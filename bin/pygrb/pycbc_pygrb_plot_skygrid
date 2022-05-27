@@ -44,27 +44,6 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 
 
 # =============================================================================
-# Functions
-# =============================================================================
-# Function to load latitude and longitude data from an HDF trigger/injection file
-def load_data(input_file, vetoes):
-    """Build a dictionary containing latitude and longitude data extracted
-    from a trigger file"""
-
-    # Inizialize the dictionary
-    data = {}
-    data['longitude'] = None
-    data['latitude'] = None
-
-    # Fill the dictionary in with required data
-    if input_file:
-        trigs = h5py.File(input_file, 'r')
-        data['longitude'] = numpy.degrees(trigs['network/longitude'])
-        data['latitude'] = numpy.degrees(trigs['network/latitude'])
-
-    return data
-
-# =============================================================================
 # Main script starts here
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,

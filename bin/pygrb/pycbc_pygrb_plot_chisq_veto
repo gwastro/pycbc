@@ -59,54 +59,6 @@ def format_single_chisqs(trig_ifo_cs, ifos):
     return trig_ifo_cs
 
 
-# Function to load necessary SNR and chi-squared data from an HDF trigger/injection file
-def load_data(input_file, vetoes, ifos, opts, injections=False):
-    """Build a dictionary containing SNR and chi-squared data extracted from a
-    trigger/injection file"""
-
-    # Keys of the quantities to be extracted
-    snr_type = 'snr'
-    veto_type = opts.y_variable
-
-    # Inizialize the dictionary
-    data = {}
-    data[snr_type] = None
-    data[veto_type] = None
-    data['chisq_dof'] = None
-    data['bank_chisq_dof'] = None
-    data['cont_chisq_dof'] = None
-
-    # Fill the dictionary in with required data
-    if input_file:
-        trigs_or_injs = h5py.File(input_file, 'r')
-        ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l', 'V1': 'v', 'T1': 't'}
-        # Case with single SNR
-        if snr_type == 'snr_sngl':
-            att = ifo_att[opts.ifo]
-            data[snr_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo,att)][:]
-        # Coherent SNR
-        else:
-            data[snr_type] = numpy.asarray(trigs_or_injs['network/coherent_snr'][:])
-        
-        # Chi-squared data
-        prefix_dict = {'standard': '', 'bank': 'bank_', 'auto': 'cont_'}
-        data[veto_type] = trigs_or_injs['%s/%schisq' % (opts.ifo,prefix_dict[veto_type])][:]
-        
-        # Remove BestNR = 0 points when dealing with standard chi-square
-        if veto_type == 'standard':
-            null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
-            data['reweighted_snr'] = numpy.array(trigs_or_injs['network/reweighted_snr'][:])
-            data[snr_type] = data[snr_type][data['reweighted_snr'] != 0]
-            data[veto_type] = data[veto_type][data['reweighted_snr'] != 0]
-        
-        # Gather data on degrees of freedom. TODO: cont_chisq_dof not available for test hdf file. 
-        for cs in ['', 'bank_']:
-            dof = cs+'chisq_dof'
-            data[dof] = numpy.unique(trigs_or_injs['%s/%s' % (ifo,dof)][:])
-
-    return data
-
-
 # Function that produces the contrours to be plotted
 def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
     """Generate the contours for the veto plots"""

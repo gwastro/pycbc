@@ -39,7 +39,6 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 try:
     from ligo import segments
     from ligo.lw import utils, lsctables, table
-    # from ligo.lw.table import get_table
     from ligo.segments.utils import fromsegwizard
     # Handle MultiInspiral xml-talbes with glue,
     # as ligo.lw no longer supports them
@@ -492,39 +491,6 @@ def slide_vetoes(vetoes, slide_dict_or_list, slide_id):
 #
 # Used (also) in executables
 #
-
-# =============================================================================
-# Function to load triggers
-# =============================================================================
-def load_triggers(trig_file, vetoes):
-    """Loads triggers from PyGRB output file"""
-
-    logging.info("Loading triggers...")
-
-    # Extract time-slides from a multi-inspiral table
-    multis, slides_list = \
-        read_multiinspiral_timeslides_from_files([trig_file])
-
-    glsctables.MultiInspiralTable.loadcolumns =\
-        [slot for slot in multis[0].__slots__ if hasattr(multis[0], slot)]
-
-    # Extract triggers
-    trigs = lsctables.New(lsctables.MultiInspiralTable,
-                          columns=lsctables.MultiInspiralTable.loadcolumns)
-
-    # Time-slid vetoes
-    for slide_id in range(len(slides_list)):
-        # Construct the ifo-indexed dictionary of slid veteoes
-        slid_vetoes = slide_vetoes(vetoes, slides_list, slide_id)
-
-        # Add time-slid triggers
-        vets = slid_vetoes.union(slid_vetoes.keys())
-        trigs.extend(t for t in multis.veto(vets)
-                     if int(t.time_slide_id) == slide_id)
-
-    logging.info("%d triggers found when including timeslides.", len(trigs))
-
-    return trigs
 
 
 # =============================================================================

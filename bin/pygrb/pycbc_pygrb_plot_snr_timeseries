@@ -48,41 +48,6 @@ __program__ = "pycbc_pygrb_plot_snr_timeseries"
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load time and necessary SNR data from an HDF trigger/injection file
-def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
-    """Build a dictionary containing time and SNR data extracted from 
-    a trigger/injection file""" 
-
-    # Initialize the dictionary
-    data = {} 
-    data['time'] = None
-    snr_type = opts.y_variable
-    data[snr_type] = None
-
-    if input_file:
-        trigs_or_injs = h5py.File(input_file, 'r')
-
-        if snr_type == 'coherent':
-            data['time'] = numpy.asarray(trigs_or_injs['network/end_time_gc'][:])
-            data['coherent'] = numpy.asarray(trigs_or_injs['network/coherent_snr'][:])
-        elif snr_type == 'null':
-            data['time'] = numpy.asarray(trigs_or_injs['network/end_time_gc'][:])
-            data['null'] = numpy.asarray(trigs_or_injs['network/null_snr'][:])
-        elif snr_type == 'reweighted': 
-            data['time'] = numpy.asarray(trigs_or_injs['network/end_time_gc'][:])
-            data['reweighted'] = numpy.array(trigs_or_injs['network/reweighted_snr'][:]) 
-        elif snr_type == 'single':
-            ifo = opts.ifo 
-            data['time'] = numpy.asarray(trigs_or_injs['%s/end_time' %ifo][:])
-            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l', 'V1': 'v', 'T1': 't'} 
-            att = ifo_att[ifo]
-            if injections:
-                data['single'] = trigs_or_injs['%s/snr' % ifo][:]
-            else:
-                data['single'] = trigs_or_injs['%s/snr_%s' % (ifo,att)][:]
-
-    return data
-
 # Find start and end times of trigger/injecton data relative to a given time
 def get_start_end_times(data, central_time):
     """Determine padded start and end times of data relative to central_time"""

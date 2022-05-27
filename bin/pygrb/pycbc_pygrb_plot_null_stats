@@ -46,34 +46,6 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load necessary SNR data from a trigger/injection file
-def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
-    """Build a dictionary containing SNR data extracted from a
-    trigger/injection file"""
-
-    # Inizialize the dictionary
-    data = {}
-    data['snr'] = None
-    null_stat_type = opts.y_variable
-    data[null_stat_type] = None
-
-    # Fill the dictionary in with required data
-    if input_file:
-        if injections:
-            trigs_or_injs = ppu.load_injections(input_file, vetoes, sim_table=sim_table)
-        else:
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-        data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
-        if null_stat_type == 'coincident':
-            data[null_stat_type] = (trigs_or_injs.get_column('coinc_snr'))
-        elif null_stat_type == 'nullstat':
-            data[null_stat_type] = numpy.asarray(trigs_or_injs.get_column('null_statistic'))
-        elif null_stat_type == 'overwhitened':
-            data[null_stat_type] = numpy.asarray(trigs_or_injs.get_null_snr())
-
-    return data
-
-
 # Function that produces the contrours to be plotted
 def calculate_contours(opts, new_snrs=None):
     """Generate the contours to plot"""
