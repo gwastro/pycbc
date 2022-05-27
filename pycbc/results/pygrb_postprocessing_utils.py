@@ -229,11 +229,11 @@ def read_seg_files(seg_files):
 # Function to load data from an HDF file
 # =============================================================================
 def load_trig_data(input_file, ifos, opts):
-    """Load data from a trigger/injection file""" 
+    """Load data from a trigger/injection file"""
     logging.info("Loading triggers...")
 
     # Initialize the dictionary
-    data = {} 
+    data = {}
     data['time'] = None
     data['longitude'] = None
     data['latitude'] = None
@@ -257,7 +257,7 @@ def load_trig_data(input_file, ifos, opts):
     if input_file:
         trigs = h5py.File(input_file, 'r')
 
-        num_trigs = len(trigs['network/end_time_gc'][:]) 
+        num_trigs = len(trigs['network/end_time_gc'][:])
 
         # Load network and single trigger times
         if opts.ifo:
@@ -281,8 +281,8 @@ def load_trig_data(input_file, ifos, opts):
         # Get single ifo SNR data
         for ifo in ifos:
             ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
-                      'V1': 'v', 'T1': 't'} 
-            att = ifo_att[ifo]  
+                      'V1': 'v', 'T1': 't'}
+            att = ifo_att[ifo]
             data['single'][ifo] = numpy.asarray(
                 trigs['%s/snr_%s' % (ifo,att)][:])
         # Calculate coincident SNR
@@ -298,26 +298,26 @@ def load_trig_data(input_file, ifos, opts):
                                            single_snr_sq[ifo])
             # Now obtain the square root
             data['coincident'] = numpy.sqrt(snr_sum_square)
-        
+
         # Get sigma for each ifo
-        for ifo in ifos: 
+        for ifo in ifos:
             sigma = dict((ifo, list(
                 trigs['%s/sigmasq' % ifo])) for ifo in ifos)
 
-        # Create array for sigma_tot 
+        # Create array for sigma_tot
         sigma_tot = numpy.zeros(num_trigs)
 
-        # Get antenna response based parameters 
+        # Get antenna response based parameters
         for ifo in ifos:
             antenna = Detector(ifo)
             ifo_f_resp = \
-                get_antenna_responses(antenna, data['longitude'], 
+                get_antenna_responses(antenna, data['longitude'],
                                       data['latitude'], data['time'])
-                
-            # Get the average for f_resp_mean and calculate sigma_tot 
+
+            # Get the average for f_resp_mean and calculate sigma_tot
             data['f_resp_mean'][ifo] = ifo_f_resp.mean()
             sigma_tot += (sigma[ifo] * ifo_f_resp)
-                
+
             for ifo in ifos:
                 try:
                     sigma_norm = sigma[ifo]/sigma_tot
@@ -347,18 +347,19 @@ def load_trig_data(input_file, ifos, opts):
             #trigs['%s/cont_chisq_dof' % ifo][:]) THIS IS NOT AVAILABLE
 
         logging.info("%d triggers found.", num_trigs)
-        
+
     return data
+
 
 # =============================================================================
 # Function to load a table from an xml file
 # =============================================================================
-def load_xml_table(file_name, table_name): 
+def load_xml_table(file_name, table_name):
     """Load xml table from file."""
-    
+
     xml_doc = utils.load_filename(file_name,
                                   contenthandler=LIGOLWContentHandler)
-    
+
     return table.Table.get_table(xml_doc, table_name)
 
 
@@ -758,18 +759,19 @@ def get_grb_time(seg_files):
 # =============================================================================
 def extract_ifos(trig_file):
     """Extracts IFOs from hdf file"""
-    
+
     # Load hdf file
     hdf_file = h5py.File(trig_file, 'r')
 
     # Extract IFOs
-    ifos = list(hdf_file.keys()) 
-    
-    # Remove 'network' key from list of ifos 
+    ifos = list(hdf_file.keys())
+
+    # Remove 'network' key from list of ifos
     if 'network' in ifos:
         ifos.remove('network')
-    
+
     return ifos
+
 
 # =============================================================================
 # Function to extract IFOs and vetoes
