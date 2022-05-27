@@ -347,7 +347,6 @@ class LiveEventManager(object):
 
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant {} '.format(apr)
-                cmd += '--fft-backends mkl '
                 cmd += '--gracedb-server {} '.format(args.gracedb_server)
                 cmd += '--gracedb-search {} '.format(args.gracedb_search)
                 if not self.gracedb_testing:
