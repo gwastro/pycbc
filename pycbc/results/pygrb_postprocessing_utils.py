@@ -281,7 +281,7 @@ def load_trig_data(input_file, ifos, opts):
         # Get single ifo SNR data
         for ifo in ifos:
             ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
-                      'V1': 'v', 'T1': 't'}
+                       'V1': 'v', 'T1': 't'}
             att = ifo_att[ifo]
             data['single'][ifo] = numpy.asarray(
                 trigs['%s/snr_%s' % (ifo, att)][:])
@@ -510,7 +510,7 @@ def load_triggers(trig_file, vetoes):
 
     # Extract triggers
     trigs = lsctables.New(lsctables.MultiInspiralTable,
-                           columns=lsctables.MultiInspiralTable.loadcolumns)
+                          columns=lsctables.MultiInspiralTable.loadcolumns)
 
     # Time-slid vetoes
     for slide_id in range(len(slides_list)):
