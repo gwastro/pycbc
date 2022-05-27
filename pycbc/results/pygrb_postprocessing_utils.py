@@ -262,7 +262,7 @@ def load_trig_data(input_file, ifos, opts):
         # Load network and single trigger times
         if opts.ifo:
             data['time'] = numpy.asarray(
-                trigs['%s/end_time' %opts.ifo][:])
+                trigs['%s/end_time' % opts.ifo][:])
         else:
             data['time'] = numpy.asarray(
                 trigs['network/end_time_gc'][:])
@@ -284,7 +284,7 @@ def load_trig_data(input_file, ifos, opts):
                       'V1': 'v', 'T1': 't'}
             att = ifo_att[ifo]
             data['single'][ifo] = numpy.asarray(
-                trigs['%s/snr_%s' % (ifo,att)][:])
+                trigs['%s/snr_%s' % (ifo, att)][:])
         # Calculate coincident SNR
         if len(ifos) > 1:
             # Initialize some dictionaries we will use
@@ -343,8 +343,8 @@ def load_trig_data(input_file, ifos, opts):
                 trigs['%s/chisq_dof' % ifo][:])
             data['bank_chisq_dof'][ifo] = numpy.unique(
                 trigs['%s/bank_chisq_dof' % ifo][:])
-            #data['cont_chisq_dof'][ifo] = numpy.asarray(
-            #trigs['%s/cont_chisq_dof' % ifo][:]) THIS IS NOT AVAILABLE
+            # data['cont_chisq_dof'][ifo] = numpy.asarray(
+            # trigs['%s/cont_chisq_dof' % ifo][:]) THIS IS NOT AVAILABLE YET
 
         logging.info("%d triggers found.", num_trigs)
 
