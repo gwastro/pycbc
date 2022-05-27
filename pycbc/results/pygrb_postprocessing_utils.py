@@ -318,18 +318,18 @@ def load_trig_data(input_file, ifos, opts):
             data['f_resp_mean'][ifo] = ifo_f_resp.mean()
             sigma_tot += (sigma[ifo] * ifo_f_resp)
 
-            for ifo in ifos:
-                try:
-                    sigma_norm = sigma[ifo]/sigma_tot
-                    data['sigma_mean'][ifo] = sigma_norm.mean()
-                    if ifo == opts.ifo:
-                        data['sigma_max'] = sigma_norm.max()
-                        data['sigma_min'] = sigma_norm.min()
-                except ValueError:
-                    data['sigma_mean'][ifo] = 0
-                    if ifo == opts.ifo:
-                        data['sigma_max'] = 0
-                        data['sigma_min'] = 0
+        for ifo in ifos:
+            try:
+                sigma_norm = sigma[ifo]/sigma_tot
+                data['sigma_mean'][ifo] = sigma_norm.mean()
+                if ifo == opts.ifo:
+                    data['sigma_max'] = sigma_norm.max()
+                    data['sigma_min'] = sigma_norm.min()
+            except ValueError:
+                data['sigma_mean'][ifo] = 0
+                if ifo == opts.ifo:
+                    data['sigma_max'] = 0
+                    data['sigma_min'] = 0
 
         # Get single IFO chisq data
         for ifo in ifos:
