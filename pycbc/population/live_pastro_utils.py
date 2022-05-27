@@ -65,15 +65,15 @@ _do_calc = {
 }
 
 
-class PAstroData(object):
+class PAs():
     """ Class for managing live p_astro calculation persistent info """
     def __init__(self, args, bank):
         """ Describe """
         if args.do_p_astro:
             self.do = True
             self.method = args.p_astro_method
-            self.spec_data = _read_spec[method](args.p_astro_spec_data)
-            self.bank_data = _read_bank[method](self.spec_data, bank)
+            self.spec_data = _read_spec[self.method](args.p_astro_spec_data)
+            self.bank_data = _read_bank[self.method](self.spec_data, bank)
         else:
             self.do = False
 
@@ -85,4 +85,3 @@ def do_pastro_calc(padata, trigger_data):
     method = padata.method
     p_astro = _do_calc[method](padata, trigger_data)
     return p_astro
-
