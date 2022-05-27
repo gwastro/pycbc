@@ -112,6 +112,13 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
 
+html_context = {
+    'display_github': True,
+    'github_user': 'gwastro',
+    'github_repo': 'pycbc',
+    'github_version': 'master/docs/',
+    }
+
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
 #html_title = None
