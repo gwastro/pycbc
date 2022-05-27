@@ -1005,7 +1005,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
                                   contenthandler=contenthandler)
 
         # Extract the time slide table
-        time_slide_table = get_table(doc, lsctables.TimeSlideTable.tableName)
+        time_slide_table = table.Table.get_table(doc, lsctables.TimeSlideTable.tableName)
         slide_mapping = {}
         curr_slides = {}
         for slide in time_slide_table:
@@ -1028,7 +1028,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
         # Extract the multi inspiral table
         try:
-            multi_inspiral_table = get_table(doc, 'multi_inspiral')
+            multi_inspiral_table = table.Table.get_table(doc, 'multi_inspiral')
             # Remap the time slide IDs
             for multi in multi_inspiral_table:
                 new_id = slide_mapping[int(multi.time_slide_id)]
