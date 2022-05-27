@@ -20,6 +20,8 @@ assuming various noise models.
 """
 
 
+from .base import BaseModel
+from .base_data import BaseDataModel
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
                        TestPrior, TestPosterior)
 from .gaussian_noise import GaussianNoise
@@ -197,3 +199,47 @@ models = {_cls.name: _cls for _cls in (
     Relative,
     HierarchicalModel,
 )}
+
+
+#
+# =============================================================================
+#
+#                         Plugin utilities
+#
+# =============================================================================
+#
+def add_custom_model(model, force=False):
+    """Makes a custom model available to PyCBC.
+
+    The provided model will be added to the dictionary of models that PyCBC
+    knows about, using the model's ``name`` attribute. If the ``name`` is the
+    same as a model that already exists in PyCBC, a :py:exc:`RuntimeError` will
+    be raised unless the ``force`` option is set to ``True``.
+
+    Parameters
+    ----------
+    model : pycbc.inference.models.base.BaseModel
+        The model to use. The model should be a sub-class of
+        :py:class:`BaseModel <pycbc.inference.models.base.BaseModel>` to ensure
+        it has the correct API for use within ``pycbc_inference``.
+    force : bool, optional
+        Add the model even if its ``name`` attribute is the same as a model
+        that is already in :py:data:`pycbc.inference.models.models`. Otherwise,
+        a :py:exc:`RuntimeError` will be raised. Default is ``False``.
+    """
+    if model.name in models and not force:
+        raise RuntimeError("Cannot load plugin model {}; the name is already "
+                           "in use.".format(model.name))
+    models[model.name] = model
+
+
+def retrieve_model_plugins():
+    """Retrieves and processes external model plugins.
+    """
+    import pkg_resources
+    # Check for fd waveforms
+    for plugin in pkg_resources.iter_entry_points('pycbc.inference.models'):
+        add_custom_model(plugin.resolve())
+
+
+retrieve_model_plugins()
