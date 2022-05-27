@@ -107,7 +107,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {'style_nav_header_background': 'grey',
+html_theme_options = {'style_nav_header_background': 'linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)',
                       'logo_only':True,
                       }
 
