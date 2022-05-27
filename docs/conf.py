@@ -107,7 +107,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {'collapsiblesidebar':True}
+html_theme_options = {'style_nav_header_background': 'grey',
+                      'logo_only':True,
+                      }
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
@@ -128,7 +130,7 @@ html_context = {
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
