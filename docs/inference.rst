@@ -1,6 +1,7 @@
 ###################################################################
 PyCBC inference documentation (``pycbc.inference``)
 ###################################################################
+.. _inference:
 
 .. Following are useful substituions for classes and modules
 .. GaussianNoise:
