@@ -1,29 +1,44 @@
-=======
-PyCBC
-=======
+=============================================
+PyCBC: Powering Gravitational-wave Astronomy
+=============================================
 
-PyCBC is a software package used to explore astrophysical sources of gravitational waves.
+PyCBC is the result of a community effort to build
+a set of core libraries and applications suites
+used to study gravitational-wave data and astrophysics.
 It contains algorithms that can detect coalescing compact binaries and measure
 the astrophysical parameters of detected sources. PyCBC was used
 in the `first direct detection of gravitational waves (GW150914) by
 LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and
 is used in the ongoing analysis of LIGO and Virgo data.
-If you use PyCBC in your scientific publications or projects,
-we ask that you acknowlege our work by citing the papers described on the page:
+
+If you are interesting in building community tools for
+graivitational-wave astronomy, please consider `contributing <https://github.com/gwastro>`_, whether it is
+providing feedback, examples, documentation or helping to improve the core
+library and application suite.
 
 .. toctree::
    :hidden:
    :maxdepth: 1
 
+   install
+   credit
+
+.. toctree::
+   :hidden:
+   :caption: User Guides
+   :maxdepth: 1
+
+   tutorials
    inference
    apps
-   tutorials
+
+.. toctree::
+   :caption: Dev Guides
+   :hidden:
+   :maxdepth: 1
+
    extend
    devs
-   credit
-   modules
-   genindex
-   modindex
 
 .. card:: Core Library Examples
     :link:  tutorials
@@ -53,8 +68,16 @@ we ask that you acknowlege our work by citing the papers described on the page:
     :link:  pygrb
     :link-type: ref
 
-    Targetted analyssi to detect gravitational-wave sources in association
+    Targetted analysis to detect gravitational-wave sources in association
     with gamma-raty bursts and other transient sources.
+
+.. card:: Other applications
+    :link:  apps
+    :link-type: ref
+
+    Documentation for a select sample of the pycbc software suite. These
+    include for generating template banks, hardware injections, etc.
+
 
 ================
 Getting Started
@@ -68,26 +91,21 @@ Getting Started
 Installation
 =====================
 
-Note, if you are a LIGO / Virgo member with access to LDG resources, PyCBC is *already*
-installed on your cluster through CVMFS! Instructions to source any release of PyCBC
-is available from the `releases page <https://github.com/gwastro/pycbc/releases>`_.
-
-You may also install PyCBC directly with pip.
+You may also install PyCBC directly with pip or conda.
 
 .. code-block:: bash
 
    pip install pycbc
 
-Full detailed installation instructions which covers other installation cases:
+Detailed instructions are found :ref:`here <installing_pycbc>`.
 
-.. toctree::
-   :maxdepth: 1
-
-   install
+Note, if you are a LIGO / Virgo member with access to IWGN resources, PyCBC is *already*
+installed on your cluster through CVMFS! Instructions to source any release of PyCBC
+is available from the `releases page <https://github.com/gwastro/pycbc/releases>`_.
 
 ==================
 Indexes and Tables
 ==================
 
 * :ref:`modindex`
-* :ref:`genindex`
+* :ref:`genindex`.

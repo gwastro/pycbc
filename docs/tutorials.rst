@@ -1,7 +1,8 @@
+.. _tutorials:
+
 ==========================================
 Library Examples and Interactive Tutorials
 ==========================================
-.. _tutorials:
 
 We have interactive tutorials and examples of using the pycbc.
 `Please give them a try! <https://github.com/gwastro/PyCBC-Tutorials>`_.

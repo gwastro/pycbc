@@ -3,7 +3,6 @@
 #############################################
 The workflow template bank generation module
 #############################################
-.. _bank:
 
 =============
 Introduction

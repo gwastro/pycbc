@@ -1,7 +1,8 @@
+.. _search_workflow:
+
 ####################################################################################
 ``pycbc_make_coinc_search_workflow``: A workflow to search for gravitational waves
 ####################################################################################
-.. _search_workflow:
 
 ===============
 Introduction
