@@ -33,7 +33,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
               'sphinx.ext.viewcode', 'sphinxcontrib.programoutput',
               'sphinx.ext.napoleon', 'sphinx.ext.mathjax',
               'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
-              'sphinx.ext.inheritance_diagram',
+              'sphinx.ext.inheritance_diagram', 'sphinx_design',
               ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -283,7 +283,8 @@ def build_includes():
             print('DONE with {}'.format(fn))
     os.chdir(cwd)
 
-build_includes()
+if not 'SKIP_PYCBC_DOCS_INCLUDE' in os.environ:
+    build_includes()
 
 def setup(app):
     app.add_js_file('typed.min.js')
