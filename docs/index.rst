@@ -23,6 +23,9 @@ library and application suite.
    install
    credit
 
+   Modules <modules>
+   genindex
+
 .. toctree::
    :hidden:
    :caption: User Guides
@@ -39,6 +42,10 @@ library and application suite.
 
    extend
    devs
+
+.. toctree::
+   :hidden:
+   :maxdepth: 1
 
 .. card:: Core Library Examples
     :link:  tutorials
@@ -102,10 +109,3 @@ Detailed instructions are found :ref:`here <installing_pycbc>`.
 Note, if you are a LIGO / Virgo member with access to IGWN resources, PyCBC is *already*
 installed on your cluster through CVMFS! Instructions to source any release of PyCBC
 is available from the `releases page <https://github.com/gwastro/pycbc/releases>`_.
-
-==================
-Indexes and Tables
-==================
-
-* :ref:`modindex`
-* :ref:`genindex`.
