@@ -99,7 +99,7 @@ You may also install PyCBC directly with pip or conda.
 
 Detailed instructions are found :ref:`here <installing_pycbc>`.
 
-Note, if you are a LIGO / Virgo member with access to IWGN resources, PyCBC is *already*
+Note, if you are a LIGO / Virgo member with access to IGWN resources, PyCBC is *already*
 installed on your cluster through CVMFS! Instructions to source any release of PyCBC
 is available from the `releases page <https://github.com/gwastro/pycbc/releases>`_.
 
