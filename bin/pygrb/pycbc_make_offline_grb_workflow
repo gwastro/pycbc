@@ -46,6 +46,7 @@ logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=__version__)
 _workflow.add_workflow_command_line_group(parser)
+_workflow.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
