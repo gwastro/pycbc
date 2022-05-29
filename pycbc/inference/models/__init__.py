@@ -20,6 +20,9 @@ assuming various noise models.
 """
 
 
+from pkg_resources import iter_entry_points as _iter_entry_points
+from .base import BaseModel
+from .base_data import BaseDataModel
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
                        TestPrior, TestPosterior)
 from .gaussian_noise import GaussianNoise
@@ -176,10 +179,10 @@ def read_from_config(cp, **kwargs):
     """
     # use the name to get the distribution
     name = cp.get("model", "name")
-    return models[name].from_config(cp, **kwargs)
+    return get_model(name).from_config(cp, **kwargs)
 
 
-models = {_cls.name: _cls for _cls in (
+_models = {_cls.name: _cls for _cls in (
     TestEggbox,
     TestNormal,
     TestRosenbrock,
@@ -197,3 +200,75 @@ models = {_cls.name: _cls for _cls in (
     Relative,
     HierarchicalModel,
 )}
+
+
+
+def register_model(model, force=False):
+    """Makes a custom model available to PyCBC.
+
+    The provided model will be added to the dictionary of models that PyCBC
+    knows about, using the model's ``name`` attribute. If the ``name`` is the
+    same as a model that already exists in PyCBC, a :py:exc:`RuntimeError` will
+    be raised unless the ``force`` option is set to ``True``.
+
+    Parameters
+    ----------
+    model : pycbc.inference.models.base.BaseModel
+        The model to use. The model should be a sub-class of
+        :py:class:`BaseModel <pycbc.inference.models.base.BaseModel>` to ensure
+        it has the correct API for use within ``pycbc_inference``.
+    force : bool, optional
+        Add the model even if its ``name`` attribute is the same as a model
+        that is already in :py:data:`pycbc.inference.models.models`. Otherwise,
+        a :py:exc:`RuntimeError` will be raised. Default is ``False``.
+    """
+    if model.name in _models and not force:
+        raise RuntimeError("Cannot add model {}; the name is already in use."
+                           .format(model.name))
+    _models[model.name] = model
+
+
+class _ModelManager:
+    """Retrieve the dictionary of available models.
+
+    The first time this is called, any plugin models that are available will be
+    added to the dictionary before returning.
+
+    Returns
+    -------
+    dict :
+        Dictionary of model names -> models.
+    """
+    def __init__(self):
+        self.retrieve_plugins = True
+
+    def __call__(self):
+        if self.retrieve_plugins:
+            for plugin in _iter_entry_points('pycbc.inference.models'):
+                register_model(plugin.resolve())
+            self.retrieve_plugins = False
+        return _models
+        
+
+get_models = _ModelManager()
+
+
+def get_model(model_name):
+    """Retrieve the given model.
+
+    Parameters
+    ----------
+    model_name : str
+        The name of the model to get.
+
+    Returns
+    -------
+    model :
+        The requested model.
+    """
+    return get_models()[model_name]
+
+
+def available_models():
+    """List the currently available models."""
+    return list(get_models().keys())
