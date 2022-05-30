@@ -28,6 +28,7 @@ import sys
 import os
 import logging
 import numpy
+import h5py
 from matplotlib import rc
 import matplotlib.pyplot as plt
 import pycbc.version
@@ -46,6 +47,54 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # =============================================================================
 # Functions
 # =============================================================================
+# Function to load trigger data
+def load_data(input_file, ifos, opts):
+    """Load data from a trigger/injection file"""
+    logging.info("Loading triggers...")
+
+    # Initialize the dictionary
+    data = {}
+    data['coherent'] = None
+    data['null'] = None
+    data['coincident'] = None
+
+    if input_file:
+        trigs = h5py.File(input_file, 'r')
+
+        num_trigs = len(trigs['network/end_time_gc'][:])
+
+        # Load SNR data
+        data['coherent'] = numpy.asarray(
+            trigs['network/coherent_snr'][:])
+        data['null'] = numpy.asarray(
+            trigs['network/null_snr'][:])
+        # Get single ifo SNR data 
+        single_snr = dict((ifo, None) for ifo in ifos)
+        for ifo in ifos:
+            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
+                       'V1': 'v', 'T1': 't'}
+            att = ifo_att[ifo]
+            single_snr[ifo] = numpy.asarray(
+                trigs['%s/snr_%s' % (ifo, att)][:])
+
+        # Calculate coincident SNR
+        if len(ifos) > 1:
+            # Initialize some dictionaries we will use
+            single_snr_sq = dict((ifo, None) for ifo in ifos)
+            snr_sum_square = numpy.zeros(num_trigs)
+            for ifo in ifos:
+                # First square the individual SNR's
+                single_snr_sq[ifo] = numpy.square(single_snr[ifo])
+                # Then add them
+                snr_sum_square = numpy.add(snr_sum_square,
+                                           single_snr_sq[ifo])
+            # Now obtain the square root
+            data['coincident'] = numpy.sqrt(snr_sum_square)
+
+        logging.info("%d triggers found.", num_trigs)
+
+    return data
+
 # Function that produces the contrours to be plotted
 def calculate_contours(opts, new_snrs=None):
     """Generate the contours to plot"""
@@ -137,10 +186,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                         opts.veto_category)
 
 # Extract trigger data
-trig_data = ppu.load_trig_data(trig_file, ifos, opts)
+trig_data = load_data(trig_file, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = ppu.load_trig_data(found_file, ifos, opts)
+inj_data = load_data(found_file, ifos, opts)
 
 # Generate plots
 logging.info("Plotting...")

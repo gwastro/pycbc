@@ -42,6 +42,26 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_skygrid"
 
+# =============================================================================
+# Functions
+# =============================================================================
+def load_data(input_file, ifos, opts):
+    """Load data from a trigger/injection file"""
+    logging.info("Loading triggers...")
+
+    # Initialize the dictionary
+    data = {}
+    data['longitude'] = None
+    data['latitude'] = None
+
+    if input_file:
+        trigs = h5py.File(input_file, 'r')
+
+        # Load latitude and longitude data
+        data['longitude'] = numpy.degrees(trigs['network/longitude'])
+        data['latitude'] = numpy.degrees(trigs['network/latitude'])
+
+    return data
 
 # =============================================================================
 # Main script starts here
@@ -73,7 +93,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load trigger data
-trig_data = ppu.load_trig_data(trig_file, ifos, opts)
+trig_data = load_data(trig_file, ifos, opts)
 
 #
 # Generate sky grid plot
