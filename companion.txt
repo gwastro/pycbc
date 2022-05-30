@@ -22,3 +22,7 @@ setproctitle
 
 # Needed for `population_models` module
 sympy>=1.9
+
+# Needed for KDE
+awkde
+scikit-learn
