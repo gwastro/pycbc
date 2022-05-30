@@ -31,7 +31,7 @@ import copy
 import numpy as np
 from pycbc.events import ranking
 from pycbc.io import hdf
-from pycbc.bank import bank_conversions as bank_conv
+from pycbc.tmpltbank import bank_conversions as bank_conv
 from pycbc.io import get_chisq_from_file_choice
 
 # sngl_rank_keys are the allowed names of reweighted SNR functions
