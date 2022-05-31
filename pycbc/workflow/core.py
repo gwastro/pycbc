@@ -181,16 +181,18 @@ class Executable(pegasus_workflow.Executable):
 
         if exe_url.scheme in ['', 'file']:
             # NOTE: There could be a case where the exe is available at a
-            #       remote site, but not on the submit host. We could work to
-            #       allow this if it ever becomes a viable use-case. Some other
-            #       places (e.g. versioning) would have to be edited as well.
+            #       remote site, but not on the submit host. Currently allowed
+            #       for the OSG site, versioning will not work as planned if
+            #       we can't see the executable (can we perhaps run versioning
+            #       including singularity??)
 
             # Check that executables at file urls
             #  on the local site exist
-            if os.path.isfile(exe_url.path) is False:
-                raise TypeError("Failed to find %s executable "
-                                "at %s on site %s" % (name, exe_path,
-                                exe_site))
+            if not exe_site in ['osg']:
+                if os.path.isfile(exe_url.path) is False:
+                    raise TypeError("Failed to find %s executable "
+                                    "at %s on site %s" % (name, exe_path,
+                                    exe_site))
         else:
             # Could be http, gsiftp, etc. so it needs fetching if run now
             self.needs_fetching = True

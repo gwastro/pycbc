@@ -203,6 +203,8 @@ def add_osg_site(sitecat, cp):
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="getenv",
                       value="False")
+    site.add_profiles(Namespace.CONDOR, key="preserve_relative_paths",
+                      value="True")
     site.add_profiles(Namespace.CONDOR, key="+InitializeModulesEnv",
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="+SingularityCleanEnv",
@@ -219,6 +221,9 @@ def add_osg_site(sitecat, cp):
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
                       value="/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation")
+    # Add MKL location to LD_LIBRARY_PATH for OSG
+    site.add_profiles(Namespace.ENV, key="LD_LIBRARY_PATH",
+                      value="/usr/local/lib:/.singularity.d/libs")
     sitecat.add_sites(site)
 
 
