@@ -78,7 +78,7 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 # Retrieve science segments
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
-sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
+sciSegs = _workflow.get_segments_file(wflow, "science", 'segments-science-name', segDir)
 
 
 if wflow.cp.has_option("inspiral", "segment-start-pad"):
