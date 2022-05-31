@@ -534,7 +534,15 @@ class GatedGaussianNoise(BaseGatedGaussian):
         float
             The value of the log likelihood.
         """
-
+        # generate the template waveform
+        try:
+            wfs = self.get_waveforms()
+        except NoWaveformError:
+            return self._nowaveform_logl()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_logl()
+            raise e
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
