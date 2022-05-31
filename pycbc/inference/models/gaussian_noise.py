@@ -834,6 +834,9 @@ class GaussianNoise(BaseGaussianNoise):
                     recalibration=self.recalibration,
                     gates=self.gates, **self.static_params)
 
+        # attribute for storing the current waveforms
+        self._current_wfs = None
+
     @property
     def _extra_stats(self):
         """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
@@ -853,6 +856,12 @@ class GaussianNoise(BaseGaussianNoise):
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
         return -numpy.inf
 
+    def update(self, **params):
+        # update
+        super().update(**params)
+        # reset current waveforms
+        self._current_wfs = None
+
     @property
     def multi_signal_support(self):
         """ The list of classes that this model supports in a multi-signal
@@ -863,36 +872,43 @@ class GaussianNoise(BaseGaussianNoise):
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
-        # This could be made somewhat faster by presumming the waveforms
-        # to save on all the extra inner products, this implementations
-        # is somehwat overexplicit. Some checks could also be done once.
-        #It should be OK, for the common case
-        # where waveform generation is the dominant cost.
-
-        loglr = 0
-        # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
+        # Generate the waveforms for each submodel
+        wfs = []
         for m in models:
-            loglr += m._loglr(save_waveforms=True)
+            wfs.append(m.get_waveforms())
 
-        # finally add in the lognl term from this model
-        for m1, m2 in itertools.combinations(models, 2):
-            if not hasattr(m1, 'wfs') or not hasattr(m2, 'wfs'):
-                raise FailedWaveformError
+        # combine into a single waveform
+        combine = {}
+        for det in self.data:
+            mlen = max([len(x) for x in wfs[det])
+            [x.resize(mlen) for x in wfs[det]
+            combine[det] = sum([wfs[det])
 
-            for det in m1.wfs:
-                h1, slc1 = m1.wfs[det]
-                h2, slc2 = m2.wfs[det]
-
-                if slc1 != slc2:
-                    raise RuntimeError('gaussian noise implementation of multi'
-                                       'signal model requires all frequency'
-                                       'cutoffs to be the same!')
-
-                h1h2 = h1[slc1].inner(h2[slc1]).real  # < h1, h2>
-                loglr += - h1h2  # This is -0.5 * (<h1|h2> + <h2|h1>)
+        loglr = self._loglr(waveforms=combine)
         return loglr + self.lognl
 
-    def _loglr(self, save_waveforms=False):
+    def get_waveforms(self):
+        """The waveforms generated using the current parameters.
+
+        If the waveforms haven't been generated yet, they will be generated.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        if self._current_wfs is None:
+            params = self.current_params
+            if self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
+            self._current_wfs = wfs
+        return self._current_wfs
+
+    def _loglr(self, waveforms=None):
         r"""Computes the log likelihood ratio,
 
         .. math::
@@ -908,24 +924,18 @@ class GaussianNoise(BaseGaussianNoise):
         float
             The value of the log likelihood ratio.
         """
-        params = self.current_params
-        try:
-            if self.all_ifodata_same_rate_length:
-                wfs = self.waveform_generator.generate(**params)
-            else:
-                wfs = {}
-                for det in self.data:
-                    wfs.update(self.waveform_generator[det].generate(**params))
-        except NoWaveformError:
-            return self._nowaveform_loglr()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
+        if waveforms:
+            wfs = waveforms
+        else:
+            try:
+                wfs = self.get_waveforms()
+            except NoWaveformError:
                 return self._nowaveform_loglr()
-            else:
-                raise e
-
-        if save_waveforms:
-            self.wfs = {}
+            except FailedWaveformError as e:
+                if self.ignore_failed_waveforms:
+                    return self._nowaveform_loglr()
+                else:
+                    raise e
 
         lr = 0.
         for det, h in wfs.items():
@@ -940,9 +950,6 @@ class GaussianNoise(BaseGaussianNoise):
                 slc = slice(self._kmin[det], kmax)
                 # whiten the waveform
                 h[self._kmin[det]:kmax] *= self._weight[det][slc]
-
-                if save_waveforms:
-                    self.wfs[det] = h, slc
 
                 # the inner products
                 cplx_hd = self._whitened_data[det][slc].inner(h[slc])  # <h, d>

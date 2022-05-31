@@ -53,8 +53,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._overwhitened_data = {}
         # cache the current gated data
         self._gated_data = {}
-        # attribute for storing the current waveforms
-        self._current_wfs = None
         # highpass waveforms with the given frequency
         self.highpass_waveforms = highpass_waveforms
         if self.highpass_waveforms:
@@ -78,12 +76,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         return super().from_config(cp, data_section=data_section,
                                    data=data, psds=psds,
                                    **kwargs)
-
-    def update(self, **params):
-        # update
-        super().update(**params)
-        # reset current waveforms
-        self._current_wfs = None
 
     @BaseDataModel.data.setter
     def data(self, data):
@@ -542,15 +534,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         float
             The value of the log likelihood.
         """
-        # generate the template waveform
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_logl()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_logl()
-            raise e
+
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
