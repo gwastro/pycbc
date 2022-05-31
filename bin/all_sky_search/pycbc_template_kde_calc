@@ -55,7 +55,7 @@ def optimizedparam(sampleval, nfold=2):
     maxFOM = FOM[(optbw, optalpha)]
     return optbw, optalpha
 
-#calling template data and constructing template_kde_hdf_file_over_same_template_params
+#calling template data and constructing template_kde_hdf file over template params
 template_file = h5py.File(args.template_file, 'r')
 mass1_n = template_file['mass1'][:]
 mass2_n = template_file['mass2'][:]
@@ -84,7 +84,7 @@ if args.make_template_kde:
     hdf.create_dataset('grid_pts', data=grid_pts_n)
     hdf.close()
 
-#calling signal data and constructing signal_kde_hdf_file_over_template_params
+#calling signal data and constructing signal_kde_hdf file over template params
 if args.make_signal_kde:
     data_signal = np.genfromtxt(args.signal_file, dtype = float, delimiter=',', names = True)
     mass2 = data_signal['mass2']
@@ -119,3 +119,6 @@ if args.make_signal_kde:
     hdf.create_dataset('chi_eff', data=chi_eff_s)
     hdf.create_dataset('grid_pts', data=grid_pts_s)
     hdf.close()
+
+if args.make_signal_kde == args.make_template_kde:
+    raise Exception("only one KDE will be generated at one time so only one option needed to be used out of make_signal_kde and make_template_kde")
