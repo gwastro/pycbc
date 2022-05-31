@@ -880,8 +880,8 @@ class GaussianNoise(BaseGaussianNoise):
         # combine into a single waveform
         combine = {}
         for det in self.data:
-            mlen = max([len(x[det]) for x in wfs)
-            [x[det].resize(mlen) for x in wfs[det]]
+            mlen = max([len(x[det]) for x in wfs])
+            [x[det].resize(mlen) for x in wfs]
             combine[det] = sum([x[det] for x in wfs])
 
         loglr = self._loglr(waveforms=combine)
