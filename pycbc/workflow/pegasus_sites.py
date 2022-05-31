@@ -192,7 +192,7 @@ def add_osg_site(sitecat, cp):
     add_site_pegasus_profile(site, cp)
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
-                      value="nonsharedfs")
+                      value="condorio")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
@@ -214,7 +214,7 @@ def add_osg_site(sitecat, cp):
     # FIXME: This one should be moved to be latest release and/or chosen in the
     #        config file.
     site.add_profiles(Namespace.CONDOR, key="+SingularityImage",
-                      value='"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el7:v1.18.0"')
+                      value='"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v2.0.3"')
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
