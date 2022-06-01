@@ -17,7 +17,6 @@
 """
 
 import logging
-import itertools
 import shlex
 from abc import ABCMeta
 import numpy
