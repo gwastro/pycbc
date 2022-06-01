@@ -1,5 +1,6 @@
 from pycbc.population import live_pastro as livepa
 
+
 def insert_live_pastro_option_group(parser):
     """ Add low-latency p astro options to the argparser object.
 
@@ -15,7 +16,7 @@ def insert_live_pastro_option_group(parser):
     """
 
     live_pastro_group = parser.add_argument_group('Options for live p_astro ',
-          'calculation.')
+                                                  'calculation.')
 
     # Only one choice so far, allow for more later
     live_pastro_group.add_argument('--p-astro-method', choices=
@@ -65,7 +66,7 @@ _do_calc = {
 }
 
 
-class PAs():
+class PAstroData():
     """ Class for managing live p_astro calculation persistent info """
     def __init__(self, args, bank):
         """ Describe """
