@@ -67,18 +67,20 @@ library and application suite.
 .. card:: Detect Signals in Archival Data
     :link:  search_workflow
     :link-type: ref
-    :footer: Documentation may be out-of-data, please help us improve it!
 
     The deep analysis used to detect gravitational-wave sources in
     archival data.
+    +++
+    Documentation may be out-of-data, please help us improve it!
 
 .. card:: Detect Signals in association with GRBs
     :link:  pygrb
     :link-type: ref
-    :footer: Expected for full implementation in PyCBC in the next year
 
     Targeted analysis to detect gravitational-wave sources in association
     with gamma-ray bursts and other transient sources.
+    +++
+    Expected for full implementation in PyCBC in the next year
 
 .. card:: Other applications
     :link:  apps
