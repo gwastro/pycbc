@@ -34,3 +34,4 @@ epsie==0.7.1
 Sphinx>=4.2.0
 sphinx-rtd-theme
 sphinxcontrib-programoutput>=0.11
+sphinx_design
