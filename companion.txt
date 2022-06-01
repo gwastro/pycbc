@@ -12,6 +12,7 @@ ligo.skymap
 pykerr
 
 # auxiliary samplers
+epsie>=1.0
 cpnest
 pymultinest
 ultranest
