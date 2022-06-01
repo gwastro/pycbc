@@ -179,6 +179,9 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         # store the psds and whiten the data
         self.psds = psds
 
+        # attribute for storing the current waveforms
+        self._current_wfs = None
+
     @property
     def high_frequency_cutoff(self):
         """The high frequency cutoff of the inner product."""
@@ -390,6 +393,12 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         then stored.
         """
         return sum(self.det_lognl(det) for det in self._data)
+
+    def update(self, **params):
+        # update
+        super().update(**params)
+        # reset current waveforms
+        self._current_wfs = None
 
     def _loglikelihood(self):
         r"""Computes the log likelihood of the paramaters,
@@ -834,9 +843,6 @@ class GaussianNoise(BaseGaussianNoise):
                     recalibration=self.recalibration,
                     gates=self.gates, **self.static_params)
 
-        # attribute for storing the current waveforms
-        self._current_wfs = None
-
     @property
     def _extra_stats(self):
         """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
@@ -856,12 +862,6 @@ class GaussianNoise(BaseGaussianNoise):
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
         return -numpy.inf
 
-    def update(self, **params):
-        # update
-        super().update(**params)
-        # reset current waveforms
-        self._current_wfs = None
-
     @property
     def multi_signal_support(self):
         """ The list of classes that this model supports in a multi-signal
@@ -874,7 +874,7 @@ class GaussianNoise(BaseGaussianNoise):
         """
         # Generate the waveforms for each submodel
         wfs = []
-        for m in models:
+        for m in models + [self]:
             wfs.append(m.get_waveforms())
 
         # combine into a single waveform
@@ -884,7 +884,9 @@ class GaussianNoise(BaseGaussianNoise):
             [x[det].resize(mlen) for x in wfs]
             combine[det] = sum([x[det] for x in wfs])
 
-        loglr = self._loglr(waveforms=combine)
+        self._current_wfs = combine
+        loglr = self._loglr()
+        self._current_wfs = None
         return loglr + self.lognl
 
     def get_waveforms(self):
@@ -908,7 +910,7 @@ class GaussianNoise(BaseGaussianNoise):
             self._current_wfs = wfs
         return self._current_wfs
 
-    def _loglr(self, waveforms=None):
+    def _loglr(self):
         r"""Computes the log likelihood ratio,
 
         .. math::
@@ -924,18 +926,15 @@ class GaussianNoise(BaseGaussianNoise):
         float
             The value of the log likelihood ratio.
         """
-        if waveforms:
-            wfs = waveforms
-        else:
-            try:
-                wfs = self.get_waveforms()
-            except NoWaveformError:
+        try:
+            wfs = self.get_waveforms()
+        except NoWaveformError:
+            return self._nowaveform_loglr()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
                 return self._nowaveform_loglr()
-            except FailedWaveformError as e:
-                if self.ignore_failed_waveforms:
-                    return self._nowaveform_loglr()
-                else:
-                    raise e
+            else:
+                raise e
 
         lr = 0.
         for det, h in wfs.items():

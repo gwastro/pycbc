@@ -541,6 +541,9 @@ class MultiSignalModel(HierarchicalModel):
                                "for the MultiSignal model isn't supported by"
                                "any of the constituent models.".format(ctypes))
 
+        self.other_models = self.submodels.values()
+        self.other_models.pop(self.primary_model)
+
     def _loglikelihood(self):
         for lbl, model in self.submodels.items():
             # Update the parameters of each
@@ -549,7 +552,7 @@ class MultiSignalModel(HierarchicalModel):
 
         # Calculate the combined loglikelihood
         p = self.primary_model
-        logl = self.submodels[p].multi_loglikelihood(self.submodels.values())
+        logl = self.submodels[p].multi_loglikelihood(self.other_models)
 
         # store any extra stats from the submodels
         for lbl, model in self.submodels.items():
