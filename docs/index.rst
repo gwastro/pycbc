@@ -3,7 +3,7 @@ PyCBC: Powering Gravitational-wave Astronomy
 =============================================
 
 PyCBC is the result of a community effort to build
-a set of core libraries and applications suites
+a set of core libraries and application suites
 used to study gravitational-wave data and astrophysics.
 It contains algorithms that can detect coalescing compact binaries and measure
 the astrophysical parameters of detected sources. PyCBC was used
@@ -12,7 +12,7 @@ LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ an
 is used in the ongoing analysis of LIGO and Virgo data.
 
 If you are interesting in building community tools for
-graivitational-wave astronomy, please consider `contributing <https://github.com/gwastro>`_, whether it is
+gravitational-wave astronomy, please consider `contributing <https://github.com/gwastro/pycbc>`_, whether it is
 providing feedback, examples, documentation or helping to improve the core
 library and application suite.
 
@@ -67,6 +67,7 @@ library and application suite.
 .. card:: Detect Signals in Archival Data
     :link:  search_workflow
     :link-type: ref
+    :footer: Documentation may be out-of-data, please help us improve it!
 
     The deep analysis used to detect gravitational-wave sources in
     archival data.
@@ -74,9 +75,10 @@ library and application suite.
 .. card:: Detect Signals in association with GRBs
     :link:  pygrb
     :link-type: ref
+    :footer: Expected for full implementation in PyCBC in the next year
 
-    Targetted analysis to detect gravitational-wave sources in association
-    with gamma-raty bursts and other transient sources.
+    Targeted analysis to detect gravitational-wave sources in association
+    with gamma-ray bursts and other transient sources.
 
 .. card:: Other applications
     :link:  apps
