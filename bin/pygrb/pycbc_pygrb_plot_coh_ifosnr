@@ -54,7 +54,7 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, ifos, opts):
+def load_data(input_file, vetoes, ifos, opts):
     """Load data from a trigger/injection file"""
     logging.info("Loading triggers...")
 
@@ -68,7 +68,7 @@ def load_data(input_file, ifos, opts):
     data['sigma_min'] = None
 
     if input_file:
-        trigs = h5py.File(input_file, 'r')
+        trigs = ppu.load_triggers(input_file, vetoes)
 
         num_trigs = len(trigs['network/end_time_gc'][:])
 
@@ -194,10 +194,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data(trig_file, ifos, opts)
+trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, ifos, opts)
+inj_data = load_data(found_file, vetoes, ifos, opts)
 
 # Generate plots
 logging.info("Plotting...")

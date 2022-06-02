@@ -366,6 +366,17 @@ def slide_vetoes(vetoes, slide_dict_or_list, slide_id):
 # Used (also) in executables
 #
 
+# =============================================================================
+# Function to load triggers
+# =============================================================================
+def load_triggers(input_file, vetoes):
+
+    trigs = h5py.File(input_file, 'r')
+
+    if vetoes is not None:
+        raise NotImplemented
+
+    return trigs
 
 # =============================================================================
 # Detector utils:
@@ -626,7 +637,10 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     ifos = extract_ifos(trig_file)
 
     # Extract vetoes
-    vetoes = extract_vetoes(veto_files, ifos, veto_cat)
+    if veto_files is not None:
+        vetoes = extract_vetoes(veto_files, ifos, veto_cat)
+    else:
+        vetoes = None
 
     return ifos, vetoes
 
