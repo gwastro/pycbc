@@ -20,7 +20,9 @@ assuming various noise models.
 """
 
 
+import logging
 from pkg_resources import iter_entry_points as _iter_entry_points
+from collections import UserDict as _UserDict
 from .base import BaseModel
 from .base_data import BaseDataModel
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
@@ -202,55 +204,109 @@ _models = {_cls.name: _cls for _cls in (
 )}
 
 
-
-def register_model(model, force=False):
-    """Makes a custom model available to PyCBC.
-
-    The provided model will be added to the dictionary of models that PyCBC
-    knows about, using the model's ``name`` attribute. If the ``name`` is the
-    same as a model that already exists in PyCBC, a :py:exc:`RuntimeError` will
-    be raised unless the ``force`` option is set to ``True``.
-
-    Parameters
-    ----------
-    model : pycbc.inference.models.base.BaseModel
-        The model to use. The model should be a sub-class of
-        :py:class:`BaseModel <pycbc.inference.models.base.BaseModel>` to ensure
-        it has the correct API for use within ``pycbc_inference``.
-    force : bool, optional
-        Add the model even if its ``name`` attribute is the same as a model
-        that is already in :py:data:`pycbc.inference.models.models`. Otherwise,
-        a :py:exc:`RuntimeError` will be raised. Default is ``False``.
-    """
-    if model.name in _models and not force:
-        raise RuntimeError("Cannot add model {}; the name is already in use."
-                           .format(model.name))
-    _models[model.name] = model
-
-
-class _ModelManager:
-    """Retrieve the dictionary of available models.
+class _ModelManager(dict):
+    """Sub-classes dictionary to manage the collection of available models.
 
     The first time this is called, any plugin models that are available will be
     added to the dictionary before returning.
-
-    Returns
-    -------
-    dict :
-        Dictionary of model names -> models.
     """
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.retrieve_plugins = True
+        super().__init__(*args, **kwargs)
 
-    def __call__(self):
+    def add_model(self, model):
+        """Adds a model to the dictionary.
+
+        If the given model has the same name as a model already in the
+        dictionary, the original model will be overridden. A warning will be
+        printed in that case.
+        """
+        if super().__contains__(model.name):
+            logging.warn("Custom model %s will override a model of the same "
+                         "name. If you don't want this, change the model's "
+                         "name attribute and restart.", model.name)
+        self[model.name] = model
+
+    def add_plugins(self):
+        """Adds any plugin models that are available.
+
+        This will only add the plugins if ``self.retrieve_plugins = True``.
+        After this runs, ``self.retrieve_plugins`` is set to ``False``, so that
+        subsequent calls to this will no re-add models.
+        """
         if self.retrieve_plugins:
             for plugin in _iter_entry_points('pycbc.inference.models'):
-                register_model(plugin.resolve())
+                self.add_model(plugin.resolve())
             self.retrieve_plugins = False
-        return _models
-        
 
-get_models = _ModelManager()
+    def __len__(self):
+        self.add_plugins()
+        super().__len__()
+
+    def __contains__(self, key):
+        self.add_plugins()
+        return super().__contains__(key)
+
+    def get(self, *args):
+        self.add_plugins()
+        return super().get(*args)
+
+    def popitem(self):
+        self.add_plugins()
+        return super().popitem()
+
+    def pop(self, *args):
+        try:
+            return super().pop(*args)
+        except KeyError:
+            self.add_plugins()
+            return super().pop(*args)
+
+    def keys(self):
+        self.add_plugins()
+        return super().keys()
+
+    def values(self):
+        self.add_plugins()
+        return super().values()
+
+    def items(self):
+        self.add_plugins()
+        return super().items()
+
+    def __iter__(self):
+        self.add_plugins()
+        return super().__iter__()
+
+    def __repr__(self):
+        self.add_plugins()
+        return super().__repr__()
+
+    def __getitem__(self, item):
+        try:
+            return super().__getitem__(item)
+        except KeyError:
+            self.add_plugins()
+            return super().__getitem__(item)
+
+    def __delitem__(self, *args, **kwargs):
+        try:
+            super().__delitem__(*args, **kwargs)
+        except KeyError:
+            self.add_plugins()
+            super().__delitem__(*args, **kwargs)
+
+
+models = _ModelManager(_models)
+
+
+def get_models():
+    """Returns the dictionary of current models.
+
+    Ensures that plugins are added to the dictionary first.
+    """
+    models.add_plugins()
+    return models
 
 
 def get_model(model_name):
@@ -272,3 +328,20 @@ def get_model(model_name):
 def available_models():
     """List the currently available models."""
     return list(get_models().keys())
+
+
+def register_model(model):
+    """Makes a custom model available to PyCBC.
+
+    The provided model will be added to the dictionary of models that PyCBC
+    knows about, using the model's ``name`` attribute. If the ``name`` is the
+    same as a model that already exists in PyCBC, a warning will be printed.
+
+    Parameters
+    ----------
+    model : pycbc.inference.models.base.BaseModel
+        The model to use. The model should be a sub-class of
+        :py:class:`BaseModel <pycbc.inference.models.base.BaseModel>` to ensure
+        it has the correct API for use within ``pycbc_inference``.
+    """
+    get_models().add_model(model)
