@@ -178,6 +178,9 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         # store the psds and whiten the data
         self.psds = psds
 
+        # attribute for storing the current waveforms
+        self._current_wfs = None
+
     @property
     def high_frequency_cutoff(self):
         """The high frequency cutoff of the inner product."""
@@ -389,6 +392,12 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         then stored.
         """
         return sum(self.det_lognl(det) for det in self._data)
+
+    def update(self, **params):
+        # update
+        super().update(**params)
+        # reset current waveforms
+        self._current_wfs = None
 
     def _loglikelihood(self):
         r"""Computes the log likelihood of the paramaters,
@@ -852,6 +861,54 @@ class GaussianNoise(BaseGaussianNoise):
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
         return -numpy.inf
 
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        return [type(self)]
+
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        # Generate the waveforms for each submodel
+        wfs = []
+        for m in models + [self]:
+            wfs.append(m.get_waveforms())
+
+        # combine into a single waveform
+        combine = {}
+        for det in self.data:
+            mlen = max([len(x[det]) for x in wfs])
+            [x[det].resize(mlen) for x in wfs]
+            combine[det] = sum([x[det] for x in wfs])
+
+        self._current_wfs = combine
+        loglr = self._loglr()
+        self._current_wfs = None
+        return loglr + self.lognl
+
+    def get_waveforms(self):
+        """The waveforms generated using the current parameters.
+
+        If the waveforms haven't been generated yet, they will be generated.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        if self._current_wfs is None:
+            params = self.current_params
+            if self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
+            self._current_wfs = wfs
+        return self._current_wfs
+
     def _loglr(self):
         r"""Computes the log likelihood ratio,
 
@@ -868,14 +925,8 @@ class GaussianNoise(BaseGaussianNoise):
         float
             The value of the log likelihood ratio.
         """
-        params = self.current_params
         try:
-            if self.all_ifodata_same_rate_length:
-                wfs = self.waveform_generator.generate(**params)
-            else:
-                wfs = {}
-                for det in self.data:
-                    wfs.update(self.waveform_generator[det].generate(**params))
+            wfs = self.get_waveforms()
         except NoWaveformError:
             return self._nowaveform_loglr()
         except FailedWaveformError as e:
@@ -883,6 +934,7 @@ class GaussianNoise(BaseGaussianNoise):
                 return self._nowaveform_loglr()
             else:
                 raise e
+
         lr = 0.
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
@@ -896,6 +948,7 @@ class GaussianNoise(BaseGaussianNoise):
                 slc = slice(self._kmin[det], kmax)
                 # whiten the waveform
                 h[self._kmin[det]:kmax] *= self._weight[det][slc]
+
                 # the inner products
                 cplx_hd = self._whitened_data[det][slc].inner(h[slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
