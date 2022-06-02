@@ -140,7 +140,7 @@ else:
             segDir, coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
     segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
                                file_url=plot_met[3])
-    segs_plot.PFN(segs_plot.cache_entry.path, site="local")
+    segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
     sciSegs = offSrc
     all_files.extend(_workflow.FileList([segs_plot]))
 
@@ -181,7 +181,7 @@ ext_file = None
 # DATAFIND
 dfDir = os.path.join(currDir, "datafind")
 datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow,
-        sciSegs, dfDir, segsFileList)
+        sciSegs, dfDir, sciSegsFile)
 if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     new_seg = segment(sciSegs[ifo][0][0] + gate_pad,
                       sciSegs[ifo][0][1] - gate_pad)
