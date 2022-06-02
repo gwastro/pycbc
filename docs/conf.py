@@ -33,7 +33,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
               'sphinx.ext.viewcode', 'sphinxcontrib.programoutput',
               'sphinx.ext.napoleon', 'sphinx.ext.mathjax',
               'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
-              'sphinx.ext.inheritance_diagram',
+              'sphinx.ext.inheritance_diagram', 'sphinx_design',
               ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -107,10 +107,19 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {'collapsiblesidebar':True}
+html_theme_options = {'style_nav_header_background': 'linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)',
+                      'logo_only':True,
+                      }
 
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
+
+html_context = {
+    'display_github': True,
+    'github_user': 'gwastro',
+    'github_repo': 'pycbc',
+    'github_version': 'master/docs/',
+    }
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -121,7 +130,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -283,7 +292,8 @@ def build_includes():
             print('DONE with {}'.format(fn))
     os.chdir(cwd)
 
-build_includes()
+if not 'SKIP_PYCBC_DOCS_INCLUDE' in os.environ:
+    build_includes()
 
 def setup(app):
     app.add_js_file('typed.min.js')
