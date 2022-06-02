@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+import numpy as np
+import h5py
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+import argparse
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--signal-file')
+parser.add_argument('--template-file', required=True)
+parser.add_argument('--param', nargs='+', required=True, help='mchirp, eta, chi_eff')
+parser.add_argument('--plot-type', choices=['kde_vs_param', 'param_vs_param'])
+parser.add_argument('--which-kde', choices=['signal_kde','template_kde', 'ratio_kde'])
+parser.add_argument('--plot-dir', required=True)
+parser.add_argument('--verbose', action='count')
+args = parser.parse_args()
+
+signal_dataset = h5py.File(args.signal_file, 'r')
+template_dataset = h5py.File(args.template_file, 'r')
+param0 = template_dataset[args.param[0]][:]    #mchirp,eta,chi_eff
+param1 = template_dataset[args.param[1]][:]
+param2 = template_dataset[args.param[2]][:]
+kde_template = template_dataset['kde_template'][:]
+kde_signal = signal_dataset['kde_sig'][:]
+
+if args.plot_type == 'kde_vs_param':
+    fig, ax = plt.subplots(3,figsize=(13,7))
+    ax[0].scatter(kde_template, param0, marker=".", c="r", s=3)
+    ax[0].set_ylabel(args.param[0], fontsize=15) 
+    ax[0].loglog()
+    ax[1].scatter(kde_template, param1, marker=".", c="b", s=3)
+    ax[1].set_ylabel(args.param[1], fontsize=15)
+    ax[1].semilogx()
+    ax[2].scatter(kde_template, param2, marker=".", c="g", s=3)
+    ax[2].set_ylabel(args.param[2], fontsize=15)
+    ax[2].set_xlabel('kde_template', fontsize=15)
+    ax[2].semilogx()
+    plot_loc = args.plot_dir+'kde_vs_param.png'
+    plt.savefig(plot_loc)
+    plt.show()
+
+elif args.plot_type == 'param_vs_param':
+    fig, ax = plt.subplots(1, figsize=(13,7), constrained_layout=True)
+    if args.which_kde == 'signal_kde':
+        im = ax.scatter(param0, param1, marker=".", c=kde_signal, cmap='RdBu_r', s=10, norm=LogNorm())
+    elif args.which_kde == 'template_kde':
+        im = ax.scatter(param0, param1, marker=".", c=kde_template, cmap='RdBu_r', s=10, norm=LogNorm())
+    elif args.which_kde == 'ratio_kde':
+        im = ax.scatter(param0, param1, marker=".", c=kde_signal/kde_template, cmap='RdBu_r', s=10, norm=LogNorm())
+    else:
+        raise RuntimeError
+    cbar = fig.colorbar(im, ax=ax)
+    ax.set_xlabel(args.param[0], fontsize=15)
+    if args.param[0] == 'mchirp':
+        ax.semilogx()
+    ax.set_ylabel(args.param[1], fontsize=15)
+    cbar.ax.set_ylabel(args.which_kde, rotation=270, fontsize=15)
+    plot_loc = args.plot_dir+args.param[0]+'_vs_'+args.param[1]+'_at_'+args.which_kde+'.png'
+    plt.savefig(plot_loc)
+    plt.show()
+else:
+    raise RuntimeError
