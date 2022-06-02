@@ -19,6 +19,7 @@
 """
 Make workflow for the archival, targeted, coherent inspiral pipeline.
 """
+# import ipdb
 
 import pycbc.version
 
@@ -79,7 +80,8 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
 sciSegs = _workflow.get_segments_file(wflow, "science", 'segments-science-name', segDir)
-
+import ipdb
+breakpoint()
 
 if wflow.cp.has_option("inspiral", "segment-start-pad"):
     pad_data = int(wflow.cp.get("inspiral", "pad-data"))
@@ -102,15 +104,15 @@ else:
 
 # Do checks for no/single IFO case
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
-if len(sciSegs.keys()) == 0:
+if len(sciSegs.ifo_list) == 0:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
             triggername, segDir)
     logging.warning("No science segments available.")
     sys.exit()
-elif len(sciSegs.keys()) < 2 and not single_ifo:
+elif len(sciSegs.ifo_list) < 2 and not single_ifo:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
             triggertime, triggername, segDir)
-    msg = "Science segments exist only for %s. " % tuple(sciSegs.keys())[0]
+    msg = "Science segments exist only for %s. " % tuple(sciSegs.ifo_list)[0]
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."

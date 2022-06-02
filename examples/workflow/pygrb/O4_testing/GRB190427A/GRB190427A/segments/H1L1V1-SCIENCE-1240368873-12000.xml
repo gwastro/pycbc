@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+	<Table Name="process:table">
+		<Column Name="comment" Type="lstring"/>
+		<Column Name="cvs_entry_time" Type="int_4s"/>
+		<Column Name="cvs_repository" Type="lstring"/>
+		<Column Name="domain" Type="lstring"/>
+		<Column Name="end_time" Type="int_4s"/>
+		<Column Name="ifos" Type="lstring"/>
+		<Column Name="is_online" Type="int_4s"/>
+		<Column Name="jobid" Type="int_4s"/>
+		<Column Name="node" Type="lstring"/>
+		<Column Name="process_id" Type="int_8s"/>
+		<Column Name="program" Type="lstring"/>
+		<Column Name="start_time" Type="int_4s"/>
+		<Column Name="unix_procid" Type="int_4s"/>
+		<Column Name="username" Type="lstring"/>
+		<Column Name="version" Type="lstring"/>
+		<Stream Name="process:table" Delimiter="," Type="Local">
+			,1337950676,"pycbc/wflow-test1",,,,0,0,"ldas-pcdev1",0,"pycbc_make_offline_grb_workflow",1338224414,1722008,"jacob.buchanan","0.0a8381"
+		</Stream>
+	</Table>
+	<Table Name="process_params:table">
+		<Column Name="param" Type="lstring"/>
+		<Column Name="process:process_id" Type="int_8s"/>
+		<Column Name="program" Type="lstring"/>
+		<Column Name="type" Type="lstring"/>
+		<Column Name="value" Type="lstring"/>
+		<Stream Name="process_params:table" Delimiter="," Type="Local">
+		</Stream>
+	</Table>
+	<Table Name="segment_definer:table">
+		<Column Name="process:process_id" Type="int_8s"/>
+		<Column Name="segment_def_id" Type="int_8s"/>
+		<Column Name="ifos" Type="lstring"/>
+		<Column Name="name" Type="lstring"/>
+		<Column Name="version" Type="int_4s"/>
+		<Column Name="comment" Type="lstring"/>
+		<Stream Name="segment_definer:table" Delimiter="," Type="Local">
+			0,0,"H1","science",1,,
+			0,1,"L1","science",1,,
+			0,2,"V1","science",1,,
+		</Stream>
+	</Table>
+	<Table Name="segment_summary:table">
+		<Column Name="process:process_id" Type="int_8s"/>
+		<Column Name="segment_sum_id" Type="int_8s"/>
+		<Column Name="start_time" Type="int_4s"/>
+		<Column Name="start_time_ns" Type="int_4s"/>
+		<Column Name="end_time" Type="int_4s"/>
+		<Column Name="end_time_ns" Type="int_4s"/>
+		<Column Name="segment_definer:segment_def_id" Type="int_8s"/>
+		<Column Name="comment" Type="lstring"/>
+		<Stream Name="segment_summary:table" Delimiter="," Type="Local">
+			0,0,1240368873,0,1240380873,0,0,,
+			0,1,1240368873,0,1240380873,0,1,,
+			0,2,1240368873,0,1240380873,0,2,,
+		</Stream>
+	</Table>
+	<Table Name="segment:table">
+		<Column Name="process:process_id" Type="int_8s"/>
+		<Column Name="segment_id" Type="int_8s"/>
+		<Column Name="start_time" Type="int_4s"/>
+		<Column Name="start_time_ns" Type="int_4s"/>
+		<Column Name="end_time" Type="int_4s"/>
+		<Column Name="end_time_ns" Type="int_4s"/>
+		<Column Name="segment_definer:segment_def_id" Type="int_8s"/>
+		<Stream Name="segment:table" Delimiter="," Type="Local">
+			0,0,1240368873,0,1240380873,0,0,
+			0,1,1240368873,0,1240380873,0,1,
+			0,2,1240368873,0,1240380873,0,2
+		</Stream>
+	</Table>
+</LIGO_LW>

@@ -305,21 +305,21 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     # How many IFOs meet minimum data requirements?
     min_seg = segments.segment(triggertime - onbefore - minbefore - padding,
                                triggertime + onafter + minafter + padding)
-    scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
-            for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
-            and abs(sciencesegs[ifo]) >= minduration})
+    scisegs = segments.segmentlistdict({ifo: sciencesegs.ifo_list[ifo]
+            for ifo in sciencesegs.ifo_list if min_seg in sciencesegs.ifo_list[ifo]
+            and abs(sciencesegs.ifo_list[ifo]) >= minduration})
 
     # Find highest number of IFOs that give an acceptable coherent segment
-    num_ifos = len(scisegs.keys())
+    num_ifos = len(scisegs.ifo_list)
     while num_ifos >= min_ifos:
         # Consider all combinations for a given number of IFOs
-        ifo_combos = itertools.combinations(scisegs.keys(), num_ifos)
+        ifo_combos = itertools.combinations(scisegs.ifo_list, num_ifos)
         onsource = {}
         offsource = {}
         for ifo_combo in ifo_combos:
             ifos = "".join(ifo_combo)
             logging.info("Calculating optimal segment for %s.", ifos)
-            segs = segments.segmentlistdict({ifo: scisegs[ifo]
+            segs = segments.segmentlistdict({ifo: scisegs.ifo_list[ifo]
                                              for ifo in ifo_combo})
             onsource[ifos], offsource[ifos] = get_triggered_coherent_segment(\
                     workflow, segs)
