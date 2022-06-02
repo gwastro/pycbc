@@ -25,18 +25,21 @@ kde_template = template_dataset['kde_template'][:]
 kde_signal = signal_dataset['kde_sig'][:]
 
 if args.plot_type == 'kde_vs_param':
-    fig, ax = plt.subplots(3,figsize=(13,7))
-    ax[0].scatter(kde_template, param0, marker=".", c="r", s=3)
-    ax[0].set_ylabel(args.param[0], fontsize=15) 
-    ax[0].loglog()
-    ax[1].scatter(kde_template, param1, marker=".", c="b", s=3)
-    ax[1].set_ylabel(args.param[1], fontsize=15)
-    ax[1].semilogx()
-    ax[2].scatter(kde_template, param2, marker=".", c="g", s=3)
-    ax[2].set_ylabel(args.param[2], fontsize=15)
-    ax[2].set_xlabel('kde_template', fontsize=15)
-    ax[2].semilogx()
-    plot_loc = args.plot_dir+'kde_vs_param.png'
+    fig, ax = plt.subplots(1,figsize=(13,7), constrained_layout=True)
+    if args.which_kde == 'signal_kde':
+        im = ax.scatter(kde_signal, param0, marker=".", c="r", s=3)
+    elif args.which_kde == 'template_kde':
+        im = ax.scatter(kde_template, param0, marker=".", c="r", s=3)
+    elif args.which_kde == 'ratio_kde':
+        im = ax.scatter(kde_signal/kde_template, param0, marker=".", c="r", s=3)
+    else:
+        raise RuntimeError
+    ax.set_xlabel(args.which_kde, fontsize=15)
+    ax.semilogx()
+    if args.param[0] == 'mchirp':
+        ax.semilogy()
+    ax.set_ylabel(args.param[0], fontsize=15)
+    plot_loc = args.plot_dir+args.which_kde+'_vs_'+args.param[0]+'.png'
     plt.savefig(plot_loc)
     plt.show()
 
