@@ -54,11 +54,25 @@ class EpsieFile(MCMCMetadataIO, CommonMultiTemperedMetadataIO,
         """Stores the swap interval to the sampler group's attrs."""
         self[self.sampler_group].attrs['swap_interval'] = swap_interval
 
+    @property
+    def seed(self):
+        """The sampler's seed."""
+        # convert seed from str back to int (see setter below for reason)
+        return int(self[self.sampler_group].attrs['seed'])
+
+    @seed.setter
+    def seed(self, seed):
+        """Store the sampler's seed."""
+        # epsie uses the numpy's new random generators, which use long integers
+        # for seeds. hdf5 doesn't know how to handle long integers, so we'll
+        # store it as a string
+        self[self.sampler_group].attrs['seed'] = str(seed)
+
     def write_sampler_metadata(self, sampler):
         """Adds writing seed and betas to MultiTemperedMCMCIO.
         """
         super(EpsieFile, self).write_sampler_metadata(sampler)
-        self[self.sampler_group].attrs['seed'] = sampler.seed
+        self.seed = sampler.seed
         self.write_data("betas", sampler.betas, path=self.sampler_group)
 
     def thin(self, thin_interval):
