@@ -22,7 +22,6 @@ assuming various noise models.
 
 import logging
 from pkg_resources import iter_entry_points as _iter_entry_points
-from collections import UserDict as _UserDict
 from .base import BaseModel
 from .base_data import BaseDataModel
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
@@ -222,9 +221,9 @@ class _ModelManager(dict):
         printed in that case.
         """
         if super().__contains__(model.name):
-            logging.warn("Custom model %s will override a model of the same "
-                         "name. If you don't want this, change the model's "
-                         "name attribute and restart.", model.name)
+            logging.warning("Custom model %s will override a model of the "
+                         "same name. If you don't want this, change the "
+                         "model's name attribute and restart.", model.name)
         self[model.name] = model
 
     def add_plugins(self):
