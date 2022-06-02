@@ -301,18 +301,15 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     if cp.has_option("workflow-condition_strain", "do-gating"):
         padding += int(os.path.basename(cp.get("condition_strain",
                                                "pad-data")))
-    import ipdb
-    breakpoint()
+
     # How many IFOs meet minimum data requirements?
     min_seg = segments.segment(triggertime - onbefore - minbefore - padding,
                                triggertime + onafter + minafter + padding)
     # Work in progess below
-    scisegs = {}
-    for iifo in range(len(sciencesegs.ifo_list)):
-        ifo = sciencesegs.ifo_list[iifo]
-        if min_seg in sciencesegs.segment_dict[ifo+':science'] and abs(sciencesegs.segment_dict[ifo+':science'][0]) >= minduration:
-             scisegs[ifo] = sciencesegs.segment_dict['H1:science'][0]
-
+    scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
+            for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
+            and abs(sciencesegs[ifo]) >= minduration})
+    
     # Find highest number of IFOs that give an acceptable coherent segment
     num_ifos = len(scisegs)
     while num_ifos >= min_ifos:
