@@ -19,7 +19,6 @@
 """
 Make workflow for the archival, targeted, coherent inspiral pipeline.
 """
-# import ipdb
 
 import pycbc.version
 
@@ -80,8 +79,6 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
 sciSegs = _workflow.get_segments_file(wflow, "science", 'segments-science-name', segDir)
-import ipdb
-breakpoint()
 
 if wflow.cp.has_option("inspiral", "segment-start-pad"):
     pad_data = int(wflow.cp.get("inspiral", "pad-data"))
