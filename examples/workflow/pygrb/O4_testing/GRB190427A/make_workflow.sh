@@ -7,5 +7,6 @@ pycbc_make_offline_grb_workflow \
 	offline_o3a.ini \
 	GRB190427A.ini \
 	--config-overrides \
-	workflow:output-directory:${PWD} \
-	--workflow-name test_wf
+	workflow:output-directory:${PWD}/output \
+	--workflow-name test_wf \
+	--output output 
