@@ -116,5 +116,5 @@ if args.make_signal_kde:
     hdf.create_dataset('grid_pts', data=grid_pts_s)
     hdf.close()
 
-if args.make_signal_kde & args.make_template_kde:
+if args.make_signal_kde and args.make_template_kde:
     raise Exception("only 1-option can be used as 1-KDE file is generated at one time")
