@@ -91,6 +91,16 @@ recommended for IGWN users:
 Other scenarios
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+===========
+Docker
+===========
+For more details, including instructions on starting a docker container  see:
+
+    .. toctree::
+       :maxdepth: 1
+
+       docker
+
 =====================================
 Building the Documentation
 =====================================
@@ -133,3 +143,13 @@ PyCBC has the ability to accelerate its processing using CUDA. To take advantage
     :maxdepth: 1
 
     install_cuda
+
+==============
+Related Help
+==============
+
+.. toctree::
+   :maxdepth: 1
+
+   install_virtualenv
+   install_lalsuite

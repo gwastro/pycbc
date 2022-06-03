@@ -17,7 +17,7 @@ It can run in a number of different modes
 - Generating template banks that do not vary over the workflow, can be the same template bank in each ifo or different ones.
 
 The template bank module, by default, is independent of other modules, though it
-is possible to ensure that there is a one-to-one correspondence between template banks and matched-filter outputs. 
+is possible to ensure that there is a one-to-one correspondence between template banks and matched-filter outputs.
 Improvements over ihope:
 
 - The template bank analysis chunks may be longer or shorter than the inspiral chunks
