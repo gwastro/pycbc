@@ -81,9 +81,7 @@ def load_data(input_file, vetoes, ifos, opts):
             trigs['network/reweighted_snr'][:])
         # Get single ifo SNR data
         for ifo in ifos:
-            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
-                       'V1': 'v', 'T1': 't'}
-            att = ifo_att[ifo]
+            att = ifo[0].lower()
             data['single'][ifo] = numpy.asarray(
                 trigs['%s/snr_%s' % (ifo, att)][:])
 
