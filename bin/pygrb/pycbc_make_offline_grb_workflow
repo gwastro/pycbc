@@ -78,12 +78,6 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 # Retrieve science segments
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
-sciSegsFiles = {}
-# for ifo in wflow.ifos:
-#    sciSegFile = _workflow.get_segments_file(wflow, "science", "segments-science-name-"+ifo, segDir)
-#    sciSegFiles[ifo] = sciSegFile
-#sciSegsFiles = {ifo : _workflow.get_segments_file(wflow, "science", "segments-science-name-"+ifo, segDir) for ifo in wflow.ifos}
-
 sciSegsFile = _workflow.get_segments_file(wflow, "science", 'segments-science', segDir)
 
 sciSegs = {}
@@ -119,7 +113,7 @@ if len(sciSegs.keys()) == 0:
 elif len(sciSegs.keys()) < 2 and not single_ifo:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
             triggertime, triggername, segDir)
-    msg = "Science segments exist only for %s. " % tuple(sciSegs.keys)[0]
+    msg = "Science segments exist only for %s. " % tuple(sciSegs.keys())[0]
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file."
@@ -253,7 +247,7 @@ else:
     IPN = False
 
 # If using pycbc_multi_inspiral we need bank_veto_bank.xml
-if (os.path.basename(wflow.cp.get("executables", "inspiral")) == "pycbc_multi_inspiral"):
+if (os.path.basename(wflow.cp.get("executables", "inspiral")) == "pycbc_multi_inspiral") and wflow.cp.has_option('inspiral', 'do-bank-veto'):
     bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
                                                  bank_veto=True)
     datafind_veto_files.extend(bank_veto_file)
