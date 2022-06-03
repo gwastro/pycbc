@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-import numpy as np
-import h5py
-import operator
-import argparse
-import logging
+import numpy, h5py, operator, argparse, logging
 from pycbc import init_logging
 import pycbc.conversions as convert
 from pycbc import libutils
@@ -24,7 +20,7 @@ init_logging(args.verbose)
 def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth='silverman', ret_kde=False):
     kde = akde.GaussianKDE(glob_bw=gl_bandwidth, alpha=alp, diag_cov=True)
     kde.fit(x)
-    if isinstance(x_grid, (list, tuple, np.ndarray)) == False:
+    if isinstance(x_grid, (list, tuple, numpy.ndarray)) == False:
         y = kde.predict(x_grid)
     else:
         y = kde.predict(x_grid)
@@ -40,11 +36,11 @@ def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
     for train_index, test_index in kfold.split(sample):
         train, test = sample[train_index], sample[test_index]
         y = kde_awkde(train, test, alp=alphachoice, gl_bandwidth=bwchoice)
-        fomlist.append(np.sum(np.log(y)))
-    return np.mean(fomlist)
+        fomlist.append(numpy.sum(numpy.log(y)))
+    return numpy.mean(fomlist)
 
 def optimizedparam(sampleval, nfold=2):
-    bwgrid = ['scott', 'silverman']+np.logspace(-2,0,10).tolist()
+    bwgrid = ['scott', 'silverman']+numpy.logspace(-2,0,10).tolist()
     alphagrid = [1]
     FOM= {}
     for gbw in bwgrid:
@@ -66,8 +62,8 @@ mchirp_n = convert.mchirp_from_mass1_mass2(mass1_n, mass2_n)
 eta_n = convert.eta_from_mass1_mass2(mass1_n, mass2_n)
 
 if args.make_template_kde:
-    sample_n = np.vstack((mchirp_n, eta_n, chi_eff_n)).T
-    grid_pts_n = np.array((mchirp_n, eta_n, chi_eff_n)).T
+    sample_n = numpy.vstack((numpy.log(mchirp_n), eta_n, chi_eff_n)).T
+    grid_pts_n = sample_n
     optbw_n, optalpha_n = optimizedparam(sample_n, nfold=2)
     kde_data_n = kde_awkde(sample_n, grid_pts_n, alp=optalpha_n, gl_bandwidth=optbw_n)
 
@@ -86,7 +82,7 @@ if args.make_template_kde:
 
 #calling signal data and constructing signal_kde_hdf file over template params
 if args.make_signal_kde:
-    data_signal = np.genfromtxt(args.signal_file, dtype = float, delimiter=',', names = True)
+    data_signal = numpy.genfromtxt(args.signal_file, dtype = float, delimiter=',', names = True)
     mass2 = data_signal['mass2']
     mass2_threshold = 5
     N_original = len(mass2)
@@ -96,7 +92,7 @@ if args.make_signal_kde:
         logging.info('%i triggers out of %i with MASS2 > %s' %
                          (len(mass2), N_original, str(mass2_threshold)))
     else:
-        idx = np.full(N_original, True)
+        idx = numpy.full(N_original, True)
     mass2_s = mass2
     mass1_s = data_signal['mass1'][idx]
     q_s = data_signal['q'][idx]
@@ -104,8 +100,8 @@ if args.make_signal_kde:
     chi_eff_s  = data_signal['chi_eff'][idx]
     mchirp_s = data_signal['mchirp'][idx]
 
-    sample_s = np.vstack((mchirp_s, eta_s, chi_eff_s)).T
-    grid_pts_s = np.array((mchirp_n, eta_n, chi_eff_n)).T
+    sample_s = numpy.vstack((numpy.log(mchirp_s), eta_s, chi_eff_s)).T
+    grid_pts_s = numpy.array((numpy.log(mchirp_n), eta_n, chi_eff_n)).T
     optbw_s, optalpha_s = optimizedparam(sample_s, nfold=2)
     kde_data_s = kde_awkde(sample_s, grid_pts_s, alp=optalpha_s, gl_bandwidth=optbw_s)
 
@@ -120,5 +116,5 @@ if args.make_signal_kde:
     hdf.create_dataset('grid_pts', data=grid_pts_s)
     hdf.close()
 
-if args.make_signal_kde == args.make_template_kde:
-    raise Exception("only one KDE will be generated at one time so only one option needed to be used out of make_signal_kde and make_template_kde")
+if args.make_signal_kde & args.make_template_kde:
+    raise Exception("only 1-option can be used as 1-KDE file is generated at one time")
