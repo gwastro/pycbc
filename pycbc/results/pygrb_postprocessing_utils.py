@@ -634,7 +634,6 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     logging.info("Extracting IFOs and vetoes.")
 
     # Extract IFOs
-    # ifos = extract_ifos(trig_file)
     ifos = extract_ifos(trig_file)
 
     # Extract vetoes
