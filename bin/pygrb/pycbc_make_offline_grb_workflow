@@ -379,7 +379,7 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
 all_files.extend(inspiral_files)
 inspiral_cache = _workflow.File(ifos, "inspiral", sciSegs[ifo][0],
                                 extension="lcf", directory=inspDir)
-inspiral_cache.PFN(inspiral_cache.cache_entry.path, site="local")
+inspiral_cache.add_pfn(inspiral_cache.cache_entry.path, site="local")
 all_files.extend(_workflow.FileList([inspiral_cache]))
 inspiral_cache_entries = inspiral_files.convert_to_lal_cache()
 inspiral_cache_entries.tofile(open(inspiral_cache.storage_path, "w"))
