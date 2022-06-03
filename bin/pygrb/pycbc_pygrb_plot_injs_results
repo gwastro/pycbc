@@ -1,15 +1,47 @@
 #!/usr/bin/env python
-""" Plot found and missed injections.
+
+# Copyright (C) 2021 Francesco Pannarale, Viviana Caceres
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
 """
+Plot found/missed injection properties for the triggered search (PyGRB).'
+"""
+
 import h5py, numpy, logging, os.path, argparse, sys
 import matplotlib; matplotlib.use('Agg')
-import matplotlib.pyplot as plot
+import matplotlib.pyplot as plt
 import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
 import pycbc.pnutils
 from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results import pygrb_postprocessing_utils as ppu
 
+plt.switch_backend('Agg')
+rc("image")
+
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__ = pycbc.version.date
+__program__ = "pycbc_pygrb_plot_injs_results"
+
+
+# =============================================================================
+# Main script starts here
+# =============================================================================
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
                     help="The hdf injection file to plot", required=True)
@@ -206,11 +238,11 @@ if args.missed_on_top:
 else:
   fig_title = 'Found and Missed Injections'
 
-fig = plot.figure()
+fig = plt.figure()
 zmissed = args.missed_on_top
 zfound = not args.missed_on_top
 
-mpoints = plot.scatter(xvals[args.x_variable][missed], myvals, s=16,
+mpoints = plt.scatter(xvals[args.x_variable][missed], myvals, s=16,
                        linewidth=0.5, marker='x', color='red',
                        label='missed', zorder=zmissed)
 
@@ -246,12 +278,12 @@ else:
                "Circles are found injections. The color indicates the value "
                "of the false alarm rate." )
 
-points = plot.scatter(fvals, fyval, c=color, linewidth=0, s=16, norm=norm,
+points = plt.scatter(fvals, fyval, c=color, linewidth=0, s=16, norm=norm,
                       marker='o', label='found', zorder=zfound,
                       cmap=args.colormap)
 if args.gradient_far:
     try:
-        c = plot.colorbar()
+        c = plt.colorbar()
         c.set_label('False Alarm Rate $(yr^{-1})$, %s' % far_title)
 
         # Set up tick labels - there will always be 5
@@ -270,10 +302,10 @@ if args.missed_on_top:
 else:
   caption += "Found injections are shown on top of missed injections."
 
-ax = plot.gca()
-plot.xlabel(labels[args.x_variable])
-plot.ylabel(labels[args.y_variable])
-plot.grid()
+ax = plt.gca()
+plt.xlabel(labels[args.x_variable])
+plt.ylabel(labels[args.y_variable])
+plt.grid()
 
 if args.x_log:
     # log x axis may fail for some choices, eg effective spin
@@ -282,7 +314,7 @@ if args.x_log:
     tmpxvals += list(xvals[args.x_variable][found])
     xmax = 1.4 * max(tmpxvals)
     xmin = 0.7 * min(tmpxvals)
-    plot.xlim(xmin, xmax)
+    plt.xlim(xmin, xmax)
 if args.y_log:
     ax.set_yscale('log')
 
@@ -292,21 +324,21 @@ ymin = 0.9 * min(tmpyvals)
 
 # note: ymin=0 will clash with args.y_log
 # in that case it *should* throw an error!
-plot.ylim(ymin, ymax)
+plt.ylim(ymin, ymax)
 
 if args.y_variable == 'redshift':
     # default y limit: min redshift 0
-    plot.ylim(ymin=0, ymax=ymax)
+    plt.ylim(ymin=0, ymax=ymax)
 else:
     # arbitrary limit of 1 distance-unit or snr-unit
-    plot.ylim(ymin=1, ymax=ymax)
+    plt.ylim(ymin=1, ymax=ymax)
 
 fig_kwds = {}
 if '.png' in args.output_file:
     fig_kwds['dpi'] = 200
 
 if ('.html' in args.output_file):
-    plot.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
+    plt.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
     import mpld3, mpld3.plugins, mpld3.utils
     mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
     legend =  mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
