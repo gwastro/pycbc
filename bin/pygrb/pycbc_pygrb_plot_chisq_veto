@@ -49,7 +49,7 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 # Functions
 # =============================================================================
 # Functions to load trigger data
-def load_data(input_file, vetoes, ifos, opts):
+def load_data(input_file, vetoes, ifos):
     """Load data from a trigger/injection file"""
     logging.info("Loading triggers...")
 

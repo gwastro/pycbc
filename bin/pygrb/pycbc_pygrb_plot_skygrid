@@ -45,7 +45,7 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 # =============================================================================
 # Functions
 # =============================================================================
-def load_data(input_file, vetoes, ifos, opts):
+def load_data(input_file, vetoes):
     """Load data from a trigger/injection file"""
     logging.info("Loading triggers...")
 
