@@ -616,7 +616,7 @@ def extract_ifos(trig_file):
     hdf_file = h5py.File(trig_file, 'r')
 
     # Extract IFOs
-    ifos = list(hdf_file.keys())
+    ifos = sorted(list(hdf_file.keys()))
 
     # Remove 'network' key from list of ifos
     if 'network' in ifos:
