@@ -438,7 +438,7 @@ if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
     pp_files.extend(_workflow.FileList([cp_file]))
     pp_files.extend(summary_files)
 
-all_files.extend(pp_files)
+#all_files.extend(pp_files)
 
 # COMPILE WORKFLOW AND WRITE DAX
 wflow.save()
