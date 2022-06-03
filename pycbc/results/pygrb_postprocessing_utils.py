@@ -34,20 +34,19 @@ from scipy import stats
 from pycbc.detector import Detector
 import pycbc.workflow as _workflow
 from pycbc.workflow.core import resolve_url_to_file
-from pycbc.io.ligolw import LIGOLWContentHandler
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo import segments
-    from ligo.lw import utils, lsctables, table
+    from ligo.lw import utils, lsctables
+    from ligo.lw.table import get_table
     from ligo.segments.utils import fromsegwizard
     # Handle MultiInspiral xml-talbes with glue,
     # as ligo.lw no longer supports them
     from glue.ligolw import lsctables as glsctables
     from glue.ligolw.ilwd import ilwdchar as gilwdchar
-    # from glue.ligolw.ligolw import LIGOLWContentHandler
+    from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
-
 
 # =============================================================================
 # Arguments functions:
@@ -230,11 +229,11 @@ def read_seg_files(seg_files):
 def load_xml_table(file_name, table_name):
     """Load xml table from file."""
 
-    xml_doc = utils.load_filename(file_name,
-                                  contenthandler=LIGOLWContentHandler)
+    xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
+                                  contenthandler=glsctables.use_in(
+                                      LIGOLWContentHandler))
 
-    return table.Table.get_table(xml_doc, table_name)
-
+    return get_table(xml_doc, table_name)
 
 # ==============================================================================
 # Function to load segments from an xml file
@@ -260,8 +259,8 @@ def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
 
     # Load SegmentDefTable and SegmentTable
     seg_def_table = load_xml_table(xml_doc,
-                                   lsctables.SegmentDefTable.tableName)
-    seg_table = load_xml_table(xml_doc, lsctables.SegmentTable.tableName)
+                                   glsctables.SegmentDefTable.tableName)
+    seg_table = load_xml_table(xml_doc, glsctables.SegmentTable.tableName)
 
     if return_dict:
         segs = segments.segmentlistdict()
@@ -656,9 +655,9 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
     else:
         logging.info("Loading %s...", label)
 
-    insp_table = lsctables.MultiInspiralTable
+    insp_table = glsctables.MultiInspiralTable
     if sim_table:
-        insp_table = lsctables.SimInspiralTable
+        insp_table = glsctables.SimInspiralTable
 
     # Load injections in injection file
     inj_table = load_xml_table(inj_file, insp_table.tableName)
@@ -713,7 +712,7 @@ def load_segment_dict(xml_file):
 
     # Get the mapping table
     time_slide_map_table = \
-        load_xml_table(xml_file, lsctables.TimeSlideSegmentMapTable.tableName)
+        load_xml_table(xml_file, glsctables.TimeSlideSegmentMapTable.tableName)
     # Perhaps unnecessary as segment_def_id and time_slide_id seem to always
     # be identical identical
     segment_map = {
@@ -722,7 +721,7 @@ def load_segment_dict(xml_file):
     }
     # Extract the segment table
     segment_table = load_xml_table(
-        xml_file, lsctables.SegmentTable.tableName)
+        xml_file, glsctables.SegmentTable.tableName)
     segment_dict = {}
     for entry in segment_table:
         curr_slid_id = segment_map[int(entry.segment_def_id)]
@@ -853,13 +852,13 @@ def read_multiinspiral_timeslides_from_files(file_list):
     multis = None
     time_slides = []
 
-    contenthandler = lsctables.use_in(LIGOLWContentHandler)
+    contenthandler = glsctables.use_in(LIGOLWContentHandler)
     for this_file in file_list:
         doc = utils.load_filename(this_file, gz=this_file.endswith("gz"),
                                   contenthandler=contenthandler)
 
         # Extract the time slide table
-        time_slide_table = table.Table.get_table(doc, lsctables.TimeSlideTable.tableName)
+        time_slide_table = get_table(doc, lsctables.TimeSlideTable.tableName)
         slide_mapping = {}
         curr_slides = {}
         for slide in time_slide_table:
@@ -882,7 +881,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
         # Extract the multi inspiral table
         try:
-            multi_inspiral_table = table.Table.get_table(doc, 'multi_inspiral')
+            multi_inspiral_table = get_table(doc, 'multi_inspiral')
             # Remap the time slide IDs
             for multi in multi_inspiral_table:
                 new_id = slide_mapping[int(multi.time_slide_id)]
