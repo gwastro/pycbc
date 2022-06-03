@@ -89,7 +89,7 @@ parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 args = parser.parse_args()
 
-init_logging(args.verbose)
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Read in HDF5 file
 logging.info('Reading in the data')
