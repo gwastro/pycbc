@@ -38,7 +38,7 @@ from pycbc.workflow.core import resolve_url_to_file
 try:
     from ligo import segments
     from ligo.lw import utils, lsctables
-    from ligo.lw.table import get_table
+    from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
     # Handle MultiInspiral xml-talbes with glue,
     # as ligo.lw no longer supports them
@@ -233,7 +233,7 @@ def load_xml_table(file_name, table_name):
                                   contenthandler=glsctables.use_in(
                                       LIGOLWContentHandler))
 
-    return get_table(xml_doc, table_name)
+    return Table.get_table(xml_doc, table_name)
 
 # ==============================================================================
 # Function to load segments from an xml file
@@ -858,7 +858,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
                                   contenthandler=contenthandler)
 
         # Extract the time slide table
-        time_slide_table = get_table(doc, lsctables.TimeSlideTable.tableName)
+        time_slide_table = Table.get_table(doc, lsctables.TimeSlideTable.tableName)
         slide_mapping = {}
         curr_slides = {}
         for slide in time_slide_table:
@@ -881,7 +881,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
         # Extract the multi inspiral table
         try:
-            multi_inspiral_table = get_table(doc, 'multi_inspiral')
+            multi_inspiral_table = Table.get_table(doc, 'multi_inspiral')
             # Remap the time slide IDs
             for multi in multi_inspiral_table:
                 new_id = slide_mapping[int(multi.time_slide_id)]
