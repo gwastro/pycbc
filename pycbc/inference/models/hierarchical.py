@@ -284,6 +284,7 @@ class HierarchicalModel(BaseModel):
                                        submodel_lbls))
         sparam_map = map_params(hpiter(cp.options('static_params'),
                                        submodel_lbls))
+
         # we'll need any waveform transforms for the initializing sub-models,
         # as the underlying models will receive the output of those transforms
         if any(cp.get_subsections('waveform_transforms')):
@@ -334,12 +335,14 @@ class HierarchicalModel(BaseModel):
             # so that the model doesn't raise an error looking for
             # prior sections. We'll then manually set the variable
             # params after the model is initialized
+
             subcp.add_section('variable_params')
             for param in vparam_map[lbl]:
                 subcp.set('static_params', param.subname, 'REPLACE')
             # add the outputs from the waveform transforms
             for param in wfparam_map[lbl]:
                 subcp.set('static_params', param.subname, 'REPLACE')
+
             # initialize
             submodel = read_from_config(subcp)
             # move the static params back to variable
@@ -541,8 +544,9 @@ class MultiSignalModel(HierarchicalModel):
                                "for the MultiSignal model isn't supported by"
                                "any of the constituent models.".format(ctypes))
 
-        self.other_models = self.submodels.values()
+        self.other_models = self.submodels.copy()
         self.other_models.pop(self.primary_model)
+        self.other_models = list(self.other_models.values())
 
     def _loglikelihood(self):
         for lbl, model in self.submodels.items():
