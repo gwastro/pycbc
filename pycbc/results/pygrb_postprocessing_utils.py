@@ -370,6 +370,7 @@ def slide_vetoes(vetoes, slide_dict_or_list, slide_id):
 # Function to load triggers
 # =============================================================================
 def load_triggers(input_file, vetoes):
+    """Loads triggers from PyGRB output file"""
 
     trigs = h5py.File(input_file, 'r')
 
