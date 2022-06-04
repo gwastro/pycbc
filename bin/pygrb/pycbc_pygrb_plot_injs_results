@@ -22,8 +22,8 @@ Plot found/missed injection properties for the triggered search (PyGRB).'
 """
 
 import h5py, numpy, logging, os.path, argparse, sys
-import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib
 import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
 import pycbc.pnutils
 from pycbc import init_logging
@@ -31,7 +31,7 @@ from pycbc.detector import Detector
 from pycbc.results import pygrb_postprocessing_utils as ppu
 
 plt.switch_backend('Agg')
-rc("image")
+matplotlib.rc("image")
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -40,27 +40,56 @@ __program__ = "pycbc_pygrb_plot_injs_results"
 
 
 # =============================================================================
+# Functions
+# =============================================================================
+def load_incl_data(raw_data, qty):
+    """Extract data related to inclination from raw trigger/injection data"""
+
+    local_dict = {}
+
+    # Whether the user requests incl, |incl|, cos(incl), or cos(|incl|)
+    # the following information is needed
+    local_dict['incl'] = numpy.asarray(raw_data['injections/inclination'][:])
+
+    # Requesting |incl| or cos(|incl|)
+    if 'abs_' in qty:
+        local_dict['abs_incl'] = 0.5*numpy.pi - abs(local_dict['incl'] - 0.5*numpy.pi)
+
+    # Requesting cos(incl) or cos(|incl|): take cosine
+    if 'cos_' in qty:
+        angle = qty.replace('cos_', '')
+        angle_data = local_dict[angle]
+        data = numpy.cos(angle_data)
+    # Requesting incl or abs_incl: convert to degrees
+    else:
+        data = numpy.rad2deg(local_dict[qty])
+
+    return data
+
+
+# =============================================================================
 # Main script starts here
 # =============================================================================
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
                     help="The hdf injection file to plot", required=True)
-# The code includes more x variable options but these are the ones that have
-# been tested to work
 admitted_xvars = ['mchirp', 'end_time', 'mtotal', 'mass_ratio', 'coa_phase',
-                  'inclination', 'latitude', 'longitude', 'mass1', 'mass2',
-                  'polarization', 'eff_spin']
+                  'distance', 'incl', 'latitude', 'longitude', 'mass1',
+                  'mass2', 'polarization', 'spin1x', 'spin1y', 'spin1z',
+                  'spin2x', 'spin2y', 'spin2z', 'eff_spin', 'eff_distance',
+                  'eff_site_dist', 'cos_incl', 'abs_incl', 'cos_abs_incl']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
                     choices=admitted_xvars,
                     help="Quantity to plot on the horizontal axis. "+
                     "(Underscores may be omitted in specifying this option).")
 parser.add_argument("--x-log", action="store_true",
                     help="Use log horizontal axis")
-# The code includes more y variable options but these are the ones that have
-# been tested to work.
-admitted_yvars = ['distance', 'eff_dist', 'eff_site_dist', 'decisive_optimal_snr',
-                  'decisive_distance', 'chirp_distance', 'comb_optimal_snr', 
-                  'decisive_optimal_snr']
+admitted_yvars = ['distance', 'eff_dist', 'eff_site_dist',
+                  'decisive_optimal_snr', 'decisive_distance', 'chirp_distance',
+                  'comb_optimal_snr','decisive_optimal_snr', 'coa_phase',
+                  'incl', 'latitude', 'longitude', 'mass1', 'mass2',
+                  'polarization', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
+                  'spin2y', 'spin2z', 'cos_incl', 'abs_incl', 'cos_abs_incl']
 parser.add_argument("-y", "--y-variable", default=None, required=True,
                     choices=admitted_yvars,
                     help="Quantity to plot on the vertical axis. "+
@@ -89,7 +118,7 @@ parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 args = parser.parse_args()
 
-init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
+init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Read in HDF5 file
 logging.info('Reading in the data')
@@ -124,12 +153,29 @@ xvals['eff_spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2)
 xvals['mtotal'] = m1 + m2
 # use convention that q>1
 xvals['mass_ratio'] = numpy.maximum(m1/m2, m2/m1)
+
+# Load times in relation to GRB time
 if args.x_variable == 'end_time':
     xvals['end_time'] = f['injections/end_time'][:] - grb_time
-# If x variable doesn't need calculations, it can be loaded directly 
+
+# Load inclinations
+elif 'incl' in args.x_variable:
+    xvals[args.x_variable] = load_incl_data(f, args.x_variable)
+
+# Load effective distances
+elif args.x_variable == 'eff_site_dist':
+    xvals['eff_site_dist'] = f['injections/eff_dist_%s' % args.ifo[0].lower()][:]
+elif args.x_variable == 'eff_dist':
+    local_dict = {}
+    local_dict['eff_site_dist'] =\
+        dict((ifo, f['injections/eff_dist_%s' % ifo[0].lower()][:])
+             for ifo in ifos)
+    xvals['eff_dist'] = numpy.power(numpy.power(numpy.asarray(
+        list(local_dict['eff_site_dist'].values())), -1).sum(0), -1)
+
+# If x variable doesn't need calculations, it can be loaded directly
 # from HDF file
-elif args.x_variable not in ['mchirp', 'eff_spin', 'mtotal', 'mass_ratio',
-                             'end_time']:
+else:
     xvals[args.x_variable] = f['injections/%s' % args.x_variable][:]
 
 # Initialize dictionary for y variable
@@ -193,8 +239,12 @@ if 'snr' in args.y_variable:  # only evaluate SNRs if needed
             numpy.array([numpy.sqrt(sorted(opt_snrsq)[-2])
                          for opt_snrsq in zip(*opt_snrsq_arr)])
 
-# Load effective distances - copied from pycbc_pygrb_plot_injs_results
-if args.y_variable == 'eff_site_dist': # For single detector site distances
+# Load inclinations
+elif 'incl' in args.y_variable:
+    yvals[args.y_variable] = load_incl_data(f, args.y_variable)
+
+# Load effective distances
+elif args.y_variable == 'eff_site_dist': # For single detector site distances
     yvals['eff_site_dist'] = f['injections/eff_dist_%s' % args.ifo[0].lower()][:]
 elif args.y_variable == 'eff_dist':
     local_dict = {}
@@ -203,6 +253,11 @@ elif args.y_variable == 'eff_dist':
              for ifo in ifos)
     yvals['eff_dist'] = numpy.power(numpy.power(numpy.asarray(
         list(local_dict['eff_site_dist'].values())), -1).sum(0), -1)
+
+# If y variable doesn't need calculations, it can be loaded directly
+# from HDF file
+else:
+    yvals[args.y_variable] = f['injections/%s' % args.y_variable][:]
 
 # Specify indices for found and missed injections
 fyvals = yvals[args.y_variable][found]
@@ -223,8 +278,17 @@ labels={'mchirp': 'Chirp Mass',
         'redshift': 'Redshift',
         'end_time': 'Time since %d (s)' % grb_time,
         'eff_spin': 'Weighted Aligned Spin',
+        'spin1x': "Spin x-component of 1st binary component",
+        'spin1y': "Spin y-component of 1st binary component",
+        'spin1z': "Spin z-component of 1st binary component",
+        'spin2x': "Spin x-component of 2nd binary component",
+        'spin2y': "Spin y-component of 2nd binary component",
+        'spin2z': "Spin z-component of 2nd binary component",
         'coa_phase': 'Complex SNR Phase',
-        'inclination': 'Inclination Angle (radians)',
+        'incl': 'Inclination (iota)',
+        'abs_incl': 'Magnitude of inclination (|iota|)',
+        'cos_incl': "cos(iota)",
+        'cos_abs_incl': "cos(|iota|)",
         'latitude' : 'Latitude',
         'longitude' : 'Longitude',
         'polarization' : 'Polarization',
@@ -333,6 +397,20 @@ else:
     # arbitrary limit of 1 distance-unit or snr-unit
     plt.ylim(ymin=1, ymax=ymax)
 
+# Handle axis limits when plotting spins
+max_missed_inj = {}
+for key in ['spin1', 'spin2']:
+    if key in args.y_variable:
+        max_missed_inj[args.y_variable] = myvals.max()
+    if key in args.x_variable:
+        max_missed_inj[args.x_variable] = xvals[args.x_variable][missed].max()
+if "spin" in args.x_variable:
+    ax.set_xlim([0, numpy.ceil(10 * max(max_missed_inj[args.x_variable],
+                                     xvals[args.x_variable][found].max())) / 10])
+if "spin" in args.y_variable:
+    ax.set_ylim([0, numpy.ceil(10 * max(max_missed_inj[args.y_variable],
+                                     fyvals.max())) / 10])
+                                     
 fig_kwds = {}
 if '.png' in args.output_file:
     fig_kwds['dpi'] = 200
