@@ -10,6 +10,7 @@ kf = libutils.import_optional('sklearn.model_selection')
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--signal-file')
 parser.add_argument('--template-file', required=True)
+parser.add_argument('--min-mass', type=float, default=None, required=True)
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--make-signal-kde', action='store_true')
 parser.add_argument('--make-template-kde', action='store_true')
@@ -51,6 +52,9 @@ def optimizedparam(sampleval, nfold=2):
     maxFOM = FOM[(optbw, optalpha)]
     return optbw, optalpha
 
+if args.make_signal_kde and args.make_template_kde:
+    raise Exception("Choose only one option out of --make-signal-kde and --make-template-kde")
+
 #calling template data and constructing template_kde_hdf file over template params
 template_file = h5py.File(args.template_file, 'r')
 mass1_n = template_file['mass1'][:]
@@ -64,8 +68,10 @@ eta_n = convert.eta_from_mass1_mass2(mass1_n, mass2_n)
 if args.make_template_kde:
     sample_n = numpy.vstack((numpy.log(mchirp_n), eta_n, chi_eff_n)).T
     grid_pts_n = sample_n
+    logging.info('Starting optimization of template KDE parameters')
     optbw_n, optalpha_n = optimizedparam(sample_n, nfold=2)
-    kde_data_n = kde_awkde(sample_n, grid_pts_n, alp=optalpha_n, gl_bandwidth=optbw_n)
+    logging.info('Evaluating template KDE')
+    kde_data_n = kde_awkde(sample_n, grid_pts_n, alp=optalpha_n, gl_bandwidth=optbw_n)    
 
     hdf = h5py.File(args.output_file, 'w')
     hdf.create_dataset('kde_template', data=kde_data_n)
@@ -84,27 +90,28 @@ if args.make_template_kde:
 if args.make_signal_kde:
     data_signal = numpy.genfromtxt(args.signal_file, dtype = float, delimiter=',', names = True)
     mass2 = data_signal['mass2']
-    mass2_threshold = 5
     N_original = len(mass2)
-    if mass2_threshold:
-        idx = mass2 > mass2_threshold
+    if args.min_mass:
+        idx = mass2 > args.min_mass
         mass2 = mass2[idx]
         logging.info('%i triggers out of %i with MASS2 > %s' %
-                         (len(mass2), N_original, str(mass2_threshold)))
+                         (len(mass2), N_original, str(args.min_mass)))
     else:
         idx = numpy.full(N_original, True)
     mass2_s = mass2
     mass1_s = data_signal['mass1'][idx]
-    q_s = data_signal['q'][idx]
+    assert min(mass1_s - mass2_s) > 0
     eta_s = data_signal['eta'][idx]
     chi_eff_s  = data_signal['chi_eff'][idx]
     mchirp_s = data_signal['mchirp'][idx]
 
     sample_s = numpy.vstack((numpy.log(mchirp_s), eta_s, chi_eff_s)).T
     grid_pts_s = numpy.array((numpy.log(mchirp_n), eta_n, chi_eff_n)).T
+    logging.info('Starting optimization of signal KDE parameters')
     optbw_s, optalpha_s = optimizedparam(sample_s, nfold=2)
+    logging.info('Evaluating signal KDE')
     kde_data_s = kde_awkde(sample_s, grid_pts_s, alp=optalpha_s, gl_bandwidth=optbw_s)
-
+ 
     hdf = h5py.File(args.output_file, 'w')
     hdf.create_dataset('kde_sig', data=kde_data_s)
     hdf.attrs['signal_kde'] = 'kde_sig'
@@ -115,6 +122,3 @@ if args.make_signal_kde:
     hdf.create_dataset('chi_eff', data=chi_eff_s)
     hdf.create_dataset('grid_pts', data=grid_pts_s)
     hdf.close()
-
-if args.make_signal_kde and args.make_template_kde:
-    raise Exception("only 1-option can be used as 1-KDE file is generated at one time")
