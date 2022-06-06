@@ -195,7 +195,7 @@ class Executable(pegasus_workflow.Executable):
         elif exe_url.scheme == 'singularity':
             # Will use an executable within a singularity container. Don't
             # need to do anything here, as I cannot easily check it exists.
-            pass
+            exe_path = exe_url.path
         else:
             # Could be http, gsiftp, etc. so it needs fetching if run now
             self.needs_fetching = True
