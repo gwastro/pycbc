@@ -150,8 +150,9 @@ def get_code_version_numbers(cp):
         if value.scheme in ['gsiftp', 'http', 'https']:
             code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
         elif value.scheme == 'singularity':
-            txt = "Executable run from a singularity image. See config file "
-                  "and site catalog for details of what image was used."
+            txt = ("Executable run from a singularity image. See config file "
+                   "and site catalog for details of what image was used."
+                  )
             code_version_dict[exe_name] = txt
         else:
             try:
