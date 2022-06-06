@@ -162,7 +162,8 @@ def get_code_version_numbers(cp):
                     stderr=subprocess.STDOUT
                 )
             except subprocess.CalledProcessError:
-                version_string = "Executable fails on %s --version" % (value)
+                version_string = "Executable fails on {} --version"
+                version_string = version_string.format(value.path)
             except OSError:
                 version_string = "Executable doesn't seem to exist(!)"
             code_version_dict[exe_name] = version_string
