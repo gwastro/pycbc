@@ -19,6 +19,7 @@
 import logging
 import os
 import subprocess
+import urllib.parse
 from pycbc.results import save_fig_with_metadata, html_escape
 
 import lal, lalframe
@@ -143,16 +144,21 @@ def get_code_version_numbers(cp):
     """
     code_version_dict = {}
     for _, value in cp.items('executables'):
-        _, exe_name = os.path.split(value)
+        value = urllib.parse.urlparse(value)
+        _, exe_name = os.path.split(value.path)
         version_string = None
-        if value.startswith('gsiftp://') or value.startswith('http://'):
+        if value.scheme in ['gsiftp', 'http', 'https']:
             code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
+        elif value.scheme == 'singularity':
+            txt = "Executable run from a singularity image. See config file "
+                  "and site catalog for details of what image was used."
+            code_version_dict[exe_name] = txt
         else:
             try:
-                if value.startswith('file://'):
-                    value = value[7:]
-                version_string = subprocess.check_output([value, '--version'],
-                                                        stderr=subprocess.STDOUT)
+                version_string = subprocess.check_output(
+                    [value.path, '--version'],
+                    stderr=subprocess.STDOUT
+                )
             except subprocess.CalledProcessError:
                 version_string = "Executable fails on %s --version" % (value)
             except OSError:

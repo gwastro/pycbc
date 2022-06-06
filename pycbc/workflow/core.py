@@ -188,11 +188,14 @@ class Executable(pegasus_workflow.Executable):
 
             # Check that executables at file urls
             #  on the local site exist
-            if not exe_site in ['osg']:
-                if os.path.isfile(exe_url.path) is False:
-                    raise TypeError("Failed to find %s executable "
-                                    "at %s on site %s" % (name, exe_path,
-                                    exe_site))
+            if os.path.isfile(exe_url.path) is False:
+                raise TypeError("Failed to find %s executable "
+                                "at %s on site %s" % (name, exe_path,
+                                exe_site))
+        elif exe_url.scheme == 'singularity':
+            # Will use an executable within a singularity container. Don't
+            # need to do anything here, as I cannot easily check it exists.
+            pass
         else:
             # Could be http, gsiftp, etc. so it needs fetching if run now
             self.needs_fetching = True
