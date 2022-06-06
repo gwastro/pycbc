@@ -21,7 +21,7 @@ from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
 from Pegasus.api import Arch, OS, SiteCatalog
 
-import pycbc.version
+from pycbc.version import last_version # noqa
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
@@ -216,7 +216,7 @@ def add_osg_site(sitecat, cp):
                             "(HAS_LIGO_FRAMES =?= True) && "
                             "(IS_GLIDEIN =?= True)")
     cvmfs_loc = '"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v'
-    cvmfs_loc += pycbc.version.last_release + '"'
+    cvmfs_loc += last_release + '"'
     site.add_profiles(Namespace.CONDOR, key="+SingularityImage",
                       value=cvmfs_loc)
     # On OSG failure rate is high
