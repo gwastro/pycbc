@@ -21,7 +21,7 @@ from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
 from Pegasus.api import Arch, OS, SiteCatalog
 
-from pycbc.version import last_version # noqa
+from pycbc.version import last_release  # noqa
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
