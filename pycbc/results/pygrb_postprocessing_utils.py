@@ -372,7 +372,7 @@ def load_triggers(input_file, vetoes):
 
     trigs = h5py.File(input_file, 'r')
 
-    if vetoes is not None
+    if vetoes is not None:
         # Developers: see PR 3972 for previous implementation
         raise NotImplemented
 
