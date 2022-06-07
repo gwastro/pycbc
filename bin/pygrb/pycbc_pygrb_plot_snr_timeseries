@@ -49,7 +49,7 @@ __program__ = "pycbc_pygrb_plot_snr_timeseries"
 # Functions
 # =============================================================================
 # Load trigger data
-def load_data(input_file, vetoes, ifos, opts):
+def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Load data from a trigger/injection file"""
     logging.info("Loading triggers...")
 
@@ -155,7 +155,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Load (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts)
+inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
 
 # Determine the central time (t=0): default is the GRB trigger time
 central_time = opts.central_time if opts.central_time is not None else\
