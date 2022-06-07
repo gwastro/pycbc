@@ -89,6 +89,7 @@ class DistMarg():
         self.distance_interpolator = None
 
         marginalize_distance = str_to_bool(marginalize_distance)
+        self.marginalize_distance = marginalize_distance
         if not marginalize_distance:
             return variable_params, kwargs
 
