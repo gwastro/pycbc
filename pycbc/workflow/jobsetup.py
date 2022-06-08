@@ -289,8 +289,6 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         bank_veto = datafind_outs[-2]
         frame_files = datafind_outs[:-2]
     else:
-        import ipdb
-        ipdb.set_trace(context=7)
         ipn_sky_points = None
         if 'bank_veto_bank' in datafind_outs[-2].description:
             bank_veto = datafind_outs[-1]
