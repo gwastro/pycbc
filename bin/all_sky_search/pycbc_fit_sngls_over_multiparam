@@ -168,9 +168,6 @@ parser.add_argument("--fit-param", nargs='+',
                          "a frequency cutoff in pnutils or a frequency function"
                          "in LALSimulation. To regress the background over "
                          "multiple parameters, provide them as a list.")
-parser.add_argument("--output-fit-by-template-values", action='store_true',
-                    help="If given, will output the fit_by_template counts "
-                         "and coefficients from the input file.")
 parser.add_argument("--approximant", default="SEOBNRv4",
                     help="Approximant for template duration. Default SEOBNRv4")
 parser.add_argument("--f-lower", type=float, default=0.,
@@ -311,12 +308,6 @@ try:
     outfile['median_sigma'] = fits['median_sigma'][:]
 except KeyError:
     logging.info('Median_sigma dataset not present in input file')
-
-if args.output_fit_by_template_values:
-    outfile.create_group("fit_by_template")
-    outfile['fit_by_template/count_above_thresh'] = fits['count_above_thresh'][:]
-    outfile['fit_by_template/count_in_template'] = fits['count_in_template'][:]
-    outfile['fit_by_template/fit_coeff'] = fits['fit_coeff'][:]
 
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
     if slog in ['false', 'False', 'FALSE']:
