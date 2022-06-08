@@ -48,37 +48,41 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, vetoes, ifos, opts):
+def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Load data from a trigger/injection file"""
 
-    logging.info("Loading triggers...")
-    
     null_stat_type = opts.y_variable
-    
+
     # Initialize the dictionary
     data = {}
     data['coherent'] = None
     data[null_stat_type] = None
 
     if input_file:
-        trigs = ppu.load_triggers(input_file, vetoes)
-        
+        if injections:
+            logging.info("Loading injections...")
+            # This will eventually become ppu.load_injections()
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+        else:
+            logging.info("Loading triggers...")
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+
         # Coherent SNR is always used
-        data['coherent'] = trigs['network/%s_snr' % null_stat_type][:]
+        data['coherent'] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
 
         if null_stat_type == 'null':
-            data[null_stat_type] = trigs['network/%s_snr' % null_stat_type][:]
+            data[null_stat_type] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
         elif null_stat_type == 'single':
             att = ifo[0].lower()
-            data[null_stat_type] = trigs['%s/snr_%s' % (opts.ifo, att)][:])
+            data[null_stat_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:])
         elif null_stat_type == 'coincident':
-            num_trigs = len(trigs['network/end_time_gc'][:])
+            num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
 
             # Calculate coincident SNR
             if len(ifos) > 1:
                 # Initialize some dictionaries we will use
                 single_snr_sq = dict((ifo, None) for ifo in ifos)
-                snr_sum_square = numpy.zeros(num_trigs)
+                snr_sum_square = numpy.zeros(num_trigs_or_injs)
                 for ifo in ifos:
                     # First square the individual SNR's
                     single_snr_sq[ifo] = numpy.square(single_snr[ifo])
@@ -88,7 +92,10 @@ def load_data(input_file, vetoes, ifos, opts):
                 # Now obtain the square root
                 data[null_stat_type] = numpy.sqrt(snr_sum_square)
 
-        logging.info("%d triggers found.", num_trigs)
+        if injections:
+            logging.info("%d injections found.", num_trigs_or_injs)
+        else:
+            logging.info("%d triggers found.", num_trigs_or_injs)
 
     return data
 
@@ -186,7 +193,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts)
+inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")
