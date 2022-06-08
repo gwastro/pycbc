@@ -289,9 +289,14 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         bank_veto = datafind_outs[-2]
         frame_files = datafind_outs[:-2]
     else:
+        import ipdb
+        ipdb.set_trace(context=7)
         ipn_sky_points = None
-        bank_veto = datafind_outs[-1]
-        frame_files = datafind_outs[:-1]
+        if 'bank_veto_bank' in datafind_outs[-2].description:
+            bank_veto = datafind_outs[-1]
+            frame_files = datafind_outs[:-1]
+        else:
+            frame_files = datafind_outs
 
     split_bank_counter = 0
 
@@ -703,13 +708,14 @@ class PyCBCMultiInspiralExecutable(Executable):
                 raise ValueError("%s must be given a bank veto file if the "
                                  "argument 'do-bank-veto' is given"
                                  % self.name)
-            node.add_input_opt('--bank-veto-templates', bankVetoBank)
-
+            node.add_input_opt('--bank-veto-bank', bankVetoBank)
+        
         # Set time options
         node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
         node.add_opt('--gps-end-time', data_seg[1] - int(pad_data))
         node.add_opt('--trig-start-time', valid_seg[0])
         node.add_opt('--trig-end-time', valid_seg[1])
+        node.add_opt('--trigger-time', self.cp.get('workflow', 'trigger-time'))
 
         # Set the input and output files
         node.new_output_file_opt(data_seg, '.hdf', '--output',
