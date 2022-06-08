@@ -154,6 +154,7 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
 
     return back_cnum, fnlouder
 
+
 _significance_meth_dict = {
     'trigger_fit': n_louder_from_fit,
     'n_louder': count_n_louder
