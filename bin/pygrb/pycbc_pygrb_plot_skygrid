@@ -45,23 +45,15 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 # =============================================================================
 # Functions
 # =============================================================================
-def load_data(input_file, vetoes):
+# Load trigger data
+def load_data(input_file, vetoes, injections=False):
     """Load data from a trigger/injection file"""
+    
     logging.info("Loading triggers...")
-
-    # Initialize the dictionary
-    data = {}
-    data['longitude'] = None
-    data['latitude'] = None
-
-    if input_file:
-        trigs = ppu.load_triggers(input_file, vetoes)
-
-        # Load latitude and longitude data
-        data['longitude'] = numpy.degrees(trigs['network/longitude'])
-        data['latitude'] = numpy.degrees(trigs['network/latitude'])
-
-    return data
+    
+    trigs = ppu.load_triggers(input_file, vetoes)
+        
+    return trigs
 
 # =============================================================================
 # Main script starts here
@@ -93,7 +85,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load trigger data
-trig_data = load_data(trig_file, vetoes, ifos, opts)
+trig_data = load_data(trig_file, vetoes)
 
 #
 # Generate sky grid plot
@@ -111,7 +103,8 @@ fig = plt.figure()
 ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
 ax.set_ylabel(ylabel)#, fontsize=16)
-ax.plot(trig_data['longitude'], trig_data['latitude'], 'ko', markerfacecolor='blue')
+ax.plot(trig_data['network/longitude'][:], trig_data['network/latitude'][:],
+        'ko', markerfacecolor='blue')
 # Wrap up
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=opts.plot_caption)
