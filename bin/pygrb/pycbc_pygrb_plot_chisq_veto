@@ -75,7 +75,6 @@ def load_data(input_file, vetoes, ifos, opts):
 
         # Calculate coincident SNR
         elif snr_type == 'coincident':
-            num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
             
             # Obtain all single SNRs
             single_snr = {}
