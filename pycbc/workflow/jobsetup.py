@@ -294,6 +294,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
             bank_veto = datafind_outs[-1]
             frame_files = datafind_outs[:-1]
         else:
+            bank_veto = None
             frame_files = datafind_outs
 
     split_bank_counter = 0
