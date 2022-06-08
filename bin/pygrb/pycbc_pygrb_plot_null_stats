@@ -50,44 +50,43 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # Function to load trigger data
 def load_data(input_file, vetoes, ifos, opts):
     """Load data from a trigger/injection file"""
-    logging.info("Loading triggers...")
 
+    logging.info("Loading triggers...")
+    
+    null_stat_type = opts.y_variable
+    
     # Initialize the dictionary
     data = {}
     data['coherent'] = None
-    data['null'] = None
-    data['coincident'] = None
+    data[null_stat_type] = None
 
     if input_file:
         trigs = ppu.load_triggers(input_file, vetoes)
+        
+        # Coherent SNR is always used
+        data['coherent'] = trigs['network/%s_snr' % null_stat_type][:]
 
-        num_trigs = len(trigs['network/end_time_gc'][:])
-
-        # Load SNR data
-        data['coherent'] = numpy.asarray(
-            trigs['network/coherent_snr'][:])
-        data['null'] = numpy.asarray(
-            trigs['network/null_snr'][:])
-        # Get single ifo SNR data 
-        single_snr = dict((ifo, None) for ifo in ifos)
-        for ifo in ifos:
+        if null_stat_type == 'null':
+            data[null_stat_type] = trigs['network/%s_snr' % null_stat_type][:]
+        elif null_stat_type == 'single':
             att = ifo[0].lower()
-            single_snr[ifo] = numpy.asarray(
-                trigs['%s/snr_%s' % (ifo, att)][:])
+            data[null_stat_type] = trigs['%s/snr_%s' % (opts.ifo, att)][:])
+        elif null_stat_type == 'coincident':
+            num_trigs = len(trigs['network/end_time_gc'][:])
 
-        # Calculate coincident SNR
-        if len(ifos) > 1:
-            # Initialize some dictionaries we will use
-            single_snr_sq = dict((ifo, None) for ifo in ifos)
-            snr_sum_square = numpy.zeros(num_trigs)
-            for ifo in ifos:
-                # First square the individual SNR's
-                single_snr_sq[ifo] = numpy.square(single_snr[ifo])
-                # Then add them
-                snr_sum_square = numpy.add(snr_sum_square,
-                                           single_snr_sq[ifo])
-            # Now obtain the square root
-            data['coincident'] = numpy.sqrt(snr_sum_square)
+            # Calculate coincident SNR
+            if len(ifos) > 1:
+                # Initialize some dictionaries we will use
+                single_snr_sq = dict((ifo, None) for ifo in ifos)
+                snr_sum_square = numpy.zeros(num_trigs)
+                for ifo in ifos:
+                    # First square the individual SNR's
+                    single_snr_sq[ifo] = numpy.square(single_snr[ifo])
+                    # Then add them
+                    snr_sum_square = numpy.add(snr_sum_square,
+                                               single_snr_sq[ifo])
+                # Now obtain the square root
+                data[null_stat_type] = numpy.sqrt(snr_sum_square)
 
         logging.info("%d triggers found.", num_trigs)
 
