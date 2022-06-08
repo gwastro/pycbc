@@ -49,75 +49,67 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 # Functions
 # =============================================================================
 # Functions to load trigger data
-def load_data(input_file, vetoes, ifos):
+def load_data(input_file, vetoes, ifos, opts):
     """Load data from a trigger/injection file"""
     logging.info("Loading triggers...")
+    
+    snr_type = opts.snr_type
+    veto_type = opts.y_variable
 
     # Initialize the dictionary
     data = {}
-    data['coherent'] = None
-    data['null'] = None
-    data['reweighted'] = None
-    data['single'] = dict((ifo, None) for ifo in ifos)
-    data['coincident'] = None
-    data['bank_chisq'] = dict((ifo, None) for ifo in ifos)
-    data['chisq'] = dict((ifo, None) for ifo in ifos)
-    data['cont_chisq'] = dict((ifo, None) for ifo in ifos)
-    data['sigmasq'] = dict((ifo, None) for ifo in ifos)
-    data['chisq_dof'] = dict((ifo, None) for ifo in ifos)
-    data['bank_chisq_dof'] = dict((ifo, None) for ifo in ifos)
-    data['cont_chisq_dof'] = dict((ifo, None) for ifo in ifos)
+    data[snr_type] = None
+    data[veto_type] = None
+    data['dof'] = None
 
     if input_file:
-        trigs = ppu.load_triggers(input_file, vetoes)
-        num_trigs = len(trigs['network/end_time_gc'][:])
-
-        # Load SNR data
-        data['coherent'] = numpy.asarray(
-            trigs['network/coherent_snr'][:])
-        data['null'] = numpy.asarray(
-            trigs['network/null_snr'][:])
-        data['reweighted'] = numpy.array(
-            trigs['network/reweighted_snr'][:])
-
-        # Get single ifo SNR data
-        for ifo in ifos:
-            ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
-                       'V1': 'v', 'T1': 't'}
-            att = ifo_att[ifo]
-            data['single'][ifo] = numpy.asarray(
-                trigs['%s/snr_%s' % (ifo, att)][:])
+        trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+        
+        num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
+        
+        if snr_type in ['coherent', 'null', 'reweighted']:
+            data[snr_type] = trigs_or_injs['network/%s_snr' % snr_type][:]
+        elif snr_type == 'single':
+            att = opts.ifo[0].lower()
+            data[snr_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:]
 
         # Calculate coincident SNR
-        if len(ifos) > 1:
-            # Initialize some dictionaries we will use
-            single_snr_sq = dict((ifo, None) for ifo in ifos)
-            snr_sum_square = numpy.zeros(num_trigs)
+        elif snr_type == 'coincident':
+            num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
+            
+            # Obtain all single SNRs
+            single_snr = {}
             for ifo in ifos:
-                # First square the individual SNR's
-                single_snr_sq[ifo] = numpy.square(data['single'][ifo])
-                # Then add them
-                snr_sum_square = numpy.add(snr_sum_square,
-                                           single_snr_sq[ifo])
-            # Now obtain the square root
-            data['coincident'] = numpy.sqrt(snr_sum_square)
+                ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
+                           'V1': 'v', 'T1': 't'}
+                att = ifo_att[ifo]
+                single_snr[ifo] = trigs_or_injs['%s/snr_%s' % (ifo, att)][:]
+            
+            # Calculate coincident SNR
+            if len(ifos) > 1:
+                # Initialize some dictionaries we will use
+                single_snr_sq = dict((ifo, None) for ifo in ifos)
+                snr_sum_square = numpy.zeros(num_trigs_or_injs)
+                for ifo in ifos:
+                    # First square the individual SNR's
+                    single_snr_sq[ifo] = numpy.square(single_snr[ifo])
+                    # Then add them
+                    snr_sum_square = numpy.add(snr_sum_square,
+                                               single_snr_sq[ifo])
+                # Now obtain the square root
+                data[snr_type] = numpy.sqrt(snr_sum_square)
 
-        # Get single IFO chisq data
-        for ifo in ifos:
-            data['bank_chisq'][ifo] = numpy.asarray(
-                trigs['%s/bank_chisq' % ifo][:])
-            data['chisq'][ifo] = numpy.asarray(
-                trigs['%s/chisq' % ifo][:])
-            data['cont_chisq'][ifo] = numpy.asarray(
-                trigs['%s/cont_chisq' % ifo][:])
-            data['chisq_dof'][ifo] = numpy.unique(
-                trigs['%s/chisq_dof' % ifo][:])
-            data['bank_chisq_dof'][ifo] = numpy.unique(
-                trigs['%s/bank_chisq_dof' % ifo][:])
-            # data['cont_chisq_dof'][ifo] = numpy.asarray(
-            # trigs['%s/cont_chisq_dof' % ifo][:]) THIS IS NOT AVAILABLE YET
+        # Tags to find vetoes in HDF files
+        veto_tags = {'standard': 'chisq',
+                     'bank': 'bank_chisq',
+                     'auto': 'cont_chisq'}
 
-        logging.info("%d triggers found.", num_trigs)
+        data[veto_type] = \
+            trigs_or_injs['%s/%s' % (opts.ifo, veto_tags[veto_type])][:]
+        data['dof'] = numpy.unique(
+            trigs_or_injs['%s/%s_dof' % (opts.ifo, veto_tags[veto_type])][:])
+
+        logging.info("%d triggers found.", num_trigs_or_injs)
 
     return data
 
@@ -137,8 +129,7 @@ def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
     """Generate the contours for the veto plots"""
 
     # Read off the degrees of freedom
-    prefix_dict = {'standard': '', 'bank': 'bank_', 'auto': 'cont_'}
-    dof = trig_data[prefix_dict[veto_type]+'chisq_dof'][opts.ifo][0]
+    dof = trig_data['dof'][0]
 
     # Add the new SNR threshold contour to the list if necessary
     # and keep track of where it is
@@ -198,9 +189,9 @@ parser.add_argument("-y", "--y-variable", required=True,
                     choices=['standard', 'bank', 'auto'],
                     help="Quantity to plot on the vertical axis.")
 parser.add_argument("--snr-type", default=None,
-                    choices=['coherent', 'single'], 
-                    help="SNR value to plot on x-axis. Can be coherent" +
-                    "or single IFO SNR")
+                    choices=['coherent', 'single', 'coincident'], 
+                    help="SNR value to plot on x-axis. Can be coherent, " +
+                    "coincident, or single IFO SNR")
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
@@ -233,6 +224,8 @@ if opts.plot_title is None:
     opts.plot_title = "%s %s" %(ifo, veto_labels[veto_type])
     if snr_type == 'single':
         opts.plot_title += " vs %s SNR" %(ifo)
+    elif snr_type == 'coincident':
+        opts.plot_title += " vs Coincident SNR"
     else:
         opts.plot_title += " vs Coherent SNR"
 if opts.plot_caption is None:
@@ -266,23 +259,13 @@ trig_data = load_data(trig_file, vetoes, ifos, opts)
 # Extract (or initialize) injection data
 inj_data = load_data(found_file, vetoes, ifos, opts)
 
-# Tags to find vetoes in data dictionary
-veto_tags = {'standard': 'chisq',
-             'bank': 'bank_chisq',
-             'auto': 'cont_chisq'}
-
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:
     err_msg = "No data to be plotted on the x-axis was found"
     raise RuntimeError(err_msg)
-if trig_data[veto_tags[veto_type]][opts.ifo] is None and inj_data[veto_tags[veto_type]][opts.ifo] is None:
+if trig_data[veto_type] is None and inj_data[veto_type] is None:
     err_msg = "No data to be plotted on the y-axis was found"
     raise RuntimeError(err_msg)
-
-if snr_type == 'single':
-    trig_data[snr_type] = trig_data[snr_type][ifo]
-    inj_data[snr_type] = inj_data[snr_type][ifo]
-
 
 # Generate plots
 logging.info("Plotting...")
@@ -293,6 +276,8 @@ x_label = "Coherent SNR"
 # Case with single SNR
 if snr_type == 'single':
     x_label = "%s SNR" % ifo
+if snr_type == 'coincident':
+    x_label = "Coincident SNR"
 
 # Determine the minumum and maximum SNR value we are dealing with
 x_min = opts.sngl_snr_threshold
@@ -303,7 +288,7 @@ y_label = "%s Single %s" % (ifo, veto_labels[veto_type])
 y_min = 1
 
 # Determine the maximum bank veto value we are dealing with
-y_max = plu.axis_max_value(trig_data[veto_tags[veto_type]][opts.ifo], inj_data[veto_tags[veto_type]][opts.ifo], found_file)
+y_max = plu.axis_max_value(trig_data[veto_type], inj_data[veto_type], found_file)
 
 # Determine contours for plots
 conts = None
@@ -322,8 +307,8 @@ if not opts.x_lims:
     else:
         opts.x_lims = str(x_min)+','+str(x_max)
         opts.y_lims = str(y_min)+','+str(10*y_max)
-trigs = [trig_data[snr_type], trig_data[veto_tags[veto_type]][opts.ifo]]
-injs = [inj_data[snr_type], inj_data[veto_tags[veto_type]][opts.ifo]]
+trigs = [trig_data[snr_type], trig_data[veto_type]]
+injs = [inj_data[snr_type], inj_data[veto_type]]
 plu.pygrb_plotter(trigs, injs, x_label, y_label, opts,
                   snr_vals=snr_vals, conts=conts, colors=colors,
                   shade_cont_value=cont_value, vert_spike=True,
