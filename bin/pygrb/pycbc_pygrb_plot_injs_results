@@ -42,14 +42,14 @@ __program__ = "pycbc_pygrb_plot_injs_results"
 # =============================================================================
 # Functions
 # =============================================================================
-def load_incl_data(raw_data, qty):
+def load_incl_data(injs, qty):
     """Extract data related to inclination from raw trigger/injection data"""
 
     local_dict = {}
 
     # Whether the user requests incl, |incl|, cos(incl), or cos(|incl|)
     # the following information is needed
-    local_dict['incl'] = numpy.asarray(raw_data['injections/inclination'][:])
+    local_dict['incl'] = numpy.asarray(injs['injections/inclination'][:])
 
     # Requesting |incl| or cos(|incl|)
     if 'abs_' in qty:
@@ -66,6 +66,99 @@ def load_incl_data(raw_data, qty):
 
     return data
 
+# Function to extract mass ratio or total mass data from a trigger/injection file
+def load_mass_data(injs, qty):
+    """Extract data related to mass ratio or total mass from raw
+    trigger/injection data"""
+
+    local_dict = {}
+
+    # Grab individual mass components
+    for mi in ['mass1', 'mass2']:
+        local_dict[mi] = injs['injections/%s' % mi][:]
+
+    if qty == 'mtotal':
+        data = local_dict['mass1'] + local_dict['mass2']
+    elif qty == 'mchirp':
+        data, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
+            local_dict['mass1'], local_dict['mass2'])
+    else:
+        data = local_dict['mass2']/local_dict['mass1']
+        data = numpy.where(data > 1, 1./data, data)
+
+    return data
+
+
+# Function to extract mass ratio or total mass data from a trigger/injection file
+def load_effdist_data(injs, qty, opts, sites):
+    """Extract data related to effective distances from raw trigger/injection data"""
+
+    local_dict = {}
+
+    if qty == 'eff_site_dist':
+        data = injs['injections/eff_dist_%s' % opts.ifo[0].lower()][:]
+    else:
+        local_dict['eff_site_dist'] =\
+            dict((ifo, injs['injections/eff_dist_%s' % ifo[0].lower()][:])
+                 for ifo in sites)
+        # Effective distance (inverse sum of inverse effective distances)
+        data = numpy.power(numpy.power(numpy.asarray(
+            list(local_dict['eff_site_dist'].values())), -1).sum(0), -1)
+
+    return data
+
+# Function to extract spin related data from a trigger/injection file
+def load_spin_data(injs, qty):
+    """Extract data related to spin from raw trigger/injection data"""
+
+    local_dict = {}
+
+    # Grab the components
+    for component in ['x', 'y', 'z']:
+        key = qty+component
+        local_dict[key] = injs['injections/%s' % key][:]
+
+    # Calculate the modulus
+    data = numpy.sqrt(local_dict[qty+'x']**2 +
+                   local_dict[qty+'y']**2 +
+                   local_dict[qty+'z']**2)
+
+    return data
+
+
+# Function to extract desired data from a trigger/injection file
+def load_data(input_file, keys, opts, sites):
+    """Create a dictionary containing the data specified by the
+    list of keys extracted from a trigger/injection file"""
+
+    injs = h5py.File(input_file, 'r')
+    data_dict = {}
+
+    easy_keys = ['coa_phase', 'distance', 'latitude',
+                 'longitude','mass1', 'mass2', 'polarization',
+                 'spin1x', 'spin1y', 'spin1z', 'spin2x',
+                 'spin2y', 'spin2z']
+
+    for qty in keys:
+        if qty in easy_keys:
+            data_dict[qty] = injs['injections/%s' % qty][:]
+        elif qty == 'end_time':
+            data_dict[qty] = injs['injections/end_time'][:]
+            grb_time = ppu.get_grb_time(opts.seg_files)
+            data_dict[qty] -= grb_time
+        elif qty in ['mtotal', 'q', 'mchirp']:
+            data_dict[qty] = load_mass_data(injs, qty)
+        elif qty in ['eff_site_dist', 'eff_dist']:
+            data_dict[qty] = load_effdist_data(injs, qty, opts, sites)
+        elif 'incl' in qty:
+            data_dict[qty] = load_incl_data(injs, qty)
+        # This handles spin1 and spin2, i.e. spin magnitudes, as components
+        # are dealt with in easy_keys (first if)
+        elif 'spin' in qty:
+            data_dict[qty] = load_spin_data(injs, qty)
+
+    return data_dict
+
 
 # =============================================================================
 # Main script starts here
@@ -73,27 +166,19 @@ def load_incl_data(raw_data, qty):
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
                     help="The hdf injection file to plot", required=True)
-admitted_xvars = ['mchirp', 'end_time', 'mtotal', 'mass_ratio', 'coa_phase',
-                  'distance', 'incl', 'latitude', 'longitude', 'mass1',
-                  'mass2', 'polarization', 'spin1x', 'spin1y', 'spin1z',
-                  'spin2x', 'spin2y', 'spin2z', 'eff_spin', 'eff_distance',
-                  'eff_site_dist', 'cos_incl', 'abs_incl', 'cos_abs_incl']
+admitted_vars = ['coa_phase', 'distance', 'latitude', 'longitude','mass1',
+                 'mass2', 'polarization', 'spin1x', 'spin1y', 'spin1z',
+                 'spin2x', 'spin2y', 'spin2z', 'end_time', 'mtotal', 'q',
+                 'mchirp', 'eff_site_dist', 'eff_dist', 'incl', 'cos_incl',
+                 'abs_incl', 'cos_abs_incl', 'spin1', 'spin2']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
-                    choices=admitted_xvars,
-                    help="Quantity to plot on the horizontal axis. "+
-                    "(Underscores may be omitted in specifying this option).")
+                    choices=admitted_vars,
+                    help="Quantity to plot on the horizontal axis. ")
 parser.add_argument("--x-log", action="store_true",
                     help="Use log horizontal axis")
-admitted_yvars = ['distance', 'eff_dist', 'eff_site_dist',
-                  'decisive_optimal_snr', 'decisive_distance', 'chirp_distance',
-                  'comb_optimal_snr','decisive_optimal_snr', 'coa_phase',
-                  'incl', 'latitude', 'longitude', 'mass1', 'mass2',
-                  'polarization', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
-                  'spin2y', 'spin2z', 'cos_incl', 'abs_incl', 'cos_abs_incl']
 parser.add_argument("-y", "--y-variable", default=None, required=True,
-                    choices=admitted_yvars,
-                    help="Quantity to plot on the vertical axis. "+
-                    "(Underscores may be omitted in specifying this option).")
+                    choices=admitted_vars,
+                    help="Quantity to plot on the vertical axis.")
 parser.add_argument("--y-log", action="store_true",
                     help="Use log vertical axis")
 parser.add_argument("-a", "--seg-files", nargs="+", action="store",
@@ -116,211 +201,100 @@ parser.add_argument('--missed-on-top', action='store_true',
                          "high FAR on top of low FAR")
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
-args = parser.parse_args()
+opts = parser.parse_args()
 
-init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
+init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
-# Read in HDF5 file
+# Read in files
 logging.info('Reading in the data')
-f = h5py.File(args.injection_file, 'r')
+f = h5py.File(opts.injection_file, 'r')
+grb_time = ppu.get_grb_time(opts.seg_files)
 
-# Load basic data
-time = f['injections/tc'][:]
-grb_time = ppu.get_grb_time(args.seg_files)
+# Load indices containing found and missed injections
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]
 
 # Load inclusive and exclusive IFARs
-if args.far_type == 'inclusive':
+if opts.far_type == 'inclusive':
     ifar_found = f['found_after_vetoes/ifar'][:]
     far_title = 'Inclusive'
-elif args.far_type == 'exclusive':
+elif opts.far_type == 'exclusive':
     ifar_found = f['found_after_vetoes/ifar_exc'][:]
     far_title = 'Exclusive'
 
-# Initialize dictionary for x variable data
-xvals = {}
-
-# Get values necessary for calculations
-m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
-dist = f['injections/distance'][:]
-s1z = f['injections/spin1z'][:]
-s2z = f['injections/spin2z'][:]
-
-# Compute x values that need calculations
-xvals['mchirp'], eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-xvals['eff_spin'] = (m1 * s1z + m2 * s2z) / (m1 + m2)
-xvals['mtotal'] = m1 + m2
-# use convention that q>1
-xvals['mass_ratio'] = numpy.maximum(m1/m2, m2/m1)
-
-# Load times in relation to GRB time
-if args.x_variable == 'end_time':
-    xvals['end_time'] = f['injections/end_time'][:] - grb_time
-
-# Load inclinations
-elif 'incl' in args.x_variable:
-    xvals[args.x_variable] = load_incl_data(f, args.x_variable)
-
-# Load effective distances
-elif args.x_variable == 'eff_site_dist':
-    xvals['eff_site_dist'] = f['injections/eff_dist_%s' % args.ifo[0].lower()][:]
-elif args.x_variable == 'eff_dist':
-    local_dict = {}
-    local_dict['eff_site_dist'] =\
-        dict((ifo, f['injections/eff_dist_%s' % ifo[0].lower()][:])
-             for ifo in ifos)
-    xvals['eff_dist'] = numpy.power(numpy.power(numpy.asarray(
-        list(local_dict['eff_site_dist'].values())), -1).sum(0), -1)
-
-# If x variable doesn't need calculations, it can be loaded directly
-# from HDF file
-else:
-    xvals[args.x_variable] = f['injections/%s' % args.x_variable][:]
-
-# Initialize dictionary for y variable
-yvals = {}
-
 # Load ifos that are available in the HDF file
 if 'ifos' in f.attrs:
-    ifos = f.attrs['ifos'].split(' ')
+    sites = f.attrs['ifos'].split(' ')
 else:
     logging.warning("Ifos not found in input file, assuming H-L")
-    ifos = ['H1', 'L1']
+    sites = ['H1', 'L1']
 
-# NOTE: Effective distance is hardcoded to these values. It's also normally
-#       meaningless for precessing injections.
-try:
-    eff_dists = []
-    for ifo in ['H1', 'L1', 'V1']:
-        eff_dists.append(Detector(ifo).effective_distance(
-                             f['injections/distance'][:],
-                             f['injections/longitude'][:],
-                             f['injections/latitude'][:],
-                             f['injections/polarization'][:],
-                             f['injections/tc'][:],
-                             f['injections/inclination'][:]))
-    eff_dists = numpy.array(eff_dists).T
-
-    # "Decisive" distance is the second smallest effective distance
-    yvals['decisive_distance'] = numpy.sort(eff_dists)[:,1]
-    yvals['dec_chirp_distance'] = \
-        pycbc.pnutils.chirp_distance(yvals['decisive_distance'],
-                                     xvals['mchirp'])
-except KeyError:
-    # If the ifo isn't in the effective distance columns you can't get this.
-    # But you can still use other values.
-    pass
-
-# We already loaded the distance
-yvals['distance'] = dist
-
-# Compute y values that need calculations
-yvals['chirp_distance'] = pycbc.pnutils.chirp_distance(dist, xvals['mchirp'])
-# Redshift can be loaded directly
-if args.y_variable == 'redshift':
-    yvals['redshift'] = f['injections/redshift'][:]
-if 'snr' in args.y_variable:  # only evaluate SNRs if needed
-    if 'optimal_snr_1' in f['injections']:  # old 2-ifo search behaviour
-        opt_snr_1 = f['injections/optimal_snr_1'][:]
-        opt_snr_2 = f['injections/optimal_snr_2'][:]
-        yvals['comb_optimal_snr'] = \
-            numpy.sqrt(opt_snr_1 ** 2. + opt_snr_2 ** 2.)
-        yvals['decisive_optimal_snr'] = \
-            numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
-    else: # New workflow code syntax
-        opt_snrsq_arr = \
-            [f['injections/optimal_snr_%s' % ifo][:]**2. for ifo in ifos]
-        yvals['comb_optimal_snr'] = \
-            numpy.array([numpy.sqrt(sum(opt_snrsq))
-                         for opt_snrsq in zip(*opt_snrsq_arr)])
-        # Decisive optimal SNR is the 2nd largest optimal SNR
-        yvals['decisive_optimal_snr'] = \
-            numpy.array([numpy.sqrt(sorted(opt_snrsq)[-2])
-                         for opt_snrsq in zip(*opt_snrsq_arr)])
-
-# Load inclinations
-elif 'incl' in args.y_variable:
-    yvals[args.y_variable] = load_incl_data(f, args.y_variable)
-
-# Load effective distances
-elif args.y_variable == 'eff_site_dist': # For single detector site distances
-    yvals['eff_site_dist'] = f['injections/eff_dist_%s' % args.ifo[0].lower()][:]
-elif args.y_variable == 'eff_dist':
-    local_dict = {}
-    local_dict['eff_site_dist'] =\
-        dict((ifo, f['injections/eff_dist_%s' % ifo[0].lower()][:])
-             for ifo in ifos)
-    yvals['eff_dist'] = numpy.power(numpy.power(numpy.asarray(
-        list(local_dict['eff_site_dist'].values())), -1).sum(0), -1)
-
-# If y variable doesn't need calculations, it can be loaded directly
-# from HDF file
-else:
-    yvals[args.y_variable] = f['injections/%s' % args.y_variable][:]
+# Load data
+x_qty = opts.x_variable
+y_qty = opts.y_variable
+inj_data = load_data(opts.injection_file, [x_qty, y_qty], opts, sites)
 
 # Specify indices for found and missed injections
-fyvals = yvals[args.y_variable][found]
-myvals = yvals[args.y_variable][missed]
+fxvals = inj_data[x_qty][found]
+mxvals = inj_data[x_qty][missed] 
+fyvals = inj_data[y_qty][found]
+myvals = inj_data[y_qty][missed]
 
 logging.info('Data loaded.')
-labels={'mchirp': 'Chirp Mass',
-        'mtotal': 'Total Mass',
-        'mass1': 'Mass 1',
-        'mass2': 'Mass 2',
-        'mass_ratio': 'Mass Ratio',
-        'distance': 'Distance (Mpc)',
-        'decisive_distance': 'Injected Decisive Distance (Mpc)',
-        'dec_chirp_distance': 'Injected Decisive Chirp Distance (Mpc)',
-        'chirp_distance': 'Injected Chirp Distance (Mpc)',
-        'comb_optimal_snr': 'Combined Optimal SNR',
-        'decisive_optimal_snr': 'Decisive Optimal SNR',
-        'redshift': 'Redshift',
-        'end_time': 'Time since %d (s)' % grb_time,
-        'eff_spin': 'Weighted Aligned Spin',
-        'spin1x': "Spin x-component of 1st binary component",
-        'spin1y': "Spin y-component of 1st binary component",
-        'spin1z': "Spin z-component of 1st binary component",
-        'spin2x': "Spin x-component of 2nd binary component",
-        'spin2y': "Spin y-component of 2nd binary component",
-        'spin2z': "Spin z-component of 2nd binary component",
-        'coa_phase': 'Complex SNR Phase',
-        'incl': 'Inclination (iota)',
+
+sitename = {'G1':'GEO', 'H1':'Hanford', 'L1':'Livingston', 'V1':'Virgo',
+            'K1':'KAGRA'}
+labels={'mchirp': "Chirp Mass (solar masses)",
+        'mtotal': "Total mass (solar masses)",
+        'q': "Mass ratio",
+        'distance': "Distance (Mpc)",
+        'eff_site_dist': "%s effective distance (Mpc)" % sitename.get(opts.ifo),
+        'eff_dist': "Inverse sum of effective distances (Mpc)",
+        'end_time': "Time since %d" % grb_time,
+        'sky_error': "Rec. sky error (radians)",
+        'coa_phase': "Phase of complex SNR",
+        'latitude': "Latitude (radians)",
+        'longitude': "Longitude (radians)",
+        'incl': "Inclination (iota)",
         'abs_incl': 'Magnitude of inclination (|iota|)',
         'cos_incl': "cos(iota)",
         'cos_abs_incl': "cos(|iota|)",
-        'latitude' : 'Latitude',
-        'longitude' : 'Longitude',
-        'polarization' : 'Polarization',
-        'eff_dist': 'Inverse sum of effective distances (Mpc)',
-        'eff_site_dist': '%s effective distance (Mpc)' % args.ifo,
-       }
+        'mass1': "Mass of 1st binary component (solar masses)",
+        'mass2': "Mass of 2nd binary component (solar masses)",
+        'polarization': "Polarization phase (radians)",
+        'spin1': "Spin on 1st binary component",
+        'spin1x': "Spin x-component of 1st binary component",
+        'spin1y': "Spin y-component of 1st binary component",
+        'spin1z': "Spin z-component of 1st binary component",
+        'spin2': "Spin on 2nd binary component",
+        'spin2x': "Spin x-component of 2nd binary component",
+        'spin2y': "Spin y-component of 2nd binary component",
+        'spin2z': "Spin z-component of 2nd binary component"}
 
 logging.info('Plotting...')
-if args.missed_on_top:
+if opts.missed_on_top:
   fig_title = 'Missed and Found Injections'
 else:
   fig_title = 'Found and Missed Injections'
 
 fig = plt.figure()
-zmissed = args.missed_on_top
-zfound = not args.missed_on_top
+zmissed = opts.missed_on_top
+zfound = not opts.missed_on_top
 
-mpoints = plt.scatter(xvals[args.x_variable][missed], myvals, s=16,
-                       linewidth=0.5, marker='x', color='red',
-                       label='missed', zorder=zmissed)
-
-fvals = xvals[args.x_variable][found]
+# Plot missed injections
+mpoints = plt.scatter(mxvals, myvals, s=10,
+                      marker='x', color='black',
+                      label='missed', zorder=zmissed)
 
 ifsort = numpy.argsort(ifar_found)
-if args.missed_on_top:
+if opts.missed_on_top:
     ifsort = ifsort[::-1]
 
-fvals = fvals[ifsort]
-fyval = fyvals[ifsort]
+fxvals_sorted = fxvals[ifsort]
+fyvals_sorted = fyvals[ifsort]
 ifsorted = ifar_found[ifsort]
 
-if not args.gradient_far:
+if not opts.gradient_far:
     color = numpy.ones(len(found))
     ten = numpy.where(ifsorted > 10)[0]
     hundred = numpy.where(ifsorted > 100)[0]
@@ -329,7 +303,7 @@ if not args.gradient_far:
     color[thousand] = 0
 
     norm = matplotlib.colors.Normalize()
-    caption = (fig_title + ": Red x's are missed injections. "
+    caption = (fig_title + ": Black x's are missed injections. "
               "Blue circles are found with IFAR < 100 years, gray are < "
               "1000 years, and yellow are found with IFAR >=1000 years. ")
 else:
@@ -338,14 +312,15 @@ else:
         color=None
 
     norm = matplotlib.colors.LogNorm()
-    caption = (fig_title + ": Red x's are missed injections. "
+    caption = (fig_title + ": Black x's are missed injections. "
                "Circles are found injections. The color indicates the value "
                "of the false alarm rate." )
 
-points = plt.scatter(fvals, fyval, c=color, linewidth=0, s=16, norm=norm,
+# Plot found injections
+points = plt.scatter(fxvals_sorted, fyvals_sorted, c=color, linewidth=0, s=30, norm=norm,
                       marker='o', label='found', zorder=zfound,
-                      cmap=args.colormap)
-if args.gradient_far:
+                      cmap=opts.colormap)
+if opts.gradient_far:
     try:
         c = plt.colorbar()
         c.set_label('False Alarm Rate $(yr^{-1})$, %s' % far_title)
@@ -358,39 +333,39 @@ if args.gradient_far:
         c.set_ticks(numpy.power(10, ticks))
     except (TypeError, ZeroDivisionError):
         # Can't make colorbar if no quiet found injections
-        if len(fvals):
+        if len(fxvals_sorted):
             raise
 
-if args.missed_on_top:
+if opts.missed_on_top:
   caption += "Missed injections are shown on top of found injections."
 else:
   caption += "Found injections are shown on top of missed injections."
 
 ax = plt.gca()
-plt.xlabel(labels[args.x_variable])
-plt.ylabel(labels[args.y_variable])
+plt.xlabel(labels[x_qty])
+plt.ylabel(labels[y_qty])
 plt.grid()
 
-if args.x_log:
+if opts.x_log:
     # log x axis may fail for some choices, eg effective spin
     ax.set_xscale('log')
-    tmpxvals = list(xvals[args.x_variable][missed])
-    tmpxvals += list(xvals[args.x_variable][found])
+    tmpxvals = list(mxvals)
+    tmpxvals += list(fxvals)
     xmax = 1.4 * max(tmpxvals)
     xmin = 0.7 * min(tmpxvals)
     plt.xlim(xmin, xmax)
-if args.y_log:
+if opts.y_log:
     ax.set_yscale('log')
 
 tmpyvals = list(fyvals) + list(myvals)
 ymax = 1.2 * max(tmpyvals)
 ymin = 0.9 * min(tmpyvals)
 
-# note: ymin=0 will clash with args.y_log
+# note: ymin=0 will clash with opts.y_log
 # in that case it *should* throw an error!
 plt.ylim(ymin, ymax)
 
-if args.y_variable == 'redshift':
+if opts.y_variable == 'redshift':
     # default y limit: min redshift 0
     plt.ylim(ymin=0, ymax=ymax)
 else:
@@ -400,22 +375,56 @@ else:
 # Handle axis limits when plotting spins
 max_missed_inj = {}
 for key in ['spin1', 'spin2']:
-    if key in args.y_variable:
-        max_missed_inj[args.y_variable] = myvals.max()
-    if key in args.x_variable:
-        max_missed_inj[args.x_variable] = xvals[args.x_variable][missed].max()
-if "spin" in args.x_variable:
-    ax.set_xlim([0, numpy.ceil(10 * max(max_missed_inj[args.x_variable],
-                                     xvals[args.x_variable][found].max())) / 10])
-if "spin" in args.y_variable:
-    ax.set_ylim([0, numpy.ceil(10 * max(max_missed_inj[args.y_variable],
+    if key in y_qty:
+        max_missed_inj[y_qty] = myvals.max()
+    if key in x_qty:
+        max_missed_inj[x_qty] = mxvals.max()
+if "spin" in x_qty:
+    ax.set_xlim([0, numpy.ceil(10 * max(max_missed_inj[x_qty],
+                                     fxvals.max())) / 10])
+if "spin" in y_qty:
+    ax.set_ylim([0, numpy.ceil(10 * max(max_missed_inj[y_qty],
                                      fyvals.max())) / 10])
-                                     
+
+# Handle axis limits when plotting inclination
+if "incl" in x_qty or "incl" in y_qty:
+    max_inc = numpy.pi
+    #max_inc = max(numpy.concatenate((g_found[qty], g_ifar[qty], g_missed2[qty], missed_inj[qty])))
+    max_inc_deg = numpy.rad2deg(max_inc)
+    max_inc_deg = numpy.ceil(max_inc_deg/10.0)*10
+    max_inc = numpy.deg2rad(max_inc_deg)
+    if x_qty == "incl":
+        ax.set_xlim(0, max_inc_deg)
+    elif x_qty == "abs_incl":
+        ax.set_xlim(0, max_inc_deg*0.5)
+    if y_qty == "incl":
+        ax.set_ylim(0, max_inc_deg)
+    elif y_qty == "abs_incl":
+        ax.set_ylim(0, max_inc_deg*0.5)
+    #if "cos_incl" in [x_qty, y_qty]:
+    if "cos_" in [x_qty, y_qty]:
+        #tt = numpy.arange(0, max_inc_deg + 10, 10)
+        tt = numpy.asarray([0, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 180])
+        tks = numpy.cos(numpy.deg2rad(tt))
+        tk_labs = ['cos(%d deg)' % tk for tk in tt]
+        #if x_qty == "cos_incl":
+        if "cos_" in x_qty:
+            plt.xticks(tks, tk_labs, fontsize=10)
+            fig.autofmt_xdate()
+            ax.set_xlim(numpy.cos(max_inc), 1)
+            #ax.set_xlim(-1, 1)
+        #if y_qty == "cos_incl":
+        if "cos_" in y_qty:
+            plt.yticks(tks, tk_labs, fontsize=10)
+            fig.autofmt_xdate()
+            ax.set_ylim(numpy.cos(max_inc), 1)
+            #ax.set_ylim(-1, 1)
+                                  
 fig_kwds = {}
-if '.png' in args.output_file:
+if '.png' in opts.output_file:
     fig_kwds['dpi'] = 200
 
-if ('.html' in args.output_file):
+if ('.html' in opts.output_file):
     plt.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
     import mpld3, mpld3.plugins, mpld3.utils
     mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
@@ -424,7 +433,7 @@ if ('.html' in args.output_file):
                                                     alpha_unsel=0.1)
     mpld3.plugins.connect(fig, legend)
 
-title = '%s: %s vs %s' % (fig_title, args.x_variable, args.y_variable)
+title = '%s: %s vs %s' % (fig_title, x_qty, y_qty)
 cmd = ' '.join(sys.argv)
-pycbc.results.save_fig_with_metadata(fig, args.output_file, fig_kwds=fig_kwds,
+pycbc.results.save_fig_with_metadata(fig, opts.output_file, fig_kwds=fig_kwds,
                                      title=title, cmd=cmd, caption=caption)
