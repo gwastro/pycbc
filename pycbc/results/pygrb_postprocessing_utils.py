@@ -48,6 +48,7 @@ try:
 except ImportError:
     pass
 
+
 # =============================================================================
 # Arguments functions:
 # * Initialize a parser object with arguments shared by all plotting scripts
@@ -234,6 +235,7 @@ def load_xml_table(file_name, table_name):
 
     return Table.get_table(xml_doc, table_name)
 
+
 # ==============================================================================
 # Function to load segments from an xml file
 # ==============================================================================
@@ -374,9 +376,10 @@ def load_triggers(input_file, vetoes):
 
     if vetoes is not None:
         # Developers: see PR 3972 for previous implementation
-        raise NotImplemented
+        raise NotImplementedError
 
     return trigs
+
 
 # =============================================================================
 # Detector utils:
@@ -858,7 +861,8 @@ def read_multiinspiral_timeslides_from_files(file_list):
                                   contenthandler=contenthandler)
 
         # Extract the time slide table
-        time_slide_table = Table.get_table(doc, lsctables.TimeSlideTable.tableName)
+        time_slide_table = \
+            Table.get_table(doc,lsctables.TimeSlideTable.tableName)
         slide_mapping = {}
         curr_slides = {}
         for slide in time_slide_table:
