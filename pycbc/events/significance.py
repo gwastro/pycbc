@@ -91,7 +91,7 @@ def count_n_louder(bstat, fstat, dec, skip_background=False,
 
 
 def n_louder_from_fit(back_stat, fore_stat, dec_facs,
-                      fit_func='exponential', fit_thresh=0):
+                      fit_function='exponential', fit_threshold=0):
     """
     Use a fit to events in back_stat in order to estimate the
     distribution for use in recovering the estimate count of louder
@@ -104,10 +104,10 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
         Array of the foreground statistic values or single value
     dec_facs: numpy.ndarray
         Array of the decimation factors for the background statistics
-    fit_func: str
+    fit_function: str
         Name of the function to be used for the fit to background
         statistic values
-    fit_thresh: float
+    fit_threshold: float
         Threshold above which triggers use the fitted value, below this
         the counted number of louder events will be used
 
@@ -122,15 +122,15 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     """
 
     # Calculate the fitting factor of the ranking statistic distribution
-    alpha, _ = trstats.fit_above_thresh(fit_func, back_stat,
-                                        thresh=fit_thresh,
+    alpha, _ = trstats.fit_above_thresh(fit_function, back_stat,
+                                        thresh=fit_threshold,
                                         weights=dec_facs)
 
     # Count background events above threshold as the cum_fit is
     # normalised to 1
-    bg_above = back_stat > fit_thresh
+    bg_above = back_stat > fit_threshold
     bg_above_thresh = np.sum(dec_facs[bg_above])
-    fg_above = fore_stat > fit_thresh
+    fg_above = fore_stat > fit_threshold
 
     # These will be overwritten, but just to silence a warning
     # in the case where trstats.cum_fit returns zero
@@ -138,10 +138,10 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     fnlouder = np.zeros_like(fore_stat)
 
     # Ue the fit above the threshold
-    back_cnum[bg_above] = trstats.cum_fit(fit_func, back_stat[bg_above],
-                                          alpha, fit_thresh) * bg_above_thresh
-    fnlouder[fg_above] = trstats.cum_fit(fit_func, fore_stat[fg_above],
-                                         alpha, fit_thresh) * bg_above_thresh
+    back_cnum[bg_above] = trstats.cum_fit(fit_function, back_stat[bg_above],
+                                          alpha, fit_threshold) * bg_above_thresh
+    fnlouder[fg_above] = trstats.cum_fit(fit_function, fore_stat[fg_above],
+                                         alpha, fit_threshold) * bg_above_thresh
 
     # Below the fit threshold, we expect there to be sufficient events
     # to use the count_n_louder method, and the distribution may deviate
@@ -149,8 +149,11 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     fg_below = np.logical_not(fg_above)
     bg_below = np.logical_not(bg_above)
 
-    back_cnum[bg_below], fnlouder[fg_below] = \
+    back_cnum_below, fnlouder_below = \
         count_n_louder(back_stat, fore_stat, dec_facs)
+
+    back_cnum[bg_below] = back_cnum_below[bg_below]
+    fnlouder[fg_below] = fnlouder_below[fg_below]
 
     return back_cnum, fnlouder
 
