@@ -290,7 +290,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         frame_files = datafind_outs[:-2]
     else:
         ipn_sky_points = None
-        if 'bank_veto_bank' in datafind_outs[-2].description:
+        if 'bank_veto_bank' in datafind_outs[-1].name:
             bank_veto = datafind_outs[-1]
             frame_files = datafind_outs[:-1]
         else:
@@ -702,12 +702,12 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         # FIXME: Should be done using file_input options in the config file
         # Feed in bank_veto_bank.xml
-        if self.cp.has_option('inspiral', 'do-bank-veto'):
+        if self.cp.has_option('inspiral', 'do-bank-veto') or self.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
             if not bankVetoBank:
                 raise ValueError("%s must be given a bank veto file if the "
                                  "argument 'do-bank-veto' is given"
                                  % self.name)
-            node.add_input_opt('--bank-veto-bank', bankVetoBank)
+            node.add_input_opt('--bank-veto-bank-file', bankVetoBank)
         
         # Set time options
         node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))

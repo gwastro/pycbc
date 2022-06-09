@@ -247,18 +247,24 @@ else:
     IPN = False
 
 # Get bank_veto_bank.xml if running bank veto
-if wflow.cp.has_option('inspiral', 'do-bank-veto'):
-    bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
+if wflow.cp.has_option('inspiral', 'do-bank-veto') or wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
+    if os.getenv("LAL_SRC") is None:
+        bank_veto_file_path = wflow.cp.get('workflow-inspiral', 'bank-veto-bank-file')
+        bank_veto_file = _workflow.FileList([_workflow.resolve_url_to_file(bank_veto_file_path)])
+    else:
+        bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
                                                  bank_veto=True)
     datafind_veto_files.extend(bank_veto_file)
 
-    if IPN:
-        search_pts_file = _workflow.get_ipn_sky_files(wflow,
-                wflow.cp.get("workflow-inspiral", "ipn-search-points"),
-                tags=["SEARCH"])
-        datafind_veto_files.extend(_workflow.FileList([search_pts_file]))
+if IPN:
+    search_pts_file = _workflow.get_ipn_sky_files(wflow,
+            wflow.cp.get("workflow-inspiral", "ipn-search-points"),
+            tags=["SEARCH"])
+    datafind_veto_files.extend(_workflow.FileList([search_pts_file]))
 
-    # Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
+# Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
+# TEMPORARY FIX: how will this work in O4?
+if wflow.cp.has_option("inspiral", "do-exttrig"):
     ext_file = _workflow.make_exttrig_file(wflow.cp, ifos, sciSegs[ifo][0],
                                            baseDir)
     all_files.extend(_workflow.FileList([ext_file]))
