@@ -350,7 +350,7 @@ with ctx:
             # we are looking at.
             idx_dict = {
                 ifo: idx[ifo][np.logical_and(
-                    idx[ifo] + time_delay_idx[ifo] > len(snr_dict[ifo]),
+                    idx[ifo] + time_delay_idx[ifo] < len(snr_dict[ifo]),
                     idx[ifo] - time_delay_idx[ifo] < len(snr_dict[ifo])
                     )
                 ]
