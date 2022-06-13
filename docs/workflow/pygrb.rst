@@ -1,3 +1,5 @@
+.. _pygrb:
+
 ####################################################################################
 ``pycbc_make_offline_grb_workflow``: A GRB triggered CBC analysis workflow generator
 ####################################################################################
@@ -18,7 +20,9 @@ same point in the sky and at the same time as an observed short duration
 gamma-ray burst.
 
 The output will be a webpage containing plots and other data files that can be
-used to understand the results of the analysis.
+used to understand the results of the analysis.  At the moment, the old
+results webage generator (pycbc_make_grb_summary_page) is gradually being replaced
+by pycbc_pygrb_pp_workflow, which needs to be run serparatly, for the time being.
 
 ==================
 Configuration File
@@ -76,7 +80,7 @@ Data segment information is given in the section::
     segments-veto-categories = 3
     segments-minimum-segment-length = 256
     segments-veto-definer-url = https://code.pycbc.phy.syr.edu/detchar/veto-definitions/download/master/cbc/ER8/H1L1-HOFT_C00_ER8B_CBC.xml
-    
+
 The GRB search requires an additional set of segment-related options,
 which we give in the following section::
 
@@ -97,7 +101,7 @@ Executable Sections
 -------------------
 
 We set the executables to be used for the analysis in the following way::
-    
+
     [executables]
     inspiral                = ${which:lalapps_coh_PTF_inspiral}
     splitbank               = ${which:pycbc_splitbank}
@@ -118,7 +122,6 @@ We set the executables to be used for the analysis in the following way::
     efficiency              = ${which:pylal_cbc_cohptf_efficiency}
     inj_efficiency          = ${which:pylal_cbc_cohptf_efficiency}
     horizon_dist            = ${which:pylal_cbc_cohptf_inspiral_horizon}
-    html_summary            = ${which:pycbc_make_grb_summary_page}
 
 Here we are getting the executable paths from our environment for flexibility,
 rather than supplying them as fixed paths.
@@ -325,7 +328,7 @@ Monitor and Debug the Workflow (`Detailed Pegasus Documentation <https://pegasus
 To monitor the above workflow, one can run::
 
     pegasus-status -cl /path/to/analysis/run
-    
+
 To get debugging information in the case of failures.::
 
     pegasus-analyzer /path/to/analysis/run
@@ -392,13 +395,13 @@ called GRB${GRB_NAME}/output.map, that contains a listing of all of the data
 products of the prior workflow.
 
 Select the entries for files that you would like to skip generating again and
-place that into a new file. The example below selects all the inspiral and 
+place that into a new file. The example below selects all the inspiral and
 tmpltbank jobs and places their entries into a new listing called
 prior_data.map.::
 
     # Lets get the tmpltbank entries
     cat /path/to/old/run/GRB${GRB_NAME}/output.map | grep 'TMPLTBANK' > prior_data.map
-    
+
     # Add in the inspiral  files
     cat /path/to/old/run/GRB${GRB_NAME}/output.map | grep 'INSPIRAL' >> prior_data.map
 

@@ -98,8 +98,7 @@ class Executable(pegasus_workflow.Executable):
     # Sub classes, or instances, should override this. If not overriden the
     # file will be retained, but a warning given
     current_retention_level = KEEP_BUT_RAISE_WARNING
-    def __init__(self, cp, name,
-                 universe=None, ifos=None, out_dir=None, tags=None,
+    def __init__(self, cp, name, ifos=None, out_dir=None, tags=None,
                  reuse_executable=True, set_submit_subdir=True):
         """
         Initialize the Executable class.
@@ -133,7 +132,6 @@ class Executable(pegasus_workflow.Executable):
         else:
             self.ifo_string = None
         self.cp = cp
-        self.universe=universe
         self.name = name
         self.container_cls = None
         self.container_type = None
@@ -183,9 +181,10 @@ class Executable(pegasus_workflow.Executable):
 
         if exe_url.scheme in ['', 'file']:
             # NOTE: There could be a case where the exe is available at a
-            #       remote site, but not on the submit host. We could work to
-            #       allow this if it ever becomes a viable use-case. Some other
-            #       places (e.g. versioning) would have to be edited as well.
+            #       remote site, but not on the submit host. Currently allowed
+            #       for the OSG site, versioning will not work as planned if
+            #       we can't see the executable (can we perhaps run versioning
+            #       including singularity??)
 
             # Check that executables at file urls
             #  on the local site exist
@@ -193,6 +192,10 @@ class Executable(pegasus_workflow.Executable):
                 raise TypeError("Failed to find %s executable "
                                 "at %s on site %s" % (name, exe_path,
                                 exe_site))
+        elif exe_url.scheme == 'singularity':
+            # Will use an executable within a singularity container. Don't
+            # need to do anything here, as I cannot easily check it exists.
+            exe_path = exe_url.path
         else:
             # Could be http, gsiftp, etc. so it needs fetching if run now
             self.needs_fetching = True
@@ -213,14 +216,6 @@ class Executable(pegasus_workflow.Executable):
             self.exe_pfns[exe_site] = exe_path
         logging.info("Using %s executable "
                      "at %s on site %s" % (name, exe_url.path, exe_site))
-
-        # Determine the condor universe if we aren't given one
-        if self.universe is None:
-            self.universe = 'vanilla'
-
-        if self.universe != 'vanilla':
-            logging.info("%s executable will run as %s universe"
-                         % (name, self.universe))
 
         # FIXME: This hasn't yet been ported to pegasus5 and won't work.
         #        Pegasus describes two ways to work with containers, and I need
@@ -264,9 +259,6 @@ class Executable(pegasus_workflow.Executable):
             super(Executable, self).__init__(self.pegasus_name,
                                              installed=self.installed)
 
-        self._set_pegasus_profile_options()
-        self.set_universe(self.universe)
-
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
 
@@ -274,6 +266,10 @@ class Executable(pegasus_workflow.Executable):
         if set_submit_subdir:
             self.add_profile('pegasus', 'relative.submit.dir',
                              self.pegasus_name)
+
+        # Set configurations from the config file, these should override all
+        # other settings
+        self._set_pegasus_profile_options()
 
         self.execution_site = exe_site
         self.executable_url = exe_path

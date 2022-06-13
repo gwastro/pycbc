@@ -25,7 +25,6 @@ Produces signal consistency plots of the form standard/bank/auto chi-square vs c
 # Preamble
 # =============================================================================
 import sys
-import glob
 import os
 import logging
 import numpy
@@ -33,8 +32,8 @@ from matplotlib import pyplot as plt
 from matplotlib import rc
 import pycbc.version
 from pycbc import init_logging
-from pycbc.results import pygrb_postprocessing_utils as ppu 
-from pycbc.results import pygrb_plotting_utils as plu 
+from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.results import pygrb_plotting_utils as plu
 
 plt.switch_backend('Agg')
 rc('font', size=14)

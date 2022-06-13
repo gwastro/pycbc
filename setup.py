@@ -37,7 +37,6 @@ requires = []
 setup_requires = ['numpy>=1.16.0']
 install_requires =  setup_requires + [
                       'cython>=0.29',
-                      'decorator>=3.4.2',
                       'numpy>=1.16.0,!=1.19.0',
                       'scipy>=0.16.0',
                       'astropy>=2.0.3,!=4.2.1,!=4.0.5',
@@ -47,7 +46,6 @@ install_requires =  setup_requires + [
                       'h5py>=3.0.0',
                       'jinja2',
                       'Mako>=1.0.1',
-                      'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       'tqdm',
                       'setuptools',
@@ -124,7 +122,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.0.dev3'
+        vinfo.version = '2.0.dev4'
         vinfo.release = 'False'
 
     with open('pycbc/version.py', 'wb') as f:
@@ -199,7 +197,15 @@ cmdclass = { 'build_docs' : build_docs,
              'build_ext':cbuild_ext
             }
 
-extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
+extras_require = {
+    'cuda': [
+        'pycuda>=2015.1',
+        'scikit-cuda',
+    ],
+    'igwn': [
+        'ciecplib>=0.4.4',
+    ],
+}
 
 # do the actual work of building the package
 VERSION = get_version_info()

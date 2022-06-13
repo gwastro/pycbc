@@ -31,6 +31,7 @@ between observatories.
 import os
 import numpy as np
 import lal
+import pycbc.libutils
 from pycbc.types import TimeSeries
 from pycbc.types.config import InterpolatingConfigParser
 from astropy.time import Time
@@ -176,7 +177,7 @@ class Detector(object):
         self.name = str(detector_name)
 
         if detector_name in [pfx for pfx, name in get_available_detectors()]:
-            import lalsimulation as lalsim
+            lalsim = pycbc.libutils.import_optional('lalsimulation')
             self._lal = lalsim.DetectorPrefixToLALDetector(self.name)
             self.response = self._lal.response
             self.location = self._lal.location
@@ -714,3 +715,13 @@ class LISA(object):
             np.array([np.float32(earth.x), np.float32(earth.y),
                       np.float32(earth.z)]), right_ascension,
             declination, t_gps)
+
+
+def ppdets(ifos, separator=', '):
+    """Pretty-print a list (or set) of detectors: return a string listing
+    the given detectors alphabetically and separated by the given string
+    (comma by default).
+    """
+    if ifos:
+        return separator.join(sorted(ifos))
+    return 'no detectors'

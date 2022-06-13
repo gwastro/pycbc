@@ -252,7 +252,7 @@ for num_inj in range(n_injections):
     else:
         # construct Executable for creating injections
         create_injections_exe = PycbcCreateInjectionsExecutable(
-            sub_workflow.cp, "create_injections", ifo=sub_workflow.ifos,
+            sub_workflow.cp, "create_injections", ifos=sub_workflow.ifos,
             out_dir=injection_file_dir)
         node, injection_file = create_injections_exe.create_node(
             config_file, seed=seed, tags=opts.tags+[event])

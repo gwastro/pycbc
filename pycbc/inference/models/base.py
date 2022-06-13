@@ -347,20 +347,15 @@ class BaseModel(metaclass=ABCMeta):
     def __init__(self, variable_params, static_params=None, prior=None,
                  sampling_transforms=None, waveform_transforms=None):
         # store variable and static args
-        if isinstance(variable_params, str):
-            variable_params = (variable_params,)
-        if not isinstance(variable_params, tuple):
-            variable_params = tuple(variable_params)
-        self._variable_params = variable_params
-        if static_params is None:
-            static_params = {}
-        self._static_params = static_params
+        self.variable_params = variable_params
+        self.static_params = static_params
         # store prior
         if prior is None:
             self.prior_distribution = _NoPrior()
+        elif set(prior.variable_args) != set(variable_params):
+            raise ValueError("variable params of prior and model must be the "
+                             "same")
         else:
-            assert prior.variable_args == variable_params, (
-                "variable params of prior and model must be the same")
             self.prior_distribution = prior
         # store transforms
         self.sampling_transforms = sampling_transforms
@@ -375,10 +370,24 @@ class BaseModel(metaclass=ABCMeta):
         """Returns the model parameters."""
         return self._variable_params
 
+    @variable_params.setter
+    def variable_params(self, variable_params):
+        if isinstance(variable_params, str):
+            variable_params = (variable_params,)
+        if not isinstance(variable_params, tuple):
+            variable_params = tuple(variable_params)
+        self._variable_params = variable_params
+
     @property
     def static_params(self):
         """Returns the model's static arguments."""
         return self._static_params
+
+    @static_params.setter
+    def static_params(self, static_params):
+        if static_params is None:
+            static_params = {}
+        self._static_params = static_params
 
     @property
     def sampling_params(self):
@@ -784,18 +793,23 @@ class BaseModel(metaclass=ABCMeta):
         args.update(kwargs)
         return cls(**args)
 
-    def write_metadata(self, fp):
+    def write_metadata(self, fp, group=None):
         """Writes metadata to the given file handler.
 
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
         """
-        fp.attrs['model'] = self.name
-        fp.attrs['variable_params'] = list(self.variable_params)
-        fp.attrs['sampling_params'] = list(self.sampling_params)
-        fp.write_kwargs_to_attrs(fp.attrs, static_params=self.static_params)
+        attrs = fp.getattrs(group=group)
+        attrs['model'] = self.name
+        attrs['variable_params'] = list(map(str, self.variable_params))
+        attrs['sampling_params'] = list(map(str, self.sampling_params))
+        fp.write_kwargs_to_attrs(attrs, static_params=self.static_params)
 
 
 def check_for_cartesian_spins(which, variable_params, static_params,

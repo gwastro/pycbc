@@ -26,7 +26,7 @@ coincident triggers.
 """
 
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
-from pycbc.detector import Detector
+from pycbc.detector import Detector, ppdets
 
 
 def background_bin_from_string(background_bins, data):
@@ -120,63 +120,6 @@ def background_bin_from_string(background_bins, data):
         bins[name] = locs
 
     return bins
-
-
-def calculate_n_louder(bstat, fstat, dec, skip_background=False):
-    """ Calculate for each foreground event the number of background events
-    that are louder than it.
-
-    Parameters
-    ----------
-    bstat: numpy.ndarray
-        Array of the background statistic values
-    fstat: numpy.ndarray or scalar
-        Array of the foreground statistic values or single value
-    dec: numpy.ndarray
-        Array of the decimation factors for the background statistics
-    skip_background: optional, {boolean, False}
-        Skip calculating cumulative numbers for background triggers
-
-    Returns
-    -------
-    cum_back_num: numpy.ndarray
-        The cumulative array of background triggers. Does not return this
-        argument if skip_background == True
-    fore_n_louder: numpy.ndarray
-        The number of background triggers above each foreground trigger
-    """
-    sort = bstat.argsort()
-    bstat = bstat[sort]
-    dec = dec[sort]
-
-    # calculate cumulative number of triggers louder than the trigger in
-    # a given index. We need to subtract the decimation factor, as the cumsum
-    # includes itself in the first sum (it is inclusive of the first value)
-    n_louder = dec[::-1].cumsum()[::-1] - dec
-
-    # Determine how many values are louder than the foreground ones
-    # We need to subtract one from the index, to be consistent with the definition
-    # of n_louder, as here we do want to include the background value at the
-    # found index
-    idx = numpy.searchsorted(bstat, fstat, side='left') - 1
-
-    # If the foreground are *quieter* than the background or at the same value
-    # then the search sorted algorithm will choose position -1, which does not exist
-    # We force it back to zero.
-    if isinstance(idx, numpy.ndarray):  # Case where our input is an array
-        idx[idx < 0] = 0
-    else:  # Case where our input is just a scalar value
-        if idx < 0:
-            idx = 0
-
-    fore_n_louder = n_louder[idx]
-
-    if not skip_background:
-        unsort = sort.argsort()
-        back_cum_num = n_louder[unsort]
-        return back_cum_num, fore_n_louder
-    else:
-        return fore_n_louder
 
 
 def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
@@ -687,7 +630,11 @@ class CoincExpireBuffer(object):
 
     @property
     def nbytes(self):
-        return self.buffer.nbytes
+        """Returns the approximate memory usage of self.
+        """
+        nbs = [self.timer[ifo].nbytes for ifo in self.ifos]
+        nbs.append(self.buffer.nbytes)
+        return sum(nbs)
 
     def increment(self, ifos):
         """Increment without adding triggers"""
@@ -1106,7 +1053,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         num_zerolag = 0
         num_background = 0
 
-        logging.info('%s background and zerolag coincs', len(cstat))
+        logging.info(
+            "%s: %s background and zerolag coincs",
+            ppdets(self.ifos, "-"), len(cstat)
+        )
         if len(cstat) > 0:
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
@@ -1191,8 +1141,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             A dictionary of arrays containing the coincident results.
         """
         # Let's see how large everything is
-        logging.info('BKG Coincs %s stored %s bytes',
-                     len(self.coincs), self.coincs.nbytes)
+        logging.info(
+            "%s: %s coincs, %s bytes",
+            ppdets(self.ifos, "-"), len(self.coincs), self.coincs.nbytes
+        )
 
         # If there are no results just return
         valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
@@ -1209,3 +1161,18 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             coinc_results['coinc_possible'] = True
 
         return coinc_results
+
+
+__all__ = [
+    "background_bin_from_string",
+    "timeslide_durations",
+    "time_coincidence",
+    "time_multi_coincidence",
+    "cluster_coincs",
+    "cluster_coincs_multiifo",
+    "mean_if_greater_than_zero",
+    "cluster_over_time",
+    "MultiRingBuffer",
+    "CoincExpireBuffer",
+    "LiveCoincTimeslideBackgroundEstimator"
+]

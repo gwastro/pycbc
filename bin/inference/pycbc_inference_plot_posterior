@@ -44,6 +44,7 @@ from pycbc import __version__
 from pycbc import conversions
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import (option_utils, io)
+from pycbc.distributions.utils import prior_from_config
 
 from pycbc.results.scatter_histograms import create_multidim_plot
 
@@ -161,7 +162,7 @@ if opts.plot_prior is not None:
                          "--plot-prior")
     logging.info("Loading prior")
     cp = WorkflowConfigParser(opts.plot_prior)
-    prior = option_utils.prior_from_config(cp)
+    prior = prior_from_config(cp)
     logging.info("Drawing samples from prior")
     prior_samples = prior.rvs(opts.prior_nsamples)
     # we'll just use the first file for metadata

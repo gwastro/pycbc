@@ -37,23 +37,10 @@ def int_gps_time_to_str(t):
     """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and
     converts it to a string. If a LIGOTimeGPS with nonzero decimal part is
     given, raises a ValueError."""
-
-    if isinstance(t, int):
-        return str(t)
-    elif isinstance(t, float):
-        # Wouldn't this just work generically?
-        int_t = int(t)
-        if abs(t - int_t) > 0.:
-            raise ValueError('Need an integer GPS time, got %s' % str(t))
-        return str(int_t)
-    elif isinstance(t, lal.LIGOTimeGPS):
-        if t.gpsNanoSeconds == 0:
-            return str(t.gpsSeconds)
-        else:
-            raise ValueError('Need an integer GPS time, got %s' % str(t))
-    else:
-        err_msg = "Didn't understand input type {}".format(type(t))
-        raise ValueError(err_msg)
+    int_t = int(t)
+    if abs(float(t - int_t)) > 0.:
+        raise ValueError('Need an integer GPS time, got %s' % str(t))
+    return str(int_t)
 
 def select_tmpltbank_class(curr_exe):
     """ This function returns a class that is appropriate for setting up
@@ -140,7 +127,7 @@ def select_generic_executable(workflow, exe_tag):
     exe_to_class_map = {
         'ligolw_add'               : LigolwAddExecutable,
         'lalapps_inspinj'          : LalappsInspinjExecutable,
-        'pycbc_create_injections'  : PyCBCCreateInjectionsExecutable,
+        'pycbc_create_injections'  : PycbcCreateInjectionsExecutable,
         'pycbc_dark_vs_bright_injections' : PycbcDarkVsBrightInjectionsExecutable,
         "pycbc_condition_strain"         : PycbcConditionStrainExecutable
     }
@@ -496,16 +483,9 @@ class PyCBCInspiralExecutable(Executable):
                  injection_file=None, tags=None, reuse_executable=False):
         if tags is None:
             tags = []
-        super(PyCBCInspiralExecutable, self).__init__(
-            cp,
-            exe_name,
-            None,
-            ifo,
-            out_dir,
-            tags=tags,
-            reuse_executable=reuse_executable,
-            set_submit_subdir=False
-        )
+        super().__init__(cp, exe_name, ifo, out_dir, tags=tags,
+                         reuse_executable=reuse_executable,
+                         set_submit_subdir=False)
         self.cp = cp
         self.injection_file = injection_file
         self.ext = '.hdf'
@@ -679,12 +659,11 @@ class PyCBCMultiInspiralExecutable(Executable):
     pycbc_multi_inspiral executable.
     """
     current_retention_level = Executable.ALL_TRIGGERS
-    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+    def __init__(self, cp, name, ifo=None, injection_file=None,
                  gate_files=None, out_dir=None, tags=None):
         if tags is None:
             tags = []
-        super(PyCBCMultiInspiralExecutable, self).__init__(cp, name, universe,
-                ifo, out_dir=out_dir, tags=tags)
+        super().__init__(cp, name, ifo, out_dir=out_dir, tags=tags)
         self.injection_file = injection_file
         self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
                                          int(cp.get('workflow', 'end-time')))
@@ -806,7 +785,7 @@ class PyCBCTmpltbankExecutable(Executable):
                  tags=None, write_psd=False, psd_files=None):
         if tags is None:
             tags = []
-        super(PyCBCTmpltbankExecutable, self).__init__(cp, exe_name, 'vanilla', ifo, out_dir, tags=tags)
+        super().__init__(cp, exe_name, ifo, out_dir, tags=tags)
         self.cp = cp
         self.write_psd = write_psd
         self.psd_files = psd_files
@@ -899,8 +878,6 @@ class LigolwAddExecutable(Executable):
     """ The class used to create nodes for the ligolw_add Executable. """
 
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
-    def __init__(self, *args, **kwargs):
-        super(LigolwAddExecutable, self).__init__(*args, **kwargs)
 
     def create_node(self, jobSegment, input_files, output=None,
                     use_tmp_subdirs=True, tags=None):
@@ -929,11 +906,11 @@ class PycbcSplitInspinjExecutable(Executable):
     The class responsible for running the pycbc_split_inspinj executable
     """
     current_retention_level = Executable.INTERMEDIATE_PRODUCT
-    def __init__(self, cp, exe_name, num_splits, universe=None, ifo=None,
-                 out_dir=None):
-        super(PycbcSplitInspinjExecutable, self).__init__(cp, exe_name,
-                universe, ifo, out_dir, tags=[])
+
+    def __init__(self, cp, exe_name, num_splits, ifo=None, out_dir=None):
+        super().__init__(cp, exe_name, ifo, out_dir, tags=[])
         self.num_splits = int(num_splits)
+
     def create_node(self, parent, tags=None):
         if tags is None:
             tags = []
@@ -960,26 +937,12 @@ class PycbcSplitInspinjExecutable(Executable):
         return node
 
 
-class PyCBCCreateInjectionsExecutable(Executable):
-    """
-    The class used to create jobs for the lalapps_inspinj Executable.
-    """
-    current_retention_level = Executable.FINAL_RESULT
-    def create_node(self, segment, tags=None):
-        if tags is None:
-            tags = []
-        node = Node(self)
-        node.new_output_file_opt(segment, '.hdf', '--output-file',
-                                 store_file=self.retain_files, tags=tags)
-        node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
-        node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
-        return node
-
 class LalappsInspinjExecutable(Executable):
     """
     The class used to create jobs for the lalapps_inspinj Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
+    extension = '.xml'
     def create_node(self, segment, exttrig_file=None, tags=None):
         if tags is None:
             tags = []
@@ -990,9 +953,7 @@ class LalappsInspinjExecutable(Executable):
         # in the config file. Used for coh_PTF as segment length is unknown
         # before run time.
         if self.get_opt('write-compress') is not None:
-            ext = '.xml.gz'
-        else:
-            ext = '.xml'
+            self.extension = '.xml.gz'
 
         # Check if these injections are using trigger information to choose
         # sky positions for the simulated signals
@@ -1026,7 +987,7 @@ class LalappsInspinjExecutable(Executable):
             node.add_opt('--time-interval', inj_tspace)
             node.add_opt('--time-step', inj_tspace)
 
-        node.new_output_file_opt(segment, ext, '--output',
+        node.new_output_file_opt(segment, self.extension, '--output',
                                  store_file=self.retain_files)
 
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
@@ -1039,15 +1000,6 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
     The clase used to create jobs for the pycbc_dark_vs_bright_injections Executable.
     """
     current_retention_level = Executable.FINAL_RESULT
-    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=None):
-        if tags is None:
-            tags = []
-        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
-                            tags=tags)
-        self.cp = cp
-        self.out_dir = out_dir
-        self.exe_name = exe_name
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
@@ -1081,15 +1033,6 @@ class LigolwCBCJitterSkylocExecutable(Executable):
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=None):
-        if tags is None:
-            tags = []
-        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
-                            tags=tags)
-        self.cp = cp
-        self.out_dir = out_dir
-        self.exe_name = exe_name
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
@@ -1099,7 +1042,7 @@ class LigolwCBCJitterSkylocExecutable(Executable):
 
         node = Node(self)
         node.add_input_opt('--input-file', parent)
-        output_file = File(parent.ifo_list, self.exe_name,
+        output_file = File(parent.ifo_list, self.name,
                            segment, extension='.xml', store_file=True,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
@@ -1112,15 +1055,6 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
     The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    def __init__(self, cp, exe_name, universe=None, ifos=None, out_dir=None,
-                 tags=None):
-        if tags is None:
-            tags = []
-        Executable.__init__(self, cp, exe_name, universe, ifos, out_dir,
-                            tags=tags)
-        self.cp = cp
-        self.out_dir = out_dir
-        self.exe_name = exe_name
 
     def create_node(self, parent, segment, tags=None):
         if tags is None:
@@ -1129,7 +1063,7 @@ class LigolwCBCAlignTotalSpinExecutable(Executable):
             raise ValueError("Must provide an input file.")
 
         node = Node(self)
-        output_file = File(parent.ifo_list, self.exe_name, segment,
+        output_file = File(parent.ifo_list, self.name, segment,
                            extension='.xml', store_file=self.retain_files,
                            directory=self.out_dir, tags=tags)
         node.add_output_opt('--output-file', output_file)
@@ -1143,9 +1077,8 @@ class PycbcSplitBankExecutable(Executable):
     extension = '.hdf'
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, num_banks,
-                 ifo=None, out_dir=None, universe=None):
-        super(PycbcSplitBankExecutable, self).__init__(cp, exe_name, universe,
-                ifo, out_dir, tags=[])
+                 ifo=None, out_dir=None):
+        super().__init__(cp, exe_name, ifo, out_dir, tags=[])
         self.num_banks = int(num_banks)
 
     def create_node(self, bank, tags=None):
@@ -1193,10 +1126,6 @@ class PycbcConditionStrainExecutable(Executable):
     """ The class responsible for creating jobs for pycbc_condition_strain. """
 
     current_retention_level = Executable.ALL_TRIGGERS
-    def __init__(self, cp, exe_name, ifo=None, out_dir=None, universe=None,
-            tags=None):
-        super(PycbcConditionStrainExecutable, self).__init__(cp, exe_name, universe,
-              ifo, out_dir, tags)
 
     def create_node(self, input_files, tags=None):
         if tags is None:
@@ -1230,10 +1159,7 @@ class PycbcCreateInjectionsExecutable(Executable):
     """
 
     current_retention_level = Executable.ALL_TRIGGERS
-    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
-                 universe=None, tags=None):
-        super(PycbcCreateInjectionsExecutable, self).__init__(
-                               cp, exe_name, universe, ifo, out_dir, tags)
+    extension = '.hdf'
 
     def create_node(self, config_file=None, seed=None, tags=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
@@ -1264,11 +1190,13 @@ class PycbcCreateInjectionsExecutable(Executable):
 
         # make node for running executable
         node = Node(self)
-        node.add_input_opt("--config-files", config_file)
+        if config_file is not None:
+            node.add_input_opt("--config-files", config_file)
         if seed:
             node.add_opt("--seed", seed)
         injection_file = node.new_output_file_opt(analysis_time,
-                                                  ".hdf", "--output-file",
+                                                  self.extension,
+                                                  "--output-file",
                                                   tags=tags)
 
         return node, injection_file
@@ -1279,13 +1207,6 @@ class PycbcInferenceExecutable(Executable):
     """
 
     current_retention_level = Executable.ALL_TRIGGERS
-    def __init__(self, cp, exe_name, ifos=None, out_dir=None,
-                 universe=None, tags=None):
-        super(PycbcInferenceExecutable, self).__init__(cp, exe_name,
-                                                       universe=universe,
-                                                       ifos=ifos,
-                                                       out_dir=out_dir,
-                                                       tags=tags)
 
     def create_node(self, config_file, seed=None, tags=None,
                     analysis_time=None):

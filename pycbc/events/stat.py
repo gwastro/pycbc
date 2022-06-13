@@ -335,7 +335,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
-        if pregenerate_hist:
+        if pregenerate_hist and not len(ifos) == 1:
             self.get_hist()
 
     def get_hist(self, ifos=None):
@@ -367,7 +367,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 selected = name
                 break
 
-        if selected is None:
+        if selected is None and len(ifos) > 1:
             raise RuntimeError("Couldn't figure out which stat file to use")
 
         logging.info("Using signal histogram %s for ifos %s", selected, ifos)
@@ -728,15 +728,32 @@ class ExpFitStatistic(QuadratureSumStatistic):
         """
         coeff_file = self.files[ifo+'-fit_coeffs']
         template_id = coeff_file['template_id'][:]
-        alphas = coeff_file['fit_coeff'][:]
-        rates = coeff_file['count_above_thresh'][:]
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
-        return {'alpha': alphas[tid_sort],
-                'rate': rates[tid_sort],
-                'thresh': coeff_file.attrs['stat_threshold']
-                }
+
+        fits_by_tid_dict = {}
+        fits_by_tid_dict['smoothed_fit_coeff'] = \
+            coeff_file['fit_coeff'][:][tid_sort]
+        fits_by_tid_dict['smoothed_rate_above_thresh'] = \
+            coeff_file['count_above_thresh'][:][tid_sort].astype(float)
+        fits_by_tid_dict['smoothed_rate_in_template'] = \
+            coeff_file['count_in_template'][:][tid_sort].astype(float)
+
+        # The by-template fits may have been stored in the smoothed fits file
+        if 'fit_by_template' in coeff_file:
+            coeff_fbt = coeff_file['fit_by_template']
+            fits_by_tid_dict['fit_by_fit_coeff'] = \
+                coeff_fbt['fit_coeff'][:][tid_sort]
+            fits_by_tid_dict['fit_by_rate_above_thresh'] = \
+                coeff_fbt['count_above_thresh'][:][tid_sort].astype(float)
+            fits_by_tid_dict['fit_by_rate_in_template'] = \
+                coeff_file['count_in_template'][:][tid_sort].astype(float)
+
+        # Keep the fit threshold in fits_by_tid
+        fits_by_tid_dict['thresh'] = coeff_file.attrs['stat_threshold']
+
+        return fits_by_tid_dict
 
     def get_ref_vals(self, ifo):
         """
@@ -749,7 +766,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         ifo: str
             The detector to get fits for.
         """
-        self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
+        self.alphamax[ifo] = self.fits_by_tid[ifo]['smoothed_fit_coeff'].max()
 
     def find_fits(self, trigs):
         """
@@ -784,9 +801,10 @@ class ExpFitStatistic(QuadratureSumStatistic):
             ifo = self.ifos[0]
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
-        alphai = self.fits_by_tid[ifo]['alpha'][tnum]
-        ratei = self.fits_by_tid[ifo]['rate'][tnum]
+        alphai = self.fits_by_tid[ifo]['smoothed_fit_coeff'][tnum]
+        ratei = self.fits_by_tid[ifo]['smoothed_rate_above_thresh'][tnum]
         thresh = self.fits_by_tid[ifo]['thresh']
+
         return alphai, ratei, thresh
 
     def lognoiserate(self, trigs):
@@ -992,11 +1010,10 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        sngl_rnk = self.single(single_info[1])
         if self.single_increasing:
-            sngl_multiifo = sngl_rnk['snglstat']
+            sngl_multiifo = single_info[1]['snglstat']
         else:
-            sngl_multiifo = -1.0 * sngl_rnk['snglstat']
+            sngl_multiifo = -1.0 * single_info[1]['snglstat']
         return sngl_multiifo
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
@@ -1224,12 +1241,13 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
             The ifo to consider.
         """
         coeff_file = self.files[ifo+'-fit_coeffs']
-        template_id = coeff_file['template_id'][:]
-        # create arrays in template_id order for easier recall
-        tid_sort = numpy.argsort(template_id)
-        self.fits_by_tid[ifo]['rate'] = \
-            coeff_file['count_above_thresh'][:][tid_sort] / \
-            float(coeff_file.attrs['analysis_time'])
+        analysis_time = float(coeff_file.attrs['analysis_time'])
+        self.fits_by_tid[ifo]['smoothed_rate_above_thresh'] /= analysis_time
+        self.fits_by_tid[ifo]['smoothed_rate_in_template'] /= analysis_time
+        # The by-template fits may have been stored in the smoothed fits file
+        if 'fit_by_template' in coeff_file:
+            self.fits_by_tid[ifo]['fit_by_rate_above_thresh'] /= analysis_time
+            self.fits_by_tid[ifo]['fit_by_rate_in_template'] /= analysis_time
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
@@ -1446,7 +1464,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         numpy.ndarray
             The array of single detector statistics
         """
-        sngls = self.single(single_info[1])
+        sngls = single_info[1]
 
         ln_noise_rate = sngls['snglstat']
         ln_noise_rate -= self.benchmark_lograte

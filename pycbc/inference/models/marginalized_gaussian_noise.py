@@ -56,7 +56,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
 
     Here, the sum is over the number of detectors :math:`N_D`, :math:`d_i`
     and :math:`h_i` are the data and signal in detector :math:`i`,
-    respectively, and we have assumed a uniform prior on :math:`phi \in [0,
+    respectively, and we have assumed a uniform prior on :math:`\phi \in [0,
     2\pi)`. With the form of the signal model given above, the inner product
     in the exponent can be written as:
 
@@ -101,14 +101,14 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
 
     The integral in the last line is equal to :math:`2\pi I_0(\sqrt{x^2+y^2})`,
     where :math:`I_0` is the modified Bessel function of the first kind. Thus
-    the marginalized log posterior is:
+    the marginalized posterior is:
 
     .. math::
 
-        \log p(\Theta|d) \propto \log p(\Theta) +
-            I_0\left(\left|\sum_i O(h^0_i, d_i)\right|\right) -
-            \frac{1}{2}\sum_i\left[ \left<h^0_i, h^0_i\right> -
-                                    \left<d_i, d_i\right> \right]
+        p(\Theta|d) \propto
+            I_0\left(\left|\sum_i O(h^0_i, d_i)\right|\right)
+             p(\Theta)\exp\left[\frac{1}{2}\sum_i\left( \left<h^0_i, h^0_i\right> -
+                                    \left<d_i, d_i\right> \right)\right]
     """
     name = 'marginalized_phase'
 
@@ -408,7 +408,8 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
         How many points to use in phase. Defaults is 100.
     \**kwargs :
         All other keyword arguments are passed to
-        :py:class:`gaussian_noise.BaseGaussianNoisei <BaseGaussianNoise>`.
+        :py:class:`BaseGaussianNoise
+        <pycbc.inference.models.gaussian_noise.BaseGaussianNoise>`.
 
     """
     name = 'marginalized_hmpolphase'

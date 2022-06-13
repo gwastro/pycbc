@@ -99,9 +99,11 @@ def get_segments_file(workflow, name, option_name, out_dir):
         server = cp.get("workflow-segments",
                                  "segments-database-url")
 
-    source = "any"
     if cp.has_option("workflow-segments", "segments-source"):
         source = cp.get("workflow-segments", "segments-source")
+    else:
+        source = "any"
+
     if source == "file":
         local_file_path = \
             resolve_url(cp.get("workflow-segments", option_name+"-file"))
@@ -113,9 +115,16 @@ def get_segments_file(workflow, name, option_name, out_dir):
     for ifo in workflow.ifos:
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
         key = ifo + ':' + name
-        segs[key] = query_str(ifo, flag_str, start, end,
-                              source=source, server=server,
-                              veto_definer=veto_definer)
+        
+        if flag_str.upper() == "OFF":
+            segs[key] = segments.segmentlist([])
+        elif flag_str.upper() == "ON":
+            all_seg = segments.segment([start, end])
+            segs[key] = segments.segmentlist([all_seg])
+        else:
+            segs[key] = query_str(ifo, flag_str, start, end,
+                                  source=source, server=server,
+                                  veto_definer=veto_definer)
         logging.info("%s: got %s flags", ifo, option_name)
 
     return SegFile.from_segment_list_dict(name, segs,

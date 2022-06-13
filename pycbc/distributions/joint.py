@@ -122,7 +122,7 @@ class JointDistribution(object):
             samples = FieldArray.from_kwargs(**samples)
 
             # evaluate constraints
-            result = self.contains(samples)
+            result = self.within_constraints(samples)
 
             # set new scaling factor for prior to be
             # the fraction of acceptances in random sampling of entire space
@@ -160,6 +160,36 @@ class JointDistribution(object):
         return params
 
     @staticmethod
+    def _return_atomic(params):
+        """Determines if an array or atomic value should be returned given a
+        set of input params.
+
+        Parameters
+        ----------
+        params : dict, numpy.record, array, or FieldArray
+            The input to evaluate.
+
+        Returns
+        -------
+        bool :
+            Whether or not functions run on the parameters should be returned
+            as atomic types or not.
+        """
+        if isinstance(params, dict):
+            return not any(isinstance(val, numpy.ndarray)
+                           for val in params.values())
+        elif isinstance(params, numpy.record):
+            return True
+        elif isinstance(params, numpy.ndarray):
+            return False
+            params = params.view(type=FieldArray)
+        elif isinstance(params, FieldArray):
+            return False
+        else:
+            raise ValueError("params must be either dict, FieldArray, "
+                             "record, or structured array")
+
+    @staticmethod
     def _ensure_fieldarray(params):
         """Ensures the given params are a ``FieldArray``.
 
@@ -171,31 +201,23 @@ class JointDistribution(object):
 
         Returns
         -------
-        params : FieldArray
+        FieldArray
             The given values as a FieldArray.
-        return_atomic : bool
-            Whether or not functions run on the parameters should be returned
-            as atomic types or not.
         """
         if isinstance(params, dict):
-            return_atomic = not any(isinstance(val, numpy.ndarray)
-                                    for val in params.values())
-            params = FieldArray.from_kwargs(**params)
+            return FieldArray.from_kwargs(**params)
         elif isinstance(params, numpy.record):
-            return_atomic = True
-            params = FieldArray.from_records(tuple(params),
-                                             names=params.dtype.names)
+            return FieldArray.from_records(tuple(params),
+                                           names=params.dtype.names)
         elif isinstance(params, numpy.ndarray):
-            return_atomic = False
-            params = params.view(type=FieldArray)
+            return params.view(type=FieldArray)
         elif isinstance(params, FieldArray):
-            return_atomic = False
+            return params
         else:
             raise ValueError("params must be either dict, FieldArray, "
                              "record, or structured array")
-        return params, return_atomic
 
-    def contains(self, params):
+    def within_constraints(self, params):
         """Evaluates whether the given parameters satisfy the constraints.
 
         Parameters
@@ -210,7 +232,8 @@ class JointDistribution(object):
             of the parameters are arrays, will return an array of booleans.
             Otherwise, a boolean.
         """
-        params, return_atomic = self._ensure_fieldarray(params)
+        params = self._ensure_fieldarray(params)
+        return_atomic = self._return_atomic(params)
         # convert params to a field array if it isn't one
         result = numpy.ones(params.shape, dtype=bool)
         for constraint in self._constraints:
@@ -219,13 +242,45 @@ class JointDistribution(object):
             result = result.item()
         return result
 
+    def contains(self, params):
+        """Evaluates whether the given parameters satisfy the boundary
+            conditions, boundaries, and constraints. This method is different
+            from `within_constraints`, that method only check the constraints.
+
+        Parameters
+        ----------
+        params : dict, FieldArray, numpy.record, or numpy.ndarray
+            The parameter values to evaluate.
+
+        Returns
+        -------
+        (array of) bool :
+            If params was an array, or if params a dictionary and one or more
+            of the parameters are arrays, will return an array of booleans.
+            Otherwise, a boolean.
+        """
+        params = self.apply_boundary_conditions(**params)
+        result = True
+        for dist in self.distributions:
+            param_name = dist.params[0]
+            contain_array = numpy.ones(len(params[param_name]), dtype=bool)
+            # note: enable `__contains__` in `pycbc.distributions.bounded`
+            # to handle array-like input, it doesn't work now.
+            for k in params[param_name]:
+                index = numpy.where(params[param_name] == k)[0][0]
+                contain_array[index] = {param_name: k} in dist
+            result &= numpy.array(contain_array)
+        result &= self.within_constraints(params)
+        return result
+
     def __call__(self, **params):
         """Evaluate joint distribution for parameters.
         """
+        return_atomic = self._return_atomic(params)
         # check if statisfies constraints
         if len(self._constraints) != 0:
-            parray, return_atomic = self._ensure_fieldarray(params)
-            isin = self.contains(parray)
+            parray = self._ensure_fieldarray(params)
+            isin = self.within_constraints(parray)
             if not isin.any():
                 if return_atomic:
                     out = -numpy.inf
@@ -242,7 +297,7 @@ class JointDistribution(object):
         if len(self._constraints) != 0:
             logp += numpy.log(isin.astype(float))
 
-        if numpy.isscalar(logp):
+        if return_atomic:
             logp = logp.item()
 
         return logp - self._logpdf_scale
@@ -267,7 +322,7 @@ class JointDistribution(object):
                 for param in dist.params:
                     scratch[param] = draw[param]
             # apply any constraints
-            keep = self.contains(scratch)
+            keep = self.within_constraints(scratch)
             nkeep = keep.sum()
             kmin = size - remaining
             kmax = min(nkeep, remaining)

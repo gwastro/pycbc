@@ -45,7 +45,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum -y install openssl-devel
   yum -y install ligo-proxy-utils
   yum -y install python3-virtualenv
-  yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static --skip-broken
+  yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static swig fftw-static gsl-static --skip-broken
 
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
@@ -66,6 +66,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
   pip install -r requirements.txt
+  pip install -r requirements-igwn.txt
   pip install -r companion.txt
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"

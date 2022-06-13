@@ -22,10 +22,12 @@
    vectors.
 """
 from math import sqrt, log
-import numpy, lal, lalsimulation, pycbc.pnutils
+import numpy, lal, pycbc.pnutils
 from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 from pycbc.waveform.utils import ceilpow2
+
+lalsimulation = pycbc.libutils.import_optional('lalsimulation')
 
 def findchirp_chirptime(m1, m2, fLower, porder):
     # variables used to compute chirp time
