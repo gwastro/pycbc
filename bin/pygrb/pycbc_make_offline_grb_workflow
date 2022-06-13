@@ -218,7 +218,7 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
                 segment(int(wflow.cp.get("workflow", "start-time")),
                         int(wflow.cp.get("workflow", "end-time"))),
                 extension="lcf", directory=dfDir)
-        gated_cache.PFN(gated_cache.cache_entry.path, site="local")
+        gated_cache.add_pfn(gated_cache.cache_entry.path, site="local")
         gated_frames.convert_to_lal_cache().tofile(\
                             open(gated_cache.storage_path, "w"))
         datafind_files.extend(_workflow.FileList([gated_cache]))
@@ -358,7 +358,7 @@ if wflow.cp.has_section("workflow-injections"):
         inj_cache = _workflow.File(ifos, "injections", sciSegs[ifo][0],
                                    extension="lcf", directory=injDir,
                                    tags=[inj_tag])
-        inj_cache.PFN(inj_cache.cache_entry.path, site="local")
+        inj_cache.add_pfn(inj_cache.cache_entry.path, site="local")
         inj_caches.extend(_workflow.FileList([inj_cache]))
         inj_cache_entries = files.convert_to_lal_cache()
         inj_cache_entries.tofile(open(inj_cache.storage_path, "w"))
@@ -368,7 +368,7 @@ if wflow.cp.has_section("workflow-injections"):
         inj_insp_cache = _workflow.File(ifos, "inspiral_injections",
                                         sciSegs[ifo][0], extension="lcf",
                                         directory=injDir, tags=[inj_tag])
-        inj_insp_cache.PFN(inj_insp_cache.cache_entry.path, site="local")
+        inj_insp_cache.add_pfn(inj_insp_cache.cache_entry.path, site="local")
         inj_insp_caches.extend(_workflow.FileList([inj_insp_cache]))
         inj_insp_cache_entries = files.convert_to_lal_cache()
         inj_insp_cache_entries.tofile(open(inj_insp_cache.storage_path, "w"))
