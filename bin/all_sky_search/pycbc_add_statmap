@@ -56,6 +56,12 @@ parser.add_argument('--hierarchical-removal-ifar-thresh', type=float,
     default=100.,
     help="Minimum IFAR for a foreground event to be hierarchically removed "
          "from background of quieter events (years) [default=100yr]")
+parser.add_argument('--hierarchical-removal-against', type=str,
+                    default='none', choices=['none', 'inclusive', 'exclusive'],
+                    help='If doing hierarchical removal, remove foreground '
+                         'triggers that are louder than either the "inclusive"'
+                         ' (little-dogs-in) background, or the "exclusive" '
+                         '(little-dogs-out) background. [default="none"]')
 significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file', help="name of output file")
 
@@ -71,7 +77,7 @@ if args.max_hierarchical_removal and injection_style:
 # Check that the user chose inclusive or exclusive background to perform
 # hierarchical removals of foreground triggers against.
 if args.max_hierarchical_removal == 0:
-    if args.hierarchical_removal_against is not 'none':
+    if args.hierarchical_removal_against != 'none':
         parser.error("User Error: 0 maximum hierarchical removals chosen but "
                      "option for --hierarchical-removal-against was given. "
                      "These are conflicting options. Use with --help for more "
@@ -273,7 +279,7 @@ for key in f['foreground'].keys():
         for k in f['foreground/%s' % key].keys():
             filter_dataset(f, 'foreground/{}/{}'.format(key, k), cidx)
 
-far_init = f['foreground/ifar'][:]
+fg_ifar_init = f['foreground/ifar'][:]
 fg_ifar_exc_init = f['foreground/ifar_exc'][:]
 
 n_triggers = fg_ifar_init.size
@@ -306,6 +312,8 @@ far = {}
 far_exc = {}
 bg_time = {}
 bg_time_exc = {}
+fnlouder = {}
+fnlouder_exc = {}
 
 if injection_style:
     # if background files are provided, this is being used for injections
@@ -593,27 +601,27 @@ while True:
                            for tc in zip(*times_tuple)])
     for key in all_ifo_combos:
         bnlouder, fnlouder = significance.get_n_louder(
-            significance_dict[ifo_combo_key],
             sep_bg_data[key].data['stat'],
             sep_fg_data[key].data['stat'],
-            sep_bg_data[key].data['decimation_factor'])
+            sep_bg_data[key].data['decimation_factor'],
+            **significance_dict[ifo_combo_key])
         # In principle, bg time should be adjusted, but is expected to be a
         # negligible corection
         fg_time_ct[key] -= args.cluster_window
         bg_t_y = conv.sec_to_year(bg_time_ct[key])
         fg_t_y = conv.sec_to_year(fg_time_ct[key])
-        sep_bg_data[key].data['ifar'] = bg_t_y / (bnlouder + 1))
-        sep_fg_data[key].data['ifar'] = bg_t_y / (fnlouder + 1))
+        sep_bg_data[key].data['ifar'] = bg_t_y / (bnlouder + 1)
+        sep_fg_data[key].data['ifar'] = bg_t_y / (fnlouder + 1)
         sep_fg_data[key].data['fap'] = 1 - \
             np.exp(-fg_t_y / sep_fg_data[key].data['ifar'])
 
     logging.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
         bnlouder, fnlouder = significance.get_n_louder(
-            significance_dict[ifo_combo_key],
             sep_bg_data[key].data['stat'],
             combined_fg_data.data['stat'],
-            sep_bg_data[key].data['decimation_factor'])
+            sep_bg_data[key].data['decimation_factor'],
+            **significance_dict[ifo_combo_key])
         far[key] = (fnlouder + 1) / bg_time_ct[key]
         # Set up variable for whether each coincidence is available in each coincidence time
         is_in_combo_time[key] = np.zeros(n_triggers)
