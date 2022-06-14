@@ -2,7 +2,8 @@ from pycbc.types import zeros
 import numpy as _np
 import ctypes
 import pycbc.scheme as _scheme
-from pycbc.libutils import get_ctypes_library, RTLD_DEEPBIND
+from pycbc.libutils import get_ctypes_library
+from os import RTLD_DEEPBIND
 from .core import _BaseFFT, _BaseIFFT
 from ..types import check_aligned
 
