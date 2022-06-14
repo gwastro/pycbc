@@ -34,9 +34,10 @@ from subprocess import getoutput
 #
 # This is only defined for linux systems, on macosx, the default behavior
 # is similar
-RTLD_DEEPBIND = 0
 if hasattr(os, 'RTLD_DEEPBIND'):
-    RTLD_DEEPBIND = os.RTLD_DEEPBIND
+    DEFAULT_RTLD_MODE = os.RTLD_DEEPBIND
+else:
+    DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
 
 
 def pkg_config(pkg_libraries):
