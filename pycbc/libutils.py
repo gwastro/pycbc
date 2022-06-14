@@ -31,7 +31,12 @@ from subprocess import getoutput
 # library rather than first going to the global symbol table
 # This should be used when multiple libraries may export incompatible
 # symbols
-RTLD_DEEPBIND = 0x00008
+#
+# This is only defined for linux systems, on macosx, the default behavior
+# is similar
+RTLD_DEEPBIND = 0
+if hasattr(os, 'RTLD_DEEPBIND'):
+    RTLD_DEEPBIND = os.RTLD_DEEPBIND
 
 
 def pkg_config(pkg_libraries):
