@@ -210,47 +210,41 @@ for f_in in files:
                     f_in['background_exc/{}/trigger_id'.format(ifo)][:]])
         else:
             fg_trig_times[ifo] = np.concatenate([fg_trig_times[ifo],
-                -1 * np.ones_like(f_in['foreground/fap'][:],
-                dtype=np.uint32)])
+                -1 * np.ones_like(f_in['foreground/stat'][:],
+                dtype=float)])
             fg_trig_ids[ifo] = np.concatenate([fg_trig_ids[ifo],
-                -1 * np.ones_like(f_in['foreground/fap'][:],
-                dtype=np.uint32)])
+                -1 * np.ones_like(f_in['foreground/stat'][:],
+                dtype=int)])
             if not injection_style:
                 bg_trig_times[ifo] = np.concatenate([bg_trig_times[ifo],
                     -1 * np.ones_like(f_in['background/stat'][:],
-                    dtype=np.uint32)])
+                    dtype=float)])
                 bg_trig_ids[ifo] = np.concatenate([bg_trig_ids[ifo],
                     -1 * np.ones_like(f_in['background/stat'][:],
-                    dtype=np.uint32)])
+                    dtype=int)])
                 bg_exc_trig_times[ifo] = np.concatenate([bg_exc_trig_times[ifo],
                     -1 * np.ones_like(f_in['background_exc/stat'][:],
-                    dtype=np.uint32)])
+                    dtype=float)])
                 bg_exc_trig_ids[ifo] = np.concatenate([bg_exc_trig_ids[ifo],
                     -1 * np.ones_like(f_in['background_exc/stat'][:],
-                    dtype=np.uint32)])
+                    dtype=int)])
 n_triggers = f['foreground/ifar'].size
 logging.info('{} foreground events before clustering'.format(n_triggers))
 
 for ifo in all_ifos:
     f.create_dataset('foreground/{}/time'.format(ifo),
-                     data=fg_trig_times[ifo],
-                     dtype=np.float64)
+                     data=fg_trig_times[ifo])
     f.create_dataset('foreground/{}/trigger_id'.format(ifo),
-                     data=fg_trig_ids[ifo],
-                     dtype=int)
+                     data=fg_trig_ids[ifo])
     if not injection_style:
         f.create_dataset('background/{}/time'.format(ifo),
-                         data=bg_trig_times[ifo],
-                         dtype=np.float64)
+                         data=bg_trig_times[ifo])
         f.create_dataset('background/{}/trigger_id'.format(ifo),
-                         data=bg_trig_ids[ifo],
-                         dtype=int)
+                         data=bg_trig_ids[ifo])
         f.create_dataset('background_exc/{}/time'.format(ifo),
-                         data=bg_exc_trig_times[ifo],
-                         dtype=np.float64)
+                         data=bg_exc_trig_times[ifo])
         f.create_dataset('background_exc/{}/trigger_id'.format(ifo),
-                         data=bg_exc_trig_ids[ifo],
-                         dtype=int)
+                         data=bg_exc_trig_ids[ifo])
 
 # fg_times is a tuple of trigger time arrays
 fg_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
