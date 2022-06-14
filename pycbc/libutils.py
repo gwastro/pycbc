@@ -26,6 +26,14 @@ from ctypes.util import find_library
 from collections import deque
 from subprocess import getoutput
 
+
+# DLOPEN mode that requies symbols to first look up locally to this
+# library rather than first going to the global symbol table
+# This should be used when multiple libraries may export incompatible
+# symbols
+RTLD_DEEPBIND = 0x00008
+
+
 def pkg_config(pkg_libraries):
     """Use pkg-config to query for the location of libraries, library directories,
        and header directories

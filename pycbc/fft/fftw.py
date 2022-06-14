@@ -2,7 +2,7 @@ from pycbc.types import zeros
 import numpy as _np
 import ctypes
 import pycbc.scheme as _scheme
-from pycbc.libutils import get_ctypes_library
+from pycbc.libutils import get_ctypes_library, RTLD_DEEPBIND
 from .core import _BaseFFT, _BaseIFFT
 from ..types import check_aligned
 
@@ -30,8 +30,8 @@ FFTW_WISDOM_ONLY = 1 << 21
 # We need to construct them directly with CDLL so
 # we can give the RTLD_GLOBAL mode, which we must do
 # in order to use the threaded libraries as well.
-double_lib = get_ctypes_library('fftw3',['fftw3'],mode=ctypes.RTLD_GLOBAL)
-float_lib = get_ctypes_library('fftw3f',['fftw3f'],mode=ctypes.RTLD_GLOBAL)
+double_lib = get_ctypes_library('fftw3',['fftw3'], mode=RTLD_DEEPBIND)
+float_lib = get_ctypes_library('fftw3f',['fftw3f'], mode=RTLD_DEEPBIND)
 if (double_lib is None) or (float_lib is None):
     raise ImportError("Unable to find FFTW libraries")
 
@@ -99,8 +99,12 @@ def _init_threads(backend):
         try:
             # Note that the threaded libraries don't have their own pkg-config files;
             # we must look for them wherever we look for double or single FFTW itself
-            _double_threaded_lib = get_ctypes_library(double_threaded_libname,['fftw3'],mode=ctypes.RTLD_GLOBAL)
-            _float_threaded_lib =  get_ctypes_library(float_threaded_libname,['fftw3f'],mode=ctypes.RTLD_GLOBAL)
+            _double_threaded_lib = get_ctypes_library(double_threaded_libname,
+                                                      ['fftw3'],
+                                                      mode=RTLD_DEEPBIND)
+            _float_threaded_lib =  get_ctypes_library(float_threaded_libname,
+                                                      ['fftw3f'],
+                                                      mode=RTLD_DEEPBIND)
             if (_double_threaded_lib is None) or (_float_threaded_lib is None):
                 raise RuntimeError("Unable to load threaded libraries {0} or {1}".format(double_threaded_libname,
                                                                                          float_threaded_libname))
@@ -302,11 +306,9 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     if idtype.char in ['f', 'F']:
         destroy = float_lib.fftwf_destroy_plan
     else:
-        destroy = double_lib.fftw_destroy_plan 
+        destroy = double_lib.fftw_destroy_plan
 
     destroy.argtypes = [ctypes.c_void_p]
-
-
     return theplan, destroy
 
 
@@ -331,6 +333,7 @@ def ifft(invec, outvec, prec, itype, otype):
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
     destroy(theplan)
+
 
 # Class based API
 
