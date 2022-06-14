@@ -160,7 +160,7 @@ def get_libpath_from_dirlist(libname, dirs):
     # If we get here, we didn't find it...
     return None
 
-def get_ctypes_library(libname, packages, mode=RTLD_DEEPBIND):
+def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
     """
     This function takes a library name, specified in architecture-independent fashion (i.e.
     omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and
