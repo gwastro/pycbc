@@ -862,7 +862,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
         # Extract the time slide table
         time_slide_table = \
-            Table.get_table(doc,lsctables.TimeSlideTable.tableName)
+            Table.get_table(doc, lsctables.TimeSlideTable.tableName)
         slide_mapping = {}
         curr_slides = {}
         for slide in time_slide_table:

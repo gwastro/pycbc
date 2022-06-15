@@ -76,7 +76,7 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
             data[null_stat_type] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
         elif null_stat_type == 'single':
             att = ifo[0].lower()
-            data[null_stat_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:])
+            data[null_stat_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:]
         elif null_stat_type == 'coincident':
             # Obtain all single SNRs
             single_snr = {}
