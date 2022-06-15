@@ -50,7 +50,9 @@ def optimizedparam(sampleval, nfold=2):
     optval = max(FOM.items(), key=operator.itemgetter(1))[0]
     optbw, optalpha  = optval[0], optval[1]
     maxFOM = FOM[(optbw, optalpha)]
+    print (optbw)
     return optbw, optalpha
+   
 
 if args.make_signal_kde and args.make_template_kde:
     raise Exception("Choose only one option out of --make-signal-kde and --make-template-kde")
