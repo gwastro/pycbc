@@ -26,6 +26,20 @@ from ctypes.util import find_library
 from collections import deque
 from subprocess import getoutput
 
+
+# DLOPEN mode that requies symbols to first look up locally to this
+# library rather than first going to the global symbol table
+# This should be used when multiple libraries may export incompatible
+# symbols
+#
+# This is only defined for linux systems, on macosx, the default behavior
+# is similar
+if hasattr(os, 'RTLD_DEEPBIND'):
+    DEFAULT_RTLD_MODE = os.RTLD_DEEPBIND
+else:
+    DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
+
+
 def pkg_config(pkg_libraries):
     """Use pkg-config to query for the location of libraries, library directories,
        and header directories
@@ -146,7 +160,7 @@ def get_libpath_from_dirlist(libname, dirs):
     # If we get here, we didn't find it...
     return None
 
-def get_ctypes_library(libname, packages, mode=None):
+def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
     """
     This function takes a library name, specified in architecture-independent fashion (i.e.
     omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and

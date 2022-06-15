@@ -335,7 +335,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
-        if pregenerate_hist:
+        if pregenerate_hist and not len(ifos) == 1:
             self.get_hist()
 
     def get_hist(self, ifos=None):
@@ -367,7 +367,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 selected = name
                 break
 
-        if selected is None:
+        if selected is None and len(ifos) > 1:
             raise RuntimeError("Couldn't figure out which stat file to use")
 
         logging.info("Using signal histogram %s for ifos %s", selected, ifos)
@@ -804,6 +804,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         alphai = self.fits_by_tid[ifo]['smoothed_fit_coeff'][tnum]
         ratei = self.fits_by_tid[ifo]['smoothed_rate_above_thresh'][tnum]
         thresh = self.fits_by_tid[ifo]['thresh']
+
         return alphai, ratei, thresh
 
     def lognoiserate(self, trigs):
@@ -1009,11 +1010,10 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        sngl_rnk = self.single(single_info[1])
         if self.single_increasing:
-            sngl_multiifo = sngl_rnk['snglstat']
+            sngl_multiifo = single_info[1]['snglstat']
         else:
-            sngl_multiifo = -1.0 * sngl_rnk['snglstat']
+            sngl_multiifo = -1.0 * single_info[1]['snglstat']
         return sngl_multiifo
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
@@ -1464,7 +1464,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         numpy.ndarray
             The array of single detector statistics
         """
-        sngls = self.single(single_info[1])
+        sngls = single_info[1]
 
         ln_noise_rate = sngls['snglstat']
         ln_noise_rate -= self.benchmark_lograte
