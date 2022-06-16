@@ -83,9 +83,7 @@ if args.max_hierarchical_removal == 0:
                      "These are conflicting options. Use with --help for more "
                      "information.")
 else :
-    is_bkg_inc = (args.hierarchical_removal_against == 'inclusive')
-    is_bkg_exc = (args.hierarchical_removal_against == 'exclusive')
-    if not(is_bkg_inc or is_bkg_exc):
+    if args.hierarchical_removal_against == 'none':
         parser.error("--max-hierarchical-removal requires a choice of which "
                      "background to remove foreground triggers against, "
                      "inclusive or exclusive. Use with --help for more "
@@ -455,7 +453,7 @@ bg_time_ct = {f_in.attrs['ifos'].replace(' ',''): f_in.attrs['background_time']
 # Counter for number of removals
 h_iterations = 0
 
-if is_bkg_inc:
+if args.hierarchical_removal_against == 'inclusive':
     ifar_key = 'ifar'
 else:
     ifar_key = 'ifar_exc'
@@ -600,7 +598,7 @@ while True:
             sep_bg_data[key].data['decimation_factor'],
             **significance_dict[ifo_combo_key])
         # In principle, bg time should be adjusted, but is expected to be a
-        # negligible corection
+        # negligible correction
         fg_time_ct[key] -= args.cluster_window
         bg_t_y = conv.sec_to_year(bg_time_ct[key])
         fg_t_y = conv.sec_to_year(fg_time_ct[key])
