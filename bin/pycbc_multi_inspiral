@@ -344,6 +344,7 @@ with ctx:
             snrv_dict = dict.fromkeys(args.instruments)
             snr = dict.fromkeys(args.instruments)
             ifo_list = args.instruments[:]
+            nifo = len(ifo_list)
             for ifo in args.instruments:
                 logging.info(
                     "Filtering template %d/%d, ifo %s", t_num + 1, n_bank, ifo)
