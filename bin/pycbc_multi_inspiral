@@ -201,7 +201,7 @@ with ctx:
                     args.ra, args.dec, t_gps)
                 + time_slides[ifo][slide])
                 * sample_rate
-                )) % tlen
+                ))
             for ifo in args.instruments
             }
         for slide in slide_ids
@@ -585,6 +585,10 @@ with ctx:
                     event_mgr.add_template_events_to_network(
                         network_names,
                         [network_out_vals[n] for n in network_names])
+        if args.cluster_method == "window":
+            cluster_window = int(args.cluster_window * sample_rate)
+        elif args.cluster_method == "template":
+            cluster_window = int(template.chirp_length * sample_rate)
         # Cluster template events by slide
         for slide in range(args.num_slides + 1):
             logging.info("Clustering slide %d", slide)
