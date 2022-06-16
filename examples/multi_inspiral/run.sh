@@ -30,7 +30,7 @@ TRIG_START=$((GPS_START + START_PAD))
 TRIG_END=$((GPS_END - END_PAD))
 OUTPUT=GW170817_test_output.hdf
 
-echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral with ${POL} projection"
+echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral on GW170817 data"
 pycbc_multi_inspiral \
     --verbose \
     --projection left+right \
@@ -66,6 +66,8 @@ pycbc_multi_inspiral \
     --psd-segment-length 32 \
     --psd-segment-stride 8 \
     --psd-num-segments 29 \
+    --num-slides 1 \
+    --slide-shift 1 \
     --output ${OUTPUT}
 
 echo -e "\\n\\n>> [`date`] Checking output files"
