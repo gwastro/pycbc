@@ -201,7 +201,7 @@ with ctx:
                     args.ra, args.dec, t_gps)
                 + time_slides[ifo][slide])
                 * sample_rate
-                ))
+                )) % tlen
             for ifo in args.instruments
             }
         for slide in slide_ids
