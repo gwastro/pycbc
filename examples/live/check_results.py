@@ -104,8 +104,8 @@ def check_single_results(args):
     return single_fail
 
 
-def check_coinc_results(args):
-    coinc_fail = False
+def check_found_events(args):
+    found_fail = False
 
     # read injections
     with h5py.File(args.injections, 'r') as injfile:
@@ -115,26 +115,27 @@ def check_coinc_results(args):
         inj_spin2z = injfile['spin2z'][:]
         inj_time = injfile['tc'][:]
 
-    # gather coincident triggers
-    coinc_trig_paths = sorted(glob.glob('output/coinc*.xml.gz'))
-    n_coincs = len(coinc_trig_paths)
-    if n_coincs == 0:
-        log.error('No coincident triggers detected')
-        coinc_fail = True
-    elif n_coincs >= 10:
-        log.error('Too many coincident triggers detected')
-        coinc_fail = True
+    # gather found triggers
+    found_trig_paths = sorted(glob.glob('output/coinc*.xml.gz') +
+                              glob.glob('output/single*.xml.gz'))
+    n_found = len(found_trig_paths)
+    if n_found == 0:
+        log.error('No triggers detected')
+        found_fail = True
+    elif n_found >= 10:
+        log.error('Too many triggers detected')
+        found_fail = True
     else:
-        log.info('%d coincident trigger(s) detected', n_coincs)
+        log.info('%d found trigger(s) detected', n_found)
 
     # create field array to store properties of triggers
     dtype = [('mass1', float), ('mass2', float),
              ('spin1z', float), ('spin2z', float),
              ('tc', float), ('net_snr', float)]
-    trig_props = FieldArray(n_coincs, dtype=dtype)
+    trig_props = FieldArray(n_found, dtype=dtype)
 
-    # store properties of coincident triggers
-    for x, ctrigfp in enumerate(coinc_trig_paths):
+    # store properties of found triggers
+    for x, ctrigfp in enumerate(found_trig_paths):
         log.info('Checking trigger %s', ctrigfp)
         xmldoc = load_xml_doc(
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
@@ -160,7 +161,7 @@ def check_coinc_results(args):
     # check if injections match trigger params
     for i in range(len(inj_mass1)):
         has_match = False
-        for j in range(n_coincs):
+        for j in range(n_found):
             # FIXME should calculate the optimal SNRs of the injections
             # and use those for checking net_snr
             if (close(inj_time[i], trig_props['tc'][j], 1.0)
@@ -173,12 +174,12 @@ def check_coinc_results(args):
                 break
 
         if not has_match:
-            coinc_fail = True
+            found_fail = True
             log.error('Injection %i was missed', i)
 
-    if coinc_fail:
-        log.error('Coincident Trigger Test Failed')
-    return coinc_fail
+    if found_fail:
+        log.error('Found Trigger Test Failed')
+    return found_fail
 
 
 parser = argparse.ArgumentParser()
@@ -193,8 +194,8 @@ args = parser.parse_args()
 log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
 
 single_fail = check_single_results(args)
-coinc_fail = check_coinc_results(args)
-fail = single_fail or coinc_fail
+found_fail = check_found_events(args)
+fail = single_fail or found_fail
 
 if fail:
     log.error('Test Failed')

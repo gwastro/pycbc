@@ -1,3 +1,5 @@
+.. _search_workflow:
+
 ####################################################################################
 ``pycbc_make_coinc_search_workflow``: A workflow to search for gravitational waves
 ####################################################################################
@@ -46,7 +48,7 @@ You tend to put things in here which will be referred to later (but you can leav
   [workflow-ifos]
   l1 =
   h1 =
-  
+
 Set up which detectors you are going to run over. A blank space after an equals sign denotes True.
 
 ::
@@ -59,13 +61,13 @@ Set up which detectors you are going to run over. A blank space after an equals 
   datafind-check-segment-gaps = update_times
   datafind-check-frames-exist = raise_error
   datafind-check-segment-summary = no_test
-  
-This section defines which frames we are going to use and employs different levels of checks to see whether the data exists, there are gaps etc. 
 
-- ``‘datafind-method’`` states how we are going to find the frames. The ‘AT_RUNTIME_SINGLE_FRAMES’ means the executable returns a list of single frame files. You can however provide a cache file, but then the options need to be changed. 
-- ``‘datafind-h1-frame-type’`` refers to the frame type the H1 channel name will be found in for the time specified. Same for L1. 
-- ``‘datafind-check-segment-gaps’`` option checks to see if there are gaps in the segments from the segment database and the option ‘update_times’ will change the analysis times to skip over these gaps. 
-- ``‘datafind-check-frames-exist’`` checks to see if the frames you are looking at actually exists, and if they don’t the ‘raise_error’ option will stop the workflow. 
+This section defines which frames we are going to use and employs different levels of checks to see whether the data exists, there are gaps etc.
+
+- ``‘datafind-method’`` states how we are going to find the frames. The ‘AT_RUNTIME_SINGLE_FRAMES’ means the executable returns a list of single frame files. You can however provide a cache file, but then the options need to be changed.
+- ``‘datafind-h1-frame-type’`` refers to the frame type the H1 channel name will be found in for the time specified. Same for L1.
+- ``‘datafind-check-segment-gaps’`` option checks to see if there are gaps in the segments from the segment database and the option ‘update_times’ will change the analysis times to skip over these gaps.
+- ``‘datafind-check-frames-exist’`` checks to see if the frames you are looking at actually exists, and if they don’t the ‘raise_error’ option will stop the workflow.
 - ``‘datafind-check-segment-summary’`` Checks the segment summary table and makes sure that the frames exist for all times that the segments are known
 
 ::
@@ -78,17 +80,17 @@ This section defines which frames we are going to use and employs different leve
   segments-database-url = https://dqsegdb5.phy.syr.edu
   segments-veto-definer-url = https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/ER6/H1L1V1-ER6_GDS_CALIB_STRAIN.xml
   segments-science-veto = 1
-  segments-veto-groups = 
+  segments-veto-groups =
   segments-final-veto-group = 1
 
-This section does a series of checks to the segment database for the segments you need for your analysis. 
+This section does a series of checks to the segment database for the segments you need for your analysis.
 
-- ``‘segments-method’`` option should not change. 
-- ``‘segments-h1-science-name’`` option specifies the segment name at LHO we consider to flag science time. The same is given for L1. 
-- ``‘segments-data-url’`` specifies the url for the segment database we want to query. 
-- ``‘segments-veto-definer-url’`` is the url for the veto definer file we want to use for the search. 
-- ``‘segments-science-veto’`` species which category of veto you want to eliminate from your search before it is performed to consider the data science. In this instance, 1 denotes that all the times of Cat 1 vetoes. Time vetoed here is not used in any part of the analysis, and is treated as if it were not collected. 
-- ``‘segments-veto-groups’`` is an option you can populate with different veto categories and diagnostic plots will be made after each veto is employed. 
+- ``‘segments-method’`` option should not change.
+- ``‘segments-h1-science-name’`` option specifies the segment name at LHO we consider to flag science time. The same is given for L1.
+- ``‘segments-data-url’`` specifies the url for the segment database we want to query.
+- ``‘segments-veto-definer-url’`` is the url for the veto definer file we want to use for the search.
+- ``‘segments-science-veto’`` species which category of veto you want to eliminate from your search before it is performed to consider the data science. In this instance, 1 denotes that all the times of Cat 1 vetoes. Time vetoed here is not used in any part of the analysis, and is treated as if it were not collected.
+- ``‘segments-veto-groups’`` is an option you can populate with different veto categories and diagnostic plots will be made after each veto is employed.
 - ``‘segments-final-veto-group’`` is an important option as the vetoes defined here will be used to remove triggers from the search before coincidence is performed. An option of 1 will remove all Cat 1 veto times from the analysis before it is performed. If you want to add cat 2 then the option is 12.
 
 ::
@@ -100,8 +102,8 @@ This section does a series of checks to the segment database for the segments yo
 
 This section specifies which template bank to use
 
-- ``’tmpltbank-method’`` option specifies whether you want to use a regenerated bank or to make it on the fly. In O1 we will be us a pregenerated bank. 
-- ``‘tmpltbank-pregnerated-bank’`` specifies the location of the xml with the pregenerated bank. Note that this exact location is only valid for SUGAR, and that in general one must provide their own template bank. 
+- ``’tmpltbank-method’`` option specifies whether you want to use a regenerated bank or to make it on the fly. In O1 we will be us a pregenerated bank.
+- ``‘tmpltbank-pregnerated-bank’`` specifies the location of the xml with the pregenerated bank. Note that this exact location is only valid for SUGAR, and that in general one must provide their own template bank.
 
 ::
 
@@ -126,7 +128,7 @@ This section sets the options for splitting the bank to help with computational 
 This section defines how the matched filter is going to be performed. Whether it is going to be independent for each detector, and also how the analysis is actually going to be separated in to chunks given the data available.
 
 - ``‘matched-filter-method’`` defines where the data is going to be separated and searched over, in this instance the data for each IFO will be considered independently and in the workflow
-- ``‘min-analysis-segments’`` defines the minimum number of overlapping chunks you separate the data in to to analyze. This is a proxy for segment length. In this instance 5 has been stated. Therefore if the data cannot be split in to 5 overlapping chunks the code skips over the data. To understand how much time this is you need to look in the [inspiral] options and consider the segment-length and padding options specified. ‘max-analysis-segments’ is the same but for the maximum number of overlapping chunks. Be aware if you lower/raise either of these numbers you will affect the psd estimation. 
+- ``‘min-analysis-segments’`` defines the minimum number of overlapping chunks you separate the data in to to analyze. This is a proxy for segment length. In this instance 5 has been stated. Therefore if the data cannot be split in to 5 overlapping chunks the code skips over the data. To understand how much time this is you need to look in the [inspiral] options and consider the segment-length and padding options specified. ‘max-analysis-segments’ is the same but for the maximum number of overlapping chunks. Be aware if you lower/raise either of these numbers you will affect the psd estimation.
 - ``‘output-type’`` is the format of the output trigger files from the matched filter search
 
 ::
@@ -142,7 +144,7 @@ This part of the workflow looks for coincidence between templates between detect
   [workflow-injections]
   injections-method=IN_WORKFLOW
 
-This section deals with software injections. Here you are specifying whether to use either pregenerated injections sets or ones made within the workflow itself. In this case, we will use one that is created within the workflow. 
+This section deals with software injections. Here you are specifying whether to use either pregenerated injections sets or ones made within the workflow itself. In this case, we will use one that is created within the workflow.
 
 ::
 
@@ -171,9 +173,9 @@ This section deals with software injections. Here you are specifying whether to 
   plot_segments = ${which:pycbc_page_segments}
   results_page = ${which:pycbc_make_html_page}
 
-This section defines where each of the executables live; it tells the workflow which files to process. It might be worth checking you can find all of these paths before you set the code running. 
+This section defines where each of the executables live; it tells the workflow which files to process. It might be worth checking you can find all of these paths before you set the code running.
 
-The following options are those associated to a given executable. 
+The following options are those associated to a given executable.
 
 ::
 
@@ -203,7 +205,7 @@ This option randomly sorts the bank to be split up before processing
 
   [injections]
   waveform = SpinTaylorT4threePointFivePN
-  
+
 Define the waveforms you want to use for injections
 
 ::
@@ -226,7 +228,7 @@ Define the waveforms you want to use for injections
   time-step = 89.155
   time-interval = 10
   seed = 1234
-  
+
 These are the injections parameters you want to define. Only defining ones which aren’t so obvious
 
 - ``f-lower`` = low frequency cut off
@@ -234,8 +236,8 @@ These are the injections parameters you want to define. Only defining ones which
 - ``max-distance`` = (kpc)
 - ``d-distr`` = the distance distribution of the injections
 - ``l-distr`` = the distribution of injections in the sky
-- ``i-distr`` = inclination of the injection 
-- ``time-step`` = time between injections. This can be whatever time you want, but remember if the injections are too close together you can screw up your psd estimation. ~90s seems ok. 
+- ``i-distr`` = inclination of the injection
+- ``time-step`` = time between injections. This can be whatever time you want, but remember if the injections are too close together you can screw up your psd estimation. ~90s seems ok.
 - ``time-interval`` = time interval to inject the signal. It will not always be exactly at time-step, but at a time of time-step +/- random_number(0,time-interval)
 - ``seed`` = random seed, choose different numbers to get different realizations of the same background distribution
 
@@ -262,7 +264,7 @@ These are the injections parameters you want to define. Only defining ones which
   sample-rate = 4096
   filter-inj-only =
   low-frequency-cutoff = 40
-  
+
 These are the parameters you want to define for the inspiral search
 
 - ``chisq-bins`` = number of chisq bins for the standard Bruce Allen chisq
@@ -272,12 +274,12 @@ These are the parameters you want to define for the inspiral search
 - ``cluster-method`` = method over which to identify the loudest trigger - in this case a window
 - ``cluster-window`` = take a 1 second window around the loudest trigger
 - ``segment-length`` = the length of a segment you want to analyze. Remember previously we mention we want 5 overlapping segments
-- ``segment-start-pad`` = the amount of time we want to pad the start of the data by. In this instance we want to not use the first 64 seconds of data, as it will contain errors from filtering. This takes in to account the length of time we lose due to PSD corruption (16s) and the wrap around effect we have due to the template (48s) 
+- ``segment-start-pad`` = the amount of time we want to pad the start of the data by. In this instance we want to not use the first 64 seconds of data, as it will contain errors from filtering. This takes in to account the length of time we lose due to PSD corruption (16s) and the wrap around effect we have due to the template (48s)
 - ``segment-end-pad`` = the amount of time we want to pad the end of the data by. See above.
 - ``psd-estimation`` = the method by which we want to estimate the psd
 - ``psd-segment-length`` = length of time used in each psd calculation
 - ``psd-segment-stride`` = time spacing between each psd calculation. 16s length with 8s stride implies a 50% overlap
-- ``psd-inverse-length`` = time length used to truncate the inverse FFT (that is, the time domain realization) of the psd 
+- ``psd-inverse-length`` = time length used to truncate the inverse FFT (that is, the time domain realization) of the psd
 - ``strain-high-pass`` = high pass filter applied to strain data before psd estimation
 - ``pad-data`` = 8 second padding added to beginning of data to account for filter corruption for resampling and high-pass before data is broken up into chunks
 - ``processing-scheme`` = indicates which software to use for processing (MKL = math kernel library made by Intel)
@@ -314,7 +316,7 @@ Here we are doing exact match coincidence. So we take the light travel time betw
   loudest-keep = 200
   timeslide-interval=1.1
 
-This section concerns time slides without injections, and its purpose is to keep a small number of timesmlide triggers for background estimation. Time slides are done at all relative offsets that are multiple of the 'timeslide-interval', which is defined here to be 1.1 seconds. We don’t store all the coincident triggers due from time slides. We keep 200 of the loudest triggers from each template time slide, given by the second option, which gives a good estimation of the background at low FAR. The top option specifies for which timeslides we will keep all triggers, to get an overall estimation of background (not just the loudest). In this instance we would keep the triggers from 1000th, 2000th, 3000th timeslide. 
+This section concerns time slides without injections, and its purpose is to keep a small number of timesmlide triggers for background estimation. Time slides are done at all relative offsets that are multiple of the 'timeslide-interval', which is defined here to be 1.1 seconds. We don’t store all the coincident triggers due from time slides. We keep 200 of the loudest triggers from each template time slide, given by the second option, which gives a good estimation of the background at low FAR. The top option specifies for which timeslides we will keep all triggers, to get an overall estimation of background (not just the loudest). In this instance we would keep the triggers from 1000th, 2000th, 3000th timeslide.
 
 ::
 
@@ -323,7 +325,7 @@ This section concerns time slides without injections, and its purpose is to keep
   loudest-keep-value = 8.5
   cluster-window = {statmap|cluster-window}
 
-This section concerns time slides with injections in the data. We assume only one injection will be coincident with a timeslide (done every 1.1 seconds - see first option) trigger and we keep its coincidence if its ranking statistic (newSNR) > 8.5 as specified in the second option. This is to limit storage of unimpactful triggers only. 
+This section concerns time slides with injections in the data. We assume only one injection will be coincident with a timeslide (done every 1.1 seconds - see first option) trigger and we keep its coincidence if its ranking statistic (newSNR) > 8.5 as specified in the second option. This is to limit storage of unimpactful triggers only.
 
 ::
 
@@ -368,43 +370,43 @@ The rest of the config file concerns plotting formats
   sig-bins = 1 3 10 30 100 300 1000 3000 10000 30000 100000
 
   [plot_sensitivity-mchirp]
-  bin-type =  mchirp 
-  bins = 0.89 1.31 1.74 2.17 2.60 
-  min-dist = 40 
-  max-dist = 120 
-  dist-bins = 50 
+  bin-type =  mchirp
+  bins = 0.89 1.31 1.74 2.17 2.60
+  min-dist = 40
+  max-dist = 120
+  dist-bins = 50
 
   [plot_sensitivity-mtotal]
   bin-type =  total_mass
-  bins = 2 2.4 3.2 4 6 
-  min-dist = 40 
-  max-dist = 120 
-  dist-bins = 50 
+  bins = 2 2.4 3.2 4 6
+  min-dist = 40
+  max-dist = 120
+  dist-bins = 50
 
   [plot_sensitivity-spin]
   bin-type =  spin
-  bins = -0.4 -0.2 0.2 0.4 
-  min-dist = 40 
-  max-dist = 120 
-  dist-bins = 50 
+  bins = -0.4 -0.2 0.2 0.4
+  min-dist = 40
+  max-dist = 120
+  dist-bins = 50
 
   [plot_sensitivity-mchirp_binless]
-  bin-type =  mchirp 
-  bins = 0.89 1.31 1.74 2.17 2.60 
-  min-dist = 40 
-  max-dist = 120 
+  bin-type =  mchirp
+  bins = 0.89 1.31 1.74 2.17 2.60
+  min-dist = 40
+  max-dist = 120
 
   [plot_sensitivity-mtotal_binless]
   bin-type =  total_mass
-  bins = 2 2.4 3.2 4 6 
-  min-dist = 40 
-  max-dist = 120 
+  bins = 2 2.4 3.2 4 6
+  min-dist = 40
+  max-dist = 120
 
   [plot_sensitivity-spin_binless]
   bin-type =  spin
-  bins = -0.4 -0.2 0.2 0.4 
-  min-dist = 40 
-  max-dist = 120  
+  bins = -0.4 -0.2 0.2 0.4
+  min-dist = 40
+  max-dist = 120
 
   [plot_foundmissed]
   [plot_foundmissed-mchirp]
@@ -439,7 +441,7 @@ The rest of the config file concerns plotting formats
   [results_page]
   analysis-title="PyCBC Coincident Analysis"
   analysis-subtitle="..."
-  
+
 
 .. _coincworkflowgenerate:
 
@@ -470,7 +472,7 @@ set the output web page location.
 .. note::
 
    To use released executables for production analysis, you should specify
-   the URL to an ``executables.ini`` file from the 
+   the URL to an ``executables.ini`` file from the
    `PyCBC Software repository <https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software>`_.
 
 .. _coincworkflowplan:
@@ -505,7 +507,7 @@ the workflow::
     which should not be used in practice.
 
 You can monitor the status of the workflow with Pegasus Dashboard, or the
-other Pegasus tools described below. 
+other Pegasus tools described below.
 
 If the workflow runs successfully, the output will be place under the
 directory specified by ``results_page:output-path`` when the workflow is
@@ -518,7 +520,7 @@ Monitor and Debug the Workflow (`Detailed Pegasus Documentation <https://pegasus
 To monitor the above workflow, one would run::
 
     pegasus-status /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
-    
+
 To get debugging information in the case of failures.::
 
     pegasus-analyzer /usr1/ahnitz/log/ahnitz/pegasus/weekly_ahope/run0011
@@ -665,7 +667,7 @@ set to ``remote``. This tells Pegasus that the file is neither on the
 ``local`` or the ``osg`` site and so Pegasus must add file transfer jobs to
 fetch the file from some other site.  This ``SITE`` attribute is needed
 beacuse a map between the job execution site and the location of the file
-might not be obvious from the hostname in the ``PHYSICAL_FILE_URL``.  
+might not be obvious from the hostname in the ``PHYSICAL_FILE_URL``.
 
 The following rule should be helpful when chosing the ``SITE`` string:
 
@@ -703,7 +705,7 @@ locations.
 Once a cache file has been constructed, to enable data re-use, you follow the
 standard instructions for planning and submitting the workflow in the section
 :ref:`coincworkflowplan`, but add the ``--cache-file`` argument that points to
-the cache file that you have created. For example:: 
+the cache file that you have created. For example::
 
     pycbc_submit_dax --cache-file /path/to/prior_data.map --accounting-group ligo.dev.o1.cbc.explore.test --dax s6d_chunk3.dax
 
@@ -748,7 +750,7 @@ Extending the GPS end time of a previous workflow
 
 A common mode of data re-use is to extend the GPS end time of a previous
 workflow to generate a new result page that e.g. extends the analysis by a few
-days. This assumes that: 
+days. This assumes that:
 
 * The previous workflow completed successfully.
 
@@ -774,7 +776,7 @@ For example::
 
     egrep 'INSPIRAL.*hdf' /path/to/downloaded/workflow-main.map > inspiral_files.map
 
-will pull out all cache file lines for the outputs of ``pycbc_inspiral`` files and write them to a new cache file called ``inspiral_files.map``.  
+will pull out all cache file lines for the outputs of ``pycbc_inspiral`` files and write them to a new cache file called ``inspiral_files.map``.
 
 5. If the files in the new cache file exist locally on the cluster where you are submitting the workflow, then the cache file is complete. If they do not, you will need to modify the file to change the ``PHYSICAL_FILE_URL`` to a valid ``gsiftp://`` or ``http://`` URL on the remote cluster, and change ``pool="local"`` to ``pool="remote"``. Again, these changes can be made with a text editor or UNIX shell tools. For example, if the file URLs begin with ``/home/dbrown`` and they are on the Syracuse cluster, to run on Atlas you would use the following ``sed`` commands to change the ``SITE`` and the URI in the cache file::
 
@@ -808,7 +810,7 @@ Then create the cache file as follows:
 
 3. This page will show three output cache files that contain the URLs of the data created by the workflow. Locate the file that ends ``main.map`` and download it by clicking on the **Link to file**. This file contains the main intermediate and output data products of the workflow.
 
-4. If only category 2 and higher vetoes have change, remove the output files that match the following strings from the output map file: 
+4. If only category 2 and higher vetoes have change, remove the output files that match the following strings from the output map file:
 
   * ``VETOTIME`` to remove the files containing the old veto segments.
   * ``LIGOLW_COMBINE_SEGMENTS`` to remove the files that combine the veto segments into categories.
@@ -841,7 +843,7 @@ workflow with a new version of the executable. If the workflow failed, no
 results web page will have been generated and the output data may not have
 been copied to the locations in ``main.map``. To re-use data from a previous
 failed workflow, you need to create a cache file containing the completed jobs
-from the previous workflow. 
+from the previous workflow.
 
 To do this, ``cd`` into the ``local-site-scratch/work`` directory of your
 failed workflow. For example, if you used ``--output-dir output`` when
@@ -858,7 +860,7 @@ Once in the ``main_ID0000001`` directory, run the command::
     for pfn in `find . -type f | sed 's+^./++g'` ; do echo $pfn file://`pwd`/$pfn pool=\"local\" ; done | egrep -v '(dax|map)' > /path/to/partial_workflow.map
 
 changing ``/path/to`` to a location where you want to save the cache.
- 
+
 Now you can than use the ``partial_workflow.map`` cache file as the ``--cache-file`` argument to ``pycbc_submit_dax``.
 
 -----------------------------------------------
