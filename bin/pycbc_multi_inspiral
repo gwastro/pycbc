@@ -267,7 +267,7 @@ with ctx:
         'null_snr': float32,
         'nifo': int,
         'my_network_chisq': float32,
-        'reweighted_snr': float32
+        'reweighted_snr': float32,
         'slide_id': int
         }
     network_out_vals = {
@@ -278,7 +278,7 @@ with ctx:
         'null_snr': None,
         'nifo': None,
         'my_network_chisq': None, 
-        'reweighted_snr': None
+        'reweighted_snr': None,
         'slide_id': int
         }
     network_names = sorted(network_out_vals.keys())
