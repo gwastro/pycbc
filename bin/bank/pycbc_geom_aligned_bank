@@ -45,6 +45,7 @@ import pycbc.tmpltbank
 import pycbc.workflow as wf
 import pycbc.workflow.pegasus_workflow as pwf
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.workflow.core import resolve_url_to_file
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -560,8 +561,7 @@ else:
 stack_exe = GeomAligned2DStackExecutable(workflow.cp, 'aligned2dstack',
                                          ifos=workflow.ifos, out_dir=curr_dir)
 num_banks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
-input_h5file = wf.File.from_path(opts.intermediate_data_file)
-
+input_h5file = resolve_url_to_file(opts.intermediate_data_file)
 
 
 all_outs = wf.FileList([])
@@ -584,7 +584,7 @@ else:
 
 combine_exe = AlignedBankCatExecutable(workflow.cp, 'alignedbankcat',
                                         ifos=workflow.ifos, out_dir=curr_dir)
-metadata_file = wf.File.from_path(cmds_file_name)
+metadata_file = resolve_url_to_file(cmds_file_name)
 combine_node = combine_exe.create_node(all_outs, metadata_file,
                                        workflow.analysis_time,
                                        output_file_path=opts.output_file)
