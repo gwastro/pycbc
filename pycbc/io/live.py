@@ -12,6 +12,7 @@ from ligo.lw.array import Array as LIGOLWArray
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.io.ligolw import return_empty_sngl, create_process_table
+from pycbc.results import generate_asd_plot
 from pycbc.results import ifo_color
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
@@ -358,8 +359,8 @@ class SingleCoincForGraceDB(object):
                 snr_series_fname = fname.replace('.xml', '.hdf')
             snr_series_plot_fname = snr_series_fname.replace('.hdf',
                                                              '_snr.png')
-            psd_series_plot_fname = snr_series_fname.replace('.hdf',
-                                                             '_psd.png')
+            asd_series_plot_fname = snr_series_fname.replace('.hdf',
+                                                             '_asd.png')
             pl.figure()
             ref_time = int(self.merger_time)
             for ifo in sorted(self.snr_series):
@@ -380,22 +381,14 @@ class SingleCoincForGraceDB(object):
             pl.savefig(snr_series_plot_fname)
             pl.close()
 
-            pl.figure()
+            generate_asd_plot(self.psds, asd_series_plot_fname)
+
+            # Additionally save the PSDs into the snr_series file
             for ifo in sorted(self.psds):
                 # Undo dynamic range factor
                 curr_psd = self.psds[ifo].astype(numpy.float64)
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
-                # Can't plot log(0) so start from point 1
-                pl.loglog(curr_psd.sample_frequencies[1:],
-                          curr_psd[1:]**0.5, c=ifo_color(ifo), label=ifo)
-            pl.legend()
-            pl.xlim([10, 1300])
-            pl.ylim([3E-24, 1E-20])
-            pl.xlabel('Frequency (Hz)')
-            pl.ylabel('ASD')
-            pl.savefig(psd_series_plot_fname)
-            pl.close()
 
         if self.probabilities is not None:
             prob_fname = fname.replace('.xml.gz', '_probs.json')
@@ -426,9 +419,9 @@ class SingleCoincForGraceDB(object):
                     displayName=['SNR timeseries']
                 )
                 gracedb.writeLog(
-                    gid, 'PSD plot upload',
-                    filename=psd_series_plot_fname,
-                    tag_name=['psd'], displayName=['PSDs']
+                    gid, 'ASD plot upload',
+                    filename=asd_series_plot_fname,
+                    tag_name=['psd'], displayName=['ASDs']
                 )
             except Exception as exc:
                 logging.error('Failed to upload plots for %s', gid)
