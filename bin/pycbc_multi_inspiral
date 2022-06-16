@@ -317,7 +317,6 @@ with ctx:
             # if injections are present.
             analyse_segment = True
             for ifo in args.instruments:
-<<<<<<< HEAD
                 if not inj_filter_rejector[ifo].template_segment_checker(
                         bank, t_num, stilde[ifo]):
                     logging.info(
