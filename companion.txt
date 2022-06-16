@@ -23,6 +23,6 @@ setproctitle
 # Needed for `population_models` module
 sympy>=1.9
 
-# Needed for KDE
+# Needed for KDE calculation
 git+https://github.com/mennthor/awkde.git@fix_setup
 scikit-learn
