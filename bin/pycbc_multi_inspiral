@@ -348,6 +348,8 @@ with ctx:
             # Even if we have none, need to keep an empty dictionary.
             # Only do this is idx doesn't get time shifted out of the time
             # we are looking at.
+            # TODO: Now that time delay is added directly to indices vs. being rolled,
+            #       is it really necessary to have two cases?
             idx_dict = {
                 ifo: idx[ifo][np.logical_and(
                     idx[ifo] + time_delay_idx[ifo] < len(snr_dict[ifo]),
@@ -507,7 +509,7 @@ with ctx:
                         norm_dict[ifo],
                         coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start)
                     ifo_out_vals['cont_chisq'] = autochisq.values(
-                        snr[ifo] / norm_dict[ifo], coinc_idx_det_frame[ifo],
+                        snr_dict[ifo] / norm_dict[ifo], coinc_idx_det_frame[ifo],
                         template, stilde[ifo].psd, norm_dict[ifo],
                         stilde=stilde[ifo], low_frequency_cutoff=flow)
                     ifo_out_vals['chisq'] = chisq[ifo]
