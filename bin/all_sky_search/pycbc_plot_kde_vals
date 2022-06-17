@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--signal-file')
 parser.add_argument('--template-file', required=True)
 parser.add_argument('--param', nargs='+', required=True, help='specify one-param and two-param in case of kde_vs_param and param_vs_param respectively')
+parser.add_argument('--log-axis', nargs='+', hoices=['True', 'False'], required=True)
 parser.add_argument('--plot-type', choices=['kde_vs_param', 'param_vs_param'])
 parser.add_argument('--which-kde', choices=['signal_kde','template_kde', 'ratio_kde'])
 parser.add_argument('--plot-dir', required=True)
@@ -28,8 +29,8 @@ param0 = template_data[args.param[0]][:]
 if len(args.param)>1:
     param1 = template_data[args.param[1]][:]
 
-if args.param[0] == 'mchirp':
-    param0 = numpy.log(param0)
+assert len(args.param) == len(args.log_axis)
+
 if args.plot_type == 'kde_vs_param':
     fig, ax = plt.subplots(1,figsize=(13,7), constrained_layout=True)
     if args.which_kde == 'signal_kde':
@@ -40,11 +41,15 @@ if args.plot_type == 'kde_vs_param':
         im = ax.scatter(kde_signal/kde_template, param0, marker=".", c="r", s=3)
     else:
         raise RuntimeError
+    ax.set_xticklabels(args.which_kde, fontsize=13)
+    ax.set_yticklabels(args.param[0], fontsize=13)
     ax.set_xlabel(args.which_kde, fontsize=15)
-    ax.semilogx()
-    if args.param[0] == 'mchirp':
-        ax.semilogy()
     ax.set_ylabel(args.param[0], fontsize=15)
+    ax.set_xscale('log')
+    if args.log_axis[0] == 'True':
+        ax.set_yscale('log')
+    else:
+        ax.set_yscale('linear')
     plot_loc = args.plot_dir+args.which_kde+'_vs_'+args.param[0]+'.png'
     plt.savefig(plot_loc)
     plt.show()
@@ -60,10 +65,18 @@ elif args.plot_type == 'param_vs_param':
     else:
         raise RuntimeError
     cbar = fig.colorbar(im, ax=ax)
+    ax.set_xticklabels(args.param[0], fontsize=13)
+    ax.set_yticklabels(args.param[1], fontsize=13)
     ax.set_xlabel(args.param[0], fontsize=15)
-    if args.param[0] == 'mchirp':
-        ax.semilogx()
     ax.set_ylabel(args.param[1], fontsize=15)
+    if args.log_axis[0] == 'True':
+        ax.set_xscale('log')
+    else:
+        ax.set_xscale('linear')
+    if args.log_axis[1] == 'True':
+        ax.set_yscale('log')
+    else:
+        ax.set_yscale('linear')
     cbar.ax.set_ylabel(args.which_kde, rotation=270, fontsize=15)
     plot_loc = args.plot_dir+args.param[0]+'_vs_'+args.param[1]+'_at_'+args.which_kde+'.png'
     plt.savefig(plot_loc)
