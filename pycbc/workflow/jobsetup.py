@@ -701,7 +701,7 @@ class PyCBCMultiInspiralExecutable(Executable):
                              "%s. Please check the ini file." % self.name)
 
         # Feed in bank_veto_bank.xml, if given
-        if self.cp.has_option('workflow-inspiral', 'bank-veto-bank-file')):
+        if self.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
             node.add_input_opt('--bank-veto-bank-file', bankVetoBank)
         # Set time options
         node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
