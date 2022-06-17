@@ -214,6 +214,7 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     for ifo in ifos:
         gated_frames = _workflow.FileList([gated_frame for gated_frame in \
                 gated_files if gated_frame.ifo == ifo])
+        # FIXME: Remove .lcf cache here
         gated_cache = _workflow.File(ifo, "gated",
                 segment(int(wflow.cp.get("workflow", "start-time")),
                         int(wflow.cp.get("workflow", "end-time"))),
@@ -247,13 +248,10 @@ else:
     IPN = False
 
 # Get bank_veto_bank.xml if running bank veto
-if wflow.cp.has_option('inspiral', 'do-bank-veto') or wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
-    if os.getenv("LAL_SRC") is None:
-        bank_veto_file_path = wflow.cp.get('workflow-inspiral', 'bank-veto-bank-file')
-        bank_veto_file = _workflow.FileList([_workflow.resolve_url_to_file(bank_veto_file_path)])
-    else:
-        bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
-                                                 bank_veto=True)
+# TODO: Finalize config file location of bank veto bank
+if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
+    bank_veto_file_path = wflow.cp.get('workflow-inspiral', 'bank-veto-bank-file')
+    bank_veto_file = _workflow.FileList([_workflow.resolve_url_to_file(bank_veto_file_path)])
     datafind_veto_files.extend(bank_veto_file)
 
 if IPN:
@@ -263,7 +261,7 @@ if IPN:
     datafind_veto_files.extend(_workflow.FileList([search_pts_file]))
 
 # Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
-# TEMPORARY FIX: how will this work in O4?
+# TODO: how will this work in O4?
 if wflow.cp.has_option("inspiral", "do-exttrig"):
     ext_file = _workflow.make_exttrig_file(wflow.cp, ifos, sciSegs[ifo][0],
                                            baseDir)
@@ -383,6 +381,7 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
         datafind_veto_files, splitbank_files, inspDir,
         tags=[mf_tag + "_no_injections"])
 all_files.extend(inspiral_files)
+# FIXME: Remove .lcf caches here
 inspiral_cache = _workflow.File(ifos, "inspiral", sciSegs[ifo][0],
                                 extension="lcf", directory=inspDir)
 inspiral_cache.add_pfn(inspiral_cache.cache_entry.path, site="local")
@@ -391,6 +390,8 @@ inspiral_cache_entries = inspiral_files.convert_to_lal_cache()
 inspiral_cache_entries.tofile(open(inspiral_cache.storage_path, "w"))
 
 # LONG TIME SLIDES
+# TODO: Eventually remove this once new time slides are finished
+# Long slides will likely not be done in the future
 long_slides = True if wflow.cp.has_option("workflow", "do-long-slides") else False
 if long_slides:
     tsDir = os.path.join(currDir, "timeslides")
@@ -413,10 +414,12 @@ else:
     inspiral_ts_files=None
 
 # POST-PROCESSING
+# TODO: Add trigger and injection combiners and clustering somewhere
 ppDir = os.path.join(currDir, "post_processing")
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
 
+# TODO: Remove all coh_ptf post-processing
 if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
                         "COH_PTF_ONLINE"]:
     from pylal import pygrb_cohptf_pp

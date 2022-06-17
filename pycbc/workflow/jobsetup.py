@@ -700,14 +700,8 @@ class PyCBCMultiInspiralExecutable(Executable):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
 
-        # FIXME: Should be done using file_input options in the config file
-        # Feed in bank_veto_bank.xml
-        if (self.cp.has_option('inspiral', 'do-bank-veto') or
-                self.cp.has_option('workflow-inspiral', 'bank-veto-bank-file')):
-            if not bankVetoBank:
-                raise ValueError("%s must be given a bank veto file if the "
-                                 "argument 'do-bank-veto' is given"
-                                 % self.name)
+        # Feed in bank_veto_bank.xml, if given
+        if self.cp.has_option('workflow-inspiral', 'bank-veto-bank-file')):
             node.add_input_opt('--bank-veto-bank-file', bankVetoBank)
         # Set time options
         node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
