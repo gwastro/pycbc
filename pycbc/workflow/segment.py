@@ -308,8 +308,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     # Work in progess below
     scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
             for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
-            and abs(sciencesegs[ifo]) >= minduration})
-    
+            and abs(sciencesegs[ifo]) >= minduration})    
     # Find highest number of IFOs that give an acceptable coherent segment
     num_ifos = len(scisegs)
     while num_ifos >= min_ifos:

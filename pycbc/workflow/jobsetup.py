@@ -702,13 +702,13 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         # FIXME: Should be done using file_input options in the config file
         # Feed in bank_veto_bank.xml
-        if self.cp.has_option('inspiral', 'do-bank-veto') or self.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
+        if (self.cp.has_option('inspiral', 'do-bank-veto') or
+                self.cp.has_option('workflow-inspiral', 'bank-veto-bank-file')):
             if not bankVetoBank:
                 raise ValueError("%s must be given a bank veto file if the "
                                  "argument 'do-bank-veto' is given"
                                  % self.name)
             node.add_input_opt('--bank-veto-bank-file', bankVetoBank)
-        
         # Set time options
         node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
         node.add_opt('--gps-end-time', data_seg[1] - int(pad_data))
