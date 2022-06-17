@@ -716,11 +716,11 @@ class PyCBCMultiInspiralExecutable(Executable):
         node.add_input_opt('--bank-file', parent, )
 
         if dfParents is not None:
-            frame_string = '--frame-files'
+            frame_arg = '--frame-files'
             for frame_file in dfParents:
-                frame_string += ' ' + ':'.join([frame_file.ifo, frame_file.name])
+                frame_arg += ' ' + ':'.join([frame_file.ifo, frame_file.name])
                 node.add_input(frame_file)
-            node.add_arg(frame_string)    
+            node.add_arg(frame_arg) 
 
         if ipn_file is not None:
             node.add_input_opt('--sky-positions-file', ipn_file)

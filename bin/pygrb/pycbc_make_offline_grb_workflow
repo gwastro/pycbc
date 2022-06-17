@@ -214,7 +214,7 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     for ifo in ifos:
         gated_frames = _workflow.FileList([gated_frame for gated_frame in \
                 gated_files if gated_frame.ifo == ifo])
-        # FIXME: Remove .lcf cache here
+        # TODO: Remove .lcf cache here
         gated_cache = _workflow.File(ifo, "gated",
                 segment(int(wflow.cp.get("workflow", "start-time")),
                         int(wflow.cp.get("workflow", "end-time"))),
@@ -381,7 +381,7 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
         datafind_veto_files, splitbank_files, inspDir,
         tags=[mf_tag + "_no_injections"])
 all_files.extend(inspiral_files)
-# FIXME: Remove .lcf caches here
+# TODO: Remove .lcf caches here
 inspiral_cache = _workflow.File(ifos, "inspiral", sciSegs[ifo][0],
                                 extension="lcf", directory=inspDir)
 inspiral_cache.add_pfn(inspiral_cache.cache_entry.path, site="local")
