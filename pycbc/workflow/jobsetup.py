@@ -720,7 +720,7 @@ class PyCBCMultiInspiralExecutable(Executable):
             for frame_file in dfParents:
                 frame_arg += ' ' + ':'.join([frame_file.ifo, frame_file.name])
                 node.add_input(frame_file)
-            node.add_arg(frame_arg) 
+            node.add_arg(frame_arg)
 
         if ipn_file is not None:
             node.add_input_opt('--sky-positions-file', ipn_file)
