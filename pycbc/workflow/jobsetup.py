@@ -715,15 +715,12 @@ class PyCBCMultiInspiralExecutable(Executable):
                                  tags=tags, store_file=self.retain_files)
         node.add_input_opt('--bank-file', parent, )
 
-        # TODO: isn't there a cleaner way of doing this?
-        # FIXME: YES! Don't use frame-cache!!!
         if dfParents is not None:
-            node.add_arg('--frame-cache %s' % \
-                         " ".join([":".join([frameCache.ifo, frameCache.name])\
-                                   for frameCache in dfParents]))
-            for frameCache in dfParents:
-                node.add_input(frameCache)
-            #node.add_input_list_opt('--frame-cache', dfParents)
+            frame_string = '--frame-files'
+            for frame_file in dfParents:
+                frame_string += ' ' + ':'.join([frame_file.ifo, frame_file.name])
+                node.add_input(frame_file)
+            node.add_arg(frame_string)    
 
         if ipn_file is not None:
             node.add_input_opt('--sky-positions-file', ipn_file)
