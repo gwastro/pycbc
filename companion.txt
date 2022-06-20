@@ -24,6 +24,6 @@ setproctitle
 # Needed for `population_models` module
 sympy>=1.9
 
-# Needed for KDE
-git+https://github.com/mennthor/awkde.git@fix_setup
+# Needed for KDE trigger statistics
+git+https://github.com/mennthor/awkde.git@master
 scikit-learn
