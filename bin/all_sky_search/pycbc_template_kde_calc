@@ -55,7 +55,6 @@ def optimizedparam(sampleval, nfold=2):
 if args.make_signal_kde and args.make_template_kde:
     raise Exception("Choose only one option out of --make-signal-kde and --make-template-kde")
 
-
 #calling template data and constructing template_kde_hdf file over template params
 template_file = h5py.File(args.template_file, 'r')
 mass1_n = template_file['mass1'][:]
