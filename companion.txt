@@ -25,5 +25,5 @@ setproctitle
 sympy>=1.9
 
 # Needed for KDE
-git+https://github.com/JAMSADIQ/awkde.git@master
+git+https://github.com/mennthor/awkde.git@master
 scikit-learn
