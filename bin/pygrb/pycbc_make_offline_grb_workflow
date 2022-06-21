@@ -381,7 +381,7 @@ inspiral_files = _workflow.setup_matchedfltr_workflow(wflow, sciSegs,
         datafind_veto_files, splitbank_files, inspDir,
         tags=[mf_tag + "_no_injections"])
 all_files.extend(inspiral_files)
-# TODO: Remove .lcf caches here
+# TODO: Remove .lcf caches here?
 inspiral_cache = _workflow.File(ifos, "inspiral", sciSegs[ifo][0],
                                 extension="lcf", directory=inspDir)
 inspiral_cache.add_pfn(inspiral_cache.cache_entry.path, site="local")
@@ -418,6 +418,15 @@ else:
 ppDir = os.path.join(currDir, "post_processing")
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
+# TODO: Finish implementing trig/inj combiners/clusterers somewhere
+# Starting with trig_combiner right here
+if wflow.cp.has_section("trig_combiner"):
+    combiner_class = _workflow.select_generic_executable(wflow, "trig_combiner")
+    combiner_exe = combiner_class(wflow.cp, "trig_combiner")
+    combiner_node = combiner_exe.create_node(wflow.ifos, triggername,
+                    wflow.cp.get('workflow', 'start-time'), segDir,
+                    inspiral_files, sciSegs[ifo][0], out_dir=ppDir)
+    wflow.add_node(combiner_node) 
 
 # TODO: Remove all coh_ptf post-processing
 if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
