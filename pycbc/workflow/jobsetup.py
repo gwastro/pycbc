@@ -1261,7 +1261,8 @@ class PycbcGrbTrigCombinerExecutable(Executable):
     def __init__(self, cp, name):
         super().__init__(cp=cp, name=name)
 
-    def create_node(self, ifo_tag, trigger_name, trig_start, seg_dir, trigger_files, segment, out_dir):
+    def create_node(self, ifo_tag, trigger_name, trig_start, seg_dir,
+                    trigger_files, segment, out_dir):
         node = Node(self)
         node.add_opt("--ifo-tag", ifo_tag)
         node.add_opt("--grb-name", trigger_name)
@@ -1269,8 +1270,10 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         node.add_opt("--segment-dir", seg_dir)
         node.add_input_list_opt("--input-files", trigger_files)
         node.add_opt("--output-dir", out_dir)
-        out_file_url = os.path.join(out_dir, ifo_tag+'-PYGRB_ALL_TIMES-'+str(trig_start)+'-'+str(segment[1]-segment[0])+'.h5')
+        out_file_url = os.path.join(out_dir, ifo_tag+'-PYGRB_ALL_TIMES-'
+                                    +str(trig_start)+'-'
+                                    +str(segment[1]-segment[0])+'.h5')
         out_file = File(ifo_tag, 'trig_combiner', segment, file_url=out_file_url)
-        node.add_output(out_file) 
+        node.add_output(out_file)
 
         return node
