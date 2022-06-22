@@ -1262,18 +1262,25 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         super().__init__(cp=cp, name=name)
 
     def create_node(self, ifo_tag, trigger_name, trig_start, seg_dir,
-                    trigger_files, segment, out_dir):
+                    trigger_files, segment, out_dir, user_tag="PYGRB",
+                    num_trials=6, tags=None):
         node = Node(self)
+        node.add_opt('--verbose')
         node.add_opt("--ifo-tag", ifo_tag)
         node.add_opt("--grb-name", trigger_name)
         node.add_opt("--trig-start-time", trig_start)
         node.add_opt("--segment-dir", seg_dir)
         node.add_input_list_opt("--input-files", trigger_files)
         node.add_opt("--output-dir", out_dir)
-        out_file_url = os.path.join(out_dir, ifo_tag+'-PYGRB_ALL_TIMES-'
-                                    +str(trig_start)+'-'
-                                    +str(segment[1]-segment[0])+'.h5')
-        out_file = File(ifo_tag, 'trig_combiner', segment, file_url=out_file_url)
-        node.add_output(out_file)
+        node.add_opt("--user-tag", user_tag)
+        node.add_opt("--num-trials", num_trials)
+        # Add output files
+        user_tag += "_GRB{}".format(trigger_name)
+        if tags:
+            user_tag += "_{}".format(tags)
+        out_file_all_path = "{}-{}_ALL_TIMES-{}-{}.h5".format(
+            ifo_tag, user_tag, segment[0], segment[1]-segment[0])
+        out_file_all = File(ifo_tag, 'trig_combiner', segment,
+                            file_url=out_file_all_path)
 
         return node

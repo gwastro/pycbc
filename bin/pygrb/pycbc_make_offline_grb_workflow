@@ -416,6 +416,7 @@ else:
 # POST-PROCESSING
 # TODO: Add trigger and injection combiners and clustering somewhere
 ppDir = os.path.join(currDir, "post_processing")
+os.makedirs(ppDir)
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
 # TODO: Finish implementing trig/inj combiners/clusterers somewhere

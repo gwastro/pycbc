@@ -198,6 +198,8 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
                                   disable=not verbose, total=nfiles,
                                   unit="files", **TQDM_KW):
             with h5py.File(filename, 'r') as h5in:
+                if len(h5in['network']['event_id']) == 0:
+                    continue
                 for dset in dataset_names:
                     # get event_id handling options
                     if dset in network_event_id_names:
