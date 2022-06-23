@@ -901,3 +901,36 @@ def read_multiinspiral_timeslides_from_files(file_list):
             raise RuntimeError(err_msg) from exc
 
     return multis, time_slides
+
+
+# =============================================================================
+# Function to calculate the coincident SNR
+# =============================================================================
+def get_coinc_snr(trigs_or_injs, ifos):
+    """ Calculate coincident SNR using single IFO SNRs"""
+
+    num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
+
+    # Obtain all single SNRs
+    single_snr = {}
+    for ifo in ifos:
+        ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
+                   'V1': 'v', 'T1': 't'}
+        att = ifo_att[ifo]
+        single_snr[ifo] = trigs_or_injs['%s/snr_%s' % (ifo, att)][:]
+
+    # Calculate coincident SNR
+    if len(ifos) > 1:
+        # Initialize some dictionaries
+        single_snr_sq = dict((ifo, None) for ifo in ifos)
+        snr_sum_square = numpy.zeros(num_trigs_or_injs)
+        for ifo in ifos:
+            # Square the individual SNR's
+            single_snr_sq[ifo] = numpy.square(single_snr[ifo])
+            # Add them
+            snr_sum_square = numpy.add(snr_sum_square,
+                                       single_snr_sq[ifo])
+        # Obtain the square root
+        coinc_snr = numpy.sqrt(snr_sum_square)
+
+    return coinc_snr

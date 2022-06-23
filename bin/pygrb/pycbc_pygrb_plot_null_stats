@@ -78,27 +78,7 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
             att = ifo[0].lower()
             data[null_stat_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:]
         elif null_stat_type == 'coincident':
-            # Obtain all single SNRs
-            single_snr = {}
-            for ifo in ifos:
-                ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
-                           'V1': 'v', 'T1': 't'}
-                att = ifo_att[ifo]
-                single_snr[ifo] = trigs_or_injs['%s/snr_%s' % (ifo, att)][:]
-            
-            # Calculate coincident SNR
-            if len(ifos) > 1:
-                # Initialize some dictionaries we will use
-                single_snr_sq = dict((ifo, None) for ifo in ifos)
-                snr_sum_square = numpy.zeros(num_trigs_or_injs)
-                for ifo in ifos:
-                    # First square the individual SNR's
-                    single_snr_sq[ifo] = numpy.square(single_snr[ifo])
-                    # Then add them
-                    snr_sum_square = numpy.add(snr_sum_square,
-                                               single_snr_sq[ifo])
-                # Now obtain the square root
-                data[null_stat_type] = numpy.sqrt(snr_sum_square)
+            data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs, ifos)
 
         if injections:
             logging.info("%d injections found.", num_trigs_or_injs)
