@@ -912,17 +912,16 @@ def get_coinc_snr(trigs_or_injs, ifos):
     num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
 
     # Calculate coincident SNR
-    if len(ifos) > 1:
-        single_snr_sq = dict((ifo, None) for ifo in ifos)
-        snr_sum_square = numpy.zeros(num_trigs_or_injs)
-        for ifo in ifos:
-            att = ifo[0].lower()
-            # Square the individual SNRs
-            single_snr_sq[ifo] = numpy.square(trigs_or_injs['%s/snr_%s' % (ifo, att)][:])
-            # Add them
-            snr_sum_square = numpy.add(snr_sum_square,
-                                       single_snr_sq[ifo])
-        # Obtain the square root
-        coinc_snr = numpy.sqrt(snr_sum_square)
+    single_snr_sq = dict((ifo, None) for ifo in ifos)
+    snr_sum_square = numpy.zeros(num_trigs_or_injs)
+    for ifo in ifos:
+        att = ifo[0].lower()
+        # Square the individual SNRs
+        single_snr_sq[ifo] = numpy.square(trigs_or_injs['%s/snr_%s' % (ifo, att)][:])
+        # Add them
+        snr_sum_square = numpy.add(snr_sum_square,
+                                    single_snr_sq[ifo])
+    # Obtain the square root
+    coinc_snr = numpy.sqrt(snr_sum_square)
 
     return coinc_snr
