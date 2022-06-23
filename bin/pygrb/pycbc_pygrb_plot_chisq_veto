@@ -18,7 +18,8 @@
 
 
 """
-Produces signal consistency plots of the form standard/bank/auto chi-square vs coherent SNR.
+Produces signal consistency plots of the form standard/bank/auto
+chi-square vs single IFO/coherent/reweighted/null/coinc SNR.
 """
 
 # =============================================================================
@@ -188,9 +189,9 @@ parser.add_argument("-y", "--y-variable", required=True,
                     choices=['standard', 'bank', 'auto'],
                     help="Quantity to plot on the vertical axis.")
 parser.add_argument("--snr-type", default=None,
-                    choices=['coherent', 'single', 'coincident'], 
-                    help="SNR value to plot on x-axis. Can be coherent, " +
-                    "coincident, or single IFO SNR")
+                    choices=['coherent', 'single', 'coincident', 'null',
+                    'reweighted'], help="SNR value to plot on x-axis. Can be " +
+                    "coherent, coincident, null, reweighted, or single IFO SNR")
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
