@@ -73,7 +73,7 @@ elif args.plot_type == 'param_vs_param':
         im = ax.scatter(param0, param1, marker=".", c=kde_signal / kde_template,
                         cmap='RdBu_r', s=5, norm=LogNorm())
     else:
-        raise RuntimeError'Unknown value of which_kde', args.which_kde)
+        raise RuntimeError('Unknown value of which_kde', args.which_kde)
     cbar = fig.colorbar(im, ax=ax)
     ax.set_xticklabels(args.param[0], fontsize=13)
     ax.set_yticklabels(args.param[1], fontsize=13)
