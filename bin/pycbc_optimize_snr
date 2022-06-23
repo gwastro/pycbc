@@ -47,7 +47,7 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     """
     Compute network SNR as a function over mchirp, eta and two aligned
     spin components, stored in that order in the sequence v
-    """    
+    """
     data = argv[0]
     coinc_times = argv[1]
     ifos = argv[2]
@@ -112,14 +112,14 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     return network_snrsq ** 0.5, snr_series_dict
 
 
-def compute_network_snr(v, *argv):
+def compute_minus_network_snr(v, *argv):
     if len(argv) == 1:
         argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
     return -nsnr
 
 
-def compute_network_snr_pso(v, *argv, **kwargs):
+def compute_minus_network_snr_pso(v, *argv, **kwargs):
     argv = kwargs['args']
     nsnr_array = numpy.array([-compute_network_snr_core(v_i, *argv)[0] for v_i in v])
     return nsnr_array
@@ -271,7 +271,7 @@ parser.add_argument('--pso-c2', type=float, default=2.0,
                     'The hyperparameter c2: the social parameter.')
 parser.add_argument('--pso-w', type=float, default=0.01,
                     help='Only relevant for --optimizer pso: '
-                    'The hyperparameter w: the intertia parameter.')
+                    'The hyperparameter w: the inertia parameter.')
 
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
