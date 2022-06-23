@@ -130,7 +130,8 @@ def select_generic_executable(workflow, exe_tag):
         'pycbc_create_injections'  : PycbcCreateInjectionsExecutable,
         'pycbc_dark_vs_bright_injections' : PycbcDarkVsBrightInjectionsExecutable,
         'pycbc_condition_strain'         : PycbcConditionStrainExecutable,
-        'pycbc_grb_trig_combiner'  : PycbcGrbTrigCombinerExecutable
+        'pycbc_grb_trig_combiner'  : PycbcGrbTrigCombinerExecutable,
+        'pycbc_grb_trig_cluster'   : PycbcGrbTrigClusterExecutable
     }
     try:
         return exe_to_class_map[exe_name]
@@ -1282,6 +1283,7 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         if tags:
             user_tag += "_{}".format(tags)
         # Add on/off source and off trial outputs
+        output_files = FileList([])
         outfile_types = ['ALL_TIMES', 'OFFSOURCE', 'ONSOURCE']
         for i in range(num_trials):
             outfile_types.append("OFFTRIAL_{}".format(i+1))
@@ -1292,5 +1294,32 @@ class PycbcGrbTrigCombinerExecutable(Executable):
             out_file = File(ifo_tag, 'trig_combiner', segment,
                             file_url=os.path.join(out_dir, out_name))
             node.add_output(out_file)
+            output_files.append(out_file)
 
-        return node
+        return node, output_files
+
+
+class PycbcGrbTrigClusterExecutable(Executable):
+    """ The class responsible for creating jobs
+    for ''pycbc_grb_trig_cluster''.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, name):
+        super().__init__(cp=cp, name=name)
+
+    def create_node(self, in_file, out_dir):
+        node = Node(self)
+        node.add_input_opt("--trig-file", in_file)
+        # Determine output file name
+        from gwdatafind.utils import filename_metadata
+        ifotag, filetag, segment = filename_metadata(in_file.name)
+        start, end = segment
+        out_name = "{}-{}_CLUSTERED-{}-{}.h5".format(ifotag, filetag,
+                                                     start, end-start)
+        out_file = File(ifotag, 'trig_cluster', segment,
+                        file_url=os.path.join(out_dir, out_name))
+        node.add_output(out_file)
+
+        return node, out_file
