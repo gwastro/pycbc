@@ -1258,6 +1258,9 @@ class PycbcGrbTrigCombinerExecutable(Executable):
     """ The class responsible for creating jobs
     for ''pycbc_grb_trig_combiner''.
     """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+
     def __init__(self, cp, name):
         super().__init__(cp=cp, name=name)
 
@@ -1271,16 +1274,41 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         node.add_opt("--trig-start-time", trig_start)
         node.add_opt("--segment-dir", seg_dir)
         node.add_input_list_opt("--input-files", trigger_files)
-        node.add_opt("--output-dir", out_dir)
+        # node.add_opt("--output-dir", out_dir)
         node.add_opt("--user-tag", user_tag)
         node.add_opt("--num-trials", num_trials)
         # Add output files
         user_tag += "_GRB{}".format(trigger_name)
         if tags:
             user_tag += "_{}".format(tags)
-        out_file_all_path = "{}-{}_ALL_TIMES-{}-{}.h5".format(
+        # All trigger file
+        out_file_all_name = "{}-{}_ALL_TIMES-{}-{}.h5".format(
             ifo_tag, user_tag, segment[0], segment[1]-segment[0])
         out_file_all = File(ifo_tag, 'trig_combiner', segment,
-                            file_url=out_file_all_path)
+                            file_url=os.path.join(out_dir,
+                            out_file_all_name))
+        node.add_output(out_file_all)
+        # Offsource trigger file
+        out_file_off_name = "{}-{}_OFFSOURCE-{}-{}.h5".format(
+            ifo_tag, user_tag, segment[0], segment[1]-segment[0])
+        out_file_off = File(ifo_tag, 'trig_combiner', segment,
+                            file_url=os.path.join(out_dir,
+                            out_file_off_name)) 
+        node.add_output(out_file_off)
+        # Onsource trigger file
+        out_file_on_name = "{}-{}_ONSOURCE-{}-{}.h5".format(
+            ifo_tag, user_tag, segment[0], segment[1]-segment[0])
+        out_file_on = File(ifo_tag, 'trig_combiner', segment,
+                            file_url=os.path.join(out_dir,
+                            out_file_on_name))
+        node.add_output(out_file_on)
+        # Off trial files
+        file_name_list = ['{}-{}_OFFTRIAL_{}-{}-{}.h5'.format(
+                    ifo_tag, user_tag, bin_num+1, segment[0], abs(segment))
+                    for bin_num in range(num_trials)]
+        for name in file_name_list:
+            out_file = File(ifo_tag, 'trig_combiner', segment,
+                            file_url=os.path.join(out_dir, name))
+            node.add_output(out_file)
 
         return node

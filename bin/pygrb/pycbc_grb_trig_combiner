@@ -478,9 +478,9 @@ numpy.random.seed(args.seed)
 # Randomly pick num_trials offsource trials
 offtrials = numpy.random.choice(range(sum(offsource_ntrials)), args.num_trials, replace=False)
 offtrials.sort()
-for i in offtrials:
-    _ts = bins["OFFSOURCE"][0][0] if i < offsource_ntrials[0] else bins["OFFSOURCE"][1][0]
-    _ts += i*trialtime
+for i, j in enumerate(offtrials):
+    _ts = bins["OFFSOURCE"][0][0] if j < offsource_ntrials[0] else bins["OFFSOURCE"][1][0]
+    _ts += j*trialtime
     _te = _ts + trialtime
     bins["OFFTRIAL_{}".format(i+1)] = seg = segments.segment(_ts, _te)
     vprint("          off-trial {} : {}".format(i+1, seg))

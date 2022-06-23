@@ -426,7 +426,7 @@ if wflow.cp.has_section("trig_combiner"):
     combiner_exe = combiner_class(wflow.cp, "trig_combiner")
     combiner_node = combiner_exe.create_node(wflow.ifos, triggername,
                     wflow.cp.get('workflow', 'start-time'), segDir,
-                    inspiral_files, sciSegs[ifo][0], out_dir=ppDir)
+                    inspiral_files, sciSegs[ifo][0], ppDir)
     wflow.add_node(combiner_node) 
 
 # TODO: Remove all coh_ptf post-processing
