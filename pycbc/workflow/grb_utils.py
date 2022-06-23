@@ -365,3 +365,22 @@ def get_sky_grid_scale(
         if upscale:
             out *= rayleigh.interval(2 * containment - 1)[-1]
     return out
+
+
+def setup_pygrb_offline_post_proc_workflow(wf, trigger_name, pp_dir,
+                                           seg_dir, segment, insp_files):
+    """
+    Generate post-processing section of PyGRB offline workflow
+    """
+    # Begin setting up trig combiner job(s)
+    # Select executable class and initialize
+    combiner_exe_class = select_generic_executable(wf, "trig_combiner")
+    job_instance = combiner_exe_class(wf.cp, "trig_combiner")
+    # Create node for coherent no injections jobs
+    node = job_instance.create_node(wf.ifos, seg_dir, segment,
+                                    insp_files, pp_dir)
+    wf.add_node(node)
+    
+    # TODO: Add other trig combiners as needed
+    # TODO: Add trig clustering as needed
+    # TODO: Add plots and necessary calculations

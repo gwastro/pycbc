@@ -419,15 +419,12 @@ ppDir = os.path.join(currDir, "post_processing")
 os.makedirs(ppDir)
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
-# TODO: Finish implementing trig/inj combiners/clusterers somewhere
-# Starting with trig_combiner right here
-if wflow.cp.has_section("trig_combiner"):
-    combiner_class = _workflow.select_generic_executable(wflow, "trig_combiner")
-    combiner_exe = combiner_class(wflow.cp, "trig_combiner")
-    combiner_node = combiner_exe.create_node(wflow.ifos, triggername,
-                    wflow.cp.get('workflow', 'start-time'), segDir,
-                    inspiral_files, sciSegs[ifo][0], ppDir)
-    wflow.add_node(combiner_node) 
+
+if post_proc_method == "PYGRB_OFFLINE":
+    _workflow.setup_pygrb_offline_post_proc_workflow(wflow, triggername,
+                                                     ppDir, segDir, 
+                                                     sciSegs[ifo][0],
+                                                     inspiral_files)
 
 # TODO: Remove all coh_ptf post-processing
 if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
