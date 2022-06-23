@@ -911,22 +911,14 @@ def get_coinc_snr(trigs_or_injs, ifos):
 
     num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
 
-    # Obtain all single SNRs
-    single_snr = {}
-    for ifo in ifos:
-        ifo_att = {'G1': 'g', 'H1': 'h1', 'H2': 'h2', 'L1': 'l',
-                   'V1': 'v', 'T1': 't'}
-        att = ifo_att[ifo]
-        single_snr[ifo] = trigs_or_injs['%s/snr_%s' % (ifo, att)][:]
-
     # Calculate coincident SNR
     if len(ifos) > 1:
-        # Initialize some dictionaries
         single_snr_sq = dict((ifo, None) for ifo in ifos)
         snr_sum_square = numpy.zeros(num_trigs_or_injs)
         for ifo in ifos:
-            # Square the individual SNR's
-            single_snr_sq[ifo] = numpy.square(single_snr[ifo])
+            att = ifo[0].lower()
+            # Square the individual SNRs
+            single_snr_sq[ifo] = numpy.square(trigs_or_injs['%s/snr_%s' % (ifo, att)][:])
             # Add them
             snr_sum_square = numpy.add(snr_sum_square,
                                        single_snr_sq[ifo])
