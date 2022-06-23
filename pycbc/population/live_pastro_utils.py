@@ -1,4 +1,4 @@
-from pycbc.population import live_pastro as livepa
+import live_pastro as livepa
 
 
 def insert_live_pastro_option_group(parser):
@@ -20,7 +20,7 @@ def insert_live_pastro_option_group(parser):
 
     # Only one choice so far, allow for more later
     live_pastro_group.add_argument('--p-astro-method', choices=
-          ['template_mchirp_bins'])
+          ['template_param_bins'])
     live_pastro_group.add_argument('--p-astro-spec-data', help='File '
           'containing information to set up p_astro calculation')
 
@@ -54,15 +54,15 @@ def verify_live_pastro_options(args):
 
 
 _read_spec = {
-      'template_mchirp_bins': livepa.read_template_mchirp_bin_data
+      'template_param_bins': livepa.read_template_param_bin_data
 }
 
 _read_bank = {
-      'template_mchirp_bins': livepa.read_template_bank_mchirp
+      'template_param_bins': livepa.read_template_bank_param
 }
 
 _do_calc = {
-      'template_mchirp_bins': livepa.template_mchirp_bin_calc
+      'template_param_bins': livepa.template_param_bin_calc
 }
 
 
@@ -73,8 +73,8 @@ class PAstroData():
         if args.do_p_astro:
             self.do = True
             self.method = args.p_astro_method
-            self.spec_data = _read_spec[self.method](args.p_astro_spec_data)
-            self.bank_data = _read_bank[self.method](self.spec_data, bank)
+            self.spec = _read_spec[self.method](args.p_astro_spec_data)
+            self.bank = _read_bank[self.method](self.spec_data, bank)
         else:
             self.do = False
 
