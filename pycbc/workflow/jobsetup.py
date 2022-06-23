@@ -1281,34 +1281,14 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         user_tag += "_GRB{}".format(trigger_name)
         if tags:
             user_tag += "_{}".format(tags)
-        # All trigger file
-        out_file_all_name = "{}-{}_ALL_TIMES-{}-{}.h5".format(
-            ifo_tag, user_tag, segment[0], segment[1]-segment[0])
-        out_file_all = File(ifo_tag, 'trig_combiner', segment,
-                            file_url=os.path.join(out_dir,
-                            out_file_all_name))
-        node.add_output(out_file_all)
-        # Offsource trigger file
-        out_file_off_name = "{}-{}_OFFSOURCE-{}-{}.h5".format(
-            ifo_tag, user_tag, segment[0], segment[1]-segment[0])
-        out_file_off = File(ifo_tag, 'trig_combiner', segment,
-                            file_url=os.path.join(out_dir,
-                            out_file_off_name)) 
-        node.add_output(out_file_off)
-        # Onsource trigger file
-        out_file_on_name = "{}-{}_ONSOURCE-{}-{}.h5".format(
-            ifo_tag, user_tag, segment[0], segment[1]-segment[0])
-        out_file_on = File(ifo_tag, 'trig_combiner', segment,
-                            file_url=os.path.join(out_dir,
-                            out_file_on_name))
-        node.add_output(out_file_on)
-        # Off trial files
-        file_name_list = ['{}-{}_OFFTRIAL_{}-{}-{}.h5'.format(
-                    ifo_tag, user_tag, bin_num+1, segment[0], abs(segment))
-                    for bin_num in range(num_trials)]
-        for name in file_name_list:
+        outfile_types = ['ALL_TIMES', 'OFFSOURCE', 'ONSOURCE']
+        for i in range(num_trials):
+            outfile_types.append("OFFTRIAL_{}".format(i+1))
+        for out_type in outfile_types:
+            out_name = "{}-{}_{}-{}-{}.h5".format(ifo_tag, user_tag,
+                out_type, segment[0], segment[1]-segment[0])
             out_file = File(ifo_tag, 'trig_combiner', segment,
-                            file_url=os.path.join(out_dir, name))
+                file_url=os.path.join(out_dir, out_name))
             node.add_output(out_file)
 
         return node
