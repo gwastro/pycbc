@@ -70,12 +70,12 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
 
         # Coherent SNR is always used
-        data['coherent'] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
+        data['coherent'] = trigs_or_injs['network/coherent_snr'][:]
 
         if null_stat_type == 'null':
             data[null_stat_type] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
         elif null_stat_type == 'single':
-            att = ifo[0].lower()
+            att = opts.ifo[0].lower()
             data[null_stat_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:]
         elif null_stat_type == 'coincident':
             data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs, ifos)
