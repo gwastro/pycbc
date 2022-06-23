@@ -49,7 +49,7 @@ def load_incl_data(injs, qty):
 
     # Whether the user requests incl, |incl|, cos(incl), or cos(|incl|)
     # the following information is needed
-    local_dict['incl'] = numpy.asarray(injs['injections/inclination'][:])
+    local_dict['incl'] = injs['injections/inclination'][:]
 
     # Requesting |incl| or cos(|incl|)
     if 'abs_' in qty:

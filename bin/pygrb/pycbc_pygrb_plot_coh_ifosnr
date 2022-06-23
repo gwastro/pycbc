@@ -73,14 +73,12 @@ def load_data(input_file, vetoes, ifos, opts):
         num_trigs = len(trigs['network/end_time_gc'][:])
 
         # Load SNR data
-        data['coherent'] = numpy.asarray(
-            trigs['network/coherent_snr'][:])
+        data['coherent'] = trigs['network/coherent_snr'][:]
 
         # Get single ifo SNR data
         for ifo in ifos:
             att = ifo[0].lower()
-            data['single'][ifo] = numpy.asarray(
-                trigs['%s/snr_%s' % (ifo, att)][:])
+            data['single'][ifo] = trigs['%s/snr_%s' % (ifo, att)][:]
 
         # Get sigma for each ifo
         for ifo in ifos:
@@ -93,7 +91,7 @@ def load_data(input_file, vetoes, ifos, opts):
         # Get parameters necessary for antenna responses
         longitude = numpy.degrees(trigs['network/longitude'])
         latitude = numpy.degrees(trigs['network/latitude'])
-        time = numpy.asarray(trigs['network/end_time_gc'][:])
+        time = trigs['network/end_time_gc'][:]
 
         # Get antenna response based parameters
         for ifo in ifos:
