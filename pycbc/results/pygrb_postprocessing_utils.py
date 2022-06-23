@@ -230,8 +230,9 @@ def read_seg_files(seg_files):
 def load_xml_table(file_name, table_name):
     """Load xml table from file."""
 
-    xml_doc = utils.load_filename(file_name, contenthandler=glsctables.use_in(
-                                      LIGOLWContentHandler))
+    xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
+                                  contenthandler=glsctables.use_in(
+                                  LIGOLWContentHandler))
 
     return Table.get_table(xml_doc, table_name)
 
