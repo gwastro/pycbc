@@ -50,9 +50,8 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 # Functions
 # =============================================================================
 # Functions to load trigger data
-def load_data(input_file, vetoes, ifos, opts):
+def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Load data from a trigger/injection file"""
-    logging.info("Loading triggers...")
     
     snr_type = opts.snr_type
     veto_type = opts.y_variable
@@ -64,7 +63,13 @@ def load_data(input_file, vetoes, ifos, opts):
     data['dof'] = None
 
     if input_file:
-        trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+        if injections:
+            logging.info("Loading injections...")
+            # This will eventually become load_injections
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+        else:
+            logging.info("Loading triggers...")
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
         
         num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
         
@@ -236,7 +241,7 @@ if ifo and ifo not in ifos:
 trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts)
+inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:

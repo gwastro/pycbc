@@ -54,9 +54,8 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, vetoes, ifos, opts):
+def load_data(input_file, vetoes, ifos, opts, injections=False):
     """Load data from a trigger/injection file"""
-    logging.info("Loading triggers...")
 
     # Initialize the dictionary
     data = {}
@@ -68,7 +67,13 @@ def load_data(input_file, vetoes, ifos, opts):
     data['sigma_min'] = None
 
     if input_file:
-        trigs = ppu.load_triggers(input_file, vetoes)
+        if injections:
+            logging.info("Loading injections...")
+            # This will eventually become load_injections
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+        else:
+            logging.info("Loading triggers...")
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
 
         num_trigs = len(trigs['network/end_time_gc'][:])
 
@@ -193,7 +198,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts)
+inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")
