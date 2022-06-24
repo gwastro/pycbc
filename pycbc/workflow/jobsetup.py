@@ -31,8 +31,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 import math, os
 import lal
 from ligo import segments
-from pycbc.workflow.core import Executable, File, FileList, Node
 from gwdatafind.utils import filename_metadata
+from pycbc.workflow.core import Executable, File, FileList, Node
 
 def int_gps_time_to_str(t):
     """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and
