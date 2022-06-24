@@ -1314,7 +1314,6 @@ class PycbcGrbTrigClusterExecutable(Executable):
         node = Node(self)
         node.add_input_opt("--trig-file", in_file)
         # Determine output file name
-        from gwdatafind.utils import filename_metadata
         ifotag, filetag, segment = filename_metadata(in_file.name)
         start, end = segment
         out_name = "{}-{}_CLUSTERED-{}-{}.h5".format(ifotag, filetag,
