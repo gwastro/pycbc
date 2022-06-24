@@ -367,7 +367,7 @@ def get_sky_grid_scale(
     return out
 
 
-def setup_pygrb_offline_post_proc_workflow(wf, trigger_name, pp_dir,
+def setup_pygrb_offline_post_proc_workflow(wf, pp_dir,
                                            seg_dir, segment, insp_files):
     """
     Generate post-processing section of PyGRB offline workflow
@@ -390,7 +390,7 @@ def setup_pygrb_offline_post_proc_workflow(wf, trigger_name, pp_dir,
         # Create and add nodes
         node, out_file = job_instance.create_node(trig_file, pp_dir)
         wf.add_node(node)
-        pp_outs.append(trig_files)
+        pp_outs.append(out_file)
     # TODO: Add other trig combiners as needed
     # TODO: Add trig clustering as needed
     # TODO: Add plots and necessary calculations

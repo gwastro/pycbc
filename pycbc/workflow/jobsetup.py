@@ -32,6 +32,7 @@ import math, os
 import lal
 from ligo import segments
 from pycbc.workflow.core import Executable, File, FileList, Node
+from gwdatafind.utils import filename_metadata
 
 def int_gps_time_to_str(t):
     """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and

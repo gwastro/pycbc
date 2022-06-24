@@ -421,8 +421,7 @@ post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
 
 if post_proc_method == "PYGRB_OFFLINE":
-    _workflow.setup_pygrb_offline_post_proc_workflow(wflow, triggername,
-                                                     ppDir, segDir, 
+    _workflow.setup_pygrb_offline_post_proc_workflow(wflow, ppDir, segDir,
                                                      sciSegs[ifo][0],
                                                      inspiral_files)
 
