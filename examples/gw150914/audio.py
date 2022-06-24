@@ -27,6 +27,6 @@ fdata.roll(int(1200 / fdata.delta_f))
 smooth = TimeSeries(fdata.to_timeseries(), delta_t=1.0/1024)
 
 #Take slice around signal
-smooth = smooth[len(smooth)/2 - 1500:len(smooth)/2 + 3000]
+smooth = smooth[len(smooth)//2 - 1500:len(smooth)//2 + 3000]
 smooth.save_to_wav('gw150914_h1_chirp.wav')
 
