@@ -148,7 +148,7 @@ class MatchedFilterControl(object):
             If true, cluster triggers above threshold using a window; otherwise,
             only apply a threshold.
         downsample_factor : {1, int}, optional
-            The factor by which to reduce the sample rate when doing a heirarchical
+            The factor by which to reduce the sample rate when doing a hierarchical
             matched filter
         upsample_threshold : {1, float}, optional
             The fraction of the snr_threshold to trigger on the subsampled filter.
@@ -211,7 +211,7 @@ class MatchedFilterControl(object):
             self.ifft = IFFT(self.corr_mem, self.snr_mem)
 
         elif downsample_factor >= 1:
-            self.matched_filter_and_cluster = self.heirarchical_matched_filter_and_cluster
+            self.matched_filter_and_cluster = self.hierarchical_matched_filter_and_cluster
             self.downsample_factor = downsample_factor
             self.upsample_method = upsample_method
             self.upsample_threshold = upsample_threshold
@@ -261,7 +261,7 @@ class MatchedFilterControl(object):
             A time series containing the complex snr.
         norm : float
             The normalization of the complex snr.
-        corrrelation: FrequencySeries
+        correlation: FrequencySeries
             A frequency series containing the correlation vector.
         idx : Array
             List of indices of the triggers.
@@ -306,7 +306,7 @@ class MatchedFilterControl(object):
             A time series containing the complex snr.
         norm : float
             The normalization of the complex snr.
-        corrrelation: FrequencySeries
+        correlation: FrequencySeries
             A frequency series containing the correlation vector.
         idx : Array
             List of indices of the triggers.
@@ -354,7 +354,7 @@ class MatchedFilterControl(object):
             A time series containing the complex snr.
         norm : float
             The normalization of the complex snr.
-        corrrelation: FrequencySeries
+        correlation: FrequencySeries
             A frequency series containing the correlation vector.
         idx : Array
             List of indices of the triggers.
@@ -372,7 +372,7 @@ class MatchedFilterControl(object):
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
 
-    def heirarchical_matched_filter_and_cluster(self, segnum, template_norm, window):
+    def hierarchical_matched_filter_and_cluster(self, segnum, template_norm, window):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
         triggers, and the snr values at the trigger locations. Returns empty
@@ -395,7 +395,7 @@ class MatchedFilterControl(object):
             A time series containing the complex snr at the reduced sample rate.
         norm : float
             The normalization of the complex snr.
-        corrrelation: FrequencySeries
+        correlation: FrequencySeries
             A frequency series containing the correlation vector.
         idx : Array
             List of indices of the triggers.
@@ -1209,7 +1209,7 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     -------
     snr : TimeSeries
         A time series containing the complex snr.
-    corrrelation: FrequencySeries
+    correlation: FrequencySeries
         A frequency series containing the correlation vector.
     norm : float
         The normalization of the complex snr.
