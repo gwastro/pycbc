@@ -90,22 +90,16 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
 
         data[veto_type] = \
             trigs_or_injs['%s/%s' % (opts.ifo, veto_tags[veto_type])][:]
+
+        # Floor single IFO chi-square at 0.005
+        numpy.putmask(data[veto_type], data[veto_type] == 0, 0.005)
+
         data['dof'] = numpy.unique(
             trigs_or_injs['%s/%s_dof' % (opts.ifo, veto_tags[veto_type])][:])
 
         logging.info("%d triggers found.", num_trigs_or_injs)
 
     return data
-
-# Format single detector chi-square data as numpy array and floor at 0.005
-def format_single_chisqs(trig_ifo_cs, ifos):
-    """Format single IFO chi-square data as numpy array and floor at 0.005"""
-
-    for ifo in ifos:
-        trig_ifo_cs[ifo] = numpy.asarray(trig_ifo_cs[ifo])
-        numpy.putmask(trig_ifo_cs[ifo], trig_ifo_cs[ifo] == 0, 0.005)
-
-    return trig_ifo_cs
 
 
 # Function that produces the contrours to be plotted
