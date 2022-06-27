@@ -273,7 +273,7 @@ def make_gating_node(workflow, datafind_files, outdir=None, tags=None):
         input_files = FileList([datafind_file for datafind_file in \
                                 datafind_files if datafind_file.ifo == ifo])
         condition_strain_jobs = condition_strain_class(cp, "condition_strain",
-                ifo=ifo, out_dir=outdir, tags=tags)
+                ifos=ifo, out_dir=outdir, tags=tags)
         condition_strain_node, condition_strain_out = \
                 condition_strain_jobs.create_node(input_files, tags=tags)
         condition_strain_nodes.append(condition_strain_node)
