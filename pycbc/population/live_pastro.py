@@ -7,7 +7,7 @@ from pycbc.tmpltbank import bank_conversions as bankconv
 
 
 def read_template_param_bin_data(spec_file):
-    """ 
+    """
     Parameters
 
     spec_file: json file with various pieces of data
@@ -80,4 +80,4 @@ def template_param_bin_calc(padata, trigger_data):
 
     # Placeholder p astro result
     p_astro = dsig / (dsig + dnoise)
-
+    return p_astro

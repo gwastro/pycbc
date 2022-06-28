@@ -74,7 +74,7 @@ class PAstroData():
             self.do = True
             self.method = args.p_astro_method
             self.spec = _read_spec[self.method](args.p_astro_spec_data)
-            self.bank = _read_bank[self.method](self.spec_data, bank)
+            self.bank = _read_bank[self.method](self.spec, bank)
         else:
             self.do = False
 
