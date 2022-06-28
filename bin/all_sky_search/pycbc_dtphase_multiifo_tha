@@ -1,0 +1,369 @@
+#!/bin/env python
+
+"""
+Create a file containing the time, phase and amplitude correlations between two
+or more detectors for signals by doing a simple monte-carlo.
+
+Output is the relative amplitude, time, and phase as compared to a reference
+IFO. A separate calculation is done for each IFO as a possible reference.  The
+data is stored as two vectors : one vector gives the discrete integer bin
+corresponding to a particular location in 3*(Nifo-1)-dimensional
+amplitude/time/phase space, the other gives the weight assigned to that bin.
+To get the signal rate this weight should be scaled by the local sensitivity
+value and by the SNR of the event in the reference detector.
+"""
+
+import argparse, h5py, numpy as np, pycbc.detector, logging
+from numpy.random import uniform, normal
+from scipy.stats import norm
+from copy import deepcopy
+
+
+def get_factors_multi_ifo(psi, phi, alpha, theta, beta, num_comps=5):
+    aplus = []
+    across = []
+
+    if num_comps >= 1:
+        aplus += [(1. + np.cos(theta) ** 2.) / 2.]
+        across += [np.cos(theta)]
+
+    if num_comps >= 2:
+        aplus += [2. * np.sin(theta) * np.cos(theta)]
+        across += [2 * np.sin(theta)]
+
+    if num_comps >= 3:
+        aplus += [3. * np.sin(theta) ** 2.]
+        across += [np.zeros(aplus[-1].shape, dtype=aplus[-1].dtype)]
+
+    if num_comps >= 4:
+        aplus += [- aplus[1]]
+        across += [across[1]]
+
+    if num_comps == 5:
+        aplus += [aplus[0]]
+        across += [- across[0]]
+
+    aplus = np.stack(aplus, axis=1)
+    across = np.stack(across, axis=1)
+
+    phik = np.stack([2. * phi + (2. - k) * alpha for k in range(num_comps)], axis=1)
+    psi2 = 2. * psi[:, None]
+
+    a1 = aplus * np.cos(phik) * np.cos(psi2) - across * np.sin(phik) * np.sin(psi2)
+    a2 = aplus * np.cos(phik) * np.sin(psi2) + across * np.sin(phik) * np.cos(psi2)
+    a3 = - aplus * np.sin(phik) * np.cos(psi2) - across * np.cos(phik) * np.sin(psi2)
+    a4 = - aplus * np.sin(phik) * np.sin(psi2) + across * np.cos(phik) * np.cos(psi2)
+
+    b = np.tan(beta / 2.)
+    bk = np.stack([b ** k for k in range(num_comps)], axis=1)
+    bt = bk / ((1 + b[:, None] ** 2.) ** 2.)
+
+    def get_factors(fp, fc):
+        wp = fp * np.cos(2. * psi) - fc * np.sin(2. * psi)
+        wc = fp * np.sin(2. * psi) + fc * np.cos(2. * psi)
+
+        wp = wp[:, None]
+        wc = wc[:, None]
+
+        real = bt * (wp * a1 + wc * a2)
+        imag = bt * (wp * a3 + wc * a4)
+
+        return real + 1.j * imag
+
+    return get_factors
+
+
+def smooth_param(data, index, wrapped=None):
+    nweights = {}
+
+    nbins = int(args.smoothing_sigma * args.bin_density)
+    bins = np.arange(-nbins, nbins + 1)
+    kernel = norm.pdf(bins, scale=args.bin_density)
+
+    for key in data:
+        weight = data[key]
+
+        for b, w in zip(bins, kernel):
+            nkey = list(key)
+            nkey[index] += b
+
+            if wrapped:
+                nkey[index] = int(np.floor(nkey[index] % wrapped))
+
+            tnkey = tuple(nkey)
+            if tnkey not in nweights:
+                nweights[tnkey] = 0
+            nweights[tnkey] += weight * w
+
+    return nweights
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--ifos', nargs='+',
+                    help="The ifos to generate a histogram for")
+parser.add_argument('--sample-size', type=int, required=True,
+                    help="Approximate number of independent samples to draw "
+                         "for the distribution")
+parser.add_argument('--noise-per-sample', type=int, default=10,
+                    help="The number of noise iterations to add to each sample.")
+parser.add_argument('--snr-ratio', type=float, required=True,
+                    help="The SNR ratio permitted between reference ifo and "
+                         "all others. Ex. giving 4 permits a ratio of "
+                         "0.25 -> 4")
+parser.add_argument('--relative-sensitivities', nargs='+', type=float,
+                    help="Numbers proportional to horizon distance or "
+                         "expected SNR at fixed distance, one for each ifo")
+parser.add_argument('--seed', type=int, default=124)
+parser.add_argument('--output-file', required=True)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--bin-density', type=int, default=1,
+                    help="Number of bins per 1 sigma uncertainty in a "
+                         "parameter. Higher values increase the resolution of "
+                         "the histogram at the expense of storage.")
+parser.add_argument('--timing-uncertainty', type=float, default=.001,
+                    help="Timing uncertainty to set bin size and smoothing "
+                         "interval [default=.001s]")
+parser.add_argument('--smoothing-sigma', type=int, default=2,
+                    help="Width of the smoothing kernel in sigmas")
+parser.add_argument('--snr-reference', type=float, default=5,
+                    help="Reference SNR to scale SNR uncertainty")
+parser.add_argument('--snr-uncertainty', type=float, default=1.0,
+                    help="SNR uncertainty to set bin size and smoothing")
+parser.add_argument('--weight-threshold', type=float, default=1e-10,
+                    help="Minimum histogram weight to store as a proportion "
+                         "of the histogram maximum: bins with less weight "
+                         "will not be stored.")
+parser.add_argument('--batch-size', type=int, default=1000000)
+parser.add_argument('--param-bin-dtype', default='int32',
+                    help="Type to use to store param_bin information. "
+                         "Affects the maximum values that can be taken by "
+                         "bin parameters. Default int32.",
+                    choices=['int8', 'int16', 'int32'])
+parser.add_argument('--beta-bins', type=int, default=10,
+                    help="The number of bins to split the beta parameter "
+                         "into, each will produce one histogram.")
+parser.add_argument('--beta-min', type=float, default=0.,
+                    help="The minimum value for the beta parameter in radians.")
+parser.add_argument('--beta-max', type=float, default=np.pi,
+                    help="The maximum value for the beta parameter in radians.")
+parser.add_argument('--num-comps', type=int, default=5,
+                    help="The number of harmonics to include in the histograms.")
+args = parser.parse_args()
+
+if len(args.relative_sensitivities) != len(args.ifos):
+    parser.error('--relative-sensitivities requires one numerical argument '
+                 'for each detector')
+
+# Approximate timing error at lower SNRs
+twidth = args.timing_uncertainty / args.bin_density
+
+# Approximate error for SNR ratios
+sref = args.snr_reference
+serr = args.snr_uncertainty / sref * 2 ** 0.5
+swidth = serr / args.bin_density
+
+# Approximate phase error at lower SNRs
+perr = np.arctan(args.snr_uncertainty * 2 ** 0.5 / sref)
+pwidth = perr / args.bin_density
+
+# Space bins geometrically over b = tan(beta/2)
+bmin = np.tan(args.beta_min / 2.)
+bmax = np.tan(args.beta_max / 2.)
+
+bs = np.geomspace(bmin, bmax, num=args.beta_bins + 1, endpoint=True)
+betas = 2. * np.arctan(bs)
+
+# Number of harmonics to be used
+num_comps = min(args.num_comps, 5)
+
+# SNR ratio limits
+srbmax = int(args.snr_ratio / swidth)
+srbmin = int((1.0 / args.snr_ratio) / swidth)
+
+d = {ifo: pycbc.detector.Detector(ifo) for ifo in args.ifos}
+
+pycbc.init_logging(args.verbose)
+
+np.random.seed(args.seed)
+size = args.batch_size
+chunks = int(args.sample_size / size) + 1
+
+bin_dtype = args.param_bin_dtype
+max_td = twidth * (np.iinfo(bin_dtype).max - np.iinfo(bin_dtype).min + 1)
+
+if max_td < 0.0425:
+    raise RuntimeError('Max allowed time difference is less than the earth '
+                       'travel time. Some observatories may be further apart '
+                       'than this.')
+
+f = h5py.File(args.output_file, 'w')
+
+# Generate a set of histograms for each beta bin
+for bi in range(args.beta_bins):
+    logging.info(f'Generating hists for beta bin {bi}')
+    bmin = np.tan(betas[bi] / 2.)
+    bmax = np.tan(betas[bi+1] / 2.)
+
+    nproposal = 0
+    nsamples = np.zeros(num_comps, dtype=int)
+    wproposal = 0
+    wsamples = np.zeros(num_comps, dtype=float)
+    srweights = {ifo: {} for ifo in args.ifos}
+    dpweights = {ifo: {} for ifo in args.ifos}
+
+    for i in range(chunks):
+        logging.info(f'Chunk {i+1}/{chunks}')
+        logging.info(f'generating {size} samples')
+
+        # Choose random sky location and polarizations from
+        # an isotropic population
+        ra = uniform(0., 2. * np.pi, size=size)
+        dec = np.arccos(uniform(-1., 1., size=size)) - np.pi / 2.
+        psi = uniform(0., 2. * np.pi, size=size)
+    
+        # Choose random coalescence phase, precession phase and thetaJN
+        phi = uniform(0., 2. * np.pi, size=size)
+        alpha = uniform(0., 2. * np.pi, size=size)
+        theta = np.arccos(uniform(-1., 1., size=size))
+    
+        # Choose a random thetaJL
+        b = np.exp(uniform(np.log(bmin), np.log(bmax), size=size))
+        beta = 2. * np.arctan(b)
+
+        # calculate the toa, poa, and amplitude of each sample
+        factors_fn = get_factors_multi_ifo(psi, phi, alpha, theta, beta,
+                                           num_comps=num_comps)
+        data = {}
+
+        for rs, ifo in zip(args.relative_sensitivities, args.ifos):
+            data[ifo] = {}
+
+            fp, fc = d[ifo].antenna_pattern(ra, dec, psi, 0)
+            factors = factors_fn(fp, fc) * rs
+
+            amps = (factors.real ** 2. + factors.imag ** 2.) ** 0.5
+            snrs = np.sum(amps ** 2., axis=1) ** 0.5
+            w = snrs ** 3.
+
+            data[ifo]['f'] = factors
+            data[ifo]['w'] = snrs ** 3.
+            data[ifo]['t'] = d[ifo].time_delay_from_earth_center(ra, dec, 0)
+
+        for ifo0 in args.ifos:
+            logging.info(f'Storing results using {ifo0} as a reference')
+            other_ifos = deepcopy(args.ifos)
+            other_ifos.remove(ifo0)
+
+            amps = (data[ifo0]['f'].real ** 2. + data[ifo0]['f'].imag ** 2.) ** 0.5
+            snrs = np.sum(amps ** 2., axis=1) ** 0.5
+            scale = args.snr_reference / snrs[:, None]
+
+            for ni in range(args.noise_per_sample):
+                logging.info(f'Applying noise iteration {ni + 1}/{args.noise_per_sample}')
+
+                factors0 = data[ifo0]['f'] * scale
+
+                fsize = factors0.shape
+                factors0 += normal(scale=args.snr_uncertainty, size=fsize)
+                factors0 += normal(scale=args.snr_uncertainty, size=fsize) * 1.j
+    
+                amps0 = (factors0.real ** 2. + factors0.imag ** 2.) ** 0.5
+                phases0 = np.arctan2(factors0.imag, factors0.real)
+
+                # Bin the data
+                bind = []
+                keep = np.ones(size, dtype=bool)
+                for ifo1 in other_ifos:
+                    factors1 = data[ifo1]['f'] * scale
+
+                    fsize = factors1.shape
+                    factors1 += normal(scale=args.snr_uncertainty, size=fsize)
+                    factors1 += normal(scale=args.snr_uncertainty, size=fsize) * 1.j
+    
+                    amps1 = (factors1.real ** 2. + factors1.imag ** 2.) ** 0.5
+                    phases1 = np.arctan2(factors1.imag, factors1.real)
+
+                    dt = (data[ifo0]['t'] - data[ifo1]['t'])
+                    dp = (phases0 - phases1) % (2. * np.pi)
+                    sr = (amps1 / amps0)
+                    dtbin = (dt / twidth).astype(int)
+                    dpbin = (dp / pwidth).astype(int)
+                    srbin = (sr / swidth).astype(int)
+                
+                    bind += [dtbin]
+                    for i in range(num_comps):
+                        keep *= (srbin[:, i] <= srbmax) & (srbin[:, i] >= srbmin)
+                        bind += [dpbin[:, i], srbin[:, i]]
+
+                # Calculate and sum the weights for each bin
+                # use first ifo as reference for weights
+                bind = [a[keep] for a in bind]
+
+                w = data[ifo0]['w'][keep]
+                for i, key in enumerate(zip(*bind)):
+                    srkey = key[::2]
+                    if srkey not in srweights[ifo0]:
+                        srweights[ifo0][srkey] = 0
+                    srweights[ifo0][srkey] += w[i]
+
+                    dpkey = tuple([key[0]] + list(key[1::2]))
+                    if dpkey not in dpweights[ifo0]:
+                        dpweights[ifo0][dpkey] = 0
+                    dpweights[ifo0][dpkey] += w[i]
+
+                logging.info(f'sr bins: {len(srweights[ifo0])},\t dp bins: {len(dpweights[ifo0])}')
+    
+    # Smooth over the dt dimension
+    for ifo in args.ifos:
+        logging.info(f'Smoothing time difference for {ifo}')
+        srweights[ifo] = smooth_param(srweights[ifo], 0)
+        dpweights[ifo] = smooth_param(dpweights[ifo], 0)
+        logging.info(f'sr bins: {len(srweights[ifo])},\t dp bins: {len(dpweights[ifo])}')
+
+    for name, weights, width in zip(['dp', 'sr'], [dpweights, srweights], [pwidth, swidth]):
+        for ifo in args.ifos:
+            logging.info(f"finalising multi {name} hist")
+            iweights = weights[ifo]
+
+            logging.info('converting to numpy arrays and normalizing')
+            keys = np.array(list(iweights.keys()))
+            values = np.array(list(iweights.values()))
+            values /= values.max()
+    
+            logging.info('discarding bins below threshold to limit storage')
+            l = values > args.weight_threshold
+            keys = keys[l].astype(bin_dtype)
+            values = values[l].astype(np.float32)
+            logging.info(f'Final length {name}: {len(keys)}')
+
+            logging.info('Presorting by keys for downstream use')
+            ncol = keys.shape[1]
+            pdtype = [('c%s' % i, bin_dtype) for i in range(ncol)]
+            keys_bin = np.zeros(len(values), dtype=pdtype)
+            for i in range(ncol):
+                keys_bin['c%s' % i] = keys[:, i]
+            lsort = keys_bin.argsort()
+            keys_bin = keys_bin[lsort]
+            values = values[lsort]
+
+            # Divide by sum and bin volume to get PDF
+            values /= values.sum() * (width ** (num_comps * (len(args.ifos) - 1.))) * twidth
+        
+            logging.info('Writing results to file')
+            f.create_dataset(f'{bi}/{ifo}/{name}/param_bin', data=keys_bin, compression='gzip',
+                             compression_opts=7)
+            f.create_dataset(f'{bi}/{ifo}/{name}/weights', data=values, compression='gzip',
+                             compression_opts=7)
+
+f.attrs['sensitivity_ratios'] = args.relative_sensitivities
+f.attrs['srbmin'] = srbmin
+f.attrs['srbmax'] = srbmax
+f.attrs['twidth'] = twidth
+f.attrs['pwidth'] = pwidth
+f.attrs['swidth'] = swidth
+f.attrs['beta_bins'] = betas
+f.attrs['num_comps'] = num_comps
+f.attrs['ifos'] = args.ifos
+f.attrs['stat'] = 'phasetd_newsnr_%s' % ''.join(args.ifos)
+
+logging.info('Done')
