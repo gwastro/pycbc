@@ -133,7 +133,7 @@ def optimize_di(bounds, cli_args, extra_args):
         bounds['spin2z']
     ]
     results = differential_evolution(
-        compute_network_snr,
+        compute_minus_network_snr,
         bounds,
         maxiter=cli_args.di_maxiter,
         workers=(cli_args.cores or -1),
@@ -154,7 +154,7 @@ def optimize_shgo(bounds, cli_args, extra_args):
         bounds['spin2z']
     ]
     results = shgo(
-        compute_network_snr,
+        compute_minus_network_snr,
         bounds=bounds,
         args=extra_args,
         iters=args.shgo_iters,
@@ -189,7 +189,7 @@ def optimize_pso(bounds, cli_args, extra_args):
         bounds=(min_bounds, max_bounds)
     )
     _, results = optimizer.optimize(
-        compute_network_snr_pso,
+        compute_minus_network_snr_pso,
         iters=cli_args.pso_iters,
         n_processes=cli_args.cores,
         args=extra_args
