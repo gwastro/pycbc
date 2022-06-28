@@ -2,6 +2,7 @@
 """
 import h5py
 import numpy as np
+import logging
 from pycbc.events import ranking, trigger_fits as fits
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
@@ -81,6 +82,8 @@ class LiveSingle(object):
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
            duration_threshold=args.single_duration_threshold[ifo],
+           fit_file=args.single_fit_file,
+           sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo]
            )
 
     def check(self, trigs, data_reader):
@@ -136,8 +139,7 @@ class LiveSingle(object):
         if self.fixed_ifar:
             return self.fixed_ifar[self.ifo]
 
-        fit_info = {}
-
+        logging.info(self.fit_file)
         with h5py.File(self.fit_file, 'r') as fit_file:
             bin_edges = fit_file['bins_edges'][:]
             live_time = fit_file[self.ifo].attrs['live_time']
@@ -153,7 +155,7 @@ class LiveSingle(object):
         rate = rates[dur_bin]
         coeff = coeffs[dur_bin]
         rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
-                                          coeff, fit_info['thresh'])[0]
+                                          coeff, thresh)[0]
         # apply a trials factor of the number of duration bins
         rate_louder *= len(rates)
         return conv.sec_to_year(1. / rate_louder)
