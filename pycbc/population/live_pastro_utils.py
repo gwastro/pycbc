@@ -1,4 +1,4 @@
-import live_pastro as livepa
+from . import live_pastro as livepa
 
 
 def insert_live_pastro_option_group(parser):
