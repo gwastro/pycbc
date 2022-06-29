@@ -139,8 +139,6 @@ class LiveSingle(object):
         if self.fixed_ifar:
             return self.fixed_ifar[self.ifo]
 
-        fit_info = {}
-
         with h5py.File(self.fit_file, 'r') as fit_file:
             bin_edges = fit_file['bins_edges'][:]
             live_time = fit_file[self.ifo].attrs['live_time']
