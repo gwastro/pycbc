@@ -81,7 +81,7 @@ class LiveEventManager(object):
         self.run_snr_optimization = run_snr_optimization
 
         # Keep track of which events have been uploaded
-        self.last_few_coincs_uploaded = numpy.zeros(10, dtype=float)
+        self.last_few_coincs_uploaded = [0.0] * 10
 
         if self.run_snr_optimization and self.rank == 0:
             # preestimate the number of CPU cores that we can afford giving to
@@ -276,7 +276,7 @@ class LiveEventManager(object):
                 event.save(fname)
 
             if self.run_snr_optimization and self.ifar_upload_threshold < ifar:
-                self.setup_snr_optimization(coinc_ifos, coinc_results, bank, fname, data_readers)
+                self.setup_snr_optimization(coinc_ifos, coinc_results, bank, fname, data_readers, upload=True)
 
 
     def check_singles(self, results, bank, data_reader, psds,
@@ -334,18 +334,50 @@ class LiveEventManager(object):
                              testing=self.gracedb_testing,
                              extra_strings=[comment],
                              search=self.gracedb_search)
+                gdb_upload_opt = True
             else:
                 event.save(fname)
+                gdb_upload_opt = False
+
+            print(type(bank))
+            print(type(data_reader[ifo]))
+            exit(1)
 
             if self.run_snr_optimization \
-                    and self.ifar_upload_threshold < ifar \
-                    and not any(nearby_coincs):
-                self.setup_snr_optimization([ifo], single, bank, fname, data_reader)
+                    and self.ifar_upload_threshold < ifar:
+                self.setup_snr_optimization([ifo], single, bank, fname,
+                                            data_reader, upload=gdb_upload_opt)
 
 
-    def setup_snr_optimization(self, ifos, coinc_results, bank, fname, data_readers):
+    def setup_snr_optimization(self, ifos, results, bank, fname,
+                               data_readers, upload=False):
+        """
+        Set up and run pycbc_optimize_snr for a found result
+
+        Parameters
+        ----------
+        ifos: list
+            The ifos involved in the event to be used for the optimization
+
+        results: dictionary
+            Dictionary with keys describing the parameters of the event
+
+        bank: LiveFilterBank
+            Template bank as used in the search
+
+        fname: string
+            The name of the xml file containing event parameters. Must end
+            in 'xml.gz', this will be the basis of the output file names.
+
+        data_readers: dictionary of StrainBuffer
+            IFO-keyed dictionary containing the StrainBuffer for each detector
+
+        upload: Boolean, default False
+            Flag whether to supply the --enable-gracedb-upload option or not
+            to pycbc_optimize_snr
+        """
         template_id = \
-            coinc_results['foreground/{}/template_id'.format(ifos[0])]
+            results['foreground/{}/template_id'.format(ifos[0])]
         p = props(bank.table[template_id])
         apr = p.pop('approximant')
         min_buffer = bank.minimum_buffer + 0.5
@@ -380,7 +412,7 @@ class LiveEventManager(object):
         with h5py.File(curr_fname, 'w') as hdfp:
             for ifo in ifos:
                 curr_time = \
-                    coinc_results['foreground/{}/end_time'.format(ifo)]
+                    results['foreground/{}/end_time'.format(ifo)]
                 hdfp['coinc_times/{}'.format(ifo)] = curr_time
             f_end = bank.end_frequency(template_id)
             if f_end is None or f_end >= (flen * delta_f):
@@ -396,7 +428,7 @@ class LiveEventManager(object):
             hdfp['spin2z'] = bank.table[template_id].spin2z
             hdfp['template_duration'] = \
                 bank.table[template_id].template_duration
-            hdfp['ifar'] = coinc_results['foreground/ifar']
+            hdfp['ifar'] = results['foreground/ifar']
             if self.gid is not None:
                 hdfp['gid'] = self.gid
 
@@ -416,7 +448,7 @@ class LiveEventManager(object):
             cmd += '--production '
         cmd += '--verbose '
         cmd += '--output-path {} '.format(self.path)
-        if self.enable_gracedb_upload:
+        if self.enable_gracedb_upload and upload:
             cmd += '--enable-gracedb-upload '
 
         cmd += '--cores {} '.format(self.fu_cores)
