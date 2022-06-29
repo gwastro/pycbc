@@ -156,7 +156,7 @@ class LiveSingle(object):
         rate = rates[dur_bin]
         coeff = coeffs[dur_bin]
         rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
-                                          coeff, fit_info['thresh'])[0]
+                                          coeff, 'thresh')[0]
         # apply a trials factor of the number of duration bins
         rate_louder *= len(rates)
         return conv.sec_to_year(1. / rate_louder)
