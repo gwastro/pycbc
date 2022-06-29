@@ -141,22 +141,22 @@ class LiveSingle(object):
 
         fit_info = {}
 
-￼       with h5py.File(self.fit_file, 'r') as fit_file:
-￼           bin_edges = fit_file['bins_edges'][:]
-￼           live_time = fit_file[self.ifo].attrs['live_time']
-￼           thresh = fit_file.attrs['fit_threshold']
-￼
-￼           dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
-￼           rates = dist_grp['counts'][:] / live_time
-￼           coeffs = dist_grp['fit_coeff'][:]
-￼
-￼       bins = bin_utils.IrregularBins(bin_edges)
-￼       dur_bin = bins[duration]
-￼
-￼       rate = rates[dur_bin]
-￼       coeff = coeffs[dur_bin]
-￼       rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
-￼                                         coeff, fit_info['thresh'])[0]
+        with h5py.File(self.fit_file, 'r') as fit_file:
+            bin_edges = fit_file['bins_edges'][:]
+            live_time = fit_file[self.ifo].attrs['live_time']
+            thresh = fit_file.attrs['fit_threshold']
+
+            dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
+            rates = dist_grp['counts'][:] / live_time
+            coeffs = dist_grp['fit_coeff'][:]
+
+        bins = bin_utils.IrregularBins(bin_edges)
+        dur_bin = bins[duration]
+
+        rate = rates[dur_bin]
+        coeff = coeffs[dur_bin]
+        rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
+                                          coeff, fit_info['thresh'])[0]
         # apply a trials factor of the number of duration bins
         rate_louder *= len(rates)
         return conv.sec_to_year(1. / rate_louder)
