@@ -16,30 +16,14 @@ class LiveSingle(object):
                  sngl_ifar_est_dist=None,
                  fixed_ifar=None):
         self.ifo = ifo
-        if sngl_ifar_est_dist in ["fixed", None]:
-            fit_bins = None
-            fit_rates = None
-            fit_thresh = None
-            fit_coeffs = None
-        else:
-            with h5py.File(fit_file, 'r') as fit_file:
-                bin_edges = fit_file['bins_edges'][:]
-                fit_bins = bin_utils.IrregularBins(bin_edges)
-                dist_grp = fit_file[ifo + '/' + sngl_ifar_est_dist]
-                live_time = fit_file[ifo].attrs['live_time']
-                fit_rates = dist_grp['counts'][:] / live_time
-                fit_coeffs = dist_grp['fit_coeff'][:]
-                fit_thresh = fit_file.attrs['fit_threshold']
+        self.fit_file = fit_file
+        self.sngl_ifar_est_dist = sngl_ifar_est_dist
+        self.fixed_ifar = fixed_ifar
+        
         self.thresholds = {
             "newsnr": newsnr_threshold,
             "reduced_chisq": reduced_chisq_threshold,
             "duration": duration_threshold}
-        self.fit_info = {
-            "fixed_ifar": fixed_ifar,
-            "bins": fit_bins,
-            "rates": fit_rates,
-            "coeffs": fit_coeffs,
-            "thresh": fit_thresh}
 
     @staticmethod
     def insert_args(parser):
@@ -151,14 +135,28 @@ class LiveSingle(object):
 
         return fake_coinc
 
-    def calculate_ifar(self, newsnr, duration):
-        if self.fit_info['fixed_ifar']:
-            return self.fit_info['fixed_ifar'][self.ifo]
-        dur_bin = self.fit_info['bins'][duration]
-        rate = self.fit_info['rates'][dur_bin]
-        coeff = self.fit_info['coeffs'][dur_bin]
-        rate_louder = rate * fits.cum_fit('exponential', [newsnr],
-                                          coeff, self.fit_info['thresh'])[0]
+    def calculate_ifar(self, sngl_ranking, duration):
+        if self.fixed_ifar:
+            return self.fixed_ifar[self.ifo]
+
+        fit_info = {}
+
+￼       with h5py.File(self.fit_file, 'r') as fit_file:
+￼           bin_edges = fit_file['bins_edges'][:]
+￼           live_time = fit_file[self.ifo].attrs['live_time']
+￼           thresh = fit_file.attrs['fit_threshold']
+￼
+￼           dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
+￼           rates = dist_grp['counts'][:] / live_time
+￼           coeffs = dist_grp['fit_coeff'][:]
+￼
+￼       bins = bin_utils.IrregularBins(bin_edges)
+￼       dur_bin = bins[duration]
+￼
+￼       rate = rates[dur_bin]
+￼       coeff = coeffs[dur_bin]
+￼       rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
+￼                                         coeff, fit_info['thresh'])[0]
         # apply a trials factor of the number of duration bins
-        rate_louder *= len(self.fit_info['rates'])
+        rate_louder *= len(rates)
         return conv.sec_to_year(1. / rate_louder)
