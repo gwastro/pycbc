@@ -19,7 +19,7 @@ class LiveSingle(object):
         self.fit_file = fit_file
         self.sngl_ifar_est_dist = sngl_ifar_est_dist
         self.fixed_ifar = fixed_ifar
-        
+
         self.thresholds = {
             "newsnr": newsnr_threshold,
             "reduced_chisq": reduced_chisq_threshold,
@@ -154,7 +154,7 @@ class LiveSingle(object):
         rate = rates[dur_bin]
         coeff = coeffs[dur_bin]
         rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
-                                          coeff, 'thresh')[0]
+                                          coeff, thresh)[0]
         # apply a trials factor of the number of duration bins
         rate_louder *= len(rates)
         return conv.sec_to_year(1. / rate_louder)
