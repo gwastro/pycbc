@@ -379,7 +379,8 @@ class LiveEventManager(object):
                 gid = None
                 event.save(fname)
 
-            if self.run_snr_optimization and self.ifar_upload_threshold < ifar:
+            if self.run_snr_optimization \
+                    and self.ifar_upload_threshold < ifar:
                 self.setup_optimize_snr(coinc_results, coinc_ifos, bank,
                                         fname, data_readers, gid)
 
@@ -410,7 +411,8 @@ class LiveEventManager(object):
                                           mc_area_args=self.mc_area_args,
                                           )
 
-            fname = 'single-%s-%s.xml.gz' % (ifo, event.merger_time)
+            fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
+                                                    pycbc.random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Single-detector candidate! Saving as %s', fname)
 
@@ -422,7 +424,7 @@ class LiveEventManager(object):
 
             # Has a coinc event at this time been uploaded recently?
             # If so, skip upload
-            coinc_tdiffs =  abs(event.merger_time -
+            coinc_tdiffs = abs(event.merger_time -
                                 self.last_few_coincs_uploaded)
             nearby_coincs = coinc_tdiffs < 0.1
             if any(nearby_coincs):
@@ -438,11 +440,15 @@ class LiveEventManager(object):
                                    testing=self.gracedb_testing,
                                    extra_strings=[comment],
                                    search=args.gracedb_search)
-                if self.run_snr_optimization:
-                    self.setup_optimize_snr(single, [ifo], bank, fname,
-                                            data_readers, gid)
             else:
+                gid = None
                 event.save(fname)
+
+            if self.ifar_upload_threshold < ifar \
+                    and not any(nearby_coincs) \
+                    and self.run_snr_optimization:
+                self.setup_optimize_snr(single, [ifo], bank, fname,
+                                        data_reader, gid)
 
 
     def dump(self, results, name, store_psd=False, time_index=None,
