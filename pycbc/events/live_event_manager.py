@@ -339,10 +339,6 @@ class LiveEventManager(object):
                 event.save(fname)
                 gdb_upload_opt = False
 
-            print(type(bank))
-            print(type(data_reader[ifo]))
-            exit(1)
-
             if self.run_snr_optimization \
                     and self.ifar_upload_threshold < ifar:
                 self.setup_snr_optimization([ifo], single, bank, fname,
