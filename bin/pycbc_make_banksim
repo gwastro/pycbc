@@ -12,7 +12,7 @@ from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
 
 class BaseJob(CondorDAGJob, CondorJob):
     def __init__(self, log_dir, executable, cp, section, gpu=False,
-                 accounting_group=None):
+                 accounting_group=None, request_disk=None):
         CondorDAGJob.__init__(self, "vanilla", executable)
 
         if gpu:
@@ -30,6 +30,9 @@ class BaseJob(CondorDAGJob, CondorJob):
 
         if accounting_group:
             self.add_condor_cmd('accounting_group', accounting_group)
+            
+        if request_disk:
+            self.add_condor_cmd('request_disk', request_disk)
 
 class BanksimNode(CondorDAGNode):
     def __init__(self, job, inj_file, tmplt_file, match_file, gpu=True,
@@ -166,6 +169,13 @@ except:
     accounting_group = None
     logging.warn('Warning: accounting-group not specified, LDG clusters may'
                  ' reject this workflow!')
+    
+try:
+    request_disk = confs.get('workflow', 'request-disk')
+except:
+    request_disk = None
+    logging.warn('Warning: request-disk not specified, LDG clusters may'
+                 ' reject this workflow!')
 
 logging.info("Making workspace directories")
 mkdir('scripts')
@@ -211,13 +221,13 @@ dag = CondorDAG(logfile)
 dag.set_dag_file("banksim")
 
 bsjob = BaseJob("log", "scripts/pycbc_banksim", confs, "banksim", gpu=gpu,
-                accounting_group=accounting_group)
+                accounting_group=accounting_group, request_disk=request_disk)
 cjob = BaseJob("log", "scripts/pycbc_banksim_match_combine", None, None,
-               accounting_group=accounting_group)
+               accounting_group=accounting_group, request_disk=request_disk)
 rjob = BaseJob("log", "scripts/pycbc_banksim_collect_results", None, None,
-               accounting_group=accounting_group)
+               accounting_group=accounting_group, request_disk=request_disk)
 pjob = BaseJob("log", "scripts/pycbc_banksim_plots", None, None,
-               accounting_group=accounting_group)
+               accounting_group=accounting_group, request_disk=request_disk)
 rnode = CondorDAGNode(rjob)
 pnode = CondorDAGNode(pjob)
 
