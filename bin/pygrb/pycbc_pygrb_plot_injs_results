@@ -90,7 +90,7 @@ def load_mass_data(injs, qty):
 
 
 # Function to extract mass ratio or total mass data from a trigger/injection file
-def load_effdist_data(injs, qty, opts, sites):
+def load_effdist_data(injs, qty, opts, ifos):
     """Extract data related to effective distances from raw trigger/injection data"""
 
     local_dict = {}
@@ -100,7 +100,7 @@ def load_effdist_data(injs, qty, opts, sites):
     else:
         local_dict['eff_site_dist'] =\
             dict((ifo, injs['injections/eff_dist_%s' % ifo[0].lower()][:])
-                 for ifo in sites)
+                 for ifo in ifos)
         # Effective distance (inverse sum of inverse effective distances)
         data = numpy.power(numpy.power(numpy.asarray(
             list(local_dict['eff_site_dist'].values())), -1).sum(0), -1)
@@ -127,7 +127,7 @@ def load_spin_data(injs, qty):
 
 
 # Function to extract desired data from a trigger/injection file
-def load_data(input_file, keys, opts, sites):
+def load_data(input_file, keys, opts, ifos):
     """Create a dictionary containing the data specified by the
     list of keys extracted from a trigger/injection file"""
 
@@ -149,7 +149,7 @@ def load_data(input_file, keys, opts, sites):
         elif qty in ['mtotal', 'q', 'mchirp']:
             data_dict[qty] = load_mass_data(injs, qty)
         elif qty in ['eff_site_dist', 'eff_dist']:
-            data_dict[qty] = load_effdist_data(injs, qty, opts, sites)
+            data_dict[qty] = load_effdist_data(injs, qty, opts, ifos)
         elif 'incl' in qty:
             data_dict[qty] = load_incl_data(injs, qty)
         # This handles spin1 and spin2, i.e. spin magnitudes, as components
@@ -160,12 +160,24 @@ def load_data(input_file, keys, opts, sites):
     return data_dict
 
 
+def load_trig_data(input_file, vetoes):
+    """Load data from a trigger file"""
+
+    logging.info("Loading triggers...")
+    trigs = ppu.load_triggers(input_file, vetoes)
+
+    return trigs
+
+
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = argparse.ArgumentParser(description=__doc__)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
+                                          version=__version__)
 parser.add_argument('--injection-file',
                     help="The hdf injection file to plot", required=True)
+parser.add_argument('--trigger-file',
+                    help="The hdf file with found triggers", required=True)            
 admitted_vars = ['coa_phase', 'distance', 'latitude', 'longitude','mass1',
                  'mass2', 'polarization', 'spin1x', 'spin1y', 'spin1z',
                  'spin2x', 'spin2y', 'spin2z', 'end_time', 'mtotal', 'q',
@@ -181,17 +193,10 @@ parser.add_argument("-y", "--y-variable", default=None, required=True,
                     help="Quantity to plot on the vertical axis.")
 parser.add_argument("--y-log", action="store_true",
                     help="Use log vertical axis")
-parser.add_argument("-a", "--seg-files", nargs="+", action="store",
-                    default=None, help="The location of the buffer, " +
-                    "onsource and offsource segment files.")
-parser.add_argument('--ifo',default=None,
-                   help="Interferometer (used for effective site distance)")
 parser.add_argument('--colormap',default='cividis_r',
                    help="Type of colormap to be used for the plots.")
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--gradient-far', action='store_true',
                     help="Show far of found injections as a gradient")
-parser.add_argument('--output-file', required=True)
 parser.add_argument('--far-type', choices=('inclusive', 'exclusive'),
                     default='inclusive',
                     help="Type of far to plot for the color. Choices are "
@@ -199,8 +204,6 @@ parser.add_argument('--far-type', choices=('inclusive', 'exclusive'),
 parser.add_argument('--missed-on-top', action='store_true',
                     help="Plot missed injections on top of found ones and "
                          "high FAR on top of low FAR")
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -208,6 +211,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 # Read in files
 logging.info('Reading in the data')
 f = h5py.File(opts.injection_file, 'r')
+trig_file = os.path.abspath(opts.trigger_file)
 grb_time = ppu.get_grb_time(opts.seg_files)
 
 # Load indices containing found and missed injections
@@ -222,17 +226,21 @@ elif opts.far_type == 'exclusive':
     ifar_found = f['found_after_vetoes/ifar_exc'][:]
     far_title = 'Exclusive'
 
-# Load ifos that are available in the HDF file
-if 'ifos' in f.attrs:
-    sites = f.attrs['ifos'].split(' ')
-else:
-    logging.warning("Ifos not found in input file, assuming H-L")
-    sites = ['H1', 'L1']
+# Extract IFOs and vetoes
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+                                           opts.veto_category)
 
 # Load data
 x_qty = opts.x_variable
 y_qty = opts.y_variable
-inj_data = load_data(opts.injection_file, [x_qty, y_qty], opts, sites)
+
+if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
+    err_msg = "A value for --ifo must be provided for "
+    err_msg += "site specific effective distance"
+    parser.error(err_msg)
+    
+inj_data = load_data(opts.injection_file, [x_qty, y_qty], opts, ifos)
+trig_data = load_trig_data(trig_file, vetoes)
 
 # Specify indices for found and missed injections
 fxvals = inj_data[x_qty][found]
