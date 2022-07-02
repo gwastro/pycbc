@@ -21,7 +21,8 @@
 Plot found/missed injection properties for the triggered search (PyGRB).'
 """
 
-import h5py, numpy, logging, os.path, argparse, sys
+import h5py, logging, os.path, argparse, sys
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
@@ -53,16 +54,16 @@ def load_incl_data(injs, qty):
 
     # Requesting |incl| or cos(|incl|)
     if 'abs_' in qty:
-        local_dict['abs_incl'] = 0.5*numpy.pi - abs(local_dict['incl'] - 0.5*numpy.pi)
+        local_dict['abs_incl'] = 0.5*np.pi - abs(local_dict['incl'] - 0.5*np.pi)
 
     # Requesting cos(incl) or cos(|incl|): take cosine
     if 'cos_' in qty:
         angle = qty.replace('cos_', '')
         angle_data = local_dict[angle]
-        data = numpy.cos(angle_data)
+        data = np.cos(angle_data)
     # Requesting incl or abs_incl: convert to degrees
     else:
-        data = numpy.rad2deg(local_dict[qty])
+        data = np.rad2deg(local_dict[qty])
 
     return data
 
@@ -84,7 +85,7 @@ def load_mass_data(injs, qty):
             local_dict['mass1'], local_dict['mass2'])
     else:
         data = local_dict['mass2']/local_dict['mass1']
-        data = numpy.where(data > 1, 1./data, data)
+        data = np.where(data > 1, 1./data, data)
 
     return data
 
@@ -102,7 +103,7 @@ def load_effdist_data(injs, qty, opts, ifos):
             dict((ifo, injs['injections/eff_dist_%s' % ifo[0].lower()][:])
                  for ifo in ifos)
         # Effective distance (inverse sum of inverse effective distances)
-        data = numpy.power(numpy.power(numpy.asarray(
+        data = np.power(np.power(np.asarray(
             list(local_dict['eff_site_dist'].values())), -1).sum(0), -1)
 
     return data
@@ -119,7 +120,7 @@ def load_spin_data(injs, qty):
         local_dict[key] = injs['injections/%s' % key][:]
 
     # Calculate the modulus
-    data = numpy.sqrt(local_dict[qty+'x']**2 +
+    data = np.sqrt(local_dict[qty+'x']**2 +
                    local_dict[qty+'y']**2 +
                    local_dict[qty+'z']**2)
 
@@ -253,7 +254,7 @@ found = f['found/injection_index'][:]
 missed = f['missed/all'][:]
 found_after_vetoes = f['found_after_vetoes/injection_index'][:]
 missed_after_vetoes = list(set(found) - set(found_after_vetoes))
-missed_after_vetoes = numpy.sort(missed_after_vetoes).astype(int)
+missed_after_vetoes = np.sort(missed_after_vetoes).astype(int)
 
 inj_data = load_data(opts.injection_file, [x_qty, y_qty], opts, ifos)
 logging.info("Triggers and missed/found injections loaded.")
@@ -304,7 +305,7 @@ for vetoed_index in missed_after_vetoes:
     vetoed['reweighted_snr'].append(f['found/stat'][found_index])
     
 # Statistics: found on top (found-missed)
-FM = numpy.argsort(found_quieter['ifar'])
+FM = np.argsort(found_quieter['ifar'])
 # Statistics: missed on top (missed-found)
 MF = FM[::-1]
 
@@ -366,7 +367,7 @@ cmap = plt.get_cmap('cividis_r')
 
 # Define the 'found' injection colour
 fnd_col = cmap(0)
-fnd_col = numpy.array([fnd_col])
+fnd_col = np.array([fnd_col])
 if not opts.missed_on_top:
     if missed_inj[x_qty].size and missed_inj[y_qty].size:
         ax.scatter(missed_inj[x_qty], missed_inj[y_qty], c="black", marker="x", s=10)
@@ -402,19 +403,19 @@ for key in ['spin1', 'spin2']:
         if key in qty:
             max_missed_inj[qty] = missed_inj[qty].max()
 if "spin" in x_qty:
-    ax.set_xlim([0, numpy.ceil(10 * max(max_missed_inj[x_qty],
+    ax.set_xlim([0, np.ceil(10 * max(max_missed_inj[x_qty],
                                      found_inj[x_qty].max())) / 10])
 if "spin" in y_qty:
-    ax.set_ylim([0, numpy.ceil(10 * max(max_missed_inj[y_qty],
+    ax.set_ylim([0, np.ceil(10 * max(max_missed_inj[y_qty],
                                      found_inj[y_qty].max())) / 10])
                                      
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
-    max_inc = numpy.pi
-    #max_inc = max(numpy.concatenate((g_found[qty], g_ifar[qty], g_missed2[qty], missed_inj[qty])))
-    max_inc_deg = numpy.rad2deg(max_inc)
-    max_inc_deg = numpy.ceil(max_inc_deg/10.0)*10
-    max_inc = numpy.deg2rad(max_inc_deg)
+    max_inc = np.pi
+    #max_inc = max(np.concatenate((g_found[qty], g_ifar[qty], g_missed2[qty], missed_inj[qty])))
+    max_inc_deg = np.rad2deg(max_inc)
+    max_inc_deg = np.ceil(max_inc_deg/10.0)*10
+    max_inc = np.deg2rad(max_inc_deg)
     if x_qty == "incl":
         ax.set_xlim(0, max_inc_deg)
     elif x_qty == "abs_incl":
@@ -425,21 +426,21 @@ if "incl" in x_qty or "incl" in y_qty:
         ax.set_ylim(0, max_inc_deg*0.5)
     #if "cos_incl" in [x_qty, y_qty]:
     if "cos_" in [x_qty, y_qty]:
-        #tt = numpy.arange(0, max_inc_deg + 10, 10)
-        tt = numpy.asarray([0, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 180])
-        tks = numpy.cos(numpy.deg2rad(tt))
+        #tt = np.arange(0, max_inc_deg + 10, 10)
+        tt = np.asarray([0, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 180])
+        tks = np.cos(np.deg2rad(tt))
         tk_labs = ['cos(%d deg)' % tk for tk in tt]
         #if x_qty == "cos_incl":
         if "cos_" in x_qty:
             plt.xticks(tks, tk_labs, fontsize=10)
             fig.autofmt_xdate()
-            ax.set_xlim(numpy.cos(max_inc), 1)
+            ax.set_xlim(np.cos(max_inc), 1)
             #ax.set_xlim(-1, 1)
         #if y_qty == "cos_incl":
         if "cos_" in y_qty:
             plt.yticks(tks, tk_labs, fontsize=10)
             fig.autofmt_xdate()
-            ax.set_ylim(numpy.cos(max_inc), 1)
+            ax.set_ylim(np.cos(max_inc), 1)
             #ax.set_ylim(-1, 1)
 
 # Take care of caption
