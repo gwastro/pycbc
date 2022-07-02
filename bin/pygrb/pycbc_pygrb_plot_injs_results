@@ -312,149 +312,102 @@ logging.info("%d found injections analysed.", len(found))
 
 # Post-processing of injections ends here
 
+# ==========
+# Make plots
+# ==========
+
+# Info for site-specific plots
 sitename = {'G1':'GEO', 'H1':'Hanford', 'L1':'Livingston', 'V1':'Virgo',
             'K1':'KAGRA'}
-labels={'mchirp': "Chirp Mass (solar masses)",
-        'mtotal': "Total mass (solar masses)",
-        'q': "Mass ratio",
-        'distance': "Distance (Mpc)",
-        'eff_site_dist': "%s effective distance (Mpc)" % sitename.get(opts.ifo),
-        'eff_dist': "Inverse sum of effective distances (Mpc)",
-        'end_time': "Time since %d (s)" % grb_time,
-        'coa_phase': "Phase of complex SNR (radians)",
-        'latitude': "Latitude (radians)",
-        'longitude': "Longitude (radians)",
-        'incl': "Inclination (iota)",
-        'abs_incl': 'Magnitude of inclination (|iota|)',
-        'cos_incl': "cos(iota)",
-        'cos_abs_incl': "cos(|iota|)",
-        'mass1': "Mass of 1st binary component (solar masses)",
-        'mass2': "Mass of 2nd binary component (solar masses)",
-        'polarization': "Polarization phase (radians)",
-        'spin1': "Spin on 1st binary component",
-        'spin1x': "Spin x-component of 1st binary component",
-        'spin1y': "Spin y-component of 1st binary component",
-        'spin1z': "Spin z-component of 1st binary component",
-        'spin2': "Spin on 2nd binary component",
-        'spin2x': "Spin x-component of 2nd binary component",
-        'spin2y': "Spin y-component of 2nd binary component",
-        'spin2z': "Spin z-component of 2nd binary component"}
 
-logging.info('Plotting...')
-if opts.missed_on_top:
-  fig_title = 'Missed and Found Injections'
-else:
-  fig_title = 'Found and Missed Injections'
+# Take care of axes labels
+axis_labels_dict ={'mchirp': "Chirp Mass (solar masses)",
+                   'mtotal': "Total mass (solar masses)",
+                   'q': "Mass ratio",
+                   'distance': "Distance (Mpc)",
+                   'eff_site_dist': "%s effective distance (Mpc)" % sitename.get(opts.ifo),
+                   'eff_dist': "Inverse sum of effective distances (Mpc)",
+                   'end_time': "Time since %d (s)" % grb_time,
+                   'coa_phase': "Phase of complex SNR (radians)",
+                   'latitude': "Latitude (radians)",
+                   'longitude': "Longitude (radians)",
+                   'incl': "Inclination (iota)",
+                   'abs_incl': 'Magnitude of inclination (|iota|)',
+                   'cos_incl': "cos(iota)",
+                   'cos_abs_incl': "cos(|iota|)",
+                   'mass1': "Mass of 1st binary component (solar masses)",
+                   'mass2': "Mass of 2nd binary component (solar masses)",
+                   'polarization': "Polarization phase (radians)",
+                   'spin1': "Spin on 1st binary component",
+                   'spin1x': "Spin x-component of 1st binary component",
+                   'spin1y': "Spin y-component of 1st binary component",
+                   'spin1z': "Spin z-component of 1st binary component",
+                   'spin2': "Spin on 2nd binary component",
+                   'spin2x': "Spin x-component of 2nd binary component",
+                   'spin2y': "Spin y-component of 2nd binary component",
+                   'spin2z': "Spin z-component of 2nd binary component"}
+
+x_label = axis_labels_dict[x_qty]
+y_label = axis_labels_dict[y_qty]
 
 fig = plt.figure()
-zmissed = opts.missed_on_top
-zfound = not opts.missed_on_top
+xscale = "log" if opts.x_log else "linear"
+yscale = "log" if opts.y_log else "linear"
+ax = fig.gca()
+ax.set_xscale(xscale)
+ax.set_yscale(yscale)
+ax.set_xlabel(x_label)
+ax.set_ylabel(y_label)
 
-# Plot missed injections
-mpoints = plt.scatter(mxvals, myvals, s=10,
-                      marker='x', color='black',
-                      label='missed', zorder=zmissed)
+# Define p-value colour
+cmap = plt.get_cmap('cividis_r')
+# Set color for out-of-range values
+#cmap.set_over('g')
 
-ifsort = numpy.argsort(ifar_found)
-if opts.missed_on_top:
-    ifsort = ifsort[::-1]
-
-fxvals_sorted = fxvals[ifsort]
-fyvals_sorted = fyvals[ifsort]
-ifsorted = ifar_found[ifsort]
-
-if not opts.gradient_far:
-    color = numpy.ones(len(found))
-    ten = numpy.where(ifsorted > 10)[0]
-    hundred = numpy.where(ifsorted > 100)[0]
-    thousand = numpy.where(ifsorted > 1000)[0]
-    color[hundred] = 0.5
-    color[thousand] = 0
-
-    norm = matplotlib.colors.Normalize()
-    caption = (fig_title + ": Black x's are missed injections. "
-              "Blue circles are found with IFAR < 100 years, gray are < "
-              "1000 years, and yellow are found with IFAR >=1000 years. ")
-else:
-    color = 1.0 / ifsorted
-    if len(color) < 2:
-        color=None
-
-    norm = matplotlib.colors.LogNorm()
-    caption = (fig_title + ": Black x's are missed injections. "
-               "Circles are found injections. The color indicates the value "
-               "of the false alarm rate." )
-
-# Plot found injections
-points = plt.scatter(fxvals_sorted, fyvals_sorted, c=color, linewidth=0, s=30, norm=norm,
-                      marker='o', label='found', zorder=zfound,
-                      cmap=opts.colormap)
-if opts.gradient_far:
-    try:
-        c = plt.colorbar()
-        c.set_label('False Alarm Rate $(yr^{-1})$, %s' % far_title)
-
-        # Set up tick labels - there will always be 5
-        min_tick = numpy.ceil(min(numpy.log10(color)))
-        max_tick = numpy.floor(max(numpy.log10(color)))
-        tick_step = numpy.floor((max_tick - min_tick) / 5)
-        ticks = numpy.arange(min_tick, max_tick, tick_step)
-        c.set_ticks(numpy.power(10, ticks))
-    except (TypeError, ZeroDivisionError):
-        # Can't make colorbar if no quiet found injections
-        if len(fxvals_sorted):
-            raise
-
-if opts.missed_on_top:
-  caption += "Missed injections are shown on top of found injections."
-else:
-  caption += "Found injections are shown on top of missed injections."
-
-ax = plt.gca()
-plt.xlabel(labels[x_qty])
-plt.ylabel(labels[y_qty])
-plt.grid()
-
-if opts.x_log:
-    # log x axis may fail for some choices, eg effective spin
-    ax.set_xscale('log')
-    tmpxvals = list(mxvals)
-    tmpxvals += list(fxvals)
-    xmax = 1.4 * max(tmpxvals)
-    xmin = 0.7 * min(tmpxvals)
-    plt.xlim(xmin, xmax)
-if opts.y_log:
-    ax.set_yscale('log')
-
-tmpyvals = list(fyvals) + list(myvals)
-ymax = 1.2 * max(tmpyvals)
-ymin = 0.9 * min(tmpyvals)
-
-# note: ymin=0 will clash with opts.y_log
-# in that case it *should* throw an error!
-plt.ylim(ymin, ymax)
-
-if opts.y_variable == 'redshift':
-    # default y limit: min redshift 0
-    plt.ylim(ymin=0, ymax=ymax)
-else:
-    # arbitrary limit of 1 distance-unit or snr-unit
-    plt.ylim(ymin=1, ymax=ymax)
+# Define the 'found' injection colour
+fnd_col = cmap(0)
+fnd_col = numpy.array([fnd_col])
+if not opts.missed_on_top:
+    if missed_inj[x_qty].size and missed_inj[y_qty].size:
+        ax.scatter(missed_inj[x_qty], missed_inj[y_qty], c="black", marker="x", s=10)
+    if vetoed[x_qty].size:
+        ax.scatter(vetoed[x_qty], vetoed[y_qty], c="red", marker="x", s=10)
+    if found_quieter[x_qty].size:
+        p = ax.scatter(found_quieter[x_qty][FM], found_quieter[y_qty][FM],
+                       c=found_quieter['reweighted_snr'][FM],
+                       cmap=cmap, vmin=0, vmax=1, s=40,
+                       edgecolor="w", linewidths=2.0)
+        cb = plt.colorbar(p, label="p-value")
+    if found_louder[x_qty].size:
+        ax.scatter(found_louder[x_qty], found_louder[y_qty], c=fnd_col, marker="+", s=30)
+elif opts.missed_on_top:
+    if found_louder[x_qty].size:
+        ax.scatter(found_louder[x_qty], found_louder[y_qty], c=fnd_col, marker="+", s=15)
+    if found_quieter[x_qty].size:
+        p = ax.scatter(found_quieter[x_qty][MF], found_quieter[y_qty][MF],
+                       c=found_quieter['reweighted_snr'][MF],
+                       cmap=cmap, vmin=0, vmax=1, s=40,
+                       edgecolor="w", linewidths=2.0)
+        cb = plt.colorbar(p, label="p-value")
+    if vetoed[x_qty].size:
+        ax.scatter(vetoed[x_qty], vetoed[y_qty], c="red", marker="x", s=40)
+    if missed_inj[x_qty].size and missed_inj[y_qty].size:
+        ax.scatter(missed_inj[x_qty], missed_inj[y_qty], c="black", marker="x", s=40)
+ax.grid()
 
 # Handle axis limits when plotting spins
 max_missed_inj = {}
 for key in ['spin1', 'spin2']:
-    if key in y_qty:
-        max_missed_inj[y_qty] = myvals.max()
-    if key in x_qty:
-        max_missed_inj[x_qty] = mxvals.max()
+    for qty in [x_qty, y_qty]:
+        if key in qty:
+            max_missed_inj[qty] = missed_inj[qty].max()
 if "spin" in x_qty:
     ax.set_xlim([0, numpy.ceil(10 * max(max_missed_inj[x_qty],
-                                     fxvals.max())) / 10])
+                                     found_inj[x_qty].max())) / 10])
 if "spin" in y_qty:
     ax.set_ylim([0, numpy.ceil(10 * max(max_missed_inj[y_qty],
-                                     fyvals.max())) / 10])
-
+                                     found_inj[y_qty].max())) / 10])
+                                     
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
     max_inc = numpy.pi
@@ -488,21 +441,58 @@ if "incl" in x_qty or "incl" in y_qty:
             fig.autofmt_xdate()
             ax.set_ylim(numpy.cos(max_inc), 1)
             #ax.set_ylim(-1, 1)
-                                  
-fig_kwds = {}
-if '.png' in opts.output_file:
-    fig_kwds['dpi'] = 200
 
-if ('.html' in opts.output_file):
-    plt.subplots_adjust(left=0.1, right=0.8, top=0.9, bottom=0.1)
-    import mpld3, mpld3.plugins, mpld3.utils
-    mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fmt='.5g'))
-    legend =  mpld3.plugins.InteractiveLegendPlugin([mpoints, points],
-                                                    ['missed', 'found'],
-                                                    alpha_unsel=0.1)
-    mpld3.plugins.connect(fig, legend)
+# Take care of caption
+plot_caption = opts.plot_caption
+if plot_caption is None:
+    plot_caption = "Black cross indicates no trigger was found "
+    plot_caption += "coincident with the injection.\n"
+    plot_caption += "Red cross indicates a trigger was found "
+    plot_caption += "coincident with the injection but it was vetoed.\n"
+    plot_caption += "Yellow plus indicates that a trigger was found "
+    plot_caption += "coincident with the injection and it was louder "
+    plot_caption += "than all events in the offsource.\n"
+    plot_caption += "Coloured circle indicates that a trigger was "
+    plot_caption += "found coincident with the injection but it was "
+    plot_caption += "not louder than all offsource events. The colour "
+    plot_caption += "bar gives the p-value of the trigger."
+    
+# Take care of title
+plot_title = opts.plot_title
+if plot_title is None:
+    title_dict = {'mchirp': "chirp mass",
+                  'mtotal': "total mass",
+                  'q': "mass ratio",
+                  'distance': "distance (Mpc)",
+                  'eff_dist': "inverse sum of effective distances",
+                  'eff_site_dist': "site specific effective distance",
+                  'end_time': "time",
+                  'coa_phase': "phase of complex SNR",
+                  'latitude': "latitude",
+                  'longitude': "longitude",
+                  'incl': "inclination",
+                  'cos_incl': "inclination",
+                  'abs_incl': "inclination",
+                  'cos_abs_incl': "inclination",
+                  'mass1': "mass",
+                  'mass2': "mass",
+                  'polarization': "polarization",
+                  'spin1': "spin",
+                  'spin1x': "spin x-component",
+                  'spin1y': "spin y-component",
+                  'spin1z': "spin z-component",
+                  'spin2': "spin",
+                  'spin2x': "spin x-component",
+                  'spin2y': "spin y-component",
+                  'spin2z': "spin z-component"}
 
-title = '%s: %s vs %s' % (fig_title, x_qty, y_qty)
-cmd = ' '.join(sys.argv)
-pycbc.results.save_fig_with_metadata(fig, opts.output_file, fig_kwds=fig_kwds,
-                                     title=title, cmd=cmd, caption=caption)
+plot_title = "Injection recovery with respect to "
+plot_title += title_dict[x_qty]
+plot_title += " and "+ title_dict[y_qty]
+
+# Wrap up
+plt.tight_layout()
+pycbc.results.save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
+                                     title=plot_title, caption=plot_caption)
+plt.close()
+logging.info("Plots complete.")
