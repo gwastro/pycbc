@@ -184,6 +184,20 @@ def load_trig_data(input_file, vetoes):
     return trigs
 
 
+# Function to cherry-pick a subset of full_data specified by fap_mask.
+# Reweighted SNR values are picked separately since they are extracted
+# in different manners
+def grab_triggers_subset(full_data, fap_mask):
+    """Separate out a subset of full_data based on fap_mask"""
+
+    data_subset = {}
+
+    for qty in full_data.keys():
+        data_subset[qty] = full_data[qty][fap_mask]
+
+    return data_subset
+
+
 # =============================================================================
 # Main script starts here
 # =============================================================================
@@ -292,17 +306,13 @@ found_after_vetoes_stat = f['found_after_vetoes/stat'][:]
 # 1) Found louder than background
 louder_mask = found_after_vetoes_stat > max_reweighted_snr
 louder_indices = found_after_vetoes[louder_mask]
-found_louder = {}
-for qty in [x_qty, y_qty]:
-    found_louder[qty] = inj_data[qty][louder_indices]
+found_louder = grab_triggers_subset(inj_data, louder_indices)
 found_louder['reweighted_snr'] = f['found_after_vetoes/stat'][louder_mask]
 
 # 2) Found quieter than background
 quieter_mask = (found_after_vetoes_stat <= max_reweighted_snr) & (found_after_vetoes_stat != 0)
 quieter_indices = found_after_vetoes[quieter_mask]
-found_quieter = {}
-for qty in [x_qty, y_qty]:
-    found_quieter[qty] = inj_data[qty][quieter_indices]
+found_quieter = grab_triggers_subset(inj_data, quieter_indices)
 found_quieter['reweighted_snr'] = f['found_after_vetoes/stat'][quieter_mask]
 
 # Extract inclusive/exclusive IFAR for injections found quieter than background
@@ -312,9 +322,7 @@ elif opts.far_type == 'exclusive':
     found_quieter['ifar'] = f['found_after_vetoes/ifar_exc'][quieter_mask]
 
 # 3) Missed due to vetoes
-vetoed = {}
-for qty in [x_qty, y_qty]:
-    vetoed[qty] = inj_data[qty][missed_after_vetoes]
+vetoed = grab_triggers_subset(inj_data, missed_after_vetoes)
 vetoed['reweighted_snr'] = []
 for vetoed_index in missed_after_vetoes:
     found_index = list(found).index(vetoed_index)
