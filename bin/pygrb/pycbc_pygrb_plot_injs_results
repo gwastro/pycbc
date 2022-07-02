@@ -234,8 +234,11 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Load indices containing found and missed injections
-found = f['found_after_vetoes/injection_index'][:]
-missed = f['missed/after_vetoes'][:]
+found = f['found/injection_index'][:]
+missed = f['missed/all'][:]
+found_after_vetoes = f['found_after_vetoes/injection_index'][:]
+missed_after_vetoes = list(set(found) - set(found_after_vetoes))
+missed_after_vetoes = numpy.sort(missed_after_vetoes).astype(int)
 
 # Load inclusive and exclusive IFARs
 if opts.far_type == 'inclusive':
