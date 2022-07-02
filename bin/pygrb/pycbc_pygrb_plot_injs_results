@@ -335,7 +335,7 @@ logging.info("%d found injections analysed.", len(found))
 
 # Info for site-specific plots
 sitename = {'G1':'GEO', 'H1':'Hanford', 'L1':'Livingston', 'V1':'Virgo',
-            'K1':'KAGRA'}
+            'K1':'KAGRA', 'A1': 'India Aundha'}
 
 # Take care of axes labels
 axis_labels_dict ={'mchirp': "Chirp Mass (solar masses)",
