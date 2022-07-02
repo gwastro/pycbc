@@ -117,8 +117,8 @@ def load_effdist_data(injs, qty, opts, ifos):
             dict((ifo, injs['injections/eff_dist_%s' % ifo[0].lower()][:])
                  for ifo in ifos)
         # Effective distance (inverse sum of inverse effective distances)
-        data = np.power(np.power(np.asarray(
-            list(local_dict['eff_site_dist'].values())), -1).sum(0), -1)
+        data = np.power(np.power(
+            local_dict['eff_site_dist'], -1).sum(0), -1)
 
     return data
 
