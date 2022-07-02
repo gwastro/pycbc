@@ -43,6 +43,20 @@ __program__ = "pycbc_pygrb_plot_injs_results"
 # =============================================================================
 # Functions
 # =============================================================================
+def process_var_strings(qty):
+    """Add underscores to match HDF column name conventions"""
+
+    qty = qty.replace('effdist', 'eff_dist')
+    qty = qty.replace('effsitedist', 'eff_site_dist')
+    qty = qty.replace('skyerror', 'sky_error')
+    qty = qty.replace('cos', 'cos_')
+    qty = qty.replace('abs', 'abs_')
+    qty = qty.replace('coaphase', 'coa_phase')
+    qty = qty.replace('endtime', 'end_time')
+
+    return qty
+
+
 def load_incl_data(injs, qty):
     """Extract data related to inclination from raw trigger/injection data"""
 
@@ -186,12 +200,14 @@ admitted_vars = ['coa_phase', 'distance', 'latitude', 'longitude','mass1',
                  'abs_incl', 'cos_abs_incl', 'spin1', 'spin2']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
                     choices=admitted_vars,
-                    help="Quantity to plot on the horizontal axis. ")
+                    help="Quantity to plot on the horizontal axis. " +
+                    "(Underscores may be omitted in specifying this option).")
 parser.add_argument("--x-log", action="store_true",
                     help="Use log horizontal axis")
 parser.add_argument("-y", "--y-variable", default=None, required=True,
                     choices=admitted_vars,
-                    help="Quantity to plot on the vertical axis.")
+                    help="Quantity to plot on the vertical axis. " +
+                    "(Underscores may be omitted in specifying this option).")
 parser.add_argument("--y-log", action="store_true",
                     help="Use log vertical axis")
 parser.add_argument('--colormap',default='cividis_r',
@@ -214,8 +230,8 @@ if opts.injection_file is None:
     err_msg = "Must provide injection file."
     raise RuntimeError(err_msg)
 
-x_qty = opts.x_variable
-y_qty = opts.y_variable
+x_qty = process_var_strings(opts.x_variable)
+y_qty = process_var_strings(opts.y_variable)
 
 if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
     err_msg = "A value for --ifo must be provided for "
