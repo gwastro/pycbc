@@ -221,11 +221,17 @@ if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
     err_msg += "site specific effective distance"
     parser.error(err_msg)
 
-# Read in files
-logging.info('Reading in the data')
+# Store options used multiple times in local variables
+outfile = opts.output_file
+trig_file = os.path.abspath(opts.offsource_file)
 f = h5py.File(opts.injection_file, 'r')
-trig_file = os.path.abspath(opts.trigger_file)
 grb_time = ppu.get_grb_time(opts.seg_files)
+
+# Set output directory
+logging.info("Setting output directory.")
+outdir = os.path.split(os.path.abspath(outfile))[0]
+if not os.path.isdir(outdir):
+    os.makedirs(outdir)
 
 # Load indices containing found and missed injections
 found = f['found_after_vetoes/injection_index'][:]
