@@ -208,6 +208,19 @@ opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
+# Check options
+if opts.injection_file is None:
+    err_msg = "Must provide injection file."
+    raise RuntimeError(err_msg)
+
+x_qty = opts.x_variable
+y_qty = opts.y_variable
+
+if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
+    err_msg = "A value for --ifo must be provided for "
+    err_msg += "site specific effective distance"
+    parser.error(err_msg)
+
 # Read in files
 logging.info('Reading in the data')
 f = h5py.File(opts.injection_file, 'r')
