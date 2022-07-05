@@ -600,7 +600,7 @@ class DataBuffer(object):
                 n = int(pattern[int(pattern.index('GPS') + 3)])
                 pattern = pattern.replace('GPS%s' % n, str(s)[0:n])
 
-            name = '%s/%s-%s-%s.gwf' % (pattern, self.beg, s, self.dur)
+            name = f'{pattern}/{self.beg}-{s}-{self.dur}.gwf'
             # check that file actually exists, else abort now
             if not os.path.exists(name):
                 raise RuntimeError
@@ -628,25 +628,23 @@ class DataBuffer(object):
         data: TimeSeries
             TimeSeries containg 'blocksize' seconds of frame data
         """
-        if self.force_update_cache:
-            self.update_cache()
-
-        try:
-            if self.increment_update_cache:
-                self.update_cache_by_increment(blocksize)
-
-            return DataBuffer.advance(self, blocksize)
-
-        except RuntimeError:
-            if pycbc.gps_now() > timeout + self.raw_buffer.end_time:
-                # The frame is not there and it should be by now, so we give up
-                # and treat it as zeros
-                DataBuffer.null_advance(self, blocksize)
-                return None
-            else:
-                # I am too early to give up on this frame, so we should try again
-                time.sleep(0.1)
-                return self.attempt_advance(blocksize, timeout=timeout)
+        while True:
+            if self.force_update_cache:
+                self.update_cache()
+            try:
+                if self.increment_update_cache:
+                    self.update_cache_by_increment(blocksize)
+                return DataBuffer.advance(self, blocksize)
+            except RuntimeError:
+                if pycbc.gps_now() > timeout + self.raw_buffer.end_time:
+                    # The frame is not there and it should be by now,
+                    # so we give up and treat it as zeros
+                    DataBuffer.null_advance(self, blocksize)
+                    return None
+                else:
+                    # I am too early to give up on this frame,
+                    # so we should try again
+                    time.sleep(0.1)
 
 class StatusBuffer(DataBuffer):
 
