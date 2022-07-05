@@ -628,9 +628,9 @@ class DataBuffer(object):
         data: TimeSeries
             TimeSeries containg 'blocksize' seconds of frame data
         """
+        if self.force_update_cache:
+            self.update_cache()
         while True:
-            if self.force_update_cache:
-                self.update_cache()
             try:
                 if self.increment_update_cache:
                     self.update_cache_by_increment(blocksize)
