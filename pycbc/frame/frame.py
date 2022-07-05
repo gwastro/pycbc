@@ -641,10 +641,9 @@ class DataBuffer(object):
                     # so we give up and treat it as zeros
                     DataBuffer.null_advance(self, blocksize)
                     return None
-                else:
-                    # I am too early to give up on this frame,
-                    # so we should try again
-                    time.sleep(0.1)
+                # I am too early to give up on this frame,
+                # so we should try again
+                time.sleep(0.1)
 
 class StatusBuffer(DataBuffer):
 
