@@ -26,6 +26,8 @@ import logging
 import pycbc
 import pycbc.version
 from pycbc import tmpltbank, pnutils
+# Old ligolw output functions no longer imported at package level
+import pycbc.tmpltbank.bank_output_utils as llw_output
 from pycbc.types import positive_float
 import pycbc.psd
 import pycbc.strain
@@ -295,7 +297,7 @@ mass1, mass2, spin1z, spin2z = partitioned_bank_object.output_all_points()
 tempBank = zip(mass1, mass2, spin1z, spin2z)
 
 # Output to file
-tmpltbank.output_sngl_inspiral_table(
+llw_output.output_sngl_inspiral_table(
     opts.output_file, tempBank, metricParams, ethincaParams,
     programName=__program__, optDict=opts.__dict__, comment="",
     version=pycbc.version.git_hash,
