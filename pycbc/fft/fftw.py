@@ -111,11 +111,13 @@ def _init_threads(backend):
             # FFTW itself.
             _double_threaded_lib = get_ctypes_library(
                 double_threaded_libname,
-                ['fftw3']
+                ['fftw3'],
+                mode=FFTW_RTLD_MODE
             )
             _float_threaded_lib =  get_ctypes_library(
                 float_threaded_libname,
-                ['fftw3f']
+                ['fftw3f'],
+                mode=FFTW_RTLD_MODE
             )
             if (_double_threaded_lib is None) or (_float_threaded_lib is None):
                 err_str = 'Unable to load threaded libraries'
