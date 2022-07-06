@@ -27,17 +27,11 @@ from collections import deque
 from subprocess import getoutput
 
 
-# DLOPEN mode that requies symbols to first look up locally to this
-# library rather than first going to the global symbol table
-# This should be used when multiple libraries may export incompatible
-# symbols
-#
-# This is only defined for linux systems, on macosx, the default behavior
-# is similar
-if hasattr(os, 'RTLD_DEEPBIND'):
-    DEFAULT_RTLD_MODE = os.RTLD_DEEPBIND
-else:
-    DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
+# Be careful setting the mode for opening libraries! Some libraries (e.g.
+# libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when
+# MKL is also present) require that os.RTLD_DEEPBIND is used. If seeing
+# segfaults around this code, play about this this!
+DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
 
 
 def pkg_config(pkg_libraries):
