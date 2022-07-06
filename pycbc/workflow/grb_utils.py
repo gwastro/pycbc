@@ -367,8 +367,7 @@ def get_sky_grid_scale(
     return out
 
 
-def setup_pygrb_offline_post_proc_workflow(wf, pp_dir,
-                                           seg_dir, segment, insp_files):
+def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files):
     """
     Generate post-processing section of PyGRB offline workflow
     """

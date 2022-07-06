@@ -1265,11 +1265,12 @@ class PycbcGrbTrigCombinerExecutable(Executable):
 
     def __init__(self, cp, name):
         super().__init__(cp=cp, name=name)
-        self.trigger_name = cp.get("workflow", "trigger-name")
+        self.trigger_name = cp.get('workflow', 'trigger-name')
         self.trig_start_time = cp.get('workflow', 'start-time')
+        self.num_trials = cp.get('trig_combiner', 'num_trials')
 
     def create_node(self, ifo_tag, seg_dir, segment, insp_files,
-                    out_dir, user_tag="PYGRB", num_trials=6, tags=None):
+                    out_dir, tags=None):
         node = Node(self)
         node.add_opt('--verbose')
         node.add_opt("--ifo-tag", ifo_tag)
@@ -1277,16 +1278,16 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         node.add_opt("--trig-start-time", self.trig_start_time)
         node.add_opt("--segment-dir", seg_dir)
         node.add_input_list_opt("--input-files", insp_files)
-        node.add_opt("--user-tag", user_tag)
-        node.add_opt("--num-trials", num_trials)
+        node.add_opt("--user-tag", "PYGRB")
+        node.add_opt("--num-trials", self.num_trials)
         # Prepare output file tag
-        user_tag += "_GRB{}".format(self.trigger_name)
+        user_tag = "PYRGB_GRB{}".format(self.trigger_name)
         if tags:
             user_tag += "_{}".format(tags)
         # Add on/off source and off trial outputs
         output_files = FileList([])
         outfile_types = ['ALL_TIMES', 'OFFSOURCE', 'ONSOURCE']
-        for i in range(num_trials):
+        for i in range(self.num_trials):
             outfile_types.append("OFFTRIAL_{}".format(i+1))
         for out_type in outfile_types:
             out_name = "{}-{}_{}-{}-{}.h5".format(
