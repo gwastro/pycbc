@@ -16,6 +16,10 @@ from ..types import check_aligned
 # NOTE:
 # When loading FFTW we use os.RTLD_DEEPBIND to avoid potential segfaults due
 # to conflicts with MKL if both are present.
+if hasattr(os, 'RTLD_DEEPBIND'):
+    FFTW_RTLD_MODE = os.RTLD_DEEPBIND
+else:
+    FFTW_RTLD_MODE = ctypes.DEFAULT_MODE
 
 #FFTW constants, these are pulled from fftw3.h
 FFTW_FORWARD = -1
@@ -35,8 +39,8 @@ FFTW_WISDOM_ONLY = 1 << 21
 # We need to construct them directly with CDLL so
 # we can give the RTLD_GLOBAL mode, which we must do
 # in order to use the threaded libraries as well.
-double_lib = get_ctypes_library('fftw3', ['fftw3'], mode=os.RTLD_DEEPBIND)
-float_lib = get_ctypes_library('fftw3f', ['fftw3f'], mode=os.RTLD_DEEPBIND)
+double_lib = get_ctypes_library('fftw3', ['fftw3'], mode=FFTW_RTLD_MODE)
+float_lib = get_ctypes_library('fftw3f', ['fftw3f'], mode=FFTW_RTLD_MODE)
 if (double_lib is None) or (float_lib is None):
     raise ImportError("Unable to find FFTW libraries")
 
