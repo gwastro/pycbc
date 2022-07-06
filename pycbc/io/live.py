@@ -44,6 +44,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     elem.appendChild(a)
     return elem
 
+
 def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     """Save an SNR time series into an XML document, in a format compatible
     with BAYESTAR.
@@ -56,6 +57,7 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     snr_node = document.childNodes[-1].appendChild(snr_xml)
     eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
+
 
 def make_psd_xmldoc(psddict, xmldoc=None):
     """Add a set of PSDs to a LIGOLW XML document. If the document is not
@@ -75,6 +77,7 @@ def make_psd_xmldoc(psddict, xmldoc=None):
         fs = lw.appendChild(xmlseries)
         fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
     return xmldoc
+
 
 class SingleCoincForGraceDB(object):
     """Create xml files and submit them to gracedb from PyCBC Live"""
@@ -103,8 +106,9 @@ class SingleCoincForGraceDB(object):
             present than given in `ifos`. If so, the extra detectors will only
             be used for sky localization.
         channel_names: dict of strings, optional
-            Strain channel names for each detector.
+            Strain channel names for each detector
             Will be recorded in the sngl_inspiral table.
+        padata: PAstroData instance, organizes info relevant to p astro.
         mc_area_args: dict of dicts, optional
             Dictionary providing arguments to be used in source probability
             estimation with pycbc/mchirp_area.py
@@ -265,6 +269,13 @@ class SingleCoincForGraceDB(object):
             fseries.data.data = psd.numpy()[kmin:] / pycbc.DYN_RANGE_FAC ** 2.0
             psds_lal[ifo] = fseries
         make_psd_xmldoc(psds_lal, outdoc)
+
+        # p astro calculation
+        padata = kwargs['padata']
+        trigger_data = {
+            network_snr: network_snrsq ** 0.5,
+            far: far}  # All a p astro calculation would want to know
+        p_astro = padata.do_pastro_calc(trigger_data, horizons)
 
         # source probabilities estimation
         if 'mc_area_args' in kwargs:
@@ -450,6 +461,7 @@ class SingleCoincForGraceDB(object):
                 logging.error(str(exc))
 
         return gid
+
 
 def gracedb_tag_with_version(gracedb, event_id):
     """Add a GraceDB log entry reporting PyCBC's version and install location.

@@ -15,8 +15,8 @@ def insert_live_pastro_option_group(parser):
         Argument group object
     """
 
-    live_pastro_group = parser.add_argument_group('Options for live p_astro ',
-                                                  'calculation.')
+    live_pastro_group = parser.add_argument_group('Options for live p_astro '
+                                                  'calculation')
 
     # Only one choice so far, allow for more later
     live_pastro_group.add_argument('--p-astro-method', choices=\
@@ -49,7 +49,6 @@ def verify_live_pastro_options(args):
     if args.do_p_astro and args.p_astro_spec_data is None:
         raise RuntimeError('Need a p astro data spec file for method %s! ' %
                            args.p_astro_method)
-
     return args
 
 
@@ -78,11 +77,11 @@ class PAstroData():
         else:
             self.do = False
 
+    def do_pastro_calc(self, trigger_data, horizons):
+        """ Describe """
+        if not padata.do:
+            return None
 
-def do_pastro_calc(padata, trigger_data):
-    """ Describe """
-    if not padata.do:
-        return None
-    method = padata.method
-    p_astro = _do_calc[method](padata, trigger_data)
-    return p_astro
+        method = padata.method
+        p_astro = _do_calc[method](self, trigger_data, horizons)
+        return p_astro

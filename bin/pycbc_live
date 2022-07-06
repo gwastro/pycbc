@@ -219,7 +219,6 @@ class LiveEventManager(object):
                     triggers['foreground/ifar'], pvalue, self.pvalue_livetime)
             triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
 
-
     def setup_optimize_snr(
         self, results, live_ifos, triggering_ifos, bank, fname, data_readers, gid
     ):
@@ -338,9 +337,7 @@ class LiveEventManager(object):
         logging.info('running %s with log to %s', cmd, log_fname)
         with open(log_fname, "w") as logfile:
             subprocess.Popen(
-                cmd, shell=True, stdout=logfile, stderr=logfile
-            )
-
+                cmd, shell=True, stdout=logfile, stderr=logfile)
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
@@ -379,13 +376,13 @@ class LiveEventManager(object):
         event = SingleCoincForGraceDB(
             live_ifos,
             coinc_results,
+            padata=padata,
             bank=bank,
             psds=psds,
             followup_data=fud,
             low_frequency_cutoff=f_low,
             channel_names=args.channel_name,
-            mc_area_args=self.mc_area_args,
-            p_astro_data=self.padata
+            mc_area_args=self.mc_area_args
         )
 
         fname = 'coinc-{}-{}.xml.gz'.format(
@@ -454,12 +451,13 @@ class LiveEventManager(object):
 
             live_ifos = [i for i in fud if 'snr_series' in fud[i]]
 
-            event = SingleCoincForGraceDB(live_ifos, single, bank=bank,
+            event = SingleCoincForGraceDB(live_ifos, single,
+                                          padata=padata, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
-                                          mc_area_args=self.mc_area_args,
-                                          p_astro_data=self.padata)
+                                          mc_area_args=self.mc_area_args)
+                                          #p_astro_data=self.padata)
 
             fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
                                                     pycbc.random_string(6))
@@ -507,7 +505,6 @@ class LiveEventManager(object):
                     data_reader,
                     gid
                 )
-
 
     def dump(self, results, name, store_psd=False, time_index=None,
              store_loudest_index=False, raw_results=None, gates=None):

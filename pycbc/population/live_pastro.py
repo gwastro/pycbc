@@ -23,7 +23,7 @@ def read_template_param_bin_data(spec_file):
     assert 'sig_per_yr_binned' in pa_spec  # signal rate per bin (per year)
     # do the lengths of bin arrays match?
     assert len(pa_spec['bin_edges']) == len(pa_spec['sig_per_yr_binned']) + 1
-    assert 'ref_bns_range' in pa_spec  # float
+    assert 'ref_bns_horizon' in pa_spec  # float
 
     return pa_spec
 
@@ -51,13 +51,26 @@ def read_template_bank_param(spec_data, bankf):
     return bank_data
 
 
-def template_param_bin_calc(padata, trigger_data):
+def signal_rate_rescale(horizons, ref_dhor):
+    """
+    Compute a factor proportional to the rate of signals with given network SNR
+    to account for network sensitivity variation relative to a reference state
+    """
+    # Combine sensitivities over ifos in a way analogous to network SNR
+    net_horizon = sum(hor ** 2. for hor in horizons.values()) ** 0.5
+    # signal rate is proportional to horizon distance cubed
+    return net_horizon ** 3. / ref_dhor ** 3.
+
+
+def template_param_bin_calc(padata, trigger_data, horizons):
     """
     Parameters
 
     padata: PAstroData instance storing static information on p astro calculation
 
     trigger_data: dictionary with trigger properties
+
+    horizons: dictionary of BNS horizon distances per ifo
 
     Returns
 
@@ -68,16 +81,16 @@ def template_param_bin_calc(padata, trigger_data):
     bind = numpy.digitize(trig_param, padata.bank['bin_edges'])
 
     # Get noise rate density and scale by fraction of templates in bin
-    # FAR is in Hz, therefore convert to rate per year
+    # FAR is in Hz, therefore convert to rate per year per SNR
     dnoise = noise_density_from_far(trigger_data['far']) * lal_s_per_yr
     dnoise *= padata.bank['tcounts'][bind] / padata.bank['num_t']
 
     # Get signal rate density at given SNR
-    dsig = signal_pdf_from_snr(trigger_data['network_snr'], padata.spec['netsnr_thresh'])\
+    dsig = signal_pdf_from_snr(trigger_data['network_snr'],
+                               padata.spec['netsnr_thresh'])\
                                        * padata.spec['sig_per_yr_binned'][bind]
-    # Scale by network sensitivity accounting for BNS ranges
-    dsig *= signal_rate_from_ranges(trigger_data, padata.spec['ref_bns_range'])
+    # Scale by network sensitivity accounting for BNS horizon distances
+    dsig *= signal_rate_rescale(horizons, padata.spec['ref_bns_horizon'])
 
-    # Placeholder p astro result
     p_astro = dsig / (dsig + dnoise)
     return p_astro
