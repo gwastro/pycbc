@@ -1267,7 +1267,7 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         super().__init__(cp=cp, name=name)
         self.trigger_name = cp.get('workflow', 'trigger-name')
         self.trig_start_time = cp.get('workflow', 'start-time')
-        self.num_trials = cp.get('trig_combiner', 'num_trials')
+        self.num_trials = int(cp.get('trig_combiner', 'num-trials'))
 
     def create_node(self, ifo_tag, seg_dir, segment, insp_files,
                     out_dir, tags=None):
