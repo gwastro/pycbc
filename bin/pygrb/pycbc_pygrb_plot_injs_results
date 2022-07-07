@@ -86,19 +86,13 @@ def load_mass_data(injs, qty):
     """Extract data related to mass ratio or total mass from raw
     trigger/injection data"""
 
-    local_dict = {}
-
-    # Grab individual mass components
-    for mi in ['mass1', 'mass2']:
-        local_dict[mi] = injs['injections/%s' % mi][:]
-
     if qty == 'mtotal':
-        data = local_dict['mass1'] + local_dict['mass2']
+        data = injs['injections/mass1'][:] + injs['injections/mass2'][:]
     elif qty == 'mchirp':
         data, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-            local_dict['mass1'], local_dict['mass2'])
+            injs['injections/mass1'][:], injs['injections/mass2'][:])
     else:
-        data = local_dict['mass2']/local_dict['mass1']
+        data = injs['injections/mass2'][:]/injs['injections/mass1'][:]
         data = np.where(data > 1, 1./data, data)
 
     return data
@@ -126,17 +120,10 @@ def load_effdist_data(injs, qty, opts, ifos):
 def load_spin_data(injs, qty):
     """Extract data related to spin from raw trigger/injection data"""
 
-    local_dict = {}
-
-    # Grab the components
-    for component in ['x', 'y', 'z']:
-        key = qty+component
-        local_dict[key] = injs['injections/%s' % key][:]
-
     # Calculate the modulus
-    data = np.sqrt(local_dict[qty+'x']**2 +
-                   local_dict[qty+'y']**2 +
-                   local_dict[qty+'z']**2)
+    data = np.sqrt(injs['injections/%sx' % qty][:]**2 +
+                   injs['injections/%sy' % qty][:]**2 +
+                   injs['injections/%sz' % qty][:]**2)
 
     return data
 
