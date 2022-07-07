@@ -92,4 +92,4 @@ def template_param_bin_calc(padata, trigger_data, horizons):
     dsig *= signal_rate_rescale(horizons, padata.spec['ref_bns_horizon'])
 
     p_astro = dsig / (dsig + dnoise)
-    return p_astro
+    return p_astro, 1 - p_astro

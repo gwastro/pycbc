@@ -19,8 +19,8 @@ def insert_live_pastro_option_group(parser):
                                                   'calculation')
 
     # Only one choice so far, allow for more later
-    live_pastro_group.add_argument('--p-astro-method', choices=\
-          ['template_param_bins'])
+    live_pastro_group.add_argument('--p-astro-method',
+                                   choices=['template_param_bins'])
     live_pastro_group.add_argument('--p-astro-spec-data', help='File '
           'containing information to set up p_astro calculation')
 
