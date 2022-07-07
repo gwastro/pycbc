@@ -275,12 +275,12 @@ class SingleCoincForGraceDB(object):
             padata = kwargs['padata']
             # All a p astro calculation would want to know
             trigger_data = {
-                mass1: sngl_populated.mass1,
-                mass2: sngl_populated.mass2,
-                spin1z: sngl_populated.spin1z,
-                spin2z: sngl_populated.spin2z,
-                network_snr: network_snrsq ** 0.5,
-                far: far}
+                'mass1': sngl_populated.mass1,
+                'mass2': sngl_populated.mass2,
+                'spin1z': sngl_populated.spin1z,
+                'spin2z': sngl_populated.spin2z,
+                'network_snr': network_snrsq ** 0.5,
+                'far': far}
             horizons = {ifo: self.psds[ifo].dist}
             self.p_astro, self.p_terr = \
                                   padata.do_pastro_calc(trigger_data, horizons)

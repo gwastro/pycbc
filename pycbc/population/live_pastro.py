@@ -2,7 +2,6 @@ import json
 import h5py
 import numpy
 from lal import YRJUL_SI as lal_s_per_yr
-#from pycbc import conversions
 from pycbc.tmpltbank import bank_conversions as bankconv
 
 

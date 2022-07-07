@@ -79,9 +79,8 @@ class PAstroData():
 
     def do_pastro_calc(self, trigger_data, horizons):
         """ Describe """
-        if not padata.do:
+        if not self.do:
             return None
 
-        method = padata.method
-        p_astro = _do_calc[method](self, trigger_data, horizons)
+        p_astro = _do_calc[self.method](self, trigger_data, horizons)
         return p_astro
