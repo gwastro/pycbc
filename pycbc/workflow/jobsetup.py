@@ -1281,7 +1281,7 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         node.add_opt("--user-tag", "PYGRB")
         node.add_opt("--num-trials", self.num_trials)
         # Prepare output file tag
-        user_tag = "PYRGB_GRB{}".format(self.trigger_name)
+        user_tag = "PYGRB_GRB{}".format(self.trigger_name)
         if tags:
             user_tag += "_{}".format(tags)
         # Add on/off source and off trial outputs
