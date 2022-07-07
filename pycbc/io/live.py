@@ -206,7 +206,7 @@ class SingleCoincForGraceDB(object):
                         sngl.mass1, sngl.mass2)
                 sngl_populated = sngl
             if sngl.snr:
-                sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
+                sngl.eff_distance = sngl.sigmasq ** 0.5 / sngl.snr
                 network_snrsq += sngl.snr ** 2.0
             if 'channel_names' in kwargs and ifo in kwargs['channel_names']:
                 sngl.channel = kwargs['channel_names'][ifo]
@@ -271,20 +271,29 @@ class SingleCoincForGraceDB(object):
         make_psd_xmldoc(psds_lal, outdoc)
 
         # p astro calculation
-        padata = kwargs['padata']
-        trigger_data = {
-            network_snr: network_snrsq ** 0.5,
-            far: far}  # All a p astro calculation would want to know
-        p_astro = padata.do_pastro_calc(trigger_data, horizons)
+        if 'padata' in kwargs:
+            padata = kwargs['padata']
+            # All a p astro calculation would want to know
+            trigger_data = {
+                mass1: sngl_populated.mass1,
+                mass2: sngl_populated.mass2,
+                spin1z: sngl_populated.spin1z,
+                spin2z: sngl_populated.spin2z,
+                network_snr: network_snrsq ** 0.5,
+                far: far}
+            horizons = {ifo: self.psds[ifo].dist}
+            self.p_astro, self.p_terr = \
+                                  padata.do_pastro_calc(trigger_data, horizons)
+        else:
+            self.p_astro, self.p_terr = None, None
 
         # source probabilities estimation
         if 'mc_area_args' in kwargs:
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
-            probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
-                                               coinc_inspiral_row.snr,
-                                               min(eff_distances),
-                                               kwargs['mc_area_args'])
-            self.probabilities = probabilities
+            self.probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
+                                                    coinc_inspiral_row.snr,
+                                                    min(eff_distances),
+                                                    kwargs['mc_area_args'])
         else:
             self.probabilities = None
 
