@@ -30,6 +30,8 @@ import pycbc.version
 import pycbc.psd
 import pycbc.strain
 from pycbc import tmpltbank
+# Old ligolw output functions no longer imported at package level
+import pycbc.tmpltbank.bank_output_utils as llw_output
 from pycbc import pnutils
 
 
@@ -379,7 +381,7 @@ logging.info("Writing output")
 # Currently this is hardcoded to dump as a sngl_inspiral table. But this is
 # easily changed.
 
-tmpltbank.output_sngl_inspiral_table(
+llw_output.output_sngl_inspiral_table(
     opts.output_file, tempBank, metricParams, ethincaParams,
     programName=__program__, optDict=opts.__dict__,
     version=pycbc.version.git_hash,
