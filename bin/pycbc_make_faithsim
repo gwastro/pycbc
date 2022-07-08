@@ -29,6 +29,8 @@ class BaseJob(CondorDAGJob, CondorJob):
         if accounting_group:
             self.add_condor_cmd('accounting_group', accounting_group)
 
+        self.add_condor_cmd('request_disk', 1024)
+
 class FaithsimNode(CondorDAGNode):
     def __init__(self, job, tmplt_file, match_file, inj_per_job=None):
         CondorDAGNode.__init__(self, job)    
