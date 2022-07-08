@@ -41,13 +41,9 @@ args=parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # Assert some sensible limits on the arguments
-try:
-    int(args.conservative_percentile)
-except ValueError:
-    raise parser.error("--conservative-percentile must be an integer")
 
-if int(args.conservative_percentile) < 50 or \
-    int(args.conservative_percentile) > 99:
+if args.conservative_percentile < 50 or \
+    args.conservative_percentile > 99:
     raise parser.error("--conservative-percentile must be between 50 and 99, "
                        "otherwise it is either not a percentile, or not "
                        "conservative.")
@@ -167,10 +163,10 @@ for ifo in args.ifos:
         c = c[valid_alpha]
         invalphan = c / a
         mean_alpha = c.mean() / invalphan.mean()
-        cons_alpha = np.percentile(a, 100 - int(args.conservative_percentile))
+        cons_alpha = np.percentile(a, 100 - args.conservative_percentile)
         cons_alphas_out[ifo][counter] = cons_alpha
         alphas_out[ifo][counter] = mean_alpha
-        cons_count = np.percentile(c, int(args.conservative_percentile))
+        cons_count = np.percentile(c, args.conservative_percentile)
         cons_counts_out[ifo][counter] = cons_count * len(c)
         counts_out[ifo][counter] = c.sum()
 
@@ -185,7 +181,7 @@ for ifo in args.ifos:
                                          [mean_alpha, mean_alpha],
                                          c=colours[counter], linestyle='--',
                                          label="total fit = %.2f" % mean_alpha)
-            alpha_lab = f"{args.conservative_percentile}th %ile = {cons_alpha:.2f}"
+            alpha_lab = f"{args.conservative_percentile:d}th %ile = {cons_alpha:.2f}"
             alpha_lines += ax_alpha.plot([ad[0], ad[-1]], [cons_alpha, cons_alpha],
                                          c=colours[counter], linestyle=':',
                                          label=alpha_lab)
@@ -197,7 +193,7 @@ for ifo in args.ifos:
                                          [c.mean() / meant, c.mean() / meant],
                                          c=colours[counter], linestyle='--',
                                          label="mean = %.3f" % (c.mean() / meant))
-            count_lab = f"{args.conservative_percentile}th %ile = {cons_count / meant:.3f}"
+            count_lab = f"{args.conservative_percentile:d}th %ile = {cons_count / meant:.3f}"
             count_lines += ax_count.plot([ad[0], ad[-1]],
                                          [cons_count / meant, cons_count / meant],
                                          c=colours[counter], linestyle=':',
