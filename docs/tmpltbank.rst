@@ -208,6 +208,7 @@ Here is one example for making an aligned-spin template bank using a pre-generat
         --asd-file /home/spxiwh/aLIGO/BBH_template_banks/asd-T1200307v4.txt \
         --intermediate-data-file intermediate.hdf \
         --metadata-file metadata.xml \
+        --workflow-name example_geom_aligned_bank \
         --supplement-config-file supplement.ini
 
 The file ``supplement.ini`` can be used to specify extra options.  When running
