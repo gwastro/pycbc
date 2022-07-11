@@ -30,6 +30,8 @@ import os
 import math
 import numpy
 import pycbc.tmpltbank
+# Old LigoLW output functions are not imported at tmpltbank level
+import pycbc.tmpltbank.bank_output_utils as llw_output
 import pycbc.psd
 import pycbc.pnutils
 from pycbc import pnutils
@@ -525,7 +527,7 @@ class TmpltbankTestClass(unittest.TestCase):
     def test_conv_to_sngl(self):
         # Just run the function, no checking output
         masses1 = [(2,2,0.4,0.3),(4.01,0.249,0.41,0.29)]
-        pycbc.tmpltbank.convert_to_sngl_inspiral_table(masses1, "a")
+        llw_output.convert_to_sngl_inspiral_table(masses1, "a")
 
     def test_ethinca_calc(self):
         # Just run the function, no checking output
@@ -535,7 +537,7 @@ class TmpltbankTestClass(unittest.TestCase):
         s2z = 0.
         # ethinca calc breaks unless f0 = fLow
         self.metricParams.f0 = self.metricParams.fLow
-        output = pycbc.tmpltbank.calculate_ethinca_metric_comps(
+        output = llw_output.calculate_ethinca_metric_comps(
             self.metricParams, self.ethincaParams, m1, m2, s1z, s2z)
         # restore initial f0 value
         self.metricParams.f0 = self.f0
