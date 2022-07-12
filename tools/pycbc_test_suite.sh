@@ -60,6 +60,18 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     fi
     popd
 
+    # run a quick bank placement example
+    pushd examples/tmpltbank
+    bash -e testNonspin2.sh
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
+    fi
+    popd
+
     # run PyCBC Live test
     if ((${PYTHON_MINOR_VERSION} > 7)); then
       # ligo.skymap is only supporting python3.8+, and older releases are
