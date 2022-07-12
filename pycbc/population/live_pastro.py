@@ -3,6 +3,8 @@ import h5py
 import numpy
 from lal import YRJUL_SI as lal_s_per_yr
 from pycbc.tmpltbank import bank_conversions as bankconv
+from pycbc.events import triggers
+from . import fgmc_functions as fgmcfun
 
 
 def read_template_param_bin_data(spec_file):
@@ -50,6 +52,23 @@ def read_template_bank_param(spec_data, bankf):
     return bank_data
 
 
+def noise_density_from_far(far, exp_fac):
+    """
+    Exponential model of noise rate density per time per (reweighted) SNR
+      b(rho) ~ k exp(-alpha * rho)
+    where alpha is the 'index', yields the relation
+      b(rho) = alpha * FAR(rho)
+    where FAR is the integral of b(rho) from rho to infinity.
+    E.g. fits to single-ifo noise typically yield alpha ~ 6
+    """
+    return exp_fac * far
+
+
+def signal_pdf_from_snr(netsnr, thresh):
+    # FGMC approximate signal distribution ~ SNR ** -4
+    return fgmcfun.log_rho_fg_analytic(netsnr, rhomin)
+
+
 def signal_rate_rescale(horizons, ref_dhor):
     """
     Compute a factor proportional to the rate of signals with given network SNR
@@ -81,7 +100,11 @@ def template_param_bin_calc(padata, trigger_data, horizons):
 
     # Get noise rate density and scale by fraction of templates in bin
     # FAR is in Hz, therefore convert to rate per year per SNR
-    dnoise = noise_density_from_far(trigger_data['far']) * lal_s_per_yr
+    if 'bg_fac' not in padata.spec:
+        expfac = 6.
+    else:
+        expfac = padata.spec['bg_fac']
+    dnoise = noise_density_from_far(trigger_data['far'], expfac) * lal_s_per_yr
     dnoise *= padata.bank['tcounts'][bind] / padata.bank['num_t']
 
     # Get signal rate density at given SNR
