@@ -1,10 +1,11 @@
 import numpy
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from ligo.lw import ligolw, lsctables, utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
-from pycbc.io.ligolw import return_empty_sngl, return_search_summary
+from pycbc.io.ligolw import (
+    return_empty_sngl, return_search_summary, create_process_table
+)
 
 
 def convert_to_sngl_inspiral_table(params, proc_id):
@@ -201,8 +202,8 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
                                ethincaParams, programName="", optDict = None,
                                outdoc=None, **kwargs):
     """
-    Function that converts the information produced by the various pyCBC bank
-    generation codes into a valid LIGOLW xml file containing a sngl_inspiral
+    Function that converts the information produced by the various PyCBC bank
+    generation codes into a valid LIGOLW XML file containing a sngl_inspiral
     table and outputs to file.
 
     Parameters
@@ -228,9 +229,6 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     outdoc (key-word argument) : ligolw xml document
         If given add template bank to this representation of a xml document and
         write to disk. If not given create a new document.
-    kwargs : key-word arguments
-        All other key word arguments will be passed directly to
-        ligolw_process.register_to_xmldoc
     """
     if optDict is None:
         optDict = {}
@@ -244,9 +242,13 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
         if optDict['channel_name'] is not None:
             ifos = [optDict['channel_name'][0:2]]
 
-    proc_id = ligolw_process.register_to_xmldoc(
-            outdoc, programName, optDict,
-            instruments=ifos, **kwargs).process_id
+    proc = create_process_table(
+        outdoc,
+        program_name=programName,
+        detectors=ifos,
+        options=optDict
+    )
+    proc_id = proc.process_id
     sngl_inspiral_table = convert_to_sngl_inspiral_table(tempBank, proc_id)
     # Calculate Gamma components if needed
     if ethincaParams is not None:
