@@ -200,7 +200,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
 
 def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
                                ethincaParams, programName="", optDict = None,
-                               outdoc=None, **kwargs):
+                               outdoc=None):
     """
     Function that converts the information produced by the various PyCBC bank
     generation codes into a valid LIGOLW XML file containing a sngl_inspiral
