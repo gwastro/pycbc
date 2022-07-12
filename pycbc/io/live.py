@@ -325,10 +325,10 @@ class SingleCoincForGraceDB(object):
             logging.info('Source probabilities file saved as %s', self.prob_file)
 
         # Save p astro / p terr as json
-        if self.pastro is not None:
+        if self.p_astro is not None:
             self.pastro_file = filename.replace('.xml.gz', '_pastro.json')
             with open(self.pastro_file, 'w') as pastrof:
-                json.dump({'p_astro': self.pastro, 'p_terr': self.pterr},
+                json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
             logging.info('P_astro file saved as %s', self.pastro_file)
 
@@ -492,7 +492,7 @@ class SingleCoincForGraceDB(object):
                 logging.error(str(exc))
 
         # Upload p_astro JSON
-        if gid is not None and self.pastro is not None:
+        if gid is not None and self.p_astro is not None:
             try:
                 gracedb.writeLog(
                     gid, '2-component p_astro JSON file upload',
