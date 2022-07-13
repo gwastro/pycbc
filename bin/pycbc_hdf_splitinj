@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2014 Andrew Lundgren
 import argparse
 from pycbc.inject import InjectionSet
 import h5py
