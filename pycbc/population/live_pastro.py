@@ -32,14 +32,16 @@ def read_template_param_bin_data(spec_file):
 def read_template_bank_param(spec_data, bankf):
     """
     Parameters
-
-    spec_data: dictionary giving prerequisite data for p astro calc
-
-    bankf: HDF5 template bank file
+    ----------
+    spec_data: dictionary
+        Prerequisite data for p astro calc
+    bankf: string
+        Path to HDF5 template bank file
 
     Returns
-
-    bank_data: dictionary giving bank information binned over specified param
+    -------
+    bank_data: dictionary
+        Template counts binned over specified param
     """
     bank = h5py.File(bankf, 'r')
     # All the templates
@@ -65,8 +67,9 @@ def noise_density_from_far(far, exp_fac):
 
 
 def signal_pdf_from_snr(netsnr, thresh):
-    # FGMC approximate signal distribution ~ SNR ** -4
-    return fgmcfun.log_rho_fg_analytic(netsnr, rhomin)
+    """ FGMC approximate signal distribution ~ SNR ** -4
+    """
+    return fgmcfun.log_rho_fg_analytic(netsnr, thresh)
 
 
 def signal_rate_rescale(horizons, ref_dhor):
@@ -83,34 +86,36 @@ def signal_rate_rescale(horizons, ref_dhor):
 def template_param_bin_calc(padata, trigger_data, horizons):
     """
     Parameters
-
-    padata: PAstroData instance storing static information on p astro calculation
-
-    trigger_data: dictionary with trigger properties
-
-    horizons: dictionary of BNS horizon distances per ifo
+    ----------
+    padata: PAstroData instance
+        Static information on p astro calculation
+    trigger_data: dictionary
+        Trigger properties
+    horizons: dictionary
+        BNS horizon distances keyed on ifo
 
     Returns
-
-    p_astro: float
+    -------
+    p_astro, p_terr: tuple of floats
     """
     trig_param = get_param(trigger_data, padata.spec['param'])
     # Which bin is the trigger in?
     bind = numpy.digitize(trig_param, padata.bank['bin_edges'])
 
-    # Get noise rate density and scale by fraction of templates in bin
+    # Get noise rate density
     # FAR is in Hz, therefore convert to rate per year per SNR
     if 'bg_fac' not in padata.spec:
         expfac = 6.
     else:
         expfac = padata.spec['bg_fac']
     dnoise = noise_density_from_far(trigger_data['far'], expfac) * lal_s_per_yr
+    # Scale by fraction of templates in bin
     dnoise *= padata.bank['tcounts'][bind] / padata.bank['num_t']
 
     # Get signal rate density at given SNR
     dsig = signal_pdf_from_snr(trigger_data['network_snr'],
-                               padata.spec['netsnr_thresh'])\
-                                       * padata.spec['sig_per_yr_binned'][bind]
+                               padata.spec['netsnr_thresh'])
+    dsig *= padata.spec['sig_per_yr_binned'][bind]
     # Scale by network sensitivity accounting for BNS horizon distances
     dsig *= signal_rate_rescale(horizons, padata.spec['ref_bns_horizon'])
 
