@@ -44,9 +44,9 @@ pycbc.init_logging(args.verbose)
 
 if args.conservative_percentile < 50 or \
     args.conservative_percentile > 99:
-    raise parser.error("--conservative-percentile must be between 50 and 99, "
-                       "otherwise it is either not a percentile, or not "
-                       "conservative.")
+    parser.error("--conservative-percentile must be between 50 and 99, "
+                 "otherwise it is either not a percentile, or not "
+                 "conservative.")
 
 colours = ['r', (1.0, 0.6, 0), 'y', 'g', 'c', 'b', 'm',
            (0.8, 0.25, 0), (0.25, 0.8, 0)]
