@@ -55,9 +55,9 @@ def read_template_bank_param(spec_data, bankf):
 def noise_density_from_far(far, exp_fac):
     """
     Exponential model of noise rate density per time per (reweighted) SNR
-      b(rho) ~ k exp(-alpha * rho)
+    b(rho) ~ k exp(-alpha * rho),
     where alpha is the 'index', yields the relation
-      b(rho) = alpha * FAR(rho)
+    b(rho) = alpha * FAR(rho),
     where FAR is the integral of b(rho) from rho to infinity.
     E.g. fits to single-ifo noise typically yield alpha ~ 6
     """
