@@ -3,6 +3,7 @@
 import argparse
 from pycbc.inject import InjectionSet
 import h5py
+import numpy as np
 import pycbc.version
 
 # Parse command line
@@ -49,7 +50,7 @@ if remainder > 0:
 
 # Sanity check: did we get account for all injs?
 if sum(injs_per_split) != num_injs:
-    raise ValueError("Not all injections were accounted for!"
+    raise ValueError("Not all injections were accounted for!")
 
 # Sort injections by time
 inj_table.sort(order='tc')
@@ -57,7 +58,7 @@ inj_table.sort(order='tc')
 # Split injections into a list of smaller sets
 for i in range(num_splits)
     # Number of injections in this split
-    injs_in_split = injs_per_split[i]
+    injs_in_split = int(injs_per_split[i])
     # Spread injections by time so they don't overlap
     injs_to_get = [i+(num_splits*j) for j in range(injs_in_split)]
     # Write to file

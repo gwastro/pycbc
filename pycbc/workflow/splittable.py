@@ -32,7 +32,8 @@ import os
 import logging
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (PycbcSplitBankExecutable,
-        PycbcSplitBankXmlExecutable, PycbcSplitInspinjExecutable)
+        PycbcSplitBankXmlExecutable, PycbcSplitInspinjExecutable,
+        PycbcHDFSplitInjExecutable)
 
 def select_splitfilejob_instance(curr_exe):
     """

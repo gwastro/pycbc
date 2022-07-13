@@ -1272,7 +1272,7 @@ class PycbcHDFSplitInjExecutable(Executable):
         
         node = Node(self)
         
-        node.add_input_opt('--input-file', inj_file)
+        node.add_input_opt('--input-file', parent)
         
         out_files = FileList([])
         for i in range(self.num_splits):
@@ -1280,7 +1280,7 @@ class PycbcHDFSplitInjExecutable(Executable):
             curr_tags = parent.tags + [curr_tag]
             job_tag = parent.description + "_" + self.name.upper()
             out_file = File(parent.ifo_list, job_tag, parent.segment,
-                            extension=ext, directory=self.out_dir,
+                            extension='.hdf', directory=self.out_dir,
                             tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
 
