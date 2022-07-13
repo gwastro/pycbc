@@ -299,7 +299,7 @@ class SingleCoincForGraceDB(object):
         # Combine p astro and source probs
         if self.p_astro is not None and self.probabilities is not None:
             self.astro_probs = {cl: pr * self.p_astro for
-                                cl, pr in self.probabilities.values}
+                                cl, pr in self.probabilities.items()}
             self.astro_probs['p_terr'] = self.p_terr
         else:
             self.astro_probs = None
