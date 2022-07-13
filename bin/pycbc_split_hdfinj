@@ -2,76 +2,65 @@
 
 # Copyright (C) 2014 Andrew Lundgren
 import argparse
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import lsctables
-from itertools import cycle
+from pycbc.inject import InjectionSet
+import h5py
 import pycbc.version
-from pycbc.io.ligolw import LIGOLWContentHandler
-
 
 # Parse command line
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
-group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-n", "--num-splits", type=int,
-                   help="Number of files to be generated")
-group.add_argument("-f", "--output-files", nargs='*', default=None,
+parser.add_argument("-f", "--output-files", nargs='*', default=None,
                    help="Names of output files")
 
 parser.add_argument("-i", "--input-file", help="Injection file to be split")
-parser.add_argument("-o", "--output-dir", default=None,
-                    help="Location of output files")
 
 args = parser.parse_args()
 
-if args.output_files and args.output_dir:
-    parser.error("Provide only one of --output-dir or --output-files")
+# Read in input file as both an hdf file and an InjectionSet object
+inj_file = h5py.File(args.input_file)
+inj_set = InjectionSet(args.input_file)
 
-# Read in input file
-xmldoc = ligolw_utils.load_filename(
-        args.input_file, verbose=True, contenthandler=LIGOLWContentHandler)
-tabletype = lsctables.SimInspiralTable
-allinjs = tabletype.get_table(xmldoc)
+# Define table of injection info
+inj_table = inj_set.table
 
-# The sim_inspiral table is a grandchild of the document, I guess
-xmlroot = xmldoc.childNodes[0]
+# InjectionSet.write() requires static params as a dictionary,
+# so get that from file object.
+# Ignore the "static_params" copy.
+static_params = {key : inj_file.attrs[key] for key in inj_file.attrs
+                 if key != 'static_args'}
 
-xmlroot.removeChild(allinjs)
+# Also get the names of variable params as write_args
+write_args = [arg for arg in inj_table.fieldnames
+              if arg not in static_params.keys()]
 
-if args.num_splits:
-    num_splits = args.num_splits
-else:
-    num_splits = len(args.output_files)
+num_injs = len(inj_table)
+num_splits = len(args.output_files)
 
-# make a list of columns that are present in the input table.
-# The : split is needed for columns like `process:process_id`,
-# which must be listed as `process:process_id` in `lsctables.New()`,
-# but are listed as just `process_id` in the `columnnames` attribute
-used_columns = []
-for col in allinjs.validcolumns:
-    att = col.split(':')[-1]
-    if att in allinjs.columnnames:
-        used_columns.append(col)
+# Ideally, the number of injections is divsible by number of splits
+# with no remainder, but that is not always true
+ideal_split = num_injs // num_splits
+remainder = num_injs % num_splits
+injs_per_split = np.zeros(num_splits) + ideal_split
 
-new_inj_tables = [lsctables.New(tabletype, columns=used_columns) 
-                  for idx in range(num_splits)]
+# Handle the remainder if it exists
+if remainder > 0:
+    for i in range(remainder):
+        injs_per_split[i] += 1
 
-table_cycle = cycle(new_inj_tables)
-for inj in sorted(allinjs, key=lambda x: x.time_geocent):
-    next(table_cycle).append(inj)
+# Sanity check: did we get account for all injs?
+if sum(injs_per_split) != num_injs:
+    raise ValueError("Not all injections were accounted for!"
 
-if not args.output_files:
-    temp = args.input_file.split('-')
-    temp[1] += '_%.4u'
-    filename_pattern = '-'.join(temp)
+# Sort injections by time
+inj_table.sort(order='tc')
 
-for idx, simtable in enumerate(new_inj_tables):
-    xmlroot.appendChild(simtable)
-    if not args.output_files:
-        out_path = args.output_dir + '/' + filename_pattern % idx
-    else:
-        out_path = args.output_files[idx]
-    ligolw_utils.write_filename(xmldoc, out_path,
-                                           gz=out_path.endswith('gz'))
-    xmlroot.removeChild(simtable)
+# Split injections into a list of smaller sets
+for i in range(num_splits)
+    # Number of injections in this split
+    injs_in_split = injs_per_split[i]
+    # Spread injections by time so they don't overlap
+    injs_to_get = [i+(num_splits*j) for j in range(injs_in_split)]
+    # Write to file
+    InjectionSet.write(args.output_files[i], inj_table[injs_to_get],
+                       write_args, static_params)
