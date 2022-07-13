@@ -80,7 +80,7 @@ class PAstroData():
     def do_pastro_calc(self, trigger_data, horizons):
         """ Describe """
         if not self.do:
-            return None
+            return None, None
 
-        p_astro = _do_calc[self.method](self, trigger_data, horizons)
-        return p_astro
+        p_astro, p_terr = _do_calc[self.method](self, trigger_data, horizons)
+        return p_astro, p_terr
