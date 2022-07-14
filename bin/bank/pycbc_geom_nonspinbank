@@ -30,6 +30,8 @@ import pycbc.version
 import pycbc.psd
 import pycbc.strain
 from pycbc import tmpltbank
+# Old ligolw output functions no longer imported at package level
+import pycbc.tmpltbank.bank_output_utils as llw_output
 from pycbc import pnutils
 
 
@@ -261,7 +263,7 @@ if lower1DBoundary is not None:
 v1s = numpy.array(v1s)
 v2s = numpy.array(v2s)
 
-logging.info("%d points in the lattice" % len(v1s))
+logging.info("%d points in the lattice", len(v1s))
 
 # What follows is used to
 #   1) Check if the points are close to the physical space, if not reject
@@ -379,12 +381,13 @@ logging.info("Writing output")
 # Currently this is hardcoded to dump as a sngl_inspiral table. But this is
 # easily changed.
 
-tmpltbank.output_sngl_inspiral_table(
-    opts.output_file, tempBank, metricParams, ethincaParams,
-    programName=__program__, optDict=opts.__dict__,
-    version=pycbc.version.git_hash,
-    cvs_repository='pycbc/'+pycbc.version.git_branch,
-    cvs_entry_time=pycbc.version.date)
+llw_output.output_sngl_inspiral_table(
+    opts.output_file,
+    tempBank,
+    metricParams,
+    ethincaParams,
+    programName=__program__,
+    optDict=opts.__dict__
+)
 
 logging.info("Done")
-

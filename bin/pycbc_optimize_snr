@@ -47,7 +47,7 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     """
     Compute network SNR as a function over mchirp, eta and two aligned
     spin components, stored in that order in the sequence v
-    """    
+    """
     data = argv[0]
     coinc_times = argv[1]
     ifos = argv[2]
@@ -112,14 +112,14 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     return network_snrsq ** 0.5, snr_series_dict
 
 
-def compute_network_snr(v, *argv):
+def compute_minus_network_snr(v, *argv):
     if len(argv) == 1:
         argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
     return -nsnr
 
 
-def compute_network_snr_pso(v, *argv, **kwargs):
+def compute_minus_network_snr_pso(v, *argv, **kwargs):
     argv = kwargs['args']
     nsnr_array = numpy.array([-compute_network_snr_core(v_i, *argv)[0] for v_i in v])
     return nsnr_array
@@ -133,7 +133,7 @@ def optimize_di(bounds, cli_args, extra_args):
         bounds['spin2z']
     ]
     results = differential_evolution(
-        compute_network_snr,
+        compute_minus_network_snr,
         bounds,
         maxiter=cli_args.di_maxiter,
         workers=(cli_args.cores or -1),
@@ -154,7 +154,7 @@ def optimize_shgo(bounds, cli_args, extra_args):
         bounds['spin2z']
     ]
     results = shgo(
-        compute_network_snr,
+        compute_minus_network_snr,
         bounds=bounds,
         args=extra_args,
         iters=args.shgo_iters,
@@ -189,7 +189,7 @@ def optimize_pso(bounds, cli_args, extra_args):
         bounds=(min_bounds, max_bounds)
     )
     _, results = optimizer.optimize(
-        compute_network_snr_pso,
+        compute_minus_network_snr_pso,
         iters=cli_args.pso_iters,
         n_processes=cli_args.cores,
         args=extra_args
@@ -271,7 +271,7 @@ parser.add_argument('--pso-c2', type=float, default=2.0,
                     'The hyperparameter c2: the social parameter.')
 parser.add_argument('--pso-w', type=float, default=0.01,
                     help='Only relevant for --optimizer pso: '
-                    'The hyperparameter w: the intertia parameter.')
+                    'The hyperparameter w: the inertia parameter.')
 
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)

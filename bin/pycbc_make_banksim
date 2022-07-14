@@ -30,6 +30,8 @@ class BaseJob(CondorDAGJob, CondorJob):
 
         if accounting_group:
             self.add_condor_cmd('accounting_group', accounting_group)
+            
+        self.add_condor_cmd('request_disk', 1024)
 
 class BanksimNode(CondorDAGNode):
     def __init__(self, job, inj_file, tmplt_file, match_file, gpu=True,
@@ -227,8 +229,8 @@ for inj_num in range(num_injs):
     cnode = CombineNode(cjob, inj_num)
     for bank_num in range(num_banks):
         if mchirp_window is not None:
-            bank_part = "bank/bank" + str(bank_num) + ".xml"
-            sim_part =  "injection/injection" + str(inj_num) + ".xml"
+            bank_part = "bank/bank" + str(bank_num) + ".xml.gz"
+            sim_part =  "injection/injection" + str(inj_num) + ".xml.gz"
             if check_outside_mchirp(bank_part, sim_part, mchirp_window):
                 skip_count += 1
                 continue
@@ -236,8 +238,8 @@ for inj_num in range(num_injs):
                 do_count += 1
         part_num = str(bank_num)
         mfn = 'match-part/match' + num +'part' + part_num + '.dat'
-        sn = 'injection/injection' + num + '.xml'
-        bn = 'bank/bank' + part_num + '.xml'
+        sn = 'injection/injection' + num + '.xml.gz'
+        bn = 'bank/bank' + part_num + '.xml.gz'
         bsnode = BanksimNode(bsjob, sn, bn, mfn, gpu=gpu,
                              gpu_postscript="scripts/diff_match.sh",
                              inj_per_job=injections_per_job)

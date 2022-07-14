@@ -12,6 +12,7 @@ ligo.skymap
 pykerr
 
 # auxiliary samplers
+epsie>=1.0
 cpnest
 pymultinest
 ultranest
@@ -22,3 +23,7 @@ setproctitle
 
 # Needed for `population_models` module
 sympy>=1.9
+
+# Needed for KDE trigger statistics
+git+https://github.com/mennthor/awkde.git@master
+scikit-learn

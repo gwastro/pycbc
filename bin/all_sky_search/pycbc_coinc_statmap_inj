@@ -5,7 +5,7 @@ by pycbc_coinc_findtrigs to generated a mapping between SNR and FAP, along
 with producing the combined foreground and background triggers
 """
 import argparse, h5py, logging, itertools, copy, pycbc.io, numpy, lal
-from pycbc.events import veto, coinc
+from pycbc.events import veto, coinc, significance
 import pycbc.version
 import pycbc.conversions as conv
 
@@ -36,12 +36,18 @@ parser.add_argument('--ranking-statistic-threshold', type=float,
                          ' a unique inclusive background.')
 parser.add_argument('--ifos', nargs='+',
                     help='List of ifos used in these coincidence files')
+significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
+
+significance.check_significance_options(args, parser)
 
 if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+
+ifo_key = ''.join(args.ifos)
+significance_dict = significance.digest_significance_options([ifo_key], args)
 
 window = args.cluster_window
 logging.info("Loading coinc zerolag triggers")
@@ -93,8 +99,11 @@ f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
-    fnlouder_exc = coinc.calculate_n_louder(back_stat, zdata.stat, dec_fac,
-                                            skip_background=True)
+    _, fnlouder_exc = significance.get_n_louder(
+        back_stat,
+        zdata.stat,
+        dec_fac,
+        **significance_dict[ifo_key])
     ifar_exc = background_time / (fnlouder_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
@@ -146,8 +155,12 @@ if len(zdata) > 0:
         inj_dec = numpy.concatenate(
                      [numpy.repeat(1, len(v1) + len(v2)), dec_fac])
 
-        fnlouder[i] = coinc.calculate_n_louder(inj_stat, fstat, inj_dec,
-                                               skip_background=True)
+        _, fnlouder[i] = significance.get_n_louder(
+            inj_stat,
+            fstat,
+            inj_dec,
+            **significance_dict[ifo_key])
+
         ifar[i] = background_time / (fnlouder[i] + 1)
         fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
         logging.info('processed %s, %s' % (i, fstat))

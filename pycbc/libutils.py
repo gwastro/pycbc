@@ -26,6 +26,14 @@ from ctypes.util import find_library
 from collections import deque
 from subprocess import getoutput
 
+
+# Be careful setting the mode for opening libraries! Some libraries (e.g.
+# libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when
+# MKL is also present) require that os.RTLD_DEEPBIND is used. If seeing
+# segfaults around this code, play about this this!
+DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
+
+
 def pkg_config(pkg_libraries):
     """Use pkg-config to query for the location of libraries, library directories,
        and header directories
@@ -146,7 +154,7 @@ def get_libpath_from_dirlist(libname, dirs):
     # If we get here, we didn't find it...
     return None
 
-def get_ctypes_library(libname, packages, mode=None):
+def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
     """
     This function takes a library name, specified in architecture-independent fashion (i.e.
     omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and

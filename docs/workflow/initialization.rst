@@ -187,7 +187,20 @@ Here is an example of the [workflow] section of a .ini file::
 Executable locations - the [executables] section
 =================================================
 
-This section should contain the names of each of the executables that will be used in the workflow and their locations. 
+This section should contain the names of each of the executables that will be used in the workflow and their locations.  The section might look something like::
+
+  [executables]
+  tmpltbank = /full/path/to/lalapps_tmpltbank
+  inspiral = /full/path/to/lalapps_inspiral
+
+Note that one can give gsiftp or http/https paths here and the workflow generator will download the code to the workflow directory when it is run.
+
+One can also give a URL indicating singularity as the scheme. This will indicate that the executable will be run within a singularity container, and therefore the executables would not be directly accessible from the head node::
+
+  [executables]
+  tmpltbank = https://github.com/full/url/to/lalapps_tmpltbank
+  inspiral = singularity:///full/path/to/lalapps_inspiral
+
 
 -------------------
 executable macros

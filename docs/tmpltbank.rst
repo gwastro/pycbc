@@ -189,15 +189,48 @@ Here is one example for making an aligned-spin template bank using a pre-generat
 
 .. code-block:: bash
 
-    pycbc_geom_aligned_bank --pn-order threePointFivePN --f0 70 --f-low 15 --f-upper 1000 --delta-f 0.01 --min-match 0.97 --min-mass1 2.5 --min-mass2 2.5 --max-mass1 3. --max-mass2 3. --verbose --max-ns-spin-mag 0.05 --max-bh-spin-mag 0.05 --output-file testAligned.xml --split-bank-num 5 --asd-file /home/spxiwh/aLIGO/BBH_template_banks/asd-T1200307v4.txt --intermediate-data-file intermediate.hdf --metadata-file metadata.xml
+    pycbc_geom_aligned_bank \
+        --pn-order threePointFivePN \
+        --f0 70 \
+        --f-low 15 \
+        --f-upper 1000 \
+        --delta-f 0.01 \
+        --min-match 0.97 \
+        --min-mass1 2.5 \
+        --min-mass2 2.5 \
+        --max-mass1 3 \
+        --max-mass2 3 \
+        --verbose \
+        --max-ns-spin-mag 0.05 \
+        --max-bh-spin-mag 0.05 \
+        --output-file testAligned.xml \
+        --split-bank-num 5 \
+        --asd-file /home/spxiwh/aLIGO/BBH_template_banks/asd-T1200307v4.txt \
+        --intermediate-data-file intermediate.hdf \
+        --metadata-file metadata.xml \
+        --workflow-name example_geom_aligned_bank \
+        --supplement-config-file supplement.ini
 
-and then submitted with something like:
+The file ``supplement.ini`` can be used to specify extra options.  When running
+on LIGO Data Grid clusters, this file should contain at least the following:
+
+.. code-block::
+
+    [pegasus_profile]
+    condor|accounting_group = accounting.tag
+    condor|request_disk = 1024
+
+where ``accounting.tag`` should be replaced with one of the valid accounting
+tags. On non-LDG clusters, ``--supplement-config-file supplement.ini`` can be
+omitted if there are no extra options to give.
+
+After running ``pycbc_geom_aligned_bank``, submit the workflow with
 
 .. code-block:: bash
 
-    pycbc_submit_dax --dax bank_gen.dax --accounting-group ligo.dev.o2.cbc.bbh.pycbcoffline
+    pycbc_submit_dax
 
-run
+Run
 
 .. code-block:: bash
 
