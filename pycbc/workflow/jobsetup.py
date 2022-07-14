@@ -1267,7 +1267,7 @@ class PycbcHDFSplitInjExecutable(Executable):
         self.num_splits = int(num_splits)
 
     def create_node(self, parent, tags=None):
-        if tags = None:
+        if tags is None:
             tags = []
         
         node = Node(self)
