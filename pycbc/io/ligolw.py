@@ -126,18 +126,20 @@ def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
     return search_summary
 
 def create_process_table(document, program_name=None, detectors=None,
-                         comment=None):
+                         comment=None, options=None):
     """Create a LIGOLW process table with sane defaults, add it to a LIGOLW
     document, and return it.
     """
     if program_name is None:
         program_name = os.path.basename(sys.argv[0])
+    if options is None:
+        options = {}
 
     # ligo.lw does not like `cvs_entry_time` being an empty string
     cvs_entry_time = pycbc_version.date or None
 
     process = ligolw_process.register_to_xmldoc(
-            document, program_name, {}, version=pycbc_version.version,
+            document, program_name, options, version=pycbc_version.version,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
             cvs_entry_time=cvs_entry_time, instruments=detectors,
             comment=comment)
