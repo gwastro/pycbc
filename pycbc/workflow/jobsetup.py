@@ -1330,7 +1330,7 @@ class PycbcHDFSplitInjExecutable(Executable):
     """ The class responsible for creating jobs for ``pycbc_hdf_splitinj``.
     """
     current_retention_level = Executable.ALL_TRIGGERS
-    
+
     def __init__(self, cp, exe_name, num_splits, ifo=None, out_dir=None):
         super().__init__(cp, exe_name, ifo, out_dir, tags=[])
         self.num_splits = int(num_splits)
@@ -1338,11 +1338,8 @@ class PycbcHDFSplitInjExecutable(Executable):
     def create_node(self, parent, tags=None):
         if tags is None:
             tags = []
-        
         node = Node(self)
-        
         node.add_input_opt('--input-file', parent)
-        
         out_files = FileList([])
         for i in range(self.num_splits):
             curr_tag = 'split%d' % i
@@ -1352,6 +1349,5 @@ class PycbcHDFSplitInjExecutable(Executable):
                             extension='.hdf', directory=self.out_dir,
                             tags=curr_tags, store_file=self.retain_files)
             out_files.append(out_file)
-
         node.add_output_list_opt('--output-files', out_files)
         return node
