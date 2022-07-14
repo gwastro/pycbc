@@ -326,7 +326,7 @@ class SingleCoincForGraceDB(object):
 
         # Save p astro / p terr as json
         if self.p_astro is not None:
-            self.pastro_file = filename.replace('.xml.gz', '_pastro.json')
+            self.pastro_file = filename.replace('.xml.gz', '_pa_pterr.json')
             with open(self.pastro_file, 'w') as pastrof:
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
@@ -334,8 +334,9 @@ class SingleCoincForGraceDB(object):
 
         # Save multi-cpt p astro as json
         if self.astro_probs is not None:
-            # Us standard GraceDB file name
-            self.multipa_file = 'p_astro.json'
+            ## Use standard GraceDB file name??
+            #self.multipa_file = 'p_astro.json'
+            self.pastro_file = filename.replace('.xml.gz', '_p_astro.json')
             with open(self.multipa_file, 'w') as multipaf:
                 json.dump(self.astro_probs, multipaf)
             logging.info('Multi p_astro file saved as %s', self.multipa_file)
@@ -509,7 +510,7 @@ class SingleCoincForGraceDB(object):
             try:
                 gracedb.writeLog(
                     gid, 'Multi-component p_astro JSON file upload',
-                    filename=self.multipa_file,
+                    filename='p_astro.json',
                     tag_name=['em_follow']
                 )
                 logging.info('Uploaded multi p_astro for %s', gid)
