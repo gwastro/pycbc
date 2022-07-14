@@ -1324,3 +1324,34 @@ class PycbcGrbTrigClusterExecutable(Executable):
         node.add_output(out_file)
 
         return node, out_file
+
+
+class PycbcHDFSplitInjExecutable(Executable):
+    """ The class responsible for creating jobs for ``pycbc_hdf_splitinj``.
+    """
+    current_retention_level = Executable.ALL_TRIGGERS
+    
+    def __init__(self, cp, exe_name, num_splits, ifo=None, out_dir=None):
+        super().__init__(cp, exe_name, ifo, out_dir, tags=[])
+        self.num_splits = int(num_splits)
+
+    def create_node(self, parent, tags=None):
+        if tags is None:
+            tags = []
+        
+        node = Node(self)
+        
+        node.add_input_opt('--input-file', parent)
+        
+        out_files = FileList([])
+        for i in range(self.num_splits):
+            curr_tag = 'split%d' % i
+            curr_tags = parent.tags + [curr_tag]
+            job_tag = parent.description + "_" + self.name.upper()
+            out_file = File(parent.ifo_list, job_tag, parent.segment,
+                            extension='.hdf', directory=self.out_dir,
+                            tags=curr_tags, store_file=self.retain_files)
+            out_files.append(out_file)
+
+        node.add_output_list_opt('--output-files', out_files)
+        return node
