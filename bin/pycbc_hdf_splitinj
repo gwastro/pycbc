@@ -6,6 +6,10 @@ import h5py
 import numpy as np
 import pycbc.version
 
+"""
+Splits injections created using pycbc_create_injections into smaller sets
+"""
+
 # Parse command line
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version",
