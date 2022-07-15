@@ -1,7 +1,7 @@
+import logging
 import json
 import h5py
 import numpy
-import logging
 from lal import YRJUL_SI as lal_s_per_yr
 from pycbc.tmpltbank import bank_conversions as bankconv
 from pycbc.events import triggers
