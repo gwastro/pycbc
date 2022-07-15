@@ -49,6 +49,9 @@ def verify_live_pastro_options(args):
     if args.do_p_astro and args.p_astro_spec_data is None:
         raise RuntimeError('Need a p astro data spec file for method %s! ' %
                            args.p_astro_method)
+    elif not args.do_p_astro and args.p_astro_spec_data is not None:
+        raise RuntimeError('Need to specify p_astro method to do a p_astro '
+                           'calculation!')
     return args
 
 
@@ -68,7 +71,9 @@ _do_calc = {
 class PAstroData():
     """ Class for managing live p_astro calculation persistent info """
     def __init__(self, args, bank):
-        """ Describe """
+        """
+        Assign calculation method, read spec file and process the template bank
+        """
         if args.do_p_astro:
             self.do = True
             self.method = args.p_astro_method
@@ -78,7 +83,7 @@ class PAstroData():
             self.do = False
 
     def do_pastro_calc(self, trigger_data, horizons):
-        """ Describe """
+        """ No-op, or call the despatch dictionary to evaluate p_astro """
         if not self.do:
             return None, None
 
