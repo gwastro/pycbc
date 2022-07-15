@@ -83,7 +83,7 @@ class DistMarg():
         self.marginalize_vector = marginalize_vector
         self.marginalize_vector_params = marginalize_vector_params
 
-        self.reconstructing_distance = False
+        self.reconstructing = False
         self.marginalize_phase = str_to_bool(marginalize_phase)
         self.distance_marginalization = False
         self.distance_interpolator = None
@@ -191,7 +191,7 @@ class DistMarg():
             vector, instead return the likelihood values as a vector.
         """
         interpolator = self.distance_interpolator
-        if self.reconstructing_distance:
+        if self.reconstructing:
             skip_vector = True
             interpolator = None
 
@@ -206,6 +206,7 @@ class DistMarg():
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
+        self.reconstructing = True
         rec = {}
 
         def draw_sample(params, loglr):
@@ -214,10 +215,6 @@ class DistMarg():
             cdf /= cdf[-1]
             xl = numpy.searchsorted(cdf, x)
             return params[xl], xl
-
-        if self.distance_marginalization:
-            # turn off interpolator and set to return vector output
-            self.reconstructing_distance = True
 
         loglr_full = self.loglr
         if self.marginalize_vector and self.distance_marginalization:
@@ -243,8 +240,7 @@ class DistMarg():
 
             vec_param, _ = draw_sample(self.marginalize_vector_params, vlr)
             rec[self.marginalize_vector] = vec_param
-
-        self.reconstructing_distance = False
+        self.reconstructing = False
         return rec
 
 
