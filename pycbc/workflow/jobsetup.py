@@ -132,7 +132,8 @@ def select_generic_executable(workflow, exe_tag):
         'pycbc_dark_vs_bright_injections' : PycbcDarkVsBrightInjectionsExecutable,
         'pycbc_condition_strain'         : PycbcConditionStrainExecutable,
         'pycbc_grb_trig_combiner'  : PycbcGrbTrigCombinerExecutable,
-        'pycbc_grb_trig_cluster'   : PycbcGrbTrigClusterExecutable
+        'pycbc_grb_trig_cluster'   : PycbcGrbTrigClusterExecutable,
+        'pycbc_grb_inj_finder'     : PycbcGrbInjFinderExecutable
     }
     try:
         return exe_to_class_map[exe_name]
@@ -1351,3 +1352,30 @@ class PycbcHDFSplitInjExecutable(Executable):
             out_files.append(out_file)
         node.add_output_list_opt('--output-files', out_files)
         return node
+
+
+class PycbcGrbInjFinderExecutable(Executable):
+    """The class responsible for creating jobs for ``pycbc_grb_inj_finder``
+    """
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, exe_name):
+        super().__init__(cp=cp, name=exe_name)
+
+    def create_node(self, inj_files, inj_insp_files,
+                    out_dir, inj_type, tags):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        node.add_input_opt_list('--input-files', inj_insp_files)
+        node.add_input_opt_list('--inj-files', inj_files)
+        node.add_input('--ifo-tag', ifo_tag)
+        out_name = "{}-{}_FOUNDMISSED-{}-{}.h5".format(
+        inj_files[0].ifo_list,
+        inj_type,
+        inj_files[0].segment[0],
+        abs(inj_files[0].segment))
+        out_file = File(ifo_tag, 'inj_finder', inj_files[0].segment,
+                        os.path.join(out_dir, out_name))
+        node.add_output(out_file)
+        return node, out_file 

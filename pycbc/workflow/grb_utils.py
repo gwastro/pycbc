@@ -367,15 +367,16 @@ def get_sky_grid_scale(
     return out
 
 
-def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files):
+def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
+                            inj_files, inj_insp_files, inj_tags):
     """
     Generate post-processing section of PyGRB offline workflow
     """
     pp_outs = FileList([])
     # Begin setting up trig combiner job(s)
     # Select executable class and initialize
-    combiner_exe_class = select_generic_executable(wf, "trig_combiner")
-    job_instance = combiner_exe_class(wf.cp, "trig_combiner")
+    exe_class = select_generic_executable(wf, "trig_combiner")
+    job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
     node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
                                     insp_files, pp_dir)
@@ -383,14 +384,22 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files):
     pp_outs.append(trig_files)
 
     # Trig clustering for each trig file
-    cluster_exe_class = select_generic_executable(wf, "trig_cluster")
-    job_instance = cluster_exe_class(wf.cp, "trig_cluster")
+    exe_class = select_generic_executable(wf, "trig_cluster")
+    job_instance = exe_class(wf.cp, "trig_cluster")
     for trig_file in trig_files:
         # Create and add nodes
         node, out_file = job_instance.create_node(trig_file, pp_dir)
         wf.add_node(node)
         pp_outs.append(out_file)
-    # TODO: Add other trig combiners as needed
-    # TODO: Add trig clustering as needed
-    # TODO: Add plots and necessary calculations
+
+    # Find injections from triggers
+    exe_class = select_generic_executable(wf, "inj_finder")
+    job_instance = exe_class(wf.cp, "inj_finder")
+    inj_find_files = []
+    for inj_tag in inj_tags:
+        node, inj_find_file = job_instance.create_node(inj_files, inj_insp_files, pp_dir, inj_tag)
+        wf.add_node(node)
+        pp_outs.append(inj_find_file)
+        inj_find_files.append(inj_find_file)
+
     return pp_outs
