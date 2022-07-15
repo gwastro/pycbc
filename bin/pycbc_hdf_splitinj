@@ -60,7 +60,7 @@ if sum(injs_per_split) != num_injs:
 inj_table.sort(order='tc')
 
 # Split injections into a list of smaller sets
-for i in range(num_splits)
+for i in range(num_splits):
     # Number of injections in this split
     injs_in_split = int(injs_per_split[i])
     # Spread injections by time so they don't overlap
