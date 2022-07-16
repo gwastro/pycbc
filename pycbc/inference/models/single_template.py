@@ -220,7 +220,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             htf = (fp * ip + 1.0j * fc * ic) / p['distance'] * phase
             self.htfs[ifo] = htf
             self.dts[ifo] = p['tc'] + dt
-            sh = self.sh[ifo].at_time(self.dts[ifo], nearest_sample=True) * htf
+            sh = self.sh[ifo].at_time(self.dts[ifo], interpolate=True) * htf
             sh_total += sh
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 

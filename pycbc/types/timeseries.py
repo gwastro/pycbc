@@ -240,9 +240,17 @@ class TimeSeries(Array):
     sample_times = property(get_sample_times,
                             doc="Array containing the sample times.")
 
-    def at_time(self, time, nearest_sample=False):
+    def at_time(self, time, nearest_sample=False, interpolate=False):
         """ Return the value at the specified gps time
         """
+        if interpolate:
+            i = float(time-self.start_time)*self.sample_rate
+            di = i - int(i)
+            i = int(i)
+            a = self[i]
+            b = self[i+1]
+            return a + (b - a) * di
+
         if nearest_sample:
             time += self.delta_t / 2.0
         return self[int((time-self.start_time)*self.sample_rate)]
