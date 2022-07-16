@@ -84,6 +84,7 @@ class DistMarg():
         self.marginalize_vector_params = marginalize_vector_params
 
         self.reconstructing = False
+        self.reconstruct_phase = False
         self.marginalize_phase = str_to_bool(marginalize_phase)
         self.distance_marginalization = False
         self.distance_interpolator = None
@@ -191,15 +192,19 @@ class DistMarg():
             vector, instead return the likelihood values as a vector.
         """
         interpolator = self.distance_interpolator
+        return_complex = False
         if self.reconstructing:
             skip_vector = True
             interpolator = None
+            if self.reconstruct_phase:
+                return_complex=True
 
         return marginalize_likelihood(sh_total, hh_total,
                                       phase=self.marginalize_phase,
                                       interpolator=interpolator,
                                       distance=self.distance_marginalization,
                                       skip_vector=skip_vector,
+                                      return_complex=return_complex,
                                       return_peak=return_peak)
 
     def reconstruct(self):
@@ -211,6 +216,7 @@ class DistMarg():
 
         def draw_sample(params, loglr):
             x = numpy.random.uniform()
+            loglr -= loglr.max()
             cdf = numpy.exp(loglr).cumsum()
             cdf /= cdf[-1]
             xl = numpy.searchsorted(cdf, x)
@@ -238,8 +244,26 @@ class DistMarg():
             else:
                 vlr = loglr
 
-            vec_param, _ = draw_sample(self.marginalize_vector_params, vlr)
+            vec_param, xl2 = draw_sample(self.marginalize_vector_params, vlr)
             rec[self.marginalize_vector] = vec_param
+
+        if self.marginalize_phase:
+            self.reconstruct_phase = True
+            self.update(**self.current_params)
+
+            loglr_full = self.loglr
+            if self.marginalize_vector and self.distance_marginalization:
+                loglr = loglr_full[:,xl][xl2]
+            elif self.marginalize_vector:
+                loglr = loglr_full[xl2]
+            elif self.distance_marginalization:
+                loglr = loglr_full[xl]
+
+            phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
+            phasel = (numpy.exp(2.0j * phasev) * loglr).real
+            rec['coa_phase'] = draw_sample(phasev, phasel)[0]
+            self.reconstruct_phase = False
+
         self.reconstructing = False
         return rec
 
@@ -315,6 +339,7 @@ def marginalize_likelihood(sh, hh,
                            skip_vector=False,
                            interpolator=None,
                            return_peak=False,
+                           return_complex=False,
                            ):
     """ Return the marginalized likelihood
 
@@ -348,7 +373,9 @@ def marginalize_likelihood(sh, hh,
         hh = hh.flatten()
         clogweights = numpy.log(len(sh))
 
-    if phase:
+    if return_complex:
+        sh = sh
+    elif phase:
         sh = abs(sh)
     else:
         sh = sh.real
@@ -374,7 +401,9 @@ def marginalize_likelihood(sh, hh,
             else:
                 vweights = dist_weights
 
-        if phase:
+        if return_complex:
+            sh = sh
+        elif phase:
             sh = numpy.log(i0e(sh)) + sh
         else:
             sh = sh.real
