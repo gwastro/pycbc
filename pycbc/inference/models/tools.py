@@ -251,16 +251,16 @@ class DistMarg():
             self.reconstruct_phase = True
             self.update(**self.current_params)
 
-            loglr_full = self.loglr
+            s, h = self.loglr
             if self.marginalize_vector and self.distance_marginalization:
-                loglr = loglr_full[:,xl][xl2]
+                s, h = s[:,xl][xl2], h[:,xl][xl2]
             elif self.marginalize_vector:
-                loglr = loglr_full[xl2]
+                s, h = s[xl2], h[xl2]
             elif self.distance_marginalization:
-                loglr = loglr_full[xl]
+                s, h = s[xl1], h[xl1]
 
             phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
-            phasel = (numpy.exp(2.0j * phasev) * loglr).real
+            phasel = (numpy.exp(2.0j * phasev) * s).real + h
             rec['coa_phase'] = draw_sample(phasev, phasel)[0]
             self.reconstruct_phase = False
 
@@ -402,7 +402,7 @@ def marginalize_likelihood(sh, hh,
                 vweights = dist_weights
 
         if return_complex:
-            sh = sh
+            return sh, -0.5 * hh
         elif phase:
             sh = numpy.log(i0e(sh)) + sh
         else:
