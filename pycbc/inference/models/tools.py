@@ -216,7 +216,7 @@ class DistMarg():
 
         def draw_sample(params, loglr):
             x = numpy.random.uniform()
-            loglr -= loglr.max()
+            loglr = loglr - loglr.max()
             cdf = numpy.exp(loglr).cumsum()
             cdf /= cdf[-1]
             xl = numpy.searchsorted(cdf, x)
@@ -236,6 +236,7 @@ class DistMarg():
             # draw distance sample
             dist, xl = draw_sample(self.dist_locs, loglr)
             rec['distance'] = dist
+            rec['loglr'] = loglr[xl]
 
         if self.marginalize_vector:
             if self.distance_marginalization:
@@ -246,6 +247,7 @@ class DistMarg():
 
             vec_param, xl2 = draw_sample(self.marginalize_vector_params, vlr)
             rec[self.marginalize_vector] = vec_param
+            rec['loglr'] = vlr[xl2]
 
         if self.marginalize_phase:
             self.reconstruct_phase = True
@@ -261,9 +263,11 @@ class DistMarg():
 
             phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
             phasel = (numpy.exp(2.0j * phasev) * s).real + h
-            rec['coa_phase'] = draw_sample(phasev, phasel)[0]
+            rec['coa_phase'], xl3 = draw_sample(phasev, phasel)
             self.reconstruct_phase = False
+            rec['loglr'] = phasel[xl3]
 
+        rec['loglikelihood'] = self.lognl + rec['loglr']
         self.reconstructing = False
         return rec
 
