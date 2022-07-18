@@ -207,13 +207,13 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             phase = numpy.exp(1.0j * 2 * p['coa_phase'])
 
         sh_total = hh_total = 0
+        ic = numpy.cos(p['inclination'])
+        ip = 0.5 * (1.0 + ic * ic)
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                    polarization, self.time)
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
                                                             self.time)
-            ic = numpy.cos(p['inclination'])
-            ip = 0.5 * (1.0 + ic * ic)
 
             # Note, this includes complex conjugation already
             # as our stored inner products were hp*xdata
