@@ -259,7 +259,7 @@ class DistMarg():
             elif self.marginalize_vector:
                 s, h = s[xl2], h[xl2]
             elif self.distance_marginalization:
-                s, h = s[xl1], h[xl1]
+                s, h = s[xl], h[xl]
 
             phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
             phasel = (numpy.exp(2.0j * phasev) * s).real + h
