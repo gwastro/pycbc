@@ -217,7 +217,7 @@ class LiveEventManager(object):
 
 
     def setup_optimize_snr(
-        self, results, live_ifos, coinc_ifos, bank, fname, data_readers, gid
+        self, results, live_ifos, triggering_ifos, bank, fname, data_readers, gid
     ):
         """Setup and start the network SNR optimization process for a
         candidate event. See arXiv:2008.07494 for details.
@@ -228,9 +228,10 @@ class LiveEventManager(object):
             Information about the candidate.
         live_ifos : list
             List of detectors with usable data.
-        coinc_ifos : list
-            List of detectors that provided a reliabile estimate of the merger
-            time for this candidate. Must not be a superset of `live_ifos`.
+        triggering_ifos : list
+            List of detectors that originally identified the candidate,
+            providing reliabile estimates of the merger time. Must not be a
+            superset of `live_ifos`.
         bank :
             Template bank.
         fname : str
@@ -276,7 +277,7 @@ class LiveEventManager(object):
 
         curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
         with h5py.File(curr_fname, 'w') as hdfp:
-            for ifo in coinc_ifos:
+            for ifo in triggering_ifos:
                 curr_time = results[f'foreground/{ifo}/end_time']
                 hdfp[f'coinc_times/{ifo}'] = curr_time
             f_end = bank.end_frequency(template_id)
@@ -494,7 +495,7 @@ class LiveEventManager(object):
                     and self.run_snr_optimization:
                 self.setup_optimize_snr(
                     single,
-                    [ifo],
+                    live_ifos,
                     [ifo],
                     bank,
                     fname,
