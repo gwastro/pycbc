@@ -116,6 +116,7 @@ class SingleCoincForGraceDB(object):
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
         self.coinc_results = coinc_results
         self.ifos = ifos
+        self.basename = None
 
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
@@ -307,26 +308,29 @@ class SingleCoincForGraceDB(object):
         self.outdoc = outdoc
         self.time = sngl_populated.end
 
-    def save(self, filename):
+    def save(self, fname):
         """Write this trigger to gracedb compatible xml format
 
         Parameters
         ----------
-        filename: str
+        fname: str
             Name of file to write to disk.
         """
-        ligolw_utils.write_filename(self.outdoc, filename, compress='auto')
+        ligolw_utils.write_filename(self.outdoc, fname, compress='auto')
 
+        if self.basename is None:
+            # here assume compression
+            self.basename = fname.replace('.xml.gz', '')
         # Save source probabilities in a json file
         if self.probabilities is not None:
-            self.prob_file = filename.replace('.xml.gz', '_probs.json')
+            self.prob_file = self.basename + '_probs.json'
             with open(self.prob_file, 'w') as probf:
                 json.dump(self.probabilities, probf)
             logging.info('Source probabilities file saved as %s', self.prob_file)
 
         # Save p astro / p terr as json
         if self.p_astro is not None:
-            self.pastro_file = filename.replace('.xml.gz', '_pa_pterr.json')
+            self.pastro_file = self.basename + '_pa_pterr.json'
             with open(self.pastro_file, 'w') as pastrof:
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
@@ -334,7 +338,7 @@ class SingleCoincForGraceDB(object):
 
         # Save multi-cpt p astro as json
         if self.astro_probs is not None:
-            self.multipa_file = filename.replace('.xml.gz', '_p_astro.json')
+            self.multipa_file = self.basename + '_p_astro.json'
             with open(self.multipa_file, 'w') as multipaf:
                 json.dump(self.astro_probs, multipaf)
             logging.info('Multi p_astro file saved as %s', self.multipa_file)
@@ -361,7 +365,14 @@ class SingleCoincForGraceDB(object):
         matplotlib.use('Agg')
         import pylab as pl
 
-        # first of all, make sure the event is saved on disk
+        if fname.endswith('.xml.gz'):
+            self.basename = fname.replace('.xml.gz', '')
+        elif fname.endswith('.xml'):
+            self.basename = fname.replace('.xml', '')
+        else raise RuntimeError("Upload filename must be .xml or .xml.gz, got "
+                                "%s" % fname)
+
+        # First of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
         self.save(fname)
 
@@ -395,14 +406,10 @@ class SingleCoincForGraceDB(object):
 
         # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
-            if fname.endswith('.xml.gz'):
-                snr_series_fname = fname.replace('.xml.gz', '.hdf')
-            else:
-                snr_series_fname = fname.replace('.xml', '.hdf')
-            snr_series_plot_fname = snr_series_fname.replace('.hdf',
-                                                             '_snr.png')
-            asd_series_plot_fname = snr_series_fname.replace('.hdf',
-                                                             '_asd.png')
+            snr_series_fname = self.basename + '.hdf'
+            snr_series_plot_fname = self.basename + '_snr.png'
+            asd_series_plot_fname = self.basename + '_asd.png')
+
             pl.figure()
             ref_time = int(self.merger_time)
             for ifo in sorted(self.snr_series):
