@@ -11,6 +11,9 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--signal-file')
 parser.add_argument('--template-file', required=True)
 parser.add_argument('--min-mass', type=float, default=None, required=True)
+parser.add_argument('--fit-param', nargs='+', required=True,
+                    help='Parameters over which KDE is calculated')
+parser.add_argument('--log-param', nargs='+', type=str, choices=['True', 'False'], required=True)
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--make-signal-kde', action='store_true')
 parser.add_argument('--make-template-kde', action='store_true')
@@ -55,7 +58,6 @@ def optimizedparam(sampleval, nfold=2):
 if args.make_signal_kde and args.make_template_kde:
     raise Exception("Choose only one option out of --make-signal-kde and --make-template-kde")
 
-
 #calling template data and constructing template_kde_hdf file over template params
 template_file = h5py.File(args.template_file, 'r')
 mass1_n = template_file['mass1'][:]
@@ -66,8 +68,22 @@ chi_eff_n = convert.chi_eff(mass1_n, mass2_n, spin1z_n, spin2z_n)
 mchirp_n = convert.mchirp_from_mass1_mass2(mass1_n, mass2_n)
 eta_n = convert.eta_from_mass1_mass2(mass1_n, mass2_n)
 
+assert len(args.fit_param) == len(args.log_param)
+
 if args.make_template_kde:
-    sample_n = numpy.vstack((numpy.log(mchirp_n), eta_n, chi_eff_n)).T
+    param0 = eval(args.fit_param[0][:])
+    param1 = eval(args.fit_param[1][:])
+    param2 = eval(args.fit_param[2][:])
+
+    if args.log_param == ['False', 'False', 'False']:
+        sample_n = numpy.vstack((param0, param1, param2)).T
+    elif args.log_param == ['True', 'False', 'False']:
+        sample_n = numpy.vstack((numpy.log(param0), param1, param2)).T
+    elif args.log_param == ['True', 'True', 'False']:
+        sample_n = numpy.vstack((numpy.log(param0), numpy.log(param1), param2)).T
+    else:
+        raise ValueError("invalid log_param argument, use 'True', or 'False'")    
+
     grid_pts_n = sample_n
     logging.info('Starting optimization of template KDE parameters')
     optbw_n, optalpha_n = optimizedparam(sample_n, nfold=2)
@@ -106,7 +122,19 @@ if args.make_signal_kde:
     chi_eff_s  = data_signal['chi_eff'][idx]
     mchirp_s = data_signal['mchirp'][idx]
 
-    sample_s = numpy.vstack((numpy.log(mchirp_s), eta_s, chi_eff_s)).T
+    param0 = eval(args.fit_param[0][:])
+    param1 = eval(args.fit_param[1][:])
+    param2 = eval(args.fit_param[2][:])
+
+    if args.log_param == ['False', 'False', 'False']:
+        sample_s = numpy.vstack((param0, param1, param2)).T
+    elif args.log_param == ['True', 'False', 'False']:
+        sample_s = numpy.vstack((numpy.log(param0), param1, param2)).T
+    elif args.log_param == ['True', 'True', 'False']:
+        sample_s = numpy.vstack((numpy.log(param0), numpy.log(param1), param2)).T
+    else:
+        raise ValueError("invalid log_param argument, use 'True', or 'False'")
+
     grid_pts_s = numpy.array((numpy.log(mchirp_n), eta_n, chi_eff_n)).T
     logging.info('Starting optimization of signal KDE parameters')
     optbw_s, optalpha_s = optimizedparam(sample_s, nfold=2)
