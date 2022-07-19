@@ -245,11 +245,10 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
 
         # read injections and filter by exclude segments
         tmpinj = InjectionSet(injf).table
-        injtime = numpy.array([inj.time_geocent for inj in tmpinj])
+        injtime = numpy.array([inj.tc for inj in tmpinj])
         keep = numpy.asarray([t not in exclude for t in injtime])
         nexcluded += (~keep).sum()
-        injections = type(tmpinj)()
-        injections.extend(compress(tmpinj, keep))
+        injections = tmpinj[keep]
         injtime = injtime[keep]
 
         # read triggers
@@ -274,7 +273,7 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         # get indices of found/missed injections and finding trigger
         for i, (l, r) in enumerate(
                 zip(_left, _right),
-                start=len(allinjections or []),
+                start=len(allinjections if allinjections is not None else []),
         ):
             if not r - l:
                 missed.append(i)
@@ -288,7 +287,7 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         if allinjections is None:
             allinjections = injections
         else:
-            allinjections.extend(injections)
+            allinjections = allinjections.append(injections)
 
         # update progress bar
         bar.set_postfix(
@@ -296,14 +295,6 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
             missed=len(missed),
             excluded=nexcluded,
         )
-
-# reformat injection table for writing
-dtypes = {key: "string" if val == "lstring" else val for
-          (key, val) in allinjections.validcolumns.items()}
-injarr = FieldArray.from_ligolw_table(
-    allinjections,
-    cast_to_dtypes={x[0]: x for x in dtypes.items()},
-)
 
 # prepare output hdf5 file
 ifotag, desc, segment = filename_metadata(args.inj_files[0])
@@ -322,10 +313,13 @@ with h5py.File(outfilename, "w") as h5out:
     # write injections from recarray
     for name, injlist in (("found", found), ("missed", missed)):
         grp = h5out.create_group(name)
-        injs = injarr[injlist]
+        injs = allinjections[injlist]
         for field in injs.fieldnames:
-            grp[field] = injs[field]
-
+            # h5py does not support unicode strings
+            if 'U' not in str(injs[field].dtype):
+                grp[field] = injs[field]
+            else:
+                grp[field] = str(injs[field])
     # write triggers
     netg = h5out.create_group("network")
     for col in trigs:

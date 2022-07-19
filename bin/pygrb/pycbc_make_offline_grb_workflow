@@ -422,7 +422,7 @@ post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
 if post_proc_method == "PYGRB_OFFLINE":
     _workflow.setup_pygrb_pp_workflow(wflow, ppDir, segDir,
                                       sciSegs[ifo][0], inspiral_files,
-                                      inj_files, inj_insp_files, inj_tags)
+                                      injs, inj_insp_files, inj_tags)
 
 # TODO: Remove all coh_ptf post-processing
 if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",

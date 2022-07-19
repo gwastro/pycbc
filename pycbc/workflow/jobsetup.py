@@ -1363,19 +1363,17 @@ class PycbcGrbInjFinderExecutable(Executable):
         super().__init__(cp=cp, name=exe_name)
 
     def create_node(self, inj_files, inj_insp_files,
-                    out_dir, inj_type, tags):
+                    out_dir, inj_type, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
-        node.add_input_opt_list('--input-files', inj_insp_files)
-        node.add_input_opt_list('--inj-files', inj_files)
-        node.add_input('--ifo-tag', ifo_tag)
+        node.add_input_list_opt('--input-files', inj_insp_files)
+        node.add_input_list_opt('--inj-files', inj_files)
+        ifo_tag, desc, segment = filename_metadata(inj_files[0].name)
+        desc = '_'.join(desc.split('_')[:-1])
         out_name = "{}-{}_FOUNDMISSED-{}-{}.h5".format(
-        inj_files[0].ifo_list,
-        inj_type,
-        inj_files[0].segment[0],
-        abs(inj_files[0].segment))
-        out_file = File(ifo_tag, 'inj_finder', inj_files[0].segment,
+            ifo_tag, desc, segment[0], abs(segment))
+        out_file = File(ifo_tag, 'inj_finder', segment,
                         os.path.join(out_dir, out_name))
         node.add_output(out_file)
         return node, out_file 

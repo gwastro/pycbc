@@ -395,11 +395,16 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     # Find injections from triggers
     exe_class = select_generic_executable(wf, "inj_finder")
     job_instance = exe_class(wf.cp, "inj_finder")
-    inj_find_files = []
+    inj_find_files = FileList([])
     for inj_tag in inj_tags:
-        node, inj_find_file = job_instance.create_node(inj_files, inj_insp_files, pp_dir, inj_tag)
+        tag_inj_files = FileList([f for f in inj_files
+                                  if inj_tag in f.tags])
+        tag_insp_files = FileList([f for f in inj_insp_files
+                                   if inj_tag in f.tags[1])
+        node, inj_find_file = job_instance.create_node(
+                                           tag_inj_files, tag_insp_files,
+                                           pp_dir, inj_tag)
         wf.add_node(node)
-        pp_outs.append(inj_find_file)
         inj_find_files.append(inj_find_file)
-
+    pp_outs.append(inj_find_files)
     return pp_outs
