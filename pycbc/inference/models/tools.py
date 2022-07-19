@@ -197,7 +197,7 @@ class DistMarg():
             skip_vector = True
             interpolator = None
             if self.reconstruct_phase:
-                return_complex=True
+                return_complex = True
 
         return marginalize_likelihood(sh_total, hh_total,
                                       phase=self.marginalize_phase,
@@ -255,7 +255,7 @@ class DistMarg():
 
             s, h = self.loglr
             if self.marginalize_vector and self.distance_marginalization:
-                s, h = s[:,xl][xl2], h[:,xl][xl2]
+                s, h = s[:, xl][xl2], h[:, xl][xl2]
             elif self.marginalize_vector:
                 s, h = s[xl2], h[xl2]
             elif self.distance_marginalization:
@@ -345,7 +345,12 @@ def marginalize_likelihood(sh, hh,
                            return_peak=False,
                            return_complex=False,
                            ):
-    """ Return the marginalized likelihood
+    """ Return the marginalized likelihood.
+
+    Apply various marginalizations to the data, including phase, distance,
+    and brute-force vector marginalizations. Several options relate
+    to how the distance marginalization is approximated and others allow for
+    special return products to aid in parameter reconstruction.
 
     Parameters
     ----------
@@ -364,6 +369,13 @@ def marginalize_likelihood(sh, hh,
         If provided, internal calculation is skipped in favor of a
         precalculated interpolating function which takes in sh/hh
         and returns the likelihood.
+    return_peak: bool, False
+        Return the peak likelihood and index if using passing an array as
+        input in addition to the marginalized over the array likelihood.
+    return_complex: bool, False
+        Return the sh / hh data products before applying phase marginalization.
+        This option is intended to aid in reconstucting phase marginalization
+        and is unlikely to be useful for other purposes.
 
     Returns
     -------
@@ -378,7 +390,7 @@ def marginalize_likelihood(sh, hh,
         clogweights = numpy.log(len(sh))
 
     if return_complex:
-        sh = sh
+        pass
     elif phase:
         sh = abs(sh)
     else:
@@ -407,10 +419,10 @@ def marginalize_likelihood(sh, hh,
 
         if return_complex:
             return sh, -0.5 * hh
-        elif phase:
+
+        # Apply the phase marginalization
+        if phase:
             sh = numpy.log(i0e(sh)) + sh
-        else:
-            sh = sh.real
 
         # Calculate loglikelihood ratio
         vloglr = sh - 0.5 * hh

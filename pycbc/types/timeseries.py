@@ -242,6 +242,15 @@ class TimeSeries(Array):
 
     def at_time(self, time, nearest_sample=False, interpolate=False):
         """ Return the value at the specified gps time
+
+        Parameters
+        ----------
+        nearest_sample: bool
+            Return the sample at the time nearest to the chosen time rather
+            than rounded down.
+        interpolate: bool
+            Return the linear interpolated value of the time series
+            at the time chosen.
         """
         if interpolate:
             i = float(time-self.start_time)*self.sample_rate
@@ -253,6 +262,7 @@ class TimeSeries(Array):
 
         if nearest_sample:
             time += self.delta_t / 2.0
+
         return self[int((time-self.start_time)*self.sample_rate)]
 
     def __eq__(self,other):
