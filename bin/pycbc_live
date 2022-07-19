@@ -219,6 +219,29 @@ class LiveEventManager(object):
     def setup_optimize_snr(
         self, results, live_ifos, coinc_ifos, bank, fname, data_readers, gid
     ):
+        """Setup and start the network SNR optimization process for a
+        candidate event. See arXiv:2008.07494 for details.
+
+        Parameters
+        ----------
+        results : dict
+            Information about the candidate.
+        live_ifos : list
+            List of detectors with usable data.
+        coinc_ifos : list
+            List of detectors that provided a reliabile estimate of the merger
+            time for this candidate. Must not be a superset of `live_ifos`.
+        bank :
+            Template bank.
+        fname : str
+            File name where the candidate information has been saved.
+            Used to name other files produced as part of setting up the
+            SNR optimization.
+        data_readers : dict
+            Data structures providing the GW data.
+        gid : str
+            GraceDB ID of the candidate.
+        """
         template_id = results[f'foreground/{live_ifos[0]}/template_id']
         p = props(bank.table[template_id])
         p.pop('approximant')
