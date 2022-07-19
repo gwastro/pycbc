@@ -49,7 +49,7 @@ def verify_live_pastro_options(args):
     if args.do_p_astro and args.p_astro_spec_data is None:
         raise RuntimeError('Need a p astro data spec file for method %s! ' %
                            args.p_astro_method)
-    elif not args.do_p_astro and args.p_astro_spec_data is not None:
+    if not args.do_p_astro and args.p_astro_spec_data is not None:
         raise RuntimeError('Need to specify p_astro method to do a p_astro '
                            'calculation!')
     return args

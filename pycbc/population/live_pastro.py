@@ -118,7 +118,7 @@ def template_param_bin_calc(padata, trdata, horizons):
         expfac = 6.
     else:
         expfac = padata.spec['bg_fac']
-    print('Using exp factor ' + str(expfac))
+
     # FAR is in Hz, therefore convert to rate per year (per SNR)
     dnoise = noise_density_from_far(trdata['far'], expfac) * lal_s_per_yr
     logging.info('FAR %.3g, noise density per yr per SNR %.3g',

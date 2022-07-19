@@ -457,7 +457,6 @@ class LiveEventManager(object):
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
                                           mc_area_args=self.mc_area_args)
-                                          #p_astro_data=self.padata)
 
             fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
                                                     pycbc.random_string(6))
