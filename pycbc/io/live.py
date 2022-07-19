@@ -370,10 +370,10 @@ class SingleCoincForGraceDB(object):
         elif fname.endswith('.xml'):
             self.basename = fname.replace('.xml', '')
         else:
-            raise RuntimeError("Upload filename must be .xml or .xml.gz, got "
-                               "%s" % fname)
+            raise ValueError("Upload filename must end in .xml or .xml.gz, got"
+                             " %s" % fname)
 
-        # First of all, make sure the event is saved on disk
+        # First make sure the event is saved on disk
         # as GraceDB operations can fail later
         self.save(fname)
 

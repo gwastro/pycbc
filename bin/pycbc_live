@@ -337,7 +337,8 @@ class LiveEventManager(object):
         logging.info('running %s with log to %s', cmd, log_fname)
         with open(log_fname, "w") as logfile:
             subprocess.Popen(
-                cmd, shell=True, stdout=logfile, stderr=logfile)
+                cmd, shell=True, stdout=logfile, stderr=logfile
+            )
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
@@ -382,7 +383,7 @@ class LiveEventManager(object):
             followup_data=fud,
             low_frequency_cutoff=f_low,
             channel_names=args.channel_name,
-            mc_area_args=self.mc_area_args
+            mc_area_args=self.mc_area_args,
         )
 
         fname = 'coinc-{}-{}.xml.gz'.format(
@@ -456,7 +457,8 @@ class LiveEventManager(object):
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
-                                          mc_area_args=self.mc_area_args)
+                                          mc_area_args=self.mc_area_args,
+                                          )
 
             fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
                                                     pycbc.random_string(6))

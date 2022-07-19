@@ -91,3 +91,10 @@ class PAstroData():
 
         p_astro, p_terr = _do_calc[self.method](self, trigger_data, horizons)
         return p_astro, p_terr
+
+
+__all__ = [
+    "insert_live_pastro_option_group",
+    "verify_live_pastro_options",
+    "PAstroData"
+]

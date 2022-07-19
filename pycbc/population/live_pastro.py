@@ -140,3 +140,13 @@ def template_param_bin_calc(padata, trdata, horizons):
     p_astro = dsig / (dsig + dnoise)
     logging.info('p_astro %.4g', p_astro)
     return p_astro, 1 - p_astro
+
+
+__all__ = [
+    "read_template_param_bin_data",
+    "read_template_bank_param",
+    "noise_density_from_far",
+    "signal_pdf_from_snr",
+    "signal_rate_rescale",
+    "template_param_bin_calc"
+]
