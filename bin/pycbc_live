@@ -759,7 +759,8 @@ pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
-padata = livepau.PAstroData(args, args.bank_file)
+padata = livepau.PAstroData(args.p_astro_method, args.p_astro_spec_data,
+                            args.bank_file)
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk

@@ -28,7 +28,7 @@ def insert_live_pastro_option_group(parser):
 
 
 def verify_live_pastro_options(args):
-    """ Input check for live p astro options
+    """ Input check for live p_astro options
 
     Parameters
     ----------
@@ -39,7 +39,6 @@ def verify_live_pastro_options(args):
     -------
     args : argparse Namespace object
     """
-
     # Convenience attr do_p_astro
     if args.p_astro_method is None:
         args.do_p_astro = False
@@ -70,14 +69,23 @@ _do_calc = {
 
 class PAstroData():
     """ Class for managing live p_astro calculation persistent info """
-    def __init__(self, args, bank):
+    def __init__(self, pastro_method, specfile, bank):
         """
-        Assign calculation method, read spec file and process the template bank
+        Read in spec file and extract relevant info from bank
+
+        Parameters
+        ----------
+        pastro_method: str
+            Name of calculation method to be used
+        specfile: str
+            Path to file containing static data used in calculation
+        bank: str
+            Path to hdf template bank file
         """
         if args.do_p_astro:
             self.do = True
-            self.method = args.p_astro_method
-            self.spec = _read_spec[self.method](args.p_astro_spec_data)
+            self.method = pastro_method
+            self.spec = _read_spec[self.method](specfile)
             self.bank = _read_bank[self.method](self.spec, bank)
         else:
             self.do = False
