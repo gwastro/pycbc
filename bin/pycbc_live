@@ -220,7 +220,8 @@ class LiveEventManager(object):
         template_id = \
             results['foreground/{}/template_id'.format(ifos[0])]
         p = props(bank.table[template_id])
-        apr = p.pop('approximant')
+        p.pop('approximant')
+        apr = bank.approximant(template_id)
         min_buffer = bank.minimum_buffer + 0.5
         buff_size = \
             pycbc.waveform.get_waveform_filter_length_in_time(apr, **p)
