@@ -321,12 +321,23 @@ class SingleCoincForGraceDB(object):
         if self.basename is None:
             # here assume compression
             self.basename = fname.replace('.xml.gz', '')
+
+        # Save multi-cpt p astro as json
+        if self.astro_probs is not None:
+            self.multipa_file = self.basename + '_p_astro.json'
+            with open(self.multipa_file, 'w') as multipaf:
+                json.dump(self.astro_probs, multipaf)
+            logging.info('Multi p_astro file saved as %s', self.multipa_file)
+            # Don't save any other files!
+            return
+
         # Save source probabilities in a json file
         if self.probabilities is not None:
             self.prob_file = self.basename + '_probs.json'
             with open(self.prob_file, 'w') as probf:
                 json.dump(self.probabilities, probf)
             logging.info('Source probabilities file saved as %s', self.prob_file)
+            return
 
         # Save p astro / p terr as json
         if self.p_astro is not None:
@@ -335,13 +346,7 @@ class SingleCoincForGraceDB(object):
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
             logging.info('P_astro file saved as %s', self.pastro_file)
-
-        # Save multi-cpt p astro as json
-        if self.astro_probs is not None:
-            self.multipa_file = self.basename + '_p_astro.json'
-            with open(self.multipa_file, 'w') as multipaf:
-                json.dump(self.astro_probs, multipaf)
-            logging.info('Multi p_astro file saved as %s', self.multipa_file)
+        return
 
     def upload(self, fname, gracedb_server=None, testing=True,
                extra_strings=None, search='AllSky'):
@@ -440,7 +445,8 @@ class SingleCoincForGraceDB(object):
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
 
-        if self.probabilities is not None:
+        # Only make the pie plot if no multi cpt p_astro
+        if self.probabilities is not None and self.astro_probs is None:
             self.prob_plotf = self.prob_file.replace('.json', '.png')
             # Don't try to plot zero probabilities
             prob_plot = {k: v for (k, v) in self.probabilities.items()
@@ -454,8 +460,12 @@ class SingleCoincForGraceDB(object):
             fig.savefig(self.prob_plotf)
             pl.close()
 
+        if gid is None:
+            # Don't try to do anything else!
+            return
+
         # Upload SNR series in HDF format and plots
-        if gid is not None and self.snr_series is not None:
+        if self.snr_series is not None:
             try:
                 gracedb.writeLog(
                     gid, 'SNR timeseries HDF file upload',
@@ -477,8 +487,24 @@ class SingleCoincForGraceDB(object):
                                gid)
                 logging.error(str(exc))
 
-        # Upload source probabilities in JSON format and plot
-        if gid is not None and self.probabilities is not None:
+        # Upload multi-cpt p_astro JSON
+        if self.astro_probs is not None:
+            try:
+                gracedb.writeLog(
+                    gid, 'Multi-component p_astro JSON file upload',
+                    filename='p_astro.json',
+                    tag_name=['em_follow']
+                )
+                logging.info('Uploaded multi p_astro for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload multi p_astro file for %s', gid)
+                logging.error(str(exc))
+            # Don't do anything else!
+            return gid
+
+        # If there is no multi p_astro, upload source probabilities in JSON
+        # format and plot
+        if self.probabilities is not None:
             try:
                 gracedb.writeLog(
                     gid, 'Source probabilities JSON file upload',
@@ -498,8 +524,8 @@ class SingleCoincForGraceDB(object):
                     'Failed to upload source probability results for %s', gid)
                 logging.error(str(exc))
 
-        # Upload p_astro JSON
-        if gid is not None and self.p_astro is not None:
+        # If there is p_astro but no probabilities, upload p_astro JSON
+        if self.p_astro is not None:
             try:
                 gracedb.writeLog(
                     gid, '2-component p_astro JSON file upload',
@@ -509,19 +535,6 @@ class SingleCoincForGraceDB(object):
                 logging.info('Uploaded p_astro for %s', gid)
             except Exception as exc:
                 logging.error('Failed to upload p_astro file for %s', gid)
-                logging.error(str(exc))
-
-        # Upload multi-cpt p_astro JSON
-        if gid is not None and self.astro_probs is not None:
-            try:
-                gracedb.writeLog(
-                    gid, 'Multi-component p_astro JSON file upload',
-                    filename='p_astro.json',
-                    tag_name=['em_follow']
-                )
-                logging.info('Uploaded multi p_astro for %s', gid)
-            except Exception as exc:
-                logging.error('Failed to upload multi p_astro file for %s', gid)
                 logging.error(str(exc))
 
         return gid
