@@ -216,9 +216,10 @@ class LiveEventManager(object):
             triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
 
 
-    def setup_optimize_snr(self, results, ifos, bank, fname, data_readers, gid):
-        template_id = \
-            results['foreground/{}/template_id'.format(ifos[0])]
+    def setup_optimize_snr(
+        self, results, live_ifos, coinc_ifos, bank, fname, data_readers, gid
+    ):
+        template_id = results[f'foreground/{live_ifos[0]}/template_id']
         p = props(bank.table[template_id])
         p.pop('approximant')
         apr = bank.approximant(template_id)
@@ -235,7 +236,7 @@ class LiveEventManager(object):
         cmd += exepath + ' '
         data_fils_str = '--data-files '
         psd_fils_str = '--psd-files '
-        for ifo in ifos:
+        for ifo in live_ifos:
             curr_fname = \
                 fname.replace('.xml.gz',
                               '_{}_data_overwhitened.hdf'.format(ifo))
@@ -252,10 +253,9 @@ class LiveEventManager(object):
 
         curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
         with h5py.File(curr_fname, 'w') as hdfp:
-            for ifo in ifos:
-                curr_time = \
-                    results['foreground/{}/end_time'.format(ifo)]
-                hdfp['coinc_times/{}'.format(ifo)] = curr_time
+            for ifo in coinc_ifos:
+                curr_time = results[f'foreground/{ifo}/end_time']
+                hdfp[f'coinc_times/{ifo}'] = curr_time
             f_end = bank.end_frequency(template_id)
             if f_end is None or f_end >= (flen * delta_f):
                 f_end = (flen-1) * delta_f
@@ -275,8 +275,7 @@ class LiveEventManager(object):
                 hdfp['gid'] = gid
 
             for ifo in args.channel_name:
-                hdfp['channel_names/{}'.format(ifo)] = \
-                    args.channel_name[ifo]
+                hdfp[f'channel_names/{ifo}'] = args.channel_name[ifo]
 
             recursively_save_dict_contents_to_group(hdfp,
                                                     'mc_area_args/',
@@ -382,8 +381,15 @@ class LiveEventManager(object):
 
             if self.run_snr_optimization \
                     and self.ifar_upload_threshold < ifar:
-                self.setup_optimize_snr(coinc_results, coinc_ifos, bank,
-                                        fname, data_readers, gid)
+                self.setup_optimize_snr(
+                    coinc_results,
+                    live_ifos,
+                    coinc_ifos,
+                    bank,
+                    fname,
+                    data_readers,
+                    gid
+                )
 
 
     def check_singles(self, results, data_reader, psds, f_low):
@@ -448,8 +454,15 @@ class LiveEventManager(object):
             if self.ifar_upload_threshold < ifar \
                     and not any(nearby_coincs) \
                     and self.run_snr_optimization:
-                self.setup_optimize_snr(single, [ifo], bank, fname,
-                                        data_reader, gid)
+                self.setup_optimize_snr(
+                    single,
+                    [ifo],
+                    [ifo],
+                    bank,
+                    fname,
+                    data_reader,
+                    gid
+                )
 
 
     def dump(self, results, name, store_psd=False, time_index=None,
