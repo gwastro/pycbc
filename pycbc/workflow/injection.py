@@ -227,7 +227,7 @@ def setup_injection_workflow(workflow, output_dir=None,
             inj_job = exe(workflow.cp, inj_section_name,
                           out_dir=output_dir, ifos='HL',
                           tags=curr_tags)
-            if inj_job is PycbcCreateInjectionsExecutable :
+            if exe is PycbcCreateInjectionsExecutable:
                 config_url = workflow.cp.get('workflow-injections',
                                              section+'-config-file')
                 config_file = resolve_url_to_file(config_url)
