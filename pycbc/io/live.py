@@ -281,7 +281,7 @@ class SingleCoincForGraceDB(object):
                 'spin2z': sngl_populated.spin2z,
                 'network_snr': network_snrsq ** 0.5,
                 'far': far}
-            horizons = {ifo: self.psds[ifo].dist}
+            horizons = {ifo: self.psds[ifo].dist for ifo in self.psds}
             self.p_astro, self.p_terr = \
                                   padata.do_pastro_calc(trigger_data, horizons)
         else:
