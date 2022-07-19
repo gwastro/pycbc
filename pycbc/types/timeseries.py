@@ -252,13 +252,23 @@ class TimeSeries(Array):
             Return the linear interpolated value of the time series
             at the time chosen.
         """
-        if interpolate:
+        if interpolate == 'linear':
             i = float(time-self.start_time)*self.sample_rate
             di = i - int(i)
             i = int(i)
             a = self[i]
             b = self[i+1]
             return a + (b - a) * di
+        elif interpolate == 'quadratic':
+            i = float(time-self.start_time)*self.sample_rate
+            di = i - int(i)
+            i = int(i)
+            c = self[i]
+            xr = self[i + 1] - c
+            xl = self[i - 1] - c
+            a = 0.5 * (xr + xl)
+            b = 0.5 * (xr - xl)
+            return a * di**2.0 + b * di + c
 
         if nearest_sample:
             time += self.delta_t / 2.0
