@@ -369,8 +369,9 @@ class SingleCoincForGraceDB(object):
             self.basename = fname.replace('.xml.gz', '')
         elif fname.endswith('.xml'):
             self.basename = fname.replace('.xml', '')
-        else raise RuntimeError("Upload filename must be .xml or .xml.gz, got "
-                                "%s" % fname)
+        else:
+            raise RuntimeError("Upload filename must be .xml or .xml.gz, got "
+                               "%s" % fname)
 
         # First of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
@@ -408,7 +409,7 @@ class SingleCoincForGraceDB(object):
         if self.snr_series is not None:
             snr_series_fname = self.basename + '.hdf'
             snr_series_plot_fname = self.basename + '_snr.png'
-            asd_series_plot_fname = self.basename + '_asd.png')
+            asd_series_plot_fname = self.basename + '_asd.png'
 
             pl.figure()
             ref_time = int(self.merger_time)
