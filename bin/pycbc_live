@@ -347,72 +347,87 @@ class LiveEventManager(object):
                 coinc_results['HWINJ'] = True
                 break
 
-        if 'foreground/ifar' in coinc_results:
-            logging.info('computing followup data for coinc')
+        if 'foreground/ifar' not in coinc_results:
+            return
 
-            coinc_ifos = coinc_results['foreground/type'].split('-')
-            followup_ifos = list(set(ifos) - set(coinc_ifos))
+        logging.info('computing followup data for coinc')
 
-            double_ifar = coinc_results['foreground/ifar']
-            if double_ifar < args.ifar_double_followup_threshold:
-                coinc_results['foreground/NO_FOLLOWUP'] = True
-                return
+        coinc_ifos = coinc_results['foreground/type'].split('-')
+        followup_ifos = list(set(ifos) - set(coinc_ifos))
 
-            fud = self.compute_followup_data(coinc_ifos, coinc_results,
-                                             data_readers, bank,
-                                             followup_ifos=followup_ifos,
-                                             recalculate_ifar=True)
+        double_ifar = coinc_results['foreground/ifar']
+        if double_ifar < args.ifar_double_followup_threshold:
+            coinc_results['foreground/NO_FOLLOWUP'] = True
+            return
 
-            live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
+        fud = self.compute_followup_data(
+            coinc_ifos,
+            coinc_results,
+            data_readers,
+            bank,
+            followup_ifos=followup_ifos,
+            recalculate_ifar=True
+        )
 
-            event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
-                                          psds=psds, followup_data=fud,
-                                          low_frequency_cutoff=f_low,
-                                          channel_names=args.channel_name,
-                                          mc_area_args=self.mc_area_args,
-                                          )
+        live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
-            fname = 'coinc-{}-{}.xml.gz'.format(event.merger_time,
-                                                pycbc.random_string(6))
-            fname = os.path.join(self.path, fname)
-            logging.info('Coincident candidate! Saving as %s', fname)
+        event = SingleCoincForGraceDB(
+            live_ifos,
+            coinc_results,
+            bank=bank,
+            psds=psds,
+            followup_data=fud,
+            low_frequency_cutoff=f_low,
+            channel_names=args.channel_name,
+            mc_area_args=self.mc_area_args,
+        )
 
-            # verbally explain some details not obvious from the other info
-            comment = ('Trigger produced as a {} coincidence. '
-                       'FAR is based on all listed detectors.<br />'
-                       'Two-detector ranking statistic: {}<br />'
-                       'Followup detectors: {}')
-            comment = comment.format(ppdets(coinc_ifos),
-                                     args.ranking_statistic,
-                                     ppdets(followup_ifos))
+        fname = 'coinc-{}-{}.xml.gz'.format(
+            event.merger_time,
+            pycbc.random_string(6)
+        )
+        fname = os.path.join(self.path, fname)
+        logging.info('Coincident candidate! Saving as %s', fname)
 
-            ifar = coinc_results['foreground/ifar']
-            if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-                gid = event.upload(fname, gracedb_server=args.gracedb_server,
-                                   testing=self.gracedb_testing,
-                                   extra_strings=[comment],
-                                   search=args.gracedb_search)
-                # Keep track of the last few coincs uploaded in order to
-                # prevent singles being uploaded as well for coinc events
-                self.last_few_coincs_uploaded.append(event.merger_time)
-                # Only need to keep a few (10) events
-                self.last_few_coincs_uploaded = \
-                    self.last_few_coincs_uploaded[-10:]
-            else:
-                gid = None
-                event.save(fname)
+        # verbally explain some details not obvious from the other info
+        comment = ('Trigger produced as a {} coincidence. '
+                   'FAR is based on all listed detectors.<br />'
+                   'Two-detector ranking statistic: {}<br />'
+                   'Followup detectors: {}')
+        comment = comment.format(ppdets(coinc_ifos),
+                                 args.ranking_statistic,
+                                 ppdets(followup_ifos))
 
-            if self.run_snr_optimization \
-                    and self.ifar_upload_threshold < ifar:
-                self.setup_optimize_snr(
-                    coinc_results,
-                    live_ifos,
-                    coinc_ifos,
-                    bank,
-                    fname,
-                    data_readers,
-                    gid
-                )
+        ifar = coinc_results['foreground/ifar']
+        if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
+            gid = event.upload(
+                fname,
+                gracedb_server=args.gracedb_server,
+                testing=self.gracedb_testing,
+                extra_strings=[comment],
+                search=args.gracedb_search
+            )
+            # Keep track of the last few coincs uploaded in order to
+            # prevent singles being uploaded as well for coinc events
+            self.last_few_coincs_uploaded.append(event.merger_time)
+            # Only need to keep a few (10) events
+            self.last_few_coincs_uploaded = \
+                self.last_few_coincs_uploaded[-10:]
+        else:
+            gid = None
+            event.save(fname)
+
+        if self.run_snr_optimization \
+                and self.ifar_upload_threshold < ifar:
+            self.setup_optimize_snr(
+                coinc_results,
+                live_ifos,
+                coinc_ifos,
+                bank,
+                fname,
+                data_readers,
+                gid
+            )
 
 
     def check_singles(self, results, data_reader, psds, f_low):
