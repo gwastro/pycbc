@@ -74,7 +74,6 @@ if args.make_template_kde:
     param0 = eval(args.fit_param[0][:])
     param1 = eval(args.fit_param[1][:])
     param2 = eval(args.fit_param[2][:])
-
     if args.log_param == ['False', 'False', 'False']:
         sample_n = numpy.vstack((param0, param1, param2)).T
     elif args.log_param == ['True', 'False', 'False']:
@@ -125,7 +124,6 @@ if args.make_signal_kde:
     param0 = eval(args.fit_param[0][:])
     param1 = eval(args.fit_param[1][:])
     param2 = eval(args.fit_param[2][:])
-
     if args.log_param == ['False', 'False', 'False']:
         sample_s = numpy.vstack((param0, param1, param2)).T
     elif args.log_param == ['True', 'False', 'False']:
