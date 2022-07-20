@@ -2,6 +2,7 @@
 """
 
 import logging
+import warnings
 from distutils.util import strtobool
 
 import numpy
@@ -12,10 +13,14 @@ from scipy.special import logsumexp, i0e
 from scipy.interpolate import RectBivariateSpline, interp1d
 from pycbc.distributions import JointDistribution
 
+from pycbc.detector import Detector
+
 
 def str_to_tuple(sval, ftype):
     """ Convenience parsing to convert str to tuple"""
-    return tuple(ftype(x) for x in sval.split(','))
+    if sval is None:
+        return ()
+    return tuple(ftype(x.strip(' ')) for x in sval.split(','))
 
 
 def str_to_bool(sval):
@@ -25,6 +30,20 @@ def str_to_bool(sval):
     return sval
 
 
+def draw_sample(loglr, size=None):
+    """ Draw a random index from a 1-d vector with loglr weights
+    """
+    if size:
+        x = numpy.random.uniform(size=size)
+    else:
+        x = numpy.random.uniform()
+    loglr = loglr - loglr.max()
+    cdf = numpy.exp(loglr).cumsum()
+    cdf /= cdf[-1]
+    xl = numpy.searchsorted(cdf, x)
+    return xl
+
+
 class DistMarg():
     """Help class to add bookkeeping for distance marginalization"""
 
@@ -32,18 +51,18 @@ class DistMarg():
     distance_marginalization = None
     distance_interpolator = None
 
-    def setup_distance_marginalization(self,
-                                       variable_params,
-                                       marginalize_phase=False,
-                                       marginalize_distance=False,
-                                       marginalize_distance_param='distance',
-                                       marginalize_distance_samples=int(1e4),
-                                       marginalize_distance_interpolator=False,
-                                       marginalize_distance_snr_range=None,
-                                       marginalize_distance_density=None,
-                                       marginalize_vector=False,
-                                       marginalize_vector_params=None,
-                                       **kwargs):
+    def setup_marginalization(self,
+                              variable_params,
+                              marginalize_phase=False,
+                              marginalize_distance=False,
+                              marginalize_distance_param='distance',
+                              marginalize_distance_samples=int(1e4),
+                              marginalize_distance_interpolator=False,
+                              marginalize_distance_snr_range=None,
+                              marginalize_distance_density=None,
+                              marginalize_vector_params=None,
+                              marginalize_vector_samples=1e3,
+                              **kwargs):
         """ Setup the model for use with distance marginalization
 
         This function sets up precalculations for distance / phase
@@ -80,12 +99,47 @@ class DistMarg():
             The keyword arguments to the model initialization, may be modified
             from the original set by this function.
         """
-        self.marginalize_vector = marginalize_vector
-        self.marginalize_vector_params = marginalize_vector_params
+        def pop_prior(param):
+            variable_params.remove(param)
+            old_prior = kwargs['prior']
 
-        self.reconstructing = False
+            dists = [d for d in old_prior.distributions
+                     if param not in d.params]
+            dprior = [d for d in old_prior.distributions
+                      if param in d.params][0]
+            prior = JointDistribution(variable_params,
+                                      *dists, **old_prior.kwargs)
+            kwargs['prior'] = prior
+            return dprior
+
         self.reconstruct_phase = False
+        self.reconstruct_distance = False
+        self.reconstruct_vector = False
+
+        # Handle any requested parameter vector / brute force marginalizations
+        self.marginalize_vector_params = {}
+        self.marginalized_vector_priors = {}
+        self.vsamples = int(marginalize_vector_samples)
+
+        for param in str_to_tuple(marginalize_vector_params, str):
+            logging.info('Marginalizing over %s, %s points from prior',
+                         param, self.vsamples)
+            self.marginalized_vector_priors[param] = pop_prior(param)
+
+        # Remove in the future, backwards compatibility
+        if 'polarization_samples' in kwargs:
+            warnings.warn("use marginalize_vector_samples rather "
+                          "than 'polarization_samples'", DeprecationWarning)
+            pol_uniform = numpy.linspace(0, numpy.pi * 2.0, self.vsamples)
+            self.marginalize_vector_params['polarization'] = pol_uniform
+            self.vsamples = int(kwargs['polarization_samples'])
+            kwargs.pop('polarization_samples')
+
+        self.marginalize_vector_weights = - numpy.log(self.vsamples)
+        self.reset_vector_params()
+
         self.marginalize_phase = str_to_bool(marginalize_phase)
+
         self.distance_marginalization = False
         self.distance_interpolator = None
 
@@ -106,15 +160,8 @@ class DistMarg():
 
         # Take distance out of the variable params since we'll handle it
         # manually now
-        variable_params.remove(marginalize_distance_param)
-        old_prior = kwargs['prior']
-        dists = [d for d in old_prior.distributions
-                 if marginalize_distance_param not in d.params]
-        dprior = [d for d in old_prior.distributions
-                  if marginalize_distance_param in d.params][0]
-        prior = JointDistribution(variable_params, *dists,
-                                  **old_prior.kwargs)
-        kwargs['prior'] = prior
+        dprior = pop_prior(marginalize_distance_param)
+
         if len(dprior.params) != 1 or not hasattr(dprior, 'bounds'):
             raise ValueError('Distance Marginalization requires a '
                              'univariate and bounded prior')
@@ -177,6 +224,14 @@ class DistMarg():
         kwargs['static_params']['distance'] = dist_ref
         return variable_params, kwargs
 
+    def reset_vector_params(self):
+        """ Redraw vector params from their priors
+        """
+        for param in self.marginalized_vector_priors:
+            vprior = self.marginalized_vector_priors[param]
+            values = vprior.rvs(self.vsamples)[param]
+            self.marginalize_vector_params[param] = values
+
     def marginalize_loglr(self, sh_total, hh_total,
                           skip_vector=False, return_peak=False):
         """ Return the marginal likelihood
@@ -193,82 +248,293 @@ class DistMarg():
         """
         interpolator = self.distance_interpolator
         return_complex = False
-        if self.reconstructing:
+        distance = self.distance_marginalization
+
+        if self.reconstruct_vector:
             skip_vector = True
+
+        if self.reconstruct_distance:
             interpolator = None
-            if self.reconstruct_phase:
-                return_complex = True
+            skip_vector = True
+
+        if self.reconstruct_phase:
+            interpolator = None
+            distance = False
+            skip_vector = True
+            return_complex = True
 
         return marginalize_likelihood(sh_total, hh_total,
+                                      logw=self.marginalize_vector_weights,
                                       phase=self.marginalize_phase,
                                       interpolator=interpolator,
-                                      distance=self.distance_marginalization,
+                                      distance=distance,
                                       skip_vector=skip_vector,
                                       return_complex=return_complex,
                                       return_peak=return_peak)
+
+    def snr_draw(self, snrs):
+        """ Improve the monte-carlo vector marginalization using the SNR time
+        series of each detector
+        """
+        p = self.current_params
+
+        if (not numpy.isscalar(p['tc']) and
+            'tc' in self.marginalized_vector_priors and
+            not ('ra' in self.marginalized_vector_priors
+                 or 'dec' in self.marginalized_vector_priors)):
+            self.draw_times(snrs)
+        elif (not numpy.isscalar(p['tc']) and
+              'tc' in self.marginalized_vector_priors and
+              'ra' in self.marginalized_vector_priors and
+              'dec' in self.marginalized_vector_priors):
+            self.draw_sky_times(snrs)
+        else:
+            # OK, we couldn't do anything with the requested monte-carlo
+            # marginalizations.
+            pass
+
+    def draw_times(self, snrs):
+        """ Draw times consistent with the incoherent network SNR
+
+        Parameters
+        ----------
+        snrs: dist of TimeSeries
+        """
+        if not hasattr(self, 'tinfo'):
+            # determine the rough time offsets for this sky location
+            tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+            tcave = (tcmax + tcmin) / 2.0
+            ifos = list(snrs.keys())
+            d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
+            self.tinfo = tcmin, tcmax, tcave, ifos, d
+
+        tcmin, tcmax, tcave, ifos, d = self.tinfo
+
+        # Determine the weights for the valid time range
+        ra = self._current_params['ra']
+        dec = self._current_params['dec']
+
+        # Determine the common valid time range
+        iref = ifos[0]
+        dref = d[iref]
+        dt = dref.time_delay_from_earth_center(ra, dec, tcave)
+
+        starts = []
+        ends = []
+
+        starts.append(max(tcmin + dt, snrs[iref].start_time))
+        ends.append(min(tcmax + dt, snrs[iref].end_time))
+
+        idels = {}
+        for ifo in ifos[1:]:
+            dti = d[ifo].time_delay_from_detector(dref, ra, dec, tcave)
+            idel = round(dti / snrs[iref].delta_t) * snrs[iref].delta_t
+            idels[ifo] = idel
+
+            starts.append(snrs[ifo].start_time - idel)
+            ends.append(snrs[ifo].end_time - idel)
+        start = max(starts)
+        end = min(ends)
+        if end <= start:
+            return
+
+        # get the weights
+        snr = snrs[iref].time_slice(start, end, mode='nearest')
+        logweight = snr.squared_norm().numpy()
+        for ifo in ifos[1:]:
+            idel = idels[ifo]
+            snrv = snrs[ifo].time_slice(snr.start_time + idel,
+                                        snr.end_time + idel,
+                                        mode='nearest')
+            logweight += snrv.squared_norm().numpy()
+        logweight /= 2.0
+
+        # Draw proportional to the incoherent likelihood
+        # Draw first which time sample
+        tci = draw_sample(logweight, size=self.vsamples)
+        # Second draw a subsample size offset so that all times are covered
+        tct = numpy.random.uniform(-snr.delta_t / 2.0,
+                                   snr.delta_t / 2.0,
+                                   size=self.vsamples)
+        tc = tct + tci * snr.delta_t + float(snr.start_time) - dt
+
+        # Update the current proposed times and the marginalization values
+        self.marginalize_vector_params['tc'] = tc
+        self._current_params['tc'] = tc
+
+        # Update the importance weights for each vector sample
+        logw = self.marginalize_vector_weights - logweight[tci]
+        self.marginalize_vector_weights = logw - logsumexp(logw)
+
+    def draw_sky_times(self, snrs):
+        """ Draw ra, dec, and tc together using SNR timeseries to determine
+        monte-carlo weights.
+        """
+        # First setup
+        # precalculate dense sky grid and make dict and or array of the results
+        if not hasattr(self, 'tinfo'):
+            logging.info('pregenerating sky pointings')
+            size = int(1e6)
+            logging.info('drawing samples')
+            ra = self.marginalized_vector_priors['ra'].rvs(size=size)['ra']
+            dec = self.marginalized_vector_priors['dec'].rvs(size=size)['dec']
+            tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+            tcave = (tcmax + tcmin) / 2.0
+            ifos = list(snrs.keys())
+            d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
+
+            # What data structure to hold times? Dict of offset -> list?
+            logging.info('sorting into time delay dict')
+            dts = []
+            for i in range(len(ifos) - 1):
+                dt = d[ifos[0]].time_delay_from_detector(d[ifos[i+1]],
+                                                         ra, dec, tcave)
+                dt = numpy.rint(dt / snrs[ifos[0]].delta_t)
+                dts.append(dt)
+
+            dtc = d[ifos[0]].time_delay_from_earth_center(ra, dec, tcave)
+
+            dmap = {}
+            for i, t in enumerate(tqdm.tqdm(zip(*dts))):
+                v = ra[i], dec[i], dtc[i]
+                if t not in dmap:
+                    dmap[t] = []
+                dmap[t].append(v)
+
+            self.tinfo = ifos, dmap, d, tcmin, tcmax
+
+        ifos, dmap, d, tcmin, tcmax = self.tinfo
+
+        # draw times from each snr time series
+        # Is it worth doing this if some detector has low SNR?
+        sref = None
+        iref = None
+        idx = []
+        dx = []
+        mcweight = None
+        for ifo in ifos:
+            snr = snrs[ifo]
+            start = max(tcmin - .031, snr.start_time)
+            end = min(tcmax + .031, snr.end_time)
+            snr = snr.time_slice(start, end, mode='nearest')
+
+            w = snr.squared_norm().numpy()
+            i = draw_sample(w, size=self.vsamples)
+
+            if sref is not None:
+                delt = float(snr.start_time - sref.start_time)
+                i += round(delt / sref.delta_t)
+                dx.append(iref - i)
+                mcweight -= w[i]
+            else:
+                sref = snr
+                iref = i
+                mcweight = w[i]
+
+            idx.append(i)
+
+        # check if delay is in dict, if not, throw out
+        ra = []
+        dec = []
+        dtc = []
+        ti = []
+        wi = []
+        rand = numpy.random.uniform(0, 1, size=self.vsamples)
+        for i in range(self.vsamples):
+            t = tuple(x[i] for x in dx)
+            if t in dmap:
+                randi = int(rand[i] * (len(dmap[t])))
+                xra, xdec, xdtc = dmap[t][randi]
+                ra.append(xra)
+                dec.append(xdec)
+                dtc.append(xdtc)
+                wi.append(len(dmap[t]))
+                ti.append(i)
+
+        # fill back to fixed size with repeat samples
+        # sample order is random, so this should be OK statistically
+        ra = numpy.resize(numpy.array(ra), self.vsamples)
+        dec = numpy.resize(numpy.array(dec), self.vsamples)
+        dtc = numpy.resize(numpy.array(dtc), self.vsamples)
+        ti = numpy.resize(numpy.array(ti), self.vsamples)
+        wi = numpy.resize(numpy.array(wi), self.vsamples)
+
+        # Second draw a subsample size offset so that all times are covered
+        tct = numpy.random.uniform(-snr.delta_t / 2.0,
+                                   snr.delta_t / 2.0,
+                                   size=len(ti))
+        tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc
+
+        # Update the current proposed times and the marginalization values
+        self.marginalize_vector_params['tc'] = tc
+        self.marginalize_vector_params['ra'] = ra
+        self.marginalize_vector_params['dec'] = dec
+        self._current_params.update(self.marginalize_vector_params)
+
+        # Update the importance weights for each vector sample
+        logw = self.marginalize_vector_weights + mcweight[ti] + numpy.log(wi)
+        self.marginalize_vector_weights = logw - logsumexp(logw)
+
+    @property
+    def current_params(self):
+        """ The current parameters
+
+        If a parameter has been vector marginalized, the likelihood should
+        expect an array for the given parameter. This allows transparent
+        vectorization for many models.
+        """
+        params = self._current_params
+        for k in self.marginalize_vector_params:
+            if k not in params:
+                params[k] = self.marginalize_vector_params[k]
+        self.marginalize_vector_weights = 0
+        return params
 
     def reconstruct(self):
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
-        self.reconstructing = True
         rec = {}
 
-        def draw_sample(params, loglr):
-            x = numpy.random.uniform()
-            loglr = loglr - loglr.max()
-            cdf = numpy.exp(loglr).cumsum()
-            cdf /= cdf[-1]
-            xl = numpy.searchsorted(cdf, x)
-            return params[xl], xl
-
-        loglr_full = self.loglr
-        if self.marginalize_vector and self.distance_marginalization:
-            loglr = logsumexp(loglr_full, axis=0)
-        else:
-            loglr = loglr_full
-
-        if self.distance_marginalization:
-            # call likelihood to get vector output
-            _, weights = self.distance_marginalization
-            loglr += numpy.log(weights)
-
-            # draw distance sample
-            dist, xl = draw_sample(self.dist_locs, loglr)
-            rec['distance'] = dist
-            rec['loglr'] = loglr[xl]
+        def get_loglr():
+            p = self.current_params.copy()
+            p.update(rec)
+            self.update(**p)
+            return self.loglr
 
         if self.marginalize_vector:
-            if self.distance_marginalization:
-                # logl along for the selected distance
-                vlr = loglr_full[:, xl]
-            else:
-                vlr = loglr
+            logging.info('Reconstruct vector')
+            self.reconstruct_vector = True
+            self.reset_vector_params()
+            loglr = get_loglr() + self.marginalize_vector_weights
+            xl = draw_sample(loglr)
 
-            vec_param, xl2 = draw_sample(self.marginalize_vector_params, vlr)
-            rec[self.marginalize_vector] = vec_param
-            rec['loglr'] = vlr[xl2]
+            for k in self.marginalize_vector_params:
+                rec[k] = self.marginalize_vector_params[k][xl]
+            self.reconstruct_vector = False
+
+        if self.distance_marginalization:
+            logging.info('Reconstruct distance')
+            # call likelihood to get vector output
+            self.reconstruct_distance = True
+            _, weights = self.distance_marginalization
+            loglr = get_loglr() + numpy.log(weights)
+            xl = draw_sample(loglr)
+            rec['distance'] = self.dist_locs[xl]
+            self.reconstruct_distance = False
 
         if self.marginalize_phase:
+            logging.info('Reconstruct phase')
             self.reconstruct_phase = True
-            self.update(**self.current_params)
-
-            s, h = self.loglr
-            if self.marginalize_vector and self.distance_marginalization:
-                s, h = s[:, xl][xl2], h[:, xl][xl2]
-            elif self.marginalize_vector:
-                s, h = s[xl2], h[xl2]
-            elif self.distance_marginalization:
-                s, h = s[xl], h[xl]
-
+            s, h = get_loglr()
             phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
-            phasel = (numpy.exp(2.0j * phasev) * s).real + h
-            rec['coa_phase'], xl3 = draw_sample(phasev, phasel)
+            loglr = (numpy.exp(2.0j * phasev) * s).real + h
+            xl = draw_sample(loglr)
+            rec['coa_phase'] = phasev[xl]
             self.reconstruct_phase = False
-            rec['loglr'] = phasel[xl3]
 
+        rec['loglr'] = loglr[xl]
         rec['loglikelihood'] = self.lognl + rec['loglr']
-        self.reconstructing = False
         return rec
 
 
@@ -338,6 +604,7 @@ def setup_distance_marg_interpolant(dist_marg,
 
 
 def marginalize_likelihood(sh, hh,
+                           logw=None,
                            phase=False,
                            distance=False,
                            skip_vector=False,
@@ -358,6 +625,9 @@ def marginalize_likelihood(sh, hh,
         The data-template inner product
     hh: complex float or numpy.ndarray
         The template-template inner product
+    logw:
+        log weighting factors if vector marginalization is used, if not
+        given, each sample is assumed to be equally weighted
     phase: bool, False
         Enable phase marginalization. Only use if orbital phase can be related
         to just a single overall phase (e.g. not true for waveform with
@@ -382,12 +652,15 @@ def marginalize_likelihood(sh, hh,
     loglr: float
         The marginalized loglikehood ratio
     """
-    if isinstance(hh, float):
-        clogweights = 0
-    else:
-        sh = sh.flatten()
-        hh = hh.flatten()
-        clogweights = numpy.log(len(sh))
+    if distance and not interpolator and not numpy.isscalar(sh):
+        raise ValueError("Cannot do vector marginalization "
+                         "and distance at the same time")
+
+    if logw is None:
+        if isinstance(hh, float):
+            logw = 0
+        else:
+            logw = -numpy.log(len(sh))
 
     if return_complex:
         pass
@@ -396,7 +669,6 @@ def marginalize_likelihood(sh, hh,
     else:
         sh = sh.real
 
-    vweights = 1
     if interpolator:
         # pre-calculated result for this function
         vloglr = interpolator(sh, hh)
@@ -408,14 +680,9 @@ def marginalize_likelihood(sh, hh,
         if distance:
             # brute force distance path
             dist_rescale, dist_weights = distance
-
-            sh = numpy.multiply.outer(sh, dist_rescale)
-            hh = numpy.multiply.outer(hh, dist_rescale ** 2.0)
-            if len(sh.shape) == 2:
-                vweights = numpy.resize(dist_weights,
-                                        (sh.shape[1], sh.shape[0])).T
-            else:
-                vweights = dist_weights
+            sh = sh * dist_rescale
+            hh = hh * dist_rescale ** 2.0
+            logw = numpy.log(dist_weights)
 
         if return_complex:
             return sh, -0.5 * hh
@@ -435,7 +702,7 @@ def marginalize_likelihood(sh, hh,
     if isinstance(vloglr, float):
         vloglr = float(vloglr)
     elif not skip_vector:
-        vloglr = float(logsumexp(vloglr, b=vweights)) - clogweights
+        vloglr = float(logsumexp(vloglr, b=numpy.exp(logw)))
 
     if return_peak:
         return vloglr, maxv, maxl

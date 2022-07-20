@@ -253,22 +253,23 @@ class TimeSeries(Array):
             are simple linear or quadratic interpolation.
         """
         if interpolate == 'linear':
-            i = float(time-self.start_time)*self.sample_rate
+            i = (time - float(self.start_time))*self.sample_rate
             di = i - int(i)
             i = int(i)
             a = self[i]
             b = self[i+1]
             return a + (b - a) * di
         elif interpolate == 'quadratic':
-            i = float(time-self.start_time)*self.sample_rate
-            di = i - int(i)
-            i = int(i)
-            c = self[i]
-            xr = self[i + 1] - c
-            xl = self[i - 1] - c
+            ir = (time - float(self.start_time))*self.sample_rate
+            i = _numpy.floor(_numpy.asarray(ir)).astype(int)
+            di = ir - i
+            c = self.data[i]
+            xr = self.data[i + 1] - c
+            xl = self.data[i - 1] - c
             a = 0.5 * (xr + xl)
             b = 0.5 * (xr - xl)
-            return a * di**2.0 + b * di + c
+            ans = a * di**2.0 + b * di + c
+            return ans
 
         if nearest_sample:
             time += self.delta_t / 2.0

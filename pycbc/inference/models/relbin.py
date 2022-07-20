@@ -101,7 +101,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     return fbin_ind
 
 
-class Relative(BaseGaussianNoise, DistMarg):
+class Relative(DistMarg, BaseGaussianNoise):
     r"""Model that assumes the likelihood in a region around the peak
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For
@@ -160,7 +160,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         **kwargs
     ):
 
-        variable_params, kwargs = self.setup_distance_marginalization(
+        variable_params, kwargs = self.setup_marginalization(
                                variable_params,
                                marginalize_phase=marginalize_phase,
                                **kwargs)
@@ -355,7 +355,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         """
         # Check if this model *can* be included in a multi-signal model.
         # All marginalizations must currently be disabled to work!
-        if (self.marginalize_vector or
+        if (self.marginalize_vector_params or
             self.marginalize_distance or
             self.marginalize_phase):
             logging.info("Cannot use single template model inside of"
