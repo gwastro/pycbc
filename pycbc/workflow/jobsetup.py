@@ -1375,7 +1375,7 @@ class PycbcGrbInjFinderExecutable(Executable):
         out_name = "{}-{}_FOUNDMISSED-{}-{}.h5".format(
             ifo_tag, desc, segment[0], abs(segment))
         out_file = File(ifo_tag, 'inj_finder', segment,
-                        os.path.join(out_dir, out_name))
+                        os.path.join(out_dir, out_name), tags=tags)
         node.add_output(out_file)
         return node, out_file 
 
@@ -1388,13 +1388,14 @@ class PycbcGrbInjCombinerExecutable(Executable):
     def __init__(self, cp, exe_name):
         super().__init__(cp=cp, name=exe_name)
 
-    def create_node(self, input_file, out_dir, inj_tag, ifo_tag, segment)
+    def create_node(self, input_file, out_dir, ifo_tag, segment, tags=None):
+        if tags is None:
+            tags = []
         node = Node(self)
         node.add_input_opt('--input-files', input_file)
-        out_name = input_file.name[:-3] + 'FILTERED.h5'
+        out_name = input_file.name[:-3] + '-FILTERED.h5'
         out_file = File(ifo_tag, 'inj_combiner', segment,
-                        os.path.join(out_dir, out_name))
+                        os.path.join(out_dir, out_name), tags=tags)
         node.add_output_opt('--output-file', out_file)
         node.add_opt('--max-inclination', 30)
-        node.add_output_opt('--output-file', os.path.join(out_dir, out_name)
         return node, out_file
