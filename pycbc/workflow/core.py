@@ -784,13 +784,14 @@ class Workflow(pegasus_workflow.Workflow):
             self.add_container(container)
 
         # save the configuration file
-        ini_file = os.path.abspath(self.name + '.ini')
+        ini_file = os.path.join(self.out_dir, self.name + '.ini')
+            
 
         # This shouldn't already exist, but just in case
         if os.path.isfile(ini_file):
             err_msg = "Refusing to overwrite configuration file that "
             err_msg += "shouldn't be there: "
-            err_msg += os.path.join(self.out_dir, ini_file)
+            err_msg += ini_file
             raise ValueError(err_msg)
 
         with open(ini_file, 'w') as fp:
