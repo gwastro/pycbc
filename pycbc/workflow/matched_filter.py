@@ -241,9 +241,9 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     if match_fltr_exe == 'pycbc_multi_inspiral':
         exe_class = select_matchedfilter_class(match_fltr_exe)
         cp.set('inspiral', 'ra',
-               str(radians(float(cp.get('workflow', 'ra')))))
+               str(cp.get('workflow', 'ra')))
         cp.set('inspiral', 'dec',
-               str(radians(float(cp.get('workflow', 'dec')))))
+               str(cp.get('workflow', 'dec')))
         # At the moment we aren't using sky grids, but when we do this code
         # might be used then. 
         # from pycbc.workflow.grb_utils import get_sky_grid_scale
