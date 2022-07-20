@@ -133,7 +133,8 @@ def select_generic_executable(workflow, exe_tag):
         'pycbc_condition_strain'         : PycbcConditionStrainExecutable,
         'pycbc_grb_trig_combiner'  : PycbcGrbTrigCombinerExecutable,
         'pycbc_grb_trig_cluster'   : PycbcGrbTrigClusterExecutable,
-        'pycbc_grb_inj_finder'     : PycbcGrbInjFinderExecutable
+        'pycbc_grb_inj_finder'     : PycbcGrbInjFinderExecutable,
+        'pycbc_grb_inj_combiner'   : PycbcGrbInjCombinerExecutable
     }
     try:
         return exe_to_class_map[exe_name]
@@ -1377,3 +1378,23 @@ class PycbcGrbInjFinderExecutable(Executable):
                         os.path.join(out_dir, out_name))
         node.add_output(out_file)
         return node, out_file 
+
+
+class PycbcGrbInjCombinerExecutable(Executable):
+    """The class responsible for creating jobs ``pycbc_grb_inj_combiner``
+    """
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, exe_name):
+        super().__init__(cp=cp, name=exe_name)
+
+    def create_node(self, input_file, out_dir, inj_tag, ifo_tag, segment)
+        node = Node(self)
+        node.add_input_opt('--input-files', input_file)
+        out_name = input_file.name[:-3] + 'FILTERED.h5'
+        out_file = File(ifo_tag, 'inj_combiner', segment,
+                        os.path.join(out_dir, out_name))
+        node.add_output_opt('--output-file', out_file)
+        node.add_opt('--max-inclination', 30)
+        node.add_output_opt('--output-file', os.path.join(out_dir, out_name)
+        return node, out_file

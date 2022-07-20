@@ -407,4 +407,19 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
         wf.add_node(node)
         inj_find_files.append(inj_find_file)
     pp_outs.append(inj_find_files)
+
+    # Combine injections
+    exe_class = select_generic_executable(wf, "inj_combiner")
+    job_instance = exe_class(wf.cp, "inj_combiner")
+    inj_comb_files = FileList([])
+    for inj_tag in inj_tags:
+        if 'DETECTION' not in inj_tag:
+            input_file = inj_find_file[tag is inj_tag]
+            node, inj_comb_file = job_instance.create_node(input_file,
+                                                           pp_dir, inj_tag,
+                                                           ifo_tag, segment)
+            wf.add_node(node)
+            inj_comb_files.append(inj_comb_file)
+    pp_outs.append(inj_comb_files)
+
     return pp_outs
