@@ -220,8 +220,8 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             htf = (fp * ip + 1.0j * fc * ic) / p['distance'] * phase
             self.htfs[ifo] = htf
             self.dts[ifo] = p['tc'] + dt
-            sh = self.sh[ifo].at_time(self.dts[ifo], interpolate='quadratic') * htf
-            sh_total += sh
+            sh = self.sh[ifo].at_time(self.dts[ifo], interpolate='quadratic')
+            sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
         return self.marginalize_loglr(sh_total, hh_total)
