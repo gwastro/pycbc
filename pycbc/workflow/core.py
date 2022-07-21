@@ -788,7 +788,6 @@ class Workflow(pegasus_workflow.Workflow):
 
         # save the configuration file
         ini_file = os.path.join(self.out_dir, self.name + '.ini')
-            
 
         # This shouldn't already exist, but just in case
         if os.path.isfile(ini_file):
