@@ -632,9 +632,12 @@ class Workflow(pegasus_workflow.Workflow):
         else:
             dax_file = None
 
+        if hasattr(args, 'dax_file_directory'):
+            output_dir = args.dax_file_directory or args.output_dir or None
+
         super(Workflow, self).__init__(
             name=name if name is not None else args.workflow_name,
-            directory=args.output_dir,
+            directory=output_dir,
             cache_file=args.cache_file,
             dax_file_name=dax_file,
         )
@@ -2165,8 +2168,8 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
     parser : argparse.ArgumentParser
         Argument parser to add the options to.
     include_subdax_opts : bool, optional
-        If True, will add output-map, transformation-catalog, and dax-file
-        options to the parser. These can be used for workflows that are
+        If True, will add output-map and dax-file-directory options
+        to the parser. These can be used for workflows that are
         generated as a subdax of another workflow. Default is False.
     """
     wfgrp = parser.add_argument_group("Options for setting workflow files")
@@ -2196,3 +2199,11 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
     if include_subdax_opts:
         wfgrp.add_argument("--output-map", default=None,
                            help="Path to an output map file.")
+        wfgrp.add_argument("--dax-file-directory", default=None,
+                           help="Put dax files (including output map, "
+                                "sites.yml etc. in this directory. The use "
+                                "case for this is when running a sub-workflow "
+                                "under pegasus the outputs need to be copied "
+                                "back to the appropriate directory, and "
+                                "using this as --dax-file-directory . allows "
+                                "that to be done.")
