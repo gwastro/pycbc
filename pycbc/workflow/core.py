@@ -634,6 +634,8 @@ class Workflow(pegasus_workflow.Workflow):
 
         if hasattr(args, 'dax_file_directory'):
             output_dir = args.dax_file_directory or args.output_dir or None
+        else:
+            output_dir = args.output_dir or None
 
         super(Workflow, self).__init__(
             name=name if name is not None else args.workflow_name,
