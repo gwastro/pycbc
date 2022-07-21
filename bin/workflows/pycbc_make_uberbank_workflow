@@ -103,6 +103,7 @@ class SbankDaxGenerator(wf.Executable):
 
         node.add_opt('--workflow-name', workflow_name)
         node.add_opt('--output-dir', out_storage_path)
+        node.add_opt('--dax-file-directory', '.')
 
         if sub_wf_tags is not None:
             node.add_opt('--tags', ' '.join(sub_wf_tags))
