@@ -70,29 +70,23 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
 
 
 class LiveEventManager(object):
-    def __init__(self, output_path, mc_area_args, p_astro_data,
-                 use_date_prefix=False,
-                 ifar_upload_threshold=None,
-                 pval_livetime=None,
-                 enable_gracedb_upload=False,
-                 gracedb_testing=True,
-                 run_snr_optimization=False):
-        self.path = output_path
-        self.mc_area_args = mc_area_args
-        self.padata = p_astro_data
+    def __init__(self, args, bank):
+        # pick relevant arguments from CLI options
+        self.low_frequency_cutoff = args.low_frequency_cutoff
+        self.path = args.output_path
+        self.mc_area_args = mchirp_area.from_cli(args)
+        self.padata = livepau.PAstroData(args.p_astro_spec, args.bank_file)
+        self.use_date_prefix = args.day_hour_output_prefix
+        self.ifar_upload_threshold = args.ifar_upload_threshold
+        self.pvalue_livetime = args.pvalue_combination_livetime
+        self.gracedb_testing = not args.enable_production_gracedb_upload
+        self.enable_gracedb_upload = args.enable_gracedb_upload
+        self.run_snr_optimization = args.run_snr_optimization
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
         self.size = self.comm.Get_size()
         self.rank = self.comm.Get_rank()
-
-        self.use_date_prefix = use_date_prefix
-        self.ifar_upload_threshold = ifar_upload_threshold
-        self.pvalue_livetime = pval_livetime
-        self.gracedb_testing = gracedb_testing
-        self.enable_gracedb_upload = enable_gracedb_upload
-
-        self.run_snr_optimization = run_snr_optimization
 
         # Keep track of which events have been uploaded
         self.last_few_coincs_uploaded = []
@@ -779,8 +773,6 @@ pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
-padata = livepau.PAstroData(args.p_astro_spec, args.bank_file)
-
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
@@ -797,17 +789,7 @@ if bank.min_f_lower < args.low_frequency_cutoff:
 ifos = set(args.channel_name.keys())
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
-evnt = LiveEventManager(args.output_path,
-                        mchirp_area.from_cli(args),
-                        padata,
-                        use_date_prefix=args.day_hour_output_prefix,
-                        ifar_upload_threshold=args.ifar_upload_threshold,
-                        pval_livetime=args.pvalue_combination_livetime,
-                        enable_gracedb_upload=args.enable_gracedb_upload,
-                        gracedb_testing=not args.enable_production_gracedb_upload,
-                        run_snr_optimization=args.run_snr_optimization)
-evnt.bank = bank
-evnt.low_frequency_cutoff = args.low_frequency_cutoff
+evnt = LiveEventManager(args, bank)
 
 # include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
@@ -1082,4 +1064,4 @@ if evnt.rank == 1:
         fft.fftw.export_double_wisdom_to_filename(args.fftw_output_double_wisdom_file)
 
 if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
-    pr.dump_stats('profiling_rank_{:03d}'.format(evnt.rank))
+    pr.dump_stats(f'profiling_rank_{evnt.rank:03d}')
