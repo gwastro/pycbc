@@ -127,7 +127,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         A dictionary of starting frequencies, in which the keys are the
         detector names and the values are the starting frequencies for the
         respective detectors to be used for computing inner products.
-    figucial_params : dict
+    fiducial_params : dict
         A dictionary of waveform parameters to be used for generating the
         fiducial waveform. Keys must be parameter names in the form
         'PARAM_ref' where PARAM is a recognized extrinsic parameter or
@@ -141,6 +141,10 @@ class Relative(BaseGaussianNoise, DistMarg):
         Default is False. If True, then vary the fp/fc polarization values
         as a function of frequency bin, using a predetermined PN approximation
         for the time offsets.
+    is_hom : boolean, optional
+        Default is False. Gives the presence (absence) of higer order mode if is
+        True (False). Calculations are in comparison with the l=|m|=2 if
+        `is_hom` activated (True).
     \**kwargs :
         All other keyword arguments are passed to
         :py:class:`BaseGaussianNoise`.
@@ -157,6 +161,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         epsilon=0.5,
         earth_rotation=False,
         marginalize_phase=True,
+        is_hom = False,
         **kwargs
     ):
 
@@ -184,6 +189,16 @@ class Relative(BaseGaussianNoise, DistMarg):
         for k in self.static_params:
             if self.fid_params[k] == 'REPLACE':
                self.fid_params.pop(k)
+
+        # make sure fid_param has ['mode_array'] which means one
+        # needs to declare this in the model section
+        if 'is_hom' in self.static_params:
+            is_hom = self.static_params['is_hom']
+            self._mode_ = int(self.fid_params['mode_array'])
+            self._mode_m = self._mode_ % 10
+            self._mode_l = int((self._mode_ % 100) / 10)
+            logging.info("Current submodel mode l=%s m=%s",
+                          self._mode_l, self._mode_m)
 
         for ifo in data:
             # store data and frequencies
@@ -253,7 +268,7 @@ class Relative(BaseGaussianNoise, DistMarg):
             self.edges[ifo] = fbin_ind
 
             self.init_from_frequencies(h00, fbin_ind, ifo)
-            self.antenna_time[ifo] = self.setup_antenna(earth_rotation,
+            self.antenna_time[ifo] = self.setup_antenna(is_hom, earth_rotation,
                                                         self.fedges[ifo])
         self.combine_layout()
 
@@ -296,11 +311,15 @@ class Relative(BaseGaussianNoise, DistMarg):
                     self.edge_unique.append(Array(self.fedges[ifo]))
         logging.info("%s unique ifo layouts", len(self.edge_unique))
 
-    def setup_antenna(self, earth_rotation, fedges):
+    def setup_antenna(self, is_hom, earth_rotation, fedges):
         # Calculate the times to evaluate fp/fc
         if earth_rotation is not False:
             logging.info("Enabling frequency-dependent earth rotation")
             from pycbc.waveform.spa_tmplt import spa_length_in_time
+
+            if is_hom:
+                # change if comparison is not wrt l = |m| = 2
+                fedges = fedges / self._mode_m * 2
 
             times = spa_length_in_time(
                 phase_order=-1,
