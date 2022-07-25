@@ -25,6 +25,8 @@ import numpy as np
 from scipy.optimize import root_scalar
 from scipy.interpolate import RectBivariateSpline
 from . import NS_DATA_DIRECTORY
+import pickle
+import os.path
 
 
 def ISCO_eq(r, chi):
@@ -404,8 +406,6 @@ def generate_isso_bivariate_interp():
     keep the fractional interpolation error over the full span of
     parameter values to less than 1e-5.
     """
-    import pickle
-    import os.path
     chis = concat_grid((
         (0.5, 25), (0.75, 20), (0.95, 30), (0.99, 20), (0.995, 50),
         (0.9975, 50), (1, 101)))
@@ -422,8 +422,6 @@ def generate_isso_bivariate_interp():
         pickle.dump(bivar, f)
 
 def load_isso_bivariate_interp():
-    import pickle
-    import os.path
     with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'rb') as f:
         func = pickle.load(f)
     return func
