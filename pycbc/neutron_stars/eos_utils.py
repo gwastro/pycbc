@@ -163,10 +163,10 @@ def foucart18(
     """Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
     `Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018)`_.
-    
+
     .. _Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018):
         https://doi.org/10.1103/PhysRevD.98.081501
-    
+
     Parameters
     ----------
     eta : float
