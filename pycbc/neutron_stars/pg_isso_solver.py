@@ -17,7 +17,7 @@
 """
 Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)
 formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
- 
+
 .. _Stone, Loeb, Berger, PRD 87, 084053 (2013):
     http://dx.doi.org/10.1103/PhysRevD.87.084053
 """
@@ -90,7 +90,7 @@ def ISSO_eq_at_pole(r, chi):
 
         P(r) &= r^3 [r^2 (r - 6) + \chi^2 (3 r + 4)] \\
              &\quad + \chi^4 [3 r (r - 2) + \chi^2] \, ,
-    
+
     where :math:`\chi` is the BH dimensionless spin parameter. Physical
     solutions are between 6 and
     :math:`1 + \sqrt{3} + \sqrt{3 + 2 \sqrt{3}}`.
@@ -182,7 +182,7 @@ def PG_ISSO_eq(r, chi, incl):
     the equatorial ISSO (i.e. the ISCO) radius (:func:`ISCO_eq`) and
     the polar ISSO radius (:func:`ISSO_eq_at_pole`).
     See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
- 
+
     .. _Stone, Loeb, Berger, PRD 87, 084053 (2013):
         http://dx.doi.org/10.1103/PhysRevD.87.084053
 
