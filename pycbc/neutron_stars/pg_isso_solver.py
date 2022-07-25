@@ -21,12 +21,13 @@ formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
 .. _Stone, Loeb, Berger, PRD 87, 084053 (2013):
     http://dx.doi.org/10.1103/PhysRevD.87.084053
 """
+import pickle
+import os.path
 import numpy as np
 from scipy.optimize import root_scalar
 from scipy.interpolate import RectBivariateSpline
 from . import NS_DATA_DIRECTORY
-import pickle
-import os.path
+
 
 
 def ISCO_eq(r, chi):
