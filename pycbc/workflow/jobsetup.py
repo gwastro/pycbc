@@ -1377,7 +1377,7 @@ class PycbcGrbInjFinderExecutable(Executable):
         out_file = File(ifo_tag, 'inj_finder', segment,
                         os.path.join(out_dir, out_name), tags=tags)
         node.add_output(out_file)
-        return node, out_file 
+        return node, out_file
 
 
 class PycbcGrbInjCombinerExecutable(Executable):
