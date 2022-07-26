@@ -42,7 +42,7 @@ from pycbc.workflow.core import \
 from pycbc.workflow.jobsetup import select_generic_executable
 
 
-def select_grb_pp_class(curr_exe):
+def select_grb_pp_class(wflow, curr_exe):
     """
     This function returns the class for PyGRB post-processing scripts.
 
@@ -60,6 +60,8 @@ def select_grb_pp_class(curr_exe):
         and
         * job.get_valid_times(ifo, )
     """
+    exe_path = wflow.cp.get('executables', curr_exe)
+    exe_name = os.path.basename(exe_path)
     exe_to_class_map = {
         'pycbc_grb_trig_combiner': PycbcGrbTrigCombinerExecutable,
         'pycbc_grb_trig_cluster': PycbcGrbTrigClusterExecutable,
@@ -67,7 +69,7 @@ def select_grb_pp_class(curr_exe):
         'pycbc_grb_inj_combiner': PycbcGrbInjCombinerExecutable
     }
     try:
-        return exe_to_class_map[curr_exe]
+        return exe_to_class_map[exe_name]
     except KeyError:
         raise NotImplementedError(
             "No job class exists for executable %s, exiting" % curr_exe)
@@ -408,7 +410,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs = FileList([])
     # Begin setting up trig combiner job(s)
     # Select executable class and initialize
-    exe_class = select_grb_pp_class("trig_combiner")
+    exe_class = select_grb_pp_class(wf, "trig_combiner")
     job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
     node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
@@ -417,7 +419,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs.append(trig_files)
 
     # Trig clustering for each trig file
-    exe_class = select_grb_pp_class("trig_cluster")
+    exe_class = select_grb_pp_class(wf, "trig_cluster")
     job_instance = exe_class(wf.cp, "trig_cluster")
     for trig_file in trig_files:
         # Create and add nodes
@@ -426,7 +428,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
         pp_outs.append(out_file)
 
     # Find injections from triggers
-    exe_class = select_grb_pp_class("inj_finder")
+    exe_class = select_grb_pp_class(wf, "inj_finder")
     job_instance = exe_class(wf.cp, "inj_finder")
     inj_find_files = FileList([])
     for inj_tag in inj_tags:
@@ -442,7 +444,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs.append(inj_find_files)
 
     # Combine injections
-    exe_class = select_grb_pp_class("inj_combiner")
+    exe_class = select_grb_pp_class(wf, "inj_combiner")
     job_instance = exe_class(wf.cp, "inj_combiner")
     inj_comb_files = FileList([])
     for in_file in inj_find_files:
