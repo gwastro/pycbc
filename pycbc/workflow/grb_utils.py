@@ -415,7 +415,8 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     for in_file in inj_find_files:
         if 'DETECTION' not in in_file.tags:
             node, inj_comb_file = job_instance.create_node(in_file,
-                                                           pp_dir, in_file.tags,
+                                                           pp_dir,
+                                                           in_file.tags,
                                                            segment)
             wf.add_node(node)
             inj_comb_files.append(inj_comb_file)

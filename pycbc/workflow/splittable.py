@@ -150,8 +150,8 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
             num_injs = int(cp.get_opt_tags("em_bright_filter", "max-keep",
                                            tags))
         else:
-            num_injs = int(cp.get_opt_tags("workflow-injections", "ninjections",
-                                           tags))
+            num_injs = int(cp.get_opt_tags("workflow-injections",
+                                           "ninjections", tags))
         inj_tspace = float(abs(workflow.analysis_time)) / num_injs
         num_splits = int(inj_interval // inj_tspace) + 1
 
