@@ -36,8 +36,23 @@ import numpy as np
 from scipy.stats import rayleigh
 from ligo import segments
 from ligo.lw import ligolw, lsctables, utils
-from pycbc.workflow.core import File, FileList, resolve_url_to_file
+from pycbc.workflow.core import \
+    File, FileList, resolve_url_to_file, Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
+
+
+def select_grb_pp_class(curr_exe):
+    exe_to_class_map = {
+        'pycbc_grb_trig_combiner'  : PycbcGrbTrigCombinerExecutable,
+        'pycbc_grb_trig_cluster'   : PycbcGrbTrigClusterExecutable,
+        'pycbc_grb_inj_finder'     : PycbcGrbInjFinderExecutable,
+        'pycbc_grb_inj_combiner'   : PycbcGrbInjCombinerExecutable
+    }
+    try:
+        return exe_to_class_map[curr_exe]
+    except KeyError:
+        raise NotImplementedError(
+            "No job class exists for executable %s, exiting" % curr_exe)
 
 
 def set_grb_start_end(cp, start, end):
@@ -375,7 +390,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs = FileList([])
     # Begin setting up trig combiner job(s)
     # Select executable class and initialize
-    exe_class = select_generic_executable(wf, "trig_combiner")
+    exe_class = select_grb_pp_class("trig_combiner")
     job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
     node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
@@ -384,7 +399,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs.append(trig_files)
 
     # Trig clustering for each trig file
-    exe_class = select_generic_executable(wf, "trig_cluster")
+    exe_class = select_grb_pp_class("trig_cluster")
     job_instance = exe_class(wf.cp, "trig_cluster")
     for trig_file in trig_files:
         # Create and add nodes
@@ -393,7 +408,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
         pp_outs.append(out_file)
 
     # Find injections from triggers
-    exe_class = select_generic_executable(wf, "inj_finder")
+    exe_class = select_grb_pp_class("inj_finder")
     job_instance = exe_class(wf.cp, "inj_finder")
     inj_find_files = FileList([])
     for inj_tag in inj_tags:
@@ -409,7 +424,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs.append(inj_find_files)
 
     # Combine injections
-    exe_class = select_generic_executable(wf, "inj_combiner")
+    exe_class = select_grb_pp_class("inj_combiner")
     job_instance = exe_class(wf.cp, "inj_combiner")
     inj_comb_files = FileList([])
     for in_file in inj_find_files:
@@ -423,3 +438,146 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs.append(inj_comb_files)
 
     return pp_outs
+
+
+class PycbcGrbTrigCombinerExecutable(Executable):
+    """ The class responsible for creating jobs
+    for ''pycbc_grb_trig_combiner''.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, name):
+        super().__init__(cp=cp, name=name)
+        self.trigger_name = cp.get('workflow', 'trigger-name')
+        self.trig_start_time = cp.get('workflow', 'start-time')
+        self.num_trials = int(cp.get('trig_combiner', 'num-trials'))
+
+    def create_node(self, ifo_tag, seg_dir, segment, insp_files,
+                    out_dir, tags=None):
+        node = Node(self)
+        node.add_opt('--verbose')
+        node.add_opt("--ifo-tag", ifo_tag)
+        node.add_opt("--grb-name", self.trigger_name)
+        node.add_opt("--trig-start-time", self.trig_start_time)
+        node.add_opt("--segment-dir", seg_dir)
+        node.add_input_list_opt("--input-files", insp_files)
+        node.add_opt("--user-tag", "PYGRB")
+        node.add_opt("--num-trials", self.num_trials)
+        # Prepare output file tag
+        user_tag = "PYGRB_GRB{}".format(self.trigger_name)
+        if tags:
+            user_tag += "_{}".format(tags)
+        # Add on/off source and off trial outputs
+        output_files = FileList([])
+        outfile_types = ['ALL_TIMES', 'OFFSOURCE', 'ONSOURCE']
+        for i in range(self.num_trials):
+            outfile_types.append("OFFTRIAL_{}".format(i+1))
+        for out_type in outfile_types:
+            out_name = "{}-{}_{}-{}-{}.h5".format(
+                       ifo_tag, user_tag, out_type,
+                       segment[0], segment[1]-segment[0])
+            out_file = File(ifo_tag, 'trig_combiner', segment,
+                            file_url=os.path.join(out_dir, out_name))
+            node.add_output(out_file)
+            output_files.append(out_file)
+
+        return node, output_files
+
+
+class PycbcGrbTrigClusterExecutable(Executable):
+    """ The class responsible for creating jobs
+    for ''pycbc_grb_trig_cluster''.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, name):
+        super().__init__(cp=cp, name=name)
+
+    def create_node(self, in_file, out_dir):
+        node = Node(self)
+        node.add_input_opt("--trig-file", in_file)
+        # Determine output file name
+        ifotag, filetag, segment = filename_metadata(in_file.name)
+        start, end = segment
+        out_name = "{}-{}_CLUSTERED-{}-{}.h5".format(ifotag, filetag,
+                                                     start, end-start)
+        out_file = File(ifotag, 'trig_cluster', segment,
+                        file_url=os.path.join(out_dir, out_name))
+        node.add_output(out_file)
+
+        return node, out_file
+
+
+class PycbcHDFSplitInjExecutable(Executable):
+    """ The class responsible for creating jobs for ``pycbc_hdf_splitinj``.
+    """
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, exe_name, num_splits, ifo=None, out_dir=None):
+        super().__init__(cp, exe_name, ifo, out_dir, tags=[])
+        self.num_splits = int(num_splits)
+
+    def create_node(self, parent, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        node.add_input_opt('--input-file', parent)
+        out_files = FileList([])
+        for i in range(self.num_splits):
+            curr_tag = 'split%d' % i
+            curr_tags = parent.tags + [curr_tag]
+            job_tag = parent.description + "_" + self.name.upper()
+            out_file = File(parent.ifo_list, job_tag, parent.segment,
+                            extension='.hdf', directory=self.out_dir,
+                            tags=curr_tags, store_file=self.retain_files)
+            out_files.append(out_file)
+        node.add_output_list_opt('--output-files', out_files)
+        return node
+
+
+class PycbcGrbInjFinderExecutable(Executable):
+    """The class responsible for creating jobs for ``pycbc_grb_inj_finder``
+    """
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, exe_name):
+        super().__init__(cp=cp, name=exe_name)
+
+    def create_node(self, inj_files, inj_insp_files,
+                    out_dir, inj_type, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        node.add_input_list_opt('--input-files', inj_insp_files)
+        node.add_input_list_opt('--inj-files', inj_files)
+        ifo_tag, desc, segment = filename_metadata(inj_files[0].name)
+        desc = '_'.join(desc.split('_')[:-1])
+        out_name = "{}-{}_FOUNDMISSED-{}-{}.h5".format(
+            ifo_tag, desc, segment[0], abs(segment))
+        out_file = File(ifo_tag, 'inj_finder', segment,
+                        os.path.join(out_dir, out_name), tags=tags)
+        node.add_output(out_file)
+        return node, out_file
+
+
+class PycbcGrbInjCombinerExecutable(Executable):
+    """The class responsible for creating jobs ``pycbc_grb_inj_combiner``
+    """
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, exe_name):
+        super().__init__(cp=cp, name=exe_name)
+
+    def create_node(self, input_file, out_dir, ifo_tag, segment, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        node.add_input_opt('--input-files', input_file)
+        out_name = input_file.name[:-3] + '-FILTERED.h5'
+        out_file = File(ifo_tag, 'inj_combiner', segment,
+                        os.path.join(out_dir, out_name), tags=tags)
+        node.add_output_opt('--output-file', out_file)
+        node.add_opt('--max-inclination', 30)
+        return node, out_file
