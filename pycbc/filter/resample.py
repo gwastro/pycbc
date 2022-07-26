@@ -91,7 +91,7 @@ def lfilter(coefficients, timeseries):
 
         else:
             npoints = len(cseries)
-            if not (npoints_time, ftype) in fft_cache:
+            if not (npoints, ftype) in fft_cache:
                 fft1outs = create_class_fft_for_cache(
                     npoints,
                     timeseries.delta_t, # Is unused here

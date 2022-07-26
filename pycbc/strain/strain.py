@@ -1557,11 +1557,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             npoints_time = e - s
             if npoints_time not in self.make_freq_cache:
                 outs = create_class_fft_for_cache(
-                    npoints_time, 
+                    npoints_time,
                     self.strain.delta_t,
                     self.strain.dtype,
                     ifft=False
-                )       
+                )
                 self.make_freq_cache[npoints_time] = outs
 
             vec, fseries, fft_class = self.make_freq_cache[npoints_time]
@@ -1592,10 +1592,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
             # trim ends of strain
             if self.reduced_pad  != 0:
-                # FIXME: Move to class API
-                #overwhite = TimeSeries(zeros(e-s, dtype=self.strain.dtype),
-                #                             delta_t=self.strain.delta_t)
-                #pycbc.fft.ifft(fseries, overwhite)
                 npoints_time = e - s
                 if npoints_time not in self.make_freq_cache2:
                     outs = create_class_fft_for_cache(
@@ -1609,22 +1605,18 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 vectilde._data[:] = fseries._data[:]
                 fft_class.execute()
                 overwhite._data *= vectilde._delta_f
-                 
+
                 overwhite2 = overwhite[self.reduced_pad:len(overwhite)-self.reduced_pad]
                 taper_window = self.trim_padding / 2.0 / overwhite.sample_rate
                 gate_params = [(overwhite2.start_time, 0., taper_window),
                                (overwhite2.end_time, 0., taper_window)]
                 gate_data(overwhite2, gate_params)
-                # FIXME: Move to class API
-                #fseries_trimmed = FrequencySeries(zeros(len(overwhite2) // 2 + 1,
-                #                                  dtype=fseries.dtype), delta_f=delta_f)
-                #pycbc.fft.fft(overwhite2, fseries_trimmed)
                 npoints_time = len(overwhite2)
                 if npoints_time not in self.make_freq_cache3:
                     outs = create_class_fft_for_cache(
-                        npoints_time, 
+                        npoints_time,
                         self.strain.delta_t,
-                        self.strain.dtype, 
+                        self.strain.dtype,
                         ifft=False
                     )
                     self.make_freq_cache3[npoints_time] = outs
