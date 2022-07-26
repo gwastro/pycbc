@@ -39,6 +39,12 @@ def cached_firwin(*args, **kwargs):
     """
     return scipy.signal.firwin(*args, **kwargs)
 
+# Change to True in front-end if you want this function to use caching
+# This is a mostly-hidden optimization option that most users will not want
+# to use. It is used in PyCBC Live
+USE_CACHING_FOR_LFILTER=False
+fft_cache = {}
+
 def lfilter(coefficients, timeseries):
     """ Apply filter coefficients to a time series
 
@@ -55,6 +61,8 @@ def lfilter(coefficients, timeseries):
         filtered array
     """
     from pycbc.filter import correlate
+    from pycbc.strain.strain import create_class_fft_for_cache
+
     fillen = len(coefficients)
 
     # If there aren't many points just use the default scipy method
@@ -71,17 +79,56 @@ def lfilter(coefficients, timeseries):
         flen = len(cseries) // 2 + 1
         ftype = complex_same_precision_as(timeseries)
 
-        cfreq = zeros(flen, dtype=ftype)
-        tfreq = zeros(flen, dtype=ftype)
+        if not USE_CACHING_FOR_LFILTER:
+            cfreq = zeros(flen, dtype=ftype)
+            tfreq = zeros(flen, dtype=ftype)
+            fft(Array(cseries), cfreq)
+            fft(Array(timeseries), tfreq)
+            cout = zeros(flen, ftype)
+            correlate(cfreq, tfreq, cout)
+            out = zeros(len(timeseries), dtype=timeseries)
+            ifft(cout, out)
 
-        fft(Array(cseries), cfreq)
-        fft(Array(timeseries), tfreq)
+        else:
+            npoints = len(cseries)
+            if not (npoints_time, ftype) in fft_cache:
+                fft1outs = create_class_fft_for_cache(
+                    npoints,
+                    timeseries.delta_t, # Is unused here
+                    timeseries.dtype,
+                    ifft=False
+                )
 
-        cout = zeros(flen, ftype)
-        out = zeros(len(timeseries), dtype=timeseries)
+                fft2outs = create_class_fft_for_cache(
+                    npoints,
+                    timeseries.delta_t, # Is unused here
+                    timeseries.dtype,
+                    ifft=False
+                )
 
-        correlate(cfreq, tfreq, cout)
-        ifft(cout, out)
+                ifftouts = create_class_fft_for_cache(
+                    npoints,
+                    timeseries.delta_t, # Is unused here
+                    timeseries.dtype,
+                    ifft=True
+                )
+
+
+                fft_cache[(npoints, ftype)] = [fft1outs, fft2outs, ifftouts]
+
+            fft1outs, fft2outs, ifftouts = fft_cache[(npoints, ftype)]
+            vec, cfreq, fft_class = fft1outs
+            vec._data[:] = cseries._data[:]
+            fft_class.execute()
+
+            vec, tfreq, fft_class = fft2outs
+            vec._data[:] = timeseries._data[:]
+            fft_class.execute()
+
+            cout, out, fft_class = ifftouts
+
+            correlate(cfreq, tfreq, cout)
+            fft_class.execute()
 
         return TimeSeries(out.numpy()  / len(out), epoch=timeseries.start_time,
                           delta_t=timeseries.delta_t)

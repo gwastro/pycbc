@@ -1245,6 +1245,38 @@ class StrainSegments(object):
             required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
 
 
+
+def create_class_fft_for_cache(npoints_time, delta_t, dtype, ifft=False):
+    npoints_freq = npoints_time // 2 + 1
+    delta_f_tmp = 1.0 / (npoints_time * delta_t)
+    vec = TimeSeries(
+        zeros(
+            npoints_time,
+            dtype=dtype
+        ),
+        delta_t=delta_t,
+        copy=False
+    )
+    vectilde = FrequencySeries(
+        zeros(
+            npoints_freq,
+            dtype=complex_same_precision_as(vec)
+        ),
+        delta_f=delta_f_tmp,
+        copy=False
+    )
+    if ifft:
+        fft_class = pycbc.fft.IFFT(vectilde, vec)
+        invec = vectilde
+        outvec = vec
+    else:
+        fft_class = pycbc.fft.FFT(vec, vectilde)
+        invec = vec
+        outvec = vectilde
+
+    return invec, outvec, fft_class
+
+
 class StrainBuffer(pycbc.frame.DataBuffer):
     def __init__(self, frame_src, channel_name, start_time,
                  max_buffer=512,
@@ -1524,30 +1556,20 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
             npoints_time = e - s
             if npoints_time not in self.make_freq_cache:
-                npoints_freq = npoints_time // 2 + 1
-                delta_f_tmp = 1.0 / (npoints_time * self.strain.delta_t)
-                vec = TimeSeries(
-                    zeros(
-                        npoints_time,
-                        dtype=self.strain.dtype
-                    ),
-                    delta_t=self.strain.delta_t,
-                    copy=False
-                )
-                vectilde = FrequencySeries(
-                    zeros(
-                        npoints_freq,
-                        dtype=complex_same_precision_as(self.strain)
-                    ),
-                    delta_f=delta_f_tmp,
-                    copy=False
-                )
-                fft_class = pycbc.fft.FFT(vec, vectilde)
-                self.make_freq_cache[npoints_time] = (vec, vectilde, fft_class)
+                outs = create_class_fft_for_cache(
+                    npoints_time, 
+                    self.strain.delta_t,
+                    self.strain.dtype,
+                    ifft=False
+                )       
+                self.make_freq_cache[npoints_time] = outs
+
             vec, fseries, fft_class = self.make_freq_cache[npoints_time]
             vec._data[:] = self.strain[s:e]
             fft_class.execute()
             fseries._data *= vec._delta_t
+            # FIXME: Make faster, don't need a slice here!
+            fseries._epoch = self.strain[s:e]._epoch
 
             # we haven't calculated a resample psd for this delta_f
             if delta_f not in self.psds:
@@ -1576,30 +1598,13 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 #pycbc.fft.ifft(fseries, overwhite)
                 npoints_time = e - s
                 if npoints_time not in self.make_freq_cache2:
-                    npoints_freq = npoints_time // 2 + 1
-                    delta_f_tmp = 1.0 / (npoints_time * self.strain.delta_t)
-                    vec = TimeSeries(
-                        zeros(
-                            npoints_time,
-                            dtype=self.strain.dtype
-                        ),
-                        delta_t=self.strain.delta_t,
-                        copy=False
+                    outs = create_class_fft_for_cache(
+                        npoints_time,
+                        self.strain.delta_t,
+                        self.strain.dtype,
+                        ifft=True
                     )
-                    vectilde = FrequencySeries(
-                        zeros(
-                            npoints_freq,
-                            dtype=complex_same_precision_as(self.strain)
-                        ),
-                        delta_f=delta_f_tmp,
-                        copy=False
-                    )
-                    fft_class = pycbc.fft.IFFT(vectilde, vec)
-                    self.make_freq_cache2[npoints_time] = (
-                        vectilde,
-                        vec,
-                        fft_class
-                    )
+                    self.make_freq_cache2[npoints_time] = outs
                 vectilde, overwhite, fft_class = self.make_freq_cache2[npoints_time]
                 vectilde._data[:] = fseries._data[:]
                 fft_class.execute()
@@ -1616,31 +1621,15 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 #pycbc.fft.fft(overwhite2, fseries_trimmed)
                 npoints_time = len(overwhite2)
                 if npoints_time not in self.make_freq_cache3:
-                    npoints_freq = npoints_time // 2 + 1
-                    delta_f_tmp = 1.0 / (npoints_time * self.strain.delta_t)
-                    vec = TimeSeries(
-                        zeros(
-                            npoints_time,
-                            dtype=self.strain.dtype
-                        ),
-                        delta_t=self.strain.delta_t,
-                        copy=False
+                    outs = create_class_fft_for_cache(
+                        npoints_time, 
+                        self.strain.delta_t,
+                        self.strain.dtype, 
+                        ifft=False
                     )
-                    vectilde = FrequencySeries(
-                        zeros(
-                            npoints_freq,
-                            dtype=complex_same_precision_as(self.strain)
-                        ),
-                        delta_f=delta_f_tmp,
-                        copy=False
-                    )
-                    fft_class = pycbc.fft.FFT(vec, vectilde)
-                    self.make_freq_cache3[npoints_time] = (
-                        vec,
-                        vectilde,
-                        fft_class
-                    )
-                vec, fseries_trimmed, fft_class = self.make_freq_cache2[npoints_time]
+                    self.make_freq_cache3[npoints_time] = outs
+
+                vec, fseries_trimmed, fft_class = self.make_freq_cache3[npoints_time]
                 vec._data[:] = overwhite2._data[:]
                 fft_class.execute()
                 fseries_trimmed._data *= vec._delta_t
