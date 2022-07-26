@@ -39,6 +39,7 @@ from ligo.lw import ligolw, lsctables, utils
 from pycbc.workflow.core import \
     File, FileList, resolve_url_to_file, Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
+from gwdatafind.utils import filename_metadata
 
 
 def select_grb_pp_class(curr_exe):
@@ -60,10 +61,10 @@ def select_grb_pp_class(curr_exe):
         * job.get_valid_times(ifo, )
     """
     exe_to_class_map = {
-        'pycbc_grb_trig_combiner'  : PycbcGrbTrigCombinerExecutable,
-        'pycbc_grb_trig_cluster'   : PycbcGrbTrigClusterExecutable,
-        'pycbc_grb_inj_finder'     : PycbcGrbInjFinderExecutable,
-        'pycbc_grb_inj_combiner'   : PycbcGrbInjCombinerExecutable
+        'pycbc_grb_trig_combiner': PycbcGrbTrigCombinerExecutable,
+        'pycbc_grb_trig_cluster': PycbcGrbTrigClusterExecutable,
+        'pycbc_grb_inj_finder': PycbcGrbInjFinderExecutable,
+        'pycbc_grb_inj_combiner': PycbcGrbInjCombinerExecutable
     }
     try:
         return exe_to_class_map[curr_exe]
@@ -435,7 +436,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
                                    if inj_tag in f.tags[1]])
         node, inj_find_file = job_instance.create_node(
                                            tag_inj_files, tag_insp_files,
-                                           pp_dir, inj_tag)
+                                           pp_dir)
         wf.add_node(node)
         inj_find_files.append(inj_find_file)
     pp_outs.append(inj_find_files)
@@ -536,7 +537,7 @@ class PycbcGrbInjFinderExecutable(Executable):
         super().__init__(cp=cp, name=exe_name)
 
     def create_node(self, inj_files, inj_insp_files,
-                    out_dir, inj_type, tags=None):
+                    out_dir, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
