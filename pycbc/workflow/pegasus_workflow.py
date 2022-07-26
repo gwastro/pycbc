@@ -619,6 +619,9 @@ class Workflow(object):
                     # There was no storage path
                     pass
 
+        # Pegasus requires that we write the DAX file into the local directory
+        olddir = os.getcwd()
+        os.chdir(self.out_dir)
         self._adag.write(filename)
         if not self.in_workflow:
             if submit_now or plan_now:
@@ -646,6 +649,7 @@ class Workflow(object):
                     # set this in submit_dax still?
                     f.write('-vvv ')
                     f.write('--dax {}'.format(filename))
+        os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
         """ Plan and submit the workflow now.

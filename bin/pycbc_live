@@ -87,7 +87,7 @@ class LiveEventManager(object):
         self.run_snr_optimization = run_snr_optimization
 
         # Keep track of which events have been uploaded
-        self.last_few_coincs_uploaded = numpy.zeros(10, dtype=float)
+        self.last_few_coincs_uploaded = []
 
         if self.run_snr_optimization and self.rank == 0:
             # preestimate the number of CPU cores that we can afford giving to
@@ -471,13 +471,14 @@ class LiveEventManager(object):
             # Has a coinc event at this time been uploaded recently?
             # If so, skip upload
             coinc_tdiffs = abs(event.merger_time -
-                                self.last_few_coincs_uploaded)
+                               numpy.array(self.last_few_coincs_uploaded))
             nearby_coincs = coinc_tdiffs < 0.1
             if any(nearby_coincs):
-                logging.info("Single detector event at time %.2f not "
-                             "uploaded due to coinc event at %.2f.",
-                             event.merger_time,
-                             self.last_few_coincs_uploaded[nearby_coincs])
+                logging.info(
+                    "Single-detector candidate at time %.3f was already "
+                    "reported as coinc, skipping upload",
+                    event.merger_time
+                )
 
             if args.enable_single_detector_upload \
                     and self.ifar_upload_threshold < ifar \
