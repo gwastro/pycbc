@@ -420,7 +420,7 @@ post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
 
 if post_proc_method == "PYGRB_OFFLINE":
-    _workflow.setup_pygrb_pp_workflow(wflow, ppDir, segDir,
+    pp_files = _workflow.setup_pygrb_pp_workflow(wflow, ppDir, segDir,
                                       sciSegs[ifo][0], inspiral_files,
                                       injs, inj_insp_files, inj_tags)
 
@@ -452,7 +452,7 @@ if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
     pp_files.extend(_workflow.FileList([cp_file]))
     pp_files.extend(summary_files)
 
-    all_files.extend(pp_files)
+all_files.extend(pp_files)
 
 # COMPILE WORKFLOW AND WRITE DAX
 wflow.save()
