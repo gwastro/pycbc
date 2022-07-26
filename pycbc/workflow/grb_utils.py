@@ -36,15 +36,15 @@ import numpy as np
 from scipy.stats import rayleigh
 from ligo import segments
 from ligo.lw import ligolw, lsctables, utils
+from gwdatafind.utils import filename_metadata
 from pycbc.workflow.core import \
     File, FileList, resolve_url_to_file, Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
-from gwdatafind.utils import filename_metadata
 
 
 def select_grb_pp_class(curr_exe):
     """
-    This function returns the executable class for PyGRB post-processing scripts.
+    This function returns the class for PyGRB post-processing scripts.
 
     Parameters
     ----------
