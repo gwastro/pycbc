@@ -462,7 +462,7 @@ class SingleCoincForGraceDB(object):
 
         if gid is None:
             # Don't try to do anything else!
-            return None
+            return gid
 
         # Upload SNR series in HDF format and plots
         if self.snr_series is not None:
