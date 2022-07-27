@@ -173,7 +173,7 @@ def load_trig_data(input_file, vetoes):
 # Function to cherry-pick a subset of full_data specified by fap_mask.
 # Reweighted SNR values are picked separately since they are extracted
 # in different manners
-def grab_triggers_subset(full_data, fap_mask):
+def grab_injs_subset(full_data, fap_mask):
     """Separate out a subset of full_data based on fap_mask"""
 
     data_subset = {}
