@@ -350,7 +350,7 @@ with ctx:
             # we are looking at.
             idx_dict = {
                 ifo: idx[ifo][
-                    idx[ifo] + time_delay_idx[ifo] < len(snr_dict[ifo])
+                    idx[ifo] + time_delay_idx[ifo] < len(snr_dict[ifo]) - 1
                 ]
                 for ifo in args.instruments}
             # Find triggers that are coincident (in geocent time) in
