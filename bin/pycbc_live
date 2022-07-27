@@ -87,7 +87,7 @@ class LiveEventManager(object):
         self.run_snr_optimization = run_snr_optimization
 
         # Keep track of which events have been uploaded
-        self.last_few_coincs_uploaded = numpy.zeros(10, dtype=float)
+        self.last_few_coincs_uploaded = []
 
         if self.run_snr_optimization and self.rank == 0:
             # preestimate the number of CPU cores that we can afford giving to
@@ -215,6 +215,129 @@ class LiveEventManager(object):
                     triggers['foreground/ifar'], pvalue, self.pvalue_livetime)
             triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
 
+
+    def setup_optimize_snr(
+        self, results, live_ifos, triggering_ifos, bank, fname, data_readers, gid
+    ):
+        """Setup and start the network SNR optimization process for a
+        candidate event. See arXiv:2008.07494 for details.
+
+        Parameters
+        ----------
+        results : dict
+            Information about the candidate.
+        live_ifos : list
+            List of detectors with usable data.
+        triggering_ifos : list
+            List of detectors that originally identified the candidate,
+            providing reliabile estimates of the merger time. Must not be a
+            superset of `live_ifos`.
+        bank :
+            Template bank.
+        fname : str
+            File name where the candidate information has been saved.
+            Used to name other files produced as part of setting up the
+            SNR optimization.
+        data_readers : dict
+            Data structures providing the GW data.
+        gid : str
+            GraceDB ID of the candidate.
+        """
+        template_id = results[f'foreground/{live_ifos[0]}/template_id']
+        p = props(bank.table[template_id])
+        p.pop('approximant')
+        apr = bank.approximant(template_id)
+        min_buffer = bank.minimum_buffer + 0.5
+        buff_size = \
+            pycbc.waveform.get_waveform_filter_length_in_time(apr, **p)
+
+        tlen = bank.round_up((buff_size + min_buffer) \
+            * bank.sample_rate)
+        flen = int(tlen / 2 + 1)
+        delta_f = bank.sample_rate / float(tlen)
+        cmd = 'timeout {} '.format(args.snr_opt_timeout)
+        exepath = which('pycbc_optimize_snr')
+        cmd += exepath + ' '
+        data_fils_str = '--data-files '
+        psd_fils_str = '--psd-files '
+        for ifo in live_ifos:
+            curr_fname = \
+                fname.replace('.xml.gz',
+                              '_{}_data_overwhitened.hdf'.format(ifo))
+            curr_data = data_readers[ifo].overwhitened_data(delta_f)
+            curr_data.save(curr_fname)
+            data_fils_str += '{}:{} ' .format(ifo, curr_fname)
+            curr_fname = fname.replace('.xml.gz',
+                                       '_{}_psd.hdf'.format(ifo))
+            curr_psd = curr_data.psd
+            curr_psd.save(curr_fname)
+            psd_fils_str += '{}:{} ' .format(ifo, curr_fname)
+        cmd += data_fils_str
+        cmd += psd_fils_str
+
+        curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
+        with h5py.File(curr_fname, 'w') as hdfp:
+            for ifo in triggering_ifos:
+                curr_time = results[f'foreground/{ifo}/end_time']
+                hdfp[f'coinc_times/{ifo}'] = curr_time
+            f_end = bank.end_frequency(template_id)
+            if f_end is None or f_end >= (flen * delta_f):
+                f_end = (flen-1) * delta_f
+            hdfp['flen'] = flen
+            hdfp['delta_f'] = delta_f
+            hdfp['f_end'] = f_end
+            hdfp['sample_rate'] = bank.sample_rate
+            hdfp['flow'] = bank.table[template_id].f_lower
+            hdfp['mass1'] = bank.table[template_id].mass1
+            hdfp['mass2'] = bank.table[template_id].mass2
+            hdfp['spin1z'] = bank.table[template_id].spin1z
+            hdfp['spin2z'] = bank.table[template_id].spin2z
+            hdfp['template_duration'] = \
+                bank.table[template_id].template_duration
+            hdfp['ifar'] = results['foreground/ifar']
+            if gid is not None:
+                hdfp['gid'] = gid
+
+            for ifo in args.channel_name:
+                hdfp[f'channel_names/{ifo}'] = args.channel_name[ifo]
+
+            recursively_save_dict_contents_to_group(hdfp,
+                                                    'mc_area_args/',
+                                                    self.mc_area_args)
+
+        cmd += '--params-file {} '.format(curr_fname)
+        cmd += '--approximant {} '.format(apr)
+        cmd += '--gracedb-server {} '.format(args.gracedb_server)
+        cmd += '--gracedb-search {} '.format(args.gracedb_search)
+        if not self.gracedb_testing:
+            cmd += '--production '
+        cmd += '--verbose '
+        cmd += '--output-path {} '.format(self.path)
+        if self.enable_gracedb_upload:
+            cmd += '--enable-gracedb-upload '
+
+        cmd += '--cores {} '.format(self.fu_cores)
+        if args.processing_scheme:
+            # we will use the cores for multiple workers of the
+            # optimization routine, so we force the processing scheme
+            # to a single core here.  this may be enforcing some
+            # assumptions about the optimal way to do ffts on the
+            # machine. however, the dominant cost of pycbc_optimize_snr
+            # is expected to be in waveform generation, which is
+            # unlikely to benefit from a processing scheme with more
+            # than 1 thread anyway.
+            opt_scheme = args.processing_scheme.split(':')[0]
+            cmd += '--processing-scheme {}:1 '.format(opt_scheme)
+
+        log_fname = fname.replace('.xml.gz', '_optimize_snr.log')
+
+        logging.info('running %s with log to %s', cmd, log_fname)
+        with open(log_fname, "w") as logfile:
+            subprocess.Popen(
+                cmd, shell=True, stdout=logfile, stderr=logfile
+            )
+
+
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
         """ Perform any followup and save zerolag triggers to a coinc xml file
@@ -225,161 +348,91 @@ class LiveEventManager(object):
                 coinc_results['HWINJ'] = True
                 break
 
-        if 'foreground/ifar' in coinc_results:
-            logging.info('computing followup data for coinc')
+        if 'foreground/ifar' not in coinc_results:
+            return
 
-            coinc_ifos = coinc_results['foreground/type'].split('-')
-            followup_ifos = list(set(ifos) - set(coinc_ifos))
+        logging.info('computing followup data for coinc')
 
-            double_ifar = coinc_results['foreground/ifar']
-            if double_ifar < args.ifar_double_followup_threshold:
-                coinc_results['foreground/NO_FOLLOWUP'] = True
-                return
+        coinc_ifos = coinc_results['foreground/type'].split('-')
+        followup_ifos = list(set(ifos) - set(coinc_ifos))
 
-            fud = self.compute_followup_data(coinc_ifos, coinc_results,
-                                             data_readers, bank,
-                                             followup_ifos=followup_ifos,
-                                             recalculate_ifar=True)
+        double_ifar = coinc_results['foreground/ifar']
+        if double_ifar < args.ifar_double_followup_threshold:
+            coinc_results['foreground/NO_FOLLOWUP'] = True
+            return
 
-            live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
+        fud = self.compute_followup_data(
+            coinc_ifos,
+            coinc_results,
+            data_readers,
+            bank,
+            followup_ifos=followup_ifos,
+            recalculate_ifar=True
+        )
 
-            event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
-                                          psds=psds, followup_data=fud,
-                                          low_frequency_cutoff=f_low,
-                                          channel_names=args.channel_name,
-                                          mc_area_args=self.mc_area_args,
-                                          )
+        live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
-            fname = 'coinc-{}-{}.xml.gz'.format(event.merger_time,
-                                                pycbc.random_string(6))
-            fname = os.path.join(self.path, fname)
-            logging.info('Coincident candidate! Saving as %s', fname)
+        event = SingleCoincForGraceDB(
+            live_ifos,
+            coinc_results,
+            bank=bank,
+            psds=psds,
+            followup_data=fud,
+            low_frequency_cutoff=f_low,
+            channel_names=args.channel_name,
+            mc_area_args=self.mc_area_args,
+        )
 
-            # verbally explain some details not obvious from the other info
-            comment = ('Trigger produced as a {} coincidence. '
-                       'FAR is based on all listed detectors.<br />'
-                       'Two-detector ranking statistic: {}<br />'
-                       'Followup detectors: {}')
-            comment = comment.format(ppdets(coinc_ifos),
-                                     args.ranking_statistic,
-                                     ppdets(followup_ifos))
+        fname = 'coinc-{}-{}.xml.gz'.format(
+            event.merger_time,
+            pycbc.random_string(6)
+        )
+        fname = os.path.join(self.path, fname)
+        logging.info('Coincident candidate! Saving as %s', fname)
 
-            ifar = coinc_results['foreground/ifar']
-            if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-                gid = event.upload(fname, gracedb_server=args.gracedb_server,
-                                   testing=self.gracedb_testing,
-                                   extra_strings=[comment],
-                                   search=args.gracedb_search)
-                # Keep track of the last few coincs uploaded in order to
-                # prevent singles being uploaded as well for coinc events
-                self.last_few_coincs_uploaded.append(event.merger_time)
-                # Only need to keep a few (10) events
-                self.last_few_coincs_uploaded = \
-                    self.last_few_coincs_uploaded[-10:]
-            else:
-                gid = None
-                event.save(fname)
+        # verbally explain some details not obvious from the other info
+        comment = ('Trigger produced as a {} coincidence. '
+                   'FAR is based on all listed detectors.<br />'
+                   'Two-detector ranking statistic: {}<br />'
+                   'Followup detectors: {}')
+        comment = comment.format(ppdets(coinc_ifos),
+                                 args.ranking_statistic,
+                                 ppdets(followup_ifos))
 
-            if self.run_snr_optimization and self.ifar_upload_threshold < ifar:
-                template_id = \
-                    coinc_results['foreground/{}/template_id'.format(live_ifos[0])]
-                p = props(bank.table[template_id])
-                apr = p.pop('approximant')
-                min_buffer = bank.minimum_buffer + 0.5
-                buff_size = \
-                    pycbc.waveform.get_waveform_filter_length_in_time(apr, **p)
+        ifar = coinc_results['foreground/ifar']
+        if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
+            gid = event.upload(
+                fname,
+                gracedb_server=args.gracedb_server,
+                testing=self.gracedb_testing,
+                extra_strings=[comment],
+                search=args.gracedb_search
+            )
+            # Keep track of the last few coincs uploaded in order to
+            # prevent singles being uploaded as well for coinc events
+            self.last_few_coincs_uploaded.append(event.merger_time)
+            # Only need to keep a few (10) events
+            self.last_few_coincs_uploaded = \
+                self.last_few_coincs_uploaded[-10:]
+        else:
+            gid = None
+            event.save(fname)
 
-                tlen = bank.round_up((buff_size + min_buffer) \
-                    * bank.sample_rate)
-                flen = int(tlen / 2 + 1)
-                delta_f = bank.sample_rate / float(tlen)
-                cmd = 'timeout {} '.format(args.snr_opt_timeout)
-                exepath = which('pycbc_optimize_snr')
-                cmd += exepath + ' '
-                data_fils_str = '--data-files '
-                psd_fils_str = '--psd-files '
-                for ifo in ifos:
-                    curr_fname = \
-                        fname.replace('.xml.gz',
-                                      '_{}_data_overwhitened.hdf'.format(ifo))
-                    curr_data = data_readers[ifo].overwhitened_data(delta_f)
-                    curr_data.save(curr_fname)
-                    data_fils_str += '{}:{} ' .format(ifo, curr_fname)
-                    curr_fname = fname.replace('.xml.gz',
-                                               '_{}_psd.hdf'.format(ifo))
-                    curr_psd = curr_data.psd
-                    curr_psd.save(curr_fname)
-                    psd_fils_str += '{}:{} ' .format(ifo, curr_fname)
-                cmd += data_fils_str
-                cmd += psd_fils_str
-
-                curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
-                with h5py.File(curr_fname, 'w') as hdfp:
-                    for ifo in coinc_ifos:
-                        curr_time = \
-                            coinc_results['foreground/{}/end_time'.format(ifo)]
-                        hdfp['coinc_times/{}'.format(ifo)] = curr_time
-                    f_end = bank.end_frequency(template_id)
-                    if f_end is None or f_end >= (flen * delta_f):
-                        f_end = (flen-1) * delta_f
-                    hdfp['flen'] = flen
-                    hdfp['delta_f'] = delta_f
-                    hdfp['f_end'] = f_end
-                    hdfp['sample_rate'] = bank.sample_rate
-                    hdfp['flow'] = bank.table[template_id].f_lower
-                    hdfp['mass1'] = bank.table[template_id].mass1
-                    hdfp['mass2'] = bank.table[template_id].mass2
-                    hdfp['spin1z'] = bank.table[template_id].spin1z
-                    hdfp['spin2z'] = bank.table[template_id].spin2z
-                    hdfp['template_duration'] = \
-                        bank.table[template_id].template_duration
-                    hdfp['ifar'] = ifar
-                    if gid is not None:
-                        hdfp['gid'] = gid
-
-                    for ifo in args.channel_name:
-                        hdfp['channel_names/{}'.format(ifo)] = \
-                            args.channel_name[ifo]
-
-                    recursively_save_dict_contents_to_group(hdfp,
-                                                            'mc_area_args/',
-                                                            self.mc_area_args)
-
-                cmd += '--params-file {} '.format(curr_fname)
-                cmd += '--approximant {} '.format(apr)
-                cmd += '--gracedb-server {} '.format(args.gracedb_server)
-                cmd += '--gracedb-search {} '.format(args.gracedb_search)
-                if not self.gracedb_testing:
-                    cmd += '--production '
-                cmd += '--verbose '
-                cmd += '--output-path {} '.format(self.path)
-                if self.enable_gracedb_upload:
-                    cmd += '--enable-gracedb-upload '
-
-                cmd += '--cores {} '.format(self.fu_cores)
-                if args.processing_scheme:
-                    # we will use the cores for multiple workers of the
-                    # optimization routine, so we force the processing scheme
-                    # to a single core here.  This may be enforcing some
-                    # assumptions about the optimal way to do FFTs on the
-                    # machine. However, the dominant cost of pycbc_optimize_snr
-                    # is expected to be in waveform generation, which is
-                    # unlikely to benefit from a processing scheme with more
-                    # than 1 thread anyway.
-                    opt_scheme = args.processing_scheme.split(':')[0]
-                    cmd += '--processing-scheme {}:1 '.format(opt_scheme)
-
-                log_fname = fname.replace('.xml.gz', '_optimize_snr.log')
-
-                logging.info('Running %s with log to %s', cmd, log_fname)
-                with open(log_fname, "w") as logfile:
-                    subprocess.Popen(
-                        cmd, shell=True, stdout=logfile, stderr=logfile
-                    )
+        if self.run_snr_optimization \
+                and self.ifar_upload_threshold < ifar:
+            self.setup_optimize_snr(
+                coinc_results,
+                live_ifos,
+                coinc_ifos,
+                bank,
+                fname,
+                data_readers,
+                gid
+            )
 
 
     def check_singles(self, results, data_reader, psds, f_low):
-        active = [k for k in results if results[k] != None]
+        active = [k for k in results if results[k] is not None]
         for ifo in active:
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
 
@@ -404,7 +457,8 @@ class LiveEventManager(object):
                                           mc_area_args=self.mc_area_args,
                                           )
 
-            fname = 'single-%s-%s.xml.gz' % (ifo, event.merger_time)
+            fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
+                                                    pycbc.random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Single-detector candidate! Saving as %s', fname)
 
@@ -416,24 +470,40 @@ class LiveEventManager(object):
 
             # Has a coinc event at this time been uploaded recently?
             # If so, skip upload
-            coinc_tdiffs =  abs(event.merger_time -
-                                self.last_few_coincs_uploaded)
+            coinc_tdiffs = abs(event.merger_time -
+                               numpy.array(self.last_few_coincs_uploaded))
             nearby_coincs = coinc_tdiffs < 0.1
             if any(nearby_coincs):
-                logging.info("Single detector event at time %.2f not "
-                             "uploaded due to coinc event at %.2f.",
-                             event.merger_time,
-                             self.last_few_coincs_uploaded[nearby_coincs])
+                logging.info(
+                    "Single-detector candidate at time %.3f was already "
+                    "reported as coinc, skipping upload",
+                    event.merger_time
+                )
 
             if args.enable_single_detector_upload \
                     and self.ifar_upload_threshold < ifar \
                     and not any(nearby_coincs):
-                event.upload(fname, gracedb_server=args.gracedb_server,
-                             testing=self.gracedb_testing,
-                             extra_strings=[comment],
-                             search=args.gracedb_search)
+                gid = event.upload(fname, gracedb_server=args.gracedb_server,
+                                   testing=self.gracedb_testing,
+                                   extra_strings=[comment],
+                                   search=args.gracedb_search)
             else:
+                gid = None
                 event.save(fname)
+
+            if self.ifar_upload_threshold < ifar \
+                    and not any(nearby_coincs) \
+                    and self.run_snr_optimization:
+                self.setup_optimize_snr(
+                    single,
+                    live_ifos,
+                    [ifo],
+                    bank,
+                    fname,
+                    data_reader,
+                    gid
+                )
+
 
     def dump(self, results, name, store_psd=False, time_index=None,
              store_loudest_index=False, raw_results=None, gates=None):

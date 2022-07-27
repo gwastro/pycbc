@@ -26,17 +26,13 @@ in a workflow.
 import os
 import copy
 import argparse
-import tempfile
 import numpy
 import logging
 import h5py
 import configparser
 from scipy import spatial
 from ligo.lw import ligolw
-from ligo.lw import table
-from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 import pycbc
 import pycbc.psd
 import pycbc.strain
@@ -46,6 +42,7 @@ import pycbc.workflow as wf
 import pycbc.workflow.pegasus_workflow as pwf
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.workflow.core import resolve_url_to_file
+from pycbc.io.ligolw import create_process_table
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -230,14 +227,10 @@ opts = parser.parse_args()
 orig_opts = copy.deepcopy(opts)
 
 # Set up the process/process_params table and output xml document
-cmds_file_name = opts.metadata_file
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
-ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
-                            instruments="", version=pycbc.version.git_hash,
-                            cvs_repository='pycbc/'+pycbc.version.git_branch,
-                            cvs_entry_time=pycbc.version.date)
-ligolw_utils.write_filename(outdoc, cmds_file_name)
+create_process_table(outdoc, __program__, options=vars(opts))
+ligolw_utils.write_filename(outdoc, opts.metadata_file)
 
 if opts.verbose:
     log_level = logging.DEBUG
@@ -334,7 +327,7 @@ else:
     chi3Min = vals[2].min()
     chi3Diff = chi3Max - chi3Min
 
-logging.info("Lattice contains %d points" % len(v1s))
+logging.info("Lattice contains %d points", len(v1s))
 
 # Now remove points that are too far from edges of parameter space
 
@@ -384,7 +377,7 @@ if opts.filter_points:
             if opts.threed_lattice:
                 newV3s.append(v3s[i])
 
-    logging.info("Filtered lattice contains %d points" % len(newV1s))
+    logging.info("Filtered lattice contains %d points", len(newV1s))
 else:
     newV1s = v1s
     newV2s = v2s
@@ -584,7 +577,7 @@ else:
 
 combine_exe = AlignedBankCatExecutable(workflow.cp, 'alignedbankcat',
                                         ifos=workflow.ifos, out_dir=curr_dir)
-metadata_file = resolve_url_to_file(cmds_file_name)
+metadata_file = resolve_url_to_file(opts.metadata_file)
 combine_node = combine_exe.create_node(all_outs, metadata_file,
                                        workflow.analysis_time,
                                        output_file_path=opts.output_file)

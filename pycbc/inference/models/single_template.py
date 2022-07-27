@@ -207,21 +207,21 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             phase = numpy.exp(1.0j * 2 * p['coa_phase'])
 
         sh_total = hh_total = 0
+        ic = numpy.cos(p['inclination'])
+        ip = 0.5 * (1.0 + ic * ic)
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                    polarization, self.time)
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
                                                             self.time)
-            ic = numpy.cos(p['inclination'])
-            ip = 0.5 * (1.0 + ic * ic)
 
             # Note, this includes complex conjugation already
             # as our stored inner products were hp*xdata
             htf = (fp * ip + 1.0j * fc * ic) / p['distance'] * phase
             self.htfs[ifo] = htf
             self.dts[ifo] = p['tc'] + dt
-            sh = self.sh[ifo].at_time(self.dts[ifo], nearest_sample=True) * htf
-            sh_total += sh
+            sh = self.sh[ifo].at_time(self.dts[ifo], interpolate='quadratic')
+            sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
         return self.marginalize_loglr(sh_total, hh_total)

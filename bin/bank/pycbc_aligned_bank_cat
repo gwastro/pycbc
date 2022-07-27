@@ -29,6 +29,8 @@ import pycbc.version
 import h5py
 from ligo.lw import utils
 from pycbc import tmpltbank
+# Old ligolw output functions no longer imported at package level
+import pycbc.tmpltbank.bank_output_utils as llw_output
 import pycbc
 import pycbc.psd
 import pycbc.strain
@@ -164,12 +166,15 @@ if options.metadata_file:
 else:
     outdoc = None
 if options.output_file.endswith(('.xml','.xml.gz','.xmlgz')):
-    tmpltbank.output_sngl_inspiral_table(options.output_file, temp_bank,
-        metricParams, ethincaParams, programName=__program__,
+    llw_output.output_sngl_inspiral_table(
+        options.output_file,
+        temp_bank,
+        metricParams,
+        ethincaParams,
+        programName=__program__,
         optDict=options.__dict__,
-        outdoc=outdoc, comment="", version=pycbc.version.git_hash,
-        cvs_repository='pycbc/'+pycbc.version.git_branch,
-        cvs_entry_time=pycbc.version.date)
+        outdoc=outdoc
+    )
 elif options.output_file.endswith(('.h5','.hdf','.hdf5')):
     out_fp = h5py.File(options.output_file, 'w')
     out_fp['mass1'] = temp_bank[:,0]
