@@ -39,10 +39,11 @@ def cached_firwin(*args, **kwargs):
     """
     return scipy.signal.firwin(*args, **kwargs)
 
+
 # Change to True in front-end if you want this function to use caching
 # This is a mostly-hidden optimization option that most users will not want
 # to use. It is used in PyCBC Live
-USE_CACHING_FOR_LFILTER=False
+USE_CACHING_FOR_LFILTER = False
 fft_cache = {}
 
 def lfilter(coefficients, timeseries):
@@ -91,28 +92,27 @@ def lfilter(coefficients, timeseries):
 
         else:
             npoints = len(cseries)
-            if not (npoints, ftype) in fft_cache:
+            if (npoints, ftype) not in fft_cache:
                 fft1outs = create_class_fft_for_cache(
                     npoints,
-                    timeseries.delta_t, # Is unused here
+                    timeseries.delta_t,  # Is unused here
                     timeseries.dtype,
                     ifft=False
                 )
 
                 fft2outs = create_class_fft_for_cache(
                     npoints,
-                    timeseries.delta_t, # Is unused here
+                    timeseries.delta_t,  # Is unused here
                     timeseries.dtype,
                     ifft=False
                 )
 
                 ifftouts = create_class_fft_for_cache(
                     npoints,
-                    timeseries.delta_t, # Is unused here
+                    timeseries.delta_t,  # Is unused here
                     timeseries.dtype,
                     ifft=True
                 )
-
 
                 fft_cache[(npoints, ftype)] = [fft1outs, fft2outs, ifftouts]
 

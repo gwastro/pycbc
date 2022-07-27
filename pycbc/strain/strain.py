@@ -1245,7 +1245,6 @@ class StrainSegments(object):
             required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
 
 
-
 def create_class_fft_for_cache(npoints_time, delta_t, dtype, ifft=False):
     npoints_freq = npoints_time // 2 + 1
     delta_f_tmp = 1.0 / (npoints_time * delta_t)
@@ -1568,8 +1567,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             vec._data[:] = self.strain[s:e]
             fft_class.execute()
             fseries._data *= vec._delta_t
-            # FIXME: Make faster, don't need a slice here!
-            fseries._epoch = self.strain[s:e]._epoch
+            fseries._epoch = self.strain._epoch + s*self.strain.delta_t
 
             # we haven't calculated a resample psd for this delta_f
             if delta_f not in self.psds:
