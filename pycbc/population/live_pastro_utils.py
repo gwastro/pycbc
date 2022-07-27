@@ -81,6 +81,7 @@ class PAstroData():
         else:
             self.do = True
             self.method = pastro_method
+            logging.info('Setting up p_astro data with method %s', method)
             self.spec = _read_spec[self.method](specfile)
             self.bank = _read_bank[self.method](self.spec, bank)
 
@@ -89,6 +90,7 @@ class PAstroData():
         if not self.do:
             return None, None
 
+        logging.info('Computing p_astro')
         p_astro, p_terr = _do_calc[self.method](self, trigger_data, horizons)
         return p_astro, p_terr
 
