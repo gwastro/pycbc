@@ -305,7 +305,6 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     # How many IFOs meet minimum data requirements?
     min_seg = segments.segment(triggertime - onbefore - minbefore - padding,
                                triggertime + onafter + minafter + padding)
-    # Work in progess below
     scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
             for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
             and abs(sciencesegs[ifo]) >= minduration})
