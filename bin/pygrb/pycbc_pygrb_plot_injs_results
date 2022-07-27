@@ -25,8 +25,7 @@ import h5py, logging, os.path, argparse, sys
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
-import pycbc.pnutils
+import pycbc.pnutils, pycbc.results, pycbc.version
 from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results import pygrb_postprocessing_utils as ppu
