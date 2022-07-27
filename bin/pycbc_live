@@ -83,6 +83,8 @@ class LiveEventManager(object):
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
 
+        self.bank = bank
+
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
         self.size = self.comm.Get_size()
