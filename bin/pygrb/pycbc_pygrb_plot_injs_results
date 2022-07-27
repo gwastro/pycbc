@@ -134,10 +134,9 @@ def load_data(input_file, keys, opts, ifos):
     injs = h5py.File(input_file, 'r')
     data_dict = {}
 
-    easy_keys = ['coa_phase', 'distance', 'latitude',
-                 'longitude','mass1', 'mass2', 'polarization',
-                 'spin1x', 'spin1y', 'spin1z', 'spin2x',
-                 'spin2y', 'spin2z']
+    easy_keys = ['coa_phase', 'distance', 'mass1', 'mass2',
+                 'polarization', 'spin1x', 'spin1y', 'spin1z',
+                 'spin2x', 'spin2y', 'spin2z']
 
     for qty in keys:
         if qty in easy_keys:
@@ -146,6 +145,8 @@ def load_data(input_file, keys, opts, ifos):
             data_dict[qty] = injs['injections/end_time'][:]
             grb_time = ppu.get_grb_time(opts.seg_files)
             data_dict[qty] -= grb_time
+        elif qty in ['latitude', 'longitude']:
+            data_dict[qty] = numpy.rad2deg(injs['injections/%s' % qty][:])
         elif qty in ['mtotal', 'q', 'mchirp']:
             data_dict[qty] = load_mass_data(injs, qty)
         elif qty in ['eff_site_dist', 'eff_dist']:
@@ -339,8 +340,8 @@ axis_labels_dict ={'mchirp': "Chirp Mass (solar masses)",
                    'eff_dist': "Inverse sum of effective distances (Mpc)",
                    'end_time': "Time since %d (s)" % grb_time,
                    'coa_phase': "Phase of complex SNR (radians)",
-                   'latitude': "Latitude (radians)",
-                   'longitude': "Longitude (radians)",
+                   'latitude': "Latitude (degrees)",
+                   'longitude': "Longitude (degrees)",
                    'incl': "Inclination (iota)",
                    'abs_incl': 'Magnitude of inclination (|iota|)',
                    'cos_incl': "cos(iota)",
