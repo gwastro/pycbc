@@ -335,31 +335,31 @@ sitename = {'G1':'GEO', 'H1':'Hanford', 'L1':'Livingston', 'V1':'Virgo',
             'K1':'KAGRA', 'A1': 'India Aundha'}
 
 # Take care of axes labels
-axis_labels_dict ={'mchirp': "Chirp Mass (solar masses)",
-                   'mtotal': "Total mass (solar masses)",
-                   'q': "Mass ratio",
-                   'distance': "Distance (Mpc)",
-                   'eff_site_dist': "%s effective distance (Mpc)" % sitename.get(opts.ifo),
-                   'eff_dist': "Inverse sum of effective distances (Mpc)",
-                   'end_time': "Time since %d (s)" % grb_time,
-                   'coa_phase': "Phase of complex SNR (radians)",
-                   'latitude': "Latitude (degrees)",
-                   'longitude': "Longitude (degrees)",
-                   'incl': "Inclination (iota)",
-                   'abs_incl': 'Magnitude of inclination (|iota|)',
-                   'cos_incl': "cos(iota)",
-                   'cos_abs_incl': "cos(|iota|)",
-                   'mass1': "Mass of 1st binary component (solar masses)",
-                   'mass2': "Mass of 2nd binary component (solar masses)",
-                   'polarization': "Polarization phase (radians)",
-                   'spin1': "Spin on 1st binary component",
-                   'spin1x': "Spin x-component of 1st binary component",
-                   'spin1y': "Spin y-component of 1st binary component",
-                   'spin1z': "Spin z-component of 1st binary component",
-                   'spin2': "Spin on 2nd binary component",
-                   'spin2x': "Spin x-component of 2nd binary component",
-                   'spin2y': "Spin y-component of 2nd binary component",
-                   'spin2z': "Spin z-component of 2nd binary component"}
+axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
+                    'mtotal': "Total mass (solar masses)",
+                    'q': "Mass ratio",
+                    'distance': "Distance (Mpc)",
+                    'eff_site_dist': "%s effective distance (Mpc)" % sitename.get(opts.ifo),
+                    'eff_dist': "Inverse sum of effective distances (Mpc)",
+                    'end_time': "Time since %d (s)" % grb_time,
+                    'coa_phase': "Phase of complex SNR (radians)",
+                    'latitude': "Latitude (degrees)",
+                    'longitude': "Longitude (degrees)",
+                    'incl': "Inclination (iota)",
+                    'abs_incl': 'Magnitude of inclination (|iota|)',
+                    'cos_incl': "cos(iota)",
+                    'cos_abs_incl': "cos(|iota|)",
+                    'mass1': "Mass of 1st binary component (solar masses)",
+                    'mass2': "Mass of 2nd binary component (solar masses)",
+                    'polarization': "Polarization phase (radians)",
+                    'spin1': "Spin on 1st binary component",
+                    'spin1x': "Spin x-component of 1st binary component",
+                    'spin1y': "Spin y-component of 1st binary component",
+                    'spin1z': "Spin z-component of 1st binary component",
+                    'spin2': "Spin on 2nd binary component",
+                    'spin2x': "Spin x-component of 2nd binary component",
+                    'spin2y': "Spin y-component of 2nd binary component",
+                    'spin2z': "Spin z-component of 2nd binary component"}
 
 x_label = axis_labels_dict[x_qty]
 y_label = axis_labels_dict[y_qty]
@@ -421,7 +421,7 @@ if "spin" in x_qty:
 if "spin" in y_qty:
     ax.set_ylim([0, np.ceil(10 * max(max_missed_inj[y_qty],
                                      found_inj[y_qty].max())) / 10])
-                                     
+
 # Handle axis limits when plotting inclination
 if "incl" in x_qty or "incl" in y_qty:
     max_inc = np.pi
@@ -470,7 +470,7 @@ if plot_caption is None:
     plot_caption += "found coincident with the injection but it was "
     plot_caption += "not louder than all offsource events. The colour "
     plot_caption += "bar gives the p-value of the trigger."
-    
+
 # Take care of title
 plot_title = opts.plot_title
 if plot_title is None:
