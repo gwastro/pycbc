@@ -492,7 +492,7 @@ class SingleCoincForGraceDB(object):
             try:
                 gracedb.writeLog(
                     gid, 'Multi-component p_astro JSON file upload',
-                    filename='p_astro.json',
+                    filename=self.multipa_file,
                     tag_name=['em_follow']
                 )
                 logging.info('Uploaded multi p_astro for %s', gid)
