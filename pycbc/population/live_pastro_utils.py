@@ -1,3 +1,4 @@
+import logging
 from . import live_pastro as livepa
 
 
@@ -81,7 +82,7 @@ class PAstroData():
         else:
             self.do = True
             self.method = pastro_method
-            logging.info('Setting up p_astro data with method %s', method)
+            logging.info('Setting up p_astro data with method %s', self.method)
             self.spec = _read_spec[self.method](specfile)
             self.bank = _read_bank[self.method](self.spec, bank)
 
