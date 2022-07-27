@@ -35,7 +35,9 @@ from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.filter import make_frequency_series
 from pycbc.filter import sigmasq
 from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
-from pycbc.types.optparse import MultiDetOptionAppendAction, convert_to_process_params_dict
+from pycbc.types.optparse import MultiDetOptionAppendAction
+from pycbc.types.optparse import convert_to_process_params_dict
+from pycbc.io.ligolw import create_process_table
 from pycbc.waveform import FilterBank, get_td_waveform, td_approximants, taper_timeseries
 import os
 import sys
@@ -271,16 +273,10 @@ logging.info('Creating XML file')
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
 
-# put opts into a dict for the process table
-opts_dict = convert_to_process_params_dict(opts)
-
 # create process table
-proc_id = utils.process.register_to_xmldoc(
-                    outdoc, sys.argv[0], opts_dict,
-                    comment="", instruments=[''.join(opts.instruments)],
-                    version=pycbc.version.git_hash,
-                    cvs_repository='pycbc/'+pycbc.version.git_branch,
-                    cvs_entry_time=pycbc.version.date).process_id
+llw_opts = convert_to_process_params_dict(opts)
+create_process_table(outdoc, sys.argv[0], options=llw_opts,
+                     detectors=[''.join(opts.instruments)])
 
 # create sim_inspiral row for injection
 # and populate non-IFO-specific columns in XML output file
