@@ -348,13 +348,9 @@ with ctx:
             # Even if we have none, need to keep an empty dictionary.
             # Only do this is idx doesn't get time shifted out of the time
             # we are looking at.
-            # TODO: Now that time delay is added directly to indices vs. being rolled,
-            #       is it really necessary to have two cases?
             idx_dict = {
-                ifo: idx[ifo][np.logical_and(
-                    idx[ifo] + time_delay_idx[ifo] < len(snr_dict[ifo]),
-                    idx[ifo] - time_delay_idx[ifo] < len(snr_dict[ifo])
-                    )
+                ifo: idx[ifo][
+                    idx[ifo] + time_delay_idx[ifo] < len(snr_dict[ifo])
                 ]
                 for ifo in args.instruments}
             # Find triggers that are coincident (in geocent time) in
