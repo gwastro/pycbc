@@ -87,7 +87,7 @@ def load_mass_data(injs, qty):
     if qty == 'mtotal':
         data = injs['injections/mass1'][:] + injs['injections/mass2'][:]
     elif qty == 'mchirp':
-        data, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
+        data, _ = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
             injs['injections/mass1'][:], injs['injections/mass2'][:])
     else:
         data = injs['injections/mass2'][:]/injs['injections/mass1'][:]
