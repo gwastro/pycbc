@@ -56,7 +56,7 @@ def process_var_strings(qty):
 
 
 def load_incl_data(injs, qty):
-    """Extract data related to inclination from raw trigger/injection data"""
+    """Extract data related to inclination from raw injection data"""
 
     local_dict = {}
 
@@ -79,10 +79,10 @@ def load_incl_data(injs, qty):
 
     return data
 
-# Function to extract mass ratio or total mass data from a trigger/injection file
+# Function to extract mass ratio or total mass data from a injection file
 def load_mass_data(injs, qty):
     """Extract data related to mass ratio or total mass from raw
-    trigger/injection data"""
+    injection data"""
 
     if qty == 'mtotal':
         data = injs['injections/mass1'][:] + injs['injections/mass2'][:]
@@ -96,9 +96,9 @@ def load_mass_data(injs, qty):
     return data
 
 
-# Function to extract mass ratio or total mass data from a trigger/injection file
+# Function to extract mass ratio or total mass data from a injection file
 def load_effdist_data(injs, qty, opts, ifos):
-    """Extract data related to effective distances from raw trigger/injection data"""
+    """Extract data related to effective distances from raw injection data"""
 
     local_dict = {}
 
@@ -114,9 +114,9 @@ def load_effdist_data(injs, qty, opts, ifos):
 
     return data
 
-# Function to extract spin related data from a trigger/injection file
+# Function to extract spin related data from a injection file
 def load_spin_data(injs, qty):
-    """Extract data related to spin from raw trigger/injection data"""
+    """Extract data related to spin from raw injection data"""
 
     # Calculate the modulus
     data = np.sqrt(injs['injections/%sx' % qty][:]**2 +
@@ -126,10 +126,10 @@ def load_spin_data(injs, qty):
     return data
 
 
-# Function to extract desired data from a trigger/injection file
+# Function to extract desired data from a injection file
 def load_data(input_file, keys, opts, ifos):
     """Create a dictionary containing the data specified by the
-    list of keys extracted from a trigger/injection file"""
+    list of keys extracted from a injection file"""
 
     injs = h5py.File(input_file, 'r')
     data_dict = {}
