@@ -27,7 +27,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 import pycbc.pnutils, pycbc.results, pycbc.version
 from pycbc import init_logging
-from pycbc.detector import Detector
 from pycbc.results import pygrb_postprocessing_utils as ppu
 
 plt.switch_backend('Agg')
