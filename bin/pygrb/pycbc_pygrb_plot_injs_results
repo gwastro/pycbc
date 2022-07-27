@@ -306,10 +306,9 @@ found_quieter = grab_injs_subset(inj_data, quieter_indices)
 found_quieter['reweighted_snr'] = f['found_after_vetoes/stat'][quieter_mask]
 
 # Extract inclusive/exclusive IFAR for injections found quieter than background
-if opts.far_type == 'inclusive':
-    found_quieter['ifar'] = f['found_after_vetoes/ifar'][quieter_mask]
-elif opts.far_type == 'exclusive':
-    found_quieter['ifar'] = f['found_after_vetoes/ifar_exc'][quieter_mask]
+ifar_string = 'found_after_vetoes/ifar' if opts.far_type == 'inclusive' \
+    else 'found_after_vetoes/ifar_exc'
+found_quieter['ifar'] = f[ifar_string][quieter_mask]
 
 # 3) Missed due to vetoes
 vetoed = grab_injs_subset(inj_data, missed_after_vetoes)
