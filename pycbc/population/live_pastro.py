@@ -8,37 +8,35 @@ from pycbc.events import triggers
 from . import fgmc_functions as fgmcfun
 
 
-def read_template_param_bin_data(spec_file):
+def check_template_param_bin_data(spec_json):
     """
     Parameters
     ----------
-    spec_file: string
-        Name of json file containing various static data
+    spec_json: JSON dictionary-like object
+        Result of parsing json file containing static data
 
     Returns
     -------
-    pa_spec: dictionary
-        Prerequisite data for p astro calc
+    spec_json: dictionary
     """
-    with open(spec_file) as specf:
-        pa_spec = json.load(specf)
-    # check that the file has the right contents
-    assert 'param' in pa_spec
-    assert 'bin_edges' in pa_spec  # should be a list of floats
-    assert 'sig_per_yr_binned' in pa_spec  # signal rate per bin (per year)
-    # do the lengths of bin arrays match?
-    assert len(pa_spec['bin_edges']) == len(pa_spec['sig_per_yr_binned']) + 1
-    assert 'ref_bns_horizon' in pa_spec  # float
-    assert 'netsnr_thresh' in pa_spec  # float
+    # Check the necessary data are present
+    assert 'param' in spec_json
+    assert 'bin_edges' in spec_json  # should be a list of floats
+    assert 'sig_per_yr_binned' in spec_json  # signal rate per bin (per year)
+    # Do the lengths of bin arrays match?
+    assert len(spec_json['bin_edges']) == \
+           len(spec_json['sig_per_yr_binned']) + 1
+    assert 'ref_bns_horizon' in spec_json  # float
+    assert 'netsnr_thresh' in spec_json  # float
 
     return pa_spec
 
 
-def read_template_bank_param(spec_data, bankf):
+def read_template_bank_param(spec_d, bankf):
     """
     Parameters
     ----------
-    spec_data: dictionary
+    spec_d: dictionary
         Prerequisite data for p astro calc
     bankf: string
         Path to HDF5 template bank file
@@ -52,9 +50,9 @@ def read_template_bank_param(spec_data, bankf):
     # All the templates
     tids = numpy.arange(len(bank['mass1']))
     # Get param vals
-    logging.debug('Getting %s values from bank', spec_data['param'])
-    parvals = bankconv.get_bank_property(spec_data['param'], bank, tids)
-    counts, edges = numpy.histogram(parvals, bins=spec_data['bin_edges'])
+    logging.debug('Getting %s values from bank', spec_d['param'])
+    parvals = bankconv.get_bank_property(spec_d['param'], bank, tids)
+    counts, edges = numpy.histogram(parvals, bins=spec_d['bin_edges'])
     bank_data = {'bin_edges': edges, 'tcounts': counts, 'num_t': counts.sum()}
     logging.debug('Binned template counts:')
     logging.debug(counts)

@@ -750,7 +750,6 @@ livepau.insert_live_pastro_option_group(parser)
 args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
-livepau.verify_live_pastro_options(args)
 
 if args.output_background is not None and len(args.output_background) != 2:
     parser.error('--output-background takes two parameters: period and path')
@@ -761,8 +760,8 @@ pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
-padata = livepau.PAstroData(args.p_astro_method, args.p_astro_spec_data,
-                            args.bank_file)
+padata = livepau.PAstroData(args.p_astro_spec, args.bank_file)
+
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
