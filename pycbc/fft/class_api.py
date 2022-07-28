@@ -92,7 +92,7 @@ class IFFT(object):
 def create_memory_and_engine_for_class_based_fft(
     npoints_time,
     dtype,
-    delta_t=1
+    delta_t=1,
     ifft=False
 ):
     """ Create memory and engine for class-based FFT/IFFT
