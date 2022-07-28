@@ -28,11 +28,9 @@ from scipy.optimize import root_scalar
 from scipy.interpolate import RectBivariateSpline
 from . import NS_DATA_DIRECTORY
 
-trig1 = 36 * chi6 * sin4i - 16 * chi6 * sin2i + 144 * chi4 * sin4i
-        - 56 * chi4 * sin2i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
+trig1 = 36 * chi6 * sin4i - 16 * chi6 * sin2i + 144 * chi4 * sin4i - 56 * chi4 * sin2i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
 
-trig2 = 36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4
-        - 48 * chi2 * sin2i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
+trig2 = 36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4 - 48 * chi2 * sin2i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
 
 trig3 = 120 * chi4 * sin2i - 144 * chi4 * sin4i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
 
