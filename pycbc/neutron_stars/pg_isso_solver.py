@@ -28,7 +28,13 @@ from scipy.optimize import root_scalar
 from scipy.interpolate import RectBivariateSpline
 from . import NS_DATA_DIRECTORY
 
+trig1 = 36 * chi6 * sin4i - 16 * chi6 * sin2i + 144 * chi4 * sin4i
+        - 56 * chi4 * sin2i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
 
+trig2 = 36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4
+        - 48 * chi2 * sin2i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
+
+trig3 = 120 * chi4 * sin2i - 144 * chi4 * sin4i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
 
 def ISCO_eq(r, chi):
     """Polynomial that enables the calculation of the Kerr innermost
@@ -225,7 +231,6 @@ def PG_ISSO_eq(r, chi, incl):
 
     return r4 * r4 * Z + chi2 * sin_incl2 * (chi2 * sin_incl2 * Y - 2 * r4 * X)
 
-
 def PG_ISSO_eq_dr(r, chi, incl):
     """Partial derivative of :func:`PG_ISSO_eq` with respect to r.
 
@@ -254,13 +259,9 @@ def PG_ISSO_eq_dr(r, chi, incl):
     return (
         12 * r**11 - 132 * r**10
         + r**9 * (120 * chi2 * sin2i - 60 * chi2 + 360) - r**8 * 252 * chi2
-        + 8 * r**7 * (
-            36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4
-            - 48 * chi2 * sin2i)
-        + 7 * r**6 * (120 * chi4 * sin2i - 144 * chi4 * sin4i)
-        + 6 * r**5 * (
-            36 * chi6 * sin4i - 16 * chi6 * sin2i + 144 * chi4 * sin4i
-            - 56 * chi4 * sin2i)
+        + 8 * r**7 * (trig2)
+        + 7 * r**6 * (trig3)
+        + 6 * r**5 * (trig1)
         + r**4 * (120 * chi6 * sin2i - 240 * chi6 * sin4i)
         + r**3 * (84 * chi8 * sin4i - 24 * chi8 * sin2i - 192 * chi6 * sin4i)
         - 84 * r**2 * chi8 * sin4i
@@ -295,13 +296,9 @@ def PG_ISSO_eq_dr2(r, chi, incl):
     return (
         132 * r**10 - 1320 * r**9
         + 90 * r**8 * (12 * chi2 * sin2i - 6 * chi2 + 36) - 2016 * chi2 * r**7
-        + 56 * r**6 * (
-            36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4
-            - 48 * chi2 * sin2i)
-        + 42 * r**5 * (120 * chi4 * sin2i - 144 * chi4 * sin4i)
-        + 30 * r**4 * (
-            36 * chi6 * sin4i - 16 * chi6 * sin2i + 144 * chi4 * sin4i
-            - 56 * chi4 * sin2i)
+        + 56 * r**6 * (trig2)
+        + 42 * r**5 * (trig3)
+        + 30 * r**4 * (trig1)
         + r**3 * (480 * chi6 * sin2i - 960 * chi6 * sin4i)
         + r**2 * (
             252 * chi8 * sin4i - 72 * chi8 * sin2i - 576 * chi6 * sin4i)
