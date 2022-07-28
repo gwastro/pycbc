@@ -28,11 +28,17 @@ from scipy.optimize import root_scalar
 from scipy.interpolate import RectBivariateSpline
 from . import NS_DATA_DIRECTORY
 
-trig1 = 36 * chi6 * sin4i - 16 * chi6 * sin2i + 144 * chi4 * sin4i - 56 * chi4 * sin2i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
+def trig1(chi6, sin4i, sin2i, chi4):
+    #repeated line condensed into a single called function. Preferable if a more informative name can be thought of
+    return 36 * chi6 * sin4i - 16 * chi6 * sin2i + 144 * chi4 * sin4i - 56 * chi4 * sin2i 
 
-trig2 = 36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4 - 48 * chi2 * sin2i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
+def trig2(chi4, sin4i, sin2i, chi2):
+    #repeated line condensed into a single called function. Preferable if a more informative name can be thought of
+    36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4 - 48 * chi2 * sin2i 
 
-trig3 = 120 * chi4 * sin2i - 144 * chi4 * sin4i #repeated line condensed into a single called variable. Preferable if a more informative name can be thought of
+def trig3(chi4, sin2i, sin4i):
+    #repeated line condensed into a single called function. Preferable if a more informative name can be thought of
+    120 * chi4 * sin2i - 144 * chi4 * sin4i
 
 def ISCO_eq(r, chi):
     """Polynomial that enables the calculation of the Kerr innermost
@@ -257,9 +263,9 @@ def PG_ISSO_eq_dr(r, chi, incl):
     return (
         12 * r**11 - 132 * r**10
         + r**9 * (120 * chi2 * sin2i - 60 * chi2 + 360) - r**8 * 252 * chi2
-        + 8 * r**7 * (trig2)
-        + 7 * r**6 * (trig3)
-        + 6 * r**5 * (trig1)
+        + 8 * r**7 * trig2(chi4, sin4i, sin2i, chi2)
+        + 7 * r**6 * trig3(chi4, sin2i, sin4i)
+        + 6 * r**5 * trig1(chi6, sin4i, sin2i, chi4)
         + r**4 * (120 * chi6 * sin2i - 240 * chi6 * sin4i)
         + r**3 * (84 * chi8 * sin4i - 24 * chi8 * sin2i - 192 * chi6 * sin4i)
         - 84 * r**2 * chi8 * sin4i
@@ -294,9 +300,9 @@ def PG_ISSO_eq_dr2(r, chi, incl):
     return (
         132 * r**10 - 1320 * r**9
         + 90 * r**8 * (12 * chi2 * sin2i - 6 * chi2 + 36) - 2016 * chi2 * r**7
-        + 56 * r**6 * (trig2)
-        + 42 * r**5 * (trig3)
-        + 30 * r**4 * (trig1)
+        + 56 * r**6 * trig2(chi4, sin4i, sin2i, chi2)
+        + 42 * r**5 * trig3(chi4, sin2i, sin4i)
+        + 30 * r**4 * trig1(chi6, sin4i, sin2i, chi4)
         + r**3 * (480 * chi6 * sin2i - 960 * chi6 * sin4i)
         + r**2 * (
             252 * chi8 * sin4i - 72 * chi8 * sin2i - 576 * chi6 * sin4i)
