@@ -31,7 +31,7 @@ from pycbc.filter import resample_to_delta_t, lowpass, highpass, make_frequency_
 from pycbc.filter.zpk import filter_zpk
 from pycbc.waveform.spa_tmplt import spa_distance
 import pycbc.psd
-import pycbc.fft
+from pycbc.fft import create_memory_and_engine_for_class_based_fft
 import pycbc.events
 import pycbc.frame
 import pycbc.filter
@@ -1245,37 +1245,6 @@ class StrainSegments(object):
             required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
 
 
-def create_class_fft_for_cache(npoints_time, delta_t, dtype, ifft=False):
-    npoints_freq = npoints_time // 2 + 1
-    delta_f_tmp = 1.0 / (npoints_time * delta_t)
-    vec = TimeSeries(
-        zeros(
-            npoints_time,
-            dtype=dtype
-        ),
-        delta_t=delta_t,
-        copy=False
-    )
-    vectilde = FrequencySeries(
-        zeros(
-            npoints_freq,
-            dtype=complex_same_precision_as(vec)
-        ),
-        delta_f=delta_f_tmp,
-        copy=False
-    )
-    if ifft:
-        fft_class = pycbc.fft.IFFT(vectilde, vec)
-        invec = vectilde
-        outvec = vec
-    else:
-        fft_class = pycbc.fft.FFT(vec, vectilde)
-        invec = vec
-        outvec = vectilde
-
-    return invec, outvec, fft_class
-
-
 class StrainBuffer(pycbc.frame.DataBuffer):
     def __init__(self, frame_src, channel_name, start_time,
                  max_buffer=512,
@@ -1475,9 +1444,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.taper_immediate_strain = True
 
         # Caches for FFTs to use class based API
-        self.make_freq_cache = {}
-        self.make_freq_cache2 = {}
-        self.make_freq_cache3 = {}
+        self.fft_cache = {}
 
     @property
     def start_time(self):
@@ -1535,6 +1502,42 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         logging.info("Recalculating %s PSD, %s", self.detector, psd.dist)
         return True
 
+    def create_memory_for_overwhitened_data(self, npoints_time):
+        """ Create memory for doing data conditioning with npoints
+
+        Parameters
+        ----------
+        npoints_time: int
+            The length (in samples) of the time domain data to create memory
+            for carrying out the necessary FFTs to condition it.
+        """
+        data_fft_outs = create_memory_and_engine_for_class_based_fft(
+            npoints_time,
+            self.strain.dtype,
+            delta_t=self.strain.delta_t
+            ifft=False
+        )
+
+        whitened_data_ifft_outs = create_memory_and_engine_for_class_based_fft(
+            npoints_time,
+            self.strain.dtype,
+            delta_t=self.strain.delta_t
+            ifft=True
+        )
+
+        trimmed_data_fft_outs = create_memory_and_engine_for_class_based_fft(
+            npoints_time,
+            self.strain.dtype,
+            delta_t=self.strain.delta_t
+            ifft=False
+        )
+
+        self.fft_cache[npoints_time] = (
+            data_fft_outs,
+            whitened_data_ifft_outs,
+            trimmed_data_fft_outs,
+        )
+
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
 
@@ -1554,18 +1557,13 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             e = len(self.strain)
             s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
             npoints_time = e - s
-            if npoints_time not in self.make_freq_cache:
-                outs = create_class_fft_for_cache(
-                    npoints_time,
-                    self.strain.delta_t,
-                    self.strain.dtype,
-                    ifft=False
-                )
-                self.make_freq_cache[npoints_time] = outs
+            if npoints_time not in self.fft_cache:
+                self.create_memory_for_overwhitened_data(npoints_time)
+            fft_memory = self.fft_cache[npoints_time]
 
-            vec, fseries, fft_class = self.make_freq_cache[npoints_time]
+            vec, fseries, fft_class = self.fft_cache[npoints_time][0]
             vec._data[:] = self.strain[s:e]
-            fft_class.execute()
+            fft_class.execute()  # vec -> FFT -> fseries
             fseries._data *= vec._delta_t
             fseries._epoch = self.strain._epoch + s*self.strain.delta_t
 
@@ -1591,17 +1589,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             # trim ends of strain
             if self.reduced_pad  != 0:
                 npoints_time = e - s
-                if npoints_time not in self.make_freq_cache2:
-                    outs = create_class_fft_for_cache(
-                        npoints_time,
-                        self.strain.delta_t,
-                        self.strain.dtype,
-                        ifft=True
-                    )
-                    self.make_freq_cache2[npoints_time] = outs
-                vectilde, overwhite, fft_class = self.make_freq_cache2[npoints_time]
+                vectilde, overwhite, fft_class = self.fft_cache[npoints_time][1]
                 vectilde._data[:] = fseries._data[:]
-                fft_class.execute()
+                fft_class.execute()  # vectilde -> IFFT -> overwhite
                 overwhite._data *= vectilde._delta_f
 
                 overwhite2 = overwhite[self.reduced_pad:len(overwhite)-self.reduced_pad]
@@ -1610,18 +1600,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                                (overwhite2.end_time, 0., taper_window)]
                 gate_data(overwhite2, gate_params)
                 npoints_time = len(overwhite2)
-                if npoints_time not in self.make_freq_cache3:
-                    outs = create_class_fft_for_cache(
-                        npoints_time,
-                        self.strain.delta_t,
-                        self.strain.dtype,
-                        ifft=False
-                    )
-                    self.make_freq_cache3[npoints_time] = outs
 
-                vec, fseries_trimmed, fft_class = self.make_freq_cache3[npoints_time]
+                vec, fseries_trimmed, fft_class = self.fft_cache[npoints_time][2]
                 vec._data[:] = overwhite2._data[:]
-                fft_class.execute()
+                fft_class.execute()  # vec -> FFT -> fseries_trimmed
                 fseries_trimmed._data *= vec._delta_t
 
                 fseries_trimmed.start_time = fseries.start_time + self.reduced_pad * self.strain.delta_t

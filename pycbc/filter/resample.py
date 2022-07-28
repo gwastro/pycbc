@@ -27,7 +27,7 @@ import numpy
 import scipy.signal
 from pycbc.types import TimeSeries, Array, zeros, FrequencySeries, real_same_precision_as
 from pycbc.types import complex_same_precision_as
-from pycbc.fft import ifft, fft
+from pycbc.fft import ifft, fft, create_memory_and_engine_for_class_based_fft
 
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
@@ -62,7 +62,6 @@ def lfilter(coefficients, timeseries):
         filtered array
     """
     from pycbc.filter import correlate
-    from pycbc.strain.strain import create_class_fft_for_cache
 
     fillen = len(coefficients)
 
@@ -93,23 +92,20 @@ def lfilter(coefficients, timeseries):
         else:
             npoints = len(cseries)
             if (npoints, ftype) not in fft_cache:
-                fft1outs = create_class_fft_for_cache(
+                fft1outs = create_memory_and_engine_for_class_based_fft(
                     npoints,
-                    timeseries.delta_t,  # Is unused here
                     timeseries.dtype,
                     ifft=False
                 )
 
-                fft2outs = create_class_fft_for_cache(
+                fft2outs = create_memory_and_engine_for_class_based_fft(
                     npoints,
-                    timeseries.delta_t,  # Is unused here
                     timeseries.dtype,
                     ifft=False
                 )
 
-                ifftouts = create_class_fft_for_cache(
+                ifftouts = create_memory_and_engine_for_class_based_fft(
                     npoints,
-                    timeseries.delta_t,  # Is unused here
                     timeseries.dtype,
                     ifft=True
                 )
