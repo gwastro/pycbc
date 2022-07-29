@@ -274,6 +274,8 @@ found_after_vetoes = f['found_after_vetoes/injection_index'][:]
 # Indices of found but vetoed injections
 missed_after_vetoes = list(set(found) - set(found_after_vetoes))
 missed_after_vetoes = np.sort(missed_after_vetoes).astype(int)
+# Indices of injections found but not louder than background
+# are populated further down
 
 inj_data = load_data(opts.injection_file, [x_qty, y_qty], opts, ifos)
 logging.info("Triggers and missed/found injections loaded.")
@@ -317,7 +319,7 @@ found_louder['reweighted_snr'] = f['found_after_vetoes/stat'][louder_mask]
 
 # 2) Found quieter than background
 quieter_mask = (found_after_vetoes_stat <= max_reweighted_snr) & (found_after_vetoes_stat != 0)
-# Indices of injection found (bestnr > 0) but not louder than background (non-zero FAP)
+# Indices of injections found (bestnr > 0) but not louder than background (non-zero FAP)
 quieter_indices = found_after_vetoes[quieter_mask]
 found_quieter = grab_injs_subset(inj_data, quieter_indices)
 found_quieter['reweighted_snr'] = f['found_after_vetoes/stat'][quieter_mask]
