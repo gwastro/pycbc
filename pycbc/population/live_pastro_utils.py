@@ -1,4 +1,5 @@
 import logging
+import json
 from . import live_pastro as livepa
 
 
@@ -55,7 +56,7 @@ class PAstroData():
             self.do = False
         else:
             self.do = True
-              
+
             with open(specfile) as specf:
                 self.spec_json = json.load(specf)
             try:

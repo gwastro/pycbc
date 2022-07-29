@@ -29,7 +29,7 @@ def check_template_param_bin_data(spec_json):
     assert 'ref_bns_horizon' in spec_json  # float
     assert 'netsnr_thresh' in spec_json  # float
 
-    return pa_spec
+    return spec_json
 
 
 def read_template_bank_param(spec_d, bankf):
