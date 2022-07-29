@@ -146,7 +146,7 @@ def load_data(input_file, keys, opts, ifos):
             grb_time = ppu.get_grb_time(opts.seg_files)
             data_dict[qty] -= grb_time
         elif qty in ['latitude', 'longitude']:
-            data_dict[qty] = numpy.rad2deg(injs['injections/%s' % qty][:])
+            data_dict[qty] = np.rad2deg(injs['injections/%s' % qty][:])
         elif qty in ['mtotal', 'q', 'mchirp']:
             data_dict[qty] = load_mass_data(injs, qty)
         elif qty in ['eff_site_dist', 'eff_dist']:
@@ -197,7 +197,7 @@ admitted_vars = ['coa_phase', 'distance', 'latitude', 'longitude','mass1',
                  'mass2', 'polarization', 'spin1x', 'spin1y', 'spin1z',
                  'spin2x', 'spin2y', 'spin2z', 'end_time', 'mtotal', 'q',
                  'mchirp', 'eff_site_dist', 'eff_dist', 'incl', 'cos_incl',
-                 'abs_incl', 'cos_abs_incl', 'spin1', 'spin2']
+                 'abs_incl', 'cos_abs_incl', 'spin1', 'spin2', 'sky_error']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
                     choices=admitted_vars,
                     help="Quantity to plot on the horizontal axis. " +
@@ -257,7 +257,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 # Load triggers. Time-slides not yet available
 logging.info("Loading triggers.")
 trig_data = load_trig_data(trig_file, vetoes)
-max_reweighted_snr = max(trig_data['network/reweighted_snr'][:]) ## FOR TESTING
+max_reweighted_snr = max(trig_data['network/reweighted_snr'][:])
 
 # =======================
 # Post-process injections
@@ -277,6 +277,23 @@ missed_after_vetoes = np.sort(missed_after_vetoes).astype(int)
 
 inj_data = load_data(opts.injection_file, [x_qty, y_qty], opts, ifos)
 logging.info("Triggers and missed/found injections loaded.")
+
+# Handle separately the special case of plotting the sky_error: this
+# quantity is not defined for *missed* injections
+found_trig = {}
+found_inj = {}
+if 'sky_error' in [x_qty, y_qty]:
+    found_inj['ra'] = np.rad2deg(f['injections/longitude'][found])
+    found_inj['dec'] = np.rad2deg(f['injections/latitude'][found])
+    found_trig['ra'] = np.rad2deg(trig_data['network/longitude'][:])
+    found_trig['dec'] = np.rad2deg(trig_data['network/latitude'][:])
+    found_inj['sky_error'] = np.arccos(np.cos(found_inj['dec'] - found_trig['dec']) -\
+                                       np.cos(found_inj['dec']) * np.cos(found_trig['dec']) *\
+                                       (1 - np.cos(found_inj['ra'] - found_trig['ra'])))
+
+    # Define inj_data only for found indices. Missed injections are assigned null values
+    inj_data['sky_error'] = np.full(len(f['injections/longitude'][:]), None)
+    inj_data['sky_error'][found] = found_inj['sky_error']
 
 # Extract the necessary data from the missed injections for the plot
 missed_inj = {}
@@ -342,6 +359,7 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'eff_site_dist': "%s effective distance (Mpc)" % sitename.get(opts.ifo),
                     'eff_dist': "Inverse sum of effective distances (Mpc)",
                     'end_time': "Time since %d (s)" % grb_time,
+                    'sky_error': "Rec. sky error (radians)",
                     'coa_phase': "Phase of complex SNR (radians)",
                     'latitude': "Latitude (degrees)",
                     'longitude': "Longitude (degrees)",
@@ -500,9 +518,12 @@ if plot_title is None:
                   'spin2y': "spin y-component",
                   'spin2z': "spin z-component"}
 
-plot_title = "Injection recovery with respect to "
-plot_title += title_dict[x_qty]
-plot_title += " and "+ title_dict[y_qty]
+    if "sky_error" in [x_qty, y_qty]:
+        plot_title = "Sky error of recovered injections"
+    else:
+        plot_title = "Injection recovery with respect to "
+        plot_title += title_dict[x_qty]
+        plot_title += " and "+ title_dict[y_qty]
 
 # Wrap up
 plt.tight_layout()
