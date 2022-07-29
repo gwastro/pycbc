@@ -46,12 +46,12 @@ def read_template_bank_param(spec_d, bankf):
     bank_data: dictionary
         Template counts binned over specified param
     """
-    bank = h5py.File(bankf, 'r')
-    # All the templates
-    tids = numpy.arange(len(bank['mass1']))
-    # Get param vals
-    logging.debug('Getting %s values from bank', spec_d['param'])
-    parvals = bankconv.get_bank_property(spec_d['param'], bank, tids)
+    with h5py.File(bankf, 'r') as bank:
+        # All the templates
+        tids = numpy.arange(len(bank['mass1']))
+        # Get param vals
+        logging.debug('Getting %s values from bank', spec_d['param'])
+        parvals = bankconv.get_bank_property(spec_d['param'], bank, tids)
     counts, edges = numpy.histogram(parvals, bins=spec_d['bin_edges'])
     bank_data = {'bin_edges': edges, 'tcounts': counts, 'num_t': counts.sum()}
     logging.debug('Binned template counts:')
