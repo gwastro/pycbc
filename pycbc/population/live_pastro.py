@@ -141,7 +141,7 @@ def template_param_bin_calc(padata, trdata, horizons):
 
 
 __all__ = [
-    "read_template_param_bin_data",
+    "check_template_param_bin_data",
     "read_template_bank_param",
     "noise_density_from_far",
     "signal_pdf_from_snr",

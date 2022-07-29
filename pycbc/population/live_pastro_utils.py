@@ -78,6 +78,5 @@ class PAstroData():
 
 __all__ = [
     "insert_live_pastro_option_group",
-    "verify_live_pastro_options",
     "PAstroData"
 ]
