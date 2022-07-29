@@ -23,7 +23,7 @@ pegasus-wms >= 5.0.1
 markupsafe <= 2.0.1
 
 # Requirements for ligoxml access needed by some workflows
-python-ligo-lw >= 1.7.0
+python-ligo-lw >= 1.8.1
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
