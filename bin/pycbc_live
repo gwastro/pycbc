@@ -377,7 +377,7 @@ class LiveEventManager(object):
         event = SingleCoincForGraceDB(
             live_ifos,
             coinc_results,
-            padata=padata,
+            padata=self.padata,
             bank=bank,
             psds=psds,
             followup_data=fud,
@@ -453,7 +453,7 @@ class LiveEventManager(object):
             live_ifos = [i for i in fud if 'snr_series' in fud[i]]
 
             event = SingleCoincForGraceDB(live_ifos, single,
-                                          padata=padata, bank=bank,
+                                          padata=self.padata, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name,
