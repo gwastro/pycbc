@@ -28,6 +28,7 @@ a relative binning likelihood for parameter estimation.
 
 import logging
 import numpy
+import itertools
 from scipy.interpolate import interp1d
 
 from pycbc.waveform import get_fd_waveform_sequence
@@ -35,7 +36,8 @@ from pycbc.detector import Detector
 from pycbc.types import Array
 
 from .gaussian_noise import BaseGaussianNoise
-from .relbin_cpu import likelihood_parts, likelihood_parts_v
+from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
+                         likelihood_parts_multi, likelihood_parts_multi_v)
 from .tools import DistMarg
 
 
@@ -96,10 +98,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     fbin_ind = numpy.unique(
         [numpy.argmin(numpy.absolute(f_full - ff)) for ff in fbin]
     )
-    # make sure grid points are precise
-    fbin = numpy.array([f_full[i] for i in fbin_ind])
-    nbin = len(fbin)
-    return nbin, fbin, fbin_ind
+    return fbin_ind
 
 
 class Relative(BaseGaussianNoise, DistMarg):
@@ -170,25 +169,21 @@ class Relative(BaseGaussianNoise, DistMarg):
             variable_params, data, low_frequency_cutoff, **kwargs
         )
 
-        self.epsilon = float(epsilon)
-
         # reference waveform and bin edges
-        self.h00, self.h00_sparse = {}, {}
         self.f, self.df, self.end_time, self.det = {}, {}, {}, {}
-        self.edges, self.fedges, self.bins, self.fbins = {}, {}, {}, {}
-        self.ta = {}
+        self.h00, self.h00_sparse = {}, {}
+        self.fedges, self.edges = {}, {}
         self.antenna_time = {}
 
         # filtered summary data for linear approximation
         self.sdat = {}
 
-        # store data and psds as arrays for faster computation
-        self.comp_data = {ifo: d.numpy() for ifo, d in self.data.items()}
-        self.comp_psds = {ifo: p.numpy() for ifo, p in self.psds.items()}
-
         # store fiducial waveform params
         self.fid_params = self.static_params.copy()
         self.fid_params.update(fiducial_params)
+        for k in self.static_params:
+            if self.fid_params[k] == 'REPLACE':
+               self.fid_params.pop(k)
 
         for ifo in data:
             # store data and frequencies
@@ -198,23 +193,12 @@ class Relative(BaseGaussianNoise, DistMarg):
             self.end_time[ifo] = float(d0.end_time)
             self.det[ifo] = Detector(ifo)
 
-            # get detector-specific arrival times relative to end of data
-            dt = self.det[ifo].time_delay_from_earth_center(
-                self.fid_params["ra"],
-                self.fid_params["dec"],
-                self.fid_params["tc"],
-            )
-
-            self.ta[ifo] = self.fid_params["tc"] + dt - self.end_time[ifo]
-
             # generate fiducial waveform
             f_lo = self.kmin[ifo] * self.df[ifo]
             f_hi = self.kmax[ifo] * self.df[ifo]
             logging.info(
                 "%s: Generating fiducial waveform from %s to %s Hz",
-                ifo,
-                f_lo,
-                f_hi,
+                ifo, f_lo, f_hi,
             )
 
             # prune low frequency samples to avoid waveform errors
@@ -240,64 +224,61 @@ class Relative(BaseGaussianNoise, DistMarg):
             hp0 = numpy.roll(fid_hp, self.kmin[ifo])
             hc0 = numpy.roll(fid_hc, self.kmin[ifo])
 
-            fp, fc = self.det[ifo].antenna_pattern(
-                self.fid_params["ra"], self.fid_params["dec"],
-                self.fid_params["polarization"], self.fid_params["tc"])
+            # get detector-specific arrival times relative to end of data
+            dt = self.det[ifo].time_delay_from_earth_center(
+                self.fid_params["ra"],
+                self.fid_params["dec"],
+                self.fid_params["tc"],
+            )
 
-            tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-            self.h00[ifo] = numpy.array(hp0 * fp + hc0 * fc) * tshift
+            ta = self.fid_params["tc"] + dt - self.end_time[ifo]
+            tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * ta)
+
+            fp, fc = self.det[ifo].antenna_pattern(
+            self.fid_params["ra"], self.fid_params["dec"],
+            self.fid_params["polarization"], self.fid_params["tc"])
+
+            h00 = (hp0 * fp + hc0 * fc) * tshift
+            self.h00[ifo] = h00
 
             # compute frequency bins
             logging.info("Computing frequency bins")
-            nbin, fbin, fbin_ind = setup_bins(
-                f_full=self.f[ifo],
-                f_lo=f_lo,
-                f_hi=f_hi,
-                gammas=gammas,
-                eps=self.epsilon,
+            fbin_ind = setup_bins(
+                f_full=self.f[ifo], f_lo=f_lo, f_hi=f_hi,
+                gammas=gammas, eps=float(epsilon),
             )
-            logging.info("Using %s bins for this model", nbin)
+            logging.info("Using %s bins for this model", len(fbin_ind))
 
-            # store bins and edges in sample and frequency space
+            self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
-            self.fedges[ifo] = numpy.array(fbin).astype(numpy.float64)
-            self.bins[ifo] = numpy.array(
-                [
-                    (self.edges[ifo][i], self.edges[ifo][i + 1])
-                    for i in range(len(self.edges[ifo]) - 1)
-                ]
-            )
-            self.fbins[ifo] = numpy.array(
-                [(fbin[i], fbin[i + 1]) for i in range(len(fbin) - 1)]
-            )
 
-            # store low res copy of fiducial waveform
-            self.h00_sparse[ifo] = self.h00[ifo].copy().take(self.edges[ifo])
+            self.init_from_frequencies(h00, fbin_ind, ifo)
+            self.antenna_time[ifo] = self.setup_antenna(earth_rotation,
+                                                        self.fedges[ifo])
+        self.combine_layout()
 
-            # compute summary data
-            logging.info(
-                "Calculating summary data at frequency resolution %s Hz",
-                self.df[ifo],
-            )
-            self.sdat[ifo] = self.summary_data(ifo)
+    def init_from_frequencies(self, h00, fbin_ind, ifo):
+        bins = numpy.array(
+            [
+                (fbin_ind[i], fbin_ind[i + 1])
+                for i in range(len(fbin_ind) - 1)
+            ]
+        )
 
-            # Calculate the times to evaluate fp/fc
-            if earth_rotation is not False:
-                logging.info("Enabling frequency-dependent earth rotation")
-                from pycbc.waveform.spa_tmplt import spa_length_in_time
+        # store low res copy of fiducial waveform
+        self.h00_sparse[ifo] = h00.copy().take(fbin_ind)
 
-                times = spa_length_in_time(
-                    phase_order=-1,
-                    mass1=self.fid_params["mass1"],
-                    mass2=self.fid_params["mass2"],
-                    f_lower=self.fedges[ifo],
-                )
-                self.antenna_time[ifo] = self.fid_params["tc"] - times
-                self.lik = likelihood_parts_v
-            else:
-                self.antenna_time[ifo] = self.fid_params["tc"]
-                self.lik = likelihood_parts
+        # compute summary data
+        logging.info(
+            "Calculating summary data at frequency resolution %s Hz",
+            self.df[ifo],
+        )
 
+        a0, a1 = self.summary_product(self.data[ifo], h00, bins, ifo)
+        b0, b1 = self.summary_product(h00, h00, bins, ifo)
+        self.sdat[ifo] = {"a0": a0, "a1": a1, "b0": abs(b0), "b1": abs(b1)}
+
+    def combine_layout(self):
         # determine the unique ifo layouts
         self.edge_unique = []
         self.ifo_map = {}
@@ -315,49 +296,46 @@ class Relative(BaseGaussianNoise, DistMarg):
                     self.edge_unique.append(Array(self.fedges[ifo]))
         logging.info("%s unique ifo layouts", len(self.edge_unique))
 
-    def summary_data(self, ifo):
-        """Compute summary data bin coefficients encoding linear
-        approximation to full resolution likelihood.
+    def setup_antenna(self, earth_rotation, fedges):
+        # Calculate the times to evaluate fp/fc
+        if earth_rotation is not False:
+            logging.info("Enabling frequency-dependent earth rotation")
+            from pycbc.waveform.spa_tmplt import spa_length_in_time
 
-        Returns
-        -------
-        dict
-            Dictionary containing bin coefficients a0, b0, a1, b1,
-            for each frequency bin.
+            times = spa_length_in_time(
+                phase_order=-1,
+                mass1=self.fid_params["mass1"],
+                mass2=self.fid_params["mass2"],
+                f_lower=fedges,
+            )
+            atimes = self.fid_params["tc"] - times
+            self.lik = likelihood_parts_v
+            self.mlik = likelihood_parts_multi_v
+        else:
+            atimes = self.fid_params["tc"]
+            self.lik = likelihood_parts
+            self.mlik = likelihood_parts_multi
+        return atimes
+
+    def summary_product(self, h1, h2, bins, ifo):
+        """ Calculate the summary values for the inner product <h1|h2>
         """
         # calculate coefficients
-        hd = numpy.conjugate(self.comp_data[ifo]) * self.h00[ifo]
-        hd /= self.comp_psds[ifo]
-        hh = (numpy.absolute(self.h00[ifo]) ** 2.0) / self.comp_psds[ifo]
+        h12 = numpy.conjugate(h1) * h2 / self.psds[ifo]
 
         # constant terms
         a0 = numpy.array([
-                4.0 * self.df[ifo] * numpy.sum(hd[l:h])
-                for l, h in self.bins[ifo]
-            ])
-        b0 = numpy.array([
-                4.0 * self.df[ifo] * numpy.sum(hh[l:h])
-                for l, h in self.bins[ifo]
+                4.0 * self.df[ifo] * h12[l:h].sum()
+                for l, h in bins
             ])
 
         # linear terms
-        bin_lefts = [fl for fl, fh in self.fbins[ifo]]
         a1 = numpy.array([
-                4.0 * self.df[ifo]
-                * numpy.sum(hd[l:h] * (self.f[ifo][l:h] - bl))
-                for (l, h), bl in zip(self.bins[ifo], bin_lefts)
-            ])
-        b1 = numpy.array([
-                4.0 * self.df[ifo]
-                * numpy.sum(hh[l:h] * (self.f[ifo][l:h] - bl))
-                for (l, h), bl in zip(self.bins[ifo], bin_lefts)
-            ])
+                4.0 / (h - l) *
+                (h12[l:h] * (self.f[ifo][l:h] - self.f[ifo][l])).sum()
+                for l, h in bins])
 
-        freqs = self.fedges[ifo]
-        df = (freqs[1:] - freqs[:-1])
-        a1 /= df
-        b1 /= df
-        return {"a0": a0, "a1": a1, "b0": b0, "b1": b1}
+        return a0, a1
 
     def get_waveforms(self, params):
         """ Get the waveform polarizations for each ifo
@@ -369,6 +347,72 @@ class Relative(BaseGaussianNoise, DistMarg):
             hc = hc.numpy()
             wfs.append((hp, hc))
         return {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        # Check if this model *can* be included in a multi-signal model.
+        # All marginalizations must currently be disabled to work!
+        if (self.marginalize_vector or
+            self.marginalize_distance or
+            self.marginalize_phase):
+            logging.info("Cannot use single template model inside of"
+                         "multi_signal if marginalizations are enabled")
+        return [type(self)]
+
+    def calculate_hihjs(self, models):
+        """ Pre-calculate the hihj inner products on a grid
+        """
+        self.hihj = {}
+        for m1, m2 in itertools.combinations(models, 2):
+            self.hihj[(m1, m2)] = {}
+            for ifo in self.data:
+                h1 = m1.h00[ifo]
+                h2 = m2.h00[ifo]
+
+                # Combine the grids
+                edge = numpy.unique([m1.edges[ifo], m2.edges[ifo]])
+
+                # Remove any points where either reference is zero
+                keep = numpy.where((h1[edge] != 0) | (h2[edge] != 0))[0]
+                edge = edge[keep]
+                fedge = m1.f[ifo][edge]
+
+                bins = numpy.array([
+                        (edge[i], edge[i + 1])
+                        for i in range(len(edge) - 1)
+                    ])
+                a0, a1 = self.summary_product(h1, h2, bins, ifo)
+                self.hihj[(m1, m2)][ifo] = a0, a1, fedge
+
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        models = [self] + models
+        loglr = 0
+        # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
+        for m in models:
+            loglr += m.loglr
+
+        if not hasattr(self, 'hihj'):
+            self.calculate_hihjs(models)
+
+        # finally add in the lognl term from this model
+        for m1, m2 in itertools.combinations(models, 2):
+            for det in self.data:
+                a0, a1, fedge = self.hihj[(m1, m2)][det]
+
+                fp, fc, dtc, hp, hc, h00 = m1._current_wf_parts[det]
+                fp2, fc2, dtc2, hp2, hc2, h002 = m2._current_wf_parts[det]
+
+                h1h2 = self.mlik(fedge,
+                                 fp, fc, dtc, hp, hc, h00,
+                                 fp2, fc2, dtc2, hp2, hc2, h002,
+                                 a0, a1)
+                loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
+        return loglr + self.lognl
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
@@ -393,17 +437,18 @@ class Relative(BaseGaussianNoise, DistMarg):
 
         hh = 0.0
         hd = 0j
+        self._current_wf_parts = {}
         for ifo in self.data:
 
             det = self.det[ifo]
             freqs = self.fedges[ifo]
             sdat = self.sdat[ifo]
-            hp, hc = wfs[ifo]
             h00 = self.h00_sparse[ifo]
             end_time = self.end_time[ifo]
             times = self.antenna_time[ifo]
 
             # project waveform to detector frame
+            hp, hc = wfs[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"],
                                          p["polarization"], times)
             dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
@@ -414,9 +459,9 @@ class Relative(BaseGaussianNoise, DistMarg):
                                 sdat['a0'], sdat['a1'],
                                 sdat['b0'], sdat['b1'])
 
+            self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
             hd += hdp
             hh += hhp
-
         return self.marginalize_loglr(hd, hh)
 
     def write_metadata(self, fp, group=None):
@@ -436,7 +481,6 @@ class Relative(BaseGaussianNoise, DistMarg):
             attrs = fp.attrs
         else:
             attrs = fp[group].attrs
-        attrs["epsilon"] = self.epsilon
         for p, v in self.fid_params.items():
             attrs["{}_ref".format(p)] = v
 

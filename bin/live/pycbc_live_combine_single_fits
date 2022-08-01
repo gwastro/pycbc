@@ -25,6 +25,9 @@ parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--trfits-files", nargs="+", required=True,
                     help="Files containing daily trigger fits")
+parser.add_argument("--conservative-percentile", type=int, default=95,
+                    help="What percentile to use for the conservative "
+                         "combined fit. Integer in range 50-99. Default=95")
 parser.add_argument("--output-file", required=True,
                     help="Output hdf file for final results")
 parser.add_argument("--output-plot-file-format",
@@ -36,6 +39,14 @@ parser.add_argument("--ifos", required=True, nargs="+",
 args=parser.parse_args()
 
 pycbc.init_logging(args.verbose)
+
+# Assert some sensible limits on the arguments
+
+if args.conservative_percentile < 50 or \
+    args.conservative_percentile > 99:
+    parser.error("--conservative-percentile must be between 50 and 99, "
+                 "otherwise it is either not a percentile, or not "
+                 "conservative.")
 
 colours = ['r', (1.0, 0.6, 0), 'y', 'g', 'c', 'b', 'm',
            (0.8, 0.25, 0), (0.25, 0.8, 0)]
@@ -82,6 +93,7 @@ for f in files:
         analysis_dates += [n_since_epoch]
     for ifo in args.ifos:
         if ifo not in fits_f:
+            live_times[ifo] += [0]
             counts_all[ifo] += [-1 * np.ones(len(bl) - 1)]
             alphas_all[ifo] += [-1 * np.ones(len(bl) - 1)]
             logging.info(f + " has no " + ifo + " triggers")
@@ -108,8 +120,8 @@ alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
 
 alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
 counts_out = {ifo : np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
-q05_alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
-q95_counts_out = {ifo : np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
+cons_alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
+cons_counts_out = {ifo : np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
 
 fout = h5py.File(args.output_file, 'w')
 fout.attrs['start_date'] = ad[0]
@@ -117,28 +129,30 @@ fout.attrs['end_date'] = ad[-1]
 fout.attrs['fit_threshold'] = fit_f0.attrs['fit_threshold']
 fout['bins_edges'] = list(bl) + [bu[-1]]
 
+
 for ifo in args.ifos:
     fout.create_group(ifo)
     fout[ifo].attrs['live_time'] = sum(live_times[ifo])
 
-
 save_allmeanalpha = {}
 for ifo in args.ifos:
+    fout_ifo = fout[ifo]
     logging.info(ifo)
-    fig_alpha = plt.figure(figsize=(12, 7.5))
-    ax_alpha = fig_alpha.add_subplot(111)
-    fig_count = plt.figure(figsize=(12, 7.5))
-    ax_count = fig_count.add_subplot(111)
     counter = 0
-    alpha_lines = []
-    count_lines = []
-    count_all = np.sum(counts_bin[ifo], axis=0) / np.array(live_times[ifo])
+    l_times = np.array(live_times[ifo])
+    count_all = np.sum(counts_bin[ifo], axis=0) / l_times
     invalphan = np.array(counts_bin[ifo]) / np.array(alphas_bin[ifo])
     invalphan_all = np.mean(invalphan, axis=0)
     alpha_all = np.mean(counts_bin[ifo], axis=0) / invalphan_all
-    l_times = np.array(live_times[ifo])
     meant = l_times.mean()
-    fout[ifo + '/daily_fits/live_times'] = l_times
+    fout_ifo['daily_fits/live_times'] = l_times
+
+    if args.output_plot_file_format:
+        fig_alpha, ax_alpha = plt.subplots(1, figsize=(12, 7.5))
+        fig_count, ax_count = plt.subplots(1, figsize=(12, 7.5))
+        alpha_lines = []
+        count_lines = []
+
     for a, c, u, l in zip(alphas_bin[ifo], counts_bin[ifo], bu, bl):
         a = np.array(a)
         c = np.array(c)
@@ -149,12 +163,17 @@ for ifo in args.ifos:
         c = c[valid_alpha]
         invalphan = c / a
         mean_alpha = c.mean() / invalphan.mean()
-        q05_alpha = np.quantile(a, 0.05)
-        q05_alphas_out[ifo][counter] = q05_alpha
+        cons_alpha = np.percentile(a, 100 - args.conservative_percentile)
+        cons_alphas_out[ifo][counter] = cons_alpha
         alphas_out[ifo][counter] = mean_alpha
-        q95_count = np.quantile(c, 0.95)
-        q95_counts_out[ifo][counter] = q95_count * len(c)
+        cons_count = np.percentile(c, args.conservative_percentile)
+        cons_counts_out[ifo][counter] = cons_count * len(c)
         counts_out[ifo][counter] = c.sum()
+
+        fout_ifo[f'daily_fits/bin_{counter:d}/fit_coeff'] = a
+        fout_ifo[f'daily_fits/bin_{counter:d}/counts'] = c
+        fout_ifo[f'daily_fits/bin_{counter:d}/date'] = ad[valid_alpha]
+
         if args.output_plot_file_format:
             alpha_lines += ax_alpha.plot(ad[valid_alpha], a, c=colours[counter],
                                          label="duration %.2f-%.2f" % (l, u))
@@ -162,9 +181,11 @@ for ifo in args.ifos:
                                          [mean_alpha, mean_alpha],
                                          c=colours[counter], linestyle='--',
                                          label="total fit = %.2f" % mean_alpha)
-            alpha_lines += ax_alpha.plot([ad[0], ad[-1]], [q05_alpha, q05_alpha],
+            alpha_lab = f"{args.conservative_percentile:d}th %ile = {cons_alpha:.2f}"
+            alpha_lines += ax_alpha.plot([ad[0], ad[-1]], [cons_alpha, cons_alpha],
                                          c=colours[counter], linestyle=':',
-                                         label="95th %%ile = %.2f" % q05_alpha)
+                                         label=alpha_lab)
+
             count_lines += ax_count.plot(ad[valid_alpha], c / l_times[valid_alpha],
                                          c=colours[counter],
                                          label="duration %.2f-%.2f" % (l, u))
@@ -172,54 +193,65 @@ for ifo in args.ifos:
                                          [c.mean() / meant, c.mean() / meant],
                                          c=colours[counter], linestyle='--',
                                          label="mean = %.3f" % (c.mean() / meant))
+            count_lab = f"{args.conservative_percentile:d}th %ile = {cons_count / meant:.3f}"
             count_lines += ax_count.plot([ad[0], ad[-1]],
-                                         [q95_count / meant, q95_count / meant],
+                                         [cons_count / meant, cons_count / meant],
                                          c=colours[counter], linestyle=':',
-                                         label="95th %%ile = %.3f" % (q95_count / meant))
-        fout[ifo + '/daily_fits/bin_%d/fit_coeff' % counter] = a
-        fout[ifo + '/daily_fits/bin_%d/counts' % counter] = c
-        fout[ifo + '/daily_fits/bin_%d/date' % counter] = ad[valid_alpha]
+                                         label=count_lab)
         counter += 1
+
+    # Output the mean average values
+    fout_ifo['mean/fit_coeff'] = alphas_out[ifo]
+    fout_ifo['mean/counts'] = counts_out[ifo]
+
+    # Output the conservative values
+    fout_ifo['conservative/fit_coeff'] = cons_alphas_out[ifo]
+    fout_ifo['conservative/counts'] = cons_counts_out[ifo]
+
+    # Take some averages for plotting and summary values
     overall_invalphan = counts_out[ifo] / alphas_out[ifo]
     overall_meanalpha = counts_out[ifo].mean() / overall_invalphan.mean()
-    alpha_lines += ax_alpha.plot(ad, alpha_all,
-                                 c='k', linestyle='-', linewidth=2,
-                                 label="daily overall alpha")
-    alpha_lines += ax_alpha.plot([ad[0], ad[-1]],
-                                 [overall_meanalpha, overall_meanalpha],
-                                 c='k', linestyle='--', linewidth=2,
-                                 label="overall alpha = %.2f" % overall_meanalpha)
     sum_counts_out = counts_out[ifo].sum() / sum(live_times[ifo])
-    count_lines += ax_count.plot(ad, count_all,
-                                 c='k', linestyle='-', linewidth=2,
-                                 label="overall count")
-    count_lines += ax_count.plot([ad[0], ad[-1]],
-                                 [sum_counts_out, sum_counts_out],
-                                 c='k', linestyle='--', linewidth=2,
-                                 label="overall count per live time = %.3f" % sum_counts_out)
     save_allmeanalpha[ifo] = overall_meanalpha
-    ax_alpha.set_xlabel('Days since ' + start_date)
-    ax_alpha.set_ylabel('Fit coefficient')
-    alpha_labels = [l.get_label() for l in alpha_lines]
-    ax_alpha.legend(alpha_lines, alpha_labels, loc='lower center',
-                    ncol=3, bbox_to_anchor=(0.5, 1.01))
-    fig_alpha.tight_layout()
-    fig_alpha.savefig(args.output_plot_file_format.format(ifo + "-alphas"))
-    ax_count.set_xlabel('Days since ' + start_date)
-    ax_count.set_ylabel('Counts per live time')
-    count_labels = [l.get_label() for l in count_lines]
-    ax_count.legend(count_lines, count_labels, loc='lower center',
-                    ncol=3, bbox_to_anchor=(0.5, 1.01))
-    fig_count.tight_layout()
-    fig_count.savefig(args.output_plot_file_format.format(ifo + "-counts"))
 
-    fout[ifo + '/mean/fit_coeff'] = alphas_out[ifo]
-    fout[ifo + '/conservative/fit_coeff'] = q05_alphas_out[ifo]
-    fout[ifo + '/fixed/fit_coeff'] = [0 for a in alphas_out[ifo]]
-    fout[ifo + '/mean/counts'] = counts_out[ifo]
-    fout[ifo + '/conservative/counts'] = q95_counts_out[ifo]
-    fout[ifo + '/fixed/counts'] = [1 for c in counts_out[ifo]]
-    fout[ifo].attrs['mean_alpha'] = save_allmeanalpha[ifo]
-    fout[ifo].attrs['total_counts'] = counts_out[ifo].sum()
+    # For the fixed version, we just 
+    fout_ifo['fixed/counts'] = [1 for c in counts_out[ifo]]
+    fout_ifo['fixed/fit_coeff'] = [0 for a in alphas_out[ifo]]
+
+    # Add some useful info to the output file
+    fout_ifo.attrs['mean_alpha'] = save_allmeanalpha[ifo]
+    fout_ifo.attrs['total_counts'] = counts_out[ifo].sum()
+
+    if args.output_plot_file_format:
+        alpha_lines += ax_alpha.plot(ad, alpha_all,
+                                     c='k', linestyle='-', linewidth=2,
+                                     label="daily overall alpha")
+        count_lines += ax_count.plot(ad, count_all,
+                                     c='k', linestyle='-', linewidth=2,
+                                     label="overall count")
+        alpha_lines += [ax_alpha.axhline(overall_meanalpha,
+                                         c='k', linestyle='--', linewidth=2,
+                                         label="overall alpha = %.2f" % overall_meanalpha)]
+        count_lines += [ax_count.axhline(y=sum_counts_out,
+                                         c='k', linestyle='--', linewidth=2,
+                                         label="overall count per live time = %.3f" % sum_counts_out)]
+        ax_alpha.set_xlabel('Days since ' + start_date)
+        ax_alpha.set_ylabel('Fit coefficient')
+        ax_alpha.set_xlim([ad[0], ad[-1]])
+        alpha_labels = [l.get_label() for l in alpha_lines]
+        ax_alpha.grid(zorder=-30)
+        ax_alpha.legend(alpha_lines, alpha_labels, loc='lower center',
+                        ncol=3, bbox_to_anchor=(0.5, 1.01))
+        fig_alpha.tight_layout()
+        fig_alpha.savefig(args.output_plot_file_format.format(ifo + "-alphas"))
+        ax_count.set_xlabel('Days since ' + start_date)
+        ax_count.set_ylabel('Counts per live time')
+        ax_count.set_xlim([ad[0], ad[-1]])
+        count_labels = [l.get_label() for l in count_lines]
+        ax_count.legend(count_lines, count_labels, loc='lower center',
+                        ncol=3, bbox_to_anchor=(0.5, 1.01))
+        ax_count.grid(zorder=-30)
+        fig_count.tight_layout()
+        fig_count.savefig(args.output_plot_file_format.format(ifo + "-counts"))
 
 fout.close()

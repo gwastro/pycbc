@@ -38,9 +38,9 @@ def empty(length, dtype=_np.float64):
 
 def ptr(self):
     return self.data.ctypes.data
-    
+
 def dot(self, other):
-    return _np.dot(self._data,other)     
+    return _np.dot(self._data,other)
 
 def min(self):
     return self.data.min()
@@ -65,16 +65,16 @@ def max(self):
 def max_loc(self):
     ind = _np.argmax(self.data)
     return self.data[ind], ind
-    
+
 def take(self, indices):
     return self.data.take(indices)
-    
+
 def weighted_inner(self, other, weight):
     """ Return the inner product of the array with complex conjugation.
     """
     if weight is None:
         return self.inner(other)
-        
+
     cdtype = common_kind(self.dtype, other.dtype)
     if cdtype.kind == 'c':
         acum_dtype = complex128
@@ -93,14 +93,14 @@ def inner_real(numpy.ndarray [REALTYPE, ndim = 1] a, numpy.ndarray [REALTYPE, nd
     cdef double total = 0
     cdef unsigned int xmax = a.shape[0]
     cdef unsigned int i
-    
+
     cdef REALTYPE* x = &a[0]
     cdef REALTYPE* y = &b[0]
 
     for i in range(xmax):
         total += x[i] * y[i]
     return total
-    
+
 ctypedef fused COMPLEXTYPE:
     float complex
     double complex
@@ -116,14 +116,14 @@ def abs_arg_max_complex(numpy.ndarray [COMPLEXTYPE, ndim=1] a):
         if mag > magmax:
             magmax = mag
             idx = i
-            
-    return idx  
+
+    return idx
 
 def abs_arg_max(self):
     if self.dtype == _np.float32 or self.dtype == _np.float64:
         return _np.argmax(abs(self.data))
     else:
-        return abs_arg_max_complex(self._data)    
+        return abs_arg_max_complex(self._data)
 
 def inner(self, other):
     """ Return the inner product of the array with complex conjugation.
@@ -169,10 +169,10 @@ def multiply_and_add(self, other, mult_fac):
 
 def numpy(self):
     return self._data
-    
+
 def _copy(self, self_ref, other_ref):
     self_ref[:] = other_ref[:]
-    
+
 def _getvalue(self, index):
     return self._data[index]
 
@@ -180,11 +180,11 @@ def sum(self):
     if self.kind == 'real':
         return _np.sum(self._data,dtype=float64)
     else:
-        return _np.sum(self._data,dtype=complex128)   
-        
-def clear(self): 
-    self[:] = 0 
-    
+        return _np.sum(self._data,dtype=complex128)
+
+def clear(self):
+    self[:] = 0
+
 def _scheme_matches_base_array(array):
     if isinstance(array, _np.ndarray):
         return True

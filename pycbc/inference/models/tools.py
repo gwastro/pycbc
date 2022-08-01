@@ -83,7 +83,8 @@ class DistMarg():
         self.marginalize_vector = marginalize_vector
         self.marginalize_vector_params = marginalize_vector_params
 
-        self.reconstructing_distance = False
+        self.reconstructing = False
+        self.reconstruct_phase = False
         self.marginalize_phase = str_to_bool(marginalize_phase)
         self.distance_marginalization = False
         self.distance_interpolator = None
@@ -191,33 +192,35 @@ class DistMarg():
             vector, instead return the likelihood values as a vector.
         """
         interpolator = self.distance_interpolator
-        if self.reconstructing_distance:
+        return_complex = False
+        if self.reconstructing:
             skip_vector = True
             interpolator = None
+            if self.reconstruct_phase:
+                return_complex = True
 
         return marginalize_likelihood(sh_total, hh_total,
                                       phase=self.marginalize_phase,
                                       interpolator=interpolator,
                                       distance=self.distance_marginalization,
                                       skip_vector=skip_vector,
+                                      return_complex=return_complex,
                                       return_peak=return_peak)
 
     def reconstruct(self):
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
+        self.reconstructing = True
         rec = {}
 
         def draw_sample(params, loglr):
             x = numpy.random.uniform()
+            loglr = loglr - loglr.max()
             cdf = numpy.exp(loglr).cumsum()
             cdf /= cdf[-1]
             xl = numpy.searchsorted(cdf, x)
             return params[xl], xl
-
-        if self.distance_marginalization:
-            # turn off interpolator and set to return vector output
-            self.reconstructing_distance = True
 
         loglr_full = self.loglr
         if self.marginalize_vector and self.distance_marginalization:
@@ -233,6 +236,7 @@ class DistMarg():
             # draw distance sample
             dist, xl = draw_sample(self.dist_locs, loglr)
             rec['distance'] = dist
+            rec['loglr'] = loglr[xl]
 
         if self.marginalize_vector:
             if self.distance_marginalization:
@@ -241,10 +245,30 @@ class DistMarg():
             else:
                 vlr = loglr
 
-            vec_param, _ = draw_sample(self.marginalize_vector_params, vlr)
+            vec_param, xl2 = draw_sample(self.marginalize_vector_params, vlr)
             rec[self.marginalize_vector] = vec_param
+            rec['loglr'] = vlr[xl2]
 
-        self.reconstructing_distance = False
+        if self.marginalize_phase:
+            self.reconstruct_phase = True
+            self.update(**self.current_params)
+
+            s, h = self.loglr
+            if self.marginalize_vector and self.distance_marginalization:
+                s, h = s[:, xl][xl2], h[:, xl][xl2]
+            elif self.marginalize_vector:
+                s, h = s[xl2], h[xl2]
+            elif self.distance_marginalization:
+                s, h = s[xl], h[xl]
+
+            phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
+            phasel = (numpy.exp(2.0j * phasev) * s).real + h
+            rec['coa_phase'], xl3 = draw_sample(phasev, phasel)
+            self.reconstruct_phase = False
+            rec['loglr'] = phasel[xl3]
+
+        rec['loglikelihood'] = self.lognl + rec['loglr']
+        self.reconstructing = False
         return rec
 
 
@@ -319,8 +343,14 @@ def marginalize_likelihood(sh, hh,
                            skip_vector=False,
                            interpolator=None,
                            return_peak=False,
+                           return_complex=False,
                            ):
-    """ Return the marginalized likelihood
+    """ Return the marginalized likelihood.
+
+    Apply various marginalizations to the data, including phase, distance,
+    and brute-force vector marginalizations. Several options relate
+    to how the distance marginalization is approximated and others allow for
+    special return products to aid in parameter reconstruction.
 
     Parameters
     ----------
@@ -339,6 +369,13 @@ def marginalize_likelihood(sh, hh,
         If provided, internal calculation is skipped in favor of a
         precalculated interpolating function which takes in sh/hh
         and returns the likelihood.
+    return_peak: bool, False
+        Return the peak likelihood and index if using passing an array as
+        input in addition to the marginalized over the array likelihood.
+    return_complex: bool, False
+        Return the sh / hh data products before applying phase marginalization.
+        This option is intended to aid in reconstucting phase marginalization
+        and is unlikely to be useful for other purposes.
 
     Returns
     -------
@@ -352,7 +389,9 @@ def marginalize_likelihood(sh, hh,
         hh = hh.flatten()
         clogweights = numpy.log(len(sh))
 
-    if phase:
+    if return_complex:
+        pass
+    elif phase:
         sh = abs(sh)
     else:
         sh = sh.real
@@ -378,10 +417,12 @@ def marginalize_likelihood(sh, hh,
             else:
                 vweights = dist_weights
 
+        if return_complex:
+            return sh, -0.5 * hh
+
+        # Apply the phase marginalization
         if phase:
             sh = numpy.log(i0e(sh)) + sh
-        else:
-            sh = sh.real
 
         # Calculate loglikelihood ratio
         vloglr = sh - 0.5 * hh

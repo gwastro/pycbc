@@ -105,6 +105,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
 
     workflow += node
 
@@ -205,6 +206,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
 
     workflow += node
 
@@ -295,6 +297,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
 
     workflow += node
 
