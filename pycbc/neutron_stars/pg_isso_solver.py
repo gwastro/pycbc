@@ -34,11 +34,11 @@ def trig1(chi6, sin4i, sin2i, chi4):
 
 def trig2(chi4, sin4i, sin2i, chi2):
     #repeated line condensed into a single called function. Preferable if a more informative name can be thought of
-    36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4 - 48 * chi2 * sin2i
+    return 36 * chi4 * sin4i - 30 * chi4 * sin2i + 9 * chi4 - 48 * chi2 * sin2i
 
 def trig3(chi4, sin2i, sin4i):
     #repeated line condensed into a single called function. Preferable if a more informative name can be thought of
-    120 * chi4 * sin2i - 144 * chi4 * sin4i
+    return 120 * chi4 * sin2i - 144 * chi4 * sin4i
 
 def ISCO_eq(r, chi):
     """Polynomial that enables the calculation of the Kerr innermost
