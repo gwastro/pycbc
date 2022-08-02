@@ -44,6 +44,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     elem.appendChild(a)
     return elem
 
+
 def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     """Save an SNR time series into an XML document, in a format compatible
     with BAYESTAR.
@@ -56,6 +57,7 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     snr_node = document.childNodes[-1].appendChild(snr_xml)
     eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
+
 
 def make_psd_xmldoc(psddict, xmldoc=None):
     """Add a set of PSDs to a LIGOLW XML document. If the document is not
@@ -75,6 +77,7 @@ def make_psd_xmldoc(psddict, xmldoc=None):
         fs = lw.appendChild(xmlseries)
         fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
     return xmldoc
+
 
 class SingleCoincForGraceDB(object):
     """Create xml files and submit them to gracedb from PyCBC Live"""
@@ -103,8 +106,9 @@ class SingleCoincForGraceDB(object):
             present than given in `ifos`. If so, the extra detectors will only
             be used for sky localization.
         channel_names: dict of strings, optional
-            Strain channel names for each detector.
+            Strain channel names for each detector
             Will be recorded in the sngl_inspiral table.
+        padata: PAstroData instance, organizes info relevant to p astro.
         mc_area_args: dict of dicts, optional
             Dictionary providing arguments to be used in source probability
             estimation with pycbc/mchirp_area.py
@@ -112,6 +116,7 @@ class SingleCoincForGraceDB(object):
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
         self.coinc_results = coinc_results
         self.ifos = ifos
+        self.basename = None
 
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
@@ -202,7 +207,7 @@ class SingleCoincForGraceDB(object):
                         sngl.mass1, sngl.mass2)
                 sngl_populated = sngl
             if sngl.snr:
-                sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
+                sngl.eff_distance = sngl.sigmasq ** 0.5 / sngl.snr
                 network_snrsq += sngl.snr ** 2.0
             if 'channel_names' in kwargs and ifo in kwargs['channel_names']:
                 sngl.channel = kwargs['channel_names'][ifo]
@@ -218,12 +223,12 @@ class SingleCoincForGraceDB(object):
             if self.snr_series is not None:
                 snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
 
-        # set merger time to the average of the ifo peaks
+        # Set merger time to the average of the ifo peaks
         self.merger_time = numpy.mean(
                     [coinc_results['foreground/{}/end_time'.format(ifo)]
                      for ifo in ifos]) + self.time_offset
 
-        # for subthreshold detectors, respect BAYESTAR's assumptions and checks
+        # For subthreshold detectors, respect BAYESTAR's assumptions and checks
         bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
                                  'spin1y spin1z spin2x spin2y spin2z').split()
         for sngl in sngl_inspiral_table:
@@ -253,7 +258,7 @@ class SingleCoincForGraceDB(object):
         coinc_inspiral_table.append(coinc_inspiral_row)
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
 
-        # append the PSDs
+        # Append the PSDs
         self.psds = kwargs['psds']
         psds_lal = {}
         for ifo in self.psds:
@@ -266,36 +271,82 @@ class SingleCoincForGraceDB(object):
             psds_lal[ifo] = fseries
         make_psd_xmldoc(psds_lal, outdoc)
 
-        # source probabilities estimation
+        # P astro calculation
+        if 'padata' in kwargs:
+            padata = kwargs['padata']
+            trigger_data = {
+                'mass1': sngl_populated.mass1,
+                'mass2': sngl_populated.mass2,
+                'spin1z': sngl_populated.spin1z,
+                'spin2z': sngl_populated.spin2z,
+                'network_snr': network_snrsq ** 0.5,
+                'far': far}
+            horizons = {ifo: self.psds[ifo].dist for ifo in self.psds}
+            self.p_astro, self.p_terr = \
+                                  padata.do_pastro_calc(trigger_data, horizons)
+        else:
+            self.p_astro, self.p_terr = None, None
+
+        # Source probabilities estimation
         if 'mc_area_args' in kwargs:
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
-            probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
-                                               coinc_inspiral_row.snr,
-                                               min(eff_distances),
-                                               kwargs['mc_area_args'])
-            self.probabilities = probabilities
+            self.probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
+                                                    coinc_inspiral_row.snr,
+                                                    min(eff_distances),
+                                                    kwargs['mc_area_args'])
         else:
             self.probabilities = None
+
+        # Combine p astro and source probs
+        if self.p_astro is not None and self.probabilities is not None:
+            self.astro_probs = {cl: pr * self.p_astro for
+                                cl, pr in self.probabilities.items()}
+            self.astro_probs['p_terr'] = self.p_terr
+        else:
+            self.astro_probs = None
 
         self.outdoc = outdoc
         self.time = sngl_populated.end
 
-    def save(self, filename):
+    def save(self, fname):
         """Write this trigger to gracedb compatible xml format
 
         Parameters
         ----------
-        filename: str
+        fname: str
             Name of file to write to disk.
         """
-        ligolw_utils.write_filename(self.outdoc, filename, compress='auto')
+        ligolw_utils.write_filename(self.outdoc, fname, compress='auto')
 
-        # save source probabilities in a json file
+        if self.basename is None:
+            # here assume compression
+            self.basename = fname.replace('.xml.gz', '')
+
+        # Save multi-cpt p astro as json
+        if self.astro_probs is not None:
+            self.multipa_file = self.basename + '_p_astro.json'
+            with open(self.multipa_file, 'w') as multipaf:
+                json.dump(self.astro_probs, multipaf)
+            logging.info('Multi p_astro file saved as %s', self.multipa_file)
+            # Don't save any other files!
+            return
+
+        # Save source probabilities in a json file
         if self.probabilities is not None:
-            prob_fname = filename.replace('.xml.gz', '_probs.json')
-            with open(prob_fname, 'w') as prob_outfile:
-                json.dump(self.probabilities, prob_outfile)
-            logging.info('Source probabilities file saved as %s', prob_fname)
+            self.prob_file = self.basename + '_probs.json'
+            with open(self.prob_file, 'w') as probf:
+                json.dump(self.probabilities, probf)
+            logging.info('Source probabilities file saved as %s', self.prob_file)
+            return
+
+        # Save p astro / p terr as json
+        if self.p_astro is not None:
+            self.pastro_file = self.basename + '_pa_pterr.json'
+            with open(self.pastro_file, 'w') as pastrof:
+                json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
+                          pastrof)
+            logging.info('P_astro file saved as %s', self.pastro_file)
+        return
 
     def upload(self, fname, gracedb_server=None, testing=True,
                extra_strings=None, search='AllSky'):
@@ -319,7 +370,15 @@ class SingleCoincForGraceDB(object):
         matplotlib.use('Agg')
         import pylab as pl
 
-        # first of all, make sure the event is saved on disk
+        if fname.endswith('.xml.gz'):
+            self.basename = fname.replace('.xml.gz', '')
+        elif fname.endswith('.xml'):
+            self.basename = fname.replace('.xml', '')
+        else:
+            raise ValueError("Upload filename must end in .xml or .xml.gz, got"
+                             " %s" % fname)
+
+        # First make sure the event is saved on disk
         # as GraceDB operations can fail later
         self.save(fname)
 
@@ -353,14 +412,10 @@ class SingleCoincForGraceDB(object):
 
         # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
-            if fname.endswith('.xml.gz'):
-                snr_series_fname = fname.replace('.xml.gz', '.hdf')
-            else:
-                snr_series_fname = fname.replace('.xml', '.hdf')
-            snr_series_plot_fname = snr_series_fname.replace('.hdf',
-                                                             '_snr.png')
-            asd_series_plot_fname = snr_series_fname.replace('.hdf',
-                                                             '_asd.png')
+            snr_series_fname = self.basename + '.hdf'
+            snr_series_plot_fname = self.basename + '_snr.png'
+            asd_series_plot_fname = self.basename + '_asd.png'
+
             pl.figure()
             ref_time = int(self.merger_time)
             for ifo in sorted(self.snr_series):
@@ -390,10 +445,10 @@ class SingleCoincForGraceDB(object):
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
 
-        if self.probabilities is not None:
-            prob_fname = fname.replace('.xml.gz', '_probs.json')
-            prob_plot_fname = prob_fname.replace('.json', '.png')
-
+        # Only make the pie plot if no multi cpt p_astro
+        if self.probabilities is not None and self.astro_probs is None:
+            self.prob_plotf = self.prob_file.replace('.json', '.png')
+            # Don't try to plot zero probabilities
             prob_plot = {k: v for (k, v) in self.probabilities.items()
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
@@ -402,11 +457,15 @@ class SingleCoincForGraceDB(object):
             ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
                    textprops={'fontsize': 15})
             ax.axis('equal')
-            fig.savefig(prob_plot_fname)
+            fig.savefig(self.prob_plotf)
             pl.close()
 
-        # upload SNR series in HDF format and plots
-        if gid is not None and self.snr_series is not None:
+        if gid is None:
+            # Don't try to do anything else!
+            return gid
+
+        # Upload SNR series in HDF format and plots
+        if self.snr_series is not None:
             try:
                 gracedb.writeLog(
                     gid, 'SNR timeseries HDF file upload',
@@ -424,32 +483,62 @@ class SingleCoincForGraceDB(object):
                     tag_name=['psd'], displayName=['ASDs']
                 )
             except Exception as exc:
-                logging.error('Failed to upload plots for %s', gid)
+                logging.error('Failed to upload SNR timeseries and ASD for %s',
+                               gid)
                 logging.error(str(exc))
 
-        # upload source probabilities in JSON format and plot
-        if gid is not None and self.probabilities is not None:
+        # Upload multi-cpt p_astro JSON
+        if self.astro_probs is not None:
+            try:
+                gracedb.writeLog(
+                    gid, 'Multi-component p_astro JSON file upload',
+                    filename=self.multipa_file,
+                    tag_name=['em_follow']
+                )
+                logging.info('Uploaded multi p_astro for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload multi p_astro file for %s', gid)
+                logging.error(str(exc))
+            # Don't do anything else!
+            return gid
+
+        # If there is no multi p_astro, upload source probabilities in JSON
+        # format and plot
+        if self.probabilities is not None:
             try:
                 gracedb.writeLog(
                     gid, 'Source probabilities JSON file upload',
-                    filename=prob_fname, tag_name=['em_follow']
+                    filename=self.prob_file,
+                    tag_name=['pe']
                 )
-                logging.info('Uploaded source probabilities for event %s', gid)
+                logging.info('Uploaded source probabilities for %s', gid)
                 gracedb.writeLog(
                     gid, 'Source probabilities plot upload',
-                    filename=prob_plot_fname,
-                    tag_name=['em_follow']
+                    filename=self.prob_plotf,
+                    tag_name=['pe']
                 )
-                logging.info('Uploaded source probabilities pie chart for '
-                             'event %s', gid)
+                logging.info('Uploaded source probabilities pie chart for %s',
+                             gid)
             except Exception as exc:
                 logging.error(
-                    'Failed to upload source probability results for %s',
-                    gid
+                    'Failed to upload source probability results for %s', gid)
+                logging.error(str(exc))
+
+        # If there is p_astro but no probabilities, upload p_astro JSON
+        if self.p_astro is not None:
+            try:
+                gracedb.writeLog(
+                    gid, '2-component p_astro JSON file upload',
+                    filename=self.pastro_file,
+                    tag_name=['sig_info']
                 )
+                logging.info('Uploaded p_astro for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload p_astro file for %s', gid)
                 logging.error(str(exc))
 
         return gid
+
 
 def gracedb_tag_with_version(gracedb, event_id):
     """Add a GraceDB log entry reporting PyCBC's version and install location.
