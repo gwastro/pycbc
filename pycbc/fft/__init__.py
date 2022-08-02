@@ -16,5 +16,5 @@
 
 from .parser_support import insert_fft_option_group, verify_fft_options, from_cli
 from .func_api import fft, ifft
-from .class_api import FFT, IFFT
+from .class_api import FFT, IFFT, create_memory_and_engine_for_class_based_fft
 from .backend_support import get_backend_names

@@ -136,11 +136,11 @@ def create_memory_and_engine_for_class_based_fft(
         copy=False
     )
     if ifft:
-        fft_class = pycbc.fft.IFFT(vectilde, vec)
+        fft_class = IFFT(vectilde, vec)
         invec = vectilde
         outvec = vec
     else:
-        fft_class = pycbc.fft.FFT(vec, vectilde)
+        fft_class = FFT(vec, vectilde)
         invec = vec
         outvec = vectilde
 
