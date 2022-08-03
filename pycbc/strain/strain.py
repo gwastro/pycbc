@@ -1445,7 +1445,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # Caches for FFTs to use class based API
         self.fft_cache = {}
-        self.fft_pad_cache = {}
 
     @property
     def start_time(self):
@@ -1525,29 +1524,19 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             delta_t=self.strain.delta_t,
             ifft=True
         )
-        self.fft_cache[npoints_time] = (
-            data_fft_outs,
-            whitened_data_ifft_outs
-        )
 
-
-    def create_memory_for_padded_data_fft(self, npoints_time):
-        """ Create memory for FFTing overwhitened data after removing padding
-
-        Parameters
-        ----------
-        npoints_time: int
-            The length (in samples) of the time domain data to create memory
-            for carrying out the necessary FFT.
-        """
         trimmed_data_fft_outs = create_memory_and_engine_for_class_based_fft(
-            npoints_time,
+            npoints_time - (2 * self.reduced_pad),
             self.strain.dtype,
             delta_t=self.strain.delta_t,
             ifft=False
         )
 
-        self.fft_pad_cache[npoints_time] = trimmed_data_fft_outs
+        self.fft_cache[npoints_time] = (
+            data_fft_outs,
+            whitened_data_ifft_outs,
+            trimmed_data_fft_outs
+        )
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
@@ -1610,11 +1599,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 gate_params = [(overwhite2.start_time, 0., taper_window),
                                (overwhite2.end_time, 0., taper_window)]
                 gate_data(overwhite2, gate_params)
-                npoints_time = len(overwhite2)
-                if npoints_time not in self.fft_pad_cache:
-                    self.create_memory_for_padded_data_fft(npoints_time)
 
-                vec, fseries_trimmed, fft_class = self.fft_pad_cache[npoints_time]
+                vec, fseries_trimmed, fft_class = self.fft_cache[npoints_time][2]
                 vec._data[:] = overwhite2._data[:]
                 fft_class.execute()  # vec -> FFT -> fseries_trimmed
                 fseries_trimmed._data *= vec._delta_t
