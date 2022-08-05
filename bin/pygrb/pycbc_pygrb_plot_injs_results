@@ -115,20 +115,13 @@ def load_effdist_data(injs, qty, opts, ifos):
     return data
 
 # Function to extract spin related data from a injection file
-def load_spin_data(injs, qty):
-    """Extract data related to spin from raw injection data"""
-
-    local_dict = {}
-
-    # Grab the components
-    for component in ['x', 'y', 'z']:
-        key = qty+component
-        local_dict[key] = injs['injections/%s' % key][:]
+def load_spin_modulus_data(injs, qty):
+    """Extract data related to spin modulus from raw injection data"""
 
     # Calculate the modulus
-    data = np.sqrt(local_dict[qty+'x']**2 +
-                   local_dict[qty+'y']**2 +
-                   local_dict[qty+'z']**2)
+    data = np.sqrt(injs['injections/%sx' % qty][:]**2 +
+                   injs['injections/%sy' % qty][:]**2 +
+                   injs['injections/%sz' % qty][:]**2)
 
     return data
 
@@ -163,7 +156,7 @@ def load_data(input_file, keys, opts, ifos):
         # This handles spin1 and spin2, i.e. spin magnitudes, as components
         # are dealt with in easy_keys (first if)
         elif 'spin' in qty:
-            data_dict[qty] = load_spin_data(injs, qty)
+            data_dict[qty] = load_spin_modulus_data(injs, qty)
 
     return data_dict
 
