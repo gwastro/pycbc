@@ -44,7 +44,6 @@ def cached_firwin(*args, **kwargs):
 # This is a mostly-hidden optimization option that most users will not want
 # to use. It is used in PyCBC Live
 USE_CACHING_FOR_LFILTER = False
-fft_cache = {}
 
 def lfilter(coefficients, timeseries):
     """ Apply filter coefficients to a time series
@@ -62,7 +61,6 @@ def lfilter(coefficients, timeseries):
         filtered array
     """
     from pycbc.filter import correlate
-
     fillen = len(coefficients)
 
     # If there aren't many points just use the default scipy method

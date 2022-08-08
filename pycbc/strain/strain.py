@@ -1581,7 +1581,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.add_hard_count()
         self.taper_immediate_strain = True
 
-
     @property
     def start_time(self):
         """ Return the start time of the current valid segment of data """
@@ -1638,41 +1637,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         logging.info("Recalculating %s PSD, %s", self.detector, psd.dist)
         return True
 
-    def create_memory_for_overwhitened_data(self, npoints_time):
-        """ Create memory for doing data conditioning with npoints
-
-        Parameters
-        ----------
-        npoints_time: int
-            The length (in samples) of the time domain data to create memory
-            for carrying out the necessary FFTs to condition it.
-        """
-        data_fft_outs = create_memory_and_engine_for_class_based_fft(
-            npoints_time,
-            self.strain.dtype,
-            delta_t=self.strain.delta_t,
-            ifft=False,
-            uid=87123876
-        )
-
-        whitened_data_ifft_outs = create_memory_and_engine_for_class_based_fft(
-            npoints_time,
-            self.strain.dtype,
-            delta_t=self.strain.delta_t,
-            ifft=True,
-            uid=264654684
-        )
-
-        trimmed_data_fft_outs = create_memory_and_engine_for_class_based_fft(
-            npoints_time - (2 * self.reduced_pad),
-            self.strain.dtype,
-            delta_t=self.strain.delta_t,
-            ifft=False,
-            uid=712394716
-        )
-
-        return (data_fft_outs, whitened_data_ifft_outs, trimmed_data_fft_outs)
-
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
 
@@ -1718,7 +1682,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
             # trim ends of strain
             if self.reduced_pad  != 0:
-                npoints_time = e - s
                 # IFFT the contents of fseries into overwhite
                 overwhite = execute_cached_ifft(fseries, uid=98961342)
 
