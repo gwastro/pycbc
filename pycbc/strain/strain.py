@@ -1655,7 +1655,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             buffer_length = int(1.0 / delta_f)
             e = len(self.strain)
             s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
-            npoints_time = e - s
 
             # FFT the contents of self.strain[s:e] into fseries 
             fseries = execute_cached_fft(self.strain[s:e], uid=85437862)
