@@ -27,7 +27,7 @@ import numpy
 import scipy.signal
 from pycbc.types import TimeSeries, Array, zeros, FrequencySeries, real_same_precision_as
 from pycbc.types import complex_same_precision_as
-from pycbc.fft import ifft, fft, create_memory_and_engine_for_class_based_fft
+from pycbc.fft import ifft, fft
 
 _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
                  numpy.dtype('float64'): lal.ResampleREAL8TimeSeries}
@@ -72,6 +72,9 @@ def lfilter(coefficients, timeseries):
                           epoch=timeseries.start_time,
                           delta_t=timeseries.delta_t)
     elif (len(timeseries) < fillen * 10) or (len(timeseries) < 2**18):
+        from pycbc.strain.strain import create_memory_and_engine_for_class_based_fft
+        from pycbc.strain.strain import execute_cached_fft, execute_cached_ifft
+
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))
         cseries.roll(len(timeseries) - fillen + 1)
@@ -91,39 +94,27 @@ def lfilter(coefficients, timeseries):
 
         else:
             npoints = len(cseries)
-            if (npoints, ftype) not in fft_cache:
-                fft1outs = create_memory_and_engine_for_class_based_fft(
-                    npoints,
-                    timeseries.dtype,
-                    ifft=False
-                )
+            # NOTE: This function is cached!
+            ifftouts = create_memory_and_engine_for_class_based_fft(
+                npoints,
+                timeseries.dtype,
+                ifft=True,
+                uid=486876761
+            )
 
-                fft2outs = create_memory_and_engine_for_class_based_fft(
-                    npoints,
-                    timeseries.dtype,
-                    ifft=False
-                )
+            # FFT contents of cseries into cfreq
+            cfreq = execute_cached_fft(cseries, uid=46464651,
+                                       normalize_by_rate=False)
 
-                ifftouts = create_memory_and_engine_for_class_based_fft(
-                    npoints,
-                    timeseries.dtype,
-                    ifft=True
-                )
-
-                fft_cache[(npoints, ftype)] = [fft1outs, fft2outs, ifftouts]
-
-            fft1outs, fft2outs, ifftouts = fft_cache[(npoints, ftype)]
-            vec, cfreq, fft_class = fft1outs
-            vec._data[:] = cseries._data[:]
-            fft_class.execute()
-
-            vec, tfreq, fft_class = fft2outs
-            vec._data[:] = timeseries._data[:]
-            fft_class.execute()
+            # FFT contents of timeseries into tfreq
+            tfreq = execute_cached_fft(timeseries, uid=91236752,
+                                       normalize_by_rate=False)
 
             cout, out, fft_class = ifftouts
 
+            # Correlate cfreq and tfreq
             correlate(cfreq, tfreq, cout)
+            # IFFT correlation output into out
             fft_class.execute()
 
         return TimeSeries(out.numpy()  / len(out), epoch=timeseries.start_time,
