@@ -1277,9 +1277,6 @@ def create_memory_and_engine_for_class_based_fft(
         of memory in the cache, for instance if calling this from different
         codes.
     """
-    from pycbc.types import FrequencySeries, TimeSeries, zeros
-    from pycbc.types import complex_same_precision_as
-
     npoints_freq = npoints_time // 2 + 1
     delta_f_tmp = 1.0 / (npoints_time * delta_t)
     vec = TimeSeries(
@@ -1345,7 +1342,7 @@ def execute_cached_fft(invec_data, normalize_by_rate=True, ifft=False,
             raise
 
     dtype = real_same_precision_as(invec_data)
-    
+
     invec, outvec, fft_class = create_memory_and_engine_for_class_based_fft(
         npoints_time,
         dtype,
@@ -1656,7 +1653,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             e = len(self.strain)
             s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
 
-            # FFT the contents of self.strain[s:e] into fseries 
+            # FFT the contents of self.strain[s:e] into fseries
             fseries = execute_cached_fft(self.strain[s:e], uid=85437862)
             fseries._epoch = self.strain._epoch + s*self.strain.delta_t
 

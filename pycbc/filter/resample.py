@@ -71,7 +71,7 @@ def lfilter(coefficients, timeseries):
                           delta_t=timeseries.delta_t)
     elif (len(timeseries) < fillen * 10) or (len(timeseries) < 2**18):
         from pycbc.strain.strain import create_memory_and_engine_for_class_based_fft
-        from pycbc.strain.strain import execute_cached_fft, execute_cached_ifft
+        from pycbc.strain.strain import execute_cached_fft
 
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))
