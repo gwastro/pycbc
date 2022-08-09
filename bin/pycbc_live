@@ -930,7 +930,7 @@ with ctx:
             )
             if status and psd_count[ifo] == 0:
                 status = data_reader[ifo].recalculate_psd()
-                psd_count[ifo] = opts.psd_recompute_length - 1
+                psd_count[ifo] = args.psd_recompute_length - 1
             elif not status:
                 psd_count[ifo] = 0
             else:
