@@ -536,9 +536,13 @@ class MultiRingBuffer(object):
         self.max_time = max_time
         self.buffer = []
         self.buffer_expire = []
+        self.valid_ends = []
+        self.valid_starts = []
         for _ in range(num_rings):
-            self.buffer.append(numpy.zeros(0, dtype=dtype))
-            self.buffer_expire.append(numpy.zeros(0, dtype=int))
+            self.buffer.append(numpy.zeros(128, dtype=dtype))
+            self.buffer_expire.append(numpy.zeros(128, dtype=int))
+            self.valid_ends.append(1)
+            self.valid_starts.append(0)
         self.time = 0
 
     @property
@@ -555,8 +559,7 @@ class MultiRingBuffer(object):
     def discard_last(self, indices):
         """Discard the triggers added in the latest update"""
         for i in indices:
-            self.buffer_expire[i] = self.buffer_expire[i][:-1]
-            self.buffer[i] = self.buffer[i][:-1]
+            self.valid_ends[i] -= 1
 
     def advance_time(self):
         """Advance the internal time increment by 1, expiring any triggers that
@@ -568,8 +571,14 @@ class MultiRingBuffer(object):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
         for i, v in zip(indices, values):
-            self.buffer[i] = numpy.append(self.buffer[i], v)
-            self.buffer_expire[i] = numpy.append(self.buffer_expire[i], self.time)
+            curr_pos = self.valid_ends[i]
+            # Expand ring buffer size if needed
+            if self.valid_ends[i] == len(self.buffer[i]):
+                self.buffer[i].resize(len(self.buffer[i]) * 2)
+                self.buffer_expire[i].resize(len(self.buffer[i]) * 2)
+            self.buffer[i][curr_pos] = v
+            self.buffer_expire[i][curr_pos] = self.time
+            self.valid_ends[i] = self.valid_ends[i] + 1
         self.advance_time()
 
     def expire_vector(self, buffer_index):
@@ -585,12 +594,23 @@ class MultiRingBuffer(object):
         while j < len(exp):
             # Everything before this j must be expired
             if exp[j] >= expired:
-                self.buffer_expire[buffer_index] = exp[j:].copy()
-                self.buffer[buffer_index] = self.buffer[buffer_index][j:].copy()
+                #self.buffer_expire[buffer_index] = exp[j:].copy()
+                #self.buffer[buffer_index] = self.buffer[buffer_index][j:].copy()
                 break
             j += 1
+        self.valid_starts[buffer_index] += j      
+        val_start = self.valid_starts[buffer_index]
+        if val_start > 0.3 * len(self.buffer):
+            # If 30% of stored triggers are expired, free up memory
+            self.buffer_expire[buffer_index] = self.buffer_expire[buffer_index][val_start:].copy()
+            self.buffer[buffer_index] = self.buffer[buffer_index][val_start:].copy()
 
-        return self.buffer[buffer_index]
+        ret_slice = slice(
+            self.valid_starts[buffer_index],
+            self.valid_ends[buffer_index]
+        )
+ 
+        return self.buffer[buffer_index][ret_slice]
 
 
 class CoincExpireBuffer(object):
