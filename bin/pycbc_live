@@ -37,9 +37,12 @@ from pycbc.population import live_pastro_utils as livepau
 from pycbc import mchirp_area
 from pycbc.detector import ppdets
 from pycbc.filter import resample
+from pycbc.psd import estimate
 
-# Set this to use cached class-based FFTs in the resample module
+# Use cached class-based FFTs in the resample and estimate module
 resample.USE_CACHING_FOR_LFILTER = True
+estimate.USE_CACHING_FOR_WELCH_FFTS = True
+estimate.USE_CACHING_FOR_INV_SPEC_TRUNC = True
 
 try:
     from setproctitle import setproctitle
