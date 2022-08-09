@@ -1380,6 +1380,13 @@ def execute_cached_ifft(*args, **kwargs):
     return execute_cached_fft(*args, **kwargs, ifft=True)
 
 
+# If using caching we want output to be unique if called at different places
+# (and if called from different modules/functions), these unique IDs acheive
+# that. The numbers are not significant, only that they are unique.
+STRAINBUFFER_UNIQUE_ID_1 = 236546845
+STRAINBUFFER_UNIQUE_ID_2 = 778946541
+STRAINBUFFER_UNIQUE_ID_3 = 665849947
+
 class StrainBuffer(pycbc.frame.DataBuffer):
     def __init__(self, frame_src, channel_name, start_time,
                  max_buffer=512,
@@ -1654,7 +1661,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
 
             # FFT the contents of self.strain[s:e] into fseries
-            fseries = execute_cached_fft(self.strain[s:e], uid=85437862)
+            fseries = execute_cached_fft(self.strain[s:e],
+                                         uid=STRAINBUFFER_UNIQUE_ID_1)
             fseries._epoch = self.strain._epoch + s*self.strain.delta_t
 
             # we haven't calculated a resample psd for this delta_f
@@ -1679,7 +1687,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             # trim ends of strain
             if self.reduced_pad  != 0:
                 # IFFT the contents of fseries into overwhite
-                overwhite = execute_cached_ifft(fseries, uid=98961342)
+                overwhite = execute_cached_ifft(fseries,
+                                                uid=STRAINBUFFER_UNIQUE_ID_2)
 
                 overwhite2 = overwhite[self.reduced_pad:len(overwhite)-self.reduced_pad]
                 taper_window = self.trim_padding / 2.0 / overwhite.sample_rate
@@ -1688,7 +1697,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 gate_data(overwhite2, gate_params)
 
                 # FFT the contents of overwhite2 into fseries_trimmed
-                fseries_trimmed = execute_cached_fft(overwhite2, uid=91237641)
+                fseries_trimmed = execute_cached_fft(
+                    overwhite2,
+                    uid=STRAINBUFFER_UNIQUE_ID_3
+                )
 
                 fseries_trimmed.start_time = fseries.start_time + self.reduced_pad * self.strain.delta_t
             else:

@@ -44,6 +44,12 @@ def cached_firwin(*args, **kwargs):
 # This is a mostly-hidden optimization option that most users will not want
 # to use. It is used in PyCBC Live
 USE_CACHING_FOR_LFILTER = False
+# If using caching we want output to be unique if called at different places
+# (and if called from different modules/functions), these unique IDs acheive
+# that. The numbers are not significant, only that they are unique.
+LFILTER_UNIQUE_ID_1 = 651273657
+LFILTER_UNIQUE_ID_2 = 154687641
+LFILTER_UNIQUE_ID_3 = 548946442
 
 def lfilter(coefficients, timeseries):
     """ Apply filter coefficients to a time series
@@ -97,15 +103,15 @@ def lfilter(coefficients, timeseries):
                 npoints,
                 timeseries.dtype,
                 ifft=True,
-                uid=486876761
+                uid=LFILTER_UNIQUE_ID_1
             )
 
             # FFT contents of cseries into cfreq
-            cfreq = execute_cached_fft(cseries, uid=46464651,
+            cfreq = execute_cached_fft(cseries, uid=LFILTER_UNIQUE_ID_2,
                                        normalize_by_rate=False)
 
             # FFT contents of timeseries into tfreq
-            tfreq = execute_cached_fft(timeseries, uid=91236752,
+            tfreq = execute_cached_fft(timeseries, uid=LFILTER_UNIQUE_ID_3,
                                        normalize_by_rate=False)
 
             cout, out, fft_class = ifftouts
