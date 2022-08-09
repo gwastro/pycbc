@@ -387,7 +387,7 @@ def concat_grid(bounds):
     out = np.concatenate([
         np.linspace(0, lim[0], lim[1], endpoint=False) if ii == 0
         else (
-            np.linspace(chi_lims[ii-1][0], lim[0], lim[1])
+            np.linspace(bounds[ii-1][0], lim[0], lim[1])
             if ii == len(bounds)
             else np.linspace(bounds[ii-1][0], lim[0], lim[1], endpoint=False)
             )
