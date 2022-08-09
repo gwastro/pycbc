@@ -34,7 +34,7 @@ changing the path to the activate script appropriately.  Clone the lalsuite repo
 Note that this checks out a read-only repository. If you want a git repository
 that you can edit, you can either fork this repository to your own GitHub
 account or, if you have ``LIGO.ORG`` credentials, you can follow the 
-`instructions on the DASWG pages for cloning lalsuite <https://wiki.ligo.org/Computing/LALSuiteInstall>`_.
+`instructions on the LSC Computing pages for cloning lalsuite <https://wiki.ligo.org/Computing/LALSuiteInstall>`_.
 
 .. note::
 
