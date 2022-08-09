@@ -554,7 +554,7 @@ else:
 stack_exe = GeomAligned2DStackExecutable(workflow.cp, 'aligned2dstack',
                                          ifos=workflow.ifos, out_dir=curr_dir)
 num_banks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
-input_h5file = resolve_url_to_file(opts.intermediate_data_file)
+input_h5file = pycbc.workflow.core.resolve_url_to_file(opts.intermediate_data_file)
 
 
 all_outs = wf.FileList([])
@@ -577,7 +577,7 @@ else:
 
 combine_exe = AlignedBankCatExecutable(workflow.cp, 'alignedbankcat',
                                         ifos=workflow.ifos, out_dir=curr_dir)
-metadata_file = resolve_url_to_file(opts.metadata_file)
+metadata_file = pycbc.workflow.core.resolve_url_to_file(opts.metadata_file)
 combine_node = combine_exe.create_node(all_outs, metadata_file,
                                        workflow.analysis_time,
                                        output_file_path=opts.output_file)
