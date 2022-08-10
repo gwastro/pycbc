@@ -384,6 +384,7 @@ def PG_ISSO_solver(chi, incl):
 
 
 def concat_grid(bounds):
+    '''Constructs non-uniform grid given specified bounds'''
     out = np.concatenate([
         np.linspace(0, lim[0], lim[1], endpoint=False) if ii == 0
         else (
