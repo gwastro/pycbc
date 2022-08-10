@@ -48,14 +48,14 @@ def load_ns_sequence(eos_name):
         the sequence (this is the mass of the most massive stable
         NS)
     """
+    ns_sequence_file = os.path.join(
+        NS_DATA_DIRECTORY, 'equil_{}.dat'.format(eos_name))
     if eos_name not in NS_SEQUENCES:
         raise NotImplementedError(
             f'{eos_name} does not have an implemented NS sequence file! '
             f'To implement, the file {ns_sequence_file} must exist and '
             'contain: NS gravitational mass (in solar masses), NS baryonic '
             'mass (in solar masses), NS compactness (dimensionless)')
-    ns_sequence_file = os.path.join(
-        NS_DATA_DIRECTORY, 'equil_{}.dat'.format(eos_name))
     ns_sequence = np.loadtxt(ns_sequence_file)
     max_ns_g_mass = max(ns_sequence[:, 0])
     return (ns_sequence, max_ns_g_mass)
