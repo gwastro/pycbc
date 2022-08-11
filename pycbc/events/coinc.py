@@ -550,7 +550,12 @@ class MultiRingBuffer(object):
         return min(self.time, self.max_time)
 
     def num_elements(self):
-        return sum([len(a) for a in self.buffer])
+        count = 0
+        for idx, a in enumerate(self.buffer):
+            vals = self.valid_starts[idx]
+            vale = self.valid_ends[idx]
+            count += len(a[vals:vale])
+        return count
 
     @property
     def nbytes(self):
@@ -574,7 +579,12 @@ class MultiRingBuffer(object):
             curr_pos = self.valid_ends[i]
             # Expand ring buffer size if needed
             if self.valid_ends[i] == len(self.buffer[i]):
-                self.buffer[i].resize(len(self.buffer[i]) * 2)
+                # FIXME: Not giving refcheck=False caused a failure after some
+                #        hours of running. That seems like an edge-case then,
+                #        but it is still worrying! Is this array somehow being
+                #        still referenced outside of this class??
+                self.buffer[i].resize(len(self.buffer[i]) * 2,
+                                      refcheck=False)
                 self.buffer_expire[i].resize(len(self.buffer[i]) * 2)
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
@@ -594,8 +604,6 @@ class MultiRingBuffer(object):
         while j < len(exp):
             # Everything before this j must be expired
             if exp[j] >= expired:
-                #self.buffer_expire[buffer_index] = exp[j:].copy()
-                #self.buffer[buffer_index] = self.buffer[buffer_index][j:].copy()
                 break
             j += 1
         self.valid_starts[buffer_index] += j      
