@@ -256,7 +256,8 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
             dtype=real_same_precision_as(psd))
         ifft(inv_asd, q)
     else:
-        q = execute_cached_fft(inv_asd, uid=INVSPECTRUNC_UNIQUE_ID)
+        q = execute_cached_fft(inv_asd, copy_output=False,
+                               uid=INVSPECTRUNC_UNIQUE_ID)
 
     trunc_start = max_filter_len // 2
     trunc_end = N - max_filter_len // 2
@@ -278,7 +279,8 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
         )
         fft(q, psd_trunc)
     else:
-        psd_trunc = execute_cached_ifft(q, uid=INVSPECTRUNC_UNIQUE_ID)
+        psd_trunc = execute_cached_ifft(q, copy_output=False,
+                                        uid=INVSPECTRUNC_UNIQUE_ID)
     psd_trunc *= psd_trunc.conj()
     psd_out = 1. / abs(psd_trunc)
 
