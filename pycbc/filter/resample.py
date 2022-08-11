@@ -108,10 +108,12 @@ def lfilter(coefficients, timeseries):
 
             # FFT contents of cseries into cfreq
             cfreq = execute_cached_fft(cseries, uid=LFILTER_UNIQUE_ID_2,
+                                       copy_output=False,
                                        normalize_by_rate=False)
 
             # FFT contents of timeseries into tfreq
             tfreq = execute_cached_fft(timeseries, uid=LFILTER_UNIQUE_ID_3,
+                                       copy_output=False,
                                        normalize_by_rate=False)
 
             cout, out, fft_class = ifftouts

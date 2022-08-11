@@ -1308,7 +1308,7 @@ def create_memory_and_engine_for_class_based_fft(
 
 
 def execute_cached_fft(invec_data, normalize_by_rate=True, ifft=False,
-                       uid=0):
+                       copy_output=True, uid=0):
     """ Executes a cached FFT
 
     Parameters
@@ -1321,6 +1321,13 @@ def execute_cached_fft(invec_data, normalize_by_rate=True, ifft=False,
     ifft : boolean (optional, default:False)
         If true assume this is an IFFT and multiply by delta_f not delta_t.
         Will do nothing if normalize_by_rate is False.
+    copy_output : boolean (optional, default:True)
+        If True we will copy the output into a new array. This avoids the issue
+        that calling this function again might overwrite output. However, if
+        you know that the output array will not be used before this function
+        might be called again with the same length, then setting this to False
+        will provide some increase in efficiency. The uid can also be used to
+        help ensure that data doesn't get unintentionally overwritten!
     uid : int (default: 0)
         Provide a unique identifier. This is used to provide a separate set
         of memory in the cache, for instance if calling this from different
@@ -1359,6 +1366,8 @@ def execute_cached_fft(invec_data, normalize_by_rate=True, ifft=False,
             outvec._data *= invec._delta_f
         else:
             outvec._data *= invec._delta_t
+    if copy_output:
+        outvec = outvec.copy()
     return outvec
 
 
@@ -1372,6 +1381,13 @@ def execute_cached_ifft(*args, **kwargs):
     normalize_by_rate : boolean (optional, default:False)
         If True, then normalize by delta_t (for an FFT) or delta_f (for an
         IFFT).
+    copy_output : boolean (optional, default:True)
+        If True we will copy the output into a new array. This avoids the issue
+        that calling this function again might overwrite output. However, if
+        you know that the output array will not be used before this function
+        might be called again with the same length, then setting this to False
+        will provide some increase in efficiency. The uid can also be used to
+        help ensure that data doesn't get unintentionally overwritten!
     uid : int (default: 0)
         Provide a unique identifier. This is used to provide a separate set
         of memory in the cache, for instance if calling this from different
@@ -1662,6 +1678,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
             # FFT the contents of self.strain[s:e] into fseries
             fseries = execute_cached_fft(self.strain[s:e],
+                                         copy_output=False,
                                          uid=STRAINBUFFER_UNIQUE_ID_1)
             fseries._epoch = self.strain._epoch + s*self.strain.delta_t
 
@@ -1688,6 +1705,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             if self.reduced_pad  != 0:
                 # IFFT the contents of fseries into overwhite
                 overwhite = execute_cached_ifft(fseries,
+                                                copy_output=False,
                                                 uid=STRAINBUFFER_UNIQUE_ID_2)
 
                 overwhite2 = overwhite[self.reduced_pad:len(overwhite)-self.reduced_pad]
@@ -1699,6 +1717,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 # FFT the contents of overwhite2 into fseries_trimmed
                 fseries_trimmed = execute_cached_fft(
                     overwhite2,
+                    copy_output=True,
                     uid=STRAINBUFFER_UNIQUE_ID_3
                 )
 
