@@ -541,7 +541,7 @@ class MultiRingBuffer(object):
         for _ in range(num_rings):
             self.buffer.append(numpy.zeros(128, dtype=dtype))
             self.buffer_expire.append(numpy.zeros(128, dtype=int))
-            self.valid_ends.append(1)
+            self.valid_ends.append(0)
             self.valid_starts.append(0)
         self.time = 0
 
@@ -612,6 +612,8 @@ class MultiRingBuffer(object):
             # If 30% of stored triggers are expired, free up memory
             self.buffer_expire[buffer_index] = self.buffer_expire[buffer_index][val_start:].copy()
             self.buffer[buffer_index] = self.buffer[buffer_index][val_start:].copy()
+            self.valid_ends[buffer_index] -= val_start
+            self.valid_starts[buffer_index] = 0
 
         ret_slice = slice(
             self.valid_starts[buffer_index],
