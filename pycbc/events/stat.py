@@ -636,6 +636,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         [Nitz et al, 2017](https://doi.org/10.3847/1538-4357/aa8f50).
         """
         rstat = sum(s[1]['snglstat'] ** 2 for s in sngls_list)
+        if len(rstat) == 0:
+            return numpy.zeros(0, dtype=numpy.float32)
         cstat = rstat + 2. * self.logsignalrate(dict(sngls_list),
                                                 slide * step,
                                                 to_shift)
