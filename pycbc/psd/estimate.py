@@ -29,8 +29,8 @@ USE_CACHING_FOR_INV_SPEC_TRUNC = False
 # If using caching we want output to be unique if called at different places
 # (and if called from different modules/functions), these unique IDs acheive
 # that. The numbers are not significant, only that they are unique.
-WELCH_UNIQUE_ID=438716587
-INVSPECTRUNC_UNIQUE_ID=100257896
+WELCH_UNIQUE_ID = 438716587
+INVSPECTRUNC_UNIQUE_ID = 100257896
 
 def median_bias(n):
     """Calculate the bias of the median average PSD computed from `n` segments.
@@ -257,7 +257,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
         ifft(inv_asd, q)
     else:
         q = execute_cached_ifft(inv_asd, copy_output=False,
-                               uid=INVSPECTRUNC_UNIQUE_ID)
+                                uid=INVSPECTRUNC_UNIQUE_ID)
 
     trunc_start = max_filter_len // 2
     trunc_end = N - max_filter_len // 2
@@ -280,7 +280,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
         fft(q, psd_trunc)
     else:
         psd_trunc = execute_cached_fft(q, copy_output=False,
-                                        uid=INVSPECTRUNC_UNIQUE_ID)
+                                       uid=INVSPECTRUNC_UNIQUE_ID)
     psd_trunc *= psd_trunc.conj()
     psd_out = 1. / abs(psd_trunc)
 
