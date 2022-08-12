@@ -303,7 +303,6 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
                 # However there are rare corner cases at starts/ends of inspiral
                 #  jobs. For these, arbitrarily keep the first trigger and
                 #  discard the second (and any subsequent ones).
-                where = right - left == rlmax
                 logging.warning('Triggers in %s are closer than coincidence '
                                 'window, 1 or more coincs will be discarded. '
                                 'This is a warning, not an error.' % ifo1)
@@ -612,7 +611,7 @@ class MultiRingBuffer(object):
             self.valid_starts[buffer_index],
             self.valid_ends[buffer_index]
         )
- 
+
         return self.buffer[buffer_index][ret_slice]
 
 
