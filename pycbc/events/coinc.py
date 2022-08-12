@@ -307,8 +307,6 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
                 logging.warning('Triggers in %s are closer than coincidence '
                                 'window, 1 or more coincs will be discarded. '
                                 'This is a warning, not an error.' % ifo1)
-                print([float(ti) for ti in
-                       time1[left[where][0]:right[where][0]]])
             # identify indices of times in ifo1 that form coincs with ifo2
             dep_ids = left[nz]
             # slide is array of slide ids attached to pivot ifo
@@ -579,12 +577,7 @@ class MultiRingBuffer(object):
             curr_pos = self.valid_ends[i]
             # Expand ring buffer size if needed
             if self.valid_ends[i] == len(self.buffer[i]):
-                # FIXME: Not giving refcheck=False caused a failure after some
-                #        hours of running. That seems like an edge-case then,
-                #        but it is still worrying! Is this array somehow being
-                #        still referenced outside of this class??
-                self.buffer[i].resize(len(self.buffer[i]) * 2,
-                                      refcheck=False)
+                self.buffer[i].resize(len(self.buffer[i]) * 2)
                 self.buffer_expire[i].resize(len(self.buffer[i]) * 2)
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
@@ -600,15 +593,15 @@ class MultiRingBuffer(object):
         # Check for expired elements and discard if they exist
         expired = self.time - self.max_time
         exp = self.buffer_expire[buffer_index]
-        j = 0
-        while j < len(exp):
+        j = self.valid_starts[buffer_index]
+        while j < self.valid_ends[buffer_index]:
             # Everything before this j must be expired
             if exp[j] >= expired:
                 break
             j += 1
-        self.valid_starts[buffer_index] += j      
+        self.valid_starts[buffer_index] = j
         val_start = self.valid_starts[buffer_index]
-        if val_start > 0.3 * len(self.buffer):
+        if val_start > 0.3 * len(self.buffer[buffer_index]):
             # If 30% of stored triggers are expired, free up memory
             self.buffer_expire[buffer_index] = self.buffer_expire[buffer_index][val_start:].copy()
             self.buffer[buffer_index] = self.buffer[buffer_index][val_start:].copy()
