@@ -227,12 +227,6 @@ class TestChisq(unittest.TestCase):
     __test__ = False
     def setUp(self, *args):
         # Where are my data files?
-        if os.path.isfile('test/data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'test/data/'
-        elif os.path.isfile('data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'data/'
-        else:
-            self.assertTrue(False, msg="Cannot find data files!")
         self.context = _context
         self.scheme = _scheme
         self.tolerance = 1e-6

@@ -101,13 +101,6 @@ def update_mass_parameters(tmpltbank_class):
 
 class TmpltbankTestClass(unittest.TestCase):
     def setUp(self):
-        # Where are my data files?
-        if os.path.isfile('test/data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'test/data/'
-        elif os.path.isfile('data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'data/'
-        else:
-            self.assertTrue(False, msg="Cannot find data files!")
 
         self.deltaF = 0.1
         self.f_low = 15
@@ -140,12 +133,17 @@ class TmpltbankTestClass(unittest.TestCase):
         self.segLen = 1./self.deltaF
         self.psdSize = int(self.segLen * self.sampleRate / 2.) + 1
 
-        self.psd = pycbc.psd.from_txt('%sZERO_DET_high_P.txt' %(self.dataDir),\
-                self.psdSize, self.deltaF, self.f_low, is_asd_file=True)
+        apy_fname = download_file(
+            DATA_FILE_URL.format('ZERO_DET_high_P.txt'),
+            cache=True
+        )
+
+        self.psd = pycbc.psd.from_txt(apy_fname, self.psdSize, self.deltaF,
+                                      self.f_low, is_asd_file=True)
         match_psd_size = int(256 * self.sampleRate / 2.) + 1
-        self.psd_for_match = pycbc.psd.from_txt\
-            ('%sZERO_DET_high_P.txt' %(self.dataDir), match_psd_size,
-             1./256., self.f_low, is_asd_file=True)
+        self.psd_for_match = pycbc.psd.from_txt(apy_fname, match_psd_size,
+                                                1./256., self.f_low,
+                                                is_asd_file=True)
 
         metricParams = pycbc.tmpltbank.metricParameters(self.pnOrder,\
                          self.f_low, self.f_upper, self.deltaF, self.f0)
