@@ -5,6 +5,7 @@ import os
 import numpy
 from numpy import complex128, real, sqrt, sin, cos, angle, ceil, log
 from numpy import zeros, argmax, array
+from astropy.utils.data import download_file
 from pycbc import DYN_RANGE_FAC
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc.pnutils import nearest_larger_binary_number
@@ -291,8 +292,16 @@ class TestChisq(unittest.TestCase):
         #    stilde.save('data/skymaxtest_stilde_%d.hdf' % idx)
         #except:
         #    pass
-        stilde = load_frequencyseries(self.dataDir + \
-                                      'skymaxtest_stilde_%d.hdf' % idx)
+        url = 'https://github.com/gwastro/pycbc-config/raw/master/'
+        url += 'test_data_files/{}'
+        fname = 'skymaxtest_stilde_{}.hdf'.format(idx)
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+
+        stilde = load_frequencyseries(fname)
+        os.unlink(fname)
         s_norm = sigmasq(stilde, psd=self.psd,
                          low_frequency_cutoff=self.low_freq_filter)
         stilde /= sqrt(float(s_norm))
@@ -305,10 +314,22 @@ class TestChisq(unittest.TestCase):
         #    hcross.save('data/skymaxtest_hcross_%d.hdf' % jdx)
         #except:
         #    pass
-        hplus = load_frequencyseries(self.dataDir + \
-                                     'skymaxtest_hplus_%d.hdf' % jdx)
-        hcross = load_frequencyseries(self.dataDir + \
-                                      'skymaxtest_hcross_%d.hdf' % jdx)
+        fname = 'skymaxtest_hplus_{}.hdf'.format(jdx)
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+        hplus = load_frequencyseries(fname)
+        os.unlink(fname)
+
+        fname = 'skymaxtest_hcross_{}.hdf'.format(jdx)
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+        hcross = load_frequencyseries(fname)
+        os.unlink(fname)
+
         hplus.f_lower = self.low_freq_filter
         hplus.params = random.randint(0,100000000000)
         hcross.f_lower = self.low_freq_filter
