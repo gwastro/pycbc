@@ -36,6 +36,10 @@ from pycbc.waveform.waveform import props
 from pycbc.population import live_pastro_utils as livepau
 from pycbc import mchirp_area
 from pycbc.detector import ppdets
+from pycbc.filter import resample
+
+# Set this to use cached class-based FFTs in the resample module
+resample.USE_CACHING_FOR_LFILTER = True
 
 try:
     from setproctitle import setproctitle
