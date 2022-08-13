@@ -705,6 +705,11 @@ parser.add_argument('--enable-background-estimation', default=False, action='sto
 parser.add_argument('--ifar-double-followup-threshold', type=float, required=True,
                     help='Inverse-FAR threshold to followup double coincs with'
                          'additional detectors')
+parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
+                    help="Livetime used for p-value combination with followup "
+                         "detectors, in years")
+parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
+
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
                     help='Upload triggers to GraceDB')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False,
@@ -723,10 +728,7 @@ parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading candidate '
                          'triggers to GraceDB, in years.')
 parser.add_argument('--file-prefix', default='Live')
-parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
-                    help="Livetime used for p-value combination with followup "
-                         "detectors, in years")
-parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
+
 parser.add_argument('--round-start-time', type=int, metavar='X',
                     help="Round up the start time to the nearest multiple of X"
                          " seconds. This is useful for forcing agreement "
