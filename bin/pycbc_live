@@ -488,6 +488,7 @@ class LiveEventManager(object):
                 )
 
             if args.enable_single_detector_upload \
+                    and self.enable_gracedb_upload \
                     and self.ifar_upload_threshold < ifar \
                     and not any(nearby_coincs):
                 gid = event.upload(fname, gracedb_server=args.gracedb_server,
