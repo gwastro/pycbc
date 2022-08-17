@@ -482,8 +482,12 @@ kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
           'channel_names': channel_names,
           'mc_area_args': mc_area_args}
 
-doc = live.SingleCoincForGraceDB(ifos, coinc_results,
-                                 upload_snr_series=True, **kwargs)
+doc = live.CandidateForGraceDB(
+    ifos,
+    coinc_results,
+    upload_snr_series=True,
+    **kwargs
+)
 
 if args.enable_gracedb_upload:
     comment = ('Automatic PyCBC followup of trigger '

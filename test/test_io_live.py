@@ -23,7 +23,7 @@ import itertools
 import numpy as np
 from utils import parse_args_cpu_only, simple_exit
 from pycbc.types import TimeSeries, FrequencySeries
-from pycbc.io.live import SingleCoincForGraceDB
+from pycbc.io.live import CandidateForGraceDB
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
@@ -98,7 +98,7 @@ class TestIOLive(unittest.TestCase):
                   'low_frequency_cutoff': 20.,
                   'followup_data': followup_data,
                   'channel_names': channel_names}
-        coinc = SingleCoincForGraceDB(trig_ifos, results, **kwargs)
+        coinc = CandidateForGraceDB(trig_ifos, results, **kwargs)
 
         tempdir = tempfile.mkdtemp()
 
