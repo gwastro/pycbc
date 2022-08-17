@@ -17,7 +17,9 @@
 
 import os
 import sys
+import numpy
 from ligo.lw import lsctables
+from ligo.lw import ligolw
 from ligo.lw.ligolw import Param, LIGOLWContentHandler \
     as OrigLIGOLWContentHandler
 from ligo.lw.lsctables import TableByName
