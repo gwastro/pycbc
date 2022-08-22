@@ -335,6 +335,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
+        self.logsignalrate_initted = False
         if pregenerate_hist and not len(ifos) == 1:
             self.get_hist()
 
@@ -472,6 +473,63 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         self.has_hist = True
 
+    def initialize_storage_arrays(self, length):
+        self.logsignalrate_initted = True
+        self.pdifarr = numpy.zeros(length, dtype=numpy.float32)
+        self.tdifarr = numpy.zeros(length, dtype=numpy.float64)
+        self.sdifarr = numpy.zeros(length, dtype=numpy.float32)
+
+    def test_internal_one(self, p, t, s, sig, sense, pref, tref, sigref, sref, senseref, shift, to_shift_ref, to_shift_ifo, twidth, pwidth, swidth):
+        if not self.logsignalrate_initted:
+            self.initialize_storage_arrays(1024)
+        sig = self.test_internal_one_one(sig)
+
+        # Calculate differences
+        pdif, tdif, sdif = self.test_internal_one_two(p, t, s, sig, sense, pref, tref, sigref, sref, senseref, shift, to_shift_ref, to_shift_ifo)
+
+        # Put into bins
+        tbin, pbin, sbin = self.test_internal_one_three(tdif, pdif, sdif, twidth, pwidth, swidth)
+        return [tbin, pbin, sbin]
+
+    def test_internal_one_one(self, sig):
+        return sig**0.5
+
+    def test_internal_one_two(self, p, t, s, sig, sense, pref, tref, sigref, sref, senseref, shift, to_shift_ref, to_shift_ifo):
+        length = len(p)
+        self.pdifarr[:length] = (pref - p) % (numpy.pi * 2.0)
+        self.tdifarr[:length] = shift * to_shift_ref + \
+            tref - shift * to_shift_ifo - t
+        self.sdifarr[:length] = (s*sense*sigref) / (sref * senseref * sig)
+        return self.pdifarr[:length], self.tdifarr[:length], self.sdifarr[:length]
+
+    def test_internal_one_three(self, tdif, pdif, sdif, twidth, pwidth, swidth):
+        tbin = (tdif // twidth).astype(int)
+        pbin = (pdif // pwidth).astype(int)
+        sbin = (sdif // swidth).astype(int)
+        return tbin, pbin, sbin
+
+
+    def test_internal_two(self, rate, rtype, nbinned, ref_ifo):
+        # High-RAM, low-CPU option for two-det
+        rate[rtype] = numpy.zeros(len(nbinned)) + self.max_penalty
+
+        id0 = nbinned['c0'].astype(numpy.int32) \
+            + self.c0_size[ref_ifo] // 2
+        id1 = nbinned['c1'].astype(numpy.int32) \
+            + self.c1_size[ref_ifo] // 2
+        id2 = nbinned['c2'].astype(numpy.int32) \
+            + self.c2_size[ref_ifo] // 2
+
+        # look up keys which are within boundaries
+        within = (id0 > 0) & (id0 < self.c0_size[ref_ifo])
+        within = within & (id1 > 0) & (id1 < self.c1_size[ref_ifo])
+        within = within & (id2 > 0) & (id2 < self.c2_size[ref_ifo])
+        within = numpy.where(within)[0]
+        rate[rtype[within]] = \
+            self.two_det_weights[ref_ifo][id0[within], id1[within],
+                                          id2[within]]
+
+
     def logsignalrate(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup
@@ -525,48 +583,20 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 p = numpy.array(sc['coa_phase'], ndmin=1)[rtype]
                 t = numpy.array(sc['end_time'], ndmin=1)[rtype]
                 s = numpy.array(sc['snr'], ndmin=1)[rtype]
+                sig = numpy.array(sc['sigmasq'], ndmin=1)[rtype]
 
-                sense = self.relsense[ifo]
-                sig = numpy.array(sc['sigmasq'], ndmin=1) ** 0.5
-                sig = sig[rtype]
-
-                # Calculate differences
-                pdif = (pref - p) % (numpy.pi * 2.0)
-                tdif = shift[rtype] * to_shift[ref_ifo] + \
-                    tref - shift[rtype] * to_shift[ifo] - t
-                sdif = s / sref * sense / senseref * sigref / sig
-
-                # Put into bins
-                tbin = (tdif / self.twidth).astype(int)
-                pbin = (pdif / self.pwidth).astype(int)
-                sbin = (sdif / self.swidth).astype(int)
-                binned += [tbin, pbin, sbin]
+                ret_lst = self.test_internal_one(p, t, s, sig, self.relsense[ifo], pref, tref, sref, sigref, senseref, shift[rtype], to_shift[ref_ifo], to_shift[ifo], self.twidth, self.pwidth, self.swidth)
+                binned += ret_lst
 
             # Convert binned to same dtype as stored in hist
-            nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
+            nbinned = numpy.zeros(len(ret_lst[1]), dtype=self.pdtype)
             for i, b in enumerate(binned):
                 nbinned['c%s' % i] = b
 
             # Read signal weight from precalculated histogram
             if self.two_det_flag:
                 # High-RAM, low-CPU option for two-det
-                rate[rtype] = numpy.zeros(len(nbinned)) + self.max_penalty
-
-                id0 = nbinned['c0'].astype(numpy.int32) \
-                    + self.c0_size[ref_ifo] // 2
-                id1 = nbinned['c1'].astype(numpy.int32) \
-                    + self.c1_size[ref_ifo] // 2
-                id2 = nbinned['c2'].astype(numpy.int32) \
-                    + self.c2_size[ref_ifo] // 2
-
-                # look up keys which are within boundaries
-                within = (id0 > 0) & (id0 < self.c0_size[ref_ifo])
-                within = within & (id1 > 0) & (id1 < self.c1_size[ref_ifo])
-                within = within & (id2 > 0) & (id2 < self.c2_size[ref_ifo])
-                within = numpy.where(within)[0]
-                rate[rtype[within]] = \
-                    self.two_det_weights[ref_ifo][id0[within], id1[within],
-                                                  id2[within]]
+                self.test_internal_two(rate, rtype, nbinned, ref_ifo)
             else:
                 # Low[er]-RAM, high[er]-CPU option for >two det
                 loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
