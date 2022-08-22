@@ -287,6 +287,8 @@ def get_random_mass(numPoints, massRangeParams, eos='2H'):
             mass2_nsbh = mass2_not_bbh[mask_nsbh]
             spin1z_nsbh = spin1z_not_bbh[mask_nsbh]
             spin2z_nsbh = spin2z_not_bbh[mask_nsbh]
+            #    [Store etas of all NSBHs]
+            eta_nsbh = conversions.eta_from_mass1_mass2(mass1_nsbh, mass2_nsbh)
             #    [mask_bright_nsbh will identify NSBH systems with high enough
             #     threshold mass]
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
