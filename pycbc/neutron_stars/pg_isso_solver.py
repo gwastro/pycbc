@@ -422,7 +422,7 @@ def generate_isso_bivariate_interp():
     with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'wb') as f:
         pickle.dump(bivar, f)
 
-        
+
 def load_isso_bivariate_interp():
     with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'rb') as f:
         func = pickle.load(f)
