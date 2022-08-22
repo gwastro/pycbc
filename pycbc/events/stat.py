@@ -335,7 +335,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
-        self.logsignalrate_initted = False
         if pregenerate_hist and not len(ifos) == 1:
             self.get_hist()
 
@@ -473,22 +472,19 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         self.has_hist = True
 
-    def initialize_storage_arrays(self, length):
-        self.logsignalrate_initted = True
-        self.pdifarr = numpy.zeros(length, dtype=numpy.float32)
-        self.tdifarr = numpy.zeros(length, dtype=numpy.float64)
-        self.sdifarr = numpy.zeros(length, dtype=numpy.float32)
-
     def test_internal_one(self, p, t, s, sig, sense, pref, tref, sigref, sref, senseref, shift, to_shift_ref, to_shift_ifo, twidth, pwidth, swidth):
-        if not self.logsignalrate_initted:
-            self.initialize_storage_arrays(1024)
+        from .eventmgr_cython import test_internal_one_three
         sig = self.test_internal_one_one(sig)
 
         # Calculate differences
         pdif, tdif, sdif = self.test_internal_one_two(p, t, s, sig, sense, pref, tref, sigref, sref, senseref, shift, to_shift_ref, to_shift_ifo)
 
         # Put into bins
-        tbin, pbin, sbin = self.test_internal_one_three(tdif, pdif, sdif, twidth, pwidth, swidth)
+        tbin = numpy.zeros(len(tdif), dtype=numpy.int32)
+        pbin = numpy.zeros(len(tdif), dtype=numpy.int32)
+        sbin = numpy.zeros(len(tdif), dtype=numpy.int32)
+
+        test_internal_one_three(tdif, pdif, sdif, tbin, pbin, sbin, twidth, pwidth, swidth, len(tdif))
         return [tbin, pbin, sbin]
 
     def test_internal_one_one(self, sig):
@@ -496,29 +492,19 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
     def test_internal_one_two(self, p, t, s, sig, sense, pref, tref, sigref, sref, senseref, shift, to_shift_ref, to_shift_ifo):
         length = len(p)
-        self.pdifarr[:length] = (pref - p) % (numpy.pi * 2.0)
-        self.tdifarr[:length] = shift * to_shift_ref + \
+        pdif = (pref - p) % (numpy.pi * 2.0)
+        tdif = shift * to_shift_ref + \
             tref - shift * to_shift_ifo - t
-        self.sdifarr[:length] = (s*sense*sigref) / (sref * senseref * sig)
-        return self.pdifarr[:length], self.tdifarr[:length], self.sdifarr[:length]
-
-    def test_internal_one_three(self, tdif, pdif, sdif, twidth, pwidth, swidth):
-        tbin = (tdif // twidth).astype(int)
-        pbin = (pdif // pwidth).astype(int)
-        sbin = (sdif // swidth).astype(int)
-        return tbin, pbin, sbin
-
+        sdif = (s*sense*sigref) / (sref * senseref * sig)
+        return pdif, tdif, sdif
 
     def test_internal_two(self, rate, rtype, nbinned, ref_ifo):
         # High-RAM, low-CPU option for two-det
         rate[rtype] = numpy.zeros(len(nbinned)) + self.max_penalty
 
-        id0 = nbinned['c0'].astype(numpy.int32) \
-            + self.c0_size[ref_ifo] // 2
-        id1 = nbinned['c1'].astype(numpy.int32) \
-            + self.c1_size[ref_ifo] // 2
-        id2 = nbinned['c2'].astype(numpy.int32) \
-            + self.c2_size[ref_ifo] // 2
+        id0 = nbinned['c0'] + self.c0_size[ref_ifo] // 2
+        id1 = nbinned['c1'] + self.c1_size[ref_ifo] // 2
+        id2 = nbinned['c2'] + self.c2_size[ref_ifo] // 2
 
         # look up keys which are within boundaries
         within = (id0 > 0) & (id0 < self.c0_size[ref_ifo])
