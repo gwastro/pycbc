@@ -28,6 +28,7 @@ from scipy.optimize import root_scalar
 from scipy.interpolate import RectBivariateSpline
 from . import NS_DATA_DIRECTORY
 
+
 def ISCO_eq(r, chi):
     """Polynomial that enables the calculation of the Kerr innermost
     stable circular orbit (ISCO) radius via its roots,
@@ -222,6 +223,7 @@ def PG_ISSO_eq(r, chi, incl):
     Z = ISCO_eq(r, chi)
 
     return r4 * r4 * Z + chi2 * sin_incl2 * (chi2 * sin_incl2 * Y - 2 * r4 * X)
+
 
 def PG_ISSO_eq_dr(r, chi, incl):
     """Partial derivative of :func:`PG_ISSO_eq` with respect to r.
@@ -420,6 +422,7 @@ def generate_isso_bivariate_interp():
     with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'wb') as f:
         pickle.dump(bivar, f)
 
+        
 def load_isso_bivariate_interp():
     with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'rb') as f:
         func = pickle.load(f)
