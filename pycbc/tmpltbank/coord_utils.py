@@ -181,7 +181,7 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
 
     return mass1, mass2, spin1z, spin2z
 
-def get_random_mass(numPoints, massRangeParams, eos):
+def get_random_mass(numPoints, massRangeParams, eos='2H'):
     """
     This function will generate a large set of points within the chosen mass
     and spin space, and with the desired minimum remnant disk mass (this applies
@@ -195,9 +195,9 @@ def get_random_mass(numPoints, massRangeParams, eos):
         Number of systems to simulate
     massRangeParams : massRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
-    eos:
-        Name of neutron star equation of state (eos). String
-
+    eos : string
+        Name of equation of state of neuron star.
+        
     Returns
     --------
     mass1 : float
