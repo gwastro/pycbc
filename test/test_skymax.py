@@ -286,9 +286,9 @@ class TestChisq(unittest.TestCase):
         #    stilde.save('data/skymaxtest_stilde_%d.hdf' % idx)
         #except:
         #    pass
-        url = 'https://github.com/gwastro/pycbc-config/raw/master/'
-        url += 'test_data_files/{}'
-        fname = 'skymaxtest_stilde_{}.hdf'.format(idx)
+        url = ('https://github.com/gwastro/pycbc-config/raw/master/'
+               'test_data_files/{}')
+        fname = f'skymaxtest_stilde_{idx}.hdf'
         apy_fname = download_file(url.format(fname), cache=False)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
