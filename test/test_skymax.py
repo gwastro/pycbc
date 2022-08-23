@@ -308,7 +308,7 @@ class TestChisq(unittest.TestCase):
         #    hcross.save('data/skymaxtest_hcross_%d.hdf' % jdx)
         #except:
         #    pass
-        fname = 'skymaxtest_hplus_{}.hdf'.format(jdx)
+        fname = f'skymaxtest_hplus_{jdx}.hdf'
         apy_fname = download_file(url.format(fname), cache=False)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
