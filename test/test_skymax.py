@@ -316,7 +316,7 @@ class TestChisq(unittest.TestCase):
         hplus = load_frequencyseries(fname)
         os.unlink(fname)
 
-        fname = 'skymaxtest_hcross_{}.hdf'.format(jdx)
+        fname = f'skymaxtest_hcross_{jdx}.hdf'
         apy_fname = download_file(url.format(fname), cache=False)
         # Astropy will not download with the .hdf extension, which we need,
         # so symlink
