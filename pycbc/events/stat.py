@@ -485,24 +485,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         self.has_hist = True
 
-    def test_internal_one(self, p, t, s, sig, sense, pref, tref, sigref, sref, senseref, shift, rtype, to_shift_ref, to_shift_ifo, twidth, pwidth, swidth):
-
-        # Assign memory - This could be cached??
-        length = len(rtype)
-        while length > len(self.pdif):
-            newlen = len(self.pdif) * 2
-            self.pdif = numpy.zeros(newlen, dtype=numpy.float64)
-            self.tdif = numpy.zeros(newlen, dtype=numpy.float64)
-            self.sdif = numpy.zeros(newlen, dtype=numpy.float64)
-            self.pbin = numpy.zeros(newlen, dtype=numpy.int32)
-            self.tbin = numpy.zeros(newlen, dtype=numpy.int32)
-            self.sbin = numpy.zeros(newlen, dtype=numpy.int32)
-
-        # Calculate differences
-        test_internal_one_two(self.pdif, self.tdif, self.sdif, self.pbin, self.tbin, self.sbin, p, t, s, sig, pref, tref, sref, sigref, shift, rtype, sense, senseref, twidth, pwidth, swidth, to_shift_ref, to_shift_ifo, length)
-
-        return [self.tbin[:length], self.pbin[:length], self.sbin[:length]]
-
     def logsignalrate(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup
