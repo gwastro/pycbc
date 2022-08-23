@@ -59,8 +59,8 @@ parser.add_argument("--update-progress-file",
                   type=str, default="progress.txt")
 parser.add_argument("--output", type=str, help="FIXME: ADD")
 parser.add_argument("--bank-file", type=str, help="FIXME: ADD")
-parser.add_argument("--snr-threshold",
-                  help="SNR threshold for trigger generation", type=float)
+parser.add_argument("--snr-threshold", nargs="+", type=float,
+                  help="SNR threshold for trigger generation for each number of harmonics")
 parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                     help="Cut triggers with NewSNR less than THRESHOLD")
 parser.add_argument("--low-frequency-cutoff", type=float,
@@ -441,7 +441,7 @@ with ctx:
 
     power_chisq = vetoes.SingleDetTHAPowerChisq(
         num_bins=opt.chisq_bins,
-        snr_threshold= opt.chisq_snr_threshold
+        snr_threshold=opt.chisq_snr_threshold
     )
 
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,

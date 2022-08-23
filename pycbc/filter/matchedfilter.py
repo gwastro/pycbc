@@ -1008,8 +1008,8 @@ class MatchedFilterTHAControl(object):
         high_frequency_cutoff : {None, float}, optional
             The frequency to stop the filter calculation. If None, continue to the
             the nyquist frequency.
-        snr_threshold : float
-            The minimum snr to return when filtering
+        snr_threshold : list
+            The minimum snr to return when filtering for each value of num_comps
         segment_list : list
             List of FrequencySeries that are the Fourier-transformed data segments
         template_output : complex64
@@ -1128,7 +1128,8 @@ class MatchedFilterTHAControl(object):
         self.snr_mem[:] = self.snr_mem[:]**0.5
         self.snr_mem.data[~curr_lgc] = 0
 
-        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+        thresh = self.snr_threshold[num_comps - 1]
+        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(thresh / norm, window)
 
         if len(idx) == 0:
             return [], [], [], [], [], []
