@@ -10,7 +10,7 @@ ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.o
 RUN dnf -y install https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && dnf -y install cvmfs cvmfs-config-default && dnf clean all && dnf makecache && \
     dnf -y groupinstall "Development Tools" \
                         "Scientific Support" && \
-    rpm -e --nodeps git perl-Git && dnf -y install @python38 rsync zlib-devel libpng-devel libjpeg-devel sqlite-devel openssl-devel fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel hdf5 hdf5-devel python38-devel swig which osg-ca-certs && python3.8 -m pip install --upgrade pip setuptools wheel cython && python3.8 -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite && \
+    rpm -e --nodeps git perl-Git && dnf -y install @python39 rsync zlib-devel libpng-devel libjpeg-devel sqlite-devel openssl-devel fftw-libs-single fftw-devel fftw fftw-libs-long fftw-libs fftw-libs-double gsl gsl-devel hdf5 hdf5-devel python38-devel swig which osg-ca-certs && python3.9 -m pip install --upgrade pip setuptools wheel cython && python3.9 -m pip install mkl ipython jupyter jupyterhub jupyterlab lalsuite && \
     dnf -y install https://repo.opensciencegrid.org/osg/3.5/el8/testing/x86_64/osg-wn-client-3.5-5.osg35.el8.noarch.rpm && dnf clean all
 
 # set up environment
@@ -21,15 +21,15 @@ RUN cd / && \
 # Install MPI software needed for pycbc_inference
 # at the end.
 RUN dnf -y install libibverbs libibverbs-devel libibmad libibmad-devel libibumad libibumad-devel librdmacm librdmacm-devel libmlx5 libmlx4 openmpi openmpi-devel && \
-    python3.8 -m pip install schwimmbad && \
-    MPICC=/lib64/openmpi/bin/mpicc CFLAGS='-I /usr/include/openmpi-x86_64/ -L /usr/lib64/openmpi/lib/ -lmpi' python3.8 -m pip install --no-cache-dir mpi4py
+    python3.9 -m pip install schwimmbad && \
+    MPICC=/lib64/openmpi/bin/mpicc CFLAGS='-I /usr/include/openmpi-x86_64/ -L /usr/lib64/openmpi/lib/ -lmpi' python3.9 -m pip install --no-cache-dir mpi4py
 RUN echo "/usr/lib64/openmpi/lib/" > /etc/ld.so.conf.d/openmpi.conf
 
 # Now update all of our library installations
 RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
 
 # Make python be what we want
-RUN alternatives --set python /usr/bin/python3.8
+RUN alternatives --set python /usr/bin/python3.9
 
 # Explicitly set the path so that it is not inherited from build the environment
 ENV PATH "/usr/local/bin:/usr/bin:/bin:/lib64/openmpi/bin/bin"
