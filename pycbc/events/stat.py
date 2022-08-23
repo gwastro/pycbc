@@ -531,7 +531,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 for ifo in self.ifos}
         for ref_ifo in self.ifos:
             rtype = rtypes[ref_ifo]
-            ref = stats[ref_ifo]
             pref = ps[ref_ifo]
             tref = ts[ref_ifo]
             sref = ss[ref_ifo]
