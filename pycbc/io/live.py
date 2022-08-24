@@ -7,92 +7,33 @@ import json
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.param import Param as LIGOLWParam
-from ligo.lw.array import Array as LIGOLWArray
 from pycbc import version as pycbc_version
 from pycbc import pnutils
-from pycbc.io.ligolw import return_empty_sngl, create_process_table
+from pycbc.io.ligolw import (
+    return_empty_sngl, create_process_table, make_psd_xmldoc, snr_series_to_xml
+)
 from pycbc.results import generate_asd_plot
 from pycbc.results import ifo_color
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
 
 
-#FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
-# xml formats
-def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    Attributes = ligolw.sax.xmlreader.AttributesImpl
-    elem = ligolw.LIGO_LW(
-            Attributes({'Name': str(series.__class__.__name__)}))
-    if comment is not None:
-        elem.appendChild(ligolw.Comment()).pcdata = comment
-    elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
-    elem.appendChild(LIGOLWParam.from_pyvalue('f0', series.f0, unit='s^-1'))
-    delta = getattr(series, delta_name)
-    if numpy.iscomplexobj(series.data.data):
-        data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
-                             series.data.data.real, series.data.data.imag))
-    else:
-        data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
-                                series.data.data))
-    a = LIGOLWArray.build(series.name, data, dim_names=dim_names)
-    a.Unit = str(series.sampleUnits)
-    dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
-    dim0.Unit = delta_unit
-    dim0.Start = series.f0
-    dim0.Scale = delta
-    elem.appendChild(a)
-    return elem
-
-
-def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
-    """Save an SNR time series into an XML document, in a format compatible
-    with BAYESTAR.
+class CandidateForGraceDB(object):
+    """This class provides an interface for uploading candidates to GraceDB.
     """
-    snr_lal = snr_series.lal()
-    snr_lal.name = 'snr'
-    snr_lal.sampleUnits = ''
-    snr_xml = _build_series(snr_lal, ('Time', 'Time,Real,Imaginary'), None,
-                            'deltaT', 's')
-    snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
-    snr_node.appendChild(eid_param)
 
-
-def make_psd_xmldoc(psddict, xmldoc=None):
-    """Add a set of PSDs to a LIGOLW XML document. If the document is not
-    given, a new one is created first.
-    """
-    xmldoc = ligolw.Document() if xmldoc is None else xmldoc.childNodes[0]
-
-    # the PSDs must be children of a LIGO_LW with name "psd"
-    root_name = 'psd'
-    Attributes = ligolw.sax.xmlreader.AttributesImpl
-    lw = xmldoc.appendChild(
-        ligolw.LIGO_LW(Attributes({'Name': root_name})))
-
-    for instrument, psd in psddict.items():
-        xmlseries = _build_series(psd, ('Frequency,Real', 'Frequency'),
-                                  None, 'deltaF', 's^-1')
-        fs = lw.appendChild(xmlseries)
-        fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
-    return xmldoc
-
-
-class SingleCoincForGraceDB(object):
-    """Create xml files and submit them to gracedb from PyCBC Live"""
     def __init__(self, ifos, coinc_results, **kwargs):
-        """Initialize a ligolw xml representation of a zerolag trigger
-        for upload from pycbc live to gracedb.
+        """Initialize a representation of a zerolag candidate for upload to
+        GraceDB.
 
         Parameters
         ----------
         ifos: list of strs
-            A list of the ifos participating in this trigger.
+            A list of the ifos participating in this candidate.
         coinc_results: dict of values
             A dictionary of values. The format is defined in
-            pycbc/events/coinc.py and matches the on disk representation
-            in the hdf file for this time.
+            `pycbc/events/coinc.py` and matches the on-disk representation in
+            the hdf file for this time.
         psds: dict of FrequencySeries
             Dictionary providing PSD estimates for all involved detectors.
         low_frequency_cutoff: float
@@ -100,20 +41,22 @@ class SingleCoincForGraceDB(object):
         high_frequency_cutoff: float, optional
             Maximum frequency considered for the PSD estimates. Default None.
         followup_data: dict of dicts, optional
-            Dictionary providing SNR time series for each detector,
-            to be used in sky localization with BAYESTAR. The format should
-            be `followup_data['H1']['snr_series']`. More detectors can be
-            present than given in `ifos`. If so, the extra detectors will only
-            be used for sky localization.
+            Dictionary providing SNR time series for each detector, to be used
+            in sky localization with BAYESTAR. The format should be
+            `followup_data['H1']['snr_series']`. More detectors can be present
+            than given in `ifos`. If so, the extra detectors will only be used
+            for sky localization.
         channel_names: dict of strings, optional
-            Strain channel names for each detector
-            Will be recorded in the sngl_inspiral table.
-        padata: PAstroData instance, organizes info relevant to p astro.
+            Strain channel names for each detector. Will be recorded in the
+            `sngl_inspiral` table.
+        padata: PAstroData instance
+            Organizes info relevant to the astrophysical probability of the
+            candidate.
         mc_area_args: dict of dicts, optional
             Dictionary providing arguments to be used in source probability
-            estimation with pycbc/mchirp_area.py
+            estimation with `pycbc/mchirp_area.py`.
         """
-        self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
+        self.template_id = coinc_results[f'foreground/{ifos[0]}/template_id']
         self.coinc_results = coinc_results
         self.ifos = ifos
         self.basename = None
@@ -124,7 +67,7 @@ class SingleCoincForGraceDB(object):
 
         # Check if we need to apply a time offset (this may be permerger)
         self.time_offset = 0
-        rtoff = 'foreground/{}/time_offset'.format(ifos[0])
+        rtoff = f'foreground/{ifos[0]}/time_offset'
         if rtoff in coinc_results:
             self.time_offset = coinc_results[rtoff]
 
@@ -189,9 +132,9 @@ class SingleCoincForGraceDB(object):
             sngl.process_id = proc_id
             sngl.ifo = ifo
             names = [n.split('/')[-1] for n in coinc_results
-                     if 'foreground/%s' % ifo in n]
+                     if f'foreground/{ifo}' in n]
             for name in names:
-                val = coinc_results['foreground/%s/%s' % (ifo, name)]
+                val = coinc_results[f'foreground/{ifo}/{name}']
                 if name == 'end_time':
                     val += self.time_offset
                     sngl.end = lal.LIGOTimeGPS(val)
@@ -225,7 +168,7 @@ class SingleCoincForGraceDB(object):
 
         # Set merger time to the average of the ifo peaks
         self.merger_time = numpy.mean(
-                    [coinc_results['foreground/{}/end_time'.format(ifo)]
+                    [coinc_results[f'foreground/{ifo}/end_time']
                      for ifo in ifos]) + self.time_offset
 
         # For subthreshold detectors, respect BAYESTAR's assumptions and checks
@@ -309,7 +252,8 @@ class SingleCoincForGraceDB(object):
         self.time = sngl_populated.end
 
     def save(self, fname):
-        """Write this trigger to gracedb compatible xml format
+        """Write a file representing this candidate in a LIGOLW XML format
+        compatible with GraceDB.
 
         Parameters
         ----------
@@ -350,7 +294,8 @@ class SingleCoincForGraceDB(object):
 
     def upload(self, fname, gracedb_server=None, testing=True,
                extra_strings=None, search='AllSky'):
-        """Upload this trigger to gracedb
+        """Upload this candidate to GraceDB, and annotate it with a few useful
+        plots and comments.
 
         Parameters
         ----------
@@ -550,5 +495,5 @@ def gracedb_tag_with_version(gracedb, event_id):
             os.path.dirname(pycbc.__file__))
     gracedb.writeLog(event_id, version_str)
 
-__all__ = ['SingleCoincForGraceDB', 'make_psd_xmldoc', 'snr_series_to_xml',
-           'gracedb_tag_with_version']
+
+__all__ = ['CandidateForGraceDB', 'gracedb_tag_with_version']

@@ -28,7 +28,7 @@ from pycbc.strain import StrainBuffer
 from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingle
-from pycbc.io.live import SingleCoincForGraceDB
+from pycbc.io.live import CandidateForGraceDB
 from pycbc.io.hdf import recursively_save_dict_contents_to_group
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
@@ -378,7 +378,7 @@ class LiveEventManager(object):
 
         live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
-        event = SingleCoincForGraceDB(
+        event = CandidateForGraceDB(
             live_ifos,
             coinc_results,
             padata=self.padata,
@@ -456,13 +456,17 @@ class LiveEventManager(object):
 
             live_ifos = [i for i in fud if 'snr_series' in fud[i]]
 
-            event = SingleCoincForGraceDB(live_ifos, single,
-                                          padata=self.padata, bank=bank,
-                                          psds=psds, followup_data=fud,
-                                          low_frequency_cutoff=f_low,
-                                          channel_names=args.channel_name,
-                                          mc_area_args=self.mc_area_args,
-                                          )
+            event = CandidateForGraceDB(
+                live_ifos,
+                single,
+                padata=self.padata,
+                bank=bank,
+                psds=psds,
+                followup_data=fud,
+                low_frequency_cutoff=f_low,
+                channel_names=args.channel_name,
+                mc_area_args=self.mc_area_args,
+            )
 
             fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
                                                     pycbc.random_string(6))
