@@ -129,6 +129,8 @@ def initialize_eos(ns_mass, eos):
     ns_b_mass : float
         Baryonic mass of the neutron star.
     """
+    if str(type(arr)) == '<class \'numpy.ndarray\'>':
+        input_is_array = True
     if eos in NS_SEQUENCES:
         ns_seq, ns_max = load_ns_sequence(eos)
         try:
