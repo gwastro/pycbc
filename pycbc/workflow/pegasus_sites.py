@@ -82,8 +82,6 @@ def add_condorpool_symlink_site(sitecat, cp):
     add_site_pegasus_profile(site, cp)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    site.add_profiles(Namespace.PEGASUS, key="transfer.links",
-                      value="true")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
@@ -117,6 +115,9 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
+    # This explicitly disables symlinking
+    site.add_profiles(Namespace.PEGASUS, key='nosymlink',
+                      value=True)
     site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
                       value="true")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
