@@ -27,6 +27,7 @@ values.
 """
 import logging
 import numpy
+import h5py
 from . import ranking
 from . import coinc_rate
 
@@ -50,7 +51,6 @@ class Stat(object):
         ifos: list of strs, needed for some statistics
             The list of detector names
         """
-        import h5py
 
         self.files = {}
         files = files or []
