@@ -403,7 +403,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         for ifo in self.hist_ifos:
 
             # renormalise to PDF
-            self.weights[ifo] = weights[ifo] / (weights[ifo].sum() * bin_volume)
+            self.weights[ifo] = \
+                weights[ifo] / (weights[ifo].sum() * bin_volume)
 
             if param[ifo].dtype == numpy.int8:
                 # Older style, incorrectly sorted histogram file
