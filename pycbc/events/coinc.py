@@ -27,6 +27,7 @@ coincident triggers.
 
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector, ppdets
+from .eventmgr_cython import coincbuffer_expireelements
 
 
 def background_bin_from_string(background_bins, data):
@@ -706,15 +707,14 @@ class CoincExpireBuffer(object):
             self.index += len(values)
 
         # Remove the expired old elements
-        keep = None
         for ifo in ifos:
-            kt = self.timer[ifo][:self.index] >= self.time[ifo] - self.expiration
-            keep = numpy.logical_and(keep, kt) if keep is not None else kt
-
-        self.buffer[:keep.sum()] = self.buffer[:self.index][keep]
-        for ifo in self.ifos:
-            self.timer[ifo][:keep.sum()] = self.timer[ifo][:self.index][keep]
-        self.index = keep.sum()
+            self.index = coincbuffer_expireelements(
+                self.buffer,
+                self.timer[ifo],
+                self.time[ifo],
+                self.expiration,
+                self.index
+            )
 
     def num_greater(self, value):
         """Return the number of elements larger than 'value'"""

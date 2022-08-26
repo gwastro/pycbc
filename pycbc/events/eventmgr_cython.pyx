@@ -117,3 +117,25 @@ def logsignalrateinternals_compute2detrate(
         rescale_fac = ref_snr / sref[ridx]
         rate[ridx] *= (rescale_fac*rescale_fac*rescale_fac*rescale_fac)
 
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def coincbuffer_expireelements(
+    float[:] cbuffer,
+    int[:] timer,
+    int time,
+    int expiration,
+    int length,
+):
+    cdef:
+        int idx, keep_count
+
+    keep_count = 0
+    for idx in range(length):
+        if timer[idx] > time - expiration:
+            cbuffer[keep_count] = cbuffer[idx]
+            timer[keep_count] = timer[idx]
+            keep_count += 1
+
+    return keep_count
