@@ -70,29 +70,25 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
 
 
 class LiveEventManager(object):
-    def __init__(self, output_path, mc_area_args, p_astro_data,
-                 use_date_prefix=False,
-                 ifar_upload_threshold=None,
-                 pval_livetime=None,
-                 enable_gracedb_upload=False,
-                 gracedb_testing=True,
-                 run_snr_optimization=False):
-        self.path = output_path
-        self.mc_area_args = mc_area_args
-        self.padata = p_astro_data
+    def __init__(self, args, bank):
+        # pick relevant arguments from CLI options
+        self.low_frequency_cutoff = args.low_frequency_cutoff
+        self.path = args.output_path
+        self.mc_area_args = mchirp_area.from_cli(args)
+        self.padata = livepau.PAstroData(args.p_astro_spec, args.bank_file)
+        self.use_date_prefix = args.day_hour_output_prefix
+        self.ifar_upload_threshold = args.ifar_upload_threshold
+        self.pvalue_livetime = args.pvalue_combination_livetime
+        self.gracedb_testing = not args.enable_production_gracedb_upload
+        self.enable_gracedb_upload = args.enable_gracedb_upload
+        self.run_snr_optimization = args.run_snr_optimization
+
+        self.bank = bank
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
         self.size = self.comm.Get_size()
         self.rank = self.comm.Get_rank()
-
-        self.use_date_prefix = use_date_prefix
-        self.ifar_upload_threshold = ifar_upload_threshold
-        self.pvalue_livetime = pval_livetime
-        self.gracedb_testing = gracedb_testing
-        self.enable_gracedb_upload = enable_gracedb_upload
-
-        self.run_snr_optimization = run_snr_optimization
 
         # Keep track of which events have been uploaded
         self.last_few_coincs_uploaded = []
@@ -149,7 +145,7 @@ class LiveEventManager(object):
 
         return combined, data_ends[0]
 
-    def compute_followup_data(self, ifos, triggers, data_readers, bank,
+    def compute_followup_data(self, ifos, triggers,
                               followup_ifos=None, recalculate_ifar=False):
         """Figure out which of the followup detectors are usable, and compute
         SNR time series for all the available detectors.
@@ -157,10 +153,12 @@ class LiveEventManager(object):
         out = {}
         followup_ifos = [] if followup_ifos is None else followup_ifos
 
-        template_id = triggers['foreground/' + ifos[0] + '/template_id']
-        htilde = bank[template_id]
+        template_id = triggers[f'foreground/{ifos[0]}/template_id']
+        htilde = self.bank[template_id]
 
-        coinc_times = {ifo: triggers['foreground/' + ifo + '/end_time'] for ifo in ifos}
+        coinc_times = {
+            ifo: triggers[f'foreground/{ifo}/end_time'] for ifo in ifos
+        }
 
         # Get the SNR series for the ifos that made the initial coinc
         for ifo in ifos:
@@ -168,8 +166,11 @@ class LiveEventManager(object):
             # IFOs producing the coincidence are assumed to also
             # produce valid SNR series.
             snr_series = compute_followup_snr_series(
-                    data_readers[ifo], htilde, coinc_times[ifo],
-                    check_state=False)
+                self.data_readers[ifo],
+                htilde,
+                coinc_times[ifo],
+                check_state=False
+            )
 
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
@@ -177,7 +178,12 @@ class LiveEventManager(object):
         # Determine if the other ifos can contribute to the coincident event
         for ifo in followup_ifos:
             snr_series, ptime, pvalue, sigma2 = followup_event_significance(
-                    ifo, data_readers[ifo], bank, template_id, coinc_times)
+                ifo,
+                self.data_readers[ifo],
+                self.bank,
+                template_id,
+                coinc_times
+            )
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
                 self.get_followup_info(ifos[0], ifo, triggers, snr_series,
@@ -224,7 +230,7 @@ class LiveEventManager(object):
             triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
 
     def setup_optimize_snr(
-        self, results, live_ifos, triggering_ifos, bank, fname, data_readers, gid
+        self, results, live_ifos, triggering_ifos, fname, gid
     ):
         """Setup and start the network SNR optimization process for a
         candidate event. See arXiv:2008.07494 for details.
@@ -239,29 +245,25 @@ class LiveEventManager(object):
             List of detectors that originally identified the candidate,
             providing reliabile estimates of the merger time. Must not be a
             superset of `live_ifos`.
-        bank :
-            Template bank.
         fname : str
             File name where the candidate information has been saved.
             Used to name other files produced as part of setting up the
             SNR optimization.
-        data_readers : dict
-            Data structures providing the GW data.
         gid : str
             GraceDB ID of the candidate.
         """
         template_id = results[f'foreground/{live_ifos[0]}/template_id']
-        p = props(bank.table[template_id])
+        p = props(self.bank.table[template_id])
         p.pop('approximant')
-        apr = bank.approximant(template_id)
-        min_buffer = bank.minimum_buffer + 0.5
+        apr = self.bank.approximant(template_id)
+        min_buffer = self.bank.minimum_buffer + 0.5
         buff_size = \
             pycbc.waveform.get_waveform_filter_length_in_time(apr, **p)
 
-        tlen = bank.round_up((buff_size + min_buffer) \
-            * bank.sample_rate)
+        tlen = self.bank.round_up((buff_size + min_buffer) \
+            * self.bank.sample_rate)
         flen = int(tlen / 2 + 1)
-        delta_f = bank.sample_rate / float(tlen)
+        delta_f = self.bank.sample_rate / float(tlen)
         cmd = 'timeout {} '.format(args.snr_opt_timeout)
         exepath = which('pycbc_optimize_snr')
         cmd += exepath + ' '
@@ -271,7 +273,7 @@ class LiveEventManager(object):
             curr_fname = \
                 fname.replace('.xml.gz',
                               '_{}_data_overwhitened.hdf'.format(ifo))
-            curr_data = data_readers[ifo].overwhitened_data(delta_f)
+            curr_data = self.data_readers[ifo].overwhitened_data(delta_f)
             curr_data.save(curr_fname)
             data_fils_str += '{}:{} ' .format(ifo, curr_fname)
             curr_fname = fname.replace('.xml.gz',
@@ -287,20 +289,20 @@ class LiveEventManager(object):
             for ifo in triggering_ifos:
                 curr_time = results[f'foreground/{ifo}/end_time']
                 hdfp[f'coinc_times/{ifo}'] = curr_time
-            f_end = bank.end_frequency(template_id)
+            f_end = self.bank.end_frequency(template_id)
             if f_end is None or f_end >= (flen * delta_f):
                 f_end = (flen-1) * delta_f
             hdfp['flen'] = flen
             hdfp['delta_f'] = delta_f
             hdfp['f_end'] = f_end
-            hdfp['sample_rate'] = bank.sample_rate
-            hdfp['flow'] = bank.table[template_id].f_lower
-            hdfp['mass1'] = bank.table[template_id].mass1
-            hdfp['mass2'] = bank.table[template_id].mass2
-            hdfp['spin1z'] = bank.table[template_id].spin1z
-            hdfp['spin2z'] = bank.table[template_id].spin2z
+            hdfp['sample_rate'] = self.bank.sample_rate
+            hdfp['flow'] = self.bank.table[template_id].f_lower
+            hdfp['mass1'] = self.bank.table[template_id].mass1
+            hdfp['mass2'] = self.bank.table[template_id].mass2
+            hdfp['spin1z'] = self.bank.table[template_id].spin1z
+            hdfp['spin2z'] = self.bank.table[template_id].spin2z
             hdfp['template_duration'] = \
-                bank.table[template_id].template_duration
+                self.bank.table[template_id].template_duration
             hdfp['ifar'] = results['foreground/ifar']
             if gid is not None:
                 hdfp['gid'] = gid
@@ -344,13 +346,12 @@ class LiveEventManager(object):
                 cmd, shell=True, stdout=logfile, stderr=logfile
             )
 
-    def check_coincs(self, ifos, coinc_results, psds, f_low,
-                     data_readers, bank):
+    def check_coincs(self, ifos, coinc_results, psds):
         """ Perform any followup and save zerolag triggers to a coinc xml file
         """
         # Check for hardware injection
         for ifo in ifos:
-            if data_readers[ifo].near_hwinj():
+            if self.data_readers[ifo].near_hwinj():
                 coinc_results['HWINJ'] = True
                 break
 
@@ -370,8 +371,6 @@ class LiveEventManager(object):
         fud = self.compute_followup_data(
             coinc_ifos,
             coinc_results,
-            data_readers,
-            bank,
             followup_ifos=followup_ifos,
             recalculate_ifar=True
         )
@@ -382,10 +381,10 @@ class LiveEventManager(object):
             live_ifos,
             coinc_results,
             padata=self.padata,
-            bank=bank,
+            bank=self.bank,
             psds=psds,
             followup_data=fud,
-            low_frequency_cutoff=f_low,
+            low_frequency_cutoff=self.low_frequency_cutoff,
             channel_names=args.channel_name,
             mc_area_args=self.mc_area_args,
         )
@@ -431,24 +430,28 @@ class LiveEventManager(object):
                 coinc_results,
                 live_ifos,
                 coinc_ifos,
-                bank,
                 fname,
-                data_readers,
                 gid
             )
 
-    def check_singles(self, results, data_reader, psds, f_low):
+    def check_singles(self, results, psds):
         active = [k for k in results if results[k] is not None]
         for ifo in active:
-            single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
+            single = sngl_estimator[ifo].check(
+                results[ifo],
+                self.data_readers[ifo]
+            )
 
             if single is None:
                 continue
 
             followup_ifos = [i for i in active if i is not ifo]
-            fud = self.compute_followup_data([ifo], single, data_reader,
-                                             bank, followup_ifos=followup_ifos,
-                                             recalculate_ifar=False)
+            fud = self.compute_followup_data(
+                [ifo],
+                single,
+                followup_ifos=followup_ifos,
+                recalculate_ifar=False
+            )
             ifar = single['foreground/ifar']
             # Apply a trials factor of the number of active detectors
             ifar /= len(active)
@@ -460,10 +463,10 @@ class LiveEventManager(object):
                 live_ifos,
                 single,
                 padata=self.padata,
-                bank=bank,
+                bank=self.bank,
                 psds=psds,
                 followup_data=fud,
-                low_frequency_cutoff=f_low,
+                low_frequency_cutoff=self.low_frequency_cutoff,
                 channel_names=args.channel_name,
                 mc_area_args=self.mc_area_args,
             )
@@ -509,9 +512,7 @@ class LiveEventManager(object):
                     single,
                     live_ifos,
                     [ifo],
-                    bank,
                     fname,
-                    data_reader,
                     gid
                 )
 
@@ -774,8 +775,6 @@ pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
-padata = livepau.PAstroData(args.p_astro_spec, args.bank_file)
-
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
@@ -792,15 +791,7 @@ if bank.min_f_lower < args.low_frequency_cutoff:
 ifos = set(args.channel_name.keys())
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
-evnt = LiveEventManager(args.output_path,
-                        mchirp_area.from_cli(args),
-                        padata,
-                        use_date_prefix=args.day_hour_output_prefix,
-                        ifar_upload_threshold=args.ifar_upload_threshold,
-                        pval_livetime=args.pvalue_combination_livetime,
-                        enable_gracedb_upload=args.enable_gracedb_upload,
-                        gracedb_testing=not args.enable_production_gracedb_upload,
-                        run_snr_optimization=args.run_snr_optimization)
+evnt = LiveEventManager(args, bank)
 
 # include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
@@ -871,6 +862,7 @@ with ctx:
     maxlen = int(maxlen)
     data_reader = {ifo: StrainBuffer.from_cli(ifo, args, maxlen)
                    for ifo in ifos}
+    evnt.data_readers = data_reader
 
     # create single-detector background "estimators"
     if args.enable_single_detector_background and evnt.rank == 0:
@@ -989,14 +981,11 @@ with ctx:
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
 
-                evnt.check_coincs(list(results.keys()), best_coinc,
-                                  psds, args.low_frequency_cutoff,
-                                  data_reader, bank)
+                evnt.check_coincs(list(results.keys()), best_coinc, psds)
 
             # Check for singles
             if args.enable_single_detector_background:
-                evnt.check_singles(results, data_reader, psds,
-                                   args.low_frequency_cutoff)
+                evnt.check_singles(results, psds)
 
             gates = {ifo: data_reader[ifo].gate_params for ifo in data_reader}
 
@@ -1077,4 +1066,4 @@ if evnt.rank == 1:
         fft.fftw.export_double_wisdom_to_filename(args.fftw_output_double_wisdom_file)
 
 if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
-    pr.dump_stats('profiling_rank_{:03d}'.format(evnt.rank))
+    pr.dump_stats(f'profiling_rank_{evnt.rank:03d}')
