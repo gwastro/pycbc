@@ -49,12 +49,11 @@ def read_template_bank_param(spec_d, bankf):
         # All the templates
         tids = numpy.arange(len(bank['mass1']))
         # Get param vals
-        logging.debug('Getting %s values from bank', spec_d['param'])
+        logging.info('Getting %s values from bank', spec_d['param'])
         parvals = bankconv.get_bank_property(spec_d['param'], bank, tids)
     counts, edges = numpy.histogram(parvals, bins=spec_d['bin_edges'])
     bank_data = {'bin_edges': edges, 'tcounts': counts, 'num_t': counts.sum()}
-    logging.debug('Binned template counts:')
-    logging.debug(counts)
+    logging.info('Binned template counts: %s', counts)
 
     return bank_data
 

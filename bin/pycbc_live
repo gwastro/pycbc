@@ -71,8 +71,18 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
 
 class LiveEventManager(object):
     def __init__(self, args, bank):
-        # pick relevant arguments from CLI options
         self.low_frequency_cutoff = args.low_frequency_cutoff
+        self.bank = bank
+
+        # Figure out what we are supposed to process within the pool of MPI processes
+        self.comm = mpi.COMM_WORLD
+        self.size = self.comm.Get_size()
+        self.rank = self.comm.Get_rank()
+
+        if self.rank > 0:
+            # We are a matched-filtering process, so nothing else is needed
+            return
+
         self.path = args.output_path
         self.mc_area_args = mchirp_area.from_cli(args)
         self.padata = livepau.PAstroData(args.p_astro_spec, args.bank_file)
@@ -83,19 +93,12 @@ class LiveEventManager(object):
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
 
-        self.bank = bank
-
-        # Figure out what we are supposed to process within the pool of MPI processes
-        self.comm = mpi.COMM_WORLD
-        self.size = self.comm.Get_size()
-        self.rank = self.comm.Get_rank()
-
         # Keep track of which events have been uploaded
         self.last_few_coincs_uploaded = []
 
-        if self.run_snr_optimization and self.rank == 0:
-            # preestimate the number of CPU cores that we can afford giving to
-            # followup processes without slowing down the main search
+        if self.run_snr_optimization:
+            # preestimate the number of CPU cores that we can afford giving
+            # to followup processes without slowing down the main search
             available_cores = len(os.sched_getaffinity(0))
             bg_cores = len(tuple(itertools.combinations(ifos, 2)))
             analysis_cores = 1 + bg_cores
