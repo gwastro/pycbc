@@ -206,8 +206,6 @@ def add_osg_site(sitecat, cp):
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="getenv",
                       value="False")
-    site.add_profiles(Namespace.CONDOR, key="preserve_relative_paths",
-                      value="True")
     site.add_profiles(Namespace.CONDOR, key="+InitializeModulesEnv",
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="+SingularityCleanEnv",
