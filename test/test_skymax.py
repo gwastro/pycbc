@@ -277,6 +277,7 @@ class TestChisq(unittest.TestCase):
     def test_filtering(self):
         idx = self.idx
         jdx = self.jdx
+        # Uncomment these lines if needing to regenerate data files
         #w1 = self.wps_list[idx]
         #w2 = self.wps_list[jdx]
         #stilde = get_waveform(w1, self.low_freq_filter-1,
@@ -300,6 +301,7 @@ class TestChisq(unittest.TestCase):
                          low_frequency_cutoff=self.low_freq_filter)
         stilde /= sqrt(float(s_norm))
         stilde *= 100
+        # Uncomment these lines if needing to regenerate data files
         #hplus, hcross = get_waveform(w2, self.low_freq_filter-1,
         #                             self.sample_rate, self.filter_N,
         #                             self.sample_rate, sky_max_template=True)
