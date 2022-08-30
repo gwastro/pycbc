@@ -382,6 +382,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             self.swidth = histfile.attrs['swidth']
             self.srbmin = histfile.attrs['srbmin']
             self.srbmax = histfile.attrs['srbmax']
+            relfac = histfile.attrs['sensitivity_ratios']
 
             for ifo in self.hist_ifos:
                 weights[ifo] = histfile[ifo]['weights'][:]
@@ -471,7 +472,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                     + self.c2_size[ifo] // 2
                 self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
-        relfac = histfile.attrs['sensitivity_ratios']
         for ifo, sense in zip(self.hist_ifos, relfac):
             self.relsense[ifo] = sense
 
