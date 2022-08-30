@@ -102,10 +102,10 @@ def logsignalrateinternals_compute2detrate(
         id1 = nbinned1[idx] + c1_size / 2
         id2 = nbinned2[idx] + c2_size / 2
 
-        # Long logic block. What we basically have here are 3 IDs (relating to the
-        # time, phase and sensitivity bins). If all 3 IDs are actually in the weights
-        # file provided, find that weight and apply it. Otherwise apply the
-        # "max_penalty" parameter.
+        # For bins that exist in the signal pdf histogram, apply that pdf value,
+        # otherwise apply the "max penalty" value.
+        # The bins are specified by 3 indexes (corresponding to the time
+        # difference, phase difference and relative sensitivity dimensions).
         if (id0 > 0) and (id0 < c0_size) and (id1 > 0) and (id1 < c1_size) and (id2 > 0) and (id2 < c2_size):
             rate[ridx] = two_det_weights[id0, id1, id2]
         else:
