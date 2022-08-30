@@ -208,6 +208,7 @@ class TmpltbankTestClass(unittest.TestCase):
         maxEval = max(evalsStock)
         evalsCurr = Array(self.metricParams.evals[self.f_upper])
         evecsCurr = Array(self.metricParams.evecs[self.f_upper])
+        # Uncomment these lines to regenerate the data files
         #numpy.savetxt('newEvals.dat', evalsCurr)
         #numpy.savetxt('newEvecs.dat', evecsCurr)
         errMsg = "pycbc.tmpltbank.determine_eigen_directions has failed "
@@ -436,6 +437,7 @@ class TmpltbankTestClass(unittest.TestCase):
         fname = 'stockAnstar3D.dat'
         apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
         stockGrid = numpy.loadtxt(apy_fname)
+        # Uncomment this line to regenerate the data file
         #numpy.savetxt("new_example.dat", arrz)
         errMsg = "Calculated lattice differs from that expected."
         self.assertTrue(len(arrz) == len(stockGrid), msg=errMsg)
