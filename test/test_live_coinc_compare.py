@@ -72,7 +72,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         )
 
         # number of templates in the bank
-        self.num_templates = 500
+        self.num_templates = 10
 
         # duration of analysis segment
         analysis_chunk = 2000
@@ -81,7 +81,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         detectors = ["H1", "L1"]
 
         # number of single-detector triggers per detector per chunk
-        num_single_trigs = 1000
+        num_single_trigs = 400
 
         self.num_iterations = 15
 
