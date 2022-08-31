@@ -123,8 +123,10 @@ def logsignalrateinternals_compute2detrate(
 @cdivision(True)
 def coincbuffer_expireelements(
     float[:] cbuffer,
-    int[:] timer,
-    int time,
+    int[:] timer1,
+    int[:] timer2,
+    int time1,
+    int time2,
     int expiration,
     int length,
 ):
@@ -133,9 +135,10 @@ def coincbuffer_expireelements(
 
     keep_count = 0
     for idx in range(length):
-        if timer[idx] >= time - expiration:
+        if (timer1[idx] >= (time1 - expiration)) and (timer2[idx] >= (time2 - expiration)):
             cbuffer[keep_count] = cbuffer[idx]
-            timer[keep_count] = timer[idx]
+            timer1[keep_count] = timer1[idx]
+            timer2[keep_count] = timer2[idx]
             keep_count += 1
 
     return keep_count
