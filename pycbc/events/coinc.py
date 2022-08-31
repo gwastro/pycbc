@@ -576,16 +576,30 @@ class MultiRingBuffer(object):
             curr_pos = self.valid_ends[i]
             # Expand ring buffer size if needed
             if self.valid_ends[i] == len(self.buffer[i]):
-                self.buffer[i].resize(len(self.buffer[i]) * 2)
-                self.buffer_expire[i].resize(len(self.buffer[i]) * 2)
+                self.buffer[i] = numpy.resize(
+                    self.buffer[i],
+                    len(self.buffer[i]) * 2
+                )
+                self.buffer_expire[i] = numpy.resize(
+                    self.buffer_expire[i],
+                    len(self.buffer[i]) * 2
+                )
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
             self.valid_ends[i] = self.valid_ends[i] + 1
         self.advance_time()
 
+    def valid_slice(self, buffer_index):
+        """Return the valid slice for this buffer index"""
+        ret_slice = slice(
+            self.valid_starts[buffer_index],
+            self.valid_ends[buffer_index]
+        )
+        return ret_slice
+
     def expire_vector(self, buffer_index):
         """Return the expiration vector of a given ring buffer """
-        return self.buffer_expire[buffer_index]
+        return self.buffer_expire[buffer_index][self.valid_slice(buffer_index)]
 
     def data(self, buffer_index):
         """Return the data vector for a given ring buffer"""
@@ -607,12 +621,7 @@ class MultiRingBuffer(object):
             self.valid_ends[buffer_index] -= val_start
             self.valid_starts[buffer_index] = 0
 
-        ret_slice = slice(
-            self.valid_starts[buffer_index],
-            self.valid_ends[buffer_index]
-        )
-
-        return self.buffer[buffer_index][ret_slice]
+        return self.buffer[buffer_index][self.valid_slice(buffer_index)]
 
 
 class CoincExpireBuffer(object):
