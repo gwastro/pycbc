@@ -350,20 +350,45 @@ def convert_to_process_params_dict(opt):
             setattr(opt, arg, new_val)
     return vars(opt)
 
+def _positive_type(s, dtype=None):
+    """
+    Ensure argument is positive and convert type to dtype
+
+    This is for the functions below to wrap to avoid code duplication.
+    """
+    assert(dtype is not None)
+    err_msg = f"Input must be a positive {dtype}, not {s}"
+    try:
+        value = dtype(s)
+    except ValueError:
+        raise argparse.ArgumentTypeError(err_msg)
+    if value <= 0:
+        raise argparse.ArgumentTypeError(err_msg)
+    return value
+
+def _nonnegative_type(s, dtype=None):
+    """
+    Ensure argument is positive or zero and convert type to dtype
+
+    This is for the functions below to wrap to avoid code duplication.
+    """
+    assert(dtype is not None)
+    err_msg = f"Input must be either a positive or zero {dtype}, not {s}"
+    try:
+        value = dtype(s)
+    except ValueError:
+        raise argparse.ArgumentTypeError(err_msg)
+    if value < 0:
+        raise argparse.ArgumentTypeError(err_msg)
+    return value
+
 def positive_float(s):
     """
     Ensure argument is a positive real number and return it as float.
 
     To be used as type in argparse arguments.
     """
-    err_msg = "must be a positive number, not %r" % s
-    try:
-        value = float(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
-    if value <= 0:
-        raise argparse.ArgumentTypeError(err_msg)
-    return value
+    _positive_type(s, dtype=float)
 
 def nonnegative_float(s):
     """
@@ -371,11 +396,22 @@ def nonnegative_float(s):
 
     To be used as type in argparse arguments.
     """
-    err_msg = "must be either positive or zero, not %r" % s
-    try:
-        value = float(s)
-    except ValueError:
-        raise argparse.ArgumentTypeError(err_msg)
-    if value < 0:
-        raise argparse.ArgumentTypeError(err_msg)
-    return value
+    _nonnegative_type(s, dtype=float)
+
+def positive_int(s):
+    """
+    Ensure argument is a positive integer and return it as int.
+
+    To be used as type in argparse arguments.
+    """
+    _positive_type(s, dtype=int)
+
+def nonnegative_float(s):
+    """
+    Ensure argument is a positive integer or zero and return it as int.
+
+    To be used as type in argparse arguments.
+    """
+    _nonnegative_type(s, dtype=int)
+
+    
