@@ -1010,6 +1010,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             [self.ifos[1], self.ifos[0]],
             [[0, -1], [-1, 0]]
         ):
+            if fixed_ifo not in ifos:
+                # This ifo is not online right now, so no new triggers to add
+                # involving fixed_ifo
+                continue
             # Find newly added triggers in fixed_ifo
             trigs = results[fixed_ifo]
             for i in range(len(trigs['end_time'])):
