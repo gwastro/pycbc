@@ -252,8 +252,11 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     inv_asd[kmin:N//2] = (1.0 / psd[kmin:N//2]) ** 0.5
     if not USE_CACHING_FOR_INV_SPEC_TRUNC:
-        q = TimeSeries(numpy.zeros(N), delta_t=(N / psd.delta_f), \
-            dtype=real_same_precision_as(psd))
+        q = TimeSeries(
+            numpy.zeros(N),
+            delta_t=(N / psd.delta_f),
+            dtype=real_same_precision_as(psd)
+        )
         ifft(inv_asd, q)
     else:
         q = execute_cached_ifft(inv_asd, copy_output=False,
