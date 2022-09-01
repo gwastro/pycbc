@@ -1049,7 +1049,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                     sngls_list,
                     slide,
                     self.timeslide_interval,
-                    to_shift
+                    shift_vec
                 )
                 # Store data about new triggers: slide index, stat value and
                 # times.
