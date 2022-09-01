@@ -1009,7 +1009,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # shift) coincs with all currently stored triggers in the other ifo. 
         # Do this by keeping the ifo with new triggers fixed and time shifting
         # the other ifo. The list 'shift_vec' must be in the same order as
-        # self.ifos and contain -1 for the shifted ifo / 0 for the fixed_ifo. 
+        # self.ifos and contain -1 for the shift_ifo / 0 for the fixed_ifo. 
         for fixed_ifo, shift_ifo, shift_vec in zip(
             [self.ifos[0], self.ifos[1]],
             [self.ifos[1], self.ifos[0]],
@@ -1026,7 +1026,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 trig_time = trigs['end_time'][i]
                 template = trigs['template_id'][i]
 
-                # Background triggers in shift_ifo
+                # Get current shift_ifo triggers in the same template 
                 times = self.singles[shift_ifo].data(template)['end_time']
                 stats = self.singles[shift_ifo].data(template)['stat']
 
