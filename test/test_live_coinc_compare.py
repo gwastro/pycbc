@@ -6,6 +6,7 @@ import numpy as np
 # Some duplicate imports, but I want to copy code without changing it!
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 import cProfile
+from astropy.utils.data import download_file
 from pycbc import gps_now
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 import pycbc.events.coinc
@@ -56,10 +57,13 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         #                     level=logging.INFO)
 
         # simulate the `args` object we normally get from the command line arguments
+
+        url = 'https://github.com/gwastro/pycbc-config/raw/master/'
+        url += 'test_data_files/{}-PTA_HISTOGRAM.hdf'
         stat_file_paths = [
-            "/home/tito.canton/projects/pycbc/live/o4_preparation/pta_files/H1L1-PTA_HISTOGRAM_O4.hdf",
-            "/home/tito.canton/projects/pycbc/live/o4_preparation/pta_files/H1V1-PTA_HISTOGRAM_O4.hdf",
-            "/home/tito.canton/projects/pycbc/live/o4_preparation/pta_files/L1V1-PTA_HISTOGRAM_O4.hdf"
+            download_file(url.format("H1L1"), cache=True),
+            download_file(url.format("H1V1"), cache=True),
+            download_file(url.format("L1V1"), cache=True)
         ]
         args = SimpleNamespace(
             sngl_ranking="snr",
