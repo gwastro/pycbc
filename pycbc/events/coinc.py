@@ -1005,11 +1005,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # Calculate all the permutations of coincident triggers for each
         # new single detector trigger collected
         # Currently only two detectors are supported.
-        # For each ifo, check its newly added triggers for (zerolag and time 
-        # shift) coincs with all currently stored triggers in the other ifo. 
+        # For each ifo, check its newly added triggers for (zerolag and time
+        # shift) coincs with all currently stored triggers in the other ifo.
         # Do this by keeping the ifo with new triggers fixed and time shifting
         # the other ifo. The list 'shift_vec' must be in the same order as
-        # self.ifos and contain -1 for the shift_ifo / 0 for the fixed_ifo. 
+        # self.ifos and contain -1 for the shift_ifo / 0 for the fixed_ifo.
         for fixed_ifo, shift_ifo, shift_vec in zip(
             [self.ifos[0], self.ifos[1]],
             [self.ifos[1], self.ifos[0]],
@@ -1026,14 +1026,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 trig_time = trigs['end_time'][i]
                 template = trigs['template_id'][i]
 
-                # Get current shift_ifo triggers in the same template 
+                # Get current shift_ifo triggers in the same template
                 times = self.singles[shift_ifo].data(template)['end_time']
                 stats = self.singles[shift_ifo].data(template)['stat']
 
                 # Perform coincidence. i1 is the list of trigger indices in the
                 # shift_ifo which make coincs, slide is the corresponding slide
                 # index.
-                # (The second output would just be a list of zeroes as we only 
+                # (The second output would just be a list of zeroes as we only
                 # have one trigger in the fixed_ifo.)
                 i1, _, slide = time_coincidence(times,
                                  numpy.array(trig_time, ndmin=1,
@@ -1042,9 +1042,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                  self.timeslide_interval)
 
                 # Make a copy of the fixed ifo trig_stat for each coinc.
-                # NB for some statistics the "stat" entry holds more than just a 
-                # ranking number. E.g. for the phase time consistency test, it
-                # must also contain the phase, time and sensitivity.
+                # NB for some statistics the "stat" entry holds more than just
+                # a ranking number. E.g. for the phase time consistency test,
+                # it must also contain the phase, time and sensitivity.
                 trig_stat = numpy.resize(trig_stat, len(i1))
 
                 # Force data into form needed by stat.py and then compute the
@@ -1198,7 +1198,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self._add_singles_to_buffer(results, ifos=valid_ifos)
 
         # Calculate zerolag and background coincidences
-        _, coinc_results = self._find_coincs(results, ifos=valid_ifos)
+        _, coinc_results = self._find_coincs(results, valid_ifos=valid_ifos)
 
         # record if a coinc is possible in this chunk
         if len(valid_ifos) == 2:
