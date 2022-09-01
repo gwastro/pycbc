@@ -29,6 +29,7 @@ from __future__ import division
 import os
 import math
 import numpy
+from astropy.utils.data import download_file
 import pycbc.tmpltbank
 # Old LigoLW output functions are not imported at tmpltbank level
 import pycbc.tmpltbank.bank_output_utils as llw_output
@@ -50,6 +51,8 @@ parse_args_cpu_only("Template bank module")
 
 import argparse
 parser = argparse.ArgumentParser()
+
+DATA_FILE_URL = 'https://github.com/gwastro/pycbc-config/raw/master/test_data_files/{}'
 
 def update_mass_parameters(tmpltbank_class):
     """
@@ -98,13 +101,6 @@ def update_mass_parameters(tmpltbank_class):
 
 class TmpltbankTestClass(unittest.TestCase):
     def setUp(self):
-        # Where are my data files?
-        if os.path.isfile('test/data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'test/data/'
-        elif os.path.isfile('data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'data/'
-        else:
-            self.assertTrue(False, msg="Cannot find data files!")
 
         self.deltaF = 0.1
         self.f_low = 15
@@ -137,12 +133,17 @@ class TmpltbankTestClass(unittest.TestCase):
         self.segLen = 1./self.deltaF
         self.psdSize = int(self.segLen * self.sampleRate / 2.) + 1
 
-        self.psd = pycbc.psd.from_txt('%sZERO_DET_high_P.txt' %(self.dataDir),\
-                self.psdSize, self.deltaF, self.f_low, is_asd_file=True)
+        apy_fname = download_file(
+            DATA_FILE_URL.format('ZERO_DET_high_P.txt'),
+            cache=True
+        )
+
+        self.psd = pycbc.psd.from_txt(apy_fname, self.psdSize, self.deltaF,
+                                      self.f_low, is_asd_file=True)
         match_psd_size = int(256 * self.sampleRate / 2.) + 1
-        self.psd_for_match = pycbc.psd.from_txt\
-            ('%sZERO_DET_high_P.txt' %(self.dataDir), match_psd_size,
-             1./256., self.f_low, is_asd_file=True)
+        self.psd_for_match = pycbc.psd.from_txt(apy_fname, match_psd_size,
+                                                1./256., self.f_low,
+                                                is_asd_file=True)
 
         metricParams = pycbc.tmpltbank.metricParameters(self.pnOrder,\
                          self.f_low, self.f_upper, self.deltaF, self.f0)
@@ -196,13 +197,20 @@ class TmpltbankTestClass(unittest.TestCase):
         self.xis = vals
 
     def test_eigen_directions(self):
-        evalsStock = Array(numpy.loadtxt('%sstockEvals.dat'%(self.dataDir)))
-        evecsStock = Array(numpy.loadtxt('%sstockEvecs.dat'%(self.dataDir)))
+        fname='stockEvals.dat'
+        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        evalsStock = Array(numpy.loadtxt(apy_fname))
+
+        fname='stockEvecs.dat'
+        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        evecsStock = Array(numpy.loadtxt(apy_fname))
+
         maxEval = max(evalsStock)
         evalsCurr = Array(self.metricParams.evals[self.f_upper])
         evecsCurr = Array(self.metricParams.evecs[self.f_upper])
-        numpy.savetxt('newEvals.dat', evalsCurr)
-        numpy.savetxt('newEvecs.dat', evecsCurr)
+        # Uncomment these lines to regenerate the data files
+        #numpy.savetxt('newEvals.dat', evalsCurr)
+        #numpy.savetxt('newEvecs.dat', evecsCurr)
         errMsg = "pycbc.tmpltbank.determine_eigen_directions has failed "
         errMsg += "sanity check."
         evalsDiff = abs(evalsCurr - evalsStock)/maxEval
@@ -405,7 +413,9 @@ class TmpltbankTestClass(unittest.TestCase):
     def test_chirp_params(self):
         chirps=pycbc.tmpltbank.get_chirp_params(2.2, 1.8, 0.2, 0.3,
                               self.metricParams.f0, self.metricParams.pnOrder)
-        stockChirps = numpy.loadtxt('%sstockChirps.dat'%(self.dataDir))
+        fname = 'stockChirps.dat'
+        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        stockChirps = numpy.loadtxt(apy_fname)
         diff = (chirps - stockChirps) / stockChirps
         errMsg = "Calculated chirp params differ from that expected."
         self.assertTrue( not (abs(diff) > 1E-4).any(), msg=errMsg)
@@ -413,7 +423,9 @@ class TmpltbankTestClass(unittest.TestCase):
     def test_hexagonal_placement(self):
         arrz = pycbc.tmpltbank.generate_hexagonal_lattice(10, 0, 10, 0, 0.03)
         arrz = numpy.array(arrz)
-        stockGrid = numpy.loadtxt("%sstockHexagonal.dat"%(self.dataDir))
+        fname = 'stockHexagonal.dat'
+        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        stockGrid = numpy.loadtxt(apy_fname)
         diff = arrz - stockGrid
         errMsg = "Calculated lattice differs from that expected."
         self.assertTrue( not (diff > 1E-4).any(), msg=errMsg)
@@ -422,8 +434,11 @@ class TmpltbankTestClass(unittest.TestCase):
         arrz = pycbc.tmpltbank.generate_anstar_3d_lattice(0, 10, 0, 10, 0, \
                                                           10, 0.03)
         arrz = numpy.array(arrz)
-        stockGrid = numpy.loadtxt("%sstockAnstar3D.dat"%(self.dataDir))
-        numpy.savetxt("new_example.dat", arrz)
+        fname = 'stockAnstar3D.dat'
+        apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
+        stockGrid = numpy.loadtxt(apy_fname)
+        # Uncomment this line to regenerate the data file
+        #numpy.savetxt("new_example.dat", arrz)
         errMsg = "Calculated lattice differs from that expected."
         self.assertTrue(len(arrz) == len(stockGrid), msg=errMsg)
         diff = arrz - stockGrid
