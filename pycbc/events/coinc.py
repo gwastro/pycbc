@@ -969,7 +969,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             updated_indices[ifo] = trigs['template_id']
         return updated_indices
 
-    def _find_coincs(self, results, ifos):
+    def _find_coincs(self, results, valid_ifos):
         """Look for coincs within the set of single triggers
 
         Parameters
@@ -978,6 +978,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
             'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
+        valid_ifos: list of strs
+            List of ifos for which new triggers might exist. This must be a
+            subset of self.ifos. If an ifo is in self.ifos but not in this list
+            it will be because the ifo is down, or the data has been flagged
+            as "bad".
 
         Returns
         -------
@@ -1010,7 +1015,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             [self.ifos[1], self.ifos[0]],
             [[0, -1], [-1, 0]]
         ):
-            if fixed_ifo not in ifos:
+            if fixed_ifo not in valid_ifos:
                 # This ifo is not online right now, so no new triggers to add
                 # involving fixed_ifo
                 continue
@@ -1085,7 +1090,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         cstat = numpy.concatenate(cstat)
         template_ids = numpy.concatenate(template_ids).astype(numpy.int32)
-        for ifo in ifos:
+        for ifo in valid_ifos:
             trigger_ids[ifo] = numpy.concatenate(trigger_ids[ifo]).astype(numpy.int32)
 
         # cluster the triggers we've found
@@ -1113,11 +1118,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 single_expire[ifo] = numpy.concatenate(single_expire[ifo])
                 single_expire[ifo] = single_expire[ifo][cidx][bkg_idx]
 
-            self.coincs.add(cstat[cidx][bkg_idx], single_expire, ifos)
+            self.coincs.add(cstat[cidx][bkg_idx], single_expire, valid_ifos)
             num_zerolag = zerolag_idx.sum()
             num_background = bkg_idx.sum()
-        elif len(ifos) > 0:
-            self.coincs.increment(ifos)
+        elif len(valid_ifos) > 0:
+            self.coincs.increment(valid_ifos)
 
         ####################################Collect coinc results for saving
         coinc_results = {}
