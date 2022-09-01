@@ -413,4 +413,3 @@ def nonnegative_int(s):
     To be used as type in argparse arguments.
     """
     return _nonnegative_type(s, dtype=int)
-
