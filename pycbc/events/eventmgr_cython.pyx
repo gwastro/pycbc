@@ -66,6 +66,9 @@ def logsignalrateinternals_computepsignalbins(
     for idx in range(length):
         ridx = rtype[idx]
         pdif[idx] = (pref[ridx] - p[ridx]) % (M_PI * 2)
+        if pdif[idx] < 0:
+            # C modulus operator is not same as python's, correct for this
+            pdif[idx] += (M_PI * 2)
         tdif[idx] = shift[ridx] * to_shift_ref + tref[ridx] - shift[ridx] * to_shift_ifo - t[ridx]
         sdif[idx] = (s[ridx] * sense * sqrt(sigref[ridx])) / (sref[ridx] * senseref * sqrt(sig[ridx]))
 
