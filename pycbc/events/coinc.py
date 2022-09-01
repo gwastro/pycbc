@@ -1058,7 +1058,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 ctimes[shift_ifo].append(times[i1])
                 ctimes[fixed_ifo].append(numpy.zeros(len(c),
                                          dtype=numpy.float64))
-                ctimes[ifo][-1].fill(trig_time)
+                ctimes[fixed_ifo][-1].fill(trig_time)
 
                 # As background triggers are removed after a certain time, we
                 # need to log when this will be for new background triggers.
