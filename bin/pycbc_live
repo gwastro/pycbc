@@ -30,6 +30,7 @@ from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingle
 from pycbc.io.live import CandidateForGraceDB
 from pycbc.io.hdf import recursively_save_dict_contents_to_group
+from pycbc.types import positive_int
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
@@ -37,9 +38,12 @@ from pycbc.population import live_pastro_utils as livepau
 from pycbc import mchirp_area
 from pycbc.detector import ppdets
 from pycbc.filter import resample
+from pycbc.psd import estimate
 
-# Set this to use cached class-based FFTs in the resample module
+# Use cached class-based FFTs in the resample and estimate module
 resample.USE_CACHING_FOR_LFILTER = True
+estimate.USE_CACHING_FOR_WELCH_FFTS = True
+estimate.USE_CACHING_FOR_INV_SPEC_TRUNC = True
 
 try:
     from setproctitle import setproctitle
@@ -630,6 +634,10 @@ parser.add_argument('--psd-segment-length', type=int, required=True,
                     help="Length in seconds of each PSD segment")
 parser.add_argument('--psd-inverse-length', type=float,
                     help="Length in time for the equivalent FIR filter")
+parser.add_argument('--psd-recompute-length', type=positive_int, default=1,
+                    help="If given only recompute the PSD after this number of "
+                         "analysis chunks, whose length is set by the option "
+                         "--analysis-chunk.")
 parser.add_argument('--trim-padding', type=float, default=0.25,
                     help="Padding around the overwhitened analysis block")
 parser.add_argument("--enable-bank-start-frequency", action='store_true',
@@ -914,6 +922,8 @@ with ctx:
     # main analysis loop
     data_end = lambda: data_reader[tuple(data_reader.keys())[0]].end_time
     last_bg_dump_time = int(data_end())
+    psd_count = {ifo:0 for ifo in ifos}
+
     while data_end() < args.end_time:
         t1 = pycbc.gps_now()
         logging.info('Analyzing from %s', data_end())
@@ -923,10 +933,17 @@ with ctx:
 
         for ifo in ifos:
             results[ifo] = False
-            status = data_reader[ifo].advance(valid_pad, timeout=args.frame_read_timeout)
-
-            if status is True:
+            status = data_reader[ifo].advance(
+                valid_pad,
+                timeout=args.frame_read_timeout
+            )
+            if status and psd_count[ifo] == 0:
                 status = data_reader[ifo].recalculate_psd()
+                psd_count[ifo] = args.psd_recompute_length - 1
+            elif not status:
+                psd_count[ifo] = 0
+            else:
+                psd_count[ifo] -= 1
 
             if data_reader[ifo].psd is not None:
                 dist = data_reader[ifo].psd.dist
