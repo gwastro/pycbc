@@ -998,7 +998,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # new single detector trigger collected
         # For now only two-detectors are permitted, alterations would be needed
         # to support > two detectors.
-        # We need to check all newly added triggers against previously added 
+        # We need to check all newly added triggers against previously added
         # background. So first check new triggers in ifo[0] against ifo[1]
         # background and then vice-versa. fixed_ifo is the one we don't slide
         # (the one where the new triggers come from), shift_ifo is the slid one
