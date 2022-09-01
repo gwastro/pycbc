@@ -628,7 +628,7 @@ parser.add_argument('--psd-inverse-length', type=float,
                     help="Length in time for the equivalent FIR filter")
 parser.add_argument('--psd-recompute-length', type=positive_int, default=1,
                     help="If given only recompute the PSD after this number of "
-                         "data blocks. Data block length is set by the option "
+                         "analysis chunks, whose length is set by the option "
                          "--analysis-chunk.")
 parser.add_argument('--trim-padding', type=float, default=0.25,
                     help="Padding around the overwhitened analysis block")
