@@ -996,32 +996,54 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # Calculate all the permutations of coincident triggers for each
         # new single detector trigger collected
-        for ifo in ifos:
-            trigs = results[ifo]
-
-            oifo = self.ifos[1] if self.ifos[0] == ifo else self.ifos[0]
-
+        # For now only two-detectors are permitted, alterations would be needed
+        # to support > two detectors.
+        # We need to check all newly added triggers against previously added 
+        # background. So first check new triggers in ifo[0] against ifo[1]
+        # background and then vice-versa. fixed_ifo is the one we don't slide
+        # (the one where the new triggers come from), shift_ifo is the slid one
+        # (where background comes from), shift_vec should be -1 for the shifted
+        # ifo and 0 for the fixed_ifo. It must be in the same order as
+        # self.ifos
+        for fixed_ifo, shift_ifo, shift_vec in zip(
+            [self.ifos[0], self.ifos[1]],
+            [self.ifos[1], self.ifos[0]],
+            [[0, -1], [-1, 0]]
+        ):
+            # Find newly added triggers in fixed_ifo
+            trigs = results[fixed_ifo]
             for i in range(len(trigs['end_time'])):
+                # Loop over all newly added triggers in fixed_ifo. Note we do
+                # this one trigger at a time.
                 trig_stat = trigs['stat'][i]
                 trig_time = trigs['end_time'][i]
                 template = trigs['template_id'][i]
 
-                times = self.singles[oifo].data(template)['end_time']
-                stats = self.singles[oifo].data(template)['stat']
+                # Background triggers in shift_ifo
+                times = self.singles[shift_ifo].data(template)['end_time']
+                stats = self.singles[shift_ifo].data(template)['stat']
 
+                # Perform coincidence. i1 is the list of trigger indexs in the
+                # shift_ifo, which found a background trigger. slide is the
+                # corresponding slide index. The second output is not useful
+                # here as we only have one trigger from fixed_ifo (it would
+                # just be a list of zeroes).
                 i1, _, slide = time_coincidence(times,
                                  numpy.array(trig_time, ndmin=1,
                                  dtype=numpy.float64),
                                  self.time_window,
                                  self.timeslide_interval)
+                # Here the resize is *repeating* the value of trig_stat.
+                # Note that for some statistics the "stat" entry holds more
+                # information than just a ranking number. For e.g. for the
+                # phase time consistency test, it must contain the phase, time
+                # and sensitivity as well.
                 trig_stat = numpy.resize(trig_stat, len(i1))
-                sngls_list = [[ifo, trig_stat],
-                              [oifo, stats[i1]]]
-                # This can only use 2-det coincs at present
-                if oifo == self.ifos[0]:
-                    to_shift = [-1, 0]
-                else:
-                    to_shift = [0, -1]
+
+                # Force data into form needed by stat.py and then compute the
+                # ranking statistic values.
+                sngls_list = [[fixed_ifo, trig_stat],
+                              [shift_ifo, stats[i1]]]
 
                 c = self.stat_calculator.rank_stat_coinc(
                     sngls_list,
@@ -1029,24 +1051,33 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                     self.timeslide_interval,
                     to_shift
                 )
+                # Store data about new triggers: slide index, stat value and
+                # times.
                 offsets.append(slide)
                 cstat.append(c)
-                ctimes[oifo].append(times[i1])
-                ctimes[ifo].append(numpy.zeros(len(c), dtype=numpy.float64))
+                ctimes[shift_ifo].append(times[i1])
+                ctimes[fixed_ifo].append(numpy.zeros(len(c),
+                                         dtype=numpy.float64))
                 ctimes[ifo][-1].fill(trig_time)
 
-                single_expire[oifo].append(self.singles[oifo].expire_vector(template)[i1])
-                single_expire[ifo].append(numpy.zeros(len(c),
-                                          dtype=numpy.int32))
-                single_expire[ifo][-1].fill(self.singles[ifo].time - 1)
+                # As background triggers are removed after a certain time, we
+                # need to log when this will be for new background triggers.
+                single_expire[shift_ifo].append(
+                    self.singles[shift_ifo].expire_vector(template)[i1]
+                )
+                single_expire[fixed_ifo].append(numpy.zeros(len(c),
+                                                dtype=numpy.int32))
+                single_expire[fixed_ifo][-1].fill(
+                    self.singles[fixed_ifo].time - 1
+                )
 
                 # save the template and trigger ids to keep association
                 # to singles. The trigger was just added so it must be in
                 # the last position we mark this with -1 so the
                 # slicing picks the right point
                 template_ids.append(numpy.zeros(len(c)) + template)
-                trigger_ids[oifo].append(i1)
-                trigger_ids[ifo].append(numpy.zeros(len(c)) - 1)
+                trigger_ids[shift_ifo].append(i1)
+                trigger_ids[fixed_ifo].append(numpy.zeros(len(c)) - 1)
 
         cstat = numpy.concatenate(cstat)
         template_ids = numpy.concatenate(template_ids).astype(numpy.int32)
