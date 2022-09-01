@@ -356,7 +356,7 @@ def _positive_type(s, dtype=None):
 
     This is for the functions below to wrap to avoid code duplication.
     """
-    assert(dtype is not None)
+    assert dtype is not None
     err_msg = f"Input must be a positive {dtype}, not {s}"
     try:
         value = dtype(s)
@@ -372,7 +372,7 @@ def _nonnegative_type(s, dtype=None):
 
     This is for the functions below to wrap to avoid code duplication.
     """
-    assert(dtype is not None)
+    assert dtype is not None
     err_msg = f"Input must be either a positive or zero {dtype}, not {s}"
     try:
         value = dtype(s)
@@ -388,7 +388,7 @@ def positive_float(s):
 
     To be used as type in argparse arguments.
     """
-    _positive_type(s, dtype=float)
+    return _positive_type(s, dtype=float)
 
 def nonnegative_float(s):
     """
@@ -396,7 +396,7 @@ def nonnegative_float(s):
 
     To be used as type in argparse arguments.
     """
-    _nonnegative_type(s, dtype=float)
+    return _nonnegative_type(s, dtype=float)
 
 def positive_int(s):
     """
@@ -404,14 +404,13 @@ def positive_int(s):
 
     To be used as type in argparse arguments.
     """
-    _positive_type(s, dtype=int)
+    return _positive_type(s, dtype=int)
 
-def nonnegative_float(s):
+def nonnegative_int(s):
     """
     Ensure argument is a positive integer or zero and return it as int.
 
     To be used as type in argparse arguments.
     """
-    _nonnegative_type(s, dtype=int)
+    return _nonnegative_type(s, dtype=int)
 
-    
