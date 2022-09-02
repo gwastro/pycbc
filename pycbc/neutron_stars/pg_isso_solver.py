@@ -30,7 +30,7 @@ from . import NS_DATA_DIRECTORY
 
 
 def ISCO_eq(r, chi):
-    """Polynomial that enables the calculation of the Kerr innermost
+    r"""Polynomial that enables the calculation of the Kerr innermost
     stable circular orbit (ISCO) radius via its roots,
 
     .. math:: Z(r) = [r (r-6)]^2 - \chi^2 [2r (3r+14) - 9 \chi^2]\,.
