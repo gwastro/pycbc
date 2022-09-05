@@ -21,9 +21,9 @@ def insert_args(parser):
                                              "source probabilities of a "
                                              "candidate event using the snr, "
                                              "mchirp, and effective distance.")
-    mchirp_group.add_argument('--src-class-mass-range', type=float, nargs=2,
-                              metavar=('MIN_M2', 'MAX_M1'),
-                              default=[1.0, 45.0],
+    mchirp_group.add_argument('--src-class-mass-ranges', type=float, nargs=3,
+                              metavar=('MIN_M2', 'MAX_NS', 'MAX_M1'),
+                              default=[1.0, 3.0, 45.0],
                               help="Minimum and maximum values for the mass "
                                    "of the binary components, used as limits "
                                    "of the mass plane when computing the area "
@@ -64,16 +64,30 @@ def insert_args(parser):
 
 
 def from_cli(args):
-    return {'mass_limits': {'max_m1': args.src_class_mass_range[1],
-                            'min_m2': args.src_class_mass_range[0]},
-            'mass_bdary': {'ns_max': args.src_class_mass_gap[0],
-                           'gap_max': args.src_class_mass_gap[1]},
+    if args.src_class_mass_gap:
+        return {'mass_limits': {'max_m1': args.src_class_mass_ranges[2],
+                                'min_m2': args.src_class_mass_ranges[0]},
+                'mass_bdary': {'ns_max': args.src_class_mass_gap[0],
+                               'gap_max': args.src_class_mass_gap[1]},
+                'estimation_coeff': {'a0': args.src_class_eff_to_lum_distance,
+                                     'b0': args.src_class_lum_distance_to_delta[0],
+                                     'b1': args.src_class_lum_distance_to_delta[1],
+                                     'm0': args.src_class_mchirp_to_delta},
+                'mass_gap': True,
+                'mass_gap_separate': args.src_class_mass_gap_separate,
+                'lal_cosmology': args.src_class_lal_cosmology}
+    return {'mass_limits': {'max_m1': args.src_class_mass_ranges[2],
+                            'min_m2': args.src_class_mass_ranges[0]},
+            'mass_bdary': {'ns_max': args.src_class_mass_ranges[1],
+                           'gap_max': args.src_class_mass_ranges[1]},
             'estimation_coeff': {'a0': args.src_class_eff_to_lum_distance,
                                  'b0': args.src_class_lum_distance_to_delta[0],
                                  'b1': args.src_class_lum_distance_to_delta[1],
                                  'm0': args.src_class_mchirp_to_delta},
-            'mass_gap': args.src_class_mass_gap_separate,
+            'mass_gap': False,
+            'mass_gap_separate': args.src_class_mass_gap_separate,
             'lal_cosmology': args.src_class_lal_cosmology}
+    
 
 
 def redshift_estimation(distance, distance_std, lal_cosmology):
@@ -168,7 +182,7 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
     return area
 
 
-def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
+def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap, mass_gap_separate):
     """Computes the area inside the lines of the second component mass as a
     function of the first component mass for the two extreme values
     of mchirp: mchirp +/- mchirp_uncertainty, for each region of the source
@@ -189,7 +203,7 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
     agns = get_area(trig_mc, ns_max, m2_min, ns_max, gap_max)
     abns = get_area(trig_mc, 'diagonal', m2_min, m2_min, ns_max)
 
-    if mass_gap:
+    if mass_gap_separate:
         return {
             "BNS": abns,
             "GNS": agns,
@@ -198,11 +212,17 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
             "BHG": abhg,
             "BBH": abbh
             }
+    if mass_gap:
+        return {
+            "BNS": abns,
+            "NSBH": ansbh,
+            "BBH": abbh,
+            "Mass Gap": agns + agg + abhg
+            }
     return {
         "BNS": abns,
         "NSBH": ansbh,
-        "BBH": abbh,
-        "Mass Gap": agns + agg + abhg
+        "BBH": abbh
         }
 
 
@@ -224,6 +244,7 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     z = redshift_estimation(dist_estimation, dist_std_estimation,
                             src_args['lal_cosmology'])
     mass_gap = src_args['mass_gap']
+    mass_gap_separate = src_args['mass_gap_separate']
 
     # If the mchirp is greater than the mchirp corresponding to two masses
     # equal to the maximum mass, the probability for BBH is 100%.
@@ -233,20 +254,24 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     mc_min = mass_limits['min_m2'] / (2 ** 0.2)
 
     if trig_mc_det['central'] > mc_max * (1 + z['central']):
-        if mass_gap:
+        if mass_gap_separate:
             probabilities = {"BNS": 0.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
                              "BHG": 0.0, "BBH": 1.0}
-        else:
+        elif mass_gap:
             probabilities = {"BNS": 0.0, "NSBH": 0.0, "BBH": 1.0,
                              "Mass Gap": 0.0}
+        else:
+            probabilities = {"BNS": 0.0, "NSBH": 0.0, "BBH": 1.0}
 
     elif trig_mc_det['central'] < mc_min * (1 + z['central']):
-        if mass_gap:
+        if mass_gap_separate:
             probabilities = {"BNS": 1.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
                              "BHG": 0.0, "BBH": 0.0}
-        else:
+        elif mass_gap:
             probabilities = {"BNS": 1.0, "NSBH": 0.0, "BBH": 0.0,
                              "Mass Gap": 0.0}
+        else:
+            probabilities = {"BNS": 1.0, "NSBH": 0.0, "BBH": 0.0}
 
     else:
         areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap)
