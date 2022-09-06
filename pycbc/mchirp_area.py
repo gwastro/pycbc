@@ -22,19 +22,20 @@ def insert_args(parser):
                                              "candidate event using the snr, "
                                              "mchirp, and effective distance.")
     mchirp_group.add_argument('--src-class-mass-ranges', type=float, nargs=3,
-                              metavar=('MIN_M2', 'MAX_NS', 'MAX_M1'),
+                              metavar=('MIN_M2', 'MAX_M1', 'MAX_NS'),
                               default=[1.0, 3.0, 45.0],
                               help="Minimum and maximum values for the mass "
-                                   "of the binary components, used as limits "
-                                   "of the mass plane when computing the area "
-                                   "corresponding to different CBC sources.")
-    mchirp_group.add_argument('--src-class-mass-gap', type=float, nargs=2,
-                              metavar=('MAX_NS', 'MIN_BH'), default=[3.0, 5.0],
-                              help="Limits of the mass gap, that correspond "
-                                   "to the maximum mass of a neutron star "
-                                   "and the minimum mass of a black hole. "
-                                   "Used as limits of integration of the "
-                                   "different CBC regions.")
+                                   "of the binary components, and maximum mass "
+                                   "of a neutron star, used as limits "
+                                   "when computing the area corresponding"
+                                   "to different CBC sources.")
+    mchirp_group.add_argument('--src-class-mass-gap-max', type=float,
+                              metavar=('MAX_GAP'),
+                              help="Upper limit of the mass gap, that corresponds "
+                                   "to the minimum mass of a black hole. "
+                                   "Used as limit of integration of the "
+                                   "different CBC regions when considering "
+                                   "the MassGap category.")
     mchirp_group.add_argument('--src-class-mchirp-to-delta', type=float,
                               metavar='m0', required=True,
                               help='Coefficient to estimate the value of the '
@@ -64,11 +65,11 @@ def insert_args(parser):
 
 
 def from_cli(args):
-    if args.src_class_mass_gap:
-        return {'mass_limits': {'max_m1': args.src_class_mass_ranges[2],
+    if args.src_class_mass_gap_max:
+        return {'mass_limits': {'max_m1': args.src_class_mass_ranges[1],
                                 'min_m2': args.src_class_mass_ranges[0]},
-                'mass_bdary': {'ns_max': args.src_class_mass_gap[0],
-                               'gap_max': args.src_class_mass_gap[1]},
+                'mass_bdary': {'ns_max': args.src_class_mass_ranges[2],
+                               'gap_max': args.src_class_mass_gap_max},
                 'estimation_coeff': {'a0': args.src_class_eff_to_lum_distance,
                                      'b0': args.src_class_lum_distance_to_delta[0],
                                      'b1': args.src_class_lum_distance_to_delta[1],
@@ -76,10 +77,10 @@ def from_cli(args):
                 'mass_gap': True,
                 'mass_gap_separate': args.src_class_mass_gap_separate,
                 'lal_cosmology': args.src_class_lal_cosmology}
-    return {'mass_limits': {'max_m1': args.src_class_mass_ranges[2],
+    return {'mass_limits': {'max_m1': args.src_class_mass_ranges[1],
                             'min_m2': args.src_class_mass_ranges[0]},
-            'mass_bdary': {'ns_max': args.src_class_mass_ranges[1],
-                           'gap_max': args.src_class_mass_ranges[1]},
+            'mass_bdary': {'ns_max': args.src_class_mass_ranges[2],
+                           'gap_max': args.src_class_mass_ranges[2]},
             'estimation_coeff': {'a0': args.src_class_eff_to_lum_distance,
                                  'b0': args.src_class_lum_distance_to_delta[0],
                                  'b1': args.src_class_lum_distance_to_delta[1],
