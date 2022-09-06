@@ -203,16 +203,16 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap, mass_gap_separ
     agns = get_area(trig_mc, ns_max, m2_min, ns_max, gap_max)
     abns = get_area(trig_mc, 'diagonal', m2_min, m2_min, ns_max)
 
-    if mass_gap_separate:
-        return {
-            "BNS": abns,
-            "GNS": agns,
-            "NSBH": ansbh,
-            "GG": agg,
-            "BHG": abhg,
-            "BBH": abbh
-            }
     if mass_gap:
+        if mass_gap_separate:
+            return {
+                "BNS": abns,
+                "GNS": agns,
+                "NSBH": ansbh,
+                "GG": agg,
+                "BHG": abhg,
+                "BBH": abbh
+                }
         return {
             "BNS": abns,
             "NSBH": ansbh,
@@ -254,22 +254,24 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     mc_min = mass_limits['min_m2'] / (2 ** 0.2)
 
     if trig_mc_det['central'] > mc_max * (1 + z['central']):
-        if mass_gap_separate:
-            probabilities = {"BNS": 0.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
-                             "BHG": 0.0, "BBH": 1.0}
-        elif mass_gap:
-            probabilities = {"BNS": 0.0, "NSBH": 0.0, "BBH": 1.0,
-                             "Mass Gap": 0.0}
+        if mass_gap:
+            if mass_gap_separate:
+                probabilities = {"BNS": 0.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
+                                 "BHG": 0.0, "BBH": 1.0}
+            else:
+                probabilities = {"BNS": 0.0, "NSBH": 0.0, "BBH": 1.0,
+                                 "Mass Gap": 0.0}
         else:
             probabilities = {"BNS": 0.0, "NSBH": 0.0, "BBH": 1.0}
 
     elif trig_mc_det['central'] < mc_min * (1 + z['central']):
-        if mass_gap_separate:
-            probabilities = {"BNS": 1.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
-                             "BHG": 0.0, "BBH": 0.0}
-        elif mass_gap:
-            probabilities = {"BNS": 1.0, "NSBH": 0.0, "BBH": 0.0,
-                             "Mass Gap": 0.0}
+        if mass_gap:
+            if mass_gap_separate:
+                probabilities = {"BNS": 1.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
+                                 "BHG": 0.0, "BBH": 0.0}
+            else:
+                probabilities = {"BNS": 1.0, "NSBH": 0.0, "BBH": 0.0,
+                                 "Mass Gap": 0.0}
         else:
             probabilities = {"BNS": 1.0, "NSBH": 0.0, "BBH": 0.0}
 
