@@ -21,11 +21,11 @@ def insert_args(parser):
                                              "source probabilities of a "
                                              "candidate event using the snr, "
                                              "mchirp, and effective distance.")
-    mchirp_group.add_argument('--src-class-mass-ranges', type=float, nargs=3,
-                              metavar=('MIN_M2', 'MAX_M1', 'MAX_NS'),
+    mchirp_group.add_argument('--src-class-mass-limits', type=float, nargs=3,
+                              metavar=('MIN_M2', 'MAX_NS', 'MAX_M1'),
                               default=[1.0, 3.0, 45.0],
                               help="Minimum and maximum values for the mass "
-                                   "of the binary components, and maximum mass "
+                                   "of the binary components and maximum mass "
                                    "of a neutron star, used as limits "
                                    "when computing the area corresponding"
                                    "to different CBC sources.")
@@ -65,10 +65,11 @@ def insert_args(parser):
 
 
 def from_cli(args):
+    mass_limits_sorted = sorted(args.src_class_mass_limits)
     if args.src_class_mass_gap_max:
-        return {'mass_limits': {'max_m1': args.src_class_mass_ranges[1],
-                                'min_m2': args.src_class_mass_ranges[0]},
-                'mass_bdary': {'ns_max': args.src_class_mass_ranges[2],
+        return {'mass_limits': {'max_m1': mass_limits_sorted[2],
+                                'min_m2': mass_limits_sorted[0]},
+                'mass_bdary': {'ns_max': mass_limits_sorted[1],
                                'gap_max': args.src_class_mass_gap_max},
                 'estimation_coeff': {'a0': args.src_class_eff_to_lum_distance,
                                      'b0': args.src_class_lum_distance_to_delta[0],
@@ -77,10 +78,10 @@ def from_cli(args):
                 'mass_gap': True,
                 'mass_gap_separate': args.src_class_mass_gap_separate,
                 'lal_cosmology': args.src_class_lal_cosmology}
-    return {'mass_limits': {'max_m1': args.src_class_mass_ranges[1],
-                            'min_m2': args.src_class_mass_ranges[0]},
-            'mass_bdary': {'ns_max': args.src_class_mass_ranges[2],
-                           'gap_max': args.src_class_mass_ranges[2]},
+    return {'mass_limits': {'max_m1': mass_limits_sorted[2],
+                            'min_m2': mass_limits_sorted[0]},
+            'mass_bdary': {'ns_max': mass_limits_sorted[1],
+                           'gap_max': mass_limits_sorted[1]},
             'estimation_coeff': {'a0': args.src_class_eff_to_lum_distance,
                                  'b0': args.src_class_lum_distance_to_delta[0],
                                  'b1': args.src_class_lum_distance_to_delta[1],
@@ -88,7 +89,6 @@ def from_cli(args):
             'mass_gap': False,
             'mass_gap_separate': args.src_class_mass_gap_separate,
             'lal_cosmology': args.src_class_lal_cosmology}
-    
 
 
 def redshift_estimation(distance, distance_std, lal_cosmology):
