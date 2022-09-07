@@ -279,6 +279,6 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     else:
         areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap, mass_gap_separate)
         total_area = sum(areas.values())
-        probabilities = {key: areas[key]/total_area for key in areas}
+        probabilities = {key: areas[key] / total_area for key in areas}
 
     return probabilities
