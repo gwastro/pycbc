@@ -352,7 +352,7 @@ def draw(rtype):
             params[k] = v
 
         # Add `static_args` back, some transformations may need them.
-        if static_args is not None:
+        if args.input_config is not None and static_args is not None:
             for k in static_args.keys():
                 params[k] = numpy.array([static_args[k]]*size)
 
