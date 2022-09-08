@@ -241,6 +241,9 @@ class Relative(BaseGaussianNoise, DistMarg):
             if self.is_lisa:
                 curr_wav.resize(len(self.f[ifo]))
                 curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
+                # get detector-specific arrival times relative to end of data
+                self.ta[ifo] = -self.end_time[ifo]
+                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
                 self.h00[ifo] = numpy.array(curr_wav) * tshift
             else:
                 fid_hp.resize(len(self.f[ifo]))
@@ -248,11 +251,6 @@ class Relative(BaseGaussianNoise, DistMarg):
                 hp0 = numpy.roll(fid_hp, self.kmin[ifo])
                 hc0 = numpy.roll(fid_hc, self.kmin[ifo])
 
-            # get detector-specific arrival times relative to end of data
-            if self.is_lisa:
-                self.ta[ifo] = -self.end_time[ifo]
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-            else:
                 self.det[ifo] = Detector(ifo)
                 dt = self.det[ifo].time_delay_from_earth_center(
                     self.fid_params["ra"],
@@ -265,7 +263,7 @@ class Relative(BaseGaussianNoise, DistMarg):
                     self.fid_params["ra"], self.fid_params["dec"],
                     self.fid_params["polarization"], self.fid_params["tc"])
 
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * ta)
+                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta)
 
                 h00 = (hp0 * fp + hc0 * fc) * tshift
                 self.h00[ifo] = h00
