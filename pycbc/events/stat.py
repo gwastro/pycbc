@@ -1381,7 +1381,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             The ifo to consider.
         """
 
-        with self.files[f'{ifo}-fit_coeffs'] as coeff_file:
+        with h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
             template_id = coeff_file['template_id'][:]
             tid_sort = numpy.argsort(template_id)
             self.fits_by_tid[ifo]['median_sigma'] = \
