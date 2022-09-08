@@ -25,6 +25,7 @@
 """
 
 from .base_hdf import BaseInferenceFile
+from .base_sampler import BaseSamplerFile
 
 
 class PosteriorFile(BaseInferenceFile):
@@ -37,6 +38,14 @@ class PosteriorFile(BaseInferenceFile):
 
     def write_samples(self, samples, parameters=None):
         return write_samples_to_file(self, samples, parameters=parameters)
+
+    def write_sampler_metadata(self, sampler):
+        sampler.model.write_metadata(self)
+
+    def write_resume_point(self):
+        pass
+
+    write_run_start_time = write_run_end_time = write_resume_point
 
 
 def read_raw_samples_from_file(fp, fields, **kwargs):
