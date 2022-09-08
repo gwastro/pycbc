@@ -241,7 +241,6 @@ class Relative(BaseGaussianNoise, DistMarg):
             if self.is_lisa:
                 curr_wav.resize(len(self.f[ifo]))
                 curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
                 self.h00[ifo] = numpy.array(curr_wav) * tshift
             else:
                 fid_hp.resize(len(self.f[ifo]))
@@ -252,6 +251,7 @@ class Relative(BaseGaussianNoise, DistMarg):
             # get detector-specific arrival times relative to end of data
             if self.is_lisa:
                 self.ta[ifo] = -self.end_time[ifo]
+                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
             else:
                 self.det[ifo] = Detector(ifo)
                 dt = self.det[ifo].time_delay_from_earth_center(
