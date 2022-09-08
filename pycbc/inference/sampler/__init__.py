@@ -85,7 +85,7 @@ def load_from_config(cp, model, **kwargs):
     sampler :
         The initialized sampler.
     """
-    if not len(model.variable_params):
+    if len(model.variable_params) == 0:
         logging.info('No variable params, so assuming Dummy Sampler')
         return DummySampler.from_config(cp, model, **kwargs)
 

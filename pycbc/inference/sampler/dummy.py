@@ -3,11 +3,11 @@
 
 import numpy
 
-from .base import (BaseSampler, setup_output)
 from pycbc.inference.io import PosteriorFile
 from pycbc.inference import models
-from pycbc.pool import (use_mpi, choose_pool)
+from pycbc.pool import choose_pool
 
+from .base import (BaseSampler, setup_output)
 
 def call_reconstruct(iteration):
     models._global_instance.update()
@@ -23,6 +23,7 @@ class DummySampler(BaseSampler):
         An instance of a model from ``pycbc.inference.models``.
     """
     name = 'dummy'
+
     def __init__(self, model, *args, nprocesses=1, use_mpi=False,
                  num_samples=1000, **kwargs):
         super().__init__(model, *args)

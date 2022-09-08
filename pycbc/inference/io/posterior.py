@@ -25,7 +25,6 @@
 """
 
 from .base_hdf import BaseInferenceFile
-from .base_sampler import BaseSamplerFile
 
 
 class PosteriorFile(BaseInferenceFile):
