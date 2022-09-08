@@ -375,14 +375,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         param = {}
 
         with h5py.File(self.files[selected], 'r') as histfile:
-            self.hist_ifos = histfile.attrs['ifos']
-
-            # Patch for pre-hdf5=3.0 histogram files
-            try:
-                logging.info("Decoding hist ifos ..")
-                self.hist_ifos = [i.decode('UTF-8') for i in self.hist_ifos]
-            except (UnicodeDecodeError, AttributeError):
-                pass
+            self.hist_ifos = [i.decode('UTF-8')
+                              for i in histfile.attrs['ifos']]
 
             # Histogram bin attributes
             self.twidth = histfile.attrs['twidth']
