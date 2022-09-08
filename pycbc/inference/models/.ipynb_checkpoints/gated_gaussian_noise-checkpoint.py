@@ -49,6 +49,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
                  static_params=None, highpass_waveforms=False, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
+        # cache the current projection for debugging
+        self.current_proj = {}
+        self.current_nproj = {}
         # cache the overwhitened data
         self._overwhitened_data = {}
         # cache the current gated data
@@ -130,8 +133,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             self._cov[det] = cov
         self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
     
-    # write a method to calculate samples and do the fit (use eigenvals for full cov), save the fit and 4 points; call that function in psds()
-    
     def gate_indices(self, det):
         """Calculate the indices corresponding to start and end of gate.
         """
@@ -157,8 +158,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # delete gated rows and columns
         trunc = numpy.delete(numpy.delete(cov, slice(start_index, end_index), 0), slice(start_index, end_index), 1)
         return trunc/2, start_index, end_index
-    
-    # here estimate the values from the fit and the size instead of calculating
+
     def det_lognorm(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance matrix.
         """
@@ -435,6 +435,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._det_lognls.clear()
         # get the times of the gates
         gate_times = self.get_gate_times()
+        self.current_nproj.clear()
         for det, invpsd in self._invpsds.items():
             start_index, end_index = self.gate_indices(det)
             norm = self.det_lognorm(det, start_index, end_index)
@@ -447,6 +448,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gated_dt = data.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
+            self.current_nproj[det] = (gated_dt.proj, gated_dt.projslc)
             # convert to the frequency series
             gated_d = gated_dt.to_frequencyseries()
             # overwhiten
@@ -509,11 +511,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
         """
-        # write sample points, residuals, and fit from linear regression to checkpoint
         BaseDataModel.write_metadata(self, fp)
         attrs = fp.getattrs(group=group)
         # write the analyzed detectors and times
-        attrs['analyzed_detectors'] = self.detectors # store fitting values here
+        attrs['analyzed_detectors'] = self.detectors
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
             attrs[key] = [float(data.start_time), float(data.end_time)]
@@ -598,6 +599,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
+        self.current_proj.clear()
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             start_index, end_index = self.gate_indices(det)
@@ -614,6 +616,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             gated_res = res.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
+            self.current_proj[det] = (gated_res.proj, gated_res.projslc)
             gated_rtilde = gated_res.to_frequencyseries()
             # overwhiten
             gated_rtilde *= invpsd
