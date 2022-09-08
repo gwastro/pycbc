@@ -210,6 +210,8 @@ def add_osg_site(sitecat, cp):
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="+SingularityCleanEnv",
                       value="True")
+    site.add_profiles(Namespace.CONDOR, key="use_x509userproxy",
+                      value="True")
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(HAS_LIGO_FRAMES =?= True) && "
