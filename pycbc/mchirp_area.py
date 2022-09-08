@@ -64,9 +64,11 @@ def insert_args(parser):
                                    'default model.')
 
 
-def from_cli(args):
+def from_cli(args, parser):
     mass_limits_sorted = sorted(args.src_class_mass_limits)
     if args.src_class_mass_gap_max:
+        if args.src_class_mass_gap_max < mass_limits_sorted[1]:
+            parser.error('MAX_GAP value cannot be lower than MAX_NS limit')
         return {'mass_limits': {'max_m1': mass_limits_sorted[2],
                                 'min_m2': mass_limits_sorted[0]},
                 'mass_bdary': {'ns_max': mass_limits_sorted[1],
