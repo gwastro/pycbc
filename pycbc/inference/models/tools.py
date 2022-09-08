@@ -501,7 +501,7 @@ class DistMarg():
             self.update(**p)
             return self.loglr
 
-        if self.marginalize_vector:
+        if self.marginalize_vector_params:
             logging.info('Reconstruct vector')
             self.reconstruct_vector = True
             self.reset_vector_params()
