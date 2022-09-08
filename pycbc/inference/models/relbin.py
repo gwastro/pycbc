@@ -176,6 +176,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         self.f, self.df, self.end_time, self.det = {}, {}, {}, {}
         self.h00, self.h00_sparse = {}, {}
         self.fedges, self.edges = {}, {}
+        self.ta = {}
         self.antenna_time = {}
 
         # filtered summary data for linear approximation
