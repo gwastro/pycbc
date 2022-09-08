@@ -135,7 +135,6 @@ class DistMarg():
             self.vsamples = int(kwargs['polarization_samples'])
             kwargs.pop('polarization_samples')
 
-        self.marginalize_vector_weights = - numpy.log(self.vsamples)
         self.reset_vector_params()
 
         self.marginalize_phase = str_to_bool(marginalize_phase)
@@ -487,7 +486,7 @@ class DistMarg():
         for k in self.marginalize_vector_params:
             if k not in params:
                 params[k] = self.marginalize_vector_params[k]
-        self.marginalize_vector_weights = 0
+        self.marginalize_vector_weights = - numpy.log(self.vsamples)
         return params
 
     def reconstruct(self):
