@@ -31,8 +31,8 @@ def insert_args(parser):
                                    "to different CBC sources.")
     mchirp_group.add_argument('--src-class-mass-gap-max', type=float,
                               metavar=('MAX_GAP'),
-                              help="Upper limit of the mass gap, that corresponds "
-                                   "to the minimum mass of a black hole. "
+                              help="Upper limit of the mass gap, corresponding"
+                                   " to the minimum mass of a black hole. "
                                    "Used as limit of integration of the "
                                    "different CBC regions when considering "
                                    "the MassGap category.")
@@ -69,25 +69,31 @@ def from_cli(args, parser):
     if args.src_class_mass_gap_max:
         if args.src_class_mass_gap_max < mass_limits_sorted[1]:
             parser.error('MAX_GAP value cannot be lower than MAX_NS limit')
-        return {'mass_limits': {'max_m1': mass_limits_sorted[2],
-                                'min_m2': mass_limits_sorted[0]},
-                'mass_bdary': {'ns_max': mass_limits_sorted[1],
-                               'gap_max': args.src_class_mass_gap_max},
-                'estimation_coeff': {'a0': args.src_class_eff_to_lum_distance,
-                                     'b0': args.src_class_lum_distance_to_delta[0],
-                                     'b1': args.src_class_lum_distance_to_delta[1],
-                                     'm0': args.src_class_mchirp_to_delta},
+        return {'mass_limits':
+                 {'max_m1': mass_limits_sorted[2],
+                  'min_m2': mass_limits_sorted[0]},
+                'mass_bdary':
+                 {'ns_max': mass_limits_sorted[1],
+                  'gap_max': args.src_class_mass_gap_max},
+                'estimation_coeff':
+                 {'a0': args.src_class_eff_to_lum_distance,
+                  'b0': args.src_class_lum_distance_to_delta[0],
+                  'b1': args.src_class_lum_distance_to_delta[1],
+                  'm0': args.src_class_mchirp_to_delta},
                 'mass_gap': True,
                 'mass_gap_separate': args.src_class_mass_gap_separate,
                 'lal_cosmology': args.src_class_lal_cosmology}
-    return {'mass_limits': {'max_m1': mass_limits_sorted[2],
-                            'min_m2': mass_limits_sorted[0]},
-            'mass_bdary': {'ns_max': mass_limits_sorted[1],
-                           'gap_max': mass_limits_sorted[1]},
-            'estimation_coeff': {'a0': args.src_class_eff_to_lum_distance,
-                                 'b0': args.src_class_lum_distance_to_delta[0],
-                                 'b1': args.src_class_lum_distance_to_delta[1],
-                                 'm0': args.src_class_mchirp_to_delta},
+    return {'mass_limits':
+             {'max_m1': mass_limits_sorted[2],
+              'min_m2': mass_limits_sorted[0]},
+            'mass_bdary':
+             {'ns_max': mass_limits_sorted[1],
+              'gap_max': mass_limits_sorted[1]},
+            'estimation_coeff':
+             {'a0': args.src_class_eff_to_lum_distance,
+              'b0': args.src_class_lum_distance_to_delta[0],
+              'b1': args.src_class_lum_distance_to_delta[1],
+              'm0': args.src_class_mchirp_to_delta},
             'mass_gap': False,
             'mass_gap_separate': args.src_class_mass_gap_separate,
             'lal_cosmology': args.src_class_lal_cosmology}
@@ -185,7 +191,13 @@ def get_area(trig_mc, lim_h1, lim_h2, lim_v1, lim_v2):
     return area
 
 
-def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap, mass_gap_separate):
+def calc_areas(
+        trig_mc_det,
+        mass_limits,
+        mass_bdary,
+        z,
+        mass_gap,
+        mass_gap_separate):
     """Computes the area inside the lines of the second component mass as a
     function of the first component mass for the two extreme values
     of mchirp: mchirp +/- mchirp_uncertainty, for each region of the source
@@ -259,8 +271,8 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     if trig_mc_det['central'] > mc_max * (1 + z['central']):
         if mass_gap:
             if mass_gap_separate:
-                probabilities = {"BNS": 0.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
-                                 "BHG": 0.0, "BBH": 1.0}
+                probabilities = {"BNS": 0.0, "GNS": 0.0, "NSBH": 0.0,
+                                 "GG": 0.0, "BHG": 0.0, "BBH": 1.0}
             else:
                 probabilities = {"BNS": 0.0, "NSBH": 0.0, "BBH": 1.0,
                                  "Mass Gap": 0.0}
@@ -270,8 +282,8 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     elif trig_mc_det['central'] < mc_min * (1 + z['central']):
         if mass_gap:
             if mass_gap_separate:
-                probabilities = {"BNS": 1.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
-                                 "BHG": 0.0, "BBH": 0.0}
+                probabilities = {"BNS": 1.0, "GNS": 0.0, "NSBH": 0.0,
+                                 "GG": 0.0, "BHG": 0.0, "BBH": 0.0}
             else:
                 probabilities = {"BNS": 1.0, "NSBH": 0.0, "BBH": 0.0,
                                  "Mass Gap": 0.0}
@@ -279,7 +291,8 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
             probabilities = {"BNS": 1.0, "NSBH": 0.0, "BBH": 0.0}
 
     else:
-        areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap, mass_gap_separate)
+        areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z,
+            mass_gap, mass_gap_separate)
         total_area = sum(areas.values())
         probabilities = {key: areas[key] / total_area for key in areas}
 
