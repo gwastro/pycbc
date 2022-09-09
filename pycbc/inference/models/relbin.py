@@ -245,7 +245,10 @@ class Relative(BaseGaussianNoise, DistMarg):
                 # get detector-specific arrival times relative to end of data
                 self.ta[ifo] = -self.end_time[ifo]
                 tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-                self.h00[ifo] = numpy.array(curr_wav) * tshift
+                #self.h00[ifo] = numpy.array(curr_wav) * tshift
+                h00 = numpy.array(curr_wav) * tshift
+                self.h00[ifo] = h00
+
             else:
                 fid_hp.resize(len(self.f[ifo]))
                 fid_hc.resize(len(self.f[ifo]))
