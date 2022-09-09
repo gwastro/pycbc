@@ -46,7 +46,7 @@ parser.add_argument('--approximant',  required=True,
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
-parser.add_argument('--sample-rate', default=2048, type=int,
+parser.add_argument('--sample-rate', default=2048, type=float,
     help='sample rate in seconds')
 parser.add_argument('--low-frequency-cutoff', default=20.0, type=float)
 parser.add_argument('--enable-sigma-bound', action='store_true')
@@ -85,6 +85,8 @@ if args.input_config is not None:
     if any(config_parser.get_subsections('waveform_transforms')):
         waveform_transforms = transforms.read_transforms_from_config(
                 config_parser, 'waveform_transforms')
+    else:
+        waveform_transforms = None
 
     dists_joint = prior_from_config(cp=config_parser)
 
@@ -349,12 +351,13 @@ def draw(rtype):
         for k, v in zip(p, points):
             params[k] = v
 
+        # Add `static_args` back, some transformations may need them.
+        if args.input_config is not None and static_args is not None:
+            for k in static_args.keys():
+                params[k] = numpy.array([static_args[k]]*size)
+
         # Apply `waveform_transforms` defined in the .ini file to samples.
         if args.input_config is not None and waveform_transforms is not None:
-            # Add `static_args` back, some transformations may need them.
-            if static_args is not None:
-                for k in static_args.keys():
-                    params[k] = numpy.array([static_args[k]]*size)
             params = transforms.apply_transforms(params, waveform_transforms)
 
     params['approximant'] = numpy.array([args.approximant]*size)
