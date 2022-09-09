@@ -62,13 +62,11 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         url += 'test_data_files/{}-PTA_HISTOGRAM.hdf'
         stat_file_paths = [
             download_file(url.format("H1L1"), cache=True),
-            download_file(url.format("H1V1"), cache=True),
-            download_file(url.format("L1V1"), cache=True)
         ]
         args = SimpleNamespace(
             sngl_ranking="snr",
             ranking_statistic="phasetd",
-            statistic_files=[stat_file_paths],
+            statistic_files=stat_file_paths,
             statistic_keywords=None,
             timeslide_interval=0.1,
             background_ifar_limit=100,
@@ -113,11 +111,6 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
             logging.info("Iteration %d", i)
             single_det_trigs = self.new_trigs[i]
             coinc_trigs = self.new_coincer.add_singles(single_det_trigs)
-
-
-        for i in range(self.num_iterations):
-            logging.info("Iteration %d", i)
-            single_det_trigs = self.new_trigs[i]
             coinc_trigs = self.old_coincer.add_singles(single_det_trigs)
 
         # Are they the same coincs now?
