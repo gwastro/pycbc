@@ -110,8 +110,8 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         for i in range(self.num_iterations):
             logging.info("Iteration %d", i)
             single_det_trigs = self.new_trigs[i]
-            coinc_trigs = self.new_coincer.add_singles(single_det_trigs)
-            coinc_trigs = self.old_coincer.add_singles(single_det_trigs)
+            self.new_coincer.add_singles(single_det_trigs)
+            self.old_coincer.add_singles(single_det_trigs)
 
         # Are they the same coincs now?
         new_coincer = self.new_coincer
