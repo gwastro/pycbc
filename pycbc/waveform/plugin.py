@@ -18,7 +18,8 @@ def add_custom_waveform(approximant, function, domain,
         Function evaluates waveform at only chosen points (instead of a
         equal-spaced grid).
     """
-    from pycbc.waveform.waveform import cpu_fd, cpu_td, fd_sequence
+    from pycbc.waveform.waveform import cpu_fd, cpu_td, fd_sequence, \
+    fd_sequence_no_response
 
     used = RuntimeError("Can't load plugin waveform {}, the name is"
                         " already in use.".format(approximant))
