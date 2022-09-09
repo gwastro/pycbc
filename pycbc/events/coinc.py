@@ -1053,8 +1053,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             trigs = results[fixed_ifo]
             # Loop over them one trigger at a time
             for i in range(len(trigs['end_time'])):
-                # Loop over all newly added triggers in fixed_ifo. Note we do
-                # this one trigger at a time.
                 trig_stat = trigs['stat'][i]
                 trig_time = trigs['end_time'][i]
                 template = trigs['template_id'][i]
