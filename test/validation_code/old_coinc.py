@@ -993,12 +993,18 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 trig_stat = numpy.resize(trig_stat, len(i1))
                 sngls_list = [[ifo, trig_stat],
                               [oifo, stats[i1]]]
+
+                if oifo == self.ifos[0]:
+                    to_shift = [-1, 0]
+                else:
+                    to_shift = [0, -1]
+
                 # This can only use 2-det coincs at present
                 c = self.stat_calculator.rank_stat_coinc(
                     sngls_list,
                     slide,
                     self.timeslide_interval,
-                    [0, -1]
+                    to_shift
                 )
                 offsets.append(slide)
                 cstat.append(c)
