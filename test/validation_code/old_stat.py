@@ -14,6 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+#### NOTE #####
+# This code is a verbatim copy of the stat.py code as of 20th August 2022.
+# It's here to verify that any changes being made to this code are not changing
+# the physical output
+###############
+
 #
 # =============================================================================
 #

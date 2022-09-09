@@ -66,7 +66,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         args = SimpleNamespace(
             sngl_ranking="snr",
             ranking_statistic="phasetd",
-            statistic_files=stat_file_paths,
+            statistic_files=[stat_file_paths],
             statistic_keywords=None,
             timeslide_interval=0.1,
             background_ifar_limit=100,
