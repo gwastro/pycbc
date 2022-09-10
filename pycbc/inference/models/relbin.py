@@ -31,7 +31,7 @@ import numpy
 import itertools
 from scipy.interpolate import interp1d
 
-from pycbc.waveform import get_fd_waveform_sequence
+from pycbc.waveform import get_fd_waveform_sequence,get_fd_det_waveform_sequence
 from pycbc.detector import Detector
 from pycbc.types import Array
 
@@ -215,8 +215,8 @@ class Relative(BaseGaussianNoise, DistMarg):
 
             if self.is_lisa:
                 if ifo not in self.init_tdi_wavs:
-                    la, le, lt = get_fd_waveform_sequence(sample_points=fpoints,
-                                                          **self.fid_params)
+                    la, le, lt = get_fd_det_waveform_sequence(sample_points=fpoints,
+                                                             **self.fid_params)
                     self.init_tdi_wavs['LISA_A'] = la
                     self.init_tdi_wavs['LISA_E'] = le
                     self.init_tdi_wavs['LISA_T'] = lt
@@ -245,7 +245,8 @@ class Relative(BaseGaussianNoise, DistMarg):
                 # get detector-specific arrival times relative to end of data
                 self.ta[ifo] = -self.end_time[ifo]
                 tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-                self.h00[ifo] = numpy.array(curr_wav) * tshift
+                h00 = numpy.array(curr_wav) * tshift
+                self.h00[ifo] = h00
             else:
                 fid_hp.resize(len(self.f[ifo]))
                 fid_hc.resize(len(self.f[ifo]))
@@ -370,8 +371,8 @@ class Relative(BaseGaussianNoise, DistMarg):
         """
         if self.is_lisa:
             wf_ret = {}
-            la, le, lt = get_fd_waveform_sequence(sample_points=self.edge_unique[0],
-                                                  **params)
+            la, le, lt = get_fd_det_waveform_sequence(sample_points=self.edge_unique[0],
+                                                     **params)
             la = la.numpy()
             le = le.numpy()
             lt = lt.numpy()
