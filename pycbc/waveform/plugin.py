@@ -3,7 +3,8 @@
 
 
 def add_custom_waveform(approximant, function, domain,
-                        sequence=False, force=False):
+                        sequence=False, has_det_response=False,
+                        force=False,):
     """ Make custom waveform available to pycbc
 
     Parameters
@@ -17,8 +18,10 @@ def add_custom_waveform(approximant, function, domain,
     sequence : bool, False
         Function evaluates waveform at only chosen points (instead of a
         equal-spaced grid).
+    has_det_response : bool, False
+        Check if waveform generator has built-in detector response.
     """
-    from pycbc.waveform.waveform import cpu_fd, cpu_td, fd_sequence
+    from pycbc.waveform.waveform import cpu_fd, cpu_td, fd_sequence, fd_det_sequence
 
     used = RuntimeError("Can't load plugin waveform {}, the name is"
                         " already in use.".format(approximant))
@@ -29,9 +32,14 @@ def add_custom_waveform(approximant, function, domain,
         cpu_td[approximant] = function
     elif domain == 'frequency':
         if sequence:
-            if not force and (approximant in fd_sequence):
-                raise used
-            fd_sequence[approximant] = function
+            if has_det_response == False:
+                if not force and (approximant in fd_sequence):
+                    raise used
+                fd_sequence[approximant] = function
+            else:
+                if not force and (approximant in fd_det_sequence):
+                    raise used
+                fd_det_sequence[approximant] = function                
         else:
             if not force and (approximant in cpu_fd):
                 raise used
@@ -67,10 +75,15 @@ def retrieve_waveform_plugins():
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.fd'):
         add_custom_waveform(plugin.name, plugin.resolve(), 'frequency')
 
-    # Check for fd sequence waveforms
+    # Check for fd sequence waveforms (no detector response)
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.fd_sequence'):
         add_custom_waveform(plugin.name, plugin.resolve(), 'frequency',
                             sequence=True)
+
+    # Check for fd sequence waveforms (has detector response)
+    for plugin in pkg_resources.iter_entry_points('pycbc.waveform.fd_det_sequence'):
+        add_custom_waveform(plugin.name, plugin.resolve(), 'frequency',
+                            sequence=True, has_det_response=True)
 
     # Check for td waveforms
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.td'):
