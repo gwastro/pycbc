@@ -30,7 +30,6 @@ import logging
 from abc import (ABCMeta, abstractmethod)
 
 from . import waveform
-from . import bbhx_waveform_plugin
 from .waveform import (FailedWaveformError)
 from . import ringdown
 from . import supernovae
@@ -1006,41 +1005,6 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         """
         return select_waveform_modes_generator(approximant)
 
-# FIXME: For now this is hardcoded to a particular waveform, but there could
-#        be a more general generate_lisa_aet function with an approximant to
-#        generate different things
-class FDomainLISAAETGenerator(BaseCBCGenerator):
-    def __init__(self, epoch, ifos=(), variable_args=(), **frozen_params):
-        self.ifos = ifos
-        self.set_epoch(epoch)
-        super().__init__(bbhx_waveform_plugin.BBHXWaveformFDInterface,
-                         variable_args=variable_args, **frozen_params)
-
-    def set_epoch(self, epoch):
-        """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
-        self._epoch = float(epoch)
-
-    @property
-    def epoch(self):
-        return _lal.LIGOTimeGPS(self._epoch)
-
-    def generate(self, **kwargs):
-        """Generates a waveform from the keyword args. The current params
-        are updated with the given kwargs, then the generator is called.
-        """
-        waveforms = super().generate(**kwargs)
-        allowed_names = ['LISA_A', 'LISA_E', 'LISA_T']
-        for i in range(3):
-            old_epoch = waveforms[i]._epoch
-            tc_within_data = self.current_params['tc'] - old_epoch
-            waveforms[i]._epoch = self._epoch
-            waveforms[i] = apply_fd_time_shift(waveforms[i],
-                                               self.current_params['tc']-tc_within_data,
-                                               copy=False)
-
-        wav_dict = {allowed_names[i]:waveforms[i] for i in range(3)
-                    if allowed_names[i] in self.ifos}
-        return wav_dict
 
 #
 # =============================================================================

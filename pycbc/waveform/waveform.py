@@ -467,6 +467,7 @@ def props_sgburst(obj, **kwargs):
 
 # Waveform generation ########################################################
 fd_sequence = {}
+fd_det_sequence = {}
 
 def _lalsim_fd_sequence(**p):
     """ Shim to interface to lalsimulation SimInspiralChooseFDWaveformSequence
@@ -490,16 +491,10 @@ _lalsim_fd_sequence.required = parameters.cbc_fd_required
 for apx in _lalsim_enum:
     fd_sequence[apx] = _lalsim_fd_sequence
 
-try:
-    from . import bbhx_waveform_plugin
-    fd_sequence['BBHX_PhenomD'] = bbhx_waveform_plugin.BBHXWaveformFDInterface
-    cpu_fd['BBHX_PhenomD'] = fd_sequence['BBHX_PhenomD']
-except ImportError:
-    pass
 
 def get_fd_waveform_sequence(template=None, **kwds):
     """Return values of the waveform evaluated at the sequence of frequency
-    points.
+    points. The waveform generator doesn't include detector response. 
 
     Parameters
     ----------
@@ -531,8 +526,41 @@ def get_fd_waveform_sequence(template=None, **kwds):
     check_args(input_params, required)
     return wav_gen(**input_params)
 
+def get_fd_det_waveform_sequence(template=None, **kwds):
+    """Return values of the waveform evaluated at the sequence of frequency
+    points. The waveform generator includes detector response. 
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table.
+    {params}
+
+    Returns
+    -------
+    htilde: Array
+        The detector-frame waveform (with detector response) in frequency domain
+        evaluated at the frequency points.
+    """
+    input_params = props(template, **kwds)
+    input_params['delta_f'] = -1
+    input_params['f_lower'] = -1
+    if input_params['approximant'] not in fd_det_sequence:
+        raise ValueError("Approximant %s not available" %
+                            (input_params['approximant']))
+    wav_gen = fd_det_sequence[input_params['approximant']]
+    if hasattr(wav_gen, 'required'):
+        required = wav_gen.required
+    else:
+        required = parameters.fd_required
+    check_args(input_params, required)
+    return wav_gen(**input_params)
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
+    params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
+           include_label=False).lstrip(' '))
+get_fd_det_waveform_sequence.__doc__ = get_fd_det_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
            include_label=False).lstrip(' '))
 
@@ -1238,7 +1266,7 @@ def get_waveform_filter_length_in_time(approximant, template=None, **kwargs):
         return None
 
 __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
-           "get_fd_waveform_from_td",
+           "get_fd_det_waveform_sequence", "get_fd_waveform_from_td",
            "print_td_approximants", "print_fd_approximants",
            "td_approximants", "fd_approximants",
            "get_waveform_filter", "filter_approximants",
@@ -1248,4 +1276,5 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
            "NoWaveformError", "FailedWaveformError", "get_td_waveform_from_fd",
-           'cpu_fd', 'cpu_td', 'fd_sequence', '_filter_time_lengths']
+           'cpu_fd', 'cpu_td', 'fd_sequence', 'fd_det_sequence',
+           '_filter_time_lengths']
