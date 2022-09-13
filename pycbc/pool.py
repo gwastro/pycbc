@@ -2,7 +2,7 @@
 """
 import multiprocessing.pool
 import functools
-from multiprocessing import TimeoutError
+from multiprocessing import TimeoutError, cpu_count
 import types
 import signal
 import atexit
@@ -168,6 +168,8 @@ def choose_pool(processes, mpi=False):
     elif processes == 1:
         pool = SinglePool()
     else:
+        if processes == -1:
+            processes = cpu_count()
         pool = BroadcastPool(processes)
 
     pool.size = processes
