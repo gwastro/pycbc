@@ -940,7 +940,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
                     hp, **self.current_params)
                 hc = self.recalib[detname].map_to_adjust(
                     hc, **self.current_params)
-            h[detname] = (hp, hc)
+            h[detname] = (hp.copy(), hc.copy())
         return h
 
     @staticmethod
