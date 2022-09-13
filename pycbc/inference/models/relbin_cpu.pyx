@@ -108,7 +108,6 @@ cpdef likelihood_parts(double [::1] freqs,
     return hd, hh
 
 cpdef likelihood_parts_det(double [::1] freqs,
-                     double fp,
                      double dtc,
                      double complex[::1] hp,
                      double complex[::1] h00,
@@ -120,11 +119,12 @@ cpdef likelihood_parts_det(double [::1] freqs,
     cdef size_t i
     cdef double complex hd=0, r0, r0n, r1, x0, x1, x0n;
     cdef double hh=0
+    cdef int N
 
     N = freqs.shape[0]
     for i in range(N):
         r0n = (exp(-2.0j * 3.141592653 * dtc * freqs[i])
-               * (fp * hp[i])) / h00[i]
+               * (hp[i])) / h00[i]
         r1 = r0n - r0
 
         x0n = norm(r0n)

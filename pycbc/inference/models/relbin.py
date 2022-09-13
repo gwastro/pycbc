@@ -31,7 +31,7 @@ import numpy
 import itertools
 from scipy.interpolate import interp1d
 
-from pycbc.waveform import get_fd_waveform_sequence,get_fd_det_waveform_sequence,\
+from pycbc.waveform import get_fd_waveform_sequence, get_fd_det_waveform_sequence,\
 fd_sequence, fd_det_sequence
 from pycbc.detector import Detector
 from pycbc.types import Array
@@ -192,7 +192,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         self.fid_params.update(fiducial_params)
 
         if self.det_response:
-            self.init_tdi_wavs = {}
+            self.no_det_waves = {}
 
         for k in self.static_params:
             if self.fid_params[k] == 'REPLACE':
@@ -219,8 +219,8 @@ class Relative(BaseGaussianNoise, DistMarg):
             fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
 
             if self.det_response:
-                if ifo not in self.init_tdi_wavs:
-                    wave = get_fd_det_waveform_sequence(ifo,
+                if ifo not in self.no_det_waves:
+                    wave = get_fd_det_waveform_sequence(ifos=ifo,
                                                         sample_points=fpoints,
                                                         **self.fid_params)
                 curr_wav = wave[ifo]
@@ -378,8 +378,8 @@ class Relative(BaseGaussianNoise, DistMarg):
         if self.det_response:
             wfs = {}
             for ifo in self.data:
-                wfs = wfs | get_fd_det_waveform_sequence(ifo,
-                                            sample_points=self.edge_unique[0],
+                wfs = wfs | get_fd_det_waveform_sequence(ifos=ifo,
+                                            sample_points=self.fedges[ifo],
                                             **params)
             return wfs
         else:
@@ -494,15 +494,11 @@ class Relative(BaseGaussianNoise, DistMarg):
             # with detector response. Otherwise, skip detector response.
 
             if self.det_response:
-                fp = 1
                 dtc = -end_time
-                print(wfs[ifo])
-                hp = wfs[ifo]
-                hdp, hhp = self.lik(freqs, fp, dtc,
-                                    hp, h00,
+                hp = wfs[ifo].numpy()
+                hdp, hhp = self.lik(freqs, dtc, hp, h00,
                                     sdat['a0'], sdat['a1'],
                                     sdat['b0'], sdat['b1'])
-                self._current_wf_parts[ifo] = (fp, dtc, hp, h00)
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
