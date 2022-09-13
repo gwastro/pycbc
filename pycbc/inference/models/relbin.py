@@ -31,7 +31,8 @@ import numpy
 import itertools
 from scipy.interpolate import interp1d
 
-from pycbc.waveform import get_fd_waveform_sequence,get_fd_det_waveform_sequence
+from pycbc.waveform import get_fd_waveform_sequence,get_fd_det_waveform_sequence,\
+fd_sequence, fd_det_sequence
 from pycbc.detector import Detector
 from pycbc.types import Array
 
@@ -169,8 +170,11 @@ class Relative(BaseGaussianNoise, DistMarg):
             variable_params, data, low_frequency_cutoff, **kwargs
         )
 
-        # FIXME: This should be set properly in some way
-        self.is_lisa = True
+        # If the waveform handles the detector response internally, set
+        # self.det_response = True
+        self.det_response = False
+        if self.static_params['approximant'] in fd_det_sequence:
+            self.det_response = True
 
         # reference waveform and bin edges
         self.f, self.df, self.end_time, self.det = {}, {}, {}, {}
@@ -186,7 +190,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         self.fid_params = self.static_params.copy()
         self.fid_params.update(fiducial_params)
 
-        if self.is_lisa:
+        if self.det_response:
             self.init_tdi_wavs = {}
 
         for k in self.static_params:
@@ -213,7 +217,7 @@ class Relative(BaseGaussianNoise, DistMarg):
             fpoints = Array(self.f[ifo].astype(numpy.float64))
             fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
 
-            if self.is_lisa:
+            if self.det_response:
                 if ifo not in self.init_tdi_wavs:
                     la, le, lt = get_fd_det_waveform_sequence(sample_points=fpoints,
                                                              **self.fid_params)
@@ -239,7 +243,7 @@ class Relative(BaseGaussianNoise, DistMarg):
                     "will be %s Hz", f_hi)
 
             # make copy of fiducial wfs, adding back in low frequencies
-            if self.is_lisa:
+            if self.det_response:
                 curr_wav.resize(len(self.f[ifo]))
                 curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
                 # get detector-specific arrival times relative to end of data
@@ -369,7 +373,7 @@ class Relative(BaseGaussianNoise, DistMarg):
     def get_waveforms(self, params):
         """ Get the waveform polarizations for each ifo
         """
-        if self.is_lisa:
+        if self.det_response:
             wf_ret = {}
             la, le, lt = get_fd_det_waveform_sequence(sample_points=self.edge_unique[0],
                                                      **params)
@@ -489,7 +493,7 @@ class Relative(BaseGaussianNoise, DistMarg):
 
             # project waveform to detector frame
             # FIXME: Don't want to do this for LISA!!
-            if self.is_lisa:
+            if self.det_response:
                 fp, fc = (1, 0)
                 dt = 0
                 dtc = -end_time
