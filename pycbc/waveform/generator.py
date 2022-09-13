@@ -852,6 +852,103 @@ class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
         """
         return select_waveform_generator(approximant)
 
+class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
+    """Generates frequency-domain waveform in a specific frame.
+
+    Generates both polarizations of a waveform using the given radiation frame
+    generator class, and applies the time shift. Detector response functions
+    are not applied.
+
+    Parameters
+    ----------
+    rFrameGeneratorClass : class
+        The class to use for generating the waveform in the radiation frame,
+        e.g., FDomainCBCGenerator. This should be the class, not an
+        instance of the class (the class will be initialized with the
+        appropriate arguments internally).
+    detectors : {None, list of strings}
+        The names of the detectors to use. If provided, all location parameters
+        must be included in either the variable args or the frozen params. If
+        None, the generate function will just return the plus polarization
+        returned by the rFrameGeneratorClass shifted by any desired time shift.
+    epoch : {float, lal.LIGOTimeGPS
+        The epoch start time to set the waveform to. A time shift = tc - epoch is
+        applied to waveforms before returning.
+    variable_args : {(), list or tuple}
+        A list or tuple of strings giving the names and order of parameters
+        that will be passed to the generate function.
+    \**frozen_params
+        Keyword arguments setting the parameters that will not be changed from
+        call-to-call of the generate function.
+
+    Attributes
+    ----------
+    detectors : dict
+        The dictionary of detectors that antenna patterns are calculated for
+        on each call of generate. If no detectors were provided, will be
+        ``{'RF': None}``, where "RF" means "radiation frame".
+    detector_names : list
+        The list of detector names. If no detectors were provided, then this
+        will be ['RF'] for "radiation frame".
+    epoch : lal.LIGOTimeGPS
+        The GPS start time of the frequency series returned by the generate function.
+        A time shift is applied to the waveform equal to tc-epoch. Update by using
+        ``set_epoch``.
+    current_params : dict
+        A dictionary of name, value pairs of the arguments that were last
+        used by the generate function.
+    rframe_generator : instance of rFrameGeneratorClass
+        The instance of the radiation-frame generator that is used for waveform
+        generation. All parameters in current_params except for the
+        location params are passed to this class's generate function.
+    frozen_location_args : dict
+        Any location parameters that were included in the frozen_params.
+    variable_args : tuple
+        The list of names of arguments that are passed to the generate
+        function.
+
+    """
+
+    def generate(self, **kwargs):
+        """Generates a waveform polarizations
+
+        Returns
+        -------
+        dict :
+            Dictionary of ``detector names -> (hp, hc)``, where ``hp, hc`` are
+            the plus and cross polarization, respectively.
+        """
+        self.current_params.update(kwargs)
+        hp, hc = self.rframe_generator.generate(**self.current_params)
+        if isinstance(hp, TimeSeries):
+            df = self.current_params['delta_f']
+            hp = hp.to_frequencyseries(delta_f=df)
+            hc = hc.to_frequencyseries(delta_f=df)
+            # time-domain waveforms will not be shifted so that the peak amp
+            # happens at the end of the time series (as they are for f-domain),
+            # so we add an additional shift to account for it
+            tshift = 1./df - abs(hp._epoch)
+        else:
+            tshift = 0.
+        hp._epoch = hc._epoch = self._epoch
+        h = {}
+
+        for detname, det in self.detectors.items():
+            if self.recalib:
+                # recalibrate with given calibration model
+                hp = self.recalib[detname].map_to_adjust(
+                    hp, **self.current_params)
+                hc = self.recalib[detname].map_to_adjust(
+                    hc, **self.current_params)
+            h[detname] = (hp, hc)
+        return h
+
+    @staticmethod
+    def select_rframe_generator(approximant):
+        """Returns a radiation frame generator class based on the approximant
+        string.
+        """
+        return select_waveform_generator(approximant)
 
 class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
     """Generates frequency-domain waveform modes in a specific frame.

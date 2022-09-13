@@ -223,7 +223,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 self.variable_params, self.data,
                 waveform_transforms=self.waveform_transforms,
                 recalibration=self.recalibration,
-                generator_class=generator.FDomainDetFrameTwoPolGenerator,
+                generator_class=generator.FDomainDetFrameTwoPolNoRespGenerator,
                 gates=self.gates, **kwargs['static_params'])
         else:
             # create a waveform generator for each ifo respestively
@@ -233,7 +233,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                     self.variable_params, {det: self.data[det]},
                     waveform_transforms=self.waveform_transforms,
                     recalibration=self.recalibration,
-                    generator_class=generator.FDomainDetFrameTwoPolGenerator,
+                    generator_class=generator.FDomainDetFrameTwoPolNoRespGenerator,
                     gates=self.gates, **kwargs['static_params'])
 
         self.dets = {}
@@ -306,8 +306,8 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             hphc = hp[slc].inner(hc[slc]).real  # <hp, hc>
 
             snr_proxy = (0.5 * ((cplx_hpd / hphp ** 0.5).squared_norm() +
-                                (cplx_hcd / hchc ** 0.5).swuqred_norm()) ** 0.5
-            snr_estimate[ifo] = snr_proxy
+                                (cplx_hcd / hchc ** 0.5).squared_norm()))
+            snr_estimate[ifo] = snr_proxy ** 0.5
 
         self.draw_snr(snr_estimate)
 
@@ -319,10 +319,13 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                                     params['dec'],
                                     params['polarization'],
                                     params['tc'])
-
-            cplx_hd = fp * cplx_hpd.at_time(params['tc'],
+            dt = self.dets[det].time_delay_from_earth_center(params['ra'],
+                                                             params['dec'],
+                                                             params['tc'])
+            dtc = params['tc'] + dt
+            cplx_hd = fp * cplx_hpd.at_time(dtc,
                                             interpolate='quadratic')
-            cplx_hd += fc * cplx_hcd.at_time(params['tc'],
+            cplx_hd += fc * cplx_hcd.at_time(dtc,
                                              interpolate='quadratic')
             hh = fp * fp * hphp + fc * fc * hchc + 2.0 * fp * fc * hphc
 
