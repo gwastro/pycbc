@@ -15,7 +15,7 @@ with open('../param_files/MBHB_params_v2.pkl', 'rb') as f:
 
     modes = [(2,2)]
 
-    params = {'approximant': 'connor_bbhx',
+    params = {'approximant': 'BBHX_PhenomD',
         'mass1': pMBHB['Mass1'],
         'mass2': pMBHB['Mass2'],
         'delta_f':1/31536000,
