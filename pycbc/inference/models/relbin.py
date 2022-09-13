@@ -38,7 +38,8 @@ from pycbc.types import Array
 
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
-                         likelihood_parts_multi, likelihood_parts_multi_v)
+                         likelihood_parts_multi, likelihood_parts_multi_v,
+                         likelihood_parts_det)
 from .tools import DistMarg
 
 
@@ -346,7 +347,10 @@ class Relative(BaseGaussianNoise, DistMarg):
             self.mlik = likelihood_parts_multi_v
         else:
             atimes = self.fid_params["tc"]
-            self.lik = likelihood_parts
+            if self.det_response:
+                self.lik = likelihood_parts_det
+            else:
+                self.lik = likelihood_parts
             self.mlik = likelihood_parts_multi
         return atimes
 
@@ -491,12 +495,19 @@ class Relative(BaseGaussianNoise, DistMarg):
             end_time = self.end_time[ifo]
             times = self.antenna_time[ifo]
 
-            # project waveform to detector frame
-            # FIXME: Don't want to do this for LISA!!
+            # project waveform to detector frame if waveform does not deal
+            # with detector response. Otherwise, skip detector response.
+
+            hp, hc = wfs[ifo]
             if self.det_response:
-                fp, fc = (1, 0)
-                dt = 0
+                fp = 1
                 dtc = -end_time
+                hp, hc = wfs[ifo]
+                hdp, hhp = self.lik(freqs, fp, dtc,
+                                    hp, hc, h00,
+                                    sdat['a0'], sdat['a1'],
+                                    sdat['b0'], sdat['b1'])
+                self._current_wf_parts[ifo] = (fp, dtc, hp, hc, h00)
             else:
                 det = self.det[ifo]
                 fp, fc = det.antenna_pattern(p["ra"], p["dec"],
@@ -504,13 +515,11 @@ class Relative(BaseGaussianNoise, DistMarg):
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time
 
-            hp, hc = wfs[ifo]
-            hdp, hhp = self.lik(freqs, fp, fc, dtc,
-                                hp, hc, h00,
-                                sdat['a0'], sdat['a1'],
-                                sdat['b0'], sdat['b1'])
-
-            self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
+                hdp, hhp = self.lik(freqs, fp, fc, dtc,
+                                    hp, hc, h00,
+                                    sdat['a0'], sdat['a1'],
+                                    sdat['b0'], sdat['b1'])
+                self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
             hd += hdp
             hh += hhp
         return self.marginalize_loglr(hd, hh)
