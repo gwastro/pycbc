@@ -288,17 +288,20 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             hp[self._kmin[det]:kmax] *= self._weight[det][slc]
             hc[self._kmin[det]:kmax] *= self._weight[det][slc]
 
+            hp.resize(len(self._whitened_data[det]))
+            hc.resize(len(self._whitened_data[det]))
+            print("I AM HERE")
             cplx_hpd, _, _ = matched_filter_core(
                                  hp,
                                  self._whitened_data[det],
-                                 low_frequency_cutoff = self._f_lower[ifo],
-                                 high_frequency_cutoff = self._f_upper[ifo],
+                                 low_frequency_cutoff = self._f_lower[det],
+                                 high_frequency_cutoff = self._f_upper[det],
                                  h_norm=1)
             cplx_hcd, _, _ = matched_filter_core(
                                  hc,
                                  self._whitened_data[det],
-                                 low_frequency_cutoff = self._f_lower[ifo],
-                                 high_frequency_cutoff = self._f_upper[ifo],
+                                 low_frequency_cutoff = self._f_lower[det],
+                                 high_frequency_cutoff = self._f_upper[det],
                                  h_norm=1)
 
             hphp = hp[slc].inner(hp[slc]).real  # < hp, hp>
@@ -307,9 +310,9 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
             snr_proxy = (0.5 * ((cplx_hpd / hphp ** 0.5).squared_norm() +
                                 (cplx_hcd / hchc ** 0.5).squared_norm()))
-            snr_estimate[ifo] = snr_proxy ** 0.5
+            snr_estimate[det] = snr_proxy ** 0.5
 
-        self.draw_snr(snr_estimate)
+        self.snr_draw(snr_estimate)
 
         for det in wfs:
             if det not in self.dets:
