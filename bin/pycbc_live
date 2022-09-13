@@ -88,7 +88,7 @@ class LiveEventManager(object):
             return
 
         self.path = args.output_path
-        self.mc_area_args = mchirp_area.from_cli(args)
+        self.mc_area_args = mchirp_area.from_cli(args, parser)
         self.padata = livepau.PAstroData(args.p_astro_spec, args.bank_file)
         self.use_date_prefix = args.day_hour_output_prefix
         self.ifar_upload_threshold = args.ifar_upload_threshold

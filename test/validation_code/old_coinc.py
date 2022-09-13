@@ -14,6 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+#### NOTE #####
+# This code is a verbatim copy of the coinc.py code as of 20th August 2022.
+# It's here to verify that any changes being made to this code are not changing
+# the physical output
+###############
+
 #
 # =============================================================================
 #
@@ -21,7 +27,7 @@
 #
 # =============================================================================
 #
-""" This module contains functions for calculating and manipulating
+""" This modules contains functions for calculating and manipulating
 coincident triggers.
 """
 
@@ -31,7 +37,6 @@ from pycbc.detector import Detector, ppdets
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
-
     Parameters
     ----------
     bins: list of strings
@@ -40,7 +45,6 @@ def background_bin_from_string(background_bins, data):
     data: dict of numpy.ndarrays
         Dict with parameter key values and numpy.ndarray values which define
         the parameters of the template bank to bin up.
-
     Returns
     -------
     bins: dict
@@ -124,10 +128,8 @@ def background_bin_from_string(background_bins, data):
 
 def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
     """ Find the coincident time for each timeslide.
-
     Find the coincident time for each timeslide, where the first time vector
     is slid to the right by the offset in the given timeslide_offsets vector.
-
     Parameters
     ----------
     start1: numpy.ndarray
@@ -140,13 +142,12 @@ def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
         Array of the end of valid analyzed times for detector 2
     timseslide_offset: numpy.ndarray
         Array of offsets (in seconds) for each timeslide
-
     Returns
     --------
     durations: numpy.ndarray
         Array of coincident time for each timeslide in the offset array
     """
-    from . import veto
+    from pycbc.events import veto
     durations = []
     seg2 = veto.start_end_to_segments(start2, end2)
     for offset in timeslide_offsets:
@@ -157,7 +158,6 @@ def timeslide_durations(start1, start2, end1, end2, timeslide_offsets):
 
 def time_coincidence(t1, t2, window, slide_step=0):
     """ Find coincidences by time window
-
     Parameters
     ----------
     t1 : numpy.ndarray
@@ -169,7 +169,6 @@ def time_coincidence(t1, t2, window, slide_step=0):
     slide_step : float (default 0)
         If calculating background coincidences, the interval between background
         slides, arbitrary units (usually s)
-
     Returns
     -------
     idx1 : numpy.ndarray
@@ -219,7 +218,6 @@ def time_coincidence(t1, t2, window, slide_step=0):
 def time_multi_coincidence(times, slide_step=0, slop=.003,
                            pivot='H1', fixed='L1'):
     """ Find multi detector coincidences.
-
     Parameters
     ----------
     times: dict of numpy.ndarrays
@@ -234,7 +232,6 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         The other ifo used in first stage coincidence, subsequently used as a
         time reference for additional ifos. All other ifos are not time shifted
         relative to this ifo
-
     Returns
     -------
     ids: dict of arrays of int
@@ -303,9 +300,12 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
                 # However there are rare corner cases at starts/ends of inspiral
                 #  jobs. For these, arbitrarily keep the first trigger and
                 #  discard the second (and any subsequent ones).
+                where = right - left == rlmax
                 logging.warning('Triggers in %s are closer than coincidence '
                                 'window, 1 or more coincs will be discarded. '
                                 'This is a warning, not an error.' % ifo1)
+                print([float(ti) for ti in
+                       time1[left[where][0]:right[where][0]]])
             # identify indices of times in ifo1 that form coincs with ifo2
             dep_ids = left[nz]
             # slide is array of slide ids attached to pivot ifo
@@ -328,7 +328,6 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
 def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
-
     Parameters
     ----------
     stat: numpy.ndarray
@@ -343,7 +342,6 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
         length of the timeslides offset interval
     window: float
         length to cluster over
-
     Returns
     -------
     cindex: numpy.ndarray
@@ -375,7 +373,6 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
 def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argmax=numpy.argmax):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
-
     Parameters
     ----------
     stat: numpy.ndarray
@@ -388,7 +385,6 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
         length of the timeslides offset interval
     window: float
         duration of clustering window in seconds
-
     Returns
     -------
     cindex: numpy.ndarray
@@ -429,12 +425,10 @@ def mean_if_greater_than_zero(vals):
     """ Calculate mean over numerical values, ignoring values less than zero.
     E.g. used for mean time over coincident triggers when timestamps are set
     to -1 for ifos not included in the coincidence.
-
     Parameters
     ----------
     vals: iterator of numerical values
         values to be mean averaged
-
     Returns
     -------
     mean: float
@@ -451,7 +445,6 @@ def mean_if_greater_than_zero(vals):
 def cluster_over_time(stat, time, window, argmax=numpy.argmax):
     """Cluster generalized transient events over time via maximum stat over a
     symmetric sliding window
-
     Parameters
     ----------
     stat: numpy.ndarray
@@ -462,7 +455,6 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
         length to cluster over
     argmax: function
         the function used to calculate the maximum value
-
     Returns
     -------
     cindex: numpy.ndarray
@@ -533,13 +525,9 @@ class MultiRingBuffer(object):
         self.max_time = max_time
         self.buffer = []
         self.buffer_expire = []
-        self.valid_ends = []
-        self.valid_starts = []
         for _ in range(num_rings):
-            self.buffer.append(numpy.zeros(128, dtype=dtype))
-            self.buffer_expire.append(numpy.zeros(128, dtype=int))
-            self.valid_ends.append(0)
-            self.valid_starts.append(0)
+            self.buffer.append(numpy.zeros(0, dtype=dtype))
+            self.buffer_expire.append(numpy.zeros(0, dtype=int))
         self.time = 0
 
     @property
@@ -547,12 +535,7 @@ class MultiRingBuffer(object):
         return min(self.time, self.max_time)
 
     def num_elements(self):
-        count = 0
-        for idx, a in enumerate(self.buffer):
-            vals = self.valid_starts[idx]
-            vale = self.valid_ends[idx]
-            count += len(a[vals:vale])
-        return count
+        return sum([len(a) for a in self.buffer])
 
     @property
     def nbytes(self):
@@ -561,7 +544,8 @@ class MultiRingBuffer(object):
     def discard_last(self, indices):
         """Discard the triggers added in the latest update"""
         for i in indices:
-            self.valid_ends[i] -= 1
+            self.buffer_expire[i] = self.buffer_expire[i][:-1]
+            self.buffer[i] = self.buffer[i][:-1]
 
     def advance_time(self):
         """Advance the internal time increment by 1, expiring any triggers that
@@ -573,55 +557,32 @@ class MultiRingBuffer(object):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
         for i, v in zip(indices, values):
-            curr_pos = self.valid_ends[i]
-            # Expand ring buffer size if needed
-            if self.valid_ends[i] == len(self.buffer[i]):
-                self.buffer[i] = numpy.resize(
-                    self.buffer[i],
-                    len(self.buffer[i]) * 2
-                )
-                self.buffer_expire[i] = numpy.resize(
-                    self.buffer_expire[i],
-                    len(self.buffer[i]) * 2
-                )
-            self.buffer[i][curr_pos] = v
-            self.buffer_expire[i][curr_pos] = self.time
-            self.valid_ends[i] = self.valid_ends[i] + 1
+            self.buffer[i] = numpy.append(self.buffer[i], v)
+            self.buffer_expire[i] = numpy.append(self.buffer_expire[i], self.time)
         self.advance_time()
-
-    def valid_slice(self, buffer_index):
-        """Return the valid slice for this buffer index"""
-        ret_slice = slice(
-            self.valid_starts[buffer_index],
-            self.valid_ends[buffer_index]
-        )
-        return ret_slice
 
     def expire_vector(self, buffer_index):
         """Return the expiration vector of a given ring buffer """
-        return self.buffer_expire[buffer_index][self.valid_slice(buffer_index)]
+        return self.buffer_expire[buffer_index]
 
     def data(self, buffer_index):
         """Return the data vector for a given ring buffer"""
         # Check for expired elements and discard if they exist
         expired = self.time - self.max_time
         exp = self.buffer_expire[buffer_index]
-        j = self.valid_starts[buffer_index]
-        while j < self.valid_ends[buffer_index]:
+        j = 0
+        while j < len(exp):
             # Everything before this j must be expired
             if exp[j] >= expired:
+                self.buffer_expire[buffer_index] = exp[j:].copy()
+                self.buffer[buffer_index] = self.buffer[buffer_index][j:].copy()
                 break
             j += 1
-        self.valid_starts[buffer_index] = j
-        val_start = self.valid_starts[buffer_index]
-        if val_start > 0.3 * len(self.buffer[buffer_index]):
-            # If 30% of stored triggers are expired, free up memory
-            self.buffer_expire[buffer_index] = self.buffer_expire[buffer_index][val_start:].copy()
-            self.buffer[buffer_index] = self.buffer[buffer_index][val_start:].copy()
-            self.valid_ends[buffer_index] -= val_start
-            self.valid_starts[buffer_index] = 0
+        if j > 0 and j == len(exp):
+            print("Shouldn't be here!")
+            raise
 
-        return self.buffer[buffer_index][self.valid_slice(buffer_index)]
+        return self.buffer[buffer_index]
 
 
 class CoincExpireBuffer(object):
@@ -677,7 +638,6 @@ class CoincExpireBuffer(object):
 
     def add(self, values, times, ifos):
         """Add values to the internal buffer
-
         Parameters
         ----------
         values: numpy.ndarray
@@ -768,7 +728,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             Additional options for the statistic to use. See stat.py
             for more details on statistic options.
         """
-        from . import stat
+        from . import old_stat as stat
         self.num_templates = num_templates
         self.analysis_block = analysis_block
 
@@ -799,18 +759,15 @@ class LiveCoincTimeslideBackgroundEstimator(object):
     @classmethod
     def pick_best_coinc(cls, coinc_results):
         """Choose the best two-ifo coinc by ifar first, then statistic if needed.
-
         This function picks which of the available double-ifo coincs to use.
         It chooses the best (highest) ifar. The ranking statistic is used as
         a tie-breaker.
         A trials factor is applied if multiple types of coincs are possible
         at this time given the active ifos.
-
         Parameters
         ----------
         coinc_results: list of coinc result dicts
             Dictionary by detector pair of coinc result dicts.
-
         Returns
         -------
         best: coinc results dict
@@ -853,7 +810,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     @classmethod
     def from_cli(cls, args, num_templates, analysis_chunk, ifos):
-        from . import stat
+        from . import old_stat as stat
 
         # Allow None inputs
         stat_files = args.statistic_files or []
@@ -876,7 +833,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     @staticmethod
     def insert_args(parser):
-        from . import stat
+        from . import old_stat as stat
 
         stat.insert_statistic_option_group(parser)
 
@@ -918,13 +875,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def set_singles_buffer(self, results):
         """Create the singles buffer
-
         This creates the singles buffer for each ifo. The dtype is determined
         by a representative sample of the single triggers in the results.
-
         Parameters
         ----------
-        results: dict of dict
+        restuls: dict of dict
             Dict indexed by ifo and then trigger column.
         """
         # Determine the dtype from a sample of the data.
@@ -953,14 +908,12 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def _add_singles_to_buffer(self, results, ifos):
         """Add single detector triggers to the internal buffer
-
         Parameters
         ----------
-        results: dict
+        results: dict of arrays
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
-            'chisq', etc. The specific format is determined by the
+            'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
-
         Returns
         -------
         updated_singles: dict of numpy.ndarrays
@@ -1000,32 +953,22 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             updated_indices[ifo] = trigs['template_id']
         return updated_indices
 
-    def _find_coincs(self, results, valid_ifos):
+    def _find_coincs(self, results, ifos):
         """Look for coincs within the set of single triggers
-
         Parameters
         ----------
-        results: dict
+        results: dict of arrays
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
-            'chisq', etc. The specific format is determined by the
+            'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
-        valid_ifos: list of strs
-            List of ifos for which new triggers might exist. This must be a
-            subset of self.ifos. If an ifo is in self.ifos but not in this list
-            either the ifo is down, or its data has been flagged as "bad".
-
         Returns
         -------
-        num_background: int
-            Number of time shifted coincidences found.
         coinc_results: dict of arrays
             A dictionary of arrays containing the coincident results.
         """
-        # For each new single detector trigger find the allowed coincidences
-        # Record the template and the index of the single trigger that forms
-        # each coincidence
-
-        # Initialize
+        # for each single detector trigger find the allowed coincidences
+        # Record which template and the index of the single trigger
+        # that forms each coincident trigger
         cstat = [[]]
         offsets = []
         ctimes = {self.ifos[0]:[], self.ifos[1]:[]}
@@ -1035,102 +978,73 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # Calculate all the permutations of coincident triggers for each
         # new single detector trigger collected
-        # Currently only two detectors are supported.
-        # For each ifo, check its newly added triggers for (zerolag and time
-        # shift) coincs with all currently stored triggers in the other ifo.
-        # Do this by keeping the ifo with new triggers fixed and time shifting
-        # the other ifo. The list 'shift_vec' must be in the same order as
-        # self.ifos and contain -1 for the shift_ifo / 0 for the fixed_ifo.
-        for fixed_ifo, shift_ifo, shift_vec in zip(
-            [self.ifos[0], self.ifos[1]],
-            [self.ifos[1], self.ifos[0]],
-            [[0, -1], [-1, 0]]
-        ):
-            if fixed_ifo not in valid_ifos:
-                # This ifo is not online now, so no new triggers or coincs
-                continue
-            # Find newly added triggers in fixed_ifo
-            trigs = results[fixed_ifo]
-            # Loop over them one trigger at a time
+        for ifo in ifos:
+            trigs = results[ifo]
+
+            oifo = self.ifos[1] if self.ifos[0] == ifo else self.ifos[0]
+
             for i in range(len(trigs['end_time'])):
                 trig_stat = trigs['stat'][i]
                 trig_time = trigs['end_time'][i]
                 template = trigs['template_id'][i]
 
-                # Get current shift_ifo triggers in the same template
-                times = self.singles[shift_ifo].data(template)['end_time']
-                stats = self.singles[shift_ifo].data(template)['stat']
+                times = self.singles[oifo].data(template)['end_time']
+                stats = self.singles[oifo].data(template)['stat']
 
-                # Perform coincidence. i1 is the list of trigger indices in the
-                # shift_ifo which make coincs, slide is the corresponding slide
-                # index.
-                # (The second output would just be a list of zeroes as we only
-                # have one trigger in the fixed_ifo.)
                 i1, _, slide = time_coincidence(times,
                                  numpy.array(trig_time, ndmin=1,
                                  dtype=numpy.float64),
                                  self.time_window,
                                  self.timeslide_interval)
-
-                # Make a copy of the fixed ifo trig_stat for each coinc.
-                # NB for some statistics the "stat" entry holds more than just
-                # a ranking number. E.g. for the phase time consistency test,
-                # it must also contain the phase, time and sensitivity.
                 trig_stat = numpy.resize(trig_stat, len(i1))
+                sngls_list = [[ifo, trig_stat],
+                              [oifo, stats[i1]]]
 
-                # Force data into form needed by stat.py and then compute the
-                # ranking statistic values.
-                sngls_list = [[fixed_ifo, trig_stat],
-                              [shift_ifo, stats[i1]]]
+                if oifo == self.ifos[0]:
+                    to_shift = [-1, 0]
+                else:
+                    to_shift = [0, -1]
+
+                # This can only use 2-det coincs at present
                 c = self.stat_calculator.rank_stat_coinc(
                     sngls_list,
                     slide,
                     self.timeslide_interval,
-                    shift_vec
+                    to_shift
                 )
-
-                # Store data about new triggers: slide index, stat value and
-                # times.
                 offsets.append(slide)
                 cstat.append(c)
-                ctimes[shift_ifo].append(times[i1])
-                ctimes[fixed_ifo].append(numpy.zeros(len(c),
-                                         dtype=numpy.float64))
-                ctimes[fixed_ifo][-1].fill(trig_time)
+                ctimes[oifo].append(times[i1])
+                ctimes[ifo].append(numpy.zeros(len(c), dtype=numpy.float64))
+                ctimes[ifo][-1].fill(trig_time)
 
-                # As background triggers are removed after a certain time, we
-                # need to log when this will be for new background triggers.
-                single_expire[shift_ifo].append(
-                    self.singles[shift_ifo].expire_vector(template)[i1]
-                )
-                single_expire[fixed_ifo].append(numpy.zeros(len(c),
-                                                dtype=numpy.int32))
-                single_expire[fixed_ifo][-1].fill(
-                    self.singles[fixed_ifo].time - 1
-                )
+                single_expire[oifo].append(self.singles[oifo].expire_vector(template)[i1])
+                single_expire[ifo].append(numpy.zeros(len(c),
+                                          dtype=numpy.int32))
+                single_expire[ifo][-1].fill(self.singles[ifo].time - 1)
 
-                # Save the template and trigger ids to keep association
+                # save the template and trigger ids to keep association
                 # to singles. The trigger was just added so it must be in
-                # the last position: we mark this with -1 so the
+                # the last position we mark this with -1 so the
                 # slicing picks the right point
                 template_ids.append(numpy.zeros(len(c)) + template)
-                trigger_ids[shift_ifo].append(i1)
-                trigger_ids[fixed_ifo].append(numpy.zeros(len(c)) - 1)
+                trigger_ids[oifo].append(i1)
+                trigger_ids[ifo].append(numpy.zeros(len(c)) - 1)
 
         cstat = numpy.concatenate(cstat)
         template_ids = numpy.concatenate(template_ids).astype(numpy.int32)
-        for ifo in valid_ifos:
+        for ifo in ifos:
             trigger_ids[ifo] = numpy.concatenate(trigger_ids[ifo]).astype(numpy.int32)
+
+        # cluster the triggers we've found
+        # (both zerolag and non handled together)
+        num_zerolag = 0
+        num_background = 0
 
         logging.info(
             "%s: %s background and zerolag coincs",
             ppdets(self.ifos, "-"), len(cstat)
         )
-
-        # Cluster the triggers we've found
-        # (both zerolag and shifted are handled together)
-        num_zerolag = 0
-        num_background = 0
         if len(cstat) > 0:
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
@@ -1147,13 +1061,13 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 single_expire[ifo] = numpy.concatenate(single_expire[ifo])
                 single_expire[ifo] = single_expire[ifo][cidx][bkg_idx]
 
-            self.coincs.add(cstat[cidx][bkg_idx], single_expire, valid_ifos)
+            self.coincs.add(cstat[cidx][bkg_idx], single_expire, ifos)
             num_zerolag = zerolag_idx.sum()
             num_background = bkg_idx.sum()
-        elif len(valid_ifos) > 0:
-            self.coincs.increment(valid_ifos)
+        elif len(ifos) > 0:
+            self.coincs.increment(ifos)
 
-        # Collect coinc results for saving
+        ####################################Collect coinc results for saving
         coinc_results = {}
         # Save information about zerolag triggers
         if num_zerolag > 0:
@@ -1181,12 +1095,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # Save all the background triggers
         if self.return_background:
             coinc_results['background/stat'] = self.coincs.data
-
         return num_background, coinc_results
 
     def backout_last(self, updated_singles, num_coincs):
         """Remove the recently added singles and coincs
-
         Parameters
         ----------
         updated_singles: dict of numpy.ndarrays
@@ -1202,14 +1114,12 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def add_singles(self, results):
         """Add singles to the background estimate and find candidates
-
         Parameters
         ----------
-        results: dict
+        results: dict of arrays
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
-            'chisq', etc. The specific format is determined by the
+            'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
-
         Returns
         -------
         coinc_results: dict of arrays
@@ -1229,7 +1139,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self._add_singles_to_buffer(results, ifos=valid_ifos)
 
         # Calculate zerolag and background coincidences
-        _, coinc_results = self._find_coincs(results, valid_ifos=valid_ifos)
+        _, coinc_results = self._find_coincs(results, ifos=valid_ifos)
 
         # record if a coinc is possible in this chunk
         if len(valid_ifos) == 2:
@@ -1237,17 +1147,3 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         return coinc_results
 
-
-__all__ = [
-    "background_bin_from_string",
-    "timeslide_durations",
-    "time_coincidence",
-    "time_multi_coincidence",
-    "cluster_coincs",
-    "cluster_coincs_multiifo",
-    "mean_if_greater_than_zero",
-    "cluster_over_time",
-    "MultiRingBuffer",
-    "CoincExpireBuffer",
-    "LiveCoincTimeslideBackgroundEstimator"
-]
