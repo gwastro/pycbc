@@ -194,6 +194,144 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
         return marginalize_likelihood(hd, hh, phase=True)
 
 
+class MarginalizedTime(DistMarg, BaseGaussianNoise):
+    r""" This likelihood numerically marginalizes over time
+
+    This likelihood is optimized for marginalizing over time, but can also
+    handle marginalization over polarization, phase (where appropriate),
+    and sky location.
+    """
+    name = 'marginalized_time'
+
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 **kwargs):
+
+        variable_params, kwargs = self.setup_marginalization(
+                               variable_params,
+                               **kwargs)
+
+        # set up the boiler-plate attributes
+        super(MarginalizedTime, self).__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            **kwargs)
+        # Determine if all data have the same sampling rate and segment length
+        if self.all_ifodata_same_rate_length:
+            # create a waveform generator for all ifos
+            self.waveform_generator = create_waveform_generator(
+                self.variable_params, self.data,
+                waveform_transforms=self.waveform_transforms,
+                recalibration=self.recalibration,
+                generator_class=generator.FDomainDetFrameTwoPolGenerator,
+                gates=self.gates, **kwargs['static_params'])
+        else:
+            # create a waveform generator for each ifo respestively
+            self.waveform_generator = {}
+            for det in self.data:
+                self.waveform_generator[det] = create_waveform_generator(
+                    self.variable_params, {det: self.data[det]},
+                    waveform_transforms=self.waveform_transforms,
+                    recalibration=self.recalibration,
+                    generator_class=generator.FDomainDetFrameTwoPolGenerator,
+                    gates=self.gates, **kwargs['static_params'])
+
+        self.dets = {}
+
+    def _nowaveform_loglr(self):
+        """Convenience function to set loglr values if no waveform generated.
+        """
+        return -numpy.inf
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        from pycbc.filter import matched_filter_core
+
+        params = self.current_params
+        try:
+            if self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
+        except NoWaveformError:
+            return self._nowaveform_loglr()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_loglr()
+            else:
+                raise e
+
+        sh_total = hh_total = 0.
+        snr_estimate = {}
+        for det, (hp, hc) in wfs.items():
+            # the kmax of the waveforms may be different than internal kmax
+            kmax = min(max(len(hp), len(hc)), self._kmax[det])
+            slc = slice(self._kmin[det], kmax)
+
+            # whiten both polarizations
+            hp[self._kmin[det]:kmax] *= self._weight[det][slc]
+            hc[self._kmin[det]:kmax] *= self._weight[det][slc]
+
+            cplx_hpd, _, _ = matched_filter_core(
+                                 hp,
+                                 self._whitened_data[det],
+                                 low_frequency_cutoff = self._f_lower[ifo],
+                                 high_frequency_cutoff = self._f_upper[ifo],
+                                 h_norm=1)
+            cplx_hcd, _, _ = matched_filter_core(
+                                 hc,
+                                 self._whitened_data[det],
+                                 low_frequency_cutoff = self._f_lower[ifo],
+                                 high_frequency_cutoff = self._f_upper[ifo],
+                                 h_norm=1)
+
+            hphp = hp[slc].inner(hp[slc]).real  # < hp, hp>
+            hchc = hc[slc].inner(hc[slc]).real  # <hc, hc>
+            hphc = hp[slc].inner(hc[slc]).real  # <hp, hc>
+
+            snr_proxy = (0.5 * ((cplx_hpd / hphp ** 0.5).squared_norm() +
+                                (cplx_hcd / hchc ** 0.5).swuqred_norm()) ** 0.5
+            snr_estimate[ifo] = snr_proxy
+
+        self.draw_snr(snr_estimate)
+
+        for det in wfs:
+            if det not in self.dets:
+                self.dets[det] = Detector(det)
+            fp, fc = self.dets[det].antenna_pattern(
+                                    params['ra'],
+                                    params['dec'],
+                                    params['polarization'],
+                                    params['tc'])
+
+            cplx_hd = fp * cplx_hpd.at_time(params['tc'],
+                                            interpolate='quadratic')
+            cplx_hd += fc * cplx_hcd.at_time(params['tc'],
+                                             interpolate='quadratic')
+            hh = fp * fp * hphp + fc * fc * hchc + 2.0 * fp * fc * hphc
+
+            sh_total += cplx_hd
+            hh_total += hh
+
+        return self.marginalize_loglr(sh_total, hh_total)
+
+
 class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
     r""" This likelihood numerically marginalizes over polarization angle
 
