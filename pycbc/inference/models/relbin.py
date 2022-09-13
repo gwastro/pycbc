@@ -220,12 +220,10 @@ class Relative(BaseGaussianNoise, DistMarg):
 
             if self.det_response:
                 if ifo not in self.init_tdi_wavs:
-                    la, le, lt = get_fd_det_waveform_sequence(sample_points=fpoints,
-                                                             **self.fid_params)
-                    self.init_tdi_wavs['LISA_A'] = la
-                    self.init_tdi_wavs['LISA_E'] = le
-                    self.init_tdi_wavs['LISA_T'] = lt
-                curr_wav = self.init_tdi_wavs[ifo]
+                    wave = get_fd_det_waveform_sequence(ifo,
+                                                        sample_points=fpoints,
+                                                        **self.fid_params)
+                curr_wav = wave[ifo]
 
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
@@ -378,15 +376,12 @@ class Relative(BaseGaussianNoise, DistMarg):
         """ Get the waveform polarizations for each ifo
         """
         if self.det_response:
-            wf_ret = {}
-            la, le, lt = get_fd_det_waveform_sequence(sample_points=self.edge_unique[0],
-                                                     **params)
-            la = la.numpy()
-            le = le.numpy()
-            lt = lt.numpy()
-            wf_ret['LISA_A'] = (la, la)
-            wf_ret['LISA_E'] = (le, le)
-            wf_ret['LISA_T'] = (lt, lt)
+            wfs = {}
+            for ifo in self.data:
+                wfs = wfs | get_fd_det_waveform_sequence(ifo,
+                                            sample_points=self.edge_unique[0],
+                                            **params)
+            return wfs
         else:
             wfs = []
             for edge in self.edge_unique:
@@ -498,17 +493,18 @@ class Relative(BaseGaussianNoise, DistMarg):
             # project waveform to detector frame if waveform does not deal
             # with detector response. Otherwise, skip detector response.
 
-            hp, hc = wfs[ifo]
             if self.det_response:
                 fp = 1
                 dtc = -end_time
-                hp, hc = wfs[ifo]
+                print(wfs[ifo])
+                hp = wfs[ifo]
                 hdp, hhp = self.lik(freqs, fp, dtc,
-                                    hp, hc, h00,
+                                    hp, h00,
                                     sdat['a0'], sdat['a1'],
                                     sdat['b0'], sdat['b1'])
-                self._current_wf_parts[ifo] = (fp, dtc, hp, hc, h00)
+                self._current_wf_parts[ifo] = (fp, dtc, hp, h00)
             else:
+                hp, hc = wfs[ifo]
                 det = self.det[ifo]
                 fp, fc = det.antenna_pattern(p["ra"], p["dec"],
                                              p["polarization"], times)

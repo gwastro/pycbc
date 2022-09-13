@@ -26,6 +26,7 @@
 waveforms.
 """
 
+from dataclasses import asdict
 import os
 import lal, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
@@ -494,7 +495,7 @@ for apx in _lalsim_enum:
 
 def get_fd_waveform_sequence(template=None, **kwds):
     """Return values of the waveform evaluated at the sequence of frequency
-    points. The waveform generator doesn't include detector response. 
+    points. The waveform generator doesn't include detector response.
 
     Parameters
     ----------
@@ -526,9 +527,9 @@ def get_fd_waveform_sequence(template=None, **kwds):
     check_args(input_params, required)
     return wav_gen(**input_params)
 
-def get_fd_det_waveform_sequence(template=None, **kwds):
+def get_fd_det_waveform_sequence(channel, template=None, **kwds):
     """Return values of the waveform evaluated at the sequence of frequency
-    points. The waveform generator includes detector response. 
+    points. The waveform generator includes detector response.
 
     Parameters
     ----------
@@ -539,9 +540,9 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
 
     Returns
     -------
-    htilde: Array
+    dict
         The detector-frame waveform (with detector response) in frequency domain
-        evaluated at the frequency points.
+        evaluated at the frequency points. Keys are requested data channels.
     """
     input_params = props(template, **kwds)
     input_params['delta_f'] = -1
@@ -555,7 +556,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     else:
         required = parameters.fd_required
     check_args(input_params, required)
-    return wav_gen(**input_params)
+    return wav_gen(channel,**input_params)
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
