@@ -26,8 +26,6 @@
 """
 Module to generate PSD figures
 """
-from matplotlib import pyplot as plt
-
 from pycbc.results import ifo_color
 from pycbc import DYN_RANGE_FAC
 
@@ -50,6 +48,7 @@ def generate_asd_plot(psddict, output_filename):
     -------
         None
     """
+    from matplotlib import pyplot as plt
     asd_fig, asd_ax = plt.subplots(1)
     for ifo in sorted(psddict.keys()):
         curr_psd = psddict[ifo]

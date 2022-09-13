@@ -37,7 +37,7 @@ fi
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   ENV_OS="x86_64_rhel_8"
-  yum -y install python38 python38-devel
+  yum -y install python39 python39-devel
   yum -y groupinstall "Development Tools"
   yum -y install which rsync
   yum clean all
@@ -51,7 +51,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   mkdir -p ${CVMFS_PATH}
 
   VENV_PATH=${CVMFS_PATH}/pycbc-${SOURCE_TAG}
-  virtualenv -p python3.8 ${VENV_PATH}
+  virtualenv -p python3.9 ${VENV_PATH}
   echo 'export PYTHONUSERBASE=${VIRTUAL_ENV}/.local' >> ${VENV_PATH}/bin/activate
   echo "export XDG_CACHE_HOME=\${HOME}/cvmfs-pycbc-${SOURCE_TAG}/.cache" >> ${VENV_PATH}/bin/activate
   source ${VENV_PATH}/bin/activate

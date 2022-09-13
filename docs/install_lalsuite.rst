@@ -10,7 +10,7 @@ The following page describes how to build lalsuite from source for use with PyCB
 
     These instructions assume that you already have the required dependencies for lalsuite installed on your system. You must have ``git``, ``FFTW``, ``GSL``, ``FrameL``, and ``MetaIO`` installed before continuing. 
     
-    These packages are installed by default on a LIGO Data Grid cluster. If you are not on a LIGO Data Grid cluster, then you can download them from the `lscsoft repository <https://wiki.ligo.org/DASWG/SoftwareDownloads>`_ or see the `lscsoft install instructions <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lscsoft-install.html>`_ for instructions on building the dependencies from source. You can also contact your system administrator to determine if these packages are available using the ``module load`` command.
+    These packages are installed by default on a LIGO Data Grid cluster. If you are not on a LIGO Data Grid cluster, see the `lalsuite install instructions <https://wiki.ligo.org/Computing/LALSuiteInstall>`_ for instructions on installing/building the dependencies. You can also contact your system administrator to determine if these packages are available.
 
 ====================================================
 Obtaining the source code and checking out a version
@@ -34,7 +34,7 @@ changing the path to the activate script appropriately.  Clone the lalsuite repo
 Note that this checks out a read-only repository. If you want a git repository
 that you can edit, you can either fork this repository to your own GitHub
 account or, if you have ``LIGO.ORG`` credentials, you can follow the 
-`instructions on the DASWG pages for cloning lalsuite <https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/advanced-lalsuite-git.html#clone>`_.
+`instructions on the LSC Computing pages for cloning lalsuite <https://wiki.ligo.org/Computing/LALSuiteInstall>`_.
 
 .. note::
 

@@ -17,13 +17,17 @@
 
 import os
 import sys
+import numpy
 from ligo.lw import lsctables
+from ligo.lw import ligolw
 from ligo.lw.ligolw import Param, LIGOLWContentHandler \
     as OrigLIGOLWContentHandler
 from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
 from ligo.lw.types import FormatFunc, FromPyType, ToPyType
 from ligo.lw.utils import process as ligolw_process
+from ligo.lw.param import Param as LIGOLWParam
+from ligo.lw.array import Array as LIGOLWArray
 import pycbc.version as pycbc_version
 
 
@@ -234,6 +238,77 @@ def legacy_row_id_converter(ContentHandler):
     ContentHandler.startStream = startStream
 
     return ContentHandler
+
+def _build_series(series, dim_names, comment, delta_name, delta_unit):
+    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    elem = ligolw.LIGO_LW(
+            Attributes({'Name': str(series.__class__.__name__)}))
+    if comment is not None:
+        elem.appendChild(ligolw.Comment()).pcdata = comment
+    elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
+    elem.appendChild(LIGOLWParam.from_pyvalue('f0', series.f0, unit='s^-1'))
+    delta = getattr(series, delta_name)
+    if numpy.iscomplexobj(series.data.data):
+        data = numpy.row_stack((
+            numpy.arange(len(series.data.data)) * delta,
+            series.data.data.real,
+            series.data.data.imag
+        ))
+    else:
+        data = numpy.row_stack((
+            numpy.arange(len(series.data.data)) * delta,
+            series.data.data
+        ))
+    a = LIGOLWArray.build(series.name, data, dim_names=dim_names)
+    a.Unit = str(series.sampleUnits)
+    dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
+    dim0.Unit = delta_unit
+    dim0.Start = series.f0
+    dim0.Scale = delta
+    elem.appendChild(a)
+    return elem
+
+def make_psd_xmldoc(psddict, xmldoc=None):
+    """Add a set of PSDs to a LIGOLW XML document. If the document is not
+    given, a new one is created first.
+    """
+    xmldoc = ligolw.Document() if xmldoc is None else xmldoc.childNodes[0]
+
+    # the PSDs must be children of a LIGO_LW with name "psd"
+    root_name = 'psd'
+    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    lw = xmldoc.appendChild(
+        ligolw.LIGO_LW(Attributes({'Name': root_name})))
+
+    for instrument, psd in psddict.items():
+        xmlseries = _build_series(
+            psd,
+            ('Frequency,Real', 'Frequency'),
+            None,
+            'deltaF',
+            's^-1'
+        )
+        fs = lw.appendChild(xmlseries)
+        fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
+    return xmldoc
+
+def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
+    """Save an SNR time series into an XML document, in a format compatible
+    with BAYESTAR.
+    """
+    snr_lal = snr_series.lal()
+    snr_lal.name = 'snr'
+    snr_lal.sampleUnits = ''
+    snr_xml = _build_series(
+        snr_lal,
+        ('Time', 'Time,Real,Imaginary'),
+        None,
+        'deltaT',
+        's'
+    )
+    snr_node = document.childNodes[-1].appendChild(snr_xml)
+    eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
+    snr_node.appendChild(eid_param)
 
 
 @legacy_row_id_converter

@@ -5,6 +5,7 @@ import os
 import numpy
 from numpy import complex128, real, sqrt, sin, cos, angle, ceil, log
 from numpy import zeros, argmax, array
+from astropy.utils.data import download_file
 from pycbc import DYN_RANGE_FAC
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc.pnutils import nearest_larger_binary_number
@@ -226,12 +227,6 @@ class TestChisq(unittest.TestCase):
     __test__ = False
     def setUp(self, *args):
         # Where are my data files?
-        if os.path.isfile('test/data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'test/data/'
-        elif os.path.isfile('data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'data/'
-        else:
-            self.assertTrue(False, msg="Cannot find data files!")
         self.context = _context
         self.scheme = _scheme
         self.tolerance = 1e-6
@@ -282,6 +277,7 @@ class TestChisq(unittest.TestCase):
     def test_filtering(self):
         idx = self.idx
         jdx = self.jdx
+        # Uncomment these lines if needing to regenerate data files
         #w1 = self.wps_list[idx]
         #w2 = self.wps_list[jdx]
         #stilde = get_waveform(w1, self.low_freq_filter-1,
@@ -291,12 +287,21 @@ class TestChisq(unittest.TestCase):
         #    stilde.save('data/skymaxtest_stilde_%d.hdf' % idx)
         #except:
         #    pass
-        stilde = load_frequencyseries(self.dataDir + \
-                                      'skymaxtest_stilde_%d.hdf' % idx)
+        url = ('https://github.com/gwastro/pycbc-config/raw/master/'
+               'test_data_files/{}')
+        fname = f'skymaxtest_stilde_{idx}.hdf'
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+
+        stilde = load_frequencyseries(fname)
+        os.unlink(fname)
         s_norm = sigmasq(stilde, psd=self.psd,
                          low_frequency_cutoff=self.low_freq_filter)
         stilde /= sqrt(float(s_norm))
         stilde *= 100
+        # Uncomment these lines if needing to regenerate data files
         #hplus, hcross = get_waveform(w2, self.low_freq_filter-1,
         #                             self.sample_rate, self.filter_N,
         #                             self.sample_rate, sky_max_template=True)
@@ -305,10 +310,22 @@ class TestChisq(unittest.TestCase):
         #    hcross.save('data/skymaxtest_hcross_%d.hdf' % jdx)
         #except:
         #    pass
-        hplus = load_frequencyseries(self.dataDir + \
-                                     'skymaxtest_hplus_%d.hdf' % jdx)
-        hcross = load_frequencyseries(self.dataDir + \
-                                      'skymaxtest_hcross_%d.hdf' % jdx)
+        fname = f'skymaxtest_hplus_{jdx}.hdf'
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+        hplus = load_frequencyseries(fname)
+        os.unlink(fname)
+
+        fname = f'skymaxtest_hcross_{jdx}.hdf'
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+        hcross = load_frequencyseries(fname)
+        os.unlink(fname)
+
         hplus.f_lower = self.low_freq_filter
         hplus.params = random.randint(0,100000000000)
         hcross.f_lower = self.low_freq_filter
