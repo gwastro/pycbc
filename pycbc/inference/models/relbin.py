@@ -344,17 +344,23 @@ class Relative(DistMarg, BaseGaussianNoise):
             if self.no_det_response:
                 self.lik = likelihood_parts_det
             else:
-                if self.marginalize_vector_params:
-                    self.lik = likelihood_parts_vector
-                    if 'polarization' in self.marginalize_vector_params:
-                        if ('ra' not in self.marginalize_vector_params and
-                           'dec' not in self.marginalize_vector_params and
-                           'tc' not in self.marginalize_vector_params):
-                           self.lik = likelihood_parts_vectorp
-                else:
-                    self.lik = likelihood_parts
-                    self.mlik = likelihood_parts_multi
+                self.lik = likelihood_parts
+                self.mlik = likelihood_parts_multi
         return atimes
+
+    @property
+    def likelihood_function(self):
+        if self.marginalize_vector_params:
+            p = self.current_params
+
+            for k in ['ra', 'dec', 'tc']:
+                if k in p and not numpy.isscalar(p[k]):
+                    return likelihood_parts_vector
+
+            if 'polarization' in p and not numpy.isscalar(p['polarization']):
+                return likelihood_parts_vectorp
+
+        return self.lik
 
     def summary_product(self, h1, h2, bins, ifo):
         """ Calculate the summary values for the inner product <h1|h2>
@@ -482,6 +488,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         p.update(self.static_params)
         wfs = self.get_waveforms(p)
 
+        lik = self.likelihood_function
         norm = 0.0
         filt = 0j
         self._current_wf_parts = {}
@@ -499,7 +506,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             if self.no_det_response:
                 dtc = -end_time
                 channel = wfs[ifo].numpy()
-                filter_i, norm_i = self.lik(freqs, dtc, channel, h00,
+                filter_i, norm_i = lik(freqs, dtc, channel, h00,
                                             sdat['a0'], sdat['a1'],
                                             sdat['b0'], sdat['b1'])
             else:
@@ -510,14 +517,16 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time
 
-                filter_i, norm_i = self.lik(freqs, fp, fc, dtc,
+                filter_i, norm_i = lik(freqs, fp, fc, dtc,
                                             hp, hc, h00,
                                             sdat['a0'], sdat['a1'],
                                             sdat['b0'], sdat['b1'])
                 self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
             filt += filter_i
             norm += norm_i
-        return self.marginalize_loglr(filt, norm)
+        loglr = self.marginalize_loglr(filt, norm)
+        print(loglr)
+        return loglr
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
