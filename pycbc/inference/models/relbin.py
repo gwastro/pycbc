@@ -31,8 +31,8 @@ import numpy
 import itertools
 from scipy.interpolate import interp1d
 
-from pycbc.waveform import get_fd_waveform_sequence,\
-get_fd_det_waveform_sequence, fd_det_sequence
+from pycbc.waveform import (get_fd_waveform_sequence,
+                            get_fd_det_waveform_sequence, fd_det_sequence)
 from pycbc.detector import Detector
 from pycbc.types import Array
 
@@ -191,9 +191,6 @@ class Relative(BaseGaussianNoise, DistMarg):
         self.fid_params = self.static_params.copy()
         self.fid_params.update(fiducial_params)
 
-        if self.no_det_response:
-            self.no_det_waves = {}
-
         for k in self.static_params:
             if self.fid_params[k] == 'REPLACE':
                self.fid_params.pop(k)
@@ -219,12 +216,10 @@ class Relative(BaseGaussianNoise, DistMarg):
             fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
 
             if self.no_det_response:
-                if ifo not in self.no_det_waves:
-                    wave = get_fd_det_waveform_sequence(ifos=ifo,
-                                                        sample_points=fpoints,
-                                                        **self.fid_params)
+                wave = get_fd_det_waveform_sequence(ifos=ifo,
+                                                    sample_points=fpoints,
+                                                    **self.fid_params)
                 curr_wav = wave[ifo]
-
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
@@ -379,8 +374,8 @@ class Relative(BaseGaussianNoise, DistMarg):
             wfs = {}
             for ifo in self.data:
                 wfs = wfs | get_fd_det_waveform_sequence(ifos=ifo,
-                                                sample_points=self.fedges[ifo],
-                                                **params)
+                                                        sample_points=self.fedges[ifo],
+                                                        **params)
             return wfs
 
         wfs = []
@@ -480,7 +475,7 @@ class Relative(BaseGaussianNoise, DistMarg):
         wfs = self.get_waveforms(p)
 
         norm = 0.0
-        filter = 0j
+        filt = 0j
         self._current_wf_parts = {}
         for ifo in self.data:
 
@@ -512,9 +507,9 @@ class Relative(BaseGaussianNoise, DistMarg):
                                             sdat['a0'], sdat['a1'],
                                             sdat['b0'], sdat['b1'])
                 self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
-            filter += filter_i
+            filt += filter_i
             norm += norm_i
-        return self.marginalize_loglr(filter, norm)
+        return self.marginalize_loglr(filt, norm)
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
