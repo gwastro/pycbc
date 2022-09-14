@@ -39,7 +39,8 @@ from pycbc.types import Array
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
-                         likelihood_parts_det)
+                         likelihood_parts_det, likelihood_parts_vector,
+                         likelihood_parts_vectorp)
 from .tools import DistMarg
 
 
@@ -343,8 +344,16 @@ class Relative(DistMarg, BaseGaussianNoise):
             if self.no_det_response:
                 self.lik = likelihood_parts_det
             else:
-                self.lik = likelihood_parts
-            self.mlik = likelihood_parts_multi
+                if self.marginalize_vector_params:
+                    self.lik = likelihood_parts_vector
+                    if 'polarization' in self.marginalize_vector_params:
+                        if ('ra' not in self.marginalize_vector_params and
+                           'dec' not in self.marginalize_vector_params and
+                           'tc' not in self.marginalize_vector_params):
+                           self.lik = likelihood_parts_vectorp
+                else:
+                    self.lik = likelihood_parts
+                    self.mlik = likelihood_parts_multi
         return atimes
 
     def summary_product(self, h1, h2, bins, ifo):
