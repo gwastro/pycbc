@@ -29,5 +29,5 @@ git+https://github.com/mennthor/awkde.git@master
 scikit-learn
 
 # Needed for `BBHx` package to work with PyCBC
-git+https://github.com/mikekatz04/BBHx.git@master
-git+https://github.com/ConWea/BBHX-waveform-model.git@master
+git+https://github.com/mikekatz04/BBHx.git
+git+https://github.com/ConWea/BBHX-waveform-model.git
