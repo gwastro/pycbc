@@ -301,7 +301,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         coinc_results[key + 'f_lower'] = f_low
         if f_upper:
             coinc_results[key + 'f_final'] = f_upper
-        # required by SingleCoincForGraceDB
+        # required by CandidateForGraceDB
         coinc_results[key + 'template_id'] = -1
         coinc_results[key + 'snr_series'] = snr_series
         coinc_results[key + 'psd_series'] = psd_series
@@ -391,7 +391,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
               'followup_data': followup_data,
               'channel_names': channel_names}
 
-    doc = live.SingleCoincForGraceDB(ifos, coinc_results, **kwargs)
+    doc = live.CandidateForGraceDB(ifos, coinc_results, **kwargs)
 
     ligolw_file_path = os.path.join(tmpdir, file_name_tag + '.xml')
 

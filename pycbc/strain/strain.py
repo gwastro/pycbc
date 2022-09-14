@@ -18,6 +18,7 @@ This modules contains functions reading, generating, and segmenting strain data
 """
 import copy
 import logging, numpy
+import functools
 import pycbc.types
 from pycbc.types import TimeSeries, zeros
 from pycbc.types import Array, FrequencySeries
@@ -25,13 +26,13 @@ from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
-from pycbc.types import copy_opts_for_single_ifo
+from pycbc.types import copy_opts_for_single_ifo, complex_same_precision_as
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, lowpass, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
 from pycbc.waveform.spa_tmplt import spa_distance
 import pycbc.psd
-import pycbc.fft
+from pycbc.fft import FFT, IFFT
 import pycbc.events
 import pycbc.frame
 import pycbc.filter
@@ -843,7 +844,7 @@ ensure_one_opt_groups.append(['--frame-cache','--fake-strain',
                               '--hdf-store'])
 
 required_opts_list = ['--gps-start-time', '--gps-end-time',
-                      '--strain-high-pass', '--pad-data', '--sample-rate',
+                      '--pad-data', '--sample-rate',
                       '--channel-name']
 
 
@@ -1245,6 +1246,163 @@ class StrainSegments(object):
             required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
 
 
+@functools.lru_cache(maxsize=500)
+def create_memory_and_engine_for_class_based_fft(
+    npoints_time,
+    dtype,
+    delta_t=1,
+    ifft=False,
+    uid=0
+):
+    """ Create memory and engine for class-based FFT/IFFT
+
+    Currently only supports R2C FFT / C2R IFFTs, but this could be expanded
+    if use-cases arise.
+
+    Parameters
+    ----------
+    npoints_time : int
+        Number of time samples of the real input vector (or real output vector
+        if doing an IFFT).
+    dtype : np.dtype
+        The dtype for the real input vector (or real output vector if doing an
+        IFFT). np.float32 or np.float64 I think in all cases.
+    delta_t : float (default: 1)
+        delta_t of the real vector. If not given this will be set to 1, and we
+        will assume it is not needed in the returned TimeSeries/FrequencySeries
+    ifft : boolean (default: False)
+        By default will use the FFT class, set to true to use IFFT.
+    uid : int (default: 0)
+        Provide a unique identifier. This is used to provide a separate set
+        of memory in the cache, for instance if calling this from different
+        codes.
+    """
+    npoints_freq = npoints_time // 2 + 1
+    delta_f_tmp = 1.0 / (npoints_time * delta_t)
+    vec = TimeSeries(
+        zeros(
+            npoints_time,
+            dtype=dtype
+        ),
+        delta_t=delta_t,
+        copy=False
+    )
+    vectilde = FrequencySeries(
+        zeros(
+            npoints_freq,
+            dtype=complex_same_precision_as(vec)
+        ),
+        delta_f=delta_f_tmp,
+        copy=False
+    )
+    if ifft:
+        fft_class = IFFT(vectilde, vec)
+        invec = vectilde
+        outvec = vec
+    else:
+        fft_class = FFT(vec, vectilde)
+        invec = vec
+        outvec = vectilde
+
+    return invec, outvec, fft_class
+
+
+def execute_cached_fft(invec_data, normalize_by_rate=True, ifft=False,
+                       copy_output=True, uid=0):
+    """ Executes a cached FFT
+
+    Parameters
+    -----------
+    invec_data : Array
+        Array which will be used as input when fft_class is executed.
+    normalize_by_rate : boolean (optional, default:False)
+        If True, then normalize by delta_t (for an FFT) or delta_f (for an
+        IFFT).
+    ifft : boolean (optional, default:False)
+        If true assume this is an IFFT and multiply by delta_f not delta_t.
+        Will do nothing if normalize_by_rate is False.
+    copy_output : boolean (optional, default:True)
+        If True we will copy the output into a new array. This avoids the issue
+        that calling this function again might overwrite output. However, if
+        you know that the output array will not be used before this function
+        might be called again with the same length, then setting this to False
+        will provide some increase in efficiency. The uid can also be used to
+        help ensure that data doesn't get unintentionally overwritten!
+    uid : int (default: 0)
+        Provide a unique identifier. This is used to provide a separate set
+        of memory in the cache, for instance if calling this from different
+        codes.
+    """
+    from pycbc.types import real_same_precision_as
+    if ifft:
+        npoints_time = (len(invec_data) - 1) * 2
+    else:
+        npoints_time = len(invec_data)
+
+    try:
+        delta_t = invec_data.delta_t
+    except AttributeError:
+        if not normalize_by_rate:
+            # Don't need this
+            delta_t = 1
+        else:
+            raise
+
+    dtype = real_same_precision_as(invec_data)
+
+    invec, outvec, fft_class = create_memory_and_engine_for_class_based_fft(
+        npoints_time,
+        dtype,
+        delta_t=delta_t,
+        ifft=ifft,
+        uid=uid
+    )
+
+    if invec_data is not None:
+        invec._data[:] = invec_data._data[:]
+    fft_class.execute()
+    if normalize_by_rate:
+        if ifft:
+            outvec._data *= invec._delta_f
+        else:
+            outvec._data *= invec._delta_t
+    if copy_output:
+        outvec = outvec.copy()
+    return outvec
+
+
+def execute_cached_ifft(*args, **kwargs):
+    """ Executes a cached IFFT
+
+    Parameters
+    -----------
+    invec_data : Array
+        Array which will be used as input when fft_class is executed.
+    normalize_by_rate : boolean (optional, default:False)
+        If True, then normalize by delta_t (for an FFT) or delta_f (for an
+        IFFT).
+    copy_output : boolean (optional, default:True)
+        If True we will copy the output into a new array. This avoids the issue
+        that calling this function again might overwrite output. However, if
+        you know that the output array will not be used before this function
+        might be called again with the same length, then setting this to False
+        will provide some increase in efficiency. The uid can also be used to
+        help ensure that data doesn't get unintentionally overwritten!
+    uid : int (default: 0)
+        Provide a unique identifier. This is used to provide a separate set
+        of memory in the cache, for instance if calling this from different
+        codes.
+    """
+    return execute_cached_fft(*args, **kwargs, ifft=True)
+
+
+# If using caching we want output to be unique if called at different places
+# (and if called from different modules/functions), these unique IDs acheive
+# that. The numbers are not significant, only that they are unique.
+STRAINBUFFER_UNIQUE_ID_1 = 236546845
+STRAINBUFFER_UNIQUE_ID_2 = 778946541
+STRAINBUFFER_UNIQUE_ID_3 = 665849947
+
 class StrainBuffer(pycbc.frame.DataBuffer):
     def __init__(self, frame_src, channel_name, start_time,
                  max_buffer=512,
@@ -1517,7 +1675,12 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             buffer_length = int(1.0 / delta_f)
             e = len(self.strain)
             s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
-            fseries = make_frequency_series(self.strain[s:e])
+
+            # FFT the contents of self.strain[s:e] into fseries
+            fseries = execute_cached_fft(self.strain[s:e],
+                                         copy_output=False,
+                                         uid=STRAINBUFFER_UNIQUE_ID_1)
+            fseries._epoch = self.strain._epoch + s*self.strain.delta_t
 
             # we haven't calculated a resample psd for this delta_f
             if delta_f not in self.psds:
@@ -1540,17 +1703,24 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
             # trim ends of strain
             if self.reduced_pad  != 0:
-                overwhite = TimeSeries(zeros(e-s, dtype=self.strain.dtype),
-                                             delta_t=self.strain.delta_t)
-                pycbc.fft.ifft(fseries, overwhite)
+                # IFFT the contents of fseries into overwhite
+                overwhite = execute_cached_ifft(fseries,
+                                                copy_output=False,
+                                                uid=STRAINBUFFER_UNIQUE_ID_2)
+
                 overwhite2 = overwhite[self.reduced_pad:len(overwhite)-self.reduced_pad]
                 taper_window = self.trim_padding / 2.0 / overwhite.sample_rate
                 gate_params = [(overwhite2.start_time, 0., taper_window),
                                (overwhite2.end_time, 0., taper_window)]
                 gate_data(overwhite2, gate_params)
-                fseries_trimmed = FrequencySeries(zeros(len(overwhite2) // 2 + 1,
-                                                  dtype=fseries.dtype), delta_f=delta_f)
-                pycbc.fft.fft(overwhite2, fseries_trimmed)
+
+                # FFT the contents of overwhite2 into fseries_trimmed
+                fseries_trimmed = execute_cached_fft(
+                    overwhite2,
+                    copy_output=True,
+                    uid=STRAINBUFFER_UNIQUE_ID_3
+                )
+
                 fseries_trimmed.start_time = fseries.start_time + self.reduced_pad * self.strain.delta_t
             else:
                 fseries_trimmed = fseries

@@ -25,7 +25,6 @@ Module to generate PyGRB figures: scatter plots and timeseries.
 
 import copy
 import numpy
-from matplotlib import pyplot as plt
 from pycbc.results import save_fig_with_metadata
 
 
@@ -94,6 +93,7 @@ def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
                   snr_vals=None, conts=None, shade_cont_value=None,
                   colors=None, vert_spike=False, cmd=None):
     """Master function to plot PyGRB results"""
+    from matplotlib import pyplot as plt
 
     # Set up plot
     fig = plt.figure()

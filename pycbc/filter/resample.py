@@ -39,6 +39,18 @@ def cached_firwin(*args, **kwargs):
     """
     return scipy.signal.firwin(*args, **kwargs)
 
+
+# Change to True in front-end if you want this function to use caching
+# This is a mostly-hidden optimization option that most users will not want
+# to use. It is used in PyCBC Live
+USE_CACHING_FOR_LFILTER = False
+# If using caching we want output to be unique if called at different places
+# (and if called from different modules/functions), these unique IDs acheive
+# that. The numbers are not significant, only that they are unique.
+LFILTER_UNIQUE_ID_1 = 651273657
+LFILTER_UNIQUE_ID_2 = 154687641
+LFILTER_UNIQUE_ID_3 = 548946442
+
 def lfilter(coefficients, timeseries):
     """ Apply filter coefficients to a time series
 
@@ -64,6 +76,9 @@ def lfilter(coefficients, timeseries):
                           epoch=timeseries.start_time,
                           delta_t=timeseries.delta_t)
     elif (len(timeseries) < fillen * 10) or (len(timeseries) < 2**18):
+        from pycbc.strain.strain import create_memory_and_engine_for_class_based_fft
+        from pycbc.strain.strain import execute_cached_fft
+
         cseries = (Array(coefficients[::-1] * 1)).astype(timeseries.dtype)
         cseries.resize(len(timeseries))
         cseries.roll(len(timeseries) - fillen + 1)
@@ -71,17 +86,42 @@ def lfilter(coefficients, timeseries):
         flen = len(cseries) // 2 + 1
         ftype = complex_same_precision_as(timeseries)
 
-        cfreq = zeros(flen, dtype=ftype)
-        tfreq = zeros(flen, dtype=ftype)
+        if not USE_CACHING_FOR_LFILTER:
+            cfreq = zeros(flen, dtype=ftype)
+            tfreq = zeros(flen, dtype=ftype)
+            fft(Array(cseries), cfreq)
+            fft(Array(timeseries), tfreq)
+            cout = zeros(flen, ftype)
+            correlate(cfreq, tfreq, cout)
+            out = zeros(len(timeseries), dtype=timeseries)
+            ifft(cout, out)
 
-        fft(Array(cseries), cfreq)
-        fft(Array(timeseries), tfreq)
+        else:
+            npoints = len(cseries)
+            # NOTE: This function is cached!
+            ifftouts = create_memory_and_engine_for_class_based_fft(
+                npoints,
+                timeseries.dtype,
+                ifft=True,
+                uid=LFILTER_UNIQUE_ID_1
+            )
 
-        cout = zeros(flen, ftype)
-        out = zeros(len(timeseries), dtype=timeseries)
+            # FFT contents of cseries into cfreq
+            cfreq = execute_cached_fft(cseries, uid=LFILTER_UNIQUE_ID_2,
+                                       copy_output=False,
+                                       normalize_by_rate=False)
 
-        correlate(cfreq, tfreq, cout)
-        ifft(cout, out)
+            # FFT contents of timeseries into tfreq
+            tfreq = execute_cached_fft(timeseries, uid=LFILTER_UNIQUE_ID_3,
+                                       copy_output=False,
+                                       normalize_by_rate=False)
+
+            cout, out, fft_class = ifftouts
+
+            # Correlate cfreq and tfreq
+            correlate(cfreq, tfreq, cout)
+            # IFFT correlation output into out
+            fft_class.execute()
 
         return TimeSeries(out.numpy()  / len(out), epoch=timeseries.start_time,
                           delta_t=timeseries.delta_t)
