@@ -143,10 +143,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # initialize lists for matrix sizes and determinants
         sample_sizes = []
         sample_dets = []
-        # set sizes of sample matrices; ensure exact calculations are only on matrices smaller than 16000*16000
+        # set sizes of sample matrices; ensure exact calculations are only on small matrices
         s = cov.shape[0]
-        if s > 16000:
-            sample_sizes = [s, 16000, 8000, 4000]
+        max_size = 8192
+        if s > max_size:
+            sample_sizes = [s, max_size, max_size//2, max_size//4]
         else:
             sample_sizes = [s, s//2, s//4, s//8]
         for i in sample_sizes:
@@ -187,6 +188,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
     def det_lognorm(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance matrix.
         """
+        if not self.normalize:
+            return 0
         try:
             # check if the key already exists; if so, return its value
             lognorm = self._lognorm[(det, start_index, end_index)]
@@ -201,7 +204,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             m, b = self._cov_regressions[det]
             # extrapolate from linear fit
             ld = m*trunc_size + b
-            lognorm = 0.5*(numpy.log(2*numpy.pi)*n + ld) # full normalization term
+            lognorm = 0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
         return lognorm
@@ -217,7 +220,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """Clears the current stats if the normalization state is changed.
         """
         self._normalize = normalize
-        # if normalize == True and cov_regressions/samples is empty do:
+        # set covariance det linear regression iff normalize is set to true and the respective dicts are empty
+        if self.normalize and self._cov_samples == {} and self._cov_regressions == {}:
             samples, fit = self.logdet_fit(cov, p)
             self._cov_samples[det] = samples
             self._cov_regressions[det] = fit
@@ -550,7 +554,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             key = '{}_analysis_segment'.format(det)
             attrs[key] = [float(data.start_time), float(data.end_time)]
             # store covariance determinant extrapolation information (checkpoint)
-            if self._normalize == True:
+            if self.normalize:
                 attrs['{}_cov_sample'.format(det)] = self._cov_samples[det]
                 attrs['{}_cov_regression'.format(det)] = self._cov_regressions[det]
         if self._psds is not None and not self.no_save_data:
