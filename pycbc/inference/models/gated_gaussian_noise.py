@@ -57,6 +57,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._Rss = {}
         self._cov = {}
         self._lognorm = {}
+        # cache samples and linear regression for determinant extrapolation
+        self._cov_samples = {}
+        self._cov_regressions = {}
         # highpass waveforms with the given frequency
         self.highpass_waveforms = highpass_waveforms
         if self.highpass_waveforms:
@@ -123,15 +126,47 @@ class BaseGatedGaussian(BaseGaussianNoise):
             invp = 1./p
             self._invpsds[det] = invp
             # store the autocorrelation function and covariance matrix for each detector
-            # p = interpolate(p, 0.25) # test with less data (eventually delete this)
-            Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries() # autocorrelation function
-            cov = scipy.linalg.toeplitz(Rss) # full covariance matrix
+            Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()
+            cov = scipy.linalg.toeplitz(Rss)/2 # full covariance matrix
             self._Rss[det] = Rss
             self._cov[det] = cov
+            # calculate and store the linear regressions to extrapolate determinant values
+            if self.normalize:
+                samples, fit = self.logdet_fit(cov, p)
+                self._cov_samples[det] = samples
+                self._cov_regressions[det] = fit
         self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
-    
-    # write a method to calculate samples and do the fit (use eigenvals for full cov), save the fit and 4 points; call that function in psds()
-    
+
+    def logdet_fit(self, cov, p):
+        """Construct a linear regression from a sample of truncated covariance matrices.
+        """
+        # initialize lists for matrix sizes and determinants
+        sample_sizes = []
+        sample_dets = []
+        # set sizes of sample matrices; ensure exact calculations are only on matrices smaller than 16000*16000
+        s = cov.shape[0]
+        if s > 16000:
+            sample_sizes = [s, 16000, 8000, 4000]
+        else:
+            sample_sizes = [s, s//2, s//4, s//8]
+        for i in sample_sizes:
+            # calculate logdet of the full matrix using circulant eigenvalue approximation
+            if i == s:
+                ld = 2*numpy.log(p/(2*p.delta_t)).sum()
+                sample_dets.append(ld)
+            # generate three more sample matrices using exact calculations
+            else:
+                gate_size = s - i
+                start = (s - gate_size)//2
+                end = start + gate_size
+                tc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
+                ld = numpy.linalg.slogdet(tc)[1]
+                sample_dets.append(ld)
+        # generate a linear regression using the four points (size, logdet)
+        x = numpy.vstack([sample_sizes, numpy.ones(len(sample_sizes))]).T
+        m, b = numpy.linalg.lstsq(x, sample_dets, rcond=None)[0]
+        return (sample_sizes, sample_dets), (m, b)
+            
     def gate_indices(self, det):
         """Calculate the indices corresponding to start and end of gate.
         """
@@ -148,16 +183,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         rindex = rindex if rindex <= len(ts) else len(ts)
         return lindex, rindex
     
-    def truncate(self, det):
-        """Truncate the covariance matrix for the given psds and start/end indices.
-        """
-        # call full covariance matrix and gate indices
-        cov = self._cov[det]
-        start_index, end_index = self.gate_indices(det)
-        # delete gated rows and columns
-        trunc = numpy.delete(numpy.delete(cov, slice(start_index, end_index), 0), slice(start_index, end_index), 1)
-        return trunc/2, start_index, end_index
-    
     # here estimate the values from the fit and the size instead of calculating
     def det_lognorm(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance matrix.
@@ -165,13 +190,17 @@ class BaseGatedGaussian(BaseGaussianNoise):
         try:
             # check if the key already exists; if so, return its value
             lognorm = self._lognorm[(det, start_index, end_index)]
-            n = self._cov[det].shape[0]
         except KeyError:
-            # if not, calculate the normalization term
-            n = self._cov[det].shape[0] # number of samples in truncated time series
-            trunc, start_index, end_index = self.truncate(det) # truncated covariance matrix
-            sl = numpy.linalg.slogdet(trunc)
-            ld = sl[1] # log determinant of trunc
+            # if not, extrapolate the normalization term
+            start_index, end_index = self.gate_indices(det)
+            # get the size of the matrix
+            cov = self._cov[det]
+            n = cov.shape[0]
+            trunc_size = n - (end_index - start_index)
+            # call the linear regression
+            m, b = self._cov_regressions[det]
+            # extrapolate from linear fit
+            ld = m*trunc_size + b
             lognorm = 0.5*(numpy.log(2*numpy.pi)*n + ld) # full normalization term
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
@@ -188,6 +217,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """Clears the current stats if the normalization state is changed.
         """
         self._normalize = normalize
+        # if normalize == True and cov_regressions/samples is empty do:
+            samples, fit = self.logdet_fit(cov, p)
+            self._cov_samples[det] = samples
+            self._cov_regressions[det] = fit
 
     def _nowaveform_handler(self):
         """Convenience function to set logl values if no waveform generated.
@@ -502,7 +535,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
         """
-        # write sample points, residuals, and fit from linear regression to checkpoint
         BaseDataModel.write_metadata(self, fp)
         attrs = fp.getattrs(group=group)
         # write the analyzed detectors and times
@@ -510,6 +542,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
             attrs[key] = [float(data.start_time), float(data.end_time)]
+            # store covariance determinant extrapolation information (checkpoint)
+            if self._normalize == True:
+                attrs['{}_cov_sample'.format(det)] = self._cov_samples[det]
+                attrs['{}_cov_regression'.format(det)] = self._cov_regressions[det]
         if self._psds is not None and not self.no_save_data:
             fp.write_psd(self._psds, group=group)
         # write the times used for psd estimation (if they were provided)
