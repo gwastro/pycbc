@@ -22,7 +22,7 @@ def add_custom_waveform(approximant, function, domain,
         Check if waveform generator has built-in detector response.
     """
     from pycbc.waveform.waveform import (cpu_fd, cpu_td, fd_sequence,
-                                        fd_det_sequence)
+                                         fd_det_sequence)
 
     used = RuntimeError("Can't load plugin waveform {}, the name is"
                         " already in use.".format(approximant))

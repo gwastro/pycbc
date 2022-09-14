@@ -374,8 +374,8 @@ class Relative(BaseGaussianNoise, DistMarg):
             wfs = {}
             for ifo in self.data:
                 wfs = wfs | get_fd_det_waveform_sequence(ifos=ifo,
-                                                        sample_points=self.fedges[ifo],
-                                                        **params)
+                                                         sample_points=self.fedges[ifo],
+                                                         **params)
             return wfs
 
         wfs = []
