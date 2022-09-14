@@ -32,6 +32,6 @@ scikit-learn
 gcc_linux-64
 gxx_linux-64
 gsl
-lapack=3.6.1
+lapack==3.6.1
 git+https://github.com/mikekatz04/BBHx.git@master
 git+https://github.com/ConWea/BBHX-waveform-model.git@master
