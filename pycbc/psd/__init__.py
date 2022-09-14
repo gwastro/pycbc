@@ -65,7 +65,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         The frequency series containing the PSD.
     """
     f_low = low_frequency_cutoff
-    sample_rate = int((length -1) * 2 * delta_f)
+    sample_rate = (length -1) * 2 * delta_f
 
     try:
         psd_estimation = opt.psd_estimation is not None
@@ -109,13 +109,14 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     elif psd_estimation:
         # estimate PSD from data
         psd = welch(strain, avg_method=opt.psd_estimation,
-                    seg_len=int(opt.psd_segment_length * sample_rate),
-                    seg_stride=int(opt.psd_segment_stride * sample_rate),
+                    seg_len=int(opt.psd_segment_length * sample_rate + 0.5),
+                    seg_stride=int(opt.psd_segment_stride * sample_rate + 0.5),
                     num_segments=opt.psd_num_segments,
                     require_exact_data_fit=False)
 
         if delta_f != psd.delta_f:
             psd = interpolate(psd, delta_f)
+
     else:
         # Shouldn't be possible to get here
         raise ValueError("Shouldn't be possible to raise this!")
