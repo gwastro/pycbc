@@ -26,7 +26,6 @@
 waveforms.
 """
 
-from dataclasses import asdict
 import os
 import lal, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
@@ -76,12 +75,10 @@ _lalsim_sgburst_approximants = {}
 
 def _check_lal_pars(p):
     """ Create a laldict object from the dictionary of waveform parameters
-
     Parameters
     ----------
     p: dictionary
         The dictionary of lalsimulation paramaters
-
     Returns
     -------
     laldict: LalDict
@@ -395,7 +392,6 @@ def get_obj_attrs(obj):
 def parse_mode_array(input_params):
     """Ensures mode_array argument in a dictionary of input parameters is
     a list of tuples of (l, m), where l and m are ints.
-
     Accepted formats for the ``mode_array`` argument is a list of tuples of
     ints (e.g., ``[(2, 2), (3, 3), (4, 4)]``), a space-separated string giving
     the modes (e.g., ``22 33 44``), or an array of ints or floats (e.g.,
@@ -496,14 +492,12 @@ for apx in _lalsim_enum:
 def get_fd_waveform_sequence(template=None, **kwds):
     """Return values of the waveform evaluated at the sequence of frequency
     points. The waveform generator doesn't include detector response.
-
     Parameters
     ----------
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
     {params}
-
     Returns
     -------
     hplustilde: Array
@@ -530,19 +524,18 @@ def get_fd_waveform_sequence(template=None, **kwds):
 def get_fd_det_waveform_sequence(template=None, **kwds):
     """Return values of the waveform evaluated at the sequence of frequency
     points. The waveform generator includes detector response.
-
     Parameters
     ----------
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
     {params}
-
     Returns
     -------
     dict
-        The detector-frame waveform (with detector response) in frequency domain
-        evaluated at the frequency points. Keys are requested data channels.
+        The detector-frame waveform (with detector response) in frequency
+        domain evaluated at the frequency points. Keys are requested data
+        channels.
     """
     input_params = props(template, **kwds)
     input_params['delta_f'] = -1
@@ -567,14 +560,12 @@ get_fd_det_waveform_sequence.__doc__ = get_fd_det_waveform_sequence.__doc__.form
 
 def get_td_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain waveform.
-
     Parameters
     ----------
     template: object
         An object that has attached properties. This can be used to subsitute
         for keyword arguments. A common example would be a row in an xml table.
     {params}
-
     Returns
     -------
     hplus: TimeSeries
@@ -601,14 +592,12 @@ get_td_waveform.__doc__ = get_td_waveform.__doc__.format(
 
 def get_fd_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
-
     Parameters
     ----------
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
     {params}
-
     Returns
     -------
     hplustilde: FrequencySeries
@@ -650,16 +639,13 @@ get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
 
 def get_fd_waveform_from_td(**params):
     """ Return time domain version of fourier domain approximant.
-
     This returns a frequency domain version of a fourier domain approximant,
     with padding and tapering at the start of the waveform.
-
     Parameters
     ----------
     params: dict
         The parameters defining the waveform to generator.
         See `get_td_waveform`.
-
     Returns
     -------
     hp: pycbc.types.FrequencySeries
@@ -716,10 +702,8 @@ def get_fd_waveform_from_td(**params):
 
 def get_td_waveform_from_fd(rwrap=0.2, **params):
     """ Return time domain version of fourier domain approximant.
-
     This returns a time domain version of a fourier domain approximant, with
     padding and tapering at the start of the waveform.
-
     Parameters
     ----------
     rwrap: float
@@ -729,7 +713,6 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     params: dict
         The parameters defining the waveform to generator.
         See `get_fd_waveform`.
-
     Returns
     -------
     hp: pycbc.types.TimeSeries
@@ -840,7 +823,6 @@ def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
 def get_sgburst_waveform(template=None, **kwargs):
     """Return the plus and cross polarizations of a time domain
     sine-Gaussian burst waveform.
-
     Parameters
     ----------
     template: object
@@ -859,7 +841,6 @@ def get_sgburst_waveform(template=None, **kwargs):
         The strain rss
     amplitude: float
         The strain amplitude
-
     Returns
     -------
     hplus: TimeSeries

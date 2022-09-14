@@ -31,8 +31,8 @@ import numpy
 import itertools
 from scipy.interpolate import interp1d
 
-from pycbc.waveform import get_fd_waveform_sequence, get_fd_det_waveform_sequence,\
-fd_sequence, fd_det_sequence
+from pycbc.waveform import (get_fd_waveform_sequence,
+                            get_fd_det_waveform_sequence, fd_det_sequence)
 from pycbc.detector import Detector
 from pycbc.types import Array
 
@@ -46,7 +46,6 @@ from .tools import DistMarg
 def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     """Construct frequency bins for use in a relative likelihood
     model. For details, see [Barak, Dai & Venumadhav 2018].
-
     Parameters
     ----------
     f_full : array
@@ -64,7 +63,6 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
         result in larger number of bins.
     gammas : array, optional
         Frequency powerlaw indices to be used in computing bins.
-
     Returns
     -------
     nbin : int
@@ -108,15 +106,12 @@ class Relative(BaseGaussianNoise, DistMarg):
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For
     more details on the implementation, see https://arxiv.org/abs/1806.08792.
-
     This model requires the use of a fiducial waveform whose parameters are
     near the peak of the likelihood. The fiducial waveform and all template
     waveforms used in likelihood calculation are currently generated using
     the SPAtmplt approximant.
-
     For more details on initialization parameters and definition of terms, see
     :py:class:`BaseGaussianNoise`.
-
     Parameters
     ----------
     variable_params : (tuple of) string(s)
@@ -173,9 +168,9 @@ class Relative(BaseGaussianNoise, DistMarg):
 
         # If the waveform handles the detector response internally, set
         # self.det_response = True
-        self.det_response = False
+        self.no_det_response = False
         if self.static_params['approximant'] in fd_det_sequence:
-            self.det_response = True
+            self.no_det_response = True
 
         # reference waveform and bin edges
         self.f, self.df, self.end_time, self.det = {}, {}, {}, {}
@@ -190,9 +185,6 @@ class Relative(BaseGaussianNoise, DistMarg):
         # store fiducial waveform params
         self.fid_params = self.static_params.copy()
         self.fid_params.update(fiducial_params)
-
-        if self.det_response:
-            self.no_det_waves = {}
 
         for k in self.static_params:
             if self.fid_params[k] == 'REPLACE':
@@ -218,13 +210,11 @@ class Relative(BaseGaussianNoise, DistMarg):
             fpoints = Array(self.f[ifo].astype(numpy.float64))
             fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
 
-            if self.det_response:
-                if ifo not in self.no_det_waves:
-                    wave = get_fd_det_waveform_sequence(ifos=ifo,
-                                                        sample_points=fpoints,
-                                                        **self.fid_params)
+            if self.no_det_response:
+                wave = get_fd_det_waveform_sequence(ifos=ifo,
+                                                    sample_points=fpoints,
+                                                    **self.fid_params)
                 curr_wav = wave[ifo]
-
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
@@ -242,7 +232,7 @@ class Relative(BaseGaussianNoise, DistMarg):
                     "will be %s Hz", f_hi)
 
             # make copy of fiducial wfs, adding back in low frequencies
-            if self.det_response:
+            if self.no_det_response:
                 curr_wav.resize(len(self.f[ifo]))
                 curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
                 # get detector-specific arrival times relative to end of data
@@ -345,7 +335,7 @@ class Relative(BaseGaussianNoise, DistMarg):
             self.mlik = likelihood_parts_multi_v
         else:
             atimes = self.fid_params["tc"]
-            if self.det_response:
+            if self.no_det_response:
                 self.lik = likelihood_parts_det
             else:
                 self.lik = likelihood_parts
@@ -375,21 +365,21 @@ class Relative(BaseGaussianNoise, DistMarg):
     def get_waveforms(self, params):
         """ Get the waveform polarizations for each ifo
         """
-        if self.det_response:
+        if self.no_det_response:
             wfs = {}
             for ifo in self.data:
                 wfs = wfs | get_fd_det_waveform_sequence(ifos=ifo,
-                                            sample_points=self.fedges[ifo],
-                                            **params)
+                                                         sample_points=self.fedges[ifo],
+                                                         **params)
             return wfs
-        else:
-            wfs = []
-            for edge in self.edge_unique:
-                hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
-                hp = hp.numpy()
-                hc = hc.numpy()
-                wfs.append((hp, hc))
-            wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+
+        wfs = []
+        for edge in self.edge_unique:
+            hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
+            hp = hp.numpy()
+            hc = hc.numpy()
+            wfs.append((hp, hc))
+        wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
         return wf_ret
 
     @property
@@ -460,15 +450,11 @@ class Relative(BaseGaussianNoise, DistMarg):
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
-
         .. math::
-
             \log \mathcal{L}(\Theta) = \sum_i
                 \left<h_i(\Theta)|d_i\right> -
                 \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
-
         at the current parameter values :math:`\Theta`.
-
         Returns
         -------
         float
@@ -479,8 +465,8 @@ class Relative(BaseGaussianNoise, DistMarg):
         p.update(self.static_params)
         wfs = self.get_waveforms(p)
 
-        hh = 0.0
-        hd = 0j
+        norm = 0.0
+        filt = 0j
         self._current_wf_parts = {}
         for ifo in self.data:
 
@@ -493,12 +479,12 @@ class Relative(BaseGaussianNoise, DistMarg):
             # project waveform to detector frame if waveform does not deal
             # with detector response. Otherwise, skip detector response.
 
-            if self.det_response:
+            if self.no_det_response:
                 dtc = -end_time
-                hp = wfs[ifo].numpy()
-                hdp, hhp = self.lik(freqs, dtc, hp, h00,
-                                    sdat['a0'], sdat['a1'],
-                                    sdat['b0'], sdat['b1'])
+                channel = wfs[ifo].numpy()
+                filter_i, norm_i = self.lik(freqs, dtc, channel, h00,
+                                            sdat['a0'], sdat['a1'],
+                                            sdat['b0'], sdat['b1'])
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
@@ -507,18 +493,17 @@ class Relative(BaseGaussianNoise, DistMarg):
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time
 
-                hdp, hhp = self.lik(freqs, fp, fc, dtc,
-                                    hp, hc, h00,
-                                    sdat['a0'], sdat['a1'],
-                                    sdat['b0'], sdat['b1'])
+                filter_i, norm_i = self.lik(freqs, fp, fc, dtc,
+                                            hp, hc, h00,
+                                            sdat['a0'], sdat['a1'],
+                                            sdat['b0'], sdat['b1'])
                 self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
-            hd += hdp
-            hh += hhp
-        return self.marginalize_loglr(hd, hh)
+            filt += filter_i
+            norm += norm_i
+        return self.marginalize_loglr(filt, norm)
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
-
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance

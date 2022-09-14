@@ -6,7 +6,6 @@ def add_custom_waveform(approximant, function, domain,
                         sequence=False, has_det_response=False,
                         force=False,):
     """ Make custom waveform available to pycbc
-
     Parameters
     ----------
     approximant : str
@@ -21,7 +20,8 @@ def add_custom_waveform(approximant, function, domain,
     has_det_response : bool, False
         Check if waveform generator has built-in detector response.
     """
-    from pycbc.waveform.waveform import cpu_fd, cpu_td, fd_sequence, fd_det_sequence
+    from pycbc.waveform.waveform import (cpu_fd, cpu_td, fd_sequence,
+                                         fd_det_sequence)
 
     used = RuntimeError("Can't load plugin waveform {}, the name is"
                         " already in use.".format(approximant))
@@ -32,7 +32,7 @@ def add_custom_waveform(approximant, function, domain,
         cpu_td[approximant] = function
     elif domain == 'frequency':
         if sequence:
-            if has_det_response == False:
+            if not has_det_response:
                 if not force and (approximant in fd_sequence):
                     raise used
                 fd_sequence[approximant] = function
@@ -51,7 +51,6 @@ def add_custom_waveform(approximant, function, domain,
 
 def add_length_estimator(approximant, function):
     """ Add length estimator for an approximant
-
     Parameters
     ----------
     approximant : str
