@@ -31,8 +31,8 @@ import numpy
 import itertools
 from scipy.interpolate import interp1d
 
-from pycbc.waveform import get_fd_waveform_sequence, get_fd_det_waveform_sequence,\
-fd_sequence, fd_det_sequence
+from pycbc.waveform import get_fd_waveform_sequence,\
+get_fd_det_waveform_sequence, fd_det_sequence
 from pycbc.detector import Detector
 from pycbc.types import Array
 
@@ -379,17 +379,17 @@ class Relative(BaseGaussianNoise, DistMarg):
             wfs = {}
             for ifo in self.data:
                 wfs = wfs | get_fd_det_waveform_sequence(ifos=ifo,
-                                            sample_points=self.fedges[ifo],
-                                            **params)
+                                                sample_points=self.fedges[ifo],
+                                                **params)
             return wfs
-        else:
-            wfs = []
-            for edge in self.edge_unique:
-                hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
-                hp = hp.numpy()
-                hc = hc.numpy()
-                wfs.append((hp, hc))
-            wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+
+        wfs = []
+        for edge in self.edge_unique:
+            hp, hc = get_fd_waveform_sequence(sample_points=edge, **params)
+            hp = hp.numpy()
+            hc = hc.numpy()
+            wfs.append((hp, hc))
+        wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
         return wf_ret
 
     @property
@@ -508,9 +508,9 @@ class Relative(BaseGaussianNoise, DistMarg):
                 dtc = p["tc"] + dt - end_time
 
                 filter_i, norm_i = self.lik(freqs, fp, fc, dtc,
-                                    hp, hc, h00,
-                                    sdat['a0'], sdat['a1'],
-                                    sdat['b0'], sdat['b1'])
+                                            hp, hc, h00,
+                                            sdat['a0'], sdat['a1'],
+                                            sdat['b0'], sdat['b1'])
                 self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
             filter += filter_i
             norm += norm_i

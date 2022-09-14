@@ -26,7 +26,6 @@
 waveforms.
 """
 
-from dataclasses import asdict
 import os
 import lal, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
@@ -541,8 +540,9 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     Returns
     -------
     dict
-        The detector-frame waveform (with detector response) in frequency domain
-        evaluated at the frequency points. Keys are requested data channels.
+        The detector-frame waveform (with detector response) in frequency
+        domain evaluated at the frequency points. Keys are requested data
+        channels.
     """
     input_params = props(template, **kwds)
     input_params['delta_f'] = -1

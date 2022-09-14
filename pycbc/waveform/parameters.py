@@ -26,7 +26,6 @@
 """
 
 from collections import OrderedDict
-from numpy import dtype
 try:
     from collections import UserList
 except ImportError:
@@ -555,7 +554,7 @@ dbeta3 = Parameter("dbeta3",
 # after a waveform is generated. Distance, however, is a parameter used by
 # the waveform generators.
 location_params = ParameterList([tc, ra, dec, polarization,
-                        eclipticlatitude, eclipticlongitude])
+                                eclipticlatitude, eclipticlongitude])
 
 # parameters describing the orientation of a binary w.r.t. the radiation
 # frame. Note: we include distance here, as it is typically used for generating
