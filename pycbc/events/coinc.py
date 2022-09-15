@@ -28,6 +28,7 @@ coincident triggers.
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector, ppdets
 from .eventmgr_cython import coincbuffer_expireelements
+from .eventmgr_cython import coincbuffer_numgreater
 
 
 def background_bin_from_string(background_bins, data):
@@ -738,7 +739,7 @@ class CoincExpireBuffer(object):
 
     def num_greater(self, value):
         """Return the number of elements larger than 'value'"""
-        return (self.buffer[:self.index] > value).sum()
+        return coincbuffer_numgreater(self.buffer, self.index, value)
 
     @property
     def data(self):
