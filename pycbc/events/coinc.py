@@ -730,7 +730,6 @@ class CoincExpireBuffer(object):
                 self.timer[ifo][:keep.sum()] = self.timer[ifo][:self.index][keep]
             self.index = keep.sum()
 
-
     def num_greater(self, value):
         """Return the number of elements larger than 'value'"""
         return (self.buffer[:self.index] > value).sum()
