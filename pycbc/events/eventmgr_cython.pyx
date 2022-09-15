@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as cnp
 from cython import wraparound, boundscheck, cdivision
 from libc.math cimport M_PI, sqrt
+from libc.math cimport round as cround
 
 
 ctypedef fused REALTYPE:
@@ -193,6 +194,7 @@ def timecoincidence_constructidxs(
 @boundscheck(False)
 @wraparound(False)
 @cdivision(True)
+def timecoincidence_getslideint(
 def timecoincidence_getslideint(
     int [:] slide,
     double[:] t1,
