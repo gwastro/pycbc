@@ -27,7 +27,3 @@ sympy>=1.9
 # Needed for KDE trigger statistics
 git+https://github.com/mennthor/awkde.git@master
 scikit-learn
-
-# Needed for `BBHx` package to work with PyCBC
-git+https://github.com/mikekatz04/BBHx.git
-git+https://github.com/ConWea/BBHX-waveform-model.git
