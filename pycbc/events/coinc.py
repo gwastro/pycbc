@@ -29,6 +29,10 @@ import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector, ppdets
 from .eventmgr_cython import coincbuffer_expireelements
 from .eventmgr_cython import coincbuffer_numgreater
+from .eventmgr_cython import timecoincidence_constructidxs
+from .eventmgr_cython import timecoincidence_constructfold
+from .eventmgr_cython import timecoincidence_getslideint
+from .eventmgr_cython import timecoincidence_findidxlen
 
 
 def background_bin_from_string(background_bins, data):
@@ -182,8 +186,12 @@ def time_coincidence(t1, t2, window, slide_step=0):
         Array of slide ids
     """
     if slide_step:
-        fold1 = t1 % slide_step
-        fold2 = t2 % slide_step
+        length1 = len(t1)
+        length2 = len(t2)
+        fold1 = numpy.zeros(length1, dtype=numpy.float64)
+        fold2 = numpy.zeros(length2, dtype=numpy.float64)
+        timecoincidence_constructfold(fold1, fold2, t1, t2, slide_step,
+                                      length1, length2)
     else:
         fold1 = t1
         fold2 = t2
@@ -195,27 +203,25 @@ def time_coincidence(t1, t2, window, slide_step=0):
 
     if slide_step:
         # FIXME explain this
-        fold2 = numpy.concatenate([fold2 - slide_step, fold2, fold2 + slide_step])
-        sort2 = numpy.concatenate([sort2, sort2, sort2])
+        fold2 = numpy.concatenate([fold2 - slide_step, fold2,
+                                   fold2 + slide_step])
 
     left = numpy.searchsorted(fold2, fold1 - window)
     right = numpy.searchsorted(fold2, fold1 + window)
 
-    idx1 = numpy.repeat(sort1, right - left)
-    idx2 = [sort2[l:r] for l, r in zip(left, right)]
+    lenidx = timecoincidence_findidxlen(left, right, len(left))
+    idx1 = numpy.zeros(lenidx, dtype=numpy.uint32)
+    idx2 = numpy.zeros(lenidx, dtype=numpy.uint32)
+    timecoincidence_constructidxs(idx1, idx2, sort1, sort2, left, right,
+                                  len(left), len(sort2))
 
-    if len(idx2) > 0:
-        idx2 = numpy.concatenate(idx2)
-    else:
-        idx2 = numpy.array([], dtype=numpy.int64)
-
+    slide = numpy.zeros(lenidx, dtype=numpy.int32)
     if slide_step:
-        diff = ((t1 / slide_step)[idx1] - (t2 / slide_step)[idx2])
-        slide = numpy.rint(diff)
+        timecoincidence_getslideint(slide, t1, t2, idx1, idx2, slide_step)
     else:
         slide = numpy.zeros(len(idx1))
 
-    return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), slide.astype(numpy.int32)
+    return idx1, idx2, slide
 
 
 def time_multi_coincidence(times, slide_step=0, slop=.003,
