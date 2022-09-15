@@ -545,7 +545,6 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
         channels.
     """
     input_params = props(template, **kwds)
-    input_params['delta_f'] = -1
     input_params['f_lower'] = -1
     if input_params['approximant'] not in fd_det_sequence:
         raise ValueError("Approximant %s not available" %
