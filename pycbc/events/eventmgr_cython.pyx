@@ -133,7 +133,7 @@ def coincbuffer_expireelements(
 
     keep_count = 0
     for idx in range(length):
-        if timer[idx] > time - expiration:
+        if timer[idx] >= time - expiration:
             cbuffer[keep_count] = cbuffer[idx]
             timer[keep_count] = timer[idx]
             keep_count += 1
