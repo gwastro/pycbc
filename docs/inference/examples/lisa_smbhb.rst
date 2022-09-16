@@ -41,17 +41,24 @@ This will run the ``dynesty`` sampler. When it is done, you will have a file cal
 ``lisa_smbhb.hdf`` which contains the results. It should take about three minutes to
 run.
 
-To plot the posterior distribution after the last iteration, run:
+To plot the posterior distribution after the last iteration, you can run the following simplified script:
 
-.. literalinclude:: ../../../examples/inference/lisa_smbhb/plot.py
+.. literalinclude:: ../../../examples/inference/lisa_smbhb/plot.sh
+   :language: bash
+
+:download:`Download <../../../examples/inference/lisa_smbhb/plot.sh>`
+
+Or you can run the advanced one:
+.. literalinclude:: ../../../examples/inference/lisa_smbhb/advanced_plot.py
    :language: python
 
-:download:`Download <../../../examples/inference/lisa_smbhb/plot.py>`
+:download:`Download <../../../examples/inference/lisa_smbhb/advanced_plot.py>`
 
-You can modify this plot script to generate the posterior of parameters that you want. This will create the following plot:
+You can modify this advanced plot script to generate the posterior of any SMBHB signals in the LDC Sangria dataset. 
+In this example it will create the following plot:
 
 .. image:: ../../_include/lisa_smbhb_mass_tc_0.png
-   :scale: 30
+   :scale: 60
    :align: center
 
 The scatter points show each walker's position after the last iteration. The

@@ -1,16 +1,11 @@
 import subprocess
 import pickle
 import numpy as np
+from pycbc.conversions import q_from_mass1_mass2, mchirp_from_mass1_mass2
 
 
 def spin_ldc2pycbc(mag, pol):
     return mag*np.cos(pol)
-
-def mass_ratio(m1,m2):
-    return m1/m2
-
-def chirp_mass(m1, m2):
-    return ((m1*m2)**(3/5))/(m1+m2)**(1/5)
 
 def plt(index):
 
@@ -23,8 +18,8 @@ def plt(index):
 
     modes = [(2,2)]
 
-    q = mass_ratio(params_true['Mass1'], params_true['Mass2'])
-    mchirp = chirp_mass(params_true['Mass1'],params_true['Mass2'])
+    q = q_from_mass1_mass2(params_true['Mass1'], params_true['Mass2'])
+    mchirp = mchirp_from_mass1_mass2(params_true['Mass1'],params_true['Mass2'])
 
     params = {'approximant': 'BBHX_PhenomD',
             'mass1': params_true['Mass1'],
@@ -41,20 +36,20 @@ def plt(index):
             'mchirp': mchirp,
             'q': q,
             'mode_array': modes}
-
+    print(params_true['Mass1'], params_true['Mass2'], params_true['CoalescenceTime'])
     plot_code = f"""
             pycbc_inference_plot_posterior \
                 --input-file ./lisa_smbhb.hdf \
                 --output-file ./lisa_smbhb_mass_tc_{p_index}.png \
-                --z-arg snr --plot-scatter --plot-marginal
+                --z-arg snr --plot-scatter --plot-marginal \
                 --parameters \
                     mass1_from_mchirp_q(mchirp,q):mass1 \
                     mass2_from_mchirp_q(mchirp,q):mass2 \
                     tc \
                 --expected-parameters \
-                    mass1_from_mchirp_q(mchirp,q):{params['mass1']} \
-                    mass2_from_mchirp_q(mchirp,q):{params['mass2']} \
-                    tc:{params['tc']} \
+                    mass1_from_mchirp_q(mchirp,q):params['mass1'] \
+                    mass2_from_mchirp_q(mchirp,q):params['mass2'] \
+                    tc:params['tc'] \
                 """
     return plot_code
 
