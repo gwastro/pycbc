@@ -509,7 +509,8 @@ def cluster_over_time(stat, time, window, method='python',
                 i += 1
                 continue
 
-            # Find the location of the maximum within the time interval around i
+            # Find the location of the maximum within the time interval
+            # around i
             max_loc = argmax(stat[l:r]) + l
 
             # If this point is the max, we can skip to the right boundary
