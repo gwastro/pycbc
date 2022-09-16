@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 
 
-def s_ldc2pycbc(mag, pol):
+def spin_ldc2pycbc(mag, pol):
     return mag*np.cos(pol)
 
 def mr(m1,m2):
@@ -19,7 +19,6 @@ def plt(index):
 
     p_index = index
     pMBHB = pmbhb[p_index]
-
     print(pMBHB)
 
     modes = [(2,2)]
@@ -28,34 +27,35 @@ def plt(index):
     mchirp = mchi(pMBHB['Mass1'],pMBHB['Mass2'])
     
     params = {'approximant': 'BBHX_PhenomD',
-         'mass1': pMBHB['Mass1'],
-         'mass2': pMBHB['Mass2'],
-        #  'inclination': incl,
-         'tc': pMBHB['CoalescenceTime'],
-        #  'polarization': psi,
-         'spin1z': s_ldc2pycbc(pMBHB['Spin1'], pMBHB['PolarAngleOfSpin1']),
-         'spin2z': s_ldc2pycbc(pMBHB['Spin2'], pMBHB['PolarAngleOfSpin2']),
-         'coa_phase' : pMBHB['PhaseAtCoalescence'],
-         'distance': pMBHB['Distance'],
-         'eclipticlatitude': pMBHB['EclipticLatitude'],
-         'eclipticlongitude': pMBHB['EclipticLongitude'],
-         'mchirp':mchirp,
-         'q':q,
-         'mode_array':modes}
+            'mass1': pMBHB['Mass1'],
+            'mass2': pMBHB['Mass2'],
+            #  'inclination': incl,
+            'tc': pMBHB['CoalescenceTime'],
+            #  'polarization': psi,
+            'spin1z': spin_ldc2pycbc(pMBHB['Spin1'], pMBHB['PolarAngleOfSpin1']),
+            'spin2z': spin_ldc2pycbc(pMBHB['Spin2'], pMBHB['PolarAngleOfSpin2']),
+            'coa_phase' : pMBHB['PhaseAtCoalescence'],
+            'distance': pMBHB['Distance'],
+            'eclipticlatitude': pMBHB['EclipticLatitude'],
+            'eclipticlongitude': pMBHB['EclipticLongitude'],
+            'mchirp':mchirp,
+            'q':q,
+            'mode_array':modes}
 
     plot_code = f"""
-    pycbc_inference_plot_posterior \
-        --input-file ./lisa_smbhb.hdf \
-        --output-file ./lisa_smbhb_mass_tc_{p_index}.png \
-        --z-arg snr --plot-scatter --plot-marginal
-        --parameters \
-            mass1_from_mchirp_q(mchirp,q):mass1\
-            mass2_from_mchirp_q(mchirp,q):mass2\
-            tc\
-        --expected-parameters  mass1_from_mchirp_q(mchirp,q):{params['mass1']}\
-        mass2_from_mchirp_q(mchirp,q):{params['mass2']}\
-        tc:{params['tc']}\
-            """
+            pycbc_inference_plot_posterior \
+                --input-file ./lisa_smbhb.hdf \
+                --output-file ./lisa_smbhb_mass_tc_{p_index}.png \
+                --z-arg snr --plot-scatter --plot-marginal
+                --parameters \
+                    mass1_from_mchirp_q(mchirp,q):mass1 \
+                    mass2_from_mchirp_q(mchirp,q):mass2 \
+                    tc \
+                --expected-parameters \
+                    mass1_from_mchirp_q(mchirp,q):{params['mass1']} \
+                    mass2_from_mchirp_q(mchirp,q):{params['mass2']} \
+                    tc:{params['tc']} \
+                """
     return plot_code
 
 p = [0]

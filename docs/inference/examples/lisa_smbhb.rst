@@ -1,10 +1,10 @@
---------------------------------------------------
-LISA parameter estimation for SMBHB by using BBHx
---------------------------------------------------
+----------------------------------------------
+LISA parameter estimation for simulated SMBHB
+----------------------------------------------
 
 This example shows how to use PyCBC for parameter estimation of supermassive black hole binaries (SMBHB) 
-in LISA data. The `data <https://zenodo.org/record/7078835>` are generated from 
-`LISA Data Challenge 2a: Sangria <https://lisa-ldc.lal.in2p3.fr/challenge2a>`_, 
+in LISA mock data. The `data <https://zenodo.org/record/7078835>` are generated from 
+`LISA Data Challenge 2a: Sangria <https://lisa-ldc.lal.in2p3.fr/challenge2a>`, 
 and `BBHx <https://github.com/mikekatz04/BBHx>` package is used to generate the ``IMRPhenomD`` template and calculate 
 the corresponding TDI response for LISA. :ref:`Relative binning (heterodyned likelihood)<relative>`
 is used during sampling to speed up the computation of likelihood functions. Before doing parameter estimation, 
@@ -19,7 +19,7 @@ First, we create the following configuration file, here we just set chirp mass, 
 :download:`Download <../../../examples/inference/lisa_smbhb/lisa_smbhb_relbin.ini>`
 
 In this simple example, we do the parameter estimation for the first SMBHB signal in the LDC Sangria dataset,
-we need download the data first:
+we need download the data first (`MBHB_params_v2.pkl` contains all the true parameters):
 
 .. literalinclude:: ../../../examples/inference/lisa_smbhb/get.sh
    :language: bash
@@ -27,7 +27,7 @@ we need download the data first:
 :download:`Download <../../../examples/inference/lisa_smbhb/get.sh>`
 
 By setting the model name to ``relative`` we are using
-:py:class:`Relative <pycbc.inference.models.relbin.Relative>`.
+:py:class:`Relative <pycbc.inference.models.relbin.Relative>` model.
 
 Now run:
 
