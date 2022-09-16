@@ -127,7 +127,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             self._invpsds[det] = invp
             # store the autocorrelation function and covariance matrix for each detector
             Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()
-            cov = scipy.linalg.toeplitz(Rss)/2 # full covariance matrix
+            cov = scipy.linalg.toeplitz(Rss/2) # full covariance matrix
             self._Rss[det] = Rss
             self._cov[det] = cov
             # calculate and store the linear regressions to extrapolate determinant values
@@ -222,9 +222,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._normalize = normalize
         # set covariance det linear regression iff normalize is set to true and the respective dicts are empty
         if self.normalize and self._cov_samples == {} and self._cov_regressions == {}:
-            samples, fit = self.logdet_fit(cov, p)
-            self._cov_samples[det] = samples
-            self._cov_regressions[det] = fit
+            for det, d in self._data.items():
+                cov = self._cov[det]
+                samples, fit = self.logdet_fit(cov, p)
+                self._cov_samples[det] = samples
+                self._cov_regressions[det] = fit
 
     def _nowaveform_handler(self):
         """Convenience function to set logl values if no waveform generated.
