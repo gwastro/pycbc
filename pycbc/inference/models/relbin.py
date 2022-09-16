@@ -46,6 +46,7 @@ from .tools import DistMarg
 def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     """Construct frequency bins for use in a relative likelihood
     model. For details, see [Barak, Dai & Venumadhav 2018].
+
     Parameters
     ----------
     f_full : array
@@ -63,6 +64,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
         result in larger number of bins.
     gammas : array, optional
         Frequency powerlaw indices to be used in computing bins.
+
     Returns
     -------
     nbin : int
@@ -106,12 +108,15 @@ class Relative(BaseGaussianNoise, DistMarg):
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For
     more details on the implementation, see https://arxiv.org/abs/1806.08792.
+
     This model requires the use of a fiducial waveform whose parameters are
     near the peak of the likelihood. The fiducial waveform and all template
     waveforms used in likelihood calculation are currently generated using
     the SPAtmplt approximant.
+
     For more details on initialization parameters and definition of terms, see
     :py:class:`BaseGaussianNoise`.
+
     Parameters
     ----------
     variable_params : (tuple of) string(s)
@@ -450,11 +455,15 @@ class Relative(BaseGaussianNoise, DistMarg):
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
+
         .. math::
+
             \log \mathcal{L}(\Theta) = \sum_i
                 \left<h_i(\Theta)|d_i\right> -
                 \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
         at the current parameter values :math:`\Theta`.
+
         Returns
         -------
         float
@@ -504,6 +513,7 @@ class Relative(BaseGaussianNoise, DistMarg):
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
+
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance

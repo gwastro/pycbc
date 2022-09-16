@@ -6,6 +6,7 @@ def add_custom_waveform(approximant, function, domain,
                         sequence=False, has_det_response=False,
                         force=False,):
     """ Make custom waveform available to pycbc
+
     Parameters
     ----------
     approximant : str
@@ -51,6 +52,7 @@ def add_custom_waveform(approximant, function, domain,
 
 def add_length_estimator(approximant, function):
     """ Add length estimator for an approximant
+
     Parameters
     ----------
     approximant : str

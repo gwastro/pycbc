@@ -49,6 +49,7 @@ To plot the posterior distribution after the last iteration, you can run the fol
 :download:`Download <../../../examples/inference/lisa_smbhb/plot.sh>`
 
 Or you can run the advanced one:
+
 .. literalinclude:: ../../../examples/inference/lisa_smbhb/advanced_plot.py
    :language: python
 
