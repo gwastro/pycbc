@@ -16,6 +16,10 @@ from pycbc.distributions import JointDistribution
 from pycbc.detector import Detector
 
 
+# Earth radius in seconds
+EARTH_RADIUS = 0.031
+
+
 def str_to_tuple(sval, ftype):
     """ Convenience parsing to convert str to tuple"""
     if sval is None:
@@ -413,8 +417,8 @@ class DistMarg():
         mcweight = None
         for ifo in ifos:
             snr = snrs[ifo]
-            start = max(tcmin - .031, snr.start_time)
-            end = min(tcmax + .031, snr.end_time)
+            start = max(tcmin - EARTH_RADIUS, snr.start_time)
+            end = min(tcmax + EARTH_RADIUS, snr.end_time)
             snr = snr.time_slice(start, end, mode='nearest')
 
             w = snr.squared_norm().numpy()
