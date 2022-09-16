@@ -221,12 +221,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         self._normalize = normalize
         # set covariance det linear regression iff normalize is set to true and the respective dicts are empty
-        if self.normalize and self._cov_samples == {} and self._cov_regressions == {}:
-            for det, d in self._data.items():
-                cov = self._cov[det]
-                samples, fit = self.logdet_fit(cov, p)
-                self._cov_samples[det] = samples
-                self._cov_regressions[det] = fit
+        # if self.normalize and self._cov_samples == {} and self._cov_regressions == {}:
+            # for det, d in self._data.items():
+                # cov = self._cov[det]
+                # samples, fit = self.logdet_fit(cov, p)
+                # self._cov_samples[det] = samples
+                # self._cov_regressions[det] = fit
 
     @staticmethod
     def _nowaveform_logl():
