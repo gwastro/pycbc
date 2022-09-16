@@ -36,7 +36,7 @@ def plt(index):
             'mchirp': mchirp,
             'q': q,
             'mode_array': modes}
-    print(params_true['Mass1'], params_true['Mass2'], params_true['CoalescenceTime'])
+
     plot_code = f"""
             pycbc_inference_plot_posterior \
                 --input-file ./lisa_smbhb.hdf \
@@ -47,9 +47,9 @@ def plt(index):
                     mass2_from_mchirp_q(mchirp,q):mass2 \
                     tc \
                 --expected-parameters \
-                    mass1_from_mchirp_q(mchirp,q):params['mass1'] \
-                    mass2_from_mchirp_q(mchirp,q):params['mass2'] \
-                    tc:params['tc'] \
+                    mass1_from_mchirp_q(mchirp,q):{params['mass1']} \
+                    mass2_from_mchirp_q(mchirp,q):{params['mass2']} \
+                    tc:{params['tc']} \
                 """
     return plot_code
 
