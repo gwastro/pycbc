@@ -6,41 +6,41 @@ import numpy as np
 def spin_ldc2pycbc(mag, pol):
     return mag*np.cos(pol)
 
-def mr(m1,m2):
+def mass_ratio(m1,m2):
     return m1/m2
 
-def mchi(m1, m2):
+def chirp_mass(m1, m2):
     return ((m1*m2)**(3/5))/(m1+m2)**(1/5)
 
 def plt(index):
 
     with open('./MBHB_params_v2.pkl', 'rb') as f:
-        pmbhb = pickle.load(f)
+        params_true_all = pickle.load(f)
 
     p_index = index
-    pMBHB = pmbhb[p_index]
-    print(pMBHB)
+    params_true = params_true_all[p_index]
+    print(params_true)
 
     modes = [(2,2)]
 
-    q = mr(pMBHB['Mass1'], pMBHB['Mass2'])
-    mchirp = mchi(pMBHB['Mass1'],pMBHB['Mass2'])
-    
+    q = mass_ratio(params_true['Mass1'], params_true['Mass2'])
+    mchirp = chirp_mass(params_true['Mass1'],params_true['Mass2'])
+
     params = {'approximant': 'BBHX_PhenomD',
-            'mass1': pMBHB['Mass1'],
-            'mass2': pMBHB['Mass2'],
+            'mass1': params_true['Mass1'],
+            'mass2': params_true['Mass2'],
             #  'inclination': incl,
-            'tc': pMBHB['CoalescenceTime'],
+            'tc': params_true['CoalescenceTime'],
             #  'polarization': psi,
-            'spin1z': spin_ldc2pycbc(pMBHB['Spin1'], pMBHB['PolarAngleOfSpin1']),
-            'spin2z': spin_ldc2pycbc(pMBHB['Spin2'], pMBHB['PolarAngleOfSpin2']),
-            'coa_phase' : pMBHB['PhaseAtCoalescence'],
-            'distance': pMBHB['Distance'],
-            'eclipticlatitude': pMBHB['EclipticLatitude'],
-            'eclipticlongitude': pMBHB['EclipticLongitude'],
-            'mchirp':mchirp,
-            'q':q,
-            'mode_array':modes}
+            'spin1z': spin_ldc2pycbc(params_true['Spin1'], params_true['PolarAngleOfSpin1']),
+            'spin2z': spin_ldc2pycbc(params_true['Spin2'], params_true['PolarAngleOfSpin2']),
+            'coa_phase': params_true['PhaseAtCoalescence'],
+            'distance': params_true['Distance'],
+            'eclipticlatitude': params_true['EclipticLatitude'],
+            'eclipticlongitude': params_true['EclipticLongitude'],
+            'mchirp': mchirp,
+            'q': q,
+            'mode_array': modes}
 
     plot_code = f"""
             pycbc_inference_plot_posterior \
@@ -58,6 +58,7 @@ def plt(index):
                 """
     return plot_code
 
+# The index of first SMBHB in LDC Sangria (0-14) is 0.
 p = [0]
 
 for i in p:
