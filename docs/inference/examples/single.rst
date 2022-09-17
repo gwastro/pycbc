@@ -1,6 +1,10 @@
------------------------------------
+######################################
 Using the single template model
------------------------------------
+######################################
+
+-------------------------------
+Quickstart example
+-------------------------------
 
 The single template model is useful for when you know all the intrinsic parameters
 of your signal (say the masses, spins, etc of a merger). In this case, we don't

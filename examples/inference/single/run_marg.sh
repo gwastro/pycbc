@@ -9,8 +9,7 @@ pycbc_inference \
 pycbc_inference_plot_posterior \
 --input-file single_marg.hdf \
 --output-file single_marg.png \
---parameters distance inclination polarization coa_phase tc ra dec \
---z-arg snr --vmin 31.85 --vmax 32.15 \
+--z-arg snr --vmin 31.85 --vmax 32.15
 
 # This reconstructs any marginalized parameters
 # and would be optional if you don't need them or
