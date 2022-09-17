@@ -18,6 +18,9 @@ First, we create the following configuration file, here we just set chirp mass, 
 
 :download:`Download <../../../examples/inference/lisa_smbhb/lisa_smbhb_relbin.ini>`
 
+By setting the model name to ``relative`` we are using
+:py:class:`Relative <pycbc.inference.models.relbin.Relative>` model.
+
 In this simple example, we do the parameter estimation for the first SMBHB signal in the LDC Sangria dataset 
 (you can also run parameter estimation for other SMBHB signals by choosing appropriate prior range),
 we need download the data first (`MBHB_params_v2.pkl` contains all the true parameters):
@@ -26,9 +29,6 @@ we need download the data first (`MBHB_params_v2.pkl` contains all the true para
    :language: bash
 
 :download:`Download <../../../examples/inference/lisa_smbhb/get.sh>`
-
-By setting the model name to ``relative`` we are using
-:py:class:`Relative <pycbc.inference.models.relbin.Relative>` model.
 
 Now run:
 
@@ -64,4 +64,4 @@ In this example it will create the following plot:
 
 The scatter points show each walker's position after the last iteration. The
 points are colored by the SNR at that point, with the 50th and 90th
-percentile contours drawn.
+percentile contours drawn. The red lines represent the true parameters of injected signal.
