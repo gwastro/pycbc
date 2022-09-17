@@ -39,8 +39,8 @@ def plt(index):
 
     plot_code = f"""
             pycbc_inference_plot_posterior \
-                --input-file ./lisa_smbhb.hdf \
-                --output-file ./lisa_smbhb_mass_tc_{p_index}.png \
+                --input-file lisa_smbhb.hdf \
+                --output-file lisa_smbhb_mass_tc_{p_index}.png \
                 --z-arg snr --plot-scatter --plot-marginal \
                 --plot-contours --contour-color black \
                 --parameters \

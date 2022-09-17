@@ -1,3 +1,3 @@
 sh ../../examples/inference/lisa_smbhb/get.sh
 sh ../../examples/inference/lisa_smbhb/run.sh
-sh ../../examples/inference/lisa_smbhb/plot.sh
+python ../../examples/inference/lisa_smbhb/advanced_plot.py

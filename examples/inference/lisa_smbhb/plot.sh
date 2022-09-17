@@ -1,6 +1,6 @@
 pycbc_inference_plot_posterior \
-    --input-file ./lisa_smbhb.hdf \
-    --output-file ./lisa_smbhb_mass_tc_0.png \
+    --input-file lisa_smbhb.hdf \
+    --output-file lisa_smbhb_mass_tc_0.png \
     --z-arg snr --plot-scatter --plot-marginal \
     --plot-contours --contour-color black \
     --parameters \
