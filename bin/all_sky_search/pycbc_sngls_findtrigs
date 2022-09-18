@@ -138,7 +138,7 @@ for tnum in template_ids:
                       "Received {}".format(args.statistic_keywords)
             raise ValueError(err_txt)
 
-    sds = rank_method.single(trigs)
+    sds = rank_method.single(trigs)[trigger_keep_ids]
     stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)
     trigger_times = sds['end_time']

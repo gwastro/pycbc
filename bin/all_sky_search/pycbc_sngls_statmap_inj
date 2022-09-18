@@ -1,0 +1,157 @@
+#!/usr/bin/env python
+"""
+The program combines output files generated
+by pycbc_sngls_findtrigs to generate a mapping between SNR and FAP/FAR, along
+with producing the combined foreground and background triggers.
+"""
+
+import argparse, h5py, itertools
+import lal, logging, numpy
+from pycbc.events import veto, coinc
+from pycbc.events import triggers, trigger_fits as trstats
+from pycbc.events import significance
+import pycbc.version, pycbc.pnutils, pycbc.io
+import sys
+import pycbc.conversions as conv
+
+class fw(object):
+    def __init__(self, name):
+        self.f = h5py.File(name, 'w')
+        self.attrs = self.f.attrs
+
+    def __setitem__(self, name, data):
+        # Make a new item if isn't in the hdf file
+        if not name in self.f:
+            self.f.create_dataset(name, data=data, compression="gzip",
+                                  compression_opts=9, shuffle=True,
+                                  maxshape=data.shape)
+        # Else reassign values
+        else:
+            self.f[name][:] = data
+
+    def __getitem__(self, *args):
+        return self.f.__getitem__(*args)
+
+parser = argparse.ArgumentParser()
+# General required options
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--sngls-files', nargs='+',
+                    help='List of files containign trigger and statistic '
+                         'information.')
+parser.add_argument('--full-data-background', required=True,
+                    help='background file from full data for use in analyzing '
+                         'injection coincs')
+parser.add_argument('--ifos', nargs=1,
+                    help='List of ifos used in these coincidence files')
+parser.add_argument('--verbose', action='count')
+parser.add_argument('--cluster-window', type=float, default=10,
+                    help='Length of time window in seconds to cluster coinc '
+                         'events [default=10s]')
+parser.add_argument('--veto-window', type=float, default=.1,
+                    help='Time around each zerolag trigger to window out '
+                         '[default=.1s]')
+parser.add_argument('--background-removal-statistic', type=float,
+                    default=numpy.inf,
+                    help="Remove any triggers with statistic higher "
+                         "than this from the background. "
+                          "Default=None removed")
+significance.insert_significance_option_group(parser)
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+significance.check_significance_options(args, parser)
+
+logging.info("Loading triggers")
+logging.info("IFO input: %s" % args.ifos[0])
+all_trigs = pycbc.io.MultiifoStatmapData(files=args.sngls_files, ifos=args.ifos)
+ifo = args.ifos[0]
+assert ifo + '/time' in all_trigs.data
+
+logging.info("We have %s triggers" % len(all_trigs.stat))
+logging.info("Clustering coinc triggers (inclusive of zerolag)")
+all_trigs = all_trigs.cluster(args.cluster_window)
+
+logging.info('getting background statistics')
+
+fb = h5py.File(args.full_data_background,'r')
+back_stat = fb['background/stat'][:]
+back_stat_exc = fb['background_exc/stat'][:]
+
+bkg_dec_facs = fb['background/decimation_factor'][:]
+bkg_exc_dec_facs = fb['background_exc/decimation_factor'][:]
+
+# For now, all triggers are both in the foreground and background
+fore_locs = numpy.flatnonzero(all_trigs.timeslide_id == 0)
+
+fg_time = fb.attrs['background_time']
+fg_time_exc = fb.attrs['background_time_exc']
+
+logging.info("Dumping foreground triggers")
+f = fw(args.output_file)
+f.attrs['num_of_ifos'] = 1
+f.attrs['ifos'] = ifo
+
+f.attrs['timeslide_interval'] = all_trigs.attrs['timeslide_interval']
+
+# Copy over the segment info
+for key in all_trigs.seg.keys():
+    f['segments/%s/start' % key] = all_trigs.seg[key]['start'][:]
+    f['segments/%s/end' % key] = all_trigs.seg[key]['end'][:]
+
+f['segments/foreground_veto/start'] = numpy.array([0])
+f['segments/foreground_veto/end'] = numpy.array([0])
+for k in all_trigs.data:
+    f['foreground/' + k] = all_trigs.data[k]
+
+
+logging.info("Estimating FAN from background statistic values")
+# Ranking statistic of foreground and background
+fore_stat = all_trigs.stat[fore_locs]
+
+significance_dict = significance.digest_significance_options([ifo], args)
+
+# Cumulative array of inclusive background triggers and the number of
+# inclusive background triggers louder than each foreground trigger
+back_cnum, fnlouder = significance.get_n_louder(
+    back_stat,
+    fore_stat,
+    bkg_dec_facs,
+    **significance_dict[ifo])
+
+# Cumulative array of exclusive background triggers and the number
+# of exclusive background triggers louder than each foreground trigger
+back_cnum_exc, fnlouder_exc = significance.get_n_louder(
+    back_stat_exc,
+    fore_stat,
+    bkg_exc_dec_facs,
+    **significance_dict[ifo])
+
+fg_ifar = fg_time / (fnlouder + 1)
+bg_ifar = fg_time / (back_cnum + 1)
+fg_ifar_exc = fg_time_exc / (fnlouder_exc + 1)
+bg_ifar_exc = fg_time_exc / (back_cnum_exc + 1)
+
+f['background/ifar'] = conv.sec_to_year(bg_ifar)
+f['background_exc/ifar'] = conv.sec_to_year(bg_ifar_exc)
+f.attrs['background_time'] = fg_time
+f.attrs['foreground_time'] = fg_time
+f.attrs['background_time_exc'] = fg_time_exc
+f.attrs['foreground_time_exc'] = fg_time_exc
+
+logging.info("calculating foreground ifar/fap values")
+
+fap = 1 - numpy.exp(- fg_time / fg_ifar)
+f['foreground/ifar'] = conv.sec_to_year(fg_ifar)
+f['foreground/fap'] = fap
+fap_exc = 1 - numpy.exp(- fg_time_exc / fg_ifar_exc)
+f['foreground/ifar_exc'] = conv.sec_to_year(fg_ifar_exc)
+f['foreground/fap_exc'] = fap_exc
+
+if 'name' in all_trigs.attrs:
+    f.attrs['name'] = all_trigs.attrs['name']
+
+logging.info('Done!')
+
