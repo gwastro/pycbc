@@ -519,7 +519,7 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
 class MultiRingBuffer(object):
     """Dynamic size n-dimensional ring buffer that can expire elements."""
 
-    def __init__(self, num_rings, max_time, dtype):
+    def __init__(self, num_rings, max_time, dtype, min_buffer_size=8):
         """
         Parameters
         ----------
@@ -530,15 +530,21 @@ class MultiRingBuffer(object):
             The maximum "time" an element can exist in each ring.
         dtype: numpy.dtype
             The type of each element in the ring buffer.
+        min_buffer_size: int (optional: default=8)
+            All ring buffers will be initialized to this length. If a buffer is
+            made larger it will no smaller than this value. Buffers may become
+            smaller than this length at any given time as triggers are expired.
         """
         self.max_time = max_time
         self.buffer = []
         self.buffer_expire = []
         self.valid_ends = []
         self.valid_starts = []
+        self.min_buffer_size = min_buffer_size
         for _ in range(num_rings):
-            self.buffer.append(numpy.zeros(128, dtype=dtype))
-            self.buffer_expire.append(numpy.zeros(128, dtype=int))
+            self.buffer.append(numpy.zeros(self.min_buffer_size, dtype=dtype))
+            self.buffer_expire.append(numpy.zeros(self.min_buffer_size,
+                                                  dtype=int))
             self.valid_ends.append(0)
             self.valid_starts.append(0)
         self.time = 0
@@ -579,11 +585,11 @@ class MultiRingBuffer(object):
             if self.valid_ends[i] == len(self.buffer[i]):
                 self.buffer[i] = numpy.resize(
                     self.buffer[i],
-                    len(self.buffer[i]) * 2
+                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
                 )
                 self.buffer_expire[i] = numpy.resize(
                     self.buffer_expire[i],
-                    len(self.buffer[i]) * 2
+                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
                 )
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
