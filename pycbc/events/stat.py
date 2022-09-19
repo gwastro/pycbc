@@ -27,6 +27,7 @@ values.
 """
 import logging
 import numpy
+import h5py
 from . import ranking
 from . import coinc_rate
 from .eventmgr_cython import logsignalrateinternals_computepsignalbins
@@ -52,20 +53,19 @@ class Stat(object):
         ifos: list of strs, needed for some statistics
             The list of detector names
         """
-        import h5py
 
         self.files = {}
         files = files or []
         for filename in files:
-            f = h5py.File(filename, 'r')
-            stat = f.attrs['stat']
+            with h5py.File(filename, 'r') as f:
+                stat = f.attrs['stat']
             if hasattr(stat, 'decode'):
                 stat = stat.decode()
             if stat in self.files:
                 raise RuntimeError("We already have one file with stat attr ="
                                    " %s. Can't provide more than one!" % stat)
             logging.info("Found file %s for stat %s", filename, stat)
-            self.files[stat] = f
+            self.files[stat] = filename
 
         # Provide the dtype of the single detector method's output
         # This is used by background estimation codes that need to maintain
@@ -381,22 +381,32 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             raise RuntimeError("Couldn't figure out which stat file to use")
 
         logging.info("Using signal histogram %s for ifos %s", selected, ifos)
-        histfile = self.files[selected]
-        self.hist_ifos = histfile.attrs['ifos']
-        # Patch for pre-hdf5=3.0 histogram files
-        try:
-            logging.info("Decoding hist ifos ..")
-            self.hist_ifos = [i.decode('UTF-8') for i in self.hist_ifos]
-        except (UnicodeDecodeError, AttributeError):
-            pass
-        n_ifos = len(self.hist_ifos)
+        weights = {}
+        param = {}
 
-        # Histogram bin attributes
-        self.twidth = histfile.attrs['twidth']
-        self.pwidth = histfile.attrs['pwidth']
-        self.swidth = histfile.attrs['swidth']
-        self.srbmin = histfile.attrs['srbmin']
-        self.srbmax = histfile.attrs['srbmax']
+        with h5py.File(self.files[selected], 'r') as histfile:
+            self.hist_ifos = histfile.attrs['ifos']
+
+            # Patch for pre-hdf5=3.0 histogram files
+            try:
+                logging.info("Decoding hist ifos ..")
+                self.hist_ifos = [i.decode('UTF-8') for i in self.hist_ifos]
+            except (UnicodeDecodeError, AttributeError):
+                pass
+
+            # Histogram bin attributes
+            self.twidth = histfile.attrs['twidth']
+            self.pwidth = histfile.attrs['pwidth']
+            self.swidth = histfile.attrs['swidth']
+            self.srbmin = histfile.attrs['srbmin']
+            self.srbmax = histfile.attrs['srbmax']
+            relfac = histfile.attrs['sensitivity_ratios']
+
+            for ifo in self.hist_ifos:
+                weights[ifo] = histfile[ifo]['weights'][:]
+                param[ifo] = histfile[ifo]['param_bin'][:]
+
+        n_ifos = len(self.hist_ifos)
 
         bin_volume = (self.twidth * self.pwidth * self.swidth) ** (n_ifos - 1)
         self.hist_max = - 1. * numpy.inf
@@ -405,20 +415,18 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         # the coinc
         for ifo in self.hist_ifos:
 
-            weights = histfile[ifo]['weights'][:]
             # renormalise to PDF
-            self.weights[ifo] = weights / (weights.sum() * bin_volume)
+            self.weights[ifo] = \
+                weights[ifo] / (weights[ifo].sum() * bin_volume)
 
-            param = histfile[ifo]['param_bin'][:]
-
-            if param.dtype == numpy.int8:
+            if param[ifo].dtype == numpy.int8:
                 # Older style, incorrectly sorted histogram file
-                ncol = param.shape[1]
-                self.pdtype = [('c%s' % i, param.dtype) for i in range(ncol)]
+                ncol = param[ifo].shape[1]
+                self.pdtype = [('c%s' % i, param[ifo].dtype) for i in range(ncol)]
                 self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]),
                                                   dtype=self.pdtype)
                 for i in range(ncol):
-                    self.param_bin[ifo]['c%s' % i] = param[:, i]
+                    self.param_bin[ifo]['c%s' % i] = param[ifo][:, i]
 
                 lsort = self.param_bin[ifo].argsort()
                 self.param_bin[ifo] = self.param_bin[ifo][lsort]
@@ -426,7 +434,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             else:
                 # New style, efficient histogram file
                 # param bin and weights have already been sorted
-                self.param_bin[ifo] = param
+                self.param_bin[ifo] = param[ifo]
                 self.pdtype = self.param_bin[ifo].dtype
 
             # Max_penalty is a small number to assigned to any bins without
@@ -479,7 +487,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                     + self.c2_size[ifo] // 2
                 self.two_det_weights[ifo][id0, id1, id2] = self.weights[ifo]
 
-        relfac = histfile.attrs['sensitivity_ratios']
         for ifo, sense in zip(self.hist_ifos, relfac):
             self.relsense[ifo] = sense
 
@@ -767,7 +774,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
             A dictionary containing the fit information in the `alpha`, `rate`
             and `thresh` keys/.
         """
-        coeff_file = self.files[ifo+'-fit_coeffs']
+        coeff_file = h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r')
         template_id = coeff_file['template_id'][:]
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
@@ -793,6 +800,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         # Keep the fit threshold in fits_by_tid
         fits_by_tid_dict['thresh'] = coeff_file.attrs['stat_threshold']
+
+        coeff_file.close()
 
         return fits_by_tid_dict
 
@@ -1281,12 +1290,14 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
         ifo: str
             The ifo to consider.
         """
-        coeff_file = self.files[ifo+'-fit_coeffs']
-        analysis_time = float(coeff_file.attrs['analysis_time'])
+        with h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
+            analysis_time = float(coeff_file.attrs['analysis_time'])
+            fbt = 'fit_by_template' in coeff_file
+
         self.fits_by_tid[ifo]['smoothed_rate_above_thresh'] /= analysis_time
         self.fits_by_tid[ifo]['smoothed_rate_in_template'] /= analysis_time
         # The by-template fits may have been stored in the smoothed fits file
-        if 'fit_by_template' in coeff_file:
+        if fbt:
             self.fits_by_tid[ifo]['fit_by_rate_above_thresh'] /= analysis_time
             self.fits_by_tid[ifo]['fit_by_rate_in_template'] /= analysis_time
 
@@ -1413,11 +1424,11 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             The ifo to consider.
         """
 
-        coeff_file = self.files[ifo + '-fit_coeffs']
-        template_id = coeff_file['template_id'][:]
-        tid_sort = numpy.argsort(template_id)
-        self.fits_by_tid[ifo]['median_sigma'] = \
-            coeff_file['median_sigma'][:][tid_sort]
+        with h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
+            template_id = coeff_file['template_id'][:]
+            tid_sort = numpy.argsort(template_id)
+            self.fits_by_tid[ifo]['median_sigma'] = \
+                coeff_file['median_sigma'][:][tid_sort]
 
     def lognoiserate(self, trigs, alphabelow=6):
         """
@@ -1861,14 +1872,15 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             Dictionary containing the bin name for each template id
         """
         ifo = key.split('-')[0]
-        dq_file = self.files[key]
-        bin_names = dq_file.attrs['names'][:]
-        locs = []
-        names = []
-        for bin_name in bin_names:
-            bin_locs = dq_file[ifo + '/locs/' + bin_name][:]
-            locs = list(locs)+list(bin_locs.astype(int))
-            names = list(names)+list([bin_name]*len(bin_locs))
+        with h5py.File(self.files[key], 'r') as dq_file:
+            bin_names = dq_file.attrs['names'][:]
+            locs = []
+            names = []
+            for bin_name in bin_names:
+                bin_locs = dq_file[ifo + '/locs/' + bin_name][:]
+                locs = list(locs)+list(bin_locs.astype(int))
+                names = list(names)+list([bin_name]*len(bin_locs))
+
         bin_dict = dict(zip(locs, names))
         return bin_dict
 
@@ -1890,13 +1902,14 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         """
         ifo = key.split('-')[0]
-        dq_file = self.files[key]
-        times = dq_file[ifo+'/times'][:]
-        bin_names = dq_file.attrs['names'][:]
-        dq_dict = {}
-        for bin_name in bin_names:
-            dq_vals = dq_file[ifo+'/dq_vals/'+bin_name][:]
-            dq_dict[bin_name] = dict(zip(times, dq_vals))
+        with h5py.File(self.files[key], 'r') as dq_file:
+            times = dq_file[ifo+'/times'][:]
+            bin_names = dq_file.attrs['names'][:]
+            dq_dict = {}
+            for bin_name in bin_names:
+                dq_vals = dq_file[ifo+'/dq_vals/'+bin_name][:]
+                dq_dict[bin_name] = dict(zip(times, dq_vals))
+
         return dq_dict
 
     def find_dq_val(self, trigs):
