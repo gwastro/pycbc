@@ -609,7 +609,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                 # Convert binned to same dtype as stored in hist
                 nbinned = numpy.zeros(len(binned[1]), dtype=self.pdtype)
                 for i, b in enumerate(binned):
-                    nbinned['c%s' % i] = b
+                    nbinned[f'c{i}'] = b
 
                 loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
                 loc[loc == len(self.weights[ref_ifo])] = 0
