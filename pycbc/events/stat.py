@@ -29,6 +29,8 @@ import logging
 import numpy
 from . import ranking
 from . import coinc_rate
+from .eventmgr_cython import logsignalrateinternals_computepsignalbins
+from .eventmgr_cython import logsignalrateinternals_compute2detrate
 
 
 class Stat(object):
@@ -335,6 +337,14 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         self.param_bin = {}
         self.two_det_flag = (len(ifos) == 2)
         self.two_det_weights = {}
+        # Some memory
+        self.pdif = numpy.zeros(128, dtype=numpy.float64)
+        self.tdif = numpy.zeros(128, dtype=numpy.float64)
+        self.sdif = numpy.zeros(128, dtype=numpy.float64)
+        self.tbin = numpy.zeros(128, dtype=numpy.int32)
+        self.pbin = numpy.zeros(128, dtype=numpy.int32)
+        self.sbin = numpy.zeros(128, dtype=numpy.int32)
+
         if pregenerate_hist and not len(ifos) == 1:
             self.get_hist()
 
@@ -446,12 +456,15 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                     self.c1_size = {}
                     self.c2_size = {}
 
-                self.c0_size[ifo] = 2 * (abs(self.param_bin[ifo]['c0']).max()
-                                         + 1)
-                self.c1_size[ifo] = 2 * (abs(self.param_bin[ifo]['c1']).max()
-                                         + 1)
-                self.c2_size[ifo] = 2 * (abs(self.param_bin[ifo]['c2']).max()
-                                         + 1)
+                self.c0_size[ifo] = numpy.int32(
+                    2 * (abs(self.param_bin[ifo]['c0']).max() + 1)
+                )
+                self.c1_size[ifo] = numpy.int32(
+                    2 * (abs(self.param_bin[ifo]['c1']).max() + 1)
+                )
+                self.c2_size[ifo] = numpy.int32(
+                    2 * (abs(self.param_bin[ifo]['c2']).max() + 1)
+                )
 
                 array_size = [self.c0_size[ifo], self.c1_size[ifo],
                               self.c2_size[ifo]]
@@ -508,67 +521,96 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         # Get reference ifo information
         rate = numpy.zeros(len(shift), dtype=numpy.float32)
+        ps = {ifo: numpy.array(stats[ifo]['coa_phase'], ndmin=1)
+              for ifo in self.ifos}
+        ts = {ifo: numpy.array(stats[ifo]['end_time'], ndmin=1)
+              for ifo in self.ifos}
+        ss = {ifo: numpy.array(stats[ifo]['snr'], ndmin=1)
+              for ifo in self.ifos}
+        sigs = {ifo: numpy.array(stats[ifo]['sigmasq'], ndmin=1)
+                for ifo in self.ifos}
         for ref_ifo in self.ifos:
             rtype = rtypes[ref_ifo]
-            ref = stats[ref_ifo]
-            pref = numpy.array(ref['coa_phase'], ndmin=1)[rtype]
-            tref = numpy.array(ref['end_time'], ndmin=1)[rtype]
-            sref = numpy.array(ref['snr'], ndmin=1)[rtype]
-            sigref = numpy.array(ref['sigmasq'], ndmin=1) ** 0.5
-            sigref = sigref[rtype]
+            pref = ps[ref_ifo]
+            tref = ts[ref_ifo]
+            sref = ss[ref_ifo]
+            sigref = sigs[ref_ifo]
             senseref = self.relsense[self.hist_ifos[0]]
 
             binned = []
             other_ifos = [ifo for ifo in self.ifos if ifo != ref_ifo]
             for ifo in other_ifos:
-                sc = stats[ifo]
-                p = numpy.array(sc['coa_phase'], ndmin=1)[rtype]
-                t = numpy.array(sc['end_time'], ndmin=1)[rtype]
-                s = numpy.array(sc['snr'], ndmin=1)[rtype]
-
-                sense = self.relsense[ifo]
-                sig = numpy.array(sc['sigmasq'], ndmin=1) ** 0.5
-                sig = sig[rtype]
+                # Assign cached memory
+                length = len(rtype)
+                while length > len(self.pdif):
+                    newlen = len(self.pdif) * 2
+                    self.pdif = numpy.zeros(newlen, dtype=numpy.float64)
+                    self.tdif = numpy.zeros(newlen, dtype=numpy.float64)
+                    self.sdif = numpy.zeros(newlen, dtype=numpy.float64)
+                    self.pbin = numpy.zeros(newlen, dtype=numpy.int32)
+                    self.tbin = numpy.zeros(newlen, dtype=numpy.int32)
+                    self.sbin = numpy.zeros(newlen, dtype=numpy.int32)
 
                 # Calculate differences
-                pdif = (pref - p) % (numpy.pi * 2.0)
-                tdif = shift[rtype] * to_shift[ref_ifo] + \
-                    tref - shift[rtype] * to_shift[ifo] - t
-                sdif = s / sref * sense / senseref * sigref / sig
+                logsignalrateinternals_computepsignalbins(
+                    self.pdif,
+                    self.tdif,
+                    self.sdif,
+                    self.pbin,
+                    self.tbin,
+                    self.sbin,
+                    ps[ifo],
+                    ts[ifo],
+                    ss[ifo],
+                    sigs[ifo],
+                    pref,
+                    tref,
+                    sref,
+                    sigref,
+                    shift,
+                    rtype,
+                    self.relsense[ifo],
+                    senseref,
+                    self.twidth,
+                    self.pwidth,
+                    self.swidth,
+                    to_shift[ref_ifo],
+                    to_shift[ifo],
+                    length
+                )
 
-                # Put into bins
-                tbin = (tdif / self.twidth).astype(int)
-                pbin = (pdif / self.pwidth).astype(int)
-                sbin = (sdif / self.swidth).astype(int)
-                binned += [tbin, pbin, sbin]
-
-            # Convert binned to same dtype as stored in hist
-            nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
-            for i, b in enumerate(binned):
-                nbinned['c%s' % i] = b
+                binned += [
+                    self.tbin[:length],
+                    self.pbin[:length],
+                    self.sbin[:length]
+                ]
 
             # Read signal weight from precalculated histogram
             if self.two_det_flag:
                 # High-RAM, low-CPU option for two-det
-                rate[rtype] = numpy.zeros(len(nbinned)) + self.max_penalty
-
-                id0 = nbinned['c0'].astype(numpy.int32) \
-                    + self.c0_size[ref_ifo] // 2
-                id1 = nbinned['c1'].astype(numpy.int32) \
-                    + self.c1_size[ref_ifo] // 2
-                id2 = nbinned['c2'].astype(numpy.int32) \
-                    + self.c2_size[ref_ifo] // 2
-
-                # look up keys which are within boundaries
-                within = (id0 > 0) & (id0 < self.c0_size[ref_ifo])
-                within = within & (id1 > 0) & (id1 < self.c1_size[ref_ifo])
-                within = within & (id2 > 0) & (id2 < self.c2_size[ref_ifo])
-                within = numpy.where(within)[0]
-                rate[rtype[within]] = \
-                    self.two_det_weights[ref_ifo][id0[within], id1[within],
-                                                  id2[within]]
+                logsignalrateinternals_compute2detrate(
+                    binned[0],
+                    binned[1],
+                    binned[2],
+                    self.c0_size[ref_ifo],
+                    self.c1_size[ref_ifo],
+                    self.c2_size[ref_ifo],
+                    rate,
+                    rtype,
+                    sref,
+                    self.two_det_weights[ref_ifo],
+                    self.max_penalty,
+                    self.ref_snr,
+                    len(rtype)
+                )
             else:
                 # Low[er]-RAM, high[er]-CPU option for >two det
+
+                # Convert binned to same dtype as stored in hist
+                nbinned = numpy.zeros(len(binned[1]), dtype=self.pdtype)
+                for i, b in enumerate(binned):
+                    nbinned[f'c{i}'] = b
+
                 loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
                 loc[loc == len(self.weights[ref_ifo])] = 0
                 rate[rtype] = self.weights[ref_ifo][loc]
@@ -579,9 +621,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
                     self.param_bin[ref_ifo][loc] != nbinned
                 )[0]
                 rate[rtype[missed]] = self.max_penalty
-
-            # Scale by signal population SNR
-            rate[rtype] *= (sref / self.ref_snr) ** -4.0
+                # Scale by signal population SNR
+                rate[rtype] *= (sref[rtype] / self.ref_snr) ** -4.0
 
         return numpy.log(rate)
 

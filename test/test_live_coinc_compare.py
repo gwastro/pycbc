@@ -29,13 +29,16 @@ class SingleDetTrigSimulator:
     def get_trigs(self):
         trigs = {}
         for det in self.detectors:
+            rand_end = np.random.randint(
+                self.start_time*4096,
+                (self.start_time + self.analysis_chunk)*4096,
+                size=self.num_trigs
+            )
+            rand_end = (rand_end / 4096.).astype(np.float64)
+
             trigs[det] = {
                 "snr": np.random.uniform(4.5, 10, size=self.num_trigs).astype(np.float32),
-                "end_time": np.random.uniform(
-                    self.start_time,
-                    self.start_time + self.analysis_chunk,
-                    size=self.num_trigs
-                ).astype(np.float64),
+                "end_time": rand_end,
                 "chisq": np.random.uniform(0.5, 1.5, size=self.num_trigs).astype(np.float32),
                 "chisq_dof": np.ones(self.num_trigs, dtype=np.int32) * 10,
                 "coa_phase": np.random.uniform(0, 2*np.pi, size=self.num_trigs).astype(np.float32),
@@ -117,7 +120,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
         new_coincer = self.new_coincer
         old_coincer = self.old_coincer
         self.assertTrue(len(new_coincer.coincs.data) == len(old_coincer.coincs.data))
-        self.assertTrue((new_coincer.coincs.data == old_coincer.coincs.data).all())
+        self.assertTrue(numpy.isclose(new_coincer.coincs.data, old_coincer.coincs.data, rtol=1e-06).all())
 
         for ifo in new_coincer.singles:
             lgc = True

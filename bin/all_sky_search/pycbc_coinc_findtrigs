@@ -173,7 +173,7 @@ if args.timeslide_interval is not None and args.timeslide_interval <= TWOEARTH:
 
 # slide = 0 means don't do timeslides
 if args.timeslide_interval is None:
-    args.timeslide_interval = 0
+    args.timeslide_interval = 0.0
 
 if args.randomize_template_order:
     seed(0)
