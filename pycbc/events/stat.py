@@ -521,7 +521,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         # to use as reference for choosing the signal histogram.
         snrs = numpy.array([numpy.array(stats[ifo]['snr'], ndmin=1)
                            for ifo in self.ifos])
-        smin = numpy.argmin(snrs, axis=0)
+        smin = snrs.argmin(axis=0)
         # Store a list of the triggers using each ifo as reference
         rtypes = {ifo: numpy.where(smin == j)[0]
                   for j, ifo in enumerate(self.ifos)}

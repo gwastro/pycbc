@@ -206,8 +206,8 @@ def time_coincidence(t1, t2, window, slide_step=0):
         fold2 = numpy.concatenate([fold2 - slide_step, fold2,
                                    fold2 + slide_step])
 
-    left = numpy.searchsorted(fold2, fold1 - window)
-    right = numpy.searchsorted(fold2, fold1 + window)
+    left = fold2.searchsorted(fold1 - window)
+    right = fold2.searchsorted(fold1 + window)
 
     lenidx = timecoincidence_findidxlen(left, right, len(left))
     idx1 = numpy.zeros(lenidx, dtype=numpy.uint32)
@@ -296,8 +296,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         for ifo2 in ids:
             logging.info('added ifo %s, testing against %s' % (ifo1, ifo2))
             w = win(ifo1, ifo2)
-            left = numpy.searchsorted(time1, ctimes[ifo2] - w)
-            right = numpy.searchsorted(time1, ctimes[ifo2] + w)
+            left = time1.searchsorted(ctimes[ifo2] - w)
+            right = time2.searchsorted(ctimes[ifo2] + w)
             # Any times within time1 coincident with the time in ifo2 have
             # indices between 'left' and 'right'
             # 'nz' indexes into times in ifo2 which have coincidences with ifo1
@@ -483,8 +483,8 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
     stat = stat[time_sorting]
     time = time[time_sorting]
 
-    left = numpy.searchsorted(time, time - window)
-    right = numpy.searchsorted(time, time + window)
+    left = time.searchsorted(time - window)
+    right = time.searchsorted(time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
 
     # i is the index we are inspecting, j is the next one to save
