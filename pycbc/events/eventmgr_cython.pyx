@@ -82,28 +82,6 @@ def logsignalrateinternals_computepsignalbins(
 @boundscheck(False)
 @wraparound(False)
 @cdivision(True)
-def timecoincidence_constructfold(
-    double[:] fold1,
-    double[:] fold2,
-    double[:] t1,
-    double[:] t2,
-    double slide_step,
-    int length1,
-    int length2
-):
-    cdef:
-        int idx
-
-    for idx in range(length1):
-        fold1[idx] = t1[idx] % slide_step
-
-    for idx in range(length2):
-        fold2[idx] = t2[idx] % slide_step
-
-
-@boundscheck(False)
-@wraparound(False)
-@cdivision(True)
 def logsignalrateinternals_compute2detrate(
     int[:] nbinned0,
     int[:] nbinned1,
@@ -140,6 +118,28 @@ def logsignalrateinternals_compute2detrate(
         # Scale by signal population SNR
         rescale_fac = ref_snr / sref[ridx]
         rate[ridx] *= (rescale_fac*rescale_fac*rescale_fac*rescale_fac)
+
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def timecoincidence_constructfold(
+    double[:] fold1,
+    double[:] fold2,
+    double[:] t1,
+    double[:] t2,
+    double slide_step,
+    int length1,
+    int length2
+):
+    cdef:
+        int idx
+
+    for idx in range(length1):
+        fold1[idx] = t1[idx] % slide_step
+
+    for idx in range(length2):
+        fold2[idx] = t2[idx] % slide_step
 
 
 @boundscheck(False)
