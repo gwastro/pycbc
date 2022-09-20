@@ -272,8 +272,10 @@ class GenUniformWaveform(object):
     def generate(self, **kwds):
         kwds.update(fdict)
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
-            hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
+            ws = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
                                                 f_lower=self.f_lower, **kwds)
+            hp = ws[0]
+            hc = ws[1]
             if 'fratio' in kwds:
                 hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
         else:

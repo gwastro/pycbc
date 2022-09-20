@@ -27,6 +27,7 @@ coincident triggers.
 
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector, ppdets
+from .eventmgr_cython import coincbuffer_expireelements
 
 
 def background_bin_from_string(background_bins, data):
@@ -518,7 +519,7 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
 class MultiRingBuffer(object):
     """Dynamic size n-dimensional ring buffer that can expire elements."""
 
-    def __init__(self, num_rings, max_time, dtype):
+    def __init__(self, num_rings, max_time, dtype, min_buffer_size=8):
         """
         Parameters
         ----------
@@ -529,15 +530,21 @@ class MultiRingBuffer(object):
             The maximum "time" an element can exist in each ring.
         dtype: numpy.dtype
             The type of each element in the ring buffer.
+        min_buffer_size: int (optional: default=8)
+            All ring buffers will be initialized to this length. If a buffer is
+            made larger it will no smaller than this value. Buffers may become
+            smaller than this length at any given time as triggers are expired.
         """
         self.max_time = max_time
         self.buffer = []
         self.buffer_expire = []
         self.valid_ends = []
         self.valid_starts = []
+        self.min_buffer_size = min_buffer_size
         for _ in range(num_rings):
-            self.buffer.append(numpy.zeros(128, dtype=dtype))
-            self.buffer_expire.append(numpy.zeros(128, dtype=int))
+            self.buffer.append(numpy.zeros(self.min_buffer_size, dtype=dtype))
+            self.buffer_expire.append(numpy.zeros(self.min_buffer_size,
+                                                  dtype=int))
             self.valid_ends.append(0)
             self.valid_starts.append(0)
         self.time = 0
@@ -578,11 +585,11 @@ class MultiRingBuffer(object):
             if self.valid_ends[i] == len(self.buffer[i]):
                 self.buffer[i] = numpy.resize(
                     self.buffer[i],
-                    len(self.buffer[i]) * 2
+                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
                 )
                 self.buffer_expire[i] = numpy.resize(
                     self.buffer_expire[i],
-                    len(self.buffer[i]) * 2
+                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
                 )
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
@@ -706,15 +713,28 @@ class CoincExpireBuffer(object):
             self.index += len(values)
 
         # Remove the expired old elements
-        keep = None
-        for ifo in ifos:
-            kt = self.timer[ifo][:self.index] >= self.time[ifo] - self.expiration
-            keep = numpy.logical_and(keep, kt) if keep is not None else kt
+        if len(ifos) == 2:
+            # Cython version for two ifo case
+            self.index = coincbuffer_expireelements(
+                self.buffer,
+                self.timer[ifos[0]],
+                self.timer[ifos[1]],
+                self.time[ifos[0]],
+                self.time[ifos[1]],
+                self.expiration,
+                self.index
+            )
+        else:
+            # Numpy version for >2 ifo case
+            keep = None
+            for ifo in ifos:
+                kt = self.timer[ifo][:self.index] >= self.time[ifo] - self.expiration
+                keep = numpy.logical_and(keep, kt) if keep is not None else kt
 
-        self.buffer[:keep.sum()] = self.buffer[:self.index][keep]
-        for ifo in self.ifos:
-            self.timer[ifo][:keep.sum()] = self.timer[ifo][:self.index][keep]
-        self.index = keep.sum()
+            self.buffer[:keep.sum()] = self.buffer[:self.index][keep]
+            for ifo in self.ifos:
+                self.timer[ifo][:keep.sum()] = self.timer[ifo][:self.index][keep]
+            self.index = keep.sum()
 
     def num_greater(self, value):
         """Return the number of elements larger than 'value'"""

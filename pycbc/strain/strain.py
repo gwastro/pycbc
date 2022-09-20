@@ -844,7 +844,7 @@ ensure_one_opt_groups.append(['--frame-cache','--fake-strain',
                               '--hdf-store'])
 
 required_opts_list = ['--gps-start-time', '--gps-end-time',
-                      '--strain-high-pass', '--pad-data', '--sample-rate',
+                      '--pad-data', '--sample-rate',
                       '--channel-name']
 
 

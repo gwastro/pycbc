@@ -96,9 +96,9 @@ model.sampling_transforms = None
 def callmodel(paramvals):
     # calculate the logposterior to get all stats populated
     model.update(**{p: paramvals[p] for p in model.variable_params})
-    _ = model.logposterior    
+    _ = model.logposterior
     stats = model.get_current_stats()
-    
+
     rec = {}
     if opts.reconstruct_parameters:
         model.update(**{p: paramvals[p] for p in model.variable_params})
@@ -140,12 +140,12 @@ idx = range(len(stats))
 for pi, p in enumerate(model.default_stats):
     vals = numpy.array([stats[ii][pi] for ii in idx]).reshape(shape)
     out.write_data(p, vals, path=fp.samples_group, append=False)
-    
+
 if opts.reconstruct_parameters:
     logging.info("Writing reconstructed parameters")
     for p in rec[0].keys():
         vals = numpy.array([r[p] for r in rec]).reshape(shape)
         out.write_data(p, vals, path=fp.samples_group, append=False)
-    
+
 out.close()
 logging.info("Done")

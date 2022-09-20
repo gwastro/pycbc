@@ -418,13 +418,13 @@ delta_tc = Parameter("delta_tc", dtype=float,
                      label=r"$\Delta t_c~(\rm{s})$",
                      description="Coalesence time offset.")
 ra = Parameter("ra",
-                dtype=float, default=None, label=r"$\alpha$",
+                dtype=float, default=0., label=r"$\alpha$",
                 description="Right ascension (rad).")
 dec = Parameter("dec",
-                dtype=float, default=None, label=r"$\delta$",
+                dtype=float, default=0., label=r"$\delta$",
                 description="Declination (rad).")
 polarization = Parameter("polarization",
-                dtype=float, default=None, label=r"$\psi$",
+                dtype=float, default=0., label=r"$\psi$",
                 description="Polarization (rad).")
 redshift = Parameter("redshift",
                 dtype=float, default=None, label=r"$z$",
@@ -432,6 +432,12 @@ redshift = Parameter("redshift",
 comoving_volume = Parameter("comoving_volume", dtype=float,
                             label=r"$V_C~(\rm{Mpc}^3)$",
                             description="Comoving volume (in cubic Mpc).")
+eclipticlatitude = Parameter("eclipticlatitude",
+                dtype=float, default=0., label=r"$\beta$",
+                description="eclipticlatitude wrt SSB coords.")
+eclipticlongitude = Parameter("eclipticlongitude",
+                dtype=float, default=0., label=r"$\lambda$",
+                description="eclipticlongitude wrt SSB coords.")
 
 #
 #   Calibration parameters
@@ -547,7 +553,8 @@ dbeta3 = Parameter("dbeta3",
 # passed to the waveform generators in lalsimulation, but are instead applied
 # after a waveform is generated. Distance, however, is a parameter used by
 # the waveform generators.
-location_params = ParameterList([tc, ra, dec, polarization])
+location_params = ParameterList([tc, ra, dec, polarization,
+                                eclipticlatitude, eclipticlongitude])
 
 # parameters describing the orientation of a binary w.r.t. the radiation
 # frame. Note: we include distance here, as it is typically used for generating

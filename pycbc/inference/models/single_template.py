@@ -61,24 +61,11 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
                  sample_rate=32768,
-                 polarization_samples=None,
                  marginalize_phase=True,
                  **kwargs):
-
-        #polarization array to marginalize over if num_samples given
-        self.pflag = 0
-        self.polarization = None
-        if polarization_samples is not None:
-            self.polarization = numpy.linspace(0, 2*numpy.pi,
-                                               int(polarization_samples))
-            self.pflag = 1
-        marg_vector = 'polarization' if self.pflag else False
-
-        variable_params, kwargs = self.setup_distance_marginalization(
+        variable_params, kwargs = self.setup_marginalization(
                                    variable_params,
                                    marginalize_phase=marginalize_phase,
-                                   marginalize_vector=marg_vector,
-                                   marginalize_vector_params=self.polarization,
                                    **kwargs)
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
@@ -104,6 +91,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         # Calculate high sample rate SNR time series
         self.sh = {}
         self.hh = {}
+        self.snr = {}
         self.det = {}
         for ifo in self.data:
             flow = self.kmin[ifo] * df
@@ -111,18 +99,20 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             # Extend data to high sample rate
             self.data[ifo].resize(flen)
             self.det[ifo] = Detector(ifo)
-            snr, _, _ = pyfilter.matched_filter_core(
+            snr, _, norm = pyfilter.matched_filter_core(
                 hp, self.data[ifo],
                 psd=self.psds[ifo],
                 low_frequency_cutoff=flow,
                 high_frequency_cutoff=fhigh)
 
             self.sh[ifo] = 4 * df * snr
+            self.snr[ifo] = snr * norm
+
             self.hh[ifo] = pyfilter.sigmasq(
                 hp, psd=self.psds[ifo],
                 low_frequency_cutoff=flow,
                 high_frequency_cutoff=fhigh)
-        self.time = None
+
         self.waveform = hp
         self.htfs = {}  # Waveform phase / distance transformation factors
         self.dts = {}
@@ -134,7 +124,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         """
         # Check if this model *can* be included in a multi-signal model.
         # All marginalizations must currently be disabled to work!
-        if (self.marginalize_vector or
+        if (self.marginalize_vector_params or
             self.marginalize_distance or
             self.marginalize_phase):
             logging.info("Cannot use single template model inside of"
@@ -194,34 +184,35 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params
-        if self.pflag == 0:
-            polarization = p['polarization']
-        elif self.pflag == 1:
-            polarization = self.polarization
-
-        if self.time is None:
-            self.time = p['tc']
 
         phase = 1
         if 'coa_phase' in p:
             phase = numpy.exp(1.0j * 2 * p['coa_phase'])
 
         sh_total = hh_total = 0
+
         ic = numpy.cos(p['inclination'])
         ip = 0.5 * (1.0 + ic * ic)
+        pol_phase = numpy.exp(-2.0j * p['polarization'])
+
+        self.snr_draw(self.snr)
+
         for ifo in self.sh:
-            fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                                   polarization, self.time)
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
-                                                            self.time)
+                                                            p['tc'])
+            self.dts[ifo] = p['tc'] + dt
+
+            fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
+                                                   0, p['tc'])
+            f = (fp + 1.0j * fc) * pol_phase
 
             # Note, this includes complex conjugation already
             # as our stored inner products were hp*xdata
-            htf = (fp * ip + 1.0j * fc * ic) / p['distance'] * phase
+            htf = (f.real * ip + 1.0j * f.imag * ic) / p['distance'] * phase
             self.htfs[ifo] = htf
-            self.dts[ifo] = p['tc'] + dt
             sh = self.sh[ifo].at_time(self.dts[ifo], interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        return self.marginalize_loglr(sh_total, hh_total)
+        loglr = self.marginalize_loglr(sh_total, hh_total)
+        return loglr
