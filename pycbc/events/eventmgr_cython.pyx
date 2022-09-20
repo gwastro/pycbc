@@ -157,6 +157,5 @@ def coincbuffer_numgreater(
 
     count = 0
     for idx in range(length):
-        if cbuffer[idx] > value:
-            count += 1
+        count += cbuffer[idx] > value
     return count
