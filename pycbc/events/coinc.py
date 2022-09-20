@@ -816,6 +816,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.singles = {}
 
+        # temporary array used in `_find_coincs()` to turn `trig_stat`
+        # into an array much faster than using `numpy.resize()`
+        self.trig_stat_memory = None
+
     @classmethod
     def pick_best_coinc(cls, coinc_results):
         """Choose the best two-ifo coinc by ifar first, then statistic if needed.
@@ -1096,11 +1100,21 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 # NB for some statistics the "stat" entry holds more than just
                 # a ranking number. E.g. for the phase time consistency test,
                 # it must also contain the phase, time and sensitivity.
-                trig_stat = numpy.resize(trig_stat, len(i1))
+                if self.trig_stat_memory is None:
+                    self.trig_stat_memory = numpy.zeros(
+                        1,
+                        dtype=trig_stat.dtype
+                    )
+                while len(self.trig_stat_memory) < len(i1):
+                    self.trig_stat_memory = numpy.resize(
+                        self.trig_stat_memory,
+                        len(self.trig_stat_memory)*2
+                    )
+                self.trig_stat_memory[:len(i1)] = trig_stat
 
                 # Force data into form needed by stat.py and then compute the
                 # ranking statistic values.
-                sngls_list = [[fixed_ifo, trig_stat],
+                sngls_list = [[fixed_ifo, self.trig_stat_memory[:len(i1)]],
                               [shift_ifo, stats[i1]]]
                 c = self.stat_calculator.rank_stat_coinc(
                     sngls_list,
