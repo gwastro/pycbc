@@ -142,3 +142,20 @@ def coincbuffer_expireelements(
             keep_count += 1
 
     return keep_count
+
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def coincbuffer_numgreater(
+    float[:] cbuffer,
+    int length,
+    float value
+):
+    cdef:
+        int idx, count
+
+    count = 0
+    for idx in range(length):
+        count += cbuffer[idx] > value
+    return count
