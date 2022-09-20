@@ -796,6 +796,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.singles = {}
 
+        # temporary array used in `_find_coincs()` to turn `trig_stat`
+        # into an array much faster than using `numpy.resize()`
         self.trig_stat_memory = None
 
     @classmethod
