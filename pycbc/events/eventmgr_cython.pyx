@@ -286,8 +286,9 @@ def timecluster_cython(
 
         # Find the location of the maximum within the time interval around i
         # Following block replaces max_loc = argmax(stat[l:r]) + l
-        max_val = -99999999999
-        for k in range(l, r):
+        max_val = stat[l]
+        max_loc = l
+        for k in range(l + 1, r):
             if stat[k] > max_val:
                 max_val = stat[k]
                 max_loc = k
