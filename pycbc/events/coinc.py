@@ -429,7 +429,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
-    cidx = cluster_over_time(stat, time_avg, window, argmax)
+    cidx = cluster_over_time(stat, time_avg, window, argmax=argmax)
 
     return cidx
 
