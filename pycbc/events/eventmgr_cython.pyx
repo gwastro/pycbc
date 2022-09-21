@@ -209,7 +209,7 @@ def timecoincidence_getslideint(
     length = idx1.shape[0]
 
     for idx in range(length):
-        diff = (t1[idx1[idx]] / slide_step) - (t2[idx2[idx]] / slide_step)
+        diff = (t1[idx1[idx]] - t2[idx2[idx]]) / slide_step
         slide[idx] = <int>(cround(diff))
 
 
