@@ -195,7 +195,6 @@ def timecoincidence_constructidxs(
 @wraparound(False)
 @cdivision(True)
 def timecoincidence_getslideint(
-def timecoincidence_getslideint(
     int [:] slide,
     double[:] t1,
     double[:] t2,
