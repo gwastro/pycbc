@@ -409,8 +409,9 @@ class BaseModel(metaclass=ABCMeta):
         params before being stored.
         """
         # add the static params
-        params.update(self.static_params)
-        self._current_params = self._transform_params(**params)
+        values = self.static_params.copy()
+        values.update(params)
+        self._current_params = self._transform_params(**values)
         self._current_stats = ModelStats()
 
     @property

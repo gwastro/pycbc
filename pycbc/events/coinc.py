@@ -27,6 +27,12 @@ coincident triggers.
 
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector, ppdets
+from .eventmgr_cython import coincbuffer_expireelements
+from .eventmgr_cython import coincbuffer_numgreater
+from .eventmgr_cython import timecoincidence_constructidxs
+from .eventmgr_cython import timecoincidence_constructfold
+from .eventmgr_cython import timecoincidence_getslideint
+from .eventmgr_cython import timecoincidence_findidxlen
 
 
 def background_bin_from_string(background_bins, data):
@@ -180,8 +186,12 @@ def time_coincidence(t1, t2, window, slide_step=0):
         Array of slide ids
     """
     if slide_step:
-        fold1 = t1 % slide_step
-        fold2 = t2 % slide_step
+        length1 = len(t1)
+        length2 = len(t2)
+        fold1 = numpy.zeros(length1, dtype=numpy.float64)
+        fold2 = numpy.zeros(length2, dtype=numpy.float64)
+        timecoincidence_constructfold(fold1, fold2, t1, t2, slide_step,
+                                      length1, length2)
     else:
         fold1 = t1
         fold2 = t2
@@ -193,27 +203,25 @@ def time_coincidence(t1, t2, window, slide_step=0):
 
     if slide_step:
         # FIXME explain this
-        fold2 = numpy.concatenate([fold2 - slide_step, fold2, fold2 + slide_step])
-        sort2 = numpy.concatenate([sort2, sort2, sort2])
+        fold2 = numpy.concatenate([fold2 - slide_step, fold2,
+                                   fold2 + slide_step])
 
     left = numpy.searchsorted(fold2, fold1 - window)
     right = numpy.searchsorted(fold2, fold1 + window)
 
-    idx1 = numpy.repeat(sort1, right - left)
-    idx2 = [sort2[l:r] for l, r in zip(left, right)]
+    lenidx = timecoincidence_findidxlen(left, right, len(left))
+    idx1 = numpy.zeros(lenidx, dtype=numpy.uint32)
+    idx2 = numpy.zeros(lenidx, dtype=numpy.uint32)
+    timecoincidence_constructidxs(idx1, idx2, sort1, sort2, left, right,
+                                  len(left), len(sort2))
 
-    if len(idx2) > 0:
-        idx2 = numpy.concatenate(idx2)
-    else:
-        idx2 = numpy.array([], dtype=numpy.int64)
-
+    slide = numpy.zeros(lenidx, dtype=numpy.int32)
     if slide_step:
-        diff = ((t1 / slide_step)[idx1] - (t2 / slide_step)[idx2])
-        slide = numpy.rint(diff)
+        timecoincidence_getslideint(slide, t1, t2, idx1, idx2, slide_step)
     else:
         slide = numpy.zeros(len(idx1))
 
-    return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), slide.astype(numpy.int32)
+    return idx1, idx2, slide
 
 
 def time_multi_coincidence(times, slide_step=0, slop=.003,
@@ -518,7 +526,7 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
 class MultiRingBuffer(object):
     """Dynamic size n-dimensional ring buffer that can expire elements."""
 
-    def __init__(self, num_rings, max_time, dtype):
+    def __init__(self, num_rings, max_time, dtype, min_buffer_size=8):
         """
         Parameters
         ----------
@@ -529,15 +537,21 @@ class MultiRingBuffer(object):
             The maximum "time" an element can exist in each ring.
         dtype: numpy.dtype
             The type of each element in the ring buffer.
+        min_buffer_size: int (optional: default=8)
+            All ring buffers will be initialized to this length. If a buffer is
+            made larger it will no smaller than this value. Buffers may become
+            smaller than this length at any given time as triggers are expired.
         """
         self.max_time = max_time
         self.buffer = []
         self.buffer_expire = []
         self.valid_ends = []
         self.valid_starts = []
+        self.min_buffer_size = min_buffer_size
         for _ in range(num_rings):
-            self.buffer.append(numpy.zeros(128, dtype=dtype))
-            self.buffer_expire.append(numpy.zeros(128, dtype=int))
+            self.buffer.append(numpy.zeros(self.min_buffer_size, dtype=dtype))
+            self.buffer_expire.append(numpy.zeros(self.min_buffer_size,
+                                                  dtype=int))
             self.valid_ends.append(0)
             self.valid_starts.append(0)
         self.time = 0
@@ -578,11 +592,11 @@ class MultiRingBuffer(object):
             if self.valid_ends[i] == len(self.buffer[i]):
                 self.buffer[i] = numpy.resize(
                     self.buffer[i],
-                    len(self.buffer[i]) * 2
+                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
                 )
                 self.buffer_expire[i] = numpy.resize(
                     self.buffer_expire[i],
-                    len(self.buffer[i]) * 2
+                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
                 )
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
@@ -706,19 +720,32 @@ class CoincExpireBuffer(object):
             self.index += len(values)
 
         # Remove the expired old elements
-        keep = None
-        for ifo in ifos:
-            kt = self.timer[ifo][:self.index] >= self.time[ifo] - self.expiration
-            keep = numpy.logical_and(keep, kt) if keep is not None else kt
+        if len(ifos) == 2:
+            # Cython version for two ifo case
+            self.index = coincbuffer_expireelements(
+                self.buffer,
+                self.timer[ifos[0]],
+                self.timer[ifos[1]],
+                self.time[ifos[0]],
+                self.time[ifos[1]],
+                self.expiration,
+                self.index
+            )
+        else:
+            # Numpy version for >2 ifo case
+            keep = None
+            for ifo in ifos:
+                kt = self.timer[ifo][:self.index] >= self.time[ifo] - self.expiration
+                keep = numpy.logical_and(keep, kt) if keep is not None else kt
 
-        self.buffer[:keep.sum()] = self.buffer[:self.index][keep]
-        for ifo in self.ifos:
-            self.timer[ifo][:keep.sum()] = self.timer[ifo][:self.index][keep]
-        self.index = keep.sum()
+            self.buffer[:keep.sum()] = self.buffer[:self.index][keep]
+            for ifo in self.ifos:
+                self.timer[ifo][:keep.sum()] = self.timer[ifo][:self.index][keep]
+            self.index = keep.sum()
 
     def num_greater(self, value):
         """Return the number of elements larger than 'value'"""
-        return (self.buffer[:self.index] > value).sum()
+        return coincbuffer_numgreater(self.buffer, self.index, value)
 
     @property
     def data(self):
@@ -795,6 +822,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.coincs = CoincExpireBuffer(self.buffer_size, self.ifos)
 
         self.singles = {}
+
+        # temporary array used in `_find_coincs()` to turn `trig_stat`
+        # into an array much faster than using `numpy.resize()`
+        self.trig_stat_memory = None
 
     @classmethod
     def pick_best_coinc(cls, coinc_results):
@@ -1076,11 +1107,21 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 # NB for some statistics the "stat" entry holds more than just
                 # a ranking number. E.g. for the phase time consistency test,
                 # it must also contain the phase, time and sensitivity.
-                trig_stat = numpy.resize(trig_stat, len(i1))
+                if self.trig_stat_memory is None:
+                    self.trig_stat_memory = numpy.zeros(
+                        1,
+                        dtype=trig_stat.dtype
+                    )
+                while len(self.trig_stat_memory) < len(i1):
+                    self.trig_stat_memory = numpy.resize(
+                        self.trig_stat_memory,
+                        len(self.trig_stat_memory)*2
+                    )
+                self.trig_stat_memory[:len(i1)] = trig_stat
 
                 # Force data into form needed by stat.py and then compute the
                 # ranking statistic values.
-                sngls_list = [[fixed_ifo, trig_stat],
+                sngls_list = [[fixed_ifo, self.trig_stat_memory[:len(i1)]],
                               [shift_ifo, stats[i1]]]
                 c = self.stat_calculator.rank_stat_coinc(
                     sngls_list,

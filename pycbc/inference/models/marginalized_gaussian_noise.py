@@ -194,7 +194,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
         return marginalize_likelihood(hd, hh, phase=True)
 
 
-class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
+class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
     r""" This likelihood numerically marginalizes over polarization angle
 
     This class implements the Gaussian likelihood with an explicit numerical
@@ -209,17 +209,11 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  polarization_samples=1000,
-                 marginalize_phase=False,
                  **kwargs):
 
-        self.polarization_samples = int(polarization_samples)
-        self.pol = numpy.linspace(0, 2*numpy.pi, self.polarization_samples)
-
-        variable_params, kwargs = self.setup_distance_marginalization(
+        variable_params, kwargs = self.setup_marginalization(
                                variable_params,
-                               marginalize_phase=marginalize_phase,
-                               marginalize_vector='polarization',
-                               marginalize_vector_params=self.pol,
+                               polarization_samples=polarization_samples,
                                **kwargs)
 
         # set up the boiler-plate attributes
@@ -304,10 +298,11 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
         for det, (hp, hc) in wfs.items():
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
-                                                    self.current_params['dec'],
-                                                    self.pol,
-                                                    self.current_params['tc'])
+            fp, fc = self.dets[det].antenna_pattern(
+                                    params['ra'],
+                                    params['dec'],
+                                    params['polarization'],
+                                    params['tc'])
 
             # the kmax of the waveforms may be different than internal kmax
             kmax = min(max(len(hp), len(hc)), self._kmax[det])
@@ -346,7 +341,9 @@ class MarginalizedPolarization(BaseGaussianNoise, DistMarg):
                   return_peak=True)
 
         # store the maxl polarization
-        setattr(self._current_stats, 'maxl_polarization', self.pol[idx])
+        setattr(self._current_stats,
+                'maxl_polarization',
+                params['polarization'])
         setattr(self._current_stats, 'maxl_loglr', maxl)
 
         # just store the maxl optimal snrsq
@@ -509,10 +506,10 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
             if det not in self.dets:
                 self.dets[det] = Detector(det)
 
-            fp, fc = self.dets[det].antenna_pattern(self.current_params['ra'],
-                                                    self.current_params['dec'],
+            fp, fc = self.dets[det].antenna_pattern(params['ra'],
+                                                    params['dec'],
                                                     self.pol,
-                                                    self.current_params['tc'])
+                                                    params['tc'])
 
             # loop over modes and prepare the waveform modes
             # we will sum up zetalm = glm <ulm, d> + i glm <vlm, d>
@@ -540,7 +537,7 @@ class MarginalizedHMPolPhase(BaseGaussianNoise):
                 # add inclination, and pack into a complex number
                 import lal
                 glm = lal.SpinWeightedSphericalHarmonic(
-                    self.current_params['inclination'], 0, -2, l, m).real
+                    params['inclination'], 0, -2, l, m).real
 
                 if m not in zetas:
                     zetas[m] = 0j
