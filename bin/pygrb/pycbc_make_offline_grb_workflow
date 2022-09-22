@@ -78,7 +78,7 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 # Retrieve science segments
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
-sciSegsFile = _workflow.get_segments_file(wflow, "science", 'segments-science', segDir)
+sciSegsFile = _workflow.get_segments_file(wflow, 'science', 'segments-science', segDir)
 
 sciSegs = {}
 for ifo in wflow.ifos:

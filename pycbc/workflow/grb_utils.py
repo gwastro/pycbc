@@ -68,11 +68,8 @@ def select_grb_pp_class(wflow, curr_exe):
         'pycbc_grb_inj_finder': PycbcGrbInjFinderExecutable,
         'pycbc_grb_inj_combiner': PycbcGrbInjCombinerExecutable
     }
-    try:
-        return exe_to_class_map[exe_name]
-    except KeyError:
-        raise NotImplementedError(
-            "No job class exists for executable %s, exiting" % curr_exe)
+    if exe_name not in exe_to_class_map:
+        raise ValueError(f"No job class exists for executable {curr_exe}")
 
 
 def set_grb_start_end(cp, start, end):
@@ -485,7 +482,7 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         node.add_opt("--user-tag", "PYGRB")
         node.add_opt("--num-trials", self.num_trials)
         # Prepare output file tag
-        user_tag = "PYGRB_GRB{}".format(self.trigger_name)
+        user_tag = f"PYGRB_GRB{self.trigger_name}"
         if tags:
             user_tag += "_{}".format(tags)
         # Add on/off source and off trial outputs
@@ -568,9 +565,8 @@ class PycbcGrbInjCombinerExecutable(Executable):
             tags = []
         node = Node(self)
         node.add_input_opt('--input-files', input_file)
-        out_name = input_file.name[:-3] + '-FILTERED.h5'
+        out_name = input_file.name.replace('.h5', '-FILTERED.h5')
         out_file = File(ifo_tag, 'inj_combiner', segment,
                         os.path.join(out_dir, out_name), tags=tags)
         node.add_output_opt('--output-file', out_file)
-        node.add_opt('--max-inclination', 30)
         return node, out_file
