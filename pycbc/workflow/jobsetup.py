@@ -719,6 +719,7 @@ class PyCBCMultiInspiralExecutable(Executable):
             frame_arg = '--frame-files'
             for frame_file in dfParents:
                 frame_arg += ' ' + ':'.join([frame_file.ifo, frame_file.name])
+                frame_arg = f"{frame_file.ifo}:{frame_file.name}"
                 node.add_input(frame_file)
             node.add_arg(frame_arg)
 
