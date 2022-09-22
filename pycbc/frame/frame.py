@@ -796,12 +796,13 @@ class StatusBuffer(DataBuffer):
 class iDQBuffer(DataBuffer):
 
     """ Read a iDQ timeseries from a frame file """
+
     def __init__(self, frame_src,
-                       channel_name,
-                       start_time,
-                       max_buffer=512,
-                       force_update_cache=False,
-                       increment_update_cache=None):
+                 channel_name,
+                 start_time,
+                 max_buffer=512,
+                 force_update_cache=False,
+                 increment_update_cache=None):
         """
         Parameters
         ----------
@@ -824,19 +825,59 @@ class iDQBuffer(DataBuffer):
             filesystem.
         """
         DataBuffer.__init__(self, frame_src, channel_name, start_time,
-                                           max_buffer=max_buffer,
-                                           force_update_cache=force_update_cache,
-                                           increment_update_cache=increment_update_cache)
+                            max_buffer=max_buffer,
+                            force_update_cache=force_update_cache,
+                            increment_update_cache=increment_update_cache)
 
     def lookup_idq(self, times):
+        """ Looks up the value of the idq buffer at the given times.
+
+        Parameters
+        ----------
+        times: float
+            The times whose idq values are needed
+
+        Returns
+        -------
+        values: float
+            The values of the idq buffer at the given times
+        """
+        return numpy.quantile(self.raw_buffer.numpy(), quant)
         return self.raw_buffer.at_time(times)
 
     def value_to_quantile(self, value):
+        """ Calculates the quantile of the given value relative compared to
+        the data in the buffer.
+
+        Parameters
+        ----------
+        value: float
+            The value whose quantile is desired
+
+        Returns
+        -------
+        quantile: float
+            The quantile of the given value
+        """
+        return numpy.quantile(self.raw_buffer.numpy(), quant)
         sorted_data = numpy.sort(self.raw_buffer.numpy())
         ind = numpy.searchsorted(sorted_data, value, side='right')
         return ind/len(sorted_data)
 
     def quantile_to_value(self, quant):
+        """ Calculates the value corresponding to the given quantile of the
+        data in the buffer.
+
+        Parameters
+        ----------
+        quant: float
+            The quantile to calculate
+
+        Returns
+        -------
+        value: float
+            The value corresponding to the given quantile
+        """
         return numpy.quantile(self.raw_buffer.numpy(), quant)
 
     def advance(self, blocksize):
@@ -851,13 +892,13 @@ class iDQBuffer(DataBuffer):
         Returns
         -------
         status: boolean
-            Returns True if all of the status information if valid,
-            False if any is not.
+            Returns True if advance is succesful,
+            False if not.
         """
         try:
             if self.increment_update_cache:
                 self.update_cache_by_increment(blocksize)
-            ts = DataBuffer.advance(self, blocksize)
+            DataBuffer.advance(self, blocksize)
             return True
         except RuntimeError:
             self.null_advance(blocksize)

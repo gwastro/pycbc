@@ -275,7 +275,7 @@ class TimeSeries(Array):
             time += self.delta_t / 2.0
         deltat = time-self.start_time
         if hasattr(deltat,'__len__'):
-            if len(deltat)>0:
+            if len(deltat) > 0:
                 return self[(deltat*self.sample_rate).astype('int')]
             else:
                 return _numpy.array([])

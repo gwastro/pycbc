@@ -1558,10 +1558,12 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if idq_channel is not None:
             assert idq_state_channel is not None, 'Each ifo with an idq channel requires an idq state channel'
             self.idq = pycbc.frame.iDQBuffer(frame_src, idq_channel, start_time,
-                                             max_buffer=max_buffer, force_update_cache=force_update_cache,
+                                             max_buffer=max_buffer,
+                                             force_update_cache=force_update_cache,
                                              increment_update_cache=increment_update_cache)
             self.idq_state = pycbc.frame.iDQBuffer(frame_src, idq_state_channel, start_time,
-                                                   max_buffer=max_buffer, force_update_cache=force_update_cache,
+                                                   max_buffer=max_buffer,
+                                                   force_update_cache=force_update_cache,
                                                    increment_update_cache=increment_update_cache)
 
         self.highpass_frequency = highpass_frequency
@@ -1929,8 +1931,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                    args.start_time, max_buffer=maxlen * 2,
                    state_channel=state_channel,
                    data_quality_channel=dq_channel,
-                   idq_channel = idq_channel,
-                   idq_state_channel = idq_state_channel,
+                   idq_channel=idq_channel,
+                   idq_state_channel=idq_state_channel,
                    sample_rate=args.sample_rate,
                    low_frequency_cutoff=args.low_frequency_cutoff,
                    highpass_frequency=args.highpass_frequency,
