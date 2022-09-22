@@ -71,6 +71,8 @@ def select_grb_pp_class(wflow, curr_exe):
     if exe_name not in exe_to_class_map:
         raise ValueError(f"No job class exists for executable {curr_exe}")
 
+    return exe_to_class_map[exe_name]
+
 
 def set_grb_start_end(cp, start, end):
     """
