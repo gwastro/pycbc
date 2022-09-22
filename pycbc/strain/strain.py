@@ -1422,6 +1422,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  autogating_taper=None,
                  state_channel=None,
                  data_quality_channel=None,
+                 idq_channel=None,
+                 idq_state_channel=None,
                  dyn_range_fac=pycbc.DYN_RANGE_FAC,
                  psd_abort_difference=None,
                  psd_recalculate_difference=None,
@@ -1478,6 +1480,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Channel to use for state information about the strain
         data_quality_channel: {str, None}, Optional
             Channel to use for data quality information about the strain
+        idq_channel: {str, None}, Optional
+            Channel to use for idq timeseries
+        idq_state_channel : {str, None}, Optional
+            Channel containing information about usability of idq
         dyn_range_fac: {float, pycbc.DYN_RANGE_FAC}, Optional
             Scale factor to apply to strain
         psd_abort_difference: {float, None}, Optional
@@ -1514,6 +1520,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.data_quality_flags = data_quality_flags
         self.state = None
         self.dq = None
+        self.idq = None
+        self.idq_state = None
         self.dq_padding = dq_padding
 
         # State channel
@@ -1546,6 +1554,15 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                              data_quality_channel, bin(valid_mask))
             self.dq = pycbc.frame.StatusBuffer(frame_src, data_quality_channel,
                                                start_time, **sb_kwargs)
+
+        if idq_channel is not None:
+            assert idq_state_channel is not None, 'Each ifo with an idq channel requires an idq state channel'
+            self.idq = pycbc.frame.iDQBuffer(frame_src, idq_channel, start_time,
+                                             max_buffer=max_buffer, force_update_cache=force_update_cache,
+                                             increment_update_cache=increment_update_cache)
+            self.idq_state = pycbc.frame.iDQBuffer(frame_src, idq_state_channel, start_time,
+                                                   max_buffer=max_buffer, force_update_cache=force_update_cache,
+                                                   increment_update_cache=increment_update_cache)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
@@ -1790,6 +1807,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 self.state.null_advance(blocksize)
             if self.dq:
                 self.dq.null_advance(blocksize)
+            if self.idq:
+                self.idq.null_advance(blocksize)
+                self.idq_state.null_advance(blocksize)
             return False
 
         # We collected some data so we are closer to being able to analyze data
@@ -1802,13 +1822,19 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             self.null_advance_strain(blocksize)
             if self.dq:
                 self.dq.null_advance(blocksize)
+            if self.idq:
+                self.idq.null_advance(blocksize)
+                self.idq_state.null_advance(blocksize)
             logging.info("%s time has invalid data, resetting buffer",
                          self.detector)
             return False
 
-        # Also advance the dq vector in lockstep
+        # Also advance the dq vector and idq timeseries in lockstep
         if self.dq:
             self.dq.advance(blocksize)
+        if self.idq:
+            self.idq.advance(blocksize)
+            self.idq_state.advance(blocksize)
 
         self.segments = {}
 
@@ -1883,6 +1909,14 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             dq_channel = ':'.join([ifo, args.data_quality_channel[ifo]])
             dq_flags = args.data_quality_flags[ifo].split(',')
 
+        idq_channel = None
+        if args.idq_channel and ifo in args.idq_channel:
+            idq_channel = ':'.join([ifo, args.idq_channel[ifo]])
+
+        idq_state_channel = None
+        if args.idq_state_channel and ifo in args.idq_state_channel:
+            idq_state_channel = ':'.join([ifo, args.idq_state_channel[ifo]])
+
         if args.frame_type:
             frame_src = pycbc.frame.frame_paths(args.frame_type[ifo],
                                                 args.start_time,
@@ -1895,6 +1929,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                    args.start_time, max_buffer=maxlen * 2,
                    state_channel=state_channel,
                    data_quality_channel=dq_channel,
+                   idq_channel = idq_channel,
+                   idq_state_channel = idq_state_channel,
                    sample_rate=args.sample_rate,
                    low_frequency_cutoff=args.low_frequency_cutoff,
                    highpass_frequency=args.highpass_frequency,

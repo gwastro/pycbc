@@ -273,8 +273,13 @@ class TimeSeries(Array):
 
         if nearest_sample:
             time += self.delta_t / 2.0
-
-        return self[int((time-self.start_time)*self.sample_rate)]
+        deltat = time-self.start_time
+        if hasattr(deltat,'__len__'):
+            if len(deltat)>0:
+                return self[(deltat*self.sample_rate).astype('int')]
+            else:
+                return _numpy.array([])
+        return self[int(deltat*self.sample_rate)]
 
     def __eq__(self,other):
         """
