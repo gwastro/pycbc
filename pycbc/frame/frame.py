@@ -842,7 +842,6 @@ class iDQBuffer(DataBuffer):
         values: float
             The values of the idq buffer at the given times
         """
-        return numpy.quantile(self.raw_buffer.numpy(), quant)
         return self.raw_buffer.at_time(times)
 
     def value_to_quantile(self, value):
@@ -859,7 +858,6 @@ class iDQBuffer(DataBuffer):
         quantile: float
             The quantile of the given value
         """
-        return numpy.quantile(self.raw_buffer.numpy(), quant)
         sorted_data = numpy.sort(self.raw_buffer.numpy())
         ind = numpy.searchsorted(sorted_data, value, side='right')
         return ind/len(sorted_data)
