@@ -1,4 +1,5 @@
-""" Dummy class when no actual sampling is needed
+""" Dummy class when no actual sampling is needed, but we may want to do
+some reconstruction supported by the likelihood model.
 """
 
 import numpy
@@ -9,7 +10,11 @@ from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
 
+
 def call_reconstruct(iteration):
+    """ Accessor to update the global model and call its reconstruction
+    routine.
+    """
     models._global_instance.update()
     return models._global_instance.reconstruct(seed=iteration)
 
@@ -58,7 +63,7 @@ class DummySampler(BaseSampler):
 
     def run(self):
         samples = self.pool.map(call_reconstruct,
-                                      range(self.num_samples))
+                                range(self.num_samples))
         self._samples = {k: numpy.array([x[k] for x in samples])
                          for k in samples[0]}
 
