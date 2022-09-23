@@ -93,7 +93,8 @@ model = models.read_from_config(cp)
 model.sampling_transforms = None
 
 # create function for calling the model to get the stats
-def callmodel(paramvals):
+def callmodel(arg):
+    iteration, paramvals = arg
     # calculate the logposterior to get all stats populated
     model.update(**{p: paramvals[p] for p in model.variable_params})
     _ = model.logposterior
@@ -102,7 +103,8 @@ def callmodel(paramvals):
     rec = {}
     if opts.reconstruct_parameters:
         model.update(**{p: paramvals[p] for p in model.variable_params})
-        rec = model.reconstruct()
+        # Ensure unique random seed for each reconstruction
+        rec = model.reconstruct(seed=iteration)
     return stats, rec
 
 # these help for parallelization for MPI
@@ -126,7 +128,7 @@ logging.info("Loaded %i samples", samples.size)
 
 # get the stats
 logging.info("Calculating stats")
-data = list(pool.map(model_call, samples))
+data = list(pool.map(model_call, enumerate(samples)))
 stats = [x[0] for x in data]
 rec = [x[1] for x in data]
 
