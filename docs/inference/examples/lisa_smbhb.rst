@@ -8,8 +8,7 @@ in LISA mock data. The `data <https://zenodo.org/record/7078835>`_ are generated
 and `BBHx <https://github.com/mikekatz04/BBHx>`_ package is used to generate the ``IMRPhenomD`` template and calculate 
 the corresponding TDI response for LISA. Relative binning (heterodyned likelihood) 
 is used during sampling to speed up the computation of likelihood functions. Before doing parameter estimation, 
-you need to install BBHx and `the corresponding PyCBC waveform plugin <https://github.com/ConWea/BBHX-waveform-model>`_
-(in the future, this waveform plugin will be a part of BBHx).
+you need to install BBHx and `the corresponding PyCBC waveform plugin <https://github.com/ConWea/BBHX-waveform-model>`_.
 
 First, we create the following configuration file, here we just set chirp mass, mass ratio and tc as variable parameters:
 
