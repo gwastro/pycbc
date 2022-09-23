@@ -1,5 +1,5 @@
 OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
---config-file `dirname "$0"`/single.ini \
+--config-file `dirname "$0"`/margtime.ini \
 --nprocesses=1 \
 --processing-scheme mkl \
 --output-file single.hdf \
@@ -8,8 +8,6 @@ OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
 --verbose
 
 # This reconstructs any marginalized parameters
-# and would be optional if you don't need them or
-# have sampled over all parameters directly (see single.ini)
 #pycbc_inference_model_stats \
 #--input-file single.hdf \
 #--output-file single2.hdf \

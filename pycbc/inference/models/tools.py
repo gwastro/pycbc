@@ -421,7 +421,7 @@ class DistMarg():
             end = min(tcmax + EARTH_RADIUS, snr.end_time)
             snr = snr.time_slice(start, end, mode='nearest')
 
-            w = snr.squared_norm().numpy()
+            w = snr.squared_norm().numpy() / 2.0
             i = draw_sample(w, size=self.vsamples)
 
             if sref is not None:

@@ -298,24 +298,23 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             cplx_hpd[det], _, _ = matched_filter_core(
                                  hp,
                                  self._whitened_data[det],
-                                 low_frequency_cutoff = self._f_lower[det],
-                                 high_frequency_cutoff = self._f_upper[det],
+                                 low_frequency_cutoff=self._f_lower[det],
+                                 high_frequency_cutoff=self._f_upper[det],
                                  h_norm=1)
             cplx_hcd[det], _, _ = matched_filter_core(
                                  hc,
                                  self._whitened_data[det],
-                                 low_frequency_cutoff = self._f_lower[det],
-                                 high_frequency_cutoff = self._f_upper[det],
+                                 low_frequency_cutoff=self._f_lower[det],
+                                 high_frequency_cutoff=self._f_upper[det],
                                  h_norm=1)
-            t1 = abs(hc[slc].inner(self._whitened_data[det][slc]))
 
             hphp[det] = hp[slc].inner(hp[slc]).real
             hchc[det] = hc[slc].inner(hc[slc]).real
             hphc[det] = hp[slc].inner(hc[slc]).real
 
-            snr_proxy = (0.5 * ((cplx_hpd[det] / hphp[det] ** 0.5).squared_norm() +
-                                (cplx_hcd[det] / hchc[det] ** 0.5).squared_norm()))
-            snr_estimate[det] = snr_proxy ** 0.5
+            snr_proxy = (cplx_hpd[det] / hphp[det] ** 0.5).squared_norm() +
+                        (cplx_hcd[det] / hchc[det] ** 0.5).squared_norm()
+            snr_estimate[det] = (0.5 * snr_proxy) ** 0.5
 
         self.snr_draw(snr_estimate)
 
@@ -332,16 +331,19 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                                                              params['tc'])
             dtc = params['tc'] + dt
             cplx_hd = fp * cplx_hpd[det].at_time(dtc,
-                                            interpolate='quadratic')
+                                                 interpolate='quadratic')
             cplx_hd += fc * cplx_hcd[det].at_time(dtc,
-                                             interpolate='quadratic')
-            hh = fp * fp * hphp[det] + fc * fc * hchc[det] + 2.0 * fp * fc * hphc[det]
+                                                  interpolate='quadratic')
+            hh = (fp * fp * hphp[det] +
+                  fc * fc * hchc[det] +
+                  2.0 * fp * fc * hphc[det])
 
             sh_total += cplx_hd
             hh_total += hh
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
         return loglr
+
 
 class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
     r""" This likelihood numerically marginalizes over polarization angle

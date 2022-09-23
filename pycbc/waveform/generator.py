@@ -928,8 +928,9 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
             # happens at the end of the time series (as they are for f-domain),
             # so we add an additional shift to account for it
             tshift = 1./df - abs(hp._epoch)
-        else:
-            tshift = 0.
+            hp = apply_fd_time_shift(hp, tshift, copy=True)
+            hc = apply_fd_time_shift(hc, tshift, copy=True)
+
         hp._epoch = hc._epoch = self._epoch
         h = {}
 
