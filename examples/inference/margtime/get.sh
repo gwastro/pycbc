@@ -1,6 +1,6 @@
-for ifo in H-H1 L-L1 V-V1
+for ifo in H-H1 L-L1
 do
-    file=${ifo}_LOSC_CLN_4_V1-1187007040-2048.gwf
+    file=${ifo}_GWOSC_4KHZ_R1-1126257415-4096.gwf
     test -f ${file} && continue
-    curl -O --silent https://dcc.ligo.org/public/0146/P1700349/001/${file}
+    curl -O --silent https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW150914/v3/${ifo}_GWOSC_4KHZ_R1-1126257415-4096.gwf
 done
