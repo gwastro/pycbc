@@ -934,7 +934,7 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
         hp._epoch = hc._epoch = self._epoch
         h = {}
 
-        for detname, det in self.detectors.items():
+        for detname in self.detectors:
             if self.recalib:
                 # recalibrate with given calibration model
                 hp = self.recalib[detname].map_to_adjust(
