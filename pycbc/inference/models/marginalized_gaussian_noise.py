@@ -312,8 +312,8 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             hchc[det] = hc[slc].inner(hc[slc]).real
             hphc[det] = hp[slc].inner(hc[slc]).real
 
-            snr_proxy = (cplx_hpd[det] / hphp[det] ** 0.5).squared_norm() +
-                        (cplx_hcd[det] / hchc[det] ** 0.5).squared_norm()
+            snr_proxy = ((cplx_hpd[det] / hphp[det] ** 0.5).squared_norm() +
+                         (cplx_hcd[det] / hchc[det] ** 0.5).squared_norm())
             snr_estimate[det] = (0.5 * snr_proxy) ** 0.5
 
         self.snr_draw(snr_estimate)

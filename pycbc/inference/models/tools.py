@@ -459,13 +459,14 @@ class DistMarg():
         ra = numpy.resize(numpy.array(ra), self.vsamples)
         dec = numpy.resize(numpy.array(dec), self.vsamples)
         dtc = numpy.resize(numpy.array(dtc), self.vsamples)
-        ti = numpy.resize(numpy.array(ti), self.vsamples)
+        ti = numpy.resize(numpy.array(ti, dtype=int), self.vsamples)
         wi = numpy.resize(numpy.array(wi), self.vsamples)
 
         # Second draw a subsample size offset so that all times are covered
         tct = numpy.random.uniform(-snr.delta_t / 2.0,
                                    snr.delta_t / 2.0,
                                    size=len(ti))
+
         tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc
 
         # Update the current proposed times and the marginalization values
