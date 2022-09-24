@@ -1,4 +1,4 @@
-OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
+OMP_NUM_THREADS=1 pycbc_inference \
 --config-file `dirname "$0"`/margtime.ini \
 --nprocesses 2 \
 --processing-scheme mkl \
