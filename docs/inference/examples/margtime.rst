@@ -46,7 +46,7 @@ This will run the ``dynesty`` sampler. When it is done, you will have a file cal
 
 This will create the following plot:
 
-.. image:: ../../_include/dmarg_150914.png
+.. image:: ../../_include/demarg_150914.png
     :width: 400
     :align: center
 
