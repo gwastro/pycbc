@@ -509,6 +509,7 @@ Examples
     inference/examples/analytic.rst
     inference/examples/bbh.rst
     inference/examples/gw150914.rst
+    inference/examples/margtime.rst
     inference/examples/single.rst
     inference/examples/relative.rst
     inference/examples/hierarchical.rst
