@@ -293,7 +293,15 @@ def get_random_mass(numPoints, massRangeParams, eos='2H'):
             #     threshold mass]
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
             if eta_nsbh.size != 0:
-                remnant = conversions.remnant_mass_from_mass1_mass2_cartesian_spin_eos(mass1_nsbh, mass2_nsbh, spin1x=0.0, spin1y=0.0, spin1z=spin1z_nsbh, eos=eos, interp=True)
+                remnant = conversions.remnant_mass_from_mass1_mass2_cartesian_spin_eos(
+                    mass1_nsbh,
+                    mass2_nsbh,
+                    spin1x=0.0,
+                    spin1y=0.0,
+                    spin1z=spin1z_nsbh,
+                    eos=eos,
+                    interp=True
+                )
                 mask_bright_nsbh[remnant
                                  >
                                  massRangeParams.remnant_mass_threshold] = True
