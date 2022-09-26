@@ -28,6 +28,7 @@ import sys
 import os
 import logging
 import numpy
+import h5py
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import pycbc.version
@@ -47,54 +48,31 @@ __program__ = "pycbc_pygrb_plot_snr_timeseries"
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load time and necessary SNR data from a trigger/injection file
-def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
-    """Build a dictionary containing time and SNR data extracted from
-    a trigger/injection file"""
-
-    # Inizialize the dictionary
-    data = {}
-    data['time'] = None
-    snr_type = opts.y_variable
-    data[snr_type] = None
-
-    # Fill the dictionary in with required data
+# Load trigger data
+def load_data(input_file, vetoes, injections=False):
+    """Load data from a trigger/injection file"""
+    
+    trigs_or_injs = None
     if input_file:
         if injections:
-            trigs_or_injs = ppu.load_injections(input_file, vetoes,
-                                                sim_table=sim_table)
-        else:
+            logging.info("Loading injections...")
+            # This will eventually become load_injections
             trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-        data['time'] = numpy.asarray(trigs_or_injs.get_end())
-        if snr_type == 'coherent':
-            data['coherent'] = numpy.asarray(trigs_or_injs.get_column('snr'))
-        elif snr_type == 'null':
-            data['null'] = numpy.asarray(trigs_or_injs.get_column('null_statistic'))
-        elif snr_type == 'reweighted':
-            null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
-            data['reweighted'] = ppu.get_bestnrs(trigs_or_injs,
-                                                 q=opts.chisq_index,
-                                                 n=opts.chisq_nhigh,
-                                                 null_thresh=null_thresh,
-                                                 snr_threshold=opts.snr_threshold,
-                                                 sngl_snr_threshold=opts.sngl_snr_threshold,
-                                                 chisq_threshold=opts.newsnr_threshold,
-                                                 null_grad_thresh=opts.null_grad_thresh,
-                                                 null_grad_val=opts.null_grad_val)
-        elif snr_type == 'single':
-            data['single'] = trigs_or_injs.get_sngl_snr(opts.ifo)
-
-    return data
+        else:
+            logging.info("Loading triggers...")
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+        
+    return trigs_or_injs
 
 
 # Find start and end times of trigger/injecton data relative to a given time
-def get_start_end_times(data, central_time):
+def get_start_end_times(data_time, central_time):
     """Determine padded start and end times of data relative to central_time"""
 
     #start = int(min(data.time)) - central_time
     #end = int(max(data.time)) - central_time
-    start = int(min(data['time'])) - central_time
-    end = int(max(data['time'])) - central_time
+    start = int(min(data_time)) - central_time
+    end = int(max(data_time)) - central_time
     duration = end - start
     start -= duration*0.05
     end += duration*0.05
@@ -103,13 +81,13 @@ def get_start_end_times(data, central_time):
 
 
 # Reset times so that t=0 is corresponds to the given trigger time
-def reset_times(data, trig_time):
+def reset_times(data_time, trig_time):
     """Reset times in data so that t=0 corresponds to the trigger time provided"""
 
     #data.time = [t-trig_time for t in data.time]
-    data['time'] = [t-trig_time for t in data['time']]
+    data_time = [t-trig_time for t in data_time]
 
-    return data
+    return data_time
 
 
 # =============================================================================
@@ -148,26 +126,42 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-_, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                         opts.veto_category)
 
 # Load trigger data
-trig_data = load_data(trig_file, vetoes, opts)
+trig_data = load_data(trig_file, vetoes)
 
 # Load (or initialize) injection data
-inj_data = load_data(found_file, vetoes, opts, injections=True, sim_table=False)
+inj_data = load_data(found_file, vetoes, injections=True)
+
+# Specify HDF file keys for x quantity (time) and y quantity (SNR)
+if snr_type == 'single':
+    x_key = opts.ifo + '/' + 'end_time'
+    y_key = opts.ifo + '/' + 'snr_' + opts.ifo.lower()
+else:
+    x_key = 'network/end_time_gc'
+    y_key = 'network/' + snr_type + '_snr'
+
+# Obtain times
+trig_data_time = trig_data[x_key][:]
+inj_data_time = inj_data[x_key][:] if found_file else None
+
+# Obtain SNRs
+trig_data_snr = trig_data[y_key][:]
+inj_data_snr = inj_data[y_key][:] if found_file else None
 
 # Determine the central time (t=0): default is the GRB trigger time
 central_time = opts.central_time if opts.central_time is not None else\
     ppu.get_grb_time(opts.seg_files)
 
 # Determine trigger data start and end times relative to the central time
-start, end = get_start_end_times(trig_data, central_time)
+start, end = get_start_end_times(trig_data_time, central_time)
 
 # Reset trigger and injection times
-trig_data = reset_times(trig_data, central_time)
+trig_data_time = reset_times(trig_data_time, central_time)
 if found_file:
-    inj_data = reset_times(inj_data, central_time)
+    inj_data_time = reset_times(inj_data_time, central_time)
 
 # Generate plots
 logging.info("Plotting...")
@@ -192,7 +186,7 @@ xlims = [start, end]
 if opts.x_lims:
     xlims = opts.x_lims
     xlims = map(float, xlims.split(','))
-plu.pygrb_plotter([trig_data['time'], trig_data[snr_type]],
-                  [inj_data['time'], inj_data[snr_type]],
+plu.pygrb_plotter([trig_data_time, trig_data_snr],
+                  [inj_data_time, inj_data_snr],
                   "Time since %.3f (s)" % (central_time), y_label,
                   opts, cmd=' '.join(sys.argv))
