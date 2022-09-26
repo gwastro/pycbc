@@ -316,15 +316,15 @@ def PG_ISSO_solver(chi, incl):
 
     Parameters
     ----------
-    chi: float
+    chi: {float, array}
         the BH dimensionless spin parameter
-    incl: float
+    incl: {float, array}
         the inclination angle between the BH spin and the orbital
         angular momentum in radians
 
     Returns
     -------
-    solution: float
+    solution: array
         the radius of the orbit in BH mass units
     """
     # Auxiliary variables

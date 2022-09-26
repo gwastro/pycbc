@@ -117,7 +117,7 @@ def initialize_eos(ns_mass, eos):
 
     Parameters
     ----------
-    ns_mass : float
+    ns_mass : {float, array}
         The mass of the neutron star, in solar masses.
     eos : str
         Name of the equation of state.
@@ -171,16 +171,16 @@ def foucart18(
 
     Parameters
     ----------
-    eta : float
+    eta : {float, array}
         The symmetric mass ratio of the system
         (note: primary is assumed to be the BH).
-    ns_compactness : float
+    ns_compactness : {float, array}
         NS compactness parameter.
-    ns_b_mass : float
+    ns_b_mass : {float, array}
         Baryonic mass of the NS.
-    bh_spin_mag: float
+    bh_spin_mag: {float, array}
         Dimensionless spin magnitude of the BH.
-    bh_spin_pol : float
+    bh_spin_pol : {float, array}
         The tilt angle of the BH spin.
     interp: bool, optional
         Whether to interpolate over a pre-computed grid of values of
