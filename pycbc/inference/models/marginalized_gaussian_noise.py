@@ -199,7 +199,8 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
     This likelihood is optimized for marginalizing over time, but can also
     handle marginalization over polarization, phase (where appropriate),
-    and sky location.
+    and sky location. The time series is interpolated using a
+    quadratic apparoximation for sub-sample times.
     """
     name = 'marginalized_time'
 
