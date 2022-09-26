@@ -398,14 +398,20 @@ def concat_grid(bounds):
     return out
 
 
-def generate_isso_bivariate_interp():
+def generate_isso_bivariate_interp(outpath):
     """Constructs a grid in spin magnitude and spin tilt angle then
     solves for the ISSO radius (in mass units). Uses the resulting
-    grid to create a bivariate spine which is saved to disk.
+    grid to create a bivariate spline which is saved to disk. Call this
+    function to generate `isso_inc_chi.pkl`. 
     Note: the grid density need not be uniform, and so has been tuned
     by hand to be more dense in regions of steeper gradient in order to
     keep the fractional interpolation error over the full span of
     parameter values to less than 1e-5.
+    
+    Parameters
+    ----------
+    outpath: string
+        Path to output file
     """
     chis = concat_grid((
         (0.5, 25), (0.75, 20), (0.95, 30), (0.99, 20), (0.995, 50),
@@ -419,7 +425,7 @@ def generate_isso_bivariate_interp():
         # more dense at larger chi
         roots[i] = PG_ISSO_solver(chi, inc)
     bivar = RectBivariateSpline(incs, chis, roots)
-    with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'wb') as f:
+    with open(outpath, 'wb') as f:
         pickle.dump(bivar, f)
 
 
