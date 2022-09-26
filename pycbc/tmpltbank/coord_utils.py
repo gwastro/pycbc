@@ -196,7 +196,7 @@ def get_random_mass(numPoints, massRangeParams, eos='2H'):
     massRangeParams : massRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
     eos : string
-        Name of equation of state of neuron star.
+        Name of equation of state of neutron star.
         
     Returns
     --------
