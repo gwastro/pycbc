@@ -44,7 +44,9 @@ from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
 from .tools import DistMarg
 
 
-def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
+def setup_bins(f_full, f_lo, f_hi, chi=1.0,
+               eps=0.1, gammas=None,
+               ):
     """Construct frequency bins for use in a relative likelihood
     model. For details, see [Barak, Dai & Venumadhav 2018].
 
@@ -484,10 +486,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             The value of the log likelihood ratio.
         """
         # get model params
-        p = self.current_params.copy()
-        p.update(self.static_params)
+        p = self.current_params
         wfs = self.get_waveforms(p)
-
         lik = self.likelihood_function
         norm = 0.0
         filt = 0j
@@ -525,7 +525,6 @@ class Relative(DistMarg, BaseGaussianNoise):
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
-        print(loglr)
         return loglr
 
     def write_metadata(self, fp, group=None):

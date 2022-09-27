@@ -112,7 +112,7 @@ cpdef likelihood_parts(double [::1] freqs,
 
         r0 = r0n
         x0 = x0n
-    return hd, hh
+    return conj(hd), hh
 
 # Likelihood where no antenna response is applied
 cpdef likelihood_parts_det(double [::1] freqs,
@@ -144,7 +144,7 @@ cpdef likelihood_parts_det(double [::1] freqs,
 
         r0 = r0n
         x0 = x0n
-    return hd, hh
+    return conj(hd), hh
 
 # Used where the antenna response may be frequency varying
 cpdef likelihood_parts_v(double [::1] freqs,
@@ -178,7 +178,7 @@ cpdef likelihood_parts_v(double [::1] freqs,
 
         r0 = r0n
         x0 = x0n
-    return hd, hh
+    return conj(hd), hh
 
 # Standard likelihood but simultaneously handling multiple sky or time points
 cpdef likelihood_parts_vector(double [::1] freqs,
@@ -219,7 +219,7 @@ cpdef likelihood_parts_vector(double [::1] freqs,
 
             r0 = r0n
             x0 = x0n
-        hdv[j] = hd
+        hdv[j] = conj(hd)
         hhv[j] = hh
     return hdv, hhv
 
@@ -265,6 +265,6 @@ cpdef likelihood_parts_vectorp(double [::1] freqs,
 
             r0 = r0n
             x0 = x0n
-        hdv[j] = hd
+        hdv[j] = conj(hd)
         hhv[j] = hh
     return hdv, hhv

@@ -1,6 +1,6 @@
-pycbc_inference \
+python -m cProfile -o log `which pycbc_inference` \
 --config-file `dirname "$0"`/single.ini \
---nprocesses=4 \
+--nprocesses=1 \
 --output-file single.hdf \
 --seed 0 \
 --force \
@@ -26,5 +26,5 @@ pycbc_inference_model_stats \
 pycbc_inference_plot_posterior \
 --input-file single2.hdf \
 --output-file single.png \
---parameters distance inclination polarization coa_phase \
---z-arg snr --vmin 31.85 --vmax 32.15 \
+--parameters polarization coa_phase \
+--z-arg snr --vmin 31.85 --vmax 32.15
