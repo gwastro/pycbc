@@ -297,7 +297,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
             logging.info('added ifo %s, testing against %s' % (ifo1, ifo2))
             w = win(ifo1, ifo2)
             left = time1.searchsorted(ctimes[ifo2] - w)
-            right = time2.searchsorted(ctimes[ifo2] + w)
+            right = time1.searchsorted(ctimes[ifo2] + w)
             # Any times within time1 coincident with the time in ifo2 have
             # indices between 'left' and 'right'
             # 'nz' indexes into times in ifo2 which have coincidences with ifo1
