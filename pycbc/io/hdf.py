@@ -1,6 +1,6 @@
-# convenience classes for accessing hdf5 trigger files
-# the 'get_column()' method is implemented parallel to
-# the existing pylal.SnglInspiralUtils functions
+# Convenience classes for accessing hdf5 trigger files
+# The 'get_column()' method is implemented parallel to
+# legacy pylal.SnglInspiralUtils functions
 
 import h5py
 import numpy as np
@@ -23,6 +23,7 @@ from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -693,13 +694,16 @@ class SingleDetTriggers(object):
 
 
 class ForegroundTriggers(object):
-    # FIXME: A lot of this is hardcoded to expect two ifos
+
+    # Injection files are expected to only have 'exclusive' IFAR/FAP values,
+    # should use has_inc=False for these.
     def __init__(self, coinc_file, bank_file, sngl_files=None, n_loudest=None,
-                     group='foreground'):
+                 group='foreground', has_inc=True):
         self.coinc_file = FileData(coinc_file, group=group)
         if 'ifos' in self.coinc_file.h5file.attrs:
             self.ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
         else:
+            # Legacy behaviour for old 2-ifo coinc pipeline
             self.ifos = [self.coinc_file.h5file.attrs['detector_1'],
                          self.coinc_file.h5file.attrs['detector_2']]
         self.sngl_files = {}
@@ -721,6 +725,7 @@ class ForegroundTriggers(object):
         self.bank_file = HFile(bank_file, "r")
         self.n_loudest = n_loudest
 
+        self._inclusive = has_inc
         self._sort_arr = None
         self._template_id = None
         self._trig_ids = None
@@ -729,7 +734,13 @@ class ForegroundTriggers(object):
     @property
     def sort_arr(self):
         if self._sort_arr is None:
-            ifar = self.coinc_file.get_column('ifar')
+            if self._inclusive:
+                try:
+                    ifar = self.coinc_file.get_column('ifar')
+                except KeyError:
+                    logging.warn("WARNING: Can't find inclusive IFAR!")
+                    ifar = self.coinc_file.get_column('ifar_exc')
+                    self._inclusive = False
             sorting = ifar.argsort()[::-1]
             if self.n_loudest:
                 sorting = sorting[:self.n_loudest]
@@ -998,22 +1009,23 @@ class ForegroundTriggers(object):
     def to_coinc_hdf_object(self, file_name):
         ofd = h5py.File(file_name,'w')
 
-        # Some fields are special cases:
-
+        # Some fields are special cases
         logging.info("Outputting search results")
         time = self.get_end_time()
         ofd.create_dataset('time', data=time, dtype=np.float32)
 
-        ifar = self.get_coincfile_array('ifar')
-        ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
+        if self._inclusive:
+            ifar = self.get_coincfile_array('ifar')
+            ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
 
         ifar_exc = self.get_coincfile_array('ifar_exc')
         ofd.create_dataset('ifar_exclusive', data=ifar_exc,
                            dtype=np.float32)
 
-        fap = self.get_coincfile_array('fap')
-        ofd.create_dataset('p_value', data=fap,
-                           dtype=np.float32)
+        if self._inclusive:
+            fap = self.get_coincfile_array('fap')
+            ofd.create_dataset('p_value', data=fap,
+                               dtype=np.float32)
 
         fap_exc = self.get_coincfile_array('fap_exc')
         ofd.create_dataset('p_value_exclusive', data=fap_exc,
