@@ -33,6 +33,7 @@ from matplotlib import pyplot as plt
 from matplotlib import rc
 import numpy
 import scipy
+import h5py
 import pycbc.version
 from pycbc.detector import Detector
 from pycbc import init_logging
@@ -52,54 +53,78 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load necessary SNR data from a trigger/injection file
+# Function to load trigger data
 def load_data(input_file, vetoes, ifos, opts, injections=False):
-    """Build a dictionary containing SNR and sensitivity data extracted
-    from a trigger/injection file"""
+    """Load data from a trigger/injection file"""
 
-    # Inizialize the dictionary
+    # Initialize the dictionary
     data = {}
-    data['snr'] = None
-    data['ifo_snr'] = None
+    data['coherent'] = None
+    data['single'] = dict((ifo, None) for ifo in ifos)
     data['f_resp_mean'] = dict((ifo, None) for ifo in ifos)
     data['sigma_mean'] = dict((ifo, None) for ifo in ifos)
     data['sigma_max'] = None
     data['sigma_min'] = None
 
-    # Fill in with required data
     if input_file:
         if injections:
-            trigs_or_injs = ppu.load_injections(input_file, vetoes)
-        else:
+            logging.info("Loading injections...")
+            # This will eventually become load_injections
             trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-            sigma = trigs_or_injs.get_sigmasqs()
-            sigma_tot = numpy.zeros(len(trigs_or_injs))
-            for ifo in ifos:
-                antenna = Detector(ifo)
-                ifo_f_resp = \
-                    ppu.get_antenna_responses(antenna,
-                                              trigs_or_injs.get_column('ra'),
-                                              trigs_or_injs.get_column('dec'),
-                                              numpy.asarray(trigs_or_injs.get_end()))
-                data['f_resp_mean'][ifo] = ifo_f_resp.mean()
-                sigma_tot += (sigma[ifo] * ifo_f_resp)
-            for ifo in ifos:
-                try:
-                    sigma_norm = sigma[ifo]/sigma_tot
-                    data['sigma_mean'][ifo] = sigma_norm.mean()
-                    if ifo == opts.ifo:
-                        data['sigma_max'] = sigma_norm.max()
-                        data['sigma_min'] = sigma_norm.min()
-                except ValueError:
-                    data['sigma_mean'][ifo] = 0
-                    if ifo == opts.ifo:
-                        data['sigma_max'] = 0
-                        data['sigma_min'] = 0
-        data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
-        data['ifo_snr'] = trigs_or_injs.get_sngl_snr(opts.ifo)
+        else:
+            logging.info("Loading triggers...")
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+
+        num_trigs = len(trigs['network/end_time_gc'][:])
+
+        # Load SNR data
+        data['coherent'] = trigs['network/coherent_snr'][:]
+
+        # Get single ifo SNR data
+        for ifo in ifos:
+            att = ifo[0].lower()
+            data['single'][ifo] = trigs['%s/snr_%s' % (ifo, att)][:]
+
+        # Get sigma for each ifo
+        for ifo in ifos:
+            sigma = dict((ifo, list(
+                trigs['%s/sigmasq' % ifo])) for ifo in ifos)
+
+        # Create array for sigma_tot
+        sigma_tot = numpy.zeros(num_trigs)
+
+        # Get parameters necessary for antenna responses
+        longitude = numpy.degrees(trigs['network/longitude'])
+        latitude = numpy.degrees(trigs['network/latitude'])
+        time = trigs['network/end_time_gc'][:]
+
+        # Get antenna response based parameters
+        for ifo in ifos:
+            antenna = Detector(ifo)
+            ifo_f_resp = \
+                ppu.get_antenna_responses(antenna, longitude,
+                                          latitude, time)
+
+            # Get the average for f_resp_mean and calculate sigma_tot
+            data['f_resp_mean'][ifo] = ifo_f_resp.mean()
+            sigma_tot += (sigma[ifo] * ifo_f_resp)
+
+        for ifo in ifos:
+            try:
+                sigma_norm = sigma[ifo]/sigma_tot
+                data['sigma_mean'][ifo] = sigma_norm.mean()
+                if ifo == opts.ifo:
+                    data['sigma_max'] = sigma_norm.max()
+                    data['sigma_min'] = sigma_norm.min()
+            except ValueError:
+                data['sigma_mean'][ifo] = 0
+                if ifo == opts.ifo:
+                    data['sigma_max'] = 0
+                    data['sigma_min'] = 0
+
+        logging.info("%d triggers found.", num_trigs)
 
     return data
-
 
 # Plot lines representing deviations based on non-central chi-square
 def plot_deviation(percentile, snr_grid, y, ax, style):
@@ -189,13 +214,13 @@ ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
 loudness_labels = ['Loudest', 'Second loudest', 'Third loudest']
 
 # Determine the maximum coherent SNR value we are dealing with
-x_max = plu.axis_max_value(trig_data['snr'], inj_data['snr'], found_file)
+x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'], found_file)
 max_snr = x_max
 if x_max < 50.:
     max_snr = 50.
 
 # Determine the maximum auto veto value we are dealing with
-y_max = plu.axis_max_value(trig_data['ifo_snr'], inj_data['ifo_snr'], found_file)
+y_max = plu.axis_max_value(trig_data['single'][opts.ifo], inj_data['single'][opts.ifo], found_file)
 
 # Setup the plots
 x_label = "Coherent SNR"
@@ -203,11 +228,11 @@ y_label = "%s sngl SNR" % ifo
 fig = plt.figure()
 ax = fig.gca()
 # Plot trigger data
-ax.plot(trig_data['snr'], trig_data['ifo_snr'], 'bx')
+ax.plot(trig_data['coherent'], trig_data['single'][opts.ifo], 'bx')
 ax.grid()
 # Plot injection data
 if found_file:
-    ax.plot(inj_data['snr'], inj_data['ifo_snr'], 'r+')
+    ax.plot(inj_data['coherent'], inj_data['single'][opts.ifo], 'r+')
 # Sigma-mean, min, max
 y_data = {'mean': trig_data['sigma_mean'][ifo],
           'min': trig_data['sigma_min'],

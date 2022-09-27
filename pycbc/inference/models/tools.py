@@ -421,7 +421,7 @@ class DistMarg():
             end = min(tcmax + EARTH_RADIUS, snr.end_time)
             snr = snr.time_slice(start, end, mode='nearest')
 
-            w = snr.squared_norm().numpy()
+            w = snr.squared_norm().numpy() / 2.0
             i = draw_sample(w, size=self.vsamples)
 
             if sref is not None:
@@ -459,13 +459,14 @@ class DistMarg():
         ra = numpy.resize(numpy.array(ra), self.vsamples)
         dec = numpy.resize(numpy.array(dec), self.vsamples)
         dtc = numpy.resize(numpy.array(dtc), self.vsamples)
-        ti = numpy.resize(numpy.array(ti), self.vsamples)
+        ti = numpy.resize(numpy.array(ti, dtype=int), self.vsamples)
         wi = numpy.resize(numpy.array(wi), self.vsamples)
 
         # Second draw a subsample size offset so that all times are covered
         tct = numpy.random.uniform(-snr.delta_t / 2.0,
                                    snr.delta_t / 2.0,
                                    size=len(ti))
+
         tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc
 
         # Update the current proposed times and the marginalization values
@@ -493,10 +494,13 @@ class DistMarg():
         self.marginalize_vector_weights = - numpy.log(self.vsamples)
         return params
 
-    def reconstruct(self):
+    def reconstruct(self, seed=None):
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
+        if seed:
+            numpy.random.seed(seed)
+
         rec = {}
 
         def get_loglr():
