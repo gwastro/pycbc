@@ -319,7 +319,7 @@ with h5py.File(outfilename, "w") as h5out:
             if 'U' not in str(injs[field].dtype):
                 grp[field] = injs[field]
             else:
-                grp[field] = str(injs[field])
+                grp[field] = [str(s) for s in injs[field]]
     # write triggers
     netg = h5out.create_group("network")
     for col in trigs:
