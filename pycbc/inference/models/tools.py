@@ -513,8 +513,8 @@ class DistMarg():
             logging.info('Reconstruct vector')
             self.reconstruct_vector = True
             self.reset_vector_params()
-            loglr = get_loglr() + self.marginalize_vector_weights
-            xl = draw_sample(loglr)
+            loglr = get_loglr()
+            xl = draw_sample(loglr + self.marginalize_vector_weights)
             for k in self.marginalize_vector_params:
                 rec[k] = self.marginalize_vector_params[k][xl]
             self.reconstruct_vector = False
@@ -524,8 +524,9 @@ class DistMarg():
             # call likelihood to get vector output
             self.reconstruct_distance = True
             _, weights = self.distance_marginalization
-            loglr = get_loglr() + numpy.log(weights)
-            xl = draw_sample(loglr)
+            loglr = get_loglr()
+            xl = draw_sample(loglr + numpy.log(weights))
+            print("dist", loglr[xl])
             rec['distance'] = self.dist_locs[xl]
             self.reconstruct_distance = False
 
@@ -537,6 +538,7 @@ class DistMarg():
             # This assumes that the template was conjugated in inner products
             loglr = (numpy.exp(-2.0j * phasev) * s).real + h
             xl = draw_sample(loglr)
+            print("phase", loglr[xl])
             rec['coa_phase'] = phasev[xl]
             self.reconstruct_phase = False
 
