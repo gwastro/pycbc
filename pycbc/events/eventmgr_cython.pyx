@@ -262,13 +262,13 @@ def timecluster_cython(
     unsigned int[:] indices,
     long int[:] left,
     long int[:] right,
-    double[:] stat,
+    REALTYPE[:] stat,
     int leftlen,
 ):
     cdef:
         int i, j, k, max_loc
         long int l, r
-        double max_val
+        REALTYPE max_val
 
     # i is the index we are inspecting, j is the next one to save
     i = 0
