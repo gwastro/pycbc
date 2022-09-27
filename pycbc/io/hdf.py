@@ -738,7 +738,7 @@ class ForegroundTriggers(object):
                 try:
                     ifar = self.coinc_file.get_column('ifar')
                 except KeyError:
-                    logging.warn("WARNING: Can't find inclusive IFAR!")
+                    logging.warning("WARNING: Can't find inclusive IFAR!")
                     ifar = self.coinc_file.get_column('ifar_exc')
                     self._inclusive = False
             sorting = ifar.argsort()[::-1]
