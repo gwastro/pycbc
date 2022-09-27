@@ -334,7 +334,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
     return ids, slide
 
 
-def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
+def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
 
@@ -377,7 +377,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
-    cidx = cluster_over_time(stat, time, window, **kwargs)
+    cidx = cluster_over_time(stat, time, window)
     return cidx
 
 
@@ -429,7 +429,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
-    cidx = cluster_over_time(stat, time_avg, window, argmax=argmax)
+    cidx = cluster_over_time(stat, time_avg, window)
 
     return cidx
 
@@ -457,8 +457,7 @@ def mean_if_greater_than_zero(vals):
     return vals[above_zero].mean(), above_zero.sum()
 
 
-def cluster_over_time(stat, time, window, method='python',
-                      argmax=numpy.argmax):
+def cluster_over_time(stat, time, window):
     """Cluster generalized transient events over time via maximum stat over a
     symmetric sliding window
 
@@ -470,11 +469,6 @@ def cluster_over_time(stat, time, window, method='python',
         time to use for clustering
     window: float
         length to cluster over
-    method: string
-        Either "cython" to use the cython implementation, or "python" to use
-        the pure python version.
-    argmax: function
-        the function used to calculate the maximum value
 
     Returns
     -------
@@ -492,41 +486,9 @@ def cluster_over_time(stat, time, window, method='python',
     right = numpy.searchsorted(time, time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
 
-    if method == 'cython':
-        j = timecluster_cython(indices, left, right, stat, len(left))
-    elif method == 'python':
-        # i is the index we are inspecting, j is the next one to save
-        i = 0
-        j = 0
-        while i < len(left):
-            l = left[i]
-            r = right[i]
-
-            # If there are no other points to compare it is obviously the max
-            if (r - l) == 1:
-                indices[j] = i
-                j += 1
-                i += 1
-                continue
-
-            # Find the location of the maximum within the time interval
-            # around i
-            max_loc = argmax(stat[l:r]) + l
-
-            # If this point is the max, we can skip to the right boundary
-            if max_loc == i:
-                indices[j] = i
-                i = r
-                j += 1
-
-            # If the max is later than i, we can skip to it
-            elif max_loc > i:
-                i = max_loc
-
-            elif max_loc < i:
-                i += 1
-    else:
-        raise ValueError(f'Do not recognize method {method}')
+    # The clustered events are stored in indices. j is the number of
+    # clustered events.
+    j = timecluster_cython(indices, left, right, stat, len(left))
 
     indices = indices[:j]
 
@@ -1190,8 +1152,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                   self.timeslide_interval,
-                                  self.analysis_block,
-                                  method='cython')
+                                  self.analysis_block)
             offsets = offsets[cidx]
             zerolag_idx = (offsets == 0)
             bkg_idx = (offsets != 0)
