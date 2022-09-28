@@ -151,7 +151,7 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
                                            tags))
         else:
             num_injs = int(cp.get_opt_tags("workflow-injections",
-                                           "ninjections", tags))
+                                           "num-injs", tags))
         inj_tspace = float(abs(workflow.analysis_time)) / num_injs
         num_splits = int(inj_interval // inj_tspace) + 1
 
