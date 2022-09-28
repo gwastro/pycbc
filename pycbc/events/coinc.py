@@ -381,7 +381,8 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
     return cidx
 
 
-def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argmax=numpy.argmax):
+def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
+                            **kwargs):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
 
@@ -429,7 +430,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
-    cidx = cluster_over_time(stat, time_avg, window, argmax=argmax)
+    cidx = cluster_over_time(stat, time_avg, window, **kwargs)
 
     return cidx
 
