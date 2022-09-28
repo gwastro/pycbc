@@ -8,8 +8,8 @@ import numpy
 import matplotlib; matplotlib.use('Agg')
 import pylab
 import inspect
-import (pycbc.events, pycbc.version, pycbc.results, 
-        pycbc.pnutils, pycbc.conversions)
+import pycbc.events, pycbc.pnutils, pycbc.conversions, pycbc.results
+import pycbc.version
 from itertools import cycle
 
 
