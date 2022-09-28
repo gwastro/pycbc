@@ -381,7 +381,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window):
     return cidx
 
 
-def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window):
+def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argmax=numpy.argmax):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
 
