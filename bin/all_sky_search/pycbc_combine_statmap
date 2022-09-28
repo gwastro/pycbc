@@ -118,11 +118,14 @@ ifar_stat = numpy.core.records.fromarrays([f['foreground/ifar'][:],
 # all_times is a tuple of trigger time arrays
 all_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
+def argmax(v):
+    return numpy.argsort(v)[-1]
+
 # Currently only clustering zerolag, i.e. foreground, so set all timeslide_ids
 # to zero
 cidx = pycbc.events.cluster_coincs_multiifo(ifar_stat, all_times,
                                             numpy.zeros(len(ifar_stat)), 0,
-                                            args.cluster_window)
+                                            args.cluster_window, argmax)
 
 def filter_dataset(h5file, name, idx):
     # Dataset needs to be deleted and remade as it is a different size
