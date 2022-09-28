@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Bin triggers by their dq value and calculate trigger rates in each bin
+"""Plot the DQ log likelihood versus time for a specific background bin
 """
 import logging
 import sys
