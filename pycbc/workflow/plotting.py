@@ -513,7 +513,7 @@ def make_dq_trigger_rate_plot(workflow, dq_files, out_dir, tags=None):
         else: bin_names = ['all_bin']
         for bbin in bin_names:
             plot_tags = [bbin] + tags
-            node = PlotExecutable(workflow.cp, 'plot_dqtriggerrate',
+            node = PlotExecutable(workflow.cp, 'plot_dq_likelihood_vs_time',
                         ifos=dq_file.ifo,
                         out_dir=out_dir,
                         tags=plot_tags).create_node()
