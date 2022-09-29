@@ -76,13 +76,13 @@ class HFile(h5py.File):
         while i < size:
             r = i + chunksize if i + chunksize < size else size
 
-            #Read each chunks worth of data and find where it passes the function
+            # Read each chunk's worth of data and find where it passes the function
             partial = [refs[arg][i:r] for arg in args]
             keep = fcn(*partial)
             if return_indices:
                 indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
-            #store only the results that pass the function
+            # Store only the results that pass the function
             for arg, part in zip(args, partial):
                 data[arg].append(part[keep])
 
@@ -703,9 +703,8 @@ class ForegroundTriggers(object):
         if 'ifos' in self.coinc_file.h5file.attrs:
             self.ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
         else:
-            # Legacy behaviour for old 2-ifo coinc pipeline
-            self.ifos = [self.coinc_file.h5file.attrs['detector_1'],
-                         self.coinc_file.h5file.attrs['detector_2']]
+            raise ValueError("File doesn't have an 'ifos' attribute!",
+                             coinc_file)
         self.sngl_files = {}
         if sngl_files is not None:
             for sngl_file in sngl_files:
@@ -738,9 +737,12 @@ class ForegroundTriggers(object):
                 try:
                     ifar = self.coinc_file.get_column('ifar')
                 except KeyError:
-                    logging.warning("WARNING: Can't find inclusive IFAR!")
+                    logging.warning("WARNING: Can't find inclusive IFAR!"
+                                    "Using exclusive IFAR instead ...")
                     ifar = self.coinc_file.get_column('ifar_exc')
                     self._inclusive = False
+            else:
+                ifar = self.coinc_file.get_column('ifar_exc')
             sorting = ifar.argsort()[::-1]
             if self.n_loudest:
                 sorting = sorting[:self.n_loudest]
@@ -758,12 +760,10 @@ class ForegroundTriggers(object):
     def trig_id(self):
         if self._trig_ids is not None:
             return self._trig_ids
-        self._trig_ids = {}
 
-        ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
-        for ifo in ifos:
-            trigid = self.get_coincfile_array(ifo + '/trigger_id')
-            self._trig_ids[ifo] = trigid
+        self._trig_ids = {}
+        for ifo in self.ifos:
+            self._trig_ids[ifo] = self.get_coincfile_array(ifo + '/trigger_id')
         return self._trig_ids
 
     def get_coincfile_array(self, variable):
@@ -814,9 +814,8 @@ class ForegroundTriggers(object):
                                                                    ends)
 
     def get_end_time(self):
-        ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
         times_gen = (self.get_coincfile_array('{}/time'.format(ifo))
-                     for ifo in ifos)
+                     for ifo in self.ifos)
         ref_times = np.array([mean_if_greater_than_zero(t)[0]
                               for t in zip(*times_gen)])
         return ref_times
@@ -824,17 +823,12 @@ class ForegroundTriggers(object):
     def get_ifos(self):
         ifo_list = []
         n_trigs = len(self.get_coincfile_array('template_id'))
-        try:  # First try new-style format
-            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
-            for ifo in ifos:
-                ifo_trigs = np.where(self.get_coincfile_array(ifo+'/time') < 0,
-                                     '-', ifo)
-                ifo_list.append(ifo_trigs)
-            ifo_list = [list(trig[trig != '-']) \
-                        for trig in iter(np.array(ifo_list).T)]
-        except KeyError:  # Else fall back on old two-det format
-            # Currently assumes two-det is Hanford and Livingston
-            ifo_list = [['H1', 'L1'] for i in range(n_trigs)]
+        for ifo in self.ifos:
+            ifo_trigs = np.where(self.get_coincfile_array(ifo+'/time') < 0,
+                                 '-', ifo)
+            ifo_list.append(ifo_trigs)
+        ifo_list = [list(trig[trig != '-']) \
+                    for trig in iter(np.array(ifo_list).T)]
         return ifo_list
 
     def to_coinc_xml_object(self, file_name):
@@ -975,7 +969,7 @@ class ForegroundTriggers(object):
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
             coinc_event_row.nevents = len(triggered_ifos)
-            # note that simply `coinc_event_row.instruments = triggered_ifos`
+            # Note that simply `coinc_event_row.instruments = triggered_ifos`
             # does not lead to a correct result with ligo.lw 1.7.1
             coinc_event_row.instruments = ','.join(sorted(triggered_ifos))
             coinc_inspiral_row.instruments = triggered_ifos
@@ -1114,6 +1108,7 @@ class ForegroundTriggers(object):
                            dtype='<S3')
 
         ofd.close()
+
 
 class ReadByTemplate(object):
     # default assignment to {} is OK for a variable used only in __init__
