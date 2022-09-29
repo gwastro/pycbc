@@ -821,10 +821,10 @@ class ForegroundTriggers(object):
         return ref_times
 
     def get_ifos(self):
+        # FIXME: Explain what this does
         ifo_list = []
-        n_trigs = len(self.get_coincfile_array('template_id'))
         for ifo in self.ifos:
-            ifo_trigs = np.where(self.get_coincfile_array(ifo+'/time') < 0,
+            ifo_trigs = np.where(self.get_coincfile_array(ifo + '/time') < 0,
                                  '-', ifo)
             ifo_list.append(ifo_trigs)
         ifo_list = [list(trig[trig != '-'])
