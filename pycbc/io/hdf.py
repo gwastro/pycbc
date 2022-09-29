@@ -827,7 +827,7 @@ class ForegroundTriggers(object):
             ifo_trigs = np.where(self.get_coincfile_array(ifo+'/time') < 0,
                                  '-', ifo)
             ifo_list.append(ifo_trigs)
-        ifo_list = [list(trig[trig != '-']) \
+        ifo_list = [list(trig[trig != '-'])
                     for trig in iter(np.array(ifo_list).T)]
         return ifo_list
 
