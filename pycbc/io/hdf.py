@@ -1,6 +1,6 @@
-# convenience classes for accessing hdf5 trigger files
-# the 'get_column()' method is implemented parallel to
-# the existing pylal.SnglInspiralUtils functions
+# Convenience classes for accessing hdf5 trigger files
+# The 'get_column()' method is implemented parallel to
+# legacy pylal.SnglInspiralUtils functions
 
 import h5py
 import numpy as np
@@ -23,6 +23,7 @@ from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -75,13 +76,13 @@ class HFile(h5py.File):
         while i < size:
             r = i + chunksize if i + chunksize < size else size
 
-            #Read each chunks worth of data and find where it passes the function
+            # Read each chunk's worth of data and find where it passes the function
             partial = [refs[arg][i:r] for arg in args]
             keep = fcn(*partial)
             if return_indices:
                 indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
-            #store only the results that pass the function
+            # Store only the results that pass the function
             for arg, part in zip(args, partial):
                 data[arg].append(part[keep])
 
@@ -693,15 +694,17 @@ class SingleDetTriggers(object):
 
 
 class ForegroundTriggers(object):
-    # FIXME: A lot of this is hardcoded to expect two ifos
+
+    # Injection files are expected to only have 'exclusive' IFAR/FAP values,
+    # should use has_inc=False for these.
     def __init__(self, coinc_file, bank_file, sngl_files=None, n_loudest=None,
-                     group='foreground'):
+                 group='foreground', has_inc=True):
         self.coinc_file = FileData(coinc_file, group=group)
         if 'ifos' in self.coinc_file.h5file.attrs:
             self.ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
         else:
-            self.ifos = [self.coinc_file.h5file.attrs['detector_1'],
-                         self.coinc_file.h5file.attrs['detector_2']]
+            raise ValueError("File doesn't have an 'ifos' attribute!",
+                             coinc_file)
         self.sngl_files = {}
         if sngl_files is not None:
             for sngl_file in sngl_files:
@@ -721,6 +724,7 @@ class ForegroundTriggers(object):
         self.bank_file = HFile(bank_file, "r")
         self.n_loudest = n_loudest
 
+        self._inclusive = has_inc
         self._sort_arr = None
         self._template_id = None
         self._trig_ids = None
@@ -729,7 +733,16 @@ class ForegroundTriggers(object):
     @property
     def sort_arr(self):
         if self._sort_arr is None:
-            ifar = self.coinc_file.get_column('ifar')
+            if self._inclusive:
+                try:
+                    ifar = self.coinc_file.get_column('ifar')
+                except KeyError:
+                    logging.warning("WARNING: Can't find inclusive IFAR!"
+                                    "Using exclusive IFAR instead ...")
+                    ifar = self.coinc_file.get_column('ifar_exc')
+                    self._inclusive = False
+            else:
+                ifar = self.coinc_file.get_column('ifar_exc')
             sorting = ifar.argsort()[::-1]
             if self.n_loudest:
                 sorting = sorting[:self.n_loudest]
@@ -747,12 +760,10 @@ class ForegroundTriggers(object):
     def trig_id(self):
         if self._trig_ids is not None:
             return self._trig_ids
-        self._trig_ids = {}
 
-        ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
-        for ifo in ifos:
-            trigid = self.get_coincfile_array(ifo + '/trigger_id')
-            self._trig_ids[ifo] = trigid
+        self._trig_ids = {}
+        for ifo in self.ifos:
+            self._trig_ids[ifo] = self.get_coincfile_array(ifo + '/trigger_id')
         return self._trig_ids
 
     def get_coincfile_array(self, variable):
@@ -803,28 +814,31 @@ class ForegroundTriggers(object):
                                                                    ends)
 
     def get_end_time(self):
-        ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
         times_gen = (self.get_coincfile_array('{}/time'.format(ifo))
-                     for ifo in ifos)
+                     for ifo in self.ifos)
         ref_times = np.array([mean_if_greater_than_zero(t)[0]
                               for t in zip(*times_gen)])
         return ref_times
 
     def get_ifos(self):
-        ifo_list = []
-        n_trigs = len(self.get_coincfile_array('template_id'))
-        try:  # First try new-style format
-            ifos = self.coinc_file.h5file.attrs['ifos'].split(' ')
-            for ifo in ifos:
-                ifo_trigs = np.where(self.get_coincfile_array(ifo+'/time') < 0,
-                                     '-', ifo)
-                ifo_list.append(ifo_trigs)
-            ifo_list = [list(trig[trig != '-']) \
-                        for trig in iter(np.array(ifo_list).T)]
-        except KeyError:  # Else fall back on old two-det format
-            # Currently assumes two-det is Hanford and Livingston
-            ifo_list = [['H1', 'L1'] for i in range(n_trigs)]
-        return ifo_list
+        """
+        Returns
+        -------
+        ifos_list
+             List of lists of ifo names involved in each foreground event.
+             Ifos will be listed in the same order as self.ifos
+        """
+        # Ian thinks this could be coded more simply and efficiently
+        # Note also that effectively the same thing is done as part of the
+        # to_coinc_hdf_object method
+        ifo_or_minus = []
+        for ifo in self.ifos:
+            ifo_trigs = np.where(self.get_coincfile_array(ifo + '/time') < 0,
+                                 '-', ifo)
+            ifo_or_minus.append(ifo_trigs)
+        ifos_list = [list(trig[trig != '-'])
+                     for trig in iter(np.array(ifo_or_minus).T)]
+        return ifos_list
 
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
@@ -964,7 +978,7 @@ class ForegroundTriggers(object):
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
             coinc_event_row.nevents = len(triggered_ifos)
-            # note that simply `coinc_event_row.instruments = triggered_ifos`
+            # Note that simply `coinc_event_row.instruments = triggered_ifos`
             # does not lead to a correct result with ligo.lw 1.7.1
             coinc_event_row.instruments = ','.join(sorted(triggered_ifos))
             coinc_inspiral_row.instruments = triggered_ifos
@@ -998,22 +1012,23 @@ class ForegroundTriggers(object):
     def to_coinc_hdf_object(self, file_name):
         ofd = h5py.File(file_name,'w')
 
-        # Some fields are special cases:
-
+        # Some fields are special cases
         logging.info("Outputting search results")
         time = self.get_end_time()
         ofd.create_dataset('time', data=time, dtype=np.float32)
 
-        ifar = self.get_coincfile_array('ifar')
-        ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
+        if self._inclusive:
+            ifar = self.get_coincfile_array('ifar')
+            ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
 
         ifar_exc = self.get_coincfile_array('ifar_exc')
         ofd.create_dataset('ifar_exclusive', data=ifar_exc,
                            dtype=np.float32)
 
-        fap = self.get_coincfile_array('fap')
-        ofd.create_dataset('p_value', data=fap,
-                           dtype=np.float32)
+        if self._inclusive:
+            fap = self.get_coincfile_array('fap')
+            ofd.create_dataset('p_value', data=fap,
+                               dtype=np.float32)
 
         fap_exc = self.get_coincfile_array('fap_exc')
         ofd.create_dataset('p_value_exclusive', data=fap_exc,
@@ -1102,6 +1117,7 @@ class ForegroundTriggers(object):
                            dtype='<S3')
 
         ofd.close()
+
 
 class ReadByTemplate(object):
     # default assignment to {} is OK for a variable used only in __init__
