@@ -821,15 +821,24 @@ class ForegroundTriggers(object):
         return ref_times
 
     def get_ifos(self):
-        # FIXME: Explain what this does
-        ifo_list = []
+        """
+        Returns
+        -------
+        ifos_list
+             List of lists of ifo names involved in each foreground event.
+             Ifos will be listed in the same order as self.ifos
+        """
+        # Ian thinks this could be coded more simply and efficiently
+        # Note also that effectively the same thing is done as part of the
+        # to_coinc_hdf_object method
+        ifo_or_minus = []
         for ifo in self.ifos:
             ifo_trigs = np.where(self.get_coincfile_array(ifo + '/time') < 0,
                                  '-', ifo)
-            ifo_list.append(ifo_trigs)
-        ifo_list = [list(trig[trig != '-'])
-                    for trig in iter(np.array(ifo_list).T)]
-        return ifo_list
+            ifo_or_minus.append(ifo_trigs)
+        ifos_list = [list(trig[trig != '-'])
+                     for trig in iter(np.array(ifo_or_minus).T)]
+        return ifos_list
 
     def to_coinc_xml_object(self, file_name):
         outdoc = ligolw.Document()
