@@ -11,7 +11,8 @@ kf = libutils.import_optional('sklearn.model_selection')
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--signal-file')
 parser.add_argument('--template-file', required=True)
-parser.add_argument('--min-mass', type=float, default=None)
+parser.add_argument('--min-mass', type=float, default=None,
+                    help='Used only on signal masses')
 parser.add_argument('--nfold-signal')
 parser.add_argument('--nfold-template')
 parser.add_argument('--fit-param', nargs='+', required=True,
@@ -59,59 +60,47 @@ def optimizedparam(sampleval, nfold=2):
     return optbw, optalpha
 
 if args.make_signal_kde and args.make_template_kde:
-    raise Exception("Choose only one option out of --make-signal-kde and --make-template-kde")
+    parser.error("Choose only one option out of --make-signal-kde and --make-template-kde")
 
 #calling template data and constructing template_kde_hdf_file over same template params
 temp_file = h5py.File(args.template_file, 'r')
-approximant = temp_file['approximant'][:]
-f_lower = temp_file['f_lower'][:]
-tid = numpy.arange(len(f_lower))
+mass1 = temp_file['mass1']
+tid = numpy.arange(len(mass1))  #tid : integer or array of int for Indices of the entries to be returned
 mass1, mass2, spin1z, spin2z = triggers.get_mass_spin(temp_file, tid)
-chi_eff = convert.chi_eff(mass1, mass2, spin1z, spin2z)
-mchirp = convert.mchirp_from_mass1_mass2(mass1, mass2)
-eta = convert.eta_from_mass1_mass2(mass1, mass2)
 
 assert len(args.fit_param) == len(args.log_param)
-parvals = []
+template_pars = []
 
 for param, slog in zip(args.fit_param, args.log_param):
     data = triggers.get_param(param, args, mass1, mass2, spin1z, spin2z)
-    if slog in ['false', 'False', 'FALSE']:
+    if slog in ['False']:
         logging.info('Using param: %s', param)
-        parvals.append(data)
-    elif slog in ['true', 'True', 'TRUE']:
+        template_pars.append(data)
+    elif slog in ['True']:
         logging.info('Using log param: %s', param)
-        parvals.append(numpy.log(data))
+        template_pars.append(numpy.log(data))
     else:
-        raise ValueError("invalid log param argument, use 'true', or 'false'")
-sample1 = numpy.vstack((parvals)).T
-grid_pts = sample1
+        raise ValueError("invalid log param argument, use 'True', or 'False'")
+sample1 = numpy.vstack((template_pars)).T
 
 if args.make_template_kde:
     logging.info('Starting optimization of template KDE parameters')
     optbw, optalpha = optimizedparam(sample1, nfold=eval(args.nfold_template))
     logging.info('Evaluating template KDE')
-    kde_data = kde_awkde(sample1, grid_pts, alp=optalpha, gl_bandwidth=optbw)
+    template_kde = kde_awkde(sample1, sample1, alp=optalpha, gl_bandwidth=optbw)
 
-    hdf = h5py.File(args.output_file, 'w')
-    hdf.create_dataset('kde_temp', data=kde_data)
-    hdf.attrs['kde_tempplate'] = 'temp_file'
-    hdf.attrs['fit_param'] = 'args.fit_param'
-    hdf.attrs['log_param'] = 'args.log_param'
-    hdf.create_dataset('mass1', data=mass1)
-    hdf.create_dataset('mass2', data=mass2)
-    hdf.create_dataset('spin1z', data=spin1z)
-    hdf.create_dataset('spin2z', data=spin2z)
-    hdf.create_dataset('mchirp', data=mchirp)
-    hdf.create_dataset('eta', data=eta)
-    hdf.create_dataset('chi_eff', data=chi_eff)
-    hdf.create_dataset('grid_pts', data=grid_pts)
-    hdf.create_dataset('approximant', data=approximant)
-    hdf.create_dataset('f_lower', data=f_lower)
-    hdf.close()
+    with h5py.File(args.output_file, "w") as f_dest:
+        g1 = f_dest.create_group("new_data")
+        g1.create_dataset("template_kde", data=template_kde)
+        g1.create_dataset("grid", data=sample1)
+        g1.create_dataset("mchirp,eta,chi_eff", data=template_pars)
+        g1.attrs['fit_param'] = args.fit_param
+        g1.attrs['log_param'] = args.log_param
+        with h5py.File("sbbh2.hdf", "r") as f_src:
+            f_src.copy(f_src["./"], f_dest["./"], "old_file_data")
 
 #calling signal data and constructing signal_kde_hdf file over template params
-paramvals = []
+signal_pars = []
 if args.make_signal_kde:
     data_signal = numpy.genfromtxt(args.signal_file, dtype = float, delimiter=',', names = True)
     mass2 = data_signal['mass2']
@@ -131,30 +120,27 @@ if args.make_signal_kde:
 
     for param, slog in zip(args.fit_param, args.log_param):
         data = data_signal[param]
-        if slog in ['false', 'False', 'FALSE']:
+        if slog in ['False']:
             logging.info('Using param: %s', param)
-            paramvals.append(data)
-        elif slog in ['true', 'True', 'TRUE']:
+            signal_pars.append(data)
+        elif slog in ['True']:
             logging.info('Using log param: %s', param)
-            paramvals.append(numpy.log(data))
+            signal_pars.append(numpy.log(data))
         else:
-            raise ValueError("invalid log param argument, use 'true', or 'false'")
+            raise ValueError("invalid log param argument, use 'True', or 'False'")
 
-    sample2 = numpy.vstack((paramvals)).T
+    sample2 = numpy.vstack((signal_pars)).T
     logging.info('Starting optimization of signal KDE parameters')
     optbw, optalpha = optimizedparam(sample2, nfold=eval(args.nfold_signal))
     logging.info('Evaluating signal KDE')
-    kde_data = kde_awkde(sample2, grid_pts, alp=optalpha, gl_bandwidth=optbw)
- 
-    hdf = h5py.File(args.output_file, 'w')
-    hdf.create_dataset('kde_sig', data=kde_data)
-    hdf.attrs['kde_signal'] = 'data_signal'
-    hdf.attrs['fit_param'] = 'args.fit_param'
-    hdf.attrs['log_param'] = 'args.log_param'
-    hdf.create_dataset('mass1', data=mass1)
-    hdf.create_dataset('mass2', data=mass2)
-    hdf.create_dataset('mchirp', data=mchirp)
-    hdf.create_dataset('eta', data=eta)
-    hdf.create_dataset('chi_eff', data=chi_eff)
-    hdf.create_dataset('grid_pts', data=grid_pts)
-    hdf.close()
+    signal_kde = kde_awkde(sample2, sample1, alp=optalpha, gl_bandwidth=optbw)
+
+    with h5py.File(args.output_file, "w") as f_dest:
+        g1 = f_dest.create_group("new_data")
+        g1.create_dataset("signal_kde", data=signal_kde)
+        g1.create_dataset("grid", data=sample1)
+        g1.create_dataset("signal_pars", data=signal_pars)
+        g1.attrs['fit_param'] = args.fit_param
+        g1.attrs['log_param'] = args.log_param
+        g2 = f_dest.create_group("old_file_data")
+        g2.create_dataset("data_signal", data=data_signal) 
