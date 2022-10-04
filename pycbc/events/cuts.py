@@ -109,12 +109,52 @@ def convert_inputstr(inputstr, choices):
     try:
         cut_value = float(cut_value_str)
     except ValueError as value_e:
-        logging.warning("Error: Cut value must be convertible into a float, "
+        logging.warning("ERROR: Cut value must be convertible into a float, "
                         "got '%s', a %s.", cut_value, type(cut_value))
         raise value_e
 
-    return {cut_param: (ineq_functions[cut_limit],
-                        float(cut_value_str))}
+    return {(cut_param, ineq_functions[cut_limit]) : float(cut_value_str)}
+
+def check_update_cuts(cut_dict, new_cut):
+    """
+    Update a cuts dictionary, but check whether the cut exists already,
+    warn and only apply the strictest cuts
+
+
+    Parameters
+    ----------
+    cut_dict: dictionary
+        Dictionary containing the cuts to be checked, will be updated
+
+    new_cut: single-entry dictionary
+        dictionary to define the new cut which is being considered to add
+    """
+    new_cut_key = list(new_cut.keys())[0]
+    if new_cut_key in cut_dict:
+        # The cut has already been called
+        logging.warning(f"WARNING: Cut parameter {new_cut_key[0]} and "
+                        f"function {new_cut_key[1]} have already "
+                        "been used. Utilising the strictest cut.")
+        # Extract the function and work out which is strictest
+        cut_function = new_cut_key[1]
+        value_new = list(new_cut.values())[0]
+        value_old = cut_dict[new_cut_key]
+        if cut_function(value_new, value_old):
+            # The new threshold would survive the cut of the
+            # old threshold, therefore the new threshold is stricter
+            # - update it
+            logging.warning(f"WARNING: New threshold of {value_new} is "
+                            f"stricter than old threshold {value_old}, "
+                            f"discarding cut at {value_old}.")
+            cut_dict.update(new_cut)
+        else:
+            # New cut would not make a difference, ignore it
+            logging.warning(f"WARNING: New threshold of {value_new} is less "
+                            f"strict than old threshold {value_old}, using  "
+                            f"cut at {value_old}.")
+    else:
+        # This is a new cut - add it
+        cut_dict.update(new_cut)
 
 
 def ingest_cuts_option_group(args):
@@ -133,13 +173,14 @@ def ingest_cuts_option_group(args):
     # Handle trigger cuts
     trigger_cut_dict = {}
     for inputstr in trigger_cut_strs:
-        trigger_cut_dict.update(convert_inputstr(inputstr,
-                                                 trigger_param_choices))
+        new_trigger_cut = convert_inputstr(inputstr, trigger_param_choices)
+        check_update_cuts(trigger_cut_dict, new_trigger_cut)
+
     # Handle template cuts
     template_cut_dict = {}
     for inputstr in template_cut_strs:
-        template_cut_dict.update(convert_inputstr(inputstr,
-                                                  template_param_choices))
+        new_template_cut = convert_inputstr(inputstr, template_param_choices)
+        check_update_cuts(template_cut_dict, new_template_cut)
 
     return trigger_cut_dict, template_cut_dict
 
@@ -157,8 +198,8 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
         the values we cut on.
 
     trigger_cut_dict: dictionary
-        Dictionary with parameters as keys, and tuples of
-        (cut_function, cut_threshold) as values
+        Dictionary with tuples of (parameter, cut_function)
+        as keys, cut_thresholds as values
         made using ingest_cuts_option_group function
 
     Returns
@@ -170,9 +211,9 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
     idx_out = np.arange(len(triggers['snr']))
 
     # Loop through the different cuts, and apply them
-    for parameter, cut_function_thresh in trigger_cut_dict.items():
+    for parameter_cut_function, cut_thresh in trigger_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
-        cut_function, cut_thresh = cut_function_thresh
+        parameter, cut_function = parameter_cut_function
 
         # What kind of parameter is it?
         if parameter.endswith('_chisq'):
@@ -203,7 +244,7 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
     return idx_out
 
 
-def apply_template_fit_cut(statistic, ifos, parameter, cut_function_thresh,
+def apply_template_fit_cut(statistic, ifos, parameter_cut_function, cut_thresh,
                            template_ids):
     """
     Apply cuts to template fit parameters, these have a few more checks
@@ -221,11 +262,12 @@ def apply_template_fit_cut(statistic, ifos, parameter, cut_function_thresh,
         List of IFOS used in this findtrigs instance.
         Templates must pass cuts in all IFOs.
 
-    parameter: string
-        Which parameter is being used for the cut?
+    parameter_cut_function: thresh
+        First entry: Which parameter is being used for the cut?
+        Second entry: Cut function
 
-    cut_function_thresh: tuple
-        tuple of the cut function and cut threshold
+    cut_thresh: float or int
+        Cut threshold to the parameter according to the cut function
 
     template_ids: numpy array
         Array of template_ids which have passed previous cuts
@@ -236,7 +278,7 @@ def apply_template_fit_cut(statistic, ifos, parameter, cut_function_thresh,
     tids_out: numpy array
         Array of template_ids which have passed this cut
     """
-    cut_function, cut_thresh = cut_function_thresh
+    parameter, cut_function = parameter_cut_function
     statistic_classname = statistic.__class__.__name__
 
     # We can only apply template fit cuts if template fits have been done
@@ -279,8 +321,8 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
         Must contain the usual template bank datasets
 
     template_cut_dict: dictionary
-        Dictionary with parameters as keys, and tuples of
-        (cut_function, cut_threshold) as values
+        Dictionary with tuples of (parameter, cut_function)
+        as keys, cut_thresholds as values
         made using ingest_cuts_option_group function
 
     Optional Parameters
@@ -321,9 +363,9 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
         return tids_out
 
     # Loop through the different cuts, and apply them
-    for parameter, cut_function_thresh in template_cut_dict.items():
+    for parameter_cut_function, cut_thresh in template_cut_dict.items():
         # The function and threshold are stored as a tuple so unpack it
-        cut_function, cut_thresh = cut_function_thresh
+        parameter, cut_function = parameter_cut_function
 
         if parameter in bank_conv.conversion_options:
             # Calculate the parameter values using the bank property helper
@@ -334,8 +376,8 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             if statistic and ifos:
                 tids_out = apply_template_fit_cut(statistic,
                                                   ifos,
-                                                  parameter,
-                                                  cut_function_thresh,
+                                                  parameter_cut_function,
+                                                  cut_thresh,
                                                   tids_out)
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
