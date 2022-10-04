@@ -320,6 +320,6 @@ cpdef snr_predictor(double [::1] freqs,
             cr0 = cr0n
             cx0 = cx0n
 
-        snr[j] = ((abs(hd) - 0.5 * hh) ** 2.0 + (abs(chd) - 0.5 * chh) ** 2.0) ** 0.5
+        snr[j] = (norm(hd) / hh + norm(chd) / chh) ** 0.5
 
     return snr

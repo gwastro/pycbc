@@ -495,7 +495,8 @@ class Relative(DistMarg, BaseGaussianNoise):
 
         # If marginalizing over time stuff
         from pycbc.inference.models.tools import EARTH_RADIUS
-        from relbin_cpu import snr_predictor
+        from .relbin_cpu import snr_predictor
+        from pycbc.types import TimeSeries
         sample_rate = 4096
         tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
         times = numpy.arange(tcmin - EARTH_RADIUS,
@@ -503,10 +504,16 @@ class Relative(DistMarg, BaseGaussianNoise):
                              1.0 / sample_rate)
         snr_pred = {}
         for ifo in self.data:
-            snr_pred[ifo] = snr_predictor(freqs, times - self.end_time[ifo],
-                                    hp, hc, h00,
+            sdat = self.sdat[ifo]
+            dtc = times - self.end_time[ifo]
+            snr = snr_predictor(self.fedges[ifo], dtc,
+                                    wfs[ifo][0], wfs[ifo][1],
+                                    self.h00_sparse[ifo],
                                     sdat['a0'], sdat['a1'],
                                     sdat['b0'], sdat['b1'])
+            snr_pred[ifo] = TimeSeries(snr, delta_t=1.0/sample_rate,
+                                       epoch=tcmin - EARTH_RADIUS)
+
         self.snr_draw(snr_pred)
         p = self.current_params
 
