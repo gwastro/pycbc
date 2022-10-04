@@ -133,7 +133,6 @@ def check_update_cuts(cut_dict, new_cut):
     new_cut_key = list(new_cut.keys())[0]
     if new_cut_key in cut_dict:
         # The cut has already been called
-        
         logging.warning("WARNING: Cut parameter %s and function %s have "
                         "already been used. Utilising the strictest cut.",
                         new_cut_key[0], new_cut_key[1].__name__)
