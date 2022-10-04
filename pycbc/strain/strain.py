@@ -1556,7 +1556,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                                                start_time, **sb_kwargs)
 
         if idq_channel is not None:
-            assert idq_state_channel is not None, 'Each ifo with an idq channel requires an idq state channel'
+            if idq_state_channel is None:
+                raise ValueError('Each detector with an iDQ channel requires an iDQ state channel as well')
             self.idq = pycbc.frame.iDQBuffer(frame_src, idq_channel, start_time,
                                              max_buffer=max_buffer,
                                              force_update_cache=force_update_cache,
