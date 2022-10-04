@@ -27,6 +27,7 @@ import pycbc
 from pycbc.bin_utils import IrregularBins
 from pycbc.events import cuts, trigger_fits as trstats, stat
 from pycbc.io import DictArray
+from pycbc.io.live import find_trigger_files
 from pycbc.events import ranking
 from pycbc.events.coinc import cluster_over_time
 from pycbc.types import MultiDetOptionAction
@@ -66,12 +67,23 @@ pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--ifos", nargs="+", required=True,
                     help="Which ifo are we fitting the triggers for? "
                          "Required")
-parser.add_argument("--top-directory", metavar='PATH', required=True,
-                    help="Directory containing trigger files, top directory, "
-                         "will contain subdirectories for each day of data. "
-                         "Required.")
-parser.add_argument("--analysis-date", required=True,
-                    help="Date of the analysis, format YYYY_MM_DD. Required")
+parser.add_argument("--directory", metavar='PATH', required=True,
+                    help="Directory containing trigger files, directory, "
+                         "can contain subdirectories. Required.")
+parser.add_argument("--gps-start-time", type=int,
+                    help="Start time of the analysis, mutually requires "
+                         "--gps-end-time. Integer, required")
+parser.add_argument("--gps-end-time", type=int,
+                    help="End time of the analysis, mutually requires "
+                         "--gps-start-time. Integer, required")
+parser.add_argument('--date-directories', action='store_true',
+                    help="Are the triggers stored in directories according "
+                         "to the date?")
+default_dd_format = "%Y_%m_%d"
+parser.add_argument("--date-directory-format", default=default_dd_format,
+                    help="Format of date, see datetime strftime "
+                         "documentation for details. Default: "
+                         "%%Y_%%m_%%d")
 parser.add_argument("--file-identifier", default="H1L1V1-Live",
                     help="String required in filename to be considered for "
                          "analysis. Default: 'H1L1V1-Live'.")
@@ -177,19 +189,36 @@ logging.info("Duration bin edges: %s", duration_bin_edges)
 
 logging.info("Finding files")
 
-files = [f for f in os.listdir(os.path.join(args.top_directory, args.analysis_date))
-         if args.file_identifier in f]
+
+files = find_trigger_files(
+            args.directory,
+            args.gps_start_time,
+            args.gps_end_time,
+            id_string=args.file_identifier,
+            date_directories=args.date_directories,
+            date_directory_format=args.date_directory_format
+        )
 
 logging.info("%s files found", len(files))
 
+logging.info("Setting up the cut dictionaries")
 # Add template duration cuts according to the bin inputs
 args.template_cuts = args.template_cuts or []
 args.template_cuts.append(f"template_duration:{min(duration_bin_edges)}:lower")
 args.template_cuts.append(f"template_duration:{max(duration_bin_edges)}:upper_inc")
 
+# Ensure that triggers are within the time limits
 args.trigger_cuts = args.trigger_cuts or []
+args.trigger_cuts.append(f"end_time:{args.gps_start_time}:lower_inc")
+args.trigger_cuts.append(f"end_time:{args.gps_end_time}:upper_inc")
 
-logging.info("Setting up the cut dictionaries")
+# Efficiency saving: add SNR cut before any others as sngl_ranking can
+# only be less than SNR.
+args.trigger_cuts.insert(0, f"snr:{args.fit_threshold}:lower_inc")
+
+# Cut triggers with sngl-ranking below threshold
+args.trigger_cuts.append(f"{args.sngl_ranking}:{args.fit_threshold}:lower_inc")
+
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 logging.info("Setting up duration bins")
@@ -205,14 +234,6 @@ logging.info("Getting events which meet criteria")
 
 # Loop through files - add events which meet the immediately gettable
 # criteria
-date_directory = os.path.join(args.top_directory, args.analysis_date)
-
-if not os.path.exists(date_directory):
-    raise FileNotFoundError(f"The directory {date_directory} does not exist.")
-
-files = [f for f in os.listdir(date_directory)
-         if args.file_identifier in f and f.endswith('hdf')]
-
 events = {}
 
 rank_method = {ifo: stat.get_statistic_from_opts(args, [ifo]) for ifo in args.ifos}
@@ -229,27 +250,25 @@ for counter, filename in enumerate(files):
                 logging.info("%s: %d triggers in %.0f s", ifo,
                              events[ifo].data['snr'].size, live_time[ifo])
 
-    f = os.path.join(date_directory, filename)
     # If there is an IOerror with the file, don't fail, just carry on
     try:
-        h5py.File(f, 'r')
+        h5py.File(filename, 'r')
     except IOError:
         logging.warning('IOError with file %s', f)
         continue
 
     # Triggers for this file
     triggers = {}
-    with h5py.File(f, 'r') as fin:
+    with h5py.File(filename, 'r') as fin:
         # Open the file: does it have the ifo group and snr dataset?
         for ifo in args.ifos:
             if not (ifo in fin and 'snr' in fin[ifo]):
                 continue
-
             # Eventual FIX ME: live output files should (soon) have the live time
             # added, but for now, extract from the filename
             # Format of the filename is to have the live time as a dash,
             # followed by '.hdf' at the end of the filename
-            lt = int(f.split('-')[-1][:-4])
+            lt = int(filename.split('-')[-1][:-4])
             live_time[ifo] += lt
 
             n_triggers = fin[ifo]['snr'].size
@@ -449,7 +468,8 @@ with h5py.File(args.output, 'w') as fout:
     fout['bins_lower'] = tbins.lower()
 
     fout.attrs['ifos'] = ','.join(args.ifos)
-    fout.attrs['analysis_date'] = args.analysis_date
+    fout.attrs['fit-start'] = args.gps_start_time
+    fout.attrs['fit-end'] = args.gps_end_time
     fout.attrs['input'] = sys.argv
     fout.attrs['cuts'] = args.template_cuts + args.trigger_cuts
     fout.attrs['sngl_ranking'] = args.sngl_ranking
