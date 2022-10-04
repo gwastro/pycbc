@@ -54,7 +54,7 @@ python ./check_GW150914_detection.py H1-INSPIRAL_$1_$2_$3-OUT.hdf
 
 # Test pycbc inspiral by running over GW150914 with a limited template bank
 echo -e "\\n\\n>> [`date`] Getting template bank"
-wget -nc https://github.com/gwastro/pycbc-config/raw/master/test/inspiral/SMALLER_BANK_FOR_GW150914.hdf
+wget -nv -nc https://github.com/gwastro/pycbc-config/raw/master/test/inspiral/SMALLER_BANK_FOR_GW150914.hdf
 
 echo -e "\\n\\n>> [`date`] Compressing template bank"
 pycbc_compress_bank --bank-file SMALLER_BANK_FOR_GW150914.hdf --output COMPRESSED_BANK.hdf --sample-rate 4096 --segment-length 256 --compression-algorithm mchirp --psd-model aLIGOZeroDetHighPower --low-frequency-cutoff 30 --approximant "SEOBNRv4_ROM"
