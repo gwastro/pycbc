@@ -113,7 +113,8 @@ def convert_inputstr(inputstr, choices):
                         "got '%s', a %s.", cut_value, type(cut_value))
         raise value_e
 
-    return {(cut_param, ineq_functions[cut_limit]) : float(cut_value_str)}
+    return {(cut_param, ineq_functions[cut_limit]): float(cut_value_str)}
+
 
 def check_update_cuts(cut_dict, new_cut):
     """
@@ -132,9 +133,10 @@ def check_update_cuts(cut_dict, new_cut):
     new_cut_key = list(new_cut.keys())[0]
     if new_cut_key in cut_dict:
         # The cut has already been called
-        logging.warning(f"WARNING: Cut parameter {new_cut_key[0]} and "
-                        f"function {new_cut_key[1]} have already "
-                        "been used. Utilising the strictest cut.")
+        
+        logging.warning("WARNING: Cut parameter %s and function %s have "
+                        "already been used. Utilising the strictest cut.",
+                        new_cut_key[0], new_cut_key[1].func_name)
         # Extract the function and work out which is strictest
         cut_function = new_cut_key[1]
         value_new = list(new_cut.values())[0]
@@ -143,15 +145,17 @@ def check_update_cuts(cut_dict, new_cut):
             # The new threshold would survive the cut of the
             # old threshold, therefore the new threshold is stricter
             # - update it
-            logging.warning(f"WARNING: New threshold of {value_new} is "
-                            f"stricter than old threshold {value_old}, "
-                            f"discarding cut at {value_old}.")
+            logging.warning("WARNING: New threshold of %.3f is "
+                            "stricter than old threshold %.3f, "
+                            "using cut at %.3f.",
+                            value_new, value_old, value_new)
             cut_dict.update(new_cut)
         else:
             # New cut would not make a difference, ignore it
-            logging.warning(f"WARNING: New threshold of {value_new} is less "
-                            f"strict than old threshold {value_old}, using  "
-                            f"cut at {value_old}.")
+            logging.warning("WARNING: New threshold of %.3f is less "
+                            "strict than old threshold %.3f, using  "
+                            "cut at %.3f.",
+                            value_new, value_old, value_old)
     else:
         # This is a new cut - add it
         cut_dict.update(new_cut)
