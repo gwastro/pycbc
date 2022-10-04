@@ -136,7 +136,7 @@ def check_update_cuts(cut_dict, new_cut):
         
         logging.warning("WARNING: Cut parameter %s and function %s have "
                         "already been used. Utilising the strictest cut.",
-                        new_cut_key[0], new_cut_key[1].func_name)
+                        new_cut_key[0], new_cut_key[1].__name__)
         # Extract the function and work out which is strictest
         cut_function = new_cut_key[1]
         value_new = list(new_cut.values())[0]
