@@ -283,7 +283,7 @@ class TimeSeries(Array):
         nearest_sample: bool
             Return the samples at the times nearest to the chosen times rather
             than rounded down.
-        """   
+        """
 
         if nearest_sample:
             times += self.delta_t / 2.0
