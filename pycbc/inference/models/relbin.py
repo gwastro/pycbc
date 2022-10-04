@@ -492,8 +492,25 @@ class Relative(DistMarg, BaseGaussianNoise):
         norm = 0.0
         filt = 0j
         self._current_wf_parts = {}
-        for ifo in self.data:
 
+        # If marginalizing over time stuff
+        from pycbc.inference.models.tools import EARTH_RADIUS
+        from relbin_cpu import snr_predictor
+        sample_rate = 4096
+        tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+        times = numpy.arange(tcmin - EARTH_RADIUS,
+                             tcmax + EARTH_RADIUS,
+                             1.0 / sample_rate)
+        snr_pred = {}
+        for ifo in self.data:
+            snr_pred[ifo] = snr_predictor(freqs, times - self.end_time[ifo],
+                                    hp, hc, h00,
+                                    sdat['a0'], sdat['a1'],
+                                    sdat['b0'], sdat['b1'])
+        self.snr_draw(snr_pred)
+        p = self.current_params
+
+        for ifo in self.data:
             freqs = self.fedges[ifo]
             sdat = self.sdat[ifo]
             h00 = self.h00_sparse[ifo]
