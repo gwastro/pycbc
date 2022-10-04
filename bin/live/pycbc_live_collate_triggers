@@ -21,183 +21,57 @@ import itertools
 import h5py
 import os
 import logging
-import pycbc
 from datetime import datetime, timedelta
+
+from ligo.segments import segmentlist, segment
+
+import pycbc
+from pycbc.io import live as liveio
+from pycbc.events import cuts, veto
 
 # Set up the command line argument parser
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--trigger-file-method', type=str, required=True,
-                    help='The method to use to find the trigger files. '
-                         'Options are: file, dir, start-end-date, '
-                         ' start-num-days, gps-start-end-time.',
-                    choices=['file', 'dir', 'start-end-date',
-                             'start-num-days', 'gps-start-end-time'])
+liveio.add_live_trigger_selection_options(parser)
+cuts.insert_cuts_option_group(parser)
 
-parser.add_argument('--trigger-dir', type=str, required=False,
-                    help='The directory containing all of the PyCBC Live '
-                         'trigger files. The directory must contain sub-'
-                         'directories with naming schemes "YYYY-MM-DD".'
-                         'The trigger files must be of the format: '
-                         '"{ifos}-Live-GPSTIME-INCREMENT.hdf".')
-
-# Take trigger files from file
-parser.add_argument('--list-of-trigger-files', type=str,
-                    help='A file containing all the trigger files you '
-                    ' would like to collate.')
-
-# Take trigger files from start and end date
-parser.add_argument('--start-date', type=str, required=False,
-                    help='The first day of triggers you want to collate.'
-                         'If no end date is given, the start date is the '
-                         'only day.')
-parser.add_argument('--end-date', type=str, required=False,
-                    help='The final day of triggers to collect. If no end '
-                         'is provided then only the start day is used.')
-
-# Take trigger files from start and num days
-parser.add_argument('--num-days', type=int, required=False,
-                    help='The number of days after (and including) the start '
-                    'date to collate triggers from.')
-
-# Take trigger files from gps start and end time
-parser.add_argument('--gps-start-time', type=int, required=False,
-                    help='Start time of the collection of trigger files.')
-parser.add_argument('--gps-end-time', type=int, required=False,
-                    help='End time of the collection of trigger files.')
-
-parser.add_argument('--ifos', type=str, required=True, nargs='+',
-                    help='The detectors to extract triggers for in the '
-                         'trigger files.')
+parser.add_argument(
+    '--ifos',
+    nargs='+',
+    required=True,
+    help="The list of detectors to include triggers in the merged file"
+)
 
 # Option to output list of trigger files
-parser.add_argument('--output-trigger-file-list', type=str,
-                    help='Name of the output file to save the list of trigger files.')
+parser.add_argument(
+    '--output-trigger-file-list',
+    help='Name of the output file to save the list of trigger files.'
+)
 
-parser.add_argument('--output-dir', type=str, required=True,
-                    help='The directory to write the collated trigger file '
-                         'to. The file will be named with the following '
-                         'format: "{ifos}-Live-STARTGPS-ENDGPS.hdf" unless '
-                         'an output file name is provided.')
-parser.add_argument('--output-file-name', type=str, required=False,
-                    help='The name of the output file to save the collated '
-                         'trigger file to. If not provided, the file will be '
-                         'named with the format: "{ifos}-Live-STARTGPS-ENDGPS.hdf"')
+parser.add_argument(
+    '--output-file',
+    required=True,
+    help='The output file containing merged triggers.'
+)
+parser.add_argument(
+    "--bank-file",
+    required=True,
+    help="The bank file used in the search"
+)
 
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-# GRAB THE TRIGGER FILES TO COLLATE
-if args.trigger_file_method == 'file':
-    if not args.list_of_trigger_files:
-        parser.error('Please provide a list of trigger files.')
-
-    initial_trigger_files = numpy.loadtxt(args.list_of_trigger_files,
-                                  delimiter=',', dtype=str)
-
-if args.trigger_file_method == 'dir':
-    if not args.trigger_dir:
-        parser.error('Please provide a directory containing trigger files.')
-
-    initial_trigger_files = [
-        l for l in glob.glob(args.trigger_dir + '/*/*-Live-*.hdf', recursive=True)
-    ]
-
-if args.trigger_file_method == 'start-end-date':
-    if not args.start_date:
-        parser.error('Please provide a start date.')
-    if not args.end_date:
-        parser.error('Please provide an end date.')
-    if not args.trigger_dir:
-        parser.error('Please provide a directory containing trigger files.')
-
-    # Convert dates to datetime to get the days array
-    start_date = datetime.strptime(args.start_date, '%Y-%m-%d').date()
-    end_date = datetime.strptime(args.end_date, '%Y-%m-%d').date()
-
-    # Create the days array
-    days = []
-    delta = timedelta(days=1)
-
-    # Loop through the days and add each date to the list
-    current_date = start_date
-    while current_date <= end_date:
-        days.append(current_date)
-        current_date += delta
-
-    # Convert to strings in a list
-    days = [str(date).replace('-', '_') for date in days]
-    num_days = str(len(days))
-
-    initial_trigger_files = [
-        os.path.join(args.trigger_dir, day, trigger_file)
-        for day in days
-        for trigger_file in os.listdir(os.path.join(args.trigger_dir, day))
-    ]
-
-if args.trigger_file_method == 'start-num-days':
-    if not args.start_date:
-        parser.error('Please provide a start date.')
-    if not args.num_days:
-        parser.error('Please provide a number of days.')
-    if not args.trigger_dir:
-        parser.error('Please provide a directory containing trigger files.')
-
-    # Convert dates to datetime to get the days array
-    start_date = datetime.strptime(args.start_date, '%Y-%m-%d').date()
-    num_days = timedelta(days=args.num_days - 1)
-    end_date = start_date + num_days
-
-    # Create the days array
-    days = []
-    delta = timedelta(days=1)
-
-    # Loop through the days and add each date to the list
-    current_date = start_date
-    while current_date <= end_date:
-        days.append(current_date)
-        current_date += delta
-
-    # Convert to strings in a list
-    days = [str(date).replace('-', '_') for date in days]
-    num_days = str(len(days))
-
-    initial_trigger_files = [
-        os.path.join(args.trigger_dir, day, trigger_file)
-        for day in days
-        for trigger_file in os.listdir(os.path.join(args.trigger_dir, day))
-    ]
-
-if args.trigger_file_method == 'gps-start-end-time':
-    if not args.gps_start_time:
-        parser.error('Please provide a GPS start time.')
-    if not args.gps_end_time:
-        parser.error('Please provide a GPS end time.')
-    if not args.trigger_dir:
-        parser.error('Please provide a directory containing trigger files.')
-
-    initial_trigger_files = [
-        l for l in glob.glob(args.trigger_dir + '/*/*-Live-*.hdf', recursive=True)
-        if float(l.split('/')[-1].split("-")[2]) > args.gps_start_time and float(l.split('/')[-1].split("-")[2]) < args.gps_end_time
-    ]
-
-logging.info(f" {len(initial_trigger_files)} files found")
-
-# Check if all files found are in the correct format and are trigger files
-ifo_permutations = [''.join(p) for p in itertools.permutations(args.ifos)]
-ifo_prefix_set = set(ifo_permutations)
-
-trigger_files = []
-for source_file in initial_trigger_files:
-    trigger_file = os.path.basename(source_file)
-    if any(trigger_file.startswith(prefix + '-Live') for prefix in ifo_prefix_set):
-        trigger_files.append(source_file)
-
-logging.info(f" {len(trigger_files)} confirmed trigger files")
+logging.info("Finding trigger files")
+trigger_files = liveio.find_trigger_files_from_cli(args)
+logging.info("%s files found", len(trigger_files))
 
 if args.output_trigger_file_list:
-    logging.info(' Writing list of trigger files to: ' + args.output_trigger_file_list)
+    logging.info(
+        'Writing list of trigger files to %s ',
+        args.output_trigger_file_list
+    )
     with open(args.output_trigger_file_list, 'w') as f:
         for item in trigger_files:
             f.write("%s\n" % item)
@@ -205,27 +79,30 @@ if args.output_trigger_file_list:
 ###########################
 # COLLATE THE TRIGGER FILES
 ###########################
+# Deal with where the gps time is in the middle of a file:
+args.trigger_cuts = args.trigger_cuts or []
+args.trigger_cuts.append(f"end_time:{args.gps_start_time}:lower_inc")
+args.trigger_cuts.append(f"end_time:{args.gps_end_time}:upper_inc")
 
-if args.output_file_name:
-    output_file = args.output_dir + args.output_file_name
-else:
-    # Extract the gpstimes for every file and take min/max for start and end
-    trigger_file_times = [float(trigger_file.split('/')[-1].split("-")[2])
-                          for trigger_file in trigger_files]
-    start_gpstime = min(trigger_file_times)
-    end_gpstime = max(trigger_file_times)
+trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
-    ifo_string = "".join(args.ifos)
-    output_file = args.output_dir + f'{ifo_string}-Live-' + start_gpstime + '-' + end_gpstime + '.hdf'
+logging.info(
+    "Collating triggers to %s",
+    args.output_file
+)
 
-logging.info(f" Creating a file at: {output_file}")
-with h5py.File(output_file, 'a') as destination:
+# Some tracking objects
+file_count = 0
+n_triggers = {ifo: 0 for ifo in args.ifos}
+n_triggers_cut = {ifo: 0 for ifo in args.ifos}
+segs = {ifo: segmentlist([]) for ifo in args.ifos}
+
+with h5py.File(args.output_file, 'w') as destination:
     # Create the ifo groups in the trigger file
     for ifo in args.ifos:
         if ifo not in destination:
             destination.create_group(ifo)
 
-    file_count = 0
     for source_file in trigger_files:
         file_count += 1
         trigger_file = os.path.basename(source_file)
@@ -235,99 +112,170 @@ with h5py.File(output_file, 'a') as destination:
         end_time = start_time + duration
 
         if file_count % 100 == 0:
-            logging.info(f" Files appended: {file_count}/{len(trigger_files)}")
+            logging.info(
+                "Files appended: %d/%d",
+                file_count,
+                len(trigger_files)
+            )
 
         with h5py.File(source_file, 'r') as source:
             for ifo in args.ifos:
-                triggers = source[ifo]
+                try:
+                    n_trigs_ifo = source[ifo]['snr'].size
+                    n_triggers[ifo] += n_trigs_ifo
+                except KeyError:
+                    # No triggers in this IFO in this file
+                    continue
+
+                # Triggers were generated, so add to the segment list
+                segs[ifo].append(segment(start_time, end_time))
+
+                triggers = {
+                    k: source[ifo][k][:] for k in source[ifo].keys()
+                    if k not in ('loudest', 'stat', 'gates', 'psd')
+                    and source[ifo][k].size == n_trigs_ifo
+                }
+                # The stored chisq is actually reduced chisq, so convert back
+                # to unreduced chisq using chisq_dof
+                tmpchisq = triggers['chisq'][:] * (2 * triggers['chisq_dof'][:] - 2)
+                triggers['chisq'][:] = tmpchisq
+
+                # Apply the cuts to triggers
+                keep_idx = cuts.apply_trigger_cuts(triggers, trigger_cut_dict)
+
+                # triggers contains the datasets that we want to use for
+                # the template cuts, so here it can be used as the template bank
+                keep_idx = cuts.apply_template_cuts(
+                    triggers,
+                    template_cut_dict,
+                    template_ids=keep_idx
+                )
+                if not any(keep_idx):
+                    # No triggers kept after cuts in this ifo for this file
+                    continue
+                n_triggers_cut[ifo] += keep_idx.size
+
+                triggers = {
+                    k: triggers[k][keep_idx]
+                    for k in triggers.keys()
+                }
+
                 if ('approximant' not in triggers) or (len(triggers['approximant']) == 0):
                         continue
 
                 for name, dataset in triggers.items():
-
                     if name in destination[ifo]:
+                        # Append new data to existing dataset in destination
                         if triggers[name].shape[0] == 0:
                             continue
-                        # Append new data to existing dataset in destination
-                        destination[ifo][name].resize((destination[ifo][name].shape[0] + triggers[name].shape[0]), axis=0)
-                        destination[ifo][name][-triggers[name].shape[0]:] = triggers[name]
+                        destination[ifo][name].resize(
+                            n_triggers_cut[ifo],
+                            axis=0
+                        )
+                        destination[ifo][name][-keep_idx.size:] = triggers[name]
                     else:
-                        destination[ifo].create_dataset(name, data=dataset, chunks=True, maxshape=(None,))
+                        destination[ifo].create_dataset(
+                            name,
+                            data=dataset,
+                            chunks=True,
+                            maxshape=(None,)
+                        )
 
                 for attr_name, attr_value in source.attrs.items():
                     destination.attrs[attr_name] = attr_value
 
-                # Create or get the '/search' subgroup within 'H1'/'L1'/'V1'
-                if 'search' not in destination[ifo]:
-                    destination[ifo].create_group('search')
+    for ifo in args.ifos:
+        # Collect the segments, and output to the file
+        search_grp = destination[ifo].create_group('search')
+        segs[ifo].coalesce()
+        seg_starts, seg_ends = veto.segments_to_start_end(segs[ifo])
+        search_grp.create_dataset(
+            'end_time',
+            data=seg_ends,
+        )
+        search_grp.create_dataset(
+            'start_time',
+            data=seg_starts,
+        )
+        logging.info(
+            "Found %d %s triggers in %s seconds",
+            n_triggers[ifo],
+            ifo,
+            abs(segs[ifo])
+        )
+        if n_triggers[ifo] != n_triggers_cut[ifo]:
+            logging.info(
+                "  %d triggers after cuts",
+                n_triggers_cut[ifo],
+            )
 
-                # Create or append 'start_time' and 'end_time' datasets within the '/search' group
-                if 'start_time' in destination[ifo]['search']:
-                    destination[ifo]['search']['start_time'].resize((destination[ifo]['search']['start_time'].shape[0] + 1), axis=0)
-                    destination[ifo]['search']['start_time'][-1] = start_time
-                else:
-                    destination[ifo]['search'].create_dataset('start_time', chunks=True, data=numpy.array([start_time]), maxshape=(None,))
-
-                if 'end_time' in destination[ifo]['search']:
-                    destination[ifo]['search']['end_time'].resize((destination[ifo]['search']['end_time'].shape[0] + 1), axis=0)
-                    destination[ifo]['search']['end_time'][-1] = end_time
-                else:
-                    destination[ifo]['search'].create_dataset('end_time', chunks=True, data=numpy.array([end_time]), maxshape=(None,))
+with h5py.File(args.bank_file,'r') as bank_file:
+    # Count the number of templates
+    n_templates = bank_file['template_hash'].size
 
 # Add all the template boundaries
-with h5py.File(output_file, 'a') as output:
+with h5py.File(args.output_file, 'a') as output:
     for ifo in args.ifos:
-        logging.info(f" Adding template boundaries for {ifo}")
-        # Grab the ifo you want
+        logging.info("Processing %s", ifo)
         triggers = output[ifo]
         try:
             template_ids = triggers['template_id'][:]
-        except:
-            logging.info(f"  No triggers for {ifo}, skipping")
+        except KeyError:
+            logging.info("No triggers for %s, skipping", ifo)
             continue
 
+        logging.info("Calculating template boundaries")
         sorted_indices = numpy.argsort(template_ids)
         sorted_template_ids = template_ids[sorted_indices]
-        unique_template_ids, template_id_counts = numpy.unique(sorted_template_ids, return_counts=True)
-        index_boundaries = numpy.cumsum(template_id_counts)
-        template_boundaries = numpy.insert(index_boundaries, 0, 0)[:-1]
+        unique_template_ids, template_id_counts = numpy.unique(
+            sorted_template_ids,
+            return_counts=True
+        )
+        template_boundaries = numpy.searchsorted(
+            sorted_template_ids,
+            numpy.arange(n_templates)
+        )
         triggers['template_boundaries'] = template_boundaries
 
-        # Sort other datasets by template_id so it makes sense:
+        # Sort other datasets by template_id so it makes sense
         # Datasets with the same length as the number of triggers:
-        #   Approximant, chisq, chisq_dof, coa_phase, end_time, f_lower
+        #   approximant, chisq, chisq_dof, coa_phase, end_time, f_lower
         #   mass_1, mass_2, sg_chisq, sigmasq, snr, spin1z, spin2z,
         #   template_duration, template_hash, template_id
         for key in triggers.keys():
             if len(triggers[key]) == len(template_ids):
-                logging.info(f'  Sorting {key} by template id')
+                logging.info('Sorting %s by template id', key)
                 sorted_key = triggers[key][:][sorted_indices]
                 triggers[key][:] = sorted_key
 
 
-        # Chisq is saved as reduced chisq for live triggers but offline
-        # code requires original chisq. This converts it back.
-        tmpval = triggers['chisq'][:] * (2 * triggers['chisq_dof'][:] - 2)
-        triggers['chisq'][:] = tmpval
-
+        logging.info("Setting up region references")
         # Datasets which need region references:
         region_ref_datasets = ('chisq_dof', 'chisq', 'coa_phase',
                                'end_time', 'sg_chisq', 'snr',
                                'template_duration', 'sigmasq')
         if 'psd_var_val' in triggers.keys():
             region_ref_datasets += ('psd_var_val',)
+
         start_boundaries = template_boundaries
         end_boundaries = numpy.roll(start_boundaries, -1)
         end_boundaries[-1] = len(template_ids)
 
         for dataset in region_ref_datasets:
-            dset = triggers[dataset][:]
-            refs = []
+            logging.info(
+                "Region references for %s",
+                dataset
+            )
+            refs = [
+                triggers[dataset].regionref[l:r]
+                for l, r in zip(start_boundaries, end_boundaries)
+            ]
 
-            for i in range(len(template_boundaries)):
-                refs.append(triggers[dataset].regionref[start_boundaries[i]:end_boundaries[i]])
-
-            triggers.create_dataset\
-            (dataset + '_template', data=refs, dtype=h5py.special_dtype(ref=h5py.RegionReference))
+            logging.info("Adding to file")
+            triggers.create_dataset(
+                dataset + '_template',
+                data=refs,
+                dtype=h5py.special_dtype(ref=h5py.RegionReference)
+            )
 
 logging.info("Done!")
