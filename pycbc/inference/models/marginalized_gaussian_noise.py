@@ -184,8 +184,8 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
                 # calculate inner products
                 hh_i = h[self._kmin[det]:kmax].inner(
                     h[self._kmin[det]:kmax]).real
-                hd_i = self._whitened_data[det][self._kmin[det]:kmax].inner(
-                    h[self._kmin[det]:kmax])
+                hd_i = h[self._kmin[det]:kmax].inner(
+                    self._whitened_data[det][self._kmin[det]:kmax])
             # store
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh_i)
             hh += hh_i
@@ -467,8 +467,8 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
             # h = fp * hp + hc * hc
             # <h, d> = fp * <hp,d> + fc * <hc,d>
             # the inner products
-            cplx_hpd = self._whitened_data[det][slc].inner(hp[slc])  # <hp, d>
-            cplx_hcd = self._whitened_data[det][slc].inner(hc[slc])  # <hc, d>
+            cplx_hpd = hp[slc].inner(self._whitened_data[det][slc])  # <hp, d>
+            cplx_hcd = hc[slc].inner(self._whitened_data[det][slc])  # <hc, d>
 
             cplx_hd = fp * cplx_hpd + fc * cplx_hcd
 
