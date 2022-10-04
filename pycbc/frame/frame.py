@@ -834,15 +834,15 @@ class iDQBuffer(DataBuffer):
 
         Parameters
         ----------
-        times: float
+        times: array of floats
             The times whose idq values are needed
 
         Returns
         -------
-        values: float
+        values: array of floats
             The values of the idq buffer at the given times
         """
-        return self.raw_buffer.at_time(times)
+        return self.raw_buffer.at_times(times)
 
     def value_to_quantile(self, value):
         """ Calculates the quantile of the given value relative compared to
@@ -850,13 +850,13 @@ class iDQBuffer(DataBuffer):
 
         Parameters
         ----------
-        value: float
-            The value whose quantile is desired
+        value: array of floats
+            The values whose quantiles are desired
 
         Returns
         -------
-        quantile: float
-            The quantile of the given value
+        quantile: array of floats
+            The quantiles of the given values
         """
         sorted_data = numpy.sort(self.raw_buffer.numpy())
         ind = numpy.searchsorted(sorted_data, value, side='right')
@@ -868,13 +868,13 @@ class iDQBuffer(DataBuffer):
 
         Parameters
         ----------
-        quant: float
-            The quantile to calculate
+        quant: array of floats
+            The quantiles to calculate
 
         Returns
         -------
-        value: float
-            The value corresponding to the given quantile
+        value: array of floats
+            The values corresponding to the given quantiles
         """
         return numpy.quantile(self.raw_buffer.numpy(), quant)
 
