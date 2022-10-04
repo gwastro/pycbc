@@ -113,6 +113,9 @@ template_ids = cuts.apply_template_cuts(
     ifos=[ifo],
     template_ids=template_ids)
 
+logging.info("%d out of %d templates kept after applying template cuts",
+             len(template_ids), trigs.bank['mass1'].size)
+
 for tnum in template_ids:
     tids_uncut = trigs.set_template(tnum)
 

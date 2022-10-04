@@ -388,7 +388,5 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
 
-    logging.info("%d out of %d templates kept after applying template cuts",
-                 len(tids_out), bank['mass1'].size)
 
     return tids_out
