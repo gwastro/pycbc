@@ -181,6 +181,9 @@ cpdef likelihood_parts_v(double [::1] freqs,
     return conj(hd), hh
 
 # Standard likelihood but simultaneously handling multiple sky or time points
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.cdivision(True)     # Disable checking for dividing by zero
 cpdef likelihood_parts_vector(double [::1] freqs,
                      double[::1] fp,
                      double[::1] fc,
@@ -227,6 +230,9 @@ cpdef likelihood_parts_vector(double [::1] freqs,
 # this is a slow implementation and the loop should be inverted /
 # refactored to do each pol separately and then combine
 # included as is for testing purposes
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.cdivision(True)     # Disable checking for dividing by zero
 cpdef likelihood_parts_vectorp(double [::1] freqs,
                      double[::1] fp,
                      double[::1] fc,
@@ -270,8 +276,13 @@ cpdef likelihood_parts_vectorp(double [::1] freqs,
     return hdv, hhv
 
 # Standard likelihood but simultaneously handling multiple sky or time points
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.cdivision(True)     # Disable checking for dividing by zero
 cpdef snr_predictor(double [::1] freqs,
-                     double[::1] dtc,
+                     double tstart,
+                     double delta_t,
+                     int num_samples,
                      double complex[::1] hp,
                      double complex[::1] hc,
                      double complex[::1] h00,
@@ -279,7 +290,7 @@ cpdef snr_predictor(double [::1] freqs,
                      double complex[::1] a1,
                      double [::1] b0,
                      double [::1] b1,
-                     ) :
+                     ):
     cdef size_t i
     cdef double complex hd, r0, r0n, r1, x0, x0n, x1
     cdef double hh
@@ -288,18 +299,25 @@ cpdef snr_predictor(double [::1] freqs,
     cdef double chh
 
     N = freqs.shape[0]
-    num_samples = dtc.shape[0]
 
     cdef numpy.ndarray[numpy.float64_t, ndim=1] snr = numpy.empty(num_samples, dtype=numpy.float64)
+    cdef numpy.ndarray[numpy.complex128_t, ndim=1] twiddle = numpy.empty(num_samples, dtype=numpy.complex128)
+    cdef numpy.ndarray[numpy.complex128_t, ndim=1] rotate = numpy.empty(num_samples, dtype=numpy.complex128)
+
+    for i in range(N):
+        twiddle[i] = exp(-2.0j * 3.141592653 * tstart * freqs[i])
+        rotate[i] =  exp(-2.0j * 3.141592653 * delta_t * freqs[i])
 
     for j in range(num_samples):
         hd = 0
         hh = 0
         chd = 0
         chh = 0
+
+        # Calculate the average SNR for the hp / hc waveforms
         for i in range(N):
-            r0n = exp(-2.0j * 3.141592653 * dtc[j] * freqs[i]) * hp[i] / h00[i]
-            cr0n = exp(-2.0j * 3.141592653 * dtc[j] * freqs[i]) * hc[i] / h00[i]
+            r0n =  twiddle[i] * hp[i] / h00[i]
+            cr0n = twiddle[i] * hc[i] / h00[i]
 
             r1 = r0n - r0
             cr1 = cr0n - cr0
@@ -320,6 +338,8 @@ cpdef snr_predictor(double [::1] freqs,
             cr0 = cr0n
             cx0 = cx0n
 
-        snr[j] = (norm(hd) / hh + norm(chd) / chh) ** 0.5
+            # Time shift the twiddle factors to the next time samples
+            twiddle[i] *= rotate[i]
 
+        snr[j] = (norm(hd) / hh / 2.0 + norm(chd) / chh / 2.0) ** 0.5
     return snr

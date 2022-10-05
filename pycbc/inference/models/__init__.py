@@ -34,7 +34,7 @@ from .marginalized_gaussian_noise import MarginalizedTime
 from .brute_marg import BruteParallelGaussianMarginalize
 from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol)
 from .single_template import SingleTemplate
-from .relbin import Relative
+from .relbin import Relative, RelativeTime
 from .hierarchical import HierarchicalModel, MultiSignalModel
 
 
@@ -201,6 +201,7 @@ _models = {_cls.name: _cls for _cls in (
     GatedGaussianMargPol,
     SingleTemplate,
     Relative,
+    RelativeTime,
     HierarchicalModel,
     MultiSignalModel,
 )}

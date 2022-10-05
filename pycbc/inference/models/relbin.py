@@ -34,14 +34,14 @@ from scipy.interpolate import interp1d
 from pycbc.waveform import (get_fd_waveform_sequence,
                             get_fd_det_waveform_sequence, fd_det_sequence)
 from pycbc.detector import Detector
-from pycbc.types import Array
+from pycbc.types import Array, TimeSeries
 
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
                          likelihood_parts_det, likelihood_parts_vector,
-                         likelihood_parts_vectorp)
-from .tools import DistMarg
+                         likelihood_parts_vectorp, snr_predictor)
+from .tools import DistMarg, EARTH_RADIUS
 
 
 def setup_bins(f_full, f_lo, f_hi, chi=1.0,
@@ -493,30 +493,6 @@ class Relative(DistMarg, BaseGaussianNoise):
         filt = 0j
         self._current_wf_parts = {}
 
-        # If marginalizing over time stuff
-        from pycbc.inference.models.tools import EARTH_RADIUS
-        from .relbin_cpu import snr_predictor
-        from pycbc.types import TimeSeries
-        sample_rate = 4096
-        tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
-        times = numpy.arange(tcmin - EARTH_RADIUS,
-                             tcmax + EARTH_RADIUS,
-                             1.0 / sample_rate)
-        snr_pred = {}
-        for ifo in self.data:
-            sdat = self.sdat[ifo]
-            dtc = times - self.end_time[ifo]
-            snr = snr_predictor(self.fedges[ifo], dtc,
-                                    wfs[ifo][0], wfs[ifo][1],
-                                    self.h00_sparse[ifo],
-                                    sdat['a0'], sdat['a1'],
-                                    sdat['b0'], sdat['b1'])
-            snr_pred[ifo] = TimeSeries(snr, delta_t=1.0/sample_rate,
-                                       epoch=tcmin - EARTH_RADIUS)
-
-        self.snr_draw(snr_pred)
-        p = self.current_params
-
         for ifo in self.data:
             freqs = self.fedges[ifo]
             sdat = self.sdat[ifo]
@@ -610,3 +586,84 @@ class Relative(DistMarg, BaseGaussianNoise):
         )
         args.update({"fiducial_params": fid_params, "gammas": gammas})
         return args
+
+class RelativeTime(Relative):
+    """ Heterodyne likelihood optimized for time marginalization
+    """
+    name = "relative_time"
+
+    def __init__(self, *args, sample_rate=4096, **kwargs):
+        super(RelativeTime, self).__init__(*args, **kwargs)
+
+        # The sample rate to calculate the SNR time series
+        self.sample_rate = sample_rate
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        # get model params
+        p = self.current_params
+        wfs = self.get_waveforms(p)
+        lik = self.likelihood_function
+        norm = 0.0
+        filt = 0j
+        self._current_wf_parts = {}
+
+        sample_rate = self.sample_rate
+        tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+        tstart = tcmin - EARTH_RADIUS
+        num_samples = int((tcmax - tcmin + EARTH_RADIUS * 2.0) * sample_rate)
+
+        snr_pred = {}
+        for ifo in self.data:
+            sdat = self.sdat[ifo]
+            dtc = tstart - self.end_time[ifo]
+
+            snr = snr_predictor(self.fedges[ifo],
+                                dtc, 1.0 / sample_rate,
+                                num_samples,
+                                wfs[ifo][0], wfs[ifo][1],
+                                self.h00_sparse[ifo],
+                                sdat['a0'], sdat['a1'],
+                                sdat['b0'], sdat['b1'])
+            snr_pred[ifo] = TimeSeries(snr, delta_t=1.0/sample_rate,
+                                       epoch=tcmin - EARTH_RADIUS)
+        self.snr_draw(snr_pred)
+        p = self.current_params
+
+        for ifo in self.data:
+            freqs = self.fedges[ifo]
+            sdat = self.sdat[ifo]
+            h00 = self.h00_sparse[ifo]
+            end_time = self.end_time[ifo]
+            times = self.antenna_time[ifo]
+
+            hp, hc = wfs[ifo]
+            det = self.det[ifo]
+            fp, fc = det.antenna_pattern(p["ra"], p["dec"],
+                                         p["polarization"], times)
+            dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
+            dtc = p["tc"] + dt - end_time
+
+            filter_i, norm_i = lik(freqs, fp, fc, dtc,
+                                        hp, hc, h00,
+                                        sdat['a0'], sdat['a1'],
+                                        sdat['b0'], sdat['b1'])
+            self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
+            filt += filter_i
+            norm += norm_i
+        loglr = self.marginalize_loglr(filt, norm)
+        return loglr
