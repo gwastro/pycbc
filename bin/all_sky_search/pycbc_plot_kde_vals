@@ -31,22 +31,24 @@ if len(args.param) != len(args.log_axis):
 
 if args.signal_file:
     signal_data = h5py.File(args.signal_file, 'r')
-    kde_signal = signal_data['kde_sig'][:]
+    sdata = signal_data['new_data']
+    signal_kde = sdata['signal_kde'][:]
 template_data = h5py.File(args.template_file, 'r')
-kde_template = template_data['kde_template'][:]
+tdata = template_data['new_data']
+template_kde = tdata['template_kde'][:]
 
-param0 = template_data[args.param[0]][:]
+param0 = tdata[args.param[0]][:]
 if len(args.param) > 1:
-    param1 = template_data[args.param[1]][:]
+    param1 = tdata[args.param[1]][:]
 
 if args.plot_type == 'kde_vs_param':
     fig, ax = plt.subplots(1, figsize=(12,7), constrained_layout=True)
     if args.which_kde == 'signal_kde':
-        im = ax.scatter(kde_signal, param0, marker=".", c="r", s=5)
+        im = ax.scatter(signal_kde, param0, marker=".", c="r", s=5)
     elif args.which_kde == 'template_kde':
-        im = ax.scatter(kde_template, param0, marker=".", c="r", s=5)
+        im = ax.scatter(template_kde, param0, marker=".", c="r", s=5)
     elif args.which_kde == 'ratio_kde':
-        im = ax.scatter(kde_signal / kde_template, param0, marker=".", c="r", s=5)
+        im = ax.scatter(signal_kde / template_kde, param0, marker=".", c="r", s=5)
     else:
         raise RuntimeError('Unknown value of which_kde', args.which_kde)
     ax.set_xticklabels(args.which_kde, fontsize=13)
@@ -64,13 +66,13 @@ if args.plot_type == 'kde_vs_param':
 elif args.plot_type == 'param_vs_param':
     fig, ax = plt.subplots(1, figsize=(12,7), constrained_layout=True)
     if args.which_kde == 'signal_kde':
-        im = ax.scatter(param0, param1, marker=".", c=kde_signal, cmap='RdBu_r',
+        im = ax.scatter(param0, param1, marker=".", c=signal_kde, cmap='RdBu_r',
                         s=5, norm=LogNorm())
     elif args.which_kde == 'template_kde':
-        im = ax.scatter(param0, param1, marker=".", c=kde_template, cmap='RdBu_r',
+        im = ax.scatter(param0, param1, marker=".", c=template_kde, cmap='RdBu_r',
                         s=5, norm=LogNorm())
     elif args.which_kde == 'ratio_kde':
-        im = ax.scatter(param0, param1, marker=".", c=kde_signal / kde_template,
+        im = ax.scatter(param0, param1, marker=".", c=signal_kde / template_kde,
                         cmap='RdBu_r', s=5, norm=LogNorm())
     else:
         raise RuntimeError('Unknown value of which_kde', args.which_kde)
