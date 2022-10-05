@@ -260,13 +260,13 @@ class Relative(DistMarg, BaseGaussianNoise):
                     self.fid_params["dec"],
                     self.fid_params["tc"],
                 )
-                self.ta = self.fid_params["tc"] + dt - self.end_time[ifo]
+                self.ta[ifo] = self.fid_params["tc"] + dt - self.end_time[ifo]
 
                 fp, fc = self.det[ifo].antenna_pattern(
                     self.fid_params["ra"], self.fid_params["dec"],
                     self.fid_params["polarization"], self.fid_params["tc"])
 
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta)
+                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
 
                 h00 = (hp0 * fp + hc0 * fc) * tshift
                 self.h00[ifo] = h00
@@ -592,11 +592,84 @@ class RelativeTime(Relative):
     """
     name = "relative_time"
 
-    def __init__(self, *args, sample_rate=4096, **kwargs):
+    def __init__(self, *args,
+                 sample_rate=4096,
+                 peak_lock_snr=None,
+                 peak_lock_ratio=1e4,
+                 **kwargs):
         super(RelativeTime, self).__init__(*args, **kwargs)
 
         # The sample rate to calculate the SNR time series
-        self.sample_rate = sample_rate
+        self.sample_rate = float(sample_rate)
+
+
+        tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+        tstart = tcmin - EARTH_RADIUS
+        tmax = tcmax - tcmin + EARTH_RADIUS * 2.0
+        num_samples = int(tmax * self.sample_rate)
+        self.tstart = {ifo: tstart for ifo in self.data}
+        self.num_samples = {ifo: num_samples for ifo in self.data}
+
+        # Restrict the time range for constructing SNR time series
+        # to identifiable peaks
+        if peak_lock_snr is not None:
+            peak_lock_snr = float(peak_lock_snr)
+            peak_lock_ratio = float(peak_lock_ratio)
+
+            wfs = {ifo: (self.h00_sparse[ifo],
+                         self.h00_sparse[ifo]) for ifo in self.h00_sparse}
+            snrs = self.snr(wfs, reference=True)
+
+            for ifo in snrs:
+                peak_snr, imax = snrs[ifo].abs_max_loc()
+                times = snrs[ifo].sample_times
+                peak_time = times[imax]
+
+                logging.info('%s: Max Ref SNR Peak of %s at %s',
+                             ifo, peak_snr, peak_time)
+
+                if peak_snr > peak_lock_snr:
+                    target = numpy.exp(peak_snr ** 2.0 / 2.0) / peak_lock_ratio
+                    target = (numpy.log(target) * 2.0) ** 0.5
+
+                    region = numpy.where(snrs[ifo] > target)[0]
+                    tstart = times[region[0]]
+                    tend = times[region[-1]]
+
+                    tstart -= 1.0 / self.sample_rate
+                    tend += 1.0 / self.sample_rate
+
+                    num_samples = int((tend - tstart) * self.sample_rate)
+
+                    logging.info('use region %s-%s above threahold %s: %s',
+                                 tstart, tend, target, num_samples)
+                    self.tstart[ifo] = tstart
+                    self.num_samples[ifo] = num_samples
+
+
+
+    def snr(self, wfs, reference=False):
+        """ Return hp/hc maximized SNR time series
+        """
+        delta_t = 1.0 / self.sample_rate
+        snrs = {}
+        for ifo in wfs:
+            sdat = self.sdat[ifo]
+            dtc = self.tstart[ifo] - self.end_time[ifo]
+
+            if reference:
+                dtc -= self.ta[ifo]
+
+            snr = snr_predictor(self.fedges[ifo],
+                        dtc, delta_t,
+                        self.num_samples[ifo],
+                        wfs[ifo][0], wfs[ifo][1],
+                        self.h00_sparse[ifo],
+                        sdat['a0'], sdat['a1'],
+                        sdat['b0'], sdat['b1'])
+            snrs[ifo] = TimeSeries(snr, delta_t=delta_t,
+                                   epoch=self.tstart[ifo])
+        return snrs
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
@@ -622,26 +695,7 @@ class RelativeTime(Relative):
         filt = 0j
         self._current_wf_parts = {}
 
-        sample_rate = self.sample_rate
-        tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
-        tstart = tcmin - EARTH_RADIUS
-        num_samples = int((tcmax - tcmin + EARTH_RADIUS * 2.0) * sample_rate)
-
-        snr_pred = {}
-        for ifo in self.data:
-            sdat = self.sdat[ifo]
-            dtc = tstart - self.end_time[ifo]
-
-            snr = snr_predictor(self.fedges[ifo],
-                                dtc, 1.0 / sample_rate,
-                                num_samples,
-                                wfs[ifo][0], wfs[ifo][1],
-                                self.h00_sparse[ifo],
-                                sdat['a0'], sdat['a1'],
-                                sdat['b0'], sdat['b1'])
-            snr_pred[ifo] = TimeSeries(snr, delta_t=1.0/sample_rate,
-                                       epoch=tcmin - EARTH_RADIUS)
-        self.snr_draw(snr_pred)
+        self.snr_draw(self.snr(wfs))
         p = self.current_params
 
         for ifo in self.data:

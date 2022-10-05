@@ -425,14 +425,14 @@ class DistMarg():
             i = draw_sample(w, size=self.vsamples)
 
             if sref is not None:
+                mcweight -= w[i]
                 delt = float(snr.start_time - sref.start_time)
                 i += round(delt / sref.delta_t)
                 dx.append(iref - i)
-                mcweight -= w[i]
             else:
                 sref = snr
                 iref = i
-                mcweight = w[i]
+                mcweight = -w[i]
 
             idx.append(i)
 

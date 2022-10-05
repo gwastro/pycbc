@@ -301,11 +301,11 @@ cpdef snr_predictor(double [::1] freqs,
     N = freqs.shape[0]
 
     cdef numpy.ndarray[numpy.float64_t, ndim=1] snr = numpy.empty(num_samples, dtype=numpy.float64)
-    cdef numpy.ndarray[numpy.complex128_t, ndim=1] twiddle = numpy.empty(num_samples, dtype=numpy.complex128)
-    cdef numpy.ndarray[numpy.complex128_t, ndim=1] rotate = numpy.empty(num_samples, dtype=numpy.complex128)
+    cdef numpy.ndarray[numpy.complex128_t, ndim=1] twiddle = numpy.empty(N, dtype=numpy.complex128)
+    cdef numpy.ndarray[numpy.complex128_t, ndim=1] rotate = numpy.empty(N, dtype=numpy.complex128)
 
     for i in range(N):
-        twiddle[i] = exp(-2.0j * 3.141592653 * tstart * freqs[i])
+        twiddle[i] = exp(-2.0j * 3.141592653 * tstart * freqs[i]) / h00[i]
         rotate[i] =  exp(-2.0j * 3.141592653 * delta_t * freqs[i])
 
     for j in range(num_samples):
@@ -316,8 +316,8 @@ cpdef snr_predictor(double [::1] freqs,
 
         # Calculate the average SNR for the hp / hc waveforms
         for i in range(N):
-            r0n =  twiddle[i] * hp[i] / h00[i]
-            cr0n = twiddle[i] * hc[i] / h00[i]
+            r0n =  twiddle[i] * hp[i]
+            cr0n = twiddle[i] * hc[i]
 
             r1 = r0n - r0
             cr1 = cr0n - cr0
