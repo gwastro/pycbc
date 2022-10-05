@@ -280,9 +280,16 @@ class TimeSeries(Array):
 
         Parameters
         ----------
+        times: array of floats
+            The times whose values are needed
         nearest_sample: bool
             Return the samples at the times nearest to the chosen times rather
             than rounded down.
+
+        Returns
+        -------
+        values: array of floats
+            The values of the timeseries at the given times
         """
 
         if nearest_sample:
