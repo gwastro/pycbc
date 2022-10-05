@@ -113,7 +113,7 @@ def convert_inputstr(inputstr, choices):
                         "got '%s'.", cut_value_str)
         raise value_e
 
-    return {(cut_param, ineq_functions[cut_limit]): float(cut_value_str)}
+    return {(cut_param, ineq_functions[cut_limit]): cut_value}
 
 
 def check_update_cuts(cut_dict, new_cut):
