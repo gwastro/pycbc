@@ -79,6 +79,19 @@ tests_parser_output = []
 # No cuts: empty dicts as output
 tests_parser_output.append(([], ({}, {}), "no_cuts_given"))
 
+# Multiple cuts on the same parameter / cut type,
+# should only use the strictest cut
+tests_parser_output.append((['--trigger-cuts',
+                             'snr:4:lower', 'snr:5:lower'],
+                            ({('snr', np.greater): 5}, {}),
+                            "multiple_similar_cuts"))
+
+# Multiple cuts exactly the same, should give the warning but still complete
+tests_parser_output.append((['--trigger-cuts',
+                             'snr:5:lower', 'snr:5:lower'],
+                            ({('snr', np.greater): 5}, {}),
+                            "multiple_same_cuts"))
+
 # Dynamically add value tests for the parser
 for test_values in tests_parser_output:
     args = parse_args(test_values[0])
