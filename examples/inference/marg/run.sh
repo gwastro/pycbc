@@ -6,6 +6,7 @@ OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
 --force \
 --verbose
 bash p.sh
+
 # This reconstructs any marginalized parameters
 # and would be optional if you don't need them or
 # have sampled over all parameters directly (see single.ini)

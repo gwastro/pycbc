@@ -606,6 +606,7 @@ class RelativeTime(Relative):
         tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
         tstart = tcmin - EARTH_RADIUS
         tmax = tcmax - tcmin + EARTH_RADIUS * 2.0
+        print(tstart, tmax)
         num_samples = int(tmax * self.sample_rate)
         self.tstart = {ifo: tstart for ifo in self.data}
         self.num_samples = {ifo: num_samples for ifo in self.data}
@@ -633,20 +634,29 @@ class RelativeTime(Relative):
                     target = (numpy.log(target) * 2.0) ** 0.5
 
                     region = numpy.where(snrs[ifo] > target)[0]
-                    tstart = times[region[0]]
-                    tend = times[region[-1]]
+                    ts = times[region[0]]
+                    te = times[region[-1]]
+                    self.tstart[ifo] = ts
+                    self.num_samples[ifo] =  int((te - ts) * self.sample_rate)
 
-                    tstart -= 1.0 / self.sample_rate
-                    tend += 1.0 / self.sample_rate
+            # Check times are commensurate with each other
+            for ifo in snrs:
+                ts = self.tstart[ifo]
+                te = ts + self.num_samples[ifo] / self.sample_rate
 
-                    num_samples = int((tend - tstart) * self.sample_rate)
+                for ifo2 in snrs:
+                    if ifo == ifo2: continue
+                    ts2 = self.tstart[ifo2]
+                    te2 = ts2 + self.num_samples[ifo2] / self.sample_rate
+                    dt = Detector(ifo2).light_travel_time_to_detector(Detector(ifo))
 
-                    logging.info('use region %s-%s above threahold %s: %s',
-                                 tstart, tend, target, num_samples)
-                    self.tstart[ifo] = tstart
-                    self.num_samples[ifo] = num_samples
+                    ts = max(ts, ts2 - dt)
+                    te = min(te, te2 + dt)
 
-
+                self.tstart[ifo] = ts
+                self.num_samples[ifo] = int((te - ts) * self.sample_rate) + 1
+                logging.info('%s: use region %s-%s, %s points',
+                             ifo, ts, te, self.num_samples[ifo])
 
     def snr(self, wfs, reference=False):
         """ Return hp/hc maximized SNR time series

@@ -377,7 +377,7 @@ class DistMarg():
         # precalculate dense sky grid and make dict and or array of the results
         if not hasattr(self, 'tinfo'):
             logging.info('pregenerating sky pointings')
-            size = int(1e6)
+            size = int(1e7)
             logging.info('drawing samples')
             ra = self.marginalized_vector_priors['ra'].rvs(size=size)['ra']
             dec = self.marginalized_vector_priors['dec'].rvs(size=size)['dec']
