@@ -93,7 +93,8 @@ if args.make_template_kde:
         g1 = f_dest.create_group("new_data")
         g1.create_dataset("template_kde", data=template_kde)
         g1.create_dataset("grid", data=sample1)
-        g1.create_dataset("mchirp,eta,chi_eff", data=template_pars)
+        for name in args.fit_param:
+            g1.create_dataset(name, data= triggers.get_param(name, args, mass1, mass2, spin1z, spin2z))
         g1.attrs['fit_param'] = args.fit_param
         g1.attrs['log_param'] = args.log_param
         with h5py.File("sbbh2.hdf", "r") as f_src:
