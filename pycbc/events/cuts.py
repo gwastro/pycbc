@@ -110,7 +110,7 @@ def convert_inputstr(inputstr, choices):
         cut_value = float(cut_value_str)
     except ValueError as value_e:
         logging.warning("ERROR: Cut value must be convertible into a float, "
-                        "got '%s', a %s.", cut_value, type(cut_value))
+                        "got '%s'.", cut_value_str)
         raise value_e
 
     return {(cut_param, ineq_functions[cut_limit]): float(cut_value_str)}
@@ -195,7 +195,7 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
 
     Parameters
     ----------
-    triggers: ReadByTemplate object
+    triggers: ReadByTemplate object or dictionary
         The triggers in this particular template. This
         must have the correct datasets required to calculate
         the values we cut on.
@@ -226,8 +226,10 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
             value = get_chisq_from_file_choice(triggers, chisq_choice)
             # Apply any previous cuts to the value for comparison
             value = value[idx_out]
-        elif parameter in triggers.file[triggers.ifo]:
-            # parameter can be read direct from the trigger file
+        elif (parameter in triggers
+                or (hasattr(triggers, "file")
+                    and parameter in triggers.file[triggers.ifo])):
+            # parameter can be read direct from the trigger dictionary / file
             value = triggers[parameter]
             # Apply any previous cuts to the value for comparison
             value = value[idx_out]
