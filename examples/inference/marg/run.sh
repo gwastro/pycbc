@@ -1,6 +1,6 @@
 OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
 --config-file `dirname "$0"`/single.ini \
---nprocesses=8 \
+--nprocesses=1 \
 --output-file single.hdf \
 --seed 0 \
 --force \
