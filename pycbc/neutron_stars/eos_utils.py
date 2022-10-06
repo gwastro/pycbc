@@ -22,7 +22,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 import lalsimulation as lalsim
 from . import NS_SEQUENCES, NS_DATA_DIRECTORY
-from .pg_isso_solver import PG_ISSO_solver, pg_isso_interp
+from .pg_isso_solver import PG_ISSO_solver
 
 
 def load_ns_sequence(eos_name):
@@ -161,7 +161,7 @@ def initialize_eos(ns_mass, eos):
 
 
 def foucart18(
-        eta, ns_compactness, ns_b_mass, bh_spin_mag, bh_spin_pol, interp=True):
+        eta, ns_compactness, ns_b_mass, bh_spin_mag, bh_spin_pol):
     """Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
     `Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018)`_.
@@ -182,19 +182,8 @@ def foucart18(
         Dimensionless spin magnitude of the BH.
     bh_spin_pol : {float, array}
         The tilt angle of the BH spin.
-    interp: bool, optional
-        Whether to interpolate over a pre-computed grid of values of
-        the ISSO for systems with BH spin magnitude < 0.9. Otherwise
-        solve via the PG_ISSO_solver routine for all systems.
-        Default = True.
     """
-    if interp:
-        isso = np.empty_like(bh_spin_mag)
-        solve = bh_spin_mag > 0.9
-        isso[~solve] = pg_isso_interp(bh_spin_pol[~solve], bh_spin_mag[~solve])
-        isso[solve] = PG_ISSO_solver(bh_spin_mag[solve], bh_spin_pol[solve])
-    else:
-        isso = PG_ISSO_solver(bh_spin_mag, bh_spin_pol)
+    isso = PG_ISSO_solver(bh_spin_mag, bh_spin_pol)
     # Fit parameters and tidal correction
     alpha = 0.406
     beta  = 0.139
