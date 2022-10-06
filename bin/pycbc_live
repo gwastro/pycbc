@@ -21,7 +21,7 @@ from shutil import which
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
-from pycbc.types import MultiDetOptionAction, MultiDetMultiColonOptionAction, MultiDetOptionActionSpecial
+from pycbc.types import MultiDetOptionAction, MultiDetMultiColonOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
@@ -606,10 +606,10 @@ parser.add_argument('--state-channel', action=MultiDetMultiColonOptionAction,
                          "corresponds to CAT1 information")
 parser.add_argument('--analyze-flags', action=MultiDetOptionAction, nargs='+',
                     help='The flags that must be in the "good" state to analyze data')
-parser.add_argument('--idq-channel', action=MultiDetOptionActionSpecial,
+parser.add_argument('--idq-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel to read iDQ timeseries from. iDQ timeseries are required "
                          "by certain ranking statistics.")
-parser.add_argument('--idq-state-channel', action=MultiDetOptionActionSpecial,
+parser.add_argument('--idq-state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing information about the state of idq."
                          "Used to determine when idq is usable for statistics. ")
 parser.add_argument('--data-quality-channel',
