@@ -197,10 +197,10 @@ if args.gradient_far:
         c = plot.colorbar()
         c.set_label('False Alarm Rate $(yr^{-1})$, %s' % far_title)
 
-        # Set up tick labels - there will always be 5
+        # Set up tick labels - there will be 5 if possible
         min_tick = numpy.ceil(min(numpy.log10(color)))
         max_tick = numpy.floor(max(numpy.log10(color)))
-        tick_step = numpy.floor((max_tick - min_tick) / 5)
+        tick_step = max(1,numpy.floor((max_tick - min_tick) / 5))
         ticks = numpy.arange(min_tick, max_tick, tick_step)
         c.set_ticks(numpy.power(10, ticks))
     except (TypeError, ZeroDivisionError):
