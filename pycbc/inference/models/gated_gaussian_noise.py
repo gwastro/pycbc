@@ -204,7 +204,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             m, b = self._cov_regressions[det]
             # extrapolate from linear fit
             ld = m*trunc_size + b
-            lognorm = 0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
+            lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
         return lognorm
@@ -215,6 +215,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         return self._normalize
 
+    ### This is called before psds, so doing direct calls to self._cov, self._psds, etc. throws an error for now ###
+    
     @normalize.setter
     def normalize(self, normalize):
         """Clears the current stats if the normalization state is changed.
@@ -240,7 +242,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         float
             The value of the log likelihood ratio evaluated at the given point.
         """
-        return self._loglikelihood(self) - self._lognl(self)
+        return self._loglikelihood() - self._lognl()
 
     def whiten(self, data, whiten, inplace=False):
         """Whitens the given data.
