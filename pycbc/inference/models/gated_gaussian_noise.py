@@ -184,9 +184,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
         rindex = rindex if rindex <= len(ts) else len(ts)
         return lindex, rindex
     
-    # here estimate the values from the fit and the size instead of calculating
-    def det_lognorm(self, det, start_index=None, end_index=None):
+    ### trying out exact calculations for static gate sizes ###
+    
+    def det_lognorm_linext(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance matrix.
+        Determinant is estimated using a linear fit to logdet vs truncated matrix size
         """
         if not self.normalize:
             return 0
@@ -207,6 +209,33 @@ class BaseGatedGaussian(BaseGaussianNoise):
             lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
+        return lognorm
+    
+    def det_lognorm(self, det, start_index=None, end_index=None):
+        """Calculate the normalization term from the truncated covariance matrix.
+        Determinant is calculated exactly using LU factorization
+        """
+        if not self.normalize:
+            return 0
+        # call the cached value if possible
+        cov = self._cov[det]
+        try:
+            full = cov.shape[0]
+            if start_index == None or end_index == None:
+                trunc_size = full
+            else:
+                trunc_size = full - (end_index - start_index)
+            lognorm = self._lognorm[(det, trunc_size)]
+        # if not, do the full calculation
+        except KeyError:
+            start, end = self.gate_indices(det)
+            # truncate the matrix and calculate the determinant
+            trunc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
+            ld = numpy.linalg.slogdet(trunc)[1]
+            # calculate the normalization term
+            lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
+            # cache the result
+            self._lognorm[(det, trunc_size)] = lognorm
         return lognorm
 
     @property
@@ -471,7 +500,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         gate_times = self.get_gate_times()
         for det, invpsd in self._invpsds.items():
             start_index, end_index = self.gate_indices(det)
-            norm = self.det_lognorm(det, start_index, end_index)
+            #norm = self.det_lognorm_linext(det, start_index, end_index) # linear estimation
+            norm = self.det_lognorm(det, start_index, end_index) # exact calculation
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -632,7 +662,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             start_index, end_index = self.gate_indices(det)
-            norm = self.det_lognorm(det, start_index=start_index, end_index=end_index)
+            norm = self.det_lognorm(det, start_index, end_index)
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
