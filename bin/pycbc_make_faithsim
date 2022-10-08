@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/home/marion.pillas/template_bank_venv/bin/python3
 import os
 import logging
 import shutil
@@ -116,7 +116,6 @@ logging.info("Creating DAG")
 
 dag = CondorDAG(logfile)
 dag.set_dag_file("faithsim")
-dag.set_dax_file("faithsim")
 
 fs_secs = matches_in_list(confs.sections(), 'faithsim')
 fsjobs = []
@@ -132,7 +131,7 @@ pjob = BaseJob("log", "scripts/pycbc_faithsim_plots", None, 'faithsim_plots',
 pnode = CondorDAGNode(pjob)
 
 for inj_num in range(num_banks):
-    bn = 'bank/bank' + str(inj_num) + '.xml'
+    bn = 'bank/bank' + str(inj_num) + '.xml.gz'
     
     for fsjob, sec in zip(fsjobs, fs_secs):
         sec_sub = str(sec[len('faithsim'):])
@@ -175,7 +174,7 @@ if __name__ == "__main__":
         data = zeros(0, dtype=dtypeo)   
         for part in parts:
             btag = part.split('-')[2].split('.')[0]
-            bname = "bank/bank" + btag + ".xml"
+            bname = "bank/bank" + btag + ".xml.gz"
             if bname not in btables:
                 indoc = utils.load_filename(bname, False, contenthandler=LIGOLWContentHandler)
                 btables[bname] = lsctables.SimInspiralTable.get_table(indoc)
