@@ -26,6 +26,7 @@
 import logging
 from numpy import complex64
 import argparse
+import sys
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
 
@@ -40,9 +41,8 @@ from pycbc.filter import match, overlap, sigma
 from pycbc.scheme import CPUScheme, CUDAScheme
 from pycbc.io.ligolw import LIGOLWContentHandler
 
-
 def update_progress(progress):
-    print('\r\r[{0}] {1}%'.format('#'*(progress/2)+' '*(50-progress/2), progress), end=' ')
+    print('Progress: {}/{} members processed'.format(progress, 100))
     if progress == 100:
         print("Done")
     sys.stdout.flush()
