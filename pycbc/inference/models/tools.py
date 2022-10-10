@@ -432,8 +432,7 @@ class DistMarg():
             else:
                 sref = snr
                 iref = i
-                mcweight = -w[i]
-
+                mcweight -= w[i]
             idx.append(i)
 
         # check if delay is in dict, if not, throw out

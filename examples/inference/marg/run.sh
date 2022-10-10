@@ -1,6 +1,6 @@
 OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
 --config-file `dirname "$0"`/single.ini \
---nprocesses=1 \
+--nprocesses=16 \
 --output-file single.hdf \
 --seed 0 \
 --force \
@@ -13,7 +13,7 @@ bash p.sh
 OMP_NUM_THREADS=1 python -m cProfile -o log2 `which pycbc_inference_model_stats` \
 --input-file single.hdf \
 --output-file single2.hdf \
---nprocesses 8 \
+--nprocesses 16 \
 --reconstruct-parameters \
 --force \
 --verbose
