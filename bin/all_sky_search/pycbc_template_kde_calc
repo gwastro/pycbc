@@ -115,7 +115,7 @@ if args.make_signal_kde:
     assert min(mass1 - mass2) > 0
 
     for param, slog in zip(args.fit_param, args.log_param):
-        data = signal_file[param]
+        data = signal_file[param][idx]
         if slog in ['False']:
             logging.info('Using param: %s', param)
             signal_pars.append(data)
