@@ -792,3 +792,112 @@ class StatusBuffer(DataBuffer):
         except RuntimeError:
             self.null_advance(blocksize)
             return False
+
+class iDQBuffer(DataBuffer):
+
+    """ Read a iDQ timeseries from a frame file """
+
+    def __init__(self, frame_src,
+                 channel_name,
+                 start_time,
+                 max_buffer=512,
+                 force_update_cache=False,
+                 increment_update_cache=None):
+        """
+        Parameters
+        ----------
+        frame_src: str of list of strings
+            Strings that indicate where to read from files from. This can be a
+            list of frame files, a glob, etc.
+        channel_name: str
+            Name of the channel to read from the frame files
+        start_time:
+            Time to start reading from.
+        max_buffer: {int, 512}, Optional
+            Length of the buffer in seconds
+        force_update_cache: {boolean, True}, Optional
+            Re-check the filesystem for frame files on every attempt to
+            read more data.
+        increment_update_cache: {str, None}, Optional
+            Pattern to look for frame files in a GPS dependent directory. This
+            is an alternate to the forced updated of the frame cache, and
+            apptempts to predict the next frame file name without probing the
+            filesystem.
+        """
+        DataBuffer.__init__(self, frame_src, channel_name, start_time,
+                            max_buffer=max_buffer,
+                            force_update_cache=force_update_cache,
+                            increment_update_cache=increment_update_cache)
+
+    def lookup_idq(self, times):
+        """ Looks up the value of the idq buffer at the given times.
+
+        Parameters
+        ----------
+        times: array of floats
+            The times whose idq values are needed
+
+        Returns
+        -------
+        values: array of floats
+            The values of the idq buffer at the given times
+        """
+        return self.raw_buffer.at_times(times)
+
+    def value_to_quantile(self, value):
+        """ Calculates the quantile of the given value relative compared to
+        the data in the buffer.
+
+        Parameters
+        ----------
+        value: array of floats
+            The values whose quantiles are desired
+
+        Returns
+        -------
+        quantile: array of floats
+            The quantiles of the given values
+        """
+        sorted_data = numpy.sort(self.raw_buffer.numpy())
+        ind = numpy.searchsorted(sorted_data, value, side='right')
+        return ind/len(sorted_data)
+
+    def quantile_to_value(self, quant):
+        """ Calculates the value corresponding to the given quantile of the
+        data in the buffer.
+
+        Parameters
+        ----------
+        quant: array of floats
+            The quantiles to calculate
+
+        Returns
+        -------
+        value: array of floats
+            The values corresponding to the given quantiles
+        """
+        return numpy.quantile(self.raw_buffer.numpy(), quant)
+
+    def advance(self, blocksize):
+        """ Add blocksize seconds more to the buffer, push blocksize seconds
+        from the beginning.
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to attempt to read from the channel
+
+        Returns
+        -------
+        status: boolean
+            Returns True if advance is succesful,
+            False if not.
+        """
+        try:
+            if self.increment_update_cache:
+                self.update_cache_by_increment(blocksize)
+            DataBuffer.advance(self, blocksize)
+            return True
+        except RuntimeError:
+            self.null_advance(blocksize)
+            return False

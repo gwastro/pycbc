@@ -273,8 +273,29 @@ class TimeSeries(Array):
 
         if nearest_sample:
             time += self.delta_t / 2.0
-
         return self[int((time-self.start_time)*self.sample_rate)]
+
+    def at_times(self, times, nearest_sample = False):
+        """ Return an array of values at the specified gps times
+
+        Parameters
+        ----------
+        times: array of floats
+            The times whose values are needed
+        nearest_sample: bool
+            Return the samples at the times nearest to the chosen times rather
+            than rounded down.
+
+        Returns
+        -------
+        values: array of floats
+            The values of the timeseries at the given times
+        """
+
+        if nearest_sample:
+            times += self.delta_t / 2.0
+        elapsed_times = times - self.start_time
+        return self[(elapsed_times * self.sample_rate).astype('int')]
 
     def __eq__(self,other):
         """
