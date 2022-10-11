@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as cnp
 from cython import wraparound, boundscheck, cdivision
 from libc.math cimport M_PI, sqrt
+from libc.math cimport round as cround
 
 
 ctypedef fused REALTYPE:
@@ -77,6 +78,7 @@ def logsignalrateinternals_computepsignalbins(
         pbin[idx] = <int>(pdif[idx] / pwidth)
         sbin[idx] = <int>(sdif[idx] / swidth)
 
+
 @boundscheck(False)
 @wraparound(False)
 @cdivision(True)
@@ -121,6 +123,98 @@ def logsignalrateinternals_compute2detrate(
 @boundscheck(False)
 @wraparound(False)
 @cdivision(True)
+def timecoincidence_constructfold(
+    double[:] fold1,
+    double[:] fold2,
+    double[:] t1,
+    double[:] t2,
+    double slide_step,
+    int length1,
+    int length2
+):
+    cdef:
+        int idx
+
+    for idx in range(length1):
+        fold1[idx] = t1[idx] % slide_step
+
+    for idx in range(length2):
+        fold2[idx] = t2[idx] % slide_step
+
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def timecoincidence_findidxlen(
+    long int[:] left,
+    long int[:] right,
+    int leftlength,
+):
+    cdef:
+        int idx, tslength
+
+    tslength = 0
+    for idx in range(leftlength):
+        tslength += right[idx] - left[idx]
+    return tslength
+
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def timecoincidence_constructidxs(
+    unsigned int[:] idx1,
+    unsigned int[:] idx2,
+    long int[:] sort1,
+    long int[:] sort2,
+    long int[:] left,
+    long int[:] right,
+    int leftlength,
+    int sort2length
+):
+    cdef:
+        int idx, jdx, count, currlen
+
+    # Construct sort1
+    count = 0
+    for idx in range(leftlength):
+        currlen = right[idx] - left[idx]
+        for jdx in range(currlen):
+            idx1[count] = sort1[idx]
+            count += 1
+
+    # Construct sort2
+    count = 0
+    for idx in range(leftlength):
+        for jdx in range(left[idx], right[idx]):
+            idx2[count] = sort2[jdx % sort2length]
+            count += 1
+
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def timecoincidence_getslideint(
+    int [:] slide,
+    double[:] t1,
+    double[:] t2,
+    unsigned int[:] idx1,
+    unsigned int[:] idx2,
+    double slide_step
+):
+    cdef:
+        int idx, length
+
+    length = idx1.shape[0]
+
+    for idx in range(length):
+        diff = (t1[idx1[idx]] - t2[idx2[idx]]) / slide_step
+        slide[idx] = <int>(cround(diff))
+
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
 def coincbuffer_expireelements(
     float[:] cbuffer,
     int[:] timer1,
@@ -142,3 +236,73 @@ def coincbuffer_expireelements(
             keep_count += 1
 
     return keep_count
+
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def coincbuffer_numgreater(
+    float[:] cbuffer,
+    int length,
+    float value
+):
+    cdef:
+        int idx, count
+
+    count = 0
+    for idx in range(length):
+        count += cbuffer[idx] > value
+    return count
+
+
+@boundscheck(False)
+@wraparound(False)
+@cdivision(True)
+def timecluster_cython(
+    unsigned int[:] indices,
+    long int[:] left,
+    long int[:] right,
+    REALTYPE[:] stat,
+    int leftlen,
+):
+    cdef:
+        int i, j, k, max_loc
+        long int l, r
+        REALTYPE max_val
+
+    # i is the index we are inspecting, j is the next one to save
+    i = 0
+    j = 0
+    while i < leftlen:
+        l = left[i]
+        r = right[i]
+
+        # If there are no other points to compare it is obviously the max
+        if (r - l) == 1:
+            indices[j] = i
+            j += 1
+            i += 1
+            continue
+
+        # Find the location of the maximum within the time interval around i
+        # Following block replaces max_loc = argmax(stat[l:r]) + l
+        max_val = stat[l]
+        max_loc = l
+        for k in range(l + 1, r):
+            if stat[k] > max_val:
+                max_val = stat[k]
+                max_loc = k
+
+        # If this point is the max, we can skip to the right boundary
+        if max_loc == i:
+            indices[j] = i
+            i = r
+            j += 1
+
+        # If the max is later than i, we can skip to it
+        elif max_loc > i:
+            i = max_loc
+
+        elif max_loc < i:
+            i += 1
+    return j

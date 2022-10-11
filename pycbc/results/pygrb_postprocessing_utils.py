@@ -29,6 +29,7 @@ import logging
 import argparse
 import copy
 import numpy
+import h5py
 from scipy import stats
 from pycbc.detector import Detector
 import pycbc.workflow as _workflow
@@ -37,7 +38,7 @@ from pycbc.workflow.core import resolve_url_to_file
 try:
     from ligo import segments
     from ligo.lw import utils, lsctables
-    from ligo.lw.table import get_table
+    from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
     # Handle MultiInspiral xml-talbes with glue,
     # as ligo.lw no longer supports them
@@ -231,9 +232,9 @@ def load_xml_table(file_name, table_name):
 
     xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
                                   contenthandler=glsctables.use_in(
-                                      LIGOLWContentHandler))
+                                  LIGOLWContentHandler))
 
-    return get_table(xml_doc, table_name)
+    return Table.get_table(xml_doc, table_name)
 
 
 # ==============================================================================
@@ -369,33 +370,14 @@ def slide_vetoes(vetoes, slide_dict_or_list, slide_id):
 # =============================================================================
 # Function to load triggers
 # =============================================================================
-def load_triggers(trig_file, vetoes):
+def load_triggers(input_file, vetoes):
     """Loads triggers from PyGRB output file"""
 
-    logging.info("Loading triggers...")
+    trigs = h5py.File(input_file, 'r')
 
-    # Extract time-slides from a multi-inspiral table
-    multis, slides_list = \
-        read_multiinspiral_timeslides_from_files([trig_file])
-
-    glsctables.MultiInspiralTable.loadcolumns =\
-        [slot for slot in multis[0].__slots__ if hasattr(multis[0], slot)]
-
-    # Extract triggers
-    trigs = glsctables.New(glsctables.MultiInspiralTable,
-                           columns=glsctables.MultiInspiralTable.loadcolumns)
-
-    # Time-slid vetoes
-    for slide_id in range(len(slides_list)):
-        # Construct the ifo-indexed dictionary of slid veteoes
-        slid_vetoes = slide_vetoes(vetoes, slides_list, slide_id)
-
-        # Add time-slid triggers
-        vets = slid_vetoes.union(slid_vetoes.keys())
-        trigs.extend(t for t in multis.veto(vets)
-                     if int(t.time_slide_id) == slide_id)
-
-    logging.info("%d triggers found when including timeslides.", len(trigs))
+    if vetoes is not None:
+        # Developers: see PR 3972 for previous implementation
+        raise NotImplementedError
 
     return trigs
 
@@ -628,17 +610,20 @@ def get_grb_time(seg_files):
 
 
 # =============================================================================
-# Function to extract ifos
+# Function to extract ifos from hdfs
 # =============================================================================
 def extract_ifos(trig_file):
-    """Extracts IFOs from search summary table"""
+    """Extracts IFOs from hdf file"""
 
-    # Load search summary
-    search_summ = load_xml_table(trig_file,
-                                 glsctables.SearchSummaryTable.tableName)
+    # Load hdf file
+    hdf_file = h5py.File(trig_file, 'r')
 
     # Extract IFOs
-    ifos = sorted(search_summ[0].instruments)
+    ifos = sorted(list(hdf_file.keys()))
+
+    # Remove 'network' key from list of ifos
+    if 'network' in ifos:
+        ifos.remove('network')
 
     return ifos
 
@@ -647,7 +632,7 @@ def extract_ifos(trig_file):
 # Function to extract IFOs and vetoes
 # =============================================================================
 def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
-    """Extracts IFOs from search summary table and vetoes from a directory"""
+    """Extracts IFOs from HDF files and vetoes from a directory"""
 
     logging.info("Extracting IFOs and vetoes.")
 
@@ -655,7 +640,10 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     ifos = extract_ifos(trig_file)
 
     # Extract vetoes
-    vetoes = extract_vetoes(veto_files, ifos, veto_cat)
+    if veto_files is not None:
+        vetoes = extract_vetoes(veto_files, ifos, veto_cat)
+    else:
+        vetoes = None
 
     return ifos, vetoes
 
@@ -874,7 +862,8 @@ def read_multiinspiral_timeslides_from_files(file_list):
                                   contenthandler=contenthandler)
 
         # Extract the time slide table
-        time_slide_table = get_table(doc, lsctables.TimeSlideTable.tableName)
+        time_slide_table = \
+            Table.get_table(doc, lsctables.TimeSlideTable.tableName)
         slide_mapping = {}
         curr_slides = {}
         for slide in time_slide_table:
@@ -897,7 +886,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
         # Extract the multi inspiral table
         try:
-            multi_inspiral_table = get_table(doc, 'multi_inspiral')
+            multi_inspiral_table = Table.get_table(doc, 'multi_inspiral')
             # Remap the time slide IDs
             for multi in multi_inspiral_table:
                 new_id = slide_mapping[int(multi.time_slide_id)]
@@ -913,3 +902,27 @@ def read_multiinspiral_timeslides_from_files(file_list):
             raise RuntimeError(err_msg) from exc
 
     return multis, time_slides
+
+
+# =============================================================================
+# Function to calculate the coincident SNR
+# =============================================================================
+def get_coinc_snr(trigs_or_injs, ifos):
+    """ Calculate coincident SNR using single IFO SNRs"""
+
+    num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
+
+    # Calculate coincident SNR
+    single_snr_sq = dict((ifo, None) for ifo in ifos)
+    snr_sum_square = numpy.zeros(num_trigs_or_injs)
+    for ifo in ifos:
+        att = ifo[0].lower()
+        # Square the individual SNRs
+        single_snr_sq[ifo] = numpy.square(
+            trigs_or_injs['%s/snr_%s' % (ifo, att)][:])
+        # Add them
+        snr_sum_square = numpy.add(snr_sum_square, single_snr_sq[ifo])
+    # Obtain the square root
+    coinc_snr = numpy.sqrt(snr_sum_square)
+
+    return coinc_snr

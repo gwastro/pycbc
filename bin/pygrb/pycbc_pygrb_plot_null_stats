@@ -28,6 +28,7 @@ import sys
 import os
 import logging
 import numpy
+import h5py
 from matplotlib import rc
 import matplotlib.pyplot as plt
 import pycbc.version
@@ -46,33 +47,45 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load necessary SNR data from a trigger/injection file
-def load_data(input_file, vetoes, opts, injections=False, sim_table=False):
-    """Build a dictionary containing SNR data extracted from a
-    trigger/injection file"""
+# Function to load trigger data
+def load_data(input_file, vetoes, ifos, opts, injections=False):
+    """Load data from a trigger/injection file"""
 
-    # Inizialize the dictionary
-    data = {}
-    data['snr'] = None
     null_stat_type = opts.y_variable
+
+    # Initialize the dictionary
+    data = {}
+    data['coherent'] = None
     data[null_stat_type] = None
 
-    # Fill the dictionary in with required data
     if input_file:
         if injections:
-            trigs_or_injs = ppu.load_injections(input_file, vetoes, sim_table=sim_table)
-        else:
+            logging.info("Loading injections...")
+            # This will eventually become ppu.load_injections()
             trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-        data['snr'] = numpy.asarray(trigs_or_injs.get_column('snr'))
-        if null_stat_type == 'coincident':
-            data[null_stat_type] = (trigs_or_injs.get_column('coinc_snr'))
-        elif null_stat_type == 'nullstat':
-            data[null_stat_type] = numpy.asarray(trigs_or_injs.get_column('null_statistic'))
-        elif null_stat_type == 'overwhitened':
-            data[null_stat_type] = numpy.asarray(trigs_or_injs.get_null_snr())
+        else:
+            logging.info("Loading triggers...")
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            
+        num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
+
+        # Coherent SNR is always used
+        data['coherent'] = trigs_or_injs['network/coherent_snr'][:]
+
+        if null_stat_type == 'null':
+            data[null_stat_type] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
+        elif null_stat_type == 'single':
+            att = opts.ifo[0].lower()
+            data[null_stat_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:]
+        elif null_stat_type == 'coincident':
+            data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs, ifos)
+
+        if injections:
+            logging.info("%d injections found.", num_trigs_or_injs)
+        else:
+            logging.info("%d triggers found.", num_trigs_or_injs)
 
     return data
-
 
 # Function that produces the contrours to be plotted
 def calculate_contours(opts, new_snrs=None):
@@ -119,7 +132,7 @@ parser.add_argument("-t", "--trig-file", action="store",
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
 parser.add_argument("-y", "--y-variable", default=None,
-                    choices=['coincident', 'nullstat', 'overwhitened'],
+                    choices=['coincident', 'null'], #TODO: overwhitened?
                     help="Quantity to plot on the vertical axis.")
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
@@ -133,9 +146,8 @@ zoom_in = opts.zoom_in
 null_stat_type = opts.y_variable
 
 # Prepare plot title and caption
-y_labels = {'nullstat': "Null statistic",
-            'overwhitened': "Overwhitened null statistic",
-            'coincident': "Coincident SNR"}
+y_labels = {'null': "Null SNR",
+            'coincident': "Coincident SNR"} #TODO: overwhitened
 if opts.plot_title is None:
     opts.plot_title = y_labels[null_stat_type] + " vs Coherent SNR"
 if opts.plot_caption is None:
@@ -162,14 +174,14 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-_, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                         opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, opts)
+trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, opts, injections=True, sim_table=False)
+inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")
@@ -182,7 +194,7 @@ x_max = None
 # Coincident SNR plot case: we want a coinc=coh diagonal line on the plot
 if null_stat_type == 'coincident':
     cont_colors = ['g-']
-    x_max = plu.axis_max_value(trig_data['snr'], inj_data['snr'], found_file)
+    x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'], found_file)
     snr_vals = [4, x_max]
     null_stat_conts = [[4, x_max]]
 # Overwhitened null stat (null SNR) and null stat  cases: newSNR contours
@@ -209,8 +221,8 @@ rc('font', size=14)
 # Set color for out-of-range values
 # Determine y-axis values of triggers and injections
 y_label = y_labels[null_stat_type]
-trigs = [trig_data['snr'], trig_data[null_stat_type]]
-injs = [inj_data['snr'], inj_data[null_stat_type]]
+trigs = [trig_data['coherent'], trig_data[null_stat_type]]
+injs = [inj_data['coherent'], inj_data[null_stat_type]]
 plu.pygrb_plotter(trigs, injs, "Coherent SNR", y_label, opts,
                   snr_vals=snr_vals, conts=null_stat_conts,
                   shade_cont_value=shade_cont_value,

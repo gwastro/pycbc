@@ -28,6 +28,12 @@ coincident triggers.
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector, ppdets
 from .eventmgr_cython import coincbuffer_expireelements
+from .eventmgr_cython import coincbuffer_numgreater
+from .eventmgr_cython import timecoincidence_constructidxs
+from .eventmgr_cython import timecoincidence_constructfold
+from .eventmgr_cython import timecoincidence_getslideint
+from .eventmgr_cython import timecoincidence_findidxlen
+from .eventmgr_cython import timecluster_cython
 
 
 def background_bin_from_string(background_bins, data):
@@ -181,8 +187,12 @@ def time_coincidence(t1, t2, window, slide_step=0):
         Array of slide ids
     """
     if slide_step:
-        fold1 = t1 % slide_step
-        fold2 = t2 % slide_step
+        length1 = len(t1)
+        length2 = len(t2)
+        fold1 = numpy.zeros(length1, dtype=numpy.float64)
+        fold2 = numpy.zeros(length2, dtype=numpy.float64)
+        timecoincidence_constructfold(fold1, fold2, t1, t2, slide_step,
+                                      length1, length2)
     else:
         fold1 = t1
         fold2 = t2
@@ -194,27 +204,25 @@ def time_coincidence(t1, t2, window, slide_step=0):
 
     if slide_step:
         # FIXME explain this
-        fold2 = numpy.concatenate([fold2 - slide_step, fold2, fold2 + slide_step])
-        sort2 = numpy.concatenate([sort2, sort2, sort2])
+        fold2 = numpy.concatenate([fold2 - slide_step, fold2,
+                                   fold2 + slide_step])
 
-    left = numpy.searchsorted(fold2, fold1 - window)
-    right = numpy.searchsorted(fold2, fold1 + window)
+    left = fold2.searchsorted(fold1 - window)
+    right = fold2.searchsorted(fold1 + window)
 
-    idx1 = numpy.repeat(sort1, right - left)
-    idx2 = [sort2[l:r] for l, r in zip(left, right)]
+    lenidx = timecoincidence_findidxlen(left, right, len(left))
+    idx1 = numpy.zeros(lenidx, dtype=numpy.uint32)
+    idx2 = numpy.zeros(lenidx, dtype=numpy.uint32)
+    timecoincidence_constructidxs(idx1, idx2, sort1, sort2, left, right,
+                                  len(left), len(sort2))
 
-    if len(idx2) > 0:
-        idx2 = numpy.concatenate(idx2)
-    else:
-        idx2 = numpy.array([], dtype=numpy.int64)
-
+    slide = numpy.zeros(lenidx, dtype=numpy.int32)
     if slide_step:
-        diff = ((t1 / slide_step)[idx1] - (t2 / slide_step)[idx2])
-        slide = numpy.rint(diff)
+        timecoincidence_getslideint(slide, t1, t2, idx1, idx2, slide_step)
     else:
         slide = numpy.zeros(len(idx1))
 
-    return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), slide.astype(numpy.int32)
+    return idx1, idx2, slide
 
 
 def time_multi_coincidence(times, slide_step=0, slop=.003,
@@ -289,8 +297,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         for ifo2 in ids:
             logging.info('added ifo %s, testing against %s' % (ifo1, ifo2))
             w = win(ifo1, ifo2)
-            left = numpy.searchsorted(time1, ctimes[ifo2] - w)
-            right = numpy.searchsorted(time1, ctimes[ifo2] + w)
+            left = time1.searchsorted(ctimes[ifo2] - w)
+            right = time1.searchsorted(ctimes[ifo2] + w)
             # Any times within time1 coincident with the time in ifo2 have
             # indices between 'left' and 'right'
             # 'nz' indexes into times in ifo2 which have coincidences with ifo1
@@ -326,7 +334,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
     return ids, slide
 
 
-def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
+def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
 
@@ -369,11 +377,12 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
-    cidx = cluster_over_time(stat, time, window, argmax)
+    cidx = cluster_over_time(stat, time, window, **kwargs)
     return cidx
 
 
-def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argmax=numpy.argmax):
+def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
+                            **kwargs):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
 
@@ -421,7 +430,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
-    cidx = cluster_over_time(stat, time_avg, window, argmax)
+    cidx = cluster_over_time(stat, time_avg, window, **kwargs)
 
     return cidx
 
@@ -449,7 +458,8 @@ def mean_if_greater_than_zero(vals):
     return vals[above_zero].mean(), above_zero.sum()
 
 
-def cluster_over_time(stat, time, window, argmax=numpy.argmax):
+def cluster_over_time(stat, time, window, method='python',
+                      argmax=numpy.argmax):
     """Cluster generalized transient events over time via maximum stat over a
     symmetric sliding window
 
@@ -461,6 +471,9 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
         time to use for clustering
     window: float
         length to cluster over
+    method: string
+        Either "cython" to use the cython implementation, or "python" to use
+        the pure python version.
     argmax: function
         the function used to calculate the maximum value
 
@@ -476,39 +489,45 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
     stat = stat[time_sorting]
     time = time[time_sorting]
 
-    left = numpy.searchsorted(time, time - window)
-    right = numpy.searchsorted(time, time + window)
+    left = time.searchsorted(time - window)
+    right = time.searchsorted(time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
 
-    # i is the index we are inspecting, j is the next one to save
-    i = 0
-    j = 0
-    while i < len(left):
-        l = left[i]
-        r = right[i]
+    if method == 'cython':
+        j = timecluster_cython(indices, left, right, stat, len(left))
+    elif method == 'python':
+        # i is the index we are inspecting, j is the next one to save
+        i = 0
+        j = 0
+        while i < len(left):
+            l = left[i]
+            r = right[i]
 
-        # If there are no other points to compare it is obviously the max
-        if (r - l) == 1:
-            indices[j] = i
-            j += 1
-            i += 1
-            continue
+            # If there are no other points to compare it is obviously the max
+            if (r - l) == 1:
+                indices[j] = i
+                j += 1
+                i += 1
+                continue
 
-        # Find the location of the maximum within the time interval around i
-        max_loc = argmax(stat[l:r]) + l
+            # Find the location of the maximum within the time interval
+            # around i
+            max_loc = argmax(stat[l:r]) + l
 
-        # If this point is the max, we can skip to the right boundary
-        if max_loc == i:
-            indices[j] = i
-            i = r
-            j += 1
+            # If this point is the max, we can skip to the right boundary
+            if max_loc == i:
+                indices[j] = i
+                i = r
+                j += 1
 
-        # If the max is later than i, we can skip to it
-        elif max_loc > i:
-            i = max_loc
+            # If the max is later than i, we can skip to it
+            elif max_loc > i:
+                i = max_loc
 
-        elif max_loc < i:
-            i += 1
+            elif max_loc < i:
+                i += 1
+    else:
+        raise ValueError(f'Do not recognize method {method}')
 
     indices = indices[:j]
 
@@ -738,7 +757,7 @@ class CoincExpireBuffer(object):
 
     def num_greater(self, value):
         """Return the number of elements larger than 'value'"""
-        return (self.buffer[:self.index] > value).sum()
+        return coincbuffer_numgreater(self.buffer, self.index, value)
 
     @property
     def data(self):
@@ -1171,8 +1190,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
 
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
-                                      self.timeslide_interval,
-                                      self.analysis_block)
+                                  self.timeslide_interval,
+                                  self.analysis_block,
+                                  method='cython')
             offsets = offsets[cidx]
             zerolag_idx = (offsets == 0)
             bkg_idx = (offsets != 0)

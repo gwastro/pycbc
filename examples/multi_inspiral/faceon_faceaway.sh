@@ -11,7 +11,7 @@ CONFIG_URL=https://github.com/gwastro/pycbc-config/raw/master/test/multi_inspira
 INJ_FILE=faceon_faceaway_injs.hdf
 
 echo -e "\\n\\n>> [`date`] Getting injection file"
-wget -nc ${CONFIG_URL}/${INJ_FILE}
+wget -nv -nc ${CONFIG_URL}/${INJ_FILE}
 
 # Generate mock data
 for IFO in 'H1' 'L1' 'V1'; do
@@ -36,9 +36,9 @@ RA=5.016076270234897
 DEC=-0.408407044967
 
 echo -e "\\n\\n>> [`date`] Getting template bank"
-wget -nc ${CONFIG_URL}/${BANK_FILE}
+wget -nv -nc ${CONFIG_URL}/${BANK_FILE}
 echo -e "\\n\\n>> [`date`] Bank veto bank"
-wget -nc ${CONFIG_URL}/${BANK_VETO_FILE}
+wget -nv -nc ${CONFIG_URL}/${BANK_VETO_FILE}
 
 for POL in 'standard' 'left' 'right' 'left+right'; do
     echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral with ${POL} projection"

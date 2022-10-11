@@ -1,6 +1,6 @@
-----------------
-GW150914 example
-----------------
+------------------------------------------
+GW150914 example with gaussian noise model
+------------------------------------------
 
 To run on GW150914, we can use the same :download:`sampler
 <../../../examples/inference/samplers/emcee_pt-gw150914_like.ini>`, :download:`prior

@@ -319,7 +319,7 @@ def get_td_waveform_modes(template=None, **kwargs):
         :py:class:`pycbc.types.TimeSeries`.
     """
     params = props(template, **kwargs)
-    required = parameters.fd_required
+    required = parameters.td_required
     check_args(params, required)
     apprx = params['approximant']
     if apprx not in _mode_waveform_td:

@@ -1,6 +1,6 @@
 from . frame import (locations_to_cache, read_frame, datafind_connection,
                      query_and_read_frame, frame_paths, write_frame,
-                     DataBuffer, StatusBuffer)
+                     DataBuffer, StatusBuffer, iDQBuffer)
 
 from . store import (read_store)
 

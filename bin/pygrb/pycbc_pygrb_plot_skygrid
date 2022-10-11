@@ -26,6 +26,7 @@ import sys
 import os
 import logging
 import numpy
+import h5py
 from matplotlib import pyplot as plt
 from matplotlib import rc
 import pycbc.version
@@ -41,28 +42,18 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_skygrid"
 
-
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load latitude and longitude data from a trigger/injection file
-def load_data(trig_file, vetoes):
-    """Build a dictionary containing latitude and longitude data extracted
-    from a trigger file"""
-
-    # Inizialize the dictionary
-    data = {}
-    data['longitude'] = None
-    data['latitude'] = None
-
-    # Fill the dictionary in with required data
-    if trig_file:
-        trigs = ppu.load_triggers(trig_file, vetoes)
-        data['longitude'] = numpy.degrees(trigs.get_column('ra'))
-        data['latitude'] = numpy.degrees(trigs.get_column('dec'))
-
-    return data
-
+# Load trigger data
+def load_data(input_file, vetoes, injections=False):
+    """Load data from a trigger/injection file"""
+    
+    logging.info("Loading triggers...")
+    
+    trigs = ppu.load_triggers(input_file, vetoes)
+        
+    return trigs
 
 # =============================================================================
 # Main script starts here
@@ -112,7 +103,8 @@ fig = plt.figure()
 ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
 ax.set_ylabel(ylabel)#, fontsize=16)
-ax.plot(trig_data['longitude'], trig_data['latitude'], 'ko', markerfacecolor='blue')
+ax.plot(trig_data['network/longitude'][:], trig_data['network/latitude'][:],
+        'ko', markerfacecolor='blue')
 # Wrap up
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=opts.plot_caption)
