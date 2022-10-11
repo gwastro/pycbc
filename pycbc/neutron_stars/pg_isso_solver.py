@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 """
 Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)
 formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
@@ -21,12 +22,9 @@ formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
 .. _Stone, Loeb, Berger, PRD 87, 084053 (2013):
     http://dx.doi.org/10.1103/PhysRevD.87.084053
 """
-import pickle
-import os.path
+
 import numpy as np
 from scipy.optimize import root_scalar
-from scipy.interpolate import RectBivariateSpline
-from . import NS_DATA_DIRECTORY
 
 
 def ISCO_eq(r, chi):
@@ -383,57 +381,3 @@ def PG_ISSO_solver(chi, incl):
         if any(oob):
             raise RuntimeError('Unable to obtain some solutions!')
     return solution
-
-
-def concat_grid(bounds):
-    '''Constructs non-uniform grid given specified bounds'''
-    out = np.concatenate([
-        np.linspace(0, lim[0], lim[1], endpoint=False) if ii == 0
-        else (
-            np.linspace(bounds[ii-1][0], lim[0], lim[1])
-            if ii == len(bounds)
-            else np.linspace(bounds[ii-1][0], lim[0], lim[1], endpoint=False)
-            )
-        for ii, lim in enumerate(bounds)])
-    return out
-
-
-def generate_isso_bivariate_interp(outpath):
-    """Constructs a grid in spin magnitude and spin tilt angle then
-    solves for the ISSO radius (in mass units). Uses the resulting
-    grid to create a bivariate spline which is saved to disk. Call this
-    function to generate `isso_inc_chi.pkl`. 
-    Note: the grid density need not be uniform, and so has been tuned
-    by hand to be more dense in regions of steeper gradient in order to
-    keep the fractional interpolation error over the full span of
-    parameter values to less than 1e-5.
-    
-    Parameters
-    ----------
-    outpath: string
-        Path to output file
-    """
-    chis = concat_grid((
-        (0.5, 25), (0.75, 20), (0.95, 30), (0.99, 20), (0.995, 50),
-        (0.9975, 50), (1, 101)))
-    incs = concat_grid((
-        (0.125 * np.pi, 50), (0.375 * np.pi, 300), (0.5 * np.pi, 50),
-        (0.9 * np.pi, 50), (np.pi, 26)))
-    chig, incg = np.meshgrid(chis, incs)
-    roots = np.empty_like(chig)
-    for i, (chi, inc) in enumerate(zip(chig, incg)):
-        # more dense at larger chi
-        roots[i] = PG_ISSO_solver(chi, inc)
-    bivar = RectBivariateSpline(incs, chis, roots)
-    with open(outpath, 'wb') as f:
-        pickle.dump(bivar, f)
-
-
-def load_isso_bivariate_interp():
-    with open(os.path.join(NS_DATA_DIRECTORY, 'isso_inc_chi.pkl'), 'rb') as f:
-        func = pickle.load(f)
-    return func
-
-
-def pg_isso_interp(incl, chi):
-    return load_isso_bivariate_interp()(incl, chi, grid=False)
