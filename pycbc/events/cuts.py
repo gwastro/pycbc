@@ -152,7 +152,7 @@ def check_update_cuts(cut_dict, new_cut):
         else:
             # New cut would not make a difference, ignore it
             logging.warning("WARNING: New threshold of %.3f is less "
-                            "strict than old threshold %.3f, using  "
+                            "strict than old threshold %.3f, using "
                             "cut at %.3f.",
                             value_new, value_old, value_old)
     else:

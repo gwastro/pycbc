@@ -58,7 +58,7 @@ test_parser_raises_error.append((['--trigger-cuts',
                                  ValueError,
                                  'threshold_not_a_float'))
 
-# Dynamically add sysexit tests into the class
+# Dynamically add error tests into the class
 for test_parser_error in test_parser_raises_error:
     args = parse_args(test_parser_error[0])
     def check_sysexit_test(self, a=args, te=test_parser_error[1]):
@@ -86,6 +86,11 @@ tests_parser_output.append((['--trigger-cuts',
                             ({('snr', np.greater): 5}, {}),
                             "multiple_similar_cuts"))
 
+tests_parser_output.append((['--trigger-cuts',
+                             'snr:5:lower', 'snr:4:lower'],
+                            ({('snr', np.greater): 5}, {}),
+                            "multiple_similar_cuts_2"))
+
 # Multiple cuts exactly the same, should give the warning but still complete
 tests_parser_output.append((['--trigger-cuts',
                              'snr:5:lower', 'snr:5:lower'],
@@ -95,14 +100,14 @@ tests_parser_output.append((['--trigger-cuts',
 # Dynamically add value tests for the parser
 for test_values in tests_parser_output:
     args = parse_args(test_values[0])
-    def digest_values_test(self, a=args, tv=test_values[1]):
+    def ingest_values_test(self, a=args, tv=test_values[1]):
         cuts_dicts = cuts.ingest_cuts_option_group(a)
         self.assertEqual(cuts_dicts, tv)
 
 
     setattr(CutsParserTest,
             'test_parser_values_' + test_values[2],
-            digest_values_test)
+            ingest_values_test)
 
 # Set up some random datasets to test the cuts:
 
@@ -208,7 +213,7 @@ test_cut_output.append((['--template-cuts', 'chi_eff:0.8:upper',
 # Dynamically add value tests for the parser
 for test_values in test_cut_output:
     args = parse_args(test_values[0])
-    def digest_values_test(self, a=args, test_func=test_values[1]):
+    def cut_values_test(self, a=args, test_func=test_values[1]):
         # Copy the global variables, as we need to use local in the tests
         triggers = copy.deepcopy(trigger_dset)
         bank = copy.deepcopy(template_dset)
@@ -226,15 +231,16 @@ for test_values in test_cut_output:
                                   trigs=trigger_dset,
                                   trig_idx=triggers_idx))
 
-    setattr(CutsParserTest,
+    setattr(CutsTest,
             'test_cuts_correct_' + test_values[2],
-            digest_values_test)
+            cut_values_test)
 
 # create and populate unittest's test suite
 suite = unittest.TestSuite()
 test_loader = unittest.TestLoader()
 suite.addTest(test_loader.loadTestsFromTestCase(CutsErrorsTest))
 suite.addTest(test_loader.loadTestsFromTestCase(CutsParserTest))
+suite.addTest(test_loader.loadTestsFromTestCase(CutsTest))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
