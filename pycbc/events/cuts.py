@@ -388,5 +388,4 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
 
-
     return tids_out
