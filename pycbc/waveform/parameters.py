@@ -383,6 +383,11 @@ eccentricity_order = Parameter("eccentricity_order",
 numrel_data = Parameter("numrel_data",
                 dtype=str, default="", label=None,
                 description="Sets the NR flags; only needed for NR waveforms.")
+remnant_mass = Parameter("remnant_mass",
+                        dtype=float, label=r"$m_{\mathrm{rem}}$",
+                        description="Remnant mass of NS-BH merger. See "
+                        "conversions.remnant_mass_"
+                        "from_mass1_mass2_spin1x_spin1y_spin1z_eos")
 
 #
 #   General location parameters
