@@ -299,8 +299,7 @@ def get_random_mass(numPoints, massRangeParams, eos='2H'):
                     spin1x=0.0,
                     spin1y=0.0,
                     spin1z=spin1z_nsbh,
-                    eos=eos,
-                    interp=True
+                    eos=eos
                 )
                 mask_bright_nsbh[remnant
                                  >
