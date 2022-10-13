@@ -307,6 +307,7 @@ with h5py.File(oput_file, 'w') as fout:
     fout.attrs['cuts'] = args.template_cuts + args.trigger_cuts
     fout.attrs['fit_function'] = args.fit_function
     fout.attrs['fit_threshold'] = args.fit_threshold
+    fout.attrs['sngl_ranking'] = args.sngl_ranking
 
 if not args.output_fit_plot:
     logging.info("Done")

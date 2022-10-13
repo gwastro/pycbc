@@ -54,17 +54,34 @@ counts_all = {ifo:[] for ifo in args.ifos}
 alphas_all = {ifo:[] for ifo in args.ifos}
 analysis_dates = []
 
-files = args.trfits_files
+with h5py.File(args.trfits_files[0], 'r') as fit_f0:
+    # Store some attributes so we can check that all files are
+    # comparable
 
-fit_f0 = h5py.File(files[0], 'r')
+    # Keep the upper and lower bins
+    bl = fit_f0['bins_lower'][:]
+    bu = fit_f0['bins_upper'][:]
 
-bl = fit_f0['bins_lower'][:]
-bu = fit_f0['bins_upper'][:]
+    sngl_rank = fit_f0.attrs['sngl_ranking']
+    fit_thresh = fit_f0.attrs['fit_threshold']
+    fit_func = fit_f0.attrs['fit_function']
 
 live_times = {ifo : [] for ifo in args.ifos}
 
-for f in files:
+logging.info("Checking through %d files", len(args.trfits_files))
+for f in args.trfits_files:
+
+    # Get the date information, there are a couple of ways to do this:
     fits_f = h5py.File(f, 'r')
+    # Check that the file uses the same setup as file 0, to make sure
+    # all coefficients are comparable
+
+    assert fits_f.attrs['sngl_ranking'] == sngl_rank
+    assert fits_f.attrs['fit_threshold'] == fit_thresh
+    assert fits_f.attrs['fit_function'] == fit_func
+    assert all(fits_f['bins_lower'][:] == bl)
+    assert all(fits_f['bins_upper'][:] == bu)
+
     if 'days_since_epoch' in fits_f.attrs:
         analysis_dates += [fits_f.attrs['days_since_epoch']]
     elif 'analysis_date' in fits_f.attrs:
@@ -78,6 +95,8 @@ for f in files:
                          - datetime.date(2000, 1, 1)).days
         analysis_dates += [n_since_epoch]
     else:
+        # Fall back on reading the date from the filename
+
         # This is the regex string to match a date in format YYYY_MM_DD
         # or if MM or DD only have one character
         # FutureWarning: this will become obsolete in the year 3000
@@ -90,12 +109,13 @@ for f in files:
                                        analysis_day)
                          - datetime.date(2000,1,1)).days
         analysis_dates += [n_since_epoch]
+
     for ifo in args.ifos:
         if ifo not in fits_f:
+            logging.info(f + " has no " + ifo + " triggers")
             live_times[ifo] += [0]
             counts_all[ifo] += [-1 * np.ones(len(bl) - 1)]
             alphas_all[ifo] += [-1 * np.ones(len(bl) - 1)]
-            logging.info(f + " has no " + ifo + " triggers")
         else:
             live_times[ifo] += [fits_f[ifo].attrs['live_time']]
             counts_all[ifo] += [fits_f[ifo + '/counts'][:]]
@@ -105,6 +125,8 @@ for f in files:
                 logging.info(fits_f[ifo + '/fit_coeff'][:])
     fits_f.close()
 
+# Set up the date array, this is stored as an offset from the start date of
+# the combination. This allows for missing or empty days
 ad_order = np.argsort(np.array(analysis_dates))
 ad = np.array(analysis_dates)[ad_order] - np.array(analysis_dates)[ad_order[0]]
 start_date_n = analysis_dates[ad_order[0]]
@@ -125,7 +147,7 @@ cons_counts_out = {ifo : np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.
 fout = h5py.File(args.output_file, 'w')
 fout.attrs['start_date'] = ad[0]
 fout.attrs['end_date'] = ad[-1]
-fout.attrs['fit_threshold'] = fit_f0.attrs['fit_threshold']
+fout.attrs['fit_threshold'] = fit_thresh
 fout['bins_edges'] = list(bl) + [bu[-1]]
 
 
