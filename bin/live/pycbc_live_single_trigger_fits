@@ -166,8 +166,12 @@ for filename in files:
     if counter % 1000 == 0:
         logging.info("Processed %d files" % counter)
         for ifo in args.ifos:
-            logging.info("{}: {} triggers in {:.0f}s".format(ifo,
-                events[ifo].data['snr'].size, live_time[ifo]))
+            if ifo not in events:
+                # In case of no triggers for an extended period
+                logging.info("%s: No data", ifo)
+            else:
+                logging.info("%s: %d triggers in %.0fs", ifo,
+                             events[ifo].data['snr'].size, live_time[ifo])
 
     f = os.path.join(date_directory, filename)
     skipping_file = False
@@ -248,8 +252,11 @@ logging.info("All events processed")
 
 logging.info("Number of events which meet all criteria:")
 for ifo in args.ifos:
-    logging.info("%s: %d in %.2fs",
-                 ifo, len(events[ifo]), live_time[ifo])
+    if ifo not in events:
+        logging.info("%s: No data", ifo)
+    else:
+        logging.info("%s: %d in %.2fs",
+                     ifo, len(events[ifo]), live_time[ifo])
 
 # split the events into bins by template duration
 logging.info('Sorting events into template duration bins')
@@ -264,6 +271,7 @@ counts = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 binned_sngl_stats = {ifo: {} for ifo in args.ifos}
 
 for ifo in args.ifos:
+    if ifo not in events: continue
     # Sort the events into their bins
     event_bin = np.array([tbins[d]
                           for d in events[ifo].data['template_duration']])
@@ -289,6 +297,7 @@ for ifo in args.ifos:
 with h5py.File(oput_file, 'w') as fout:
 
     for ifo in args.ifos:
+        if ifo not in events: continue
         fout.create_group(ifo)
         # Save the triggers we have used for the fits
         fout[ifo].create_group('triggers')
@@ -322,6 +331,7 @@ histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m',(0.8,0.25,0),(0.25,0.8,0)]
 logging.info("Plotting fits")
 
 for ifo in args.ifos:
+    if ifo not in events: continue
     sngl_stat = events[ifo].data[args.sngl_ranking]
 
     # Skip if no triggers in this IFO
