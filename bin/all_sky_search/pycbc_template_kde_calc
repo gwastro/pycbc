@@ -92,7 +92,7 @@ if args.make_template_kde:
     with h5py.File(args.output_file, "w") as f_dest:
         f_dest.create_dataset("template_kde", data=template_kde)
         for name in args.fit_param:
-            f_dest.create_dataset(name, data= triggers.get_param(name, args, mass1, mass2, spin1z, spin2z))
+            f_dest.create_dataset(name, data=triggers.get_param(name, args, mass1, mass2, spin1z, spin2z))
         f_dest.attrs['fit_param'] = args.fit_param
         f_dest.attrs['log_param'] = args.log_param
         with h5py.File(args.template_file, "r") as f_src:
@@ -102,17 +102,17 @@ if args.make_template_kde:
 signal_pars = []
 if args.make_signal_kde:
     signal_file = numpy.genfromtxt(args.signal_file, dtype = float, delimiter=',', names = True)
-    mass2 = signal_file['mass2']
-    N_original = len(mass2)
+    mass2_sgnl = signal_file['mass2']
+    N_original = len(mass2_sgnl)
     if args.min_mass:
-        idx = mass2 > args.min_mass
-        mass2 = mass2[idx]
+        idx = mass2_sgnl > args.min_mass
+        mass2_sgnl = mass2_sgnl[idx]
         logging.info('%i triggers out of %i with MASS2 > %s' %
-                         (len(mass2), N_original, str(args.min_mass)))
+                         (len(mass2_sgnl), N_original, str(args.min_mass)))
     else:
         idx = numpy.full(N_original, True)
-    mass1 = signal_file['mass1'][idx]
-    assert min(mass1 - mass2) > 0
+    mass1_sgnl = signal_file['mass1'][idx]
+    assert min(mass1_sgnl - mass2_sgnl) > 0
 
     for param, slog in zip(args.fit_param, args.log_param):
         data = signal_file[param][idx]
@@ -133,7 +133,9 @@ if args.make_signal_kde:
 
     with h5py.File(args.output_file, "w") as f_dest:
         f_dest.create_dataset("signal_kde", data=signal_kde)
-        f_dest.create_dataset("grid", data=temp_samples)
+        for name in args.fit_param:
+            f_dest.create_dataset(name, data=triggers.get_param(name, args, mass1, mass2, spin1z, spin2z))
         f_dest.attrs['fit_param'] = args.fit_param
         f_dest.attrs['log_param'] = args.log_param
-        f_dest.create_dataset("input_signal_file_params", data=signal_file)
+        with h5py.File(args.template_file, "r") as f_src:
+            f_src.copy(f_src["./"], f_dest["./"], "input_template_file_params")
