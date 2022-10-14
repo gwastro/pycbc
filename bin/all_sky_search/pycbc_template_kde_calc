@@ -70,6 +70,7 @@ mass1 = temp_file['mass1']
 tid = numpy.arange(len(mass1))  #Array of template ids
 mass1, mass2, spin1z, spin2z = triggers.get_mass_spin(temp_file, tid)
 
+template_kde = []
 template_pars = []
 for param, slog in zip(args.fit_param, args.log_param):
     data = triggers.get_param(param, args, mass1, mass2, spin1z, spin2z)
@@ -89,14 +90,14 @@ if args.make_template_kde:
     logging.info('Evaluating template KDE')
     template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw)
 
-    with h5py.File(args.output_file, "w") as f_dest:
-        f_dest.create_dataset("template_kde", data=template_kde)
-        for name in args.fit_param:
-            f_dest.create_dataset(name, data=triggers.get_param(name, args, mass1, mass2, spin1z, spin2z))
-        f_dest.attrs['fit_param'] = args.fit_param
-        f_dest.attrs['log_param'] = args.log_param
-        with h5py.File(args.template_file, "r") as f_src:
-            f_src.copy(f_src["./"], f_dest["./"], "input_template_file_params")
+with h5py.File(args.output_file, "w") as f_dest:
+    f_dest.create_dataset("template_kde", data=template_kde)
+    for name in args.fit_param:
+        f_dest.create_dataset(name, data=triggers.get_param(name, args, mass1, mass2, spin1z, spin2z))
+    f_dest.attrs['fit_param'] = args.fit_param
+    f_dest.attrs['log_param'] = args.log_param
+    with h5py.File(args.template_file, "r") as f_src:
+        f_src.copy(f_src["./"], f_dest["./"], "input_template_file_params")
 
 #Obtaining signal parameters
 signal_pars = []
@@ -131,11 +132,7 @@ if args.make_signal_kde:
     logging.info('Evaluating signal KDE')
     signal_kde = kde_awkde(signal_samples, temp_samples, alp=optalpha, gl_bandwidth=optbw)
 
-    with h5py.File(args.output_file, "w") as f_dest:
+    with h5py.File(args.output_file, "a") as f_dest:
         f_dest.create_dataset("signal_kde", data=signal_kde)
-        for name in args.fit_param:
-            f_dest.create_dataset(name, data=triggers.get_param(name, args, mass1, mass2, spin1z, spin2z))
-        f_dest.attrs['fit_param'] = args.fit_param
-        f_dest.attrs['log_param'] = args.log_param
-        with h5py.File(args.template_file, "r") as f_src:
-            f_src.copy(f_src["./"], f_dest["./"], "input_template_file_params")
+        del f_dest['template_kde']
+
