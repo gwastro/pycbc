@@ -244,10 +244,15 @@ for ifo in args.ifos:
     fout_ifo.attrs['total_counts'] = counts_out[ifo].sum()
 
     if args.output_plot_file_format:
-        alpha_lines += ax_alpha.plot(ad, alpha_all,
+        # If no bins had any triggers on that day, ignore
+        valid_days = np.logical_and(alpha_all > 0, np.isfinite(alpha_all))
+        dates_out = ad[valid_days]
+        count_all = count_all[valid_days]
+        alpha_all = alpha_all[valid_days]
+        alpha_lines += ax_alpha.plot(dates_out, alpha_all,
                                      c='k', linestyle='-', linewidth=2,
                                      label="daily overall alpha")
-        count_lines += ax_count.plot(ad, count_all,
+        count_lines += ax_count.plot(dates_out, count_all,
                                      c='k', linestyle='-', linewidth=2,
                                      label="overall count")
         alpha_lines += [ax_alpha.axhline(overall_meanalpha,
