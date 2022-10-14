@@ -1784,8 +1784,8 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         """
         Optimization function to identify coincs too quiet to be of interest
 
-        Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers.
+        Calculat 
+tatistic
 
         Parameters
         ----------
@@ -1808,6 +1808,126 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
                     self, s, thresh, limifo, **kwargs)
         loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
         return loglr
+
+
+
+class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
+    """
+    The ExpFitFgBgNormStatistic with a mass  and spin weighting factor determined by KDE
+
+    This is the same as the ExpFitFgBgNormStatistic except the likelihood
+    is multiplied by the ratio of signal KDE to template KDE over template params.
+    """
+
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+        """
+        Create a statistic class instance
+
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+        ifos: list of strs, not used here
+            The list of detector names
+        """
+        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
+                                         ifos=ifos, **kwargs)
+
+    def logsignalrate(self, stats, shift, to_shift):
+        """
+        Calculate the normalized log rate density of signals via lookup
+
+        This calls back to the Parent class and then applies the chirp mass
+        weighting factor.
+
+        Parameters
+        ----------
+        stats: list of dicts giving single-ifo quantities, ordered as
+            self.ifos
+        shift: numpy array of float, size of the time shift vector for each
+            coinc to be ranked
+        to_shift: list of int, multiple of the time shift to apply ordered
+            as self.ifos
+
+        Returns
+        -------
+        value: log of coinc signal rate density for the given single-ifo
+            triggers and time shifts
+        """
+
+        # model signal rate as uniform over chirp mass, background rate is
+        # proportional to mchirp^(-11/3) due to density of templates
+        logr_s = ExpFitFgBgNormStatistic.logsignalrate(
+                    self,
+                    stats,
+                    shift,
+                    to_shift
+                    )
+        logr_s += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
+        return logr_s
+
+    def single(self, trigs):
+        """
+        Calculate the necessary single detector information
+
+        In this case the ranking rescaled (see the lognoiserate method here)
+        with the phase, end time, sigma, SNR, template_id and the
+        benchmark_logvol values added in. This also stored the current chirp
+        mass for use when computing the coinc statistic values.
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
+                                                   trigs.param['mass2'])
+        if self.mcm is not None:
+            # Careful - input might be a str, so cast to float
+            self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
+        return ExpFitFgBgNormStatistic.single(self, trigs)
+
+    def coinc_lim_for_thresh(self, s, thresh, limifo,
+                             **kwargs): # pylint:disable=unused-argument
+        """
+        Optimization function to identify coincs too quiet to be of interest
+
+        Calculat 
+tatistic
+
+        Parameters
+        ----------
+        s: list
+            List of (ifo, single detector statistic) tuples for all detectors
+            except limifo.
+        thresh: float
+            The threshold on the coincident statistic.
+        limifo: string
+            The ifo for which the limit is to be found.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the limifo single statistic to
+            exceed thresh.
+        """
+
+        loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
+                    self, s, thresh, limifo, **kwargs)
+        loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
+        return loglr
+
 
 
 class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
@@ -1969,6 +2089,7 @@ statistic_dict = {
     'exp_fit_bg_rate': ExpFitBgRateStatistic,
     'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
     'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
+    'phasetd_exp_fit_fgbg_kde': ExpFitFgBgKDEStatistic,
 }
 
 
