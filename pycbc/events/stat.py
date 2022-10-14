@@ -1768,8 +1768,8 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         """
         Optimization function to identify coincs too quiet to be of interest
 
-        Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers.
+        Calculat 
+tatistic
 
         Parameters
         ----------
@@ -1828,7 +1828,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         assert sorted(self.kde_names) == ['signal', 'template'], \
             "Two stat files are required, they should have stat attr " \
             "'signal-kde_file' and 'template-kde_file' respectively"
-
         self.kde_by_tid = {}
         for kname in self.kde_names:
             self.assign_kdes(kname)
