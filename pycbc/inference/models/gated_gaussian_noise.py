@@ -21,12 +21,15 @@ method to fill the removed part such that it does not enter the likelihood.
 from abc import abstractmethod
 import logging
 import numpy
+import scipy
 from scipy import special
 
 from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
+from pycbc.psd import interpolate
+from pycbc import types
 from pycbc.waveform.utils import time_from_frequencyseries
 from pycbc.waveform import generator
 from pycbc.filter import highpass
@@ -50,6 +53,13 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._overwhitened_data = {}
         # cache the current gated data
         self._gated_data = {}
+        # cache covariance matrix and normalization terms
+        self._Rss = {}
+        self._cov = {}
+        self._lognorm = {}
+        # cache samples and linear regression for determinant extrapolation
+        self._cov_samples = {}
+        self._cov_regressions = {}
         # highpass waveforms with the given frequency
         self.highpass_waveforms = highpass_waveforms
         if self.highpass_waveforms:
@@ -115,12 +125,117 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # we'll store the weight to apply to the inner product
             invp = 1./p
             self._invpsds[det] = invp
+            # store the autocorrelation function and covariance matrix for each detector
+            Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()
+            cov = scipy.linalg.toeplitz(Rss/2) # full covariance matrix
+            self._Rss[det] = Rss
+            self._cov[det] = cov
+            # calculate and store the linear regressions to extrapolate determinant values
+            if self.normalize:
+                samples, fit = self.logdet_fit(cov, p)
+                self._cov_samples[det] = samples
+                self._cov_regressions[det] = fit
         self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
 
-    def det_lognorm(self, det):
-        # FIXME: just returning 0 for now, but should be the determinant
-        # of the truncated covariance matrix
-        return 0.
+    def logdet_fit(self, cov, p):
+        """Construct a linear regression from a sample of truncated covariance matrices.
+        """
+        # initialize lists for matrix sizes and determinants
+        sample_sizes = []
+        sample_dets = []
+        # set sizes of sample matrices; ensure exact calculations are only on small matrices
+        s = cov.shape[0]
+        max_size = 8192
+        if s > max_size:
+            sample_sizes = [s, max_size, max_size//2, max_size//4]
+        else:
+            sample_sizes = [s, s//2, s//4, s//8]
+        for i in sample_sizes:
+            # calculate logdet of the full matrix using circulant eigenvalue approximation
+            if i == s:
+                ld = 2*numpy.log(p/(2*p.delta_t)).sum()
+                sample_dets.append(ld)
+            # generate three more sample matrices using exact calculations
+            else:
+                gate_size = s - i
+                start = (s - gate_size)//2
+                end = start + gate_size
+                tc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
+                ld = numpy.linalg.slogdet(tc)[1]
+                sample_dets.append(ld)
+        # generate a linear regression using the four points (size, logdet)
+        x = numpy.vstack([sample_sizes, numpy.ones(len(sample_sizes))]).T
+        m, b = numpy.linalg.lstsq(x, sample_dets, rcond=None)[0]
+        return (sample_sizes, sample_dets), (m, b)
+            
+    def gate_indices(self, det):
+        """Calculate the indices corresponding to start and end of gate.
+        """
+        # get time series start and delta_t
+        ts = self._Rss[det]
+        start_time = self.td_data[det].start_time
+        delta_t = ts.delta_t
+        # get gate start and length from get_gate_times
+        gate_start, gate_length = self.get_gate_times()[det]
+        # convert to indices
+        lindex = int(float(gate_start - start_time)/delta_t)
+        rindex = lindex + int(gate_length / delta_t)
+        lindex = lindex if lindex >= 0 else 0
+        rindex = rindex if rindex <= len(ts) else len(ts)
+        return lindex, rindex
+    
+    ### trying out exact calculations for static gate sizes ###
+    
+    def det_lognorm_linext(self, det, start_index=None, end_index=None):
+        """Calculate the normalization term from the truncated covariance matrix.
+        Determinant is estimated using a linear fit to logdet vs truncated matrix size
+        """
+        if not self.normalize:
+            return 0
+        try:
+            # check if the key already exists; if so, return its value
+            lognorm = self._lognorm[(det, start_index, end_index)]
+        except KeyError:
+            # if not, extrapolate the normalization term
+            start_index, end_index = self.gate_indices(det)
+            # get the size of the matrix
+            cov = self._cov[det]
+            n = cov.shape[0]
+            trunc_size = n - (end_index - start_index)
+            # call the linear regression
+            m, b = self._cov_regressions[det]
+            # extrapolate from linear fit
+            ld = m*trunc_size + b
+            lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
+            # cache the result
+            self._lognorm[(det, start_index, end_index)] = lognorm
+        return lognorm
+    
+    def det_lognorm(self, det, start_index=None, end_index=None):
+        """Calculate the normalization term from the truncated covariance matrix.
+        Determinant is calculated exactly using LU factorization
+        """
+        if not self.normalize:
+            return 0
+        # call the cached value if possible
+        cov = self._cov[det]
+        try:
+            full = cov.shape[0]
+            if start_index == None or end_index == None:
+                trunc_size = full
+            else:
+                trunc_size = full - (end_index - start_index)
+            lognorm = self._lognorm[(det, trunc_size)]
+        # if not, do the full calculation
+        except KeyError:
+            start, end = self.gate_indices(det)
+            # truncate the matrix and calculate the norm term
+            trunc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
+            ld = numpy.linalg.slogdet(trunc)[1]
+            lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
+            # cache the result
+            self._lognorm[(det, trunc_size)] = lognorm
+        return lognorm
 
     @property
     def normalize(self):
@@ -128,11 +243,20 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         return self._normalize
 
+    ### This is called before psds, so doing direct calls to self._cov, self._psds, etc. throws an error for now ###
+    
     @normalize.setter
     def normalize(self, normalize):
         """Clears the current stats if the normalization state is changed.
         """
         self._normalize = normalize
+        # set covariance det linear regression iff normalize is set to true and the respective dicts are empty
+        # if self.normalize and self._cov_samples == {} and self._cov_regressions == {}:
+            # for det, d in self._data.items():
+                # cov = self._cov[det]
+                # samples, fit = self.logdet_fit(cov, p)
+                # self._cov_samples[det] = samples
+                # self._cov_regressions[det] = fit
 
     @staticmethod
     def _nowaveform_logl():
@@ -147,7 +271,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         float
             The value of the log likelihood ratio evaluated at the given point.
         """
-        return self.loglikelihood - self.lognl
+        return self._loglikelihood() - self._lognl()
 
     def whiten(self, data, whiten, inplace=False):
         """Whitens the given data.
@@ -381,7 +505,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # get the times of the gates
         gate_times = self.get_gate_times()
         for det, invpsd in self._invpsds.items():
-            norm = self.det_lognorm(det)
+            start_index, end_index = self.gate_indices(det)
+            norm = self.det_lognorm_linext(det, start_index, end_index) # linear estimation
+            #norm = self.det_lognorm(det, start_index, end_index) # exact calculation
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -456,10 +582,14 @@ class BaseGatedGaussian(BaseGaussianNoise):
         BaseDataModel.write_metadata(self, fp)
         attrs = fp.getattrs(group=group)
         # write the analyzed detectors and times
-        attrs['analyzed_detectors'] = self.detectors
+        attrs['analyzed_detectors'] = self.detectors # store fitting values here
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
             attrs[key] = [float(data.start_time), float(data.end_time)]
+            # store covariance determinant extrapolation information (checkpoint)
+            if self.normalize:
+                attrs['{}_cov_sample'.format(det)] = self._cov_samples[det]
+                attrs['{}_cov_regression'.format(det)] = self._cov_regressions[det]
         if self._psds is not None and not self.no_save_data:
             fp.write_psd(self._psds, group=group)
         # write the times used for psd estimation (if they were provided)
@@ -514,6 +644,8 @@ class GatedGaussianNoise(BaseGatedGaussian):
         """No extra stats are stored."""
         return []
 
+    ### This needs to be called after running model.update() for changes to take effect ###
+    
     def _loglikelihood(self):
         r"""Computes the log likelihood after removing the power within the
         given time window,
@@ -543,7 +675,9 @@ class GatedGaussianNoise(BaseGatedGaussian):
         logl = 0.
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
-            norm = self.det_lognorm(det)
+            start_index, end_index = self.gate_indices(det)
+            #norm = self.det_lognorm(det, start_index, end_index)
+            norm = self.det_lognorm_linext(det, start_index, end_index)
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -719,7 +853,9 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                                                     self.current_params['dec'],
                                                     self.pol,
                                                     self.current_params['tc'])
-            norm = self.det_lognorm(det)
+            start_index, end_index = self.gate_indices(det)
+            # norm = self.det_lognorm(det, start_index, end_index)
+            norm = self.det_lognorm_linext(det, start_index, end_index)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
