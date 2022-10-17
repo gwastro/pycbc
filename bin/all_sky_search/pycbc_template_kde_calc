@@ -1,5 +1,5 @@
-#3dimensional_kde                     
-#python3 pycbc_template_kde_calc.py --template-file /home/praveen.kumar/focused_search/kde/sbbh2.hdf --signal-file /home/praveen.kumar/focused_search/kde/3OGC_PEtable.txt_ifar_gt0.5.csv   --min-mass 5     --fit-param mchirp eta chi_eff   --log-param  True False False    --output-file   kdevals_signal.hdf  --make-signal-kde  --nfold-signal 2   --verbose
+#!/usr/bin/env python                    
+# python3 pycbc_template_kde_calc.py --template-file /home/praveen.kumar/focused_search/kde/sbbh2.hdf --signal-file /home/praveen.kumar/focused_search/kde/3OGC_PEtable.txt_ifar_gt0.5.csv   --min-mass 5     --fit-param mchirp eta chi_eff   --log-param  True False False    --output-file   kdevals_signal.hdf  --make-signal-kde  --nfold-signal 2   --verbose
 
 import numpy, h5py, operator, argparse, logging
 from pycbc import init_logging
