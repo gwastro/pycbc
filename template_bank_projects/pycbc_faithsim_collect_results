@@ -1,0 +1,61 @@
+#! /usr/bin/env python  
+
+from numpy import *
+from ligo.lw import utils, table, lsctables
+import glob
+from pycbc.io.ligolw import LIGOLWContentHandler
+import argparse
+
+parser = argparse.ArgumentParser(usage='',
+        description="Collect results")
+parser.add_argument('--inputs', nargs="+", required=True)
+parser.add_argument('--output')
+args = parser.parse_args()
+
+
+fils = glob.glob("match/match*.dat")
+mfields = ('match', 'overlap', 'time_offset', 'sigma1', 'sigma2')
+bfields = ('match', 'overlap', 'time_offset', 'sigma1', 'sigma2', 'mass1',
+           'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
+           'spin2z', 'inclination', 'latitude', 'longitude',
+           'polarization', 'coa_phase')
+dtypem={'names': mfields, 'formats': ('f8', 'f8', 'f8', 'f8', 'f8')}
+dtypeo={'names': bfields,
+        'formats': ('f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8',
+                    'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8')}
+                    
+if __name__ == "__main__":
+    #fils = glob.glob("match/match*.dat")
+    fils = args.inputs[:]
+    tags = []
+    for fil in fils:
+        tags.append(fil.split('-')[1])
+    tags = list(set(tags))
+    btables = {}
+    for tag in tags:
+        parts = glob.glob("match/match-" + tag + "-*.dat")
+        data = zeros(0, dtype=dtypeo)   
+        for part in parts:
+            btag = part.split('-')[2].split('.')[0]
+            bname = "bank/bank" + btag + ".xml.gz"
+            if bname not in btables:
+                indoc = utils.load_filename(bname, False, contenthandler=LIGOLWContentHandler)
+                btables[bname] = lsctables.SimInspiralTable.get_table(indoc)
+            bt = btables[bname]
+            try:      
+                md = loadtxt(part, dtype=dtypem)
+                if md.size == 0:
+                    continue  
+            except IOError:
+                continue
+            pdata = zeros(len(bt), dtype=dtypeo)
+            
+            for field in mfields: 
+                pdata[field] = md[field]
+                
+            for field in bfields:
+                if field not in mfields:
+                    pdata[field] = bt.get_column(field)
+            
+            data = append(data, pdata)
+        savetxt(args.output + tag + '.dat', data)
