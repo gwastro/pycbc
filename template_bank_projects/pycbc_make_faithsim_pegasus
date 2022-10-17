@@ -70,19 +70,6 @@ class FaithsimExecutable(wf.Executable):
                                  tags=self.tags + extra_tags)
         return node
 
-class CollectResultsExecutable(wf.Executable):
-    """ Class for running pycbc_faithsim_collect_results """
-    current_retention_level = wf.Executable.ALL_TRIGGERS
-
-    def create_node(self, analysis_time, inputs, extra_tags=None):
-        if extra_tags is None:
-            extra_tags = []
-        node = wf.Executable.create_node(self)
-        node.add_input_opt('--inputs', inputs)
-        node.new_output_file_opt(analysis_time, '.dat', '--output',
-                                 tags=self.tags + extra_tags)
-        return node
-
 parser = argparse.ArgumentParser(description=_desc)
 parser.add_argument('--version', action='version', version=__version__)
 wf.add_workflow_command_line_group(parser)
@@ -90,20 +77,20 @@ wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
 workflow = wf.Workflow(args)
-
+collect_prog = workflow.cp.get("executables", "faithsim_collect_results")
 plot_prog = workflow.cp.get("executables","faithsim_plot")
 
 templates_per_job = workflow.cp.get("workflow", "templates-per-job")
 log_path = workflow.cp.get("workflow", 'log-path')
 bank_nb = workflow.cp.get("workflow", "bank_nb")
-psd=
-approx1= 
-start_f1=
-approx2=
-start_f2=
-low_freq_cutoff=
-sample_rate=
-wav_length=
+psd=workflow.cp.get("faithsim-flatIMRC", "psd-model"] 
+approx1= workflow.cp.get("faithsim-flatIMRC", "waveform1-approximant"]
+start_f1=workflow.cp.get("faithsim-flatIMRC", "waveform1-start-frequency"]
+approx2=workflow.cp.get("faithsim-flatIMRC", "waveform2-approximant"]
+start_f2=workflow.cp.get("faithsim-flatIMRC", "waveform2-start-frequency"]
+low_freq_cutoff=workflow.cp.get("faithsim-flatIMRC","filter-low-frequency"]
+sample_rate=workflow.cp.get("faithsim-flatIMRC", "filter-sample-rate"]
+wav_length=workflow.cp.get("faithsim-flatIMRC", "filter-sample-rate"]
 
 wf.makedir('match')
 wf.makedir('injections')
@@ -113,7 +100,7 @@ wf.makedir('plots')
 
 injections_job = CreateInjectionExecutable(workflow.cp, 'create_inj_file')
 faithsim_job = FaithsimExecutable(workflow.cp, 'faithsim')
-collect_job = CollectResultsExecutable(workflow.cp, 'faithsim_collect_results')
+collect_job = wf.Executable(collect_prog)
 plot_job = wf.Executable(plot_prog)
 
 inj_node = injections_job.create_node(workflow.analysis_time, workflow.cp)
@@ -147,38 +134,38 @@ coa = 'Coalescence Phase'
 
 folder = 'plots/'
 plot_job.add_inputs('--input-files')
+collect_job.add_inputs('--inputs')
 
+collect_results = wf.File(['H1', 'L1', 'V1'], "pycbc_collect_results", workflow.analysis_time, extension='dat', tags=['result-flatIMRC'], store_file=True)
 for i in range(num_banks):
     faithsim_node = faithsim_job.create_node(workflow.analysis_time, psd=psd, param_file='bank/bank'+[i]+'.xml.gz', approx1=approx1, start_f1=start_f1, approx2=approx2, start_f2=start_f2, low_freq_cutoff=low_freq_cutoff, sample_rate=sample_rate, wav_length=wav_length, extra_tags=['match-flatIMRC-%i' %i])
     workflow+=faithsim_node
     match = faithsim_node.output_files[i]
-    collect_node = collect_job.create_node(workflow.analysis_time, inputs=match, extra_tags=['result-flatIMRC-%i' %i])
-    workflow+=collect_node
- 
-    collect_results = collect_node.output_files[i]
-    plot_job.add_inputs(collect_results)
+    collect_job.add_inputs(match)
 
+collect_job.add_outputs(collect_results)
+workflow._outputs.append(collect_results)
+collect_job.add_into_workflow(workflow)
 
-for i in range(num_banks):
-    #tag = collect_results.split('-')[1].split('.')[0]
-    #pname = tag + '-'
-    pname = 'flatIMRC-'
-    combs =  [('mass1', 'mass2', 'match'),
-              ]
-    for v1, v2, v3 in combs:
-        name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3 + '.png'
-        plot_job.add_outputs(folder+name, stage_out=True)
-        workflow._outputs.append(folder+name)
+plot_job.add_inputs(collect_results)
 
-    parameters = [[m1,m2,t], [q, s1_m, match], [q,s1z, match], [q, s2_m, match], [q,s2z, match], [q, mtot, match],
-              [m1,m2,match], [coa, match, mc], [inc, match, mc], [inc, sig2, mc], [inc, sig1, mc]]
+pname = 'flatIMRC-'
+combs =  [('mass1', 'mass2', 'match'),
+]
+for v1, v2, v3 in combs:
+    name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3 + '.png'
+    plot_job.add_outputs(folder+name, stage_out=True)
+    workflow._outputs.append(folder+name)
+    
+parameters = [[m1,m2,t], [q, s1_m, match], [q,s1z, match], [q, s2_m, match], [q,s2z, match], [q, mtot, match],
+        [m1,m2,match], [coa, match, mc], [inc, match, mc], [inc, sig2, mc], [inc, sig1, mc]]
 
-    for par in parameters:
-        name = pname + 'scatter' + par[0] + '-' + par[1] + '-' + par[2] +'.png'
-        THUMB_name = 'THUMB-'+name
-        plot_job.add_outputs(folder+name, stage_out=True)
-        plot_job.add_outputs(folder+THUMB_name, stage_out=True)
-        workflow._outputs.append(folder+name)
-        workflow._outputs.append(folder+THUMB_name)
-
+for par in parameters:
+    name = pname + 'scatter' + par[0] + '-' + par[1] + '-' + par[2] +'.png'
+    THUMB_name = 'THUMB-'+name
+    plot_job.add_outputs(folder+name, stage_out=True)
+    plot_job.add_outputs(folder+THUMB_name, stage_out=True)
+    workflow._outputs.append(folder+name)
+    workflow._outputs.append(folder+THUMB_name)
+        
 plot_job.add_into_workflow(workflow)

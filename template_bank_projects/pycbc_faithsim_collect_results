@@ -25,8 +25,8 @@ dtypeo={'names': bfields,
                     'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8', 'f8')}
                     
 if __name__ == "__main__":
-    #fils = glob.glob("match/match*.dat")
-    fils = args.inputs[:]
+    fils = glob.glob(args.inputs)
+    #fils = args.inputs[:]
     tags = []
     for fil in fils:
         tags.append(fil.split('-')[1])
@@ -55,7 +55,7 @@ if __name__ == "__main__":
                 
             for field in bfields:
                 if field not in mfields:
-                    pdata[field] = bt.get_column(field)
+                    pdata[field] = bt.getColumnByName(field).asarray()
             
             data = append(data, pdata)
         savetxt(args.output + tag + '.dat', data)
