@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+import pycbc
 import pycbc.workflow as wf
 import logging
 import shutil
@@ -18,8 +19,16 @@ from pycbc.workflow.jobsetup import (select_generic_executable,
                                      LalappsInspinjExecutable)
 from pycbc.workflow import setup_splittable_dax_generated
 
+def get_ini_opts(confs, section):
+    op_str = ""
+    for opt in confs.options(section):
+        val = confs.get(section, opt)
+        op_str += "--" + opt + " " + val + " \\" + "\n"
+    return op_str
+
+
 class CreateInjectionExecutable(wf.Executable):
-    """Class for running create_inj_file                                                                                                                           
+    """ Class for running create_inj_file                                                                                                                           
     """
     current_retention_level = wf.Executable.ALL_TRIGGERS #what is this line for ? 
 
@@ -27,6 +36,7 @@ class CreateInjectionExecutable(wf.Executable):
         if extra_tags is None:
             extra_tags = []
         node = wf.Executable.create_node(self)
+
         node.add_input_opt('--config', config)
         node.new_output_file_opt(analysis_time, '.xml', '--output-file',
                                  tags=self.tags + extra_tags)
@@ -70,27 +80,30 @@ class FaithsimExecutable(wf.Executable):
                                  tags=self.tags + extra_tags)
         return node
 
-parser = argparse.ArgumentParser(description=_desc)
+__version__ = pycbc.version.git_verbose_msg
+
+parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version=__version__)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
 workflow = wf.Workflow(args)
-collect_prog = workflow.cp.get("executables", "faithsim_collect_results")
-plot_prog = workflow.cp.get("executables","faithsim_plot")
+
+config_path = os.path.abspath('configuration_pycbc_faithsim.ini')
+workflow.cp.write(open(config_path, 'w'))
+config_file = wf.resolve_url_to_file(config_path)
 
 templates_per_job = workflow.cp.get("workflow", "templates-per-job")
 log_path = workflow.cp.get("workflow", 'log-path')
-bank_nb = workflow.cp.get("workflow", "bank_nb")
-psd=workflow.cp.get("faithsim-flatIMRC", "psd-model"] 
-approx1= workflow.cp.get("faithsim-flatIMRC", "waveform1-approximant"]
-start_f1=workflow.cp.get("faithsim-flatIMRC", "waveform1-start-frequency"]
-approx2=workflow.cp.get("faithsim-flatIMRC", "waveform2-approximant"]
-start_f2=workflow.cp.get("faithsim-flatIMRC", "waveform2-start-frequency"]
-low_freq_cutoff=workflow.cp.get("faithsim-flatIMRC","filter-low-frequency"]
-sample_rate=workflow.cp.get("faithsim-flatIMRC", "filter-sample-rate"]
-wav_length=workflow.cp.get("faithsim-flatIMRC", "filter-sample-rate"]
+psd=workflow.cp.get("faithsim-flatIMRC", "psd-model")
+approx1= workflow.cp.get("faithsim-flatIMRC", "waveform1-approximant")
+start_f1=workflow.cp.get("faithsim-flatIMRC", "waveform1-start-frequency")
+approx2=workflow.cp.get("faithsim-flatIMRC", "waveform2-approximant")
+start_f2=workflow.cp.get("faithsim-flatIMRC", "waveform2-start-frequency")
+low_freq_cutoff=workflow.cp.get("faithsim-flatIMRC","filter-low-frequency")
+sample_rate=workflow.cp.get("faithsim-flatIMRC", "filter-sample-rate")
+wav_length=workflow.cp.get("faithsim-flatIMRC", "filter-sample-rate")
 
 wf.makedir('match')
 wf.makedir('injections')
@@ -99,11 +112,13 @@ wf.makedir('log')
 wf.makedir('plots')
 
 injections_job = CreateInjectionExecutable(workflow.cp, 'create_inj_file')
-faithsim_job = FaithsimExecutable(workflow.cp, 'faithsim')
-collect_job = wf.Executable(collect_prog)
-plot_job = wf.Executable(plot_prog)
 
-inj_node = injections_job.create_node(workflow.analysis_time, workflow.cp)
+faithsim_job = FaithsimExecutable(workflow.cp, 'faithsim')
+
+collect_job = wf.Executable(workflow.cp,"faithsim_collect_results")
+plot_job = wf.Executable(workflow.cp,"faithsim_plot")
+
+inj_node = injections_job.create_node(workflow.analysis_time, config_file, extra_tags=['inj'])
 workflow+=inj_node
 
 inj = inj_node.output_files[0] 
@@ -136,7 +151,7 @@ folder = 'plots/'
 plot_job.add_inputs('--input-files')
 collect_job.add_inputs('--inputs')
 
-collect_results = wf.File(['H1', 'L1', 'V1'], "pycbc_collect_results", workflow.analysis_time, extension='dat', tags=['result-flatIMRC'], store_file=True)
+collect_results = wf.File(['H1', 'L1', 'V1'], "pycbc_collect_results", workflow.analysis_time, directory='./',extension='dat', tags=['result-flatIMRC'], store_file=True)
 for i in range(num_banks):
     faithsim_node = faithsim_job.create_node(workflow.analysis_time, psd=psd, param_file='bank/bank'+[i]+'.xml.gz', approx1=approx1, start_f1=start_f1, approx2=approx2, start_f2=start_f2, low_freq_cutoff=low_freq_cutoff, sample_rate=sample_rate, wav_length=wav_length, extra_tags=['match-flatIMRC-%i' %i])
     workflow+=faithsim_node
