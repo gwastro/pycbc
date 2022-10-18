@@ -200,9 +200,13 @@ for filename in files:
             if not n_triggers:
                 continue
 
-            # Read datasets from file, only where 
+            # Read trigger value datasets from file
             triggers[ifo] = {k: fin[ifo][k][:] for k in fin[ifo].keys()
-                             if k not in ('loudest', 'stat')}
+                             if k not in ('loudest', 'stat', 'gates', 'psd')
+                             and fin[ifo][k].size == n_triggers}
+            # The n_triggers filter should be enough, but the 'not in'
+            # list is for edge cases where the number of gates/loudest etc is
+            # the same as the number of triggers
 
             # The stored chisq is actually reduced chisq, so we need to
             # alter the chisq_dof dataset so we can use the standard conversions.
@@ -289,7 +293,7 @@ for ifo in args.ifos:
             alphas[ifo][bin_num] = -1
             continue
 
-        # For ease, keep the sngl_ranking values as 
+        # For ease, keep the sngl_ranking values as this will be used later
         binned_sngl_stats[ifo][bin_num] = \
             events[ifo].data[args.sngl_ranking][inbin]
 
@@ -330,7 +334,10 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
-histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m',(0.8,0.25,0),(0.25,0.8,0)]
+colours = ['r', (1.0,0.6,0), 'y', 'g', 'c', 'b', 'm',
+           (0.25,0.9,0)]
+# If the above colours are exhausted, revert to the default colour cycle
+colours += plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 logging.info("Plotting fits")
 
@@ -368,8 +375,8 @@ for ifo in args.ifos:
                       trstats.cum_fit(args.fit_function, plotbins,
                                       alphas[ifo][bin_num], args.fit_threshold)
         ax.plot(edges[:-1], cum_rate, linewidth=2,
-                color=histcolors[bin_num], label=binlabel, alpha=0.6)
-        ax.plot(plotbins, cum_fit, "--", color=histcolors[bin_num],
+                color=colours[bin_num], label=binlabel, alpha=0.6)
+        ax.plot(plotbins, cum_fit, "--", color=colours[bin_num],
                 label=r"$\alpha = $%.2f" % alphas[ifo][bin_num])
     oput_plot = os.path.join(args.output_directory,
                              ifo + '-' + args.analysis_date + "-TRIGGER-FITS.png")

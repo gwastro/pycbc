@@ -48,7 +48,10 @@ if args.conservative_percentile < 50 or \
                  "otherwise it is either not a percentile, or not "
                  "conservative.")
 
-colours = ['r',(1.0,0.6,0),'y','g','c','b','m',(0.8,0.25,0),(0.25,0.8,0)]
+colours = ['r', (1.0,0.6,0), 'y', 'g', 'c', 'b', 'm',
+           (0.25,0.9,0)]
+# If the above colours are exhausted, revert to the default colour cycle
+colours += plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 counts_all = {ifo:[] for ifo in args.ifos}
 alphas_all = {ifo:[] for ifo in args.ifos}
@@ -235,7 +238,7 @@ for ifo in args.ifos:
     sum_counts_out = counts_out[ifo].sum() / sum(live_times[ifo])
     save_allmeanalpha[ifo] = overall_meanalpha
 
-    # For the fixed version, we just 
+    # For the fixed version, we just set this to 1
     fout_ifo['fixed/counts'] = [1 for c in counts_out[ifo]]
     fout_ifo['fixed/fit_coeff'] = [0 for a in alphas_out[ifo]]
 
