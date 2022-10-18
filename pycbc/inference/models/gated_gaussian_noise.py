@@ -173,20 +173,24 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         # get time series start and delta_t
         ts = self._Rss[det]
-        start_time = self.td_data[det].start_time
+        start_time_gc = self.td_data[det].start_time
         delta_t = ts.delta_t
+        # we have to convert start_time_gc (geocentric) to the detector frame
+        ra, dec = self.current_params['ra'], self.current_params['dec']
+        thisdet = Detector[det]
+        start_time = start_time_gc + thisdet.time_delay_from_earth_center(ra, dec, start_time_gc)
         # get gate start and length from get_gate_times
         gate_start, gate_length = self.get_gate_times()[det]
         # convert to indices
-        lindex = int(float(gate_start - start_time)/delta_t)
-        rindex = lindex + int(gate_length / delta_t)
+        lindex = float(gate_start - start_time) // delta_t
+        rindex = lindex + (gate_length // delta_t)
         lindex = lindex if lindex >= 0 else 0
         rindex = rindex if rindex <= len(ts) else len(ts)
         return lindex, rindex
     
-    ### trying out exact calculations for static gate sizes ###
+    ### would it be worth it keying by trunc size instead of index? ###
     
-    def det_lognorm_linext(self, det, start_index=None, end_index=None):
+    def det_lognorm(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance matrix.
         Determinant is estimated using a linear fit to logdet vs truncated matrix size
         """
@@ -194,6 +198,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
             return 0
         try:
             # check if the key already exists; if so, return its value
+            # cov = self._cov[det]
+            # n = cov.shape[0]
+            # trunc_size = n - (end_index - start_index)
+            # lognorm = self._lognorm[(det, trunc_size)]
             lognorm = self._lognorm[(det, start_index, end_index)]
         except KeyError:
             # if not, extrapolate the normalization term
@@ -209,32 +217,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
-        return lognorm
-    
-    def det_lognorm(self, det, start_index=None, end_index=None):
-        """Calculate the normalization term from the truncated covariance matrix.
-        Determinant is calculated exactly using LU factorization
-        """
-        if not self.normalize:
-            return 0
-        # call the cached value if possible
-        cov = self._cov[det]
-        try:
-            full = cov.shape[0]
-            if start_index == None or end_index == None:
-                trunc_size = full
-            else:
-                trunc_size = full - (end_index - start_index)
-            lognorm = self._lognorm[(det, trunc_size)]
-        # if not, do the full calculation
-        except KeyError:
-            start, end = self.gate_indices(det)
-            # truncate the matrix and calculate the norm term
-            trunc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
-            ld = numpy.linalg.slogdet(trunc)[1]
-            lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
-            # cache the result
-            self._lognorm[(det, trunc_size)] = lognorm
+            # self._lognorm[(det, trunc_size)] = lognorm
         return lognorm
 
     @property
@@ -443,10 +426,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
             thisdet = Detector(det)
             # account for the time delay between the waveforms of the
             # different detectors
-            gatestartdelay = gatestart + thisdet.time_delay_from_earth_center(
-                ra, dec, gatestart)
-            gateenddelay = gateend + thisdet.time_delay_from_earth_center(
-                ra, dec, gateend)
+            gatestartdelay = gatestart + thisdet.time_delay_from_earth_center(ra, dec, gatestart)
+            gateenddelay = gateend + thisdet.time_delay_from_earth_center(ra, dec, gateend)
             dgatedelay = gateenddelay - gatestartdelay
             gatetimes[det] = (gatestartdelay, dgatedelay)
         return gatetimes
@@ -506,8 +487,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         gate_times = self.get_gate_times()
         for det, invpsd in self._invpsds.items():
             start_index, end_index = self.gate_indices(det)
-            norm = self.det_lognorm_linext(det, start_index, end_index) # linear estimation
-            #norm = self.det_lognorm(det, start_index, end_index) # exact calculation
+            norm = self.det_lognorm(det, start_index, end_index) # linear estimation
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -676,8 +656,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             start_index, end_index = self.gate_indices(det)
-            #norm = self.det_lognorm(det, start_index, end_index)
-            norm = self.det_lognorm_linext(det, start_index, end_index)
+            norm = self.det_lognorm(det, start_index, end_index)
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -854,8 +833,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                                                     self.pol,
                                                     self.current_params['tc'])
             start_index, end_index = self.gate_indices(det)
-            # norm = self.det_lognorm(det, start_index, end_index)
-            norm = self.det_lognorm_linext(det, start_index, end_index)
+            norm = self.det_lognorm(det, start_index, end_index)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
