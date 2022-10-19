@@ -221,6 +221,6 @@ __all__ = [
     "noise_density_from_far",
     "signal_pdf_from_snr",
     "signal_rate_rescale",
-    "template_param_bin_pa"
+    "template_param_bin_pa",
     "template_param_bin_types_pa",
 ]
