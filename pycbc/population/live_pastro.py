@@ -106,7 +106,7 @@ def signal_rate_rescale(horizons, ref_dhor):
     return net_horizon ** 3. / ref_dhor ** 3.
 
 
-def template_param_bin_calc(padata, trdata, horizons):
+def template_param_bin_pa(padata, trdata, horizons):
     """
     Parameters
     ----------
