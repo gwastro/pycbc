@@ -29,13 +29,14 @@ class CandidateForGraceDB(object):
         Parameters
         ----------
         ifos: list of strs
-            A list of the ifos participating in this candidate.
+            A list of the ifos participating (with triggers above threshold) in
+            this candidate.
         coinc_results: dict of values
             A dictionary of values. The format is defined in
             `pycbc/events/coinc.py` and matches the on-disk representation in
             the hdf file for this time.
         psds: dict of FrequencySeries
-            Dictionary providing PSD estimates for all involved detectors.
+            Dictionary providing PSD estimates for all detectors observing.
         low_frequency_cutoff: float
             Minimum valid frequency for the PSD estimates.
         high_frequency_cutoff: float, optional
@@ -44,8 +45,8 @@ class CandidateForGraceDB(object):
             Dictionary providing SNR time series for each detector, to be used
             in sky localization with BAYESTAR. The format should be
             `followup_data['H1']['snr_series']`. More detectors can be present
-            than given in `ifos`. If so, the extra detectors will only be used
-            for sky localization.
+            than in `ifos`. If so, extra detectors will only be used for sky
+            localization.
         channel_names: dict of strings, optional
             Strain channel names for each detector. Will be recorded in the
             `sngl_inspiral` table.
@@ -65,7 +66,7 @@ class CandidateForGraceDB(object):
         self.is_hardware_injection = ('HWINJ' in coinc_results
                                       and coinc_results['HWINJ'])
 
-        # Check if we need to apply a time offset (this may be permerger)
+        # Check if we need to apply a time offset (this may be premerger)
         self.time_offset = 0
         rtoff = f'foreground/{ifos[0]}/time_offset'
         if rtoff in coinc_results:
@@ -76,7 +77,8 @@ class CandidateForGraceDB(object):
             assert len({fud[ifo]['snr_series'].delta_t for ifo in fud}) == 1, \
                     "delta_t for all ifos do not match"
             self.snr_series = {ifo: fud[ifo]['snr_series'] for ifo in fud}
-            usable_ifos = fud.keys()
+            usable_ifos = fud.keys()  # Ifos with SNR time series calculated
+            # Followup ifos are matched filterable but were not triggered
             followup_ifos = list(set(usable_ifos) - set(ifos))
 
             for ifo in self.snr_series:
@@ -216,17 +218,18 @@ class CandidateForGraceDB(object):
 
         # P astro calculation
         if 'padata' in kwargs:
-            padata = kwargs['padata']
             trigger_data = {
                 'mass1': sngl_populated.mass1,
                 'mass2': sngl_populated.mass2,
                 'spin1z': sngl_populated.spin1z,
                 'spin2z': sngl_populated.spin2z,
                 'network_snr': network_snrsq ** 0.5,
-                'far': far}
-            horizons = {ifo: self.psds[ifo].dist for ifo in self.psds}
+                'far': far,
+                'triggered': ifos,
+                'active': usable_ifos}
+            horizons = {i: self.psds[i].dist for i in usable_ifos}
             self.p_astro, self.p_terr = \
-                                  padata.do_pastro_calc(trigger_data, horizons)
+                        kwargs['padata'].do_pastro_calc(trigger_data, horizons)
         else:
             self.p_astro, self.p_terr = None, None
 
