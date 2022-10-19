@@ -229,7 +229,7 @@ class CandidateForGraceDB(object):
                 'active': usable_ifos}
             horizons = {i: self.psds[i].dist for i in usable_ifos}
             self.p_astro, self.p_terr = \
-                        kwargs['padata'].do_pastro_calc(trigger_data, horizons)
+                kwargs['padata'].do_pastro_calc(trigger_data, horizons)
         else:
             self.p_astro, self.p_terr = None, None
 

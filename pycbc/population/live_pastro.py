@@ -75,7 +75,7 @@ def trials_type(ntriggered, nactive):
     The trials factor previously applied to an individual event type FAR
     For single triggers, the factor is the number of active ifos
     For coincs, the factor is either 1 (in double time) or 6 (in triple time)
-    6 accounts for both the trials over coinc type and pvalue (non-)followup 
+    6 accounts for both the trials over coinc type and pvalue (non-)followup
     %%% NOTE - ONLY VALID FOR 2- OR 3-IFO SEARCH %%%
     """
     if ntriggered == 1:
@@ -84,9 +84,9 @@ def trials_type(ntriggered, nactive):
         return 1
     elif ntriggered == 2 and nactive == 3:
         return 6
-    else:
-        raise ValueError(f"I don't know what to do with {ntriggered} triggered"
-                          " and {nactive} active ifos!")
+    # All valid inputs are exhausted, throw an error if we reach this point
+    raise ValueError(f"I don't know what to do with {ntriggered} triggered and"
+                     f" {nactive} active ifos!")
 
 
 def signal_pdf_from_snr(netsnr, thresh):
