@@ -80,9 +80,9 @@ def trials_type(ntriggered, nactive):
     """
     if ntriggered == 1:
         return nactive
-    elif ntriggered == 2 and nactive == 2:
+    if ntriggered == 2 and nactive == 2:
         return 1
-    elif ntriggered == 2 and nactive == 3:
+    if ntriggered == 2 and nactive == 3:
         return 6
     # All valid inputs are exhausted, throw an error if we reach this point
     raise ValueError(f"I don't know what to do with {ntriggered} triggered and"
