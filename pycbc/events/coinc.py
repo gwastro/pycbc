@@ -538,7 +538,8 @@ def cluster_over_time(stat, time, window, method='python',
 class MultiRingBuffer(object):
     """Dynamic size n-dimensional ring buffer that can expire elements."""
 
-    def __init__(self, num_rings, max_time, dtype, min_buffer_size=8):
+    def __init__(self, num_rings, max_time, dtype, min_buffer_size=16,
+                 buffer_increment=8, resize_invalid_fraction=0.4):
         """
         Parameters
         ----------
@@ -549,10 +550,21 @@ class MultiRingBuffer(object):
             The maximum "time" an element can exist in each ring.
         dtype: numpy.dtype
             The type of each element in the ring buffer.
-        min_buffer_size: int (optional: default=8)
+        min_buffer_size: int (optional: default=16)
             All ring buffers will be initialized to this length. If a buffer is
             made larger it will no smaller than this value. Buffers may become
             smaller than this length at any given time as triggers are expired.
+        buffer_increment: int (optional: default=8)
+            When increasing ring buffers, add this many points. Be careful if
+            changing this and min_buffer_size from default values, it is
+            possible to get stuck in a mode where the buffers are always being
+            resized.
+        resize_invalid_fraction: float (optional:default=0.4)
+            If this fraction of any buffer contains unused data points then
+            resize it to contain only valid points. As with the previous two
+            options, be careful changing default values, it is
+            possible to get stuck in a mode where the buffers are always being
+            resized.
         """
         self.max_time = max_time
         self.buffer = []
@@ -560,6 +572,8 @@ class MultiRingBuffer(object):
         self.valid_ends = []
         self.valid_starts = []
         self.min_buffer_size = min_buffer_size
+        self.buffer_increment = buffer_increment
+        self.resize_invalid_fraction = resize_invalid_fraction
         for _ in range(num_rings):
             self.buffer.append(numpy.zeros(self.min_buffer_size, dtype=dtype))
             self.buffer_expire.append(numpy.zeros(self.min_buffer_size,
@@ -604,11 +618,17 @@ class MultiRingBuffer(object):
             if self.valid_ends[i] == len(self.buffer[i]):
                 self.buffer[i] = numpy.resize(
                     self.buffer[i],
-                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
+                    max(
+                        len(self.buffer[i]) + self.buffer_increment,
+                        self.min_buffer_size
+                    )
                 )
                 self.buffer_expire[i] = numpy.resize(
                     self.buffer_expire[i],
-                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
+                    max(
+                        len(self.buffer[i]) + self.buffer_increment,
+                        self.min_buffer_size
+                    )
                 )
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
@@ -640,10 +660,14 @@ class MultiRingBuffer(object):
             j += 1
         self.valid_starts[buffer_index] = j
         val_start = self.valid_starts[buffer_index]
-        if val_start > 0.3 * len(self.buffer[buffer_index]):
-            # If 30% of stored triggers are expired, free up memory
-            self.buffer_expire[buffer_index] = self.buffer_expire[buffer_index][val_start:].copy()
-            self.buffer[buffer_index] = self.buffer[buffer_index][val_start:].copy()
+        val_end = self.valid_ends[buffer_index]
+        buf_len = len(self.buffer[buffer_index])
+        invalid_limit = self.resize_invalid_fraction * buf_len
+        if (buf_len - val_end) + val_start > invalid_limit:
+            # If self.resize_invalid_fraction of stored triggers are expired
+            # or are not set, free up memory
+            self.buffer_expire[buffer_index] = self.buffer_expire[buffer_index][val_start:val_end].copy()
+            self.buffer[buffer_index] = self.buffer[buffer_index][val_start:val_end].copy()
             self.valid_ends[buffer_index] -= val_start
             self.valid_starts[buffer_index] = 0
 
