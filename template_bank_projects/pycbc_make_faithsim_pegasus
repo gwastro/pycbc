@@ -132,7 +132,10 @@ class FaithSimPlotExecutable(wf.Executable):
 
         return node
 
+__author__  = "Marion Pillas <marion.pillas@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_offline"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=__version__)
@@ -158,7 +161,7 @@ approx2 = workflow.cp.get("faithsim-flatIMRC", "waveform2-approximant")
 start_f2 = workflow.cp.get("faithsim-flatIMRC", "waveform2-start-frequency")
 low_freq_cutoff = workflow.cp.get("faithsim-flatIMRC", "filter-low-frequency")
 sample_rate = workflow.cp.get("faithsim-flatIMRC", "filter-sample-rate")
-wav_length = workflow.cp.get("faithsim-flatIMRC", "filter-sample-rate")
+wav_length = workflow.cp.get("faithsim-flatIMRC", "filter-waveform-length")
 num_banks = workflow.cp.get("bank", "num_banks")
 
 wf.makedir("match")
