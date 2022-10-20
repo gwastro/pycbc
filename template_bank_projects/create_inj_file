@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser(usage='',
     description="Creating injeciton file")
 parser.add_argument('--config')
 parser.add_argument('--output-file',  help='output xml file iwth the injections')
-(options, args) = parser.parse_args()
+args = parser.parse_args()
 
 def get_ini_opts(confs, section):
     op_str = ""
@@ -18,7 +18,7 @@ def get_ini_opts(confs, section):
     return op_str
 
 confs = ConfigParser.ConfigParser()
-confs.read(options.config)
+confs.read(args.config)
 
 logging.info("Creating injection file")
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output "+args.output_file
