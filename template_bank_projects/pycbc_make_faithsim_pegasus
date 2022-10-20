@@ -109,6 +109,28 @@ class FaithsimExecutable(wf.Executable):
         )
         return node
 
+class FaithSimPlotExecutable(wf.Executable):
+    """Class for running pycbc_faithsim_plot"""
+
+    current_retention_level = wf.Executable.ALL_TRIGGERS
+
+    def create_node(self, analysis_time, input_file, parameter_x, parameter_y, parameter_z, output_file2=False, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+
+        node.add_input_opt("--input-file", input_file)
+        node.add_opt("--parameter-x", parameter_x)
+        node.add_opt("--parameter-y", parameter_y)
+        node.add_opt("--parameter-z", parameter_z)
+        
+        node.new_output_file_opt(
+            analysis_time, '.png', "--output-plot", tags=self.tags)
+        if output_file2 is True:
+            node.new_output_file_opt(
+            analysis_time, '.png', "--output-plot2", tags=self.tags + extra_tags)
+
+        return node
 
 __version__ = pycbc.version.git_verbose_msg
 
@@ -123,6 +145,9 @@ workflow = wf.Workflow(args)
 config_path = os.path.abspath("configuration_pycbc_faithsim.ini")
 workflow.cp.write(open(config_path, "w"))
 config_file = wf.resolve_url_to_file(config_path)
+
+wf.makedir(args.output_dir)
+os.chdir(args.output_dir)
 
 templates_per_job = workflow.cp.get("workflow", "templates-per-job")
 log_path = workflow.cp.get("workflow", "log-path")
@@ -143,7 +168,7 @@ wf.makedir("log")
 wf.makedir("plots")
 
 injections_job = CreateInjectionExecutable(
-    workflow.cp, "create_inj_file", ifos=["H1", "L1", "V1"], out_dir="./", tags=["inj"]
+    workflow.cp, "create_inj_file", ifos=["H1", "L1", "V1"], out_dir="injections", tags=["inj"]
 )
 
 faithsim_job = FaithsimExecutable(
@@ -151,7 +176,6 @@ faithsim_job = FaithsimExecutable(
 )
 
 collect_node = wf.Executable(workflow.cp, "faithsim_collect_results").create_node()
-plot_node = wf.Executable(workflow.cp, "faithsim_plot").create_node()
 
 inj_node = injections_job.create_node(workflow.analysis_time, config_file)
 workflow += inj_node
@@ -218,87 +242,48 @@ for i in range(int(num_banks)):
     match = faithsim_files[i]
     collect_node.add_input(match)
 
-m1 = "mass1"
-m2 = "mass2"
-mc = "Mchirp"
-inc = "Inclination"
-sig1 = "Sigma1"
-sig2 = "Sigma2"
-mtot = "total mass"
-t = "time_offset"
-q = "mass ratio"
-s1_m = "spin 1 magnitude"
-s2_m = "spin 2 magnitude"
-s1z = "spin 1 z"
-s2z = "spin 2 z"
-match = "match"
-coa = "Coalescence Phase"
-
-folder = "plots/"
-plot_node.add_opt("--ifos", "H1L1V1")
-plot_node.add_opt("--input-files")
+m1 = workflow.cp.get("plot", "m1")
+m2 = workflow.cp.get("plot", "m2")
+Mc = workflow.cp.get("plot", "Mc")
+inc = workflow.cp.get("plot", "inc")
+sig1 = workflow.cp.get("plot", "sig1")
+sig2 = workflow.cp.get("plot", "sig2")
+mtot = workflow.cp.get("plot", "mtot")
+dt = workflow.cp.get("plot", "dt")
+q = workflow.cp.get("plot", "q")
+s1_m = workflow.cp.get("plot", "s1m")
+s2_m = workflow.cp.get("plot", "s2m")
+s1z = workflow.cp.get("plot", "s1z")
+s2z = workflow.cp.get("plot", "s2z")
+m = workflow.cp.get("plot", "m")
+coa = workflow.cp.get("plot", "coa")
 
 collect_node.add_output(collect_results)
 workflow._outputs.append(collect_results)
 workflow += collect_node
 
-plot_node.add_input(collect_results)
-
-pname = "flatIMRC-"
-combs = [
-    ("mass1", "mass2", "match"),
-]
-for v1, v2, v3 in combs:
-    name = pname + "scatter" + v1 + "-" + v2 + "-" + v3
-    outp1 = wf.File(
-        ["H1", "L1", "V1"],
-        "",
-        workflow.analysis_time,
-        directory="./plots/",
-        extension="png",
-        tags=[name],
-    )
-    plot_node.add_output(outp1)
-    workflow._outputs.append(outp1)
-
-parameters = [
-    [m1, m2, t],
-    [q, s1_m, match],
-    [q, s1z, match],
-    [q, s2_m, match],
-    [q, s2z, match],
-    [q, mtot, match],
-    [m1, m2, match],
-    [coa, match, mc],
-    [inc, match, mc],
-    [inc, sig2, mc],
-    [inc, sig1, mc],
+parameters = [                                                                                                                                                                                        
+    [m1, m2, dt],                                                                                                                                                                                     
+    [q, s1_m, m],                                                                                                                                                                                 
+    [q, s1z, m],                                                                                                                                                                                  
+    [q, s2_m, m],                                                                                                                                                                                 
+    [q, s2z, m],                                                                                                                                                                                  
+    [q, mtot, m],                                                                                                                                                                                 
+    [m1, m2, m],                                                                                                                                                                                  
+    [coa, m, Mc],                                                                                                                                                                                 
+    [inc, m, Mc],                                                                                                                                                                                 
+    [inc, sig2, Mc],                                                                                                                                                                                  
+    [inc, sig1, Mc],                                                                                                                                                                                  
 ]
 
 for par in parameters:
-    name = pname + "scatter" + par[0] + "-" + par[1] + "-" + par[2] + ".png"
-    THUMB_name = "THUMB-" + name
-    outp2 = wf.File(
-        ["H1", "L1", "V1"],
-        "",
-        workflow.analysis_time,
-        directory="./plots/",
-        extension="png",
-        tags=[name],
-    )
-    outp3 = wf.File(
-        ["H1", "L1", "V1"],
-        "",
-        workflow.analysis_time,
-        directory="./plots/",
-        extension="png",
-        tags=[THUMB_name],
-    )
-    plot_node.add_output(outp2)
-    plot_node.add_output(outp3)
-    workflow._outputs.append(outp2)
-    workflow._outputs.append(outp3)
+    plot_job = FaithSimPlotExecutable(workflow.cp, "faithsim_plot", ifos=["H1", "L1", "V1"], out_dir="plots", tags=['_flatIMRC_'+par[0]+'_'+par[1]+'_'+par[2]])
 
-workflow += plot_node
+    if par == [m1, m2, m]:
+        plot_node = plot_job.create_node(workflow.analysis_time, collect_results, par[0], par[1], par[2], output_file2=True, extra_tags = ['_mmass1_mmass2_'])
+    else:
+        plot_node = plot_job.create_node(workflow.analysis_time, collect_results, par[0], par[1], par[2])
+
+    workflow += plot_node
 
 workflow.save()

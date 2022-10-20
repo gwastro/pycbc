@@ -1,5 +1,6 @@
-WORKFLOW_NAME=pycbc_make__faithsim_workflow
+WORKFLOW_NAME=pycbc_make_faithsim_workflow
 
 ./pycbc_make_faithsim_pegasus \
 --workflow-name ${WORKFLOW_NAME} \
---config-files ./configuration_pycbc_faithsim.ini 
+--config-files ./configuration_pycbc_faithsim.ini \
+--output-dir output
