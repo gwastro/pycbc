@@ -69,6 +69,7 @@ def add_length_estimator(approximant, function):
     from pycbc.waveform.waveform import td_fd_waveform_transform
     td_fd_waveform_transform(approximant)
 
+
 def retrieve_waveform_plugins():
     """ Process external waveform plugins
     """
