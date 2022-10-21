@@ -1018,7 +1018,17 @@ if 'PYCBC_WAVEFORM' in os.environ:
                        cpu_td=cpu_td,
                        filter_time_lengths=_filter_time_lengths)
 
-for apx in copy.copy(_filter_time_lengths):
+def td_fd_waveform_transform(apx):
+    '''If the waveform approximant is in time domain, make a frequency domain
+    version using 'get_fd_waveform_from_td'; If the waveform approximant 
+    is in frequency domain, do interpolation for waveforms with a time length
+    estimator, and make a time domain version using 'get_td_waveform_from_fd'
+
+    Parameters
+    ----------
+    apx: string
+        The name of a waveform approximant.
+    '''
     fd_apx = list(cpu_fd.keys())
     td_apx = list(cpu_td.keys())
 
@@ -1036,6 +1046,9 @@ for apx in copy.copy(_filter_time_lengths):
         # This will override any existing approximants with the same name
         # (ex. IMRPhenomXX)
         cpu_td[apx] = get_td_waveform_from_fd
+
+for apx in copy.copy(_filter_time_lengths):
+    td_fd_waveform_transform(apx)
 
 
 td_wav = _scheme.ChooseBySchemeDict()

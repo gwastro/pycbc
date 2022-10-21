@@ -66,6 +66,8 @@ def add_length_estimator(approximant, function):
                            " already in use.".format(approximant))
     _filter_time_lengths[approximant] = function
 
+    from pycbc.waveform.waveform import td_fd_waveform_transform
+    td_fd_waveform_transform(approximant)
 
 def retrieve_waveform_plugins():
     """ Process external waveform plugins
@@ -93,12 +95,4 @@ def retrieve_waveform_plugins():
     # Check for waveform length estimates
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.length'):
         add_length_estimator(plugin.name, plugin.resolve())
-
-        from pycbc.waveform.waveform import cpu_fd,cpu_td
-        fd_apx = list(cpu_fd.keys())
-        td_apx = list(cpu_td.keys())
-        if (plugin.name in fd_apx) and (plugin.name not in td_apx):
-            from pycbc.waveform.waveform import td_wav,get_td_waveform_from_fd
-            import pycbc.scheme as _scheme 
-            cpu_td[plugin.name] = get_td_waveform_from_fd
-            td_wav.update({_scheme.CPUScheme:cpu_td})
+        
