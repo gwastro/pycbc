@@ -95,4 +95,3 @@ def retrieve_waveform_plugins():
     # Check for waveform length estimates
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.length'):
         add_length_estimator(plugin.name, plugin.resolve())
-        
