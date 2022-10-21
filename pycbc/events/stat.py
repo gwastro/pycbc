@@ -1837,12 +1837,16 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
-
+    
+        with h5py.File(self.files[files], 'r'):
+            signal_kde = signal_data['signal_kde'][:] 
+        with h5py.File(self.files[files], 'r'): 
+            template_kde = template_data['template_kde'][:]
     def logsignalrate(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup
 
-        This calls back to the Parent class and then applies the chirp mass
+        This calls back to the Parent class and then applies the ratio_kde
         weighting factor.
 
         Parameters
@@ -1868,7 +1872,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
                     shift,
                     to_shift
                     )
-        logr_s += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
+        logr_s += signal_kde/template_kde
         return logr_s
 
     def single(self, trigs):
@@ -1877,8 +1881,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
 
         In this case the ranking rescaled (see the lognoiserate method here)
         with the phase, end time, sigma, SNR, template_id and the
-        benchmark_logvol values added in. This also stored the current chirp
-        mass for use when computing the coinc statistic values.
+        benchmark_logvol values added in.
 
         Parameters
         ----------
@@ -1890,12 +1893,12 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         numpy.ndarray
             The array of single detector values
         """
-        from pycbc.conversions import mchirp_from_mass1_mass2
-        self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
-                                                   trigs.param['mass2'])
-        if self.mcm is not None:
+        #from pycbc.conversions import mchirp_from_mass1_mass2
+        #self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
+        #                                           trigs.param['mass2'])
+        if self.rkde is not None:
             # Careful - input might be a str, so cast to float
-            self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
+            self.curr_ratio_kde = min(self.curr_ratio_kde, float(self.rkde))
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
@@ -1903,8 +1906,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         Optimization function to identify coincs too quiet to be of interest
 
-        Calculat 
-tatistic
+        Calculate the required single detector statistic to exceed the 
+        threshold for each of the input trigers.
 
         Parameters
         ----------
@@ -1925,7 +1928,7 @@ tatistic
 
         loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
-        loglr += numpy.log((self.curr_mchirp / 20.0) ** (11./3.0))
+        loglr += signal_kde/template_kde
         return loglr
 
 
