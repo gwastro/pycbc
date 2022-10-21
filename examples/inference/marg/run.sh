@@ -24,8 +24,14 @@ OMP_NUM_THREADS=1 python -m cProfile -o log2 `which pycbc_inference_model_stats`
 #--parameters distance inclination polarization coa_phase tc ra dec \
 #--z-arg snr --vmin 31.85 --vmax 32.15 \
 
+#pycbc_inference_plot_posterior \
+#--input-file single2.hdf \
+#--output-file single.png \
+#--parameters polarization coa_phase distance inclination tc ra dec \
+#--z-arg snr
+
 pycbc_inference_plot_posterior \
 --input-file single2.hdf \
 --output-file single.png \
---parameters polarization coa_phase distance inclination tc ra dec mchirp eta \
+--parameters distance inclination polarization coa_phase tc ra dec mchirp eta \
 --z-arg snr

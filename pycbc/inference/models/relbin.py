@@ -596,6 +596,7 @@ class RelativeTime(Relative):
                  sample_rate=4096,
                  peak_lock_snr=None,
                  peak_lock_ratio=1e4,
+                 peak_lock_region=4,
                  **kwargs):
         super(RelativeTime, self).__init__(*args, **kwargs)
 
@@ -616,6 +617,7 @@ class RelativeTime(Relative):
         if peak_lock_snr is not None:
             peak_lock_snr = float(peak_lock_snr)
             peak_lock_ratio = float(peak_lock_ratio)
+            peak_lock_region = int(peak_lock_region)
 
             wfs = {ifo: (self.h00_sparse[ifo],
                          self.h00_sparse[ifo]) for ifo in self.h00_sparse}
@@ -634,8 +636,8 @@ class RelativeTime(Relative):
                     target = (numpy.log(target) * 2.0) ** 0.5
 
                     region = numpy.where(snrs[ifo] > target)[0]
-                    ts = times[region[0]]
-                    te = times[region[-1]]
+                    ts = times[region[0]] - peak_lock_region / self.sample_rate
+                    te = times[region[-1]] + peak_lock_region / self.sample_rate
                     self.tstart[ifo] = ts
                     self.num_samples[ifo] =  int((te - ts) * self.sample_rate)
 

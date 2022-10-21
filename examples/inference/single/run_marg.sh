@@ -26,5 +26,5 @@ pycbc_inference_plot_posterior \
 --input-file single_demarg.hdf \
 --output-file single_demarg.png \
 --parameters distance inclination polarization coa_phase tc ra dec \
---z-arg snr --vmin 31.85 --vmax 32.15 \
+--z-arg snr --vmin 31.85 --vmax 32.15
 
