@@ -22,6 +22,17 @@ from pycbc.workflow.jobsetup import (
 from pycbc.workflow import setup_splittable_dax_generated
 
 
+def get_ini_opts(confs, section):
+    arg = []
+    value = []
+    for opt in confs.options(section):
+        val = confs.get(section, opt)
+        arg.append(opt)
+        value.append(val)
+
+    return arg, value
+
+
 class CreateInjectionExecutable(wf.Executable):
     """Class for running create_inj_file"""
 
@@ -30,11 +41,18 @@ class CreateInjectionExecutable(wf.Executable):
     def create_node(self, analysis_time, config, extra_tags=None):
         if extra_tags is None:
             extra_tags = []
+
         node = wf.Executable.create_node(self)
 
-        node.add_input_opt("--config", config)
+        confs = ConfigParser.ConfigParser()
+        confs.read(config)
+
+        arg, value = get_ini_opts(confs, "inspinj")
+        for i in range(len(arg)):
+            node.add_opt("--" + arg[i], value[i])
+
         node.new_output_file_opt(
-            analysis_time, ".xml", "--output-file", tags=self.tags + extra_tags
+            analysis_time, ".xml", "--output", tags=self.tags + extra_tags
         )
         return node
 
@@ -69,7 +87,6 @@ class FaithsimExecutable(wf.Executable):
         version=None,
         verbose=False,
         extra_tags=None,
-        cuda=True,
     ):
         if extra_tags is None:
             extra_tags = []
@@ -87,7 +104,6 @@ class FaithsimExecutable(wf.Executable):
 
         node.add_input_opt("--param-file", param_file)
 
-        node.add_opt("--directory", directory)
         node.add_opt("--psd-model", psd)
         node.add_opt("--waveform1-approximant", approx1)
         node.add_opt("--waveform1-phase-order", phase_order1)
@@ -102,19 +118,50 @@ class FaithsimExecutable(wf.Executable):
         node.add_opt("--filter-low-frequency-cutoff", low_freq_cutoff)
         node.add_opt("--filter-sample-rate", sample_rate)
         node.add_opt("--filter-waveform-length", wav_length)
-        node.add_opt("--cuda", cuda)
 
         node.new_output_file_opt(
             analysis_time, ".dat", "--match-file", tags=self.tags + extra_tags
         )
         return node
 
+
+class CollectResultsExecutable(wf.Executable):
+    """Class for splitting the bank"""
+
+    current_retention_level = wf.Executable.ALL_TRIGGERS
+
+    def create_node(self, analysis_time, match_list, bank_list, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+
+        for match in match_list:
+            node.add_input_opt("--inputs-match", match)
+        for bank in bank_list:
+            node.add_input_opt("--inputs-bank", bank)
+
+        node.new_output_file_opt(
+            analysis_time, ".dat", "--output", tags=self.tags + extra_tags
+        )
+
+        return node
+
+
 class FaithSimPlotExecutable(wf.Executable):
     """Class for running pycbc_faithsim_plot"""
 
     current_retention_level = wf.Executable.ALL_TRIGGERS
 
-    def create_node(self, analysis_time, input_file, parameter_x, parameter_y, parameter_z, output_file2=False, extra_tags=None):
+    def create_node(
+        self,
+        analysis_time,
+        input_file,
+        parameter_x,
+        parameter_y,
+        parameter_z,
+        output_file2=False,
+        extra_tags=None,
+    ):
         if extra_tags is None:
             extra_tags = []
         node = wf.Executable.create_node(self)
@@ -123,18 +170,19 @@ class FaithSimPlotExecutable(wf.Executable):
         node.add_opt("--parameter-x", parameter_x)
         node.add_opt("--parameter-y", parameter_y)
         node.add_opt("--parameter-z", parameter_z)
-        
-        node.new_output_file_opt(
-            analysis_time, '.png', "--output-plot", tags=self.tags)
+
+        node.new_output_file_opt(analysis_time, ".png", "--output-plot", tags=self.tags)
         if output_file2 is True:
             node.new_output_file_opt(
-            analysis_time, '.png', "--output-plot2", tags=self.tags + extra_tags)
+                analysis_time, ".png", "--output-plot2", tags=self.tags + extra_tags
+            )
 
         return node
 
-__author__  = "Marion Pillas <marion.pillas@ligo.org>"
+
+__author__ = "Marion Pillas <marion.pillas@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
+__date__ = pycbc.version.date
 __program__ = "pycbc_offline"
 
 parser = argparse.ArgumentParser()
@@ -146,13 +194,10 @@ args = parser.parse_args()
 workflow = wf.Workflow(args)
 
 config_path = os.path.abspath("configuration_pycbc_faithsim.ini")
-workflow.cp.write(open(config_path, "w"))
-config_file = wf.resolve_url_to_file(config_path)
 
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
 
-templates_per_job = workflow.cp.get("workflow", "templates-per-job")
 log_path = workflow.cp.get("workflow", "log-path")
 psd = workflow.cp.get("faithsim-flatIMRC", "psd-model")
 approx1 = workflow.cp.get("faithsim-flatIMRC", "waveform1-approximant")
@@ -165,70 +210,55 @@ wav_length = workflow.cp.get("faithsim-flatIMRC", "filter-waveform-length")
 num_banks = workflow.cp.get("bank", "num_banks")
 
 wf.makedir("match")
+wf.makedir("collect_results")
 wf.makedir("injections")
 wf.makedir("bank")
 wf.makedir("log")
 wf.makedir("plots")
 
 injections_job = CreateInjectionExecutable(
-    workflow.cp, "create_inj_file", ifos=["H1", "L1", "V1"], out_dir="injections", tags=["inj"]
+    workflow.cp,
+    "lalapps",
+    ifos=["H1", "L1", "V1"],
+    out_dir="injections",
+    tags=["inj"],
 )
 
 faithsim_job = FaithsimExecutable(
     workflow.cp, "faithsim", ifos=["H1", "L1", "V1"], out_dir="match"
 )
 
-collect_node = wf.Executable(workflow.cp, "faithsim_collect_results").create_node()
+collect_job = CollectResultsExecutable(
+    workflow.cp,
+    "faithsim_collect_results",
+    ifos=["H1", "L1", "V1"],
+    out_dir="collect_results",
+)
 
-inj_node = injections_job.create_node(workflow.analysis_time, config_file)
+inj_node = injections_job.create_node(workflow.analysis_time, config_path)
 workflow += inj_node
 
 inj = inj_node.output_files[0]
 
-spltbank_node = wf.Executable(workflow.cp, "splitbank").create_node()
-spltbank_node.add_opt("--templates-per-bank", str(templates_per_job))
-spltbank_node.add_opt("-t", inj)
-spltbank_node.add_opt("--number-of-banks", num_banks)
-spltbank_node.add_opt("--output-filenames")
-
-collect_results = wf.File(
-    ["H1", "L1", "V1"],
-    "pycbc_collect_results",
-    workflow.analysis_time,
-    directory="./",
-    extension="dat",
-    tags=["result-flatIMRC"],
-    store_file=True,
+split_job = wf.PycbcSplitBankXmlExecutable(
+    workflow.cp, "splitbank", num_banks=num_banks, out_dir="bank"
 )
-
-collect_node.add_opt("--inputs")
-
-match_dir = os.path.abspath("./match/")
-
-for i in range(int(num_banks)):
-    banks = wf.File(
-        ["H1", "L1", "V1"],
-        "pycbc_splitbank",
-        workflow.analysis_time,
-        directory="bank",
-        extension="xml.gz",
-        tags=["bank%i" % i],
-        store_file=True,
-    )
-    spltbank_node.add_output(banks)
-    workflow._outputs.append(banks)
+spltbank_node = split_job.create_node(inj)
 
 workflow += spltbank_node
 
 faithsim_files = wf.FileList([])
 
+bank_files = wf.FileList([])
+
 for i in range(int(num_banks)):
     bank = spltbank_node.output_files[i]
+    bank_files.append(bank)
     faithsim_node = faithsim_job.create_node(
         workflow.analysis_time,
         psd=psd,
         param_file=bank,
-        directory=match_dir,
+        directory="match",
         approx1=approx1,
         start_f1=start_f1,
         approx2=approx2,
@@ -241,9 +271,11 @@ for i in range(int(num_banks)):
     workflow += faithsim_node
     faithsim_files.append(faithsim_node.output_file)
 
-for i in range(int(num_banks)):
-    match = faithsim_files[i]
-    collect_node.add_input(match)
+collect_node = collect_job.create_node(
+    workflow.analysis_time, faithsim_files, bank_files, extra_tags=["result-flatIMRC"]
+)
+workflow += collect_node
+collect_results = collect_node.output_files[0]
 
 m1 = workflow.cp.get("plot", "m1")
 m2 = workflow.cp.get("plot", "m2")
@@ -261,31 +293,43 @@ s2z = workflow.cp.get("plot", "s2z")
 m = workflow.cp.get("plot", "m")
 coa = workflow.cp.get("plot", "coa")
 
-collect_node.add_output(collect_results)
-workflow._outputs.append(collect_results)
-workflow += collect_node
-
-parameters = [                                                                                                                                                                                        
-    [m1, m2, dt],                                                                                                                                                                                     
-    [q, s1_m, m],                                                                                                                                                                                 
-    [q, s1z, m],                                                                                                                                                                                  
-    [q, s2_m, m],                                                                                                                                                                                 
-    [q, s2z, m],                                                                                                                                                                                  
-    [q, mtot, m],                                                                                                                                                                                 
-    [m1, m2, m],                                                                                                                                                                                  
-    [coa, m, Mc],                                                                                                                                                                                 
-    [inc, m, Mc],                                                                                                                                                                                 
-    [inc, sig2, Mc],                                                                                                                                                                                  
-    [inc, sig1, Mc],                                                                                                                                                                                  
+parameters = [
+    [m1, m2, dt],
+    [q, s1_m, m],
+    [q, s1z, m],
+    [q, s2_m, m],
+    [q, s2z, m],
+    [q, mtot, m],
+    [m1, m2, m],
+    [coa, m, Mc],
+    [inc, m, Mc],
+    [inc, sig2, Mc],
+    [inc, sig1, Mc],
 ]
 
 for par in parameters:
-    plot_job = FaithSimPlotExecutable(workflow.cp, "faithsim_plot", ifos=["H1", "L1", "V1"], out_dir="plots", tags=['_flatIMRC_'+par[0]+'_'+par[1]+'_'+par[2]])
+    plot_job = FaithSimPlotExecutable(
+        workflow.cp,
+        "faithsim_plot",
+        ifos=["H1", "L1", "V1"],
+        out_dir="plots",
+        tags=["_flatIMRC_" + par[0] + "_" + par[1] + "_" + par[2]],
+    )
 
     if par == [m1, m2, m]:
-        plot_node = plot_job.create_node(workflow.analysis_time, collect_results, par[0], par[1], par[2], output_file2=True, extra_tags = ['_mmass1_mmass2_'])
+        plot_node = plot_job.create_node(
+            workflow.analysis_time,
+            collect_results,
+            par[0],
+            par[1],
+            par[2],
+            output_file2=True,
+            extra_tags=["_mmass1_mmass2_"],
+        )
     else:
-        plot_node = plot_job.create_node(workflow.analysis_time, collect_results, par[0], par[1], par[2])
+        plot_node = plot_job.create_node(
+            workflow.analysis_time, collect_results, par[0], par[1], par[2]
+        )
 
     workflow += plot_node
 
