@@ -432,6 +432,7 @@ class LiveEventManager(object):
         if self.run_snr_optimization \
                 and self.ifar_upload_threshold < ifar:
             logging.info('Optimizing SNR for coinc above threshold ..')
+            live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
             self.setup_optimize_snr(
                 coinc_results,
                 live_ifos,
@@ -513,6 +514,7 @@ class LiveEventManager(object):
                     and not any(nearby_coincs) \
                     and self.run_snr_optimization:
                 logging.info('Optimizing SNR for coinc above threshold ..')
+                live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
                 self.setup_optimize_snr(
                     single,
                     live_ifos,
