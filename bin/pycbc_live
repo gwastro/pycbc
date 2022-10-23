@@ -382,10 +382,8 @@ class LiveEventManager(object):
             recalculate_ifar=True
         )
 
-        live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
-
         event = CandidateForGraceDB(
-            live_ifos,
+            coinc_ifos,
             coinc_results,
             padata=self.padata,
             bank=self.bank,
@@ -433,6 +431,7 @@ class LiveEventManager(object):
 
         if self.run_snr_optimization \
                 and self.ifar_upload_threshold < ifar:
+            logging.info('Optimizing SNR for coinc above threshold ..')
             self.setup_optimize_snr(
                 coinc_results,
                 live_ifos,
@@ -464,10 +463,8 @@ class LiveEventManager(object):
             ifar /= len(active)
             single['foreground/ifar'] = ifar
 
-            live_ifos = [i for i in fud if 'snr_series' in fud[i]]
-
             event = CandidateForGraceDB(
-                live_ifos,
+                [ifo],
                 single,
                 padata=self.padata,
                 bank=self.bank,
@@ -515,6 +512,7 @@ class LiveEventManager(object):
             if self.ifar_upload_threshold < ifar \
                     and not any(nearby_coincs) \
                     and self.run_snr_optimization:
+                logging.info('Optimizing SNR for coinc above threshold ..')
                 self.setup_optimize_snr(
                     single,
                     live_ifos,
@@ -1047,16 +1045,15 @@ with ctx:
                         ds.attrs['background_time'] = bg_time
                     bgf.attrs['gps_time'] = last_bg_dump_time
 
-            logging.info('Finished Analyzing up to %s', data_end())
+            logging.info('Finished analyzing up to %s', data_end())
 
         if args.sync:
             evnt.barrier()
         tdiff = pycbc.gps_now() - t1
         lag = float(pycbc.gps_now() - data_end())
-        logging.info('Took %1.2f, duty factor of %.2f, '
-                     'lag %.2f s, %d live detectors',
-                     tdiff, tdiff / valid_pad, lag,
-                     len(evnt.live_detectors))
+        logging.info('Took %1.2f, duty factor of %.2f, lag %.2f s, %d live detectors',
+                     tdiff, tdiff / valid_pad, lag, len(evnt.live_detectors)
+        )
 
         if args.output_status is not None and evnt.rank == 0:
             if lag > 120:
@@ -1081,8 +1078,7 @@ with ctx:
                 with open(args.output_status, 'w') as status_fp:
                     json.dump(status, status_fp)
             except IOError:
-                logging.error('I/O error writing status JSON file! '
-                              'Hopefully it works next time')
+                logging.error('I/O error writing status JSON file!')
 
 if evnt.rank == 1:
     if args.fftw_output_float_wisdom_file:

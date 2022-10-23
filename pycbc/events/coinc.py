@@ -358,9 +358,6 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
-
-    logging.info('clustering coinc triggers over %ss window' % window)
-
     if len(time1) == 0 or len(time2) == 0:
         logging.info('No coinc triggers in one, or both, ifos.')
         return numpy.array([])
@@ -1212,7 +1209,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
-
+            logging.info("Clustering %s-%s coincs", self.ifos[0], self.ifos[1])
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                   self.timeslide_interval,
                                   self.analysis_block,
