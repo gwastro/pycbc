@@ -17,11 +17,14 @@
 using at the likelihood level.
 """
 import math
+import logging
 import numpy
 
 from multiprocessing import Pool
-from .gaussian_noise import BaseGaussianNoise
 from scipy.special import logsumexp
+
+from .gaussian_noise import BaseGaussianNoise
+from .tools import draw_sample
 
 _model = None
 class likelihood_wrapper(object):
@@ -98,6 +101,7 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
 
     def __init__(self, variable_params,
                  cores=1,
+                 loop_polarization=False,
                  base_model=None,
                  **kwds):
         super().__init__(variable_params, **kwds)
@@ -121,6 +125,16 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
             self.pool = None
             self.mapfunc = map
 
+        # Do I explicitly check the polarization + pi/2 points
+        # We could also add other arguments here, ie only check longitude
+        # or latitude symmetry points.
+        if loop_polarization:
+            self.num_sky_modes = 16
+        else:
+            self.num_sky_modes = 8
+
+        self.reconstruct_sky_points = False
+
 
     @property
     def _extra_stats(self):
@@ -129,58 +143,84 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
 
     def _loglr(self):
         params = []
-        for sym_num in range(8):
-            # FIXME: Literature says this should be 8 points, but I always see
-            #        two polarization modes if I use the indicated 8. Possibly
-            #        there is some issue here, and I'm not using the *right*
-            #        8 points. Note that what I think are the right 8 points
-            #        are acheived by setting this to range(8).
+        for sym_num in range(self.num_sky_modes):
             pref = self.current_params.copy()
-            lambdal = pref['eclipticlongitude']
-            beta = pref['eclipticlatitude']
-            psi = pref['polarization']
-            inc = pref['inclination']
-
-            pol_num = sym_num // 8
-            sym_num = sym_num % 8
-            long_num = sym_num % 4
-            lat_num = sym_num // 4
-
-            # Apply latitude symmetry mode
-            if lat_num:
-                beta = - beta
-                inc = numpy.pi - inc
-                psi = numpy.pi - psi
-
-            # Apply longitudonal symmetry mode
-            lambdal = (lambdal + long_num * 0.5 * numpy.pi) % (2*numpy.pi)
-            psi = (psi + long_num * 0.5 * numpy.pi) % (2*numpy.pi)
-
-            # Apply additional polarization mode (shouldn't be needed)
-            if pol_num:
-                psi = psi + (math.pi / 2.)
-
-            pref['eclipticlongitude'] = lambdal
-            pref['eclipticlatitude'] = beta
-            pref['polarization'] = psi
-            pref['inclination'] = inc
+            self._apply_sky_point_rotation(pref, sym_num)
             params.append(pref)
 
         vals = list(self.mapfunc(self.call, params))
         loglr = numpy.array([v[0] for v in vals])
 
+        if self.reconstruct_sky_points:
+            return loglr
+
         max_llr_idx = loglr.argmax()
         max_llr = loglr[max_llr_idx]
         marg_lrfac = sum([math.exp(llr - max_llr) for llr in loglr])
-        marg_llr = max_llr + math.log(marg_lrfac/8.)
+        marg_llr = max_llr + math.log(marg_lrfac/self.num_sky_modes)
 
         # set the stats
-        for sym_num in range(8):
+        for sym_num in range(self.num_sky_modes):
             setattr(self._current_stats, f'llr_mode_{sym_num}', loglr[sym_num])
 
         return marg_llr
+
+    def _apply_sky_point_rotation(self, pref, sky_num):
+        """ Apply the sky point rotation for mode sky_num to parameters pref
+        """
+        lambdal = pref['eclipticlongitude']
+        beta = pref['eclipticlatitude']
+        psi = pref['polarization']
+        inc = pref['inclination']
+
+        pol_num = sky_num // 8
+        sky_num = sky_num % 8
+        long_num = sky_num % 4
+        lat_num = sky_num // 4
+
+        # Apply latitude symmetry mode
+        if lat_num:
+            beta = - beta
+            inc = numpy.pi - inc
+            psi = numpy.pi - psi
+
+        # Apply longitudonal symmetry mode
+        lambdal = (lambdal + long_num * 0.5 * numpy.pi) % (2*numpy.pi)
+        psi = (psi + long_num * 0.5 * numpy.pi) % (2*numpy.pi)
+
+        # Apply additional polarization mode (shouldn't be needed)
+        if pol_num:
+            psi = psi + (math.pi / 2.)
+
+        pref['eclipticlongitude'] = lambdal
+        pref['eclipticlatitude'] = beta
+        pref['polarization'] = psi
+        pref['inclination'] = inc
+
 
     @classmethod
     def from_config(cls, cp, **kwargs):
         kwargs['config_object'] = cp
         return super(BruteLISASkyModesMarginalize, cls).from_config(cp, **kwargs)
+
+    def reconstruct(self, seed=None):
+        """ Reconstruct a point from unwrapping the 8-fold sky symmetry
+        """
+        if seed:
+            numpy.random.seed(seed)
+        rec = {}
+
+        logging.info('Reconstruct LISA sky mode symmetry')
+        self.reconstruct_sky_points = True
+        loglr = self.loglr
+        xl = draw_sample(loglr)
+        # Undo rotations
+        pref = self.current_params.copy()
+        self._apply_sky_point_rotation(pref, xl)
+
+        rec.update(pref)
+        rec['loglr'] = loglr[xl]
+        rec['loglikelihood'] = self.lognl + rec['loglr']
+        self.reconstruct_sky_points = False
+        return self.model.reconstruct(seed=seed)
+
