@@ -214,18 +214,16 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
         self.reconstruct_sky_points = True
         loglr = self.loglr
         xl = draw_sample(loglr)
+        logging.info(f'Found point {xl}')
         # Undo rotations
         pref = self.current_params.copy()
         self._apply_sky_point_rotation(pref, xl)
 
-        rec.update(pref)
+        for val in ['polarization', 'eclipticlongitude', 'eclipticlatitude',
+                    'inclination']:
+            rec[val] = pref[val]
         rec['loglr'] = loglr[xl]
         rec['loglikelihood'] = self.lognl + rec['loglr']
         self.reconstruct_sky_points = False
-        self.current_params.update(rec)
-        rec_return = self.model.reconstruct(seed=seed)
-        for val in ['polarization', 'eclipticlongitude', 'eclipticlatitude',
-                    'inclination']:
-            rec_return[val] = rec[val]
-        return rec_return
+        return self.model.reconstruct(seed=seed, rec=rec)
 
