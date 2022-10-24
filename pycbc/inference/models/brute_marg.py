@@ -222,5 +222,10 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
         rec['loglr'] = loglr[xl]
         rec['loglikelihood'] = self.lognl + rec['loglr']
         self.reconstruct_sky_points = False
-        return self.model.reconstruct(seed=seed)
+        self.current_params.update(rec)
+        rec_return = self.model.reconstruct(seed=seed)
+        for val in ['polarization', 'eclipticlongitude', 'eclipticlatitude',
+                    'inclination']:
+            rec_return[val] = rec[val]
+        return rec_return
 
