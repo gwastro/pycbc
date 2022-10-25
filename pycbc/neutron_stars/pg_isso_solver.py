@@ -309,15 +309,14 @@ def PG_ISSO_solver(chi, incl):
     # Otherwise, find the ISSO radius for a generic inclination
     initial_hi = np.maximum(rISCO_limit, rISSO_at_pole_limit)
     initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
-    initial_m = 0.5*(initial_hi+initial_lo)
     brackets = [
-        (bl, bh) 
-        for bl, bh in zip(initial_lo, initial_hi)]
+        (bl, bh) if c != 1 else None
+        for bl, bh, c in zip(initial_lo, initial_hi, chi)]
     solution = np.array([
         root_scalar(
             PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr, bracket=bracket,
             fprime2=PG_ISSO_eq_dr2, args=(c, inc), xtol=1e-12).root
-        for g0, bracket, c, inc in zip(initial_m, brackets, chi, incl)])
+        for g0, bracket, c, inc in zip(initial_hi, brackets, chi, incl)])
     oob = (solution < 1) | (solution > 9)
     if any(oob):
         solution = np.array([
