@@ -26,59 +26,11 @@ formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
 import numpy as np
 from scipy.optimize import root_scalar
 
-
-def ISCO_eq(r, chi):
-    r"""Polynomial that enables the calculation of the Kerr innermost
-    stable circular orbit (ISCO) radius via its roots,
-
-    .. math:: Z(r) = [r (r-6)]^2 - \chi^2 [2r (3r+14) - 9 \chi^2]\,.
-
-    Parameters
-    -----------
-    r: float
-        the radial coordinate in BH mass units
-    chi: float
-        the BH dimensionless spin parameter
-
-    Returns
-    ----------
-    float
-    """
-    return (r * (r - 6))**2 - chi**2 * (2 * r * (3 * r + 14) - 9 * chi**2)
-
-
-def ISCO_eq_dr(r, chi):
-    """Partial derivative of :func:`ISCO_eq` with respect to r.
-
-    Parameters
-    ----------
-    r: float
-        the radial coordinate in BH mass units
-    chi: float
-        the BH dimensionless spin parameter
-
-    Returns
-    -------
-    float
-    """
-    return 4 * r**3 - 36 * r**2 + 12 * (6 - chi**2) * r - 28 * chi**2
-
-
-def ISCO_eq_dr2(r, chi):
-    """Double partial derivative of :func:`ISCO_eq` with respect to r.
-
-    Parameters
-    ----------
-    r: float
-        the radial coordinate in BH mass units
-    chi: float
-        the BH dimensionless spin parameter
-
-    Returns
-    -------
-    float
-    """
-    return 12 * r**2 - 72 * r + 12 * (6 - chi**2)
+def ISCO_analitic_solution(chi, sgn):
+    chi2 = chi * chi
+    Z1 = 1 + np.cbrt(1 - chi2) * (np.cbrt(1 + chi) + np.cbrt(1 - chi))
+    Z2 = np.sqrt(3 * chi2 + Z1 * Z1)
+    return 3 + Z2 - sgn * np.sqrt((3 - Z1) * (3 + Z1 + 2 * Z2))
 
 
 def ISSO_eq_at_pole(r, chi):
@@ -218,7 +170,7 @@ def PG_ISSO_eq(r, chi, incl):
         + 6 * r * r_minus_2 * (
             chi4 * chi2 + 2 * r2 * r * (
                 chi2 * (three_r + 2) + 3 * r2 * r_minus_2)))
-    Z = ISCO_eq(r, chi)
+    Z = (r * (r - 6))**2 - chi2 * (2 * r * (3 * r + 14) - 9 * chi2)
 
     return r4 * r4 * Z + chi2 * sin_incl2 * (chi2 * sin_incl2 * Y - 2 * r4 * X)
 
@@ -327,26 +279,23 @@ def PG_ISSO_solver(chi, incl):
     """
     # Auxiliary variables
     cos_incl = np.cos(incl)
-    sgnchi = np.sign(cos_incl)*chi
+    sgn = np.sign(cos_incl)
+    sgnchi = sgn*chi
     if np.isscalar(sgnchi):
         sgnchi = np.array(sgnchi, copy=False, ndmin=1)
+        sgn = np.array(sgn, copy=False, ndmin=1)
         chi = np.array(chi, copy=False, ndmin=1)
         incl = np.array(incl, copy=False, ndmin=1)
-
+    chi = np.abs(chi)
     # ISCO radius for the given spin magnitude
-    initial_guess = [2 if s > 0.99 else (9 if s < 0 else 5) for s in sgnchi]
-    rISCO_limit = np.array([
-        root_scalar(
-            ISCO_eq, x0=g0, fprime=ISCO_eq_dr, fprime2=ISCO_eq_dr2,
-            args=(sc)).root
-        for g0, sc in zip(initial_guess, sgnchi)])
+    rISCO_limit = ISCO_analitic_solution(chi, sgn)
     # If the inclination is 0 or pi, just output the ISCO radius
     equatorial = np.isclose(incl, 0) | np.isclose(incl, np.pi)
     if all(equatorial):
         return rISCO_limit
 
     # ISSO radius for an inclination of pi/2
-    initial_guess = [9 if c < 0 else 6 for c in chi]
+    initial_guess = [5.27451056440629 if c > 0.5 else 6 for c in chi]
     rISSO_at_pole_limit = np.array([
         root_scalar(
             ISSO_eq_at_pole, x0=g0, fprime=ISSO_eq_at_pole_dr,
@@ -360,14 +309,15 @@ def PG_ISSO_solver(chi, incl):
     # Otherwise, find the ISSO radius for a generic inclination
     initial_hi = np.maximum(rISCO_limit, rISSO_at_pole_limit)
     initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
+    initial_m = 0.5*(initial_hi+initial_lo)
     brackets = [
-        (bl, bh) if c == 1 else None
-        for bl, bh, c in zip(initial_lo, initial_hi, chi)]
+        (bl, bh) 
+        for bl, bh in zip(initial_lo, initial_hi)]
     solution = np.array([
         root_scalar(
             PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr, bracket=bracket,
             fprime2=PG_ISSO_eq_dr2, args=(c, inc), xtol=1e-12).root
-        for g0, bracket, c, inc in zip(initial_hi, brackets, chi, incl)])
+        for g0, bracket, c, inc in zip(initial_m, brackets, chi, incl)])
     oob = (solution < 1) | (solution > 9)
     if any(oob):
         solution = np.array([
