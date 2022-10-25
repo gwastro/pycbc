@@ -135,7 +135,6 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
 
         self.reconstruct_sky_points = False
 
-
     @property
     def _extra_stats(self):
         stats = self.model._extra_stats
@@ -197,11 +196,13 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
         pref['polarization'] = psi
         pref['inclination'] = inc
 
-
     @classmethod
     def from_config(cls, cp, **kwargs):
         kwargs['config_object'] = cp
-        return super(BruteLISASkyModesMarginalize, cls).from_config(cp, **kwargs)
+        return super(BruteLISASkyModesMarginalize, cls).from_config(
+            cp, 
+            **kwargs
+        )
 
     def reconstruct(self, seed=None):
         """ Reconstruct a point from unwrapping the 8-fold sky symmetry
@@ -214,7 +215,7 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
         self.reconstruct_sky_points = True
         loglr = self.loglr
         xl = draw_sample(loglr)
-        logging.info(f'Found point {xl}')
+        logging.info('Found point %d', xl)
         # Undo rotations
         pref = self.current_params.copy()
         self._apply_sky_point_rotation(pref, xl)
@@ -226,4 +227,3 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
         rec['loglikelihood'] = self.lognl + rec['loglr']
         self.reconstruct_sky_points = False
         return self.model.reconstruct(seed=seed, rec=rec)
-
