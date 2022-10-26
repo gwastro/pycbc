@@ -47,11 +47,11 @@ def plt(index):
                 --parameters \
                     mass1_from_mchirp_q(mchirp,q):mass1 \
                     mass2_from_mchirp_q(mchirp,q):mass2 \
-                    tc_lisa \
+                    tc \
                 --expected-parameters \
                     mass1_from_mchirp_q(mchirp,q):{params['mass1']} \
                     mass2_from_mchirp_q(mchirp,q):{params['mass2']} \
-                    tc_lisa:{params['tc_lisa']} \
+                    tc:{params['tc_lisa']} \
                 """
     return plot_code
 

@@ -11,8 +11,8 @@ is used during sampling to speed up the computation of likelihood functions. Bef
 you need to install `BBHx <https://github.com/mikekatz04/BBHx>`_ and `the corresponding PyCBC waveform plugin <https://github.com/ConWea/BBHX-waveform-model>`_, 
 please click the corresponding link to see the detailed description of the installation.
 
-First, we create the following configuration file, here we just set chirp mass, mass ratio and tc_lisa as variable parameters, 
-parameters with '_lisa' mean they're in the LISA frame rather than the SSB frame:
+First, we create the following configuration file, here we just set chirp mass, mass ratio and tc as variable parameters, 
+`tc`, `eclipticlongitude`, `eclipticlatitude` and `polarization` are in the LISA frame rather than the SSB frame:
 
 .. literalinclude:: ../../../examples/inference/lisa_smbhb/lisa_smbhb_relbin.ini
    :language: ini

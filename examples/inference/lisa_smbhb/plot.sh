@@ -6,8 +6,8 @@ pycbc_inference_plot_posterior \
     --parameters \
         'mass1_from_mchirp_q(mchirp,q)':mass1 \
         'mass2_from_mchirp_q(mchirp,q)':mass2 \
-        tc_lisa \
+        tc \
     --expected-parameters \
         'mass1_from_mchirp_q(mchirp,q)':1015522.4376 \
         'mass2_from_mchirp_q(mchirp,q)':796849.1091 \
-        tc_lisa:4799624.274911478 \
+        tc:4799624.274911478 \
