@@ -193,7 +193,7 @@ args = parser.parse_args()
 
 workflow = wf.Workflow(args)
 
-config_path = os.path.abspath("configuration_pycbc_faithsim.ini")
+config_path = os.path.abspath(args.config_files[0])
 
 wf.makedir(args.output_dir)
 os.chdir(args.output_dir)
