@@ -11,7 +11,8 @@ is used during sampling to speed up the computation of likelihood functions. Bef
 you need to install `BBHx <https://github.com/mikekatz04/BBHx>`_ and `the corresponding PyCBC waveform plugin <https://github.com/ConWea/BBHX-waveform-model>`_, 
 please click the corresponding link to see the detailed description of the installation.
 
-First, we create the following configuration file, here we just set chirp mass, mass ratio and tc as variable parameters:
+First, we create the following configuration file, here we just set chirp mass, mass ratio and tc as variable parameters, 
+`tc`, `eclipticlongitude`, `eclipticlatitude` and `polarization` are defined in the LISA frame:
 
 .. literalinclude:: ../../../examples/inference/lisa_smbhb/lisa_smbhb_relbin.ini
    :language: ini
@@ -23,7 +24,7 @@ By setting the model name to ``relative`` we are using
 
 In this simple example, we do the parameter estimation for the first SMBHB signal in the LDC Sangria dataset 
 (you can also run parameter estimation for other SMBHB signals by choosing appropriate prior range),
-we need download the data first (`MBHB_params_v2.pkl` contains all the true parameters):
+we need download the data first (`MBHB_params_v2_LISA_frame.pkl` contains all the true parameters):
 
 .. literalinclude:: ../../../examples/inference/lisa_smbhb/get.sh
    :language: bash
