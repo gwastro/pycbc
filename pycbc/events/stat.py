@@ -1785,7 +1785,6 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         Optimization function to identify coincs too quiet to be of interest
 
         Calculat 
-tatistic
 
         Parameters
         ----------
@@ -1820,6 +1819,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
+                                         ifos=ifos, **kwargs)
         """
         Create a statistic class instance
 
@@ -1835,14 +1836,18 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         ifos: list of strs, not used here
             The list of detector names
         """
-        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                         ifos=ifos, **kwargs)
-    
-        with h5py.File(self.files[files], 'r'):
-            signal_kde = signal_data['signal_kde'][:] 
-        with h5py.File(self.files[files], 'r'): 
-            template_kde = template_data['template_kde'][:]
-    def logsignalrate(self, stats, shift, to_shift):
+        self.kde_values = {}
+        try:
+            tnum = trigs.template_num  
+        except AttributeError:
+            tnum = trigs['template_id']  
+
+        signal_kde = self.signal_kde[tnum]        
+        template_kde = self.template_kde[tnum]
+        self.mcm = max_chirp_mass
+        self.curr_tnum = None     
+        
+    def rank_stat_coinc(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup
 
@@ -1863,16 +1868,9 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         value: log of coinc signal rate density for the given single-ifo
             triggers and time shifts
         """
-
-        # model signal rate as uniform over chirp mass, background rate is
-        # proportional to mchirp^(-11/3) due to density of templates
-        logr_s = ExpFitFgBgNormStatistic.logsignalrate(
-                    self,
-                    stats,
-                    shift,
-                    to_shift
-                    )
-        logr_s += signal_kde/template_kde
+        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats,
+                                                       shift, to_shift)
+        logr_s += numpy.log(signal_kde/template_kde)
         return logr_s
 
     def single(self, trigs):
@@ -1893,16 +1891,15 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         numpy.ndarray
             The array of single detector values
         """
-        #from pycbc.conversions import mchirp_from_mass1_mass2
-        #self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
-        #                                           trigs.param['mass2'])
-        if self.rkde is not None:
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        self.curr_tnum = mchirp_from_mass1_mass2(trigs.param['mass1'],
+                                                 trigs.param['mass2'])
+        if self.mcm is not None:
             # Careful - input might be a str, so cast to float
-            self.curr_ratio_kde = min(self.curr_ratio_kde, float(self.rkde))
+              self.curr_tnum =  min(self.curr_tnum, float(self.mcm))
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
-    def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -1925,10 +1922,9 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             Array of limits on the limifo single statistic to
             exceed thresh.
         """
-
         loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
-        loglr += signal_kde/template_kde
+        loglr += numpy.log(signal_kde/template_kde)
         return loglr
 
 
