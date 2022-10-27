@@ -433,6 +433,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     for inj_tag in inj_tags:
         tag_inj_files = FileList([f for f in inj_files
                                   if inj_tag in f.tags])
+        # FIXME: Check this and add a comment explaining!
         tag_insp_files = FileList([f for f in inj_insp_files
                                    if inj_tag in f.tags[1]])
         node, inj_find_file = job_instance.create_node(
