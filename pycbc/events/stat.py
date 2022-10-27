@@ -1871,7 +1871,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             # exists for SingleDetTriggers
             self.curr_tnum = trigs['template_id']
         return ExpFitFgBgNormStatistic.single(self, trigs)
-
+        
     def logsignalrate(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup.
