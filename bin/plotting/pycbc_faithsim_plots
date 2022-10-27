@@ -16,63 +16,6 @@ from ligo.lw import utils, table, lsctables
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from pycbc import pnutils
 
-
-cfields = (
-    "match",
-    "overlap",
-    "time_offset",
-    "sigma1",
-    "sigma2",
-    "mass1",
-    "mass2",
-    "spin1x",
-    "spin1y",
-    "spin1z",
-    "spin2x",
-    "spin2y",
-    "spin2z",
-    "inclination",
-    "latitude",
-    "longitude",
-    "polarization",
-    "coa_phase",
-    "mass_ratio",
-    "mchirp",
-    "total_mass",
-    "spin1_magnitude",
-    "spin2_magnitude",
-)
-
-dtypec = {
-    "names": cfields,
-    "formats": (
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-        "f8",
-    ),
-}
-
-
 def basic_scatter(
     out_name,
     neg_idx,
@@ -162,7 +105,7 @@ def basic_scatter(
     pylab.savefig(out_name, dpi=500)
 
 
-parser = argparse.ArgumentParser(usage="", description=__doc__[1:])
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "--input-file",
     required=True,
@@ -182,7 +125,7 @@ parser.add_argument("--output-plot", required=True, help="name of the output plo
 
 args = parser.parse_args()
 
-data = np.loadtxt(args.input_file, dtype=dtypec)
+data = np.genfromtxt(args.input_file, names=True)
 
 red_data = data[data["match"] > -0.5]
 

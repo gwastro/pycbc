@@ -10,7 +10,7 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc import pnutils
 import argparse
 
-parser = argparse.ArgumentParser(usage="", description=__doc__[1:])
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "--input-collect-results",
     required=True,
@@ -120,6 +120,8 @@ dtypec = {
     ),
 }
 
+columns = "match overlap time_offset sigma1 sigma2 mass1 mass2 spin1x spin1y spin1z spin2x spin2y spin2z inclination latitude longitude polarization coa_phase mass_ratio mchirp total_mass spin1_magnitude spin2_magnitude"
+
 data = np.loadtxt(args.input_collect_results, dtype=dtypeo)
 
 mmass1 = np.maximum(data["mass1"], data["mass2"])
@@ -150,4 +152,4 @@ for field in cfields:
 
 d = np.append(d, pdata)
 
-np.savetxt(args.output, d)
+np.savetxt(args.output, d, header=columns)
