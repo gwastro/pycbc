@@ -173,22 +173,16 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         # get time series start and delta_t
         ts = self._Rss[det]
-        start_time_gc = self.td_data[det].start_time
+        start_time_gc = float(self.td_data[det].start_time) # need float for conversion input
         delta_t = ts.delta_t
-        # we have to convert start_time_gc (geocentric) to the detector frame
-        ra, dec = self.current_params['ra'], self.current_params['dec']
-        thisdet = Detector[det]
-        start_time = start_time_gc + thisdet.time_delay_from_earth_center(ra, dec, start_time_gc)
         # get gate start and length from get_gate_times
         gate_start, gate_length = self.get_gate_times()[det]
         # convert to indices
-        lindex = float(gate_start - start_time) // delta_t
+        lindex = float(gate_start - start_time_gc) // delta_t
         rindex = lindex + (gate_length // delta_t)
         lindex = lindex if lindex >= 0 else 0
         rindex = rindex if rindex <= len(ts) else len(ts)
         return lindex, rindex
-    
-    ### would it be worth it keying by trunc size instead of index? ###
     
     def det_lognorm(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance matrix.
@@ -198,10 +192,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             return 0
         try:
             # check if the key already exists; if so, return its value
-            # cov = self._cov[det]
-            # n = cov.shape[0]
-            # trunc_size = n - (end_index - start_index)
-            # lognorm = self._lognorm[(det, trunc_size)]
             lognorm = self._lognorm[(det, start_index, end_index)]
         except KeyError:
             # if not, extrapolate the normalization term
@@ -217,7 +207,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
-            # self._lognorm[(det, trunc_size)] = lognorm
         return lognorm
 
     @property
@@ -455,8 +444,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # gate input for ringdown analysis which consideres a start time
         # and an end time
         dgate = params['gate_window']
-        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'],
-                                       spin1, spin2)
+        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'], spin1, spin2)
         # figure out the gate times
         gatetimes = {}
         for det, h in wfs.items():
@@ -675,6 +663,25 @@ class GatedGaussianNoise(BaseGatedGaussian):
             rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
             logl += norm - 0.5*rr
         return float(logl)
+    
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        # Generate the waveforms for each submodel
+        wfs = []
+        for m in models + [self]:
+            wfs.append(m.get_waveforms())
+
+        # combine into a single waveform
+        combine = {}
+        for det in self.data:
+            # get max waveform length
+            mlen = max([len(x[det]) for x in wfs])
+            [x[det].resize(mlen) for x in wfs]
+            combine[det] = sum([x[det] for x in wfs])
+
+        self._current_wfs = combine
+        return self._loglikelihood()
 
     def get_gated_waveforms(self):
         wfs = self.get_waveforms()
@@ -880,3 +887,28 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # compute the marginalized log likelihood
         marglogl = special.logsumexp(loglr) + lognl - numpy.log(len(self.pol))
         return float(marglogl)
+    
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        # Generate the waveforms for each submodel
+        wfs = []
+        for m in models + [self]:
+            wfs.append(m.get_waveforms())
+
+        # combine into a single waveform
+        combine = {}
+        for det in ['H1', 'L1']:
+            # get max waveform length across all pols
+            mlen = max([len(x[det][i]) for x in wfs for i in range(len(x[det]))])
+            for wf in wfs:
+                # resize each polarization to max length
+                hp, hc = wf[det]
+                hp.resize(mlen)
+                hc.resize(mlen)
+            # add the waveforms in each detector
+            combine[det] = (sum([x[det][0] for x in wfs]), sum([x[det][1] for x in wfs]))
+
+        # calculate likelihood for combined waveform
+        self._current_wfs = combine
+        return self._loglikelihood()
