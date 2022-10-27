@@ -950,7 +950,7 @@ class GaussianNoise(BaseGaussianNoise):
                 h[self._kmin[det]:kmax] *= self._weight[det][slc]
 
                 # the inner products
-                cplx_hd = self._whitened_data[det][slc].inner(h[slc])  # <h, d>
+                cplx_hd = h[slc].inner(self._whitened_data[det][slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
             cplx_loglr = cplx_hd - 0.5 * hh
             # store

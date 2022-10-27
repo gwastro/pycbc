@@ -19,7 +19,7 @@ import numpy
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import conversions
 from pycbc import pnutils
-from pycbc.tmpltbank.em_progenitors import load_ns_sequence, remnant_masses
+from pycbc.neutron_stars import load_ns_sequence
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -181,7 +181,7 @@ def get_random_mass_point_particles(numPoints, massRangeParams):
 
     return mass1, mass2, spin1z, spin2z
 
-def get_random_mass(numPoints, massRangeParams):
+def get_random_mass(numPoints, massRangeParams, eos='2H'):
     """
     This function will generate a large set of points within the chosen mass
     and spin space, and with the desired minimum remnant disk mass (this applies
@@ -195,7 +195,9 @@ def get_random_mass(numPoints, massRangeParams):
         Number of systems to simulate
     massRangeParams : massRangeParameters instance
         Instance holding all the details of mass ranges and spin ranges.
-
+    eos : string
+        Name of equation of state of neutron star.
+        
     Returns
     --------
     mass1 : float
@@ -223,7 +225,7 @@ def get_random_mass(numPoints, massRangeParams):
     # only systems that can yield (at least) the desired remnant
     # disk mass and that pass the mass and spin range cuts.
     else:
-        ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
+        max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)[1]
         boundary_mass = massRangeParams.ns_bh_boundary_mass
         if max_ns_g_mass < boundary_mass:
             warn_msg = "WARNING: "
@@ -291,8 +293,14 @@ def get_random_mass(numPoints, massRangeParams):
             #     threshold mass]
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
             if eta_nsbh.size != 0:
-                remnant = remnant_masses(eta_nsbh, mass2_nsbh, ns_sequence,
-                                         spin1z_nsbh, 0.)
+                remnant = conversions.remnant_mass_from_mass1_mass2_cartesian_spin_eos(
+                    mass1_nsbh,
+                    mass2_nsbh,
+                    spin1x=0.0,
+                    spin1y=0.0,
+                    spin1z=spin1z_nsbh,
+                    eos=eos
+                )
                 mask_bright_nsbh[remnant
                                  >
                                  massRangeParams.remnant_mass_threshold] = True

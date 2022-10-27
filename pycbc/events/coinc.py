@@ -33,6 +33,7 @@ from .eventmgr_cython import timecoincidence_constructidxs
 from .eventmgr_cython import timecoincidence_constructfold
 from .eventmgr_cython import timecoincidence_getslideint
 from .eventmgr_cython import timecoincidence_findidxlen
+from .eventmgr_cython import timecluster_cython
 
 
 def background_bin_from_string(background_bins, data):
@@ -206,8 +207,8 @@ def time_coincidence(t1, t2, window, slide_step=0):
         fold2 = numpy.concatenate([fold2 - slide_step, fold2,
                                    fold2 + slide_step])
 
-    left = numpy.searchsorted(fold2, fold1 - window)
-    right = numpy.searchsorted(fold2, fold1 + window)
+    left = fold2.searchsorted(fold1 - window)
+    right = fold2.searchsorted(fold1 + window)
 
     lenidx = timecoincidence_findidxlen(left, right, len(left))
     idx1 = numpy.zeros(lenidx, dtype=numpy.uint32)
@@ -296,8 +297,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         for ifo2 in ids:
             logging.info('added ifo %s, testing against %s' % (ifo1, ifo2))
             w = win(ifo1, ifo2)
-            left = numpy.searchsorted(time1, ctimes[ifo2] - w)
-            right = numpy.searchsorted(time1, ctimes[ifo2] + w)
+            left = time1.searchsorted(ctimes[ifo2] - w)
+            right = time1.searchsorted(ctimes[ifo2] + w)
             # Any times within time1 coincident with the time in ifo2 have
             # indices between 'left' and 'right'
             # 'nz' indexes into times in ifo2 which have coincidences with ifo1
@@ -333,7 +334,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
     return ids, slide
 
 
-def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
+def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
 
@@ -376,11 +377,12 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
-    cidx = cluster_over_time(stat, time, window, argmax)
+    cidx = cluster_over_time(stat, time, window, **kwargs)
     return cidx
 
 
-def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argmax=numpy.argmax):
+def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
+                            **kwargs):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
 
@@ -428,7 +430,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
-    cidx = cluster_over_time(stat, time_avg, window, argmax)
+    cidx = cluster_over_time(stat, time_avg, window, **kwargs)
 
     return cidx
 
@@ -456,7 +458,8 @@ def mean_if_greater_than_zero(vals):
     return vals[above_zero].mean(), above_zero.sum()
 
 
-def cluster_over_time(stat, time, window, argmax=numpy.argmax):
+def cluster_over_time(stat, time, window, method='python',
+                      argmax=numpy.argmax):
     """Cluster generalized transient events over time via maximum stat over a
     symmetric sliding window
 
@@ -468,6 +471,9 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
         time to use for clustering
     window: float
         length to cluster over
+    method: string
+        Either "cython" to use the cython implementation, or "python" to use
+        the pure python version.
     argmax: function
         the function used to calculate the maximum value
 
@@ -483,39 +489,45 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
     stat = stat[time_sorting]
     time = time[time_sorting]
 
-    left = numpy.searchsorted(time, time - window)
-    right = numpy.searchsorted(time, time + window)
+    left = time.searchsorted(time - window)
+    right = time.searchsorted(time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
 
-    # i is the index we are inspecting, j is the next one to save
-    i = 0
-    j = 0
-    while i < len(left):
-        l = left[i]
-        r = right[i]
+    if method == 'cython':
+        j = timecluster_cython(indices, left, right, stat, len(left))
+    elif method == 'python':
+        # i is the index we are inspecting, j is the next one to save
+        i = 0
+        j = 0
+        while i < len(left):
+            l = left[i]
+            r = right[i]
 
-        # If there are no other points to compare it is obviously the max
-        if (r - l) == 1:
-            indices[j] = i
-            j += 1
-            i += 1
-            continue
+            # If there are no other points to compare it is obviously the max
+            if (r - l) == 1:
+                indices[j] = i
+                j += 1
+                i += 1
+                continue
 
-        # Find the location of the maximum within the time interval around i
-        max_loc = argmax(stat[l:r]) + l
+            # Find the location of the maximum within the time interval
+            # around i
+            max_loc = argmax(stat[l:r]) + l
 
-        # If this point is the max, we can skip to the right boundary
-        if max_loc == i:
-            indices[j] = i
-            i = r
-            j += 1
+            # If this point is the max, we can skip to the right boundary
+            if max_loc == i:
+                indices[j] = i
+                i = r
+                j += 1
 
-        # If the max is later than i, we can skip to it
-        elif max_loc > i:
-            i = max_loc
+            # If the max is later than i, we can skip to it
+            elif max_loc > i:
+                i = max_loc
 
-        elif max_loc < i:
-            i += 1
+            elif max_loc < i:
+                i += 1
+    else:
+        raise ValueError(f'Do not recognize method {method}')
 
     indices = indices[:j]
 
@@ -526,7 +538,8 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
 class MultiRingBuffer(object):
     """Dynamic size n-dimensional ring buffer that can expire elements."""
 
-    def __init__(self, num_rings, max_time, dtype, min_buffer_size=8):
+    def __init__(self, num_rings, max_time, dtype, min_buffer_size=16,
+                 buffer_increment=8, resize_invalid_fraction=0.4):
         """
         Parameters
         ----------
@@ -537,10 +550,21 @@ class MultiRingBuffer(object):
             The maximum "time" an element can exist in each ring.
         dtype: numpy.dtype
             The type of each element in the ring buffer.
-        min_buffer_size: int (optional: default=8)
+        min_buffer_size: int (optional: default=16)
             All ring buffers will be initialized to this length. If a buffer is
             made larger it will no smaller than this value. Buffers may become
             smaller than this length at any given time as triggers are expired.
+        buffer_increment: int (optional: default=8)
+            When increasing ring buffers, add this many points. Be careful if
+            changing this and min_buffer_size from default values, it is
+            possible to get stuck in a mode where the buffers are always being
+            resized.
+        resize_invalid_fraction: float (optional:default=0.4)
+            If this fraction of any buffer contains unused data points then
+            resize it to contain only valid points. As with the previous two
+            options, be careful changing default values, it is
+            possible to get stuck in a mode where the buffers are always being
+            resized.
         """
         self.max_time = max_time
         self.buffer = []
@@ -548,6 +572,8 @@ class MultiRingBuffer(object):
         self.valid_ends = []
         self.valid_starts = []
         self.min_buffer_size = min_buffer_size
+        self.buffer_increment = buffer_increment
+        self.resize_invalid_fraction = resize_invalid_fraction
         for _ in range(num_rings):
             self.buffer.append(numpy.zeros(self.min_buffer_size, dtype=dtype))
             self.buffer_expire.append(numpy.zeros(self.min_buffer_size,
@@ -592,11 +618,17 @@ class MultiRingBuffer(object):
             if self.valid_ends[i] == len(self.buffer[i]):
                 self.buffer[i] = numpy.resize(
                     self.buffer[i],
-                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
+                    max(
+                        len(self.buffer[i]) + self.buffer_increment,
+                        self.min_buffer_size
+                    )
                 )
                 self.buffer_expire[i] = numpy.resize(
                     self.buffer_expire[i],
-                    max(len(self.buffer[i]) * 2, self.min_buffer_size)
+                    max(
+                        len(self.buffer[i]) + self.buffer_increment,
+                        self.min_buffer_size
+                    )
                 )
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
@@ -628,10 +660,14 @@ class MultiRingBuffer(object):
             j += 1
         self.valid_starts[buffer_index] = j
         val_start = self.valid_starts[buffer_index]
-        if val_start > 0.3 * len(self.buffer[buffer_index]):
-            # If 30% of stored triggers are expired, free up memory
-            self.buffer_expire[buffer_index] = self.buffer_expire[buffer_index][val_start:].copy()
-            self.buffer[buffer_index] = self.buffer[buffer_index][val_start:].copy()
+        val_end = self.valid_ends[buffer_index]
+        buf_len = len(self.buffer[buffer_index])
+        invalid_limit = self.resize_invalid_fraction * buf_len
+        if (buf_len - val_end) + val_start > invalid_limit:
+            # If self.resize_invalid_fraction of stored triggers are expired
+            # or are not set, free up memory
+            self.buffer_expire[buffer_index] = self.buffer_expire[buffer_index][val_start:val_end].copy()
+            self.buffer[buffer_index] = self.buffer[buffer_index][val_start:val_end].copy()
             self.valid_ends[buffer_index] -= val_start
             self.valid_starts[buffer_index] = 0
 
@@ -1178,8 +1214,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
 
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
-                                      self.timeslide_interval,
-                                      self.analysis_block)
+                                  self.timeslide_interval,
+                                  self.analysis_block,
+                                  method='cython')
             offsets = offsets[cidx]
             zerolag_idx = (offsets == 0)
             bkg_idx = (offsets != 0)

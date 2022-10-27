@@ -11,13 +11,13 @@ V1_FRAME=https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW170817/
 V1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
 
 echo -e "\\n\\n>> [`date`] Getting template bank"
-wget -nc ${CONFIG_URL}/${BANK_FILE}
+wget -nv -nc ${CONFIG_URL}/${BANK_FILE}
 echo -e "\\n\\n>> [`date`] Bank veto bank"
-wget -nc ${CONFIG_URL}/${BANK_VETO_FILE}
+wget -nv -nc ${CONFIG_URL}/${BANK_VETO_FILE}
 for IFO in H1 L1 V1; do
     echo -e "\\n\\n>> [`date`] Getting ${IFO} frame"
     FRAME=${IFO}_FRAME
-    wget -nc ${!FRAME}
+    wget -nv -nc ${!FRAME}
 done
 
 EVENT=1187008882

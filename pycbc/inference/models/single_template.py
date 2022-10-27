@@ -187,7 +187,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
 
         phase = 1
         if 'coa_phase' in p:
-            phase = numpy.exp(1.0j * 2 * p['coa_phase'])
+            phase = numpy.exp(-1.0j * 2 * p['coa_phase'])
 
         sh_total = hh_total = 0
 
@@ -207,7 +207,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
             f = (fp + 1.0j * fc) * pol_phase
 
             # Note, this includes complex conjugation already
-            # as our stored inner products were hp*xdata
+            # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic) / p['distance'] * phase
             self.htfs[ifo] = htf
             sh = self.sh[ifo].at_time(self.dts[ifo], interpolate='quadratic')
