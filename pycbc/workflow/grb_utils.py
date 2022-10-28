@@ -433,11 +433,11 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     for inj_tag in inj_tags:
         tag_inj_files = FileList([f for f in inj_files
                                   if inj_tag in f.tags])
-        # The [1] here stems from the injection group information
+        # The here stems from the injection group information
         # being stored in the second tag. This could be improved
         # depending on the final implementation of injections
         tag_insp_files = FileList([f for f in inj_insp_files
-                                   if inj_tag in f.tags[1])
+                                   if inj_tag in f.tags[1]])
         node, inj_find_file = job_instance.create_node(
                                            tag_inj_files, tag_insp_files,
                                            pp_dir)
