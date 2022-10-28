@@ -10,7 +10,7 @@ from ligo.lw import utils, table, lsctables
 from pycbc.io.ligolw import LIGOLWContentHandler
 import argparse
 
-parser = argparse.ArgumentParser(usage="", description=__doc__[1:])
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
     "--inputs-match",
     action="append",
@@ -47,6 +47,11 @@ bfields = (
     "polarization",
     "coa_phase",
 )
+
+columns = ''
+for param in bfields:
+    columns += param + ' '
+
 dtypem = {"names": mfields, "formats": ("f8", "f8", "f8", "f8", "f8")}
 dtypeo = {
     "names": bfields,
@@ -101,4 +106,4 @@ for i in range(len(match_files)):
 
     data = np.append(data, pdata)
 
-np.savetxt(args.output, data)
+np.savetxt(args.output, data, header=columns)

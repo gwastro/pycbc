@@ -91,26 +91,6 @@ class CollectResultsExecutable(wf.Executable):
 
         return node
 
-
-class CollectFullResultsExecutable(wf.Executable):
-    """class for adding some parameters in the resulting .dat file from collect results script"""
-
-    current_retention_level = wf.Executable.ALL_TRIGGERS
-
-    def create_node(self, analysis_time, collect_file, extra_tags=None):
-        if extra_tags is None:
-            extra_tags = []
-        node = wf.Executable.create_node(self)
-
-        node.add_input_opt("--input-collect-results", collect_file)
-
-        node.new_output_file_opt(
-            analysis_time, ".dat", "--output", tags=self.tags + extra_tags
-        )
-
-        return node
-
-
 class FaithSimPlotExecutable(wf.Executable):
     """Class for running pycbc_faithsim_plot"""
 
@@ -142,7 +122,7 @@ class FaithSimPlotExecutable(wf.Executable):
         return node
 
 
-parser = argparse.ArgumentParser(description=__doc__[:1])
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action="version", version=__version__)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
@@ -216,21 +196,6 @@ collect_node = collect_exe.create_node(
 workflow += collect_node
 collect_results = collect_node.output_files[0]
 
-full_results_exe = CollectFullResultsExecutable(
-    workflow.cp,
-    "pycbc_faithsim_collect_full_results",
-    ifos=["H1", "L1", "V1"],
-    out_dir="collect_results",
-)
-
-full_results_node = full_results_exe.create_node(
-    workflow.analysis_time, collect_results, extra_tags=["full_result-"]
-)
-
-workflow += full_results_node
-
-collect_full_results = full_results_node.output_files[0]
-
 subsections = [
     sec for sec in workflow.cp.sections() if sec.startswith("pycbc_faithsim_plots")
 ]
@@ -245,7 +210,7 @@ for subsec in subsections:
         tags=[endname],
     )
     plot_node = plot_exe.create_node(
-        workflow.analysis_time, collect_full_results, config_path, subsec
+        workflow.analysis_time, collect_results, config_path, subsec
     )
 
     workflow += plot_node

@@ -1,3 +1,3 @@
 cd output
 
-pycbc_submit_dax \
+pycbc_submit_dax

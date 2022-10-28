@@ -15,6 +15,22 @@ import numpy as np
 from ligo.lw import utils, table, lsctables
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from pycbc import pnutils
+from pycbc.conversions import mtotal_from_mass1_mass2, q_from_mass1_mass2, eta_from_mass1_mass2, mchirp_from_mass1_mass2, chi_eff
+
+def derived_quantities(data):
+    M = mtotal_from_mass1_mass2(data['mass1'], data['mass2'])
+    mchirp = mchirp_from_mass1_mass2(data['mass1'], data['mass2'])
+    q = q_from_mass1_mass2(data['mass1'], data['mass2'])
+    chi_eff = chi_eff(data['mass1'], data['mass2'], data["spin1z"], data["spin2z"])
+    eta = eta_from_mass1_mass2(data['mass1'], data['mass2'])
+
+    s1 = (data["spin1x"] ** 2 + data["spin1y"] ** 2 + data["spin1z"] ** 2) ** 0.5
+    s2 = (data["spin2x"] ** 2 + data["spin2y"] ** 2 + data["spin2z"] ** 2) ** 0.5
+    
+    s81 = data["sigma1"] / 8
+    s82 = data["sigma2"] / 8
+    
+    return {'total_mass':M, 'mass_ratio':q, 'mchirp':mchirp, 'spin1_magnitude':s1, 'spin2_magnitude':s2, 'eta':eta, 'chi_eff':chi_eff, 's81': s81, 's82':s82}
 
 def basic_scatter(
     out_name,
@@ -125,50 +141,51 @@ parser.add_argument("--output-plot", required=True, help="name of the output plo
 
 args = parser.parse_args()
 
-data = np.genfromtxt(args.input_file, names=True)
+with open(args.input_file, 'r') as f:
+    l = f.readlines()[0]
 
-red_data = data[data["match"] > -0.5]
+data = np.genfromtxt(args.input_file, names=True)
 
 title = args.parameter_x + " VS " + args.parameter_y + " colorbar " + args.parameter_z
 
 neg_idx = np.flatnonzero(data["match"] < 0)
 
-if args.parameter_z == "time_offset":
-    basic_scatter(
-        args.output_plot,
-        neg_idx,
-        args.parameter_x,
-        args.parameter_y,
-        title,
-        red_data[args.parameter_x],
-        red_data[args.parameter_y],
-        red_data[args.parameter_z],
-        args.parameter_z,
-        vmin=args.vmin,
-        vmax=args.vmax,
-        xmin=args.xmin,
-        ymin=args.ymin,
-        majorL=args.majorL,
-        minorL=args.minorL,
-        colormap=args.colormap,
-    )
-
+if args.parameter_x in l:
+    v1d = data[args.parameter_x]
+elif args.parameter_x in derived_quantities(data).keys():
+    v1d = derived_quantities(data)[args.parameter_x]
 else:
-    basic_scatter(
-        args.output_plot,
-        neg_idx,
-        args.parameter_x,
-        args.parameter_y,
-        title,
-        data[args.parameter_x],
-        data[args.parameter_y],
-        data[args.parameter_z],
-        args.parameter_z,
-        vmin=args.vmin,
-        vmax=args.vmax,
-        xmin=args.xmin,
-        ymin=args.ymin,
-        majorL=args.majorL,
-        minorL=args.minorL,
-        colormap=args.colormap,
-    )
+    raise RuntimeError("Quantity "+args.parameter_x+" not calculated in the plotting script, we should add the calculation")
+
+if args.parameter_y in l:
+    v2d = data[args.parameter_y]
+elif args.parameter_y in derived_quantities(data).keys():
+    v2d = derived_quantities(data)[args.parameter_y]
+else:
+    raise RuntimeError("Quantity "+args.parameter_y+" not calculated in the plotting script, we should add the calculation")
+
+if args.parameter_z in l:
+    v3d = data[args.parameter_z]
+elif args.parameter_z in derived_quantities(data).keys():
+    v3d = derived_quantities(data)[args.parameter_z]
+else:
+    raise RuntimeError("Quantity "+args.parameter_z+" not calculated in the plotting script, we should add the calculation")
+
+basic_scatter(
+    args.output_plot,
+    neg_idx,
+    args.parameter_x,
+    args.parameter_y,
+    title,
+    v1d,
+    v2d,
+    v3d,
+    args.parameter_z,
+    vmin=args.vmin,
+    vmax=args.vmax,
+    xmin=args.xmin,
+    ymin=args.ymin,
+    majorL=args.majorL,
+    minorL=args.minorL,
+    colormap=args.colormap,
+)
