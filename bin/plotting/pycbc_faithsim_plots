@@ -28,7 +28,7 @@ def derived_quantities(data):
     M = mtotal_from_mass1_mass2(data["mass1"], data["mass2"])
     mchirp = mchirp_from_mass1_mass2(data["mass1"], data["mass2"])
     q = q_from_mass1_mass2(data["mass1"], data["mass2"])
-    chi_eff = chi_eff(data["mass1"], data["mass2"], data["spin1z"], data["spin2z"])
+    chieff = chi_eff(data["mass1"], data["mass2"], data["spin1z"], data["spin2z"])
     eta = eta_from_mass1_mass2(data["mass1"], data["mass2"])
 
     s1 = (data["spin1x"] ** 2 + data["spin1y"] ** 2 + data["spin1z"] ** 2) ** 0.5
@@ -44,7 +44,7 @@ def derived_quantities(data):
         "spin1_magnitude": s1,
         "spin2_magnitude": s2,
         "eta": eta,
-        "chi_eff": chi_eff,
+        "chi_eff": chieff,
         "s81": s81,
         "s82": s82,
     }
