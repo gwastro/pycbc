@@ -39,7 +39,9 @@ def ISCO_solution(chi, incl):
     chi: float
         the BH dimensionless spin parameter
     incl: float
-        inclination of the orbit
+        inclination angle between the BH spin and the orbital angular
+        momentum in radians
+        
     Returns
     ----------
     float
