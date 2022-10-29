@@ -26,8 +26,26 @@ formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
 import numpy as np
 from scipy.optimize import root_scalar
 
-def ISCO_analitic_solution(chi, sgn):
+def ISCO_solution(chi, incl):
+    r"""Analytic solution of the innermost
+    stable circular orbit (ISCO).
+
+    ..See eq. (2.21) of 
+    `Bardeen, J. M., Press, W. H., Teukolsky, S. A. (1972)
+    https://articles.adsabs.harvard.edu/pdf/1972ApJ...178..347B
+
+    Parameters
+    -----------
+    chi: float
+        the BH dimensionless spin parameter
+    incl: float
+        inclination of the orbit
+    Returns
+    ----------
+    float
+    """
     chi2 = chi * chi
+    sgn = np.sign(np.cos(incl))
     Z1 = 1 + np.cbrt(1 - chi2) * (np.cbrt(1 + chi) + np.cbrt(1 - chi))
     Z2 = np.sqrt(3 * chi2 + Z1 * Z1)
     return 3 + Z2 - sgn * np.sqrt((3 - Z1) * (3 + Z1 + 2 * Z2))
@@ -278,17 +296,12 @@ def PG_ISSO_solver(chi, incl):
         the radius of the orbit in BH mass units
     """
     # Auxiliary variables
-    cos_incl = np.cos(incl)
-    sgn = np.sign(cos_incl)
-    sgnchi = sgn*chi
-    if np.isscalar(sgnchi):
-        sgnchi = np.array(sgnchi, copy=False, ndmin=1)
-        sgn = np.array(sgn, copy=False, ndmin=1)
+    if np.isscalar(chi):
         chi = np.array(chi, copy=False, ndmin=1)
         incl = np.array(incl, copy=False, ndmin=1)
     chi = np.abs(chi)
     # ISCO radius for the given spin magnitude
-    rISCO_limit = ISCO_analitic_solution(chi, sgn)
+    rISCO_limit = ISCO_solution(chi, incl)
     # If the inclination is 0 or pi, just output the ISCO radius
     equatorial = np.isclose(incl, 0) | np.isclose(incl, np.pi)
     if all(equatorial):
@@ -310,8 +323,8 @@ def PG_ISSO_solver(chi, incl):
     initial_hi = np.maximum(rISCO_limit, rISSO_at_pole_limit)
     initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
     brackets = [
-        (bl, bh) if c != 1 else None
-        for bl, bh, c in zip(initial_lo, initial_hi, chi)]
+        (bl, bh) if (c != 1 and PG_ISSO_eq(bl, c, inc)*PG_ISSO_eq(bh, c, inc)<0) else None
+        for bl, bh, c, inc in zip(initial_lo, initial_hi, chi, incl)]
     solution = np.array([
         root_scalar(
             PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr, bracket=bracket,
