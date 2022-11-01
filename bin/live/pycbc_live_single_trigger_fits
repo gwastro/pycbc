@@ -70,6 +70,12 @@ parser.add_argument("--output-directory", required=True,
                     help="Directory in which to save the output file.")
 parser.add_argument("--output-fit-plot", action='store_true',
                     help="Flag to save a plot of the fits.")
+parser.add_argument("--output-id-string",
+                    help="Identification string to add to output filenames")
+parser.add_argument("--x-lim-upper", type=float,
+                    help="Add an upper limit to the x-axis of the plot")
+parser.add_argument("--y-lim-upper", type=float,
+                    help="Add an upper limit to the y-axis of the plot")
 #parser.add_argument("--", default="", help="")
 
 stat.insert_statistic_option_group(parser,
@@ -270,7 +276,10 @@ for ifo in args.ifos:
 logging.info('Sorting events into template duration bins')
 
 oput_file = os.path.join(args.output_directory,
-                         args.analysis_date + "-TRIGGER-FITS.hdf")
+                         args.analysis_date)
+if args.output_id_string:
+    oput_file += f'-{args.output_id_string}'
+oput_file += "-TRIGGER-FITS.hdf"
 
 # Fit the triggers within each bin
 n_bins = duration_bin_edges.size - 1
@@ -379,13 +388,22 @@ for ifo in args.ifos:
         ax.plot(plotbins, cum_fit, "--", color=colours[bin_num],
                 label=r"$\alpha = $%.2f" % alphas[ifo][bin_num])
     oput_plot = os.path.join(args.output_directory,
-                             ifo + '-' + args.analysis_date + "-TRIGGER-FITS.png")
+                             f'{ifo}-{args.analysis_date}')
+    if args.output_id_string:
+        oput_plot += f'-{args.output_id_string}'
+    oput_plot += "-TRIGGER-FITS.png"
     ax.semilogy()
     ax.grid()
-    ax.set_xlim(args.fit_threshold, 1.05 * maxstat)
+    x_upper = args.x_lim_upper or 1.05 * maxstat
+    y_upper = args.y_lim_upper or 1.5 * max_rate
+    ax.set_xlim(args.fit_threshold, x_upper)
     ax.set_ylim(0.5 / live_time[ifo], 1.5 * max_rate)
     ax.set_xlabel(args.sngl_ranking)
     ax.set_ylabel("Number of louder triggers per live time")
-    ax.legend()
+    title = f"{ifo} {args.analysis_date} trigger fits"
+    if args.output_id_string:
+        title += f' {args.output_id_string}'
+    ax.set_title(title)
+    ax.legend(loc='upper right')
     logging.getLogger().setLevel(logging.WARNING)
     fig.savefig(oput_plot)
