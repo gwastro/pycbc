@@ -649,6 +649,13 @@ class GatedGaussianNoise(BaseGatedGaussian):
             logl += norm - 0.5*rr
         return float(logl)
     
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        return [type(self)]
+    
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
@@ -866,6 +873,13 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # compute the marginalized log likelihood
         marglogl = special.logsumexp(loglr) + lognl - numpy.log(len(self.pol))
         return float(marglogl)
+    
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        return [type(self)]
     
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
