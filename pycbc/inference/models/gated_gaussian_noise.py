@@ -837,13 +837,9 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # inner products
             d = self._overwhitened_data[det]
             # overwhiten the hp and hc
-            # we'll do this in place for computational efficiency, but as a
-            # result we'll clear the current waveforms cache so a repeated call
-            # to get_waveforms does not return the overwhitened versions
-            self._current_wfs = None
             invpsd = self._invpsds[det]
-            hp *= invpsd
-            hc *= invpsd
+            hp = hp*invpsd
+            hc = hc*invpsd
             # get the various gated inner products
             hpd = hp[slc].inner(gated_d[slc]).real  # <hp, d>
             hcd = hc[slc].inner(gated_d[slc]).real  # <hc, d>
@@ -891,7 +887,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
 
         # combine into a single waveform
         combine = {}
-        for det in ['H1', 'L1']:
+        for det in self.data:
             # get max waveform length across all pols
             mlen = max([len(x[det][i]) for x in wfs for i in range(len(x[det]))])
             for wf in wfs:
