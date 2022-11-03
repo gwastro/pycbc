@@ -55,7 +55,7 @@ if remainder > 0:
         injs_per_split[i] += 1
 
 # Sanity check: did we get account for all injs?
-assert sum(injs_per_split) == num_splits, "Not all injections were accounted for!"
+assert sum(injs_per_split) == num_injs, "Not all injections were accounted for!"
 
 # Sort injections by time
 inj_table.sort(order='tc')
