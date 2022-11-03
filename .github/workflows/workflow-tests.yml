@@ -27,7 +27,7 @@ jobs:
         sudo systemctl enable condor
     - name: install pegasus
       run: |
-        wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | apt-key add -
+        wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
         echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu bionic main" |
  sudo tee -a /etc/apt/sources.list
         sudo apt-get update
