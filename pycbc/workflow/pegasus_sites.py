@@ -182,9 +182,10 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
     sitecat.add_sites(site)
 
-# Would like to add this, but need to figure out some issues with copy
-# protocol. Probably condorio would be the ideal thing to use here, but that
-# doesn't work with our INSPIRAL 111111/FILENAME.xml LFN schem
+
+# NOTE: We should now be able to add a nonfs site. I'll leave this for a
+#       future patch/as demanded feature though. The setup would largely be
+#       the same as the OSG site, except without the OSG specific things.
 
 # def add_condorpool_nonfs_site(sitecat, cp):
 
