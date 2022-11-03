@@ -18,7 +18,6 @@ gwdatafind
 
 # Requirements for full pegasus env
 pegasus-wms.api >= 5.0.3
-GitPython>1.0 # Required by pegasus-wms.api, but not declared as such
 # need to pin until pegasus for further upstream
 # addresses incompatibility between old flask/jinja2 and latest markupsafe
 markupsafe <= 2.0.1

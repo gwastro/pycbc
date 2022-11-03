@@ -51,7 +51,6 @@ install_requires =  setup_requires + [
                       'setuptools',
                       'gwdatafind',
                       'pegasus-wms.api >= 5.0.3',
-                      'GitPython>1.0',
                       'python-ligo-lw >= 1.7.0',
                       'ligo-segments',
                       'lalsuite!=7.2',
