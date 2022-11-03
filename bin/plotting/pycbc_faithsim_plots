@@ -24,32 +24,6 @@ from pycbc.conversions import (
 )
 
 
-def derived_quantities(data):
-    M = mtotal_from_mass1_mass2(data["mass1"], data["mass2"])
-    mchirp = mchirp_from_mass1_mass2(data["mass1"], data["mass2"])
-    q = q_from_mass1_mass2(data["mass1"], data["mass2"])
-    chieff = chi_eff(data["mass1"], data["mass2"], data["spin1z"], data["spin2z"])
-    eta = eta_from_mass1_mass2(data["mass1"], data["mass2"])
-
-    s1 = (data["spin1x"] ** 2 + data["spin1y"] ** 2 + data["spin1z"] ** 2) ** 0.5
-    s2 = (data["spin2x"] ** 2 + data["spin2y"] ** 2 + data["spin2z"] ** 2) ** 0.5
-
-    s81 = data["sigma1"] / 8
-    s82 = data["sigma2"] / 8
-
-    return {
-        "total_mass": M,
-        "mass_ratio": q,
-        "mchirp": mchirp,
-        "spin1_magnitude": s1,
-        "spin2_magnitude": s2,
-        "eta": eta,
-        "chi_eff": chieff,
-        "s81": s81,
-        "s82": s82,
-    }
-
-
 def basic_scatter(
     out_name,
     neg_idx,
@@ -159,43 +133,56 @@ parser.add_argument("--output-plot", required=True, help="name of the output plo
 
 args = parser.parse_args()
 
-with open(args.input_file, "r") as f:
-    l = f.readlines()[0]
+derived_func_map = {
+    "total_mass": lambda d: mtotal_from_mass1_mass2(d["mass1"], d["mass2"]),
+    "mass_ratio": lambda d: q_from_mass1_mass2(d["mass1"], d["mass2"]),
+    "mchirp": lambda d: q_from_mass1_mass2(d["mass1"], d["mass2"]),
+    "spin1_magnitude": lambda d: (
+        d["spin1x"] ** 2 + d["spin1y"] ** 2 + d["spin1z"] ** 2
+    )
+    ** 0.5,
+    "spin2_magnitude": lambda d: (["spin2x"] ** 2 + d["spin2y"] ** 2 + d["spin2z"] ** 2)
+    ** 0.5,
+    "eta": lambda d: eta_from_mass1_mass2(d["mass1"], d["mass2"]),
+    "chi_eff": lambda d: chi_eff(d["mass1"], d["mass2"], d["spin1z"], d["spin2z"]),
+    "s81": lambda d: d["sigma1"] / 8,
+    "s82": lambda d: d["sigma2"] / 8,
+}
 
 data = np.genfromtxt(args.input_file, names=True)
 
-title = args.parameter_x + " VS " + args.parameter_y + " colorbar " + args.parameter_z
+title = f"{args.parameter_x} VS {args.parameter_y} colorbar {args.parameter_z}"
 
 neg_idx = np.flatnonzero(data["match"] < 0)
 
-if args.parameter_x in l:
+if args.parameter_x in data.dtype.names:
     v1d = data[args.parameter_x]
-elif args.parameter_x in derived_quantities(data).keys():
-    v1d = derived_quantities(data)[args.parameter_x]
+elif args.parameter_x in derived_func_map:
+    v1d = derived_func_map[args.parameter_x](data)
 else:
-    raise RuntimeError(
+    raise NotImplementedError(
         "Quantity "
         + args.parameter_x
         + " not calculated in the plotting script, we should add the calculation"
     )
 
-if args.parameter_y in l:
+if args.parameter_y in data.dtype.names:
     v2d = data[args.parameter_y]
-elif args.parameter_y in derived_quantities(data).keys():
-    v2d = derived_quantities(data)[args.parameter_y]
+elif args.parameter_y in derived_func_map:
+    v2d = v1d = derived_func_map[args.parameter_y](data)
 else:
-    raise RuntimeError(
+    raise NotImplementedError(
         "Quantity "
         + args.parameter_y
         + " not calculated in the plotting script, we should add the calculation"
     )
 
-if args.parameter_z in l:
+if args.parameter_z in data.dtype.names:
     v3d = data[args.parameter_z]
-elif args.parameter_z in derived_quantities(data).keys():
-    v3d = derived_quantities(data)[args.parameter_z]
+elif args.parameter_z in derived_func_map:
+    v3d = derived_func_map[args.parameter_z](data)
 else:
-    raise RuntimeError(
+    raise NotImplementedError(
         "Quantity "
         + args.parameter_z
         + " not calculated in the plotting script, we should add the calculation"

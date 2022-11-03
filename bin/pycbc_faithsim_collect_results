@@ -48,9 +48,7 @@ bfields = (
     "coa_phase",
 )
 
-columns = ''
-for param in bfields:
-    columns += param + ' '
+columns = " ".join(bfields)
 
 dtypem = {"names": mfields, "formats": ("f8", "f8", "f8", "f8", "f8")}
 dtypeo = {
