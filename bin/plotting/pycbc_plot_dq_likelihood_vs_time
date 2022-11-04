@@ -57,8 +57,8 @@ ax.legend(loc='upper left', markerscale=5)
 # format plot
 ax.set_ylabel('Data quality log likelihood')
 ax.set_xlabel('Time (s)')
-ax.set_ylim(ymin=0,ymax=ymax)
-ax.set_xlim(xmin=xmin,xmax=xmax)
+ax.set_ylim(ymin=0, ymax=ymax)
+ax.set_xlim(xmin=xmin, xmax=xmax)
 
 # add a grid to the plot
 ax.grid()
