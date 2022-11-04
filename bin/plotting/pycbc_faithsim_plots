@@ -136,7 +136,7 @@ args = parser.parse_args()
 derived_func_map = {
     "total_mass": lambda d: mtotal_from_mass1_mass2(d["mass1"], d["mass2"]),
     "mass_ratio": lambda d: q_from_mass1_mass2(d["mass1"], d["mass2"]),
-    "mchirp": lambda d: q_from_mass1_mass2(d["mass1"], d["mass2"]),
+    "mchirp": lambda d: mchirp_from_mass1_mass2(d["mass1"], d["mass2"]),
     "spin1_magnitude": lambda d: (
         d["spin1x"] ** 2 + d["spin1y"] ** 2 + d["spin1z"] ** 2
     )
