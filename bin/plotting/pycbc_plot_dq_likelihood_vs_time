@@ -66,7 +66,7 @@ ax.grid()
 yticks = ax.get_yticks()
 
 # add second axis
-ax2=ax.twinx()
+ax2 = ax.twinx()
 ax2_ymax = numpy.exp(ymax)
 ax2.set_ylim(1,ax2_ymax)
 ax2.plot(xmax+1e9,100)
