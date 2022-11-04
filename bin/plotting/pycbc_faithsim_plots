@@ -141,7 +141,7 @@ derived_func_map = {
         d["spin1x"] ** 2 + d["spin1y"] ** 2 + d["spin1z"] ** 2
     )
     ** 0.5,
-    "spin2_magnitude": lambda d: (["spin2x"] ** 2 + d["spin2y"] ** 2 + d["spin2z"] ** 2)
+    "spin2_magnitude": lambda d: (d["spin2x"] ** 2 + d["spin2y"] ** 2 + d["spin2z"] ** 2)
     ** 0.5,
     "eta": lambda d: eta_from_mass1_mass2(d["mass1"], d["mass2"]),
     "chi_eff": lambda d: chi_eff(d["mass1"], d["mass2"], d["spin1z"], d["spin2z"]),
