@@ -13,13 +13,6 @@ import configparser as ConfigParser
 import numpy as np
 import logging
 import argparse
-from pycbc.workflow.jobsetup import (
-    select_generic_executable,
-    int_gps_time_to_str,
-    PycbcCreateInjectionsExecutable,
-    LalappsInspinjExecutable,
-)
-
 from pycbc.workflow.plotting import PlotExecutable
 from pycbc.workflow import setup_splittable_dax_generated
 
@@ -34,7 +27,7 @@ def make_faithsim_plot(workflow, analysis_time, input_file, out_dir, tags=None):
         node = PlotExecutable(
             workflow.cp,
             "pycbc_faithsim_plots",
-            ifos=["H1", "L1", "V1"],
+            ifos=["X1"],
             out_dir=out_dir,
             tags=[tag] + tags,
         ).create_node()
@@ -92,9 +85,9 @@ class CollectResultsExecutable(wf.Executable):
         node = wf.Executable.create_node(self)
 
         for match in match_list:
-            node.add_input_opt("--inputs-match", match)
+            node.add_input_opt("--match-inputs", match)
         for bank in bank_list:
-            node.add_input_opt("--inputs-bank", bank)
+            node.add_input_opt("--bank-inputs", bank)
 
         node.new_output_file_opt(
             analysis_time, ".dat", "--output", tags=self.tags + extra_tags
@@ -111,24 +104,13 @@ args = parser.parse_args()
 
 workflow = wf.Workflow(args)
 
-config_path = os.path.abspath(args.config_files[0])
-
-wf.makedir(args.output_dir)
-os.chdir(args.output_dir)
-
-wf.makedir("match")
-wf.makedir("collect_results")
-wf.makedir("injections")
-wf.makedir("bank")
-wf.makedir("plots")
-
 num_banks = workflow.cp.get("splitbank", "num_banks")
 
 injections_exe = CreateInjectionExecutable(
     workflow.cp,
     "lalapps_inspinj",
-    ifos=["H1", "L1", "V1"],
-    out_dir="injections",
+    ifos=["X1"],
+    out_dir=workflow.output_dir + "injections",
     tags=["inj"],
 )
 
@@ -138,31 +120,30 @@ workflow += inj_node
 inj = inj_node.output_files[0]
 
 split_exe = wf.PycbcSplitBankXmlExecutable(
-    workflow.cp, "pycbc_splitbank", num_banks=num_banks, out_dir="bank"
+    workflow.cp, "pycbc_splitbank", num_banks=num_banks, out_dir=workflow.output_dir +"bank"
 )
-spltbank_node = split_exe.create_node(inj)
+splitbank_node = split_exe.create_node(inj)
 
 workflow += spltbank_node
 
 faithsim_exe = FaithsimExecutable(
-    workflow.cp, "pycbc_faithsim", ifos=["H1", "L1", "V1"], out_dir="match"
+    workflow.cp, "pycbc_faithsim", ifos=["X1"], out_dir=workflow.output_dir +"match"
 )
 
 collect_exe = CollectResultsExecutable(
     workflow.cp,
     "pycbc_faithsim_collect_results",
-    ifos=["H1", "L1", "V1"],
-    out_dir="collect_results",
+    ifos=["X1"],
+    out_dir=workflow.output_dir +"collect_results",
 )
 
 faithsim_files = wf.FileList([])
 
-for i in range(int(num_banks)):
-    bank = spltbank_node.output_files[i]
+for i, bank in enumerate(splitbank_node.output_files):
     faithsim_node = faithsim_exe.create_node(
         workflow.analysis_time,
         param_file=bank,
-        extra_tags=["match-{i}"],
+        extra_tags=[f"match{i}"],
     )
     workflow += faithsim_node
     faithsim_files.append(faithsim_node.output_file)
@@ -180,7 +161,7 @@ make_faithsim_plot(
     workflow,
     workflow.analysis_time,
     collect_results,
-    out_dir="plots",
+    out_dir=workflow.output_dir +"plots",
     tags=None,
 )
 

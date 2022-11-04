@@ -12,13 +12,13 @@ import argparse
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument(
-    "--inputs-match",
+    "--match-inputs",
     action="append",
     required=True,
     help=".dat files containing the match computed with pycbc_faithsim",
 )
 parser.add_argument(
-    "--inputs-bank",
+    "--bank-inputs",
     action="append",
     required=True,
     help="bank files from pycbc_splitbank",

@@ -145,8 +145,8 @@ derived_func_map = {
     ** 0.5,
     "eta": lambda d: eta_from_mass1_mass2(d["mass1"], d["mass2"]),
     "chi_eff": lambda d: chi_eff(d["mass1"], d["mass2"], d["spin1z"], d["spin2z"]),
-    "s81": lambda d: d["sigma1"] / 8,
-    "s82": lambda d: d["sigma2"] / 8,
+    "horizon_distance_1": lambda d: d["sigma1"] / 8,
+    "horizon_distance_2": lambda d: d["sigma2"] / 8,
 }
 
 data = np.genfromtxt(args.input_file, names=True)
