@@ -537,7 +537,7 @@ for dqf,dql in zip(dqfiles,dqfile_labels):
     outdir = rdir['data_quality/%s_trigger_rates_%s' % (dqf.ifo,dql)]
     wf.make_dq_trigger_rate_plot(workflow, [dqf], outdir, tags=[dql,'full_data'])
 
-    outdir = rdir['data_quality/%s_percentiles_%s' % (dqf.ifo,dql)]
+    outdir = rdir[f'data_quality/{dqf.ifo}_percentiles_{dql}']
     wf.make_dq_percentile_plot(workflow, [dqf], outdir, tags=[dql,'full_data'])
 
 # DQ background binning plot
