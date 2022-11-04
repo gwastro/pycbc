@@ -30,7 +30,7 @@ f = h5py.File(args.dq_file, 'r')
 
 bin_name = args.background_bin
 
-if bin_name not in f['%s/dq_vals'%ifo].keys():
+if bin_name not in f[f'{ifo}/dq_vals'].keys():
     raise ValueError("Background bin name not found in DQ file")
 else:
     yvals = f['%s/dq_vals/%s'%(ifo,bin_name)][:]
