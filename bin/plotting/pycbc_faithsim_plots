@@ -169,7 +169,7 @@ else:
 if args.parameter_y in data.dtype.names:
     v2d = data[args.parameter_y]
 elif args.parameter_y in derived_func_map:
-    v2d = v1d = derived_func_map[args.parameter_y](data)
+    v2d = derived_func_map[args.parameter_y](data)
 else:
     raise NotImplementedError(
         "Quantity "
