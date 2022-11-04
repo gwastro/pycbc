@@ -15,7 +15,7 @@ import pycbc.results
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--verbose', action="store_true")
-parser.add_argument("--ifo", type=str,required=True)
+parser.add_argument("--ifo", type=str, required=True)
 parser.add_argument("--dq-file", required=True)
 parser.add_argument('--background-bin', default='all_bin')
 parser.add_argument("--output-file", required=True)
