@@ -164,7 +164,7 @@ def setup_dq_reranking(workflow, dq_label, insps, bank,
         assert len(ifo_insp)==1
         ifo_insp = ifo_insp[0]
         flag_name = flag_str
-        logging.info("Creating job for flag %s" % (flag_name))
+        logging.info("Creating job for flag %s", flag_name)
         for seg in segs[ifo]:
             raw_exe = PyCBCCalculateDQFlagExecutable(workflow.cp,
                                                  'calculate_dqflag', ifos=ifo,
