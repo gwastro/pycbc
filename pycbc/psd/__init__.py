@@ -18,6 +18,7 @@ import copy
 from ligo import segments
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
+from pycbc.psd.analytical_space import *
 from pycbc.psd.estimate import *
 from pycbc.psd.variation import *
 from pycbc.types import float32,float64
