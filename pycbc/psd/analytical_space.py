@@ -297,7 +297,7 @@ def psd_lisa_tdi_A_E_1p5(f, len_arm, acc_noise_level, oms_noise_level):
                f, len_arm, acc_noise_level, oms_noise_level)
     csd_XY = analytical_csd_lisa_tdi_1p5(
                f, len_arm, acc_noise_level, oms_noise_level)
-    psd_A_E = psd_A - csd_XY
+    psd_A_E = psd_X - csd_XY
 
     return psd_A_E
 
