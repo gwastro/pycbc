@@ -328,3 +328,26 @@ def psd_lisa_tdi_T_1p5(f, len_arm, acc_noise_level, oms_noise_level):
     psd_T = psd_X + 2*csd_XY
 
     return psd_T
+
+def sensitivity_curve_lisa_SciRD(f):
+    r""" The analytical LISA's sensitivity curve in SciRD,
+    averaged over sky and polarization.
+    Parameters
+    ----------
+    f : float or array
+        The frequency or frequency range.
+    Returns
+    -------
+    sense_curve : float or array
+        The sky and polarization averaged analytical
+        LISA's sensitivity curve in SciRD.
+    Notes
+    -----
+        Pease see Eq.(114) in <LISA-LCST-SGS-TN-001> for more details.
+    """
+    s_I = 5.76e-48 * (1+(4e-4/f)**2)
+    s_II = 3.6e-41
+    R = 1 + (f/2.5e-2)**2
+    sense_curve = 10/3 * (s_I/(2*np.pi*f)**4+s_II) * R
+
+    return sense_curve
