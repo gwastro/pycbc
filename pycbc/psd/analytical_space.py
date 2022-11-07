@@ -35,13 +35,13 @@ def psd_lisa_acc_noise(f, acc_noise_level):
     r""" The PSD of LISA's acceleration noise.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     acc_noise_level : float
         The level of acceleration noise.
     Returns
     -------
-    s_acc_nu : float or array
+    s_acc_nu : float or numpy.array
         The PSD value or array for acceleration noise.
     Notes
     -----
@@ -57,13 +57,13 @@ def psd_lisa_oms_noise(f, oms_noise_level):
     r""" The PSD of LISA's OMS noise.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     oms_noise_level : float
         The level of OMS noise.
     Returns
     -------
-    s_oms_nu : float or array
+    s_oms_nu : float or numpy.array
         The PSD value or array for OMS noise.
     Notes
     -----
@@ -78,8 +78,8 @@ def lisa_psd_components(f, acc_noise_level, oms_noise_level):
     r""" The PSD of LISA's acceleration and OMS noise.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     acc_noise_level : float
         The level of acceleration noise.
     oms_noise_level : float
@@ -98,17 +98,17 @@ def analytical_psd_lisa_tdi_1p5(f, len_arm, acc_noise_level, oms_noise_level):
     r""" The TDI-1.5 analytical PSD for LISA.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     acc_noise_level : float
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
     Returns
     -------
-    psd : float or array
+    psd : float or numpy.array
         The TDI-1.5 PSD for LISA.
     Notes
     -----
@@ -125,17 +125,17 @@ def analytical_psd_lisa_tdi_2p0(f, len_arm, acc_noise_level, oms_noise_level):
     r""" The TDI-2.0 analytical PSD for LISA.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     acc_noise_level : float
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
     Returns
     -------
-    psd : float or array
+    psd : float or numpy.array
         The TDI-2.0 PSD for LISA.
     Notes
     -----
@@ -154,13 +154,13 @@ def averaged_lisa_fplus_sq_approx(f, len_arm):
     averaged over sky and polarization.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     Returns
     -------
-    fp_sq_approx : float or array
+    fp_sq_approx : float or numpy.array
         The sky and polarization averaged squared antenna response.
     Notes
     -----
@@ -176,13 +176,13 @@ def averaged_response_lisa_tdi_1p5(f, len_arm):
     averaged over sky and polarization.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     Returns
     -------
-    response_tdi_1p5 : float or array
+    response_tdi_1p5 : float or numpy.array
         The sky and polarization averaged TDI-1.5 response function to GW.
     Notes
     -----
@@ -199,13 +199,13 @@ def averaged_response_lisa_tdi_2p0(f, len_arm):
     averaged over sky and polarization.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     Returns
     -------
-    response_tdi_2p0 : float or array
+    response_tdi_2p0 : float or numpy.array
         The sky and polarization averaged TDI-2.0 response function to GW.
     Notes
     -----
@@ -222,17 +222,17 @@ def semi_sensitivity_curve_lisa(f, len_arm, acc_noise_level, oms_noise_level):
     averaged over sky and polarization.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     acc_noise_level : float
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
     Returns
     -------
-    sense_curve : float or array
+    sense_curve : float or numpy.array
         The sky and polarization averaged semi-analytical
         LISA's sensitivity curve.
     Notes
@@ -250,17 +250,17 @@ def analytical_csd_lisa_tdi_1p5(f, len_arm, acc_noise_level, oms_noise_level):
     r""" The cross-spectrum density between LISA's TDI channel X and Y.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     acc_noise_level : float
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
     Returns
     -------
-    csd : float or array
+    csd : float or numpy.array
         The CSD (value or array) between LISA's TDI channel X and Y.
     Notes
     -----
@@ -277,17 +277,17 @@ def psd_lisa_tdi_A_E_1p5(f, len_arm, acc_noise_level, oms_noise_level):
     r""" The PSD of LISA's TDI-1.5 channel A and E.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     acc_noise_level : float
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
     Returns
     -------
-    psd_A_E : float or array
+    psd_A_E : float or numpy.array
         The PSD (value or array) of LISA's TDI-1.5 channel A and E.
     Notes
     -----
@@ -305,17 +305,17 @@ def psd_lisa_tdi_T_1p5(f, len_arm, acc_noise_level, oms_noise_level):
     r""" The PSD of LISA's TDI-1.5 channel T.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     len_arm : float
-        The arm length of LISA.
+        The arm length of LISA, in the unit of "m".
     acc_noise_level : float
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
     Returns
     -------
-    psd_T : float or array
+    psd_T : float or numpy.array
         The PSD (value or array) of LISA's TDI-1.5 channel T.
     Notes
     -----
@@ -334,11 +334,11 @@ def sensitivity_curve_lisa_SciRD(f):
     averaged over sky and polarization.
     Parameters
     ----------
-    f : float or array
-        The frequency or frequency range.
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
     Returns
     -------
-    sense_curve : float or array
+    sense_curve : float or numpy.array
         The sky and polarization averaged analytical
         LISA's sensitivity curve in SciRD.
     Notes
