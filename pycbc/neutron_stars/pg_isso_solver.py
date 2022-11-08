@@ -329,7 +329,7 @@ def PG_ISSO_solver(chi, incl):
     initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
     brackets = [
         (bl, bh) if (c != 1 and PG_ISSO_eq(bl, c, inc)
-        * PG_ISSO_eq(bh, c, inc) < 0) else None
+                    * PG_ISSO_eq(bh, c, inc) < 0) else None
         for bl, bh, c, inc in zip(initial_lo, initial_hi, chi, incl)]
     solution = np.array([
         root_scalar(
