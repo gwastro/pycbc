@@ -148,8 +148,8 @@ parser.add_argument("--version", action="version",
 
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", metavar="FILE",
-                    required=True, help="SimInspiral or SnglInspiral XML file "
-                                        "containing the template parameters")
+                    required=True, help="File specifying the template parameters, "
+                                        "either in HDF or LIGOLW XML format.")
 parser.add_argument("--total-mass-divide", type=float,
                     help="Total mass to switch from --template-approximant to "
                          "--highmass-approximant.")
