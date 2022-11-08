@@ -28,7 +28,7 @@ from scipy.optimize import root_scalar
 
 def ISCO_solution(chi, incl):
     r"""Analytic solution of the innermost
-    stable circular orbit (ISCO).
+    stable circular orbit (ISCO) for the Kerr metric.
 
     ..See eq. (2.21) of 
     `Bardeen, J. M., Press, W. H., Teukolsky, S. A. (1972)
