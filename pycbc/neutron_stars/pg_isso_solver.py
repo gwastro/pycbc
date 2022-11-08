@@ -26,11 +26,12 @@ formalism. See `Stone, Loeb, Berger, PRD 87, 084053 (2013)`_.
 import numpy as np
 from scipy.optimize import root_scalar
 
+
 def ISCO_solution(chi, incl):
     r"""Analytic solution of the innermost
     stable circular orbit (ISCO) for the Kerr metric.
 
-    ..See eq. (2.21) of 
+    ..See eq. (2.21) of
     `Bardeen, J. M., Press, W. H., Teukolsky, S. A. (1972)
     https://articles.adsabs.harvard.edu/pdf/1972ApJ...178..347B
 
@@ -41,7 +42,7 @@ def ISCO_solution(chi, incl):
     incl: float
         inclination angle between the BH spin and the orbital angular
         momentum in radians
-        
+
     Returns
     ----------
     float
@@ -310,7 +311,7 @@ def PG_ISSO_solver(chi, incl):
         return rISCO_limit
 
     # ISSO radius for an inclination of pi/2
-    # Initial guess is based on the extrema of the polar ISSO radius equation, 
+    # Initial guess is based on the extrema of the polar ISSO radius equation,
     # that are: r=6 (chi=1) and r=1+sqrt(3)+sqrt(3+sqrt(12))=5.274... (chi=0)
     initial_guess = [5.27451056440629 if c > 0.5 else 6 for c in chi]
     rISSO_at_pole_limit = np.array([
@@ -327,7 +328,8 @@ def PG_ISSO_solver(chi, incl):
     initial_hi = np.maximum(rISCO_limit, rISSO_at_pole_limit)
     initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
     brackets = [
-        (bl, bh) if (c != 1 and PG_ISSO_eq(bl, c, inc)*PG_ISSO_eq(bh, c, inc)<0) else None
+        (bl, bh) if (c != 1 and PG_ISSO_eq(bl, c, inc)
+        * PG_ISSO_eq(bh, c, inc) < 0) else None
         for bl, bh, c, inc in zip(initial_lo, initial_hi, chi, incl)]
     solution = np.array([
         root_scalar(
