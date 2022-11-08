@@ -349,10 +349,8 @@ with ctx:
             # Only do this is idx doesn't get time shifted out of the time
             # we are looking at.
             idx_dict = {
-                ifo: idx[ifo][np.logical_and(
-                    idx[ifo] > time_delay_idx[ifo],
-                    idx[ifo] - time_delay_idx[ifo] < len(snr_dict[ifo])
-                    )
+                ifo: idx[ifo][
+                    idx[ifo] + time_delay_idx[ifo] < len(snr_dict[ifo]) - 1
                 ]
                 for ifo in args.instruments}
             # Find triggers that are coincident (in geocent time) in
@@ -507,7 +505,7 @@ with ctx:
                         norm_dict[ifo],
                         coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start)
                     ifo_out_vals['cont_chisq'] = autochisq.values(
-                        snr[ifo] / norm_dict[ifo], coinc_idx_det_frame[ifo],
+                        snr_dict[ifo] / norm_dict[ifo], coinc_idx_det_frame[ifo],
                         template, stilde[ifo].psd, norm_dict[ifo],
                         stilde=stilde[ifo], low_frequency_cutoff=flow)
                     ifo_out_vals['chisq'] = chisq[ifo]

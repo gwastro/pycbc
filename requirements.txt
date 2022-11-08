@@ -17,7 +17,7 @@ tqdm
 gwdatafind
 
 # Requirements for full pegasus env
-pegasus-wms >= 5.0.1
+pegasus-wms.api >= 5.0.3
 # need to pin until pegasus for further upstream
 # addresses incompatibility between old flask/jinja2 and latest markupsafe
 markupsafe <= 2.0.1
