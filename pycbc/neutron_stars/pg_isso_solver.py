@@ -310,6 +310,8 @@ def PG_ISSO_solver(chi, incl):
         return rISCO_limit
 
     # ISSO radius for an inclination of pi/2
+    # Initial guess is based on the extrema of the polar ISSO radius equation, 
+    # that are: r=6 (chi=1) and r=1+sqrt(3)+sqrt(3+sqrt(12))=5.274... (chi=0)
     initial_guess = [5.27451056440629 if c > 0.5 else 6 for c in chi]
     rISSO_at_pole_limit = np.array([
         root_scalar(
@@ -317,7 +319,7 @@ def PG_ISSO_solver(chi, incl):
             fprime2=ISSO_eq_at_pole_dr2, args=(c)).root
         for g0, c in zip(initial_guess, chi)])
     # If the inclination is pi/2, just output the ISSO radius at the pole(s)
-    polar = np.isclose(incl, np.pi / 2)
+    polar = np.isclose(incl, 0.5*np.pi)
     if all(polar):
         return rISSO_at_pole_limit
 
