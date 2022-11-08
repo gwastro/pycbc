@@ -750,7 +750,7 @@ def spin_from_pulsar_freq(mass, radius, freq):
     """
     omega = 2 * numpy.pi * freq
     mt = mass * lal.MTSUN_SI
-    mominert = (2/3.) * mt * (radius * 1000 / lal.C_SI)**2
+    mominert = (2/5.) * mt * (radius * 1000 / lal.C_SI)**2
     return mominert * omega / mt**2
 
 
