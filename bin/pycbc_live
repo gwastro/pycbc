@@ -432,7 +432,7 @@ class LiveEventManager(object):
         if self.run_snr_optimization \
                 and self.ifar_upload_threshold < ifar:
             logging.info('Optimizing SNR for coinc above threshold ..')
-            live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
+            live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
             self.setup_optimize_snr(
                 coinc_results,
                 live_ifos,
@@ -452,17 +452,19 @@ class LiveEventManager(object):
             if single is None:
                 continue
 
+            sifar = single['foreground/ifar']
+            logging.info(f'Found {ifo} single with ifar {sifar}')
+
             followup_ifos = [i for i in active if i is not ifo]
+            # Don't recompute ifar considering other ifos
             sld = self.compute_followup_data(
                 [ifo],
                 single,
                 followup_ifos=followup_ifos,
                 recalculate_ifar=False
             )
-            ifar = single['foreground/ifar']
             # Apply a trials factor of the number of active detectors
-            ifar /= len(active)
-            single['foreground/ifar'] = ifar
+            single['foreground/ifar'] = sifar / len(active)
 
             event = CandidateForGraceDB(
                 [ifo],
@@ -501,7 +503,7 @@ class LiveEventManager(object):
                 )
 
             if args.enable_single_detector_upload \
-                    and self.ifar_upload_threshold < ifar \
+                    and self.ifar_upload_threshold < single['foreground/ifar'] \
                     and not any(nearby_coincs):
                 gid = event.upload(fname, gracedb_server=args.gracedb_server,
                                    testing=self.gracedb_testing,
@@ -511,11 +513,11 @@ class LiveEventManager(object):
                 gid = None
                 event.save(fname)
 
-            if self.ifar_upload_threshold < ifar \
+            if self.ifar_upload_threshold < single['foreground/ifar'] \
                     and not any(nearby_coincs) \
                     and self.run_snr_optimization:
-                logging.info('Optimizing SNR for coinc above threshold ..')
-                live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
+                logging.info('Optimizing SNR for single above threshold ..')
+                live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
                 self.setup_optimize_snr(
                     single,
                     live_ifos,
