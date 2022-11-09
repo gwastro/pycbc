@@ -29,9 +29,10 @@ LDC manual <LISA-LCST-SGS-MAN-001>, and paper <10.1088/1361-6382/ab1101>.
 
 import numpy as np
 from astropy import constants
+from pycbc.types import FrequencySeries
 
 
-def psd_lisa_acc_noise(f, acc_noise_level):
+def psd_lisa_acc_noise(f, acc_noise_level=3e-15):
     r""" The PSD of LISA's acceleration noise.
     Parameters
     ----------
@@ -53,7 +54,7 @@ def psd_lisa_acc_noise(f, acc_noise_level):
 
     return s_acc_nu
 
-def psd_lisa_oms_noise(f, oms_noise_level):
+def psd_lisa_oms_noise(f, oms_noise_level=15e-12):
     r""" The PSD of LISA's OMS noise.
     Parameters
     ----------
@@ -74,7 +75,7 @@ def psd_lisa_oms_noise(f, oms_noise_level):
 
     return s_oms_nu
 
-def lisa_psd_components(f, acc_noise_level, oms_noise_level):
+def lisa_psd_components(f, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The PSD of LISA's acceleration and OMS noise.
     Parameters
     ----------
@@ -94,12 +95,17 @@ def lisa_psd_components(f, acc_noise_level, oms_noise_level):
 
     return [low_freq_component, high_freq_component]
 
-def analytical_psd_lisa_tdi_1p5(f, len_arm, acc_noise_level, oms_noise_level):
+def analytical_psd_lisa_tdi_1p5(length, delta_f, low_freq_cutoff,
+    len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The TDI-1.5 analytical PSD for LISA.
     Parameters
     ----------
-    f : float or numpy.array
-        The frequency or frequency range, in the unit of "Hz".
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of LISA, in the unit of "m".
     acc_noise_level : float
@@ -108,25 +114,38 @@ def analytical_psd_lisa_tdi_1p5(f, len_arm, acc_noise_level, oms_noise_level):
         The level of OMS noise.
     Returns
     -------
-    psd : float or numpy.array
+    fseries : FrequencySeries
         The TDI-1.5 PSD for LISA.
     Notes
     -----
         Pease see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    [s_acc_nu, s_oms_nu] = lisa_psd_components(
-                              f, acc_noise_level, oms_noise_level)
-    omega_len = 2*np.pi*f * len_arm/constants.c.value
-    psd = 16*(np.sin(omega_len))**2 * (s_oms_nu+s_acc_nu*(3+np.cos(omega_len)))
+    psd = []
+    lg_fmin = np.log10(2e-5)
+    lg_fmax = np.log10(1)
+    fr = 10**np.arange(lg_fmin, lg_fmax, (lg_fmax-lg_fmin)/length)
+    for f in fr:
+        [s_acc_nu, s_oms_nu] = lisa_psd_components(
+                                f, acc_noise_level, oms_noise_level)
+        omega_len = 2*np.pi*f * len_arm/constants.c.value
+        psd.append(16*(np.sin(omega_len))**2 * (s_oms_nu+s_acc_nu*(3+np.cos(omega_len))))
+    fseries = FrequencySeries(np.array(psd), delta_f=delta_f)
+    kmin = int(low_freq_cutoff / fseries.delta_f)
+    fseries.data[:kmin] = 0
 
-    return psd
+    return fseries
 
-def analytical_psd_lisa_tdi_2p0(f, len_arm, acc_noise_level, oms_noise_level):
+def analytical_psd_lisa_tdi_2p0(length, delta_f, low_freq_cutoff,
+    len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The TDI-2.0 analytical PSD for LISA.
     Parameters
     ----------
-    f : float or numpy.array
-        The frequency or frequency range, in the unit of "Hz".
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of LISA, in the unit of "m".
     acc_noise_level : float
@@ -135,21 +154,29 @@ def analytical_psd_lisa_tdi_2p0(f, len_arm, acc_noise_level, oms_noise_level):
         The level of OMS noise.
     Returns
     -------
-    psd : float or numpy.array
+    fseries : FrequencySeries
         The TDI-2.0 PSD for LISA.
     Notes
     -----
         Pease see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    [s_acc_nu, s_oms_nu] = lisa_psd_components(
-                              f, acc_noise_level, oms_noise_level)
-    omega_len = 2*np.pi*f * len_arm/constants.c.value
-    psd = 64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 * \
-          (s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len)))
+    psd = []
+    lg_fmin = np.log10(2e-5)
+    lg_fmax = np.log10(1)
+    fr = 10**np.arange(lg_fmin, lg_fmax, (lg_fmax-lg_fmin)/length)
+    for f in fr:
+        [s_acc_nu, s_oms_nu] = lisa_psd_components(
+                                f, acc_noise_level, oms_noise_level)
+        omega_len = 2*np.pi*f * len_arm/constants.c.value
+        psd = 64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 * \
+            (s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len)))
+    fseries = FrequencySeries(np.array(psd), delta_f=delta_f)
+    kmin = int(low_freq_cutoff / fseries.delta_f)
+    fseries.data[:kmin] = 0
 
-    return psd
+    return fseries
 
-def averaged_lisa_fplus_sq_approx(f, len_arm):
+def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
     r""" An approximant for LISA's squared antenna response function,
     averaged over sky and polarization.
     Parameters
@@ -171,7 +198,7 @@ def averaged_lisa_fplus_sq_approx(f, len_arm):
 
     return fp_sq_approx
 
-def averaged_response_lisa_tdi_1p5(f, len_arm):
+def averaged_response_lisa_tdi_1p5(f, len_arm=2.5e9):
     r""" LISA's TDI-1.5 response function to GW,
     averaged over sky and polarization.
     Parameters
@@ -194,7 +221,7 @@ def averaged_response_lisa_tdi_1p5(f, len_arm):
 
     return response_tdi_1p5
 
-def averaged_response_lisa_tdi_2p0(f, len_arm):
+def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
     r""" LISA's TDI-2.0 response function to GW,
     averaged over sky and polarization.
     Parameters
@@ -217,7 +244,7 @@ def averaged_response_lisa_tdi_2p0(f, len_arm):
     
     return response_tdi_2p0
 
-def semi_sensitivity_curve_lisa(f, len_arm, acc_noise_level, oms_noise_level):
+def semi_sensitivity_curve_lisa(f, len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The semi-analytical LISA's sensitivity curve,
     averaged over sky and polarization.
     Parameters
@@ -246,7 +273,7 @@ def semi_sensitivity_curve_lisa(f, len_arm, acc_noise_level, oms_noise_level):
 
     return sense_curve
 
-def analytical_csd_lisa_tdi_1p5(f, len_arm, acc_noise_level, oms_noise_level):
+def analytical_csd_lisa_tdi_1p5(f, len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The cross-spectrum density between LISA's TDI channel X and Y.
     Parameters
     ----------
@@ -273,12 +300,17 @@ def analytical_csd_lisa_tdi_1p5(f, len_arm, acc_noise_level, oms_noise_level):
 
     return csd
 
-def psd_lisa_tdi_A_E_1p5(f, len_arm, acc_noise_level, oms_noise_level):
+def analytical_psd_lisa_tdi_A_E_1p5(length, delta_f, low_freq_cutoff,
+    len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The PSD of LISA's TDI-1.5 channel A and E.
     Parameters
     ----------
-    f : float or numpy.array
-        The frequency or frequency range, in the unit of "Hz".
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of LISA, in the unit of "m".
     acc_noise_level : float
@@ -287,26 +319,40 @@ def psd_lisa_tdi_A_E_1p5(f, len_arm, acc_noise_level, oms_noise_level):
         The level of OMS noise.
     Returns
     -------
-    psd_A_E : float or numpy.array
-        The PSD (value or array) of LISA's TDI-1.5 channel A and E.
+    fseries : FrequencySeries
+        The PSD of LISA's TDI-1.5 channel A and E.
     Notes
     -----
         Pease see Eq.(58) in <LISA-LCST-SGS-MAN-001> for more details.
     """
-    psd_X = analytical_psd_lisa_tdi_1p5(
-               f, len_arm, acc_noise_level, oms_noise_level)
-    csd_XY = analytical_csd_lisa_tdi_1p5(
-               f, len_arm, acc_noise_level, oms_noise_level)
-    psd_A_E = psd_X - csd_XY
+    psd = []
+    lg_fmin = np.log10(2e-5)
+    lg_fmax = np.log10(1)
+    fr = 10**np.arange(lg_fmin, lg_fmax, (lg_fmax-lg_fmin)/length)
+    for f in fr:
+        [s_acc_nu, s_oms_nu] = lisa_psd_components(
+                                f, acc_noise_level, oms_noise_level)
+        omega_len = 2*np.pi*f * len_arm/constants.c.value
+        psd = 8*(np.sin(omega_len))**2 *\
+                (4*(1+np.cos(omega_len)+np.cos(omega_len)**2)*s_acc_nu +\
+                (2+np.cos(omega_len))*s_oms_nu)
+    fseries = FrequencySeries(np.array(psd), delta_f=delta_f)
+    kmin = int(low_freq_cutoff / fseries.delta_f)
+    fseries.data[:kmin] = 0
 
-    return psd_A_E
+    return fseries
 
-def psd_lisa_tdi_T_1p5(f, len_arm, acc_noise_level, oms_noise_level):
+def analytical_psd_lisa_tdi_T_1p5(length, delta_f, low_freq_cutoff,
+    len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The PSD of LISA's TDI-1.5 channel T.
     Parameters
     ----------
-    f : float or numpy.array
-        The frequency or frequency range, in the unit of "Hz".
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of LISA, in the unit of "m".
     acc_noise_level : float
@@ -315,19 +361,27 @@ def psd_lisa_tdi_T_1p5(f, len_arm, acc_noise_level, oms_noise_level):
         The level of OMS noise.
     Returns
     -------
-    psd_T : float or numpy.array
-        The PSD (value or array) of LISA's TDI-1.5 channel T.
+    fseries : FrequencySeries
+        The PSD of LISA's TDI-1.5 channel T.
     Notes
     -----
         Pease see Eq.(59) in <LISA-LCST-SGS-MAN-001> for more details.
     """
-    psd_X = analytical_psd_lisa_tdi_1p5(
-               f, len_arm, acc_noise_level, oms_noise_level)
-    csd_XY = analytical_csd_lisa_tdi_1p5(
-               f, len_arm, acc_noise_level, oms_noise_level)
-    psd_T = psd_X + 2*csd_XY
+    psd = []
+    lg_fmin = np.log10(2e-5)
+    lg_fmax = np.log10(1)
+    fr = 10**np.arange(lg_fmin, lg_fmax, (lg_fmax-lg_fmin)/length)
+    for f in fr:
+        [s_acc_nu, s_oms_nu] = lisa_psd_components(
+                                f, acc_noise_level, oms_noise_level)
+        omega_len = 2*np.pi*f * len_arm/constants.c.value
+        psd = 32*np.sin(omega_len)**2 * np.sin(omega_len/2)**2 *\
+                (4*s_acc_nu*np.sin(omega_len/2)**2 + s_oms_nu)
+    fseries = FrequencySeries(np.array(psd), delta_f=delta_f)
+    kmin = int(low_freq_cutoff / fseries.delta_f)
+    fseries.data[:kmin] = 0
 
-    return psd_T
+    return fseries
 
 def sensitivity_curve_lisa_SciRD(f):
     r""" The analytical LISA's sensitivity curve in SciRD,
