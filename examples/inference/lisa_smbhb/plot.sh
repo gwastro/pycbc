@@ -10,4 +10,4 @@ pycbc_inference_plot_posterior \
     --expected-parameters \
         'mass1_from_mchirp_q(mchirp,q)':1015522.4376 \
         'mass2_from_mchirp_q(mchirp,q)':796849.1091 \
-        tc:4800021.15572853 \
+        tc:4799624.274911478 \

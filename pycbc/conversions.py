@@ -23,7 +23,7 @@
 # =============================================================================
 #
 """
-This modules provides a library of functions that calculate waveform parameters
+This module provides a library of functions that calculate waveform parameters
 from other parameters. All exposed functions in this module's namespace return
 one parameter given a set of inputs.
 """
@@ -33,7 +33,10 @@ import numpy
 import lal
 from pycbc.detector import Detector
 import pycbc.cosmology
-from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
+from .coordinates import (
+    spherical_to_cartesian as _spherical_to_cartesian,
+    cartesian_to_spherical as _cartesian_to_spherical)
+from pycbc import neutron_stars as ns
 
 pykerr = pycbc.libutils.import_optional('pykerr')
 lalsim = pycbc.libutils.import_optional('lalsimulation')
@@ -417,6 +420,92 @@ def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
     lambdav = numpy.interp(mass_src, mass_from_file, lambda_from_file)
     return lambdav
 
+
+def remnant_mass_from_mass1_mass2_spherical_spin_eos(
+        mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H'):
+    """
+    Function that determines the remnant disk mass of an NS-BH system
+    using the fit to numerical-relativity results discussed in
+    Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018).
+    The BH spin may be misaligned with the orbital angular momentum.
+    In such cases the ISSO is approximated following the approach of
+    Stone, Loeb & Berger, PRD 87, 084053 (2013), which was originally
+    devised for a previous NS-BH remnant mass fit of
+    Foucart, PRD 86, 124007 (2012).
+    Note: NS spin is assumed to be 0!
+
+    Parameters
+    -----------
+    mass1 : float
+        The mass of the black hole, in solar masses.
+    mass2 : float
+        The mass of the neutron star, in solar masses.
+    spin1a : float, optional
+        The dimensionless magnitude of the spin of mass1. Default = 0.
+    spin1pol : float, optional
+        The tilt angle of the spin of mass1. Default = 0 (aligned w L).
+    eos : str, optional
+        Name of the equation of state being adopted. Default is '2H'.
+
+    Returns
+    ----------
+    remnant_mass: float
+        The remnant mass in solar masses
+    """
+    mass1, mass2, spin1a, spin1pol, input_is_array = ensurearray(
+        mass1, mass2, spin1a, spin1pol)
+    # mass1 must be greater than mass2
+    try:
+        if any(mass2 > mass1) and input_is_array:
+            raise ValueError(f'Require mass1 >= mass2')
+    except TypeError:
+        if mass2 > mass1 and not input_is_array:
+            raise ValueError(f'Require mass1 >= mass2. {mass1} < {mass2}')
+    ns_compactness, ns_b_mass = ns.initialize_eos(mass2, eos)
+    eta = eta_from_mass1_mass2(mass1, mass2)
+    remnant_mass = ns.foucart18(
+        eta, ns_compactness, ns_b_mass, spin1a, spin1pol)
+    return formatreturn(remnant_mass, input_is_array)
+
+
+def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
+        mass1, mass2, spin1x=0.0, spin1y=0.0, spin1z=0.0, eos='2H'):
+    """
+    Function that determines the remnant disk mass of an NS-BH system
+    using the fit to numerical-relativity results discussed in
+    Foucart, Hinderer & Nissanke, PRD 98, 081501(R) (2018).
+    The BH spin may be misaligned with the orbital angular momentum.
+    In such cases the ISSO is approximated following the approach of
+    Stone, Loeb & Berger, PRD 87, 084053 (2013), which was originally
+    devised for a previous NS-BH remnant mass fit of
+    Foucart, PRD 86, 124007 (2012).
+    Note: NS spin is assumed to be 0!
+
+    Parameters
+    -----------
+    mass1 : float
+        The mass of the black hole, in solar masses.
+    mass2 : float
+        The mass of the neutron star, in solar masses.
+    spin1x : float, optional
+        The dimensionless x-component of the spin of mass1. Default = 0.
+    spin1y : float, optional
+        The dimensionless y-component of the spin of mass1. Default = 0.
+    spin1z : float, optional
+        The dimensionless z-component of the spin of mass1. Default = 0.
+    eos: str, optional
+        Name of the equation of state being adopted. Default is '2H'.
+
+    Returns
+    ----------
+    remnant_mass: float
+        The remnant mass in solar masses
+    """
+    spin1a, _, spin1pol = _cartesian_to_spherical(spin1x, spin1y, spin1z)
+    return remnant_mass_from_mass1_mass2_spherical_spin_eos(
+        mass1, mass2, spin1a, spin1pol, eos=eos)
+
+
 #
 # =============================================================================
 #
@@ -661,7 +750,7 @@ def spin_from_pulsar_freq(mass, radius, freq):
     """
     omega = 2 * numpy.pi * freq
     mt = mass * lal.MTSUN_SI
-    mominert = (2/3.) * mt * (radius * 1000 / lal.C_SI)**2
+    mominert = (2/5.) * mt * (radius * 1000 / lal.C_SI)**2
     return mominert * omega / mt**2
 
 
@@ -1537,5 +1626,7 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
            'nltides_gw_phase_diff_isco', 'spin_from_pulsar_freq',
-           'freqlmn_from_other_lmn', 'taulmn_from_other_lmn'
+           'freqlmn_from_other_lmn', 'taulmn_from_other_lmn',
+           'remnant_mass_from_mass1_mass2_spherical_spin_eos',
+           'remnant_mass_from_mass1_mass2_cartesian_spin_eos'
           ]

@@ -647,7 +647,7 @@ class Workflow(object):
                     f.write('--relative-dir work ')
                     # --dir is not being set here because it might be easier to
                     # set this in submit_dax still?
-                    f.write('-vvv ')
+                    f.write('-q ')
                     f.write('--dax {}'.format(filename))
         os.chdir(olddir)
 
@@ -705,6 +705,10 @@ class Workflow(object):
         planner_args['cluster'] = ['label,horizontal']
         planner_args['relative_dir'] = 'work'
         planner_args['cleanup'] = 'inplace'
+        # This quietens the planner a bit. We cannot set the verbosity
+        # directly, which would be better. So be careful, if changing the
+        # pegasus.mode property, it will change the verbosity (a lot).
+        planner_args['quiet'] = 1
 
         # FIXME: The location of output.map is hardcoded in the properties
         #        file. This is overridden for subworkflows, but is not for

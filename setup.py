@@ -50,7 +50,7 @@ install_requires =  setup_requires + [
                       'tqdm',
                       'setuptools',
                       'gwdatafind',
-                      'pegasus-wms.api >= 5.0.1',
+                      'pegasus-wms.api >= 5.0.3',
                       'python-ligo-lw >= 1.7.0',
                       'ligo-segments',
                       'lalsuite!=7.2',
@@ -304,7 +304,7 @@ setup (
     packages = find_packages(),
     package_data = {'pycbc.workflow': find_files('pycbc/workflow'),
                     'pycbc.results': find_files('pycbc/results'),
-                    'pycbc.tmpltbank': find_files('pycbc/tmpltbank')},
+                    'pycbc.neutron_stars': find_files('pycbc/neutron_stars')},
     ext_modules = ext,
     python_requires='>=3.7',
     classifiers=[

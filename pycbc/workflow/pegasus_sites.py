@@ -82,8 +82,6 @@ def add_condorpool_symlink_site(sitecat, cp):
     add_site_pegasus_profile(site, cp)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    site.add_profiles(Namespace.PEGASUS, key="transfer.links",
-                      value="true")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
@@ -117,6 +115,9 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
+    # This explicitly disables symlinking
+    site.add_profiles(Namespace.PEGASUS, key='nosymlink',
+                      value=True)
     site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
                       value="true")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
@@ -181,9 +182,10 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
     sitecat.add_sites(site)
 
-# Would like to add this, but need to figure out some issues with copy
-# protocol. Probably condorio would be the ideal thing to use here, but that
-# doesn't work with our INSPIRAL 111111/FILENAME.xml LFN schem
+
+# NOTE: We should now be able to add a nonfs site. I'll leave this for a
+#       future patch/as demanded feature though. The setup would largely be
+#       the same as the OSG site, except without the OSG specific things.
 
 # def add_condorpool_nonfs_site(sitecat, cp):
 
@@ -205,11 +207,11 @@ def add_osg_site(sitecat, cp):
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="getenv",
                       value="False")
-    site.add_profiles(Namespace.CONDOR, key="preserve_relative_paths",
-                      value="True")
     site.add_profiles(Namespace.CONDOR, key="+InitializeModulesEnv",
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="+SingularityCleanEnv",
+                      value="True")
+    site.add_profiles(Namespace.CONDOR, key="use_x509userproxy",
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
