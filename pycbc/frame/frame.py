@@ -645,6 +645,22 @@ class DataBuffer(object):
                 # so we should try again
                 time.sleep(0.1)
 
+    def at_times(self, times):
+        """ Looks up the value of the buffer at the given times.
+
+        Parameters
+        ----------
+        times: array of floats
+            The times whose values are needed
+
+        Returns
+        -------
+        values: array of floats
+            The values of the buffer at the given times
+        """
+        return self.raw_buffer.at_times(times)
+
+
 class StatusBuffer(DataBuffer):
 
     """ Read state vector or DQ information from a frame file """
@@ -656,7 +672,8 @@ class StatusBuffer(DataBuffer):
                        valid_mask=3,
                        force_update_cache=False,
                        increment_update_cache=None,
-                       valid_on_zero=False):
+                       valid_on_zero=False,
+                       threshold=None):
         """ Create a rolling buffer of status data from a frame
 
         Parameters
@@ -675,6 +692,9 @@ class StatusBuffer(DataBuffer):
         valid_on_zero: bool
             If True, `valid_mask` is ignored and the status is considered
             "good" simply when the channel is zero.
+        threshold: float
+            If valid_on_zero is False and threshold is given, then status
+            is considered good when the channel's value is above threshold
         """
         DataBuffer.__init__(self, frame_src, channel_name, start_time,
                             max_buffer=max_buffer,
@@ -683,6 +703,7 @@ class StatusBuffer(DataBuffer):
                             dtype=numpy.int32)
         self.valid_mask = valid_mask
         self.valid_on_zero = valid_on_zero
+        self.threshold = threshold
 
     def check_valid(self, values, flag=None):
         """Check if the data contains any non-valid status information
@@ -702,10 +723,12 @@ class StatusBuffer(DataBuffer):
         """
         if self.valid_on_zero:
             valid = values.numpy() == 0
+        elif self.threshold is not None:
+            valid = values.numpy() > self.threshold
         else:
             if flag is None:
                 flag = self.valid_mask
-            valid = numpy.bitwise_and(values.numpy(), flag) == flag
+            valid = numpy.bitwise_and(values.numpy().astype(int), flag) == flag
         return bool(numpy.all(valid))
 
     def is_extent_valid(self, start_time, duration, flag=None):
@@ -760,6 +783,8 @@ class StatusBuffer(DataBuffer):
 
         if self.valid_on_zero:
             invalid = data.numpy() != 0
+        elif self.threshold is not None:
+            invalid = data.numpy() <= self.threshold
         else:
             invalid = numpy.bitwise_and(data.numpy(), self.valid_mask) \
                     != self.valid_mask

@@ -1424,6 +1424,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  data_quality_channel=None,
                  idq_channel=None,
                  idq_state_channel=None,
+                 idq_threshold=None,
                  dyn_range_fac=pycbc.DYN_RANGE_FAC,
                  psd_abort_difference=None,
                  psd_recalculate_difference=None,
@@ -1484,6 +1485,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Channel to use for idq timeseries
         idq_state_channel : {str, None}, Optional
             Channel containing information about usability of idq
+        idq_threshold : float, Optional
+            Threshold which triggers a veto if iDQ channel falls below this threshold
         dyn_range_fac: {float, pycbc.DYN_RANGE_FAC}, Optional
             Scale factor to apply to strain
         psd_abort_difference: {float, None}, Optional
@@ -1522,6 +1525,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.dq = None
         self.idq = None
         self.idq_state = None
+        self.idq_threshold =  None
         self.dq_padding = dq_padding
 
         # State channel
@@ -1558,14 +1562,19 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if idq_channel is not None:
             if idq_state_channel is None:
                 raise ValueError('Each detector with an iDQ channel requires an iDQ state channel as well')
-            self.idq = pycbc.frame.iDQBuffer(frame_src, idq_channel, start_time,
-                                             max_buffer=max_buffer,
-                                             force_update_cache=force_update_cache,
-                                             increment_update_cache=increment_update_cache)
-            self.idq_state = pycbc.frame.iDQBuffer(frame_src, idq_state_channel, start_time,
-                                                   max_buffer=max_buffer,
-                                                   force_update_cache=force_update_cache,
-                                                   increment_update_cache=increment_update_cache)
+            if idq_threshold is None:
+                raise ValueError('If an iDQ channel is provided, a veto threshold must also be provided')
+            self.idq_threshold = idq_threshold
+            self.idq = pycbc.frame.StatusBuffer(frame_src, idq_channel, start_time,
+                                                max_buffer=max_buffer,
+                                                force_update_cache=force_update_cache,
+                                                increment_update_cache=increment_update_cache,
+                                                threshold=self.idq_threshold)
+            self.idq_state = pycbc.frame.StatusBuffer(frame_src, idq_channel, start_time,
+                                                      max_buffer=max_buffer,
+                                                      force_update_cache=force_update_cache,
+                                                      increment_update_cache=increment_update_cache,
+                                                      valid_mask=1)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
@@ -1934,6 +1943,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                    data_quality_channel=dq_channel,
                    idq_channel=idq_channel,
                    idq_state_channel=idq_state_channel,
+                   idq_threshold=args.idq_threshold,
                    sample_rate=args.sample_rate,
                    low_frequency_cutoff=args.low_frequency_cutoff,
                    highpass_frequency=args.highpass_frequency,
