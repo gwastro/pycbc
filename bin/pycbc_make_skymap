@@ -340,32 +340,32 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
 
         network_snr2 += snr ** 2
 
-    ifos = sorted(set(ifos) - set(subthreshold_ifos))
-    if not ifos:
-        raise RuntimeError('all interferometers have SNR below threshold.'
-                           ' Is this really a candidate event?')
+    trig_ifos = sorted(set(ifos) - set(subthreshold_ifos))
+    if not trig_ifos:
+        raise RuntimeError(f'All interferometers have SNR below threshold '
+                           '{thresh_SNR}. Is this really a candidate event?')
 
     coinc_results['foreground/stat'] = network_snr2 ** 0.5
     coinc_results['foreground/ifar'] = ifar
 
     # BAYESTAR's convention for end time of subthreshold detectors
-    subthreshold_sngl_time = np.mean(
-            [coinc_results['foreground/%s/end_time' % ifo] for ifo in ifos])
+    subthreshold_sngl_time = np.mean([
+        coinc_results['foreground/%s/end_time' % ifo] for ifo in trig_ifos])
 
     window_bins = int(snr_series_duration * sample_rate)
-    followup_data = {}
-    for ifo in ifos + subthreshold_ifos:
+    skyloc_data = {}
+    for ifo in ifos:
         key = 'foreground/{}/'.format(ifo)
 
         if ifo in subthreshold_ifos:
             coinc_results[key + 'end_time'] = subthreshold_sngl_time
 
-        followup_data[ifo] = {
+        skyloc_data[ifo] = {
             'psd': interpolate(coinc_results[key + 'psd_series'], 0.25)
         }
 
-        # now go back to the SNR time series and cut out
-        # a shorter piece centered on the end time
+        # Go back to the SNR time series and select a piece centered on the
+        # end time
         time = coinc_results[key + 'end_time']
         snr_series = coinc_results[key + 'snr_series']
         peak_bin = int((time - snr_series.start_time) / snr_series.delta_t)
@@ -381,22 +381,26 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             max_bin = peak_bin + window_bins + 1
             min_bin = peak_bin - window_bins
 
-        followup_data[ifo]['snr_series'] = \
+        skyloc_data[ifo]['snr_series'] = \
                 snr_series[min_bin:max_bin].astype(np.complex64)
 
-    kwargs = {'psds': {ifo: followup_data[ifo]['psd']
-                       for ifo in ifos + subthreshold_ifos},
+    kwargs = {'psds': {ifo: skyloc_data[ifo]['psd'] for ifo in ifos},
               'low_frequency_cutoff': f_low,
               'high_frequency_cutoff': f_upper,
-              'followup_data': followup_data,
+              'skyloc_data': skyloc_data,
               'channel_names': channel_names}
 
-    doc = live.CandidateForGraceDB(ifos, coinc_results, **kwargs)
+    doc = live.CandidateForGraceDB(
+        trig_ifos,
+        trig_ifos,
+        coinc_results,
+        **kwargs
+    )
 
     ligolw_file_path = os.path.join(tmpdir, file_name_tag + '.xml')
 
     if gracedb_server:
-        comments = ['Manual followup up from PyCBC']
+        comments = ['Manual followup from PyCBC']
         gid = doc.upload(ligolw_file_path,
                          gracedb_server=gracedb_server,
                          testing=test_event,
@@ -406,13 +410,11 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
         doc.save(ligolw_file_path)
 
     # Defining the approximant to feed into BAYESTAR
-
     row = WaveformArray.from_kwargs(
         mass1=mass1,
         mass2=mass2,
         spin1z=spin1z,
         spin2z=spin2z)
-
     bs_approximant = waveform.bank.parse_approximant_arg(approximant, row)[0]
 
     # BAYESTAR uses TaylorF2 instead of SPAtmplt

@@ -30,10 +30,10 @@ class CandidateForGraceDB(object):
         ----------
         coinc_ifos: list of strs
             A list of the originally triggered ifos with SNR above threshold
-            before possible significance followups.
+            for this candidate, before possible significance followups.
         ifos: list of strs
-            A list of the ifos participating with triggers identified in
-            coinc_results for this candidate: ifos contributing to significance
+            A list of the ifos with triggers identified in coinc_results for
+            this candidate: ifos contributing to significance
         coinc_results: dict of values
             A dictionary of values. The format is defined in
             `pycbc/events/coinc.py` and matches the on-disk representation in
@@ -49,7 +49,7 @@ class CandidateForGraceDB(object):
             in sky localization with BAYESTAR. The format should be
             `skyloc_data['H1']['snr_series']`. More detectors can be present
             than in `ifos`; if so, extra detectors will only be used for sky
-            localization and will not appear as sngl_inspiral entries (?).
+            localization.
         channel_names: dict of strings, optional
             Strain channel names for each detector. Will be recorded in the
             `sngl_inspiral` table.
@@ -64,6 +64,7 @@ class CandidateForGraceDB(object):
         self.coinc_results = coinc_results
         self.ifos = ifos
         assert len(coinc_ifos) < 3, f"I can't handle {coinc_ifos} coinc ifos!"
+        self.psds = kwargs['psds']
         self.basename = None
 
         # Determine if the candidate should be marked as HWINJ
@@ -86,6 +87,8 @@ class CandidateForGraceDB(object):
             extra_ifos = list(set(snr_ifos) - set(ifos))
 
             for ifo in snr_ifos:
+                # Ifos used for sky loc must have a PSD
+                assert ifo in self.psds
                 self.snr_series[ifo].start_time += self.time_offset
         else:
             self.snr_series = None
@@ -133,7 +136,6 @@ class CandidateForGraceDB(object):
         # Marker variable to collect template info from a valid sngl trigger
         sngl_populated = None
         network_snrsq = 0
-        # All ifos with SNR time series make it into the sngl table
         for sngl_id, ifo in enumerate(snr_ifos):
             sngl = return_empty_sngl(nones=True)
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
@@ -142,7 +144,6 @@ class CandidateForGraceDB(object):
             names = [n.split('/')[-1] for n in coinc_results
                      if f'foreground/{ifo}' in n]
             print(names)
-            #assert len(names), f"Can't find {ifo} in coinc results foreground!"
             for name in names:
                 val = coinc_results[f'foreground/{ifo}/{name}']
                 if name == 'end_time':
@@ -179,10 +180,11 @@ class CandidateForGraceDB(object):
 
         # Set merger time to the average of trigger peaks from coinc_results ifos
         self.merger_time = numpy.mean(
-                    [coinc_results[f'foreground/{ifo}/end_time']
-                     for ifo in ifos]) + self.time_offset
+            [coinc_results[f'foreground/{ifo}/end_time'] for ifo in ifos]) \
+            + self.time_offset
 
-        # For subthreshold detectors, respect BAYESTAR's assumptions and checks
+        # For extra detectors used only for sky loc, respect BAYESTAR's
+        # assumptions and checks
         bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
                                  'spin1y spin1z spin2x spin2y spin2z').split()
         for sngl in sngl_inspiral_table:
@@ -198,7 +200,7 @@ class CandidateForGraceDB(object):
         coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
         coinc_inspiral_row = lsctables.CoincInspiral()
         # This seems to be used as FAP, which should not be in gracedb
-        coinc_inspiral_row.false_alarm_rate = 0
+        coinc_inspiral_row.false_alarm_rate = 0.
         coinc_inspiral_row.minimum_duration = 0.
         coinc_inspiral_row.instruments = tuple(snr_ifos)
         coinc_inspiral_row.coinc_event_id = coinc_id
@@ -213,10 +215,8 @@ class CandidateForGraceDB(object):
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
 
         # Append the PSDs
-        self.psds = kwargs['psds']
         psds_lal = {}
-        for ifo in self.psds:
-            psd = self.psds[ifo]
+        for ifo, psd in self.psds.items():
             kmin = int(kwargs['low_frequency_cutoff'] / psd.delta_f)
             fseries = lal.CreateREAL8FrequencySeries(
                 "psd", psd.epoch, kwargs['low_frequency_cutoff'], psd.delta_f,
@@ -227,6 +227,8 @@ class CandidateForGraceDB(object):
 
         # P astro calculation
         if 'padata' in kwargs:
+            assert len(coinc_ifos) < 3, \
+                f"p_astro can't handle {coinc_ifos} coinc ifos!"
             trigger_data = {
                 'mass1': sngl_populated.mass1,
                 'mass2': sngl_populated.mass2,
@@ -235,8 +237,10 @@ class CandidateForGraceDB(object):
                 'network_snr': network_snrsq ** 0.5,
                 'far': far,
                 'triggered': coinc_ifos,
-                'active': snr_ifos}
-            horizons = {i: self.psds[i].dist for i in snr_ifos}
+                # Active = potentially contributing to significance:
+                # ignore ifos that only contribute to sky loc
+                'active': ifos}
+            horizons = {i: self.psds[i].dist for i in ifos}
             self.p_astro, self.p_terr = \
                 kwargs['padata'].do_pastro_calc(trigger_data, horizons)
         else:

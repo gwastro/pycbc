@@ -367,7 +367,7 @@ spin2z = opt_params[3]
 
 # Prepare for GraceDB upload
 coinc_results = {}
-followup_data = {}
+skyloc_data = {}
 
 loudest_ifo = None
 loudest_snr_allifos = 0
@@ -437,9 +437,9 @@ for idx, ifo in enumerate(ifos):
     coinc_results['foreground/'+ifo+'/chisq_dof'] = 1
     coinc_results['foreground/'+ifo+'/template_duration'] = \
         fp['template_duration'][()]
-    followup_data[ifo] = {}
-    followup_data[ifo]['psd'] = interpolate(data[ifo].psd, 0.25)
-    followup_data[ifo]['snr_series'] = snr_series_dict[ifo]
+    skyloc_data[ifo] = {}
+    skyloc_data[ifo]['psd'] = interpolate(data[ifo].psd, 0.25)
+    skyloc_data[ifo]['snr_series'] = snr_series_dict[ifo]
 
     # Find loudest SNR within coincidence window of the largest peak
     snr_peak = abs(loudest_snrs[ifo])
@@ -448,8 +448,8 @@ for idx, ifo in enumerate(ifos):
     # Add small buffer
     lttbd += 0.005
 
-    time_window = [loudest_snr_time_allifos-lttbd,
-                   loudest_snr_time_allifos+lttbd]
+    time_window = [loudest_snr_time_allifos - lttbd,
+                   loudest_snr_time_allifos + lttbd]
 
     snr_slice = snr_series_dict[ifo].time_slice(time_window[0], time_window[1])
     max_snr_idx = numpy.argmax(abs(snr_slice))
@@ -476,13 +476,16 @@ for ifo in fp['channel_names'].keys():
 
 mc_area_args = load_hdf5_to_dict(fp, 'mc_area_args/')
 
-kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
+kwargs = {'psds': {ifo: skyloc_data[ifo]['psd'] for ifo in ifos},
           'low_frequency_cutoff': flow,
-          'followup_data': followup_data,
+          'skyloc_data': skyloc_data,
           'channel_names': channel_names,
           'mc_area_args': mc_area_args}
 
+# Treat all ifos as having triggers
+# Do not recalculate p_astro
 doc = live.CandidateForGraceDB(
+    ifos,
     ifos,
     coinc_results,
     upload_snr_series=True,
@@ -493,7 +496,7 @@ if args.enable_gracedb_upload:
     comment = ('Automatic PyCBC followup of trigger '
                '<a href="/events/{0}/view">{0}</a> to find the template '
                'parameters that maximize the SNR. The FAR of this trigger is '
-               'copied from {0} and does not reflect this triggers\' template '
+               'copied from {0} and does not reflect this trigger\'s template '
                'parameters.')
     comment = comment.format(original_gid)
 
