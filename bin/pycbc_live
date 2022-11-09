@@ -366,7 +366,6 @@ class LiveEventManager(object):
             return
 
         logging.info('computing followup data for coinc')
-
         coinc_ifos = coinc_results['foreground/type'].split('-')
         followup_ifos = list(set(ifos) - set(coinc_ifos))
 
@@ -375,7 +374,7 @@ class LiveEventManager(object):
             coinc_results['foreground/NO_FOLLOWUP'] = True
             return
 
-        fud = self.compute_followup_data(
+        sld = self.compute_followup_data(
             coinc_ifos,
             coinc_results,
             followup_ifos=followup_ifos,
@@ -384,11 +383,12 @@ class LiveEventManager(object):
 
         event = CandidateForGraceDB(
             coinc_ifos,
+            ifos,
             coinc_results,
             padata=self.padata,
             bank=self.bank,
             psds=psds,
-            followup_data=fud,
+            skyloc_data=sld,
             low_frequency_cutoff=self.low_frequency_cutoff,
             channel_names=args.channel_name,
             mc_area_args=self.mc_area_args,
@@ -453,7 +453,7 @@ class LiveEventManager(object):
                 continue
 
             followup_ifos = [i for i in active if i is not ifo]
-            fud = self.compute_followup_data(
+            sld = self.compute_followup_data(
                 [ifo],
                 single,
                 followup_ifos=followup_ifos,
@@ -466,11 +466,12 @@ class LiveEventManager(object):
 
             event = CandidateForGraceDB(
                 [ifo],
+                active,
                 single,
                 padata=self.padata,
                 bank=self.bank,
                 psds=psds,
-                followup_data=fud,
+                skyloc_data=sld,
                 low_frequency_cutoff=self.low_frequency_cutoff,
                 channel_names=args.channel_name,
                 mc_area_args=self.mc_area_args,

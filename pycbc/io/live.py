@@ -22,15 +22,18 @@ class CandidateForGraceDB(object):
     """This class provides an interface for uploading candidates to GraceDB.
     """
 
-    def __init__(self, ifos, coinc_results, **kwargs):
+    def __init__(self, coinc_ifos, ifos, coinc_results, **kwargs):
         """Initialize a representation of a zerolag candidate for upload to
         GraceDB.
 
         Parameters
         ----------
+        coinc_ifos: list of strs
+            A list of the originally triggered ifos with SNR above threshold
+            before possible significance followups.
         ifos: list of strs
-            A list of the ifos participating (with triggers above threshold) in
-            this candidate.
+            A list of the ifos participating with triggers identified in
+            coinc_results for this candidate: ifos contributing to significance
         coinc_results: dict of values
             A dictionary of values. The format is defined in
             `pycbc/events/coinc.py` and matches the on-disk representation in
@@ -41,12 +44,12 @@ class CandidateForGraceDB(object):
             Minimum valid frequency for the PSD estimates.
         high_frequency_cutoff: float, optional
             Maximum frequency considered for the PSD estimates. Default None.
-        followup_data: dict of dicts, optional
+        skyloc_data: dict of dicts, optional
             Dictionary providing SNR time series for each detector, to be used
             in sky localization with BAYESTAR. The format should be
-            `followup_data['H1']['snr_series']`. More detectors can be present
-            than in `ifos`. If so, extra detectors will only be used for sky
-            localization.
+            `skyloc_data['H1']['snr_series']`. More detectors can be present
+            than in `ifos`; if so, extra detectors will only be used for sky
+            localization and will not appear as sngl_inspiral entries (?).
         channel_names: dict of strings, optional
             Strain channel names for each detector. Will be recorded in the
             `sngl_inspiral` table.
@@ -60,33 +63,34 @@ class CandidateForGraceDB(object):
         self.template_id = coinc_results[f'foreground/{ifos[0]}/template_id']
         self.coinc_results = coinc_results
         self.ifos = ifos
+        assert len(coinc_ifos) < 3, f"I can't handle {coinc_ifos} coinc ifos!"
         self.basename = None
 
-        # remember if this should be marked as HWINJ
+        # Determine if the candidate should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
                                       and coinc_results['HWINJ'])
 
-        # Check if we need to apply a time offset (this may be premerger)
+        # We may need to apply a time offset for premerger search
         self.time_offset = 0
         rtoff = f'foreground/{ifos[0]}/time_offset'
         if rtoff in coinc_results:
             self.time_offset = coinc_results[rtoff]
 
-        if 'followup_data' in kwargs:
-            fud = kwargs['followup_data']
-            assert len({fud[ifo]['snr_series'].delta_t for ifo in fud}) == 1, \
+        if 'skyloc_data' in kwargs:
+            sld = kwargs['skyloc_data']
+            assert len({sld[ifo]['snr_series'].delta_t for ifo in sld}) == 1, \
                     "delta_t for all ifos do not match"
-            self.snr_series = {ifo: fud[ifo]['snr_series'] for ifo in fud}
-            usable_ifos = fud.keys()  # Ifos with SNR time series calculated
-            # Followup ifos are matched filterable but were not triggered
-            followup_ifos = list(set(usable_ifos) - set(ifos))
+            snr_ifos = sld.keys()  # Ifos with SNR time series calculated
+            self.snr_series = {ifo: sld[ifo]['snr_series'] for ifo in snr_ifos}
+            # Extra ifos have SNR time series but not sngl inspiral triggers
+            extra_ifos = list(set(snr_ifos) - set(ifos))
 
-            for ifo in self.snr_series:
+            for ifo in snr_ifos:
                 self.snr_series[ifo].start_time += self.time_offset
         else:
             self.snr_series = None
-            usable_ifos = ifos
-            followup_ifos = []
+            snr_ifos = ifos
+            extra_ifos = []
 
         # Set up the bare structure of the xml document
         outdoc = ligolw.Document()
@@ -95,7 +99,7 @@ class CandidateForGraceDB(object):
         # FIXME is it safe (in terms of downstream operations) to let
         # `program_name` default to the actual script name?
         proc_id = create_process_table(outdoc, program_name='pycbc',
-                                       detectors=usable_ifos).process_id
+                                       detectors=snr_ifos).process_id
 
         # Set up coinc_definer table
         coinc_def_table = lsctables.New(lsctables.CoincDefTable)
@@ -113,8 +117,8 @@ class CandidateForGraceDB(object):
         coinc_event_table = lsctables.New(lsctables.CoincTable)
         coinc_event_row = lsctables.Coinc()
         coinc_event_row.coinc_def_id = coinc_def_id
-        coinc_event_row.nevents = len(usable_ifos)
-        coinc_event_row.instruments = ','.join(usable_ifos)
+        coinc_event_row.nevents = len(snr_ifos)
+        coinc_event_row.instruments = ','.join(snr_ifos)
         coinc_event_row.time_slide_id = lsctables.TimeSlideID(0)
         coinc_event_row.process_id = proc_id
         coinc_event_row.coinc_event_id = coinc_id
@@ -126,21 +130,26 @@ class CandidateForGraceDB(object):
         sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
+        # Marker variable to collect template info from a valid sngl trigger
         sngl_populated = None
         network_snrsq = 0
-        for sngl_id, ifo in enumerate(usable_ifos):
+        # All ifos with SNR time series make it into the sngl table
+        for sngl_id, ifo in enumerate(snr_ifos):
             sngl = return_empty_sngl(nones=True)
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
             sngl.process_id = proc_id
             sngl.ifo = ifo
             names = [n.split('/')[-1] for n in coinc_results
                      if f'foreground/{ifo}' in n]
+            print(names)
+            #assert len(names), f"Can't find {ifo} in coinc results foreground!"
             for name in names:
                 val = coinc_results[f'foreground/{ifo}/{name}']
                 if name == 'end_time':
                     val += self.time_offset
                     sngl.end = lal.LIGOTimeGPS(val)
                 else:
+                    # Explain why this might fail with an AttributeError ???
                     try:
                         setattr(sngl, name, val)
                     except AttributeError:
@@ -168,7 +177,7 @@ class CandidateForGraceDB(object):
             if self.snr_series is not None:
                 snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
 
-        # Set merger time to the average of the ifo peaks
+        # Set merger time to the average of trigger peaks from coinc_results ifos
         self.merger_time = numpy.mean(
                     [coinc_results[f'foreground/{ifo}/end_time']
                      for ifo in ifos]) + self.time_offset
@@ -177,7 +186,7 @@ class CandidateForGraceDB(object):
         bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
                                  'spin1y spin1z spin2x spin2y spin2z').split()
         for sngl in sngl_inspiral_table:
-            if sngl.ifo in followup_ifos:
+            if sngl.ifo in extra_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
                 sngl.end = lal.LIGOTimeGPS(self.merger_time)
@@ -191,7 +200,7 @@ class CandidateForGraceDB(object):
         # This seems to be used as FAP, which should not be in gracedb
         coinc_inspiral_row.false_alarm_rate = 0
         coinc_inspiral_row.minimum_duration = 0.
-        coinc_inspiral_row.instruments = tuple(usable_ifos)
+        coinc_inspiral_row.instruments = tuple(snr_ifos)
         coinc_inspiral_row.coinc_event_id = coinc_id
         coinc_inspiral_row.mchirp = sngl_populated.mchirp
         coinc_inspiral_row.mass = sngl_populated.mtotal
@@ -225,9 +234,9 @@ class CandidateForGraceDB(object):
                 'spin2z': sngl_populated.spin2z,
                 'network_snr': network_snrsq ** 0.5,
                 'far': far,
-                'triggered': ifos,
-                'active': usable_ifos}
-            horizons = {i: self.psds[i].dist for i in usable_ifos}
+                'triggered': coinc_ifos,
+                'active': snr_ifos}
+            horizons = {i: self.psds[i].dist for i in snr_ifos}
             self.p_astro, self.p_terr = \
                 kwargs['padata'].do_pastro_calc(trigger_data, horizons)
         else:
