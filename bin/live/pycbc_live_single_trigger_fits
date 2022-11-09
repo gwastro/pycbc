@@ -68,7 +68,7 @@ parser.add_argument("--cluster", action='store_true',
                          "from each file.")
 parser.add_argument("--output-directory", required=True,
                     help="Directory in which to save the output file.")
-parser.add_argument("--output-fit-plot", action='store_true',
+parser.add_argument("--output-plot", action='store_true',
                     help="Flag to save a plot of the fits.")
 parser.add_argument("--output-id-string",
                     help="Identification string to add to output filenames")
@@ -170,6 +170,9 @@ events = {}
 counter = 0
 no_triggers_yet = {ifo: True for ifo in args.ifos}
 
+# FIXME - remove this when committing
+logger = logging.getLogger()
+
 for filename in files:
     counter += 1
     if counter % 1000 == 0:
@@ -228,11 +231,15 @@ for filename in files:
         # Apply the cuts to triggers
         keep_idx = cuts.apply_trigger_cuts(triggers[ifo], trigger_cut_dict)
 
+        # FIXME  - disabling logging while using a cuts module where the logging hasnt been moved
+        logger.disabled = True
         # triggers contains the datasets that we want to use for
         # the template cuts, so it can be used as the template bank
         # in this use case
         keep_idx = cuts.apply_template_cuts(triggers[ifo], template_cut_dict,
                                             template_ids=keep_idx)
+
+        logger.disabled = False
 
         # Skip if no triggers survive the cuts
         if not keep_idx.size: continue
@@ -334,7 +341,7 @@ with h5py.File(oput_file, 'w') as fout:
     fout.attrs['fit_threshold'] = args.fit_threshold
     fout.attrs['sngl_ranking'] = args.sngl_ranking
 
-if not args.output_fit_plot:
+if not args.output_plot:
     logging.info("Done")
     exit(0)
 
