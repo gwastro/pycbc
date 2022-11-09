@@ -52,7 +52,7 @@ if args.conservative_percentile < 50 or \
                  "otherwise it is either not a percentile, or not "
                  "conservative.")
 
-colours = ['r', (1.0,0.6,0), 'y', 'g', 'c', 'b', 'm',
+colours = ['r', (1.0, 0.6, 0), 'y', 'g', 'c', 'b', 'm',
            (0.25,0.9,0)]
 # If the above colours are exhausted, revert to the default colour cycle
 colours += plt.rcParams['axes.prop_cycle'].by_key()['color']
