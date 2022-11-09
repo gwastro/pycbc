@@ -133,7 +133,7 @@ class CandidateForGraceDB(object):
         sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
-        # Marker variable to collect template info from a valid sngl trigger
+        # Marker variable recording template info from a valid sngl trigger
         sngl_populated = None
         network_snrsq = 0
         for sngl_id, ifo in enumerate(snr_ifos):
@@ -143,14 +143,13 @@ class CandidateForGraceDB(object):
             sngl.ifo = ifo
             names = [n.split('/')[-1] for n in coinc_results
                      if f'foreground/{ifo}' in n]
-            print(names)
             for name in names:
                 val = coinc_results[f'foreground/{ifo}/{name}']
                 if name == 'end_time':
                     val += self.time_offset
                     sngl.end = lal.LIGOTimeGPS(val)
                 else:
-                    # Explain why this might fail with an AttributeError ???
+                    # Sngl inspirals have a restricted set of attributes
                     try:
                         setattr(sngl, name, val)
                     except AttributeError:
