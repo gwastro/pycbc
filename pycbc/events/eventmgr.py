@@ -608,21 +608,28 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         for ifo in self.ifos:
             self.event_index[ifo] = 0
         self.event_index['network'] = 0
-        self.template_event_dict['network'] = \
-                                numpy.array([], dtype=self.network_event_dtype)
+        self.template_event_dict['network'] = numpy.array(
+            [], dtype=self.network_event_dtype)
 
-    def cluster_template_network_events(self, tcolumn, column, window_size):
+    def cluster_template_network_events(self, tcolumn, column, window_size,
+                                        slide=0):
         """ Cluster the internal events over the named column
         """
-        cvec = self.template_event_dict['network'][column]
-        tvec = self.template_event_dict['network'][tcolumn]
-        if window_size == 0:
-            indices = numpy.arange(len(tvec))
-        else:
+        if not window_size == 0:
+            slide_indices = (
+                self.template_event_dict['network']['slide_id'] == slide)
+            cvec = self.template_event_dict['network'][column][slide_indices]
+            tvec = self.template_event_dict['network'][tcolumn][slide_indices]
             indices = findchirp_cluster_over_window(tvec, cvec, window_size)
-        for key in self.template_event_dict:
-            self.template_event_dict[key] = numpy.take(
-                self.template_event_dict[key], indices)
+            if any(~slide_indices):
+                indices = numpy.concatenate((
+                        numpy.flatnonzero(~slide_indices),
+                        numpy.flatnonzero(slide_indices)[indices]))
+                indices.sort()
+            for key in self.template_event_dict:
+                self.template_event_dict[key] = \
+                    self.template_event_dict[key][indices]
+        # FIXME: else...?
 
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """
@@ -659,33 +666,26 @@ class EventManagerCoherent(EventManagerMultiDetBase):
 
             def __setitem__(self, name, data):
                 col = self.prefix + '/' + name
-                self.f.create_dataset(col, data=data,
-                                      compression='gzip',
-                                      compression_opts=9,
-                                      shuffle=True)
-
+                self.f.create_dataset(
+                    col, data=data, compression='gzip', compression_opts=9,
+                    shuffle=True)
         self.events.sort(order='template_id')
-        th = numpy.array([p['tmplt'].template_hash for p in
-                          self.template_params])
+        th = numpy.array(
+            [p['tmplt'].template_hash for p in self.template_params])
         f = fw(outname)
         # Output network stuff
         f.prefix = 'network'
-        network_events = numpy.array([e for e in self.network_events],
-                                     dtype=self.network_event_dtype)
-        f['event_id'] = network_events['event_id']
-        f['coherent_snr'] = network_events['coherent_snr']
-        f['reweighted_snr'] = network_events['reweighted_snr']
-        f['null_snr'] = network_events['null_snr']
-        f['end_time_gc'] = network_events['time_index'] / \
-                float(self.opt.sample_rate[self.ifos[0].lower()]) + \
-                        self.opt.gps_start_time[self.ifos[0].lower()]
-        f['nifo'] = network_events['nifo']
-        f['latitude'] = network_events['latitude']
-        f['longitude'] = network_events['longitude']
-        f['template_id'] = network_events['template_id']
-        for ifo in self.ifos:
-            # First add the ifo event ids to the network branch
-            f[ifo + '_event_id'] = network_events[ifo + '_event_id']
+        network_events = numpy.array(
+            [e for e in self.network_events], dtype=self.network_event_dtype)
+        for col in network_events.dtype.names:
+            if col == 'time_index':
+                f['end_time_gc'] = (
+                    network_events[col]
+                    / float(self.opt.sample_rate[self.ifos[0].lower()])
+                    + self.opt.gps_start_time[self.ifos[0].lower()]
+                    )
+            else:
+                f[col] = network_events[col]
         # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
             tid = self.events['template_id'][self.events['ifo'] == i]

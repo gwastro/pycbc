@@ -11,13 +11,13 @@ V1_FRAME=https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW170817/
 V1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
 
 echo -e "\\n\\n>> [`date`] Getting template bank"
-wget -nv -nc ${CONFIG_URL}/${BANK_FILE}
+wget -nc ${CONFIG_URL}/${BANK_FILE}
 echo -e "\\n\\n>> [`date`] Bank veto bank"
-wget -nv -nc ${CONFIG_URL}/${BANK_VETO_FILE}
+wget -nc ${CONFIG_URL}/${BANK_VETO_FILE}
 for IFO in H1 L1 V1; do
     echo -e "\\n\\n>> [`date`] Getting ${IFO} frame"
     FRAME=${IFO}_FRAME
-    wget -nv -nc ${!FRAME}
+    wget -nc ${!FRAME}
 done
 
 EVENT=1187008882
@@ -30,7 +30,7 @@ TRIG_START=$((GPS_START + START_PAD))
 TRIG_END=$((GPS_END - END_PAD))
 OUTPUT=GW170817_test_output.hdf
 
-echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral with ${POL} projection"
+echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral on GW170817 data"
 pycbc_multi_inspiral \
     --verbose \
     --projection left+right \
@@ -66,6 +66,8 @@ pycbc_multi_inspiral \
     --psd-segment-length 32 \
     --psd-segment-stride 8 \
     --psd-num-segments 29 \
+    --num-slides 1 \
+    --slide-shift 1 \
     --output ${OUTPUT}
 
 echo -e "\\n\\n>> [`date`] Checking output files"
