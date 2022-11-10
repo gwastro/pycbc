@@ -335,12 +335,18 @@ maxchirp = mchirp * (1 + mchirp / 50.0)
 minchirp = 1 if minchirp < 1 else minchirp
 maxchirp = 80 if maxchirp > 80 else maxchirp
 
+# Astrophysical spin bounds dependent on system masses - https://surface.syr.edu/etd/316/ pg. 15
+minspin1z = -0.4 if fp['mass1'][()] < 3 else -0.9
+maxspin1z = 0.4 if fp['mass1'][()] < 3 else 0.9
+minspin2z = -0.4 if fp['mass2'][()] < 3 else -0.9
+maxspin2z = 0.4 if fp['mass2'][()] < 3 else 0.9
+
 # boundary of the optimization space (dict of (min, max) tuples)
 bounds = {
     'mchirp': (minchirp, maxchirp),
     'eta': (0.01, 0.2499),
-    'spin1z': (-0.9, 0.9),
-    'spin2z': (-0.9, 0.9)
+    'spin1z': (minspin1z, maxspin1z),
+    'spin2z': (minspin2z, maxspin2z)
 }
 
 with scheme_context:
