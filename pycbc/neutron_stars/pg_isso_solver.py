@@ -32,7 +32,7 @@ def ISCO_solution(chi, incl):
     stable circular orbit (ISCO) for the Kerr metric.
 
     ..See eq. (2.21) of
-    `Bardeen, J. M., Press, W. H., Teukolsky, S. A. (1972)
+    `Bardeen, J. M., Press, W. H., Teukolsky, S. A. (1972)`
     https://articles.adsabs.harvard.edu/pdf/1972ApJ...178..347B
 
     Parameters
