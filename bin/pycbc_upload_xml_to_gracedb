@@ -226,9 +226,14 @@ for event in coinc_table:
         logging.info("Not uploading event")
     else:
         group_tag = 'Test' if args.testing else 'CBC'
-        r = gracedb.createEvent(group_tag, 'pycbc', filename_xml,
-                                filecontents=open(fullpath_xml, "rb").read(),
-                                search=id_str, offline=True).json()
+        r = gracedb.create_event(
+            group_tag,
+            'pycbc',
+            filename_xml,
+            filecontents=open(fullpath_xml, "rb").read(),
+            search=id_str,
+            offline=True
+        ).json()
 
         logging.info("Uploaded event %s.", r["graceid"])
 

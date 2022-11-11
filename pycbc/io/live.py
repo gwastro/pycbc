@@ -335,7 +335,7 @@ class CandidateForGraceDB(object):
 
             # create GraceDB event
             group = 'Test' if testing else 'CBC'
-            r = gracedb.createEvent(group, "pycbc", fname, search).json()
+            r = gracedb.create_event(group, "pycbc", fname, search).json()
             gid = r["graceid"]
             logging.info("Uploaded event %s", gid)
 
