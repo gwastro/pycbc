@@ -29,7 +29,7 @@ LDC manual <LISA-LCST-SGS-MAN-001>, and paper <10.1088/1361-6382/ab1101>.
 
 import numpy as np
 from astropy import constants
-from pycbc.types import FrequencySeries
+from pycbc.psd.read import from_numpy_arrays
 
 
 def psd_lisa_acc_noise(f, acc_noise_level=3e-15):
@@ -121,17 +121,14 @@ def analytical_psd_lisa_tdi_1p5(length, delta_f, low_freq_cutoff,
         Pease see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
     """
     psd = []
-    lg_fmin = np.log10(2e-5)
-    lg_fmax = np.log10(1)
-    fr = 10**np.arange(lg_fmin, lg_fmax, (lg_fmax-lg_fmin)/length)
+    fr = np.linspace(2e-5, 1.1, length)
     for f in fr:
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
                                 f, acc_noise_level, oms_noise_level)
         omega_len = 2*np.pi*f * len_arm/constants.c.value
         psd.append(16*(np.sin(omega_len))**2 * (s_oms_nu+s_acc_nu*(3+np.cos(omega_len))))
-    fseries = FrequencySeries(np.array(psd), delta_f=delta_f)
-    kmin = int(low_freq_cutoff / fseries.delta_f)
-    fseries.data[:kmin] = 0
+    fseries = from_numpy_arrays(fr, np.array(psd),
+                length, delta_f, low_freq_cutoff)
 
     return fseries
 
@@ -161,18 +158,15 @@ def analytical_psd_lisa_tdi_2p0(length, delta_f, low_freq_cutoff,
         Pease see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
     """
     psd = []
-    lg_fmin = np.log10(2e-5)
-    lg_fmax = np.log10(1)
-    fr = 10**np.arange(lg_fmin, lg_fmax, (lg_fmax-lg_fmin)/length)
+    fr = np.linspace(2e-5, 1.1, length)
     for f in fr:
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
                                 f, acc_noise_level, oms_noise_level)
         omega_len = 2*np.pi*f * len_arm/constants.c.value
-        psd = 64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 * \
-            (s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len)))
-    fseries = FrequencySeries(np.array(psd), delta_f=delta_f)
-    kmin = int(low_freq_cutoff / fseries.delta_f)
-    fseries.data[:kmin] = 0
+        psd.append(64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 * \
+                    (s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len))))
+    fseries = from_numpy_arrays(fr, np.array(psd),
+                length, delta_f, low_freq_cutoff)
 
     return fseries
 
@@ -326,19 +320,16 @@ def analytical_psd_lisa_tdi_A_E_1p5(length, delta_f, low_freq_cutoff,
         Pease see Eq.(58) in <LISA-LCST-SGS-MAN-001> for more details.
     """
     psd = []
-    lg_fmin = np.log10(2e-5)
-    lg_fmax = np.log10(1)
-    fr = 10**np.arange(lg_fmin, lg_fmax, (lg_fmax-lg_fmin)/length)
+    fr = np.linspace(2e-5, 1.1, length)
     for f in fr:
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
                                 f, acc_noise_level, oms_noise_level)
         omega_len = 2*np.pi*f * len_arm/constants.c.value
-        psd = 8*(np.sin(omega_len))**2 *\
-                (4*(1+np.cos(omega_len)+np.cos(omega_len)**2)*s_acc_nu +\
-                (2+np.cos(omega_len))*s_oms_nu)
-    fseries = FrequencySeries(np.array(psd), delta_f=delta_f)
-    kmin = int(low_freq_cutoff / fseries.delta_f)
-    fseries.data[:kmin] = 0
+        psd.append(8*(np.sin(omega_len))**2 *\
+                    (4*(1+np.cos(omega_len)+np.cos(omega_len)**2)*s_acc_nu +\
+                    (2+np.cos(omega_len))*s_oms_nu))
+    fseries = from_numpy_arrays(fr, np.array(psd),
+                length, delta_f, low_freq_cutoff)
 
     return fseries
 
@@ -368,18 +359,15 @@ def analytical_psd_lisa_tdi_T_1p5(length, delta_f, low_freq_cutoff,
         Pease see Eq.(59) in <LISA-LCST-SGS-MAN-001> for more details.
     """
     psd = []
-    lg_fmin = np.log10(2e-5)
-    lg_fmax = np.log10(1)
-    fr = 10**np.arange(lg_fmin, lg_fmax, (lg_fmax-lg_fmin)/length)
+    fr = np.linspace(2e-5, 1.1, length)
     for f in fr:
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
                                 f, acc_noise_level, oms_noise_level)
         omega_len = 2*np.pi*f * len_arm/constants.c.value
-        psd = 32*np.sin(omega_len)**2 * np.sin(omega_len/2)**2 *\
-                (4*s_acc_nu*np.sin(omega_len/2)**2 + s_oms_nu)
-    fseries = FrequencySeries(np.array(psd), delta_f=delta_f)
-    kmin = int(low_freq_cutoff / fseries.delta_f)
-    fseries.data[:kmin] = 0
+        psd.append(32*np.sin(omega_len)**2 * np.sin(omega_len/2)**2 *\
+                    (4*s_acc_nu*np.sin(omega_len/2)**2 + s_oms_nu))
+    fseries = from_numpy_arrays(fr, np.array(psd),
+                length, delta_f, low_freq_cutoff)
 
     return fseries
 
