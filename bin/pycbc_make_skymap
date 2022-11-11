@@ -448,14 +448,20 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     shutil.move(skymap_fits_name, final_fits_path)
 
     if gracedb_server:
-        gracedb.writeLog(gid, 'Bayestar skymap FITS file upload',
-                         filename=final_fits_path,
-                         tag_name=['sky_loc'],
-                         displayName=['Bayestar FITS skymap'])
-        gracedb.writeLog(gid, 'Bayestar skymap plot upload',
-                         filename=skymap_plot_path,
-                         tag_name=['sky_loc'],
-                         displayName=['Bayestar skymap plot'])
+        gracedb.write_log(
+            gid,
+            'Bayestar skymap FITS file upload',
+            filename=final_fits_path,
+            tag_name=['sky_loc'],
+            displayName=['Bayestar FITS skymap']
+        )
+        gracedb.write_log(
+            gid,
+            'Bayestar skymap plot upload',
+            filename=skymap_plot_path,
+            tag_name=['sky_loc'],
+            displayName=['Bayestar skymap plot']
+        )
 
     if ligolw_event_output:
         shutil.move(ligolw_file_path, ligolw_event_output)

@@ -340,7 +340,7 @@ class CandidateForGraceDB(object):
             logging.info("Uploaded event %s", gid)
 
             if self.is_hardware_injection:
-                gracedb.writeLabel(gid, 'INJ')
+                gracedb.write_label(gid, 'INJ')
                 logging.info("Tagging event %s as an injection", gid)
 
             # add info for tracking code version
@@ -348,7 +348,7 @@ class CandidateForGraceDB(object):
 
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
-                gracedb.writeLog(gid, text, tag_name=['analyst_comments'])
+                gracedb.write_log(gid, text, tag_name=['analyst_comments'])
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
                           'event %s on GraceDB. The event may not have been '
@@ -412,17 +412,17 @@ class CandidateForGraceDB(object):
         # Upload SNR series in HDF format and plots
         if self.snr_series is not None:
             try:
-                gracedb.writeLog(
+                gracedb.write_log(
                     gid, 'SNR timeseries HDF file upload',
                     filename=snr_series_fname
                 )
-                gracedb.writeLog(
+                gracedb.write_log(
                     gid, 'SNR timeseries plot upload',
                     filename=snr_series_plot_fname,
                     tag_name=['background'],
                     displayName=['SNR timeseries']
                 )
-                gracedb.writeLog(
+                gracedb.write_log(
                     gid, 'ASD plot upload',
                     filename=asd_series_plot_fname,
                     tag_name=['psd'], displayName=['ASDs']
@@ -435,7 +435,7 @@ class CandidateForGraceDB(object):
         # Upload multi-cpt p_astro JSON
         if self.astro_probs is not None:
             try:
-                gracedb.writeLog(
+                gracedb.write_log(
                     gid, 'Multi-component p_astro JSON file upload',
                     filename=self.multipa_file,
                     tag_name=['em_follow']
@@ -451,13 +451,13 @@ class CandidateForGraceDB(object):
         # format and plot
         if self.probabilities is not None:
             try:
-                gracedb.writeLog(
+                gracedb.write_log(
                     gid, 'Source probabilities JSON file upload',
                     filename=self.prob_file,
                     tag_name=['pe']
                 )
                 logging.info('Uploaded source probabilities for %s', gid)
-                gracedb.writeLog(
+                gracedb.write_log(
                     gid, 'Source probabilities plot upload',
                     filename=self.prob_plotf,
                     tag_name=['pe']
@@ -472,7 +472,7 @@ class CandidateForGraceDB(object):
         # If there is p_astro but no probabilities, upload p_astro JSON
         if self.p_astro is not None:
             try:
-                gracedb.writeLog(
+                gracedb.write_log(
                     gid, '2-component p_astro JSON file upload',
                     filename=self.pastro_file,
                     tag_name=['sig_info']
@@ -493,7 +493,7 @@ def gracedb_tag_with_version(gracedb, event_id):
             pycbc_version.version,
             ' (release)' if pycbc_version.release else '',
             os.path.dirname(pycbc.__file__))
-    gracedb.writeLog(event_id, version_str)
+    gracedb.write_log(event_id, version_str)
 
 
 __all__ = ['CandidateForGraceDB', 'gracedb_tag_with_version']

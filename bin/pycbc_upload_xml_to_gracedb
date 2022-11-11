@@ -243,12 +243,15 @@ for event in coinc_table:
         # document the absolute path to the input file
         input_file_str = 'Candidate uploaded from ' \
             + os.path.abspath(args.input_file)
-        gracedb.writeLog(r['graceid'], input_file_str)
+        gracedb.write_log(r['graceid'], input_file_str)
 
         # add the custom log message, if provided
         if args.log_message is not None:
-            gracedb.writeLog(r['graceid'], args.log_message,
-                             tag_name=['analyst_comments'])
+            gracedb.write_log(
+                r['graceid'],
+                args.log_message,
+                tag_name=['analyst_comments']
+            )
 
     if args.generate_plots:
         asd_png_filename = f'{ifos_str}-PYCBC_{id_str}_ASD-{time:d}-1.png'
@@ -256,10 +259,13 @@ for event in coinc_table:
         generate_asd_plot(psddict, fullpath_asd)
         logging.info("Saved ASD plot %s", asd_png_filename)
         if not args.no_upload:
-            gracedb.writeLog(
-            r["graceid"], "PyCBC ASD estimate from the time of event",
-            filename=fullpath_psd,
-            tag_name=["psd"], displayName=['ASDs'])
+            gracedb.write_log(
+                r["graceid"],
+                "PyCBC ASD estimate from the time of event",
+                filename=fullpath_psd,
+                tag_name=["psd"],
+                displayName=['ASDs']
+            )
             logging.info("Uploaded file %s to event %s.", psd_png_filename,
                          r["graceid"])
 
