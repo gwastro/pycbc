@@ -1819,8 +1819,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
-        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                         ifos=ifos, **kwargs)
         """
         Create a statistic class instance
 
@@ -1836,17 +1834,44 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         ifos: list of strs, not used here
             The list of detector names
         """
-        self.kde_values = {}
-        try:
-            tnum = trigs.template_num  
-        except AttributeError:
-            tnum = trigs['template_id']  
+        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
+                                         ifos=ifos, **kwargs)
+        parsed_attrs = [f.split('-') for f in self.files.keys()]
+        self.data_name = [at[0] for at in parsed_attrs if
+                       (len(at) == 2 and at[1] == 'kde_file')]
+        if not len(self.data_name):
+            raise RuntimeError("None of the statistic files has the required "
+                               "attribute called {dname}-kde_file !")
+        self.kde_by_tid = {}
+        for dname in self.data_name:
+            self.kde_by_tid[dname] = self.assign_kdes(dname)
+            #print('self.kde_by_tid=', self.kde_by_tid[dname])
+        self.curr_tnum = None       
+ 
+    def assign_kdes(self, dname):
+        """
+        Extract fits from fit files
 
-        signal_kde = self.signal_kde[tnum]        
-        template_kde = self.template_kde[tnum]
-        self.mcm = max_chirp_mass
-        self.curr_tnum = None     
-        
+        Parameters
+        -----------
+        dname: str
+            signal or template.
+
+        Returns
+        -------
+        rate_dict: dict
+            A dictionary containing kde values for signal and template files
+
+        """
+        kde_file = self.files[dname+'-kde_file']
+        template_id = kde_file['template_id'][:]
+        tid_sort = numpy.argsort(template_id)
+        kde_by_tid_dict = {}
+        kde_by_tid_dict[dname+'_data_kde'] = \
+            kde_file['data_kde'][:][tid_sort]
+        print('self.kde_by_tid_dict=', kde_by_tid_dict)
+        return kde_by_tid_dict
+
     def rank_stat_coinc(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup
@@ -1870,7 +1895,10 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats,
                                                        shift, to_shift)
-        logr_s += numpy.log(signal_kde/template_kde)
+        signal_kde = self.kde_by_tid_dict["signal_data_kde"]
+        template_kde = self.kde_by_tid_dict["template_data_kde"]
+        logr_s += [numpy.log(i/j) for i, j in zip(signal_kde, template_kde)]
+        print('logr_s=', logr_s)
         return logr_s
 
     def single(self, trigs):
@@ -1891,12 +1919,12 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         numpy.ndarray
             The array of single detector values
         """
-        from pycbc.conversions import mchirp_from_mass1_mass2
-        self.curr_tnum = mchirp_from_mass1_mass2(trigs.param['mass1'],
-                                                 trigs.param['mass2'])
-        if self.mcm is not None:
-            # Careful - input might be a str, so cast to float
-              self.curr_tnum =  min(self.curr_tnum, float(self.mcm))
+        try:
+            tnum = trigs.template_num
+        except AttributeError:
+            tnum = trigs['template_id']
+        self.curr_tnum = self.kde_by_tid
+        print(kde_values)
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
@@ -1924,9 +1952,10 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
-        loglr += numpy.log(signal_kde/template_kde)
+        signal_kde = self.kde_by_tid_dict["signal_data_kde"]
+        template_kde = self.kde_by_tid_dict["template_data_kde"]
+        loglr += [numpy.log(i/j) for i, j in zip(signal_kde, template_kde)]
         return loglr
-
 
 
 class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
