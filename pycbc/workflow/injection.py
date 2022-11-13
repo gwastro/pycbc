@@ -36,7 +36,8 @@ from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
-        PycbcDarkVsBrightInjectionsExecutable, select_generic_executable)
+        PycbcDarkVsBrightInjectionsExecutable, select_generic_executable,
+        PycbcCreateInjectionsExecutable)
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -226,7 +227,13 @@ def setup_injection_workflow(workflow, output_dir=None,
             inj_job = exe(workflow.cp, inj_section_name,
                           out_dir=output_dir, ifos='HL',
                           tags=curr_tags)
-            node = inj_job.create_node(full_segment)
+            if exe is PycbcCreateInjectionsExecutable:
+                config_url = workflow.cp.get('workflow-injections',
+                                             section+'-config-file')
+                config_file = resolve_url_to_file(config_url)
+                node, inj_file = inj_job.create_node(config_file)
+            else:
+                node = inj_job.create_node(full_segment)
             if injection_method == "AT_RUNTIME":
                 workflow.execute_node(node)
             else:

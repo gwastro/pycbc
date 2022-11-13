@@ -32,7 +32,8 @@ import os
 import logging
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (PycbcSplitBankExecutable,
-        PycbcSplitBankXmlExecutable, PycbcSplitInspinjExecutable)
+        PycbcSplitBankXmlExecutable, PycbcSplitInspinjExecutable,
+        PycbcHDFSplitInjExecutable)
 
 def select_splitfilejob_instance(curr_exe):
     """
@@ -61,6 +62,8 @@ def select_splitfilejob_instance(curr_exe):
         exe_class = PycbcSplitBankXmlExecutable
     elif curr_exe == 'pycbc_split_inspinj':
         exe_class = PycbcSplitInspinjExecutable
+    elif curr_exe == 'pycbc_hdf_splitinj':
+        exe_class = PycbcHDFSplitInjExecutable
     else:
         # Should we try some sort of default class??
         err_string = "No class exists for Executable %s" %(curr_exe,)
@@ -147,8 +150,10 @@ def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):
             num_injs = int(cp.get_opt_tags("em_bright_filter", "max-keep",
                                            tags))
         else:
-            num_injs = int(cp.get_opt_tags("workflow-injections", "num-injs",
-                                           tags))
+            # This needed to be changed from num-injs to ninjections in order
+            # to work properly with pycbc_create_injections
+            num_injs = int(cp.get_opt_tags("workflow-injections",
+                                           "ninjections", tags))
         inj_tspace = float(abs(workflow.analysis_time)) / num_injs
         num_splits = int(inj_interval // inj_tspace) + 1
 

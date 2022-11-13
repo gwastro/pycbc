@@ -1,0 +1,107 @@
+#! /usr/bin/env python
+
+"""
+Program for collecting the results of pycbc_faithsim comparing two approximants
+computing the match between them and creating a .dat file with the results. 
+"""
+
+import numpy as np
+from ligo.lw import utils, table, lsctables
+from pycbc.io.ligolw import LIGOLWContentHandler
+import argparse
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--match-inputs",
+    action="append",
+    required=True,
+    help=".dat files containing the match computed with pycbc_faithsim",
+)
+parser.add_argument(
+    "--bank-inputs",
+    action="append",
+    required=True,
+    help="bank files from pycbc_splitbank",
+)
+parser.add_argument("--output", required=True, help="name of the output .dat file")
+args = parser.parse_args()
+
+mfields = ("match", "overlap", "time_offset", "sigma1", "sigma2")
+bfields = (
+    "match",
+    "overlap",
+    "time_offset",
+    "sigma1",
+    "sigma2",
+    "mass1",
+    "mass2",
+    "spin1x",
+    "spin1y",
+    "spin1z",
+    "spin2x",
+    "spin2y",
+    "spin2z",
+    "inclination",
+    "latitude",
+    "longitude",
+    "polarization",
+    "coa_phase",
+)
+
+columns = " ".join(bfields)
+
+dtypem = {"names": mfields, "formats": ("f8", "f8", "f8", "f8", "f8")}
+dtypeo = {
+    "names": bfields,
+    "formats": (
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+        "f8",
+    ),
+}
+
+btables = {}
+match_files = args.inputs_match[:]
+bank_files = args.inputs_bank[:]
+data = np.zeros(0, dtype=dtypeo)
+
+for i in range(len(match_files)):
+    match = match_files[i]
+    bname = bank_files[i]
+    if bname not in btables:
+        indoc = utils.load_filename(bname, False, contenthandler=LIGOLWContentHandler)
+        btables[bname] = lsctables.SimInspiralTable.get_table(indoc)
+    bt = btables[bname]
+    try:
+        md = np.loadtxt(match, dtype=dtypem)
+        if md.size == 0:
+            continue
+    except IOError:
+        continue
+    pdata = np.zeros(len(bt), dtype=dtypeo)
+
+    for field in mfields:
+        pdata[field] = md[field]
+
+    for field in bfields:
+        if field not in mfields:
+            pdata[field] = bt.getColumnByName(field).asarray()
+
+    data = np.append(data, pdata)
+
+np.savetxt(args.output, data, header=columns)

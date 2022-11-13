@@ -129,7 +129,7 @@ def select_generic_executable(workflow, exe_tag):
         'lalapps_inspinj'          : LalappsInspinjExecutable,
         'pycbc_create_injections'  : PycbcCreateInjectionsExecutable,
         'pycbc_dark_vs_bright_injections' : PycbcDarkVsBrightInjectionsExecutable,
-        "pycbc_condition_strain"         : PycbcConditionStrainExecutable
+        'pycbc_condition_strain'         : PycbcConditionStrainExecutable
     }
     try:
         return exe_to_class_map[exe_name]
@@ -290,8 +290,12 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         frame_files = datafind_outs[:-2]
     else:
         ipn_sky_points = None
-        bank_veto = datafind_outs[-1]
-        frame_files = datafind_outs[:-1]
+        if 'bank_veto_bank' in datafind_outs[-1].name:
+            bank_veto = datafind_outs[-1]
+            frame_files = datafind_outs[:-1]
+        else:
+            bank_veto = None
+            frame_files = datafind_outs
 
     split_bank_counter = 0
 
@@ -696,35 +700,27 @@ class PyCBCMultiInspiralExecutable(Executable):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
 
-        # FIXME: Should be done using file_input options in the config file
-        # Feed in bank_veto_bank.xml
-        if self.cp.has_option('inspiral', 'do-bank-veto'):
-            if not bankVetoBank:
-                raise ValueError("%s must be given a bank veto file if the "
-                                 "argument 'do-bank-veto' is given"
-                                 % self.name)
-            node.add_input_opt('--bank-veto-templates', bankVetoBank)
-
+        # Feed in bank_veto_bank.xml, if given
+        if self.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
+            node.add_input_opt('--bank-veto-bank-file', bankVetoBank)
         # Set time options
         node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
         node.add_opt('--gps-end-time', data_seg[1] - int(pad_data))
         node.add_opt('--trig-start-time', valid_seg[0])
         node.add_opt('--trig-end-time', valid_seg[1])
+        node.add_opt('--trigger-time', self.cp.get('workflow', 'trigger-time'))
 
         # Set the input and output files
         node.new_output_file_opt(data_seg, '.hdf', '--output',
                                  tags=tags, store_file=self.retain_files)
         node.add_input_opt('--bank-file', parent, )
 
-        # TODO: isn't there a cleaner way of doing this?
-        # FIXME: YES! Don't use frame-cache!!!
         if dfParents is not None:
-            node.add_arg('--frame-cache %s' % \
-                         " ".join([":".join([frameCache.ifo, frameCache.name])\
-                                   for frameCache in dfParents]))
-            for frameCache in dfParents:
-                node.add_input(frameCache)
-            #node.add_input_list_opt('--frame-cache', dfParents)
+            frame_arg = '--frame-files'
+            for frame_file in dfParents:
+                frame_arg += f" {frame_file.ifo}:{frame_file.name}"
+                node.add_input(frame_file)
+            node.add_arg(frame_arg)
 
         if ipn_file is not None:
             node.add_input_opt('--sky-positions-file', ipn_file)
@@ -1255,3 +1251,30 @@ class PycbcInferenceExecutable(Executable):
             #                    register=False, transfer=False)
 
         return node, inference_file
+
+
+class PycbcHDFSplitInjExecutable(Executable):
+    """ The class responsible for creating jobs for ``pycbc_hdf_splitinj``.
+    """
+    current_retention_level = Executable.ALL_TRIGGERS
+
+    def __init__(self, cp, exe_name, num_splits, ifo=None, out_dir=None):
+        super().__init__(cp, exe_name, ifo, out_dir, tags=[])
+        self.num_splits = int(num_splits)
+
+    def create_node(self, parent, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        node.add_input_opt('--input-file', parent)
+        out_files = FileList([])
+        for i in range(self.num_splits):
+            curr_tag = 'split%d' % i
+            curr_tags = parent.tags + [curr_tag]
+            job_tag = parent.description + "_" + self.name.upper()
+            out_file = File(parent.ifo_list, job_tag, parent.segment,
+                            extension='.hdf', directory=self.out_dir,
+                            tags=curr_tags, store_file=self.retain_files)
+            out_files.append(out_file)
+        node.add_output_list_opt('--output-files', out_files)
+        return node

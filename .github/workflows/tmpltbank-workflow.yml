@@ -22,12 +22,15 @@ jobs:
         sudo systemctl enable condor
     - name: install pegasus
       run: |
-        wget -nv https://download.pegasus.isi.edu/pegasus/ubuntu/dists/bionic/main/binary-amd64/pegasus_5.0.1-1+ubuntu18_amd64.deb
-        sudo apt install ./pegasus_5.0.1-1+ubuntu18_amd64.deb
+        wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
+        echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu bionic main" | sudo tee -a /etc/apt/sources.list
+        sudo apt-get update
+        sudo apt-get install pegasus
     - run: sudo apt-get install *fftw3* intel-mkl*
     - name: Install pycbc
       run: |
         python -m pip install --upgrade 'pip<22.0' setuptools
+        pip install GitPython # This shouldn't really be needed!
         pip install -r requirements.txt
         pip install sbank
         pip install .
