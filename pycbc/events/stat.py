@@ -1869,7 +1869,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         kde_by_tid_dict = {}
         kde_by_tid_dict[dname+'_data_kde'] = \
             kde_file['data_kde'][:][tid_sort]
-        print('self.kde_by_tid_dict=', kde_by_tid_dict)
+        print('self.kde_by_tid_dict', kde_by_tid_dict)
         return kde_by_tid_dict
 
     def rank_stat_coinc(self, stats, shift, to_shift):
