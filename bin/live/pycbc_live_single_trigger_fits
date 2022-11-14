@@ -161,8 +161,7 @@ logging.info("Getting events which meet criteria")
 date_directory = os.path.join(args.top_directory, args.analysis_date)
 
 if not os.path.exists(date_directory):
-    logging.warning("The directory %s does not exist.", date_directory)
-    raise OSError
+    raise FileNotFoundError(f"The directory {date_directory} does not exist.")
 
 files = [f for f in os.listdir(date_directory)
          if args.file_identifier in f]
