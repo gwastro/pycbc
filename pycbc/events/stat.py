@@ -1895,8 +1895,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats,
                                                        shift, to_shift)
-        signal_kde = self.kde_by_tid_dict["signal_data_kde"]
-        template_kde = self.kde_by_tid_dict["template_data_kde"]
+        signal_kde = self.kde_by_tid["signal"]
+        template_kde = self.kde_by_tid["template"]
         logr_s += [numpy.log(i/j) for i, j in zip(signal_kde, template_kde)]
         print('logr_s=', logr_s)
         return logr_s
@@ -1952,8 +1952,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
-        signal_kde = self.kde_by_tid_dict["signal_data_kde"]
-        template_kde = self.kde_by_tid_dict["template_data_kde"]
+        signal_kde = self.kde_by_tid["signal"]
+        template_kde = self.kde_by_tid["template"]
         loglr += [numpy.log(i/j) for i, j in zip(signal_kde, template_kde)]
         return loglr
 
