@@ -105,9 +105,9 @@ if not args.duration_bin_edges and not (args.duration_bin_start and
 
 if args.duration_bin_end and \
         args.duration_bin_end <= args.duration_bin_start:
-    raise parser.error("--duration-bin-end must be greater than "
-                       "--duration-bin-start, got %.2f and %.2f",
-                       args.duration_bin_end, args.duration_bin_start)
+    parser.error("--duration-bin-end must be greater than "
+                 "--duration-bin-start, got "
+                 f"{args.duration_bin_end} and {args.duration_bin_start}")
 
 # Create the duration bins:
 if args.duration_bin_edges:
