@@ -92,9 +92,9 @@ if args.duration_bin_edges and (args.duration_bin_start or
                                 args.duration_bin_end or
                                 args.num_duration_bins):
     # duration bin edges specified as well as the linear/logarithmi
-    raise parser.error("Cannot use --duration-bin-edges with "
-                       "--duration-bin-start, --duration-bin-end or "
-                       "--num-duration-bins.")
+    parser.error("Cannot use --duration-bin-edges with "
+                 "--duration-bin-start, --duration-bin-end or "
+                 "--num-duration-bins.")
 
 if not args.duration_bin_edges and not (args.duration_bin_start and
                                         args.duration_bin_end and
