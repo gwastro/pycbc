@@ -63,7 +63,6 @@ class CandidateForGraceDB(object):
         self.template_id = coinc_results[f'foreground/{ifos[0]}/template_id']
         self.coinc_results = coinc_results
         self.ifos = ifos
-        assert len(coinc_ifos) < 3, f"I can't handle {coinc_ifos} coinc ifos!"
         self.psds = kwargs['psds']
         self.basename = None
 
