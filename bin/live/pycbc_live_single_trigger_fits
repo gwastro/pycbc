@@ -99,9 +99,9 @@ if args.duration_bin_edges and (args.duration_bin_start or
 if not args.duration_bin_edges and not (args.duration_bin_start and
                                         args.duration_bin_end and
                                         args.num_duration_bins):
-    raise parser.error("--duration-bin-start, --duration-bin-end and "
-                       "--num-duration-bins must be set if not using "
-                       "--duration-bin-edges.")
+    parser.error("--duration-bin-start, --duration-bin-end and "
+                 "--num-duration-bins must be set if not using "
+                 "--duration-bin-edges.")
 
 if args.duration_bin_end and \
         args.duration_bin_end <= args.duration_bin_start:
