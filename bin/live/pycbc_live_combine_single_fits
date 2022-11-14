@@ -289,7 +289,7 @@ for ifo in args.ifos:
         ax_alpha.legend(alpha_lines, alpha_labels, loc='lower center',
                         ncol=3, bbox_to_anchor=(0.5, 1.01))
         fig_alpha.tight_layout()
-        fig_alpha.savefig(outname + f'_{ifo}_fit_coeffs.png')
+        fig_alpha.savefig(f'{outname}_{ifo}_fit_coeffs.png')
         ax_count.set_xlabel('Days since ' + start_date)
         ax_count.set_ylabel('Counts per live time')
         ax_count.set_xlim([ad[0], ad[-1]])
