@@ -1923,8 +1923,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             tnum = trigs.template_num
         except AttributeError:
             tnum = trigs['template_id']
-        self.curr_tnum = self.kde_by_tid
-        print(kde_values)
+        self.curr_tnum = self.kde_by_tid[tnum]
+        print(self.curr_tnum)
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
