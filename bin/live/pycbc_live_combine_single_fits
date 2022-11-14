@@ -298,6 +298,6 @@ for ifo in args.ifos:
                         ncol=3, bbox_to_anchor=(0.5, 1.01))
         ax_count.grid(zorder=-30)
         fig_count.tight_layout()
-        fig_count.savefig(outname + f'_{ifo}_counts.png')
+        fig_count.savefig(f'{outname}_{ifo}_counts.png')
 
 fout.close()
