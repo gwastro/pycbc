@@ -5,6 +5,7 @@ import numpy
 import lal
 import json
 import copy
+from multiprocessing.dummy import threading
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
@@ -294,10 +295,14 @@ class CandidateForGraceDB(object):
         fname: str
             Name of file to write to disk.
         """
-        ligolw_utils.write_filename(self.outdoc, fname, compress='auto')
+        kwargs = {}
+        if threading.current_thread() is not threading.main_thread():
+            # avoid an error due to no ability to do signal handling in threads
+            kwargs['trap_signals'] = None
+        ligolw_utils.write_filename(self.outdoc, fname, compress='auto', **kwargs)
 
         save_dir = os.path.dirname(fname)
-
+        
         # Save EMBright properties info as json
         if self.hasmassgap is not None:
             self.embright_file = os.path.join(save_dir, 'pycbc.em_bright.json')
