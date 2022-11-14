@@ -775,6 +775,65 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
                                            params['f_lower']))
     return hp, hc
 
+def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
+    """ Return time domain version of fourier domain approximant which
+    includes detector response, with padding and tapering at the start
+    of the waveform.
+
+    Parameters
+    ----------
+    rwrap: float
+        Cyclic time shift parameter in seconds. A fudge factor to ensure
+        that the entire time series is contiguous in the array and not
+        wrapped around the end.
+    params: dict
+        The parameters defining the waveform to generator.
+        See `get_fd_det_waveform_sequence`.
+
+    Returns
+    -------
+    dict
+        The detector-frame waveform (with detector response) in time
+        domain. Keys are requested data channels.
+    """
+    # determine the duration to use
+    full_duration = duration = get_waveform_filter_length_in_time(
+                                "IMRPhenomD", **params)
+    nparams = params.copy()
+
+    while full_duration < duration * 1.5:
+        full_duration = get_waveform_filter_length_in_time(
+            "IMRPhenomD", **nparams)
+        nparams['f_lower'] *= 0.99
+
+    if 'f_ref' not in nparams:
+        nparams['f_ref'] = params['f_lower']
+
+    # factor to ensure the vectors are all large enough. We don't need to
+    # completely trust our duration estimator in this case, at a small
+    # increase in computational cost
+    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
+    fsamples = int(fudge_duration / params['delta_t'])
+    N = pnutils.nearest_larger_binary_number(fsamples)
+    fudge_duration = N * params['delta_t']
+
+    nparams['delta_f'] = 1.0 / fudge_duration
+    wfs = {}
+    for ifo in self.data:
+        wfs = wfs | get_fd_det_waveform_sequence(ifos=ifo, **nparams)
+
+    # Resize to the right sample rate
+    tsize = int(1.0 / params['delta_t'] /  nparams['delta_f'])
+    fsize = tsize // 2 + 1
+    for ifo in self.data:
+        wfs[ifo].resize(fsize)
+        # avoid wraparound
+        wfs[ifo] = wfs[ifo].cyclic_time_shift(-rwrap)
+        wfs[ifo] = wfutils.fd_to_td(wfs[ifo], left_window=(nparams['f_lower'],
+                                    params['f_lower']))
+
+    return wfs
+
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):
     """ Return a fourier domain waveform approximant, using interpolation
