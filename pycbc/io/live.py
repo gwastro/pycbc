@@ -236,9 +236,9 @@ class CandidateForGraceDB(object):
                 'network_snr': network_snrsq ** 0.5,
                 'far': far,
                 'triggered': coinc_ifos,
-                # Active = potentially contributing to significance:
-                # ignore ifos that only contribute to sky loc
-                'active': ifos}
+                # Consider all ifos potentially relevant to detection,
+                # ignore those that only contribute to sky loc
+                'sensitive': ifos}
             horizons = {i: self.psds[i].dist for i in ifos}
             self.p_astro, self.p_terr = \
                 kwargs['padata'].do_pastro_calc(trigger_data, horizons)

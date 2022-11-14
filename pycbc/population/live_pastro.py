@@ -84,7 +84,7 @@ def trials_type(ntriggered, nactive):
         return 1
     if ntriggered == 2 and nactive == 3:
         return 6
-    # All valid inputs are exhausted, throw an error if we reach this point
+    # All valid inputs are exhausted, throw an error
     raise ValueError(f"I don't know what to do with {ntriggered} triggered and"
                      f" {nactive} active ifos!")
 
@@ -196,7 +196,7 @@ def template_param_bin_types_pa(padata, trdata, horizons):
     dnoise *= padata.bank['tcounts'][bind] / padata.bank['num_t']
     logging.debug('Noise density in bin %.3g', dnoise)
     # Back out trials factor to give noise density for triggered event type
-    dnoise /= float(trials_type(len(tr_ifos), len(trdata['active'])))
+    dnoise /= float(trials_type(len(tr_ifos), len(trdata['sensitive'])))
     logging.debug('Divide by previously applied trials factor: %.3g', dnoise)
 
     # Get signal rate density per year at given SNR
