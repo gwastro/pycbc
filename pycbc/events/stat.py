@@ -1784,7 +1784,8 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         """
         Optimization function to identify coincs too quiet to be of interest
 
-        Calculat 
+        Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers. 
 
         Parameters
         ----------
@@ -1836,6 +1837,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
+        #looking for 'signal' and 'template' attributes in kde files
+        # and is represented as dname
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.data_name = [at[0] for at in parsed_attrs if
                        (len(at) == 2 and at[1] == 'kde_file')]
@@ -1845,61 +1848,21 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         self.kde_by_tid = {}
         for dname in self.data_name:
             self.kde_by_tid[dname] = self.assign_kdes(dname)
-            #print('self.kde_by_tid=', self.kde_by_tid[dname])
         self.curr_tnum = None       
  
     def assign_kdes(self, dname):
         """
-        Extract fits from fit files
+        Extract values from from KDE files
 
         Parameters
         -----------
         dname: str
             signal or template.
-
-        Returns
-        -------
-        rate_dict: dict
-            A dictionary containing kde values for signal and template files
-
         """
+
         kde_file = self.files[dname+'-kde_file']
         template_id = kde_file['template_id'][:]
-        tid_sort = numpy.argsort(template_id)
-        kde_by_tid_dict = {}
-        kde_by_tid_dict[dname+'_data_kde'] = \
-            kde_file['data_kde'][:][tid_sort]
-        print('self.kde_by_tid_dict', kde_by_tid_dict)
-        return kde_by_tid_dict
-
-    def rank_stat_coinc(self, stats, shift, to_shift):
-        """
-        Calculate the normalized log rate density of signals via lookup
-
-        This calls back to the Parent class and then applies the ratio_kde
-        weighting factor.
-
-        Parameters
-        ----------
-        stats: list of dicts giving single-ifo quantities, ordered as
-            self.ifos
-        shift: numpy array of float, size of the time shift vector for each
-            coinc to be ranked
-        to_shift: list of int, multiple of the time shift to apply ordered
-            as self.ifos
-
-        Returns
-        -------
-        value: log of coinc signal rate density for the given single-ifo
-            triggers and time shifts
-        """
-        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats,
-                                                       shift, to_shift)
-        signal_kde = self.kde_by_tid["signal"]
-        template_kde = self.kde_by_tid["template"]
-        logr_s += [numpy.log(i/j) for i, j in zip(signal_kde, template_kde)]
-        print('logr_s=', logr_s)
-        return logr_s
+        self.kde_by_tid[dname+'_data_kde'] = kde_file['data_kde'][:]
 
     def single(self, trigs):
         """
@@ -1920,12 +1883,42 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             The array of single detector values
         """
         try:
-            tnum = trigs.template_num
+            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            ifo = trigs.ifo
         except AttributeError:
-            tnum = trigs['template_id']
-        self.curr_tnum = self.kde_by_tid[tnum]
-        print(self.curr_tnum)
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            assert len(self.ifos) == 1
+            # Should be exactly one ifo provided
+            ifo = self.ifos[0]
+        signal_kde = self.kde_by_tid["signal_data_kde"][tnum]
+        template_kde = self.kde_by_tid["template_data_kde"][tnum]
+        self.curr_tnum = signal_kde / template_kde
         return ExpFitFgBgNormStatistic.single(self, trigs)
+
+    def logsignalrate(self, stats, shift, to_shift):
+        """
+        Calculate the normalized log rate density of signals via lookup
+
+        This calls back to the Parent class and then applies the ratio_kde
+        weighting factor.
+
+        Parameters
+        ----------
+        stats: list of dicts giving single-ifo quantities, ordered as
+            self.ifos
+        shift: numpy array of float, size of the time shift vector for each
+            coinc to be ranked
+        to_shift: list of int, multiple of the time shift to apply ordered
+            as self.ifos
+
+        Returns
+        -------
+        value: log of coinc signal rate density for the given single-ifo
+            triggers and time shifts
+        """
+        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, shift, to_shift)
+        logr_s += numpy.log(self.curr_tnum)
+        return logr_s
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
         """
@@ -1952,9 +1945,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
-        signal_kde = self.kde_by_tid["signal"]
-        template_kde = self.kde_by_tid["template"]
-        loglr += [numpy.log(i/j) for i, j in zip(signal_kde, template_kde)]
+        loglr += numpy.log(self.curr_tnum)
         return loglr
 
 
