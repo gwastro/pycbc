@@ -72,6 +72,5 @@ for idx, simtable in enumerate(new_inj_tables):
         out_path = args.output_dir + '/' + filename_pattern % idx
     else:
         out_path = args.output_files[idx]
-    ligolw_utils.write_filename(xmldoc, out_path,
-                                           gz=out_path.endswith('gz'))
+    ligolw_utils.write_filename(xmldoc, out_path, compress='auto')
     xmlroot.removeChild(simtable)
