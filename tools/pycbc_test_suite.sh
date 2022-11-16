@@ -99,6 +99,18 @@ if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
         echo -e "    Pass."
     fi
     popd
+
+    # run pycbc_optimal_snr example
+    pushd examples/optimal_snr
+    bash -e optimal_snr.sh
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
+    fi
+    popd
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
