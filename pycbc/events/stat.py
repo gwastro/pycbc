@@ -1838,31 +1838,30 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
         #looking for 'signal' and 'template' attributes in kde files
-        # and is represented as dname
+        #and is represented as kname
         parsed_attrs = [f.split('-') for f in self.files.keys()]
-        self.data_name = [at[0] for at in parsed_attrs if
+        self.kde_names = [at[0] for at in parsed_attrs if
                        (len(at) == 2 and at[1] == 'kde_file')]
-        if not len(self.data_name):
+        if not len(self.kde_names):
             raise RuntimeError("None of the statistic files has the required "
-                               "attribute called {dname}-kde_file !")
+                               "attribute called {signal}-kde_file or " 
+                               "{template}-kde_file !")
         self.kde_by_tid = {}
-        for dname in self.data_name:
-            self.kde_by_tid[dname] = self.assign_kdes(dname)
+        for kname in self.kde_names:
+            self.assign_kdes(kname)
         self.curr_tnum = None       
  
-    def assign_kdes(self, dname):
+    def assign_kdes(self, kname):
         """
         Extract values from from KDE files
 
         Parameters
         -----------
-        dname: str
+        kname: str
             signal or template.
         """
-
-        kde_file = self.files[dname+'-kde_file']
-        template_id = kde_file['template_id'][:]
-        self.kde_by_tid[dname+'_data_kde'] = kde_file['data_kde'][:]
+        with h5py.File(self.files[kname+'-kde_file'], 'r') as kde_file:
+            self.kde_by_tid[kname+'_kdevals'] = kde_file['data_kde'][:]
 
     def single(self, trigs):
         """
@@ -1890,9 +1889,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             assert len(self.ifos) == 1
             # Should be exactly one ifo provided
             ifo = self.ifos[0]
-        signal_kde = self.kde_by_tid["signal_data_kde"][tnum]
-        template_kde = self.kde_by_tid["template_data_kde"][tnum]
-        self.curr_tnum = signal_kde / template_kde
+        if self.curr_tnum is None:
+            self.curr_tnum = tnum
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def logsignalrate(self, stats, shift, to_shift):
@@ -1917,7 +1915,9 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             triggers and time shifts
         """
         logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, shift, to_shift)
-        logr_s += numpy.log(self.curr_tnum)
+        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
+        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
+        logr_s += numpy.log(signal_kde/template_kde)
         return logr_s
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
@@ -1945,7 +1945,9 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
-        loglr += numpy.log(self.curr_tnum)
+        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
+        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
+        loglr += numpy.log(signal_kde/template_kde)
         return loglr
 
 
