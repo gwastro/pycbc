@@ -1837,7 +1837,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         # calculation
         self.curr_tnum = None
  
-    def assign_kdes(self, dname):
+    def assign_kdes(self, kname):
         """
         Extract values from KDE files
 
