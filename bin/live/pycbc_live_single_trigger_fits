@@ -162,10 +162,6 @@ files = [f for f in os.listdir(date_directory)
 
 events = {}
 counter = 0
-no_triggers_yet = {ifo: True for ifo in args.ifos}
-
-# FIXME - remove this when committing
-logger = logging.getLogger()
 
 for filename in files:
     counter += 1
@@ -195,7 +191,13 @@ for filename in files:
         for ifo in args.ifos:
             if not (ifo in fin and 'snr' in fin[ifo]):
                 continue
-            live_time[ifo] += 8
+
+            # FIXME: live output files should (soon) have the live time
+            # added, but for now, extract from the filename
+            # Format of the filename is to have the live time as a dash,
+            # followed by '.hdf' at the end of the filename
+            lt = int(f.split('-')[-1][:-4])
+            live_time[ifo] += lt
 
             n_triggers = fin[ifo]['snr'].size
             # Skip if there are no triggers
@@ -217,23 +219,16 @@ for filename in files:
                 1.5 * np.ones_like(triggers[ifo]['snr'])
 
 
-    for ifo in args.ifos:
-        # Continue if not triggers found in file
-        if ifo not in triggers:
-            continue
+    for ifo in triggers.keys():
 
         # Apply the cuts to triggers
         keep_idx = cuts.apply_trigger_cuts(triggers[ifo], trigger_cut_dict)
 
-        # FIXME  - disabling logging while using a cuts module where the logging hasnt been moved
-        logger.disabled = True
         # triggers contains the datasets that we want to use for
         # the template cuts, so it can be used as the template bank
         # in this use case
         keep_idx = cuts.apply_template_cuts(triggers[ifo], template_cut_dict,
                                             template_ids=keep_idx)
-
-        logger.disabled = False
 
         # Skip if no triggers survive the cuts
         if not keep_idx.size: continue
@@ -256,11 +251,10 @@ for filename in files:
             max_idx = sngls_value.argmax()
             triggers_cut = triggers_da.select(max_idx)
 
-        if no_triggers_yet[ifo]:
-            events[ifo] = triggers_da
-            no_triggers_yet[ifo] = False
-        else:
+        if ifo in events:
             events[ifo] += triggers_da
+        else:
+            events[ifo] = triggers_da
 
 logging.info("All events processed")
 
@@ -287,8 +281,7 @@ alphas = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 counts = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 binned_sngl_stats = {ifo: {} for ifo in args.ifos}
 
-for ifo in args.ifos:
-    if ifo not in events: continue
+for ifo in events.keys():
     # Sort the events into their bins
     event_bin = np.array([tbins[d]
                           for d in events[ifo].data['template_duration']])
@@ -311,10 +304,9 @@ for ifo in args.ifos:
                                       binned_sngl_stats[ifo][bin_num],
                                       args.fit_threshold)
 
+logging.info("Writing results")
 with h5py.File(oput_file, 'w') as fout:
-
-    for ifo in args.ifos:
-        if ifo not in events: continue
+    for ifo in events.keys():
         fout.create_group(ifo)
         # Save the triggers we have used for the fits
         fout[ifo].create_group('triggers')

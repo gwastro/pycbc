@@ -196,7 +196,7 @@ template_ids = cuts.apply_template_cuts(
     template_ids=template_ids)
 
 logging.info("%d out of %d templates kept after applying template cuts",
-             len(template_ids), trigs.singles[0].bank['mass1'].size)
+             len(template_ids), len(trigs.singles[0].bank))
 
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and

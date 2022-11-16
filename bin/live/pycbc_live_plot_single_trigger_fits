@@ -27,20 +27,17 @@ parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--trigger-fits-file", required=True,
                     help="Trigger fits file to plot")
-parser.add_argument("--ifos", nargs="+", required=True,
-                    help="Which ifo(s) are we plotting the trigger fits for? "
-                         "Required")
 default_plot_format = "{ifo}-TRIGGER-FITS.png"
 parser.add_argument("--output-plot-name-format",
                     default=default_plot_format,
                     help="Format to save plots, must contain '{ifo}' to "
                          "indicate ifo in filename. Default: " +
                          default_plot_format)
-parser.add_argument("--colormap", default="rainbow",
+parser.add_argument("--colormap", default="rainbow_r", choices=plt.colormaps(),
                     help="Colormap to use for choosing the colours of the "
-                         "duration bin lines.")
+                         "duration bin lines. Default=rainbow_r")
 parser.add_argument("--log-colormap", action='store_true',
-                    help="Use log spacign for choosing colormap values "
+                    help="Use log spacing for choosing colormap values "
                          "based on duration bins.")
 parser.add_argument("--x-lim-upper", type=float,
                     help="Add an upper limit to the x-axis of the plot")
@@ -55,11 +52,9 @@ pycbc.init_logging(args.verbose)
 
 logging.info("Getting trigger fits file information")
 with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
+    # Get the ifos to plot from the file
     # Check that all the ifos we want to plot are in the file
-    for ifo in args.ifos:
-        if ifo not in trfit_f:
-            raise ValueError(f"IFO {ifo} not found in fits file "
-                             f"{args.trigger_fits_file}")
+    ifos = [k for k in trfit_f.keys() if not k.startswith('bins')]
 
     # Grab some info from the attributes
     sngl_ranking = trfit_f.attrs['sngl_ranking']
@@ -69,14 +64,14 @@ with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
 
     # Get the triggers for each detector
     # (This is ones which passed the cuts in the fitting code)
-    stats = {ifo: {} for ifo in args.ifos}
-    durations = {ifo: {} for ifo in args.ifos}
-    for ifo in args.ifos:
+    stats = {ifo: {} for ifo in ifos}
+    durations = {ifo: {} for ifo in ifos}
+    for ifo in ifos:
         stats[ifo] = trfit_f[ifo]['triggers'][sngl_ranking][:]
         durations[ifo] = trfit_f[ifo]['triggers']['template_duration'][:]
-    live_time = {ifo: trfit_f[ifo].attrs['live_time'] for ifo in args.ifos}
-    alphas = {ifo: trfit_f[ifo]['fit_coeff'][:] for ifo in args.ifos}
-    counts = {ifo: trfit_f[ifo]['counts'][:] for ifo in args.ifos}
+    live_time = {ifo: trfit_f[ifo].attrs['live_time'] for ifo in ifos}
+    alphas = {ifo: trfit_f[ifo]['fit_coeff'][:] for ifo in ifos}
+    counts = {ifo: trfit_f[ifo]['counts'][:] for ifo in ifos}
     bu = trfit_f['bins_upper'][:]
     bl = trfit_f['bins_lower'][:]
 
@@ -105,7 +100,7 @@ init_level = logger.level
 
 logging.info("Plotting fits")
 
-for ifo in args.ifos:
+for ifo in ifos:
     # Skip if no triggers in this IFO
     if not len(stats[ifo]): continue
 
