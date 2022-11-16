@@ -139,6 +139,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
 
     def logdet_fit(self, cov, p):
         """Construct a linear regression from a sample of truncated covariance matrices.
+        
+        Returns the sample points used for linear fit generation as well as the linear fit parameters.
         """
         # initialize lists for matrix sizes and determinants
         sample_sizes = []
@@ -662,7 +664,20 @@ class GatedGaussianNoise(BaseGatedGaussian):
         # Generate the waveforms for each submodel
         wfs = []
         for m in models + [self]:
-            wfs.append(m.get_waveforms())
+            # temp fix for wfs in combined run
+            wf = m.get_waveforms()
+            # zero out inspiral wf after gate
+            if m.current_params['approximant'] == 'IMRPhenomXPHM':
+                gate_times = m.get_gate_times()
+                for d in wf:
+                    ts = wf[d]
+                    start = gate_times[d][0]
+                    gpsidx = (float(start) - float(ts.start_time))//ts.delta_t # this converts to an index in a time series
+                    ts = ts.to_timeseries()
+                    ts[int(gpsidx):] *= 0
+                    ts = ts.to_frequencyseries()
+                    wf[d] = ts
+            wfs.append(wf)
 
         # combine into a single waveform
         combine = {}
