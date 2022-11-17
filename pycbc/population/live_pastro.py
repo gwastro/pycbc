@@ -106,6 +106,27 @@ def signal_rate_rescale(horizons, ref_dhor):
     return net_horizon ** 3. / ref_dhor ** 3.
 
 
+def signal_rate_trig_type(horizons, sens_ifos, trig_ifos):
+    """
+    Compute a factor accounting for the fraction of signals seen as a given
+    trigger type
+    """
+    # Single-ifo time
+    if len(sens_ifos) == 1:
+        assert len(trig_ifos) == 1
+        return 1.
+    # Single trigger in multi-ifo time
+    if len(trig_ifos) == 1:
+        # Sensitive volume scales with horizon^3
+        # Suppress horizon by sqrt(2) wrt coincs
+        return (horizons[trig_ifos[0]] / 2**0.5) ** 3. /\
+            sum([horizons[i] ** 3. for i in sens_ifos])
+    # Double coinc : volume determined by less sensitive ifo
+    # Compare to 2nd most sensitive ifo over the observing network
+    return sorted([horizons[i] for i in trig_ifos])[0] ** 3. /\
+        sorted([horizons[i] for i in sens_ifos])[-2] ** 3.
+
+
 def template_param_bin_pa(padata, trdata, horizons):
     """
     Parameters
@@ -204,11 +225,14 @@ def template_param_bin_types_pa(padata, trdata, horizons):
                                padata.spec['netsnr_thresh'])
     logging.debug('SNR %.3g, signal pdf %.3g', trdata['network_snr'], dsig)
     dsig *= padata.spec['sig_per_yr_binned'][bind]
-    logging.debug('Signal density per yr per SNR in bin %.3g', dsig)
-    # Scale by triggered network sensitivity accounting for BNS horizons
+    logging.debug('Total signal density per yr per SNR in bin %.3g', dsig)
+    # Scale by network sensitivity accounting for BNS horizons
     trig_hor = {i: horizons[i] for i in tr_ifos}
-    dsig *= signal_rate_rescale(trig_hor, padata.spec['ref_bns_horizon'])
-    logging.debug('After triggered network horizon rescaling %.3g', dsig)
+    dsig *= signal_rate_rescale(horizons, padata.spec['ref_bns_horizon'])
+    logging.debug('After network horizon rescaling %.3g', dsig)
+    # Scale by relative signal rate in triggered ifos
+    dsig *= signal_rate_trig_type(horizons, trdata['sensitive'], tr_ifos)
+    logging.debug('After triggered ifo rate rescaling %.3g', dsig)
 
     p_astro = dsig / (dsig + dnoise)
     logging.debug('p_astro %.4g', p_astro)
@@ -221,6 +245,7 @@ __all__ = [
     "noise_density_from_far",
     "signal_pdf_from_snr",
     "signal_rate_rescale",
+    "signal_rate_trig_type",
     "template_param_bin_pa",
     "template_param_bin_types_pa",
 ]
