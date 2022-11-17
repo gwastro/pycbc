@@ -183,12 +183,9 @@ conf_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
                          file_url='file://' + conf_path)])
 
 # Input bank file
+file_attrs = {'segs': workflow.analysis_time, 'tags': [], 'ifo_list': workflow.ifos, 'description': 'TEMPLATEBANK'}
 inp_bank = workflow.cp.get('workflow', 'input-bank')
-inp_bank = wf.resolve_url_to_file(inp_bank)
-inp_bank.tags = []
-inp_bank.description='TEMPLATEBANK'
-inp_bank.ifo_list = workflow.ifos
-inp_bank.segment = workflow.analysis_time
+inp_bank = wf.resolve_url_to_file(inp_bank,attrs=file_attrs)
 
 # Inspinj Executable
 inspinj_exe = select_generic_executable(workflow, 'injection')
