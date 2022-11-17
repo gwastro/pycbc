@@ -48,14 +48,17 @@ __version__ = pycbc_version
 
 _default_format = '%(asctime)s: %(message)s'
 
+
 class Formatter(logging.Formatter):
     converter = dt.fromtimestamp
+
     def formatTime(self, record, datefmt=None):
         ct = self.converter(record.created).astimezone()
         t = ct.strftime("%Y-%m-%dT%H:%M:%S")
         s = "%s.%03d" % (t, record.msecs)
         s += ct.strftime('%z')
         return s
+
 
 def init_logging(verbose=False, fmt=_default_format):
     """Common utility for setting up logging in PyCBC.
