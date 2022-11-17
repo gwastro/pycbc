@@ -46,7 +46,7 @@ except:
 __version__ = pycbc_version
 
 
-_default_format = '%(asctime)s %(levelname)s: %(message)s'
+_default_format = '%(asctime)s: %(message)s'
 
 class Formatter(logging.Formatter):
     converter = dt.fromtimestamp
