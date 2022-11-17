@@ -32,6 +32,7 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 import logging
 import random
 import string
+import time
 
 try:
     # This will fail when pycbc is imported during the build process,
@@ -45,7 +46,7 @@ except:
 __version__ = pycbc_version
 
 
-def init_logging(verbose=False, format='%(asctime)s %(message)s'):
+def init_logging(verbose=False, format='%(asctime)s UTC: %(message)s'):
     """Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
@@ -82,6 +83,7 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
     else:
         initial_level = int(verbose)
     logging.getLogger().setLevel(initial_level)
+    logging.Formatter.converter = time.gmtime
     logging.basicConfig(format=format, level=initial_level)
 
 
