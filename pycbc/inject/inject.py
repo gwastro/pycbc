@@ -326,8 +326,7 @@ class _XMLInjectionSet(object):
             for (field, value) in static_args.items():
                 set_sim_data(sim, field, value)
             simtable.append(sim)
-        ligolw_utils.write_filename(xmldoc, filename,
-                                    gz=filename.endswith('gz'))
+        ligolw_utils.write_filename(xmldoc, filename, compress='auto')
 
 
 # -----------------------------------------------------------------------------

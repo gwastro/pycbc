@@ -341,8 +341,7 @@ if __name__ == '__main__':
         llw_root = llw_doc.childNodes[0]
         llw_root.removeChild(injections.table)
         llw_root.appendChild(new_inj_table)
-        ligolw_utils.write_filename(llw_doc, opts.out_file,
-                                    gz=opts.out_file.endswith('gz'))
+        ligolw_utils.write_filename(llw_doc, opts.out_file, compress='auto')
     else:
         pycbc.inject.InjectionSet.write(opts.out_file, new_inj_table)
 
