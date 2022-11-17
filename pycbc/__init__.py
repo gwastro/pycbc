@@ -32,7 +32,7 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 import logging
 import random
 import string
-import time
+from datetime import datetime as dt
 
 try:
     # This will fail when pycbc is imported during the build process,
@@ -46,7 +46,18 @@ except:
 __version__ = pycbc_version
 
 
-def init_logging(verbose=False, format='%(asctime)s UTC: %(message)s'):
+_default_format = '%(asctime)s %(levelname)s: %(message)s'
+
+class Formatter(logging.Formatter):
+    converter = dt.fromtimestamp
+    def formatTime(self, record, datefmt=None):
+        ct = self.converter(record.created).astimezone()
+        t = ct.strftime("%Y-%m-%dT%H:%M:%S")
+        s = "%s.%03d" % (t, record.msecs)
+        s += ct.strftime('%z')
+        return s
+
+def init_logging(verbose=False, fmt=_default_format):
     """Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
@@ -82,9 +93,12 @@ def init_logging(verbose=False, format='%(asctime)s UTC: %(message)s'):
         initial_level = logging.INFO
     else:
         initial_level = int(verbose)
-    logging.getLogger().setLevel(initial_level)
-    logging.Formatter.converter = time.gmtime
-    logging.basicConfig(format=format, level=initial_level)
+
+    logger = logging.getLogger()
+    logger.setLevel(initial_level)
+    sh = logging.StreamHandler()
+    logger.addHandler(sh)
+    sh.setFormatter(Formatter(fmt=fmt))
 
 
 def makedir(path):
