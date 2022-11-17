@@ -46,10 +46,10 @@ except:
 __version__ = pycbc_version
 
 
-_default_format = '%(asctime)s: %(message)s'
+_default_format = '%(asctime)s %(message)s'
 
 
-class Formatter(logging.Formatter):
+class LogFormatter(logging.Formatter):
     converter = dt.fromtimestamp
 
     def formatTime(self, record, datefmt=None):
@@ -101,7 +101,7 @@ def init_logging(verbose=False, fmt=_default_format):
     logger.setLevel(initial_level)
     sh = logging.StreamHandler()
     logger.addHandler(sh)
-    sh.setFormatter(Formatter(fmt=fmt))
+    sh.setFormatter(LogFormatter(fmt=fmt))
 
 
 def makedir(path):
