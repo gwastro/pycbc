@@ -15,7 +15,7 @@
 import numpy as np
 import pycbc
 from pycbc import bin_utils
-from pycbc.events import cuts, stat, triggers, trigger_fits as trstats
+from pycbc.events import cuts, triggers, trigger_fits as trstats
 from pycbc.io import DictArray
 from pycbc.events import ranking
 import argparse, logging, os, sys, h5py
@@ -69,10 +69,11 @@ parser.add_argument("--cluster", action='store_true',
 parser.add_argument("--output", required=True,
                     help="File in which to save the output trigger fit "
                          "parameters.")
+parser.add_argument("--sngl-ranking", default="newsnr",
+                    choices=ranking.sngls_ranking_function_dict.keys(),
+                    help="The single-detector trigger ranking to use.")
 #parser.add_argument("--", default="", help="")
 
-stat.insert_statistic_option_group(parser,
-     default_ranking_statistic='single_ranking_only')
 cuts.insert_cuts_option_group(parser)
 
 #Add some input sanitisation
