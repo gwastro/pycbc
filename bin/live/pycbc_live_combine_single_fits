@@ -26,7 +26,7 @@ parser.add_argument("--conservative-percentile", type=int, default=95,
                     help="What percentile to use for the conservative "
                          "combined fit. Integer in range 50-99. Default=95")
 parser.add_argument("--output", required=True,
-                    help="Output directory for final results")
+                    help="Output file for combined fit parameters")
 parser.add_argument("--ifos", required=True, nargs="+",
                     help="list of ifos fo collect info for")
 

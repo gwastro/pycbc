@@ -66,10 +66,9 @@ parser.add_argument("--fit-threshold", type=float, default=5,
 parser.add_argument("--cluster", action='store_true',
                     help="Only use maximum of the --sngl-ranking value "
                          "from each file.")
-parser.add_argument("--output-directory", required=True,
-                    help="Directory in which to save the output file.")
-parser.add_argument("--output-id-string",
-                    help="Identification string to add to output filenames")
+parser.add_argument("--output", required=True,
+                    help="File in which to save the output trigger fit "
+                         "parameters.")
 #parser.add_argument("--", default="", help="")
 
 stat.insert_statistic_option_group(parser,
@@ -269,12 +268,6 @@ for ifo in args.ifos:
 # split the events into bins by template duration
 logging.info('Sorting events into template duration bins')
 
-oput_file = os.path.join(args.output_directory,
-                         args.analysis_date)
-if args.output_id_string:
-    oput_file += f'-{args.output_id_string}'
-oput_file += "-TRIGGER-FITS.hdf"
-
 # Fit the triggers within each bin
 n_bins = duration_bin_edges.size - 1
 alphas = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
@@ -305,7 +298,7 @@ for ifo in events.keys():
                                       args.fit_threshold)
 
 logging.info("Writing results")
-with h5py.File(oput_file, 'w') as fout:
+with h5py.File(args.output, 'w') as fout:
     for ifo in events.keys():
         fout.create_group(ifo)
         # Save the triggers we have used for the fits
