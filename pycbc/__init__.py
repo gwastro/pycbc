@@ -60,7 +60,9 @@ class LogFormatter(logging.Formatter):
         ct = self.converter(record.created).astimezone()
         t = ct.strftime("%Y-%m-%dT%H:%M:%S")
         s = f"{t}.{int(record.msecs):03d}"
-        s += ct.strftime('%z')
+        timezone = ct.strftime('%z')
+        timezone_colon = f"{timezone[:-2]}:{timezone[-2:]}"
+        s += timezone_colon
         return s
 
 
