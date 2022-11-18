@@ -75,7 +75,8 @@ elif args.far_type == 'exclusive':
     ifar_found = f['found_after_vetoes/ifar_exc'][:]
     far_title = 'Exclusive'
 
-ifar_found = numpy.minimum(ifar_found, args.limit_ifar)
+if args.limit_ifar:
+    ifar_found = numpy.minimum(ifar_found, args.limit_ifar)
 
 s1z = f['injections/spin1z'][:]
 s2z = f['injections/spin2z'][:]
