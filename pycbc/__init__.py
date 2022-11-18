@@ -60,7 +60,7 @@ class LogFormatter(logging.Formatter):
         return s
 
 
-def init_logging(verbose=False, fmt=_default_format):
+def init_logging(verbose=False, format=_default_format):
     """Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
@@ -101,7 +101,7 @@ def init_logging(verbose=False, fmt=_default_format):
     logger.setLevel(initial_level)
     sh = logging.StreamHandler()
     logger.addHandler(sh)
-    sh.setFormatter(LogFormatter(fmt=fmt))
+    sh.setFormatter(LogFormatter(fmt=format))
 
 
 def makedir(path):
