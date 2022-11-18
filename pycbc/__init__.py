@@ -46,10 +46,14 @@ except:
 __version__ = pycbc_version
 
 
-_default_format = '%(asctime)s %(message)s'
-
-
 class LogFormatter(logging.Formatter):
+    """
+    Format the logging appropriately
+    This will return the log time in the ISO 6801 standard,
+    but with millisecond precision
+    https://en.wikipedia.org/wiki/ISO_8601
+    e.g. 2022-11-18T09:53:01.554+00:00
+    """
     converter = dt.fromtimestamp
 
     def formatTime(self, record, datefmt=None):
@@ -60,7 +64,7 @@ class LogFormatter(logging.Formatter):
         return s
 
 
-def init_logging(verbose=False, format=_default_format):
+def init_logging(verbose=False, format='%(asctime)s %(message)s'):
     """Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
