@@ -12,17 +12,17 @@ from pycbc.detector import Detector
 labels={'mchirp': 'Chirp Mass',
         'mtotal': 'Total Mass',
         'mass_ratio': 'Mass Ratio',
-        'decisive_distance': 'Injected Decisive Distance (Mpc)',
-        'dec_chirp_distance': 'Injected Decisive Chirp Distance (Mpc)',
-        'min_eff_distance': 'Minimum Effective Injected Distance (Mpc)',
-        'min_eff_chirp_distance': 'Minimum Effective Injected Chirp Distance (Mpc)',
+        'decisive_distance': 'Decisive Distance (Mpc)',
+        'dec_chirp_distance': 'Decisive Chirp Distance (Mpc)',
+        'min_eff_distance': 'Minimum Effective Distance (Mpc)',
+        'min_eff_chirp_distance': 'Minimum Effective Chirp Distance (Mpc)',
         'chirp_distance': 'Injected Chirp Distance (Mpc)',
         'comb_optimal_snr': 'Combined Optimal SNR',
         'decisive_optimal_snr': 'Decisive Optimal SNR',
         'max_optimal_snr': 'Maximum Optimal SNR',
         'redshift': 'Redshift',
         'time': 'Time (s)',
-        'effective_spin': 'Weighted Aligned Spin',
+        'effective_spin': 'Effective Inspiral Spin',
        }
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -32,7 +32,7 @@ parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
                     'effective_spin', 'time', 'mtotal', 'mass_ratio'])
 parser.add_argument('--log-x', action='store_true', default=False)
 parser.add_argument('--distance-type', default='decisive_optimal_snr',
-                    choices=list(labels.keys()),
+                    choices=list(labels),
                     help="Variable related to injected distance. Decisive "
                          "distance and dec chirp distance only available for "
                          "2-ifo search")
@@ -75,9 +75,7 @@ elif args.far_type == 'exclusive':
     ifar_found = f['found_after_vetoes/ifar_exc'][:]
     far_title = 'Exclusive'
 
-if args.limit_ifar:
-    ifar_above_thresh = ifar_found > args.limit_ifar
-    ifar_found[ifar_above_thresh] = args.limit_ifar
+ifar_found = numpy.minimum(ifar_found, args.limit_ifar)
 
 s1z = f['injections/spin1z'][:]
 s2z = f['injections/spin2z'][:]
@@ -121,8 +119,8 @@ try:
     dvals['dec_chirp_distance'] = \
         pycbc.pnutils.chirp_distance(dvals['decisive_distance'],
                                      vals['mchirp'])
-    # If we include single-detector triggers in the analysis, the
-    # "decisive" distance would be the minimum distance
+    # When including single-detector triggers in the analysis, the
+    # "decisive" distance is be the minimum distance
     dvals['min_eff_distance'] = numpy.min(eff_dists, axis=1)
     dvals['min_eff_chirp_distance'] = \
         pycbc.pnutils.chirp_distance(dvals['min_eff_distance'],
