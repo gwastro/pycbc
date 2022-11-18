@@ -55,7 +55,7 @@ class LogFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):
         ct = self.converter(record.created).astimezone()
         t = ct.strftime("%Y-%m-%dT%H:%M:%S")
-        s = "%s.%03d" % (t, record.msecs)
+        s = f"{t}.{record.msecs:03d}"
         s += ct.strftime('%z')
         return s
 
