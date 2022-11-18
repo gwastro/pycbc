@@ -241,7 +241,7 @@ if opts.open_box:
 if opts.open_box:
     # scale the plot around the foreground
     pylab.ylim(0.7, 0.05 * len(fore_cumnum))
-    pylab.xlim(min(expected_ifar) / 30, 3 * max_ifar)
+    pylab.xlim(30 * min(fore_ifar), 3 * max_ifar)
 else:
     pylab.ylim(0.7, max(expected_cumnum))
     pylab.xlim(min(expected_ifar) / 30, 3 * max(upper[4]))
