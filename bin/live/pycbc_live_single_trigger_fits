@@ -191,7 +191,7 @@ for filename in files:
             if not (ifo in fin and 'snr' in fin[ifo]):
                 continue
 
-            # FIXME: live output files should (soon) have the live time
+            # Eventual FIX ME: live output files should (soon) have the live time
             # added, but for now, extract from the filename
             # Format of the filename is to have the live time as a dash,
             # followed by '.hdf' at the end of the filename
@@ -218,23 +218,23 @@ for filename in files:
                 1.5 * np.ones_like(triggers[ifo]['snr'])
 
 
-    for ifo in triggers.keys():
+    for ifo, trigs_ifo in triggers.items():
 
         # Apply the cuts to triggers
-        keep_idx = cuts.apply_trigger_cuts(triggers[ifo], trigger_cut_dict)
+        keep_idx = cuts.apply_trigger_cuts(trigs_ifo, trigger_cut_dict)
 
         # triggers contains the datasets that we want to use for
         # the template cuts, so it can be used as the template bank
         # in this use case
-        keep_idx = cuts.apply_template_cuts(triggers[ifo], template_cut_dict,
+        keep_idx = cuts.apply_template_cuts(trigs_ifo, template_cut_dict,
                                             template_ids=keep_idx)
 
         # Skip if no triggers survive the cuts
         if not keep_idx.size: continue
 
         # Apply the cuts
-        triggers_cut = {k: triggers[ifo][k][keep_idx]
-                        for k in triggers[ifo].keys()}
+        triggers_cut = {k: trigs_ifo[k][keep_idx]
+                        for k in trigs_ifo.keys()}
 
         # Calculate the sngl_ranking value to be used in the fits
         sngls_value = ranking.get_sngls_ranking_from_trigs(

@@ -77,6 +77,7 @@ for f in args.trfits_files:
     assert all(fits_f['bins_lower'][:] == bl)
     assert all(fits_f['bins_upper'][:] == bu)
 
+    # Get the time of the last trigger in the trigger_fits file
     gps_last = 0
     for ifo in args.ifos:
         if ifo not in fits_f:
@@ -102,7 +103,8 @@ for f in args.trfits_files:
     fits_f.close()
 
 # Set up the date array, this is stored as an offset from the start date of
-# the combination. This allows for missing or empty days
+# the combination to the end of the trigger_fits file.
+# This allows for missing or empty days
 
 trigger_file_times = np.array(trigger_file_times)
 ad_order = np.argsort(np.array(trigger_file_times))
