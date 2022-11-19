@@ -680,16 +680,31 @@ class GatedGaussianNoise(BaseGatedGaussian):
         wfs = []
         for m in models + [self]:
             # temp fix for wfs in combined run
+            # set static params 'zero_before_gate' or 'zero_after_gate' to specify portion of wf to zero out
             wf = m.get_waveforms()
-            # zero out inspiral wf after gate
-            if m.current_params['approximant'] == 'IMRPhenomXPHM':
+            # if params don't exist, set them to false
+            try:
+                m.static_params['zero_before_gate']
+            except KeyError:
+                m.static_params['zero_before_gate'] = False
+            try:
+                m.static_params['zero_after_gate']
+            except KeyError:
+                m.static_params['zero_after_gate'] = False
+                
+            if m.static_params['zero_before_gate'] or m.static_params['zero_after_gate']:
                 gate_times = m.get_gate_times()
                 for d in wf:
                     ts = wf[d]
                     start = gate_times[d][0]
-                    gpsidx = (float(start) - float(ts.start_time))//ts.delta_t # this converts to an index in a time series
+                    gpsidx = (float(start) - float(ts.start_time))//ts.delta_t
                     ts = ts.to_timeseries()
-                    ts[int(gpsidx):] *= 0
+                    # zero out inspiral wf after gate
+                    if m.current_params['zero_after_gate']:
+                        ts[int(gpsidx):] *= 0
+                    # zero out ringdown wf before gate
+                    if m.current_params['zero_before_gate']:
+                        ts[:int(gpsidx)] *= 0
                     ts = ts.to_frequencyseries()
                     wf[d] = ts
             wfs.append(wf)
