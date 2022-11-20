@@ -1837,39 +1837,35 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
-        #looking for 'signal' and 'template' attributes in kde files
-        #and is represented as kname
+        # the stat file attributes are hard-coded as 'signal-kde_file' & 'template-kde_file' 
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.kde_names = [at[0] for at in parsed_attrs if
                        (len(at) == 2 and at[1] == 'kde_file')]
-        if not len(self.kde_names):
-            raise RuntimeError("None of the statistic files has the required "
-                               "attribute called {signal}-kde_file or " 
-                               "{template}-kde_file !")
+        assert self.kde_names == ["signal", "template"] and len(self.kde_names) == 2, \
+                              "None of the statistic files has the required attribute "\
+                              "called {signal}-kde_file or {template}-kde_file !"
         self.kde_by_tid = {}
         for kname in self.kde_names:
             self.assign_kdes(kname)
+        #this will hold the template ids of the events for the statistic calculation
         self.curr_tnum = None       
  
     def assign_kdes(self, kname):
         """
-        Extract values from from KDE files
+        Extract values from KDE files
 
         Parameters
         -----------
         kname: str
-            signal or template.
+            Used to label the kde files. 
         """
         with h5py.File(self.files[kname+'-kde_file'], 'r') as kde_file:
             self.kde_by_tid[kname+'_kdevals'] = kde_file['data_kde'][:]
 
     def single(self, trigs):
         """
-        Calculate the necessary single detector information
-
-        In this case the ranking rescaled (see the lognoiserate method here)
-        with the phase, end time, sigma, SNR, template_id and the
-        benchmark_logvol values added in.
+        Calculate the necessary single detector information, that is,
+        getting tnum values from single detector triggers.
 
         Parameters
         ----------
@@ -1881,16 +1877,12 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         numpy.ndarray
             The array of single detector values
         """
-        try:
-            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
-            ifo = trigs.ifo
-        except AttributeError:
-            tnum = trigs['template_id']  # exists for SingleDetTriggers
-            assert len(self.ifos) == 1
-            # Should be exactly one ifo provided
-            ifo = self.ifos[0]
         if self.curr_tnum is None:
-            self.curr_tnum = tnum
+            try:
+                tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+                self.curr_tnum = tnum
+            except AttributeError:
+                tnum = trigs['template_id']  # exists for SingleDetTriggers
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def logsignalrate(self, stats, shift, to_shift):
@@ -1917,7 +1909,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, shift, to_shift)
         signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
         template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
-        logr_s += numpy.log(signal_kde/template_kde)
+        logr_s += numpy.log(signal_kde / template_kde)
         return logr_s
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
@@ -1947,7 +1939,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
                     self, s, thresh, limifo, **kwargs)
         signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
         template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
-        loglr += numpy.log(signal_kde/template_kde)
+        loglr += numpy.log(signal_kde / template_kde)
         return loglr
 
 
