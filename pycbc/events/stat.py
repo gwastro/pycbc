@@ -1844,7 +1844,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.kde_names = [at[0] for at in parsed_attrs if
                        (len(at) == 2 and at[1] == 'kde_file')]
-        assert self.kde_names == sorted(['signal', 'template']),"None of the"\
+        assert sorted(self.kde_names) == ['signal', 'template'],"None of the"\
                               " statistic files has the required attribute "\
                               "called {signal}-kde_file or {template}-kde_file"
         self.kde_by_tid = {}
