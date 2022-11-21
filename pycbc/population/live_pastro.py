@@ -227,7 +227,6 @@ def template_param_bin_types_pa(padata, trdata, horizons):
     dsig *= padata.spec['sig_per_yr_binned'][bind]
     logging.debug('Total signal density per yr per SNR in bin %.3g', dsig)
     # Scale by network sensitivity accounting for BNS horizons
-    trig_hor = {i: horizons[i] for i in tr_ifos}
     dsig *= signal_rate_rescale(horizons, padata.spec['ref_bns_horizon'])
     logging.debug('After network horizon rescaling %.3g', dsig)
     # Scale by relative signal rate in triggered ifos

@@ -176,7 +176,7 @@ class CandidateForGraceDB(object):
             if self.snr_series is not None:
                 snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
 
-        # Set merger time to the average of trigger peaks from coinc_results ifos
+        # Set merger time to the mean of trigger peaks over coinc_results ifos
         self.merger_time = numpy.mean(
             [coinc_results[f'foreground/{ifo}/end_time'] for ifo in ifos]) \
             + self.time_offset
