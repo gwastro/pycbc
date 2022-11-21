@@ -997,7 +997,7 @@ with ctx:
                     idx = data_reader[ifo].dq.indices_of_flag(
                             start, valid_pad, times,
                             padding=data_reader[ifo].dq_padding)
-                    logging.info('Keeping %d/%d %s triggers',
+                    logging.info('Keeping %d/%d %s triggers after DQ flags',
                                  len(idx), len(times), ifo)
                     for key in results[ifo]:
                         if len(results[ifo][key]):
@@ -1011,18 +1011,18 @@ with ctx:
                     idq_states = data_reader[ifo].idq_state.at_times(times)
                     idq_valid = idq_states == 1
                     idq_invalid = numpy.logical_not(idq_valid)
-                    invalid_idx = numpy.where(idq_invalid)[0]
+                    invalid_idx = numpy.flatnonzero(idq_invalid)
 
                     # for triggers with valid idq info, only keep those with
                     # idq FAP > threshold
-                    valid_idx = numpy.where(idq_valid)[0]
+                    valid_idx = numpy.flatnonzero(idq_valid)
                     valid_keep = data_reader[ifo].idq.indices_of_flag(
                             start, valid_pad, times[valid_idx],
                             padding=data_reader[ifo].dq_padding)
                     valid_idx = valid_idx[valid_keep]
                     idx = numpy.append(invalid_idx, valid_idx)
 
-                    logging.info('Keeping %d/%d %s triggers',
+                    logging.info('Keeping %d/%d %s triggers after iDQ',
                                  len(idx), len(times), ifo)
                     for key in results[ifo]:
                         if len(results[ifo][key]):

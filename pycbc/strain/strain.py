@@ -1570,7 +1570,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                                                 force_update_cache=force_update_cache,
                                                 increment_update_cache=increment_update_cache,
                                                 threshold=self.idq_threshold)
-            self.idq_state = pycbc.frame.StatusBuffer(frame_src, idq_channel, start_time,
+            self.idq_state = pycbc.frame.StatusBuffer(frame_src, idq_state_channel, start_time,
                                                       max_buffer=max_buffer,
                                                       force_update_cache=force_update_cache,
                                                       increment_update_cache=increment_update_cache,
