@@ -1764,7 +1764,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         Parameters
         ----------
         trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+            Dictionary-like object holding single detector trigger information
 
         Returns
         -------
@@ -1785,7 +1785,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         Optimization function to identify coincs too quiet to be of interest
 
         Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers. 
+        the threshold for each of the input triggers.
 
         Parameters
         ----------
@@ -1813,10 +1813,12 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
 
 class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
     """
-    The ExpFitFgBgNormStatistic with a mass  and spin weighting factor determined by KDE
+    The ExpFitFgBgNormStatistic with a mass  and spin weighting factor 
+    determined by KDE
 
     This is the same as the ExpFitFgBgNormStatistic except the likelihood
-    is multiplied by the ratio of signal KDE to template KDE over template params.
+    is multiplied by the ratio of signal KDE to template KDE over template
+    params.
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
@@ -1837,18 +1839,20 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
-        # the stat file attributes are hard-coded as 'signal-kde_file' & 'template-kde_file' 
+        # the stat file attributes are hard-coded as 'signal-kde_file'
+        # and 'template-kde_file'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.kde_names = [at[0] for at in parsed_attrs if
                        (len(at) == 2 and at[1] == 'kde_file')]
-        assert self.kde_names == ["signal", "template"] and len(self.kde_names) == 2, \
-                              "None of the statistic files has the required attribute "\
-                              "called {signal}-kde_file or {template}-kde_file !"
+        assert self.kde_names == sorted(['signal', 'template']),"None of the"\
+                              " statistic files has the required attribute "\
+                              "called {signal}-kde_file or {template}-kde_file"
         self.kde_by_tid = {}
         for kname in self.kde_names:
             self.assign_kdes(kname)
-        #this will hold the template ids of the events for the statistic calculation
-        self.curr_tnum = None       
+        # this will hold the template ids of the events for the
+        # statistic calculation
+        self.curr_tnum = None
  
     def assign_kdes(self, kname):
         """
@@ -1857,20 +1861,20 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         Parameters
         -----------
         kname: str
-            Used to label the kde files. 
+            Used to label the kde files.
         """
         with h5py.File(self.files[kname+'-kde_file'], 'r') as kde_file:
             self.kde_by_tid[kname+'_kdevals'] = kde_file['data_kde'][:]
 
     def single(self, trigs):
         """
-        Calculate the necessary single detector information, that is,
+        Calculate the necessary  single detector  information, that is,
         getting tnum values from single detector triggers.
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs:dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information
 
         Returns
         -------
@@ -1879,10 +1883,11 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         if self.curr_tnum is None:
             try:
-                tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+                tnum = trigs.template_num # exists if accessed
+                                          # via coinc_findtrigs
                 self.curr_tnum = tnum
             except AttributeError:
-                tnum = trigs['template_id']  # exists for SingleDetTriggers
+                tnum = trigs['template_id']  #exists for SingleDetTriggers
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def logsignalrate(self, stats, shift, to_shift):
@@ -1906,7 +1911,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         value: log of coinc signal rate density for the given single-ifo
             triggers and time shifts
         """
-        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, shift, to_shift)
+        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, 
+                                                       shift, to_shift)
         signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
         template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
         logr_s += numpy.log(signal_kde / template_kde)
@@ -1916,7 +1922,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         Optimization function to identify coincs too quiet to be of interest
 
-        Calculate the required single detector statistic to exceed the 
+        Calculate the required single detector statistic to exceed the
         threshold for each of the input trigers.
 
         Parameters
