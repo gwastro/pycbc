@@ -96,7 +96,6 @@ if h_inc_back_num is None:
 
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
-    import sys
     fig = pylab.figure()
     ax = fig.add_subplot(111)
 
@@ -244,7 +243,6 @@ if opts.open_box:
     pylab.xlim(30 * min(fore_ifar), 3 * max_ifar)
 else:
     pylab.ylim(0.7, max(expected_cumnum))
-    pylab.xlim(min(expected_ifar) / 30, 3 * max(upper[4]))
 pylab.grid()
 pylab.legend(loc='upper right', fontsize=13)
 pylab.ylabel('Cumulative Number', size='large')

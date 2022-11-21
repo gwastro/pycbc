@@ -16,7 +16,7 @@ labels={'mchirp': 'Chirp Mass',
         'dec_chirp_distance': 'Decisive Chirp Distance (Mpc)',
         'min_eff_distance': 'Minimum Effective Distance (Mpc)',
         'min_eff_chirp_distance': 'Minimum Effective Chirp Distance (Mpc)',
-        'chirp_distance': 'Injected Chirp Distance (Mpc)',
+        'chirp_distance': 'Chirp Distance (Mpc)',
         'comb_optimal_snr': 'Combined Optimal SNR',
         'decisive_optimal_snr': 'Decisive Optimal SNR',
         'max_optimal_snr': 'Maximum Optimal SNR',
@@ -120,8 +120,8 @@ try:
     dvals['dec_chirp_distance'] = \
         pycbc.pnutils.chirp_distance(dvals['decisive_distance'],
                                      vals['mchirp'])
-    # When including single-detector triggers in the analysis, the
-    # "decisive" distance is be the minimum distance
+    # When single-detector triggers are included in the analysis,
+    # minimum distance is the relevant quantity for injection efficiency
     dvals['min_eff_distance'] = numpy.min(eff_dists, axis=1)
     dvals['min_eff_chirp_distance'] = \
         pycbc.pnutils.chirp_distance(dvals['min_eff_distance'],
