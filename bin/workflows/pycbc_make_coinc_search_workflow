@@ -797,6 +797,9 @@ for arg in args_to_output:
 
 args_to_output.insert(0, sys.argv[0])
 
-gen_str = '\n'.join(args_to_output)
+gen_str = '<pre>' + '\n'.join(args_to_output) + '</pre>'
+kwds = { 'title' : 'Workflow Generation Command',
+         'caption' : "Command used to generate the workflow.",
+         'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(gen_str, gen_file_html.storage_path, **kwds)
-layout.single_layout(rdir['workflow'], ([dashboard_file,gen_file_html, log_file_html]))
+layout.single_layout(rdir['workflow'], ([dashboard_file, gen_file_html, log_file_html]))
