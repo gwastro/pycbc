@@ -737,6 +737,9 @@ create_versioning_page(rdir['workflow/version'], container.cp)
 log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
                         extension='.html', directory=rdir['workflow'])
 
+gen_file_html = wf.File(workflow.ifos, 'WORKFLOW-GEN', workflow.analysis_time,
+                        extension='.html', directory=rdir['workflow'])
+
 # Create a page to contain a dashboard link
 dashboard_file = wf.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
                          extension='.html', directory=rdir['workflow'])
@@ -781,4 +784,19 @@ kwds = { 'title' : 'Workflow Generation Log',
          'caption' : "Log of the workflow script %s" % sys.argv[0],
          'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
-layout.single_layout(rdir['workflow'], ([dashboard_file,log_file_html]))
+
+# Add the command line used to a specific file
+args_to_output = sys.argv[1:]
+for arg in args_to_output:
+    if arg.startswith('--'):
+        # This is an option, add two spaces to the start
+        arg = '  ' + arg
+    else:
+        # This is a parameter, add four spaces
+        arg = '    ' + arg
+
+args_to_output.insert(0, sys.argv[0])
+
+gen_str = '\n'.join(args_to_output)
+save_fig_with_metadata(gen_str, gen_file_html.storage_path, **kwds)
+layout.single_layout(rdir['workflow'], ([dashboard_file,gen_file_html, log_file_html]))
