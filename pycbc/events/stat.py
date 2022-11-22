@@ -1810,10 +1810,9 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         return loglr
 
 
-
 class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
     """
-    The ExpFitFgBgNormStatistic with a mass  and spin weighting factor 
+    The ExpFitFgBgNormStatistic with a mass and spin weighting factor
     determined by KDE
 
     This is the same as the ExpFitFgBgNormStatistic except the likelihood
@@ -1844,16 +1843,16 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.kde_names = [at[0] for at in parsed_attrs if
                        (len(at) == 2 and at[1] == 'kde_file')]
-        assert sorted(self.kde_names) == ['signal', 'template'],"None of the"\
-                              " statistic files has the required attribute "\
-                              "called {signal}-kde_file or {template}-kde_file"
+        assert sorted(self.kde_names) == ['signal', 'template'], "two files" \
+                              "are required & one of them should have attr " \
+                              "'signal' & other should have attr 'template'"
         self.kde_by_tid = {}
         for kname in self.kde_names:
             self.assign_kdes(kname)
         # this will hold the template ids of the events for the
         # statistic calculation
         self.curr_tnum = None
- 
+
     def assign_kdes(self, kname):
         """
         Extract values from KDE files
@@ -1883,11 +1882,11 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         if self.curr_tnum is None:
             try:
-                tnum = trigs.template_num # exists if accessed
-                                          # via coinc_findtrigs
+                # exists if accessed via coinc_findtrigs
+                tnum = trigs.template_num
                 self.curr_tnum = tnum
             except AttributeError:
-                tnum = trigs['template_id']  #exists for SingleDetTriggers
+                tnum = trigs['template_id']  # exists for SingleDetTriggers
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def logsignalrate(self, stats, shift, to_shift):
@@ -1911,8 +1910,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         value: log of coinc signal rate density for the given single-ifo
             triggers and time shifts
         """
-        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, 
-                                                       shift, to_shift)
+        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats,
+                shift, to_shift)
         signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
         template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
         logr_s += numpy.log(signal_kde / template_kde)
