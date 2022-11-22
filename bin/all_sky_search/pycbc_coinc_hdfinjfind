@@ -51,7 +51,7 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
         else:
             new_col = col
         key = os.path.join(hdf_key, new_col)
-        hdf_append(hdf_file, key, numpy.array(table.get_column(col),
+        hdf_append(hdf_file, key, numpy.array(table.getColumnByName(col),
                                         dtype=numpy.float32))
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -142,8 +142,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
         indoc = ligolw_utils.load_filename(injection_file, False,
                                            contenthandler=LIGOLWContentHandler)
         sim_table = lsctables.SimInspiralTable.get_table(indoc)
-        inj_time = numpy.array(sim_table.get_column('geocent_end_time') +
-                               1e-9 * sim_table.get_column('geocent_end_time_ns'),
+        inj_time = numpy.array(sim_table.getColumnByName('geocent_end_time').asarray() +
+                               1e-9 * sim_table.getColumnByName('geocent_end_time_ns').asarray(),
                                dtype=numpy.float64)
     else:
         inj_file = CBCHDFInjectionSet(injection_file)
@@ -175,33 +175,38 @@ for trigger_file, injection_file in zip(args.trigger_files,
     logging.info('Found: %s, Missed: %s' %
                  (len(found_within_time), len(missed_within_time)))
 
-    logging.info('Removing injections in vetoed time')
+    if args.veto_file:
+        logging.info('Removing injections in vetoed time')
 
-    # Put individual detector vetoes into list of all vetoed indices, if an
-    # injection is vetoed in N ifos then its index will appear N times
-    vetoid = numpy.array([])
-    veto_dict = {}
-    for ifo in ifo_list:
-        vi, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
-                                        segment_name=args.segment_name)
-        vetoid = numpy.append(vetoid, vi)
-        veto_dict[ifo] = vi
+        # Put individual detector vetoes into list of all vetoed indices, if an
+        # injection is vetoed in N ifos then its index will appear N times
+        vetoid = numpy.array([])
+        veto_dict = {}
+        for ifo in ifo_list:
+            vi, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
+                                            segment_name=args.segment_name)
+            vetoid = numpy.append(vetoid, vi)
+            veto_dict[ifo] = vi
 
-    # Find out which of these indices are unique, and how many times each
-    # vetoed index occurs - this is how many detectors it is vetoed in
-    vetoid_unique, count_vetoid = numpy.unique(vetoid, return_counts=True)
+        # Find out which of these indices are unique, and how many times each
+        # vetoed index occurs - this is how many detectors it is vetoed in
+        vetoid_unique, count_vetoid = numpy.unique(vetoid, return_counts=True)
 
-    # remove injections where the number of unvetoed ifos is less than the
-    # minimum specified by the user
-    vetoed_all = vetoid_unique[(len(ifo_list) - count_vetoid)
-                               < args.min_required_ifos]
-    found_after_vetoes = numpy.array([i for i in found_within_time
-                                      if i not in vetoed_all])
-    missed_after_vetoes = numpy.array([i for i in missed_within_time
-                                      if i not in vetoed_all]).astype(int)
+        # remove injections where the number of unvetoed ifos is less than the
+        # minimum specified by the user
+        vetoed_all = vetoid_unique[(len(ifo_list) - count_vetoid)
+                                   < args.min_required_ifos]
+        found_after_vetoes = numpy.array([i for i in found_within_time
+                                          if i not in vetoed_all])
+        missed_after_vetoes = numpy.array([i for i in missed_within_time
+                                          if i not in vetoed_all]).astype(int)
+        logging.info('Found: %s, Missed: %s' %
+                     (len(found_after_vetoes), len(missed_after_vetoes)))
+    else:
+        veto_dict = {ifo: [] for ifo in ifo_list}
+        found_after_vetoes = found_within_time
+        missed_after_vetoes = missed_within_time.astype(int)
 
-    logging.info('Found: %s, Missed: %s' %
-                 (len(found_after_vetoes), len(missed_after_vetoes)))
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
@@ -221,7 +226,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
             # As a single detector being vetoed won't veto all combinations,
             # need to set optimal_snr of a vetoed ifo to zero in order
             # to later calculate decisive optimal snr
-            optimal_snr_all = numpy.array(sim_table.get_column(column))
+            optimal_snr_all = numpy.array(sim_table.getColumnByName(column))
             optimal_snr_all[veto_dict[ifo]] = 0
             hdf_append(fo, 'injections/optimal_snr_%s' % ifo,
                        optimal_snr_all)
@@ -229,7 +234,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
         # pick up redshift
         if args.redshift_column:
             hdf_append(fo, 'injections/redshift',
-                       sim_table.get_column(args.redshift_column))
+                       sim_table.getColumnByName(args.redshift_column))
     else:
         # hdf injection format
         ninj = len(inj_data)
@@ -268,8 +273,10 @@ for trigger_file, injection_file in zip(args.trigger_files,
             fkey = f[key]
         else:
             fkey = f
-        fo[key].attrs['pivot'] = fkey.attrs['pivot']
-        fo[key].attrs['fixed'] = fkey.attrs['fixed']
+        if 'pivot' in fo[key].attrs:
+            # This is a coincident statmap file
+            fo[key].attrs['pivot'] = fkey.attrs['pivot']
+            fo[key].attrs['fixed'] = fkey.attrs['fixed']
         fo[key].attrs['foreground_time'] = fkey.attrs['foreground_time']
         fo[key].attrs['foreground_time_exc'] = fkey.attrs['foreground_time_exc']
 
