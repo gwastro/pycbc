@@ -1836,7 +1836,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         # This will hold the template ids of the events for the statistic
         # calculation
         self.curr_tnum = None
- 
+
     def assign_kdes(self, kname):
         """
         Extract values from KDE files
