@@ -786,18 +786,16 @@ kwds = { 'title' : 'Workflow Generation Log',
 save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
 
 # Add the command line used to a specific file
-args_to_output = sys.argv[1:]
-for arg in args_to_output:
+args_to_output = [sys.argv[0]]
+for arg in sys.argv[1:]:
     if arg.startswith('--'):
-        # This is an option, add two spaces to the start
-        arg = '  ' + arg
+        # This is an option, add tab
+        args_to_output.append('  ' + arg)
     else:
-        # This is a parameter, add four spaces
-        arg = '    ' + arg
+        # This is a parameter, add two tabs
+        args_to_output.append('    ' + arg)
 
-args_to_output.insert(0, sys.argv[0])
-
-gen_str = '<pre>' + '\n'.join(args_to_output) + '</pre>'
+gen_str = '<pre>' + ' \\\n'.join(args_to_output) + '</pre>'
 kwds = { 'title' : 'Workflow Generation Command',
          'caption' : "Command used to generate the workflow.",
          'cmd' :' '.join(sys.argv), }
