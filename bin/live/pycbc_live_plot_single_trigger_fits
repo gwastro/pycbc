@@ -48,6 +48,10 @@ parser.add_argument("--y-lim-upper", type=float,
 #Add some input sanitisation
 args = parser.parse_args()
 
+if '{ifo}' not in args.output_plot_name_format:
+    parser.error("--output-plot-name-format must contain '{ifo}' "
+                 "to indicate ifo in filename.")
+
 pycbc.init_logging(args.verbose)
 
 logging.info("Getting trigger fits file information")
