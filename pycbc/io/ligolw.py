@@ -31,11 +31,14 @@ from ligo.lw.array import Array as LIGOLWArray
 import pycbc.version as pycbc_version
 
 
-__all__ = ('default_null_value',
-           'return_empty_sngl',
-           'return_search_summary',
-           'legacy_row_id_converter',
-           'LIGOLWContentHandler')
+__all__ = (
+    'default_null_value',
+    'return_empty_sngl',
+    'return_search_summary',
+    'legacy_row_id_converter',
+    'get_table_columns',
+    'LIGOLWContentHandler'
+)
 
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
@@ -309,6 +312,22 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     snr_node = document.childNodes[-1].appendChild(snr_xml)
     eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
     snr_node.appendChild(eid_param)
+
+def get_table_columns(table):
+    """Return a list of columns that are present in the given table, in a
+    format that can be passed to `lsctables.New()`.
+
+    The split on ":" is needed for columns like `process:process_id`, which
+    must be listed as `process:process_id` in `lsctables.New()`, but are
+    listed as just `process_id` in the `columnnames` attribute of the given
+    table.
+    """
+    columns = []
+    for col in table.validcolumns:
+        att = col.split(':')[-1]
+        if att in table.columnnames:
+            columns.append(col)
+    return columns
 
 
 @legacy_row_id_converter

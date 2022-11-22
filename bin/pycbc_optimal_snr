@@ -30,12 +30,13 @@ import h5py
 import pycbc
 import pycbc.inject
 import pycbc.psd
+import pycbc.version
 from ligo.lw import utils as ligolw_utils
+from ligo.lw import lsctables
 from pycbc.filter import sigma, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
                         MultiDetOptionAction, load_frequencyseries
-from ligo.lw import lsctables
-import pycbc.version
+from pycbc.io.ligolw import get_table_columns
 
 
 class TimeIndependentPSD(object):
@@ -296,8 +297,10 @@ if __name__ == '__main__':
     inj_table = sorted(inj_table, key=sort_func)
 
     if ligolw:
-        new_inj_table = lsctables.New(lsctables.SimInspiralTable,
-                                      columns=injections.table.columnnames)
+        new_inj_table = lsctables.New(
+            lsctables.SimInspiralTable,
+            columns=get_table_columns(injections.table)
+        )
     else:
         new_inj_table = []
 
