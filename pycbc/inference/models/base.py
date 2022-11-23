@@ -345,7 +345,7 @@ class BaseModel(metaclass=ABCMeta):
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,
-                 sampling_transforms=None, waveform_transforms=None):
+                 sampling_transforms=None, waveform_transforms=None, **kwargs):
         # store variable and static args
         self.variable_params = variable_params
         self.static_params = static_params

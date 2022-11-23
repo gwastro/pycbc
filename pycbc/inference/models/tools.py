@@ -494,14 +494,15 @@ class DistMarg():
         self.marginalize_vector_weights = - numpy.log(self.vsamples)
         return params
 
-    def reconstruct(self, seed=None):
+    def reconstruct(self, rec=None, seed=None):
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
         if seed:
             numpy.random.seed(seed)
 
-        rec = {}
+        if rec is None:
+            rec = {}
 
         def get_loglr():
             p = self.current_params.copy()
