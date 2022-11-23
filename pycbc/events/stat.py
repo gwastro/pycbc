@@ -1844,7 +1844,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         self.kde_names = [at[0] for at in parsed_attrs if
                        (len(at) == 2 and at[1] == 'kde_file')]
         assert sorted(self.kde_names) == ['signal', 'template'], "two files" \
-                              "are required & one of them should have attr " \
+                              "are required & one of them should have attr" \
                               "'signal' & other should have attr 'template'"
         self.kde_by_tid = {}
         for kname in self.kde_names:
@@ -1880,13 +1880,11 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         numpy.ndarray
             The array of single detector values
         """
-        if self.curr_tnum is None:
-            try:
-                # exists if accessed via coinc_findtrigs
-                tnum = trigs.template_num
-                self.curr_tnum = tnum
-            except AttributeError:
-                tnum = trigs['template_id']  # exists for SingleDetTriggers
+        try:
+            tnum = trigs.template_num # exists if accessed via coinc_findtrigs
+            self.curr_tnum = tnum
+        except AttributeError:
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def logsignalrate(self, stats, shift, to_shift):
@@ -1911,7 +1909,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             triggers and time shifts
         """
         logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats,
-                shift, to_shift)
+                                                   shift, to_shift)
         signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
         template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
         logr_s += numpy.log(signal_kde / template_kde)
