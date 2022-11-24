@@ -1769,8 +1769,8 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         """
         Optimization function to identify coincs too quiet to be of interest
 
-        Calculat 
-tatistic
+        Calculate the required single detector statistic to exceed
+        the threshold for each of the input triggers
 
         Parameters
         ----------
