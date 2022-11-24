@@ -98,8 +98,7 @@ llw_doc = injections.indoc
 llw_root = llw_doc.childNodes[0]
 llw_root.removeChild(injections.table)
 llw_root.appendChild(out_sim_inspiral_inject)
-ligolw_utils.write_filename(llw_doc, output_inject,
-                                       gz=output_inject.endswith('gz'))
+ligolw_utils.write_filename(llw_doc, output_inject, compress='auto')
 
 if opts.output_missed:
     output_missed = opts.output_missed
@@ -110,7 +109,6 @@ if opts.output_missed:
     llw_root.appendChild(out_sim_inspiral_missed)
     logging.info('Storing them to %s.', output_missed)
 
-    ligolw_utils.write_filename(llw_doc, output_missed,
-                                           gz=output_missed.endswith('gz'))
+    ligolw_utils.write_filename(llw_doc, output_missed, compress='auto')
 
 logging.info('Done')

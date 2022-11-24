@@ -226,11 +226,14 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
             value = get_chisq_from_file_choice(triggers, chisq_choice)
             # Apply any previous cuts to the value for comparison
             value = value[idx_out]
-        elif (parameter in triggers
+        elif ((not hasattr(triggers, "file") and parameter in triggers)
                 or (hasattr(triggers, "file")
                     and parameter in triggers.file[triggers.ifo])):
             # parameter can be read direct from the trigger dictionary / file
-            value = triggers[parameter]
+            if parameter in triggers:
+                value = triggers[parameter]
+            else:
+                value = triggers.file[triggers.ifo][parameter]
             # Apply any previous cuts to the value for comparison
             value = value[idx_out]
         elif parameter in sngl_rank_keys:
@@ -387,8 +390,5 @@ def apply_template_cuts(bank, template_cut_dict, template_ids=None,
         else:
             raise ValueError("Cut parameter " + parameter + " not recognised."
                              " This shouldn't happen with input sanitisation")
-
-    logging.info("%d out of %d templates kept after applying template cuts",
-                 len(tids_out), bank['mass1'].size)
 
     return tids_out

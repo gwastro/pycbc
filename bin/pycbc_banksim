@@ -111,6 +111,9 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
                  wf_params, start_frequency, sample_rate, length,
                  filter_rate):
 
+    if type(approximant) is not str:
+        approximant = approximant.decode('utf-8')
+
     delta_f = filter_rate / length
     if approximant in fd_approximants():
         hp, hc = get_fd_waveform(wf_params, approximant=approximant,

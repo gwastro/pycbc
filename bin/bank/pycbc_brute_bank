@@ -19,11 +19,10 @@
 
 """Generate a bank of templates using a brute force stochastic method.
 """
-import numpy, h5py, logging, argparse, numpy.random, sys
+import numpy, h5py, logging, argparse, numpy.random
 import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.conversions
 from pycbc import transforms
-from pycbc.distributions import read_params_from_config, read_distributions_from_config
-from pycbc.distributions import read_constraints_from_config, JointDistribution
+from pycbc.distributions import read_params_from_config
 from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
 from scipy.stats import gaussian_kde
 

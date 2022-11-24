@@ -32,6 +32,7 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 import logging
 import random
 import string
+from datetime import datetime as dt
 
 try:
     # This will fail when pycbc is imported during the build process,
@@ -43,6 +44,26 @@ except:
     pycbc_version = 'none'
 
 __version__ = pycbc_version
+
+
+class LogFormatter(logging.Formatter):
+    """
+    Format the logging appropriately
+    This will return the log time in the ISO 6801 standard,
+    but with millisecond precision
+    https://en.wikipedia.org/wiki/ISO_8601
+    e.g. 2022-11-18T09:53:01.554+00:00
+    """
+    converter = dt.fromtimestamp
+
+    def formatTime(self, record, datefmt=None):
+        ct = self.converter(record.created).astimezone()
+        t = ct.strftime("%Y-%m-%dT%H:%M:%S")
+        s = f"{t}.{int(record.msecs):03d}"
+        timezone = ct.strftime('%z')
+        timezone_colon = f"{timezone[:-2]}:{timezone[-2:]}"
+        s += timezone_colon
+        return s
 
 
 def init_logging(verbose=False, format='%(asctime)s %(message)s'):
@@ -81,8 +102,12 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
         initial_level = logging.INFO
     else:
         initial_level = int(verbose)
-    logging.getLogger().setLevel(initial_level)
-    logging.basicConfig(format=format, level=initial_level)
+
+    logger = logging.getLogger()
+    logger.setLevel(initial_level)
+    sh = logging.StreamHandler()
+    logger.addHandler(sh)
+    sh.setFormatter(LogFormatter(fmt=format))
 
 
 def makedir(path):
