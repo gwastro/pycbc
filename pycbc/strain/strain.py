@@ -1524,7 +1524,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.state = None
         self.dq = None
         self.idq = None
-        self.idq_state = None
         self.idq_threshold =  None
         self.dq_padding = dq_padding
 
@@ -1561,20 +1560,20 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         if idq_channel is not None:
             if idq_state_channel is None:
-                raise ValueError('Each detector with an iDQ channel requires an iDQ state channel as well')
+                raise ValueError(
+                    'Each detector with an iDQ channel requires an iDQ state channel as well')
             if idq_threshold is None:
-                raise ValueError('If an iDQ channel is provided, a veto threshold must also be provided')
+                raise ValueError(
+                    'If an iDQ channel is provided, a veto threshold must also be provided')
             self.idq_threshold = idq_threshold
-            self.idq = pycbc.frame.StatusBuffer(frame_src, idq_channel, start_time,
-                                                max_buffer=max_buffer,
-                                                force_update_cache=force_update_cache,
-                                                increment_update_cache=increment_update_cache,
-                                                threshold=self.idq_threshold)
-            self.idq_state = pycbc.frame.StatusBuffer(frame_src, idq_state_channel, start_time,
-                                                      max_buffer=max_buffer,
-                                                      force_update_cache=force_update_cache,
-                                                      increment_update_cache=increment_update_cache,
-                                                      valid_mask=1)
+            self.idq = pycbc.frame.iDQBuffer(frame_src,
+                                            idq_channel,
+                                            idq_state_channel,
+                                            idq_threshold,
+                                            start_time,
+                                            max_buffer=max_buffer,
+                                            force_update_cache=force_update_cache,
+                                            increment_update_cache=increment_update_cache)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
@@ -1821,7 +1820,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 self.dq.null_advance(blocksize)
             if self.idq:
                 self.idq.null_advance(blocksize)
-                self.idq_state.null_advance(blocksize)
             return False
 
         # We collected some data so we are closer to being able to analyze data
@@ -1836,7 +1834,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 self.dq.null_advance(blocksize)
             if self.idq:
                 self.idq.null_advance(blocksize)
-                self.idq_state.null_advance(blocksize)
             logging.info("%s time has invalid data, resetting buffer",
                          self.detector)
             return False
@@ -1846,7 +1843,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             self.dq.advance(blocksize)
         if self.idq:
             self.idq.advance(blocksize)
-            self.idq_state.advance(blocksize)
 
         self.segments = {}
 

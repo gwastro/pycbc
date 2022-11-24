@@ -1006,22 +1006,9 @@ with ctx:
                     logging.info("Checking %s's iDQ information", ifo)
                     start = data_reader[ifo].start_time
                     times = results[ifo]['end_time']
-                    # if idq_states = 0, idq info was invalid. Don't let
-                    # those triggers get vetoed
-                    idq_states = data_reader[ifo].idq_state.at_times(times)
-                    idq_valid = idq_states == 1
-                    idq_invalid = numpy.logical_not(idq_valid)
-                    invalid_idx = numpy.flatnonzero(idq_invalid)
-
-                    # for triggers with valid idq info, only keep those with
-                    # idq FAP > threshold
-                    valid_idx = numpy.flatnonzero(idq_valid)
-                    valid_keep = data_reader[ifo].idq.indices_of_flag(
-                            start, valid_pad, times[valid_idx],
+                    idx = data_reader[ifo].idq.indices_of_flag(
+                            start, valid_pad, times,
                             padding=data_reader[ifo].dq_padding)
-                    valid_idx = valid_idx[valid_keep]
-                    idx = numpy.append(invalid_idx, valid_idx)
-
                     logging.info('Keeping %d/%d %s triggers after iDQ',
                                  len(idx), len(times), ifo)
                     for key in results[ifo]:
