@@ -857,7 +857,6 @@ class iDQBuffer(object):
                                         force_update_cache=force_update_cache,
                                         increment_update_cache=increment_update_cache)
 
-
     def indices_of_flag(self, start_time, duration, times, padding=0):
         """ Return the indices of the times lying in the flagged region
 
@@ -884,7 +883,7 @@ class iDQBuffer(object):
         idq_fap = self.idq.raw_buffer[s:e]
         stamps = idq_fap.sample_times.numpy()
         low_fap = idq_fap.numpy() <= self.threshold
-        idq_valid  = self.idq_state.raw_buffer[s:e]
+        idq_valid = self.idq_state.raw_buffer[s:e]
         idq_valid = idq_valid.numpy().astype(bool)
         valid_low_fap = numpy.logical_and(idq_valid, low_fap)
         glitch_idx = numpy.flatnonzero(valid_low_fap)
@@ -893,7 +892,6 @@ class iDQBuffer(object):
         ends = starts + 1.0 / sr + padding * 2.0
         idx = indices_outside_times(times, starts, ends)
         return idx
-
 
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds
