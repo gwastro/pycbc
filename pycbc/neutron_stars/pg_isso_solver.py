@@ -27,58 +27,31 @@ import numpy as np
 from scipy.optimize import root_scalar
 
 
-def ISCO_eq(r, chi):
-    r"""Polynomial that enables the calculation of the Kerr innermost
-    stable circular orbit (ISCO) radius via its roots,
+def ISCO_solution(chi, incl):
+    r"""Analytic solution of the innermost
+    stable circular orbit (ISCO) for the Kerr metric.
 
-    .. math:: Z(r) = [r (r-6)]^2 - \chi^2 [2r (3r+14) - 9 \chi^2]\,.
+    ..See eq. (2.21) of
+    Bardeen, J. M., Press, W. H., Teukolsky, S. A. (1972)`
+    https://articles.adsabs.harvard.edu/pdf/1972ApJ...178..347B
 
     Parameters
     -----------
-    r: float
-        the radial coordinate in BH mass units
     chi: float
         the BH dimensionless spin parameter
+    incl: float
+        inclination angle between the BH spin and the orbital angular
+        momentum in radians
 
     Returns
     ----------
     float
     """
-    return (r * (r - 6))**2 - chi**2 * (2 * r * (3 * r + 14) - 9 * chi**2)
-
-
-def ISCO_eq_dr(r, chi):
-    """Partial derivative of :func:`ISCO_eq` with respect to r.
-
-    Parameters
-    ----------
-    r: float
-        the radial coordinate in BH mass units
-    chi: float
-        the BH dimensionless spin parameter
-
-    Returns
-    -------
-    float
-    """
-    return 4 * r**3 - 36 * r**2 + 12 * (6 - chi**2) * r - 28 * chi**2
-
-
-def ISCO_eq_dr2(r, chi):
-    """Double partial derivative of :func:`ISCO_eq` with respect to r.
-
-    Parameters
-    ----------
-    r: float
-        the radial coordinate in BH mass units
-    chi: float
-        the BH dimensionless spin parameter
-
-    Returns
-    -------
-    float
-    """
-    return 12 * r**2 - 72 * r + 12 * (6 - chi**2)
+    chi2 = chi * chi
+    sgn = np.sign(np.cos(incl))
+    Z1 = 1 + np.cbrt(1 - chi2) * (np.cbrt(1 + chi) + np.cbrt(1 - chi))
+    Z2 = np.sqrt(3 * chi2 + Z1 * Z1)
+    return 3 + Z2 - sgn * np.sqrt((3 - Z1) * (3 + Z1 + 2 * Z2))
 
 
 def ISSO_eq_at_pole(r, chi):
@@ -218,7 +191,7 @@ def PG_ISSO_eq(r, chi, incl):
         + 6 * r * r_minus_2 * (
             chi4 * chi2 + 2 * r2 * r * (
                 chi2 * (three_r + 2) + 3 * r2 * r_minus_2)))
-    Z = ISCO_eq(r, chi)
+    Z = (r * (r - 6))**2 - chi2 * (2 * r * (3 * r + 14) - 9 * chi2)
 
     return r4 * r4 * Z + chi2 * sin_incl2 * (chi2 * sin_incl2 * Y - 2 * r4 * X)
 
@@ -326,34 +299,28 @@ def PG_ISSO_solver(chi, incl):
         the radius of the orbit in BH mass units
     """
     # Auxiliary variables
-    cos_incl = np.cos(incl)
-    sgnchi = np.sign(cos_incl)*chi
-    if np.isscalar(sgnchi):
-        sgnchi = np.array(sgnchi, copy=False, ndmin=1)
+    if np.isscalar(chi):
         chi = np.array(chi, copy=False, ndmin=1)
         incl = np.array(incl, copy=False, ndmin=1)
-
+    chi = np.abs(chi)
     # ISCO radius for the given spin magnitude
-    initial_guess = [2 if s > 0.99 else (9 if s < 0 else 5) for s in sgnchi]
-    rISCO_limit = np.array([
-        root_scalar(
-            ISCO_eq, x0=g0, fprime=ISCO_eq_dr, fprime2=ISCO_eq_dr2,
-            args=(sc)).root
-        for g0, sc in zip(initial_guess, sgnchi)])
+    rISCO_limit = ISCO_solution(chi, incl)
     # If the inclination is 0 or pi, just output the ISCO radius
     equatorial = np.isclose(incl, 0) | np.isclose(incl, np.pi)
     if all(equatorial):
         return rISCO_limit
 
     # ISSO radius for an inclination of pi/2
-    initial_guess = [9 if c < 0 else 6 for c in chi]
+    # Initial guess is based on the extrema of the polar ISSO radius equation,
+    # that are: r=6 (chi=1) and r=1+sqrt(3)+sqrt(3+sqrt(12))=5.274... (chi=0)
+    initial_guess = [5.27451056440629 if c > 0.5 else 6 for c in chi]
     rISSO_at_pole_limit = np.array([
         root_scalar(
             ISSO_eq_at_pole, x0=g0, fprime=ISSO_eq_at_pole_dr,
             fprime2=ISSO_eq_at_pole_dr2, args=(c)).root
         for g0, c in zip(initial_guess, chi)])
     # If the inclination is pi/2, just output the ISSO radius at the pole(s)
-    polar = np.isclose(incl, np.pi / 2)
+    polar = np.isclose(incl, 0.5*np.pi)
     if all(polar):
         return rISSO_at_pole_limit
 
@@ -361,8 +328,9 @@ def PG_ISSO_solver(chi, incl):
     initial_hi = np.maximum(rISCO_limit, rISSO_at_pole_limit)
     initial_lo = np.minimum(rISCO_limit, rISSO_at_pole_limit)
     brackets = [
-        (bl, bh) if c == 1 else None
-        for bl, bh, c in zip(initial_lo, initial_hi, chi)]
+        (bl, bh) if (c != 1 and PG_ISSO_eq(bl, c, inc) *
+                     PG_ISSO_eq(bh, c, inc) < 0) else None
+        for bl, bh, c, inc in zip(initial_lo, initial_hi, chi, incl)]
     solution = np.array([
         root_scalar(
             PG_ISSO_eq, x0=g0, fprime=PG_ISSO_eq_dr, bracket=bracket,

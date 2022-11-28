@@ -25,17 +25,20 @@ def insert_live_pastro_option_group(parser):
     return live_pastro_group
 
 
-# Only one choice so far, allow for more later
+# Choices of p astro calc method
 _check_spec = {
-      'template_param_bins': livepa.check_template_param_bin_data
+      'template_param_bins': livepa.check_template_param_bin_data,
+      'template_param_bins_types': livepa.check_template_param_bin_data
 }
 
 _read_bank = {
-      'template_param_bins': livepa.read_template_bank_param
+      'template_param_bins': livepa.read_template_bank_param,
+      'template_param_bins_types': livepa.read_template_bank_param
 }
 
 _do_calc = {
-      'template_param_bins': livepa.template_param_bin_calc
+      'template_param_bins': livepa.template_param_bin_pa,
+      'template_param_bins_types': livepa.template_param_bin_types_pa
 }
 
 

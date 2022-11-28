@@ -536,7 +536,7 @@ class SingleDetTriggers(object):
 
     @property
     def template_id(self):
-        return self.get_column('template_id')
+        return self.get_column('template_id').astype(int)
 
     @property
     def mass1(self):
@@ -753,7 +753,7 @@ class ForegroundTriggers(object):
     def template_id(self):
         if self._template_id is None:
             template_id = self.get_coincfile_array('template_id')
-            self._template_id = template_id
+            self._template_id = template_id.astype(int)
         return self._template_id
 
     @property

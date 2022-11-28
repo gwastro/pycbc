@@ -6,7 +6,7 @@ from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
 from itertools import cycle
 import pycbc.version
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.ligolw import LIGOLWContentHandler, get_table_columns
 
 
 # Parse command line
@@ -39,23 +39,12 @@ xmlroot = xmldoc.childNodes[0]
 
 xmlroot.removeChild(allinjs)
 
-if args.num_splits:
-    num_splits = args.num_splits
-else:
-    num_splits = len(args.output_files)
+num_splits = args.num_splits or len(args.output_files)
 
-# make a list of columns that are present in the input table.
-# The : split is needed for columns like `process:process_id`,
-# which must be listed as `process:process_id` in `lsctables.New()`,
-# but are listed as just `process_id` in the `columnnames` attribute
-used_columns = []
-for col in allinjs.validcolumns:
-    att = col.split(':')[-1]
-    if att in allinjs.columnnames:
-        used_columns.append(col)
-
-new_inj_tables = [lsctables.New(tabletype, columns=used_columns) 
-                  for idx in range(num_splits)]
+new_inj_tables = [
+    lsctables.New(tabletype, columns=get_table_columns(allinjs))
+    for _ in range(num_splits)
+]
 
 table_cycle = cycle(new_inj_tables)
 for inj in sorted(allinjs, key=lambda x: x.time_geocent):
@@ -72,6 +61,5 @@ for idx, simtable in enumerate(new_inj_tables):
         out_path = args.output_dir + '/' + filename_pattern % idx
     else:
         out_path = args.output_files[idx]
-    ligolw_utils.write_filename(xmldoc, out_path,
-                                           gz=out_path.endswith('gz'))
+    ligolw_utils.write_filename(xmldoc, out_path, compress='auto')
     xmlroot.removeChild(simtable)

@@ -230,10 +230,11 @@ def read_seg_files(seg_files):
 def load_xml_table(file_name, table_name):
     """Load xml table from file."""
 
-    xml_doc = utils.load_filename(file_name, gz=file_name.endswith("gz"),
-                                  contenthandler=glsctables.use_in(
-                                  LIGOLWContentHandler))
-
+    xml_doc = utils.load_filename(
+        file_name,
+        compress='auto',
+        contenthandler=glsctables.use_in(LIGOLWContentHandler)
+    )
     return Table.get_table(xml_doc, table_name)
 
 
@@ -858,7 +859,7 @@ def read_multiinspiral_timeslides_from_files(file_list):
 
     contenthandler = glsctables.use_in(LIGOLWContentHandler)
     for this_file in file_list:
-        doc = utils.load_filename(this_file, gz=this_file.endswith("gz"),
+        doc = utils.load_filename(this_file, compress='auto',
                                   contenthandler=contenthandler)
 
         # Extract the time slide table

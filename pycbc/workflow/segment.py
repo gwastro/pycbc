@@ -308,12 +308,11 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
             for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
             and abs(sciencesegs[ifo]) >= minduration})
-
     # Find highest number of IFOs that give an acceptable coherent segment
-    num_ifos = len(scisegs.keys())
+    num_ifos = len(scisegs)
     while num_ifos >= min_ifos:
         # Consider all combinations for a given number of IFOs
-        ifo_combos = itertools.combinations(scisegs.keys(), num_ifos)
+        ifo_combos = itertools.combinations(scisegs, num_ifos)
         onsource = {}
         offsource = {}
         for ifo_combo in ifo_combos:
@@ -356,7 +355,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                                       list(offsource[best_comb].values())[0])
 
             onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
-            segmentsUtils.tosegwizard(file(onsourceSegfile, "w"),
+            segmentsUtils.tosegwizard(open(onsourceSegfile, "w"),
                                       list(onsource[best_comb].values())[0])
 
             bufferleft = int(cp.get('workflow-exttrig_segments',
@@ -368,7 +367,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                     triggertime - onbefore - bufferleft * onlen,
                     triggertime + onafter + bufferright * onlen)
             bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
-            segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
+            segmentsUtils.tosegwizard(open(bufferSegfile, "w"),
                                       segments.segmentlist([bufferSegment]))
 
             return onsource[best_comb], offsource[best_comb]
