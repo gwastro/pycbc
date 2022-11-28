@@ -908,14 +908,9 @@ class iDQBuffer(object):
             Returns True if advance is succesful,
             False if not.
         """
-        try:
-            self.idq.advance(blocksize)
-            self.idq_state.advance(blocksize)
-            return True
-        except RuntimeError:
-            self.idq.null_advance(blocksize)
-            self.idq_state.null_advance(blocksize)
-            return False
+        idq_ts = self.idq.attempt_advance(blocksize)
+        idq_state_ts = self.idq_state.attempt_advance(blocksize)
+        return (idq_ts is not None) and (idq_state_ts is not None)
 
     def null_advance(self, blocksize):
         """Advance and insert zeros
