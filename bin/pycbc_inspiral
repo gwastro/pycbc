@@ -201,9 +201,22 @@ parser.add_argument("--multiprocessing-nprocesses", type=int,
                          "Used in conjunction with the option"
                          "--finalize-events-template-rate which should be set"
                          "to a multiple of the number of processes.")
-
 # Add options groups
 psd.insert_psd_option_group(parser)
+parser.add_argument("--use-precomputed-psd", action="store_true", default=False,
+                    help='Use compressed waveforms from the bank file.')
+
+# FIXME: We may need to use multiple files based on chunk if those are not
+# generated in the workflow.
+# psd.add_argument('--psd-files', metavar='FILE', nargs='*',
+#                         help='Instead of time-independent PSDs, use time-varying '
+#                         'PSDs from the given HDF5 files and pick the appropriate '
+#                         'PSD for each injection')
+
+parser.add_argument("--precomputed-psd-file", metavar='FILE', type=str,
+                        help='Instead of time-independent PSDs, use time-varying '
+                        'PSDs from the given HDF5 files and pick the appropriate '
+                        'PSD for each injection')
 strain.insert_strain_option_group(parser)
 strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)
@@ -295,7 +308,7 @@ def template_triggers(t_num):
                                       out_vals['time_index'],
                                       opt.gps_start_time, opt.sample_rate)
         #print(idx, out_vals['time_index'])
-        
+
         out_vals_all.append(copy.deepcopy(out_vals))
         #print(out_vals_all)
     return out_vals_all, tparam
@@ -356,7 +369,7 @@ with ctx:
     if opt.psdvar_segment is not None:
         logging.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
-                opt.psdvar_short_segment, opt.psdvar_long_segment, 
+                opt.psdvar_short_segment, opt.psdvar_long_segment,
                 opt.psdvar_psd_duration, opt.psdvar_psd_stride,
                 opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
 
@@ -451,16 +464,16 @@ with ctx:
 
     tsetup = time.time() - tstart
     tcheckpoint = time.time()
-    
+
     tanalyze = list(range(tnum_start, len(bank)))
     n = opt.finalize_events_template_rate
     n = 1 if n is None else n
-    tchunks = [tanalyze[i:i + n] for i in range(0, len(tanalyze), n)] 
-    
+    tchunks = [tanalyze[i:i + n] for i in range(0, len(tanalyze), n)]
+
     mmap = map
     if opt.multiprocessing_nprocesses:
         mmap = Pool(opt.multiprocessing_nprocesses).map
-    
+
     for tchunk in tchunks:
         data = list(mmap(template_triggers, tchunk))
 
@@ -470,11 +483,11 @@ with ctx:
                 event_mgr.new_template(tmplt=tparam)
 
                 for edata in out_vals_all:
-                    event_mgr.add_template_events(names, [edata[n] for n in names])              
-                                    
+                    event_mgr.add_template_events(names, [edata[n] for n in names])
+
                 event_mgr.cluster_template_events("time_index", "snr", cluster_window)
                 event_mgr.finalize_template_events()
-        
+
         if opt.finalize_events_template_rate is not None:
             event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 
@@ -486,7 +499,7 @@ with ctx:
         if opt.checkpoint_exit_maxtime and \
             (time.time() - tstart > opt.checkpoint_exit_maxtime):
             event_mgr.save_state(max(tchunk), opt.output + '.checkpoint')
-            sys.exit(opt.checkpoint_exit_code)           
+            sys.exit(opt.checkpoint_exit_code)
 
 event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()
