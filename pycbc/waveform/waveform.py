@@ -799,16 +799,16 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
     kwds = props(template, **params)
     # determine the duration to use
     full_duration = duration = pnutils.get_imr_duration(
-            m1 = kwds['mass1'], m2 = kwds['mass2'], s1z = kwds['spin1z'],
-            s2z = kwds['spin1z'], f_low = kwds['f_lower'],
-            approximant = "IMRPhenomD")
+            m1=kwds['mass1'], m2=kwds['mass2'], s1z=kwds['spin1z'],
+            s2z=kwds['spin1z'], f_low=kwds['f_lower'],
+            approximant="IMRPhenomD")
     nparams = kwds.copy()
 
     while full_duration < duration * 1.5:
         full_duration = duration = pnutils.get_imr_duration(
-                m1 = kwds['mass1'], m2 = kwds['mass2'], s1z = kwds['spin1z'],
-                s2z = kwds['spin1z'], f_low = kwds['f_lower'],
-                approximant = "IMRPhenomD")
+                m1=kwds['mass1'], m2=kwds['mass2'], s1z=kwds['spin1z'],
+                s2z=kwds['spin1z'], f_low=kwds['f_lower'],
+                approximant="IMRPhenomD")
         nparams['f_lower'] *= 0.99
 
     if 'f_ref' not in nparams:
@@ -839,8 +839,8 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
 
 get_td_det_waveform_from_fd_det.__doc__ = \
     get_td_det_waveform_from_fd_det.__doc__.format(
-    params=parameters.td_waveform_params.docstr(prefix="    ",
-           include_label=False).lstrip(' '))
+        params=parameters.td_waveform_params.docstr(prefix="    ",
+            include_label=False).lstrip(' '))
 
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):
