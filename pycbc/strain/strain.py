@@ -1524,7 +1524,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.state = None
         self.dq = None
         self.idq = None
-        self.idq_threshold =  None
         self.dq_padding = dq_padding
 
         # State channel
@@ -1565,7 +1564,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             if idq_threshold is None:
                 raise ValueError(
                     'If an iDQ channel is provided, a veto threshold must also be provided')
-            self.idq_threshold = idq_threshold
             self.idq = pycbc.frame.iDQBuffer(frame_src,
                                              idq_channel,
                                              idq_state_channel,

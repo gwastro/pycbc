@@ -645,22 +645,6 @@ class DataBuffer(object):
                 # so we should try again
                 time.sleep(0.1)
 
-    def at_times(self, times):
-        """ Looks up the value of the buffer at the given times.
-
-        Parameters
-        ----------
-        times: array of floats
-            The times whose values are needed
-
-        Returns
-        -------
-        values: array of floats
-            The values of the buffer at the given times
-        """
-        return self.raw_buffer.at_times(times)
-
-
 class StatusBuffer(DataBuffer):
 
     """ Read state vector or DQ information from a frame file """
