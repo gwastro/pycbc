@@ -681,6 +681,7 @@ class StatusBuffer(DataBuffer):
                             force_update_cache=force_update_cache,
                             increment_update_cache=increment_update_cache,
                             dtype=numpy.int32)
+
         self.valid_mask = valid_mask
         self.valid_on_zero = valid_on_zero
 
@@ -793,12 +794,14 @@ class StatusBuffer(DataBuffer):
             self.null_advance(blocksize)
             return False
 
-class iDQBuffer(DataBuffer):
+class iDQBuffer(object):
 
-    """ Read a iDQ timeseries from a frame file """
+    """ Read iDQ timeseries from a frame file """
 
     def __init__(self, frame_src,
-                 channel_name,
+                 idq_channel_name,
+                 idq_status_channel_name,
+                 idq_threshold,
                  start_time,
                  max_buffer=512,
                  force_update_cache=False,
@@ -809,8 +812,12 @@ class iDQBuffer(DataBuffer):
         frame_src: str of list of strings
             Strings that indicate where to read from files from. This can be a
             list of frame files, a glob, etc.
-        channel_name: str
-            Name of the channel to read from the frame files
+        idq_channel_name: str
+            Name of the channel to read the iDQ statistic from
+        idq_status_channel_name: str
+            Name of the channel to read the iDQ status from
+        idq_threshold: float
+            Threshold which triggers a veto if iDQ channel falls below this threshold
         start_time:
             Time to start reading from.
         max_buffer: {int, 512}, Optional
@@ -824,59 +831,51 @@ class iDQBuffer(DataBuffer):
             apptempts to predict the next frame file name without probing the
             filesystem.
         """
-        DataBuffer.__init__(self, frame_src, channel_name, start_time,
-                            max_buffer=max_buffer,
-                            force_update_cache=force_update_cache,
-                            increment_update_cache=increment_update_cache)
+        self.threshold = idq_threshold
+        self.idq = DataBuffer(frame_src, idq_channel_name, start_time,
+                                max_buffer=max_buffer,
+                                force_update_cache=force_update_cache,
+                                increment_update_cache=increment_update_cache)
+        self.idq_state = DataBuffer(frame_src, idq_status_channel_name, start_time,
+                                        max_buffer=max_buffer,
+                                        force_update_cache=force_update_cache,
+                                        increment_update_cache=increment_update_cache)
 
-    def lookup_idq(self, times):
-        """ Looks up the value of the idq buffer at the given times.
-
-        Parameters
-        ----------
-        times: array of floats
-            The times whose idq values are needed
-
-        Returns
-        -------
-        values: array of floats
-            The values of the idq buffer at the given times
-        """
-        return self.raw_buffer.at_times(times)
-
-    def value_to_quantile(self, value):
-        """ Calculates the quantile of the given value relative compared to
-        the data in the buffer.
+    def indices_of_flag(self, start_time, duration, times, padding=0):
+        """ Return the indices of the times lying in the flagged region
 
         Parameters
         ----------
-        value: array of floats
-            The values whose quantiles are desired
+        start_time: int
+            Beginning time to request for
+        duration: int
+            Number of seconds to check.
+        padding: float
+            Number of seconds to add around flag inactive times to be considered
+        inactive as well.
 
         Returns
         -------
-        quantile: array of floats
-            The quantiles of the given values
+        indices: numpy.ndarray
+            Array of indices marking the location of triggers within valid
+        time.
         """
-        sorted_data = numpy.sort(self.raw_buffer.numpy())
-        ind = numpy.searchsorted(sorted_data, value, side='right')
-        return ind/len(sorted_data)
-
-    def quantile_to_value(self, quant):
-        """ Calculates the value corresponding to the given quantile of the
-        data in the buffer.
-
-        Parameters
-        ----------
-        quant: array of floats
-            The quantiles to calculate
-
-        Returns
-        -------
-        value: array of floats
-            The values corresponding to the given quantiles
-        """
-        return numpy.quantile(self.raw_buffer.numpy(), quant)
+        from pycbc.events.veto import indices_outside_times
+        sr = self.idq.raw_buffer.sample_rate
+        s = int((start_time - self.idq.raw_buffer.start_time - padding) * sr) - 1
+        e = s + int((duration + padding) * sr) + 1
+        idq_fap = self.idq.raw_buffer[s:e]
+        stamps = idq_fap.sample_times.numpy()
+        low_fap = idq_fap.numpy() <= self.threshold
+        idq_valid = self.idq_state.raw_buffer[s:e]
+        idq_valid = idq_valid.numpy().astype(bool)
+        valid_low_fap = numpy.logical_and(idq_valid, low_fap)
+        glitch_idx = numpy.flatnonzero(valid_low_fap)
+        glitch_times = stamps[glitch_idx]
+        starts = glitch_times - padding
+        ends = starts + 1.0 / sr + padding * 2.0
+        idx = indices_outside_times(times, starts, ends)
+        return idx
 
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds
@@ -885,7 +884,7 @@ class iDQBuffer(DataBuffer):
         Parameters
         ----------
         blocksize: int
-            The number of seconds to attempt to read from the channel
+            The number of seconds to attempt to read
 
         Returns
         -------
@@ -893,11 +892,17 @@ class iDQBuffer(DataBuffer):
             Returns True if advance is succesful,
             False if not.
         """
-        try:
-            if self.increment_update_cache:
-                self.update_cache_by_increment(blocksize)
-            DataBuffer.advance(self, blocksize)
-            return True
-        except RuntimeError:
-            self.null_advance(blocksize)
-            return False
+        idq_ts = self.idq.attempt_advance(blocksize)
+        idq_state_ts = self.idq_state.attempt_advance(blocksize)
+        return (idq_ts is not None) and (idq_state_ts is not None)
+
+    def null_advance(self, blocksize):
+        """Advance and insert zeros
+
+        Parameters
+        ----------
+        blocksize: int
+            The number of seconds to advance the buffers
+        """
+        self.idq.null_advance(blocksize)
+        self.idq_state.null_advance(blocksize)
