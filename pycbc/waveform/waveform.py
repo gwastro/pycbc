@@ -42,6 +42,8 @@ from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
 
+import gwsignal
+
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
     zeros being returned, e.g., if a requested `f_final` is <= `f_lower`.
@@ -235,7 +237,21 @@ def _spintaylor_aligned_prec_swapper(**p):
     p['approximant'] = orig_approximant
     return hp, hc
 
+
 def _lalsim_fd_waveform(**p):
+    # convert paramaters to gwsignal parameters
+    p_temp = to_gwsignal_dict(p)
+    gen = gwsignal.LALCompactBinaryCoalescenceGenerator(p['approximant'])
+    hp1, hc1 = wfm.GenerateTDWaveform(python_dict, gen)
+    hp = FrequencySeries(hp1.data.data[:], delta_f=hp1.deltaF,
+                            epoch=hp1.epoch)
+
+    hc = FrequencySeries(hc1.data.data[:], delta_f=hc1.deltaF,
+                            epoch=hc1.epoch)
+
+    return hp, hc
+
+def _lalsim_fd_waveform_old(**p):
     lal_pars = _check_lal_pars(p)
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(
                float(pnutils.solar_mass_to_kg(p['mass1'])),
