@@ -81,7 +81,7 @@ def get_pycbc_psd_list():
     pycbc_analytical_psd_list = sorted(pycbc_analytical_psd_list)
     return pycbc_analytical_psd_list
 
-def from_string(psd_name, length, delta_f, low_freq_cutoff):
+def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):
     """Generate a frequency series containing a LALSimulation or
     built-in space-borne detectors' PSD specified by name.
 
@@ -96,6 +96,8 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
         Frequency resolution of the frequency series.
     low_freq_cutoff : float
         Frequencies below this value are set to zero.
+    **kwargs :
+        All other keyword arguments are passed to the PSD model.
 
     Returns
     -------
@@ -130,7 +132,7 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
     # if PSD model is coded in PyCBC
     else:
         func = pycbc_analytical_psds[psd_name]
-        psd = func(length, delta_f, low_freq_cutoff)
+        psd = func(length, delta_f, low_freq_cutoff, **kwargs)
 
     # zero-out content below low-frequency cutoff
     kmin = int(low_freq_cutoff / delta_f)
