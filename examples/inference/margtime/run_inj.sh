@@ -1,3 +1,14 @@
+pycbc_create_injections --verbose \
+        --config-files injection.ini \
+        --ninjections 1 \
+        --seed 10 \
+        --output-file injection.hdf \
+        --variable-params-section variable_params \
+        --static-params-section static_params \
+        --dist-section prior \
+        --force
+
+
 OMP_NUM_THREADS=1 pycbc_inference \
 --config-file `dirname "$0"`/margtime_inj.ini \
 --nprocesses 1 \
@@ -20,7 +31,5 @@ pycbc_inference_plot_posterior \
 --input-file demarg_inj.hdf \
 --output-file demarg_inj.png \
 --parameters \
- "primary_mass(mass1, mass2) / (1 + redshift(distance)):srcmass1" \
- "secondary_mass(mass1, mass2) / (1 + redshift(distance)):srcmass2" \
- ra dec tc inclination coa_phase polarization distance \
---z-arg snr
+ mass1 mass2 ra dec tc inclination coa_phase polarization distance \
+--z-arg snr --plot-injection-parameters
