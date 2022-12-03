@@ -382,7 +382,16 @@ class DistMarg():
         """
         # First setup
         # precalculate dense sky grid and make dict and or array of the results
-        if not hasattr(self, 'tinfo'):
+        ifos = list(snrs.keys())
+        if hasattr(self, 'keep_ifos'):
+            ifos = self.keep_ifos
+        ikey  = ''.join(ifos)
+        
+        # No good SNR peaks, go with prior draw
+        if len(ifos) == 0:
+            return
+ 
+        def make_init():
             logging.info('pregenerating sky pointings')
             size = int(1e6)
             logging.info('drawing samples')
@@ -390,9 +399,6 @@ class DistMarg():
             dec = self.marginalized_vector_priors['dec'].rvs(size=size)['dec']
             tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
             tcave = (tcmax + tcmin) / 2.0
-            ifos = list(snrs.keys())
-            if hasattr(self, 'keep_ifos'):
-                ifos = self.keep_ifos
             d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
 
             # What data structure to hold times? Dict of offset -> list?
@@ -415,10 +421,15 @@ class DistMarg():
 
             if len(ifos) == 1:
                 dmap[()] = list(zip(ra, dec, dtc))
+            return ifos, dmap, d, tcmin, tcmax
+        
+        if not hasattr(self, 'tinfo'):
+            self.tinfo = {}
+        
+        if ikey not in self.tinfo:  
+            self.tinfo[ikey] = make_init()
 
-            self.tinfo = ifos, dmap, d, tcmin, tcmax
-
-        ifos, dmap, d, tcmin, tcmax = self.tinfo
+        ifos, dmap, d, tcmin, tcmax = self.tinfo[ikey]
 
         # draw times from each snr time series
         # Is it worth doing this if some detector has low SNR?
@@ -472,8 +483,14 @@ class DistMarg():
                 wi.append(len(dmap[t]))
                 ti.append(i)
 
+        # If we had really poor efficiency at finding a point, we should
+        # give up and just use the original random draws
+        if len(ra) < 0.05 * self.vsamples:
+            return
+
         # fill back to fixed size with repeat samples
         # sample order is random, so this should be OK statistically
+        
         ra = numpy.resize(numpy.array(ra), self.vsamples)
         dec = numpy.resize(numpy.array(dec), self.vsamples)
         dtc = numpy.resize(numpy.array(dtc), self.vsamples)
@@ -590,7 +607,7 @@ class DistMarg():
         for ifo in snrs:
             self.tend[ifo] += self.num_samples[ifo] / sample_rate
 
-    def draw_ifos(self, snrs, peak_snr_threshold=4.0, **kwargs):
+    def draw_ifos(self, snrs, peak_snr_threshold=4.0, log=True, **kwargs):
         """ Helper utility to determine which ifos we should use based on the
         reference SNR time series.
         """
@@ -600,17 +617,21 @@ class DistMarg():
         tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
         ifos = list(snrs.keys())
         keep_ifos = []
+        psnrs = []
         for ifo in ifos:
-            snr = snrs[ifo].time_slice(tcmin, tcmax)
+            snr = snrs[ifo]
             start = max(tcmin - EARTH_RADIUS, snr.start_time)
             end = min(tcmax + EARTH_RADIUS, snr.end_time)
             snr = snr.time_slice(start, end, mode='nearest')
-
-            if abs(snr).max() > peak_snr_threshold:
+            psnr = abs(snr).max()
+            if psnr > peak_snr_threshold:
                 keep_ifos.append(ifo)
+            psnrs.append(psnr)
 
-        logging.info("Ifos used for SNR draws: %s, peak_snr_threshold=%s",
-                     keep_ifos, peak_snr_threshold)
+        if log:
+            logging.info("Ifos used for SNR based draws: %s, snrs: %s, peak_snr_threshold=%s",
+                     keep_ifos, psnrs, peak_snr_threshold)
+
         self.keep_ifos = keep_ifos
         return keep_ifos
 
