@@ -5,7 +5,6 @@ OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
 --seed 0 \
 --force \
 --verbose
-bash p.sh
 
 # This reconstructs any marginalized parameters
 # and would be optional if you don't need them or
@@ -13,7 +12,7 @@ bash p.sh
 OMP_NUM_THREADS=1 python -m cProfile -o log2 `which pycbc_inference_model_stats` \
 --input-file reltime.hdf \
 --output-file reltime2.hdf \
---nprocesses 8 \
+--nprocesses 2 \
 --reconstruct-parameters \
 --force \
 --verbose
@@ -23,5 +22,3 @@ pycbc_inference_plot_posterior \
 --output-file reltime.png \
 --parameters distance inclination polarization coa_phase tc ra dec mchirp eta \
 --z-arg snr
-
-#pycbc_inference_plot_posterior --input-file reltime.hdf --output-file reltime.png --parameters distance inclination polarization coa_phase tc ra dec --z-arg snr
