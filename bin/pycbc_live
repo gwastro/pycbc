@@ -19,6 +19,7 @@ from matplotlib import use
 use('agg')
 from shutil import which
 from mpi4py import MPI as mpi
+from astropy.time import Time
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
 from pycbc.types import MultiDetOptionAction, MultiDetMultiColonOptionAction
@@ -328,7 +329,12 @@ class LiveEventManager(object):
         if not self.gracedb_testing:
             cmd += '--production '
         cmd += '--verbose '
-        cmd += '--output-path {} '.format(self.path)
+
+        # set up a place for storing the SNR optimization results and log
+        out_dir_path = os.path.join(os.path.dirname(fname), 'optimize_snr')
+        makedir(out_dir_path)
+        cmd += f'--output-path {out_dir_path} '
+
         if self.enable_gracedb_upload:
             cmd += '--enable-gracedb-upload '
 
@@ -345,7 +351,7 @@ class LiveEventManager(object):
             opt_scheme = args.processing_scheme.split(':')[0]
             cmd += '--processing-scheme {}:1 '.format(opt_scheme)
 
-        log_fname = fname.replace('.xml.gz', '_optimize_snr.log')
+        log_fname = os.path.join(out_dir_path, 'optimize_snr.log')
 
         logging.info('running %s with log to %s', cmd, log_fname)
         with open(log_fname, "w") as logfile:
@@ -394,11 +400,10 @@ class LiveEventManager(object):
             mc_area_args=self.mc_area_args,
         )
 
-        fname = 'coinc-{}-{}.xml.gz'.format(
-            event.merger_time,
-            pycbc.random_string(6)
+        fname = os.path.join(
+            self.get_candidate_path(event.merger_time),
+            f'coinc-{event.merger_time:.3f}.xml.gz'
         )
-        fname = os.path.join(self.path, fname)
         logging.info('Coincident candidate! Saving as %s', fname)
 
         # Verbally explain some details not obvious from the other info
@@ -479,9 +484,10 @@ class LiveEventManager(object):
                 mc_area_args=self.mc_area_args,
             )
 
-            fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
-                                                    pycbc.random_string(6))
-            fname = os.path.join(self.path, fname)
+            fname = os.path.join(
+                self.get_candidate_path(event.merger_time),
+                f'single-{ifo}-{event.merger_time:.3f}.xml.gz'
+            )
             logging.info('Single-detector candidate! Saving as %s', fname)
 
             # Verbally explain some details not obvious from the other info
@@ -526,18 +532,40 @@ class LiveEventManager(object):
                     gid
                 )
 
+    def get_out_dir_path(self, time_gps):
+        """Compose and return the path to a directory to store files associated
+        with a particular GPS time. Create the directory if it does not exist.
+        """
+        path = self.path
+        if self.use_date_prefix:
+            time_dt = Time(time_gps, format='gps', scale='utc').to_datetime()
+            path = os.path.join(
+                path,
+                f'{time_dt.year:04d}_{time_dt.month:02d}_{time_dt.day:02d}'
+            )
+        makedir(path)
+        return path
+
+    def get_candidate_path(self, merger_time):
+        """Compose and return the path to a directory to store files associated
+        with a particular candidate event. Create the directory if it does not
+        exist.
+        """
+        path = os.path.join(
+            self.get_out_dir_path(merger_time),
+            f'candidate_{merger_time:.3f}_{pycbc.random_string(6)}'
+        )
+        makedir(path)
+        return path
+
     def dump(self, results, name, store_psd=False, time_index=None,
              store_loudest_index=False, raw_results=None, gates=None):
         """Save the results from this time block to an hdf output file.
         """
-        if self.use_date_prefix:
-            tm = lal.GPSToUTC(int(time_index))
-            subdir = '{:04d}_{:02d}_{:02d}'.format(tm[0], tm[1], tm[2])
-            makedir(os.path.join(self.path, subdir))
-            fname = os.path.join(self.path, subdir, name) + '.hdf'
-        else:
-            makedir(self.path)
-            fname = os.path.join(self.path, name) + '.hdf'
+        fname = os.path.join(
+            self.get_out_dir_path(time_index),
+            name + '.hdf'
+        )
 
         with h5py.File(fname, 'w') as f:
             f.attrs['pycbc_version'] = version.git_verbose_msg

@@ -493,6 +493,8 @@ doc = live.CandidateForGraceDB(
 )
 
 if args.enable_gracedb_upload:
+    logging.info('Uploading optimized candidate to GraceDB')
+
     comment = ('Automatic PyCBC followup of trigger '
                '<a href="/events/{0}/view">{0}</a> to find the template '
                'parameters that maximize the SNR. The FAR of this trigger is '
@@ -523,7 +525,11 @@ if args.enable_gracedb_upload:
             tag_name=['analyst_comments']
         )
 else:
+    logging.info('Saving optimized candidate')
+
     fname = 'coinc-{:.3f}-{}.xml.gz'.format(loudest_snr_time_allifos,
                                             pycbc.random_string(6))
     fname = os.path.join(args.output_path, fname)
     doc.save(fname)
+
+logging.info('Done')

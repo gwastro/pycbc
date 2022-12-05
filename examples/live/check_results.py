@@ -116,8 +116,7 @@ def check_found_events(args):
         inj_time = injfile['tc'][:]
 
     # gather found triggers
-    found_trig_paths = sorted(glob.glob('output/coinc*.xml.gz') +
-                              glob.glob('output/single*.xml.gz'))
+    found_trig_paths = sorted(glob.glob('output/????_??_??/candidate_*/*.xml.gz'))
     n_found = len(found_trig_paths)
     if n_found == 0:
         log.error('No triggers detected')

@@ -203,8 +203,11 @@ python -m mpi4py `which pycbc_live` \
 --sngl-ifar-est-dist conservative \
 --verbose
 
+# note that, at this point, some SNR optimization processes may still be
+# running, so the checks below may ignore their results
+
 # cat the logs of pycbc_optimize_snr so we can check them
-for opt_snr_log in `ls output/*optimize_snr.log`
+for opt_snr_log in `find output -type f -name optimize_snr.log | sort`
 do
     echo -e "\\n\\n>> [`date`] Showing log of SNR optimizer, ${opt_snr_log}"
     cat ${opt_snr_log}
@@ -220,7 +223,10 @@ echo -e "\\n\\n>> [`date`] Checking results"
     --detectors H1 L1 V1
 
 echo -e "\\n\\n>> [`date`] Running Bayestar"
-for XMLFIL in `ls output/*xml*`
+for XMLFIL in `find output -type f -name \*.xml\* | sort`
 do
-    bayestar-localize-coincs --f-low ${f_min} ${XMLFIL} ${XMLFIL}
+    pushd `dirname ${XMLFIL}`
+    bayestar-localize-coincs --f-low ${f_min} `basename ${XMLFIL}` `basename ${XMLFIL}`
+    test -f 0.fits
+    popd
 done
