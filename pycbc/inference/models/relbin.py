@@ -234,7 +234,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                 logging.info(
                     "WARNING! Fiducial waveform starts above "
                     "low-frequency-cutoff, initial bin frequency "
-                    "will be %s Hz", f_lo)                
+                    "will be %s Hz", f_lo)
             numzeros_hi = list(curr_wav[::-1] != 0j).index(True)
             if numzeros_hi > 0:
                 new_kmax = self.kmax[ifo] - numzeros_hi
