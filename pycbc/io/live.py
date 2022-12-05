@@ -248,15 +248,24 @@ class CandidateForGraceDB(object):
         else:
             self.p_astro, self.p_terr = None, None
 
-        # Source probabilities estimation
+        # Source probabilities and hasmassgap estimation
         if 'mc_area_args' in kwargs:
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
             self.probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
                                                     coinc_inspiral_row.snr,
                                                     min(eff_distances),
                                                     kwargs['mc_area_args'])
+            kwargs['hasmassgap_args'] = numpy.copy(kwargs['mc_area_args'])
+            kwargs['hasmassgap_args']['mass_gap'] = True
+            kwargs['hasmassgap_args']['mass_bdary']['ns_max'] = 3.0
+            kwargs['hasmassgap_args']['mass_bdary']['gap_max'] = 5.0
+            self.hasmassgap = calc_probabilities(coinc_inspiral_row.mchirp,
+                                                    coinc_inspiral_row.snr,
+                                                    min(eff_distances),
+                                                    kwargs['hasmassgap_args'])['Mass Gap']
         else:
             self.probabilities = None
+            self.hasmassgap = None
 
         # Combine p astro and source probs
         if self.p_astro is not None and self.probabilities is not None:
@@ -308,6 +317,14 @@ class CandidateForGraceDB(object):
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
             logging.info('P_astro file saved as %s', self.pastro_file)
+        return
+
+        # Save EMBright properties info as json
+        if  self.hasmassgap is not None:
+            self.embright_file = self.basename + '_em_bright.json'
+            with open(self.embright_file, 'w') as embrightf:
+                json.dump({'HasMassGap': self.hasmassgap}, embrightf)
+            logging.info('EM Bright file saved as %s', self.embright_file)
         return
 
     def upload(self, fname, gracedb_server=None, testing=True,
@@ -448,6 +465,20 @@ class CandidateForGraceDB(object):
             except Exception as exc:
                 logging.error('Failed to upload SNR timeseries and ASD for %s',
                                gid)
+                logging.error(str(exc))
+
+        # Upload em_bright properties JSON
+        if  self.hasmassgap is not None:
+            try:
+                gracedb.write_log(
+                    gid, 'EM Bright properties JSON file upload',
+                    filename = self.embright_file,
+                    tag_name=['em_follow']
+                )
+                logging.info('Uploaded em_bright properties for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload em_bright properties file for %s',
+                              gid)
                 logging.error(str(exc))
 
         # Upload multi-cpt p_astro JSON
