@@ -40,6 +40,9 @@ class UniformSky(angular.UniformSolidAngle):
     rotate it to be centered at the (ra, dec) coordinate mu.
 
     Assume kappa = 1 / sigma**2
+   
+    As in UniformSky, the polar angle varies from pi/2 (the north pole) to
+    -pi/2 (the south pole) and dec varies from 0 to 2pi.
 
     References:
       * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
