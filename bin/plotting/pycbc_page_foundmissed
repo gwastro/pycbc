@@ -9,6 +9,22 @@ import pycbc.pnutils
 from pycbc import init_logging
 from pycbc.detector import Detector
 
+labels={'mchirp': 'Chirp Mass',
+        'mtotal': 'Total Mass',
+        'mass_ratio': 'Mass Ratio',
+        'decisive_distance': 'Decisive Distance (Mpc)',
+        'dec_chirp_distance': 'Decisive Chirp Distance (Mpc)',
+        'min_eff_distance': 'Minimum Effective Distance (Mpc)',
+        'min_eff_chirp_distance': 'Minimum Effective Chirp Distance (Mpc)',
+        'chirp_distance': 'Chirp Distance (Mpc)',
+        'comb_optimal_snr': 'Combined Optimal SNR',
+        'decisive_optimal_snr': 'Decisive Optimal SNR',
+        'max_optimal_snr': 'Maximum Optimal SNR',
+        'redshift': 'Redshift',
+        'time': 'Time (s)',
+        'effective_spin': 'Effective Inspiral Spin',
+       }
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--injection-file',
                     help="The hdf injection file to plot", required=True)
@@ -16,9 +32,7 @@ parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
                     'effective_spin', 'time', 'mtotal', 'mass_ratio'])
 parser.add_argument('--log-x', action='store_true', default=False)
 parser.add_argument('--distance-type', default='decisive_optimal_snr',
-                    choices=['decisive_distance', 'dec_chirp_distance',
-                             'chirp_distance', 'comb_optimal_snr',
-                             'decisive_optimal_snr', 'redshift'],
+                    choices=list(labels),
                     help="Variable related to injected distance. Decisive "
                          "distance and dec chirp distance only available for "
                          "2-ifo search")
@@ -33,6 +47,8 @@ parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--gradient-far', action='store_true',
                     help="Show far of found injections as a gradient")
 parser.add_argument('--output-file', required=True)
+parser.add_argument('--limit-ifar', type=float,
+                    help="Supply a limit for IFAR colors")
 parser.add_argument('--far-type', choices=('inclusive', 'exclusive'),
                     default='inclusive',
                     help="Type of far to plot for the color. Choices are "
@@ -58,6 +74,9 @@ if args.far_type == 'inclusive':
 elif args.far_type == 'exclusive':
     ifar_found = f['found_after_vetoes/ifar_exc'][:]
     far_title = 'Exclusive'
+
+if args.limit_ifar:
+    ifar_found = numpy.minimum(ifar_found, args.limit_ifar)
 
 s1z = f['injections/spin1z'][:]
 s2z = f['injections/spin2z'][:]
@@ -95,10 +114,17 @@ try:
                              f['injections/inclination'][:]))
     eff_dists = numpy.array(eff_dists).T
 
-    # "Decisive" distance is the second smallest effective distance
+    # "Decisive" distance for coincidences is the second smallest
+    # effective distance
     dvals['decisive_distance'] = numpy.sort(eff_dists)[:,1]
     dvals['dec_chirp_distance'] = \
         pycbc.pnutils.chirp_distance(dvals['decisive_distance'],
+                                     vals['mchirp'])
+    # When single-detector triggers are included in the analysis,
+    # minimum distance is the relevant quantity for injection efficiency
+    dvals['min_eff_distance'] = numpy.min(eff_dists, axis=1)
+    dvals['min_eff_chirp_distance'] = \
+        pycbc.pnutils.chirp_distance(dvals['min_eff_distance'],
                                      vals['mchirp'])
 except KeyError:
     # If the ifo isn't in the effective distance columns you can't get this.
@@ -110,39 +136,21 @@ if args.distance_type == 'redshift':
     dvals['redshift'] = f['injections/redshift'][:]
 
 if 'snr' in args.distance_type:  # only evaluate SNRs if needed
-    if 'optimal_snr_1' in f['injections']:  # old 2-ifo search behaviour
-        opt_snr_1 = f['injections/optimal_snr_1'][:]
-        opt_snr_2 = f['injections/optimal_snr_2'][:]
-        dvals['comb_optimal_snr'] = \
-            numpy.sqrt(opt_snr_1 ** 2. + opt_snr_2 ** 2.)
-        dvals['decisive_optimal_snr'] = \
-            numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
-    else: # New workflow code syntax
-        opt_snrsq_arr = \
-            [f['injections/optimal_snr_%s' % ifo][:]**2. for ifo in ifos]
-        dvals['comb_optimal_snr'] = \
-            numpy.array([numpy.sqrt(sum(opt_snrsq))
-                         for opt_snrsq in zip(*opt_snrsq_arr)])
-        # Decisive optimal SNR is the 2nd largest optimal SNR
-        dvals['decisive_optimal_snr'] = \
-            numpy.array([numpy.sqrt(sorted(opt_snrsq)[-2])
-                         for opt_snrsq in zip(*opt_snrsq_arr)])
+    opt_snrsq_arr = \
+        [f['injections/optimal_snr_%s' % ifo][:] ** 2. for ifo in ifos]
+    dvals['comb_optimal_snr'] = \
+        numpy.array([numpy.sqrt(sum(opt_snrsq))
+                     for opt_snrsq in zip(*opt_snrsq_arr)])
+    # Decisive optimal SNR is the 2nd largest optimal SNR
+    dvals['decisive_optimal_snr'] = \
+        numpy.array([numpy.sqrt(sorted(opt_snrsq)[-2])
+                     for opt_snrsq in zip(*opt_snrsq_arr)])
+    dvals['max_optimal_snr'] = \
+        numpy.array([numpy.sqrt(max(opt_snrsq))
+                     for opt_snrsq in zip(*opt_snrsq_arr)])
 
 fdvals = dvals[args.distance_type][found]
 mdvals = dvals[args.distance_type][missed]
-
-labels={'mchirp': 'Chirp Mass',
-        'mtotal': 'Total Mass',
-        'mass_ratio': 'Mass Ratio',
-        'decisive_distance': 'Injected Decisive Distance (Mpc)',
-        'dec_chirp_distance': 'Injected Decisive Chirp Distance (Mpc)',
-        'chirp_distance': 'Injected Chirp Distance (Mpc)',
-        'comb_optimal_snr': 'Combined Optimal SNR',
-        'decisive_optimal_snr': 'Decisive Optimal SNR',
-        'redshift': 'Redshift',
-        'time': 'Time (s)',
-        'effective_spin': 'Weighted Aligned Spin',
-       }
 
 if args.missed_on_top:
   fig_title = 'Missed and Found Injections'

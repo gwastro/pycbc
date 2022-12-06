@@ -89,8 +89,8 @@ class Stat(object):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         -------
@@ -109,8 +109,8 @@ class Stat(object):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         -------
@@ -195,8 +195,8 @@ class QuadratureSumStatistic(Stat):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         -------
@@ -292,8 +292,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
     def __init__(self, sngl_ranking, files=None, ifos=None,
                  pregenerate_hist=True, **kwargs):
         """
-        Create a statistic class instance
-
         Parameters
         ----------
         sngl_ranking: str
@@ -722,8 +720,6 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
-        Create a statistic class instance
-
         Parameters
         ----------
         sngl_ranking: str
@@ -824,8 +820,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
             The coincidence executable will always call this using a bunch of
             trigs from a single template, there template_num is stored as an
             attribute and we just return the single value for all templates.
@@ -866,8 +862,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         Parameters
         -----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         ---------
@@ -893,8 +889,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         -------
@@ -988,8 +984,6 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
-        Create a statistic class instance
-
         Parameters
         ----------
         sngl_ranking: str
@@ -1028,8 +1022,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         -------
@@ -1126,11 +1120,8 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
     Statistic combining exponential noise model with signal histogram PDF
     """
 
-    # default is 2-ifo operation with exactly 1 'phasetd' file
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
-        Create a statistic class instance
-
         Parameters
         ----------
         sngl_ranking: str
@@ -1160,8 +1151,8 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         -------
@@ -1250,8 +1241,6 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
     def __init__(self, sngl_ranking, files=None, ifos=None,
                  benchmark_lograte=-14.6, **kwargs):
         """
-        Create a statistic class instance
-
         Parameters
         ----------
         sngl_ranking: str
@@ -1375,8 +1364,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
     def __init__(self, sngl_ranking, files=None, ifos=None,
                  reference_ifos='H1,L1', **kwargs):
         """
-        Create a statistic class instance
-
         Parameters
         ----------
         sngl_ranking: str
@@ -1439,8 +1426,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         Parameters
         -----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
         alphabelow: float, default=6
             Use this slope to fit the noise triggers below the point at which
             fits are present in the input files.
@@ -1472,8 +1459,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
         Returns
         -------
         numpy.ndarray
@@ -1628,7 +1615,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         # Safety against subclassing and not rethinking this
         allowed_names = ['ExpFitFgBgNormStatistic',
                          'ExpFitFgBgNormBBHStatistic',
-                         'DQExpFitFgBgNormStatistic']
+                         'DQExpFitFgBgNormStatistic',
+                         'ExpFitFgBgKDEStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
         if not self.has_hist:
@@ -1694,8 +1682,6 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
     def __init__(self, sngl_ranking, files=None, ifos=None,
                  max_chirp_mass=None, **kwargs):
         """
-        Create a statistic class instance
-
         Parameters
         ----------
         sngl_ranking: str
@@ -1740,8 +1726,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         value: log of coinc signal rate density for the given single-ifo
             triggers and time shifts
         """
-
-        # model signal rate as uniform over chirp mass, background rate is
+        # Model signal rate as uniform over chirp mass, background rate is
         # proportional to mchirp^(-11/3) due to density of templates
         logr_s = ExpFitFgBgNormStatistic.logsignalrate(
                     self,
@@ -1763,8 +1748,8 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         -------
@@ -1810,20 +1795,154 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         return loglr
 
 
+class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
+    """
+    The ExpFitFgBgNormStatistic with an additional mass and spin weighting
+    factor determined by KDE statistic files.
+
+    This is the same as the ExpFitFgBgNormStatistic except the likelihood
+    ratio is multiplied by the ratio of signal KDE to template KDE over some
+    parameters covering the bank.
+    """
+
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+        """
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+        ifos: list of strs, not used here
+            The list of detector names
+        """
+        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
+                                         ifos=ifos, **kwargs)
+        # The stat file attributes are hard-coded as 'signal-kde_file'
+        # and 'template-kde_file'
+        parsed_attrs = [f.split('-') for f in self.files.keys()]
+        self.kde_names = [at[0] for at in parsed_attrs if
+                       (len(at) == 2 and at[1] == 'kde_file')]
+        assert sorted(self.kde_names) == ['signal', 'template'], \
+            "Two stat files are required, they should have stat attr " \
+            "'signal-kde_file' and 'template-kde_file' respectively"
+
+        self.kde_by_tid = {}
+        for kname in self.kde_names:
+            self.assign_kdes(kname)
+        # This will hold the template ids of the events for the statistic
+        # calculation
+        self.curr_tnum = None
+
+    def assign_kdes(self, kname):
+        """
+        Extract values from KDE files
+
+        Parameters
+        -----------
+        kname: str
+            Used to label the kde files.
+        """
+        with h5py.File(self.files[kname+'-kde_file'], 'r') as kde_file:
+            self.kde_by_tid[kname+'_kdevals'] = kde_file['data_kde'][:]
+
+    def single(self, trigs):
+        """
+        Calculate the necessary single detector information including getting
+        template ids from single detector triggers.
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        try:
+            # template_num exists if accessed via coinc_findtrigs
+            self.curr_tnum = trigs.template_num
+        except AttributeError:
+            # exists for SingleDetTriggers
+            self.curr_tnum = trigs['template_id']
+        return ExpFitFgBgNormStatistic.single(self, trigs)
+
+    def logsignalrate(self, stats, shift, to_shift):
+        """
+        Calculate the normalized log rate density of signals via lookup.
+
+        This calls back to the parent class and then applies the ratio_kde
+        weighting factor.
+
+        Parameters
+        ----------
+        stats: list of dicts giving single-ifo quantities, ordered as
+            self.ifos
+        shift: numpy array of float, size of the time shift vector for each
+            coinc to be ranked
+        to_shift: list of int, multiple of the time shift to apply ordered
+            as self.ifos
+
+        Returns
+        -------
+        value: log of coinc signal rate density for the given single-ifo
+            triggers and time shifts
+        """
+        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, shift,
+                                                       to_shift)
+        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
+        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
+        logr_s += numpy.log(signal_kde / template_kde)
+        return logr_s
+
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
+        """
+        Optimization function to identify coincs too quiet to be of interest
+
+        Calculate the required single detector statistic to exceed the
+        threshold for each of the input trigers.
+
+        Parameters
+        ----------
+        s: list
+            List of (ifo, single detector statistic) tuples for all detectors
+            except limifo.
+        thresh: float
+            The threshold on the coincident statistic.
+        limifo: string
+            The ifo for which the limit is to be found.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of limits on the limifo single statistic to
+            exceed thresh.
+        """
+        loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
+            self, s, thresh, limifo, **kwargs)
+        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
+        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
+        loglr += numpy.log(signal_kde / template_kde)
+        return loglr
+
+
 class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
     """
     The ExpFitFgBgNormStatistic with DQ-based reranking.
 
     This is the same as the ExpFitFgBgNormStatistic except the likelihood
-    is multiplied by the relative signal rate based on the relevant
-    DQ likelihood value.
+    ratio is corrected via estimating relative noise trigger rates based on
+    the DQ time series.
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None,
                  **kwargs):
         """
-        Create a statistic class instance
-
         Parameters
         ----------
         sngl_ranking: str
@@ -1944,8 +2063,8 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         Parameters
         -----------
-        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-            Dictionary-like object holding single detector trigger information.
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
 
         Returns
         ---------
@@ -1969,6 +2088,7 @@ statistic_dict = {
     'exp_fit_bg_rate': ExpFitBgRateStatistic,
     'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
     'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
+    'phasetd_exp_fit_fgbg_kde': ExpFitFgBgKDEStatistic,
 }
 
 
