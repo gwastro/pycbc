@@ -225,11 +225,19 @@ class Relative(DistMarg, BaseGaussianNoise):
                                                           **self.fid_params)
                 curr_wav = fid_hp
 
-            # check for zeros at high frequencies
+            # check for zeros at low and high frequencies
             # make sure only nonzero samples are included in bins
-            numzeros = list(curr_wav[::-1] != 0j).index(True)
-            if numzeros > 0:
-                new_kmax = self.kmax[ifo] - numzeros
+            numzeros_lo = list(curr_wav != 0j).index(True)
+            if numzeros_lo > 0:
+                new_kmin = self.kmin[ifo] + numzeros_lo
+                f_lo = new_kmin * self.df[ifo]
+                logging.info(
+                    "WARNING! Fiducial waveform starts above "
+                    "low-frequency-cutoff, initial bin frequency "
+                    "will be %s Hz", f_lo)
+            numzeros_hi = list(curr_wav[::-1] != 0j).index(True)
+            if numzeros_hi > 0:
+                new_kmax = self.kmax[ifo] - numzeros_hi
                 f_hi = new_kmax * self.df[ifo]
                 logging.info(
                     "WARNING! Fiducial waveform terminates below "

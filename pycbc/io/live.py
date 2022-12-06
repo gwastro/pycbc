@@ -32,8 +32,8 @@ class CandidateForGraceDB(object):
             A list of the originally triggered ifos with SNR above threshold
             for this candidate, before possible significance followups.
         ifos: list of strs
-            A list of the ifos with triggers identified in coinc_results for
-            this candidate: ifos contributing to significance
+            A list of ifos which may have triggers identified in coinc_results
+            for this candidate: ifos potentially contributing to significance
         coinc_results: dict of values
             A dictionary of values. The format is defined in
             `pycbc/events/coinc.py` and matches the on-disk representation in
@@ -62,7 +62,6 @@ class CandidateForGraceDB(object):
         """
         self.template_id = coinc_results[f'foreground/{ifos[0]}/template_id']
         self.coinc_results = coinc_results
-        self.ifos = ifos
         self.psds = kwargs['psds']
         self.basename = None
 
@@ -76,6 +75,10 @@ class CandidateForGraceDB(object):
         if rtoff in coinc_results:
             self.time_offset = coinc_results[rtoff]
 
+        # Check for ifos with SNR peaks in coinc_results
+        self.et_ifos = [i for i in ifos if f'foreground/{i}/end_time' in
+                        coinc_results]
+
         if 'skyloc_data' in kwargs:
             sld = kwargs['skyloc_data']
             assert len({sld[ifo]['snr_series'].delta_t for ifo in sld}) == 1, \
@@ -83,7 +86,7 @@ class CandidateForGraceDB(object):
             snr_ifos = sld.keys()  # Ifos with SNR time series calculated
             self.snr_series = {ifo: sld[ifo]['snr_series'] for ifo in snr_ifos}
             # Extra ifos have SNR time series but not sngl inspiral triggers
-            extra_ifos = list(set(snr_ifos) - set(ifos))
+            extra_ifos = list(set(snr_ifos) - set(self.et_ifos))
 
             for ifo in snr_ifos:
                 # Ifos used for sky loc must have a PSD
@@ -91,7 +94,7 @@ class CandidateForGraceDB(object):
                 self.snr_series[ifo].start_time += self.time_offset
         else:
             self.snr_series = None
-            snr_ifos = ifos
+            snr_ifos = self.et_ifos
             extra_ifos = []
 
         # Set up the bare structure of the xml document
@@ -177,8 +180,9 @@ class CandidateForGraceDB(object):
                 snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
 
         # Set merger time to the mean of trigger peaks over coinc_results ifos
-        self.merger_time = numpy.mean(
-            [coinc_results[f'foreground/{ifo}/end_time'] for ifo in ifos]) \
+        self.merger_time = \
+            numpy.mean([coinc_results[f'foreground/{ifo}/end_time'] for ifo in
+                        self.et_ifos]) \
             + self.time_offset
 
         # For extra detectors used only for sky loc, respect BAYESTAR's
@@ -237,8 +241,8 @@ class CandidateForGraceDB(object):
                 'triggered': coinc_ifos,
                 # Consider all ifos potentially relevant to detection,
                 # ignore those that only contribute to sky loc
-                'sensitive': ifos}
-            horizons = {i: self.psds[i].dist for i in ifos}
+                'sensitive': self.et_ifos}
+            horizons = {i: self.psds[i].dist for i in self.et_ifos}
             self.p_astro, self.p_terr = \
                 kwargs['padata'].do_pastro_calc(trigger_data, horizons)
         else:
@@ -382,7 +386,7 @@ class CandidateForGraceDB(object):
                 curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
                 pl.plot(curr_snrs.sample_times - ref_time, abs(curr_snrs),
                         c=ifo_color(ifo), label=ifo)
-                if ifo in self.ifos:
+                if ifo in self.et_ifos:
                     base = 'foreground/{}/'.format(ifo)
                     snr = self.coinc_results[base + 'snr']
                     mt = (self.coinc_results[base + 'end_time']

@@ -615,6 +615,9 @@ parser.add_argument('--idq-channel', action=MultiDetMultiColonOptionAction,
 parser.add_argument('--idq-state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing information about the state of idq."
                          "Used to determine when idq is usable for statistics. ")
+parser.add_argument('--idq-threshold', type=float,
+                    help='Threshold used to veto triggers at times of '
+                    'low iDQ False Alarm Probability')
 parser.add_argument('--data-quality-channel',
                     action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
@@ -988,20 +991,32 @@ with ctx:
                 results.pop(ifo)
 
             # Veto single detector triggers that fail the DQ vector
+            # or have iDQ value below the threshold
             for ifo in results:
-                if data_reader[ifo].dq is None:
-                    continue
-                logging.info("Checking %s's DQ vector", ifo)
-                start = data_reader[ifo].start_time
-                times = results[ifo]['end_time']
-                idx = data_reader[ifo].dq.indices_of_flag(
-                        start, valid_pad, times,
-                        padding=data_reader[ifo].dq_padding)
-                logging.info('Keeping %d/%d %s triggers',
-                             len(idx), len(times), ifo)
-                for key in results[ifo]:
-                    if len(results[ifo][key]):
-                        results[ifo][key] = results[ifo][key][idx]
+                if data_reader[ifo].dq is not None:
+                    logging.info("Checking %s's DQ vector", ifo)
+                    start = data_reader[ifo].start_time
+                    times = results[ifo]['end_time']
+                    idx = data_reader[ifo].dq.indices_of_flag(
+                            start, valid_pad, times,
+                            padding=data_reader[ifo].dq_padding)
+                    logging.info('Keeping %d/%d %s triggers after DQ flags',
+                                 len(idx), len(times), ifo)
+                    for key in results[ifo]:
+                        if len(results[ifo][key]):
+                            results[ifo][key] = results[ifo][key][idx]
+                if data_reader[ifo].idq is not None:
+                    logging.info("Checking %s's iDQ information", ifo)
+                    start = data_reader[ifo].start_time
+                    times = results[ifo]['end_time']
+                    idx = data_reader[ifo].idq.indices_of_flag(
+                            start, valid_pad, times,
+                            padding=data_reader[ifo].dq_padding)
+                    logging.info('Keeping %d/%d %s triggers after iDQ',
+                                 len(idx), len(times), ifo)
+                    for key in results[ifo]:
+                        if len(results[ifo][key]):
+                            results[ifo][key] = results[ifo][key][idx]
 
             # Look for coincident triggers and do background estimation
             if args.enable_background_estimation:
