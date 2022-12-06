@@ -18,6 +18,8 @@ right acension and declination.
 
 
 from pycbc.distributions import angular
+import numpy
+from pycbc.transforms import new_z_to_euler, rotate_euler
 
 class UniformSky(angular.UniformSolidAngle):
     """A distribution that is uniform on the sky. This is the same as
@@ -31,5 +33,32 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
+ class FisherDist():
+    """A distribution that returns a random (ra, dec) angle drawn from the Fisher
+    distribution. Assume that the concentration parameter (kappa) is large
+    so that we can use a Rayleigh distribution about the north pole and
+    rotate it to be centered at the (ra, dec) coordinate mu.
 
-__all__ = ['UniformSky']
+    Assume kappa = 1 / sigma**2
+
+    References:
+      * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
+      * http://arxiv.org/pdf/0902.0737v1 (states the Rayleigh limit)
+    """
+    name = 'fisher_dist'
+    def __init__(self, mu, kappa, size, if_radians=True):
+        self.kappa = kappa
+        if if_radians is True:
+            self.mu= (mu[1],mu[0])
+        elif if_radians is False :
+            self.mu=numpy.array(numpy.deg2rad([mu[1],mu[0]]))
+        else:
+            raise ValueError("You can choose to not give any option if angles are in radians or you should give either 'True' or 'False' ")  
+            
+    def rvs(self,size):
+        arr=numpy.array([numpy.random.rayleigh(scale=1. / numpy.sqrt(self.kappa), size=size),
+                         numpy.random.uniform(low=0, high=2*numpy.pi, size=size)]).reshape((2, size)).T
+        a, b = new_z_to_euler(self.mu)
+        return rotate_euler(arr, b, ((numpy.pi)/2) -a, 0)
+
+__all__ = ['UniformSky', 'FisherDist']
