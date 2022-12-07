@@ -1,3 +1,5 @@
+set -e
+
 for channel in A E T
 do
     strain_file=${channel}_TDI_v2.gwf
