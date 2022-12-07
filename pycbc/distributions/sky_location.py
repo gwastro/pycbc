@@ -41,14 +41,18 @@ class UniformSky(angular.UniformSolidAngle):
 
     Assume kappa = 1 / sigma**2
    
-    As in UniformSky, the polar angle varies from pi/2 (the north pole) to
-    -pi/2 (the south pole) and dec varies from 0 to 2pi.
+    As in UniformSky, the polar angle varies from pi/2 to-pi/2 
+    and dec varies from 0 to 2pi.
 
     References:
       * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
       * http://arxiv.org/pdf/0902.0737v1 (states the Rayleigh limit)
     """
     name = 'fisher_dist'
+    _polardistcls = angular.CosAngle
+    _default_polar_angle = 'dec'
+    _default_azimuthal_angle = 'ra'
+    
     def __init__(self, mu, kappa, size, if_radians=True):
         self.kappa = kappa
         if if_radians is True:
@@ -56,7 +60,7 @@ class UniformSky(angular.UniformSolidAngle):
         elif if_radians is False :
             self.mu=numpy.array(numpy.deg2rad([mu[1],mu[0]]))
         else:
-            raise ValueError("You can choose to not give any option if angles are in radians or you should give either 'True' or 'False' ")  
+            raise ValueError("You should give either 'True' or 'False' (for whether the angles are in radians or degrees respectively) ")  
             
     def rvs(self,size):
         arr=numpy.array([numpy.random.rayleigh(scale=1. / numpy.sqrt(self.kappa), size=size),
