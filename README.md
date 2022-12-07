@@ -32,7 +32,7 @@ pip install pycbc
 
 To test the code on your machine
 ```
-pip install pytest tox
+pip install pytest "tox<4.0.0"
 tox
 ```
 
