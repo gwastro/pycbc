@@ -18,7 +18,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - run: |
         brew install fftw openssl
-        pip install --upgrade pip setuptools tox<4.0.0
+        pip install --upgrade pip setuptools "tox<4.0.0"
     - name: run basic pycbc test suite
       run: |
         sudo chmod -R 777 /usr/local/miniconda/
