@@ -534,7 +534,8 @@ class LiveEventManager(object):
 
     def get_out_dir_path(self, time_gps):
         """Compose and return the path to a directory to store files associated
-        with a particular GPS time. Create the directory if it does not exist.
+        with times in a given day (specified via a GPS time).
+        Create the directory if it does not exist.
         """
         path = self.path
         if self.use_date_prefix:
