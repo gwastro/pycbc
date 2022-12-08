@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+"""Plot the DQ log likelihood versus time for a specific background bin
+"""
+import logging
+import sys
+import argparse
+import numpy
+import pycbc
+import h5py
+from matplotlib import use; use('Agg')
+from matplotlib import pyplot
+from pycbc.version import git_verbose_msg as version
+import pycbc.results
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="store_true")
+parser.add_argument("--ifo", type=str, required=True)
+parser.add_argument("--dq-file", required=True)
+parser.add_argument('--background-bin', default='all_bin')
+parser.add_argument("--output-file", required=True)
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+
+ifo = args.ifo
+
+f = h5py.File(args.dq_file, 'r')
+
+bin_name = args.background_bin
+
+if bin_name not in f[f'{ifo}/dq_vals'].keys():
+    raise ValueError("Background bin name not found in DQ file")
+else:
+    yvals = f['%s/dq_vals/%s'%(ifo,bin_name)][:]
+
+xvals = f[f'{ifo}/times'][:]
+dq_name = f.attrs['stat'].split('-')[0]
+
+xmax = max(xvals) + 0.2 * (max(xvals)-min(xvals))
+xmin = min(xvals) - 0.2 * (max(xvals)-min(xvals))
+
+ymax = 1.2 * max(yvals)
+
+color = pycbc.results.ifo_color(ifo)
+
+# create a figure to add a histogram
+fig = pyplot.figure(0)
+ax = fig.add_subplot(111)
+
+ax.scatter(xvals[yvals>0],yvals[yvals>0],
+               label=' '.join([ifo,dq_name,bin_name]), edgecolor='none',
+               s=1, color=color)
+ax.legend(loc='upper left', markerscale=5)
+
+# format plot
+ax.set_ylabel('Data quality log likelihood')
+ax.set_xlabel('Time (s)')
+ax.set_ylim(ymin=0, ymax=ymax)
+ax.set_xlim(xmin=xmin, xmax=xmax)
+
+# add a grid to the plot
+ax.grid()
+
+yticks = ax.get_yticks()
+
+# add second axis
+ax2 = ax.twinx()
+ax2_ymax = numpy.exp(ymax)
+ax2.set_ylim(1, ax2_ymax)
+ax2.plot(xmax + 1e9, 100)
+new_ticks = range(0, int(numpy.ceil(numpy.log10(ax2_ymax))))
+ax2.set_yticks([10**t for t in new_ticks])
+ax2.set_ylabel('Relative Trigger Rate')
+ax2.set_xlim(xmin, xmax)
+ax2.set_yscale('log')
+
+# add meta data and save figure
+fig_kwds = {}
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
+                fig_kwds=fig_kwds,
+                title = '%s %s log likelihood versus time' % (ifo, dq_name),
+                caption = 'The log likelihood verus time of a DQ product.',
+                cmd = ' '.join(sys.argv))
+
