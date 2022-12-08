@@ -554,7 +554,7 @@ class LiveEventManager(object):
         """
         path = os.path.join(
             self.get_out_dir_path(merger_time),
-            f'candidate_{merger_time:.3f}_{pycbc.random_string(6)}'
+            f'candidate_{merger_time:.3f}_{pycbc.random_string(4)}'
         )
         makedir(path)
         return path
