@@ -498,12 +498,32 @@ class DistMarg():
         self.marginalize_vector_weights = logw - logsumexp(logw)
 
     def setup_peak_lock(self,
-                 sample_rate=4096,
-                 snrs=None,
-                 peak_lock_snr=None,
-                 peak_lock_ratio=1e4,
-                 peak_lock_region=4,
-                 **kwargs):
+                        sample_rate=4096,
+                        snrs=None,
+                        peak_lock_snr=None,
+                        peak_lock_ratio=1e4,
+                        peak_lock_region=4,
+                        **kwargs):
+        """ Determine where to constrain marginalization based on 
+        the observed reference SNR peaks.
+        
+        Parameters
+        ----------
+        sample_rate : float
+            The SNR sample rate
+        snrs : Dict of SNR time series
+            Either provide this or the model needs a function
+            to get the reference SNRs.
+        peak_lock_snr: float
+            The minimum SNR to bother restricting from the prior range
+        peak_lock_ratio: float
+            The likelihood ratio (not log) relative to the peak to
+            act as a threshold bounding region.
+        peak_lock_region: int
+            Number of samples to inclue beyond the strict region
+            determined by the relative likelihood
+        """
+                
         if 'tc' not in self.marginalized_vector_priors:
             return
 
@@ -551,7 +571,8 @@ class DistMarg():
                 te = ts + self.num_samples[ifo] / sample_rate
 
                 for ifo2 in snrs:
-                    if ifo == ifo2: continue
+                    if ifo == ifo2:
+                        continue
                     ts2 = self.tstart[ifo2]
                     te2 = ts2 + self.num_samples[ifo2] / sample_rate
                     det = Detector(ifo)
