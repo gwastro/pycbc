@@ -530,7 +530,7 @@ def insert_strain_option_group(parser, gps_times=True):
                 default=16384, type=float,
                 help="Sample rate of the fake data generation")
     data_reading_group.add_argument("--fake-strain-extra-args",
-                nargs='+', action=MultiDetOptionAction,
+                nargs='+', action=ExtraArgsOptionAction,
                 metavar='PARAM:VALUE', type=str,
                 help="Extra arguments passed to the PSD models.")
 
