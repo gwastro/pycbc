@@ -165,8 +165,8 @@ def flat_unity(length, delta_f, low_freq_cutoff):
 # dict of analytical PSDs coded in PyCBC
 pycbc_analytical_psds = {
     'flat_unity' : flat_unity,
-    'analytical_psd_lisa_tdi_1p5' : analytical_psd_lisa_tdi_1p5,
-    'analytical_psd_lisa_tdi_2p0' : analytical_psd_lisa_tdi_2p0,
-    'analytical_psd_lisa_tdi_A_E_1p5' : analytical_psd_lisa_tdi_A_E_1p5,
-    'analytical_psd_lisa_tdi_T_1p5' : analytical_psd_lisa_tdi_T_1p5,
+    'analytical_psd_lisa_tdi_1p5_XYZ' : analytical_psd_lisa_tdi_1p5_XYZ,
+    'analytical_psd_lisa_tdi_2p0_XYZ' : analytical_psd_lisa_tdi_2p0_XYZ,
+    'analytical_psd_lisa_tdi_1p5_AE' : analytical_psd_lisa_tdi_1p5_AE,
+    'analytical_psd_lisa_tdi_1p5_T' : analytical_psd_lisa_tdi_1p5_T,
 }

@@ -95,9 +95,9 @@ def lisa_psd_components(f, acc_noise_level=3e-15, oms_noise_level=15e-12):
 
     return [low_freq_component, high_freq_component]
 
-def analytical_psd_lisa_tdi_1p5(length, delta_f, low_freq_cutoff,
+def analytical_psd_lisa_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
-    r""" The TDI-1.5 analytical PSD for LISA.
+    r""" The TDI-1.5 analytical PSD (X,Y,Z channel) for LISA.
     Parameters
     ----------
     length : int
@@ -115,7 +115,7 @@ def analytical_psd_lisa_tdi_1p5(length, delta_f, low_freq_cutoff,
     Returns
     -------
     fseries : FrequencySeries
-        The TDI-1.5 PSD for LISA.
+        The TDI-1.5 PSD (X,Y,Z channel) for LISA.
     Notes
     -----
         Pease see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
@@ -132,9 +132,9 @@ def analytical_psd_lisa_tdi_1p5(length, delta_f, low_freq_cutoff,
 
     return fseries
 
-def analytical_psd_lisa_tdi_2p0(length, delta_f, low_freq_cutoff,
+def analytical_psd_lisa_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
-    r""" The TDI-2.0 analytical PSD for LISA.
+    r""" The TDI-2.0 analytical PSD (X,Y,Z channel) for LISA.
     Parameters
     ----------
     length : int
@@ -152,7 +152,7 @@ def analytical_psd_lisa_tdi_2p0(length, delta_f, low_freq_cutoff,
     Returns
     -------
     fseries : FrequencySeries
-        The TDI-2.0 PSD for LISA.
+        The TDI-2.0 PSD (X,Y,Z channel) for LISA.
     Notes
     -----
         Pease see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
@@ -170,7 +170,7 @@ def analytical_psd_lisa_tdi_2p0(length, delta_f, low_freq_cutoff,
 
     return fseries
 
-def analytical_csd_lisa_tdi_1p5(length, delta_f, low_freq_cutoff,
+def analytical_csd_lisa_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
     len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The cross-spectrum density between LISA's TDI channel X and Y.
     Parameters
@@ -207,7 +207,7 @@ def analytical_csd_lisa_tdi_1p5(length, delta_f, low_freq_cutoff,
                 length, delta_f, low_freq_cutoff)
     return fseries
 
-def analytical_psd_lisa_tdi_A_E_1p5(length, delta_f, low_freq_cutoff,
+def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The PSD of LISA's TDI-1.5 channel A and E.
     Parameters
@@ -246,7 +246,7 @@ def analytical_psd_lisa_tdi_A_E_1p5(length, delta_f, low_freq_cutoff,
 
     return fseries
 
-def analytical_psd_lisa_tdi_T_1p5(length, delta_f, low_freq_cutoff,
+def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The PSD of LISA's TDI-1.5 channel T.
     Parameters
@@ -286,7 +286,7 @@ def analytical_psd_lisa_tdi_T_1p5(length, delta_f, low_freq_cutoff,
 
 def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
     r""" An approximant for LISA's squared antenna response function,
-    averaged over sky and polarization.
+    averaged over sky and polarization angle.
     Parameters
     ----------
     f : float or numpy.array
@@ -296,7 +296,7 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
     Returns
     -------
     fp_sq_approx : float or numpy.array
-        The sky and polarization averaged squared antenna response.
+        The sky and polarization angle averaged squared antenna response.
     Notes
     -----
         Pease see Eq.(36) in <LISA-LCST-SGS-TN-001> for more details.
@@ -308,7 +308,7 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
 
 def averaged_response_lisa_tdi_1p5(f, len_arm=2.5e9):
     r""" LISA's TDI-1.5 response function to GW,
-    averaged over sky and polarization.
+    averaged over sky and polarization angle.
     Parameters
     ----------
     f : float or numpy.array
@@ -318,7 +318,7 @@ def averaged_response_lisa_tdi_1p5(f, len_arm=2.5e9):
     Returns
     -------
     response_tdi_1p5 : float or numpy.array
-        The sky and polarization averaged TDI-1.5 response function to GW.
+        The sky and polarization angle averaged TDI-1.5 response function to GW.
     Notes
     -----
         Pease see Eq.(39) in <LISA-LCST-SGS-TN-001> for more details.
@@ -331,7 +331,7 @@ def averaged_response_lisa_tdi_1p5(f, len_arm=2.5e9):
 
 def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
     r""" LISA's TDI-2.0 response function to GW,
-    averaged over sky and polarization.
+    averaged over sky and polarization angle.
     Parameters
     ----------
     f : float or numpy.array
@@ -341,7 +341,7 @@ def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
     Returns
     -------
     response_tdi_2p0 : float or numpy.array
-        The sky and polarization averaged TDI-2.0 response function to GW.
+        The sky and polarization angle averaged TDI-2.0 response function to GW.
     Notes
     -----
         Pease see Eq.(40) in <LISA-LCST-SGS-TN-001> for more details.
@@ -352,9 +352,10 @@ def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
     
     return response_tdi_2p0
 
-def semi_sensitivity_curve_lisa(f, len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
+def semi_sensitivity_curve_lisa(f, len_arm=2.5e9,
+    acc_noise_level=3e-15, oms_noise_level=15e-12):
     r""" The semi-analytical LISA's sensitivity curve,
-    averaged over sky and polarization.
+    averaged over sky and polarization angle.
     Parameters
     ----------
     f : float or numpy.array
@@ -368,7 +369,7 @@ def semi_sensitivity_curve_lisa(f, len_arm=2.5e9, acc_noise_level=3e-15, oms_noi
     Returns
     -------
     sense_curve : float or numpy.array
-        The sky and polarization averaged semi-analytical
+        The sky and polarization angle averaged semi-analytical
         LISA's sensitivity curve.
     Notes
     -----
@@ -383,7 +384,7 @@ def semi_sensitivity_curve_lisa(f, len_arm=2.5e9, acc_noise_level=3e-15, oms_noi
 
 def sensitivity_curve_lisa_SciRD(f):
     r""" The analytical LISA's sensitivity curve in SciRD,
-    averaged over sky and polarization.
+    averaged over sky and polarization angle.
     Parameters
     ----------
     f : float or numpy.array
@@ -391,7 +392,7 @@ def sensitivity_curve_lisa_SciRD(f):
     Returns
     -------
     sense_curve : float or numpy.array
-        The sky and polarization averaged analytical
+        The sky and polarization angle averaged analytical
         LISA's sensitivity curve in SciRD.
     Notes
     -----
