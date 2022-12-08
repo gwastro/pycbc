@@ -504,9 +504,9 @@ class DistMarg():
                         peak_lock_ratio=1e4,
                         peak_lock_region=4,
                         **kwargs):
-        """ Determine where to constrain marginalization based on 
+        """ Determine where to constrain marginalization based on
         the observed reference SNR peaks.
-        
+
         Parameters
         ----------
         sample_rate : float
@@ -523,7 +523,7 @@ class DistMarg():
             Number of samples to inclue beyond the strict region
             determined by the relative likelihood
         """
-                
+
         if 'tc' not in self.marginalized_vector_priors:
             return
 
