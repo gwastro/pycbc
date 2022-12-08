@@ -1,4 +1,5 @@
-# Copyright (C) 2015 Ian Harry
+# Copyright (C) 2015 Ian Harry, Tito Dal Canton
+#               2022 Shichao Wu
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -211,6 +212,65 @@ class MultiDetOptionAppendAction(MultiDetOptionAction):
                 err_msg += "The character ':' is used to distinguish the "
                 err_msg += "ifo and the value. It must be given exactly once "
                 err_msg += "for all entries"
+                raise ValueError(err_msg)
+        setattr(namespace, self.dest, items)
+
+class ExtraArgsOptionAction(argparse.Action):
+    # Initialise the same as the standard 'append' action
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 nargs='+',
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+        if type is not None:
+            self.internal_type = type
+        else:
+            self.internal_type = str
+        new_default = DictWithDefaultReturn(lambda: default)
+        #new_default.default_value=default
+        if nargs == 0:
+            raise ValueError('nargs for append actions must be > 0; if arg '
+                             'strings are not supplying the value to append, '
+                             'the append const action may be more appropriate')
+        if const is not None and nargs != argparse.OPTIONAL:
+            raise ValueError('nargs must be %r to supply const'
+                             % argparse.OPTIONAL)
+        super(ExtraArgsOptionAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=new_default,
+            type=str,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        # Again this is modified from the standard argparse 'append' action
+        err_msg = "Issue with option: %s \n" %(self.dest,)
+        err_msg += "Received value: %s \n" %(' '.join(values),)
+        if getattr(namespace, self.dest, None) is None:
+            setattr(namespace, self.dest, DictWithDefaultReturn())
+        items = getattr(namespace, self.dest)
+        items = copy.copy(items)
+        for value in values:
+            value = value.split(':')
+            if len(value) == 2:
+                # "Normal" case, all extra arguments supplied independently
+                # as "param:VALUE"
+                items[value[0]] = self.internal_type(value[1])
+            else:
+                err_msg += "The character ':' is used to distinguish the "
+                err_msg += "parameter name and the value. Please do not "
+                err_msg += "use it more than once."
                 raise ValueError(err_msg)
         setattr(namespace, self.dest, items)
 

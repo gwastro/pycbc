@@ -24,6 +24,7 @@ from pycbc.types import TimeSeries, zeros
 from pycbc.types import Array, FrequencySeries
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
+from pycbc.types import ExtraArgsOptionAction
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo, complex_same_precision_as
@@ -528,7 +529,9 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--fake-strain-sample-rate",
                 default=16384, type=float,
                 help="Sample rate of the fake data generation")
-    data_reading_group.add_argument("--fake-strain-extra-args", type=str,
+    data_reading_group.add_argument("--fake-strain-extra-args",
+                nargs='+', action=MultiDetOptionAction,
+                metavar='PARAM:VALUE', type=str,
                 help="Extra arguments passed to the PSD models.")
 
     # Injection options
