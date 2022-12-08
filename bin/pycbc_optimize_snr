@@ -3,12 +3,10 @@
 """Followup utility to optimize the SNR of a PyCBC Live trigger."""
 
 import os
-import shutil
 import argparse, numpy, h5py
 import time
 import types
 import logging
-import tempfile
 from scipy.optimize import differential_evolution, shgo
 import pycbc
 from pycbc import (
@@ -492,7 +490,14 @@ doc = live.CandidateForGraceDB(
     **kwargs
 )
 
+xml_path = os.path.join(
+    args.output_path,
+    f'coinc-{loudest_snr_time_allifos:.3f}.xml.gz'
+)
+
 if args.enable_gracedb_upload:
+    logging.info('Uploading optimized candidate to GraceDB')
+
     comment = ('Automatic PyCBC followup of trigger '
                '<a href="/events/{0}/view">{0}</a> to find the template '
                'parameters that maximize the SNR. The FAR of this trigger is '
@@ -500,15 +505,11 @@ if args.enable_gracedb_upload:
                'parameters.')
     comment = comment.format(original_gid)
 
-    tmpdir = tempfile.mkdtemp()
-    xml_path = os.path.join(tmpdir,
-                            '{:.3f}.xml.gz'.format(loudest_snr_time_allifos))
     gid = doc.upload(xml_path, gracedb_server=args.gracedb_server,
                      testing=(not args.production), extra_strings=[comment],
                      search=args.gracedb_search)
     if gid is not None:
         logging.info('Event uploaded as %s', gid)
-        shutil.rmtree(tmpdir)
 
         # add a note to the original G event pointing to the optimized one
         from ligo.gracedb.rest import GraceDb
@@ -523,7 +524,7 @@ if args.enable_gracedb_upload:
             tag_name=['analyst_comments']
         )
 else:
-    fname = 'coinc-{:.3f}-{}.xml.gz'.format(loudest_snr_time_allifos,
-                                            pycbc.random_string(6))
-    fname = os.path.join(args.output_path, fname)
-    doc.save(fname)
+    logging.info('Saving optimized candidate')
+    doc.save(xml_path)
+
+logging.info('Done')
