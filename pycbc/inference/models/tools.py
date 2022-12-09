@@ -296,6 +296,26 @@ class DistMarg():
             # marginalizations.
             pass
 
+    def draw_ifos(self, snrs, snr_threshold=4.0):
+        """ Helper utility to determine which ifos we should use based on the
+        reference SNR time series.
+        """
+        tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+        ifos = list(snrs.keys())
+        keep_ifos = []
+        for ifo in ifos:
+            snr = snrs[ifo]
+            start = max(tcmin - EARTH_RADIUS, snr.start_time)
+            end = min(tcmax + EARTH_RADIUS, snr.end_time)
+            snr = snr.time_slice(start, end, mode='nearest')
+
+            if abs(snr).max() > snr_threshold:
+                keep_ifos.append(ifo)
+
+        logging.info("Ifos used for SNR based draws: %s", keep_ifos)
+        self.keep_ifos = keep_ifos
+        return keep_ifos
+
     def draw_times(self, snrs):
         """ Draw times consistent with the incoherent network SNR
 
@@ -308,6 +328,8 @@ class DistMarg():
             tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
             tcave = (tcmax + tcmin) / 2.0
             ifos = list(snrs.keys())
+            if hasattr(self, 'keep_ifos'):
+                ifos = self.keep_ifos
             d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
             self.tinfo = tcmin, tcmax, tcave, ifos, d
 
@@ -384,6 +406,8 @@ class DistMarg():
             tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
             tcave = (tcmax + tcmin) / 2.0
             ifos = list(snrs.keys())
+            if hasattr(self, 'keep_ifos'):
+                ifos = self.keep_ifos
             d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
 
             # What data structure to hold times? Dict of offset -> list?
@@ -403,6 +427,9 @@ class DistMarg():
                 if t not in dmap:
                     dmap[t] = []
                 dmap[t].append(v)
+
+            if len(ifos) == 1:
+                dmap[()] = list(zip(ra, dec, dtc))
 
             self.tinfo = ifos, dmap, d, tcmin, tcmax
 
@@ -425,14 +452,14 @@ class DistMarg():
             i = draw_sample(w, size=self.vsamples)
 
             if sref is not None:
+                mcweight -= w[i]
                 delt = float(snr.start_time - sref.start_time)
                 i += round(delt / sref.delta_t)
                 dx.append(iref - i)
-                mcweight -= w[i]
             else:
                 sref = snr
                 iref = i
-                mcweight = w[i]
+                mcweight = -w[i]
 
             idx.append(i)
 
