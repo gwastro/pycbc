@@ -4,6 +4,7 @@ import pycbc
 import numpy
 import lal
 import json
+import copy
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
@@ -255,7 +256,7 @@ class CandidateForGraceDB(object):
                                                     coinc_inspiral_row.snr,
                                                     min(eff_distances),
                                                     kwargs['mc_area_args'])
-            kwargs['hasmassgap_args'] = numpy.copy(kwargs['mc_area_args'])
+            kwargs['hasmassgap_args'] = copy.deepcopy(kwargs['mc_area_args'])
             kwargs['hasmassgap_args']['mass_gap'] = True
             kwargs['hasmassgap_args']['mass_bdary']['ns_max'] = 3.0
             kwargs['hasmassgap_args']['mass_bdary']['gap_max'] = 5.0
@@ -293,6 +294,13 @@ class CandidateForGraceDB(object):
             # here assume compression
             self.basename = fname.replace('.xml.gz', '')
 
+        # Save EMBright properties info as json
+        if  self.hasmassgap is not None:
+            self.embright_file = self.basename + '_em_bright.json'
+            with open(self.embright_file, 'w') as embrightf:
+                json.dump({'HasMassGap': self.hasmassgap}, embrightf)
+            logging.info('EM Bright file saved as %s', self.embright_file)
+
         # Save multi-cpt p astro as json
         if self.astro_probs is not None:
             self.multipa_file = self.basename + '_p_astro.json'
@@ -317,14 +325,6 @@ class CandidateForGraceDB(object):
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
             logging.info('P_astro file saved as %s', self.pastro_file)
-        return
-
-        # Save EMBright properties info as json
-        if  self.hasmassgap is not None:
-            self.embright_file = self.basename + '_em_bright.json'
-            with open(self.embright_file, 'w') as embrightf:
-                json.dump({'HasMassGap': self.hasmassgap}, embrightf)
-            logging.info('EM Bright file saved as %s', self.embright_file)
         return
 
     def upload(self, fname, gracedb_server=None, testing=True,
