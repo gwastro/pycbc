@@ -120,8 +120,11 @@ def analytical_psd_lisa_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Pease see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
     """
+    len_arm = np.float64(len_arm)
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
     psd = []
-    fr = np.linspace(2e-5, 1.1, length)
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     for f in fr:
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
                                 f, acc_noise_level, oms_noise_level)
@@ -157,8 +160,11 @@ def analytical_psd_lisa_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Pease see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
     """
+    len_arm = np.float64(len_arm)
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
     psd = []
-    fr = np.linspace(2e-5, 1.1, length)
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     for f in fr:
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
                                 f, acc_noise_level, oms_noise_level)
@@ -195,8 +201,11 @@ def analytical_csd_lisa_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
     -----
         Pease see Eq.(56) in <LISA-LCST-SGS-MAN-001> for more details.
     """
+    len_arm = np.float64(len_arm)
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
     csd = []
-    fr = np.linspace(2e-5, 1.1, length)
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     for f in fr:
         omega_len = 2*np.pi*f * len_arm/constants.c.value
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
@@ -232,8 +241,11 @@ def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     -----
         Pease see Eq.(58) in <LISA-LCST-SGS-MAN-001> for more details.
     """
+    len_arm = np.float64(len_arm)
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
     psd = []
-    fr = np.linspace(2e-5, 1.1, length)
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     for f in fr:
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
                                 f, acc_noise_level, oms_noise_level)
@@ -271,8 +283,11 @@ def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     -----
         Pease see Eq.(59) in <LISA-LCST-SGS-MAN-001> for more details.
     """
+    len_arm = np.float64(len_arm)
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
     psd = []
-    fr = np.linspace(2e-5, 1.1, length)
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     for f in fr:
         [s_acc_nu, s_oms_nu] = lisa_psd_components(
                                 f, acc_noise_level, oms_noise_level)
