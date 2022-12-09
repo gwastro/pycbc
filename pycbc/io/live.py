@@ -261,9 +261,10 @@ class CandidateForGraceDB(object):
             kwargs['hasmassgap_args']['mass_bdary']['ns_max'] = 3.0
             kwargs['hasmassgap_args']['mass_bdary']['gap_max'] = 5.0
             self.hasmassgap = calc_probabilities(coinc_inspiral_row.mchirp,
-                                                    coinc_inspiral_row.snr,
-                                                    min(eff_distances),
-                                                    kwargs['hasmassgap_args'])['Mass Gap']
+                                                 coinc_inspiral_row.snr,
+                                                 min(eff_distances),
+                                                 kwargs['hasmassgap_args']
+                                                )['Mass Gap']
         else:
             self.probabilities = None
             self.hasmassgap = None
@@ -295,7 +296,7 @@ class CandidateForGraceDB(object):
             self.basename = fname.replace('.xml.gz', '')
 
         # Save EMBright properties info as json
-        if  self.hasmassgap is not None:
+        if self.hasmassgap is not None:
             self.embright_file = self.basename + '_em_bright.json'
             with open(self.embright_file, 'w') as embrightf:
                 json.dump({'HasMassGap': self.hasmassgap}, embrightf)
@@ -472,13 +473,13 @@ class CandidateForGraceDB(object):
             try:
                 gracedb.write_log(
                     gid, 'EM Bright properties JSON file upload',
-                    filename = self.embright_file,
+                    filename=self.embright_file,
                     tag_name=['em_follow']
                 )
                 logging.info('Uploaded em_bright properties for %s', gid)
             except Exception as exc:
-                logging.error('Failed to upload em_bright properties file for %s',
-                              gid)
+                logging.error('Failed to upload em_bright properties file '
+                              'for %s', gid)
                 logging.error(str(exc))
 
         # Upload multi-cpt p_astro JSON
