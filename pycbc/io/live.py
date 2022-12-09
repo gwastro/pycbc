@@ -260,11 +260,11 @@ class CandidateForGraceDB(object):
             kwargs['hasmassgap_args']['mass_gap'] = True
             kwargs['hasmassgap_args']['mass_bdary']['ns_max'] = 3.0
             kwargs['hasmassgap_args']['mass_bdary']['gap_max'] = 5.0
-            self.hasmassgap = calc_probabilities(coinc_inspiral_row.mchirp,
-                                                 coinc_inspiral_row.snr,
-                                                 min(eff_distances),
-                                                 kwargs['hasmassgap_args']
-                                                )['Mass Gap']
+            self.hasmassgap = calc_probabilities(
+                                  coinc_inspiral_row.mchirp,
+                                  coinc_inspiral_row.snr,
+                                  min(eff_distances),
+                                  kwargs['hasmassgap_args'])['Mass Gap']
         else:
             self.probabilities = None
             self.hasmassgap = None
@@ -469,7 +469,7 @@ class CandidateForGraceDB(object):
                 logging.error(str(exc))
 
         # Upload em_bright properties JSON
-        if  self.hasmassgap is not None:
+        if self.hasmassgap is not None:
             try:
                 gracedb.write_log(
                     gid, 'EM Bright properties JSON file upload',
