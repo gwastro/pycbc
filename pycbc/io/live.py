@@ -273,7 +273,7 @@ class CandidateForGraceDB(object):
         if self.p_astro is not None and self.probabilities is not None:
             self.astro_probs = {cl: pr * self.p_astro for
                                 cl, pr in self.probabilities.items()}
-            self.astro_probs['p_terr'] = self.p_terr
+            self.astro_probs['Terrestrial'] = self.p_terr
         else:
             self.astro_probs = None
 
@@ -291,20 +291,18 @@ class CandidateForGraceDB(object):
         """
         ligolw_utils.write_filename(self.outdoc, fname, compress='auto')
 
-        if self.basename is None:
-            # here assume compression
-            self.basename = fname.replace('.xml.gz', '')
+        save_dir = os.path.dirname(fname)
 
         # Save EMBright properties info as json
         if self.hasmassgap is not None:
-            self.embright_file = self.basename + '_em_bright.json'
+            self.embright_file = os.path.join(save_dir, 'pycbc.em_bright.json')
             with open(self.embright_file, 'w') as embrightf:
                 json.dump({'HasMassGap': self.hasmassgap}, embrightf)
             logging.info('EM Bright file saved as %s', self.embright_file)
 
         # Save multi-cpt p astro as json
         if self.astro_probs is not None:
-            self.multipa_file = self.basename + '_p_astro.json'
+            self.multipa_file = os.path.join(save_dir, 'pycbc.p_astro.json')
             with open(self.multipa_file, 'w') as multipaf:
                 json.dump(self.astro_probs, multipaf)
             logging.info('Multi p_astro file saved as %s', self.multipa_file)
@@ -313,15 +311,14 @@ class CandidateForGraceDB(object):
 
         # Save source probabilities in a json file
         if self.probabilities is not None:
-            self.prob_file = self.basename + '_probs.json'
+            self.prob_file = os.path.join(save_dir, 'src_probs.json')
             with open(self.prob_file, 'w') as probf:
                 json.dump(self.probabilities, probf)
             logging.info('Source probabilities file saved as %s', self.prob_file)
-            return
 
         # Save p astro / p terr as json
         if self.p_astro is not None:
-            self.pastro_file = self.basename + '_pa_pterr.json'
+            self.pastro_file = os.path.join(save_dir, 'pa_pterr.json')
             with open(self.pastro_file, 'w') as pastrof:
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
@@ -474,7 +471,7 @@ class CandidateForGraceDB(object):
                 gracedb.write_log(
                     gid, 'EM Bright properties JSON file upload',
                     filename=self.embright_file,
-                    tag_name=['em_follow']
+                    tag_name=['em_bright']
                 )
                 logging.info('Uploaded em_bright properties for %s', gid)
             except Exception as exc:
@@ -488,7 +485,7 @@ class CandidateForGraceDB(object):
                 gracedb.write_log(
                     gid, 'Multi-component p_astro JSON file upload',
                     filename=self.multipa_file,
-                    tag_name=['em_follow']
+                    tag_name=['p_astro']
                 )
                 logging.info('Uploaded multi p_astro for %s', gid)
             except Exception as exc:
