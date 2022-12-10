@@ -250,8 +250,12 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                             is_asd_file=True)
         elif opt.fake_strain != 'zeroNoise':
             logging.info("Making PSD for strain")
-            strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
-                                               fake_flow, **kwargs)
+            if hasattr(opt, 'fake_strain_extra_args'):
+                strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
+                                                   fake_flow, **kwargs)
+            else:
+                strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
+                                                   fake_flow)
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
