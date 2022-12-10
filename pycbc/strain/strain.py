@@ -240,6 +240,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         fake_rate = opt.fake_strain_sample_rate
         if hasattr(opt, 'fake_strain_extra_args'):
             kwargs = opt.fake_strain_extra_args
+        else: kwargs = {}
         plen = round(opt.sample_rate / pdf) // 2 + 1
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
