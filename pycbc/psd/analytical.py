@@ -18,12 +18,14 @@
 """Provides reference PSDs from LALSimulation and pycbc.psd.analytical_space.
 
 More information about how to use these ground-based detectors' PSD can be
-found in the guide about :ref:`Analytic PSDs from lalsimulation`. For space-borne
-ones, see `pycbc.psd.analytical_space` module.
+found in the guide about :ref:`Analytic PSDs from lalsimulation`. For
+space-borne ones, see `pycbc.psd.analytical_space` module.
 """
 import numbers
 from pycbc.types import FrequencySeries
-from pycbc.psd.analytical_space import *
+from pycbc.psd.analytical_space import (
+    analytical_psd_lisa_tdi_1p5_XYZ, analytical_psd_lisa_tdi_2p0_XYZ,
+    analytical_psd_lisa_tdi_1p5_AE, analytical_psd_lisa_tdi_1p5_T)
 import lal
 import numpy
 

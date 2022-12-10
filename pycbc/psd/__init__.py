@@ -59,7 +59,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         If 'single' the PSD will be converted to float32, if not already in
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
-    **kwargs : 
+    **kwargs :
         All other keyword arguments are passed to the PSD model.
     Returns
     -------
