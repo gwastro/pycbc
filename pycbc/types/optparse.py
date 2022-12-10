@@ -222,7 +222,6 @@ class ExtraArgsOptionAction(argparse.Action):
                  dest,
                  nargs='+',
                  const=None,
-                 default=None,
                  type=None,
                  choices=None,
                  required=False,
@@ -232,8 +231,6 @@ class ExtraArgsOptionAction(argparse.Action):
             self.internal_type = type
         else:
             self.internal_type = str
-        new_default = DictWithDefaultReturn(lambda: default)
-        #new_default.default_value=default
         if nargs == 0:
             raise ValueError('nargs for append actions must be > 0; if arg '
                              'strings are not supplying the value to append, '
@@ -246,7 +243,6 @@ class ExtraArgsOptionAction(argparse.Action):
             dest=dest,
             nargs=nargs,
             const=const,
-            default=new_default,
             type=str,
             choices=choices,
             required=required,
