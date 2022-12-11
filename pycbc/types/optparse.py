@@ -232,8 +232,7 @@ class ExtraArgsOptionAction(argparse.Action):
             self.internal_type = type
         else:
             self.internal_type = str
-        new_default = DictWithDefaultReturn(lambda: default)
-        #new_default.default_value=default
+        new_default = None
         if nargs == 0:
             raise ValueError('nargs for append actions must be > 0; if arg '
                              'strings are not supplying the value to append, '
