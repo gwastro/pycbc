@@ -4,6 +4,7 @@ import pycbc
 import numpy
 import lal
 import json
+import copy
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
@@ -248,21 +249,31 @@ class CandidateForGraceDB(object):
         else:
             self.p_astro, self.p_terr = None, None
 
-        # Source probabilities estimation
+        # Source probabilities and hasmassgap estimation
         if 'mc_area_args' in kwargs:
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
             self.probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
                                                     coinc_inspiral_row.snr,
                                                     min(eff_distances),
                                                     kwargs['mc_area_args'])
+            kwargs['hasmassgap_args'] = copy.deepcopy(kwargs['mc_area_args'])
+            kwargs['hasmassgap_args']['mass_gap'] = True
+            kwargs['hasmassgap_args']['mass_bdary']['ns_max'] = 3.0
+            kwargs['hasmassgap_args']['mass_bdary']['gap_max'] = 5.0
+            self.hasmassgap = calc_probabilities(
+                                  coinc_inspiral_row.mchirp,
+                                  coinc_inspiral_row.snr,
+                                  min(eff_distances),
+                                  kwargs['hasmassgap_args'])['Mass Gap']
         else:
             self.probabilities = None
+            self.hasmassgap = None
 
         # Combine p astro and source probs
         if self.p_astro is not None and self.probabilities is not None:
             self.astro_probs = {cl: pr * self.p_astro for
                                 cl, pr in self.probabilities.items()}
-            self.astro_probs['p_terr'] = self.p_terr
+            self.astro_probs['Terrestrial'] = self.p_terr
         else:
             self.astro_probs = None
 
@@ -280,13 +291,18 @@ class CandidateForGraceDB(object):
         """
         ligolw_utils.write_filename(self.outdoc, fname, compress='auto')
 
-        if self.basename is None:
-            # here assume compression
-            self.basename = fname.replace('.xml.gz', '')
+        save_dir = os.path.dirname(fname)
+
+        # Save EMBright properties info as json
+        if self.hasmassgap is not None:
+            self.embright_file = os.path.join(save_dir, 'pycbc.em_bright.json')
+            with open(self.embright_file, 'w') as embrightf:
+                json.dump({'HasMassGap': self.hasmassgap}, embrightf)
+            logging.info('EM Bright file saved as %s', self.embright_file)
 
         # Save multi-cpt p astro as json
         if self.astro_probs is not None:
-            self.multipa_file = self.basename + '_p_astro.json'
+            self.multipa_file = os.path.join(save_dir, 'pycbc.p_astro.json')
             with open(self.multipa_file, 'w') as multipaf:
                 json.dump(self.astro_probs, multipaf)
             logging.info('Multi p_astro file saved as %s', self.multipa_file)
@@ -295,15 +311,14 @@ class CandidateForGraceDB(object):
 
         # Save source probabilities in a json file
         if self.probabilities is not None:
-            self.prob_file = self.basename + '_probs.json'
+            self.prob_file = os.path.join(save_dir, 'src_probs.json')
             with open(self.prob_file, 'w') as probf:
                 json.dump(self.probabilities, probf)
             logging.info('Source probabilities file saved as %s', self.prob_file)
-            return
 
         # Save p astro / p terr as json
         if self.p_astro is not None:
-            self.pastro_file = self.basename + '_pa_pterr.json'
+            self.pastro_file = os.path.join(save_dir, 'pa_pterr.json')
             with open(self.pastro_file, 'w') as pastrof:
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
@@ -450,13 +465,27 @@ class CandidateForGraceDB(object):
                                gid)
                 logging.error(str(exc))
 
+        # Upload em_bright properties JSON
+        if self.hasmassgap is not None:
+            try:
+                gracedb.write_log(
+                    gid, 'EM Bright properties JSON file upload',
+                    filename=self.embright_file,
+                    tag_name=['em_bright']
+                )
+                logging.info('Uploaded em_bright properties for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload em_bright properties file '
+                              'for %s', gid)
+                logging.error(str(exc))
+
         # Upload multi-cpt p_astro JSON
         if self.astro_probs is not None:
             try:
                 gracedb.write_log(
                     gid, 'Multi-component p_astro JSON file upload',
                     filename=self.multipa_file,
-                    tag_name=['em_follow']
+                    tag_name=['p_astro']
                 )
                 logging.info('Uploaded multi p_astro for %s', gid)
             except Exception as exc:
