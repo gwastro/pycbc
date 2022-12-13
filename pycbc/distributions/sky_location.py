@@ -17,8 +17,8 @@ right acension and declination.
 """
 
 
-from pycbc.distributions import angular
 import numpy
+from pycbc.distributions import angular
 from pycbc.transforms import new_z_to_euler, rotate_euler
 
 class UniformSky(angular.UniformSolidAngle):
@@ -33,7 +33,7 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
- class FisherDist():
+class FisherDist():
     """A distribution that returns a random (ra, dec) angle drawn from the Fisher
     distribution. Assume that the concentration parameter (kappa) is large
     so that we can use a Rayleigh distribution about the north pole and
