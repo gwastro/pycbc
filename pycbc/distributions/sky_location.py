@@ -66,12 +66,14 @@ class FisherDist():
 
     def rvs(self, size):
         """Randomly multiple samples from the Fisher distribution."""
-        arr = numpy.array([numpy.random.rayleigh(scale=1./numpy.sqrt(self.kappa),
-                                                 size=size),
-                           numpy.random.uniform(low=0, high=2*numpy.pi,
-                                                size=size)]).reshape((2, size)).T
+        arr = numpy.array([
+            numpy.random.rayleigh(scale=1./numpy.sqrt(self.kappa),
+                                  size=size),
+            numpy.random.uniform(low=0,
+                                 high=2*numpy.pi,
+                                 size=size)]).reshape((2, size)).T
         a, b = new_z_to_euler(self.mu)
         return rotate_euler(arr, b, ((numpy.pi)/2) - a, 0)
 
-    
+
 __all__ = ['UniformSky', 'FisherDist']
