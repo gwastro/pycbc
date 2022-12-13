@@ -2502,6 +2502,7 @@ def read_transforms_from_config(cp, section="transforms"):
         trans.append(t)
     return order_transforms(trans)
 
+
 def new_z_to_euler(new_z):
     """
     From the new Z axis expressed in (polar, azimuthal) angles of the
@@ -2509,6 +2510,7 @@ def new_z_to_euler(new_z):
     that rotate the old Z axis (0, 0) to the new Z axis.
     """
     return (lal.PI_2 + new_z[1]) % (2 * lal.PI), new_z[0]
+
 
 def rotate_euler(sph_coords, alpha, beta, gamma):
     """
