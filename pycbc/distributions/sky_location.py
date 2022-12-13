@@ -34,14 +34,14 @@ class UniformSky(angular.UniformSolidAngle):
     _default_azimuthal_angle = 'ra'
 
 class FisherDist():
-    """A distribution that returns a random (ra, dec) angle drawn from the Fisher
-    distribution. Assume that the concentration parameter (kappa) is large
-    so that we can use a Rayleigh distribution about the north pole and
-    rotate it to be centered at the (ra, dec) coordinate mu.
+    """A distribution that returns a random (ra, dec) angle drawn from the
+    Fisher distribution. Assume that the concentration parameter (kappa)
+    is large so that we can use a Rayleigh distribution about the north
+    pole and rotate it to be centered at the (ra, dec) coordinate mu.
 
     Assume kappa = 1 / sigma**2
-   
-    As in UniformSky, the polar angle varies from pi/2 to-pi/2 
+
+    As in UniformSky, the polar angle varies from pi/2 to-pi/2
     and dec varies from 0 to 2pi.
 
     References:
@@ -52,20 +52,26 @@ class FisherDist():
     _polardistcls = angular.CosAngle
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
-    
-    def __init__(self, mu, kappa, size, if_radians=True):
+
+    def __init__(self, mu, kappa, if_radians=True):
         self.kappa = kappa
         if if_radians is True:
-            self.mu= (mu[1],mu[0])
-        elif if_radians is False :
-            self.mu=numpy.array(numpy.deg2rad([mu[1],mu[0]]))
+            self.mu = (mu[1], mu[0])
+        elif if_radians is False:
+            self.mu = numpy.array(numpy.deg2rad([mu[1], mu[0]]))
         else:
-            raise ValueError("You should give either 'True' or 'False' (for whether the angles are in radians or degrees respectively) ")  
-            
-    def rvs(self,size):
-        arr=numpy.array([numpy.random.rayleigh(scale=1. / numpy.sqrt(self.kappa), size=size),
-                         numpy.random.uniform(low=0, high=2*numpy.pi, size=size)]).reshape((2, size)).T
-        a, b = new_z_to_euler(self.mu)
-        return rotate_euler(arr, b, ((numpy.pi)/2) -a, 0)
+            raise ValueError("You should give either 'True' or 'False' "
+                             "(for whether the angles are in radians or "
+                             "degrees respectively)")
 
+    def rvs(self, size):
+        """Randomly multiple samples from the Fisher distribution."""
+        arr = numpy.array([numpy.random.rayleigh(scale=1./numpy.sqrt(self.kappa),
+                                                 size=size),
+                           numpy.random.uniform(low=0, high=2*numpy.pi,
+                                                size=size)]).reshape((2, size)).T
+        a, b = new_z_to_euler(self.mu)
+        return rotate_euler(arr, b, ((numpy.pi)/2) - a, 0)
+
+    
 __all__ = ['UniformSky', 'FisherDist']
