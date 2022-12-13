@@ -2510,7 +2510,6 @@ def new_z_to_euler(new_z):
     """
     return (lal.PI_2 + new_z[1]) % (2 * lal.PI), new_z[0]
 
-
 def rotate_euler(sph_coords, alpha, beta, gamma):
     """
     Take an Nx2 array of N (theta, phi) vectors on the unit sphere
@@ -2533,8 +2532,8 @@ def rotate_euler(sph_coords, alpha, beta, gamma):
 
     # Convert to intermediate cartesian representation (N x 3)
     cart_orig = numpy.empty(shape=(len(sph_coords), 3), dtype=float)
-    cart_orig[:, 0] = c(sph_coords[:, 1]) # * s(sph_coords[:, 0])
-    cart_orig[:, 1] = s(sph_coords[:, 1]) # * s(sph_coords[:, 0])
+    cart_orig[:, 0] = c(sph_coords[:, 1])
+    cart_orig[:, 1] = s(sph_coords[:, 1])
     cart_orig[:, 0:2] *= s(sph_coords[:, 0])[:, None]
     cart_orig[:, 2] = c(sph_coords[:, 0])
 
