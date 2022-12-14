@@ -2509,7 +2509,7 @@ def new_z_to_euler(new_z):
     initial coordinate system, return the (alpha, beta) Euler angles
     that rotate the old Z axis (0, 0) to the new Z axis.
     """
-    return (lal.PI_2 + new_z[1]) % (2 * lal.PI), new_z[0]
+    return (numpy.pi/2 + new_z[1]) % (2 * numpy.pi), new_z[0]
 
 
 def rotate_euler(sph_coords, alpha, beta, gamma):
