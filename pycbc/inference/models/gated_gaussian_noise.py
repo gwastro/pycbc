@@ -667,17 +667,18 @@ class GatedGaussianNoise(BaseGatedGaussian):
             # temp fix for wfs in combined run
             # set static params 'zero_before_gate' or 'zero_after_gate' to specify portion of wf to zero out
             wf = m.get_waveforms()
-            # if params don't exist, set them to false
+            # if params don't exist, set them to False
+            # if they do exist, their value doesn't matter; strings always return True
             try:
-                m.static_params['zero_before_gate']
+                m.current_params['zero_before_gate']
             except KeyError:
-                m.static_params['zero_before_gate'] = False
+                m.current_params['zero_before_gate'] = False
             try:
-                m.static_params['zero_after_gate']
+                m.current_params['zero_after_gate']
             except KeyError:
-                m.static_params['zero_after_gate'] = False
+                m.current_params['zero_after_gate'] = False
                 
-            if m.static_params['zero_before_gate'] or m.static_params['zero_after_gate']:
+            if m.current_params['zero_before_gate'] or m.current_params['zero_after_gate']:
                 gate_times = m.get_gate_times()
                 for d in wf:
                     ts = wf[d]
@@ -913,21 +914,55 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # Generate the waveforms for each submodel
         wfs = []
         for m in models + [self]:
-            wfs.append(m.get_waveforms())
+            # temp fix for wfs in combined run
+            # set static params 'zero_before_gate' or 'zero_after_gate' to specify portion of wf to zero out
+            wf = m.get_waveforms()
+            # if params don't exist, set them to False
+            # if they do exist, their value doesn't matter; strings always return True
+            try:
+                m.current_params['zero_before_gate']
+            except KeyError:
+                m.current_params['zero_before_gate'] = False
+            try:
+                m.current_params['zero_after_gate']
+            except KeyError:
+                m.current_params['zero_after_gate'] = False
+                
+            if m.current_params['zero_before_gate'] or m.current_params['zero_after_gate']:
+                gate_times = m.get_gate_times()
+                for d in wf:
+                    tsp, tsc = wf[d]
+                    start = gate_times[d][0]
+                    # plus and cross pols probably have the same gpsidx, but get both just to be safe
+                    gpsidxp = (float(start) - float(tsp.start_time))//tsp.delta_t
+                    gpsidxc = (float(start) - float(tsc.start_time))//tsc.delta_t
+                    tsp = tsp.to_timeseries()
+                    tsc = tsc.to_timeseries()
+                    # zero out inspiral wf after gate
+                    if m.current_params['zero_after_gate']:
+                        tsp[int(gpsidxp):] *= 0
+                        tsc[int(gpsidxc):] *= 0
+                    # zero out ringdown wf before gate
+                    if m.current_params['zero_before_gate']:
+                        tsp[:int(gpsidxp)] *= 0
+                        tsc[:int(gpsidxc)] *= 0
+                    tsp = tsp.to_frequencyseries()
+                    tsc = tsc.to_frequencyseries()
+                    wf[d] = (tsp, tsc)
+            wfs.append(wf)
 
         # combine into a single waveform
         combine = {}
         for det in self.data:
-            # get max waveform length across all pols
-            mlen = max([len(x[det][i]) for x in wfs for i in range(len(x[det]))])
-            for wf in wfs:
-                # resize each polarization to max length
-                hp, hc = wf[det]
-                hp.resize(mlen)
-                hc.resize(mlen)
-            # add the waveforms in each detector
+            # get max waveform length
+            mlenp = max([len(x[det][0]) for x in wfs])
+            mlenc = max([len(x[det][1]) for x in wfs])
+            mlen = max([mlenp, mlenc])
+            # resize plus and cross
+            [x[det][0].resize(mlen) for x in wfs]
+            [x[det][1].resize(mlen) for x in wfs]
+            # combine waveforms
             combine[det] = (sum([x[det][0] for x in wfs]), sum([x[det][1] for x in wfs]))
 
-        # calculate likelihood for combined waveform
         self._current_wfs = combine
         return self._loglikelihood()
