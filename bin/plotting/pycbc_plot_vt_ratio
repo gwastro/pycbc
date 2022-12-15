@@ -18,11 +18,11 @@ from pycbc.results import save_fig_with_metadata
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--vt-file-one', required=True,
-                    help='HDF file containing VT curves, '
-                         'first set of data for comparison')
+                    help='HDF file containing VT curves, data for '
+                         'the numerator (top) of the ratio')
 parser.add_argument('--vt-file-two', required=True,
-                    help='HDF file containing VT curves, '
-                         'second set of data for comparison')
+                    help='HDF file containing VT curves, data for '
+                         'the denominator (bottom) of the ratio')
 parser.add_argument('--desc-one',  required=True,
                     help='Descriptor tag for first set of data '
                          '(short, for use in subscript)')
@@ -42,17 +42,17 @@ parser.add_argument('--log-y', action='store_true',
 args = parser.parse_args()
 
 # Load in the two datasets
-ffirst_set = h5py.File(args.vt_file_one, 'r')
-fsecond_set = h5py.File(args.vt_file_two, 'r')
+ftop = h5py.File(args.vt_file_one, 'r')
+fbottom = h5py.File(args.vt_file_two, 'r')
 
 # Find the index closest to the given IFAR value
-idxs = [np.argmin(np.abs(ffirst_set['xvals'][:] - ifv)) for ifv in args.ifars]
+idxs = [np.argmin(np.abs(ftop['xvals'][:] - ifv)) for ifv in args.ifars]
 
-keys = ffirst_set['data'].keys()
+keys = ftop['data'].keys()
 # sanitise the input so that the files have the same binning parameter and bins
-if keys != fsecond_set['data'].keys():
+if keys != fbottom['data'].keys():
     parser.error('keys do not match for the given input files - '
-                 '{} vs {}'.format(keys, fsecond_set['data'].keys()))
+                 '{} vs {}'.format(keys, fbottom['data'].keys()))
 
 # make the plot pretty
 plt.rc('axes.formatter', limits=[-3, 4])
@@ -63,10 +63,10 @@ ax_mi = fig_mi.gca()
 ax_mi.grid(True, zorder=1)
 
 # read in labels for the different plotting points
-labels = ['$ ' + label.split('\\in')[-1] for label in ffirst_set['data'].keys()]
+labels = ['$ ' + label.split('\\in')[-1] for label in ftop['data'].keys()]
 
 # read in the splitting parameter name from the first data set
-x_param = r'$' + tuple(ffirst_set['data'].keys())[0].split('\\in')[0].strip('$').strip() + r'$'
+x_param = r'$' + tuple(ftop['data'].keys())[0].split('\\in')[0].strip('$').strip() + r'$'
 
 # read in the positions from the labels
 xpos = np.array([float(l.split('[')[1].split(',')[0]) for l in labels])
@@ -90,20 +90,20 @@ colors = ['#7b85d4', '#f37738', '#83c995', '#d7369e', '#c4c9d8', '#859795']
 
 # loop through each IFAR and plot the VT ratio with error bars
 for count, idv in enumerate(idxs):
-    data1 = np.array([ffirst_set['data'][key][idv] for key in keys])
-    data2 = np.array([fsecond_set['data'][key][idv] for key in keys])
-
-    errhigh1 = np.array([ffirst_set['errorhigh'][key][idv] for key in keys])
-    errlow1 = np.array([ffirst_set['errorlow'][key][idv] for key in keys])
-
-    errhigh2 = np.array([fsecond_set['errorhigh'][key][idv] for key in keys])
-    errlow2 = np.array([fsecond_set['errorlow'][key][idv] for key in keys])
+    data1 = np.array([ftop['data'][key][idv] for key in keys])
+    errhigh1 = np.array([ftop['errorhigh'][key][idv] for key in keys])
+    errlow1 = np.array([ftop['errorlow'][key][idv] for key in keys])
+    
+    data2 = np.array([fbottom['data'][key][idv] for key in keys])
+    errhigh2 = np.array([fbottom['errorhigh'][key][idv] for key in keys])
+    errlow2 = np.array([fbottom['errorlow'][key][idv] for key in keys])
 
     ys = np.divide(data1, data2)
     yerr_errlow = np.multiply(np.sqrt(np.divide(errlow1, data1)**2 +
                 np.divide(errlow2, data2)**2), ys)
     yerr_errhigh = np.multiply(np.sqrt(np.divide(errhigh1, data1)**2 +
                 np.divide(errhigh2, data2)**2), ys)
+
     if args.log_x:
         xvals = np.exp(np.log(xpos) +
                        xpos_add_dx * (count -
@@ -113,7 +113,7 @@ for count, idv in enumerate(idxs):
                                       float(len(args.ifars) - 1) / 2.)
     ax_mi.errorbar(xvals, ys,
         yerr=[yerr_errlow, yerr_errhigh], fmt='o', markersize=7, linewidth=5,
-        label='IFAR = %d yr' % ffirst_set['xvals'][idv], capsize=5,
+        label='IFAR = %d yr' % ftop['xvals'][idv], capsize=5,
         capthick=2, mec='k', color=colors[count % len(colors)])
 
 if args.log_x:
@@ -132,9 +132,10 @@ ax_mi.legend(bbox_to_anchor=(0.5, 1.01), ncol=len(args.ifars),
              loc='lower center')
 ax_mi.get_legend().get_title().set_fontsize('14')
 ax_mi.get_legend().get_frame().set_alpha(0.7)
-ax_mi.set_xlabel(x_param)
-ax_mi.set_ylabel(r'$\frac{VT(\mathrm{' + args.desc_one +'})}{VT(\mathrm{' +
-                 args.desc_two +'})}$')
+ax_mi.set_xlabel(x_param, size='large')
+ax_mi.set_ylabel(r'$\frac{VT(\mathrm{' + args.desc_one +'})}\
+                         {VT(\mathrm{' + args.desc_two +'})}$', 
+                 size='large')
 plt.tight_layout()
 
 title = 'VT sensitivity comparison between {} and {}'.format(
