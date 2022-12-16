@@ -616,23 +616,19 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         """ Cluster the internal events over the named column
         Parameters
         ----------------
-        self
-            
-        tcolumn 
-            
-        column 
-            
-        window_size 
-            The size of the window
-        slide 
+        tcolumn
+            Indicates which column contains the time.
+        column
+            The named column to cluster.
+        window_size
+            The size of the window.
+        slide
             Default is 0.
-            
         """
+        slide_indices = (self.template_event_dict['network']['slide_id'] == slide)
+        cvec = self.template_event_dict['network'][column][slide_indices]
+        tvec = self.template_event_dict['network'][tcolumn][slide_indices]
         if not window_size == 0:
-            slide_indices = (
-                self.template_event_dict['network']['slide_id'] == slide)
-            cvec = self.template_event_dict['network'][column][slide_indices]
-            tvec = self.template_event_dict['network'][tcolumn][slide_indices]
             # cluster events over the window
             indices = findchirp_cluster_over_window(tvec, cvec, window_size)
             # if a slide_indices = 0
@@ -641,12 +637,12 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                         numpy.flatnonzero(~slide_indices),
                         numpy.flatnonzero(slide_indices)[indices]))
                 indices.sort()
-            # 
+            # get value of key for where you have indicies 
             for key in self.template_event_dict:
                 self.template_event_dict[key] = \
                     self.template_event_dict[key][indices]
-        # FIXME: else...?
-            # Previously, if window_size == 0: indices = numpy.arange(len(tvec))
+        else:
+            indices = numpy.arange(len(tvec))
 
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """
