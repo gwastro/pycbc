@@ -375,25 +375,6 @@ class LiveEventManager(object):
         gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
         self.gracedb = GraceDb(args.gracedb_server, **gdbargs) if args.gracedb_server else GraceDb(**gdbargs)
 
-    def check_gdb(self, max_tries = 3):
-        """
-        Used to check whether GraceDb is responding. 
-        The first ping after session creation takes longer.
-        """
-        if self.gracedb:
-            for i in range(max_tries):
-                response = self.gracedb.ping()
-                logging.info('GraceDB ping response: %s %s time elapsed: %s',
-                        response.status, response.reason, response.elapsed.total_seconds())
-                if response.status == 200:
-                    return True
-                # If pinging again, ensure we wait at least 0.1 seconds so we don't get rate limited. 
-                time.sleep(.1)
-        else:
-            logging.info('Cannot check GraceDB object, has it been created yet?')
-        logging.info('Checking GraceDB failed')
-        return False
-
     def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos, upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
         if upload_checks:
             gid = event.upload(
@@ -470,7 +451,7 @@ class LiveEventManager(object):
                                  ppdets(followup_ifos))
 
         ifar = coinc_results['foreground/ifar']
-        upload_checks = self.enable_gracedb_upload and self.ifar_upload_threshold < ifar and self.check_gdb()
+        upload_checks = self.enable_gracedb_upload and self.ifar_upload_threshold < ifar
         optimize_snr_checks = self.run_snr_optimization and self.ifar_upload_threshold < ifar
         
         # Keep track of the last few coincs uploaded in order to
@@ -556,7 +537,7 @@ class LiveEventManager(object):
                     event.merger_time
                 )
 
-            upload_checks = args.enable_single_detector_upload and self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs) and self.check_gdb()
+            upload_checks = args.enable_single_detector_upload and self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs)
             optimize_snr_checks = self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs) and self.run_snr_optimization
             if not upload_checks:
                 gid = None
@@ -896,7 +877,9 @@ if args.size_override:
 # make sure we can talk to GraceDB
 if evnt.rank == 0 and args.enable_gracedb_upload:
     evnt.create_gdb()
-    evnt.check_gdb()
+    response = evnt.gracedb.ping()
+    logging.info('GraceDB ping response: %s %s time elapsed: %s',
+            response.status, response.reason, response.elapsed.total_seconds())
 
 # I'm not the root, so do some actual filtering.
 with ctx:
