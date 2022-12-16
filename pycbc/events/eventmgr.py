@@ -625,7 +625,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         slide
             Default is 0.
         """
-        slide_indices = (self.template_event_dict['network']['slide_id'] == slide)
+        slide_indices = (
+            self.template_event_dict['network']['slide_id'] == slide)
         cvec = self.template_event_dict['network'][column][slide_indices]
         tvec = self.template_event_dict['network'][tcolumn][slide_indices]
         if not window_size == 0:
@@ -637,7 +638,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                         numpy.flatnonzero(~slide_indices),
                         numpy.flatnonzero(slide_indices)[indices]))
                 indices.sort()
-            # get value of key for where you have indicies 
+            # get value of key for where you have indicies
             for key in self.template_event_dict:
                 self.template_event_dict[key] = \
                     self.template_event_dict[key][indices]
