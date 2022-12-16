@@ -80,7 +80,7 @@ def get_coinc_triggers(snrs, idx, t_delay_idx):
     coincs: dict
         Dictionary of coincident trigger SNRs in each detector
     """
-    # loops through snrs 
+    # loops through snrs
     # %len(snrs[ifo]) was included as part of a wrap-around solution
     coincs = {
         ifo: snrs[ifo][(idx + t_delay_idx[ifo]) % len(snrs[ifo])]
