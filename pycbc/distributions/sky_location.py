@@ -60,7 +60,7 @@ class FisherDist():
         if radians:
             self.mu = (mu[1], mu[0])
         else:
-            self.mu=np.array(np.deg2rad([mu[1],mu[0]]))
+            self.mu=numpy.array(numpy.deg2rad([mu[1],mu[0]]))
 
     def rvs(self, size):
         """Randomly multiple samples from the Fisher distribution."""
