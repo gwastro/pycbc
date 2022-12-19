@@ -41,8 +41,10 @@ class FisherDist():
 
     Assume kappa = 1 / sigma**2
 
-    As in UniformSky, the polar angle varies from pi/2 to-pi/2
-    and dec varies from 0 to 2pi.
+    As in UniformSky, the declination (dec) varies from pi/2 to-pi/2
+    and right ascension (ra) varies from 0 to 2pi. And the angles
+    should be provided in (ra,dec) format in radians (radians=True),
+    rather than factors of pi, or in degrees (radians=False).
 
     References:
       * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
@@ -53,16 +55,12 @@ class FisherDist():
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-    def __init__(self, mu, kappa, if_radians=True):
+    def __init__(self, mu, kappa, radians=True):
         self.kappa = kappa
-        if if_radians is True:
+        if radians:
             self.mu = (mu[1], mu[0])
-        elif if_radians is False:
-            self.mu = numpy.array(numpy.deg2rad([mu[1], mu[0]]))
         else:
-            raise ValueError("You should give either 'True' or 'False' "
-                             "(for whether the angles are in radians or "
-                             "degrees respectively)")
+            self.mu=np.array(np.deg2rad([mu[1],mu[0]]))
 
     def rvs(self, size):
         """Randomly multiple samples from the Fisher distribution."""
