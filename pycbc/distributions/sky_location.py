@@ -33,7 +33,7 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-class FisherDist():
+class FisherDist(angular.UniformSolidAngle):
     """A distribution that returns a random (ra, dec) angle drawn from the
     Fisher distribution. Assume that the concentration parameter (kappa)
     is large so that we can use a Rayleigh distribution about the north
@@ -60,7 +60,7 @@ class FisherDist():
         if radians:
             self.mu = (mu[1], mu[0])
         else:
-            self.mu=numpy.array(numpy.deg2rad([mu[1],mu[0]]))
+            self.mu = numpy.array(numpy.deg2rad([mu[1], mu[0]]))
 
     def rvs(self, size):
         """Randomly multiple samples from the Fisher distribution."""
