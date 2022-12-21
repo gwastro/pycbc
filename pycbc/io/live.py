@@ -61,7 +61,6 @@ class CandidateForGraceDB(object):
             Dictionary providing arguments to be used in source probability
             estimation with `pycbc/mchirp_area.py`.
         """
-        self.template_id = coinc_results[f'foreground/{ifos[0]}/template_id']
         self.coinc_results = coinc_results
         self.psds = kwargs['psds']
         self.basename = None
