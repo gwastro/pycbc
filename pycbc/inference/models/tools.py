@@ -385,12 +385,12 @@ class DistMarg():
         ifos = list(snrs.keys())
         if hasattr(self, 'keep_ifos'):
             ifos = self.keep_ifos
-        ikey  = ''.join(ifos)
-        
+        ikey = ''.join(ifos)
+
         # No good SNR peaks, go with prior draw
         if len(ifos) == 0:
             return
- 
+
         def make_init():
             logging.info('pregenerating sky pointings')
             size = int(1e6)
@@ -421,15 +421,15 @@ class DistMarg():
 
             if len(ifos) == 1:
                 dmap[()] = list(zip(ra, dec, dtc))
-            return ifos, dmap, d, tcmin, tcmax
-        
+            return ifos, dmap, tcmin, tcmax
+
         if not hasattr(self, 'tinfo'):
             self.tinfo = {}
-        
-        if ikey not in self.tinfo:  
+
+        if ikey not in self.tinfo:
             self.tinfo[ikey] = make_init()
 
-        ifos, dmap, d, tcmin, tcmax = self.tinfo[ikey]
+        ifos, dmap, tcmin, tcmax = self.tinfo[ikey]
 
         # draw times from each snr time series
         # Is it worth doing this if some detector has low SNR?
@@ -490,7 +490,7 @@ class DistMarg():
 
         # fill back to fixed size with repeat samples
         # sample order is random, so this should be OK statistically
-        
+
         ra = numpy.resize(numpy.array(ra), self.vsamples)
         dec = numpy.resize(numpy.array(dec), self.vsamples)
         dtc = numpy.resize(numpy.array(dtc), self.vsamples)
@@ -629,8 +629,9 @@ class DistMarg():
             psnrs.append(psnr)
 
         if log:
-            logging.info("Ifos used for SNR based draws: %s, snrs: %s, peak_snr_threshold=%s",
-                     keep_ifos, psnrs, peak_snr_threshold)
+            logging.info("Ifos used for SNR based draws:"
+                         " %s, snrs: %s, peak_snr_threshold=%s",
+                         keep_ifos, psnrs, peak_snr_threshold)
 
         self.keep_ifos = keep_ifos
         return keep_ifos
