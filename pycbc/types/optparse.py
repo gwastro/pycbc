@@ -215,7 +215,7 @@ class MultiDetOptionAppendAction(MultiDetOptionAction):
                 raise ValueError(err_msg)
         setattr(namespace, self.dest, items)
 
-class ExtraArgsOptionAction(argparse.Action):
+class DictOptionAction(argparse.Action):
     # Initialise the same as the standard 'append' action
     def __init__(self,
                  option_strings,
@@ -240,7 +240,7 @@ class ExtraArgsOptionAction(argparse.Action):
         if const is not None and nargs != argparse.OPTIONAL:
             raise ValueError('nargs must be %r to supply const'
                              % argparse.OPTIONAL)
-        super(ExtraArgsOptionAction, self).__init__(
+        super(DictOptionAction, self).__init__(
             option_strings=option_strings,
             dest=dest,
             nargs=nargs,
@@ -257,7 +257,7 @@ class ExtraArgsOptionAction(argparse.Action):
         err_msg = "Issue with option: %s \n" %(self.dest,)
         err_msg += "Received value: %s \n" %(' '.join(values),)
         if getattr(namespace, self.dest, None) is None:
-            setattr(namespace, self.dest, DictWithDefaultReturn())
+            setattr(namespace, self.dest, {})
         items = getattr(namespace, self.dest)
         items = copy.copy(items)
         for value in values:

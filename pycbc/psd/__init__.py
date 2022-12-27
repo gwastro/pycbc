@@ -28,7 +28,7 @@ from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 
 def from_cli(opt, length, delta_f, low_frequency_cutoff,
-             strain=None, dyn_range_factor=1, precision=None, **kwargs):
+             strain=None, dyn_range_factor=1, precision=None):
     """Parses the CLI options related to the noise PSD and returns a
     FrequencySeries with the corresponding PSD. If necessary, the PSD is
     linearly interpolated to achieve the resolution specified in the CLI.
@@ -59,8 +59,6 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         If 'single' the PSD will be converted to float32, if not already in
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
-    **kwargs :
-        All other keyword arguments are passed to the PSD model.
     Returns
     -------
     psd : FrequencySeries
