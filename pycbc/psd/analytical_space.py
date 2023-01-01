@@ -325,8 +325,23 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
     -----
         Pease see Eq.(36) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    omega_len = 2*np.pi*f * len_arm/constants.c.value
-    fp_sq_approx = 3/20/(1+0.6*omega_len**2)
+    from os import getcwd, path
+    from urllib import request
+    from scipy.interpolate import interp1d
+
+    if len_arm != 2.5e9:
+        raise Exception("Currently only support 'len_arm=2.5e9'.")
+    cwd = getcwd()
+    if path.exists(cwd+"/AvFXp2_Raw.npy") == False:
+        url = "https://zenodo.org/record/7497853/files/AvFXp2_Raw.npy"
+        request.urlretrieve(url, cwd+"/AvFXp2_Raw.npy")
+    freqs, fp_sq = np.load(cwd+"/AvFXp2_Raw.npy")
+    # Padding the end.
+    freqs = np.append(freqs, 2)
+    fp_sq = np.append(fp_sq, 0.0012712348970728724)
+    fp_sq_interp = interp1d(freqs, fp_sq, kind='linear',
+                            fill_value="extrapolate")
+    fp_sq_approx = fp_sq_interp(f)/16
 
     return fp_sq_approx
 
@@ -379,14 +394,18 @@ def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
     return response_tdi_2p0
 
 
-def semi_sensitivity_curve_lisa(f, len_arm=2.5e9,
-        acc_noise_level=3e-15, oms_noise_level=15e-12):
-    r""" The semi-analytical LISA's sensitivity curve,
+def sensitivity_curve_lisa_semi_analytical(length, delta_f, low_freq_cutoff,
+        len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12):
+    r""" The semi-analytical LISA's sensitivity curve (6-links),
     averaged over sky and polarization angle.
     Parameters
     ----------
-    f : float or numpy.array
-        The frequency or frequency range, in the unit of "Hz".
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of LISA, in the unit of "m".
     acc_noise_level : float
@@ -395,40 +414,117 @@ def semi_sensitivity_curve_lisa(f, len_arm=2.5e9,
         The level of OMS noise.
     Returns
     -------
-    sense_curve : float or numpy.array
+    fseries : FrequencySeries
         The sky and polarization angle averaged semi-analytical
-        LISA's sensitivity curve.
+        LISA's sensitivity curve (6-links).
     Notes
     -----
         Pease see Eq.(42) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    psd = analytical_psd_lisa_tdi_2p0_XYZ(
-               f, len_arm, acc_noise_level, oms_noise_level)
-    response = averaged_response_lisa_tdi_2p0(f, len_arm)
-    sense_curve = psd / response
+    sense_curve = []
+    len_arm = np.float64(len_arm)
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
+    fp_sq = averaged_lisa_fplus_sq_approx(fr, len_arm)
+    for i in range(len(fr)):
+        [s_acc_nu, s_oms_nu] = lisa_psd_components(
+                                fr[i], acc_noise_level, oms_noise_level)
+        omega_len = 2*np.pi*fr[i] * len_arm/constants.c.value
+        sense_curve.append((s_oms_nu + s_acc_nu*(3+np.cos(2*omega_len))) /\
+                            (omega_len**2*fp_sq[i]))
+    fseries = from_numpy_arrays(fr, np.array(sense_curve)/2,
+                    length, delta_f, low_freq_cutoff)
 
-    return sense_curve
+    return fseries
 
 
-def sensitivity_curve_lisa_SciRD(f):
+def sensitivity_curve_lisa_SciRD(length, delta_f, low_freq_cutoff):
     r""" The analytical LISA's sensitivity curve in SciRD,
     averaged over sky and polarization angle.
     Parameters
     ----------
-    f : float or numpy.array
-        The frequency or frequency range, in the unit of "Hz".
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
     Returns
     -------
-    sense_curve : float or numpy.array
+    fseries : FrequencySeries
         The sky and polarization angle averaged analytical
         LISA's sensitivity curve in SciRD.
     Notes
     -----
         Pease see Eq.(114) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    s_I = 5.76e-48 * (1+(4e-4/f)**2)
-    s_II = 3.6e-41
-    R = 1 + (f/2.5e-2)**2
-    sense_curve = 10/3 * (s_I/(2*np.pi*f)**4+s_II) * R
+    sense_curve = []
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
+    for f in fr:
+        s_I = 5.76e-48 * (1+(4e-4/f)**2)
+        s_II = 3.6e-41
+        R = 1 + (f/2.5e-2)**2
+        sense_curve.append(10/3 * (s_I/(2*np.pi*f)**4+s_II) * R)
+    fseries = from_numpy_arrays(fr, sense_curve,
+                    length, delta_f, low_freq_cutoff)
 
-    return sense_curve
+    return fseries
+
+def sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
+        len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12,
+        base_model="semi", duration=1.0):
+    r""" The LISA's sensitivity curve with Galactic confusion noise,
+    averaged over sky and polarization angle.
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of LISA, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+    base_model : string
+        The base model of sensitivity curve, chosen from "semi" or "SciRD".
+    duration : float
+        The duration of observation, between 0 and 10, in the unit of years.
+    Returns
+    -------
+    fseries : FrequencySeries
+        The sky and polarization angle averaged semi-analytical
+        LISA's sensitivity curve with Galactic confusion noise.
+    Notes
+    -----
+        Pease see Eq.(85-86) in <LISA-LCST-SGS-TN-001> for more details.
+    """
+    if base_model == "semi":
+        base_curve = sensitivity_curve_lisa_semi_analytical(
+            length, delta_f, low_freq_cutoff,
+            len_arm, acc_noise_level, oms_noise_level)
+    elif base_curve == "SciRD":
+        base_curve = sensitivity_curve_lisa_SciRD(
+            length, delta_f, low_freq_cutoff)
+    else:
+        raise Exception("Must choose from 'semi' or 'SciRD'.")
+    if 0 > duration or duration > 10:
+        raise Exception("Must between 0 and 10.")
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
+    sh_confusion = []
+    f1 = 10**(-0.25*np.log10(duration)-2.7)
+    fk = 10**(-0.27*np.log10(duration)-2.47)
+    for f in fr:
+        sh_confusion.append(0.5*1.14e-44*f**(-7/3)*np.exp(-(f/f1)**1.8) *\
+                (1.0+np.tanh((fk-f)/(0.31e-3))))
+    fseries_confusion = from_numpy_arrays(fr, np.array(sh_confusion),
+                length, delta_f, low_freq_cutoff)
+    fseries = from_numpy_arrays(base_curve.sample_frequencies,
+                base_curve+fseries_confusion,
+                length, delta_f, low_freq_cutoff)
+
+    return fseries
