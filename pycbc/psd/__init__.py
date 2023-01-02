@@ -84,7 +84,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         if opt.psd_model:
             if hasattr(opt, 'fake_strain_extra_args'):
                 psd = from_string(opt.psd_model, length, delta_f, f_low,
-                                opt.fake_strain_extra_args)
+                                  opt.fake_strain_extra_args)
             else:
                 psd = from_string(opt.psd_model, length, delta_f, f_low)
         elif opt.psd_file or opt.asd_file:

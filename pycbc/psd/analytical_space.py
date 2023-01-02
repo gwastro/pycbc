@@ -205,7 +205,7 @@ def analytical_csd_lisa_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
         The CSD between LISA's TDI-1.5 channel X and Y.
     Notes
     -----
-        Pease see Eq.(56) in <LISA-LCST-SGS-MAN-001> for more details.
+        Pease see Eq.(56) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
     len_arm = np.float64(len_arm)
     acc_noise_level = np.float64(acc_noise_level)
@@ -246,7 +246,7 @@ def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         The PSD of LISA's TDI-1.5 channel A and E.
     Notes
     -----
-        Pease see Eq.(58) in <LISA-LCST-SGS-MAN-001> for more details.
+        Pease see Eq.(58) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
     len_arm = np.float64(len_arm)
     acc_noise_level = np.float64(acc_noise_level)
@@ -289,7 +289,7 @@ def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         The PSD of LISA's TDI-1.5 channel T.
     Notes
     -----
-        Pease see Eq.(59) in <LISA-LCST-SGS-MAN-001> for more details.
+        Pease see Eq.(59) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
     len_arm = np.float64(len_arm)
     acc_noise_level = np.float64(acc_noise_level)
@@ -419,7 +419,7 @@ def sensitivity_curve_lisa_semi_analytical(length, delta_f, low_freq_cutoff,
         LISA's sensitivity curve (6-links).
     Notes
     -----
-        Pease see Eq.(42) in <LISA-LCST-SGS-TN-001> for more details.
+        Pease see Eq.(42-43) in <LISA-LCST-SGS-TN-001> for more details.
     """
     sense_curve = []
     len_arm = np.float64(len_arm)
@@ -497,7 +497,7 @@ def sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
     Returns
     -------
     fseries : FrequencySeries
-        The sky and polarization angle averaged semi-analytical
+        The sky and polarization angle averaged
         LISA's sensitivity curve with Galactic confusion noise.
     Notes
     -----
@@ -525,6 +525,57 @@ def sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
                 length, delta_f, low_freq_cutoff)
     fseries = from_numpy_arrays(base_curve.sample_frequencies,
                 base_curve+fseries_confusion,
+                length, delta_f, low_freq_cutoff)
+
+    return fseries
+
+def sh_transformed_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
+        len_arm=2.5e9, acc_noise_level=3e-15, oms_noise_level=15e-12,
+        base_model="semi", duration=1.0, tdi="1.5"):
+    r""" The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA
+    with Galactic confusion noise, transformed from LISA sensitivity curve.
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of LISA, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+    base_model : string
+        The base model of sensitivity curve, chosen from "semi" or "SciRD".
+    duration : float
+        The duration of observation, between 0 and 10, in the unit of years.
+    tdi : string
+        The version of TDI, currently only for 1.5 or 2.0.
+    Returns
+    -------
+    fseries : FrequencySeries
+        The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA with Galactic confusion
+        noise, transformed from LISA sensitivity curve.
+    Notes
+    -----
+        Pease see Eq.(7,41-43) in <LISA-LCST-SGS-TN-001> for more details.
+    """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
+    if tdi == "1.5":
+        response = averaged_response_lisa_tdi_1p5(fr, len_arm)
+    elif tdi == "2.0":
+        response = averaged_response_lisa_tdi_2p0(fr, len_arm)
+    else:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    fseries_response = from_numpy_arrays(fr, np.array(response),
+            length, delta_f, low_freq_cutoff)
+    sh = sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
+            len_arm, acc_noise_level, oms_noise_level, base_model, duration)
+    psd = 2*sh.data * fseries_response.data
+    fseries = from_numpy_arrays(sh.sample_frequencies, psd,
                 length, delta_f, low_freq_cutoff)
 
     return fseries

@@ -25,7 +25,8 @@ import numbers
 from pycbc.types import FrequencySeries
 from pycbc.psd.analytical_space import (
     analytical_psd_lisa_tdi_1p5_XYZ, analytical_psd_lisa_tdi_2p0_XYZ,
-    analytical_psd_lisa_tdi_1p5_AE, analytical_psd_lisa_tdi_1p5_T)
+    analytical_psd_lisa_tdi_1p5_AE, analytical_psd_lisa_tdi_1p5_T,
+    sh_transformed_psd_lisa_tdi_XYZ)
 import lal
 import numpy
 
@@ -171,4 +172,5 @@ pycbc_analytical_psds = {
     'analytical_psd_lisa_tdi_2p0_XYZ' : analytical_psd_lisa_tdi_2p0_XYZ,
     'analytical_psd_lisa_tdi_1p5_AE' : analytical_psd_lisa_tdi_1p5_AE,
     'analytical_psd_lisa_tdi_1p5_T' : analytical_psd_lisa_tdi_1p5_T,
+    'sh_transformed_psd_lisa_tdi_XYZ' : sh_transformed_psd_lisa_tdi_XYZ,
 }
