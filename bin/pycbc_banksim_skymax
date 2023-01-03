@@ -39,13 +39,7 @@ from math import ceil, log
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain, pycbc.version
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 from pycbc.waveform import TemplateBank
-
-def update_progress(progress):
-    bar = '#' * (int(progress*100)/2) + ' ' * (50-int(progress*100)/2)
-    print('[{0}] {1:.2%}\r\r'.format(bar, progress), end=' ')
-    if progress == 1:
-        print(('Done' + ' ' * 70))
-    sys.stdout.flush()
+from tqdm import tqdm
 
 ## Remove the need for these functions ########################################
     
@@ -77,7 +71,7 @@ def make_padded_frequency_series(vec, filter_N=None, delta_f=None):
         N = 2 ** power
     else:
         N = filter_N
-    n = N / 2 + 1
+    n = N // 2 + 1
 
     if isinstance(vec, FrequencySeries):
         vectilde = FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
@@ -120,6 +114,9 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
                  wf_params, start_frequency, sample_rate, length,
                  filter_rate, sky_max_template=False):
 
+    if type(approximant) is not str:
+        approximant = approximant.decode('utf-8')
+
     delta_f = filter_rate / length
     if approximant in fd_approximants():
         hp, hc = get_fd_waveform(wf_params, approximant=approximant,
@@ -148,7 +145,7 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
             make_padded_frequency_series(hc, filter_N, delta_f=delta_f)
 
 aprs = sorted(list(set(td_approximants() + fd_approximants())))
-aprs += ['FROM_TEMPLATE_BANK']
+# aprs += ['FROM_TEMPLATE_BANK']
 
 #File output Settings
 parser = ArgumentParser(description=__doc__)
@@ -318,7 +315,7 @@ logging.info("  %d signal waveforms", len(signal_table))
 logging.info("Matches will be written to %s", options.out_file)
 
 filter_N = int(options.filter_signal_length * options.filter_sample_rate)
-filter_n = filter_N / 2 + 1
+filter_n = filter_N // 2 + 1
 filter_delta_f = 1.0 / float(options.filter_signal_length)
 
 logging.info("Reading and Interpolating PSD")
@@ -333,11 +330,12 @@ with ctx:
     logging.info("Pregenerating Signals")
 
     signals = []
+    # Used for getting mchirp/tau0 later
     sig_m1 = []
     sig_m2 = []
+    prog = tqdm(total=len(signal_table), disable=(not options.verbose))    
     for index, signal_params in enumerate(signal_table):
-        if options.verbose:
-            update_progress(float(index+1)/len(signal_table))
+        prog.update(1)
         if not options.use_sky_location:
             signal_params.latitude = 0.
             signal_params.longitude = 0.
@@ -356,6 +354,7 @@ with ctx:
         signals.append((stilde, s_norm, [], signal_params))
         sig_m1.append(signal_params.mass1)
         sig_m2.append(signal_params.mass2)
+    prog.close()
     sig_m1 = array(sig_m1)
     sig_m2 = array(sig_m2)
     sig_tau0, _ = mass1_mass2_to_tau0_tau3(sig_m1, sig_m2,
@@ -377,10 +376,9 @@ with ctx:
     logging.info("Calculating Overlaps")
 
     flow_warned = False
+    prog = tqdm(total=len(template_table), disable=(not options.verbose))    
     for index, template_params in enumerate(template_table):
-        if options.verbose:
-            update_progress(float(index+1)/len(template_table))
-
+        prog.update(1)
         f_lower = template_params.f_lower
         # If not set fall back on filter low-freq cutoff
         if f_lower < 0.000001:
@@ -463,7 +461,7 @@ with ctx:
             i = argmax(det_stat.data)
             o = det_stat[i]
             matches.append(o)
-
+    prog.close()
 logging.info("Determining maximum overlaps and outputting results")
 
 # Find the maximum overlap in the bank and output to a file
