@@ -312,6 +312,7 @@ class LiveEventManager(object):
             hdfp['template_duration'] = \
                 self.bank.table[template_id].template_duration
             hdfp['ifar'] = results['foreground/ifar']
+            hdfp['p_terr'] = results['p_terr']
             if gid is not None:
                 hdfp['gid'] = gid
 
@@ -438,6 +439,9 @@ class LiveEventManager(object):
                 and self.ifar_upload_threshold < ifar:
             logging.info('Optimizing SNR for coinc above threshold ..')
             live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+            # Tell snr optimized event about p_terr
+            if hasattr(event, 'p_terr'):
+                coinc_results['p_terr'] = event.p_terr
             self.setup_optimize_snr(
                 coinc_results,
                 live_ifos,
