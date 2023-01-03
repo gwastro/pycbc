@@ -418,7 +418,8 @@ def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
 
 
 def sensitivity_curve_lisa_semi_analytical(length, delta_f, low_freq_cutoff,
-                                           len_arm=2.5e9, acc_noise_level=3e-15,
+                                           len_arm=2.5e9,
+                                           acc_noise_level=3e-15,
                                            oms_noise_level=15e-12):
     r""" The semi-analytical LISA's sensitivity curve (6-links),
     averaged over sky and polarization angle.
@@ -559,7 +560,8 @@ def sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
 def sh_transformed_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
                                     len_arm=2.5e9, acc_noise_level=3e-15,
                                     oms_noise_level=15e-12,
-                                    base_model="semi", duration=1.0, tdi="1.5"):
+                                    base_model="semi", duration=1.0,
+                                    tdi="1.5"):
     r""" The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA
     with Galactic confusion noise, transformed from LISA sensitivity curve.
     Parameters
