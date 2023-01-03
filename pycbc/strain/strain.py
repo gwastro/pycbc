@@ -249,7 +249,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                             is_asd_file=True)
         elif opt.fake_strain != 'zeroNoise':
             logging.info("Making PSD for strain")
-            if hasattr(opt, 'fake_strain_extra_args') and (kwargs != None):
+            if hasattr(opt,'fake_strain_extra_args') and (kwargs is not None):
                 strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
                                                    fake_flow, **kwargs)
             else:
