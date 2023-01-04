@@ -312,7 +312,8 @@ class LiveEventManager(object):
             hdfp['template_duration'] = \
                 self.bank.table[template_id].template_duration
             hdfp['ifar'] = results['foreground/ifar']
-            hdfp['p_terr'] = results['p_terr']
+            if 'p_terr' in results:
+                hdfp['p_terr'] = results['p_terr']
             if gid is not None:
                 hdfp['gid'] = gid
 
