@@ -480,7 +480,8 @@ kwargs = {'psds': {ifo: skyloc_data[ifo]['psd'] for ifo in ifos},
           'channel_names': channel_names,
           'mc_area_args': mc_area_args}
 
-# Do not recalculate p_terr/p_astro; source probabilities may be recalculated
+# Do not recalculate p_terr/p_astro, reuse previous value if available
+# (source probabilities may be recalculated)
 if 'p_terr' in fp:
     kwargs['p_terr'] = fp['p_terr'][()]
 
