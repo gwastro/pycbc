@@ -537,7 +537,7 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--fake-strain-extra-args",
                 nargs='+', action=DictOptionAction,
                 metavar='PARAM:VALUE', type=str,
-                help="Extra arguments passed to the PSD models.")
+                help="(optional) Extra arguments passed to the PSD models.")
 
     # Injection options
     data_reading_group.add_argument("--injection-file", type=str,
