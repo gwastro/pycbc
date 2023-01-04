@@ -145,7 +145,6 @@ def get_waveform(approximant, phase_order, amplitude_order, spin_order,
             make_padded_frequency_series(hc, filter_N, delta_f=delta_f)
 
 aprs = sorted(list(set(td_approximants() + fd_approximants())))
-# aprs += ['FROM_TEMPLATE_BANK']
 
 #File output Settings
 parser = ArgumentParser(description=__doc__)
