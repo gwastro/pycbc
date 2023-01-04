@@ -22,9 +22,10 @@
 # =============================================================================
 #
 """
-This module provides analytical PSDs and sensitivity curves for space borne
-detectors, such as LISA. Based on LISA technical note <LISA-LCST-SGS-TN-001>,
-LDC manual <LISA-LCST-SGS-MAN-001>, and paper <10.1088/1361-6382/ab1101>.
+This module provides (semi-)analytical PSDs and sensitivity curves for space
+borne detectors, such as LISA. Based on LISA technical note
+<LISA-LCST-SGS-TN-001>, LDC manual <LISA-LCST-SGS-MAN-001>,
+and paper <10.1088/1361-6382/ab1101>.
 """
 
 import numpy as np
