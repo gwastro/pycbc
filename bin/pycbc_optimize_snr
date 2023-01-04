@@ -482,7 +482,7 @@ kwargs = {'psds': {ifo: skyloc_data[ifo]['psd'] for ifo in ifos},
 
 # Do not recalculate p_terr/p_astro; source probabilities may be recalculated
 if 'p_terr' in fp:
-    kwargs['p_terr'] = fp['p_terr']
+    kwargs['p_terr'] = fp['p_terr'][()]
 
 # Treat all ifos as having triggers
 doc = live.CandidateForGraceDB(
