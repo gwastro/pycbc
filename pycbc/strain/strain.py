@@ -270,8 +270,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                    seed=opt.fake_strain_seed,
                                    sample_rate=fake_rate,
                                    low_frequency_cutoff=fake_flow,
-                                   filter_duration=\
-                                    opt.fake_strain_filter_duration)
+                                   filter_duration=1.0/pdf)
 
         if not strain.sample_rate_close(fake_rate):
             err_msg = "Actual sample rate of generated data does not match "
