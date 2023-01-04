@@ -229,6 +229,10 @@ class CandidateForGraceDB(object):
 
         # P astro calculation
         if 'padata' in kwargs:
+            if 'p_terr' in kwargs:
+                raise RuntimeError("Both p_astro calculation data and a "
+                    "previously calculated p_terr value were provided, this "
+                    "doesn't make sense!")
             assert len(coinc_ifos) < 3, \
                 f"p_astro can't handle {coinc_ifos} coinc ifos!"
             trigger_data = {
