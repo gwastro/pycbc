@@ -17,12 +17,13 @@ with h5py.File('GW170817_test_output.hdf', 'r') as f:
         f['network/end_time_gc'][:],
         f['network/coherent_snr'][:],
         f['network/reweighted_snr'][:],
-        ]
+        f['network/slide_id'][:]]
 # search for compatible trigs
 mask = (
     (abs(gw170817_time - snrs[0]) < 0.1)
     & (snrs[1] > 25)
     & (snrs[2] > 25)
+    & (snrs[3] == 0)
     )
 n = mask.sum()
 if n > 0:
