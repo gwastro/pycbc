@@ -24,7 +24,7 @@ class CandidateForGraceDB(object):
     """This class provides an interface for uploading candidates to GraceDB.
     """
 
-    def __init__(self, coinc_ifos, ifos, coinc_results, gracedb, **kwargs):
+    def __init__(self, coinc_ifos, ifos, coinc_results, **kwargs):
         """Initialize a representation of a zerolag candidate for upload to
         GraceDB.
 
@@ -65,7 +65,8 @@ class CandidateForGraceDB(object):
         self.coinc_results = coinc_results
         self.psds = kwargs['psds']
         self.basename = None
-        self.gracedb = gracedb
+        if kwargs.get('gracedb'):
+            self.gracedb = kwargs['gracedb']
 
         # Determine if the candidate should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
@@ -358,6 +359,11 @@ class CandidateForGraceDB(object):
         matplotlib.use('Agg')
         import pylab as pl
 
+        if not self.gracedb:
+            from ligo.gracedb.rest import GraceDb
+            gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+            self.gracedb = GraceDb(gracedb_server, **gdbargs) if gracedb_server else GraceDb(**gdbargs)
+
         if fname.endswith('.xml.gz'):
             self.basename = fname.replace('.xml.gz', '')
         elif fname.endswith('.xml'):
@@ -534,7 +540,7 @@ class CandidateForGraceDB(object):
             except Exception as exc:
                 logging.error('Failed to upload p_astro file for %s', gid)
                 logging.error(str(exc))
-
+                
         return gid
 
 
