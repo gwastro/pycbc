@@ -359,11 +359,6 @@ class CandidateForGraceDB(object):
         matplotlib.use('Agg')
         import pylab as pl
 
-        if not self.gracedb:
-            from ligo.gracedb.rest import GraceDb
-            gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
-            self.gracedb = GraceDb(gracedb_server, **gdbargs) if gracedb_server else GraceDb(**gdbargs)
-
         if fname.endswith('.xml.gz'):
             self.basename = fname.replace('.xml.gz', '')
         elif fname.endswith('.xml'):
@@ -378,6 +373,10 @@ class CandidateForGraceDB(object):
 
         gid = None
         try:
+            if not hasattr(self, 'gracedb'):
+                from ligo.gracedb.rest import GraceDb
+                gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+                self.gracedb = GraceDb(gracedb_server, **gdbargs) if gracedb_server else GraceDb(**gdbargs)
             # create GraceDB event
             group = 'Test' if testing else 'CBC'
             r = self.gracedb.create_event(group, "pycbc", fname, search).json()
