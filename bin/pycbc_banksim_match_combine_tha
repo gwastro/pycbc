@@ -23,25 +23,19 @@ bank files, and the number of injections in each must correspond one-to-one.
 """
 
 from os.path import isfile
-import imp
 import argparse
 import numpy as np
 import h5py
-from glue.ligolw import utils, table
+from ligo.lw import utils, table
 import pycbc
 from pycbc import pnutils
 from pycbc.waveform import TemplateBank
+from pycbc.io.ligolw import LIGOLWContentHandler
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
 __program__ = "pycbc_banksim_match_combine"
-
-from glue.ligolw.ligolw import LIGOLWContentHandler
-from glue.ligolw import lsctables
-class mycontenthandler(LIGOLWContentHandler):
-    pass
-lsctables.use_in(mycontenthandler)
 
 # Read command line options
 _desc = __doc__[1:]
@@ -67,23 +61,24 @@ parser.add_argument("--filter-func-file", default=None,
                          "as numpy arrays.")
 options = parser.parse_args()
 
-dtypem = np.dtype([('match_1', float64), ('match_2', float64),
-                ('match_3', float64), ('match_4', float64),
-                ('match_5', float64), ('match_vary', float64),
-                ('match_vary_max2', float64), ('match_vary_max3', float64),
-                ('match_vary_max4', float64), ('bank_1', unicode_, 256),
-                ('bank_2', unicode_, 256), ('bank_3', unicode_, 256),
-                ('bank_4', unicode_, 256), ('bank_5', unicode_, 256),
-                ('bank_vary', unicode_, 256),
-                ('bank_vary_max2', unicode_, 256),
-                ('bank_vary_max3', unicode_, 256), 
-                ('bank_vary_max4', unicode_, 256),
-                ('bank_i_1', int32), ('bank_i_2', int32),
-                ('bank_i_3', int32), ('bank_i_4', int32),
-                ('bank_i_5', int32), ('bank_i_vary', int32),
-                ('bank_i_vary_max2', int32), ('bank_i_vary_max3', int32),
-                ('bank_i_vary_max4', int32), ('sim', unicode_, 256),
-                ('sim_i', int32), ('sigmasq', float64)])
+dtypem = np.dtype([('match_1', np.float64), ('match_2', np.float64),
+                ('match_3', np.float64), ('match_4', np.float64),
+                ('match_5', np.float64), ('match_vary', np.float64),
+                ('match_vary_max2', np.float64),
+                ('match_vary_max3', np.float64),
+                ('match_vary_max4', np.float64), ('bank_1', np.unicode_, 256),
+                ('bank_2', np.unicode_, 256), ('bank_3', np.unicode_, 256),
+                ('bank_4', np.unicode_, 256), ('bank_5', np.unicode_, 256),
+                ('bank_vary', np.unicode_, 256),
+                ('bank_vary_max2', np.unicode_, 256),
+                ('bank_vary_max3', np.unicode_, 256), 
+                ('bank_vary_max4', np.unicode_, 256),
+                ('bank_i_1', np.int32), ('bank_i_2', np.int32),
+                ('bank_i_3', np.int32), ('bank_i_4', np.int32),
+                ('bank_i_5', np.int32), ('bank_i_vary', np.int32),
+                ('bank_i_vary_max2', np.int32), ('bank_i_vary_max3', np.int32),
+                ('bank_i_vary_max4', np.int32), ('sim', np.unicode_, 256),
+                ('sim_i', np.int32), ('sigmasq', np.float64)])
 
 # Collect the results
 res = None
@@ -133,8 +128,9 @@ for idx, row in enumerate(res):
             btables[row['bank_{}'.format(i)]] = temp_bank.table
 
     if row['sim'] not in itables:
-        indoc = utils.load_filename(row['sim'], False, contenthandler=mycontenthandler)
-        itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
+        indoc = utils.load_filename(row['sim'], False, 
+                                    contenthandler=LIGOLWContentHandler)
+        itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral") 
     
     bts = []
     for i in [1, 2, 3, 4, 5, 'vary', 'vary_max2', 'vary_max3', 'vary_max4']:
