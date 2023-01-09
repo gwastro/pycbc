@@ -797,18 +797,23 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
         domain. Keys are requested data channels.
     """
     kwds = props(template, **params)
-    # determine the duration to use
-    full_duration = duration = pnutils.get_imr_duration(
-            m1=kwds['mass1'], m2=kwds['mass2'], s1z=kwds['spin1z'],
-            s2z=kwds['spin1z'], f_low=kwds['f_lower'],
-            approximant="IMRPhenomD")
     nparams = kwds.copy()
+    # determine the duration to use
+    if nparams['approximant'] not in _filter_time_lengths:
+        raise ValueError("Approximant %s not available" %
+                            (nparams['approximant']))
+    full_duration = duration = _filter_time_lengths[nparams['approximant']](
+        m1=kwds['mass1'], m2=kwds['mass2'],
+        s1z=kwds['spin1z'], s2z=kwds['spin1z'],
+        f_lower=kwds['f_lower']
+    )
 
-    while full_duration < duration * 1.5:
-        full_duration = duration = pnutils.get_imr_duration(
-                m1=kwds['mass1'], m2=kwds['mass2'], s1z=kwds['spin1z'],
-                s2z=kwds['spin1z'], f_low=kwds['f_lower'],
-                approximant="IMRPhenomD")
+    while full_duration < duration * 1.01:
+        full_duration = _filter_time_lengths[nparams['approximant']](
+            m1=kwds['mass1'], m2=kwds['mass2'],
+            s1z=kwds['spin1z'], s2z=kwds['spin1z'],
+            f_lower=nparams['f_lower']
+        )
         nparams['f_lower'] *= 0.99
 
     if 'f_ref' not in nparams:
@@ -817,7 +822,7 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
     # factor to ensure the vectors are all large enough. We don't need to
     # completely trust our duration estimator in this case, at a small
     # increase in computational cost
-    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
+    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.01
     fsamples = int(fudge_duration / kwds['delta_t'])
     N = pnutils.nearest_larger_binary_number(fsamples)
     fudge_duration = N * kwds['delta_t']
