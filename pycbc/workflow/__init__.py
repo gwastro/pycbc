@@ -43,6 +43,7 @@ from pycbc.workflow.coincidence import *
 from pycbc.workflow.injection import *
 from pycbc.workflow.plotting import *
 from pycbc.workflow.minifollowups import *
+from pycbc.workflow.dq import *
 
 # Set the pycbc workflow specific pegasus configuration and planning files
 from pycbc.workflow.pegasus_workflow import PEGASUS_FILE_DIRECTORY

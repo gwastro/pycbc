@@ -86,7 +86,8 @@ def normal(start, end, sample_rate=16384, seed=0):
 def colored_noise(psd, start_time, end_time,
                   seed=0, sample_rate=16384,
                   low_frequency_cutoff=1.0,
-                  filter_duration=128):
+                  filter_duration=128,
+                  scale=1.0):
     """ Create noise from a PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
@@ -172,7 +173,7 @@ def colored_noise(psd, start_time, end_time,
                          sample_rate=sample_rate)
     white_noise = white_noise.to_frequencyseries()
     # Here we color. Do not want to duplicate memory here though so use '*='
-    white_noise *= asd
+    white_noise *= asd*scale
     del asd
     colored = white_noise.to_timeseries(delta_t=1.0/sample_rate)
     del white_noise
@@ -182,7 +183,8 @@ def noise_from_string(psd_name, start_time, end_time,
                       seed=0,
                       sample_rate=16384,
                       low_frequency_cutoff=1.0,
-                      filter_duration=128):
+                      filter_duration=128,
+                      scale=1.0):
     """ Create noise from an analytic PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
@@ -218,4 +220,5 @@ def noise_from_string(psd_name, start_time, end_time,
                          seed=seed,
                          sample_rate=sample_rate,
                          low_frequency_cutoff=low_frequency_cutoff,
-                         filter_duration=filter_duration)
+                         filter_duration=filter_duration,
+                         scale=scale)
