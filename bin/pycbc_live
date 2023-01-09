@@ -530,7 +530,7 @@ class LiveEventManager(object):
                 logging.info('Optimizing SNR for single above threshold ..')
                 live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
                 # Tell snr optimized event about p_terr
-                if hasattr(event, 'p_terr'):
+                if hasattr(event, 'p_terr') and event.p_terr is not None:
                     single['p_terr'] = event.p_terr
                 self.setup_optimize_snr(
                     single,
