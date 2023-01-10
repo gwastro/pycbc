@@ -20,6 +20,7 @@ right acension and declination.
 import numpy
 from pycbc.distributions import angular
 from pycbc.transforms import new_z_to_euler, rotate_euler
+from pycbc.transforms import decra2polaz, polaz2decra
 
 class UniformSky(angular.UniformSolidAngle):
     """A distribution that is uniform on the sky. This is the same as
@@ -58,13 +59,16 @@ class FisherDist():
     def __init__(self, mu, kappa, mu_radians=True):
         self.kappa = kappa
         if mu_radians:
-            self.mu = np.array(mu[0], mu[1]))
+            self.mu = np.array(mu[0], mu[1])
         else:
             self.mu = numpy.array(numpy.deg2rad([mu[0], mu[1]]))
-        self.mu = decra2polaz(self.mu[0],self.mu[1])
+        self.mu = decra2polaz(self.mu[0], self.mu[1])
 
     def rvs_polaz(self, size):
-        """Randomly draw multiple samples from the Fisher distribution and returns (polar, azimuthal) angle values."""
+        """
+        Randomly draw multiple samples from the Fisher distribution
+        and returns (polar, azimuthal) angle values.
+        """
         arr = numpy.array([
             numpy.random.rayleigh(scale=1./numpy.sqrt(self.kappa),
                                   size=size),
@@ -73,9 +77,12 @@ class FisherDist():
                                  size=size)]).reshape((2, size)).T
         a, b = new_z_to_euler(self.mu)
         return rotate_euler(arr, a, b, 0)
-    
-    def rvs_radec(self, size):
-        """Randomly draw multiple samples from the Fisher distribution and returns (ra, dec) values"""
+
+   def rvs_radec(self, size):
+        """
+        Randomly draw multiple samples from the Fisher distribution
+        and returns (ra, dec) values
+        """
         rot_eu = rvs_polaz(size)
         raN = []
         decN = []
@@ -88,6 +95,5 @@ class FisherDist():
         dec_p = np.array([decN])
         ra, dec = polaz2decra(dec_p, ra_a)
         return ra, dec
-
 
 __all__ = ['UniformSky', 'FisherDist']
