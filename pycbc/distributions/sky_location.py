@@ -56,13 +56,13 @@ class FisherDist():
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-    def __init__(self, mu, kappa, mu_radians=True):
+    def __init__(self, mu_values, kappa, mu_radians=True):
         self.kappa = kappa
         if mu_radians:
-            self.mu = numpy.array(mu[0], mu[1])
+            self.mu_values = numpy.array(mu_values[0], mu_values[1])
         else:
-            self.mu = numpy.array(numpy.deg2rad([mu[0], mu[1]]))
-        self.mu = decra2polaz(self.mu[0], self.mu[1])
+            self.mu_values = numpy.array(numpy.deg2rad([mu_values[0], mu_values[1]]))
+        self.mu_values = decra2polaz(self.mu_values[0], self.mu_values[1])
 
     def rvs_polaz(self, size):
         """
@@ -75,8 +75,8 @@ class FisherDist():
             numpy.random.uniform(low=0,
                                  high=2*numpy.pi,
                                  size=size)]).reshape((2, size)).T
-        a, b = new_z_to_euler(self.mu)
-        return rotate_euler(arr, a, b, 0)
+        alpha, beta = new_z_to_euler(self.mu_values)
+        return rotate_euler(arr, alpha, beta, 0)
 
     def rvs_radec(self, size):
         """
@@ -84,17 +84,17 @@ class FisherDist():
         and returns (ra, dec) values
         """
         rot_eu = self.rvs_polaz(size)
-        ra_N = []
-        dec_N = []
+        ra_new = []
+        dec_new = []
         for i in range(size):
             ra_ = rot_eu[i][1]
-            ra_N.append(ra_)
+            ra_new.append(ra_)
             dec_ = rot_eu[i][0]
-            dec_N.append(dec_)
-        ra_a = numpy.array([ra_N])
-        dec_p = numpy.array([dec_N])
-        ra, dec = polaz2decra(dec_p, ra_a)
-        return ra, dec
+            dec_new.append(dec_)
+        ra_a = numpy.array([ra_new])
+        dec_p = numpy.array([dec_new])
+        right_ascension, declination = polaz2decra(dec_p, ra_a)
+        return right_ascension, declination
 
+    
 __all__ = ['UniformSky', 'FisherDist']
-
