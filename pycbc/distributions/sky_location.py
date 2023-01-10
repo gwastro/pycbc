@@ -59,7 +59,7 @@ class FisherDist():
     def __init__(self, mu, kappa, mu_radians=True):
         self.kappa = kappa
         if mu_radians:
-            self.mu = np.array(mu[0], mu[1])
+            self.mu = numpy.array(mu[0], mu[1])
         else:
             self.mu = numpy.array(numpy.deg2rad([mu[0], mu[1]]))
         self.mu = decra2polaz(self.mu[0], self.mu[1])
@@ -83,17 +83,18 @@ class FisherDist():
         Randomly draw multiple samples from the Fisher distribution
         and returns (ra, dec) values
         """
-        rot_eu = rvs_polaz(size)
-        raN = []
-        decN = []
+        rot_eu = self.rvs_polaz(size)
+        ra_N = []
+        dec_N = []
         for i in range(size):
             ra_ = rot_eu[i][1]
-            raN.append(ra_)
+            ra_N.append(ra_)
             dec_ = rot_eu[i][0]
-            decN.append(dec_)
-        ra_a = np.array([raN])
-        dec_p = np.array([decN])
+            dec_N.append(dec_)
+        ra_a = numpy.array([ra_N])
+        dec_p = numpy.array([dec_N])
         ra, dec = polaz2decra(dec_p, ra_a)
         return ra, dec
 
 __all__ = ['UniformSky', 'FisherDist']
+
