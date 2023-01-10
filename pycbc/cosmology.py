@@ -137,6 +137,10 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
     if fval.size == 1 and fval.ndim == 0:
         fval = fval.reshape(1)
     zs = numpy.zeros(fval.shape, dtype=float)  # the output array
+    if 'method' not in kwargs:
+        # workaround for https://github.com/astropy/astropy/issues/14249
+        # FIXME remove when fixed in astropy/scipy
+        kwargs['method'] = 'bounded'
     for (ii, val) in enumerate(fval):
         try:
             zs[ii] = astropy.cosmology.z_at_value(func, val*unit, zmax=zmax,

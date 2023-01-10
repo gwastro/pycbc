@@ -750,7 +750,7 @@ def spin_from_pulsar_freq(mass, radius, freq):
     """
     omega = 2 * numpy.pi * freq
     mt = mass * lal.MTSUN_SI
-    mominert = (2/3.) * mt * (radius * 1000 / lal.C_SI)**2
+    mominert = (2/5.) * mt * (radius * 1000 / lal.C_SI)**2
     return mominert * omega / mt**2
 
 
@@ -1260,8 +1260,8 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     final_mass = numpy.full(mass1.shape, numpy.nan)
     final_spin = numpy.full(mass1.shape, numpy.nan)
     for ii in range(final_mass.size):
-        m1 = numpy.float(mass1[ii])
-        m2 = numpy.float(mass2[ii])
+        m1 = float(mass1[ii])
+        m2 = float(mass2[ii])
         spin1 = list(map(float, [spin1x[ii], spin1y[ii], spin1z[ii]]))
         spin2 = list(map(float, [spin2x[ii], spin2y[ii], spin2z[ii]]))
         if approximant == 'NRSur7dq4':

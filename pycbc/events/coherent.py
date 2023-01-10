@@ -80,7 +80,11 @@ def get_coinc_triggers(snrs, idx, t_delay_idx):
     coincs: dict
         Dictionary of coincident trigger SNRs in each detector
     """
-    coincs = {ifo: snrs[ifo][idx + t_delay_idx[ifo]] for ifo in snrs}
+    # loops through snrs
+    # %len(snrs[ifo]) was included as part of a wrap-around solution
+    coincs = {
+        ifo: snrs[ifo][(idx + t_delay_idx[ifo]) % len(snrs[ifo])]
+        for ifo in snrs}
     return coincs
 
 
@@ -365,7 +369,7 @@ def reweight_snr_by_null(
 
     Returns
     -------
-    rw_snr: dict
+    rw_snr: numpy.ndarray
         Re-weighted SNR for each trigger
     """
     downweight = (

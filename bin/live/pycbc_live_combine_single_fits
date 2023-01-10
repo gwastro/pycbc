@@ -13,14 +13,11 @@
 # Public License for more details.
 
 import h5py, numpy as np, argparse
-import matplotlib
-matplotlib.use('agg')
-from matplotlib import pyplot as plt
-import re, datetime, logging
+import logging
 import pycbc
 
 parser = argparse.ArgumentParser(usage="",
-    description="Plot histograms of triggers split over various parameters")
+    description="Combine fitting parameters from several different files")
 parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--trfits-files", nargs="+", required=True,
@@ -28,11 +25,8 @@ parser.add_argument("--trfits-files", nargs="+", required=True,
 parser.add_argument("--conservative-percentile", type=int, default=95,
                     help="What percentile to use for the conservative "
                          "combined fit. Integer in range 50-99. Default=95")
-parser.add_argument("--output-file", required=True,
-                    help="Output hdf file for final results")
-parser.add_argument("--output-plot-file-format",
-                    help="Output file format for alphas vs time plots, needs to "
-                         "contain '{}' as marker for where ifo string is included")
+parser.add_argument("--output", required=True,
+                    help="Output file for combined fit parameters")
 parser.add_argument("--ifos", required=True, nargs="+",
                     help="list of ifos fo collect info for")
 
@@ -48,73 +42,76 @@ if args.conservative_percentile < 50 or \
                  "otherwise it is either not a percentile, or not "
                  "conservative.")
 
-colours = ['r', (1.0, 0.6, 0), 'y', 'g', 'c', 'b', 'm',
-           (0.8, 0.25, 0), (0.25, 0.8, 0)]
-
 counts_all = {ifo:[] for ifo in args.ifos}
 alphas_all = {ifo:[] for ifo in args.ifos}
 analysis_dates = []
 
-files = args.trfits_files
+with h5py.File(args.trfits_files[0], 'r') as fit_f0:
+    # Store some attributes so we can check that all files are
+    # comparable
 
-fit_f0 = h5py.File(files[0], 'r')
+    # Keep the upper and lower bins
+    bl = fit_f0['bins_lower'][:]
+    bu = fit_f0['bins_upper'][:]
 
-bl = fit_f0['bins_lower'][:]
-bu = fit_f0['bins_upper'][:]
+    sngl_rank = fit_f0.attrs['sngl_ranking']
+    fit_thresh = fit_f0.attrs['fit_threshold']
+    fit_func = fit_f0.attrs['fit_function']
 
 live_times = {ifo : [] for ifo in args.ifos}
 
-for f in files:
+trigger_file_times = []
+
+n_files = len(args.trfits_files)
+logging.info("Checking through %d files", n_files)
+
+for f in args.trfits_files:
+
     fits_f = h5py.File(f, 'r')
-    if 'days_since_epoch' in fits_f.attrs:
-        analysis_dates += [fits_f.attrs['days_since_epoch']]
-    elif 'analysis_date' in fits_f.attrs:
-        date_array = fits_f.attrs['analysis_date'].split('_')
-        analysis_year = int(date_array[0])
-        analysis_month = int(date_array[1])
-        analysis_day = int(date_array[2])
-        n_since_epoch = (datetime.date(analysis_year,
-                                       analysis_month,
-                                       analysis_day)
-                         - datetime.date(2000, 1, 1)).days
-        analysis_dates += [n_since_epoch]
-    else:
-        # This is the regex string to match a date in format YYYY_MM_DD
-        # or if MM or DD only have one character
-        # FutureWarning: this will become obsolete in the year 3000
-        re_string = '([12]\d{3})_(0?[1-9]|1[0-2])_(0?[1-9]|[12]\d|3[01])'
-        m = re.search(re_string, f)
-        analysis_year = int(m.group(1))
-        analysis_month = int(m.group(2))
-        analysis_day = int(m.group(3))
-        n_since_epoch = (datetime.date(analysis_year, analysis_month,
-                                       analysis_day)
-                         - datetime.date(2000,1,1)).days
-        analysis_dates += [n_since_epoch]
+    # Check that the file uses the same setup as file 0, to make sure
+    # all coefficients are comparable
+
+    assert fits_f.attrs['sngl_ranking'] == sngl_rank
+    assert fits_f.attrs['fit_threshold'] == fit_thresh
+    assert fits_f.attrs['fit_function'] == fit_func
+    assert all(fits_f['bins_lower'][:] == bl)
+    assert all(fits_f['bins_upper'][:] == bu)
+
+    # Get the time of the last trigger in the trigger_fits file
+    gps_last = 0
     for ifo in args.ifos:
         if ifo not in fits_f:
-            live_times[ifo] += [0]
-            counts_all[ifo] += [-1 * np.ones(len(bl) - 1)]
-            alphas_all[ifo] += [-1 * np.ones(len(bl) - 1)]
-            logging.info(f + " has no " + ifo + " triggers")
+            continue
         else:
-            live_times[ifo] += [fits_f[ifo].attrs['live_time']]
-            counts_all[ifo] += [fits_f[ifo + '/counts'][:]]
-            alphas_all[ifo] += [fits_f[ifo + '/fit_coeff'][:]]
+            trig_times = fits_f[ifo]['triggers']['end_time'][:]
+            gps_last = max(gps_last,
+                           trig_times.max())
+    trigger_file_times.append(gps_last)
+
+    for ifo in args.ifos:
+        if ifo not in fits_f:
+            live_times[ifo].append(0)
+            counts_all[ifo].append(-1 * np.ones_like(bl))
+            alphas_all[ifo].append(-1 * np.ones_like(bl))
+        else:
+            live_times[ifo].append(fits_f[ifo].attrs['live_time'])
+            counts_all[ifo].append(fits_f[ifo + '/counts'][:])
+            alphas_all[ifo].append(fits_f[ifo + '/fit_coeff'][:])
             if any(np.isnan(fits_f[ifo + '/fit_coeff'][:])):
                 logging.info("nan in " + f + ", " + ifo)
                 logging.info(fits_f[ifo + '/fit_coeff'][:])
     fits_f.close()
 
-ad_order = np.argsort(np.array(analysis_dates))
-ad = np.array(analysis_dates)[ad_order] - np.array(analysis_dates)[ad_order[0]]
-start_date_n = analysis_dates[ad_order[0]]
-start_date_dt = datetime.date(2000, 1, 1) + datetime.timedelta(days=start_date_n)
+# Set up the date array, this is stored as an offset from the start date of
+# the combination to the end of the trigger_fits file.
+# This allows for missing or empty days
 
-start_date = "{:04d}_{:02d}_{:02d}".format(start_date_dt.year,
-                                           start_date_dt.month,
-                                           start_date_dt.day)
+trigger_file_times = np.array(trigger_file_times)
+ad_order = np.argsort(np.array(trigger_file_times))
+start_date_n = trigger_file_times[ad_order[0]]
+ad = trigger_file_times[ad_order] - start_date_n
 
+# Get the counts and alphas sorted by bin rather than by date
 counts_bin = {ifo: [c for c in zip(*counts_all[ifo])] for ifo in args.ifos}
 alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
 
@@ -123,12 +120,13 @@ counts_out = {ifo : np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
 cons_alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
 cons_counts_out = {ifo : np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
 
-fout = h5py.File(args.output_file, 'w')
-fout.attrs['start_date'] = ad[0]
-fout.attrs['end_date'] = ad[-1]
-fout.attrs['fit_threshold'] = fit_f0.attrs['fit_threshold']
+logging.info("Writing results")
+fout = h5py.File(args.output, 'w')
+fout.attrs['fit_threshold'] = fit_thresh
+fout.attrs['conservative_percentile'] = args.conservative_percentile
+fout.attrs['ifos'] = args.ifos
 fout['bins_edges'] = list(bl) + [bu[-1]]
-
+fout['fits_dates'] = ad + start_date_n
 
 for ifo in args.ifos:
     fout.create_group(ifo)
@@ -138,29 +136,20 @@ save_allmeanalpha = {}
 for ifo in args.ifos:
     fout_ifo = fout[ifo]
     logging.info(ifo)
-    counter = 0
     l_times = np.array(live_times[ifo])
     count_all = np.sum(counts_bin[ifo], axis=0) / l_times
     invalphan = np.array(counts_bin[ifo]) / np.array(alphas_bin[ifo])
     invalphan_all = np.mean(invalphan, axis=0)
     alpha_all = np.mean(counts_bin[ifo], axis=0) / invalphan_all
     meant = l_times.mean()
-    fout_ifo['daily_fits/live_times'] = l_times
 
-    if args.output_plot_file_format:
-        fig_alpha, ax_alpha = plt.subplots(1, figsize=(12, 7.5))
-        fig_count, ax_count = plt.subplots(1, figsize=(12, 7.5))
-        alpha_lines = []
-        count_lines = []
-
-    for a, c, u, l in zip(alphas_bin[ifo], counts_bin[ifo], bu, bl):
+    fout_ifo[f'separate_fits/live_times'] = l_times
+    fout_ifo[f'separate_fits/date'] = ad + start_date_n
+    for counter, a_c_u_l in enumerate(zip(alphas_bin[ifo],
+                                          counts_bin[ifo], bu, bl)):
+        a, c, u, l = a_c_u_l
         a = np.array(a)
         c = np.array(c)
-        valid_alpha = np.logical_and(a > 0, np.isfinite(a))
-        if not any(valid_alpha):
-            continue
-        a = a[valid_alpha]
-        c = c[valid_alpha]
         invalphan = c / a
         mean_alpha = c.mean() / invalphan.mean()
         cons_alpha = np.percentile(a, 100 - args.conservative_percentile)
@@ -170,35 +159,8 @@ for ifo in args.ifos:
         cons_counts_out[ifo][counter] = cons_count * len(c)
         counts_out[ifo][counter] = c.sum()
 
-        fout_ifo[f'daily_fits/bin_{counter:d}/fit_coeff'] = a
-        fout_ifo[f'daily_fits/bin_{counter:d}/counts'] = c
-        fout_ifo[f'daily_fits/bin_{counter:d}/date'] = ad[valid_alpha]
-
-        if args.output_plot_file_format:
-            alpha_lines += ax_alpha.plot(ad[valid_alpha], a, c=colours[counter],
-                                         label="duration %.2f-%.2f" % (l, u))
-            alpha_lines += ax_alpha.plot([ad[0], ad[-1]],
-                                         [mean_alpha, mean_alpha],
-                                         c=colours[counter], linestyle='--',
-                                         label="total fit = %.2f" % mean_alpha)
-            alpha_lab = f"{args.conservative_percentile:d}th %ile = {cons_alpha:.2f}"
-            alpha_lines += ax_alpha.plot([ad[0], ad[-1]], [cons_alpha, cons_alpha],
-                                         c=colours[counter], linestyle=':',
-                                         label=alpha_lab)
-
-            count_lines += ax_count.plot(ad[valid_alpha], c / l_times[valid_alpha],
-                                         c=colours[counter],
-                                         label="duration %.2f-%.2f" % (l, u))
-            count_lines += ax_count.plot([ad[0], ad[-1]],
-                                         [c.mean() / meant, c.mean() / meant],
-                                         c=colours[counter], linestyle='--',
-                                         label="mean = %.3f" % (c.mean() / meant))
-            count_lab = f"{args.conservative_percentile:d}th %ile = {cons_count / meant:.3f}"
-            count_lines += ax_count.plot([ad[0], ad[-1]],
-                                         [cons_count / meant, cons_count / meant],
-                                         c=colours[counter], linestyle=':',
-                                         label=count_lab)
-        counter += 1
+        fout_ifo[f'separate_fits/bin_{counter:d}/fit_coeff'] = a
+        fout_ifo[f'separate_fits/bin_{counter:d}/counts'] = c
 
     # Output the mean average values
     fout_ifo['mean/fit_coeff'] = alphas_out[ifo]
@@ -214,44 +176,12 @@ for ifo in args.ifos:
     sum_counts_out = counts_out[ifo].sum() / sum(live_times[ifo])
     save_allmeanalpha[ifo] = overall_meanalpha
 
-    # For the fixed version, we just 
+    # For the fixed version, we just set this to 1
     fout_ifo['fixed/counts'] = [1 for c in counts_out[ifo]]
     fout_ifo['fixed/fit_coeff'] = [0 for a in alphas_out[ifo]]
 
     # Add some useful info to the output file
     fout_ifo.attrs['mean_alpha'] = save_allmeanalpha[ifo]
     fout_ifo.attrs['total_counts'] = counts_out[ifo].sum()
-
-    if args.output_plot_file_format:
-        alpha_lines += ax_alpha.plot(ad, alpha_all,
-                                     c='k', linestyle='-', linewidth=2,
-                                     label="daily overall alpha")
-        count_lines += ax_count.plot(ad, count_all,
-                                     c='k', linestyle='-', linewidth=2,
-                                     label="overall count")
-        alpha_lines += [ax_alpha.axhline(overall_meanalpha,
-                                         c='k', linestyle='--', linewidth=2,
-                                         label="overall alpha = %.2f" % overall_meanalpha)]
-        count_lines += [ax_count.axhline(y=sum_counts_out,
-                                         c='k', linestyle='--', linewidth=2,
-                                         label="overall count per live time = %.3f" % sum_counts_out)]
-        ax_alpha.set_xlabel('Days since ' + start_date)
-        ax_alpha.set_ylabel('Fit coefficient')
-        ax_alpha.set_xlim([ad[0], ad[-1]])
-        alpha_labels = [l.get_label() for l in alpha_lines]
-        ax_alpha.grid(zorder=-30)
-        ax_alpha.legend(alpha_lines, alpha_labels, loc='lower center',
-                        ncol=3, bbox_to_anchor=(0.5, 1.01))
-        fig_alpha.tight_layout()
-        fig_alpha.savefig(args.output_plot_file_format.format(ifo + "-alphas"))
-        ax_count.set_xlabel('Days since ' + start_date)
-        ax_count.set_ylabel('Counts per live time')
-        ax_count.set_xlim([ad[0], ad[-1]])
-        count_labels = [l.get_label() for l in count_lines]
-        ax_count.legend(count_lines, count_labels, loc='lower center',
-                        ncol=3, bbox_to_anchor=(0.5, 1.01))
-        ax_count.grid(zorder=-30)
-        fig_count.tight_layout()
-        fig_count.savefig(args.output_plot_file_format.format(ifo + "-counts"))
 
 fout.close()

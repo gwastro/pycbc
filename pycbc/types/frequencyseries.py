@@ -412,8 +412,11 @@ class FrequencySeries(Array):
             if not first_idx == 0:
                 data_lal[:first_idx] = data_lal[first_idx]
             psddict = {ifo: output}
-            utils.write_filename(make_psd_xmldoc(psddict), path,
-                                 gz=path.endswith(".gz"))
+            utils.write_filename(
+                make_psd_xmldoc(psddict),
+                path,
+                compress='auto'
+            )
         elif ext == '.hdf':
             key = 'data' if group is None else group
             with h5py.File(path, 'a') as f:

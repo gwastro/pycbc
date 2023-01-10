@@ -891,8 +891,8 @@ def get_segment_summary_times(scienceFile, segmentName):
     """
     # Parse the segmentName
     segmentName = segmentName.split(':')
-    if not len(segmentName) in [2,3]:
-        raise ValueError("Invalid channel name %s." %(segmentName))
+    if not len(segmentName) in [2, 3]:
+        raise ValueError(f"Invalid channel name {segmentName}.")
     ifo = segmentName[0]
     channel = segmentName[1]
     version = ''
@@ -900,9 +900,11 @@ def get_segment_summary_times(scienceFile, segmentName):
         version = int(segmentName[2])
 
     # Load the filename
-    xmldoc = utils.load_filename(scienceFile.cache_entry.path,
-                             gz=scienceFile.cache_entry.path.endswith("gz"),
-                             contenthandler=LIGOLWContentHandler)
+    xmldoc = utils.load_filename(
+        scienceFile.cache_entry.path,
+        compress='auto',
+        contenthandler=LIGOLWContentHandler
+    )
 
     # Get the segment_def_id for the segmentName
     segmentDefTable = table.Table.get_table(xmldoc, "segment_definer")
