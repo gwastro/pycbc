@@ -10,7 +10,7 @@ launched with mpirun.
 See https://arxiv.org/abs/1805.11174 for an overview."""
 
 import sys
-import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json, time
+import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 import os.path
 import itertools
 import platform

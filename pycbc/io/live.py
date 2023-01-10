@@ -304,7 +304,6 @@ class CandidateForGraceDB(object):
         ligolw_utils.write_filename(self.outdoc, fname, compress='auto', **kwargs)
 
         save_dir = os.path.dirname(fname)
-        
         # Save EMBright properties info as json
         if self.hasmassgap is not None:
             self.embright_file = os.path.join(save_dir, 'pycbc.em_bright.json')
@@ -539,7 +538,6 @@ class CandidateForGraceDB(object):
             except Exception as exc:
                 logging.error('Failed to upload p_astro file for %s', gid)
                 logging.error(str(exc))
-                
         return gid
 
 
