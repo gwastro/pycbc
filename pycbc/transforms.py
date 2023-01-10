@@ -2549,3 +2549,11 @@ def rotate_euler(sph_coords, alpha, beta, gamma):
     sph_new[:, 1] = numpy.arctan2(cart_new[:, 1], cart_new[:, 0])
 
     return sph_new
+
+def decra2polaz(dec, ra):
+    """Convert (ra,dec) to (polar, azimuthal) angles. All angles in radians."""
+    return (0.5*numpy.pi) - dec, ra
+
+def polaz2decra(theta, phi):
+    """Convert (polar, azimuthal) to (ra,dec) angles. All angles in radians."""
+    return phi, (0.5*numpy.pi) - theta
