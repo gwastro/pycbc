@@ -22,7 +22,7 @@ def add_custom_waveform(approximant, function, domain,
         Check if waveform generator has built-in detector response.
     """
     from pycbc.waveform.waveform import (cpu_fd, cpu_td, fd_sequence,
-                                         fd_det_sequence)
+                                         fd_det, fd_det_sequence)
 
     used = RuntimeError("Can't load plugin waveform {}, the name is"
                         " already in use.".format(approximant))
@@ -42,9 +42,14 @@ def add_custom_waveform(approximant, function, domain,
                     raise used
                 fd_det_sequence[approximant] = function
         else:
-            if not force and (approximant in cpu_fd):
-                raise used
-            cpu_fd[approximant] = function
+            if not has_det_response:
+                if not force and (approximant in cpu_fd):
+                    raise used
+                cpu_fd[approximant] = function
+            else:
+                if not force and (approximant in fd_det):
+                    raise used
+                fd_det[approximant] = function                
     else:
         raise ValueError("Invalid domain ({}), should be "
                          "'time' or 'frequency'".format(domain))
@@ -75,9 +80,14 @@ def retrieve_waveform_plugins():
     """
     import pkg_resources
 
-    # Check for fd waveforms
+    # Check for fd waveforms (no detector response)
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.fd'):
         add_custom_waveform(plugin.name, plugin.resolve(), 'frequency')
+
+    # Check for fd waveforms (has detector response)
+    for plugin in pkg_resources.iter_entry_points('pycbc.waveform.fd_det'):
+        add_custom_waveform(plugin.name, plugin.resolve(), 'frequency',
+                            has_det_response=True)
 
     # Check for fd sequence waveforms (no detector response)
     for plugin in pkg_resources.iter_entry_points('pycbc.waveform.fd_sequence'):
