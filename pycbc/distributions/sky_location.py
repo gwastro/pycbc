@@ -61,7 +61,8 @@ class FisherDist():
         if mu_radians:
             self.mu_values = numpy.array(mu_values[0], mu_values[1])
         else:
-            self.mu_values = numpy.array(numpy.deg2rad([mu_values[0], mu_values[1]]))
+            self.mu_values = numpy.array(numpy.deg2rad([mu_values[0],
+                                                        mu_values[1]]))
         self.mu_values = decra2polaz(self.mu_values[0], self.mu_values[1])
 
     def rvs_polaz(self, size):
@@ -96,5 +97,5 @@ class FisherDist():
         right_ascension, declination = polaz2decra(dec_p, ra_a)
         return right_ascension, declination
 
-    
+
 __all__ = ['UniformSky', 'FisherDist']
