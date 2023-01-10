@@ -43,8 +43,8 @@ class FisherDist():
 
     As in UniformSky, the declination (dec) varies from pi/2 to-pi/2
     and right ascension (ra) varies from 0 to 2pi. And the angles
-    should be provided in (ra,dec) format in radians (radians=True),
-    rather than factors of pi, or in degrees (radians=False).
+    should be provided in (ra,dec) format in radians (mu_radians=True),
+    rather than factors of pi, or in degrees (mu_radians=False).
 
     References:
       * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
@@ -55,15 +55,16 @@ class FisherDist():
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-    def __init__(self, mu, kappa, radians=True):
+    def __init__(self, mu, kappa, mu_radians=True):
         self.kappa = kappa
-        if radians:
-            self.mu = (mu[1], mu[0])
+        if mu_radians:
+            self.mu = np.array(mu[0], mu[1]))
         else:
-            self.mu = numpy.array(numpy.deg2rad([mu[1], mu[0]]))
+            self.mu = numpy.array(numpy.deg2rad([mu[0], mu[1]]))
+        self.mu = decra2polaz(self.mu[0],self.mu[1])
 
-    def rvs(self, size):
-        """Randomly multiple samples from the Fisher distribution."""
+    def rvs_polaz(self, size):
+        """Randomly draw multiple samples from the Fisher distribution and returns (polar, azimuthal) angle values."""
         arr = numpy.array([
             numpy.random.rayleigh(scale=1./numpy.sqrt(self.kappa),
                                   size=size),
@@ -71,7 +72,22 @@ class FisherDist():
                                  high=2*numpy.pi,
                                  size=size)]).reshape((2, size)).T
         a, b = new_z_to_euler(self.mu)
-        return rotate_euler(arr, b, ((numpy.pi)/2) - a, 0)
+        return rotate_euler(arr, a, b, 0)
+    
+    def rvs_radec(self, size):
+        """Randomly draw multiple samples from the Fisher distribution and returns (ra, dec) values"""
+        rot_eu = rvs_polaz(size)
+        raN = []
+        decN = []
+        for i in range(size):
+            ra_ = rot_eu[i][1]
+            raN.append(ra_)
+            dec_ = rot_eu[i][0]
+            decN.append(dec_)
+        ra_a = np.array([raN])
+        dec_p = np.array([decN])
+        ra, dec = polaz2decra(dec_p, ra_a)
+        return ra, dec
 
 
 __all__ = ['UniformSky', 'FisherDist']
