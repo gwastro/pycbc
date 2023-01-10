@@ -78,7 +78,7 @@ class FisherDist():
         a, b = new_z_to_euler(self.mu)
         return rotate_euler(arr, a, b, 0)
 
-   def rvs_radec(self, size):
+    def rvs_radec(self, size):
         """
         Randomly draw multiple samples from the Fisher distribution
         and returns (ra, dec) values
