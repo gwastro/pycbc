@@ -49,7 +49,7 @@ def add_custom_waveform(approximant, function, domain,
             else:
                 if not force and (approximant in fd_det):
                     raise used
-                fd_det[approximant] = function                
+                fd_det[approximant] = function
     else:
         raise ValueError("Invalid domain ({}), should be "
                          "'time' or 'frequency'".format(domain))
