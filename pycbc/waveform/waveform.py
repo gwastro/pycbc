@@ -770,10 +770,10 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     hp = hp.cyclic_time_shift(-rwrap)
     hc = hc.cyclic_time_shift(-rwrap)
 
-    hp = wfutils.fd_to_td(hp, left_window=(nparams['f_lower'],
-                                           params['f_lower']))
-    hc = wfutils.fd_to_td(hc, left_window=(nparams['f_lower'],
-                                           params['f_lower']))
+    hp = wfutils.fd_to_td(hp, delta_t=params['delta_t'],
+                          left_window=(nparams['f_lower'], params['f_lower']))
+    hc = wfutils.fd_to_td(hc, delta_t=params['delta_t'],
+                          left_window=(nparams['f_lower'], params['f_lower']))
     return hp, hc
 
 def get_fd_det_waveform(template=None, **kwargs):
@@ -873,7 +873,8 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
         wfs[ifo].resize(fsize)
         # avoid wraparound
         wfs[ifo] = wfs[ifo].cyclic_time_shift(-rwrap)
-        wfs[ifo] = wfutils.fd_to_td(wfs[ifo], left_window=(nparams['f_lower'],
+        wfs[ifo] = wfutils.fd_to_td(wfs[ifo], delta_t=kwds['delta_t'],
+                                    left_window=(nparams['f_lower'],
                                     kwds['f_lower']))
 
     return wfs
