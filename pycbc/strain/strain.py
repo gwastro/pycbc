@@ -24,6 +24,7 @@ from pycbc.types import TimeSeries, zeros
 from pycbc.types import Array, FrequencySeries
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
+from pycbc.types import DictOptionAction
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo, complex_same_precision_as
@@ -237,6 +238,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         pdf = 1.0 / opt.fake_strain_filter_duration
         fake_flow = opt.fake_strain_flow
         fake_rate = opt.fake_strain_sample_rate
+        if hasattr(opt, 'fake_strain_extra_args'):
+            kwargs = opt.fake_strain_extra_args
         plen = round(opt.sample_rate / pdf) // 2 + 1
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
@@ -246,8 +249,12 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                             is_asd_file=True)
         elif opt.fake_strain != 'zeroNoise':
             logging.info("Making PSD for strain")
-            strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
-                                               fake_flow)
+            if hasattr(opt,'fake_strain_extra_args') and (kwargs is not None):
+                strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
+                                                   fake_flow, **kwargs)
+            else:
+                strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
+                                                   fake_flow)
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
@@ -262,7 +269,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                    opt.gps_end_time + opt.pad_data,
                                    seed=opt.fake_strain_seed,
                                    sample_rate=fake_rate,
-                                   low_frequency_cutoff=fake_flow)
+                                   low_frequency_cutoff=fake_flow,
+                                   filter_duration=1.0/pdf)
 
         if not strain.sample_rate_close(fake_rate):
             err_msg = "Actual sample rate of generated data does not match "
@@ -306,7 +314,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if injector is not None:
         logging.info("Applying injections")
         injections = \
-            injector.apply(strain, opt.channel_name[0:2],
+            injector.apply(strain, opt.channel_name.split(':')[0],
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
                            inj_filter_rejector=inj_filter_rejector)
@@ -314,7 +322,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if opt.sgburst_injection_file:
         logging.info("Applying sine-Gaussian burst injections")
         injector = SGBurstInjectionSet(opt.sgburst_injection_file)
-        injector.apply(strain, opt.channel_name[0:2],
+        injector.apply(strain, opt.channel_name.split(':')[0],
                          distance_scale=opt.injection_scale_factor)
 
     if precision == 'single':
@@ -512,7 +520,7 @@ def insert_strain_option_group(parser, gps_times=True):
     # Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise.",
-                choices=pycbc.psd.get_lalsim_psd_list() + ['zeroNoise'])
+                choices=pycbc.psd.get_psd_model_list() + ['zeroNoise'])
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
@@ -527,6 +535,10 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--fake-strain-sample-rate",
                 default=16384, type=float,
                 help="Sample rate of the fake data generation")
+    data_reading_group.add_argument("--fake-strain-extra-args",
+                nargs='+', action=DictOptionAction,
+                metavar='PARAM:VALUE', type=str,
+                help="(optional) Extra arguments passed to the PSD models.")
 
     # Injection options
     data_reading_group.add_argument("--injection-file", type=str,
