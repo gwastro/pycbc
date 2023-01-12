@@ -635,9 +635,9 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         else:
             # compute the waveform time series
             hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
-                                    **self.extra_args)
+                                     **self.extra_args)
             strain = projector(detector_name,
-                         inj, hp, hc, distance_scale=distance_scale)
+                               inj, hp, hc, distance_scale=distance_scale)
         return strain
 
     def end_times(self):
