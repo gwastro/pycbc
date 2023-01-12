@@ -229,6 +229,10 @@ class CandidateForGraceDB(object):
 
         # P astro calculation
         if 'padata' in kwargs:
+            if 'p_terr' in kwargs:
+                raise RuntimeError("Both p_astro calculation data and a "
+                    "previously calculated p_terr value were provided, this "
+                    "doesn't make sense!")
             assert len(coinc_ifos) < 3, \
                 f"p_astro can't handle {coinc_ifos} coinc ifos!"
             trigger_data = {
@@ -245,6 +249,8 @@ class CandidateForGraceDB(object):
             horizons = {i: self.psds[i].dist for i in self.et_ifos}
             self.p_astro, self.p_terr = \
                 kwargs['padata'].do_pastro_calc(trigger_data, horizons)
+        elif 'p_terr' in kwargs:
+            self.p_astro, self.p_terr = 1 - kwargs['p_terr'], kwargs['p_terr']
         else:
             self.p_astro, self.p_terr = None, None
 
