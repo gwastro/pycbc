@@ -394,7 +394,7 @@ class _FDTemplate():
         # L-aligned frame
         h *= np.exp(2j * _dphi(thetaJN, alpha0, self.beta))
         # create LAL frequency array and return precessing harmonic
-        new = CreateCOMPLEX8FrequencySeries(
+        new = lal.CreateCOMPLEX8FrequencySeries(
             "", lal.LIGOTimeGPS(hp.epoch), 0, df, lal.SecondUnit, len(h)
         )
         new.data.data[:] = h[:]
