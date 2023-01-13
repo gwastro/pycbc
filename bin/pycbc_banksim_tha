@@ -269,8 +269,8 @@ def compute_beta(tmplt):
     """ Calculate beta (thetaJL) using code from
     https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/_l_a_l_sim_inspiral_8c_source.html#l06105
     """
-    m1 = tmplt.m1
-    m2 = tmplt.m2
+    m1 = tmplt.mass1
+    m2 = tmplt.mass2
     s1x = tmplt.spin1x
     s1y = tmplt.spin1y
     s1z = tmplt.spin1z
