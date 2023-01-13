@@ -651,7 +651,7 @@ def get_tha_waveform(approximant, wf_params, start_frequency, sample_rate,
 
     if approximant == "IMRPhenomPv2":
         cls = PhenomPv2Template
-    elif approximant = "IMRPhenomXP":
+    elif approximant == "IMRPhenomXP":
         cls = PhenomXPTemplate
     else:
         print (approximant)
