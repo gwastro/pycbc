@@ -907,7 +907,7 @@ with ctx:
             check_logic |= outside_mchirp_window(template_mchirp[index],
                                                  sig_mchirp[sidx])
             if check_logic:
-                matches.append([0.,0.,0.,0.,0.])
+                matches.append([0.,0.,0.,0.,0.,0.,0.,0.,0.])
                 continue
 
             # Generate htilde if we haven't already done so

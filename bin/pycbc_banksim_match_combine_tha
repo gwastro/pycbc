@@ -132,9 +132,9 @@ for idx, row in enumerate(res):
                                     contenthandler=LIGOLWContentHandler)
         itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral") 
     
-    bts = []
+    bts = {}
     for i in [1, 2, 3, 4, 5, 'vary', 'vary_max2', 'vary_max3', 'vary_max4']:
-        bts.append(btables[row['bank_{}'.format(i)]][row['bank_i_{}'.format(i)]])
+        bts[i] = btables[row['bank_{}'.format(i)]][row['bank_i_{}'.format(i)]]
     it = itables[row['sim']][row['sim_i']]
  
     for i in [1, 2, 3, 4, 5, 'vary', 'vary_max2', 'vary_max3', 'vary_max4']:
