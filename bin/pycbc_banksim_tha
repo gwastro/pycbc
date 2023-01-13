@@ -380,7 +380,7 @@ class _FDTemplate():
         # generate hp, hc for given orientation with lalsimulation
         hp, hc = lalsim.SimInspiralChooseFDWaveform(
             self.mass1*lal.MSUN_SI, self.mass2*lal.MSUN_SI, spin1x, spin1y,
-            spin1z, spin2x, spin2y, spin2z, 1.e6*PC_SI, iota, phi0,
+            spin1z, spin2x, spin2y, spin2z, 1.e6*lal.PC_SI, iota, phi0,
             0, 0, 0, df, self.flow, f_final, self.fref, lal.CreateDict(),
             lalsim.GetApproximantFromString(self.approximant)
         )
