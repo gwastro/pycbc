@@ -216,8 +216,99 @@ def compute_complex_correlation(htilde1, htilde2, deltaF):
     # vdot is dot with complex conjugation
     return np.vdot(htilde1, htilde2) * 4 * deltaF
 
-class PhenomTemplate():
-    
+def _dpsi(theta_jn, phi_jl, beta):
+    """Calculate the difference between the polarization with respect to the
+    total angular momentum and the polarization with respect to the orbital
+    angular momentum using code from
+    https://git.ligo.org/lscsoft/pesummary/-/blob/master/pesummary/gw/conversions/angles.py#L13
+    """
+    if theta_jn == 0:
+        return -1. * phi_jl
+    n = np.array([np.sin(theta_jn), 0, np.cos(theta_jn)])
+    j = np.array([0, 0, 1])
+    l = np.array([
+        np.sin(beta) * np.sin(phi_jl), np.sin(beta) * np.cos(phi_jl), np.cos(beta)
+    ])
+    p_j = np.cross(n, j)
+    p_j /= np.linalg.norm(p_j)
+    p_l = np.cross(n, l)
+    p_l /= np.linalg.norm(p_l)
+    cosine = np.inner(p_j, p_l)
+    sine = np.inner(n, np.cross(p_j, p_l))
+    dpsi = np.pi / 2 + np.sign(sine) * np.arccos(cosine)
+    return dpsi
+
+def _dphi(theta_jn, phi_jl, beta):
+    """Calculate the difference in the phase angle between J-aligned
+    and L-aligned frames using code from
+    https://git.ligo.org/lscsoft/pesummary/-/blob/master/pesummary/gw/conversions/angles.py#L36
+
+    Parameters
+    ----------
+    theta_jn: np.ndarray
+        the angle between J and line of sight
+    phi_jl: np.ndarray
+        the precession phase
+    beta: np.ndarray
+        the opening angle (angle between J and L)
+    """
+    theta_jn = np.array([theta_jn])
+    phi_jl = np.array([phi_jl])
+    beta = np.array([beta])
+    n = np.column_stack(
+        [np.repeat([0], len(theta_jn)), np.sin(theta_jn), np.cos(theta_jn)]
+    )
+    l = np.column_stack(
+        [
+            np.sin(beta) * np.cos(phi_jl), np.sin(beta) * np.sin(phi_jl),
+            np.cos(beta)
+        ]
+    )
+    cosi = [np.inner(nn, ll) for nn, ll in zip(n, l)]
+    inc = np.arccos(cosi)
+    sign = np.sign(np.cos(theta_jn) - (np.cos(beta) * np.cos(inc)))
+    cos_d = np.cos(phi_jl) * np.sin(theta_jn) / np.sin(inc)
+    inds = np.logical_or(cos_d < -1, cos_d > 1)
+    cos_d[inds] = np.sign(cos_d[inds]) * 1.
+    dphi = -1. * sign * np.arccos(cos_d)
+    return dphi[0]
+
+def compute_beta(tmplt):
+    """ Calculate beta (thetaJL) using code from
+    https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/_l_a_l_sim_inspiral_8c_source.html#l06105
+    """
+    m1 = tmplt.m1
+    m2 = tmplt.m2
+    s1x = tmplt.spin1x
+    s1y = tmplt.spin1y
+    s1z = tmplt.spin1z
+    s2x = tmplt.spin2x
+    s2y = tmplt.spin2y
+    s2z = tmplt.spin2z
+    flow = tmplt.flow
+
+    eta = m1 * m2 / (m1 + m2) / (m1 + m2);
+    v0 = ((m1 + m2) * MTSUN_SI * PI * flow) ** (1. / 3.)
+
+    lmag = (m1 + m2) * (m1 + m2) * eta / v0
+    lmag *= (1.0 + v0 * v0 * (1.5 + eta / 6.))
+
+    s1x = m1 * m1 * s1x
+    s1y = m1 * m1 * s1y
+    s1z = m1 * m1 * s1z
+    s2x = m2 * m2 * s2x
+    s2y = m2 * m2 * s2y
+    s2z = m2 * m2 * s2z
+    jx = s1x + s2x
+    jy = s1y + s2y
+    jz = lmag + s1z + s2z
+
+    jnorm = (jx * jx + jy * jy + jz * jz) ** (1. / 2.)
+    jhatz = jz / jnorm
+
+    return np.arccos(jhatz)
+
+class _FDTemplate():
     def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
                  theta, phi, iota, psi, orb_phase, sample_rate, f_lower):
         self.flow = f_lower
@@ -237,10 +328,11 @@ class PhenomTemplate():
         self.iota = float(iota)
         self.psi = float(psi)
         self.orb_phase = float(orb_phase)
-        
-        outs = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
-            self.mass1,
-            self.mass2,
+        self.fref = self.flow
+
+        outs = self._model_parameters_from_source_frame(
+            self.m1*MSUN_SI,
+            self.m2*MSUN_SI,
             self.flow,
             self.orb_phase,
             self.iota,
@@ -250,10 +342,8 @@ class PhenomTemplate():
             self.spin2x,
             self.spin2y,
             self.spin2z,
-            lalsim.IMRPhenomPv2_V
         )
         chi1_l, chi2_l, chip, thetaJN, alpha0, phi_aligned, zeta_polariz = outs
-
         self.chi1_l = float(chi1_l)
         self.chi2_l = float(chi2_l)
         self.chip = float(chip)
@@ -265,57 +355,97 @@ class PhenomTemplate():
         self.psi = float(psi)
         # This is a correction on psi, currently unused
         self.psi_corr = zeta_polariz
-        
+        self.beta = compute_beta(self)
+
         self.comps = {}
-        
-    def gen_phenom_p_comp(self, thetaJN, alpha0, phi0, df):
-        return lalsim.SimIMRPhenomP(
-            self.chi1_l,
-            self.chi2_l,
-            self.chip,
-            thetaJN,
-            self.mass1*lal.MSUN_SI,
-            self.mass2*lal.MSUN_SI,
-            1.e6*lal.PC_SI,
-            alpha0,
-            phi0,
-            df,
-            self.flow,
-            self.f_final,
-            self.flow,
-            lalsim.IMRPhenomPv2_V,
-            lalsim.NoNRT_V,
-            None
+
+    def gen_harmonics_comp(self, thetaJN, alpha0, phi0, psi, df, f_final):
+        # calculate cartesian spins for waveform generator
+        a1 = np.sqrt(
+            np.sum(np.square([self.spin1x, self.spin1y, self.spin1z]))
         )
-
-    def compute_waveform_five_comps(self, df, f_final):
-
-        hgen1a, _  = self.gen_phenom_p_comp(0., 0., 0., df)
-        # hgen1b is negative w.r.t. 1908.05707
-        _, hgen1b = self.gen_phenom_p_comp(0., 0., np.pi/4., df)
-        # These are both negative w.r.t 1908.05707
-        _, hgen2a = self.gen_phenom_p_comp(np.pi/2., 0., np.pi/4., df)
-        _, hgen2b = self.gen_phenom_p_comp(np.pi/2., np.pi/2., 0., df)
-        hgen3a, _ = self.gen_phenom_p_comp(np.pi/2., 0., 0., df)
-        hgen3b, _ = self.gen_phenom_p_comp(np.pi/2., np.pi/2., 0., df)
-
+        a2 = np.sqrt(
+            np.sum(np.square([self.spin2x, self.spin2y, self.spin2z]))
+        )
+        phi1 = np.fmod(
+            2 * np.pi + np.arctan2(self.spin1y, self.spin1x),
+            2 * np.pi
+        )
+        phi2 = np.fmod(
+            2 * np.pi + np.arctan2(self.spin2y, self.spin2x),
+            2 * np.pi
+        )
+        phi12 = phi2 - phi1
+        if phi12 < 0:
+            phi12 += 2 * np.pi
+        tilt1 = np.arccos(self.spin1z / a1)
+        tilt2 = np.arccos(self.spin2z / a2)
+        iota, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
+            lalsim.SimInspiralTransformPrecessingNewInitialConditions(
+                thetaJN, alpha0, tilt1, tilt2, phi12, a1, a2,
+                self.m1*MSUN_SI, self.m2*MSUN_SI, self.fref, phi0
+            )
+        # generate hp, hc for given orientation with lalsimulation
+        hp, hc = lalsim.SimInspiralChooseFDWaveform(
+            self.m1*MSUN_SI, self.m2*MSUN_SI, spin1x, spin1y,
+            spin1z, spin2x, spin2y, spin2z, 1.e6*PC_SI, iota, phi0,
+            0, 0, 0, df, self.flow, f_final, self.fref, lal.CreateDict(),
+            lalsim.GetApproximantFromString(self.approximant)
+        )
+        # 1908.05707 defines psi in J-aligned frame. Need to rotate to
+        # L-aligned frame and multiply by w+, wx
+        dpsi = _dpsi(thetaJN, alpha0, self.beta)
+        fp = np.cos(2 * (psi - dpsi))
+        fc = -1. * np.sin(2 * (psi - dpsi))
+        h = (fp * hp.data.data[:] + fc * hc.data.data[:])
+        # 1908.05707 defines phi in J-aligned frame. Need to rotate to
+        # L-aligned frame
+        h *= np.exp(2j * _dphi(thetaJN, alpha0, self.beta))
+        # create LAL frequency array and return precessing harmonic
+        new = CreateCOMPLEX8FrequencySeries(
+            "", lal.LIGOTimeGPS(hp.epoch), 0, df, lal.SecondUnit, len(h)
+        )
+        new.data.data[:] = h[:]
+        return new
+    
+    def _compute_waveform_five_comps(self, df, f_final):
+        # calculate 5 harmonic decomposition as defined in 1908.05707
+        hgen1a = self.gen_harmonics_comp(
+            0., 0., 0., 0., df, f_final
+            )
+        hgen1b = self.gen_harmonics_comp(
+            0., 0., np.pi/4., np.pi/4, df, f_final
+        )
         # Edit these arrays in place to avoid defining new LAL arrays
-        tmp = hgen1a.data.data[:] + hgen1b.data.data[:]
-        hgen1b.data.data[:] = (hgen1a.data.data[:] - hgen1b.data.data[:])/2.
+        tmp = hgen1a.data.data[:] - hgen1b.data.data[:]
+        hgen1b.data.data[:] = (hgen1a.data.data[:] + hgen1b.data.data[:]) / 2.
         hgen1a.data.data[:] = tmp / 2.
         h1 = hgen1a
         h5 = hgen1b
-
+        hgen2a = self.gen_harmonics_comp(
+            np.pi/2., 0., np.pi/4., np.pi/4, df, f_final
+        )
+        hgen2b = self.gen_harmonics_comp(
+            np.pi/2., np.pi/2., 0., np.pi/4, df, f_final
+        )
         tmp = hgen2a.data.data[:] + hgen2b.data.data[:]
-        hgen2b.data.data[:] = 0.25 * (hgen2a.data.data[:] - hgen2b.data.data[:])
-        hgen2a.data.data[:] = 0.25 * tmp
+        hgen2b.data.data[:] = -0.25 * (
+            hgen2a.data.data[:] - hgen2b.data.data[:]
+        )
+        hgen2a.data.data[:] = -0.25 * tmp
         h2 = hgen2a
         h4 = hgen2b
+        hgen3a = self.gen_harmonics_comp(
+            np.pi/2., 0., 0., 0., df, f_final
+        )
+        hgen3b = self.gen_harmonics_comp(
+            np.pi/2., np.pi/2., 0., 0., df, f_final
+        )
         hgen3a.data.data[:] = \
             1./6. * (hgen3a.data.data[:] + hgen3b.data.data[:])
         h3 = hgen3a
-
-        return h1, h2, h3, h4, h5
+        hs = (h1, h2, h3, h4, h5)
+        return hs
 
     def get_whitened_normalized_comps(self, df, psd):
         """
@@ -481,6 +611,24 @@ class PhenomTemplate():
                     print (i, j, abs(overlap_cplx(hs[i], hs[j], low_frequency_cutoff=30.)))
 
 
+class PhenomPv2Template(_FDTemplate):
+    approximant = "IMRPhenomPv2"
+
+    def _model_parameters_from_source_frame(self, *args):
+        return lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
+            *args, lalsim.IMRPhenomPv2_V
+        )
+
+
+class PhenomXPTemplate(_FDTemplate):
+    approximant = "IMRPhenomXP" 
+
+    def _model_parameters_from_source_frame(self, *args):
+        return lalsim.SimIMRPhenomXPCalculateModelParametersFromSourceFrame(
+            *args, None
+        )
+
+
 
 def get_tha_waveform(approximant, wf_params, start_frequency, sample_rate,
                      length, filter_rate, psd):
@@ -490,10 +638,6 @@ def get_tha_waveform(approximant, wf_params, start_frequency, sample_rate,
     except AttributeError:
         # Already a str
         pass
-
-    if not approximant == 'IMRPhenomPv2':
-        print (approximant)
-        raise ValueError("Can only do PhenomPv2 right now!")
 
     assert(sample_rate == filter_rate)
 
@@ -513,9 +657,17 @@ def get_tha_waveform(approximant, wf_params, start_frequency, sample_rate,
     psi = template_params.polarization
     orb_phase = template_params.orbital_phase
 
-    curr_tmp = PhenomTemplate(mass1, mass2, spin1x, spin1y, spin1z, spin2x,
-                              spin2y, spin2z, theta, phi, iota, psi,
-                              orb_phase, sample_rate, start_frequency)
+    if approximant == "IMRPhenomPv2":
+        cls = PhenomPv2Template
+    elif approximant = "IMRPhenomXP":
+        cls = PhenomXPTemplate
+    else:
+        print (approximant)
+        raise ValueError("Can only do PhenomPv2 and PhenomXP right now!")
+    curr_tmp = cls(mass1, mass2, spin1x, spin1y, spin1z, spin2x,
+                   spin2y, spin2z, theta, phi, iota, psi,
+                   orb_phase, sample_rate, start_frequency)
+
 
     #curr_tmp.test_five_comps_orthogonality(delta_f, psd)
 
