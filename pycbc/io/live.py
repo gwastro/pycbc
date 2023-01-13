@@ -301,7 +301,8 @@ class CandidateForGraceDB(object):
         if threading.current_thread() is not threading.main_thread():
             # avoid an error due to no ability to do signal handling in threads
             kwargs['trap_signals'] = None
-        ligolw_utils.write_filename(self.outdoc, fname, compress='auto', **kwargs)
+        ligolw_utils.write_filename(self.outdoc, fname, \
+            compress='auto', **kwargs)
 
         save_dir = os.path.dirname(fname)
         # Save EMBright properties info as json
@@ -375,7 +376,8 @@ class CandidateForGraceDB(object):
             if not hasattr(self, 'gracedb'):
                 from ligo.gracedb.rest import GraceDb
                 gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
-                self.gracedb = GraceDb(gracedb_server, **gdbargs) if gracedb_server else GraceDb(**gdbargs)
+                self.gracedb = GraceDb(gracedb_server, **gdbargs) \
+                    if gracedb_server else GraceDb(**gdbargs)
             # create GraceDB event
             group = 'Test' if testing else 'CBC'
             r = self.gracedb.create_event(group, "pycbc", fname, search).json()
