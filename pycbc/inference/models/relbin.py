@@ -104,7 +104,9 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
         elif idx_f_full == len(f_full):
             curr_idx = len(f_full) - 1
         else:
-            if abs(f_full[idx_f_full] - fbin[idx_fbin]) > abs(f_full[idx_f_full-1] - fbin[idx_fbin]):
+            abs1 = abs(f_full[idx_f_full] - fbin[idx_fbin])
+            abs2 = abs(f_full[idx_f_full-1] - fbin[idx_fbin])
+            if abs1 > abs2:
                 curr_idx = idx_f_full - 1
             else:
                 curr_idx = idx_f_full
