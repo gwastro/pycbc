@@ -280,7 +280,7 @@ def compute_beta(tmplt):
     flow = tmplt.flow
 
     eta = m1 * m2 / (m1 + m2) / (m1 + m2);
-    v0 = ((m1 + m2) * MTSUN_SI * PI * flow) ** (1. / 3.)
+    v0 = ((m1 + m2) * lal.MTSUN_SI * lal.PI * flow) ** (1. / 3.)
 
     lmag = (m1 + m2) * (m1 + m2) * eta / v0
     lmag *= (1.0 + v0 * v0 * (1.5 + eta / 6.))
