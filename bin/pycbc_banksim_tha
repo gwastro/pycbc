@@ -323,8 +323,8 @@ class _FDTemplate():
         self.fref = self.flow
 
         outs = self._model_parameters_from_source_frame(
-            self.m1*MSUN_SI,
-            self.m2*MSUN_SI,
+            self.m1*lal.MSUN_SI,
+            self.m2*lal.MSUN_SI,
             self.flow,
             self.orb_phase,
             self.iota,
@@ -375,11 +375,11 @@ class _FDTemplate():
         iota, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
             lalsim.SimInspiralTransformPrecessingNewInitialConditions(
                 thetaJN, alpha0, tilt1, tilt2, phi12, a1, a2,
-                self.m1*MSUN_SI, self.m2*MSUN_SI, self.fref, phi0
+                self.m1*lal.MSUN_SI, self.m2*lal.MSUN_SI, self.fref, phi0
             )
         # generate hp, hc for given orientation with lalsimulation
         hp, hc = lalsim.SimInspiralChooseFDWaveform(
-            self.m1*MSUN_SI, self.m2*MSUN_SI, spin1x, spin1y,
+            self.m1*lal.MSUN_SI, self.m2*lal.MSUN_SI, spin1x, spin1y,
             spin1z, spin2x, spin2y, spin2z, 1.e6*PC_SI, iota, phi0,
             0, 0, 0, df, self.flow, f_final, self.fref, lal.CreateDict(),
             lalsim.GetApproximantFromString(self.approximant)
