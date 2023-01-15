@@ -145,7 +145,7 @@ def multiband_td_waveform(bands=None, lengths=None, overlap=0, **p):
     if p['approximant'] in fd_det:
         waveform = {}
         for ifo in p['ifos']:
-            waveform[ifo] = wf_det[np.where(p['ifos']==ifo)[0]]
+            waveform[ifo] = wf_det[numpy.where(p['ifos']==ifo)[0]]
     else:
         waveform = (wf_plus, wf_cross)
 
@@ -192,7 +192,7 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
     else:
         waveform = {}
         for ifo in p['ifos']:
-            waveform[ifo] = waveform_td[np.where(
+            waveform[ifo] = waveform_td[numpy.where(
                         p['ifos']==ifo)[0]].to_frequencyseries(p['delta_f'])
 
     return waveform
