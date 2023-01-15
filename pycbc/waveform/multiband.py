@@ -58,7 +58,7 @@ def multiband_td_waveform(bands=None, lengths=None, overlap=0, **p):
 
     Returns
     -------
-    waveform: pycbc.types.TimeSeries or tuple
+    waveform: dict or tuple contains pycbc.types.TimeSeries
     """
     from pycbc.waveform import (get_fd_waveform,
                                 fd_det, get_fd_det_waveform)
@@ -81,8 +81,8 @@ def multiband_td_waveform(bands=None, lengths=None, overlap=0, **p):
     tlen = int(1.0 / dt / df)
     flen = tlen / 2 + 1
     if p['approximant'] in fd_det:
-        wf_det = TimeSeries(zeros(tlen, dtype=numpy.float32),
-                            copy=False, delta_t=dt, epoch=-1.0/df)
+        wf_det = len(p['ifos'])*[TimeSeries(zeros(tlen, dtype=numpy.float32),
+                                 copy=False, delta_t=dt, epoch=-1.0/df)]
     else:
         wf_plus = TimeSeries(zeros(tlen, dtype=numpy.float32),
                              copy=False, delta_t=dt, epoch=-1.0/df)
@@ -112,11 +112,11 @@ def multiband_td_waveform(bands=None, lengths=None, overlap=0, **p):
             p2['f_final'] += overlap / 2.0
 
         tlen = int(1.0 / dt / dfs[i])
-        flen = tlen / 2 + 1
+        flen = tlen // 2 + 1
 
         if p['approximant'] in fd_det:
             strain = get_fd_det_waveform(**p2)
-            zip_list = zip([wf_det], [strain])
+            zip_list = zip(wf_det, strain.values())
         else:
             hp, hc = get_fd_waveform(**p2)
             zip_list = zip([wf_plus, wf_cross], [hp, hc])
@@ -134,15 +134,18 @@ def multiband_td_waveform(bands=None, lengths=None, overlap=0, **p):
 
             if taper_end:
                 l, r = kmax - (len(taper) - len(taper) // 2), kmax
+                print(l, r)
                 h[l:r] *= taper[len(taper)//2:]
 
             # add frequency band to total and use fft to interpolate
             h.resize(flen)
-            h = h.to_timeseries()
-            wf[len(wf)-len(h):] += h
+            h = h.to_timeseries(dt)
+            wf = wf.add_into(h)
 
     if p['approximant'] in fd_det:
-        waveform = wf_det
+        waveform = {}
+        for ifo in p['ifos']:
+            waveform[ifo] = wf_det[np.where(p['ifos']==ifo)[0]]
     else:
         waveform = (wf_plus, wf_cross)
 
@@ -178,14 +181,18 @@ def multiband_fd_waveform(bands=None, lengths=None, overlap=0, **p):
 
     Returns
     -------
-    waveform: pycbc.types.FrequencySeries or list
+    waveform: dict or tuple contains pycbc.types.FrequencySeries
     """
     waveform_td = multiband_td_waveform(bands, lengths, overlap, **p)
     if isinstance(waveform_td, tuple):
         waveform = []
         for h in waveform_td:
-            waveform.append(h.to_frequencyseries())
+            waveform.append(h.to_frequencyseries(p['delta_f']))
+        waveform = tuple(waveform)
     else:
-        waveform = waveform_td.to_frequencyseries()
+        waveform = {}
+        for ifo in p['ifos']:
+            waveform[ifo] = waveform_td[np.where(
+                        p['ifos']==ifo)[0]].to_frequencyseries(p['delta_f'])
 
     return waveform
