@@ -134,7 +134,6 @@ def multiband_td_waveform(bands=None, lengths=None, overlap=0, **p):
 
             if taper_end:
                 l, r = kmax - (len(taper) - len(taper) // 2), kmax
-                print(l, r)
                 h[l:r] *= taper[len(taper)//2:]
 
             # add frequency band to total and use fft to interpolate
