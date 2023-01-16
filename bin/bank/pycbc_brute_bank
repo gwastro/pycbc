@@ -26,7 +26,6 @@ from pycbc.distributions import read_params_from_config
 from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
 from scipy.stats import gaussian_kde
 
-from pycbc.conversions import remnant_mass_from_mass1_mass2_spherical_spin_eos as rmn_mass
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--verbose', action='store_true')
@@ -412,8 +411,8 @@ def draw(rtype):
         
         if args.remnant_mass_threshold:
             params = {k: params[k][l] for k in params}
-            l = (rmn_mass(params['mass1'], params['mass2'], spin1a=params['spin1z'],
-                          eos=args.eos) > args.remnant_mass_threshold) | \
+            l = (pycbc.conversions.remnant_mass_from_mass1_mass2_spherical_spin_eos(params['mass1'],
+                 params['mass2'], spin1a=params['spin1z'], eos=args.eos) > args.remnant_mass_threshold) | \
                 (params['mass1'] <= args.NS_threshold)
 
     else:
