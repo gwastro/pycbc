@@ -26,7 +26,6 @@ from pycbc.distributions import read_params_from_config
 from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
 from scipy.stats import gaussian_kde
 
-
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--output-file', required=True,
@@ -94,11 +93,21 @@ if args.input_config is not None:
     dists_joint = prior_from_config(cp=config_parser)
 
 if not args.tau0_end:
+    """
+    If tau0_end is not provided, it is derived and rounded up to the
+    upper tens.
+    This is necessary to cover up all the phase space.  
+    """
     import math
-    args.tau0_end = math.ceil(pycbc.conversions.tau0_from_mass1_mass2(args.min[0], args.min[1],
-                                                                        args.low_frequency_cutoff) / 10) * 10
+    from pycbc.conversions import tau0_from_mass1_mass2
+    args.tau0_end = math.ceil(tau0_from_mass1_mass2(args.min[0], args.min[1],
+                                        args.low_frequency_cutoff) / 10) * 10
 if not args.eos:
     args.eos = '2H'
+
+if args.remnant_mass_threshold:
+    from pycbc.conversions import \
+    remnant_mass_from_mass1_mass2_spherical_spin_eos as remnant_mass
 
 if args.remnant_mass_threshold and not args.NS_threshold:
     from pycbc.neutron_stars.eos_utils import load_ns_sequence
@@ -122,7 +131,8 @@ class Shrinker(object):
         return l
 
 class TriangleBank(object):
-    """ A bank of templates that uses the triangle inequality to estimate
+    """ 
+    A bank of templates that uses the triangle inequality to estimate
     matches based on prior ones.
     """
     def __init__(self, p=None):
@@ -376,11 +386,13 @@ def draw(rtype):
             params = transforms.apply_transforms(params, waveform_transforms)
 
     params['approximant'] = numpy.array([args.approximant]*size)
-    #order params
-    params['mass1'], params['mass2'], params['spin1z'], params['spin2z'] = numpy.where(
-                            params['mass1']>params['mass2'], (params['mass1'], params['mass2'],
-                            params['spin1z'], params['spin2z']), (params['mass2'], params['mass1'], 
-                            params['spin2z'], params['spin1z']))
+    # remnant_mass function needs m1 >= m2, therefore it is necessary to order
+    # the params
+    if args.remnant_mass_threshold:
+        params['mass1'], params['mass2'], 
+        params['spin1z'], params['spin2z'] = numpy.where(params['mass1'] > params['mass2'],
+                    (params['mass1'], params['mass2'], params['spin1z'], params['spin2z']),
+                    (params['mass2'], params['mass1'], params['spin2z'], params['spin1z']))
 
     # Filter out stuff (kde method may also generate samples outside boundaries).
     l = None
@@ -390,7 +402,8 @@ def draw(rtype):
             l = (nl & l) if l is not None else nl
 
         if args.max_q:
-            q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
+            q =  numpy.maximum(params['mass1'] / params['mass2'], 
+                               params['mass2'] / params['mass1'])
             l &= q < args.max_q
 
         if args.max_mtotal:
@@ -411,8 +424,8 @@ def draw(rtype):
         
         if args.remnant_mass_threshold:
             params = {k: params[k][l] for k in params}
-            l = (pycbc.conversions.remnant_mass_from_mass1_mass2_spherical_spin_eos(params['mass1'],
-                 params['mass2'], spin1a=params['spin1z'], eos=args.eos) > args.remnant_mass_threshold) | \
+            l = (remnant_mass(params['mass1'], params['mass2'], 
+                 spin1a=params['spin1z'], eos=args.eos) > args.remnant_mass_threshold) | \
                 (params['mass1'] <= args.NS_threshold)
 
     else:
@@ -503,7 +516,9 @@ while tau0s < args.tau0_end:
     region += 1
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2
-logging.info("Time elapsed: %s", time.time()-t0)
+time_elapsed = time.time() - t0
+time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time_elapsed))
+logging.info("Elapsed time: ", time_elapsed)
 o = h5py.File(args.output_file, 'w')
 for k in bank.keys():
     val = bank.key(k)
