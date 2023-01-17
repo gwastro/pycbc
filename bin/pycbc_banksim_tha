@@ -400,7 +400,7 @@ class _FDTemplate():
         new.data.data[:] = h[:]
         return new
     
-    def _compute_waveform_five_comps(self, df, f_final):
+    def compute_waveform_five_comps(self, df, f_final):
         # calculate 5 harmonic decomposition as defined in 1908.05707
         hgen1a = self.gen_harmonics_comp(
             0., 0., 0., 0., df, f_final
