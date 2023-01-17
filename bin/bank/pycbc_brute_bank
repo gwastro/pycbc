@@ -89,6 +89,17 @@ if args.input_config is not None:
 
     dists_joint = prior_from_config(cp=config_parser)
 
+if not args.tau0_end:
+    """
+    If tau0_end is not provided, it is derived and rounded up to the
+    upper tens.
+    This is necessary to cover up all the phase space.  
+    """
+    import math
+    from pycbc.conversions import tau0_from_mass1_mass2
+    args.tau0_end = math.ceil(tau0_from_mass1_mass2(args.min[0], args.min[1],
+                                        args.low_frequency_cutoff) / 10) * 10
+
 fdict = {}
 if args.fixed_params:
     for p, v in zip(args.fixed_params, args.fixed_values):
@@ -187,11 +198,12 @@ class TriangleBank(object):
 
         msig = len(r)
 
-        #Apply tua0 threshold
+        #Apply tau0 threshold
         if args.tau0_threshold:
             hp.tau0 = pycbc.conversions.tau0_from_mass1_mass2(
                                             hp.params['mass1'],
-                                            hp.params['mass2'], 15.0)
+                                            hp.params['mass2'],
+                                            args.low_frequency_cutoff)
             hp.tbin = int(hp.tau0 / args.tau0_threshold)
 
             if hp.tbin in self.tbins:
@@ -400,7 +412,8 @@ def cdraw(rtype, ts, te):
 
     p = draw(rtype)
     if  len(p[list(p.keys())[0]]) > 0:
-        t = tau0_from_mass1_mass2(p['mass1'], p['mass2'], 15.0)
+        t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
+                                  args.low_frequency_cutoff)
         l = (t < te) & (t > ts)
         for k in p:
             p[k] = p[k][l]
@@ -413,7 +426,8 @@ def cdraw(rtype, ts, te):
             p[k] = numpy.concatenate([p[k], tp[k]])
 
         if  len(p[list(p.keys())[0]]) > 0:
-            t = tau0_from_mass1_mass2(p['mass1'], p['mass2'], 15.0)
+            t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
+                                      args.low_frequency_cutoff)
             l = (t < te) & (t > ts)
             for k in p:
                 p[k] = p[k][l]
