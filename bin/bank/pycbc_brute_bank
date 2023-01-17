@@ -63,9 +63,6 @@ parser.add_argument('--max-q', type=float)
 parser.add_argument('--tau0-crawl', type=float)
 parser.add_argument('--tau0-start', type=float)
 parser.add_argument('--tau0-end', type=float)
-parser.add_argument('--NS-threshold', type=float)
-parser.add_argument('--remnant-mass-threshold', type=float)
-parser.add_argument('--eos', type=str)
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -102,22 +99,11 @@ if not args.tau0_end:
     from pycbc.conversions import tau0_from_mass1_mass2
     args.tau0_end = math.ceil(tau0_from_mass1_mass2(args.min[0], args.min[1],
                                         args.low_frequency_cutoff) / 10) * 10
-if not args.eos:
-    args.eos = '2H'
-
-if args.remnant_mass_threshold:
-    from pycbc.conversions import \
-    remnant_mass_from_mass1_mass2_spherical_spin_eos as remnant_mass
-
-if args.remnant_mass_threshold and not args.NS_threshold:
-    from pycbc.neutron_stars.eos_utils import load_ns_sequence
-    seq, args.NS_threshold = load_ns_sequence(args.eos)
-    del seq
 
 fdict = {}
 if args.fixed_params:
-    fdict = {p: v for (p, v) in zip(args.fixed_params, args.fixed_values)}
-    
+    for p, v in zip(args.fixed_params, args.fixed_values):
+        fdict[p] = v
 
 class Shrinker(object):
     def __init__(self, data):
@@ -131,8 +117,7 @@ class Shrinker(object):
         return l
 
 class TriangleBank(object):
-    """ 
-    A bank of templates that uses the triangle inequality to estimate
+    """ A bank of templates that uses the triangle inequality to estimate
     matches based on prior ones.
     """
     def __init__(self, p=None):
@@ -213,7 +198,7 @@ class TriangleBank(object):
 
         msig = len(r)
 
-        #Apply tua0 threshold
+        #Apply tau0 threshold
         if args.tau0_threshold:
             hp.tau0 = pycbc.conversions.tau0_from_mass1_mass2(
                                             hp.params['mass1'],
@@ -346,18 +331,20 @@ if args.input_file:
 
 
 def draw(rtype):
+    params = {}
 
     if rtype == 'uniform':
         if args.input_config is None:
-            params = {name: numpy.random.uniform(pmin, pmax, size=size) 
-                      for name, pmin, pmax in zip(args.params, args.min, args.max)}
+            for name, pmin, pmax in zip(args.params, args.min, args.max):
+                params[name] = numpy.random.uniform(pmin, pmax, size=size)
         else:
             # `draw_samples_from_config` has its own fixed seed, so must overwrite it.
             random_seed = numpy.random.randint(low=0, high=2**32-1)
             samples = draw_samples_from_config(args.input_config, size, random_seed)
-            params = {name: samples[name] for name in samples.fieldnames}
+            for name in samples.fieldnames:
+                params[name] = samples[name]
             # Add `static_args` back.
-            if static_args is not None: 
+            if static_args is not None:
                 for k in static_args.keys():
                     params[k] = numpy.array([static_args[k]]*size)
 
@@ -374,7 +361,8 @@ def draw(rtype):
 
         kde = gaussian_kde(bdata)
         points = kde.resample(size=size)
-        params = {k: v for k, v in zip(p, points)}
+        for k, v in zip(p, points):
+            params[k] = v
 
         # Add `static_args` back, some transformations may need them.
         if args.input_config is not None and static_args is not None:
@@ -386,13 +374,6 @@ def draw(rtype):
             params = transforms.apply_transforms(params, waveform_transforms)
 
     params['approximant'] = numpy.array([args.approximant]*size)
-    # remnant_mass function needs m1 >= m2, therefore it is necessary to order
-    # the params
-    if args.remnant_mass_threshold:
-        params['mass1'], params['mass2'], 
-        params['spin1z'], params['spin2z'] = numpy.where(params['mass1'] > params['mass2'],
-                    (params['mass1'], params['mass2'], params['spin1z'], params['spin2z']),
-                    (params['mass2'], params['mass1'], params['spin2z'], params['spin1z']))
 
     # Filter out stuff (kde method may also generate samples outside boundaries).
     l = None
@@ -402,8 +383,7 @@ def draw(rtype):
             l = (nl & l) if l is not None else nl
 
         if args.max_q:
-            q =  numpy.maximum(params['mass1'] / params['mass2'], 
-                               params['mass2'] / params['mass1'])
+            q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
             l &= q < args.max_q
 
         if args.max_mtotal:
@@ -418,20 +398,13 @@ def draw(rtype):
             from pycbc.conversions import mchirp_from_mass1_mass2
             mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
             l &= mc > args.min_mchirp
-        
-        if args.NS_threshold:
-            l &= (params['mass2'] <= args.NS_threshold)
-        
-        if args.remnant_mass_threshold:
-            params = {k: params[k][l] for k in params}
-            l = (remnant_mass(params['mass1'], params['mass2'], 
-                 spin1a=params['spin1z'], eos=args.eos) > args.remnant_mass_threshold) | \
-                (params['mass1'] <= args.NS_threshold)
 
     else:
         l = dists_joint.contains(params)
 
-    params = {k: params[k][l] for k in params}
+    for k in params:
+        params[k] = params[k][l]
+
     return params
 
 def cdraw(rtype, ts, te):
@@ -442,13 +415,13 @@ def cdraw(rtype, ts, te):
         t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
                                   args.low_frequency_cutoff)
         l = (t < te) & (t > ts)
-        p = {k: p[k][l] for k in p}
+        for k in p:
+            p[k] = p[k][l]
 
     i = 0
     while len(p[list(p.keys())[0]]) < size:
 
         tp = draw(rtype)
-        p = {k: numpy.concatenate([p[k], tp[k]]) for k in p}
         for k in p:
             p[k] = numpy.concatenate([p[k], tp[k]])
 
@@ -456,7 +429,8 @@ def cdraw(rtype, ts, te):
             t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
                                       args.low_frequency_cutoff)
             l = (t < te) & (t > ts)
-            p = {k: p[k][l] for k in p}
+            for k in p:
+                p[k] = p[k][l]
 
         i += 1
         if i > 1000:
@@ -464,15 +438,13 @@ def cdraw(rtype, ts, te):
 
     if len(p[list(p.keys())[0]]) == 0:
         return None
-    
-    return p
 
+    return p
 
 tau0s = args.tau0_start
 tau0e = tau0s + args.tau0_crawl
 go = True
-import time
-t0 = time.time()
+
 region = 0
 while tau0s < args.tau0_end:
     conv = 1
@@ -485,6 +457,7 @@ while tau0s < args.tau0_end:
             if len(bank) > 0:
                 go = False
             break
+
         blen = len(bank)
         bank, uconv = bank.check_params(gen, params, args.minimal_match)
         logging.info("%s: Round (U): %s Size: %s conv: %s added: %s",
@@ -516,9 +489,7 @@ while tau0s < args.tau0_end:
     region += 1
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2
-time_elapsed = time.time() - t0
-time_elapsed = time.strftime("%H:%M:%S", time.gmtime(time_elapsed))
-logging.info("Elapsed time: ", time_elapsed)
+
 o = h5py.File(args.output_file, 'w')
 for k in bank.keys():
     val = bank.key(k)
