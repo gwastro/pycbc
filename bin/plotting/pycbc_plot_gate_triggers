@@ -184,7 +184,7 @@ for ifo_files in ifo_trigger_files:
                             else '']
             )
         if args.log_y:
-           plt.yscale('log')
+            plt.yscale('log')
         plt.grid(True)
         plt.xlabel('Time relative to the gate (s)')
         plt.ylabel('Number of triggers')
