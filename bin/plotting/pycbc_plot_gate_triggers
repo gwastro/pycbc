@@ -86,7 +86,7 @@ else:
     snr_cut_vals = numpy.array([0])
 
 # Binning along trigger time
-nbins = int((2 * args.window / args.bin_duration)) + 1)
+nbins = int(2 * args.window / args.bin_duration + 1)
 
 for ifo_files in ifo_trigger_files:
     ifo_trigger_times = [[] for thr in snr_cut_vals]
