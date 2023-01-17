@@ -15,6 +15,7 @@ import os.path
 import itertools
 import platform
 import subprocess
+from multiprocessing.dummy import threading
 from matplotlib import use
 use('agg')
 from shutil import which
@@ -97,6 +98,7 @@ class LiveEventManager(object):
         self.gracedb_testing = not args.enable_production_gracedb_upload
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
+        self.gracedb = None
 
         # Keep track of which events have been uploaded
         self.last_few_coincs_uploaded = []
@@ -361,6 +363,36 @@ class LiveEventManager(object):
                 cmd, shell=True, stdout=logfile, stderr=logfile
             )
 
+    def create_gdb(self):
+        """
+        Function to create GraceDB session.
+        """
+        from ligo.gracedb.rest import GraceDb
+        logging.info('Creating GraceDB session')
+        # Set up dict for args that reload the certificate if it will expire in the reload_buffer time
+        # These args are documented here: https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
+        # Because we do not change any of the request session values when running the code, it should remain thread safe. 
+        gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+        self.gracedb = GraceDb(args.gracedb_server, **gdbargs) if args.gracedb_server else GraceDb(**gdbargs)
+
+    def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos, upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
+        if upload_checks:
+            gid = event.upload(
+                fname,
+                gracedb_server=gracedb_server,
+                testing=self.gracedb_testing,
+                extra_strings=[comment],
+                search=gracedb_search
+            )
+        if optimize_snr_checks:
+            self.setup_optimize_snr(
+                results,
+                live_ifos,
+                ifos,
+                fname,
+                gid
+            )
+
     def check_coincs(self, ifos, coinc_results, psds):
         """ Perform any followup and save zerolag triggers to a coinc xml file
         """
@@ -393,6 +425,7 @@ class LiveEventManager(object):
             coinc_ifos,
             ifos,
             coinc_results,
+            gracedb=self.gracedb,
             padata=self.padata,
             bank=self.bank,
             psds=psds,
@@ -418,38 +451,28 @@ class LiveEventManager(object):
                                  ppdets(followup_ifos))
 
         ifar = coinc_results['foreground/ifar']
-        if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-            gid = event.upload(
-                fname,
-                gracedb_server=args.gracedb_server,
-                testing=self.gracedb_testing,
-                extra_strings=[comment],
-                search=args.gracedb_search
-            )
-            # Keep track of the last few coincs uploaded in order to
-            # prevent singles being uploaded as well for coinc events
-            self.last_few_coincs_uploaded.append(event.merger_time)
-            # Only need to keep a few (10) events
-            self.last_few_coincs_uploaded = \
-                self.last_few_coincs_uploaded[-10:]
-        else:
+        upload_checks = self.enable_gracedb_upload and self.ifar_upload_threshold < ifar
+        optimize_snr_checks = self.run_snr_optimization and self.ifar_upload_threshold < ifar
+        
+        # Keep track of the last few coincs uploaded in order to
+        # prevent singles being uploaded as well for coinc events
+        self.last_few_coincs_uploaded.append(event.merger_time)
+        # Only need to keep a few (10) events
+        self.last_few_coincs_uploaded = \
+            self.last_few_coincs_uploaded[-10:]
+
+        if not upload_checks:
             gid = None
             event.save(fname)
-
-        if self.run_snr_optimization \
-                and self.ifar_upload_threshold < ifar:
-            logging.info('Optimizing SNR for coinc above threshold ..')
+        if upload_checks or optimize_snr_checks:
+            if optimize_snr_checks:
+                logging.info('Optimizing SNR for coinc above threshold ..')
+                # Tell snr optimized event about p_terr
+                if hasattr(event, 'p_terr') and event.p_terr is not None:
+                    coinc_results['p_terr'] = event.p_terr
             live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
-            # Tell snr optimized event about p_terr
-            if hasattr(event, 'p_terr') and event.p_terr is not None:
-                coinc_results['p_terr'] = event.p_terr
-            self.setup_optimize_snr(
-                coinc_results,
-                live_ifos,
-                coinc_ifos,
-                fname,
-                gid
-            )
+            gdb_upload_thread = threading.Thread(target = self.upload_in_thread, args = (event, fname, comment, coinc_results, live_ifos, coinc_ifos, upload_checks, optimize_snr_checks,args.gracedb_server, args.gracedb_search,))
+            gdb_upload_thread.start()
 
     def check_singles(self, results, psds):
         active = [k for k in results if results[k] is not None]
@@ -480,6 +503,7 @@ class LiveEventManager(object):
                 [ifo],
                 active,
                 single,
+                gracedb=self.gracedb,
                 padata=self.padata,
                 bank=self.bank,
                 psds=psds,
@@ -513,32 +537,20 @@ class LiveEventManager(object):
                     event.merger_time
                 )
 
-            if args.enable_single_detector_upload \
-                    and self.ifar_upload_threshold < single['foreground/ifar'] \
-                    and not any(nearby_coincs):
-                gid = event.upload(fname, gracedb_server=args.gracedb_server,
-                                   testing=self.gracedb_testing,
-                                   extra_strings=[comment],
-                                   search=args.gracedb_search)
-            else:
+            upload_checks = args.enable_single_detector_upload and self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs)
+            optimize_snr_checks = self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs) and self.run_snr_optimization
+            if not upload_checks:
                 gid = None
                 event.save(fname)
-
-            if self.ifar_upload_threshold < single['foreground/ifar'] \
-                    and not any(nearby_coincs) \
-                    and self.run_snr_optimization:
-                logging.info('Optimizing SNR for single above threshold ..')
+            if upload_checks or optimize_snr_checks:
+                if optimize_snr_checks:
+                    logging.info('Optimizing SNR for single above threshold ..')
+                    # Tell snr optimized event about p_terr
+                    if hasattr(event, 'p_terr') and event.p_terr is not None:
+                        single['p_terr'] = event.p_terr
                 live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
-                # Tell snr optimized event about p_terr
-                if hasattr(event, 'p_terr') and event.p_terr is not None:
-                    single['p_terr'] = event.p_terr
-                self.setup_optimize_snr(
-                    single,
-                    live_ifos,
-                    [ifo],
-                    fname,
-                    gid
-                )
+                gdb_upload_thread = threading.Thread(target = self.upload_in_thread, args = (event, fname, comment, single, live_ifos, [ifo], upload_checks, optimize_snr_checks, args.gracedb_server, args.gracedb_search,))
+                gdb_upload_thread.start()
 
     def get_out_dir_path(self, time_gps):
         """Compose and return the path to a directory to store files associated
@@ -864,13 +876,10 @@ if args.size_override:
 
 # make sure we can talk to GraceDB
 if evnt.rank == 0 and args.enable_gracedb_upload:
-    logging.info('Testing access to GraceDB')
-    from ligo.gracedb.rest import GraceDb
-    gdb_client = GraceDb(args.gracedb_server) if args.gracedb_server else GraceDb()
-    response = gdb_client.ping()
-    logging.info('GraceDB ping response: %s %s',
-                 response.status, response.reason)
-    del gdb_client
+    evnt.create_gdb()
+    response = evnt.gracedb.ping()
+    logging.info('GraceDB ping response: %s %s time elapsed: %s',
+            response.status, response.reason, response.elapsed.total_seconds())
 
 # I'm not the root, so do some actual filtering.
 with ctx:
