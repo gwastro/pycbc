@@ -5,6 +5,7 @@ import numpy
 import lal
 import json
 import copy
+from multiprocessing.dummy import threading
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
@@ -64,6 +65,8 @@ class CandidateForGraceDB(object):
         self.coinc_results = coinc_results
         self.psds = kwargs['psds']
         self.basename = None
+        if kwargs.get('gracedb'):
+            self.gracedb = kwargs['gracedb']
 
         # Determine if the candidate should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
@@ -294,10 +297,14 @@ class CandidateForGraceDB(object):
         fname: str
             Name of file to write to disk.
         """
-        ligolw_utils.write_filename(self.outdoc, fname, compress='auto')
+        kwargs = {}
+        if threading.current_thread() is not threading.main_thread():
+            # avoid an error due to no ability to do signal handling in threads
+            kwargs['trap_signals'] = None
+        ligolw_utils.write_filename(self.outdoc, fname, \
+            compress='auto', **kwargs)
 
         save_dir = os.path.dirname(fname)
-
         # Save EMBright properties info as json
         if self.hasmassgap is not None:
             self.embright_file = os.path.join(save_dir, 'pycbc.em_bright.json')
@@ -348,7 +355,6 @@ class CandidateForGraceDB(object):
         search: str
             String going into the "search" field of the GraceDB event.
         """
-        from ligo.gracedb.rest import GraceDb
         import matplotlib
         matplotlib.use('Agg')
         import pylab as pl
@@ -367,26 +373,27 @@ class CandidateForGraceDB(object):
 
         gid = None
         try:
-            # try connecting to GraceDB
-            gracedb = GraceDb(gracedb_server) \
-                    if gracedb_server is not None else GraceDb()
-
+            if not hasattr(self, 'gracedb'):
+                from ligo.gracedb.rest import GraceDb
+                gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+                self.gracedb = GraceDb(gracedb_server, **gdbargs) \
+                    if gracedb_server else GraceDb(**gdbargs)
             # create GraceDB event
             group = 'Test' if testing else 'CBC'
-            r = gracedb.create_event(group, "pycbc", fname, search).json()
+            r = self.gracedb.create_event(group, "pycbc", fname, search).json()
             gid = r["graceid"]
             logging.info("Uploaded event %s", gid)
 
             if self.is_hardware_injection:
-                gracedb.write_label(gid, 'INJ')
+                self.gracedb.write_label(gid, 'INJ')
                 logging.info("Tagging event %s as an injection", gid)
 
             # add info for tracking code version
-            gracedb_tag_with_version(gracedb, gid)
+            gracedb_tag_with_version(self.gracedb, gid)
 
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
-                gracedb.write_log(gid, text, tag_name=['analyst_comments'])
+                self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
                           'event %s on GraceDB. The event may not have been '
@@ -450,17 +457,17 @@ class CandidateForGraceDB(object):
         # Upload SNR series in HDF format and plots
         if self.snr_series is not None:
             try:
-                gracedb.write_log(
+                self.gracedb.write_log(
                     gid, 'SNR timeseries HDF file upload',
                     filename=snr_series_fname
                 )
-                gracedb.write_log(
+                self.gracedb.write_log(
                     gid, 'SNR timeseries plot upload',
                     filename=snr_series_plot_fname,
                     tag_name=['background'],
                     displayName=['SNR timeseries']
                 )
-                gracedb.write_log(
+                self.gracedb.write_log(
                     gid, 'ASD plot upload',
                     filename=asd_series_plot_fname,
                     tag_name=['psd'], displayName=['ASDs']
@@ -473,7 +480,7 @@ class CandidateForGraceDB(object):
         # Upload em_bright properties JSON
         if self.hasmassgap is not None:
             try:
-                gracedb.write_log(
+                self.gracedb.write_log(
                     gid, 'EM Bright properties JSON file upload',
                     filename=self.embright_file,
                     tag_name=['em_bright']
@@ -487,7 +494,7 @@ class CandidateForGraceDB(object):
         # Upload multi-cpt p_astro JSON
         if self.astro_probs is not None:
             try:
-                gracedb.write_log(
+                self.gracedb.write_log(
                     gid, 'Multi-component p_astro JSON file upload',
                     filename=self.multipa_file,
                     tag_name=['p_astro']
@@ -503,13 +510,13 @@ class CandidateForGraceDB(object):
         # format and plot
         if self.probabilities is not None:
             try:
-                gracedb.write_log(
+                self.gracedb.write_log(
                     gid, 'Source probabilities JSON file upload',
                     filename=self.prob_file,
                     tag_name=['pe']
                 )
                 logging.info('Uploaded source probabilities for %s', gid)
-                gracedb.write_log(
+                self.gracedb.write_log(
                     gid, 'Source probabilities plot upload',
                     filename=self.prob_plotf,
                     tag_name=['pe']
@@ -524,7 +531,7 @@ class CandidateForGraceDB(object):
         # If there is p_astro but no probabilities, upload p_astro JSON
         if self.p_astro is not None:
             try:
-                gracedb.write_log(
+                self.gracedb.write_log(
                     gid, '2-component p_astro JSON file upload',
                     filename=self.pastro_file,
                     tag_name=['sig_info']
@@ -533,7 +540,6 @@ class CandidateForGraceDB(object):
             except Exception as exc:
                 logging.error('Failed to upload p_astro file for %s', gid)
                 logging.error(str(exc))
-
         return gid
 
 
