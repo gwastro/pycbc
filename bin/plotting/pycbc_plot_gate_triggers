@@ -16,10 +16,8 @@
 Plot histograms of triggers around gated times.
 """
 
-import os
 import h5py
 import numpy
-import random
 import logging
 import argparse
 from pycbc.events import ranking
