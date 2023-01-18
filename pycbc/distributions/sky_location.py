@@ -63,7 +63,7 @@ class FisherDist():
         else:
             self.mu_values = numpy.array(numpy.deg2rad([mu_values[0],
                                                         mu_values[1]]))
-        self.mu_values = decra2polaz(self.mu_values[0], self.mu_values[1])
+        self.mu_values = decra2polaz(self.mu_values[1], self.mu_values[0])
 
     def rvs_polaz(self, size):
         """
