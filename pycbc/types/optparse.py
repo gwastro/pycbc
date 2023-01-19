@@ -222,7 +222,7 @@ class DictOptionAction(argparse.Action):
                  dest,
                  nargs='+',
                  const=None,
-                 default=None,
+                 default={},
                  type=None,
                  choices=None,
                  required=False,
@@ -232,7 +232,7 @@ class DictOptionAction(argparse.Action):
             self.internal_type = type
         else:
             self.internal_type = str
-        new_default = None
+        new_default = {}
         if nargs == 0:
             raise ValueError('nargs for append actions must be > 0; if arg '
                              'strings are not supplying the value to append, '
