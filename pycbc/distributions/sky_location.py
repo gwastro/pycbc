@@ -40,7 +40,7 @@ class Fisher():
     is large so that we can use a Rayleigh distribution about the north
     pole and rotate it to be centered at the (ra, dec) coordinate mu.
 
-    Assume kappa = 1 / sigma**2
+    Assume kappa = 1 / sigma**2 (kappa should be in units of steradians)
 
     As in UniformSky, the declination (dec) varies from pi/2 to-pi/2
     and right ascension (ra) varies from 0 to 2pi. And the angles
