@@ -273,6 +273,46 @@ class DictOptionAction(argparse.Action):
                 raise ValueError(err_msg)
         setattr(namespace, self.dest, items)
 
+class MultiDetDictOptionAction(DictOptionAction):
+    """A special case of `DictOptionAction` which allows one to use
+    argument containing the detector (channel) name, such as
+    `DETECTOR:PARAM:VALUE`. The first colon is the name of detector,
+    the second colon is the name of parameter, the third colon is the value.
+    Unlike `DictOptionAction`, all arguments must be prefixed by the
+    corresponding detector.
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        # Again this is modified from the standard argparse 'append' action
+        err_msg = ('Issue with option: {}\n'
+                   'Received value: {}\n').format(self.dest, ' '.join(values))
+        if getattr(namespace, self.dest, None) is None:
+            setattr(namespace, self.dest, {})
+        items = copy.copy(getattr(namespace, self.dest))
+        detector_args = {}
+        for value in values:
+            if ':' not in value:
+                err_msg += ("Each argument must contain two ':' "
+                            "characters")
+                raise ValueError(err_msg)
+            detector, param_value = value.split(':', 1)
+            if ':' not in param_value:
+                err_msg += ("Must use format `DETECTOR:PARAM:VALUE`.")
+                raise ValueError(err_msg)
+            param, val = param_value.split(':')
+            if detector not in detector_args:
+                detector_args[detector] = {param: self.internal_type(val)}
+            else:
+                if param in detector_args[detector]:
+                    err_msg += ("Multiple values supplied for the same "
+                                "parameter {} under detector {},\n"
+                                "already have {}.")
+                    err_msg = err_msg.format(param, detector,
+                                detector_args[detector][param])
+                else:
+                    detector_args[detector][param] = self.internal_type(val)
+        items = detector_args
+        setattr(namespace, self.dest, items)
+
 def required_opts(opt, parser, opt_list, required_by=None):
     """Check that all the opts are defined
 
