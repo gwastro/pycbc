@@ -85,15 +85,8 @@ class FisherDist():
         and returns (ra, dec) values
         """
         rot_eu = self.rvs_polaz(size)
-        ra_new = []
-        dec_new = []
-        for i in range(size):
-            ra_ = rot_eu[i][1]
-            ra_new.append(ra_)
-            dec_ = rot_eu[i][0]
-            dec_new.append(dec_)
-        ra_a = numpy.array([ra_new])
-        dec_p = numpy.array([dec_new])
+        ra_a = rot_eu[:,1]
+        dec_p = rot_eu[:,0]
         right_ascension, declination = polaz2decra(dec_p, ra_a)
         return right_ascension, declination
 
