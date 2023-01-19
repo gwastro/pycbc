@@ -97,37 +97,37 @@ for single_file in args.single_trigger_files:
         gate_time = numpy.unique(data[f'gating/{gating_type}/time'][:])
         n_gates += len(gate_time)
         logging.info("%i %s gates found", len(gate_time), args.gating_type)
+    else:
+        logging.info('Trigger file does not contain %s gates. '
+                     'Skipping file...', args.gating_type)
+        continue
+    logging.info("Extracting trigger times...")
+    times = data['end_time'][:]
+
+    if args.template_duration:
+        logging.info("Cutting on template duration...")
+        template_duration = data['template_duration'][:]
+        if args.duration_ltgt == 'LT':
+            times = times[template_duration <= args.duration_cut]
         else:
-            logging.info('Trigger file does not contain %s gates. '
-                         'Skipping file...', args.gating_type)
-            continue
-        logging.info("Extracting trigger times...")
-        times = data['end_time'][:]
+            times = times[template_duration >= args.duration_cut]
 
+    if args.snr_cut_type:
+        logging.info("Cutting on %s...", args.snr_cut_type)
+        if args.snr_cut_type == 'snr':
+            snr_val = data['snr'][:]
+        if args.snr_cut_type == 'newsnr':
+            rchisq = data['chisq'][:] / (2 * data['chisq_dof'][:] - 2)
+            if len(rchisq) > 0:
+                snr_val = ranking.newsnr(data['snr'][:], rchisq)
+            else:
+                snr_val = numpy.array([])
+            del rchisq
         if args.template_duration:
-            logging.info("Cutting on template duration...")
-            template_duration = data['template_duration'][:]
             if args.duration_ltgt == 'LT':
-                times = times[template_duration <= args.duration_cut]
-            elif args.duration_ltgt == 'GT':
-                times = times[template_duration >= args.duration_cut]
-
-        if args.snr_cut_type:
-            logging.info("Cutting on %s...", args.snr_cut_type)
-            if args.snr_cut_type == 'snr':
-                snr_val = data['snr'][:]
-            if args.snr_cut_type == 'newsnr':
-                rchisq = data['chisq'][:] / (2 * data['chisq_dof'][:] - 2)
-                if len(rchisq) > 0:
-                    snr_val = ranking.newsnr(data['snr'][:], rchisq)
-                else:
-                    snr_val = numpy.array([])
-                del rchisq
-            if args.template_duration:
-                if args.duration_ltgt == 'LT':
-                    snr_val = snr_val[template_duration <= args.duration_cut]
-                elif args.duration_ltgt == 'GT':
-                    snr_val = snr_val[template_duration >= args.duration_cut]
+                snr_val = snr_val[template_duration <= args.duration_cut]
+            else args.duration_ltgt == 'GT':
+                snr_val = snr_val[template_duration >= args.duration_cut]
 
     logging.info("Starting loop over gates...")
     time_triggers = [[] for thr in snr_cut_vals]
