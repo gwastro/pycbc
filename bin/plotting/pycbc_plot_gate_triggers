@@ -185,7 +185,8 @@ if n_gates > 0:
     plt.title(  # Complicated recipe
          '%s - %i %s GATES %s %s' % 
          (args.ifo_tag, n_gates, str(args.gating_type).upper(),
-          'IN %i CHUNKS' % len(ifo_files) if len(ifo_files) > 1 else '',
+          'IN %i CHUNKS' % len(args.single_trigger_files) if \
+          len(args.single_trigger_files) > 1 else '',
           '\n Triggers with template duration %s %s s' % 
           ('<' if args.duration_ltgt == 'LT' else '>', str(args.duration_cut))
           if args.template_duration else '')
