@@ -528,8 +528,8 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dtc = -end_time
                 channel = wfs[ifo].numpy()
                 filter_i, norm_i = lik(freqs, dtc, channel, h00,
-                                            sdat['a0'], sdat['a1'],
-                                            sdat['b0'], sdat['b1'])
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
@@ -539,9 +539,9 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dtc = p["tc"] + dt - end_time
 
                 filter_i, norm_i = lik(freqs, fp, fc, dtc,
-                                            hp, hc, h00,
-                                            sdat['a0'], sdat['a1'],
-                                            sdat['b0'], sdat['b1'])
+                                       hp, hc, h00,
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
                 self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
             filt += filter_i
             norm += norm_i
@@ -607,7 +607,8 @@ class Relative(DistMarg, BaseGaussianNoise):
         )
         args.update({"fiducial_params": fid_params, "gammas": gammas})
         return args
-    
+
+
 class RelativeTime(Relative):
     """ Heterodyne likelihood optimized for time marginalization
     """
@@ -619,16 +620,16 @@ class RelativeTime(Relative):
         super(RelativeTime, self).__init__(*args, **kwargs)
         self.sample_rate = float(sample_rate)
         self.setup_peak_lock(sample_rate=self.sample_rate, **kwargs)
-        self.draw_ifos(self.ref_snr)  
- 
+        self.draw_ifos(self.ref_snr)
+
     @property
     def ref_snr(self):
         if not hasattr(self, '_ref_snr'):
             wfs = {ifo: (self.h00_sparse[ifo],
-                     self.h00_sparse[ifo]) for ifo in self.h00_sparse}       
+                     self.h00_sparse[ifo]) for ifo in self.h00_sparse}
             self._ref_snr = self.get_snr(wfs, reference=True)
         return self._ref_snr
-        
+
     def get_snr(self, wfs, reference=False):
         """ Return hp/hc maximized SNR time series
         """
@@ -642,12 +643,12 @@ class RelativeTime(Relative):
                 dtc -= self.ta[ifo]
 
             snr = snr_predictor(self.fedges[ifo],
-                        dtc, delta_t,
-                        self.num_samples[ifo],
-                        wfs[ifo][0], wfs[ifo][1],
-                        self.h00_sparse[ifo],
-                        sdat['a0'], sdat['a1'],
-                        sdat['b0'], sdat['b1'])
+                                dtc, delta_t,
+                                self.num_samples[ifo],
+                                wfs[ifo][0], wfs[ifo][1],
+                                self.h00_sparse[ifo],
+                                sdat['a0'], sdat['a1'],
+                                sdat['b0'], sdat['b1'])
             snrs[ifo] = TimeSeries(snr, delta_t=delta_t,
                                    epoch=self.tstart[ifo])
         return snrs
@@ -701,6 +702,7 @@ class RelativeTime(Relative):
         loglr = self.marginalize_loglr(filt, norm)
         return loglr
 
+
 class RelativeTimeDom(RelativeTime):
     """ Heterodyne likelihood optimized for time marginalization
     """
@@ -721,16 +723,16 @@ class RelativeTimeDom(RelativeTime):
                 dtc -= self.ta[ifo]
 
             sh, hh = snr_predictor_dom(self.fedges[ifo],
-                        dtc - delta_t * 2.0, delta_t,
-                        self.num_samples[ifo] + 4,
-                        wfs[ifo][0],
-                        self.h00_sparse[ifo],
-                        sdat['a0'], sdat['a1'],
-                        sdat['b0'], sdat['b1'])
+                                       dtc - delta_t * 2.0, delta_t,
+                                       self.num_samples[ifo] + 4,
+                                       wfs[ifo][0],
+                                       self.h00_sparse[ifo],
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
             snr = TimeSeries(abs(sh[2:-2]) / hh ** 0.5, delta_t=delta_t,
-                                   epoch=self.tstart[ifo])
+                             epoch=self.tstart[ifo])
             self.sh[ifo] = TimeSeries(sh, delta_t=delta_t,
-                                   epoch=self.tstart[ifo] - delta_t * 2.0)
+                                      epoch=self.tstart[ifo] - delta_t * 2.0)
             self.hh[ifo] = hh
             snrs[ifo] = snr
 
