@@ -2556,6 +2556,6 @@ def decra2polaz(dec, ra):
     return (0.5*numpy.pi) - dec, ra
 
 
-def polaz2decra(theta, phi):
+def polaz2radec(theta, phi):
     """Convert (polar, azimuthal) to (ra,dec) angles. All angles in radians."""
-    return phi, (0.5*numpy.pi) - theta
+    return (0.5*numpy.pi) - theta, phi
