@@ -47,7 +47,8 @@ If you use the offline PyCBC search pipeline, please additionally cite:
 
 - `The PyCBC search for gravitational waves from compact binary coalescence. <http://iopscience.iop.org/article/10.1088/0264-9381/33/21/215004/meta>`__ `[INSPIRES BibTeX Key] <https://inspirehep.net/record/1387292/export/hx>`__ `[ADS BibTeX key] <http://adsabs.harvard.edu/cgi-bin/nph-bib_query?bibcode=2016CQGra..33u5004U&data_type=BIBTEX&db_key=AST&nocookieset=1>`__
 
-If you use the low-latency PyCBC search pipeline, please additionally cite:
+If you use the low-latency PyCBC search pipeline (PyCBC Live), please additionally cite:
 
 - `PyCBC Live: Rapid Detection of Gravitational Waves from Compact Binary Mergers. <https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.024050>`__ `[INSPIRES BibTeX Key] <https://inspirehep.net/record/1675309/export/hx>`_ `[ADS BibTeX key] <http://adsabs.harvard.edu/cgi-bin/nph-bib_query?bibcode=2018PhRvD..98b4050N&data_type=BIBTEX&db_key=PHY&nocookieset=1>`__
 
+- `Realtime search for compact binary mergers in Advanced LIGO and Virgo's third observing run using PyCBC Live. <https://doi.org/10.3847/1538-4357/ac2f9a>`__ `[INSPIRES BibTeX Key] https://inspirehep.net/literature/1811966`_ `[ADS BibTeX key] https://ui.adsabs.harvard.edu/abs/2021ApJ...923..254D/exportcitation`__
