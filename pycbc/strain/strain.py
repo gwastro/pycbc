@@ -741,10 +741,6 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                 default=16384, type=float,
                 nargs="+", action=MultiDetOptionAction,
                 help="Sample rate of the fake data generation")
-    data_reading_group_multi.add_argument("--fake-strain-extra-args",
-                nargs='+', action=MultiDetDictOptionAction,
-                metavar='PARAM:VALUE', default={}, type=dict,
-                help="(optional) Extra arguments passed to the PSD models.")
 
     # Injection options
     data_reading_group_multi.add_argument("--injection-file", type=str,
