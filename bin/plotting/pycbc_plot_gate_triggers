@@ -24,19 +24,14 @@ from pycbc.events import ranking
 from matplotlib import use; use('Agg')
 import matplotlib.pyplot as plt
 
-def split_in_ifos(list, ifos):
-    """Function to split files in arrays depending on ifo.
-       Warning: relies on the name of the files to start by IFO.
-    """
-    split_list = [list[[j.split('/')[-1].startswith(ifo) for j in list]]
-                  for ifo in ifos]
-    return [list for list in split_list if len(list) > 0]
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--single-trigger-files', nargs='+', type=str,
+parser.add_argument('--single-trigger-files', nargs='+',
                     help='HDF format single detector merged trigger file(s) path. '
-                         'A histogram is plotted for each ifo trigger file(s).')
+                         'All triggers are combined in the histogram')
+parser.add_argument('--ifo-label', default='',
+                    help='String to label plots, eg H1, H1L1')
 parser.add_argument('--gating-type', choices=['auto', 'detchar'],
                     help='Type of gate to analyze.')
 parser.add_argument('--window', default=5, type=float,
@@ -72,9 +67,6 @@ if args.gating_type:
 else:
     raise ValueError('A gating type argument must be provided.')
 
-ifos = ['H1', 'L1', 'V1']
-ifo_trigger_files = split_in_ifos(numpy.array(args.single_trigger_files), ifos)
-
 if args.snr_cut_type:
     if args.snr_cut_vals:
         snr_cut_vals = sorted(args.snr_cut_vals)
@@ -83,24 +75,28 @@ if args.snr_cut_type:
 else:
     snr_cut_vals = numpy.array([0])
 
+if args.template_duration:
+    args.duration_ltgt = args.template_duration[0]
+    assert args.duration_ltgt in ['LT', 'GT']
+    args.duration_cut = float(args.template_duration[1])
+
 # Binning along trigger time
 nbins = int(2 * args.window / args.bin_duration + 1)
 
-for ifo_files in ifo_trigger_files:
-    ifo_trigger_times = [[] for thr in snr_cut_vals]
-    n_gates = 0
-    for single_file in ifo_files:
-        logging.info("Reading trigger file %s...", single_file.split('/')[-1])
-        file_ = h5py.File(single_file, "r")
-        ifo = str(list(file_.keys())[0])
-        data = file_[ifo]
+ifo_trigger_times = [[] for thr in snr_cut_vals]
+n_gates = 0
 
-        if gating_type in data['gating'].keys():
-            logging.info("Extracting gated times...")
-            gate_time = numpy.unique(data[f'gating/{gating_type}/time'][:])
-            gate_number = len(gate_time)
-            n_gates += gate_number
-            logging.info("%i %s gates found" % (gate_number, args.gating_type))
+for single_file in args.single_trigger_files:
+    logging.info("Reading trigger file %s...", single_file.split('/')[-1])
+    file_ = h5py.File(single_file, "r")
+    ifo = str(list(file_.keys())[0])
+    data = file_[ifo]
+
+    if gating_type in data['gating'].keys():
+        logging.info("Extracting gated times...")
+        gate_time = numpy.unique(data[f'gating/{gating_type}/time'][:])
+        n_gates += len(gate_time)
+        logging.info("%i %s gates found", len(gate_time), args.gating_type)
         else:
             logging.info('Trigger file does not contain %s gates. '
                          'Skipping file...', args.gating_type)
@@ -110,13 +106,11 @@ for ifo_files in ifo_trigger_files:
 
         if args.template_duration:
             logging.info("Cutting on template duration...")
-            template_cut_type = args.template_duration[0]
-            template_cut_value = float(args.template_duration[1])
             template_duration = data['template_duration'][:]
-            if template_cut_type == 'LT':
-                times = times[template_duration <= template_cut_value]
-            elif template_cut_type == 'GT':
-                times = times[template_duration >= template_cut_value]
+            if args.duration_ltgt == 'LT':
+                times = times[template_duration <= args.duration_cut]
+            elif args.duration_ltgt == 'GT':
+                times = times[template_duration >= args.duration_cut]
 
         if args.snr_cut_type:
             logging.info("Cutting on %s...", args.snr_cut_type)
@@ -124,86 +118,90 @@ for ifo_files in ifo_trigger_files:
                 snr_val = data['snr'][:]
             if args.snr_cut_type == 'newsnr':
                 rchisq = data['chisq'][:] / (2 * data['chisq_dof'][:] - 2)
-                if len(rchisq) > 0:  # Not sure why this check is done only here, not for plain SNR cut
+                if len(rchisq) > 0:
                     snr_val = ranking.newsnr(data['snr'][:], rchisq)
                 else:
                     snr_val = numpy.array([])
                 del rchisq
             if args.template_duration:
-                if template_cut_type == 'LT':
-                    snr_val = snr_val[template_duration <= template_cut_value]
-                elif template_cut_type == 'GT':
-                    snr_val = snr_val[template_duration >= template_cut_value]
+                if args.duration_ltgt == 'LT':
+                    snr_val = snr_val[template_duration <= args.duration_cut]
+                elif args.duration_ltgt == 'GT':
+                    snr_val = snr_val[template_duration >= args.duration_cut]
 
-        time_triggers = [[] for thr in snr_cut_vals]
-
-        logging.info("Starting loop over gates...")
-        for i, thr in enumerate(snr_cut_vals):
-            if args.snr_cut_type:
-                times = times[snr_val >= thr]
-                snr_val = snr_val[snr_val >= thr]
-            for gt in gate_time:
-                idx = numpy.logical_and(times < gt + args.window,
-                                        times > gt - args.window)
-                time_trigger = times[idx] - gt
-                time_triggers[i].extend(time_trigger)
-            ifo_trigger_times[i].extend(time_triggers[i])
-
-        file_.close()
-
-    if args.output_file:
-        out_name = args.output_file
-    else:
-        window_name = (str("{:.1f}".format(args.window)).replace('.', '-') if '.' in
-                       str(args.window) else str(args.window))
-        out_name = '%s_%s' % (str(args.gating_type).upper(), ifo)
-        if args.template_duration:
-            templ_cut_name = (str("{:.1f}".format(template_cut_value)).replace('.', '-')
-                              if '.' in args.template_duration[1] else
-                              args.template_duration[1])
-            out_name = '_'.join([out_name, 'TD-%s-%s' %
-                                 (template_cut_type, templ_cut_name)])
+    logging.info("Starting loop over gates...")
+    time_triggers = [[] for thr in snr_cut_vals]
+    for i, thr in enumerate(snr_cut_vals):
         if args.snr_cut_type:
-            snr_cut_name = (args.snr_cut_type).upper()
-            snr_cuts = [str("{:.1f}".format(cut_val)).replace('.', '-')
-                        if '.' in str(cut_val) else str(cut_val) for cut_val in
-                        snr_cut_vals]
+            times = times[snr_val >= thr]
+            snr_val = snr_val[snr_val >= thr]
+        for gt in gate_time:
+            idx = numpy.logical_and(times < gt + args.window, times > gt - args.window)
+            time_trigger = times[idx] - gt
+            time_triggers[i].extend(time_trigger)
+        ifo_trigger_times[i].extend(time_triggers[i])
+
+    file_.close()
+
+if args.output_file:
+    out_name = args.output_file
+else:
+    window_name = (str("{:.1f}".format(args.window)).replace('.', '-') if '.' in
+                   str(args.window) else str(args.window))
+    out_name = '%s_%s' % (str(args.gating_type).upper(), args.ifo_tag)
+    if args.template_duration:
+        templ_cut_name = (
+            str("{:.1f}".format(args.duration_cut)).replace('.', '-') 
+                if '.' in args.template_duration[1]
+                else args.template_duration[1]
+        )
+        out_name = '_'.join([out_name, 'TD-%s-%s' % (args.duration_ltgt, templ_cut_name)])
+
+    if args.snr_cut_type:
+        snr_cut_name = (args.snr_cut_type).upper()
+        snr_cuts = [
+            str("{:.1f}".format(cut_val)).replace('.', '-') if '.' in str(cut_val)
+            else str(cut_val) for cut_val in snr_cut_vals
+        ]
             snr_cut_value = '_'.join(snr_cuts)
             out_name = '_'.join([out_name, '%s-%s' % (snr_cut_name, snr_cut_value)])
         out_name = '_'.join([out_name, 'WINDOW-%s' % window_name])
         if args.log_y:
             out_name = '_'.join([out_name, 'LOG'])
+    out_name = out_name + '.png'
 
-    if n_gates > 0:
-        for i, thr in enumerate(snr_cut_vals):
-            plt.hist(ifo_trigger_times[i],
-                     bins=numpy.linspace(-args.window, args.window, nbins),
-                     label=['%s > %.1f' % (args.snr_cut_type, thr) if args.snr_cut_type
-                            else '']
-            )
-        if args.log_y:
-            plt.yscale('log')
-        plt.grid(True)
-        plt.xlabel('Time relative to the gate (s)')
-        plt.ylabel('Number of triggers')
-        plt.title('%s - %i %s GATES %s'
-                  '%s' % (str(ifo), n_gates, str(args.gating_type).upper(),
-                          'IN %i CHUNKS' % len(ifo_files) if len(ifo_files) > 1 else '',
-                          '\n Triggers with template duration %s %s s'
-                          % ('<' if template_cut_type == 'LT' else '>',
-                             str(template_cut_value)) if args.template_duration else ''))
-        if args.snr_cut_type:
-            plt.legend()
+if n_gates > 0:
+    for i, thr in enumerate(snr_cut_vals):
+        plt.hist(
+            ifo_trigger_times[i],
+            bins=numpy.linspace(-args.window, args.window, nbins),
+            label=['%s > %.1f' % (args.snr_cut_type, thr) if args.snr_cut_type else '']
+        )
+    if args.log_y:
+        plt.yscale('log')
+    plt.grid(True)
+    plt.xlabel('Time relative to gate centre (s)')
+    plt.ylabel('Number of triggers')
+    plt.title(  # Complicated recipe
+         '%s - %i %s GATES %s %s' % 
+         (args.ifo_tag, n_gates, str(args.gating_type).upper(),
+          'IN %i CHUNKS' % len(ifo_files) if len(ifo_files) > 1 else '',
+          '\n Triggers with template duration %s %s s' % 
+          ('<' if args.duration_ltgt == 'LT' else '>', str(args.duration_cut))
+          if args.template_duration else '')
+    )
+    if args.snr_cut_type:
+        plt.legend()
 
-    else:  # Nothing to plot, make an empty figure
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        output_message = "Sorry, no gates to plot!"
-        ax.text(0.5, 0.5, output_message, horizontalalignment='center',
-                verticalalignment='center')
+else:  # Nothing to plot, make an empty figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    output_message = "Sorry, no gates to plot!"
+    ax.text(0.5, 0.5, output_message, horizontalalignment='center',
+            verticalalignment='center')
 
-    logging.info('Saving histogram for gates in %s...', ifo)
-    plt.savefig(out_name + '.png')
-    plt.close()
+logging.info('Saving histogram...')
+plt.savefig(out_name)
+plt.close()
 
 logging.info("Done")
