@@ -90,8 +90,8 @@ class Fisher():
         rot_eu = self.rvs_polaz(size)
         ra_a = rot_eu[:,1]
         dec_p = rot_eu[:,0]
-        right_ascension, declination = polaz2decra(dec_p, ra_a)
+        right_ascension, declination = polaz2radec(dec_p, ra_a)
         return right_ascension, declination
 
 
-__all__ = ['UniformSky', 'FisherDist']
+__all__ = ['UniformSky', 'Fisher']
