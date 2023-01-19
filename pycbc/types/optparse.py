@@ -307,7 +307,7 @@ class MultiDetDictOptionAction(DictOptionAction):
                                 "parameter {} under detector {},\n"
                                 "already have {}.")
                     err_msg = err_msg.format(param, detector,
-                                detector_args[detector][param])
+                                             detector_args[detector][param])
                 else:
                     detector_args[detector][param] = self.internal_type(val)
         items = detector_args
