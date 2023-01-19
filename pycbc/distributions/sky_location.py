@@ -34,7 +34,7 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-class FisherDist():
+class Fisher():
     """A distribution that returns a random (ra, dec) angle drawn from the
     Fisher distribution. Assume that the concentration parameter (kappa)
     is large so that we can use a Rayleigh distribution about the north
@@ -51,19 +51,22 @@ class FisherDist():
       * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
       * http://arxiv.org/pdf/0902.0737v1 (states the Rayleigh limit)
     """
-    name = 'fisher_dist'
+    name = 'fisher'
     _polardistcls = angular.CosAngle
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
     def __init__(self, mu_values, kappa, mu_radians=True):
         self.kappa = kappa
-        if mu_radians:
-            self.mu_values = numpy.array(mu_values[0], mu_values[1])
-        else:
-            self.mu_values = numpy.array(numpy.deg2rad([mu_values[0],
+        if kappa >= 500:
+            if mu_radians:
+                self.mu_values = numpy.array(mu_values[0], mu_values[1])
+            else:
+                self.mu_values = numpy.array(numpy.deg2rad([mu_values[0],
                                                         mu_values[1]]))
-        self.mu_values = decra2polaz(self.mu_values[1], self.mu_values[0])
+            self.mu_values = decra2polaz(self.mu_values[1], self.mu_values[0])
+        else:
+            raise ValueError("Kappa too low, minimum should be 500")    
 
     def rvs_polaz(self, size):
         """
