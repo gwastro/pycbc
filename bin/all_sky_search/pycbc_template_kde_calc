@@ -1,5 +1,17 @@
 #!/usr/bin/env python
-# python3 pycbc_template_kde_calc --template-file /home/praveen.kumar/focused_search/kde/sbbh2.hdf --signal-file /home/praveen.kumar/focused_search/kde/3OGC_PEtable.txt_ifar_gt0.5.csv   --min-mass 5     --fit-param mchirp eta chi_eff   --log-param  True False False    --output-file   signal-kdevals.hdf  --make-signal-kde  --nfold-signal 10   --fom-plot  /home/praveen.kumar/public_html/focused_search_plots/kde_plots/bbh_bank_plots/3D/sbbh2/FOM_signal_at_mchirp_eta_chi.png   --alpha-grid 0.33 0.40 0.50 0.67 1.00  --bw-grid  0.010 0.013 0.016 0.021 0.026 0.034 0.043 0.055 0.069 0.089 0.113 0.144 0.183 0.234 0.298 0.379 0.483 0.616 0.785 1.000 --verbose
+
+# Copyright 2023 Praveen Kumar
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+
 
 import numpy, h5py, operator, argparse, logging
 from pycbc import init_logging
@@ -8,7 +20,6 @@ from pycbc import libutils
 from pycbc.events import triggers
 akde = libutils.import_optional('awkde')
 kf = libutils.import_optional('sklearn.model_selection')
-import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--signal-file')
@@ -27,10 +38,10 @@ parser.add_argument('--log-param', nargs='+', choices=['True', 'False'],
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--make-signal-kde', action='store_true')
 parser.add_argument('--make-template-kde', action='store_true')
-parser.add_argument('--fom-plot', required=True)
+parser.add_argument('--fom-plot')
 parser.add_argument('--alpha-grid', type=float, nargs="+",
                     help='Grid of choices of sensitivity parameter alpha for'
-                    'local bandwidth')
+                         'local bandwidth')
 parser.add_argument('--bw-grid', type=float, nargs='+', 
                     help='Grid of choices of global bandwidth')
 parser.add_argument('--verbose', action='count')
@@ -42,7 +53,7 @@ if args.make_signal_kde and args.make_template_kde:
     parser.error("Choose only one option out of --make-signal-kde and \
                  --make-template-kde")
 
-def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth='silverman', ret_kde=False):
+def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth='gl_bw', ret_kde=False):
     kde = akde.GaussianKDE(glob_bw=gl_bandwidth, alpha=alp, diag_cov=True)
     kde.fit(x)
     if isinstance(x_grid, (list, tuple, numpy.ndarray)) == False:
@@ -59,8 +70,6 @@ def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
     Evaluate the K-fold cross validated log likelihood for an awKDE with
     specific bandwidth and sensitivity (alpha) parameters
     """
-    if bwchoice not in ['silverman', 'scott']:
-        bwchoice = float(bwchoice)
     fomlist = []
     kfold = kf.KFold(n_splits=k, shuffle=True, random_state=None)
     for train_index, test_index in kfold.split(sample):
@@ -70,37 +79,33 @@ def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
     return numpy.mean(fomlist)
 
 
-def optimizedparam(sampleval, nfold=2):
-    # bw-grid and alpha-grid are values given as arguments to the function
-    bwgrid = args.bw_grid
-    alphagrid = args.alpha_grid
+def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
     FOM = {}
     for gbw in bwgrid:
         for alphavals in alphagrid:
-            FOM[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals,\
-                k=nfold)
+            FOM[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals, \
+                                               k=nfold)
     optval = max(FOM.items(), key=operator.itemgetter(1))[0]
     optbw, optalpha = optval[0], optval[1]
     maxFOM = FOM[(optbw, optalpha)]
 
     # Plotting FOM paramters
-    fig = plt.figure(figsize=(12,8))
-    ax = fig.add_subplot(111)
-    for bw in bwgrid:
-        FOMlist = [FOM[(bw, al)] for al in alphagrid]
-        ax.plot(alphagrid, FOMlist, label='{0:.3f}'.format(bw))
-    ax.plot(optalpha, maxFOM, 'ko', linewidth=10, label= \
-            r'$\alpha={0:.3f},bw= {1:.3f}$'.format(optalpha, optbw))
-    ax.set_xlabel(r'$\alpha$', fontsize=15)
-    ax.set_ylabel(r'$FOM$', fontsize=15)
-    ax.set_ylim(maxFOM-20, maxFOM+5)
-    handles, labels = ax.get_legend_handles_labels()
-    lgd = ax.legend(handles, labels, loc='upper center', bbox_to_anchor= \
-                    (0.5,1.175), ncol =8, fancybox=True, shadow=True)
-    plot_loc = args.fom_plot
-    plt.savefig(plot_loc)
+    if args.fom_plot:
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(12,8))
+        ax = fig.add_subplot(111)
+        for bw in bwgrid:
+            FOMlist = [FOM[(bw, al)] for al in alphagrid]
+            ax.plot(alphagrid, FOMlist, label='{0:.3f}'.format(bw))
+        ax.plot(optalpha, maxFOM, 'ko', linewidth=10, label= \
+                r'$\alpha={0:.3f},bw= {1:.3f}$'.format(optalpha, optbw))
+        ax.set_xlabel(r'$\alpha$', fontsize=15)
+        ax.set_ylabel(r'$FOM$', fontsize=15)
+        ax.set_ylim(maxFOM-20, maxFOM+5)
+        ax.legend(loc='upper center', bbox_to_anchor= (0.5,1.135), ncol =8)
+        plot_loc = args.fom_plot
+        plt.savefig(plot_loc)
     return optbw, optalpha
-
 
 # Obtaining template parameters
 temp_file = h5py.File(args.template_file, 'r')
@@ -133,7 +138,8 @@ temp_samples = numpy.vstack((template_pars)).T
 
 if args.make_template_kde:
     logging.info('Starting optimization of template KDE parameters')
-    optbw, optalpha = optimizedparam(temp_samples, nfold=args.nfold_template)
+    optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,\
+                              bwgrid=args.bw_grid, nfold=args.nfold_template)
     logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
     logging.info('Evaluating template KDE')
     template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha, \
@@ -172,13 +178,16 @@ if args.make_signal_kde:
     
     signal_samples = numpy.vstack((signal_pars)).T
     logging.info('Starting optimization of signal KDE parameters')  
-    optbw, optalpha = optimizedparam(signal_samples, nfold=args.nfold_signal)
+    optbw, optalpha = optimizedparam(signal_samples, bwgrid=args.bw_grid, \
+                      alphagrid=args.alpha_grid, nfold=args.nfold_signal)
     logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
     logging.info('Evaluating signal KDE')
     signal_kde = kde_awkde(signal_samples, temp_samples, \
                            alp=optalpha, gl_bandwidth=optbw)
     f_dest.create_dataset("data_kde", data=signal_kde)
     f_dest.attrs['stat'] = "signal-kde_file"
-  
+
+f_dest.attrs['alpha'] = optalpha
+f_dest.attrs['bandwidth'] = optbw
 f_dest.close()
 logging.info('Done!')
