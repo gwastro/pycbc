@@ -203,7 +203,8 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
     psd_options.add_argument("--fake-strain-extra-args",
                              nargs='+', action=DictOptionAction,
                              metavar='PARAM:VALUE', default={}, type=dict,
-                             help="(optional) Extra arguments passed to the PSD models.")
+                             help="(optional) Extra arguments passed to the "
+                                  "PSD models.")
     # Options specific to XML PSD files
     psd_options.add_argument("--psd-file-xml-ifo-string",
                              help="If using an XML PSD file, use the PSD in "
