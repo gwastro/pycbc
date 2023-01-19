@@ -42,7 +42,7 @@ from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_det, likelihood_parts_vector,
                          likelihood_parts_vectorp, snr_predictor,
                          snr_predictor_dom)
-from .tools import DistMarg, EARTH_RADIUS
+from .tools import DistMarg
 
 
 def setup_bins(f_full, f_lo, f_hi, chi=1.0,
@@ -626,7 +626,7 @@ class RelativeTime(Relative):
     def ref_snr(self):
         if not hasattr(self, '_ref_snr'):
             wfs = {ifo: (self.h00_sparse[ifo],
-                     self.h00_sparse[ifo]) for ifo in self.h00_sparse}
+                         self.h00_sparse[ifo]) for ifo in self.h00_sparse}
             self._ref_snr = self.get_snr(wfs, reference=True)
         return self._ref_snr
 
