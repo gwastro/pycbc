@@ -126,7 +126,7 @@ for single_file in args.single_trigger_files:
         if args.template_duration:
             if args.duration_ltgt == 'LT':
                 snr_val = snr_val[template_duration <= args.duration_cut]
-            else args.duration_ltgt == 'GT':
+            else:
                 snr_val = snr_val[template_duration >= args.duration_cut]
 
     logging.info("Starting loop over gates...")
