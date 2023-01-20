@@ -146,9 +146,8 @@ for single_file in args.single_trigger_files:
 if args.output_file:
     out_name = args.output_file
 else:
-    window_name = (str("{:.1f}".format(args.window)).replace('.', '-') if '.' in
-                   str(args.window) else str(args.window))
     out_name = '%s_%s' % (str(args.gating_type).upper(), args.ifo_tag)
+
     if args.template_duration:
         templ_cut_name = (
             str("{:.1f}".format(args.duration_cut)).replace('.', '-') 
@@ -163,12 +162,17 @@ else:
             str("{:.1f}".format(cut_val)).replace('.', '-') if '.' in str(cut_val)
             else str(cut_val) for cut_val in snr_cut_vals
         ]
-            snr_cut_value = '_'.join(snr_cuts)
-            out_name = '_'.join([out_name, '%s-%s' % (snr_cut_name, snr_cut_value)])
-        out_name = '_'.join([out_name, 'WINDOW-%s' % window_name])
-        if args.log_y:
-            out_name = '_'.join([out_name, 'LOG'])
-    out_name = out_name + '.png'
+        snr_cut_value = '_'.join(snr_cuts)
+        out_name = '_'.join([out_name, '%s-%s' % (snr_cut_name, snr_cut_value)])
+
+    window_name = (str("{:.1f}".format(args.window)).replace('.', '-') if '.' in
+                   str(args.window) else str(args.window))
+    out_name = '_'.join([out_name, 'WINDOW-%s' % window_name])
+
+    if args.log_y:
+        out_name = '_'.join([out_name, 'LOG'])
+
+    out_name = out_name + '.png'  # Filenames via command line may have any extension
 
 if n_gates > 0:
     for i, thr in enumerate(snr_cut_vals):
