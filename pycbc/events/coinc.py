@@ -610,7 +610,6 @@ class MultiRingBuffer(object):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
         for i, v in zip(indices, values):
-            curr_pos = self.valid_ends[i]
             # Expand ring buffer size if needed
             if self.valid_ends[i] == len(self.buffer[i]):
                 # First clear out any old triggers before resizing
@@ -632,6 +631,7 @@ class MultiRingBuffer(object):
                         self.min_buffer_size
                     )
                 )
+            curr_pos = self.valid_ends[i]
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
             self.valid_ends[i] = self.valid_ends[i] + 1
