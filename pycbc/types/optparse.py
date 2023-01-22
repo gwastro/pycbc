@@ -424,7 +424,8 @@ def copy_opts_for_single_ifo(opt, ifo):
     """
     opt = copy.deepcopy(opt)
     for arg, val in vars(opt).items():
-        if isinstance(val, DictWithDefaultReturn):
+        if isinstance(val, DictWithDefaultReturn) or \
+            (isinstance(val, dict) and ifo in val):
             setattr(opt, arg, getattr(opt, arg)[ifo])
     return opt
 
