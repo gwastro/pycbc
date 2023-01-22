@@ -200,11 +200,6 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="(Optional) What truncation method to use "
                                   "when applying psd-inverse-length. If not "
                                   "provided, a hard truncation will be used.")
-    psd_options.add_argument("--fake-strain-extra-args",
-                             nargs='+', action=DictOptionAction,
-                             metavar='PARAM:VALUE', default={}, type=dict,
-                             help="(optional) Extra arguments passed to the "
-                                  "PSD models.")
     # Options specific to XML PSD files
     psd_options.add_argument("--psd-file-xml-ifo-string",
                              help="If using an XML PSD file, use the PSD in "
@@ -326,12 +321,6 @@ def insert_psd_option_group_multi_ifo(parser):
                              help="(Optional) What truncation method to use "
                                   "when applying psd-inverse-length. If not "
                                   "provided, a hard truncation will be used.")
-    psd_options.add_argument("--fake-strain-extra-args",
-                             nargs='+', action=MultiDetDictOptionAction,
-                             metavar='DETECTOR:PARAM:VALUE',
-                             default={},type=dict,
-                             help="(optional) Extra arguments passed to the "
-                                  "PSD models.")
     psd_options.add_argument("--psd-output", nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:FILE',
                           help="(Optional) Write PSD to specified file")
