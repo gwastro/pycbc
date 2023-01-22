@@ -204,10 +204,12 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
     """
     name = 'marginalized_time'
 
-    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+    def __init__(self, variable_params,
+                 data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
                  **kwargs):
 
+        self.kwargs = kwargs
         variable_params, kwargs = self.setup_marginalization(
                                variable_params,
                                **kwargs)
@@ -317,6 +319,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                          (cplx_hcd[det] / hchc[det] ** 0.5).squared_norm())
             snr_estimate[det] = (0.5 * snr_proxy) ** 0.5
 
+        self.draw_ifos(snr_estimate, log=False, **self.kwargs)
         self.snr_draw(snr_estimate)
 
         for det in wfs:
