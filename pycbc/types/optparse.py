@@ -278,8 +278,9 @@ class MultiDetDictOptionAction(DictOptionAction):
     argument containing the detector (channel) name, such as
     `DETECTOR:PARAM:VALUE`. The first colon is the name of detector,
     the second colon is the name of parameter, the third colon is the value.
-    Unlike `DictOptionAction`, all arguments must be prefixed by the
-    corresponding detector.
+    Or similar to `DictOptionAction`, all arguments don't contain the name of
+    detector, such as `PARAM:VALUE`, this will assume each detector has same
+    values of those parameters.
     """
     def __call__(self, parser, namespace, values, option_string=None):
         # Again this is modified from the standard argparse 'append' action
@@ -290,18 +291,11 @@ class MultiDetDictOptionAction(DictOptionAction):
         items = copy.copy(getattr(namespace, self.dest))
         detector_args = {}
         for value in values:
-            if ':' not in value:
-                err_msg += ("Each argument must contain two ':' "
-                            "characters")
-                raise ValueError(err_msg)
-            detector, param_value = value.split(':', 1)
-            if ':' not in param_value:
-                err_msg += ("Must use format `DETECTOR:PARAM:VALUE`.")
-                raise ValueError(err_msg)
-            param, val = param_value.split(':')
-            if detector not in detector_args:
-                detector_args[detector] = {param: self.internal_type(val)}
-            else:
+            if value.count(':') == 2:
+                detector, param_value = value.split(':', 1)
+                param, val = param_value.split(':')
+                if detector not in detector_args:
+                    detector_args[detector] = {param: self.internal_type(val)}
                 if param in detector_args[detector]:
                     err_msg += ("Multiple values supplied for the same "
                                 "parameter {} under detector {},\n"
@@ -310,6 +304,26 @@ class MultiDetDictOptionAction(DictOptionAction):
                                              detector_args[detector][param])
                 else:
                     detector_args[detector][param] = self.internal_type(val)
+            elif value.count(':') == 1:
+                param, val = value.split(':')
+                for detector in getattr(namespace, 'instruments'):
+                    if detector not in detector_args:
+                        detector_args[detector] = \
+                            {param: self.internal_type(val)}
+                    if param in detector_args[detector]:
+                        err_msg += ("Multiple values supplied for the same "
+                                    "parameter {} under detector {},\n"
+                                    "already have {}.")
+                        err_msg = err_msg.format(
+                                    param, detector,
+                                    detector_args[detector][param])
+                    else:
+                        detector_args[detector][param] = \
+                                    self.internal_type(val)          
+            else:
+                err_msg += ("Use format `DETECTOR:PARAM:VALUE` for each "
+                            "detector, or use `PARAM:VALUE` for all.")
+                raise ValueError(err_msg)
         items = detector_args
         setattr(namespace, self.dest, items)
 
