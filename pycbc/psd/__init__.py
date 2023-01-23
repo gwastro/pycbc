@@ -187,6 +187,11 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
     psd_options.add_argument("--psd-model",
                              help="Get PSD from given analytical model. ",
                              choices=get_psd_model_list())
+    psd_options.add_argument("--fake-strain-extra-args",
+                             nargs='+', action=DictOptionAction,
+                             metavar='PARAM:VALUE', default={}, type=float,
+                             help="(optional) Extra arguments passed to "
+                             "the PSD models.")
     psd_options.add_argument("--psd-file",
                              help="Get PSD using given PSD ASCII file")
     psd_options.add_argument("--asd-file",
@@ -283,6 +288,11 @@ def insert_psd_option_group_multi_ifo(parser):
                           action=MultiDetOptionAction, metavar='IFO:MODEL',
                           help="Get PSD from given analytical model. "
                           "Choose from %s" %(', '.join(get_psd_model_list()),))
+    psd_options.add_argument("--fake-strain-extra-args",
+                             nargs='+', action=MultiDetDictOptionAction,
+                             metavar='DETECTOR:PARAM:VALUE', default={},
+                             type=float, help="(optional) Extra arguments "
+                             "passed to the PSD models.")
     psd_options.add_argument("--psd-file", nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:FILE',
                           help="Get PSD using given PSD ASCII file")
