@@ -30,7 +30,7 @@ parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--single-trigger-files', nargs='+',
                     help='HDF format single detector merged trigger file(s) path. '
                          'All triggers are combined in the histogram')
-parser.add_argument('--ifo-label', default='',
+parser.add_argument('--ifo-tag', default='',
                     help='String to label plots, eg H1, H1L1')
 parser.add_argument('--gating-type', choices=['auto', 'detchar'],
                     help='Type of gate to analyze.')
