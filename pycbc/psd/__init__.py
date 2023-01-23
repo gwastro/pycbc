@@ -84,7 +84,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         # PSD from lalsimulation or file
         if opt.psd_model:
             psd = from_string(opt.psd_model, length, delta_f, f_low,
-                              **opt.fake_strain_extra_args)
+                              **opt.extra_args)
         elif opt.psd_file or opt.asd_file:
             if opt.asd_file:
                 psd_file_name = opt.asd_file
@@ -187,7 +187,7 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
     psd_options.add_argument("--psd-model",
                              help="Get PSD from given analytical model. ",
                              choices=get_psd_model_list())
-    psd_options.add_argument("--fake-strain-extra-args",
+    psd_options.add_argument("--extra-args",
                              nargs='+', action=DictOptionAction,
                              metavar='PARAM:VALUE', default={}, type=float,
                              help="(optional) Extra arguments passed to "
@@ -288,7 +288,7 @@ def insert_psd_option_group_multi_ifo(parser):
                           action=MultiDetOptionAction, metavar='IFO:MODEL',
                           help="Get PSD from given analytical model. "
                           "Choose from %s" %(', '.join(get_psd_model_list()),))
-    psd_options.add_argument("--fake-strain-extra-args",
+    psd_options.add_argument("--extra-args",
                              nargs='+', action=MultiDetDictOptionAction,
                              metavar='DETECTOR:PARAM:VALUE', default={},
                              type=float, help="(optional) Extra arguments "
