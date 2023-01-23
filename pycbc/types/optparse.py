@@ -319,7 +319,7 @@ class MultiDetDictOptionAction(DictOptionAction):
                                     detector_args[detector][param])
                     else:
                         detector_args[detector][param] = \
-                                    self.internal_type(val)          
+                                    self.internal_type(val)
             else:
                 err_msg += ("Use format `DETECTOR:PARAM:VALUE` for each "
                             "detector, or use `PARAM:VALUE` for all.")
