@@ -75,6 +75,7 @@ parser.add_argument('--frame-duration', metavar='SECONDS', type=int,
                          'in seconds')
 
 pycbc.strain.insert_strain_option_group(parser)
+pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
 
 if args.frame_duration is not None and args.frame_duration <= 0:
