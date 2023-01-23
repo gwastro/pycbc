@@ -1115,9 +1115,8 @@ cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 from .premerger import premerger_taylorf2
 cpu_fd['PreTaylorF2'] = premerger_taylorf2
 
-from .multiband import multiband_td_waveform, multiband_fd_waveform
-cpu_td['multiband_td'] = multiband_td_waveform
-cpu_fd['multiband_fd'] = multiband_fd_waveform
+from .multiband import multiband_fd_waveform
+cpu_fd['multiband'] = multiband_fd_waveform
 
 # Load external waveforms #####################################################
 if 'PYCBC_WAVEFORM' in os.environ:
