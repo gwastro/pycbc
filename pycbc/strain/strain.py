@@ -24,7 +24,6 @@ from pycbc.types import TimeSeries, zeros
 from pycbc.types import Array, FrequencySeries
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
-from pycbc.types import DictOptionAction, MultiDetDictOptionAction
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo, complex_same_precision_as
