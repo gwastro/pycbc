@@ -237,7 +237,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         pdf = 1.0 / opt.fake_strain_filter_duration
         fake_flow = opt.fake_strain_flow
         fake_rate = opt.fake_strain_sample_rate
-        kwargs = opt.fake_strain_extra_args
+        extra_args = opt.extra_args
         plen = round(opt.sample_rate / pdf) // 2 + 1
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
@@ -248,7 +248,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         elif opt.fake_strain != 'zeroNoise':
             logging.info("Making PSD for strain")
             strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
-                                               fake_flow, **kwargs)
+                                               fake_flow, **extra_args)
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
