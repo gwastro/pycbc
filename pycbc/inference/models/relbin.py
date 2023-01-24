@@ -620,7 +620,7 @@ class RelativeTime(Relative):
         super(RelativeTime, self).__init__(*args, **kwargs)
         self.sample_rate = float(sample_rate)
         self.setup_peak_lock(sample_rate=self.sample_rate, **kwargs)
-        self.draw_ifos(self.ref_snr)
+        self.draw_ifos(self.ref_snr, **kwargs)
 
     @property
     def ref_snr(self):

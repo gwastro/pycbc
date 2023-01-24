@@ -616,6 +616,8 @@ class DistMarg():
         if 'tc' not in self.marginalized_vector_priors:
             return
 
+        peak_snr_threshold = float(peak_snr_threshold)
+
         tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
         ifos = list(snrs.keys())
         keep_ifos = []
