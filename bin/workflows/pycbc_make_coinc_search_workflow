@@ -80,6 +80,7 @@ os.chdir(args.output_dir)
 
 rdir = layout.SectionNumber('results', ['analysis_time',
                                  'detector_sensitivity',
+                                 'data_quality',
                                  'single_triggers',
                                  'coincident_triggers',
                                  'injections',
@@ -135,15 +136,24 @@ ssegs = {}
 for ifo in workflow.ifos:
     ssegs[ifo] = science_seg_file.segment_dict["%s:science" % ifo]
 
+hoft_tags=[]
+if 'hoft' in workflow.cp.get_subsections('workflow-datafind'):
+    hoft_tags=['hoft']
 datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
                                            wf.setup_datafind_workflow(workflow,
                                      ssegs, "datafind",
-                                     seg_file=science_seg_file)
+                                     seg_file=science_seg_file, tags=hoft_tags)
 
 final_veto_name = 'vetoes'
 final_veto_file = wf.get_segments_file(workflow, final_veto_name,
                                        'segments-vetoes',
                                        rdir['analysis_time/segment_data'])
+
+# Get dq segments from veto definer and calculate data quality timeseries
+dq_flag_name = 'dq_flag'
+dq_segment_file = wf.get_flag_segments_file(workflow, dq_flag_name,
+                                      'segments-dq',
+                                      rdir['analysis_time/segment_data'])
 
 # Template bank stuff
 hdfbank = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
@@ -156,8 +166,13 @@ splitbank_files_fd = wf.setup_splittable_workflow(workflow, [hdfbank],
                                                   out_dir="bank",
                                                   tags=['full_data'])
 
+bank_tags = []
+if 'mass1_mass2' in workflow.cp.get_subsections('plot_bank'):
+    bank_tags=['mass1_mass2']
 bank_plot = wf.make_template_plot(workflow, hdfbank,
-                                  rdir['coincident_triggers'])
+                                  rdir['coincident_triggers'],
+                                  tags=bank_tags)
+
 
 ######################## Setup the FULL DATA run ##############################
 output_dir = "full_data"
@@ -173,7 +188,20 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
 
 # setup sngl trigger distribution fitting jobs
 # 'statfiles' is list of files used in calculating coinc statistic
+# 'dqfiles' is the subset of files containing data quality information
 statfiles = []
+dqfiles = []
+dqfile_labels = []
+dq_labels = workflow.cp.get_subsections('workflow-data_quality')
+for dq_label in dq_labels:
+    dq_label_files = wf.setup_dq_reranking(workflow, dq_label, insps, hdfbank,
+                                       analyzable_segs, analyzable_file,
+                                       dq_segment_file,
+                                       output_dir='dq',
+                                       tags=['full_data'])
+    statfiles += dq_label_files
+    dqfiles += dq_label_files
+    dqfile_labels += len(dq_label_files) * [dq_label]
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name,
                                       output_dir=output_dir,
@@ -194,6 +222,14 @@ for ifo, _ in zip(*insps.categorize_by_attr('ifo')):
 # Generate the possible detector combinations from 2 detectors
 # up to the number of trigger files
 
+if workflow.cp.has_option_tags('workflow-data_quality', 'no-coinc-veto',
+                                tags=None):
+    logging.info("no-coinc-veto option enabled, " +
+                 "no longer passing veto segments to coinc jobs.")
+    coinc_veto_file = None
+else:
+    coinc_veto_file = final_veto_file
+
 for ifocomb in ifo_combos(ifo_ids.keys()):
     inspcomb = wf.select_files_by_ifo_combination(ifocomb, insps)
     pivot_ifo, fixed_ifo, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb,
@@ -204,7 +240,7 @@ for ifocomb in ifo_combos(ifo_ids.keys()):
     ctagcomb = ['full_data', coinctag]
 
     bg_file = wf.setup_interval_coinc(
-        workflow, hdfbank, inspcomb, statfiles, final_veto_file,
+        workflow, hdfbank, inspcomb, statfiles, coinc_veto_file,
         final_veto_name, output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
 
     # Optionally perform follow-up on triggers and rerank the candidates
@@ -494,6 +530,26 @@ for key in final_bg_files:
     snrifar_summ += closed_page
     layout.two_column_layout(closed_dir, closed_page)
 
+#################### Plotting of data quality results #########################
+
+# DQ log likelihood plots
+for dqf,dql in zip(dqfiles,dqfile_labels):
+    outdir = rdir[f'data_quality/{dqf.ifo}_trigger_rates_{dql}']
+    wf.make_dq_trigger_rate_plot(workflow, [dqf], outdir, tags=[dql,'full_data'])
+
+    outdir = rdir[f'data_quality/{dqf.ifo}_percentiles_{dql}']
+    wf.make_dq_percentile_plot(workflow, [dqf], outdir, tags=[dql,'full_data'])
+
+# DQ background binning plot
+if workflow.cp.has_option_tags('workflow-data_quality', 'background-bins',
+                                tags=None):
+    background_bins = workflow.cp.get_opt_tags('bin_trigger_rates_dq',
+                                               'background-bins',tags=None)
+    bank_tags = workflow.cp.get_subsections('plot_bank')
+    if len(bank_tags) == 0: bank_tags=['bank']
+    for b_tag in bank_tags:
+        wf.make_template_plot(workflow, hdfbank, rdir['data_quality'],
+                              bins=background_bins, tags=['dq_bins',b_tag])
 
 ############################## Setup the injection runs #######################
 
@@ -553,7 +609,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
             inspcomb,
             statfiles,
             final_bg_files[ordered_ifo_list],
-            final_veto_file,
+            coinc_veto_file,
             final_veto_name,
             output_dir,
             pivot_ifo,
@@ -737,6 +793,9 @@ create_versioning_page(rdir['workflow/version'], container.cp)
 log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
                         extension='.html', directory=rdir['workflow'])
 
+gen_file_html = wf.File(workflow.ifos, 'WORKFLOW-GEN', workflow.analysis_time,
+                        extension='.html', directory=rdir['workflow'])
+
 # Create a page to contain a dashboard link
 dashboard_file = wf.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
                          extension='.html', directory=rdir['workflow'])
@@ -781,4 +840,20 @@ kwds = { 'title' : 'Workflow Generation Log',
          'caption' : "Log of the workflow script %s" % sys.argv[0],
          'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
-layout.single_layout(rdir['workflow'], ([dashboard_file,log_file_html]))
+
+# Add the command line used to a specific file
+args_to_output = [sys.argv[0]]
+for arg in sys.argv[1:]:
+    if arg.startswith('--'):
+        # This is an option, add tab
+        args_to_output.append('  ' + arg)
+    else:
+        # This is a parameter, add two tabs
+        args_to_output.append('    ' + arg)
+
+gen_str = '<pre>' + ' \\\n'.join(args_to_output) + '</pre>'
+kwds = { 'title' : 'Workflow Generation Command',
+         'caption' : "Command used to generate the workflow.",
+         'cmd' :' '.join(sys.argv), }
+save_fig_with_metadata(gen_str, gen_file_html.storage_path, **kwds)
+layout.single_layout(rdir['workflow'], ([dashboard_file, gen_file_html, log_file_html]))

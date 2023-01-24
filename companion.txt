@@ -4,8 +4,8 @@ gwpy>=0.8.1
 # HEALPix is very useful for some analysis.
 healpy
 
-# Needed for gracedb uploads and skymap generation
-ligo-gracedb
+# Needed for GraceDB uploads and skymap generation
+ligo-gracedb>=2.7.8
 ligo.skymap
 
 # Needed for ringdown

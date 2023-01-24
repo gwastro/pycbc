@@ -70,6 +70,8 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
 
+        sample_rate = float(sample_rate)
+
         # Generate template waveforms
         df = data[self.detectors[0]].delta_f
         self.df = df
@@ -85,7 +87,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         hp, _ = get_fd_waveform(delta_f=df, distance=1, inclination=0, **p)
 
         # Extend template to high sample rate
-        flen = int(int(sample_rate) / df) / 2 + 1
+        flen = int(round(sample_rate / df) / 2 + 1)
         hp.resize(flen)
 
         # Calculate high sample rate SNR time series
@@ -116,6 +118,13 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         self.waveform = hp
         self.htfs = {}  # Waveform phase / distance transformation factors
         self.dts = {}
+
+        # Retrict to analyzing around peaks if chosen and choose what
+        # ifos to draw from
+        self.setup_peak_lock(snrs=self.snr,
+                             sample_rate=sample_rate,
+                             **kwargs)
+        self.draw_ifos(self.snr)
 
     @property
     def multi_signal_support(self):

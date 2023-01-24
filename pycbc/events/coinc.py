@@ -358,9 +358,6 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
-
-    logging.info('clustering coinc triggers over %ss window' % window)
-
     if len(time1) == 0 or len(time2) == 0:
         logging.info('No coinc triggers in one, or both, ifos.')
         return numpy.array([])
@@ -604,8 +601,8 @@ class MultiRingBuffer(object):
             self.valid_ends[i] -= 1
 
     def advance_time(self):
-        """Advance the internal time increment by 1, expiring any triggers that
-        are now too old.
+        """Advance the internal time increment by 1, expiring any triggers
+        that are now too old.
         """
         self.time += 1
 
@@ -613,9 +610,13 @@ class MultiRingBuffer(object):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
         for i, v in zip(indices, values):
-            curr_pos = self.valid_ends[i]
             # Expand ring buffer size if needed
             if self.valid_ends[i] == len(self.buffer[i]):
+                # First clear out any old triggers before resizing
+                self.update_valid_start(i)
+                self.check_expired_triggers(i)
+
+                # Then increase arrays by buffer_increment
                 self.buffer[i] = numpy.resize(
                     self.buffer[i],
                     max(
@@ -630,6 +631,7 @@ class MultiRingBuffer(object):
                         self.min_buffer_size
                     )
                 )
+            curr_pos = self.valid_ends[i]
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
             self.valid_ends[i] = self.valid_ends[i] + 1
@@ -647,9 +649,8 @@ class MultiRingBuffer(object):
         """Return the expiration vector of a given ring buffer """
         return self.buffer_expire[buffer_index][self.valid_slice(buffer_index)]
 
-    def data(self, buffer_index):
-        """Return the data vector for a given ring buffer"""
-        # Check for expired elements and discard if they exist
+    def update_valid_start(self, buffer_index):
+        """Update the valid_start for the given buffer index"""
         expired = self.time - self.max_time
         exp = self.buffer_expire[buffer_index]
         j = self.valid_starts[buffer_index]
@@ -659,6 +660,14 @@ class MultiRingBuffer(object):
                 break
             j += 1
         self.valid_starts[buffer_index] = j
+
+    def check_expired_triggers(self, buffer_index):
+        """Check if we should free memory for this buffer index.
+
+        Check what fraction of triggers are expired in the specified buffer
+        and if it is more than the allowed fraction (set by
+        self.resize_invalid_fraction) resize the array to remove them.
+        """
         val_start = self.valid_starts[buffer_index]
         val_end = self.valid_ends[buffer_index]
         buf_len = len(self.buffer[buffer_index])
@@ -670,6 +679,11 @@ class MultiRingBuffer(object):
             self.buffer[buffer_index] = self.buffer[buffer_index][val_start:val_end].copy()
             self.valid_ends[buffer_index] -= val_start
             self.valid_starts[buffer_index] = 0
+
+    def data(self, buffer_index):
+        """Return the data vector for a given ring buffer"""
+        self.update_valid_start(buffer_index)
+        self.check_expired_triggers(buffer_index)
 
         return self.buffer[buffer_index][self.valid_slice(buffer_index)]
 
@@ -1212,7 +1226,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
-
+            logging.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                   self.timeslide_interval,
                                   self.analysis_block,

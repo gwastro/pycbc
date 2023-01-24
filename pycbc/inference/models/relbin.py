@@ -97,9 +97,21 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
     # frequency grid points
     fbin = dphi2f(dphi_grid)
     # indices of frequency grid points in the FFT array
-    fbin_ind = numpy.unique(
-        [numpy.argmin(numpy.absolute(f_full - ff)) for ff in fbin]
-    )
+    fbin_ind = numpy.searchsorted(f_full, fbin)
+    for idx_fbin, idx_f_full in enumerate(fbin_ind):
+        if idx_f_full == 0:
+            curr_idx = 0
+        elif idx_f_full == len(f_full):
+            curr_idx = len(f_full) - 1
+        else:
+            abs1 = abs(f_full[idx_f_full] - fbin[idx_fbin])
+            abs2 = abs(f_full[idx_f_full-1] - fbin[idx_fbin])
+            if abs1 > abs2:
+                curr_idx = idx_f_full - 1
+            else:
+                curr_idx = idx_f_full
+        fbin_ind[idx_fbin] = curr_idx
+    fbin_ind = numpy.unique(fbin_ind)
     return fbin_ind
 
 
@@ -225,11 +237,19 @@ class Relative(DistMarg, BaseGaussianNoise):
                                                           **self.fid_params)
                 curr_wav = fid_hp
 
-            # check for zeros at high frequencies
+            # check for zeros at low and high frequencies
             # make sure only nonzero samples are included in bins
-            numzeros = list(curr_wav[::-1] != 0j).index(True)
-            if numzeros > 0:
-                new_kmax = self.kmax[ifo] - numzeros
+            numzeros_lo = list(curr_wav != 0j).index(True)
+            if numzeros_lo > 0:
+                new_kmin = self.kmin[ifo] + numzeros_lo
+                f_lo = new_kmin * self.df[ifo]
+                logging.info(
+                    "WARNING! Fiducial waveform starts above "
+                    "low-frequency-cutoff, initial bin frequency "
+                    "will be %s Hz", f_lo)
+            numzeros_hi = list(curr_wav[::-1] != 0j).index(True)
+            if numzeros_hi > 0:
+                new_kmax = self.kmax[ifo] - numzeros_hi
                 f_hi = new_kmax * self.df[ifo]
                 logging.info(
                     "WARNING! Fiducial waveform terminates below "

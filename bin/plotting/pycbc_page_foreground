@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Make table of the foreground coincident events. Also includes ability to
+Make table of the foreground events. Also includes ability to
 write FARs and p-values for intermediary hierarchical removal steps.
 """
 import argparse
@@ -21,7 +21,7 @@ parser.add_argument('--bank-file')
 parser.add_argument('--single-detector-triggers', nargs='+', default=None)
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
-parser.add_argument('--num-coincs-to-write', type=int)
+parser.add_argument('--num-to-write', type=int)
 parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which FARs to write to the table '
                          'based on the number of hierarchical removals done. '
@@ -70,7 +70,7 @@ if args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
         err_msg += "trigger lists with --single-detector-triggers."
         raise ValueError(err_msg)
 
-# Ensure that the user uses a coinc trigger file that is hierarchical
+# Ensure that the user uses a trigger file that is hierarchical
 # removal compatible. Also default to regular behavior if hierarchical
 # removals were not performed.
 if h_num_rm is not None and h_iterations is not None \
@@ -78,18 +78,18 @@ if h_num_rm is not None and h_iterations is not None \
     # read in the triggers from the group corresponding to the removal stage
     fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                       sngl_files=args.single_detector_triggers,
-                                      n_loudest=args.num_coincs_to_write,
+                                      n_loudest=args.num_to_write,
                                       group='foreground_h%s' % h_num_rm)
     # read in the regular triggers to get the exclusive ifar which is
     # independent of any removal
     fortrigs_exclusive = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                            sngl_files=args.single_detector_triggers,
-                                           n_loudest=args.num_coincs_to_write)
+                                           n_loudest=args.num_to_write)
 
 else :
     fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                       sngl_files=args.single_detector_triggers,
-                                      n_loudest=args.num_coincs_to_write)
+                                      n_loudest=args.num_to_write)
 
 if args.output_file.endswith('.html'):
     ifar = fortrigs.get_coincfile_array('ifar')
@@ -108,7 +108,7 @@ if args.output_file.endswith('.html'):
         #        this table for hierarchically removed triggers, we would need
         #        to change the code below to support that.
 
-        # This information is not stored at all levels of the coinc trigger file
+        # This information is not stored at all levels of the trigger file
         # so grab from the top level and populate the variables for output later
 
         ifar_exc_orig = fortrigs_exclusive.get_coincfile_array('ifar_exc')

@@ -15,10 +15,12 @@ import os.path
 import itertools
 import platform
 import subprocess
+from multiprocessing.dummy import threading
 from matplotlib import use
 use('agg')
 from shutil import which
 from mpi4py import MPI as mpi
+from astropy.time import Time
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
 from pycbc.types import MultiDetOptionAction, MultiDetMultiColonOptionAction
@@ -96,6 +98,7 @@ class LiveEventManager(object):
         self.gracedb_testing = not args.enable_production_gracedb_upload
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
+        self.gracedb = None
 
         # Keep track of which events have been uploaded
         self.last_few_coincs_uploaded = []
@@ -311,6 +314,8 @@ class LiveEventManager(object):
             hdfp['template_duration'] = \
                 self.bank.table[template_id].template_duration
             hdfp['ifar'] = results['foreground/ifar']
+            if 'p_terr' in results:
+                hdfp['p_terr'] = results['p_terr']
             if gid is not None:
                 hdfp['gid'] = gid
 
@@ -328,7 +333,12 @@ class LiveEventManager(object):
         if not self.gracedb_testing:
             cmd += '--production '
         cmd += '--verbose '
-        cmd += '--output-path {} '.format(self.path)
+
+        # set up a place for storing the SNR optimization results and log
+        out_dir_path = os.path.join(os.path.dirname(fname), 'optimize_snr')
+        makedir(out_dir_path)
+        cmd += f'--output-path {out_dir_path} '
+
         if self.enable_gracedb_upload:
             cmd += '--enable-gracedb-upload '
 
@@ -345,12 +355,42 @@ class LiveEventManager(object):
             opt_scheme = args.processing_scheme.split(':')[0]
             cmd += '--processing-scheme {}:1 '.format(opt_scheme)
 
-        log_fname = fname.replace('.xml.gz', '_optimize_snr.log')
+        log_fname = os.path.join(out_dir_path, 'optimize_snr.log')
 
         logging.info('running %s with log to %s', cmd, log_fname)
         with open(log_fname, "w") as logfile:
             subprocess.Popen(
                 cmd, shell=True, stdout=logfile, stderr=logfile
+            )
+
+    def create_gdb(self):
+        """
+        Function to create GraceDB session.
+        """
+        from ligo.gracedb.rest import GraceDb
+        logging.info('Creating GraceDB session')
+        # Set up dict for args that reload the certificate if it will expire in the reload_buffer time
+        # These args are documented here: https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
+        # Because we do not change any of the request session values when running the code, it should remain thread safe. 
+        gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+        self.gracedb = GraceDb(args.gracedb_server, **gdbargs) if args.gracedb_server else GraceDb(**gdbargs)
+
+    def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos, upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
+        if upload_checks:
+            gid = event.upload(
+                fname,
+                gracedb_server=gracedb_server,
+                testing=self.gracedb_testing,
+                extra_strings=[comment],
+                search=gracedb_search
+            )
+        if optimize_snr_checks:
+            self.setup_optimize_snr(
+                results,
+                live_ifos,
+                ifos,
+                fname,
+                gid
             )
 
     def check_coincs(self, ifos, coinc_results, psds):
@@ -366,7 +406,6 @@ class LiveEventManager(object):
             return
 
         logging.info('computing followup data for coinc')
-
         coinc_ifos = coinc_results['foreground/type'].split('-')
         followup_ifos = list(set(ifos) - set(coinc_ifos))
 
@@ -375,32 +414,31 @@ class LiveEventManager(object):
             coinc_results['foreground/NO_FOLLOWUP'] = True
             return
 
-        fud = self.compute_followup_data(
+        sld = self.compute_followup_data(
             coinc_ifos,
             coinc_results,
             followup_ifos=followup_ifos,
             recalculate_ifar=True
         )
 
-        live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
-
         event = CandidateForGraceDB(
-            live_ifos,
+            coinc_ifos,
+            ifos,
             coinc_results,
+            gracedb=self.gracedb,
             padata=self.padata,
             bank=self.bank,
             psds=psds,
-            followup_data=fud,
+            skyloc_data=sld,
             low_frequency_cutoff=self.low_frequency_cutoff,
             channel_names=args.channel_name,
             mc_area_args=self.mc_area_args,
         )
 
-        fname = 'coinc-{}-{}.xml.gz'.format(
-            event.merger_time,
-            pycbc.random_string(6)
+        fname = os.path.join(
+            self.get_candidate_path(event.merger_time),
+            f'coinc-{event.merger_time:.3f}.xml.gz'
         )
-        fname = os.path.join(self.path, fname)
         logging.info('Coincident candidate! Saving as %s', fname)
 
         # Verbally explain some details not obvious from the other info
@@ -413,33 +451,28 @@ class LiveEventManager(object):
                                  ppdets(followup_ifos))
 
         ifar = coinc_results['foreground/ifar']
-        if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-            gid = event.upload(
-                fname,
-                gracedb_server=args.gracedb_server,
-                testing=self.gracedb_testing,
-                extra_strings=[comment],
-                search=args.gracedb_search
-            )
-            # Keep track of the last few coincs uploaded in order to
-            # prevent singles being uploaded as well for coinc events
-            self.last_few_coincs_uploaded.append(event.merger_time)
-            # Only need to keep a few (10) events
-            self.last_few_coincs_uploaded = \
-                self.last_few_coincs_uploaded[-10:]
-        else:
+        upload_checks = self.enable_gracedb_upload and self.ifar_upload_threshold < ifar
+        optimize_snr_checks = self.run_snr_optimization and self.ifar_upload_threshold < ifar
+        
+        # Keep track of the last few coincs uploaded in order to
+        # prevent singles being uploaded as well for coinc events
+        self.last_few_coincs_uploaded.append(event.merger_time)
+        # Only need to keep a few (10) events
+        self.last_few_coincs_uploaded = \
+            self.last_few_coincs_uploaded[-10:]
+
+        if not upload_checks:
             gid = None
             event.save(fname)
-
-        if self.run_snr_optimization \
-                and self.ifar_upload_threshold < ifar:
-            self.setup_optimize_snr(
-                coinc_results,
-                live_ifos,
-                coinc_ifos,
-                fname,
-                gid
-            )
+        if upload_checks or optimize_snr_checks:
+            if optimize_snr_checks:
+                logging.info('Optimizing SNR for coinc above threshold ..')
+                # Tell snr optimized event about p_terr
+                if hasattr(event, 'p_terr') and event.p_terr is not None:
+                    coinc_results['p_terr'] = event.p_terr
+            live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+            gdb_upload_thread = threading.Thread(target = self.upload_in_thread, args = (event, fname, comment, coinc_results, live_ifos, coinc_ifos, upload_checks, optimize_snr_checks,args.gracedb_server, args.gracedb_search,))
+            gdb_upload_thread.start()
 
     def check_singles(self, results, psds):
         active = [k for k in results if results[k] is not None]
@@ -452,35 +485,38 @@ class LiveEventManager(object):
             if single is None:
                 continue
 
+            sifar = single['foreground/ifar']
+            logging.info(f'Found {ifo} single with ifar {sifar}')
+
             followup_ifos = [i for i in active if i is not ifo]
-            fud = self.compute_followup_data(
+            # Don't recompute ifar considering other ifos
+            sld = self.compute_followup_data(
                 [ifo],
                 single,
                 followup_ifos=followup_ifos,
                 recalculate_ifar=False
             )
-            ifar = single['foreground/ifar']
             # Apply a trials factor of the number of active detectors
-            ifar /= len(active)
-            single['foreground/ifar'] = ifar
-
-            live_ifos = [i for i in fud if 'snr_series' in fud[i]]
+            single['foreground/ifar'] = sifar / len(active)
 
             event = CandidateForGraceDB(
-                live_ifos,
+                [ifo],
+                active,
                 single,
+                gracedb=self.gracedb,
                 padata=self.padata,
                 bank=self.bank,
                 psds=psds,
-                followup_data=fud,
+                skyloc_data=sld,
                 low_frequency_cutoff=self.low_frequency_cutoff,
                 channel_names=args.channel_name,
                 mc_area_args=self.mc_area_args,
             )
 
-            fname = 'single-{}-{}-{}.xml.gz'.format(ifo, event.merger_time,
-                                                    pycbc.random_string(6))
-            fname = os.path.join(self.path, fname)
+            fname = os.path.join(
+                self.get_candidate_path(event.merger_time),
+                f'single-{ifo}-{event.merger_time:.3f}.xml.gz'
+            )
             logging.info('Single-detector candidate! Saving as %s', fname)
 
             # Verbally explain some details not obvious from the other info
@@ -501,40 +537,56 @@ class LiveEventManager(object):
                     event.merger_time
                 )
 
-            if args.enable_single_detector_upload \
-                    and self.ifar_upload_threshold < ifar \
-                    and not any(nearby_coincs):
-                gid = event.upload(fname, gracedb_server=args.gracedb_server,
-                                   testing=self.gracedb_testing,
-                                   extra_strings=[comment],
-                                   search=args.gracedb_search)
-            else:
+            upload_checks = args.enable_single_detector_upload and self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs)
+            optimize_snr_checks = self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs) and self.run_snr_optimization
+            if not upload_checks:
                 gid = None
                 event.save(fname)
+            if upload_checks or optimize_snr_checks:
+                if optimize_snr_checks:
+                    logging.info('Optimizing SNR for single above threshold ..')
+                    # Tell snr optimized event about p_terr
+                    if hasattr(event, 'p_terr') and event.p_terr is not None:
+                        single['p_terr'] = event.p_terr
+                live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+                gdb_upload_thread = threading.Thread(target = self.upload_in_thread, args = (event, fname, comment, single, live_ifos, [ifo], upload_checks, optimize_snr_checks, args.gracedb_server, args.gracedb_search,))
+                gdb_upload_thread.start()
 
-            if self.ifar_upload_threshold < ifar \
-                    and not any(nearby_coincs) \
-                    and self.run_snr_optimization:
-                self.setup_optimize_snr(
-                    single,
-                    live_ifos,
-                    [ifo],
-                    fname,
-                    gid
-                )
+    def get_out_dir_path(self, time_gps):
+        """Compose and return the path to a directory to store files associated
+        with times in a given day (specified via a GPS time).
+        Create the directory if it does not exist.
+        """
+        path = self.path
+        if self.use_date_prefix:
+            time_dt = Time(time_gps, format='gps', scale='utc').to_datetime()
+            path = os.path.join(
+                path,
+                f'{time_dt.year:04d}_{time_dt.month:02d}_{time_dt.day:02d}'
+            )
+        makedir(path)
+        return path
+
+    def get_candidate_path(self, merger_time):
+        """Compose and return the path to a directory to store files associated
+        with a particular candidate event. Create the directory if it does not
+        exist.
+        """
+        path = os.path.join(
+            self.get_out_dir_path(merger_time),
+            f'candidate_{merger_time:.3f}_{pycbc.random_string(4)}'
+        )
+        makedir(path)
+        return path
 
     def dump(self, results, name, store_psd=False, time_index=None,
              store_loudest_index=False, raw_results=None, gates=None):
         """Save the results from this time block to an hdf output file.
         """
-        if self.use_date_prefix:
-            tm = lal.GPSToUTC(int(time_index))
-            subdir = '{:04d}_{:02d}_{:02d}'.format(tm[0], tm[1], tm[2])
-            makedir(os.path.join(self.path, subdir))
-            fname = os.path.join(self.path, subdir, name) + '.hdf'
-        else:
-            makedir(self.path)
-            fname = os.path.join(self.path, name) + '.hdf'
+        fname = os.path.join(
+            self.get_out_dir_path(time_index),
+            name + '.hdf'
+        )
 
         with h5py.File(fname, 'w') as f:
             f.attrs['pycbc_version'] = version.git_verbose_msg
@@ -612,6 +664,9 @@ parser.add_argument('--idq-channel', action=MultiDetMultiColonOptionAction,
 parser.add_argument('--idq-state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing information about the state of idq."
                          "Used to determine when idq is usable for statistics. ")
+parser.add_argument('--idq-threshold', type=float,
+                    help='Threshold used to veto triggers at times of '
+                    'low iDQ False Alarm Probability')
 parser.add_argument('--data-quality-channel',
                     action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
@@ -821,13 +876,10 @@ if args.size_override:
 
 # make sure we can talk to GraceDB
 if evnt.rank == 0 and args.enable_gracedb_upload:
-    logging.info('Testing access to GraceDB')
-    from ligo.gracedb.rest import GraceDb
-    gdb_client = GraceDb(args.gracedb_server) if args.gracedb_server else GraceDb()
-    response = gdb_client.ping()
-    logging.info('GraceDB ping response: %s %s',
-                 response.status, response.reason)
-    del gdb_client
+    evnt.create_gdb()
+    response = evnt.gracedb.ping()
+    logging.info('GraceDB ping response: %s %s time elapsed: %s',
+            response.status, response.reason, response.elapsed.total_seconds())
 
 # I'm not the root, so do some actual filtering.
 with ctx:
@@ -985,20 +1037,32 @@ with ctx:
                 results.pop(ifo)
 
             # Veto single detector triggers that fail the DQ vector
+            # or have iDQ value below the threshold
             for ifo in results:
-                if data_reader[ifo].dq is None:
-                    continue
-                logging.info("Checking %s's DQ vector", ifo)
-                start = data_reader[ifo].start_time
-                times = results[ifo]['end_time']
-                idx = data_reader[ifo].dq.indices_of_flag(
-                        start, valid_pad, times,
-                        padding=data_reader[ifo].dq_padding)
-                logging.info('Keeping %d/%d %s triggers',
-                             len(idx), len(times), ifo)
-                for key in results[ifo]:
-                    if len(results[ifo][key]):
-                        results[ifo][key] = results[ifo][key][idx]
+                if data_reader[ifo].dq is not None:
+                    logging.info("Checking %s's DQ vector", ifo)
+                    start = data_reader[ifo].start_time
+                    times = results[ifo]['end_time']
+                    idx = data_reader[ifo].dq.indices_of_flag(
+                            start, valid_pad, times,
+                            padding=data_reader[ifo].dq_padding)
+                    logging.info('Keeping %d/%d %s triggers after DQ flags',
+                                 len(idx), len(times), ifo)
+                    for key in results[ifo]:
+                        if len(results[ifo][key]):
+                            results[ifo][key] = results[ifo][key][idx]
+                if data_reader[ifo].idq is not None:
+                    logging.info("Checking %s's iDQ information", ifo)
+                    start = data_reader[ifo].start_time
+                    times = results[ifo]['end_time']
+                    idx = data_reader[ifo].idq.indices_of_flag(
+                            start, valid_pad, times,
+                            padding=data_reader[ifo].dq_padding)
+                    logging.info('Keeping %d/%d %s triggers after iDQ',
+                                 len(idx), len(times), ifo)
+                    for key in results[ifo]:
+                        if len(results[ifo][key]):
+                            results[ifo][key] = results[ifo][key][idx]
 
             # Look for coincident triggers and do background estimation
             if args.enable_background_estimation:
@@ -1047,16 +1111,15 @@ with ctx:
                         ds.attrs['background_time'] = bg_time
                     bgf.attrs['gps_time'] = last_bg_dump_time
 
-            logging.info('Finished Analyzing up to %s', data_end())
+            logging.info('Finished analyzing up to %s', data_end())
 
         if args.sync:
             evnt.barrier()
         tdiff = pycbc.gps_now() - t1
         lag = float(pycbc.gps_now() - data_end())
-        logging.info('Took %1.2f, duty factor of %.2f, '
-                     'lag %.2f s, %d live detectors',
-                     tdiff, tdiff / valid_pad, lag,
-                     len(evnt.live_detectors))
+        logging.info('Took %1.2f, duty factor of %.2f, lag %.2f s, %d live detectors',
+                     tdiff, tdiff / valid_pad, lag, len(evnt.live_detectors)
+        )
 
         if args.output_status is not None and evnt.rank == 0:
             if lag > 120:
@@ -1081,8 +1144,7 @@ with ctx:
                 with open(args.output_status, 'w') as status_fp:
                     json.dump(status, status_fp)
             except IOError:
-                logging.error('I/O error writing status JSON file! '
-                              'Hopefully it works next time')
+                logging.error('I/O error writing status JSON file!')
 
 if evnt.rank == 1:
     if args.fftw_output_float_wisdom_file:
