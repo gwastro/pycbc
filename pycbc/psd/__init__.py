@@ -84,7 +84,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         # PSD from lalsimulation or file
         if opt.psd_model:
             psd = from_string(opt.psd_model, length, delta_f, f_low,
-                              **opt.extra_args)
+                              **opt.psd_extra_args)
         elif opt.psd_file or opt.asd_file:
             if opt.asd_file:
                 psd_file_name = opt.asd_file
