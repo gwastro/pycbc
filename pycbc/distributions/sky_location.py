@@ -63,10 +63,10 @@ class Fisher():
                 self.mu_values = numpy.array(mu_values[0], mu_values[1])
             else:
                 self.mu_values = numpy.array(numpy.deg2rad([mu_values[0],
-                                                        mu_values[1]]))
+                                                            mu_values[1]]))
             self.mu_values = decra2polaz(self.mu_values[1], self.mu_values[0])
         else:
-            raise ValueError("Kappa too low, minimum should be 500")    
+            raise ValueError("Kappa too low, minimum should be 500")
 
     def rvs_polaz(self, size):
         """
@@ -88,8 +88,8 @@ class Fisher():
         and returns (ra, dec) values
         """
         rot_eu = self.rvs_polaz(size)
-        ra_a = rot_eu[:,1]
-        dec_p = rot_eu[:,0]
+        ra_a = rot_eu[:, 1]
+        dec_p = rot_eu[:, 0]
         right_ascension, declination = polaz2radec(dec_p, ra_a)
         return right_ascension, declination
 
