@@ -647,10 +647,10 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
     @staticmethod
     def supported_approximants():
         all_apprxs = []
-        for d in [waveform.waveform.td_wav, waveform.waveform.fd_wav,
-                  waveform.waveform.fd_det]:
+        for d in [waveform.waveform.td_wav, waveform.waveform.fd_wav]:
             for key in d:
                 all_apprxs.extend(d[key])
+        all_apprxs.extend(waveform.waveform.fd_det)
         return list(set(all_apprxs))
 
 
