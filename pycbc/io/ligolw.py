@@ -147,8 +147,12 @@ def create_process_table(document, program_name=None, detectors=None,
     cvs_entry_time = pycbc_version.date or None
 
     opts = options.copy()
+    key_del = []
     for key, value in opts.items():
         if value not in FromPyType:
+            key_del.append(key)
+    if len(key_del) != 0:
+        for key in key_del:
             opts.pop(key)
 
     process = ligolw_process.register_to_xmldoc(
