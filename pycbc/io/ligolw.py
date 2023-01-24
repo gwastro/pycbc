@@ -149,7 +149,7 @@ def create_process_table(document, program_name=None, detectors=None,
     opts = options.copy()
     key_del = []
     for key, value in opts.items():
-        if value not in FromPyType:
+        if type(value) not in tuple(FromPyType.keys()):
             key_del.append(key)
     if len(key_del) != 0:
         for key in key_del:
