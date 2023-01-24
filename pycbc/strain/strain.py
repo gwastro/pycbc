@@ -24,6 +24,7 @@ from pycbc.types import TimeSeries, zeros
 from pycbc.types import Array, FrequencySeries
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
+from pycbc.types import DictOptionAction, MultiDetDictOptionAction
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo, complex_same_precision_as
@@ -237,7 +238,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         pdf = 1.0 / opt.fake_strain_filter_duration
         fake_flow = opt.fake_strain_flow
         fake_rate = opt.fake_strain_sample_rate
-        extra_args = opt.extra_args
+        fake_extra_args = opt.fake_strain_extra_args
         plen = round(opt.sample_rate / pdf) // 2 + 1
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
@@ -248,7 +249,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         elif opt.fake_strain != 'zeroNoise':
             logging.info("Making PSD for strain")
             strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
-                                               fake_flow, **extra_args)
+                                               fake_flow, **fake_extra_args)
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
@@ -515,6 +516,11 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise.",
                 choices=pycbc.psd.get_psd_model_list() + ['zeroNoise'])
+    data_reading_group.add_argument("--fake-strain-extra-args",
+                nargs='+', action=DictOptionAction,
+                metavar='PARAM:VALUE', default={}, type=float,
+                help="(optional) Extra arguments passed to "
+                "the PSD models.")
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
@@ -715,6 +721,11 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             help="Name of model PSD for generating fake "
                             "gaussian noise. Choose from %s or zeroNoise" \
                             %((', ').join(pycbc.psd.get_lalsim_psd_list()),) )
+    data_reading_group_multi.add_argument("--fake-strain-extra-args",
+                            nargs='+', action=MultiDetDictOptionAction,
+                            metavar='DETECTOR:PARAM:VALUE', default={},
+                            type=float, help="(optional) Extra arguments "
+                            "passed to the PSD models.")
     data_reading_group_multi.add_argument("--fake-strain-seed", type=int,
                             default=0, nargs="+", action=MultiDetOptionAction,
                             metavar='IFO:SEED',
