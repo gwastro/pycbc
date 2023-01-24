@@ -20,7 +20,7 @@ right acension and declination.
 import numpy
 from pycbc.distributions import angular
 from pycbc.transforms import new_z_to_euler, rotate_euler
-from pycbc.transforms import decra2polaz, polaz2decra
+from pycbc.transforms import decra2polaz, polaz2radec
 
 class UniformSky(angular.UniformSolidAngle):
     """A distribution that is uniform on the sky. This is the same as
