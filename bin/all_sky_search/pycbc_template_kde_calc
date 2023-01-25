@@ -12,7 +12,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-
 import numpy, h5py, operator, argparse, logging
 from pycbc import init_logging
 import pycbc.conversions as convert
@@ -21,9 +20,12 @@ from pycbc.events import triggers
 akde = libutils.import_optional('awkde')
 kf = libutils.import_optional('sklearn.model_selection')
 
+
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--signal-file')
-parser.add_argument('--template-file', required=True)
+parser.add_argument('--signal-file', help='File with parameters of GW signals '
+                    'for KDE calculation')
+parser.add_argument('--template-file', required=True, help='Hdf5 file with '
+                    'template masses and spins')
 parser.add_argument('--min-mass', type=float, default=None,
                     help='Used only on signal masses: remove all' 
                          'signal events with mass2 < min_mass')
@@ -38,10 +40,11 @@ parser.add_argument('--log-param', nargs='+', choices=['True', 'False'],
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--make-signal-kde', action='store_true')
 parser.add_argument('--make-template-kde', action='store_true')
-parser.add_argument('--fom-plot')
+parser.add_argument('--fom-plot', help='Make a FOM plot for cross-validation'
+                    ' and save it as this file')
 parser.add_argument('--alpha-grid', type=float, nargs="+",
                     help='Grid of choices of sensitivity parameter alpha for'
-                         'local bandwidth')
+                         ' local bandwidth')
 parser.add_argument('--bw-grid', type=float, nargs='+', 
                     help='Grid of choices of global bandwidth')
 parser.add_argument('--verbose', action='count')
@@ -53,9 +56,14 @@ if args.make_signal_kde and args.make_template_kde:
     parser.error("Choose only one option out of --make-signal-kde and \
                  --make-template-kde")
 
-def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth='gl_bw', ret_kde=False):
-    kde = akde.GaussianKDE(glob_bw=gl_bandwidth, alpha=alp, diag_cov=True)
+
+def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth=None, ret_kde=False):
+    if gl_bandwidth is None:  # use default from awkde
+        kde = akde.GaussianKDE(alpha=alp, diag_cov=True)
+    else:
+        kde = akde.GaussianKDE(glob_bw=gl_bandwidth, alpha=alp, diag_cov=True)
     kde.fit(x)
+    # I don't see why this if-else is here!
     if isinstance(x_grid, (list, tuple, numpy.ndarray)) == False:
         y = kde.predict(x_grid)
     else:
@@ -102,10 +110,12 @@ def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
         ax.set_xlabel(r'$\alpha$', fontsize=15)
         ax.set_ylabel(r'$FOM$', fontsize=15)
         ax.set_ylim(maxFOM-20, maxFOM+5)
-        ax.legend(loc='upper center', bbox_to_anchor= (0.5,1.135), ncol =8)
-        plot_loc = args.fom_plot
-        plt.savefig(plot_loc)
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5,1.135), ncol=8)
+        plt.savefig(args.fom_plot)
+        plt.close()
+
     return optbw, optalpha
+
 
 # Obtaining template parameters
 temp_file = h5py.File(args.template_file, 'r')
@@ -190,4 +200,5 @@ if args.make_signal_kde:
 f_dest.attrs['alpha'] = optalpha
 f_dest.attrs['bandwidth'] = optbw
 f_dest.close()
+
 logging.info('Done!')
