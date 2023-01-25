@@ -85,7 +85,7 @@ def to_gwsignal_dict(p):
             knew = pycbc_to_gws.get(k)
         else:
             knew = k
-
+    params[knew] = p[k] * gws_units[knew]
 
     print('debugging')
     print('input params', p)
