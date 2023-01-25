@@ -3,6 +3,7 @@ from pycbc.waveform.utils import *
 from pycbc.waveform.bank import *
 from pycbc.waveform.ringdown import *
 from pycbc.waveform.parameters import *
+from pycbc.waveform.gwsignal_utils import *
 from pycbc.waveform.waveform_modes import (get_td_waveform_modes,
                                            get_fd_waveform_modes)
 from pycbc.waveform.plugin import (retrieve_waveform_plugins,

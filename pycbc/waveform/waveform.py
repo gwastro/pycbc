@@ -43,7 +43,7 @@ from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_length_in_time
 
 import gwsignal
-from gwsignal_utils import to_gwsignal_dict
+from pycbc.waveform.gwsignal_utils import to_gwsignal_dict
 
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
