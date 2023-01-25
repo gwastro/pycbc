@@ -80,14 +80,12 @@ gws_units = {'mass1': u.solMass,
 
 def to_gwsignal_dict(p):
     params = {}
-    for k in p.keys() & gws_units.keys():
-        if k in pycbc_to_gws:
-            knew = pycbc_to_gws.get(k)
-        else:
+    for k in p:
+        knew = pycbc_to_gws.get(k)
+        if not knew:
             knew = k
-    params[knew] = p[k] * gws_units[knew]
 
-    print('debugging')
-    print('input params', p)
-    print('modified params', params)
+        if knew in gws_units and p[k]:
+            params[knew] = p[k] * gws_units[knew]
+
     return params
