@@ -175,6 +175,14 @@ def _check_lal_pars(p):
     return lal_pars
 
 def _lalsim_td_waveform(**p):
+    # convert paramaters to gwsignal parameters
+    p_gws = to_gwsignal_dict(p)
+    gen = gwsignal.LALCompactBinaryCoalescenceGenerator(p['approximant'])
+    hp1, hc1 = gwsignal.GenerateTDWaveform(p_gws, gen)
+
+    return hp1.to_pycbc(), hc1.to_pycbc()
+
+def _lalsim_td_waveform_old(**p):
     lal_pars = _check_lal_pars(p)
     #nonGRparams can be straightforwardly added if needed, however they have to
     # be invoked one by one
@@ -243,7 +251,7 @@ def _lalsim_fd_waveform(**p):
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
     gen = gwsignal.LALCompactBinaryCoalescenceGenerator(p['approximant'])
-    hp1, hc1 = gwsignal.GenerateTDWaveform(p_gws, gen)
+    hp1, hc1 = gwsignal.GenerateFDWaveform(p_gws, gen)
 
     return hp1.to_pycbc(), hc1.to_pycbc()
 

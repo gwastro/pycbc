@@ -85,4 +85,9 @@ def to_gwsignal_dict(p):
             knew = pycbc_to_gws.get(k)
         else:
             knew = k
+
+
+    print('debugging')
+    print('input params', p)
+    print('modified params', params)
     return params
