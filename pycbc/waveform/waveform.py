@@ -43,6 +43,7 @@ from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_length_in_time
 
 import gwsignal
+from gwsignal_utils import to_gwsignal_dict
 
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
@@ -240,16 +241,11 @@ def _spintaylor_aligned_prec_swapper(**p):
 
 def _lalsim_fd_waveform(**p):
     # convert paramaters to gwsignal parameters
-    p_temp = to_gwsignal_dict(p)
+    p_gws = to_gwsignal_dict(p)
     gen = gwsignal.LALCompactBinaryCoalescenceGenerator(p['approximant'])
-    hp1, hc1 = wfm.GenerateTDWaveform(python_dict, gen)
-    hp = FrequencySeries(hp1.data.data[:], delta_f=hp1.deltaF,
-                            epoch=hp1.epoch)
+    hp1, hc1 = gwsignal.GenerateTDWaveform(p_gws, gen)
 
-    hc = FrequencySeries(hc1.data.data[:], delta_f=hc1.deltaF,
-                            epoch=hc1.epoch)
-
-    return hp, hc
+    return hp1.to_pycbc(), hc1.to_pycbc()
 
 def _lalsim_fd_waveform_old(**p):
     lal_pars = _check_lal_pars(p)
