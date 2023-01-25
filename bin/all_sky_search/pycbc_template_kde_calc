@@ -37,7 +37,7 @@ parser.add_argument('--fit-param', nargs='+', required=True,
                     help='Parameters over which KDE is calculated')
 parser.add_argument('--log-param', nargs='+', choices=['True', 'False'], 
                     required=True)
-parser.add_argument('--output-file', required=True)
+parser.add_argument('--output-file', required=True, help='Name of .hdf output')
 parser.add_argument('--make-signal-kde', action='store_true')
 parser.add_argument('--make-template-kde', action='store_true')
 parser.add_argument('--fom-plot', help='Make a FOM plot for cross-validation'
@@ -62,12 +62,10 @@ def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth=None, ret_kde=False):
         kde = akde.GaussianKDE(alpha=alp, diag_cov=True)
     else:
         kde = akde.GaussianKDE(glob_bw=gl_bandwidth, alpha=alp, diag_cov=True)
+
     kde.fit(x)
-    # I don't see why this if-else is here!
-    if isinstance(x_grid, (list, tuple, numpy.ndarray)) == False:
-        y = kde.predict(x_grid)
-    else:
-        y = kde.predict(x_grid)
+    y = kde.predict(x_grid)
+
     if ret_kde == True:
         return kde, y
     return y
@@ -83,11 +81,15 @@ def kfcv_awkde(sample, bwchoice, alphachoice, k=2):
     for train_index, test_index in kfold.split(sample):
         train, test = sample[train_index], sample[test_index]
         y = kde_awkde(train, test, alp=alphachoice, gl_bandwidth=bwchoice)
+        # Figure of merit : log likelihood for training samples
         fomlist.append(numpy.sum(numpy.log(y)))
-    return numpy.mean(fomlist)
+
+    # Return the sum over all K sets of training samples
+    return numpy.sum(fomlist)
 
 
 def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
+    npoints, ndim = sampleval.shape
     FOM = {}
     for gbw in bwgrid:
         for alphavals in alphagrid:
@@ -97,7 +99,7 @@ def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
     optbw, optalpha = optval[0], optval[1]
     maxFOM = FOM[(optbw, optalpha)]
 
-    # Plotting FOM paramters
+    # Plotting FOM parameters
     if args.fom_plot:
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(12,8))
@@ -106,11 +108,12 @@ def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
             FOMlist = [FOM[(bw, al)] for al in alphagrid]
             ax.plot(alphagrid, FOMlist, label='{0:.3f}'.format(bw))
         ax.plot(optalpha, maxFOM, 'ko', linewidth=10, label= \
-                r'$\alpha={0:.3f},bw= {1:.3f}$'.format(optalpha, optbw))
+                r'$\alpha={0:.3f},bw={1:.3f}$'.format(optalpha, optbw))
         ax.set_xlabel(r'$\alpha$', fontsize=15)
         ax.set_ylabel(r'$FOM$', fontsize=15)
-        ax.set_ylim(maxFOM-20, maxFOM+5)
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5,1.135), ncol=8)
+        # Guess at a suitable range of FOM values to plot
+        ax.set_ylim(maxFOM - 0.5 * npoints, maxFOM + 0.2 * npoints)
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.135), ncol=8)
         plt.savefig(args.fom_plot)
         plt.close()
 
