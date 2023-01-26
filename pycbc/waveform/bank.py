@@ -1059,9 +1059,9 @@ class FilterBankTHA(TemplateBank):
         approximant = self.approximant(index)
         assert(approximant in ["IMRPhenomPv2", "IMRPhenomXP"])
         if approximant == "IMRPhenomPv2":
-            _approx_cls = IMRPhenomPv2Template
+            _approx_cls = PhenomPv2Template
         else:
-            _approx_cls = IMRPhenomXPTemplate
+            _approx_cls = PhenomXPTemplate
 
         # Get the end of the waveform if applicable (only for SPAtmplt atm)
         f_end = self.end_frequency(index)
