@@ -269,7 +269,7 @@ class DictOptionAction(argparse.Action):
             else:
                 err_msg += "The character ':' is used to distinguish the "
                 err_msg += "parameter name and the value. Please do not "
-                err_msg += "use it more than once."
+                err_msg += "use it more than or less than once."
                 raise ValueError(err_msg)
         setattr(namespace, self.dest, items)
 
