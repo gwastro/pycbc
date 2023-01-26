@@ -261,6 +261,8 @@ class DictOptionAction(argparse.Action):
         items = getattr(namespace, self.dest)
         items = copy.copy(items)
         for value in values:
+            if values == ['{}']:
+                break
             value = value.split(':')
             if len(value) == 2:
                 # "Normal" case, all extra arguments supplied independently
@@ -291,6 +293,8 @@ class MultiDetDictOptionAction(DictOptionAction):
         items = copy.copy(getattr(namespace, self.dest))
         detector_args = {}
         for value in values:
+            if values == ['{}']:
+                break
             if value.count(':') == 2:
                 detector, param_value = value.split(':', 1)
                 param, val = param_value.split(':')
