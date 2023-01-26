@@ -63,6 +63,7 @@ parser.add_argument('--max-q', type=float)
 parser.add_argument('--tau0-crawl', type=float)
 parser.add_argument('--tau0-start', type=float)
 parser.add_argument('--tau0-end', type=float)
+parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -88,17 +89,6 @@ if args.input_config is not None:
         waveform_transforms = None
 
     dists_joint = prior_from_config(cp=config_parser)
-
-if not args.tau0_end:
-    """
-    If tau0_end is not provided, it is derived and rounded up to the
-    upper tens.
-    This is necessary to cover up all the phase space.  
-    """
-    import math
-    from pycbc.conversions import tau0_from_mass1_mass2
-    args.tau0_end = math.ceil(tau0_from_mass1_mass2(args.min[0], args.min[1],
-                                        args.low_frequency_cutoff) / 10) * 10
 
 fdict = {}
 if args.fixed_params:
@@ -203,7 +193,7 @@ class TriangleBank(object):
             hp.tau0 = pycbc.conversions.tau0_from_mass1_mass2(
                                             hp.params['mass1'],
                                             hp.params['mass2'],
-                                            args.low_frequency_cutoff)
+                                            args.tau0_cutoff_frequency)
             hp.tbin = int(hp.tau0 / args.tau0_threshold)
 
             if hp.tbin in self.tbins:
@@ -413,7 +403,7 @@ def cdraw(rtype, ts, te):
     p = draw(rtype)
     if  len(p[list(p.keys())[0]]) > 0:
         t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
-                                  args.low_frequency_cutoff)
+                                  args.tau0_cutoff_frequency)
         l = (t < te) & (t > ts)
         for k in p:
             p[k] = p[k][l]
@@ -427,7 +417,7 @@ def cdraw(rtype, ts, te):
 
         if  len(p[list(p.keys())[0]]) > 0:
             t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
-                                      args.low_frequency_cutoff)
+                                      args.tau0_cutoff_frequency)
             l = (t < te) & (t > ts)
             for k in p:
                 p[k] = p[k][l]
