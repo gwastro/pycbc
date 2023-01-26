@@ -163,7 +163,7 @@ def add_commands_to_cp(commands, options, cp, section_name):
                 cp.set(section_name, command[2:], '')
             elif attr:
                 if isinstance(attr, DictWithDefaultReturn):
-                    cp.set(section_name, command[2:], '')
+                    cp.set(section_name, command[2:], '{}')
                 elif isinstance(attr, dict):
                     cp.set(section_name, command[2:], dict_to_string(attr))
                 else:
