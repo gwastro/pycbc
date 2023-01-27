@@ -18,10 +18,12 @@ import copy
 from ligo import segments
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
+from pycbc.psd.analytical_space import *
 from pycbc.psd.estimate import *
 from pycbc.psd.variation import *
 from pycbc.types import float32,float64
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
+from pycbc.types import DictOptionAction, MultiDetDictOptionAction
 from pycbc.types import copy_opts_for_single_ifo
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
@@ -58,7 +60,6 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         If 'single' the PSD will be converted to float32, if not already in
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
-
     Returns
     -------
     psd : FrequencySeries
@@ -82,7 +83,8 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     if (opt.psd_model or opt.psd_file or opt.asd_file):
         # PSD from lalsimulation or file
         if opt.psd_model:
-            psd = from_string(opt.psd_model, length, delta_f, f_low)
+            psd = from_string(opt.psd_model, length, delta_f, f_low,
+                              **opt.psd_extra_args)
         elif opt.psd_file or opt.asd_file:
             if opt.asd_file:
                 psd_file_name = opt.asd_file
@@ -185,6 +187,11 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
     psd_options.add_argument("--psd-model",
                              help="Get PSD from given analytical model. ",
                              choices=get_psd_model_list())
+    psd_options.add_argument("--psd-extra-args",
+                             nargs='+', action=DictOptionAction,
+                             metavar='PARAM:VALUE', default={}, type=float,
+                             help="(optional) Extra arguments passed to "
+                             "the PSD models.")
     psd_options.add_argument("--psd-file",
                              help="Get PSD using given PSD ASCII file")
     psd_options.add_argument("--asd-file",
@@ -281,6 +288,11 @@ def insert_psd_option_group_multi_ifo(parser):
                           action=MultiDetOptionAction, metavar='IFO:MODEL',
                           help="Get PSD from given analytical model. "
                           "Choose from %s" %(', '.join(get_psd_model_list()),))
+    psd_options.add_argument("--psd-extra-args",
+                             nargs='+', action=MultiDetDictOptionAction,
+                             metavar='DETECTOR:PARAM:VALUE', default={},
+                             type=float, help="(optional) Extra arguments "
+                             "passed to the PSD models.")
     psd_options.add_argument("--psd-file", nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:FILE',
                           help="Get PSD using given PSD ASCII file")
@@ -575,4 +587,3 @@ def associate_psds_to_multi_ifo_segments(opt, fd_segments, gwstrain, flen,
         associate_psds_to_single_ifo_segments(opt, segments, strain, flen,
                 delta_f, flow, ifo, dyn_range_factor=dyn_range_factor,
                 precision=precision)
-
