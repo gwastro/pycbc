@@ -715,67 +715,6 @@ def get_fd_waveform_from_td(**params):
     hc = hc.to_frequencyseries().cyclic_time_shift(hc.start_time)
     return hp, hc
 
-def get_td_waveform_from_fd(rwrap=0.2, **params):
-    """ Return time domain version of fourier domain approximant.
-
-    This returns a time domain version of a fourier domain approximant, with
-    padding and tapering at the start of the waveform.
-
-    Parameters
-    ----------
-    rwrap: float
-        Cyclic time shift parameter in seconds. A fudge factor to ensure
-        that the entire time series is contiguous in the array and not
-        wrapped around the end.
-    params: dict
-        The parameters defining the waveform to generator.
-        See `get_fd_waveform`.
-
-    Returns
-    -------
-    hp: pycbc.types.TimeSeries
-        Plus polarization time series
-    hc: pycbc.types.TimeSeries
-        Cross polarization time series
-    """
-    # determine the duration to use
-    full_duration = duration = get_waveform_filter_length_in_time(**params)
-    nparams = params.copy()
-
-    while full_duration < duration * 1.5:
-        full_duration = get_waveform_filter_length_in_time(**nparams)
-        nparams['f_lower'] *= 0.99
-
-    if 'f_ref' not in nparams:
-        nparams['f_ref'] = params['f_lower']
-
-    # factor to ensure the vectors are all large enough. We don't need to
-    # completely trust our duration estimator in this case, at a small
-    # increase in computational cost
-    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
-    fsamples = int(fudge_duration / params['delta_t'])
-    N = pnutils.nearest_larger_binary_number(fsamples)
-    fudge_duration = N * params['delta_t']
-
-    nparams['delta_f'] = 1.0 / fudge_duration
-    hp, hc = get_fd_waveform(**nparams)
-
-    # Resize to the right sample rate
-    tsize = int(1.0 / params['delta_t'] /  nparams['delta_f'])
-    fsize = tsize // 2 + 1
-    hp.resize(fsize)
-    hc.resize(fsize)
-
-    # avoid wraparound
-    hp = hp.cyclic_time_shift(-rwrap)
-    hc = hc.cyclic_time_shift(-rwrap)
-
-    hp = wfutils.fd_to_td(hp, delta_t=params['delta_t'],
-                          left_window=(nparams['f_lower'], params['f_lower']))
-    hc = wfutils.fd_to_td(hc, delta_t=params['delta_t'],
-                          left_window=(nparams['f_lower'], params['f_lower']))
-    return hp, hc
-
 def get_fd_det_waveform(template=None, **kwargs):
     """Return a frequency domain gravitational waveform.
     The waveform generator includes detector response.
@@ -811,6 +750,106 @@ get_fd_det_waveform.__doc__ = get_fd_det_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
            include_label=False).lstrip(' '))
 
+def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
+    """ The base function to calculate time domain version of fourier
+    domain approximant which not include or includes detector response.
+    Called by `get_td_waveform_from_fd` and `get_td_det_waveform_from_fd_det`.
+    """
+    kwds = props(template, **params)
+    nparams = kwds.copy()
+    if nparams['approximant'] not in fd_det:
+        # determine the duration to use
+        full_duration = duration = \
+            get_waveform_filter_length_in_time(**params)
+    else:
+        if nparams['approximant'] not in _filter_time_lengths:
+            raise ValueError("Approximant %s not available" %
+                                (nparams['approximant']))
+        full_duration = duration = \
+            _filter_time_lengths[nparams['approximant']](
+            m1=kwds['mass1'], m2=kwds['mass2'],
+            s1z=kwds['spin1z'], s2z=kwds['spin1z'],
+            f_lower=kwds['f_lower']
+        )
+
+    while full_duration < duration * 1.5:
+        if nparams['approximant'] not in fd_det:
+            full_duration = get_waveform_filter_length_in_time(**nparams)
+        else:
+            full_duration = _filter_time_lengths[nparams['approximant']](
+                m1=kwds['mass1'], m2=kwds['mass2'],
+                s1z=kwds['spin1z'], s2z=kwds['spin1z'],
+                f_lower=nparams['f_lower']
+            )
+        nparams['f_lower'] *= 0.99
+
+    if 'f_ref' not in nparams:
+        nparams['f_ref'] = params['f_lower']
+
+    # factor to ensure the vectors are all large enough. We don't need to
+    # completely trust our duration estimator in this case, at a small
+    # increase in computational cost
+    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
+    fsamples = int(fudge_duration / nparams['delta_t'])
+    N = pnutils.nearest_larger_binary_number(fsamples)
+    fudge_duration = N * nparams['delta_t']
+
+    nparams['delta_f'] = 1.0 / fudge_duration
+    tsize = int(1.0 / nparams['delta_t'] /  nparams['delta_f'])
+    fsize = tsize // 2 + 1
+
+    if nparams['approximant'] not in fd_det:
+        hp, hc = get_fd_waveform(**nparams)
+        # Resize to the right sample rate
+        hp.resize(fsize)
+        hc.resize(fsize)
+
+        # avoid wraparound
+        hp = hp.cyclic_time_shift(-rwrap)
+        hc = hc.cyclic_time_shift(-rwrap)
+
+        hp = wfutils.fd_to_td(hp, delta_t=params['delta_t'],
+                              left_window=(nparams['f_lower'],
+                                           params['f_lower']))
+        hc = wfutils.fd_to_td(hc, delta_t=params['delta_t'],
+                              left_window=(nparams['f_lower'],
+                                           params['f_lower']))
+        return hp, hc
+    else:
+        for ifo in wfs.keys():
+            wfs[ifo].resize(fsize)
+            # avoid wraparound
+            wfs[ifo] = wfs[ifo].cyclic_time_shift(-rwrap)
+            wfs[ifo] = wfutils.fd_to_td(wfs[ifo], delta_t=kwds['delta_t'],
+                                        left_window=(nparams['f_lower'],
+                                        kwds['f_lower']))
+        return wfs
+
+def get_td_waveform_from_fd(rwrap=0.2, **params):
+    """ Return time domain version of fourier domain approximant.
+
+    This returns a time domain version of a fourier domain approximant, with
+    padding and tapering at the start of the waveform.
+
+    Parameters
+    ----------
+    rwrap: float
+        Cyclic time shift parameter in seconds. A fudge factor to ensure
+        that the entire time series is contiguous in the array and not
+        wrapped around the end.
+    params: dict
+        The parameters defining the waveform to generator.
+        See `get_fd_waveform`.
+
+    Returns
+    -------
+    hp: pycbc.types.TimeSeries
+        Plus polarization time series
+    hc: pycbc.types.TimeSeries
+        Cross polarization time series
+    """
+    return _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params)
+
 def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
     """ Return time domain version of fourier domain approximant which
     includes detector response, with padding and tapering at the start
@@ -832,52 +871,7 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
         The detector-frame waveform (with detector response) in time
         domain. Keys are requested data channels.
     """
-    kwds = props(template, **params)
-    nparams = kwds.copy()
-    # determine the duration to use
-    if nparams['approximant'] not in _filter_time_lengths:
-        raise ValueError("Approximant %s not available" %
-                            (nparams['approximant']))
-    full_duration = duration = _filter_time_lengths[nparams['approximant']](
-        m1=kwds['mass1'], m2=kwds['mass2'],
-        s1z=kwds['spin1z'], s2z=kwds['spin1z'],
-        f_lower=kwds['f_lower']
-    )
-
-    while full_duration < duration * 1.01:
-        full_duration = _filter_time_lengths[nparams['approximant']](
-            m1=kwds['mass1'], m2=kwds['mass2'],
-            s1z=kwds['spin1z'], s2z=kwds['spin1z'],
-            f_lower=nparams['f_lower']
-        )
-        nparams['f_lower'] *= 0.99
-
-    if 'f_ref' not in nparams:
-        nparams['f_ref'] = params['f_lower']
-
-    # factor to ensure the vectors are all large enough. We don't need to
-    # completely trust our duration estimator in this case, at a small
-    # increase in computational cost
-    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.01
-    fsamples = int(fudge_duration / kwds['delta_t'])
-    N = pnutils.nearest_larger_binary_number(fsamples)
-    fudge_duration = N * kwds['delta_t']
-
-    nparams['delta_f'] = 1.0 / fudge_duration
-    wfs = get_fd_det_waveform(**nparams)
-
-    # Resize to the right sample rate
-    tsize = int(1.0 / kwds['delta_t'] /  nparams['delta_f'])
-    fsize = tsize // 2 + 1
-    for ifo in wfs.keys():
-        wfs[ifo].resize(fsize)
-        # avoid wraparound
-        wfs[ifo] = wfs[ifo].cyclic_time_shift(-rwrap)
-        wfs[ifo] = wfutils.fd_to_td(wfs[ifo], delta_t=kwds['delta_t'],
-                                    left_window=(nparams['f_lower'],
-                                    kwds['f_lower']))
-
-    return wfs
+    return _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params)
 
 get_td_det_waveform_from_fd_det.__doc__ = \
     get_td_det_waveform_from_fd_det.__doc__.format(
