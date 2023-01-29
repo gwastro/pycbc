@@ -497,7 +497,8 @@ class CandidateForGraceDB(object):
                 self.gracedb.write_log(
                     gid, 'Multi-component p_astro JSON file upload',
                     filename=self.multipa_file,
-                    tag_name=['p_astro']
+                    tag_name=['p_astro'],
+                    label='PASTRO_READY'
                 )
                 logging.info('Uploaded multi p_astro for %s', gid)
             except Exception as exc:
