@@ -763,14 +763,14 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
             get_waveform_filter_length_in_time(**params)
     else:
         if nparams['approximant'] not in _filter_time_lengths:
-            raise ValueError("Approximant %s not available" %
-                                (nparams['approximant']))
+            raise ValueError("Approximant %s _filter_time_lengths function \
+                             not available" % (nparams['approximant']))
         full_duration = duration = \
             _filter_time_lengths[nparams['approximant']](
-            m1=kwds['mass1'], m2=kwds['mass2'],
-            s1z=kwds['spin1z'], s2z=kwds['spin1z'],
-            f_lower=kwds['f_lower']
-        )
+                m1=kwds['mass1'], m2=kwds['mass2'],
+                s1z=kwds['spin1z'], s2z=kwds['spin1z'],
+                f_lower=kwds['f_lower']
+            )
 
     while full_duration < duration * 1.5:
         if nparams['approximant'] not in fd_det:
@@ -816,6 +816,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
                                            params['f_lower']))
         return hp, hc
     else:
+        wfs = get_fd_det_waveform(**nparams)
         for ifo in wfs.keys():
             wfs[ifo].resize(fsize)
             # avoid wraparound
@@ -848,7 +849,7 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     hc: pycbc.types.TimeSeries
         Cross polarization time series
     """
-    return _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params)
+    return _base_get_td_waveform_from_fd(None, rwrap, **params)
 
 def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
     """ Return time domain version of fourier domain approximant which
@@ -871,7 +872,7 @@ def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
         The detector-frame waveform (with detector response) in time
         domain. Keys are requested data channels.
     """
-    return _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params)
+    return _base_get_td_waveform_from_fd(template, rwrap, **params)
 
 get_td_det_waveform_from_fd_det.__doc__ = \
     get_td_det_waveform_from_fd_det.__doc__.format(
