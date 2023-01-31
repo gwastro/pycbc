@@ -123,30 +123,40 @@ class LiveSingle(object):
         # 'cluster' by taking the maximal newsnr value over the trigger set
         i = nsnr_all[nsnr_idx].argmax()
 
+        # calculate the (inverse) false-alarm rate
         nsnr = nsnr_all[nsnr_idx][i]
         dur = cutall_trigs['template_duration'][i]
+        ifar = self.calculate_ifar(nsnr, dur)
+        if ifar is None:
+            return None
 
-        # create the coincidence
-        fake_coinc = {'foreground/%s/%s' % (self.ifo, k):
-                      cutall_trigs[k][i] for k in trigs}
-        fake_coinc['foreground/stat'] = nsnr
-        fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr, dur)
-        fake_coinc['HWINJ'] = data_reader.near_hwinj()
-
-        return fake_coinc
+        # fill in a new candidate event
+        candidate = {
+            f'foreground/{self.ifo}/{k}': cutall_trigs[k][i] for k in trigs
+        }
+        candidate['foreground/stat'] = nsnr
+        candidate['foreground/ifar'] = ifar
+        candidate['HWINJ'] = data_reader.near_hwinj()
+        return candidate
 
     def calculate_ifar(self, sngl_ranking, duration):
         if self.fixed_ifar:
             return self.fixed_ifar[self.ifo]
 
-        with h5py.File(self.fit_file, 'r') as fit_file:
-            bin_edges = fit_file['bins_edges'][:]
-            live_time = fit_file[self.ifo].attrs['live_time']
-            thresh = fit_file.attrs['fit_threshold']
-
-            dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
-            rates = dist_grp['counts'][:] / live_time
-            coeffs = dist_grp['fit_coeff'][:]
+        try:
+            with h5py.File(self.fit_file, 'r') as fit_file:
+                bin_edges = fit_file['bins_edges'][:]
+                live_time = fit_file[self.ifo].attrs['live_time']
+                thresh = fit_file.attrs['fit_threshold']
+                dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
+                rates = dist_grp['counts'][:] / live_time
+                coeffs = dist_grp['fit_coeff'][:]
+        except FileNotFoundError:
+            logging.error(
+                f'Single fit file {self.fit_file} not found; '
+                'dropping a potential single-detector candidate!'
+            )
+            return None
 
         bins = bin_utils.IrregularBins(bin_edges)
         dur_bin = bins[duration]
