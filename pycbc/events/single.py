@@ -6,6 +6,8 @@ from pycbc.events import ranking, trigger_fits as fits
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
 from pycbc import bin_utils
+import logging
+
 
 class LiveSingle(object):
     def __init__(self, ifo,
