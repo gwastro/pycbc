@@ -94,9 +94,6 @@ class LiveSingle(object):
         the current data.
         """
 
-        if len(trigs['snr']) == 0:
-            return None
-
         # Apply cuts to trigs before clustering
         # Cut on snr so that triggers which could not reach newsnr
         # threshold do not have newsnr calculated
