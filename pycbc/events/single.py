@@ -1,12 +1,12 @@
 """ utilities for assigning FAR to single detector triggers
 """
+import logging
 import h5py
 import numpy as np
 from pycbc.events import ranking, trigger_fits as fits
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
 from pycbc import bin_utils
-import logging
 
 
 class LiveSingle(object):
@@ -155,8 +155,9 @@ class LiveSingle(object):
                 coeffs = dist_grp['fit_coeff'][:]
         except FileNotFoundError:
             logging.error(
-                f'Single fit file {self.fit_file} not found; '
-                'dropping a potential single-detector candidate!'
+                'Single fit file %s not found; '
+                'dropping a potential single-detector candidate!',
+                self.fit_file
             )
             return None
 
