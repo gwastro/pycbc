@@ -173,8 +173,8 @@ logging.info('Calculating stat values')
 abovethresh, stat = get_stat(args, trigf[args.ifo], args.stat_threshold)
 logging.info('%i trigs left after thresholding' % len(stat))
 
-tid = trigf[args.ifo + '/template_id'][abovethresh]
-time = trigf[args.ifo + '/end_time'][abovethresh]
+tid = trigf[args.ifo + '/template_id'][:][abovethresh]
+time = trigf[args.ifo + '/end_time'][:][abovethresh]
 if args.save_trig_param:
     tparam_region = trigf[args.ifo][args.save_trig_param + '_template'][:]
     tparam = []
