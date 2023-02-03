@@ -43,7 +43,7 @@ install_requires =  setup_requires + [
                       'matplotlib>=1.5.1',
                       'mpld3>=0.3',
                       'pillow',
-                      'h5py>=3.0.0',
+                      'h5py>=3.0.0,!=3.7.0',
                       'jinja2',
                       'Mako>=1.0.1',
                       'beautifulsoup4>=4.6.0',
