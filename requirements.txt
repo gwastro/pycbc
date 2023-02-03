@@ -6,7 +6,7 @@ matplotlib>=2.0.0
 # Remove the upper bound ASAP, this is a temporary fix!!!!!!
 numpy>=1.16.0,!=1.19.0,<1.24.0
 pillow
-h5py>=3.0.0
+h5py>=3.0.0,!=3.7.0
 jinja2
 mpld3>=0.3
 beautifulsoup4>=4.6.0
