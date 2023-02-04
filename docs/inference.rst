@@ -513,7 +513,8 @@ Examples
     inference/examples/single.rst
     inference/examples/relative.rst
     inference/examples/hierarchical.rst
-    /inference/examples/lisa_smbhb.rst
+    inference/examples/lisa_smbhb_ldc_pe.rst
+    inference/examples/lisa_smbhb_inj_pe.rst
 
 ===============================================
 Visualizing the Posteriors
