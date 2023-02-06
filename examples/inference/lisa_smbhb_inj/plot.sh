@@ -8,7 +8,4 @@ pycbc_inference_plot_posterior \
         'mass1_from_mchirp_q(mchirp,q)':mass1 \
         'mass2_from_mchirp_q(mchirp,q)':mass2 \
         tc \
-    --expected-parameters \
-        'mass1_from_mchirp_q(mchirp,q)':1015522.4376 \
-        'mass2_from_mchirp_q(mchirp,q)':796849.1091 \
-        tc:4799624.274911478 \
+    --plot-injection-parameters injection_smbhb.hdf
