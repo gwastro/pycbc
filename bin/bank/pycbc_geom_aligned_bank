@@ -142,7 +142,19 @@ class BankVerification(wf.Executable):
 
         return node
 
+def dict_to_string(arg_dict):
+    attr_str = ""
+    for i in arg_dict.keys():
+        if isinstance(arg_dict[i], dict):
+            for j in arg_dict[i].keys():
+                attr_str += "%s:%s:%s " % (i, j, arg_dict[i][j])
+        else:
+            attr_str += "%s:%s " % (i, arg_dict[i])
+    attr_str = attr_str[:-1]
+    return attr_str
+
 def add_commands_to_cp(commands, options, cp, section_name):
+    from pycbc.types.optparse import DictWithDefaultReturn
     for command in commands:
         command_uscore = (command.replace('-','_'))[2:]
         if hasattr(options, command_uscore):
@@ -150,7 +162,12 @@ def add_commands_to_cp(commands, options, cp, section_name):
             if attr is True:
                 cp.set(section_name, command[2:], '')
             elif attr:
-                cp.set(section_name, command[2:], str(attr))
+                if isinstance(attr, DictWithDefaultReturn):
+                    cp.set(section_name, command[2:], '{}')
+                elif isinstance(attr, dict):
+                    cp.set(section_name, command[2:], dict_to_string(attr))
+                else:
+                    cp.set(section_name, command[2:], str(attr))
 
 # Read command line options
 _desc = __doc__[1:]

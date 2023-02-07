@@ -136,7 +136,7 @@ for ifo in ifos:
         a = alphas[valid]
         l_times = separate_times[ifo][valid]
         rate = counts[valid] / l_times
-        ad = separate_dates[ifo][valid] / 86400.
+        ad = (separate_dates[ifo][valid] - separate_dates[ifo][0]) / 86400.
 
         ma = mean_alpha[ifo][i]
         ca = cons_alpha[ifo][i]

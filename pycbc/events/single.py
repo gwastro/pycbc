@@ -1,11 +1,13 @@
 """ utilities for assigning FAR to single detector triggers
 """
+import logging
 import h5py
 import numpy as np
 from pycbc.events import ranking, trigger_fits as fits
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
 from pycbc import bin_utils
+
 
 class LiveSingle(object):
     def __init__(self, ifo,
@@ -92,9 +94,6 @@ class LiveSingle(object):
         the current data.
         """
 
-        if len(trigs['snr']) == 0:
-            return None
-
         # Apply cuts to trigs before clustering
         # Cut on snr so that triggers which could not reach newsnr
         # threshold do not have newsnr calculated
@@ -123,30 +122,41 @@ class LiveSingle(object):
         # 'cluster' by taking the maximal newsnr value over the trigger set
         i = nsnr_all[nsnr_idx].argmax()
 
+        # calculate the (inverse) false-alarm rate
         nsnr = nsnr_all[nsnr_idx][i]
         dur = cutall_trigs['template_duration'][i]
+        ifar = self.calculate_ifar(nsnr, dur)
+        if ifar is None:
+            return None
 
-        # create the coincidence
-        fake_coinc = {'foreground/%s/%s' % (self.ifo, k):
-                      cutall_trigs[k][i] for k in trigs}
-        fake_coinc['foreground/stat'] = nsnr
-        fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr, dur)
-        fake_coinc['HWINJ'] = data_reader.near_hwinj()
-
-        return fake_coinc
+        # fill in a new candidate event
+        candidate = {
+            f'foreground/{self.ifo}/{k}': cutall_trigs[k][i] for k in trigs
+        }
+        candidate['foreground/stat'] = nsnr
+        candidate['foreground/ifar'] = ifar
+        candidate['HWINJ'] = data_reader.near_hwinj()
+        return candidate
 
     def calculate_ifar(self, sngl_ranking, duration):
         if self.fixed_ifar:
             return self.fixed_ifar[self.ifo]
 
-        with h5py.File(self.fit_file, 'r') as fit_file:
-            bin_edges = fit_file['bins_edges'][:]
-            live_time = fit_file[self.ifo].attrs['live_time']
-            thresh = fit_file.attrs['fit_threshold']
-
-            dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
-            rates = dist_grp['counts'][:] / live_time
-            coeffs = dist_grp['fit_coeff'][:]
+        try:
+            with h5py.File(self.fit_file, 'r') as fit_file:
+                bin_edges = fit_file['bins_edges'][:]
+                live_time = fit_file[self.ifo].attrs['live_time']
+                thresh = fit_file.attrs['fit_threshold']
+                dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
+                rates = dist_grp['counts'][:] / live_time
+                coeffs = dist_grp['fit_coeff'][:]
+        except FileNotFoundError:
+            logging.error(
+                'Single fit file %s not found; '
+                'dropping a potential single-detector candidate!',
+                self.fit_file
+            )
+            return None
 
         bins = bin_utils.IrregularBins(bin_edges)
         dur_bin = bins[duration]
