@@ -408,7 +408,7 @@ with ctx:
                             'should not be possible.')
                 # Time delay is applied to indices
                 coinc_idx_det_frame = {
-                    ifo: coinc_idx + time_delay_idx[slide][ifo]
+                    ifo: (coinc_idx + time_delay_idx[slide][ifo]) % len(snr_dict[ifo])
                     for ifo in args.instruments}
                 # Calculate the coincident and coherent snr. Check we have
                 # data before we try to compute the coherent snr
@@ -497,7 +497,7 @@ with ctx:
                     # coinc_idx_det_frame is redefined to account for the
                     # cuts to coinc_idx above
                     coinc_idx_det_frame = {
-                        ifo: coinc_idx + time_delay_idx[slide][ifo]
+                        ifo: (coinc_idx + time_delay_idx[slide][ifo]) % len(snr_dict[ifo])
                         for ifo in args.instruments}
                     coherent_ifo_trigs = {
                         ifo: snr_dict[ifo][coinc_idx_det_frame[ifo]]
@@ -552,7 +552,7 @@ with ctx:
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start)
                         ifo_out_vals['cont_chisq'] = autochisq.values(
-                            snr[ifo] / norm_dict[ifo],
+                            snr_dict[ifo] / norm_dict[ifo],
                             coinc_idx_det_frame[ifo], template,
                             stilde[ifo].psd, norm_dict[ifo],
                             stilde=stilde[ifo], low_frequency_cutoff=flow)
