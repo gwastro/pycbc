@@ -303,16 +303,19 @@ for ifo in events.keys():
 
             binned_events = events[ifo].data[args.sngl_ranking][inbin]
             binned_event_times = events[ifo].data['end_time'][inbin]
-            # Deal with the case where there are fewer triggers
-            # than we would prune
-            if args.prune_loudest > binned_events.size:
-                continue
 
             # Cluster the triggers in time (use 2x the pruning window)
             # to make sure we aren't just getting the same event N times
             # in different templates
             cidx = cluster_over_time(binned_events, binned_event_times,
                                      args.prune_window * 2)
+
+            # Deal with the case where there are fewer clustered triggers
+            # than we would prune
+            if args.prune_loudest > cidx.size:
+                # Prune all triggers
+                times_to_prune[ifo] += list(binned_event_times[cidx])
+                continue
 
             # Find the loudest of the triggers in this bin
             argloudest = np.argsort(binned_events[cidx])[-args.prune_loudest:]
