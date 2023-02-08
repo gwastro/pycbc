@@ -155,7 +155,7 @@ for ifo in ifos:
     x_upper = args.x_lim_upper or 1.05 * maxstat
     y_upper = args.y_lim_upper or 1.5 * max_rate
     ax.set_xlim(fit_threshold, x_upper)
-    ax.set_ylim(0.5 / live_time[ifo], 1.5 * max_rate)
+    ax.set_ylim(0.5 / live_time[ifo], y_upper)
     ax.set_xlabel(sngl_ranking)
     ax.set_ylabel("Number of louder triggers per live time")
     title = f"{ifo} {analysis_date} trigger fits"
