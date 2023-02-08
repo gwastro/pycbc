@@ -306,7 +306,7 @@ for ifo in events.keys():
 
             # Cluster the triggers in time (use 2x the pruning window)
             # to make sure we aren't just getting the same event N times
-            # in different templates
+            # in different templates within the same bin
             cidx = cluster_over_time(binned_events, binned_event_times,
                                      args.prune_window * 2)
 
@@ -325,6 +325,7 @@ for ifo in events.keys():
 logger.setLevel(level)
 
 n_pruned = {ifo: [] for ifo in args.ifos}
+pruned_event_times = {}
 if args.prune_loudest:
     logging.info("Pruning triggers in a %.2fs window around the loudest %d "
                  "triggers in each bin", args.prune_window,
@@ -343,6 +344,7 @@ if args.prune_loudest:
 
         # Save the pruned events for reporting
         pruned_event_bins = event_bins[ifo][within_window]
+        pruned_event_times[ifo] = times[within_window]
         # Cut events which have been pruned from the arrays we use
         events[ifo] = events[ifo].select(outwith_window)
         event_bins[ifo] = event_bins[ifo][outwith_window]
@@ -379,6 +381,7 @@ with h5py.File(args.output, 'w') as fout:
         fout[ifo].create_group('triggers')
         for key in events[ifo].data:
             fout[ifo]['triggers'][key] = events[ifo].data[key]
+        fout[ifo]['pruned_event_times'] = pruned_event_times[ifo]
 
         fout[ifo]['fit_coeff'] = alphas[ifo]
         fout[ifo]['counts'] = counts[ifo]
