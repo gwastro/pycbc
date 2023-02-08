@@ -325,7 +325,7 @@ for ifo in events.keys():
 logger.setLevel(level)
 
 n_pruned = {ifo: [] for ifo in args.ifos}
-pruned_event_times = {}
+pruned_trigger_times = {}
 if args.prune_loudest:
     logging.info("Pruning triggers in a %.2fs window around the loudest %d "
                  "triggers in each bin", args.prune_window,
@@ -343,14 +343,14 @@ if args.prune_loudest:
         within_window = np.logical_not(outwith_window)
 
         # Save the pruned events for reporting
-        pruned_event_bins = event_bins[ifo][within_window]
-        pruned_event_times[ifo] = times[within_window]
+        pruned_trigger_bins = event_bins[ifo][within_window]
+        pruned_trigger_times[ifo] = times[within_window]
         # Cut events which have been pruned from the arrays we use
         events[ifo] = events[ifo].select(outwith_window)
         event_bins[ifo] = event_bins[ifo][outwith_window]
         for bin_num in range(n_bins):
             # Reporting the number of pruned triggers in each bin
-            pruned_inbin = pruned_event_bins == bin_num
+            pruned_inbin = pruned_trigger_bins == bin_num
             n_pruned_thisbin = np.count_nonzero(pruned_inbin)
             n_pruned[ifo].append(n_pruned_thisbin)
             logging.info("Pruned %d triggers from %s bin %d",
@@ -381,7 +381,7 @@ with h5py.File(args.output, 'w') as fout:
         fout[ifo].create_group('triggers')
         for key in events[ifo].data:
             fout[ifo]['triggers'][key] = events[ifo].data[key]
-        fout[ifo]['pruned_event_times'] = pruned_event_times[ifo]
+        fout[ifo]['pruned_trigger_times'] = pruned_trigger_times[ifo]
 
         fout[ifo]['fit_coeff'] = alphas[ifo]
         fout[ifo]['counts'] = counts[ifo]
