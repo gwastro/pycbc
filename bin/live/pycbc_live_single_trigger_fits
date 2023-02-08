@@ -65,13 +65,12 @@ parser.add_argument('--prune-loudest', type=int,
                     help="Number of loudest triggers to remove from each "
                          "bin (and all triggers within --prune-window "
                          "seconds around it)")
-parser.add_argument("--prune-window", type=float, default=0.1,
+parser.add_argument("--prune-window", type=float,
                     help="Window (seconds) either side of the --prune-loudest "
-                         "loudest triggers in each duration bin to remove. "
-                         "Default=0.1s")
-parser.add_argument("--minimum-prune-stat", type=float, default=8,
+                         "loudest triggers in each duration bin to remove.")
+parser.add_argument("--prune-stat-threshold", type=float,
                     help="Minimum value of --sngl-ranking that a trigger must "
-                         "have before it is used for pruning. Default=8")
+                         "have before it is used for pruning.")
 parser.add_argument("--fit-threshold", type=float, default=5,
                     help="Lower threshold used in fitting the triggers."
                          "Default 5.")
@@ -90,6 +89,14 @@ cuts.insert_cuts_option_group(parser)
 
 #Add some input sanitisation
 args = parser.parse_args()
+
+# These options are mutually required or not needed
+prune_options = [args.prune_loudest, args.prune_window,
+                 args.prune_stat_threshold]
+
+if any(prune_options) and not all(prune_options):
+        parser.error("Require all or none of --prune-loudest, "
+                     "--prune-window and --prune-stat-threshold")
 
 pycbc.init_logging(args.verbose)
 
@@ -292,7 +299,7 @@ times_to_prune = {ifo: [] for ifo in args.ifos}
 logger = logging.getLogger()
 # Remember current logging level
 level = logger.level
-logger.setLevel(logging.WARN)
+logger.setLevel(logging.debug)
 
 for ifo in events.keys():
     # Sort the events into their bins
@@ -314,7 +321,7 @@ for ifo in events.keys():
 
             # Of these events, are any of them above the specified
             # minimum statistic value?
-            above_stat_min = binned_events[cidx] >= args.minimum_prune_stat
+            above_stat_min = binned_events[cidx] >= args.prune_stat_threshold
             cidx = cidx[above_stat_min]
 
             if args.prune_loudest > cidx.size:
@@ -336,7 +343,7 @@ if args.prune_loudest:
     logging.info("Pruning triggers %.2fs either side of the loudest %d "
                  "triggers in each bin if %s > %.2f", args.prune_window,
                  args.prune_loudest, args.sngl_ranking,
-                 args.minimum_prune_stat)
+                 args.prune_stat_threshold)
     for ifo in args.ifos:
         times = events[ifo].data['end_time'][:]
         outwith_window = np.ones_like(times, dtype=bool)
