@@ -69,6 +69,9 @@ parser.add_argument("--prune-window", type=float, default=0.1,
                     help="Window (seconds) either side of the --prune-loudest "
                          "loudest triggers in each duration bin to remove. "
                          "Default=0.1s")
+parser.add_argument("--minimum-prune-stat", type=float, default=0,
+                    help="Minimum value of --sngl-ranking that a trigger must "
+                         "have before it is used for pruning. Default=No limit")
 parser.add_argument("--fit-threshold", type=float, default=5,
                     help="Lower threshold used in fitting the triggers."
                          "Default 5.")
@@ -308,6 +311,11 @@ for ifo in events.keys():
             # in different templates within the same bin
             cidx = cluster_over_time(binned_events, binned_event_times,
                                      args.prune_window)
+
+            # Of these events, are any of them above the specified
+            # minimum statistic value?
+            above_stat_min = binned_events[cidx] >= args.minimum_prune_stat
+            cidx = cidx[above_stat_min]
 
             if args.prune_loudest > cidx.size:
                 # There are fewer triggers than the number specified,
