@@ -318,7 +318,7 @@ for ifo in events.keys():
             cidx = cidx[above_stat_min]
 
             if args.prune_loudest > cidx.size:
-                # There are fewer triggers than the number specified,
+                # There are fewer clusters than the number specified,
                 # so prune them all
                 times_to_prune[ifo] += list(binned_event_times[cidx])
                 continue
