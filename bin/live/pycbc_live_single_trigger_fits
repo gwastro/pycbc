@@ -18,6 +18,7 @@ from pycbc import bin_utils
 from pycbc.events import cuts, triggers, trigger_fits as trstats
 from pycbc.io import DictArray
 from pycbc.events import ranking
+from pycbc.events.coinc import cluster_over_time
 import argparse, logging, os, sys, h5py
 
 parser = argparse.ArgumentParser(usage="",
@@ -60,6 +61,14 @@ parser.add_argument("--duration-bin-spacing",
                     help="How to set spacing for bank split "
                          "if using --duration-bin-start, --duration-bin-end "
                          "and --num-duration-bins.")
+parser.add_argument('--prune-loudest', type=int,
+                    help="Number of loudest triggers to remove from each "
+                         "bin (and all triggers within a --prune-window "
+                         "seconds window around it)")
+parser.add_argument("--prune-window", type=float, default=0.1,
+                    help="Window (seconds) around the --prune-loudest "
+                         "loudest triggers in each duration bin to remove. "
+                         "Default=0.1s")
 parser.add_argument("--fit-threshold", type=float, default=5,
                     help="Lower threshold used in fitting the triggers."
                          "Default 5.")
@@ -273,30 +282,91 @@ logging.info('Sorting events into template duration bins')
 n_bins = duration_bin_edges.size - 1
 alphas = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 counts = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
-binned_sngl_stats = {ifo: {} for ifo in args.ifos}
+event_bins = {}
+times_to_prune = {ifo: [] for ifo in args.ifos}
+
+# Note: cluster_over_time has quite a lot of logigng, so turn
+# logging off temporarily
+logger = logging.getLogger()
+# Get current logging level
+level = logger.level
+logger.setLevel(logging.WARN)
 
 for ifo in events.keys():
     # Sort the events into their bins
-    event_bin = np.array([tbins[d]
-                          for d in events[ifo].data['template_duration']])
+    event_bins[ifo] = np.array([tbins[d]
+                               for d in events[ifo].data['template_duration']])
 
+    if args.prune_loudest:
+        for bin_num in range(n_bins):
+            inbin = event_bins[ifo] == bin_num
+
+            binned_events = events[ifo].data[args.sngl_ranking][inbin]
+            binned_event_times = events[ifo].data['end_time'][inbin]
+            # Deal with the case where there are fewer triggers
+            # than we would prune
+            if args.prune_loudest > binned_events.size:
+                continue
+
+            # Cluster the triggers in time (use 2x the pruning window)
+            # to make sure we aren't just getting the same event N times
+            # in different templates
+            cidx = cluster_over_time(binned_events, binned_event_times,
+                                     args.prune_window * 2)
+
+            # Find the loudest of the triggers in this bin
+            argloudest = np.argsort(binned_events[cidx])[-args.prune_loudest:]
+            times_to_prune[ifo] += list(binned_event_times[cidx][argloudest])
+
+# Turn logging back on
+logger.setLevel(level)
+
+n_pruned = {ifo: [] for ifo in args.ifos}
+if args.prune_loudest:
+    logging.info("Pruning triggers in a %.2fs window around the loudest %d "
+                 "triggers in each bin", args.prune_window,
+                 args.prune_loudest)
+    for ifo in args.ifos:
+        times = events[ifo].data['end_time'][:]
+        outwith_window = np.ones_like(times, dtype=bool)
+        for t in times_to_prune[ifo]:
+            outwith_window &= abs(times - t) > (args.prune_window / 2.)
+            # Need to make an (ever-so-small) correction to the live time
+            live_time[ifo] -= args.prune_window
+
+        # want to get the indices of events within the window to
+        # help us with reporting
+        within_window = np.logical_not(outwith_window)
+
+        # Save the pruned events for reporting
+        pruned_event_bins = event_bins[ifo][within_window]
+        # Cut events which have been pruned from the arrays we use
+        events[ifo] = events[ifo].select(outwith_window)
+        event_bins[ifo] = event_bins[ifo][outwith_window]
+        for bin_num in range(n_bins):
+            # Reporting the number of pruned triggers in each bin
+            pruned_inbin = pruned_event_bins == bin_num
+            n_pruned_thisbin = np.count_nonzero(pruned_inbin)
+            n_pruned[ifo].append(n_pruned_thisbin)
+            logging.info("Pruned %d triggers from %s bin %d",
+                         n_pruned_thisbin, ifo, bin_num)
+
+for ifo in events.keys():
     # For each bin, do the fit
     for bin_num in range(n_bins):
-        inbin = event_bin == bin_num
+        inbin = event_bins[ifo] == bin_num
+
         if not np.count_nonzero(inbin):
             # No triggers, alpha and count are -1
             counts[ifo][bin_num] = -1
             alphas[ifo][bin_num] = -1
             continue
 
-        # For ease, keep the sngl_ranking values as this will be used later
-        binned_sngl_stats[ifo][bin_num] = \
-            events[ifo].data[args.sngl_ranking][inbin]
-
         counts[ifo][bin_num] = np.count_nonzero(inbin)
-        alphas[ifo][bin_num], _ = trstats.fit_above_thresh(args.fit_function,
-                                      binned_sngl_stats[ifo][bin_num],
-                                      args.fit_threshold)
+        alphas[ifo][bin_num], _ = trstats.fit_above_thresh(
+                args.fit_function,
+                events[ifo].data[args.sngl_ranking][inbin],
+                args.fit_threshold)
 
 logging.info("Writing results")
 with h5py.File(args.output, 'w') as fout:
@@ -310,6 +380,8 @@ with h5py.File(args.output, 'w') as fout:
         fout[ifo]['fit_coeff'] = alphas[ifo]
         fout[ifo]['counts'] = counts[ifo]
         fout[ifo].attrs['live_time'] = live_time[ifo]
+        fout[ifo].attrs['pruned_times'] = times_to_prune[ifo]
+        fout[ifo].attrs['n_pruned'] = n_pruned[ifo]
 
     fout['bins_upper'] = tbins.upper()
     fout['bins_lower'] = tbins.lower()
