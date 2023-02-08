@@ -34,7 +34,7 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-class Fisher():
+class Fisher(UniformSky):
     """A distribution that returns a random (ra, dec) angle drawn from the
     Fisher distribution. Assume that the concentration parameter (kappa)
     is large so that we can use a Rayleigh distribution about the north
@@ -56,18 +56,19 @@ class Fisher():
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-    def __init__(self, mu_values, kappa, mu_radians=True):
+    def __init__(self, ra, dec, kappa, mu_radians=True):
         self.kappa = kappa
         if kappa >= 500:
             if mu_radians:
-                self.mu_values = numpy.array(mu_values[0], mu_values[1])
+                mu_values = numpy.array(self.ra, self.dec)
             else:
-                self.mu_values = numpy.array(numpy.deg2rad([mu_values[0],
-                                                            mu_values[1]]))
-            self.mu_values = decra2polaz(self.mu_values[1], self.mu_values[0])
+                mu_values = numpy.array(numpy.deg2rad([self.ra,
+                                                            self.dec]))
+            mu_values = decra2polaz(self.dec, self.ra)
         else:
             raise ValueError("Kappa too low, minimum should be 500")
-
+            
+    @property 
     def rvs_polaz(self, size):
         """
         Randomly draw multiple samples from the Fisher distribution
@@ -79,9 +80,9 @@ class Fisher():
             numpy.random.uniform(low=0,
                                  high=2*numpy.pi,
                                  size=size)]).reshape((2, size)).T
-        alpha, beta = new_z_to_euler(self.mu_values)
+        alpha, beta = new_z_to_euler(mu_values)
         return rotate_euler(arr, alpha, beta, 0)
-
+    @property
     def rvs_radec(self, size):
         """
         Randomly draw multiple samples from the Fisher distribution
