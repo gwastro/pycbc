@@ -285,10 +285,9 @@ counts = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 event_bins = {}
 times_to_prune = {ifo: [] for ifo in args.ifos}
 
-# Note: cluster_over_time has quite a lot of logigng, so turn
-# logging off temporarily
+# Note: turn off logging for cluster_over_time which is quite verbose
 logger = logging.getLogger()
-# Get current logging level
+# Remember current logging level
 level = logger.level
 logger.setLevel(logging.WARN)
 
