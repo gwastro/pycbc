@@ -63,10 +63,10 @@ parser.add_argument("--duration-bin-spacing",
                          "and --num-duration-bins.")
 parser.add_argument('--prune-loudest', type=int,
                     help="Number of loudest triggers to remove from each "
-                         "bin (and all triggers within a --prune-window "
-                         "seconds window around it)")
+                         "bin (and all triggers within --prune-window "
+                         "seconds around it)")
 parser.add_argument("--prune-window", type=float, default=0.1,
-                    help="Window (seconds) around the --prune-loudest "
+                    help="Window (seconds) either side of the --prune-loudest "
                          "loudest triggers in each duration bin to remove. "
                          "Default=0.1s")
 parser.add_argument("--fit-threshold", type=float, default=5,
@@ -303,16 +303,15 @@ for ifo in events.keys():
             binned_events = events[ifo].data[args.sngl_ranking][inbin]
             binned_event_times = events[ifo].data['end_time'][inbin]
 
-            # Cluster the triggers in time (use 2x the pruning window)
+            # Cluster the triggers in time (use the pruning window)
             # to make sure we aren't just getting the same event N times
             # in different templates within the same bin
             cidx = cluster_over_time(binned_events, binned_event_times,
-                                     args.prune_window * 2)
+                                     args.prune_window)
 
-            # Deal with the case where there are fewer clustered triggers
-            # than we would prune
             if args.prune_loudest > cidx.size:
-                # Prune all triggers
+                # There are fewer triggers than the number specified,
+                # so prune them all
                 times_to_prune[ifo] += list(binned_event_times[cidx])
                 continue
 
@@ -333,20 +332,19 @@ if args.prune_loudest:
         times = events[ifo].data['end_time'][:]
         outwith_window = np.ones_like(times, dtype=bool)
         for t in times_to_prune[ifo]:
-            outwith_window &= abs(times - t) > (args.prune_window / 2.)
+            outwith_window &= abs(times - t) > args.prune_window
             # Need to make an (ever-so-small) correction to the live time
             live_time[ifo] -= args.prune_window
 
-        # want to get the indices of events within the window to
-        # help us with reporting
-        within_window = np.logical_not(outwith_window)
-
         # Save the pruned events for reporting
+        within_window = np.logical_not(outwith_window)
         pruned_trigger_bins = event_bins[ifo][within_window]
         pruned_trigger_times[ifo] = times[within_window]
+
         # Cut events which have been pruned from the arrays we use
         events[ifo] = events[ifo].select(outwith_window)
         event_bins[ifo] = event_bins[ifo][outwith_window]
+
         for bin_num in range(n_bins):
             # Reporting the number of pruned triggers in each bin
             pruned_inbin = pruned_trigger_bins == bin_num
