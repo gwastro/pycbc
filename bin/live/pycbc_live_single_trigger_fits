@@ -295,12 +295,6 @@ counts = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 event_bins = {}
 times_to_prune = {ifo: [] for ifo in args.ifos}
 
-# Note: turn off logging for cluster_over_time which is quite verbose
-logger = logging.getLogger()
-# Remember current logging level
-level = logger.level
-logger.setLevel(logging.debug)
-
 for ifo in events.keys():
     # Sort the events into their bins
     event_bins[ifo] = np.array([tbins[d]
@@ -333,9 +327,6 @@ for ifo in events.keys():
             # Find the loudest of the triggers in this bin
             argloudest = np.argsort(binned_events[cidx])[-args.prune_loudest:]
             times_to_prune[ifo] += list(binned_event_times[cidx][argloudest])
-
-# Turn logging back on
-logger.setLevel(level)
 
 n_pruned = {ifo: [] for ifo in args.ifos}
 pruned_trigger_times = {}
