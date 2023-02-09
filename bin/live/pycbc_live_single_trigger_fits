@@ -335,7 +335,7 @@ if args.prune_loudest:
                  "triggers in each bin if %s > %.2f", args.prune_window,
                  args.prune_loudest, args.sngl_ranking,
                  args.prune_stat_threshold)
-    for ifo in args.ifos:
+    for ifo in events.keys():
         times = events[ifo].data['end_time'][:]
         outwith_window = np.ones_like(times, dtype=bool)
         for t in times_to_prune[ifo]:
