@@ -65,7 +65,8 @@ parser.add_argument('--tau0-crawl', type=float)
 parser.add_argument('--tau0-start', type=float)
 parser.add_argument('--tau0-end', type=float)
 parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
-parser.add_argument('--NS-threshold', type=float)
+parser.add_argument('--NS-threshold', type=float,
+    help='NS maximum mass. NS is the second object.')
 parser.add_argument('--remnant-mass-threshold', type=float,
     help='Enables derivation of remnant mass assuming BH-NS events.')
 parser.add_argument('--eos', type=str)
