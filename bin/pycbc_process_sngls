@@ -75,9 +75,10 @@ outfile = h5py.File(args.output_file, 'w')
 outgroup = outfile.create_group(args.detector)
 
 if args.cluster_window is not None:
-    logging.info('Clustering over time')
+    logging.info('Clustering events over %s s window', args.cluster_window)
     out_idx = coinc.cluster_over_time(stat, sngls.end_time,
                                       window=args.cluster_window)
+    logging.info('%d triggers remaining', len(cidx))
     outgroup['cluster_window'] = args.cluster_window
 else:
     out_idx = numpy.arange(len(sngls.end_time))
