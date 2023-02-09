@@ -493,6 +493,8 @@ def cluster_over_time(stat, time, window, method='python',
     right = time.searchsorted(time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
 
+    logging.debug('%d triggers before clustering', len(time))
+
     if method == 'cython':
         j = timecluster_cython(indices, left, right, stat, len(left))
     elif method == 'python':
@@ -531,6 +533,7 @@ def cluster_over_time(stat, time, window, method='python',
 
     indices = indices[:j]
 
+    logging.debug('%d triggers remaining', len(indices))
     return time_sorting[indices]
 
 
