@@ -238,6 +238,9 @@ if args.gating_veto_windows:
     if not (gveto_before == 0 and gveto_after == 0):
         time = trigf[args.ifo + '/end_time'][:]
         gate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
+        if args.ifo is not 'V1':
+            detgate_times = np.unique(trigf[args.ifo + '/gating/file/time'][:])
+        gate_times.extend(detgate_times)
         gveto_remove = events.veto.indices_within_times(time, gate_times + gveto_before,
                                                         gate_times + gveto_after)
         stat[gveto_remove] = np.zeros_like(gveto_remove)
