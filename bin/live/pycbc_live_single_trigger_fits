@@ -341,7 +341,7 @@ if args.prune_loudest:
         for t in times_to_prune[ifo]:
             outwith_window &= abs(times - t) > args.prune_window
             # Need to make an (ever-so-small) correction to the live time
-            live_time[ifo] -= args.prune_window
+            live_time[ifo] -= 2 * args.prune_window
 
         # Save the pruned events for reporting
         within_window = np.logical_not(outwith_window)
