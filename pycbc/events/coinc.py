@@ -374,7 +374,9 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
+    logging.info('Clustering events over %s s window', window)
     cidx = cluster_over_time(stat, time, window, **kwargs)
+    logging.info('%d triggers remaining', len(cidx))
     return cidx
 
 
@@ -427,7 +429,9 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
+    logging.info('Clustering events over %s s window', window)
     cidx = cluster_over_time(stat, time_avg, window, **kwargs)
+    logging.info('%d triggers remaining', len(cidx))
 
     return cidx
 
@@ -479,7 +483,6 @@ def cluster_over_time(stat, time, window, method='python',
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
-    logging.info('Clustering events over %s s window', window)
 
     indices = []
     time_sorting = time.argsort()
@@ -489,6 +492,8 @@ def cluster_over_time(stat, time, window, method='python',
     left = time.searchsorted(time - window)
     right = time.searchsorted(time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
+
+    logging.debug('%d triggers before clustering', len(time))
 
     if method == 'cython':
         j = timecluster_cython(indices, left, right, stat, len(left))
@@ -528,7 +533,7 @@ def cluster_over_time(stat, time, window, method='python',
 
     indices = indices[:j]
 
-    logging.info('%d triggers remaining', len(indices))
+    logging.debug('%d triggers remaining', len(indices))
     return time_sorting[indices]
 
 

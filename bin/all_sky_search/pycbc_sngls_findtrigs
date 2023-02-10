@@ -116,6 +116,8 @@ template_ids = cuts.apply_template_cuts(
 logging.info("%d out of %d templates kept after applying template cuts",
              len(template_ids), len(trigs.bank))
 
+logging.info('Clustering events over %s s window within each template',
+             args.cluster_window)
 for tnum in template_ids:
     tids_uncut = trigs.set_template(tnum)
 
@@ -146,7 +148,6 @@ for tnum in template_ids:
                                           **extra_kwargs)
     trigger_times = sds['end_time']
     if args.cluster_window:
-        logging.info("Clustering")
         cid = coinc.cluster_over_time(stat_t, trigger_times,
                                       args.cluster_window)
         stat_t = stat_t[cid]
