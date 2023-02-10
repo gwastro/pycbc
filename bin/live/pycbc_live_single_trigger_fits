@@ -62,8 +62,8 @@ parser.add_argument("--duration-bin-spacing",
                          "if using --duration-bin-start, --duration-bin-end "
                          "and --num-duration-bins.")
 parser.add_argument('--prune-loudest', type=int,
-                    help="[Maximum] number of loudest trigger clusters to "
-                         "remove from each bin."
+                    help="Maximum number of loudest trigger clusters to "
+                         "remove from each bin.")
 parser.add_argument("--prune-window", type=float,
                     help="Window (seconds) either side of the --prune-loudest "
                          "loudest triggers in each duration bin to remove.")
