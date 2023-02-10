@@ -507,7 +507,7 @@ while tau0s < args.tau0_end:
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2
 
-logging.info("Elapsed time: %s", time.time()-t0)
+logging.info("Elapsed time: %s", time.strftime("%H:%M:%S", time.time()-t0))
 o = h5py.File(args.output_file, 'w')
 for k in bank.keys():
     val = bank.key(k)
