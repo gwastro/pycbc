@@ -65,6 +65,8 @@ parser.add_argument("--plot-prior", nargs="+", type=str,
 parser.add_argument("--prior-nsamples", type=int, default=10000,
                     help="The number of samples to use for plotting the "
                          "prior. Default is 10000.")
+parser.add_argument("--colors-multi-inj", nargs="+", type=str,
+                    help="For multiple injections, provide colours to be used for successive injections. Default setting is to use the successive colours specified in matplotlib.")
 # add options for what plots to create
 option_utils.add_plot_posterior_option_group(parser)
 # scatter configuration
@@ -245,7 +247,10 @@ expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
 
 # get the color cycle to use
 color_cycle = [c['color'] for c in matplotlib.rcParams['axes.prop_cycle']]
-colors = itertools.cycle(color_cycle)
+if opts.colors_multi_inj is not None:
+    colors = itertools.cycle(opts.colors_multi_inj)
+else:
+    colors = itertools.cycle(color_cycle)
 
 # plot each input file
 logging.info("Plotting")
