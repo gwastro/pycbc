@@ -215,7 +215,9 @@ if args.gating_veto_windows:
         autogate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
         if args.ifo+'/gating/file' in trigf:
             detgate_times = trigf[args.ifo + '/gating/file/time'][:]
-            gate_times = np.concatenate((autogate_times, detgate_times))
+        else:
+            detgate_times = []
+        gate_times = np.concatenate((autogate_times, detgate_times))
         gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
                                                        gate_times + gveto_after).coalesce()
         all_segments -= gveto_segs
