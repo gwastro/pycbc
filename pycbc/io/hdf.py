@@ -1150,16 +1150,17 @@ class ReadByTemplate(object):
                 raise ValueError("Gating veto window values must be negative "
                                  "before gates and positive after gates.")
             if not (gveto_before == 0 and gveto_after == 0):
-                autogate_times = np.unique
-                               (self.file[self.ifo + '/gating/auto/time'][:])
+                autogate_times = np.unique(
+                        self.file[self.ifo + '/gating/auto/time'][:])
                 if self.ifo+'/gating/file' in self.file:
-                    detgate_times = self.file
-                                  [self.ifo + '/gating/file/time'][:]
+                    detgate_times = self.file[self.ifo + '/gating/file/time'][:]
                 else:
                     detgate_times = []
                 gate_times = np.concatenate((autogate_times, detgate_times))
-                gating_veto_segs = veto.start_end_to_segments(gate_times + gveto_before,
-                                                              gate_times + gveto_after).coalesce()
+                gating_veto_segs = veto.start_end_to_segments(
+                        gate_times + gveto_before,
+                        gate_times + gveto_after
+                ).coalesce()
                 self.segs = (self.segs - gating_veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
 
