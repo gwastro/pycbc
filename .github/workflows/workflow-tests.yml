@@ -23,8 +23,8 @@ jobs:
     - name: install condor
       run: |
         wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
-        echo "deb http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
-        echo "deb-src http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
+        echo "deb https://research.cs.wisc.edu/htcondor/repo/ubuntu/9.0/dists/focal focal contrib" | sudo tee -a /etc/apt/sources.list
+        echo "deb-src https://research.cs.wisc.edu/htcondor/repo/ubuntu/9.0/dists/ focal contrib" | sudo tee -a /etc/apt/sources.list
         sudo apt-get update
         sudo apt-get install minihtcondor
         sudo systemctl start condor
@@ -35,7 +35,7 @@ jobs:
         echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu bionic main" | sudo tee -a /etc/apt/sources.list
         sudo apt-get update
         wget https://download.pegasus.isi.edu/pegasus/ubuntu/dists/bionic/main/binary-amd64/pegasus_5.0.3-1+ubuntu18_amd64.deb
-        sudo apt-get install ./pegasus_5.0.3-1+ubuntu18_amd64.deb
+        sudo apt-get install pegasus
     - run: sudo apt-get install *fftw3* intel-mkl*
     - name: Install pycbc
       run: |
