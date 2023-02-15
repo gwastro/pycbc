@@ -23,8 +23,8 @@ jobs:
     - name: install condor
       run: |
         wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
-        echo "deb https://research.cs.wisc.edu/htcondor/repo/ubuntu/9.0 focal main" | sudo tee -a /etc/apt/sources.list
-        echo "deb-src https://research.cs.wisc.edu/htcondor/repo/ubuntu/9.0 focal main" | sudo tee -a /etc/apt/sources.list
+        echo "deb [trusted=yes] https://research.cs.wisc.edu/htcondor/repo/ubuntu/9.0 focal main" | sudo tee -a /etc/apt/sources.list
+        echo "deb-src [trusted=yes] https://research.cs.wisc.edu/htcondor/repo/ubuntu/9.0 focal main" | sudo tee -a /etc/apt/sources.list
         sudo apt-get update
         sudo apt-get install minihtcondor
         sudo systemctl start condor
