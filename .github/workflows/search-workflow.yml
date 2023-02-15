@@ -29,7 +29,8 @@ jobs:
         wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
         echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu bionic main" | sudo tee -a /etc/apt/sources.list
         sudo apt-get update
-        sudo apt-get install pegasus=5.0.4-1+ubuntu18
+        wget https://download.pegasus.isi.edu/pegasus/ubuntu/dists/bionic/main/binary-amd64/pegasus_5.0.3-1+ubuntu18_amd64.deb
+        sudo apt-get install ./pegasus=5.0.4-1+ubuntu18
     - run: sudo apt-get install *fftw3* intel-mkl*
     - name: Install pycbc
       run: |
