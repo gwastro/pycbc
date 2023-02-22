@@ -376,6 +376,7 @@ class LiveEventManager(object):
         self.gracedb = GraceDb(args.gracedb_server, **gdbargs) if args.gracedb_server else GraceDb(**gdbargs)
 
     def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos, upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
+        gid = None
         if upload_checks:
             gid = event.upload(
                 fname,
@@ -462,7 +463,6 @@ class LiveEventManager(object):
             self.last_few_coincs_uploaded[-10:]
 
         if not upload_checks:
-            gid = None
             event.save(fname)
         if upload_checks or optimize_snr_checks:
             if optimize_snr_checks:
@@ -540,7 +540,6 @@ class LiveEventManager(object):
             upload_checks = args.enable_single_detector_upload and self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs)
             optimize_snr_checks = self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs) and self.run_snr_optimization
             if not upload_checks:
-                gid = None
                 event.save(fname)
             if upload_checks or optimize_snr_checks:
                 if optimize_snr_checks:

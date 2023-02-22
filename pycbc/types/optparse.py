@@ -1,4 +1,5 @@
-# Copyright (C) 2015 Ian Harry
+# Copyright (C) 2015 Ian Harry, Tito Dal Canton
+#               2022 Shichao Wu
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -214,6 +215,122 @@ class MultiDetOptionAppendAction(MultiDetOptionAction):
                 raise ValueError(err_msg)
         setattr(namespace, self.dest, items)
 
+class DictOptionAction(argparse.Action):
+    # Initialise the same as the standard 'append' action
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 nargs='+',
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+        if type is not None:
+            self.internal_type = type
+        else:
+            self.internal_type = str
+        new_default = DictWithDefaultReturn(lambda: default)
+        if nargs == 0:
+            raise ValueError('nargs for append actions must be > 0; if arg '
+                             'strings are not supplying the value to append, '
+                             'the append const action may be more appropriate')
+        if const is not None and nargs != argparse.OPTIONAL:
+            raise ValueError('nargs must be %r to supply const'
+                             % argparse.OPTIONAL)
+        super(DictOptionAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            nargs=nargs,
+            const=const,
+            default=new_default,
+            type=str,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        # Again this is modified from the standard argparse 'append' action
+        err_msg = "Issue with option: %s \n" %(self.dest,)
+        err_msg += "Received value: %s \n" %(' '.join(values),)
+        if getattr(namespace, self.dest, None) is None:
+            setattr(namespace, self.dest, {})
+        items = getattr(namespace, self.dest)
+        items = copy.copy(items)
+        for value in values:
+            if values == ['{}']:
+                break
+            value = value.split(':')
+            if len(value) == 2:
+                # "Normal" case, all extra arguments supplied independently
+                # as "param:VALUE"
+                items[value[0]] = self.internal_type(value[1])
+            else:
+                err_msg += "The character ':' is used to distinguish the "
+                err_msg += "parameter name and the value. Please do not "
+                err_msg += "use it more than or less than once."
+                raise ValueError(err_msg)
+        setattr(namespace, self.dest, items)
+
+class MultiDetDictOptionAction(DictOptionAction):
+    """A special case of `DictOptionAction` which allows one to use
+    argument containing the detector (channel) name, such as
+    `DETECTOR:PARAM:VALUE`. The first colon is the name of detector,
+    the second colon is the name of parameter, the third colon is the value.
+    Or similar to `DictOptionAction`, all arguments don't contain the name of
+    detector, such as `PARAM:VALUE`, this will assume each detector has same
+    values of those parameters.
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        # Again this is modified from the standard argparse 'append' action
+        err_msg = ('Issue with option: {}\n'
+                   'Received value: {}\n').format(self.dest, ' '.join(values))
+        if getattr(namespace, self.dest, None) is None:
+            setattr(namespace, self.dest, {})
+        items = copy.copy(getattr(namespace, self.dest))
+        detector_args = {}
+        for value in values:
+            if values == ['{}']:
+                break
+            if value.count(':') == 2:
+                detector, param_value = value.split(':', 1)
+                param, val = param_value.split(':')
+                if detector not in detector_args:
+                    detector_args[detector] = {param: self.internal_type(val)}
+                if param in detector_args[detector]:
+                    err_msg += ("Multiple values supplied for the same "
+                                "parameter {} under detector {},\n"
+                                "already have {}.")
+                    err_msg = err_msg.format(param, detector,
+                                             detector_args[detector][param])
+                else:
+                    detector_args[detector][param] = self.internal_type(val)
+            elif value.count(':') == 1:
+                param, val = value.split(':')
+                for detector in getattr(namespace, 'instruments'):
+                    if detector not in detector_args:
+                        detector_args[detector] = \
+                            {param: self.internal_type(val)}
+                    if param in detector_args[detector]:
+                        err_msg += ("Multiple values supplied for the same "
+                                    "parameter {} under detector {},\n"
+                                    "already have {}.")
+                        err_msg = err_msg.format(
+                                    param, detector,
+                                    detector_args[detector][param])
+                    else:
+                        detector_args[detector][param] = \
+                                    self.internal_type(val)
+            else:
+                err_msg += ("Use format `DETECTOR:PARAM:VALUE` for each "
+                            "detector, or use `PARAM:VALUE` for all.")
+                raise ValueError(err_msg)
+        items = detector_args
+        setattr(namespace, self.dest, items)
+
 def required_opts(opt, parser, opt_list, required_by=None):
     """Check that all the opts are defined
 
@@ -325,7 +442,8 @@ def copy_opts_for_single_ifo(opt, ifo):
     """
     opt = copy.deepcopy(opt)
     for arg, val in vars(opt).items():
-        if isinstance(val, DictWithDefaultReturn):
+        if isinstance(val, DictWithDefaultReturn) or \
+           (isinstance(val, dict) and ifo in val):
             setattr(opt, arg, getattr(opt, arg)[ifo])
     return opt
 

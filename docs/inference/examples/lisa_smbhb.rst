@@ -3,7 +3,7 @@ LISA parameter estimation for simulated SMBHB
 ----------------------------------------------
 
 This example shows how to use PyCBC for parameter estimation of supermassive black hole binaries (SMBHB) 
-in LISA mock data. The `data <https://zenodo.org/record/7078835>`_ are generated from 
+in LISA mock data. The `data <https://zenodo.org/record/7497853>`_ are generated from 
 `LISA Data Challenge 2a: Sangria <https://lisa-ldc.lal.in2p3.fr/challenge2a>`_, 
 and `BBHx <https://github.com/mikekatz04/BBHx>`_ package is used to generate the ``IMRPhenomD`` template and calculate 
 the corresponding TDI response for LISA. Relative binning (heterodyned likelihood) 

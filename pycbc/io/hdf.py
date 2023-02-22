@@ -956,8 +956,7 @@ class ForegroundTriggers(object):
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
                         sngl.mass1, sngl.mass2)
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
-                # If exact match is not used, then take mean
-                # masses from the single triggers
+                # If exact match is not used, get masses from single triggers
                 sngl_mchirps += [sngl.mchirp]
                 sngl_mtots += [sngl.mtotal]
 
@@ -970,6 +969,7 @@ class ForegroundTriggers(object):
                 coinc_map_row.event_id = event_id
                 coinc_event_map_table.append(coinc_map_row)
 
+            # Take the mean if exact match is not used
             sngl_combined_mchirp = np.mean(sngl_mchirps)
             sngl_combined_mtot = np.mean(sngl_mtots)
 
@@ -978,8 +978,8 @@ class ForegroundTriggers(object):
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
             coinc_event_row.nevents = len(triggered_ifos)
-            # Note that simply `coinc_event_row.instruments = triggered_ifos`
-            # does not lead to a correct result with ligo.lw 1.7.1
+            # NB, `coinc_event_row.instruments = triggered_ifos does not give a
+            # correct result with ligo.lw 1.7.1
             coinc_event_row.instruments = ','.join(sorted(triggered_ifos))
             coinc_inspiral_row.instruments = triggered_ifos
             coinc_event_row.time_slide_id = time_slide_id
@@ -1093,24 +1093,24 @@ class ForegroundTriggers(object):
         ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
 
         logging.info("Triggered detectors")
-        # This creates a n_ifos by n_events matrix, with the ifo letter
-        # if the event contains a trigger from the ifo, empty string if not
+        # Create a n_ifos by n_events matrix, with the ifo letter if the
+        # event contains a trigger from the ifo, empty string if not
         triggered_matrix = [[ifo[0] if v else ''
                              for v in snr_vals_valid[ifo][1]]
                             for ifo in self.ifos]
-        # This combines the ifo letters to make a single string per event
+        # Combine the ifo letters to make a single string per event
         triggered_detectors = [''.join(triggered).encode('ascii')
                                for triggered in zip(*triggered_matrix)]
         ofd.create_dataset('trig', data=triggered_detectors,
                            dtype='<S3')
 
         logging.info("active detectors")
-        # This creates a n_ifos by n_events matrix, with the ifo letter
-        # if the ifo was active at the event time, empty string if not
+        # Create a n_ifos by n_events matrix, with the ifo letter if the
+        # ifo was active at the event time, empty string if not
         active_matrix = [[ifo[0] if t in self.active_segments[ifo]
                           else '' for t in time]
                          for ifo in self.ifos]
-        # This combines the ifo letters to make a single string per event
+        # Combine the ifo letters to make a single string per event
         active_detectors = [''.join(active_at_time).encode('ascii')
                             for active_at_time in zip(*active_matrix)]
         ofd.create_dataset('obs', data=active_detectors,
@@ -1120,7 +1120,7 @@ class ForegroundTriggers(object):
 
 
 class ReadByTemplate(object):
-    # default assignment to {} is OK for a variable used only in __init__
+    # Default assignment to {} is OK for a variable used only in __init__
     def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
                  gating_veto_windows={}):
         self.filename = filename
@@ -1150,10 +1150,17 @@ class ReadByTemplate(object):
                 raise ValueError("Gating veto window values must be negative "
                                  "before gates and positive after gates.")
             if not (gveto_before == 0 and gveto_after == 0):
-                gate_times = np.unique(
-                    self.file[self.ifo + '/gating/auto/time'][:])
-                gating_veto_segs = veto.start_end_to_segments(gate_times + gveto_before,
-                                                              gate_times + gveto_after).coalesce()
+                autogate_times = np.unique(
+                        self.file[self.ifo + '/gating/auto/time'][:])
+                if self.ifo + '/gating/file' in self.file:
+                    detgate_times = self.file[self.ifo + '/gating/file/time'][:]
+                else:
+                    detgate_times = []
+                gate_times = np.concatenate((autogate_times, detgate_times))
+                gating_veto_segs = veto.start_end_to_segments(
+                        gate_times + gveto_before,
+                        gate_times + gveto_after
+                ).coalesce()
                 self.segs = (self.segs - gating_veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
 

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # Copyright (C) 2012-2016 Alex Nitz, Tito Dal Canton, Leo Singer
+#               2022 Shichao Wu
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,13 +15,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-"""Provides reference PSDs from LALSimulation.
+"""Provides reference PSDs from LALSimulation and pycbc.psd.analytical_space.
 
-More information about how to use these can be found in the
-guide about :ref:`Analytic PSDs from lalsimulation`.
+More information about how to use these ground-based detectors' PSD can be
+found in the guide about :ref:`Analytic PSDs from lalsimulation`. For
+space-borne ones, see `pycbc.psd.analytical_space` module.
 """
 import numbers
 from pycbc.types import FrequencySeries
+from pycbc.psd.analytical_space import (
+    analytical_psd_lisa_tdi_1p5_XYZ, analytical_psd_lisa_tdi_2p0_XYZ,
+    analytical_psd_lisa_tdi_1p5_AE, analytical_psd_lisa_tdi_1p5_T,
+    sh_transformed_psd_lisa_tdi_XYZ)
 import lal
 import numpy
 
@@ -78,20 +84,23 @@ def get_pycbc_psd_list():
     pycbc_analytical_psd_list = sorted(pycbc_analytical_psd_list)
     return pycbc_analytical_psd_list
 
-def from_string(psd_name, length, delta_f, low_freq_cutoff):
-    """Generate a frequency series containing a LALSimulation PSD specified
-    by name.
+def from_string(psd_name, length, delta_f, low_freq_cutoff, **kwargs):
+    """Generate a frequency series containing a LALSimulation or
+    built-in space-borne detectors' PSD specified by name.
 
     Parameters
     ----------
     psd_name : string
-        PSD name as found in LALSimulation, minus the SimNoisePSD prefix.
+        PSD name as found in LALSimulation (minus the SimNoisePSD prefix)
+        or pycbc.psd.analytical_space.
     length : int
         Length of the frequency series in samples.
     delta_f : float
         Frequency resolution of the frequency series.
     low_freq_cutoff : float
         Frequencies below this value are set to zero.
+    **kwargs :
+        All other keyword arguments are passed to the PSD model.
 
     Returns
     -------
@@ -126,7 +135,7 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
     # if PSD model is coded in PyCBC
     else:
         func = pycbc_analytical_psds[psd_name]
-        psd = func(length, delta_f, low_freq_cutoff)
+        psd = func(length, delta_f, low_freq_cutoff, **kwargs)
 
     # zero-out content below low-frequency cutoff
     kmin = int(low_freq_cutoff / delta_f)
@@ -159,4 +168,9 @@ def flat_unity(length, delta_f, low_freq_cutoff):
 # dict of analytical PSDs coded in PyCBC
 pycbc_analytical_psds = {
     'flat_unity' : flat_unity,
+    'analytical_psd_lisa_tdi_1p5_XYZ' : analytical_psd_lisa_tdi_1p5_XYZ,
+    'analytical_psd_lisa_tdi_2p0_XYZ' : analytical_psd_lisa_tdi_2p0_XYZ,
+    'analytical_psd_lisa_tdi_1p5_AE' : analytical_psd_lisa_tdi_1p5_AE,
+    'analytical_psd_lisa_tdi_1p5_T' : analytical_psd_lisa_tdi_1p5_T,
+    'sh_transformed_psd_lisa_tdi_XYZ' : sh_transformed_psd_lisa_tdi_XYZ,
 }
