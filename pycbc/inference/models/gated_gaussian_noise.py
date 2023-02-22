@@ -329,6 +329,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             Dictionary of detector names -> FrequencySeries.
         """
         wfs = self.get_waveforms()
+        
         out = {}
         for det, h in wfs.items():
             d = self.data[det]
@@ -725,6 +726,35 @@ class GatedGaussianNoise(BaseGatedGaussian):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
+        
+        # temp fix for hierarchical runs
+        # zeroes out pre-merger for ringdown, post-merger for inspiral
+        # will need a more elegant solution later; for now copy code from multi_loglikelihood
+        try:
+            self.current_params['zero_before_gate']
+        except KeyError:
+            self.current_params['zero_before_gate'] = False
+        try:
+            self.current_params['zero_after_gate']
+        except KeyError:
+            self.current_params['zero_after_gate'] = False
+                
+        if self.current_params['zero_before_gate'] or self.current_params['zero_after_gate']:
+            for d in wfs:
+                ts = wfs[d]
+                start = gate_times[d][0]
+                gpsidx = (float(start) - float(ts.start_time))//ts.delta_t
+                ts = ts.to_timeseries()
+                # zero out inspiral wf after gate
+                if self.current_params['zero_after_gate']:
+                    ts[int(gpsidx):] *= 0
+                # zero out ringdown wf before gate
+                if self.current_params['zero_before_gate']:
+                    ts[:int(gpsidx)] *= 0
+                ts = ts.to_frequencyseries()
+                wfs[d] = ts
+        
+        # apply the gate
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
@@ -819,6 +849,40 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
+        
+        # temp fix for hierarchical runs
+        # zero out pre-merger for ringdown, post-merger for inspiral
+        # need a more elegant solution later; for now just copy code from multi_loglikelihood
+        try:
+            self.current_params['zero_before_gate']
+        except KeyError:
+            self.current_params['zero_before_gate'] = False
+        try:
+            self.current_params['zero_after_gate']
+        except KeyError:
+            self.current_params['zero_after_gate'] = False
+                
+        if self.current_params['zero_before_gate'] or self.current_params['zero_after_gate']:
+            for d in wfs:
+                tsp, tsc = wfs[d]
+                start = gate_times[d][0]
+                # plus and cross pols probably have the same gpsidx, but get both just to be safe
+                gpsidxp = (float(start) - float(tsp.start_time))//tsp.delta_t
+                gpsidxc = (float(start) - float(tsc.start_time))//tsc.delta_t
+                tsp = tsp.to_timeseries()
+                tsc = tsc.to_timeseries()
+                # zero out inspiral wf after gate
+                if self.current_params['zero_after_gate']:
+                    tsp[int(gpsidxp):] *= 0
+                    tsc[int(gpsidxc):] *= 0
+                # zero out ringdown wf before gate
+                if self.current_params['zero_before_gate']:
+                    tsp[:int(gpsidxp)] *= 0
+                    tsc[:int(gpsidxc)] *= 0
+                tsp = tsp.to_frequencyseries()
+                tsc = tsc.to_frequencyseries()
+                wfs[d] = (tsp, tsc)
+        
         for det in wfs:
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
