@@ -388,17 +388,88 @@ class CandidateForGraceDB(object):
                 self.gracedb.write_label(gid, 'INJ')
                 logging.info("Tagging event %s as an injection", gid)
 
-            # add info for tracking code version
-            gracedb_tag_with_version(self.gracedb, gid)
-
-            extra_strings = [] if extra_strings is None else extra_strings
-            for text in extra_strings:
-                self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
                           'event %s on GraceDB. The event may not have been '
                           'uploaded!', fname)
             logging.error(str(exc))
+
+        # Upload em_bright properties JSON
+        if self.hasmassgap is not None:
+            try:
+                self.gracedb.write_log(
+                    gid, 'EM Bright properties JSON file upload',
+                    filename=self.embright_file,
+                    tag_name=['em_bright']
+                )
+                logging.info('Uploaded em_bright properties for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload em_bright properties file '
+                              'for %s', gid)
+                logging.error(str(exc))
+
+        # Upload multi-cpt p_astro JSON
+        if self.astro_probs is not None:
+            try:
+                self.gracedb.write_log(
+                    gid, 'Multi-component p_astro JSON file upload',
+                    filename=self.multipa_file,
+                    tag_name=['p_astro'],
+                    label='PASTRO_READY'
+                )
+                logging.info('Uploaded multi p_astro for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload multi p_astro file for %s', gid)
+                logging.error(str(exc))
+
+        # If there is p_astro but no probabilities, upload p_astro JSON
+        if hasattr(self, 'pastro_file'):
+            try:
+                self.gracedb.write_log(
+                    gid, '2-component p_astro JSON file upload',
+                    filename=self.pastro_file,
+                    tag_name=['sig_info']
+                )
+                logging.info('Uploaded p_astro for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload p_astro file for %s', gid)
+                logging.error(str(exc))
+
+        # If there is no multi p_astro, upload source probabilities in JSON
+        # format and plot
+        if hasattr(self, 'prob_file'):
+            # Only make the pie plot if no multi cpt p_astro
+            if self.astro_probs is None:
+                self.prob_plotf = self.prob_file.replace('.json', '.png')
+                # Don't try to plot zero probabilities
+                prob_plot = {k: v for (k, v) in self.probabilities.items()
+                             if v != 0.0}
+                labels, sizes = zip(*prob_plot.items())
+                colors = [source_color(label) for label in labels]
+                fig, ax = pl.subplots()
+                ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
+                       textprops={'fontsize': 15})
+                ax.axis('equal')
+                fig.savefig(self.prob_plotf)
+                pl.close()
+            try:
+                self.gracedb.write_log(
+                    gid, 'Source probabilities JSON file upload',
+                    filename=self.prob_file,
+                    tag_name=['pe']
+                )
+                logging.info('Uploaded source probabilities for %s', gid)
+                self.gracedb.write_log(
+                    gid, 'Source probabilities plot upload',
+                    filename=self.prob_plotf,
+                    tag_name=['pe']
+                )
+                logging.info('Uploaded source probabilities pie chart for %s',
+                             gid)
+            except Exception as exc:
+                logging.error(
+                    'Failed to upload source probability results for %s', gid)
+                logging.error(str(exc))
 
         # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
@@ -477,70 +548,19 @@ class CandidateForGraceDB(object):
                                gid)
                 logging.error(str(exc))
 
-        # Upload em_bright properties JSON
-        if self.hasmassgap is not None:
-            try:
-                self.gracedb.write_log(
-                    gid, 'EM Bright properties JSON file upload',
-                    filename=self.embright_file,
-                    tag_name=['em_bright']
-                )
-                logging.info('Uploaded em_bright properties for %s', gid)
-            except Exception as exc:
-                logging.error('Failed to upload em_bright properties file '
-                              'for %s', gid)
-                logging.error(str(exc))
+        try:
+            # add info for tracking code version
+            gracedb_tag_with_version(self.gracedb, gid)
 
-        # Upload multi-cpt p_astro JSON
-        if self.astro_probs is not None:
-            try:
-                self.gracedb.write_log(
-                    gid, 'Multi-component p_astro JSON file upload',
-                    filename=self.multipa_file,
-                    tag_name=['p_astro'],
-                    label='PASTRO_READY'
-                )
-                logging.info('Uploaded multi p_astro for %s', gid)
-            except Exception as exc:
-                logging.error('Failed to upload multi p_astro file for %s', gid)
-                logging.error(str(exc))
-            # Don't do anything else!
-            return gid
+            extra_strings = [] if extra_strings is None else extra_strings
+            for text in extra_strings:
+                self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
+        except Exception as exc:
+            logging.error('Something failed during the upload/annotation of '
+                          'analyst comments of event %s on GraceDB. The event may '
+                          'not have been uploaded!', fname)
+            logging.error(str(exc))
 
-        # If there is no multi p_astro, upload source probabilities in JSON
-        # format and plot
-        if self.probabilities is not None:
-            try:
-                self.gracedb.write_log(
-                    gid, 'Source probabilities JSON file upload',
-                    filename=self.prob_file,
-                    tag_name=['pe']
-                )
-                logging.info('Uploaded source probabilities for %s', gid)
-                self.gracedb.write_log(
-                    gid, 'Source probabilities plot upload',
-                    filename=self.prob_plotf,
-                    tag_name=['pe']
-                )
-                logging.info('Uploaded source probabilities pie chart for %s',
-                             gid)
-            except Exception as exc:
-                logging.error(
-                    'Failed to upload source probability results for %s', gid)
-                logging.error(str(exc))
-
-        # If there is p_astro but no probabilities, upload p_astro JSON
-        if self.p_astro is not None:
-            try:
-                self.gracedb.write_log(
-                    gid, '2-component p_astro JSON file upload',
-                    filename=self.pastro_file,
-                    tag_name=['sig_info']
-                )
-                logging.info('Uploaded p_astro for %s', gid)
-            except Exception as exc:
-                logging.error('Failed to upload p_astro file for %s', gid)
-                logging.error(str(exc))
         return gid
 
 
