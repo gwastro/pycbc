@@ -557,8 +557,7 @@ class CandidateForGraceDB(object):
                 self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
         except Exception as exc:
             logging.error('Something failed during the annotation of '
-                          'analyst comments of event %s on GraceDB. The '
-                          'event may not have been uploaded!', fname)
+                          'analyst comments of event %s on GraceDB.', fname)
             logging.error(str(exc))
 
         return gid
