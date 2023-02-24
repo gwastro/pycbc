@@ -375,8 +375,9 @@ class LiveEventManager(object):
         # Because we do not change any of the request session values when running the
         # code, it should remain thread safe. 
         gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
-        self.gracedb = GraceDb(args.gracedb_server, **gdbargs) if args.gracedb_server \
-            else GraceDb(**gdbargs)
+        if args.gracedb_server:
+            gdbargs['service_url'] = args.gracedb_server 
+        self.gracedb = GraceDb(**gdbargs)
 
     def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos,
                          upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
@@ -564,7 +565,7 @@ class LiveEventManager(object):
                         single['p_terr'] = event.p_terr
                 live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
                 thread_args = (
-                    event, fname, comment, coinc_results, live_ifos, [ifo],
+                    event, fname, comment, single, live_ifos, [ifo],
                     upload_checks, optimize_snr_checks, args.gracedb_server, 
                     args.gracedb_search,
                     )
