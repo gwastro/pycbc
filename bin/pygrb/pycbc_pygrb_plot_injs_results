@@ -44,119 +44,134 @@ __program__ = "pycbc_pygrb_plot_injs_results"
 def process_var_strings(qty):
     """Add underscores to match HDF column name conventions"""
 
-    qty = qty.replace('effdist', 'eff_dist')
-    qty = qty.replace('effsitedist', 'eff_site_dist')
+    #qty = qty.replace('effdist', 'eff_dist')
+    #qty = qty.replace('effsitedist', 'eff_site_dist')
     qty = qty.replace('skyerror', 'sky_error')
     qty = qty.replace('cos', 'cos_')
     qty = qty.replace('abs', 'abs_')
-    qty = qty.replace('coaphase', 'coa_phase')
+    #qty = qty.replace('coaphase', 'coa_phase')
     qty = qty.replace('endtime', 'end_time')
 
     return qty
 
 
-def load_incl_data(injs, qty):
+def load_incl_data(input_file_handle, key, tag):
     """Extract data related to inclination from raw injection data"""
 
     local_dict = {}
 
     # Whether the user requests incl, |incl|, cos(incl), or cos(|incl|)
     # the following information is needed
-    local_dict['incl'] = injs['injections/inclination'][:]
+    # TODO: make sure it is clear that inclination is interpreted as theta_jn
+    local_dict['incl'] = input_file_handle[tag+'/thetajn'][:]
 
     # Requesting |incl| or cos(|incl|)
-    if 'abs_' in qty:
+    if 'abs_' in key:
         local_dict['abs_incl'] = 0.5*np.pi - abs(local_dict['incl'] - 0.5*np.pi)
 
     # Requesting cos(incl) or cos(|incl|): take cosine
-    if 'cos_' in qty:
-        angle = qty.replace('cos_', '')
+    if 'cos_' in key:
+        angle = key.replace('cos_', '')
         angle_data = local_dict[angle]
         data = np.cos(angle_data)
     # Requesting incl or abs_incl: convert to degrees
     else:
-        data = np.rad2deg(local_dict[qty])
+        data = np.rad2deg(local_dict[key])
 
     return data
 
+
 # Function to extract mass ratio or total mass data from a injection file
-def load_mass_data(injs, qty):
-    """Extract data related to mass ratio or total mass from raw
+def load_mass_data(input_file_handle, key, tag):
+    """Extract data related to mass ratio, chirp mass or total mass from raw
     injection data"""
 
-    if qty == 'mtotal':
-        data = injs['injections/mass1'][:] + injs['injections/mass2'][:]
-    elif qty == 'mchirp':
+    if key == 'mtotal':
+        data = input_file_handle[tag+'/mass1'][:] + \
+               input_file_handle[tag+'/mass2'][:]
+    elif key == 'mchirp':
         data, _ = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-            injs['injections/mass1'][:], injs['injections/mass2'][:])
+            input_file_handle[tag+'/mass1'][:],
+            input_file_handle[tag+'/mass2'][:])
     else:
-        data = injs['injections/mass2'][:]/injs['injections/mass1'][:]
+        data = input_file_handle[tag+'/mass2'][:]/\
+               input_file_handle[tag+'/mass1'][:]
         data = np.where(data > 1, 1./data, data)
 
     return data
 
 
-# Function to extract mass ratio or total mass data from a injection file
-def load_effdist_data(injs, qty, opts, ifos):
-    """Extract data related to effective distances from raw injection data"""
+# Function to extract effective distance data from a injection file
+#def load_effdist_data(injs, qty, opts, ifos):
+#    """Extract data related to effective distances from raw injection data"""
+#
+#    local_dict = {}
+#
+#    if qty == 'eff_site_dist':
+#        data = injs['injections/eff_dist_%s' % opts.ifo[0].lower()][:]
+#    else:
+#        local_dict['eff_site_dist'] =\
+#            dict((ifo, injs['injections/eff_dist_%s' % ifo[0].lower()][:])
+#                 for ifo in ifos)
+#        # Effective distance (inverse sum of inverse effective distances)
+#        data = np.power(np.power(
+#            local_dict['eff_site_dist'], -1).sum(0), -1)
+#
+#    return data
 
-    local_dict = {}
 
-    if qty == 'eff_site_dist':
-        data = injs['injections/eff_dist_%s' % opts.ifo[0].lower()][:]
+def load_sky_error_data(input_file_handle, key, tag, trig_data):
+    """Extract data related to sky_error from raw injection and trigger data"""
+    if tag == 'missed':
+        # Missed injections are assigned null values
+        data = np.full(len(input_file_handle[tag+'/mass1'][:]), None)
     else:
-        local_dict['eff_site_dist'] =\
-            dict((ifo, injs['injections/eff_dist_%s' % ifo[0].lower()][:])
-                 for ifo in ifos)
-        # Effective distance (inverse sum of inverse effective distances)
-        data = np.power(np.power(
-            local_dict['eff_site_dist'], -1).sum(0), -1)
-
-    return data
-
-# Function to extract spin related data from a injection file
-def load_spin_modulus_data(injs, qty):
-    """Extract data related to spin modulus from raw injection data"""
-
-    # Calculate the modulus
-    data = np.sqrt(injs['injections/%sx' % qty][:]**2 +
-                   injs['injections/%sy' % qty][:]**2 +
-                   injs['injections/%sz' % qty][:]**2)
+        inj = {}
+        inj['ra'] = input_file_handle[tag+'/ra'][:]
+        inj['dec'] = input_file_handle[tag+'/dec'][:]
+        trig = {}
+        trig['ra'] = np.rad2deg(trig_data['network/longitude'][:])
+        trig['dec'] = np.rad2deg(trig_data['network/latitude'][:])
+        data = np.arccos(np.cos(inj['dec'] - trig['dec']) -
+                         np.cos(inj['dec']) * np.cos(trig['dec']) *
+                         (1 - np.cos(inj['ra'] - trig['ra'])))
 
     return data
 
 
-# Function to extract desired data from a injection file
-def load_data(input_file, keys, opts, ifos):
+# These are keys in the found-missed-file under 'found' and 'missed' 
+# TODO: also in the found-missed injs file is 'inclination'
+easy_keys = ['distance', 'mass1', 'mass2', 'polarization',
+             'spin1_a', 'spin1x', 'spin1y', 'spin1z',
+             'spin2_a', 'spin2x', 'spin2y', 'spin2z',
+             'spin1_azimuthal', 'spin1_polar',
+             'spin2_azimuthal', 'spin2_polar',
+             'dec', 'ra', 'phi_ref']
+# Function to extract desired data from an injection file
+def load_data(input_file_handle, keys, tag, trig_data):
     """Create a dictionary containing the data specified by the
-    list of keys extracted from a injection file"""
+    list of keys extracted from an injection file"""
 
-    injs = h5py.File(input_file, 'r')
     data_dict = {}
 
-    easy_keys = ['coa_phase', 'distance', 'mass1', 'mass2',
-                 'polarization', 'spin1x', 'spin1y', 'spin1z',
-                 'spin2x', 'spin2y', 'spin2z']
+    for key in keys:
+        if key in easy_keys:
+            data_dict[key] = f[tag][key][:]
+        elif key == 'end_time':
+            data_dict[key] = f[tag]['tc'][:]
+            #grb_time = ppu.get_grb_time(opts.seg_files)
+            #data_dict[key] -= grb_time
+        elif key in ['q', 'mchirp', 'mtotal']:
+            data_dict[key] = load_mass_data(input_file_handle, key, tag)
+        elif 'incl' in key:
+            data_dict[key] = load_incl_data(input_file_handle, key, tag)
+        elif key == 'sky_error':
+            data_dict[key] = load_sky_error_data(input_file_handle, key,
+                                                 tag, trig_data)
+        else:
+            return NotImplemented
 
-    for qty in keys:
-        if qty in easy_keys:
-            data_dict[qty] = injs['injections/%s' % qty][:]
-        elif qty == 'end_time':
-            data_dict[qty] = injs['injections/end_time'][:]
-            grb_time = ppu.get_grb_time(opts.seg_files)
-            data_dict[qty] -= grb_time
-        elif qty in ['latitude', 'longitude']:
-            data_dict[qty] = np.rad2deg(injs['injections/%s' % qty][:])
-        elif qty in ['mtotal', 'q', 'mchirp']:
-            data_dict[qty] = load_mass_data(injs, qty)
-        elif qty in ['eff_site_dist', 'eff_dist']:
-            data_dict[qty] = load_effdist_data(injs, qty, opts, ifos)
-        elif 'incl' in qty:
-            data_dict[qty] = load_incl_data(injs, qty)
-        # This handles spin1 and spin2, i.e. spin magnitudes, as components
-        # are dealt with in easy_keys (first if)
-        elif 'spin' in qty:
-            data_dict[qty] = load_spin_modulus_data(injs, qty)
+    logging.info("{0} {1} injections analysed.".format(len(data_dict[keys[0]]), tag))
 
     return data_dict
 
@@ -173,15 +188,15 @@ def load_trig_data(input_file, vetoes):
 # Function to cherry-pick a subset of full_data specified by fap_mask.
 # Reweighted SNR values are picked separately since they are extracted
 # in different manners
-def grab_injs_subset(full_data, fap_mask):
-    """Separate out a subset of full_data based on fap_mask"""
-
-    data_subset = {}
-
-    for qty in full_data.keys():
-        data_subset[qty] = full_data[qty][fap_mask]
-
-    return data_subset
+#def grab_injs_subset(full_data, fap_mask):
+#    """Separate out a subset of full_data based on fap_mask"""
+#
+#    data_subset = {}
+#
+#    for qty in full_data.keys():
+#        data_subset[qty] = full_data[qty][fap_mask]
+#
+#    return data_subset
 
 
 # =============================================================================
@@ -189,15 +204,17 @@ def grab_injs_subset(full_data, fap_mask):
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
-parser.add_argument('--injection-file',
-                    help="The hdf injection file to plot", required=True)
+parser.add_argument('--found-missed-file',
+                    help="The hdf injection results file", required=True)
 parser.add_argument('--offsource-file',
                     help="The hdf offsource trigger file", required=True)            
-admitted_vars = ['coa_phase', 'distance', 'latitude', 'longitude','mass1',
-                 'mass2', 'polarization', 'spin1x', 'spin1y', 'spin1z',
-                 'spin2x', 'spin2y', 'spin2z', 'end_time', 'mtotal', 'q',
-                 'mchirp', 'eff_site_dist', 'eff_dist', 'incl', 'cos_incl',
-                 'abs_incl', 'cos_abs_incl', 'spin1', 'spin2', 'sky_error']
+# FIXME: not all of these work
+admitted_vars = easy_keys + ['coa_phase', 'latitude', 'longitude',
+                 'end_time', 'mtotal', 'q', 'mchirp',
+                 'eff_site_dist', 'eff_dist', 'incl', 'cos_incl',
+                 'abs_incl', 'cos_abs_incl', 'sky_error',
+                 'coaphase', 'endtime', 'effsitedist', 'effdist',
+                 'cosincl', 'absincl', 'cosabsincl', 'skyerror']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
                     choices=admitted_vars,
                     help="Quantity to plot on the horizontal axis. " +
@@ -212,8 +229,9 @@ parser.add_argument("--y-log", action="store_true",
                     help="Use log vertical axis")
 parser.add_argument('--colormap',default='cividis_r',
                    help="Type of colormap to be used for the plots.")
-parser.add_argument('--gradient-far', action='store_true',
-                    help="Show far of found injections as a gradient")
+# TODO: what was the intention of this being an option?
+#parser.add_argument('--gradient-far', action='store_true',
+#                    help="Show far of found injections as a gradient")
 parser.add_argument('--far-type', choices=('inclusive', 'exclusive'),
                     default='inclusive',
                     help="Type of far to plot for the color. Choices are "
@@ -224,11 +242,6 @@ parser.add_argument('--missed-on-top', action='store_true',
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
-
-# Check options
-if opts.injection_file is None:
-    err_msg = "Must provide injection file."
-    raise RuntimeError(err_msg)
 
 x_qty = process_var_strings(opts.x_variable)
 y_qty = process_var_strings(opts.y_variable)
@@ -241,7 +254,7 @@ if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
 # Store options used multiple times in local variables
 outfile = opts.output_file
 trig_file = os.path.abspath(opts.offsource_file)
-f = h5py.File(opts.injection_file, 'r')
+f = h5py.File(opts.found_missed_file, 'r')
 grb_time = ppu.get_grb_time(opts.seg_files)
 
 # Set output directory
@@ -255,93 +268,70 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load triggers. Time-slides not yet available
-logging.info("Loading triggers.")
 trig_data = load_trig_data(trig_file, vetoes)
-max_reweighted_snr = max(trig_data['network/reweighted_snr'][:])
+max_reweighted_snr = max(trig_data['network/reweighted_snr'][:])*0.2 # FIXME: Lower for testing purposes with GRB 170817A
 
 # =======================
 # Post-process injections
 # =======================
-# Triggers, missed injections (i.e., not recovered at all), and injections
-# recovered in some form. Trigs/injs at vetoed times are discarded.
-
-# Indices of all found injections
-found = f['found/injection_index'][:]
-# Indices of all missed injections
-missed = f['missed/all'][:]
-# Indices of injections found surviving vetoes
-found_after_vetoes = f['found_after_vetoes/injection_index'][:]
-# Indices of found but vetoed injections
-missed_after_vetoes = list(set(found) - set(found_after_vetoes))
-missed_after_vetoes = np.sort(missed_after_vetoes).astype(int)
-# Indices of injections found but not louder than background
-# are populated further down
-
-inj_data = load_data(opts.injection_file, [x_qty, y_qty], opts, ifos)
-logging.info("Triggers and missed/found injections loaded.")
-
-# Handle separately the special case of plotting the sky_error: this
-# quantity is not defined for *missed* injections
-found_trig = {}
-found_inj = {}
-if 'sky_error' in [x_qty, y_qty]:
-    found_inj['ra'] = np.rad2deg(f['injections/longitude'][found])
-    found_inj['dec'] = np.rad2deg(f['injections/latitude'][found])
-    found_trig['ra'] = np.rad2deg(trig_data['network/longitude'][:])
-    found_trig['dec'] = np.rad2deg(trig_data['network/latitude'][:])
-    found_inj['sky_error'] = np.arccos(np.cos(found_inj['dec'] - found_trig['dec']) -\
-                                       np.cos(found_inj['dec']) * np.cos(found_trig['dec']) *\
-                                       (1 - np.cos(found_inj['ra'] - found_trig['ra'])))
-
-    # Define inj_data only for found indices. Missed injections are assigned null values
-    inj_data['sky_error'] = np.full(len(f['injections/longitude'][:]), None)
-    inj_data['sky_error'][found] = found_inj['sky_error']
-
 # Extract the necessary data from the missed injections for the plot
-missed_inj = {}
-for qty in [x_qty, y_qty]:
-    missed_inj[qty] = inj_data[qty][missed]
-logging.info("%d missed injections analysed.", len(missed))
+missed_inj = load_data(f, [x_qty, y_qty], 'missed', trig_data)
 
 # Extract the necessary data from the found injections for the plot
-found_inj = {x_qty: inj_data[x_qty][found],
-             y_qty: inj_data[y_qty][found]}
+found_inj = load_data(f, [x_qty, y_qty], 'found', trig_data)
+
+# Injections found surviving vetoes
+found_after_vetoes = found_inj if 'found_after_vetoes' not in f.keys() else f['found_after_vetoes']
+# FIXME: Found but vetoed injections
+#missed_after_vetoes = list(set(found) - set(found_after_vetoes))
+#missed_after_vetoes = np.sort(missed_after_vetoes).astype(int)
+missed_after_vetoes = {}
+# Injections found but not louder than background
+# are populated further down
 
 # Extract the detection statistic of injections found after vetoes
-found_after_vetoes_stat = f['found_after_vetoes/stat'][:]
+found_after_vetoes_stat = f['network/reweighted_snr'][:] if 'found_after_vetoes' not in f.keys() else f['found_after_vetoes/stat'][:]
 
 # Separate triggers into:
 # 1) Found louder than background
 louder_mask = found_after_vetoes_stat > max_reweighted_snr
-louder_indices = found_after_vetoes[louder_mask]
-found_louder = grab_injs_subset(inj_data, louder_indices)
-found_louder['reweighted_snr'] = f['found_after_vetoes/stat'][louder_mask]
+found_louder = {}
+for key in found_after_vetoes.keys():
+    found_louder[key] = found_after_vetoes[key][louder_mask]
+found_louder['reweighted_snr'] = found_after_vetoes_stat[louder_mask]
 
-# 2) Found quieter than background
+# 2) Found quieter than background: injections found (bestnr > 0)
+#    but not louder than background (non-zero FAP)
 quieter_mask = (found_after_vetoes_stat <= max_reweighted_snr) & (found_after_vetoes_stat != 0)
-# Indices of injections found (bestnr > 0) but not louder than background (non-zero FAP)
-quieter_indices = found_after_vetoes[quieter_mask]
-found_quieter = grab_injs_subset(inj_data, quieter_indices)
-found_quieter['reweighted_snr'] = f['found_after_vetoes/stat'][quieter_mask]
+found_quieter = {}
+for key in found_after_vetoes.keys():
+    found_quieter[key] = found_after_vetoes[key][quieter_mask]
+found_quieter['reweighted_snr'] = found_after_vetoes_stat[quieter_mask]
 
+# TODO: ifar still missing
+"""
 # Extract inclusive/exclusive IFAR for injections found quieter than background
 ifar_string = 'found_after_vetoes/ifar' if opts.far_type == 'inclusive' \
     else 'found_after_vetoes/ifar_exc'
 found_quieter['ifar'] = f[ifar_string][quieter_mask]
+"""
 
 # 3) Missed due to vetoes
-vetoed = grab_injs_subset(inj_data, missed_after_vetoes)
-vetoed['reweighted_snr'] = []
-for vetoed_index in missed_after_vetoes:
-    found_index = list(found).index(vetoed_index)
-    vetoed['reweighted_snr'].append(f['found/stat'][found_index])
-    
+#vetoed = grab_injs_subset(inj_data, missed_after_vetoes)
+#vetoed['reweighted_snr'] = []
+#for vetoed_index in missed_after_vetoes:
+#    found_index = list(found).index(vetoed_index)
+#    vetoed['reweighted_snr'].append(f['found/stat'][found_index])
+vetoed = missed_after_vetoes
+
 # Statistics: found on top (found-missed)
-FM = np.argsort(found_quieter['ifar'])
+# TODO: ifar still missing
+#FM = np.argsort(found_quieter['ifar'])
+logging.info("WARNING: IFAR not implemented yet")
+logging.info("WARNING: Avoiding failure by setting it to -1 and shifting colorbar from [0,1] to [-2,0].")
+FM = np.full(found_quieter['reweighted_snr'].shape, -1)
 # Statistics: missed on top (missed-found)
 MF = FM[::-1]
-
-logging.info("%d found injections analysed.", len(found))
 
 # Post-processing of injections ends here
 
@@ -372,11 +362,11 @@ axis_labels_dict = {'mchirp': "Chirp Mass (solar masses)",
                     'mass1': "Mass of 1st binary component (solar masses)",
                     'mass2': "Mass of 2nd binary component (solar masses)",
                     'polarization': "Polarization phase (radians)",
-                    'spin1': "Spin on 1st binary component",
+                    'spin1_a': "Spin on 1st binary component",
                     'spin1x': "Spin x-component of 1st binary component",
                     'spin1y': "Spin y-component of 1st binary component",
                     'spin1z': "Spin z-component of 1st binary component",
-                    'spin2': "Spin on 2nd binary component",
+                    'spin2_a': "Spin on 2nd binary component",
                     'spin2x': "Spin x-component of 2nd binary component",
                     'spin2y': "Spin y-component of 2nd binary component",
                     'spin2z': "Spin z-component of 2nd binary component"}
@@ -404,12 +394,14 @@ fnd_col = np.array([fnd_col])
 if not opts.missed_on_top:
     if missed_inj[x_qty].size and missed_inj[y_qty].size:
         ax.scatter(missed_inj[x_qty], missed_inj[y_qty], c="black", marker="x", s=10)
-    if vetoed[x_qty].size:
+    #FIXME: once vetoed is filled in properly
+    #if vetoed[x_qty].size:
+    if x_qty in vetoed.keys():
         ax.scatter(vetoed[x_qty], vetoed[y_qty], c="red", marker="x", s=10)
     if found_quieter[x_qty].size:
         p = ax.scatter(found_quieter[x_qty][FM], found_quieter[y_qty][FM],
                        c=found_quieter['reweighted_snr'][FM],
-                       cmap=cmap, vmin=0, vmax=1, s=40,
+                       cmap=cmap, vmin=-2, vmax=0, s=40,
                        edgecolor="w", linewidths=2.0)
         cb = plt.colorbar(p, label="p-value")
     if found_louder[x_qty].size:
@@ -420,10 +412,12 @@ elif opts.missed_on_top:
     if found_quieter[x_qty].size:
         p = ax.scatter(found_quieter[x_qty][MF], found_quieter[y_qty][MF],
                        c=found_quieter['reweighted_snr'][MF],
-                       cmap=cmap, vmin=0, vmax=1, s=40,
+                       cmap=cmap, vmin=-2, vmax=0, s=40,
                        edgecolor="w", linewidths=2.0)
         cb = plt.colorbar(p, label="p-value")
-    if vetoed[x_qty].size:
+    #FIXME: once vetoed is filled in properly
+    #if vetoed[x_qty].size:
+    if x_qty in vetoed.keys():
         ax.scatter(vetoed[x_qty], vetoed[y_qty], c="red", marker="x", s=40)
     if missed_inj[x_qty].size and missed_inj[y_qty].size:
         ax.scatter(missed_inj[x_qty], missed_inj[y_qty], c="black", marker="x", s=40)
@@ -431,7 +425,7 @@ ax.grid()
 
 # Handle axis limits when plotting spins
 max_missed_inj = {}
-for key in ['spin1', 'spin2']:
+for key in ['spin1_a', 'spin2_a']:
     for qty in [x_qty, y_qty]:
         if key in qty:
             max_missed_inj[qty] = missed_inj[qty].max()
@@ -511,11 +505,11 @@ if plot_title is None:
                   'mass1': "mass",
                   'mass2': "mass",
                   'polarization': "polarization",
-                  'spin1': "spin",
+                  'spin1_a': "spin",
                   'spin1x': "spin x-component",
                   'spin1y': "spin y-component",
                   'spin1z': "spin z-component",
-                  'spin2': "spin",
+                  'spin2_a': "spin",
                   'spin2x': "spin x-component",
                   'spin2y': "spin y-component",
                   'spin2z': "spin z-component"}
@@ -532,4 +526,4 @@ plt.tight_layout()
 pycbc.results.save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                                      title=plot_title, caption=plot_caption)
 plt.close()
-logging.info("Plots complete.")
+logging.info("Plot complete.")
