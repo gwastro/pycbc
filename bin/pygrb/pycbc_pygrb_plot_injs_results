@@ -51,6 +51,8 @@ def process_var_strings(qty):
     qty = qty.replace('abs', 'abs_')
     #qty = qty.replace('coaphase', 'coa_phase')
     qty = qty.replace('endtime', 'end_time')
+    qty = qty.replace('spin1a', 'spin1_a')
+    qty = qty.replace('spin2a', 'spin2_a')
 
     return qty
 
@@ -209,12 +211,14 @@ parser.add_argument('--found-missed-file',
 parser.add_argument('--offsource-file',
                     help="The hdf offsource trigger file", required=True)            
 # FIXME: not all of these work
-admitted_vars = easy_keys + ['coa_phase', 'latitude', 'longitude',
-                 'end_time', 'mtotal', 'q', 'mchirp',
-                 'eff_site_dist', 'eff_dist', 'incl', 'cos_incl',
-                 'abs_incl', 'cos_abs_incl', 'sky_error',
-                 'coaphase', 'endtime', 'effsitedist', 'effdist',
-                 'cosincl', 'absincl', 'cosabsincl', 'skyerror']
+admitted_vars = easy_keys + ['mtotal', 'q', 'mchirp',
+                             'spin1a', 'spin2a',
+                             'incl', 'cos_incl', 'abs_incl', 'cos_abs_incl',
+                             'cosincl', 'absincl', 'cosabsincl',
+                             'sky_error', 'skyerror', 'end_time', 'endtime',
+                             'latitude', 'longitude', 'coaphase', 'coa_phase',
+                             'eff_site_dist', 'eff_dist',
+                             'effsitedist', 'effdist']
 parser.add_argument("-x", "--x-variable", default=None, required=True,
                     choices=admitted_vars,
                     help="Quantity to plot on the horizontal axis. " +
