@@ -69,11 +69,11 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
     if input_file:
         if injections:
             logging.info("Loading injections...")
-            # This will eventually become load_injections
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            # TODO: This will eventually become load_injections
+            trigs = ppu.load_triggers(input_file, vetoes)
         else:
             logging.info("Loading triggers...")
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            trigs = ppu.load_triggers(input_file, vetoes)
 
         num_trigs = len(trigs['network/end_time_gc'][:])
 
