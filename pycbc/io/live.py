@@ -503,12 +503,12 @@ class CandidateForGraceDB(object):
             self.prob_plotf = self.prob_file.replace('.json', '.png')
             # Don't try to plot zero probabilities
             prob_plot = {k: v for (k, v) in self.probabilities.items()
-                            if v != 0.0}
+                         if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             colors = [source_color(label) for label in labels]
             fig, ax = pl.subplots()
             ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
-                    textprops={'fontsize': 15})
+                   textprops={'fontsize': 15})
             ax.axis('equal')
             fig.savefig(self.prob_plotf)
             pl.close()
