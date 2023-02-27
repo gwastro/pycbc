@@ -435,42 +435,6 @@ class CandidateForGraceDB(object):
                 logging.error('Failed to upload p_astro file for %s', gid)
                 logging.error(str(exc))
 
-        # If there is no multi p_astro, upload source probabilities in JSON
-        # format and plot
-        if hasattr(self, 'prob_file'):
-            # Only make the pie plot if no multi cpt p_astro
-            if self.astro_probs is None:
-                self.prob_plotf = self.prob_file.replace('.json', '.png')
-                # Don't try to plot zero probabilities
-                prob_plot = {k: v for (k, v) in self.probabilities.items()
-                             if v != 0.0}
-                labels, sizes = zip(*prob_plot.items())
-                colors = [source_color(label) for label in labels]
-                fig, ax = pl.subplots()
-                ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
-                       textprops={'fontsize': 15})
-                ax.axis('equal')
-                fig.savefig(self.prob_plotf)
-                pl.close()
-            try:
-                self.gracedb.write_log(
-                    gid, 'Source probabilities JSON file upload',
-                    filename=self.prob_file,
-                    tag_name=['pe']
-                )
-                logging.info('Uploaded source probabilities for %s', gid)
-                self.gracedb.write_log(
-                    gid, 'Source probabilities plot upload',
-                    filename=self.prob_plotf,
-                    tag_name=['pe']
-                )
-                logging.info('Uploaded source probabilities pie chart for %s',
-                             gid)
-            except Exception as exc:
-                logging.error(
-                    'Failed to upload source probability results for %s', gid)
-                logging.error(str(exc))
-
         # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
             snr_series_fname = self.basename + '.hdf'
@@ -506,21 +470,6 @@ class CandidateForGraceDB(object):
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
 
-        # Only make the pie plot if no multi cpt p_astro
-        if self.probabilities is not None and self.astro_probs is None:
-            self.prob_plotf = self.prob_file.replace('.json', '.png')
-            # Don't try to plot zero probabilities
-            prob_plot = {k: v for (k, v) in self.probabilities.items()
-                         if v != 0.0}
-            labels, sizes = zip(*prob_plot.items())
-            colors = [source_color(label) for label in labels]
-            fig, ax = pl.subplots()
-            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
-                   textprops={'fontsize': 15})
-            ax.axis('equal')
-            fig.savefig(self.prob_plotf)
-            pl.close()
-
         if gid is None:
             # Don't try to do anything else!
             return gid
@@ -546,6 +495,40 @@ class CandidateForGraceDB(object):
             except Exception as exc:
                 logging.error('Failed to upload SNR timeseries and ASD for %s',
                                gid)
+                logging.error(str(exc))
+
+        # If 'self.prob_file' exists, make and upload source probabilities
+        # in JSON format and pie plot
+        if hasattr(self, 'prob_file'):
+            self.prob_plotf = self.prob_file.replace('.json', '.png')
+            # Don't try to plot zero probabilities
+            prob_plot = {k: v for (k, v) in self.probabilities.items()
+                            if v != 0.0}
+            labels, sizes = zip(*prob_plot.items())
+            colors = [source_color(label) for label in labels]
+            fig, ax = pl.subplots()
+            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
+                    textprops={'fontsize': 15})
+            ax.axis('equal')
+            fig.savefig(self.prob_plotf)
+            pl.close()
+            try:
+                self.gracedb.write_log(
+                    gid, 'Source probabilities JSON file upload',
+                    filename=self.prob_file,
+                    tag_name=['pe']
+                )
+                logging.info('Uploaded source probabilities for %s', gid)
+                self.gracedb.write_log(
+                    gid, 'Source probabilities plot upload',
+                    filename=self.prob_plotf,
+                    tag_name=['pe']
+                )
+                logging.info('Uploaded source probabilities pie chart for %s',
+                             gid)
+            except Exception as exc:
+                logging.error(
+                    'Failed to upload source probability results for %s', gid)
                 logging.error(str(exc))
 
         try:
