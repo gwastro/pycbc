@@ -318,8 +318,6 @@ class CandidateForGraceDB(object):
             with open(self.multipa_file, 'w') as multipaf:
                 json.dump(self.astro_probs, multipaf)
             logging.info('Multi p_astro file saved as %s', self.multipa_file)
-            # Don't save any other files!
-            return
 
         # Save source probabilities in a json file
         if self.probabilities is not None:
@@ -327,6 +325,8 @@ class CandidateForGraceDB(object):
             with open(self.prob_file, 'w') as probf:
                 json.dump(self.probabilities, probf)
             logging.info('Source probabilities file saved as %s', self.prob_file)
+            # Don't save any other files!
+            return
 
         # Save p astro / p terr as json
         if self.p_astro is not None:
