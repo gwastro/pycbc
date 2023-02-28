@@ -469,10 +469,6 @@ class CandidateForGraceDB(object):
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
 
-        if gid is None:
-            # Don't try to do anything else!
-            return gid
-
         # Upload SNR series in HDF format and plots
         if self.snr_series is not None:
             try:
