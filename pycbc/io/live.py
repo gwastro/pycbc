@@ -12,7 +12,10 @@ from ligo.lw import utils as ligolw_utils
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.io.ligolw import (
-    return_empty_sngl, create_process_table, make_psd_xmldoc, snr_series_to_xml
+    return_empty_sngl,
+    create_process_table,
+    make_psd_xmldoc,
+    snr_series_to_xml
 )
 from pycbc.results import generate_asd_plot
 from pycbc.results import ifo_color
@@ -533,10 +536,11 @@ class CandidateForGraceDB(object):
                 gracedb_tag_with_version(self.gracedb, gid)
                 # Add any annotations to the event log
                 for text in (extra_strings or []):
-                    self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
+                    self.gracedb.write_log(
+                        gid, text, tag_name=['analyst_comments'])
             except Exception as exc:
-                logging.error('Something failed during the annotation of analyst '
-                              'comments of event %s on GraceDB.', fname)
+                logging.error('Something failed during annotation of analyst'
+                              ' comments for event %s on GraceDB.', fname)
                 logging.error(str(exc))
 
         return gid
