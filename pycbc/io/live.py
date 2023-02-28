@@ -492,8 +492,9 @@ class CandidateForGraceDB(object):
                               gid)
                 logging.error(str(exc))
 
-        # If 'self.prob_file' exists, make and upload source probabilities
-        # in JSON format and pie plot
+        # If 'self.prob_file' exists, make pie plot and do uploads.
+        # The pie plot only shows relative astrophysical source
+        # probabilities, not p_astro vs p_terrestrial
         if hasattr(self, 'prob_file'):
             self.prob_plotf = self.prob_file.replace('.json', '.png')
             # Don't try to plot zero probabilities
