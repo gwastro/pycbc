@@ -535,8 +535,7 @@ class CandidateForGraceDB(object):
             # add info for tracking code version
             gracedb_tag_with_version(self.gracedb, gid)
 
-            extra_strings = [] if extra_strings is None else extra_strings
-            for text in extra_strings:
+            for text in (extra_strings or []):
                 self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
         except Exception as exc:
             logging.error('Something failed during the annotation of '
