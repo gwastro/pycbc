@@ -388,9 +388,9 @@ class CandidateForGraceDB(object):
                 logging.info("Tagging event %s as an injection", gid)
 
         except Exception as exc:
-            logging.error('Something failed during the upload of '
-                          'event %s on GraceDB. The event may not have been '
-                          'uploaded!', fname)
+            logging.error('Something failed during the upload of event %s on '
+                          'GraceDB. The event may not have been uploaded!',
+                          fname)
             logging.error(str(exc))
 
         # Upload em_bright properties JSON
@@ -489,7 +489,7 @@ class CandidateForGraceDB(object):
                 )
             except Exception as exc:
                 logging.error('Failed to upload SNR timeseries and ASD for %s',
-                               gid)
+                              gid)
                 logging.error(str(exc))
 
         # If 'self.prob_file' exists, make and upload source probabilities
@@ -526,16 +526,17 @@ class CandidateForGraceDB(object):
                     'Failed to upload source probability results for %s', gid)
                 logging.error(str(exc))
 
-        try:
-            # add info for tracking code version
-            gracedb_tag_with_version(self.gracedb, gid)
-
-            for text in (extra_strings or []):
-                self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
-        except Exception as exc:
-            logging.error('Something failed during the annotation of '
-                          'analyst comments of event %s on GraceDB.', fname)
-            logging.error(str(exc))
+        if gid is not None:
+            try:
+                # Add code version info
+                gracedb_tag_with_version(self.gracedb, gid)
+                # Add any annotations to the event log
+                for text in (extra_strings or []):
+                    self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
+            except Exception as exc:
+                logging.error('Something failed during the annotation of analyst '
+                              'comments of event %s on GraceDB.', fname)
+                logging.error(str(exc))
 
         return gid
 
