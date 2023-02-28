@@ -335,7 +335,6 @@ class CandidateForGraceDB(object):
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
             logging.info('P_astro file saved as %s', self.pastro_file)
-        return
 
     def upload(self, fname, gracedb_server=None, testing=True,
                extra_strings=None, search='AllSky'):
