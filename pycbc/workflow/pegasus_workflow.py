@@ -788,6 +788,10 @@ class SubWorkflow(dax.SubWorkflow):
 
         self.add_planner_arg('pegasus.dir.storage.mapper.replica.file',
                              os.path.basename(output_map_file.name))
+        # Ensure output_map_file has the for_planning flag set. There's no
+        # API way to set this after the File is initialized, so we have to
+        # change the attribute here.
+        output_map_file.for_planning=True
         self.add_inputs(output_map_file)
 
         # I think this is needed to deal with cases where the subworkflow file
