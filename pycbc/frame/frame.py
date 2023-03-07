@@ -208,7 +208,7 @@ def read_frame(location, channels, start_time=None,
     if check_integrity:
         stream.mode = (stream.mode | lalframe.FR_STREAM_CHECKSUM_MODE)
 
-    lalframe.FrSetMode(stream.mode, stream)
+    lalframe.FrStreamSetMode(stream, stream.mode)
 
     # determine duration of data
     if type(channels) is list:
