@@ -29,7 +29,7 @@ def insert_live_pastro_option_group(parser):
 _check_spec = {
     'template_param_bins': livepa.check_template_param_bin_data,
     'template_param_bins_types': livepa.check_template_param_bin_data,
-    'template_param_bins_types_farlim': \
+    'template_param_bins_types_farlim':
         livepa.check_template_param_bin_farlim_data
 }
 
@@ -42,7 +42,7 @@ _read_bank = {
 _do_calc = {
     'template_param_bins': livepa.template_param_bin_pa,
     'template_param_bins_types': livepa.template_param_bin_types_pa,
-    'template_param_bins_types_farlim': \
+    'template_param_bins_types_farlim':
         livepa.template_param_bin_types_farlim_pa
 }
 
@@ -77,17 +77,19 @@ class PAstroData():
             self.bank = _read_bank[self.method](self.spec, bank)
 
     def apply_significance_limits(self, trigger_data):
-        # If the network SNR and FAR indicate saturation of the FAR estimate,
-        # set them to the fixed values given in the specification.
+        """
+        If the network SNR and FAR indicate saturation of the FAR estimate,
+        set them to the fixed values given in the specification.
+        """
         # This only happens for double or triple events
         if len(trigger_data['triggered']) > 1:
-            snrlim = self.spec['limit_snr']
             farlim = self.spec['limit_far']
+            snrlim = self.spec['limit_snr']
             if trigger_data['far'] < farlim and \
                     trigger_data['network_snr'] > snrlim:
                 logging.debug('Truncating FAR and SNR from %f, %f to %f, %f',
-                    trigger_data['far'], trigger_data['network_snr'],
-                    farlim, snrlim)
+                              trigger_data['far'], trigger_data['network_snr'],
+                              farlim, snrlim)
                 trigger_data['network_snr'] = snrlim
                 trigger_data['far'] = farlim
         return trigger_data
