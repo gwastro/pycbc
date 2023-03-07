@@ -50,40 +50,40 @@ class Fisher():
       * http://arxiv.org/pdf/0902.0737v1 (states the Rayleigh limit)
     """
     name = 'fisher'
-    _params=['ra','dec']
+    _params=['ra', 'dec']
 
     def __init__(self,**params):
-        self.mu_values = numpy.array([params['mean_ra'],params['mean_dec']])
+        self.mu_values = numpy.array([params['mean_ra'], params['mean_dec']])
         self.sigma = params['sigma']
         self.alpha, self.beta = new_z_to_euler(self.mu_values)
         self.kappa = 1./((0.66*params['sigma']))**2
-        
+
     @property
     def params(self):
         return self._params
-    
+ 
     @classmethod
-    def from_config(cls,cp, section,variable_args):
+    def from_config(cls, cp, section, variable_args):
         tag = variable_args
         variable_args = variable_args.split(VARARGS_DELIM)
         if not set(variable_args) == set(cls._params):
             raise ValueError("Not all parameters used by this distribution "
                              "included in tag portion of section name")
-        mean_ra = float(cp.get_opt_tag(section,'mean_ra',tag))
-        mean_dec = float(cp.get_opt_tag(section,'mean_dec',tag))
-        sigma = float(cp.get_opt_tag(section,'sigma',tag))
-        return cls(mean_ra=mean_ra, mean_dec=mean_dec,sigma=sigma)
+        mean_ra = float(cp.get_opt_tag(section, 'mean_ra', tag))
+        mean_dec = float(cp.get_opt_tag(section, 'mean_dec', tag))
+        sigma = float(cp.get_opt_tag(section, 'sigma', tag))
+        return cls(mean_ra=mean_ra, mean_dec=mean_dec, sigma=sigma)
 
     def rvs(self,size):
-        arr=numpy.array([
-            numpy.random.rayleigh(scale=1./numpy.sqrt(self.kappa),
-                                  size=size),
-            numpy.random.uniform(low=0,
-                                 high=(2*numpy.pi),
-                                 size=size)]).T
-        euler=rotate_euler(arr, self.alpha, self.beta, 0)
-        rot_euler=FieldArray(size,dtype=[('ra','<f8'),('dec','<f8')])
-        rot_euler['ra'],rot_euler['dec']=euler[:,0],euler[:,1]
+        arr = numpy.array([
+            numpy.random.rayleigh(scale = 1./numpy.sqrt(self.kappa),
+                                  size = size),
+            numpy.random.uniform(low = 0,
+                                 high = (2*numpy.pi),
+                                 size = size)]).T
+        euler = rotate_euler(arr, self.alpha, self.beta, 0)
+        rot_euler = FieldArray(size,dtype = [('ra','<f8'), ('dec','<f8')])
+        rot_euler['ra'], rot_euler['dec'] = euler[:,0], euler[:,1]
         return rot_euler
 
 
