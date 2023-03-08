@@ -35,7 +35,7 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
-class Fisher():
+class FisherSky():
     """A distribution that returns a random (ra, dec) angle drawn from the
     Fisher distribution. Assume that the concentration parameter (kappa)
     is large so that we can use a Rayleigh distribution about the north
@@ -49,7 +49,7 @@ class Fisher():
       * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
       * http://arxiv.org/pdf/0902.0737v1 (states the Rayleigh limit)
     """
-    name = 'fisher'
+    name = 'fisher_sky'
     _params=['ra', 'dec']
 
     def __init__(self,**params):
