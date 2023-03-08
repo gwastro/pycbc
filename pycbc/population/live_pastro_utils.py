@@ -82,17 +82,25 @@ class PAstroData():
         set them to the fixed values given in the specification.
         """
         # This only happens for double or triple events
-        if len(trigger_data['triggered']) > 1:
+        if len(trigger_data['triggered']) == 1:
+            return trigger_data
+        
+        elif len(trigger_data['triggered']) > 1:
             farlim = self.spec['limit_far']
             snrlim = self.spec['limit_snr']
-            if trigger_data['far'] < farlim and \
-                    trigger_data['network_snr'] > snrlim:
-                logging.debug('Truncating FAR and SNR from %f, %f to %f, %f',
-                              trigger_data['far'], trigger_data['network_snr'],
-                              farlim, snrlim)
-                trigger_data['network_snr'] = snrlim
-                trigger_data['far'] = farlim
-        return trigger_data
+            # Only do anything if FAR and SNR are beyond given limits
+            if trigger_data['far'] > farlim or \
+                    trigger_data['network_snr'] < snrlim:
+                return trigger_data
+
+            logging.debug('Truncating FAR and SNR from %f, %f to %f, %f',
+                           trigger_data['far'], trigger_data['network_snr'],
+                          farlim, snrlim)
+            trigger_data['network_snr'] = snrlim
+            trigger_data['far'] = farlim
+            return trigger_data
+
+            raise RuntimeError('Number of triggered ifos must be >0 !')
 
     def do_pastro_calc(self, trigger_data, horizons):
         """ No-op, or call the despatch dictionary to evaluate p_astro """
