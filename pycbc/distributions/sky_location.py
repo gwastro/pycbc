@@ -87,4 +87,4 @@ class FisherSky():
         return rot_euler
 
 
-__all__ = ['UniformSky', 'Fisher']
+__all__ = ['UniformSky', 'FisherSky']
