@@ -222,7 +222,7 @@ _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
 
 
 
-_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomhm_modes
+_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes
                      #'IMRPhenomXPHM' : get_imrphenomhm_modes, # Still needs to be implemented since functions are not splitted mode by mode
                     }
 
