@@ -41,6 +41,7 @@ from pycbc import mchirp_area
 from pycbc.detector import ppdets
 from pycbc.filter import resample
 from pycbc.psd import estimate
+from pycbc.live import snr_optimizer
 
 # Use cached class-based FFTs in the resample and estimate module
 resample.USE_CACHING_FOR_LFILTER = True
@@ -114,12 +115,15 @@ class LiveEventManager(object):
             bg_cores = len(tuple(itertools.combinations(ifos, 2)))
             analysis_cores = 1 + bg_cores
             self.fu_cores = available_cores - analysis_cores
+            self.optimizer = args.optimizer
             if self.fu_cores <= 0:
                 logging.warning('Insufficient number of CPU cores (%d) to '
                                 'run search and trigger followups. Uploaded '
                                 'triggers will momentarily increase the lag',
                                 available_cores)
                 self.fu_cores = 1
+            # Convert SNR optimizer options into a string
+            self.snr_opt_options = snr_optimizer.args_to_string(args)
 
         if args.enable_embright_has_massgap:
             if args.embright_massgap_max < self.mc_area_args['mass_bdary']['ns_max']:
@@ -313,6 +317,11 @@ class LiveEventManager(object):
         cmd = 'timeout {} '.format(args.snr_opt_timeout)
         exepath = which('pycbc_optimize_snr')
         cmd += exepath + ' '
+
+        # Add SNR optimization options to the command
+        cmd += self.snr_opt_options
+
+        # Add data files according to the event we are optimizing
         data_fils_str = '--data-files '
         psd_fils_str = '--psd-files '
         for ifo in live_ifos:
@@ -757,7 +766,7 @@ parser.add_argument('--psd-samples', type=int, required=True,
                     help="Number of PSD segments to use in the rolling estimate")
 parser.add_argument('--psd-segment-length', type=int, required=True,
                     help="Length in seconds of each PSD segment")
-parser.add_argument('--psd-inverse-length', type=float,
+sparser.add_argument('--psd-inverse-length', type=float,
                     help="Length in time for the equivalent FIR filter")
 parser.add_argument('--psd-recompute-length', type=positive_int, default=1,
                     help="If given only recompute the PSD after this number of "
@@ -894,15 +903,12 @@ parser.add_argument('--size-override', type=int, metavar='N',
 parser.add_argument('--fftw-planning-limit', type=float,
                     help="Time in seconds to allow for a plan to be created")
 parser.add_argument('--run-snr-optimization', action='store_true',
-                    default=False,
                     help='Run spawned followup processes to maximize SNR for '
                          'any trigger uploaded to GraceDB')
 parser.add_argument('--snr-opt-timeout', type=int, default=400, metavar='SECONDS',
                     help='Maximum allowed duration of followup process to maximize SNR')
 parser.add_argument('--snr-opt-label', type=str, default='SNR_OPTIMIZED',
                     help='Label to apply to snr-optimized GraceDB uploads')
-
-
 parser.add_argument('--enable-embright-has-massgap', action='store_true', default=False,
                     help='Estimate HasMassGap probability for EMBright info. Lower limit '
                          'of the mass gap is equal to the maximum NS mass used for '
@@ -918,6 +924,7 @@ Coincer.insert_args(parser)
 SingleDetSGChisq.insert_option_group(parser)
 mchirp_area.insert_args(parser)
 livepau.insert_live_pastro_option_group(parser)
+snr_optimizer.insert_snr_optimizer_options(parser)
 
 args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
