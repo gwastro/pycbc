@@ -823,6 +823,12 @@ parser.add_argument('--gracedb-server', metavar='URL',
 parser.add_argument('--gracedb-search', type=str, default='AllSky',
                     help='String going into the "search" field of the GraceDB '
                          'events')
+parser.add_argument(
+    '--gracedb-labels',
+    metavar='LABEL',
+    nargs='+',
+    help='Apply the given list of labels to events uploaded to GraceDB.'
+)
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading candidate '
                          'triggers to GraceDB, in years.')
