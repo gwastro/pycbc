@@ -2550,12 +2550,3 @@ def rotate_euler(sph_coords, alpha, beta, gamma):
 
     return sph_new
 
-
-def decra2polaz(dec, ra):
-    """Convert (ra,dec) to (polar, azimuthal) angles. All angles in radians."""
-    return (0.5*numpy.pi) - dec, ra
-
-
-def polaz2radec(theta, phi):
-    """Convert (polar, azimuthal) to (ra,dec) angles. All angles in radians."""
-    return (0.5*numpy.pi) - theta, phi
