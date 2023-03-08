@@ -844,7 +844,15 @@ def optimal_ra_from_detector(detector_name, tc):
 
 
     Parameters
-    ----------
+    ----------def decra2polaz(dec, ra):
+    """Convert (ra,dec) to (polar, azimuthal) angles. All angles in radians."""
+    return (0.5*numpy.pi) - dec, ra
+
+
+def polaz2radec(theta, phi):
+    """Convert (polar, azimuthal) to (ra,dec) angles. All angles in radians."""
+    return (0.5*numpy.pi) - theta, phi
+
     detector_name : string
         The name of the detector, e.g., 'H1'.
     tc : float
@@ -856,6 +864,14 @@ def optimal_ra_from_detector(detector_name, tc):
         The declination of the signal, in radians.
     """
     return optimal_orientation_from_detector(detector_name, tc)[0]
+
+def decra2polaz(dec, ra):
+    """Convert (ra,dec) to (polar, azimuthal) angles. All angles in radians."""
+    return (0.5*numpy.pi) - dec, ra
+
+def polaz2radec(theta, phi):
+    """Convert (polar, azimuthal) to (ra,dec) angles. All angles in radians."""
+    return (0.5*numpy.pi) - theta, phi
 
 #
 # =============================================================================
