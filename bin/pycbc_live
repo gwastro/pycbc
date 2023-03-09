@@ -369,13 +369,18 @@ class LiveEventManager(object):
         """
         from ligo.gracedb.rest import GraceDb
         logging.info('Creating GraceDB session')
-        # Set up dict for args that reload the certificate if it will expire in the reload_buffer time
-        # These args are documented here: https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
-        # Because we do not change any of the request session values when running the code, it should remain thread safe. 
+        # Set up dict for args that reload the certificate if it will expire in the
+        # reload_buffer time. These args are documented here:
+        # https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
+        # Because we do not change any of the request session values when running the
+        # code, it should remain thread safe. 
         gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
-        self.gracedb = GraceDb(args.gracedb_server, **gdbargs) if args.gracedb_server else GraceDb(**gdbargs)
+        if args.gracedb_server:
+            gdbargs['service_url'] = args.gracedb_server 
+        self.gracedb = GraceDb(**gdbargs)
 
-    def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos, upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
+    def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos,
+                         upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
         gid = None
         if upload_checks:
             gid = event.upload(
@@ -471,7 +476,13 @@ class LiveEventManager(object):
                 if hasattr(event, 'p_terr') and event.p_terr is not None:
                     coinc_results['p_terr'] = event.p_terr
             live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
-            gdb_upload_thread = threading.Thread(target = self.upload_in_thread, args = (event, fname, comment, coinc_results, live_ifos, coinc_ifos, upload_checks, optimize_snr_checks,args.gracedb_server, args.gracedb_search,))
+            thread_args = (
+                event, fname, comment, coinc_results, live_ifos, coinc_ifos,
+                upload_checks, optimize_snr_checks, args.gracedb_server, 
+                args.gracedb_search,
+            )
+            gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
+                                                 args=thread_args)
             gdb_upload_thread.start()
 
     def check_singles(self, results, psds):
@@ -537,8 +548,13 @@ class LiveEventManager(object):
                     event.merger_time
                 )
 
-            upload_checks = args.enable_single_detector_upload and self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs)
-            optimize_snr_checks = self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs) and self.run_snr_optimization
+            upload_checks = args.enable_single_detector_upload and \
+                self.ifar_upload_threshold < single['foreground/ifar'] and \
+                not any(nearby_coincs)
+            optimize_snr_checks = \
+                self.ifar_upload_threshold < single['foreground/ifar'] and \
+                not any(nearby_coincs) and \
+                self.run_snr_optimization
             if not upload_checks:
                 event.save(fname)
             if upload_checks or optimize_snr_checks:
@@ -548,7 +564,13 @@ class LiveEventManager(object):
                     if hasattr(event, 'p_terr') and event.p_terr is not None:
                         single['p_terr'] = event.p_terr
                 live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
-                gdb_upload_thread = threading.Thread(target = self.upload_in_thread, args = (event, fname, comment, single, live_ifos, [ifo], upload_checks, optimize_snr_checks, args.gracedb_server, args.gracedb_search,))
+                thread_args = (
+                    event, fname, comment, single, live_ifos, [ifo],
+                    upload_checks, optimize_snr_checks, args.gracedb_server, 
+                    args.gracedb_search,
+                    )
+                gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
+                                                     args=thread_args)
                 gdb_upload_thread.start()
 
     def get_out_dir_path(self, time_gps):
@@ -653,13 +675,13 @@ parser.add_argument('--channel-name', action=MultiDetMultiColonOptionAction,
                     required=True)
 parser.add_argument('--state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing frame status information. Used "
-                         "to determine when to analyze the hoft data. This somewhat "
-                         "corresponds to CAT1 information")
+                         "to determine when to analyze the hoft data. This somewhat"
+                         " corresponds to CAT1 information")
 parser.add_argument('--analyze-flags', action=MultiDetOptionAction, nargs='+',
                     help='The flags that must be in the "good" state to analyze data')
 parser.add_argument('--idq-channel', action=MultiDetMultiColonOptionAction,
-                    help="Channel to read iDQ timeseries from. iDQ timeseries are required "
-                         "by certain ranking statistics.")
+                    help="Channel to read iDQ timeseries from. iDQ timeseries are "
+                         "required by certain ranking statistics.")
 parser.add_argument('--idq-state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing information about the state of idq."
                          "Used to determine when idq is usable for statistics. ")
@@ -669,14 +691,15 @@ parser.add_argument('--idq-threshold', type=float,
 parser.add_argument('--data-quality-channel',
                     action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
-                         "to determine when hoft may be suspect and may be used to veto"
-                         "triggers or not analyze a segment of data. This roughly "
-                         "corresponds to CAT2 information")
+                         "to determine when hoft may be suspect and may be used to "
+                         "veto triggers or not analyze a segment of data. This "
+                         "roughly corresponds to CAT2 information")
 parser.add_argument('--data-quality-flags', action=MultiDetOptionAction, nargs='+',
                     help='Flags used to determine when to throw triggers away. '
                          'For each detector, give a comma-separated list of flags.')
 parser.add_argument('--data-quality-padding', type=float, default=0,
-                    help='Time in seconds around a bad dq time to additionally remove triggers')
+                    help='Time in seconds around a bad dq time to additionally remove '
+                         'triggers')
 parser.add_argument('--frame-src', action=MultiDetOptionAction, nargs='+')
 parser.add_argument('--frame-type', action=MultiDetOptionAction, nargs='+')
 parser.add_argument('--force-update-cache', action='store_true')
@@ -921,7 +944,8 @@ with ctx:
         args.start_time = evnt.comm.bcast(tnow, root=0)
 
     if args.round_start_time:
-        args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
+        args.start_time = int(args.start_time / args.round_start_time + 1) *\
+            args.round_start_time
         logging.info('Starting from: %s', args.start_time)
 
     # initialize the data readers for all detectors
@@ -1099,14 +1123,22 @@ with ctx:
                 bg_fn = os.path.join(args.output_background[1], bg_fn)
                 with h5py.File(bg_fn, 'w') as bgf:
                     for bg_ifos, bg_data, bg_time in bg_dists:
-                        if args.output_background_n_loudest and (args.output_background_n_loudest < len(bg_data)-1):
+                        if args.output_background_n_loudest and \
+                                args.output_background_n_loudest < (len(bg_data) - 1):
                             n_loudest = args.output_background_n_loudest
-                            assert (n_loudest > 0), "We can only store positive int loudest triggers."
-                            ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
-                                    data=-numpy.partition(-bg_data, n_loudest)[:n_loudest], compression='gzip')
+                            assert (n_loudest > 0), \
+                                "We can only store positive int loudest triggers."
+                            ds = bgf.create_dataset(
+                                ','.join(sorted(bg_ifos)),
+                                data=-numpy.partition(-bg_data, n_loudest)[:n_loudest],
+                                compression='gzip'
+                            )
                         else:
-                            ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
-                                                    data=bg_data, compression='gzip')
+                            ds = bgf.create_dataset(
+                                ','.join(sorted(bg_ifos)),
+                                data=bg_data,
+                                compression='gzip'
+                            )
                         ds.attrs['background_time'] = bg_time
                     bgf.attrs['gps_time'] = last_bg_dump_time
 
