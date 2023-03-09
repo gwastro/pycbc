@@ -216,8 +216,8 @@ def get_imrphenomxh_modes(**params):
             hclm *= -1
         hlms[l, m] = (hplm, hclm)
     return hlms
-    
-    
+
+
 _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
                      }
 _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
