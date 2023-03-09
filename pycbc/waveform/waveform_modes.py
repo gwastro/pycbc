@@ -208,7 +208,8 @@ def get_imrphenomxh_modes(**params):
             laldict)
         hlm = FrequencySeries(hlm.data.data, delta_f=hlm.deltaF,
                               epoch=hlm.epoch)
-        # Plus, cross strains without Y_lm. (-1)**(l) factor ALREADY included in FDOneMode
+        # Plus, cross strains without Y_lm.
+        # (-1)**(l) factor ALREADY included in FDOneMode
         hplm = 0.5 * hlm  # Plus strain
         hclm = 0.5j * hlm  # Cross strain
         if m > 0:
@@ -220,7 +221,6 @@ def get_imrphenomxh_modes(**params):
 
 _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
                      }
-
 _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
                      }
 # 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented.
