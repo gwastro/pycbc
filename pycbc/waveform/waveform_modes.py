@@ -218,15 +218,13 @@ def get_imrphenomxh_modes(**params):
 
 
 
-_mode_waveform_td = {'NRSur7dq4':get_nrsur_modes,
+_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
                      }
 
-
-
-_mode_waveform_fd = {'IMRPhenomXHM':get_imrphenomxh_modes,
-                    }
-#'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented. LAL function do not split strain mode by mode                 
-
+_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
+                     }
+# 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented.
+# LAL function do not split strain mode by mode
 
 def fd_waveform_mode_approximants():
     """Frequency domain approximants that will return separate modes."""
