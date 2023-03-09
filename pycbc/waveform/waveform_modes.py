@@ -19,7 +19,7 @@
 from string import Formatter
 import lal
 
-from pycbc import libutils
+from pycbc import libutils, pnutils
 from pycbc.types import (TimeSeries, FrequencySeries)
 from .waveform import (props, _check_lal_pars, check_args)
 from . import parameters
@@ -208,11 +208,12 @@ def get_imrphenomxh_modes(**params):
             laldict)
         hlm = FrequencySeries(hlm.data.data, delta_f=hlm.deltaF,
                                epoch=hlm.epoch)
-        hplm = 0.5 * hlm  # Plus strain, not multiplied by SpherHarmonic. (-1)**(l) factor ALREADY included in LAL FDOneMode function
-        hclm =  0.5j * hlm # Cros strain, not multiplied by SpherHarmonic. (-1)**(l) factor ALREADY included in LAL FDOneMode function
-        if (m > 0):
+        # Plus, cross strains without SpherHarmonics. (-1)**(l) factor ALREADY included in LAL FDOneMode function
+        hplm = 0.5*hlm  # Plus strain 
+        hclm =  0.5j*hlm # Cross strain
+        if m > 0:
             hclm *= -1
-        hlms[l, m] = (hplm,hclm)
+        hlms[l, m] = (hplm, hclm)
     return hlms
 
 
@@ -222,9 +223,10 @@ _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
 
 
 
-_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes
-                     #'IMRPhenomXPHM' : get_imrphenomhm_modes, # Still needs to be implemented since functions are not splitted mode by mode
+_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes 
                     }
+#'IMRPhenomXPHM' : get_imrphenomhm_modes, # Still needs to be implemented. LAL function do not split strain mode by mode
+                    
 
 
 def fd_waveform_mode_approximants():
