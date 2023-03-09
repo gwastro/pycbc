@@ -207,10 +207,10 @@ def get_imrphenomxh_modes(**params):
             params['coa_phase'], params['f_ref'],
             laldict)
         hlm = FrequencySeries(hlm.data.data, delta_f=hlm.deltaF,
-                               epoch=hlm.epoch)
-        # Plus, cross strains without SpherHarmonics. (-1)**(l) factor ALREADY included in LAL FDOneMode function
-        hplm = 0.5*hlm  # Plus strain 
-        hclm =  0.5j*hlm # Cross strain
+                              epoch=hlm.epoch)
+        # Plus, cross strains without Y_lm. (-1)**(l) factor ALREADY included in FDOneMode
+        hplm = 0.5 * hlm  # Plus strain
+        hclm = 0.5j * hlm  # Cross strain
         if m > 0:
             hclm *= -1
         hlms[l, m] = (hplm, hclm)
@@ -218,15 +218,14 @@ def get_imrphenomxh_modes(**params):
 
 
 
-_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
+_mode_waveform_td = {'NRSur7dq4':get_nrsur_modes,
                      }
 
 
 
-_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes 
+_mode_waveform_fd = {'IMRPhenomXHM':get_imrphenomxh_modes,
                     }
-#'IMRPhenomXPHM' : get_imrphenomhm_modes, # Still needs to be implemented. LAL function do not split strain mode by mode
-                    
+#'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented. LAL function do not split strain mode by mode                 
 
 
 def fd_waveform_mode_approximants():
