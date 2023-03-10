@@ -404,8 +404,7 @@ class CandidateForGraceDB(object):
                 search=search,
                 labels=labels
             )
-            json_response = response.json()
-            gid = json_response["graceid"]
+            gid = response.json()["graceid"]
             logging.info("Uploaded event %s", gid)
         except Exception as exc:
             logging.error('Failed to create GraceDB event')
