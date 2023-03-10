@@ -135,7 +135,7 @@ class LVKNewStyleInjectionSet(object):
 
     def pack_data_into_pycbc_format_input(self):
         data = {}
-        for subdir in ['cbc_waveform_params', 'cbc_sim_data']:
+        for subdir in ['cbc_waveform_params']:
             for lvk_name, pycbc_name in self.columns_in_pycbc_format(subdir):
                 data[pycbc_name] = self.inj_file[f'{subdir}/{lvk_name}'][:]
         return data
