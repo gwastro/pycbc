@@ -16,18 +16,132 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-""" This program converts a standard sngl_inspiral table based template bank
-into an hdf format that includes a template hash used to associate triggers
-with their template.
+""" This program converts standard injection file formats (e.g. XML format
+or the LIGO HDF format) into a PyCBC hdf format that includes a template hash
+used to associate triggers with their template.
 """
 
 import argparse
 import numpy
+import h5py
 
 import pycbc
 from pycbc.inject import InjectionSet, CBCHDFInjectionSet
+from pycbc.types import float64, float32
 from pycbc.io.record import FieldArray
-from pycbc.inject import legacy_approximant_name
+
+from pycbc.io.ligolw import LIGOLWContentHandler
+from ligo.lw import utils as ligolw_utils, lsctables
+
+
+# Handlers for alternative injection formats
+
+def legacy_approximant_name(apx):
+    """Convert the old style xml approximant name to a name
+    and phase_order.
+    """
+    apx = str(apx)
+    try:
+        order = sim.GetOrderFromString(apx)
+    except:
+        print("Warning: Could not read phase order from string, using default")
+        order = -1
+    name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
+    return name, order
+
+
+class XMLInjectionSet(object):
+
+    """Reads injections from LIGOLW XML files
+
+    Parameters
+    ----------
+    sim_file : string
+        Path to a LIGOLW XML file containing a SimInspiralTable
+        with injection definitions.
+
+    Attributes
+    ----------
+    indoc
+    table
+    """
+
+    def __init__(self, sim_file):  
+        self.indoc = ligolw_utils.load_filename(
+            sim_file, False, contenthandler=LIGOLWContentHandler)
+        self.table = lsctables.SimInspiralTable.get_table(self.indoc)
+
+    def end_times(self):
+        """Return the end times of all injections"""
+        return [inj.time_geocent for inj in self.table]
+
+    def pack_data_into_pycbc_format_input(self):
+        data = {}
+        for key in xinj.table[0].__slots__:
+            # Some XML files can have empty columns which are read as None in
+            # python. For these cases we ignore the columns so they do not
+            # appear in the output HDF file. (Such XML files cannot currently
+            # be read by LALSuite C code.) 
+            if getattr(xinj.table[0], key) is not None:
+                data[str(key)] = numpy.array(
+                    [getattr(t, key) for t in xinj.table]
+                )
+
+        for k in ['simulation_id', 'process_id']:
+            a = data.pop(k)
+
+        data['approximant'], data['phase_order'] = numpy.array(
+                [legacy_approximant_name(wf) for wf in data['waveform']]
+        ).T
+        data['tc'] = (
+            data['geocent_end_time'] + 1e-9 * data['geocent_end_time_ns']
+        )
+        data['dec'] = data['latitude']
+        data['ra'] = data['longitude']
+        return data
+
+
+class LVKNewStyleInjectionSet(object):
+    """Reads injections from new-style LVK injection files
+    """
+
+    translation_dict = {
+        'mass1_det': 'mass1',
+        'mass2_det': 'mass2',
+        'f22_ref_spin': 'fref', # ????
+        't_co_gps': 'tc',
+        'd_lum': 'distance',
+        'f22_start': 'f_lower',
+        'cbc_model': 'approximant',
+        'longAscNodes': 'FIXME', # FIXME
+        'eccentricity': 'FIXME', # FIXME (check eccentricity params!)
+        'meanPerAno': 'FIXME', # FIXME
+        't_co_gps_add': 'FIXME', # FIXME (don't understand why this is needed?)
+        'ModeArray': 'FIXME', # FIXME (Will need special handling. Need an example)
+        'ModeArrayJframe': 'FIXME', # FIXME (Does this do anything useful?)
+    }
+    
+    def __init__(self, sim_file):
+        self.inj_file = h5py.File(sim_file, 'r')
+
+    def columns_in_pycbc_format(self, subdir):
+        # Loop over columns in input file
+                         
+        for field_name in self.inj_file[subdir].keys():
+            if field_name in self.translation_dict:
+                yield (field_name, self.translation_dict[field_name])
+            else:
+                yield (field_name, field_name)
+
+    def pack_data_into_pycbc_format_input(self):
+        data = {}
+        for subdir in ['cbc_waveform_params', 'cbc_sim_data']:
+            for lvk_name, pycbc_name in self.columns_in_pycbc_format(subdir):
+                data[pycbc_name] = self.inj_file[f'{subdir}/{lvk_name}'][:]
+        return data
+
+
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -43,24 +157,25 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-xinj = InjectionSet(args.injection_file)
+injclass = None
+if args.injection_file.endswith(('.xml', '.xml.gz', '.xmlgz')):
+    injclass = XMLInjectionSet(args.injection_file)
+else:
+    # Assume a HDF file - check if new LVK format first
+    inj_file = h5py.File(args.injection_file, 'r')
+    if 'file_format' in inj_file.attrs:
+        # Assume LVK as PyCBC doesn't have this attribute
+        injclass = LVKNewStyleInjectionSet(args.injection_file)
+    inj_file.close()
 
-data = {}
-for key in xinj.table[0].__slots__:
-    # Some XML files can have empty columns which are read as None in python.
-    # For these cases we ignore the columns so they do not appear in the output
-    # HDF file. (Such XML files cannot currently be read by LALSuite C code.)
-    if getattr(xinj.table[0], key) is not None:
+if injclass is None:
+    # Assume this is a PyCBC format
+    injclass = InjectionSet(args.injection_file)
+    data = {}
+    for key in xinj.table[0].__slots__:
         data[str(key)] = numpy.array([getattr(t, key) for t in xinj.table])
-
-for k in ['simulation_id', 'process_id']:
-    a = data.pop(k)
-
-data['approximant'], data['phase_order'] = \
-        numpy.array([legacy_approximant_name(wf) for wf in data['waveform']]).T
-data['tc'] = data['geocent_end_time'] + 1e-9 * data['geocent_end_time_ns']
-data['dec'] = data['latitude']
-data['ra'] = data['longitude']
+else:
+    data = injclass.pack_data_into_pycbc_format_input()
 
 samples = FieldArray.from_kwargs(**data)
 CBCHDFInjectionSet.write(args.output_file, samples)
