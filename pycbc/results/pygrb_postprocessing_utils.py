@@ -32,7 +32,7 @@ import numpy
 import h5py
 from scipy import stats
 from pycbc.detector import Detector
-from pycbc.workflow.core import FileList
+from pycbc.workflow.core import FileList, resolve_url_to_file
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo import segments
@@ -42,7 +42,7 @@ try:
     # Handle MultiInspiral xml-tables with glue,
     # as ligo.lw no longer supports them
     from glue.ligolw import lsctables as glsctables
-    #from glue.ligolw.ilwd import ilwdchar as gilwdchar
+    # from glue.ligolw.ilwd import ilwdchar as gilwdchar
     from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
@@ -161,13 +161,13 @@ def pygrb_add_bestnr_opts(parser):
                         "increase above the threshold")
 
 
-#def pygrb_add_missed_injs_input_opt(parser):
-#    """Add to parser object the arguments for missed injection file."""
-#    if parser is None:
-#        parser = argparse.ArgumentParser()
-#    parser.add_argument("-m", "--missed-file", action="store",
-#                        default=None,
-#                        help="Location of the missed injections file.")
+# def pygrb_add_missed_injs_input_opt(parser):
+#     """Add to parser object the arguments for missed injection file."""
+#     if parser is None:
+#         parser = argparse.ArgumentParser()
+#     parser.add_argument("-m", "--missed-file", action="store",
+#                         default=None,
+#                         help="Location of the missed injections file.")
 
 
 # =============================================================================
@@ -184,16 +184,16 @@ def build_veto_filelist(workflow):
     return veto_files
 
 
-#def build_segment_filelist(workflow):
-#    """Construct a FileList instance containing all segments txt files"""
-#
-#    seg_dir = workflow.cp.get('workflow', 'segment-dir')
-#    file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
-#    seg_files = [os.path.join(seg_dir, file_name) for file_name in file_names]
-#    seg_files = [resolve_url_to_file(sf) for sf in seg_files]
-#    seg_files = FileList(seg_files)
-#
-#    return seg_files
+# def build_segment_filelist(workflow):
+#     """Construct a FileList instance containing all segments txt files"""
+# 
+#     seg_dir = workflow.cp.get('workflow', 'segment-dir')
+#     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
+#     seg_files = [os.path.join(seg_dir, file_name) for file_name in file_names]
+#     seg_files = [resolve_url_to_file(sf) for sf in seg_files]
+#     seg_files = FileList(seg_files)
+# 
+#     return seg_files
 
 
 # =============================================================================
@@ -601,13 +601,13 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
 # =============================================================================
 # Find GRB trigger time
 # =============================================================================
-#def get_grb_time(seg_files, on_after):
-#    """Determine GRB trigger time"""
-#
-#    segs = read_seg_files(seg_files)
-#    grb_time = segs['on'][1] - on_after
-#
-#    return grb_time
+# def get_grb_time(seg_files, on_after):
+#     """Determine GRB trigger time"""
+# 
+#     segs = read_seg_files(seg_files)
+#     grb_time = segs['on'][1] - on_after
+# 
+#     return grb_time
 
 
 # =============================================================================
