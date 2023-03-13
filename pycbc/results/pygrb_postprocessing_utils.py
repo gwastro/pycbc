@@ -171,32 +171,6 @@ def pygrb_add_bestnr_opts(parser):
 
 
 # =============================================================================
-# Functions to create appropriate FileLists of veto/segment files
-# =============================================================================
-def build_veto_filelist(workflow):
-    """Construct a FileList instance containing all veto xml files"""
-
-    veto_dir = workflow.cp.get('workflow', 'veto-directory')
-    veto_files = glob.glob(veto_dir + '/*CAT*.xml')
-    veto_files = [resolve_url_to_file(vf) for vf in veto_files]
-    veto_files = FileList(veto_files)
-
-    return veto_files
-
-
-# def build_segment_filelist(workflow):
-#     """Construct a FileList instance containing all segments txt files"""
-#
-#     seg_dir = workflow.cp.get('workflow', 'segment-dir')
-#     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
-#     seg_files = [os.path.join(seg_dir, fn) for fn in file_names]
-#     seg_files = [resolve_url_to_file(sf) for sf in seg_files]
-#     seg_files = FileList(seg_files)
-#
-#     return seg_files
-
-
-# =============================================================================
 # Wrapper to read segments files [never invoked outside this file]
 # =============================================================================
 def read_seg_files(seg_files):

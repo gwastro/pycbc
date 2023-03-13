@@ -43,7 +43,6 @@ from pycbc.workflow.core import \
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable
-from pycbc.results.pygrb_postprocessing_utils import build_veto_filelist
 
 
 # Never invoked outside this file
@@ -591,6 +590,29 @@ def opt_to_file(workflow, section, option):
     path = workflow.cp.get(section, option)
 
     return resolve_url_to_file(path)
+
+
+def build_veto_filelist(workflow):
+    """Construct a FileList instance containing all veto xml files"""
+
+    veto_dir = workflow.cp.get('workflow', 'veto-directory')
+    veto_files = glob.glob(veto_dir + '/*CAT*.xml')
+    veto_files = [resolve_url_to_file(vf) for vf in veto_files]
+    veto_files = FileList(veto_files)
+
+    return veto_files
+
+
+def build_segment_filelist(workflow):
+    """Construct a FileList instance containing all segments txt files"""
+
+    seg_dir = workflow.cp.get('workflow', 'segment-dir')
+    file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
+    seg_files = [os.path.join(seg_dir, fn) for fn in file_names]
+    seg_files = [resolve_url_to_file(sf) for sf in seg_files]
+    seg_files = FileList(seg_files)
+
+    return seg_files
 
 
 def make_pygrb_plot(workflow, exec_name, out_dir,
