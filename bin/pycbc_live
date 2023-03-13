@@ -333,7 +333,9 @@ class LiveEventManager(object):
         cmd += '--approximant {} '.format(apr)
         cmd += '--gracedb-server {} '.format(self.gracedb_server)
         cmd += '--gracedb-search {} '.format(self.gracedb_search)
-        # FIXME should we also pass the GraceDB labels here?
+        # Don't pass labels to the SNR optimization job:
+        # currently labels are only required for Early Warning
+        # analysis, which does not use SNR opt
         if not self.gracedb_testing:
             cmd += '--production '
         cmd += '--verbose '
