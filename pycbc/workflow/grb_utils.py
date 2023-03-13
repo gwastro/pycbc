@@ -43,7 +43,7 @@ from pycbc.workflow.core import \
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable
-from pycbc.results.pygrb_postprocessing_utils import build_veto_filelist 
+from pycbc.results.pygrb_postprocessing_utils import build_veto_filelist
 
 
 # Never invoked outside this file
@@ -110,24 +110,24 @@ def set_grb_start_end(cp, start, end):
 #                       summary_files=False):
 #     """
 #     Retrieve files needed to run coh_PTF jobs within a PyGRB workflow
-# 
+#
 #     Parameters
 #     ----------
 #     cp : pycbc.workflow.configuration.WorkflowConfigParser object
 #     The parsed configuration options of a pycbc.workflow.core.Workflow.
-# 
+#
 #     ifos : str
 #     String containing the analysis interferometer IDs.
-# 
+#
 #     run_dir : str
 #     The run directory, destination for retrieved files.
-# 
+#
 #     bank_veto : Boolean
 #     If true, will retrieve the bank_veto_bank.xml file.
-# 
+#
 #     summary_files : Boolean
 #     If true, will retrieve the summary page style files.
-# 
+#
 #     Returns
 #     -------
 #     file_list : pycbc.workflow.FileList object
@@ -141,7 +141,7 @@ def set_grb_start_end(cp, start, end):
 #         sci_seg = segments.segment(int(cp.get("workflow", "start-time")),
 #                                    int(cp.get("workflow", "end-time")))
 #         file_list = FileList([])
-# 
+#
 #         # Bank veto
 #         if bank_veto:
 #             shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
@@ -152,7 +152,7 @@ def set_grb_start_end(cp, start, end):
 #             # FIXME: If this is an input file, use the from_path classmethod
 #             bank_veto.add_pfn(bank_veto.cache_entry.path, site="local")
 #             file_list.extend(FileList([bank_veto]))
-# 
+#
 #         if summary_files:
 #             # summary.js file
 #             shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
@@ -163,7 +163,7 @@ def set_grb_start_end(cp, start, end):
 #                               file_url=summary_js_url)
 #             summary_js.add_pfn(summary_js.cache_entry.path, site="local")
 #             file_list.extend(FileList([summary_js]))
-# 
+#
 #             # summary.css file
 #             shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
 #                         "coh_PTF_html_summary.css" % lalDir, "%s" % run_dir)
@@ -173,7 +173,7 @@ def set_grb_start_end(cp, start, end):
 #                                file_url=summary_css_url)
 #             summary_css.add_pfn(summary_css.cache_entry.path, site="local")
 #             file_list.extend(FileList([summary_css]))
-# 
+#
 #         return file_list
 
 
@@ -593,8 +593,9 @@ def opt_to_file(workflow, section, option):
     return resolve_url_to_file(path)
 
 
-def make_pygrb_plot(workflow, exec_name, out_dir,  # exclude=None, require=None,
+def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None, tags=None):
+                    # exclude=None, require=None,
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -951,7 +952,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
             workflow.add_explicit_dependancy(dep, node)
 
     # Execute this in a sub-workflow
-    job = SubWorkflow(name, is_planned=False)  #, _id='results')
+    job = SubWorkflow(name, is_planned=False)  # , _id='results')
     job.set_subworkflow_properties(map_file,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)

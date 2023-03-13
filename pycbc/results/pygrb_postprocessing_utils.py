@@ -186,13 +186,13 @@ def build_veto_filelist(workflow):
 
 # def build_segment_filelist(workflow):
 #     """Construct a FileList instance containing all segments txt files"""
-# 
+#
 #     seg_dir = workflow.cp.get('workflow', 'segment-dir')
 #     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
-#     seg_files = [os.path.join(seg_dir, file_name) for file_name in file_names]
+#     seg_files = [os.path.join(seg_dir, fn) for fn in file_names]
 #     seg_files = [resolve_url_to_file(sf) for sf in seg_files]
 #     seg_files = FileList(seg_files)
-# 
+#
 #     return seg_files
 
 
@@ -603,10 +603,10 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
 # =============================================================================
 # def get_grb_time(seg_files, on_after):
 #     """Determine GRB trigger time"""
-# 
+#
 #     segs = read_seg_files(seg_files)
 #     grb_time = segs['on'][1] - on_after
-# 
+#
 #     return grb_time
 
 
@@ -849,60 +849,60 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
     return inj_dist_mc
 
 
-#def read_multiinspiral_timeslides_from_files(file_list):
-#    """
-#    Read time-slid multiInspiral tables from a list of files
-#    """
+# def read_multiinspiral_timeslides_from_files(file_list):
+#     """
+#     Read time-slid multiInspiral tables from a list of files
+#     """
 #
-#    multis = None
-#    time_slides = []
+#     multis = None
+#     time_slides = []
 #
-#    contenthandler = glsctables.use_in(LIGOLWContentHandler)
-#    for this_file in file_list:
-#        doc = utils.load_filename(this_file, compress='auto',
-#                                  contenthandler=contenthandler)
+#     contenthandler = glsctables.use_in(LIGOLWContentHandler)
+#     for this_file in file_list:
+#         doc = utils.load_filename(this_file, compress='auto',
+#                                   contenthandler=contenthandler)
 #
-#        # Extract the time slide table
-#        time_slide_table = \
-#            Table.get_table(doc, lsctables.TimeSlideTable.tableName)
-#        slide_mapping = {}
-#        curr_slides = {}
-#        for slide in time_slide_table:
-#            curr_id = int(slide.time_slide_id)
-#            if curr_id not in curr_slides:
-#                curr_slides[curr_id] = {}
-#                curr_slides[curr_id][slide.instrument] = slide.offset
-#            elif slide.instrument not in curr_slides[curr_id]:
-#                curr_slides[curr_id][slide.instrument] = slide.offset
+#         # Extract the time slide table
+#         time_slide_table = \
+#             Table.get_table(doc, lsctables.TimeSlideTable.tableName)
+#         slide_mapping = {}
+#         curr_slides = {}
+#         for slide in time_slide_table:
+#             curr_id = int(slide.time_slide_id)
+#             if curr_id not in curr_slides:
+#                 curr_slides[curr_id] = {}
+#                 curr_slides[curr_id][slide.instrument] = slide.offset
+#             elif slide.instrument not in curr_slides[curr_id]:
+#                 curr_slides[curr_id][slide.instrument] = slide.offset
 #
-#        for slide_id, offset_dict in curr_slides.items():
-#            try:
-#                # Is the slide already in the list and where?
-#                offset_index = time_slides.index(offset_dict)
-#                slide_mapping[slide_id] = offset_index
-#            except ValueError:
-#                # If not then add it
-#                time_slides.append(offset_dict)
-#                slide_mapping[slide_id] = len(time_slides) - 1
+#         for slide_id, offset_dict in curr_slides.items():
+#             try:
+#                 # Is the slide already in the list and where?
+#                 offset_index = time_slides.index(offset_dict)
+#                 slide_mapping[slide_id] = offset_index
+#             except ValueError:
+#                 # If not then add it
+#                 time_slides.append(offset_dict)
+#                 slide_mapping[slide_id] = len(time_slides) - 1
 #
-#        # Extract the multi inspiral table
-#        try:
-#            multi_inspiral_table = Table.get_table(doc, 'multi_inspiral')
-#            # Remap the time slide IDs
-#            for multi in multi_inspiral_table:
-#                new_id = slide_mapping[int(multi.time_slide_id)]
-#                multi.time_slide_id = gilwdchar(
-#                                      f"time_slide:time_slide_id:{new_id}")
-#            if multis:
-#                multis.extend(multi_inspiral_table)
-#            else:
-#                multis = multi_inspiral_table
-#        except Exception as exc:
-#            err_msg = "Unable to read a time-slid multiInspiral table "
-#            err_msg += f"from {this_file}."
-#            raise RuntimeError(err_msg) from exc
+#         # Extract the multi inspiral table
+#         try:
+#             multi_inspiral_table = Table.get_table(doc, 'multi_inspiral')
+#             # Remap the time slide IDs
+#             for multi in multi_inspiral_table:
+#                 new_id = slide_mapping[int(multi.time_slide_id)]
+#                 multi.time_slide_id = gilwdchar(
+#                                       f"time_slide:time_slide_id:{new_id}")
+#             if multis:
+#                 multis.extend(multi_inspiral_table)
+#             else:
+#                 multis = multi_inspiral_table
+#         except Exception as exc:
+#             err_msg = "Unable to read a time-slid multiInspiral table "
+#             err_msg += f"from {this_file}."
+#             raise RuntimeError(err_msg) from exc
 #
-#    return multis, time_slides
+#     return multis, time_slides
 
 
 # =============================================================================

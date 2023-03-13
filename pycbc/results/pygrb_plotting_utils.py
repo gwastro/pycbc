@@ -97,7 +97,8 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
     for sub, ifo in zip(subs, ifos):
         for seg in science_segs[ifo]:
             sub.add_patch(Rectangle((seg[0], 0.1), abs(seg), 0.8,
-                                    facecolor=ifo_colors[ifo], edgecolor='none'))
+                                    facecolor=ifo_colors[ifo],
+                                    edgecolor='none'))
         if coherent_seg:
             if len(science_segs[ifo]) > 0 and \
                     coherent_seg in science_segs[ifo]:
