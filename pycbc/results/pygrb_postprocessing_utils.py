@@ -360,7 +360,7 @@ def load_triggers(input_file, vetoes):
 # * Function to calculate the antenna distance factor
 # =============================================================================
 # The call, e.g., Detector("H1", reference_time=None), will not always work in
-# Python 2.7 as is needs an old version of astropy which cannot download
+# Python 2.7 as it needs an old version of astropy which cannot download
 # recent enough IERS tables. TEMPORARILY use the default time (GW150914) as
 # reference, thus approximating the sidereal time.
 # [Never invoked outside this file]

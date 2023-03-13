@@ -230,7 +230,7 @@ ifo = ifo_list[0]
 ifos = ''.join(ifo_list)
 wflow.ifos = ifos
 
-# Is this an IPN GRB?
+# Config file consistency check for IPN GRBs
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
         and wflow.cp.has_option("workflow-injections", "ipn-sim-points"):
     wflow.cp.set("injections", "ipn-gps-time",
@@ -248,11 +248,31 @@ else:
     IPN = False
 
 # Get bank_veto_bank.xml if running bank veto
-# TODO: Finalize config file location of bank veto bank
 if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
     bank_veto_file_path = wflow.cp.get('workflow-inspiral', 'bank-veto-bank-file')
     bank_veto_file = _workflow.FileList([_workflow.resolve_url_to_file(bank_veto_file_path)])
     datafind_veto_files.extend(bank_veto_file)
+# TODO: Finalize location of bank veto bank and make the above automatic
+# Below is the snippet of old grb_utils.py code that used to handle this
+# if os.getenv("LAL_SRC") is None:
+#     raise ValueError("The environment variable LAL_SRC must be set to a "
+#                      "location containing the file lalsuite.git")
+# else:
+#     lalDir = os.getenv("LAL_SRC")
+#     sci_seg = segments.segment(int(cp.get("workflow", "start-time")),
+#                                int(cp.get("workflow", "end-time")))
+#     file_list = FileList([])
+#
+#     # Bank veto
+#     shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
+#                 "bank_veto_bank.xml" % lalDir, "%s" % run_dir)
+#     bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
+#     bank_veto = File(ifos, "bank_veto_bank", sci_seg,
+#                      file_url=bank_veto_url)
+#     # FIXME: If this is an input file, use the from_path classmethod
+#     bank_veto.add_pfn(bank_veto.cache_entry.path, site="local")
+#     file_list.extend(FileList([bank_veto]))
+
 
 if IPN:
     search_pts_file = _workflow.get_ipn_sky_files(wflow,
@@ -261,7 +281,7 @@ if IPN:
     datafind_veto_files.extend(_workflow.FileList([search_pts_file]))
 
 # Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
-# TODO: how will this work in O4?
+# TODO: how will this work with the new code
 if wflow.cp.has_option("inspiral", "do-exttrig"):
     ext_file = _workflow.make_exttrig_file(wflow.cp, ifos, sciSegs[ifo][0],
                                            baseDir)
@@ -389,9 +409,7 @@ all_files.extend(_workflow.FileList([inspiral_cache]))
 inspiral_cache_entries = inspiral_files.convert_to_lal_cache()
 inspiral_cache_entries.tofile(open(inspiral_cache.storage_path, "w"))
 
-# LONG TIME SLIDES
-# TODO: Eventually remove this once new time slides are finished
-# Long slides will likely not be done in the future
+# LONG TIME SLIDES: unlikely to be done in the (near) future
 long_slides = True if wflow.cp.has_option("workflow", "do-long-slides") else False
 if long_slides:
     tsDir = os.path.join(currDir, "timeslides")
@@ -438,7 +456,6 @@ if post_proc_method == "PYGRB_OFFLINE":
                                                                pp_files[-2])
         logging.info('Leaving results module')
 
-# TODO: Remove all coh_ptf post-processing
 #if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
 #                        "COH_PTF_ONLINE"]:
 #    from pylal import pygrb_cohptf_pp
@@ -459,16 +476,10 @@ if post_proc_method == "PYGRB_OFFLINE":
 #            injection_caches=inj_caches, config_file=cp_file, web_dir=html_dir,
 #            segments_plot=segs_plot, ifos=ifos, inj_tags=inj_tags)
 #
-#    # Retrieve style files for webpage
-#    summary_files = _workflow.get_coh_PTF_files(wflow.cp, ifos, ppDir,
-#                                                summary_files=True)
-#
 #    pp_files.extend(_workflow.FileList([cp_file]))
-#    pp_files.extend(summary_files)
 
 all_files.extend(pp_files)
 all_files.extend(results_files)
-#all_files.extend(extra_results_files)
 
 # COMPILE WORKFLOW AND WRITE DAX
 wflow.save()
