@@ -101,7 +101,6 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
-ppu.pygrb_add_missed_injs_input_opt(parser)
 ppu.pygrb_add_injmc_opts(parser)
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
@@ -109,13 +108,7 @@ opts = parser.parse_args()
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
-if (opts.found_file is None) and (opts.missed_file is None):
-    do_injections = False
-elif (opts.found_file) and opts.missed_file:
-    do_injections = True
-else:
-    err_msg = "Must provide both found and missed file if running injections."
-    parser.error(err_msg)
+do_injections = True if opts.found_missed_file is not None
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
@@ -124,8 +117,7 @@ if not opts.newsnr_threshold:
 outdir = os.path.split(os.path.abspath(opts.background_output_file))[0]
 trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
-found_file = opts.found_file
-missed_file = opts.missed_file
+found_missed_file = opts.found_missed_file
 inj_set_name = os.path.split(os.path.abspath(missed_file))[1].split('INSPINJ')[1].split('_')[1]
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh

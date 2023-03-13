@@ -75,8 +75,10 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         if null_stat_type == 'null':
             data[null_stat_type] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
         elif null_stat_type == 'single':
-            att = opts.ifo[0].lower()
-            data[null_stat_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:]
+            key = opts.ifo + '/snr_' + opts.ifo.lower()
+            if opts.ifo.lower() != 'h1':
+                key = key[:-1]
+            data[null_stat_type] = trigs_or_injs[key][:]
         elif null_stat_type == 'coincident':
             data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs, ifos)
 
@@ -129,6 +131,8 @@ parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")
+parser.add_argument("--found-missed-file",
+                    help="The hdf injection results file", required=False)
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
 parser.add_argument("-y", "--y-variable", default=None,
@@ -141,7 +145,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_file = os.path.abspath(opts.found_file) if opts.found_file else None
+found_missed_file = os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
 zoom_in = opts.zoom_in
 null_stat_type = opts.y_variable
 
@@ -152,7 +156,7 @@ if opts.plot_title is None:
     opts.plot_title = y_labels[null_stat_type] + " vs Coherent SNR"
 if opts.plot_caption is None:
     opts.plot_caption = ("Blue crosses: background triggers.  ")
-    if found_file:
+    if found_missed_file:
         opts.plot_caption = opts.plot_caption +\
                             ("Red crosses: injections triggers.  ")
 
@@ -181,7 +185,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_missed_file, vetoes, ifos, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")
@@ -194,7 +198,7 @@ x_max = None
 # Coincident SNR plot case: we want a coinc=coh diagonal line on the plot
 if null_stat_type == 'coincident':
     cont_colors = ['g-']
-    x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'], found_file)
+    x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'], found_missed_file)
     snr_vals = [4, x_max]
     null_stat_conts = [[4, x_max]]
 # Overwhitened null stat (null SNR) and null stat  cases: newSNR contours

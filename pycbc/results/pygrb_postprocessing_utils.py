@@ -32,18 +32,17 @@ import numpy
 import h5py
 from scipy import stats
 from pycbc.detector import Detector
-import pycbc.workflow as _workflow
-from pycbc.workflow.core import resolve_url_to_file
+from pycbc.workflow.core import FileList
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo import segments
     from ligo.lw import utils, lsctables
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
-    # Handle MultiInspiral xml-talbes with glue,
+    # Handle MultiInspiral xml-tables with glue,
     # as ligo.lw no longer supports them
     from glue.ligolw import lsctables as glsctables
-    from glue.ligolw.ilwd import ilwdchar as gilwdchar
+    #from glue.ligolw.ilwd import ilwdchar as gilwdchar
     from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
@@ -79,9 +78,6 @@ def pygrb_initialize_plot_parser(description=None, version=None):
                         help="Produce a log-log plot")
     parser.add_argument("-i", "--ifo", default=None, help="IFO used for IFO " +
                         "specific plots")
-    parser.add_argument("-f", "--found-file", action="store",
-                        default=None,
-                        help="Location of the found injections file.")
     parser.add_argument("-a", "--seg-files", nargs="+", action="store",
                         default=None, help="The location of the buffer, " +
                         "onsource and offsource segment files.")
@@ -138,9 +134,9 @@ def pygrb_add_bestnr_opts(parser):
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument("-Q", "--chisq-index", action="store", type=float,
-                        default=4.0, help="chisq_index for newSNR calculation")
+                        default=6.0, help="chisq_index for newSNR calculation")
     parser.add_argument("-N", "--chisq-nhigh", action="store", type=float,
-                        default=3.0, help="nhigh for newSNR calculation")
+                        default=2.0, help="nhigh for newSNR calculation")
     parser.add_argument("-B", "--sngl-snr-threshold", action="store",
                         type=float, default=4.0, help="Single detector SNR " +
                         "threshold, the two most sensitive detectors " +
@@ -149,12 +145,12 @@ def pygrb_add_bestnr_opts(parser):
                         default=6.0, help="SNR threshold for recording " +
                         "triggers.")
     parser.add_argument("-c", "--newsnr-threshold", action="store", type=float,
-                        default=None, help="NewSNR threshold for " +
+                        default=6.0, help="NewSNR threshold for " +
                         "calculating the chisq of triggers (based on value " +
                         "of auto and bank chisq  values. By default will " +
                         "take the same value as snr-threshold.")
     parser.add_argument("-A", "--null-snr-threshold", action="store",
-                        default="4.25,6",
+                        default="3.5,5.25",
                         help="Comma separated lower,higher null SNR " +
                         "threshold for null SNR cut")
     parser.add_argument("-T", "--null-grad-thresh", action="store", type=float,
@@ -165,13 +161,13 @@ def pygrb_add_bestnr_opts(parser):
                         "increase above the threshold")
 
 
-def pygrb_add_missed_injs_input_opt(parser):
-    """Add to parser object the arguments for missed injection file."""
-    if parser is None:
-        parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--missed-file", action="store",
-                        default=None,
-                        help="Location of the missed injections file.")
+#def pygrb_add_missed_injs_input_opt(parser):
+#    """Add to parser object the arguments for missed injection file."""
+#    if parser is None:
+#        parser = argparse.ArgumentParser()
+#    parser.add_argument("-m", "--missed-file", action="store",
+#                        default=None,
+#                        help="Location of the missed injections file.")
 
 
 # =============================================================================
@@ -183,25 +179,25 @@ def build_veto_filelist(workflow):
     veto_dir = workflow.cp.get('workflow', 'veto-directory')
     veto_files = glob.glob(veto_dir + '/*CAT*.xml')
     veto_files = [resolve_url_to_file(vf) for vf in veto_files]
-    veto_files = _workflow.FileList(veto_files)
+    veto_files = FileList(veto_files)
 
     return veto_files
 
 
-def build_segment_filelist(workflow):
-    """Construct a FileList instance containing all segments txt files"""
-
-    seg_dir = workflow.cp.get('workflow', 'segment-dir')
-    file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
-    seg_files = [os.path.join(seg_dir, file_name) for file_name in file_names]
-    seg_files = [resolve_url_to_file(sf) for sf in seg_files]
-    seg_files = _workflow.FileList(seg_files)
-
-    return seg_files
+#def build_segment_filelist(workflow):
+#    """Construct a FileList instance containing all segments txt files"""
+#
+#    seg_dir = workflow.cp.get('workflow', 'segment-dir')
+#    file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
+#    seg_files = [os.path.join(seg_dir, file_name) for file_name in file_names]
+#    seg_files = [resolve_url_to_file(sf) for sf in seg_files]
+#    seg_files = FileList(seg_files)
+#
+#    return seg_files
 
 
 # =============================================================================
-# Wrapper to read segments files
+# Wrapper to read segments files [never invoked outside this file]
 # =============================================================================
 def read_seg_files(seg_files):
     """Read segments txt files"""
@@ -239,7 +235,7 @@ def load_xml_table(file_name, table_name):
 
 
 # ==============================================================================
-# Function to load segments from an xml file
+# Function to load segments from an xml file [never invoked outside this file]
 # ==============================================================================
 def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
     """Read a ligo.segments.segmentlist from the file object file containing an
@@ -296,7 +292,7 @@ def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
 
 
 # =============================================================================
-# Function to extract vetoes
+# Function to extract vetoes [never invoked outside this file]
 # =============================================================================
 def extract_vetoes(all_veto_files, ifos, veto_cat):
     """Extracts vetoes from veto filelist"""
@@ -338,6 +334,7 @@ def extract_vetoes(all_veto_files, ifos, veto_cat):
 
 # =============================================================================
 # Function to get the ID numbers from a LIGO-LW table
+# [never invoked outside this file]
 # =============================================================================
 def get_id_numbers(ligolw_table, column):
     """Grab the IDs of a LIGO-LW table"""
@@ -349,6 +346,7 @@ def get_id_numbers(ligolw_table, column):
 
 # =============================================================================
 # Function to build a dictionary (indexed by ifo) of time-slid vetoes
+# [never invoked outside this file]
 # =============================================================================
 def slide_vetoes(vetoes, slide_dict_or_list, slide_id):
     """Build a dictionary (indexed by ifo) of time-slid vetoes"""
@@ -393,6 +391,7 @@ def load_triggers(input_file, vetoes):
 # Python 2.7 as is needs an old version of astropy which cannot download
 # recent enough IERS tables. TEMPORARILY use the default time (GW150914) as
 # reference, thus approximating the sidereal time.
+# [Never invoked outside this file]
 def get_antenna_factors(antenna, ra, dec, geocent_time):
     """Returns the antenna responses F+ and Fx of an IFO (passed as pycbc
     Detector type) at a given sky location and time."""
@@ -402,6 +401,7 @@ def get_antenna_factors(antenna, ra, dec, geocent_time):
     return f_plus, f_cross
 
 
+# [Never invoked outside this file]
 def get_antenna_single_response(antenna, ra, dec, geocent_time):
     """Returns the antenna response F+^2 + Fx^2 of an IFO (passed as pycbc
     Detector type) at a given sky location and time."""
@@ -601,13 +601,13 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
 # =============================================================================
 # Find GRB trigger time
 # =============================================================================
-def get_grb_time(seg_files):
-    """Determine GRB trigger time"""
-
-    segs = read_seg_files(seg_files)
-    grb_time = segs['on'][1] - 1
-
-    return grb_time
+#def get_grb_time(seg_files, on_after):
+#    """Determine GRB trigger time"""
+#
+#    segs = read_seg_files(seg_files)
+#    grb_time = segs['on'][1] - on_after
+#
+#    return grb_time
 
 
 # =============================================================================
@@ -849,60 +849,60 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
     return inj_dist_mc
 
 
-def read_multiinspiral_timeslides_from_files(file_list):
-    """
-    Read time-slid multiInspiral tables from a list of files
-    """
-
-    multis = None
-    time_slides = []
-
-    contenthandler = glsctables.use_in(LIGOLWContentHandler)
-    for this_file in file_list:
-        doc = utils.load_filename(this_file, compress='auto',
-                                  contenthandler=contenthandler)
-
-        # Extract the time slide table
-        time_slide_table = \
-            Table.get_table(doc, lsctables.TimeSlideTable.tableName)
-        slide_mapping = {}
-        curr_slides = {}
-        for slide in time_slide_table:
-            curr_id = int(slide.time_slide_id)
-            if curr_id not in curr_slides:
-                curr_slides[curr_id] = {}
-                curr_slides[curr_id][slide.instrument] = slide.offset
-            elif slide.instrument not in curr_slides[curr_id]:
-                curr_slides[curr_id][slide.instrument] = slide.offset
-
-        for slide_id, offset_dict in curr_slides.items():
-            try:
-                # Is the slide already in the list and where?
-                offset_index = time_slides.index(offset_dict)
-                slide_mapping[slide_id] = offset_index
-            except ValueError:
-                # If not then add it
-                time_slides.append(offset_dict)
-                slide_mapping[slide_id] = len(time_slides) - 1
-
-        # Extract the multi inspiral table
-        try:
-            multi_inspiral_table = Table.get_table(doc, 'multi_inspiral')
-            # Remap the time slide IDs
-            for multi in multi_inspiral_table:
-                new_id = slide_mapping[int(multi.time_slide_id)]
-                multi.time_slide_id = gilwdchar(
-                                      f"time_slide:time_slide_id:{new_id}")
-            if multis:
-                multis.extend(multi_inspiral_table)
-            else:
-                multis = multi_inspiral_table
-        except Exception as exc:
-            err_msg = "Unable to read a time-slid multiInspiral table "
-            err_msg += f"from {this_file}."
-            raise RuntimeError(err_msg) from exc
-
-    return multis, time_slides
+#def read_multiinspiral_timeslides_from_files(file_list):
+#    """
+#    Read time-slid multiInspiral tables from a list of files
+#    """
+#
+#    multis = None
+#    time_slides = []
+#
+#    contenthandler = glsctables.use_in(LIGOLWContentHandler)
+#    for this_file in file_list:
+#        doc = utils.load_filename(this_file, compress='auto',
+#                                  contenthandler=contenthandler)
+#
+#        # Extract the time slide table
+#        time_slide_table = \
+#            Table.get_table(doc, lsctables.TimeSlideTable.tableName)
+#        slide_mapping = {}
+#        curr_slides = {}
+#        for slide in time_slide_table:
+#            curr_id = int(slide.time_slide_id)
+#            if curr_id not in curr_slides:
+#                curr_slides[curr_id] = {}
+#                curr_slides[curr_id][slide.instrument] = slide.offset
+#            elif slide.instrument not in curr_slides[curr_id]:
+#                curr_slides[curr_id][slide.instrument] = slide.offset
+#
+#        for slide_id, offset_dict in curr_slides.items():
+#            try:
+#                # Is the slide already in the list and where?
+#                offset_index = time_slides.index(offset_dict)
+#                slide_mapping[slide_id] = offset_index
+#            except ValueError:
+#                # If not then add it
+#                time_slides.append(offset_dict)
+#                slide_mapping[slide_id] = len(time_slides) - 1
+#
+#        # Extract the multi inspiral table
+#        try:
+#            multi_inspiral_table = Table.get_table(doc, 'multi_inspiral')
+#            # Remap the time slide IDs
+#            for multi in multi_inspiral_table:
+#                new_id = slide_mapping[int(multi.time_slide_id)]
+#                multi.time_slide_id = gilwdchar(
+#                                      f"time_slide:time_slide_id:{new_id}")
+#            if multis:
+#                multis.extend(multi_inspiral_table)
+#            else:
+#                multis = multi_inspiral_table
+#        except Exception as exc:
+#            err_msg = "Unable to read a time-slid multiInspiral table "
+#            err_msg += f"from {this_file}."
+#            raise RuntimeError(err_msg) from exc
+#
+#    return multis, time_slides
 
 
 # =============================================================================
@@ -917,10 +917,12 @@ def get_coinc_snr(trigs_or_injs, ifos):
     single_snr_sq = dict((ifo, None) for ifo in ifos)
     snr_sum_square = numpy.zeros(num_trigs_or_injs)
     for ifo in ifos:
-        att = ifo[0].lower()
+        key = ifo + '/snr_' + ifo.lower()
+        if ifo.lower() != 'h1':
+            key = key[:-1]
         # Square the individual SNRs
         single_snr_sq[ifo] = numpy.square(
-            trigs_or_injs['%s/snr_%s' % (ifo, att)][:])
+            trigs_or_injs[key][:])
         # Add them
         snr_sum_square = numpy.add(snr_sum_square, single_snr_sq[ifo])
     # Obtain the square root

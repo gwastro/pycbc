@@ -37,11 +37,15 @@ from scipy.stats import rayleigh
 from ligo import segments
 from ligo.lw import ligolw, lsctables, utils
 from gwdatafind.utils import filename_metadata
+from pycbc import makedir
 from pycbc.workflow.core import \
     File, FileList, resolve_url_to_file, Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
+from pycbc.workflow.pegasus_workflow import SubWorkflow
+from pycbc.workflow.plotting import PlotExecutable
 
 
+# Never invoked outside this file
 def select_grb_pp_class(wflow, curr_exe):
     """
     This function returns the class for PyGRB post-processing scripts.
@@ -101,74 +105,74 @@ def set_grb_start_end(cp, start, end):
     return cp
 
 
-def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
-    """
-    Retrieve files needed to run coh_PTF jobs within a PyGRB workflow
-
-    Parameters
-    ----------
-    cp : pycbc.workflow.configuration.WorkflowConfigParser object
-    The parsed configuration options of a pycbc.workflow.core.Workflow.
-
-    ifos : str
-    String containing the analysis interferometer IDs.
-
-    run_dir : str
-    The run directory, destination for retrieved files.
-
-    bank_veto : Boolean
-    If true, will retrieve the bank_veto_bank.xml file.
-
-    summary_files : Boolean
-    If true, will retrieve the summary page style files.
-
-    Returns
-    -------
-    file_list : pycbc.workflow.FileList object
-    A FileList containing the retrieved files.
-    """
-    if os.getenv("LAL_SRC") is None:
-        raise ValueError("The environment variable LAL_SRC must be set to a "
-                         "location containing the file lalsuite.git")
-    else:
-        lalDir = os.getenv("LAL_SRC")
-        sci_seg = segments.segment(int(cp.get("workflow", "start-time")),
-                                   int(cp.get("workflow", "end-time")))
-        file_list = FileList([])
-
-        # Bank veto
-        if bank_veto:
-            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
-                        "bank_veto_bank.xml" % lalDir, "%s" % run_dir)
-            bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
-            bank_veto = File(ifos, "bank_veto_bank", sci_seg,
-                             file_url=bank_veto_url)
-            # FIXME: Is this an input file? If so use the from_path classmethod
-            bank_veto.add_pfn(bank_veto.cache_entry.path, site="local")
-            file_list.extend(FileList([bank_veto]))
-
-        if summary_files:
-            # summary.js file
-            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
-                        "coh_PTF_html_summary.js" % lalDir, "%s" % run_dir)
-            summary_js_url = "file://localhost%s/coh_PTF_html_summary.js" \
-                             % run_dir
-            summary_js = File(ifos, "coh_PTF_html_summary_js", sci_seg,
-                              file_url=summary_js_url)
-            summary_js.add_pfn(summary_js.cache_entry.path, site="local")
-            file_list.extend(FileList([summary_js]))
-
-            # summary.css file
-            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
-                        "coh_PTF_html_summary.css" % lalDir, "%s" % run_dir)
-            summary_css_url = "file://localhost%s/coh_PTF_html_summary.css" \
-                              % run_dir
-            summary_css = File(ifos, "coh_PTF_html_summary_css", sci_seg,
-                               file_url=summary_css_url)
-            summary_css.add_pfn(summary_css.cache_entry.path, site="local")
-            file_list.extend(FileList([summary_css]))
-
-        return file_list
+#def get_coh_PTF_files(cp, ifos, run_dir, bank_veto=False, summary_files=False):
+#    """
+#    Retrieve files needed to run coh_PTF jobs within a PyGRB workflow
+#
+#    Parameters
+#    ----------
+#    cp : pycbc.workflow.configuration.WorkflowConfigParser object
+#    The parsed configuration options of a pycbc.workflow.core.Workflow.
+#
+#    ifos : str
+#    String containing the analysis interferometer IDs.
+#
+#    run_dir : str
+#    The run directory, destination for retrieved files.
+#
+#    bank_veto : Boolean
+#    If true, will retrieve the bank_veto_bank.xml file.
+#
+#    summary_files : Boolean
+#    If true, will retrieve the summary page style files.
+#
+#    Returns
+#    -------
+#    file_list : pycbc.workflow.FileList object
+#    A FileList containing the retrieved files.
+#    """
+#    if os.getenv("LAL_SRC") is None:
+#        raise ValueError("The environment variable LAL_SRC must be set to a "
+#                         "location containing the file lalsuite.git")
+#    else:
+#        lalDir = os.getenv("LAL_SRC")
+#        sci_seg = segments.segment(int(cp.get("workflow", "start-time")),
+#                                   int(cp.get("workflow", "end-time")))
+#        file_list = FileList([])
+#
+#        # Bank veto
+#        if bank_veto:
+#            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
+#                        "bank_veto_bank.xml" % lalDir, "%s" % run_dir)
+#            bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
+#            bank_veto = File(ifos, "bank_veto_bank", sci_seg,
+#                             file_url=bank_veto_url)
+#            # FIXME: Is this an input file? If so use the from_path classmethod
+#            bank_veto.add_pfn(bank_veto.cache_entry.path, site="local")
+#            file_list.extend(FileList([bank_veto]))
+#
+#        if summary_files:
+#            # summary.js file
+#            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
+#                        "coh_PTF_html_summary.js" % lalDir, "%s" % run_dir)
+#            summary_js_url = "file://localhost%s/coh_PTF_html_summary.js" \
+#                             % run_dir
+#            summary_js = File(ifos, "coh_PTF_html_summary_js", sci_seg,
+#                              file_url=summary_js_url)
+#            summary_js.add_pfn(summary_js.cache_entry.path, site="local")
+#            file_list.extend(FileList([summary_js]))
+#
+#            # summary.css file
+#            shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
+#                        "coh_PTF_html_summary.css" % lalDir, "%s" % run_dir)
+#            summary_css_url = "file://localhost%s/coh_PTF_html_summary.css" \
+#                              % run_dir
+#            summary_css = File(ifos, "coh_PTF_html_summary_css", sci_seg,
+#                               file_url=summary_css_url)
+#            summary_css.add_pfn(summary_css.cache_entry.path, site="local")
+#            file_list.extend(FileList([summary_css]))
+#
+#        return file_list
 
 
 def make_exttrig_file(cp, ifos, sci_seg, out_dir):
@@ -575,3 +579,368 @@ class PycbcGrbInjCombinerExecutable(Executable):
                         os.path.join(out_dir, out_name), tags=tags)
         node.add_output_opt('--output-file', out_file)
         return node, out_file
+
+
+# [Never invoked outside this file]
+def opt_to_file(workflow, section, option):
+    """Fetch a file given its url location via the section
+    and option in the workflow configuraiton file."""
+
+    path = workflow.cp.get(section, option)
+
+    return resolve_url_to_file(path)
+
+
+def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
+                    ifo=None, inj_file=None, trig_file=None, tags=None):
+    """Adds a node for a plot of PyGRB results to the workflow"""
+
+    tags = [] if tags is None else tags
+
+    # Initialize job node with its tags
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    extra_tags = ['GRB'+grb_name]
+    #if inj_set is not None:
+    #    extra_tags.append(inj_set) # TODO: why is inj_set repeated twice in output files?
+    if ifo:
+        extra_tags.append(ifo)
+    node = PlotExecutable(workflow.cp, exec_name, ifos=workflow.ifos,
+                          out_dir=out_dir,
+                          tags=tags+extra_tags).create_node()
+    # Pass the trigger file as an input File instance
+    #if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_coh_ifosnr',
+    #                 'pygrb_plot_null_stats', 'pygrb_plot_skygrid',
+    #                 'pygrb_plot_snr_timeseries']:
+    if trig_file is not None:
+        node.add_input_opt('--trig-file', resolve_url_to_file(trig_file))
+    # Pass the veto and segment files and options
+    if workflow.cp.has_option('workflow', 'veto-category'):
+        node.add_opt('--veto-category', workflow.cp.get('workflow', 'veto-category'))
+    # FIXME: move to next if within previous one and else Raise error?
+    if workflow.cp.has_option('workflow', 'veto-files'):
+        veto_files = build_veto_filelist(workflow)
+        node.add_input_list_opt('--veto-files', veto_files)
+    # FIXME: will this do for pygrb_efficiency and pygrb_plot_stats_distribution?
+    # They originally wanted seg_files
+    if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency',
+                     'pygrb_plot_snr_timeseries',
+                     'pygrb_plot_stats_distribution']:
+        trig_time = workflow.cp.get('workflow', 'trigger-time')
+        node.add_opt('--trigger-time', trig_time)
+    # Other shared tuning values
+    if exec_name not in ['pygrb_plot_skygrid', 'pygrb_plot_coh_ifosnr']:
+        if not (exec_name == 'pygrb_plot_snr_timeseries' and tags[0] != 'reweighted'):
+            for opt in ['chisq-index', 'chisq-nhigh',
+                        'null-snr-threshold', 'snr-threshold', 'newsnr-threshold',
+                        'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
+                if workflow.cp.has_option('workflow', opt):
+                    node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
+    # Pass the injection file as an input File instance
+    if inj_file is not None and exec_name not in ['pygrb_plot_skygrid',
+                                                  'pygrb_plot_stats_distribution']:
+        fm_file = resolve_url_to_file(inj_file)
+        node.add_input_opt('--found-missed-file', fm_file)
+    # IFO option
+    if ifo:
+        node.add_opt('--ifo', ifo)
+    # Additional input files (passed as File instances)
+    #if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency']:
+    #    missed_file = inj_file
+    #    node.add_input_opt('--missed-file', missed_file)
+    # FIXME: need found-missed-file option
+    # Output files and final input file (passed as a File instance)
+    if exec_name == 'pygrb_efficiency':
+        # In this case tags[0] is the offtrial number
+        onsource_file = opt_to_file(workflow, 'workflow', 'onsource-file')
+        node.add_input_opt('--onsource-file', onsource_file)
+        node.new_output_file_opt(workflow.analysis_time, '.png',
+                                 '--background-output-file', tags=extra_tags+['max_background'])
+        node.new_output_file_opt(workflow.analysis_time, '.png',
+                                 '--onsource-output-file', tags=extra_tags+['onsource'])
+    else:
+        node.new_output_file_opt(workflow.analysis_time, '.png',
+                                 '--output-file', tags=extra_tags)
+        if exec_name in ['pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats'] and 'zoomin' in tags:
+            node.add_opt('--zoom-in')
+    # Quantity to be displayed on the y-axis of the plot
+    if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_null_stats', 'pygrb_plot_snr_timeseries']:
+        node.add_opt('--y-variable', tags[0])
+    # Quantity to be displayed on the x-axis of the plot
+    elif exec_name == 'pygrb_plot_stats_distribution':
+        node.add_opt('--x-variable', tags[0])
+    elif exec_name == 'pygrb_plot_injs_results':
+        # Variables to plot on x and y axes
+        node.add_opt('--y-variable', tags[0])
+        node.add_opt('--x-variable', tags[1])
+        # Flag to plot found over missed or missed over found
+        if tags[2] == 'missed-on-top':
+            node.add_opt('--'+tags[2])
+        # Enable log axes
+        subsection = '_'.join(tags[0:2])
+        for log_flag in ['x-log', 'y-log']:
+            if workflow.cp.has_option_tags(exec_name, log_flag, tags=[subsection]):
+                node.add_opt('--'+log_flag)
+
+    # Add job node to workflow
+    workflow += node
+
+    return node, node.output_files
+
+
+def make_info_table(workflow, out_dir, ifo=None, tags=None):
+    """Setup a job to create an html snippet with the GRB trigger information.
+    """
+
+    tags = [] if tags is None else tags
+
+    # Exectuable
+    exec_name = 'pygrb_grb_info_table'
+
+    # Initialize job node
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    extra_tags = ['GRB'+grb_name, 'INFO_TABLE']
+    node = PlotExecutable(workflow.cp, exec_name,
+                          ifos=workflow.ifos, out_dir=out_dir,
+                          tags=tags+extra_tags).create_node()
+
+    # Options
+    node.add_opt('--trigger-time', workflow.cp.get('workflow', 'trigger-time'))
+    node.add_opt('--ra', workflow.cp.get('workflow', 'ra'))
+    node.add_opt('--dec', workflow.cp.get('workflow', 'dec'))
+    node.add_opt('--sky-error', workflow.cp.get('workflow', 'sky-error'))
+    node.add_opt('--ifos', ' '.join(workflow.ifos))
+    node.new_output_file_opt(workflow.analysis_time, '.html',
+                             '--output-file', tags=extra_tags)
+    # Add job node to workflow
+    workflow += node
+
+    return node, node.output_files
+
+
+def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
+                           inj_set=None, tags=None):
+    """Adds a PyGRB job to make quiet-found and missed-found injection tables"""
+
+    tags = [] if tags is None else tags
+
+    # Exectuable
+    exec_name = 'pygrb_page_tables'
+    # Initialize job node
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    extra_tags = ['GRB'+grb_name]
+    if inj_set is not None:
+        extra_tags.append(inj_set) # TODO: why is inj_set repeated twice in output files?
+    node = PlotExecutable(workflow.cp, exec_name,
+                          ifos=workflow.ifos, out_dir=out_dir,
+                          tags=tags+extra_tags).create_node()
+    # Pass the veto and segment files and options
+    if workflow.cp.has_option('workflow', 'veto-files'):
+        veto_files = build_veto_filelist(workflow)
+        node.add_input_list_opt('--veto-files', veto_files)
+    trig_time = workflow.cp.get('workflow', 'trigger-time')
+    node.add_opt('--trigger-time', trig_time)
+    # Other shared tuning values
+    for opt in ['chisq-index', 'chisq-nhigh', 'null-snr-threshold',
+                'veto-category', 'snr-threshold', 'newsnr-threshold',
+                'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
+        if workflow.cp.has_option('workflow', opt):
+            node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
+    # Handle input/output for injections
+    if inj_set:
+        # Found-missed injection file (passed as File instance)
+        fm_file = opt_to_file(workflow, 'injections-'+inj_set, 'found-missed-file')
+        node.add_input_opt('--found-missed-file', fm_file)
+        # Missed-found and quiet-found injections html output files
+        for mf_or_qf in ['missed-found', 'quiet-found']:
+            node.new_output_file_opt(workflow.analysis_time, '.html',
+                                     '--'+mf_or_qf+'-injs-output-file',
+                                     tags=extra_tags+[mf_or_qf.upper().replace('-', '_')])
+        # Quiet-found injections h5 output file
+        node.new_output_file_opt(workflow.analysis_time, '.h5',
+                                 '--quiet-found-injs-h5-output-file',
+                                 tags=extra_tags+['QUIET_FOUND'])
+    # Handle input/output for onsource/offsource
+    else:
+        # Onsource input file (passed as File instance)
+        onsource_file = opt_to_file(workflow, 'workflow', 'onsource-file')
+        node.add_input_opt('--onsource-file', onsource_file)
+        # Loudest offsource triggers and onsource trigger html and h5 output files
+        for source_type in ['onsource-trig', 'offsource-trigs']:
+            node.new_output_file_opt(workflow.analysis_time, '.html',
+                                     '--loudest-'+source_type+'-output-file',
+                                     tags=extra_tags+[source_type.upper().replace('-', '_')])
+            node.new_output_file_opt(workflow.analysis_time, '.h5',
+                                     '--loudest-'+source_type+'-h5-output-file',
+                                     tags=extra_tags+[source_type.upper().replace('-', '_')])
+
+    # Add job node to the workflow
+    workflow += node
+
+    return node, node.output_files
+
+
+# Based on setup_single_det_minifollowups
+def setup_pygrb_minifollowups(workflow, followups_file,
+                              dax_output, out_dir,
+                              trig_file=None, tags=None):
+    """Create plots that followup the the loudest PyGRB triggers or
+    missed injections from an HDF file.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    followups_file: pycbc.workflow.File
+        The File class holding the triggers/injections.
+    dax_output: The directory that will contain the dax file.
+    out_dir: path
+        The directory to store minifollowups result plots and files
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+    """
+    #ifos: List of available IFOs to loop over.
+
+    tags = [] if tags is None else tags
+    #_workflow.makedir(dax_output)
+    makedir(dax_output)
+
+    # Turn the config file into a File instance
+    #curr_ifo = single_trig_file.ifo
+    #config_path = os.path.abspath(dax_output + '/' + curr_ifo + \
+    config_path = os.path.abspath(dax_output + '/' + \
+                                   '_'.join(tags) + '_minifollowup.ini')
+    workflow.cp.write(open(config_path, 'w'))
+    config_file = resolve_url_to_file(config_path)
+
+    #wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
+    wikifile = '_'.join(tags) + 'loudest_table.txt'
+
+    # Create the node
+    exe = Executable(workflow.cp, 'pygrb_minifollowups',
+                     ifos=workflow.ifos, out_dir=dax_output,
+                     tags=tags)
+    node = exe.create_node()
+
+    # Grab and pass all necessary files
+    if trig_file is not None:
+        node.add_input_opt('--trig-file', trig_file)
+    if workflow.cp.has_option('workflow', 'veto-files'):
+        veto_files = build_veto_filelist(workflow)
+        node.add_input_list_opt('--veto-files', veto_files)
+    trig_time = workflow.cp.get('workflow', 'trigger-time')
+    node.add_opt('--trigger-time', trig_time)
+    node.add_input_opt('--config-files', config_file)
+    node.add_input_opt('--followups-file', followups_file)
+    node.add_opt('--wiki-file', wikifile)
+    if tags:
+        node.add_list_opt('--tags', tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map',
+                             '--output-map')
+
+    name = node.output_files[0].name
+    assert(name.endswith('.dax'))
+    map_file = node.output_files[1]
+    assert(map_file.name.endswith('.map'))
+
+    node.add_opt('--workflow-name', name)
+    node.add_opt('--output-dir', out_dir)
+
+    workflow += node
+
+    # Execute this in a sub-workflow
+    fil = node.output_files[0]
+    job = SubWorkflow(fil.name, is_planned=False)
+    job.set_subworkflow_properties(map_file,
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
+    job.add_into_workflow(workflow)
+
+
+def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
+                                 onsource_file, inj_files, tags=None,
+                                 explicit_dependencies=None):
+    """Create subworkflow to produce plots, tables,
+    and results webpage for a PyGRB analysis. 
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    res_dir: The post-processing directory where
+        results (plots, etc.) will be stored
+    trig_file: The triggers File object
+    onsource_file: The onsource File object
+    inj_files: FileList of injection results
+    tags: {None, optional}
+        Tags to add to the executables
+    excplicit_dependencies: nodes that must precede this
+    """
+
+    tags = [] if tags is None else tags
+    dax_output = res_dir+'/webpage_daxes'
+    #_workflow.makedir(dax_output)
+    makedir(dax_output)
+
+    # Turn the config file into a File instance
+    #config_path = os.path.abspath(dax_output + '/' + \
+    #                               '_'.join(tags) + 'webpage.ini')
+    #workflow.cp.write(open(config_path, 'w'))
+    #config_file = resolve_url_to_file(config_path)
+
+    # Create the node
+    exe = Executable(workflow.cp, 'pygrb_pp_workflow',
+                     ifos=workflow.ifos, out_dir=dax_output,
+                     tags=tags)
+    node = exe.create_node()
+    # Grab and pass all necessary files
+    node.add_input_opt('--trig-file', trig_file)
+    if workflow.cp.has_option('workflow', 'veto-files'):
+        veto_files = build_veto_filelist(workflow)
+        node.add_input_list_opt('--veto-files', veto_files)
+    #node.add_input_opt('--config-files', config_file)
+    node.add_input_list_opt('--inj-files', inj_files)
+
+    if tags:
+        node.add_list_opt('--tags', tags)
+
+    node.new_output_file_opt(workflow.analysis_time, '.dax',
+                             '--dax-file', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.map',
+                             '--output-map', tags=tags)# + ['MAP'])#,
+                             #use_tmp_subdirs=True)
+    name = node.output_files[0].name
+    assert(name.endswith('.dax'))
+    map_file = node.output_files[1]
+    assert(map_file.name.endswith('.map'))
+    node.add_opt('--workflow-name', name)
+    # This is the output dir for the products of this node, namely dax and map
+    node.add_opt('--output-dir', res_dir)
+    node.add_opt('--dax-file-directory', '.')
+
+    # Turn the config file into a File instance
+    config_path = os.path.abspath(dax_output + '/' + \
+                                   '_'.join(tags) + 'webpage.ini')
+    workflow.cp.write(open(config_path, 'w'))
+    config_file = resolve_url_to_file(config_path)
+    node.add_input_opt('--config-files', config_file)
+
+    # Track additional ini file produced by pycbc_pygrb_pp_workflow
+    out_file = File(workflow.ifos, 'pygrb_pp_workflow', workflow.analysis_time,
+                    file_url=os.path.join(dax_output, name+'.ini'))
+    node.add_output(out_file)
+
+    # Add node to the workflow workflow
+    workflow += node
+    if explicit_dependencies is not None:
+        for dep in explicit_dependencies:
+            workflow.add_explicit_dependancy(dep, node)
+
+    # Execute this in a sub-workflow
+    job = SubWorkflow(name, is_planned=False)#, _id='results')
+    job.set_subworkflow_properties(map_file,
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
+    job.add_into_workflow(workflow)
+
+    return node.output_files

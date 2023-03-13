@@ -25,28 +25,12 @@ Module to generate PyGRB figures: scatter plots and timeseries.
 
 import copy
 import numpy
+from ligo import segments
 from pycbc.results import save_fig_with_metadata
 
 
-#
-# Used locally
-#
-
 # =============================================================================
-# Function to calculate chi-square weight for the reweighted SNR
-# =============================================================================
-def new_snr_chisq(snr, new_snr, chisq_dof, chisq_index=4.0, chisq_nhigh=3.0):
-    """Returns the chi-square value needed to weight SNR into new SNR"""
-
-    chisqnorm = (snr/new_snr)**chisq_index
-    if chisqnorm <= 1:
-        return 1E-20
-
-    return chisq_dof * (2*chisqnorm - 1)**(chisq_nhigh/chisq_index)
-
-
-# =============================================================================
-# Plot contours in a scatter plot where SNR is on the horizontal axis
+# Used locally: plot contours in a scatter plot with SNR as horizontal axis
 # =============================================================================
 def contour_plotter(axis, snr_vals, contours, colors, vert_spike=False):
     """Plot contours in a scatter plot where SNR is on the horizontal axis"""
@@ -70,8 +54,105 @@ def contour_plotter(axis, snr_vals, contours, colors, vert_spike=False):
 
 
 #
-# Used (also) in executables
+# Functions used in executables
 #
+
+# =============================================================================
+# Plot trigger time and offsource extent over segments
+# Copyright (C) 2015 Andrew R. Williamson
+# =============================================================================
+def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
+                           out_dir, coherent_seg=None, fail_criterion=None):
+    """Plot trigger time and offsource extent over segments"""
+
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+    from matplotlib.lines import Line2D
+    from pycbc.results.color import ifo_color
+
+    ifos = wkflow.ifos
+    if len(science_segs.keys()) == 0:
+        extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
+                                  int(wkflow.cp.get("workflow", "end-time")))
+    else:
+        pltpad = [science_segs.extent_all()[1] - trigger_time,
+                  trigger_time - science_segs.extent_all()[0]]
+        extent = segments.segmentlist([science_segs.extent_all(),
+            segments.segment(trigger_time - pltpad[0],
+                             trigger_time + pltpad[1])]).extent()
+
+    ifo_colors = {}
+    for ifo in ifos:
+        ifo_colors[ifo] = ifo_color(ifo)
+        if ifo not in science_segs.keys():
+            science_segs[ifo] = segments.segmentlist([])
+
+    # Make plot
+    fig, subs = plt.subplots(len(ifos), sharey=True)
+    if len(ifos) == 1:
+        subs = [subs]
+    plt.xticks(rotation=20, ha='right')
+    for sub, ifo in zip(subs, ifos):
+        for seg in science_segs[ifo]:
+            sub.add_patch(Rectangle((seg[0], 0.1), abs(seg), 0.8,
+                                    facecolor=ifo_colors[ifo], edgecolor='none'))
+        if coherent_seg:
+            if len(science_segs[ifo]) > 0 and \
+                    coherent_seg in science_segs[ifo]:
+                sub.plot([trigger_time, trigger_time], [0, 1], '-',
+                         c='orange')
+                sub.add_patch(Rectangle((coherent_seg[0], 0),
+                                        abs(coherent_seg), 1, alpha=0.5,
+                                        facecolor='orange', edgecolor='none'))
+            else:
+                sub.plot([trigger_time, trigger_time], [0, 1], ':',
+                         c='orange')
+                sub.plot([coherent_seg[0], coherent_seg[0]], [0, 1], '--',
+                         c='orange', alpha=0.5)
+                sub.plot([coherent_seg[1], coherent_seg[1]], [0, 1], '--',
+                         c='orange', alpha=0.5)
+        else:
+            sub.plot([trigger_time, trigger_time], [0, 1], ':k')
+        if fail_criterion:
+            if len(science_segs[ifo]) > 0:
+                style_str = '--'
+            else:
+                style_str = '-'
+            sub.plot([fail_criterion[0], fail_criterion[0]], [0, 1], style_str,
+                     c='black', alpha=0.5)
+            sub.plot([fail_criterion[1], fail_criterion[1]], [0, 1], style_str,
+                     c='black', alpha=0.5)
+
+        sub.set_frame_on(False)
+        sub.set_yticks([])
+        sub.set_ylabel(ifo, rotation=45)
+        sub.set_ylim([0, 1])
+        sub.set_xlim([float(extent[0]), float(extent[1])])
+        sub.get_xaxis().get_major_formatter().set_useOffset(False)
+        sub.get_xaxis().get_major_formatter().set_scientific(False)
+        sub.get_xaxis().tick_bottom()
+        if sub is subs[-1]:
+            sub.tick_params(labelsize=10, pad=1)
+        else:
+            sub.get_xaxis().set_ticks([])
+            sub.get_xaxis().set_ticklabels([])
+
+    xmin, xmax = fig.axes[-1].get_xaxis().get_view_interval()
+    ymin, _ = fig.axes[-1].get_yaxis().get_view_interval()
+    fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymin), color='black',
+                                   linewidth=2))
+    fig.axes[-1].set_xlabel('GPS Time')
+
+    fig.axes[0].set_title('Science Segments for GRB%s' % trigger_name)
+    plt.tight_layout()
+    fig.subplots_adjust(hspace=0)
+
+    plot_name = 'GRB%s_segments.png' % trigger_name
+    plot_url = 'file://localhost%s/%s' % (out_dir, plot_name)
+    fig.savefig('%s/%s' % (out_dir, plot_name))
+
+    return [ifos, plot_name, extent, plot_url]
+
 
 # =============================================================================
 # Given the trigger and injection values of a quantity, determine the maximum

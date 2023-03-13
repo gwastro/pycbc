@@ -76,8 +76,10 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         if snr_type in ['coherent', 'null', 'reweighted']:
             data[snr_type] = trigs_or_injs['network/%s_snr' % snr_type][:]
         elif snr_type == 'single':
-            att = opts.ifo[0].lower()
-            data[snr_type] = trigs_or_injs['%s/snr_%s' % (opts.ifo, att)][:]
+            key = opts.ifo + '/snr_' + opts.ifo.lower()
+            if opts.ifo.lower() != 'h1':
+                key = key[:-1]
+            data[snr_type] = trigs_or_injs[key][:]
 
         # Calculate coincident SNR
         elif snr_type == 'coincident':
@@ -88,18 +90,35 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
                      'bank': 'bank_chisq',
                      'auto': 'cont_chisq'}
 
-        data[veto_type] = \
-            trigs_or_injs['%s/%s' % (opts.ifo, veto_tags[veto_type])][:]
+        # FIXME: network data contains my_network_chisq
+        chisq_key = 'network/my_network_chisq' if injections \
+            else opts.ifo + '/' + veto_tags[veto_type]
+        # Will not work until single IFO data is in found_missed_file
+        data[veto_type] = trigs_or_injs[chisq_key][:]
 
         # Floor single IFO chi-square at 0.005
         numpy.putmask(data[veto_type], data[veto_type] == 0, 0.005)
 
-        data['dof'] = numpy.unique(
-            trigs_or_injs['%s/%s_dof' % (opts.ifo, veto_tags[veto_type])][:])
+        if not injections:
+            data['dof'] = numpy.unique(
+                trigs_or_injs['%s/%s_dof' % (opts.ifo, veto_tags[veto_type])][:])
 
-        logging.info("%d triggers found.", num_trigs_or_injs)
+        label = "injections" if injections else "triggers"
+           
+        logging.info("{0} {1} found.".format(num_trigs_or_injs, label))
 
     return data
+
+
+# Function to calculate chi-square weight for the reweighted SNR
+def new_snr_chisq(snr, new_snr, chisq_dof, chisq_index=4.0, chisq_nhigh=3.0):
+    """Returns the chi-square value needed to weight SNR into new SNR"""
+
+    chisqnorm = (snr/new_snr)**chisq_index
+    if chisqnorm <= 1:
+        return 1E-20
+
+    return chisq_dof * (2*chisqnorm - 1)**(chisq_nhigh/chisq_index)
 
 
 # Function that produces the contrours to be plotted
@@ -130,9 +149,9 @@ def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
     # Loop over SNR values and calculate chisq variable needed
     for j, snr in enumerate(snr_vals):
         for i, new_snr in enumerate(new_snrs):
-            contours[i][j] = plu.new_snr_chisq(snr, new_snr, dof,
-                                               opts.chisq_index,
-                                               opts.chisq_nhigh)
+            contours[i][j] = new_snr_chisq(snr, new_snr, dof,
+                                           opts.chisq_index,
+                                           opts.chisq_nhigh)
 
     return contours, snr_vals, cont_value
 
@@ -161,14 +180,17 @@ parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")
+parser.add_argument("--found-missed-file",
+                    help="The hdf injection results file", required=False)
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
 parser.add_argument("-y", "--y-variable", required=True,
                     choices=['standard', 'bank', 'auto'],
                     help="Quantity to plot on the vertical axis.")
-parser.add_argument("--snr-type", default=None,
-                    choices=['coherent', 'single', 'coincident', 'null',
-                    'reweighted'], help="SNR value to plot on x-axis. Can be " +
+# TODO: get 'single' to work
+parser.add_argument("--snr-type", default='coherent',
+                    choices=['coherent', 'coincident', 'null', 'reweighted',
+                    'single'], help="SNR value to plot on x-axis. Can be " +
                     "coherent, coincident, null, reweighted, or single IFO SNR")
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
@@ -177,7 +199,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_file = os.path.abspath(opts.found_file) if opts.found_file else None
+found_missed_file = os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
 zoom_in = opts.zoom_in
 veto_type = opts.y_variable
 ifo = opts.ifo
@@ -186,13 +208,14 @@ snr_type = opts.snr_type
 # otherwise the single IFO SNR is used
 if snr_type == 'single':
     if ifo is None:
-        err_msg = "--ifo must be given when using --use-sngl-ifo-snr"
+        err_msg = "--ifo must be given to plot single IFO SNR veto"
         parser.error(err_msg)
 
 # Veto is intended as a single IFO quantity. Network chisq will be obsolete.
-if ifo is None:
-    err_msg = "--ifo must be given to plot single IFO SNR veto"
-    parser.error(err_msg)
+# TODO: fix vetoes
+#if ifo is None:
+#    err_msg = "--ifo must be given to plot single IFO SNR veto"
+#    parser.error(err_msg)
 
 # Prepare plot title and caption
 veto_labels = {'standard': "Chi Square Veto",
@@ -211,7 +234,7 @@ if opts.plot_caption is None:
                          "Black line: veto line.  " +
                          "Gray shaded region: Vetoed area.  " +
                          "Yellow lines: contours of new SNR.")
-    if found_file:
+    if found_missed_file:
         opts.plot_caption = ("Red crosses: injections triggers.  ") +\
                             opts.plot_caption
 
@@ -235,7 +258,7 @@ if ifo and ifo not in ifos:
 trig_data = load_data(trig_file, vetoes, ifos, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_missed_file, vetoes, ifos, opts, injections=True)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:
@@ -259,14 +282,14 @@ if snr_type == 'coincident':
 
 # Determine the minumum and maximum SNR value we are dealing with
 x_min = opts.sngl_snr_threshold
-x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type], found_file)
+x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type], found_missed_file)
 
 # Determine y-axis minimum value and label
 y_label = "%s Single %s" % (ifo, veto_labels[veto_type])
 y_min = 1
 
 # Determine the maximum bank veto value we are dealing with
-y_max = plu.axis_max_value(trig_data[veto_type], inj_data[veto_type], found_file)
+y_max = plu.axis_max_value(trig_data[veto_type], inj_data[veto_type], found_missed_file)
 
 # Determine contours for plots
 conts = None

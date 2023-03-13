@@ -69,8 +69,6 @@ def load_data(input_file, vetoes, injections=False):
 def get_start_end_times(data_time, central_time):
     """Determine padded start and end times of data relative to central_time"""
 
-    #start = int(min(data.time)) - central_time
-    #end = int(max(data.time)) - central_time
     start = int(min(data_time)) - central_time
     end = int(max(data_time)) - central_time
     duration = end - start
@@ -98,9 +96,10 @@ parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")
-parser.add_argument('--central-time', type=float, default=None,
-                    help="Center plot at the given GPS time. If omitted, "+
-                    "use the GRB trigger time")
+parser.add_argument("--found-missed-file",
+                    help="The hdf injection results file", required=False)
+parser.add_argument("--trigger-time", type=float, default=0,
+                    help="External GPS time.  Used to center the plot.")
 parser.add_argument("-y", "--y-variable", default=None,
                     choices=['coherent', 'single', 'reweighted', 'null'],
                     help="Quantity to plot on the vertical axis.")
@@ -111,7 +110,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_file = os.path.abspath(opts.found_file) if opts.found_file else None
+inj_file = os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
 snr_type = opts.y_variable
 ifo = opts.ifo
 if snr_type == 'single' and ifo is None:
@@ -133,12 +132,12 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 trig_data = load_data(trig_file, vetoes)
 
 # Load (or initialize) injection data
-inj_data = load_data(found_file, vetoes, injections=True)
+inj_data = load_data(inj_file, vetoes, injections=True)
 
 # Specify HDF file keys for x quantity (time) and y quantity (SNR)
 if snr_type == 'single':
-    x_key = opts.ifo + '/' + 'end_time'
-    y_key = opts.ifo + '/' + 'snr_' + opts.ifo.lower()
+    x_key = opts.ifo + '/end_time'
+    y_key = opts.ifo + '/snr_' + opts.ifo.lower()
     if opts.ifo.lower() != 'h1':
         y_key = y_key[:-1]
 else:
@@ -147,22 +146,21 @@ else:
 
 # Obtain times
 trig_data_time = trig_data[x_key][:]
-inj_data_time = inj_data[x_key][:] if found_file else None
+inj_data_time = inj_data[x_key][:] if inj_file else None
 
 # Obtain SNRs
 trig_data_snr = trig_data[y_key][:]
-inj_data_snr = inj_data[y_key][:] if found_file else None
+inj_data_snr = inj_data[y_key][:] if inj_file else None
 
-# Determine the central time (t=0): default is the GRB trigger time
-central_time = opts.central_time if opts.central_time is not None else\
-    ppu.get_grb_time(opts.seg_files)
+# Determine the central time (t=0) for the plot
+central_time = opts.trigger_time
 
 # Determine trigger data start and end times relative to the central time
 start, end = get_start_end_times(trig_data_time, central_time)
 
 # Reset trigger and injection times
 trig_data_time = reset_times(trig_data_time, central_time)
-if found_file:
+if inj_file:
     inj_data_time = reset_times(inj_data_time, central_time)
 
 # Generate plots
@@ -180,7 +178,7 @@ if opts.plot_title is None:
     opts.plot_title = y_label + " vs Time"
 if opts.plot_caption is None:
     opts.plot_caption = ("Blue crosses: background triggers.  ")
-    if found_file:
+    if inj_file:
         opts.plot_caption += ("Red crosses: injections triggers.")
 
 # Single IFO SNR versus time plots

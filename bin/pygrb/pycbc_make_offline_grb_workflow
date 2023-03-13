@@ -36,7 +36,7 @@ import pycbc.workflow as _workflow
 from ligo.segments import segment, segmentlist, segmentlistdict
 import matplotlib
 matplotlib.use('agg')
-from pycbc.results.legacy_grb import make_grb_segments_plot
+from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
 
 workflow_name = "pygrb_offline"
 logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
@@ -418,43 +418,58 @@ ppDir = os.path.join(currDir, "post_processing")
 os.makedirs(ppDir)
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
-
 if post_proc_method == "PYGRB_OFFLINE":
     pp_files = _workflow.setup_pygrb_pp_workflow(wflow, ppDir, segDir,
                                       sciSegs[ifo][0], inspiral_files,
                                       injs, inj_insp_files, inj_tags)
+    # pp_files[1] ALLTIMES_CLUSTERED File
+    # pp_files[3] ONSOURCE_CLUSTERED File
+    # pp_files[-2] FOUNDMISSED FileList
+    # pp_files[-1] FOUNDMISSED-FILTERED FileList
+    sec_name = 'workflow-pygrb_pp_workflow'
+    if not wflow.cp.has_section(sec_name):
+        msg = 'No {0} section found in configuration file.'.format(sec_name)
+        logging.info(msg)
+    else:
+        logging.info('Entering results module')
+        results_files = _workflow.setup_pygrb_results_workflow(wflow, ppDir,
+                                                               pp_files[1],
+                                                               pp_files[3],
+                                                               pp_files[-2])
+        logging.info('Leaving results module')
 
 # TODO: Remove all coh_ptf post-processing
-if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
-                        "COH_PTF_ONLINE"]:
-    from pylal import pygrb_cohptf_pp
-    # Add parsed config file so it can be linked from summary page
-    cp_file_name = workflow_name + ".ini"
-    cp_file_url = "file://localhost%s/%s" % (runDir, cp_file_name)
-    cp_file = _workflow.File(ifos, cp_file_name, sciSegs[ifo][0],
-                             file_url=cp_file_url)
-    cp_file.PFN(cp_file.cache_entry.path, site="local")
-
-    # Generate post-processing workflow
-    html_dir = wflow.cp.get("workflow", "html-dir")
-    pp_files = pygrb_cohptf_pp.setup_coh_PTF_post_processing(wflow,
-            inspiral_files, inspiral_cache, ppDir, segDir,
-            injection_trigger_files=inj_insp_files, injection_files=injs,
-            injection_trigger_caches=inj_insp_caches,
-            timeslide_trigger_files=inspiral_ts_files,
-            injection_caches=inj_caches, config_file=cp_file, web_dir=html_dir,
-            segments_plot=segs_plot, ifos=ifos, inj_tags=inj_tags)
-
-    # Retrieve style files for webpage
-    summary_files = _workflow.get_coh_PTF_files(wflow.cp, ifos, ppDir,
-                                                summary_files=True)
-
-    pp_files.extend(_workflow.FileList([cp_file]))
-    pp_files.extend(summary_files)
+#if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
+#                        "COH_PTF_ONLINE"]:
+#    from pylal import pygrb_cohptf_pp
+#    # Add parsed config file so it can be linked from summary page
+#    cp_file_name = workflow_name + ".ini"
+#    cp_file_url = "file://localhost%s/%s" % (runDir, cp_file_name)
+#    cp_file = _workflow.File(ifos, cp_file_name, sciSegs[ifo][0],
+#                             file_url=cp_file_url)
+#    cp_file.PFN(cp_file.cache_entry.path, site="local")
+#
+#    # Generate post-processing workflow
+#    html_dir = wflow.cp.get("workflow", "html-dir")
+#    pp_files = pygrb_cohptf_pp.setup_coh_PTF_post_processing(wflow,
+#            inspiral_files, inspiral_cache, ppDir, segDir,
+#            injection_trigger_files=inj_insp_files, injection_files=injs,
+#            injection_trigger_caches=inj_insp_caches,
+#            timeslide_trigger_files=inspiral_ts_files,
+#            injection_caches=inj_caches, config_file=cp_file, web_dir=html_dir,
+#            segments_plot=segs_plot, ifos=ifos, inj_tags=inj_tags)
+#
+#    # Retrieve style files for webpage
+#    summary_files = _workflow.get_coh_PTF_files(wflow.cp, ifos, ppDir,
+#                                                summary_files=True)
+#
+#    pp_files.extend(_workflow.FileList([cp_file]))
+#    pp_files.extend(summary_files)
 
 all_files.extend(pp_files)
+all_files.extend(results_files)
+#all_files.extend(extra_results_files)
 
 # COMPILE WORKFLOW AND WRITE DAX
 wflow.save()
 logging.info("Written dax.")
-

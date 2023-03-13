@@ -32,11 +32,8 @@ import os
 import pycbc.version
 from pycbc import init_logging
 import pycbc.workflow as _workflow
-from pycbc.workflow.plotting import PlotExecutable
-from pycbc.workflow.core import resolve_url_to_file
-from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.results import create_versioning_page, layout
-from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.results.pygrb_postprocessing_utils import extract_ifos
 from pycbc.results.versioning import save_fig_with_metadata
 
 __author__ = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
@@ -46,322 +43,40 @@ __program__ = "pycbc_pygrb_pp_workflow"
 
 
 # =============================================================================
-# Functions
-# =============================================================================
-def opt_to_file(workflow, section, option):
-    """Fetch a file given its url location via the section
-    and option in the workflow configuraiton file."""
-
-    path = workflow.cp.get(section, option)
-
-    return resolve_url_to_file(path)
-
-
-def make_pygrb_plot(workflow, exec_name, out_dir, # exclude=None, require=None,
-                    ifo=None, inj_set=None, tags=None):
-    """Adds a node for a plot of PyGRB results to the workflow"""
-
-    tags = [] if tags is None else tags
-
-    # Initialize job node with its tags
-    grb_name = workflow.cp.get('workflow', 'trigger-name')
-    extra_tags = ['GRB'+grb_name]
-    if inj_set is not None:
-        extra_tags.append(inj_set) # TODO: why is inj_set repeated twice in output files?
-    if ifo:
-        extra_tags.append(ifo)
-    node = PlotExecutable(workflow.cp, exec_name, ifos=workflow.ifos,
-                          out_dir=out_dir,
-                          tags=tags+extra_tags).create_node()
-    # Pass the trigger file as an input File instance
-    if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_coh_ifosnr',
-                     'pygrb_plot_null_stats', 'pygrb_plot_skygrid',
-                     'pygrb_plot_snr_timeseries']:
-        trig_file = opt_to_file(workflow, 'workflow', 'trig-file')
-        node.add_input_opt('--trig-file', trig_file)
-    # Pass the veto and segment files and options
-    if workflow.cp.has_option('workflow', 'veto-category'):
-        node.add_opt('--veto-category', workflow.cp.get('workflow', 'veto-category'))
-    # FIXME: move next if within previous one and else Raise error?
-    if workflow.cp.has_option('workflow', 'veto-files'):
-        veto_files = ppu.build_veto_filelist(workflow)
-        node.add_input_list_opt('--veto-files', veto_files)
-    if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency',
-                     'pygrb_plot_snr_timeseries',
-                     'pygrb_plot_stats_distribution']:
-        seg_files = ppu.build_segment_filelist(workflow)
-        node.add_input_list_opt('--seg-files', seg_files)
-    # Other shared tuning values
-    if exec_name not in ['pygrb_plot_skygrid', 'pygrb_plot_coh_ifosnr']:
-        if not (exec_name == 'pygrb_plot_snr_timeseries' and tags[0] != 'reweighted'):
-            for opt in ['chisq-index', 'chisq-nhigh',
-                        'null-snr-threshold', 'snr-threshold', 'newsnr-threshold',
-                        'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
-                if workflow.cp.has_option('workflow', opt):
-                    node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
-    # Pass the injection file as an input File instance
-    if inj_set is not None and exec_name not in ['pygrb_plot_skygrid',
-                                                 'pygrb_plot_stats_distribution']:
-        found_file = opt_to_file(workflow, 'injections-'+inj_set, 'found-missed-file')
-        if exec_name == 'pygrb_plot_injs_results':
-            node.add_input_opt('--found-missed-file', found_file)
-        else:
-            node.add_input_opt('--found-file', found_file)
-    # IFO option
-    if ifo:
-        node.add_opt('--ifo', ifo)
-    # Additional input files (passed as File instances)
-    #if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency']:
-    #    missed_file = opt_to_file(workflow, 'injections-'+inj_set, 'missed-file')
-    #    node.add_input_opt('--missed-file', missed_file)
-    # FIXME: need found-missed-file option
-    # Output files and final input file (passed as a File instance)
-    if exec_name == 'pygrb_efficiency':
-        # In this case tags[0] is the offtrial number
-        onsource_file = opt_to_file(workflow, 'workflow', 'onsource-file')
-        node.add_input_opt('--onsource-file', onsource_file)
-        node.new_output_file_opt(workflow.analysis_time, '.png',
-                                 '--background-output-file', tags=extra_tags+['max_background'])
-        node.new_output_file_opt(workflow.analysis_time, '.png',
-                                 '--onsource-output-file', tags=extra_tags+['onsource'])
-    else:
-        node.new_output_file_opt(workflow.analysis_time, '.png',
-                                 '--output-file', tags=extra_tags)
-        if exec_name in ['pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats'] and 'zoomin' in tags:
-            node.add_opt('--zoom-in')
-    # Quantity to be displayed on the y-axis of the plot
-    if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_null_stats', 'pygrb_plot_snr_timeseries']:
-        node.add_opt('--y-variable', tags[0])
-    # Quantity to be displayed on the x-axis of the plot
-    elif exec_name == 'pygrb_plot_stats_distribution':
-        node.add_opt('--x-variable', tags[0])
-    elif exec_name == 'pygrb_plot_injs_results':
-        # Variables to plot on x and y axes
-        node.add_opt('--y-variable', tags[0])
-        node.add_opt('--x-variable', tags[1])
-        # Flag to plot found over missed or missed over found
-        if tags[2] == 'missed-on-top':
-            node.add_opt('--'+tags[2])
-        # Enable log axes
-        subsection = '_'.join(tags[0:2])
-        for log_flag in ['x-log', 'y-log']:
-            if workflow.cp.has_option_tags(exec_name, log_flag, tags=[subsection]):
-                node.add_opt('--'+log_flag)
-
-    # Add job node to workflow
-    workflow += node
-
-    return node, node.output_files
-
-
-def make_info_table(workflow, out_dir, ifo=None, tags=None):
-    """Setup a job to create an html snippet with the GRB trigger information.
-    """
-
-    tags = [] if tags is None else tags
-
-    # Exectuable
-    exec_name = 'pygrb_grb_info_table'
-
-    # Initialize job node
-    grb_name = workflow.cp.get('workflow', 'trigger-name')
-    extra_tags = ['GRB'+grb_name, 'INFO_TABLE']
-    node = PlotExecutable(workflow.cp, exec_name,
-                          ifos=workflow.ifos, out_dir=out_dir,
-                          tags=tags+extra_tags).create_node()
-
-    # Options
-    node.add_opt('--trigger-time', workflow.cp.get('workflow', 'trigger-time'))
-    node.add_opt('--ra', workflow.cp.get('workflow', 'ra'))
-    node.add_opt('--dec', workflow.cp.get('workflow', 'dec'))
-    node.add_opt('--sky-error', workflow.cp.get('workflow', 'sky-error'))
-    node.add_opt('--ifos', ' '.join(workflow.ifos))
-    node.new_output_file_opt(workflow.analysis_time, '.html',
-                             '--output-file', tags=extra_tags)
-    # Add job node to workflow
-    workflow += node
-
-    return node, node.output_files
-
-
-def make_pygrb_injs_tables(workflow, out_dir, # exclude=None, require=None,
-                           inj_set=None, tags=None):
-    """Adds a PyGRB job to make quiet-found and missed-found injection tables"""
-
-    tags = [] if tags is None else tags
-
-    # Exectuable
-    exec_name = 'pygrb_page_tables'
-    # Initialize job node
-    grb_name = workflow.cp.get('workflow', 'trigger-name')
-    extra_tags = ['GRB'+grb_name]
-    if inj_set is not None:
-        extra_tags.append(inj_set) # TODO: why is inj_set repeated twice in output files?
-    node = PlotExecutable(workflow.cp, exec_name,
-                          ifos=workflow.ifos, out_dir=out_dir,
-                          tags=tags+extra_tags).create_node()
-    # Pass the veto and segment files and options
-    if workflow.cp.has_option('workflow', 'veto-files'):
-        veto_files = ppu.build_veto_filelist(workflow)
-        node.add_input_list_opt('--veto-files', veto_files)
-    seg_files = ppu.build_segment_filelist(workflow)
-    node.add_input_list_opt('--seg-files', seg_files)
-    # Other shared tuning values
-    for opt in ['chisq-index', 'chisq-nhigh', 'null-snr-threshold',
-                'veto-category', 'snr-threshold', 'newsnr-threshold',
-                'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
-        if workflow.cp.has_option('workflow', opt):
-            node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
-    # Handle input/output for injections
-    if inj_set:
-        # Found-missed injection file (passed as File instance)
-        fm_file = opt_to_file(workflow, 'injections-'+inj_set, 'found-missed-file')
-        node.add_input_opt('--found-missed-file', fm_file)
-        # Missed-found and quiet-found injections html output files
-        for mf_or_qf in ['missed-found', 'quiet-found']:
-            node.new_output_file_opt(workflow.analysis_time, '.html',
-                                     '--'+mf_or_qf+'-injs-output-file',
-                                     tags=extra_tags+[mf_or_qf.upper().replace('-', '_')])
-        # Quiet-found injections h5 output file
-        node.new_output_file_opt(workflow.analysis_time, '.h5',
-                                 '--quiet-found-injs-h5-output-file',
-                                 tags=extra_tags+['QUIET_FOUND'])
-    # Handle input/output for onsource/offsource
-    else:
-        # Onsource input file (passed as File instance)
-        onsource_file = opt_to_file(workflow, 'workflow', 'onsource-file')
-        node.add_input_opt('--onsource-file', onsource_file)
-        # Loudest offsource triggers and onsource trigger html and h5 output files
-        for source_type in ['onsource-trig', 'offsource-trigs']:
-            node.new_output_file_opt(workflow.analysis_time, '.html',
-                                     '--loudest-'+source_type+'-output-file',
-                                     tags=extra_tags+[source_type.upper().replace('-', '_')])
-            node.new_output_file_opt(workflow.analysis_time, '.h5',
-                                     '--loudest-'+source_type+'-h5-output-file',
-                                     tags=extra_tags+[source_type.upper().replace('-', '_')])
-
-    # Add job node to the workflow
-    workflow += node
-
-    return node, node.output_files
-
-
-# Based on setup_single_det_minifollowups
-def setup_pygrb_minifollowups(workflow, followups_file,
-                              dax_output, out_dir,
-                              tags=None):
-    """ Create plots that followup the the loudest PyGRB triggers or
-    missed injections from an HDF file.
-    Parameters
-    ----------
-    workflow: pycbc.workflow.Workflow
-        The core workflow instance we are populating
-    followups_file: pycbc.workflow.File
-        The File class holding the triggers/injections.
-    dax_output: The directory that will contain the dax file.
-    out_dir: path
-        The directory to store minifollowups result plots and files
-    tags: {None, optional}
-        Tags to add to the minifollowups executables
-    """
-    #ifos: List of available IFOs to loop over.
-
-    logging.info('Entering minifollowups module')
-
-    if not workflow.cp.has_section('workflow-minifollowups'):
-        msg = 'There is no [workflow-minifollowups] section in '
-        msg += 'configuration file'
-        logging.info(msg)
-        logging.info('Leaving minifollowups')
-        return
-
-    tags = [] if tags is None else tags
-    _workflow.makedir(dax_output)
-
-    # Trun the trigger file into a File instance
-    trig_file = opt_to_file(workflow, 'workflow', 'trig-file')
-
-    # Turn the config file into a File instance
-    #curr_ifo = single_trig_file.ifo
-    #config_path = os.path.abspath(dax_output + '/' + curr_ifo + \
-    config_path = os.path.abspath(dax_output + '/' + \
-                                   '_'.join(tags) + '_minifollowup.ini')
-    workflow.cp.write(open(config_path, 'w'))
-    config_file = resolve_url_to_file(config_path)
-
-    #wikifile = curr_ifo + '_'.join(tags) + 'loudest_table.txt'
-    wikifile = '_'.join(tags) + 'loudest_table.txt'
-
-    # Create the node
-    exe = _workflow.Executable(workflow.cp, 'pygrb_minifollowups',
-                               ifos=workflow.ifos, out_dir=dax_output,
-                               tags=tags)
-    node = exe.create_node()
-
-    # Grab and pass all necessary files
-    node.add_input_opt('--trig-file', trig_file)
-    if workflow.cp.has_option('workflow', 'veto-files'):
-        veto_files = ppu.build_veto_filelist(workflow)
-        node.add_input_list_opt('--veto-files', veto_files)
-    seg_files = ppu.build_segment_filelist(workflow)
-    node.add_input_list_opt('--seg-files', seg_files)
-    node.add_input_opt('--config-files', config_file)
-    node.add_input_opt('--followups-file', followups_file)
-    node.add_opt('--wiki-file', wikifile)
-    if tags:
-        node.add_list_opt('--tags', tags)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
-    node.new_output_file_opt(workflow.analysis_time, '.dax.map',
-                             '--output-map')
-
-    name = node.output_files[0].name
-    assert(name.endswith('.dax'))
-    map_file = node.output_files[1]
-    assert(map_file.name.endswith('.map'))
-
-    node.add_opt('--workflow-name', name)
-    node.add_opt('--output-dir', out_dir)
-
-    workflow += node
-
-    # Execute this in a sub-workflow
-    fil = node.output_files[0]
-    job = SubWorkflow(fil.name, is_planned=False)
-    job.set_subworkflow_properties(map_file,
-                                   staging_site=workflow.staging_site,
-                                   cache_file=workflow.cache_file)
-    job.add_into_workflow(workflow)
-    logging.info('Leaving minifollowups module')
-
-
-# =============================================================================
 # Main script
 # =============================================================================
 # Use the standard workflow command-line parsing routines.
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",
                     help="Verbose output")
+parser.add_argument("-t", "--trig-file", action="store",
+                    default=None, required=True,
+                    help="The location of the trigger file")
+parser.add_argument("-i", "--inj-files", action="store",
+                    default=None, nargs="+",
+                    help="Location(s) of input injection results file(s)")
 _workflow.add_workflow_command_line_group(parser)
-_workflow.add_workflow_settings_cli(parser)
+_workflow.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
-# Create the workflow objects
+# Store starting run directory
+start_rundir = os.getcwd()
+
+# Create the workflow object
 logging.info("Generating %s workflow", args.workflow_name)
-container = _workflow.Workflow(args, name=args.workflow_name)
-wflow = _workflow.Workflow(args, args.workflow_name + '-main')
-finalize_wflow = _workflow.Workflow(args, args.workflow_name + '-finalization')
+wflow = _workflow.Workflow(args, name=args.workflow_name)
 
 logging.info("Post-processing output will be generated in %s", args.output_dir)
 if not os.path.exists(args.output_dir):
     _workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
-args.output_dir = '.'
+#args.output_dir = '.' # BUG!
 
 # Setup results directory
-rdir = layout.SectionNumber('results', ['offsource_triggers_vs_time',
+rdir = layout.SectionNumber('webpage', ['offsource_triggers_vs_time',
                                         'signal_consistency',
                                         'injections',
                                         'loudest_offsource_events',
@@ -372,9 +87,13 @@ _workflow.makedir(rdir.base)
 _workflow.makedir(rdir['workflow'])
 
 # Input trigger file
-trig_file = wflow.cp.get('workflow', 'trig-file')
+trig_file = start_rundir+'/'+args.trig_file 
+
+# Input injection files and injection set names
+inj_files = [start_rundir+'/'+el for el in args.inj_files] 
+
 # IFOs actually used: determined by data availability
-ifos = ppu.extract_ifos(trig_file)
+ifos = extract_ifos(trig_file)
 wflow.ifos = ifos
 
 plotting_nodes = []
@@ -403,11 +122,13 @@ files = _workflow.FileList([])
 #
 # Create information table about the GRB trigger and plot the search grid
 #
-info_table_node, grb_info_table = make_info_table(wflow, out_dir=out_dir)
+info_table_node, grb_info_table = _workflow.make_info_table(wflow, out_dir)
 html_nodes.append(info_table_node)
 files.append(grb_info_table)
 #
-plot_node, skygrid_plot = make_pygrb_plot(wflow, 'pygrb_plot_skygrid', out_dir=out_dir)
+plot_node, skygrid_plot = _workflow.make_pygrb_plot(wflow, 'pygrb_plot_skygrid',
+                                                    out_dir,
+                                                    trig_file=trig_file)
 plotting_nodes.append(plot_node)
 files.append(skygrid_plot)
 summary_layout = [(grb_info_table[0],), (skygrid_plot[0],)]
@@ -427,7 +148,16 @@ out_dirs_dict = {'coherent' : 'offsource_triggers_vs_time/coh_snr_timeseries',
                  'null': 'offsource_triggers_vs_time/null_snr_timeseries'}
 
 # Grab the name of the prefereed injection set for these plots
-tuning_inj_set = wflow.cp.get('workflow', 'tuning-inj-set')
+tuning_inj_set = wflow.cp.get('workflow-pygrb_pp_workflow', 'tuning-inj-set')
+logging.info("The tuning injections set is {0}".format(tuning_inj_set))
+
+# Determine which injections result corresponds to the tuining set
+tuning_inj_file = None
+if inj_files is not None:
+    tuning_inj_file = list(filter(lambda x: tuning_inj_set.lower() in x.lower(), inj_files))
+    tuning_inj_file = tuning_inj_file[0] if len(tuning_inj_file)==1 else None
+logging.info("The tuning injections results file is {0}".format(tuning_inj_file))
+
 # Loop over timeseries request by the user
 timeseries = wflow.cp.get_subsections('pygrb_plot_snr_timeseries')
 for snr_type in timeseries:
@@ -435,16 +165,19 @@ for snr_type in timeseries:
     _workflow.makedir(out_dir)
     files = _workflow.FileList([])
     # Only single SNR timeseries requires looping over IFOs
-    ifos_to_loop = [None]
-    if snr_type == 'single':
-        ifos_to_loop = ifos
+    ifos_to_loop = ifos if snr_type == 'single' else [None]
     for ifo in ifos_to_loop:
         timeseries_plots = _workflow.FileList([])
         # Plots without and with injections
-        for inj_set in [None, tuning_inj_set]:
+        for inj_file in set([None, tuning_inj_file]):
+            # If the inj_file is used for the plot, include the tuning
+            # injection set tag in assembling up the plot name
+            tags = [snr_type] if inj_file is None else [snr_type, tuning_inj_set]
             plot_node, output_files = \
-                make_pygrb_plot(wflow, 'pygrb_plot_snr_timeseries', out_dir,
-                                inj_set=inj_set, ifo=ifo, tags=[snr_type])
+                _workflow.make_pygrb_plot(wflow, 'pygrb_plot_snr_timeseries',
+                                          out_dir, trig_file=trig_file,
+                                          inj_file=inj_file, ifo=ifo,
+                                          tags=tags)
             plotting_nodes.append(plot_node)
             # We want a File, not a 1-element list with a File
             # pycbc_pygrb_plot_snr_timeseries produces only one plot: take [0]
@@ -467,11 +200,18 @@ vetoes = wflow.cp.get_subsections('pygrb_plot_chisq_veto')
 for veto in vetoes:
     chisq_veto_plots = _workflow.FileList([])
     # Plots with and without injections
-    for inj_set in [tuning_inj_set, None]:
-        plot_node, output_files = \
-            make_pygrb_plot(wflow, 'pygrb_plot_chisq_veto', out_dir,
-                            inj_set=inj_set, tags=[veto])
-        plotting_nodes.append(plot_node)
+    for inj_file in set([tuning_inj_file, None]):
+        # FIXING: loop over ifos
+        for ifo in ifos:
+            # If the inj_file is used for the plot, include the tuning
+            # injection set tag in assembling up the plot name
+            tags = [veto] if inj_file is None else [veto, tuning_inj_set]
+            plot_node, output_files = \
+                _workflow.make_pygrb_plot(wflow, 'pygrb_plot_chisq_veto',
+                                          out_dir, trig_file=trig_file,
+                                          inj_file=inj_file, ifo=ifo,
+                                          tags=tags)
+            plotting_nodes.append(plot_node)
         # We want a File, not a 1-element list with a File
         # pycbc_pygrb_plot_chisq_veto produces only one plot: take [0]
         chisq_veto_plots.append(output_files[0])
@@ -487,13 +227,18 @@ files = _workflow.FileList([])
 if wflow.cp.has_section('pygrb_plot_coh_ifosnr'):
     for ifo in ifos:
         # Plots with and without injections
-        for inj_set in [tuning_inj_set, None]:
+        for inj_file in set([tuning_inj_file, None]):
             sngl_snr_plots = _workflow.FileList([])
             for zoom_tag in [['zoomin'], None]:
+                # If the inj_file is used for the plot, include the tuning
+                # injection set tag in assembling up the plot name
+                tags = [zoom_tag] if inj_file is None else [zoom_tag, tuning_inj_set]
                 # Single IFO SNR vs Coherent SNR
                 plot_node, output_files = \
-                    make_pygrb_plot(wflow, 'pygrb_plot_coh_ifosnr', out_dir,
-                                    inj_set=inj_set, ifo=ifo, tags=zoom_tag)
+                    _workflow.make_pygrb_plot(wflow, 'pygrb_plot_coh_ifosnr',
+                                              out_dir, trig_file=trig_file,
+                                              inj_file=inj_file, ifo=ifo,
+                                              tags=tags)
                 plotting_nodes.append(plot_node)
                 # We want a File, not a 1-element list with a File
                 # pycbc_pygrb_plot_cohifo_snr produces only one plot: take [0]
@@ -517,7 +262,7 @@ coinc_files = _workflow.FileList([])
 nstats = wflow.cp.get_subsections('pygrb_plot_null_stats')
 for nstat in nstats:
     # Plots with and without injections, zoomed in and zoomed out
-    for inj_set in [tuning_inj_set, None]:
+    for inj_file in set([tuning_inj_file, None]):
         if nstat == 'coincident':
             out_dir = coinc_out_dir
             files = coinc_files
@@ -525,10 +270,17 @@ for nstat in nstats:
             out_dir = null_snr_out_dir
             files = null_snr_files
         null_stats_plots = _workflow.FileList([])
-        for zoom_tag in [['zoomin'], []]:
+        #for zoom_tag in [['zoomin'], []]: # IDEA
+        for zoom_tag in ['zoomin', None]:
+            # If the inj_file is used for the plot, include the tuning
+            # injection set tag in assembling up the plot name
+            tags = [nstat]
+            tags = tags + [zoom_tag] if zoom_tag is not None else tags
+            tags = tags + [tuning_inj_set] if inj_file is not None else tags 
             plot_node, output_files = \
-            make_pygrb_plot(wflow, 'pygrb_plot_null_stats', out_dir,
-                            inj_set=inj_set, tags=[nstat]+zoom_tag)
+            _workflow.make_pygrb_plot(wflow, 'pygrb_plot_null_stats', out_dir,
+                                      trig_file=trig_file, inj_file=inj_file,
+                                      tags=tags)
             plotting_nodes.append(plot_node)
             # We want a File, not a 1-element list with a File
             # pycbc_pygrb_plot_null_stats produces only one plot: take [0]
@@ -552,6 +304,8 @@ inj_plots = wflow.cp.get_subsections('pygrb_plot_injs_results')
 # from the set of requested injection plot types
 inj_plots = [inj_plot for inj_plot in inj_plots if inj_plot not in inj_sets]
 for inj_set in inj_sets:
+    inj_file = list(filter(lambda x: inj_set.lower() in x.lower(), inj_files))
+    inj_file = inj_file[0] if len(inj_file)==1 else None
     out_dir = rdir['injections/'+inj_set]
     _workflow.makedir(out_dir)
     files = _workflow.FileList([])
@@ -563,28 +317,37 @@ for inj_set in inj_sets:
             ifos_to_loop = ifos
         for ifo in ifos_to_loop:
             for fm_or_mf in ['missed-on-top', 'found-on-top']:
-                plot_node, output_files = make_pygrb_plot(wflow, 'pygrb_plot_injs_results',
-                                                          out_dir, ifo=ifo, inj_set=inj_set,
-                                                          tags=[y_qty, x_qty, fm_or_mf])
+                tags = [y_qty, x_qty, fm_or_mf, inj_set] # TODO: last one needed?
+                plot_node, output_files = _workflow.make_pygrb_plot(wflow, 'pygrb_plot_injs_results',
+                                                                    out_dir, trig_file=trig_file,
+                                                                    ifo=ifo, inj_file=inj_file,
+                                                                    tags=tags)
                 plotting_nodes.append(plot_node)
                 # We want a File, not a 1-element list with a File
                 # pycbc_pygrb_plot_injs_results produces only one plot: take [0]
                 files.append(output_files[0])
     # Generate quiet-found and missed-found html tables
     # TODO:  pass lont/lofft arguments if inj_set=None
-    html_node, [mf_table, qf_table, qf_h5] =\
-         make_pygrb_injs_tables(wflow, out_dir, inj_set=inj_set)
-    html_nodes.append(html_node)
-
-    inj_layout = list(layout.grouper(files, 2)) + [(mf_table,), (qf_table,)]
+    # FIXME
+    #html_node, [mf_table, qf_table, qf_h5] =\
+    #     _workflow.make_pygrb_injs_tables(wflow, out_dir, inj_set=inj_set)
+    #html_nodes.append(html_node)
+    inj_layout = list(layout.grouper(files, 2)) # + [(mf_table,), (qf_table,)]
     layout.two_column_layout(out_dir, inj_layout)
 
     # Follow up of loudest N quiet-found injections:
     # qf_h5 includes quiet and missed found injections
-    out_dir = rdir['injections/'+inj_set+'loudest_quiet_found_followups']
-    setup_pygrb_minifollowups(wflow, qf_h5,
-                              'daxes', out_dir,
-                              tags=[inj_set, 'loudest_quiet_found_injs'])
+    #out_dir = rdir['injections/'+inj_set+'loudest_quiet_found_followups']
+    #if not wflow.cp.has_section('workflow-minifollowups'):
+    #        msg = 'No [workflow-minifollowups] section found in configuration file'
+    #        logging.info(msg)
+    #else:
+    #        logging.info('Entering minifollowups module')
+    #        _workflow.setup_pygrb_minifollowups(wflow, qf_h5,
+    #                                            'daxes', out_dir,
+    #                                            tags=[inj_set,
+    #                                            'loudest_quiet_found_injs'])
+    #        logging.info('Leaving minifollowups')
 
 
 #
@@ -598,8 +361,9 @@ files = []
 stats = wflow.cp.get_subsections('pygrb_plot_stats_distribution')
 for stat in stats:
     plot_node, output_file = \
-        make_pygrb_plot(wflow, 'pygrb_plot_stats_distribution', out_dir,
-                        inj_set=tuning_inj_set, tags=[stat])
+        _workflow.make_pygrb_plot(wflow, 'pygrb_plot_stats_distribution',
+                                  out_dir, trig_file=trig_file,
+                                  inj_file=inj_file, tags=[stat])
     plotting_nodes.append(plot_node)
     # We want a File, not a 1-element list with a File
     # pycbc_pygrb_plot_stats_distribution produces only one plot: take [0]
@@ -608,18 +372,24 @@ for stat in stats:
 ##layout.single_layout(out_dir, (files))
 #layout.group_layout(out_dir, files)
 
-html_node, [lont_table, lont_h5, lofft_table, lofft_h5] =\
-     make_pygrb_injs_tables(wflow, out_dir, inj_set=None)
-html_nodes.append(html_node)
-
-lofft_layout = list(layout.grouper(files, 2)) + [(lofft_table,)]
-layout.two_column_layout(out_dir, lofft_layout)
+#FIXME
+#html_node, [lont_table, lont_h5, lofft_table, lofft_h5] =\
+#     _workflow.make_pygrb_injs_tables(wflow, out_dir, inj_set=None)
+#html_nodes.append(html_node)
+#lofft_layout = list(layout.grouper(files, 2)) + [(lofft_table,)]
+#layout.two_column_layout(out_dir, lofft_layout)
 
 # Follow up N loudest offsource triggers (parent-child)
-out_dir = rdir['loudest_offsource_events/followups']
-setup_pygrb_minifollowups(wflow, lofft_h5,
-                          'daxes', out_dir,
-                          tags=['loudest_offsource_events'])
+#out_dir = rdir['loudest_offsource_events/followups']
+#if not wflow.cp.has_section('workflow-minifollowups'):
+#        msg = 'No [workflow-minifollowups] section found in configuration file'
+#        logging.info(msg)
+#else:
+#        logging.info('Entering minifollowups module')
+#        _workflow.setup_pygrb_minifollowups(wflow, lofft_h5,
+#                                            'daxes', out_dir,
+#                                             tags=['loudest_offsource_events'])
+#        logging.info('Leaving minifollowups')
 
 
 #
@@ -632,17 +402,19 @@ _workflow.makedir(out_dir)
 num_trials = int(wflow.cp.get('trig_combiner', 'num-trials'))
 offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
 inj_sets = wflow.cp.get_subsections('injections')
-for offtrial in offtrials:
-    out_dir = rdir['exclusion_distances/'+offtrial]
-    _workflow.makedir(out_dir)
-    files = _workflow.FileList([])
-    for inj_set in inj_sets:
-        plot_node, output_files = \
-            make_pygrb_plot(wflow, 'pygrb_efficiency', out_dir,
-                            inj_set=inj_set, tags=[offtrial])
-        plotting_nodes.append(plot_node)
-        files.append(output_files)
-    layout.two_column_layout(out_dir, files)
+#FIXME
+#for offtrial in offtrials:
+#    out_dir = rdir['exclusion_distances/'+offtrial]
+#    _workflow.makedir(out_dir)
+#    files = _workflow.FileList([])
+#    for inj_set in inj_sets:
+#        plot_node, output_files = \
+#            _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency', out_dir,
+#                                      trig_file=trig_file,
+#                                      inj_set=inj_set, tags=[offtrial])
+#        plotting_nodes.append(plot_node)
+#        files.append(output_files)
+#    layout.two_column_layout(out_dir, files)
 
 
 #
@@ -656,7 +428,7 @@ _workflow.makedir(base)
 # Save global config file
 base = rdir['workflow/configuration']
 _workflow.makedir(base)
-ini_file_path = os.path.join(base, 'pygrb_offline_pp.ini')
+ini_file_path = os.path.join(base, args.workflow_name+'.ini')
 with open(ini_file_path, 'w') as ini_fh:
     wflow.cp.write(ini_fh)
 ini_file = _workflow.FileList([_workflow.File(wflow.ifos, '',
@@ -687,16 +459,9 @@ _workflow.makedir(rdir['workflow/output_map'])
 _workflow.makedir(rdir['workflow/planning'])
 
 logging.info("Path for make_results_web_page: %s", os.path.join(os.getcwd(), rdir.base))
-_workflow.make_results_web_page(finalize_wflow, os.path.join(os.getcwd(), rdir.base),
-                                template='red')
-
-container += wflow
-container += finalize_wflow
-
-container.add_subworkflow_dependancy(wflow, finalize_wflow)
-
-container.save()
-logging.info("Dax written.")
+_workflow.make_results_web_page(wflow, os.path.join(os.getcwd(), rdir.base),
+                                template='red',
+                                explicit_dependencies=plotting_nodes+html_nodes)
 
 # Protect the open box results folder
 out_dir = rdir['open_box']
@@ -704,9 +469,15 @@ _workflow.makedir(out_dir)
 os.chmod(out_dir, 0o0700)
 # TODO: follow up loudest offsource trigger
 #out_dir = rdir['open_box/loudest_event/followup']
-#setup_pygrb_minifollowups(wflow, lont_h5, #wflow.ifos,
-#                          'daxes', out_dir,
-#                          tags=['loudest_onsource_event'])
+#if not wflow.cp.has_section('workflow-minifollowups'):
+#        msg = 'No [workflow-minifollowups] section found in configuration file'
+#        logging.info(msg)
+#else:
+#        logging.info('Entering minifollowups module')
+#        _workflow.setup_pygrb_minifollowups(wflow, lont_h5, #wflow.ifos,
+#                                            'daxes', out_dir,
+#                                            tags=['loudest_onsource_event'])
+#        logging.info('Leaving minifollowups')
 
 # Close the log and flush to the html file
 logging.shutdown()
@@ -723,3 +494,8 @@ kwds = {'title' : 'Workflow Generation Log',
         'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
 layout.single_layout(rdir['workflow'], ([dashboard_file, log_file_html]))
+
+# Go back to the run directory and save the workflow
+os.chdir(start_rundir)
+wflow.save()
+logging.info("Dax written.")
