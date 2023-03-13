@@ -23,7 +23,6 @@
 Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
-import glob
 import os
 import logging
 import argparse
@@ -32,7 +31,6 @@ import numpy
 import h5py
 from scipy import stats
 from pycbc.detector import Detector
-from pycbc.workflow.core import FileList, resolve_url_to_file
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo import segments
