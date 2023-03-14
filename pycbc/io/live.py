@@ -340,7 +340,7 @@ class CandidateForGraceDB(object):
             logging.info('P_astro file saved as %s', self.pastro_file)
 
     def upload(self, fname, gracedb_server=None, testing=True,
-               extra_strings=None, search='AllSky'):
+               extra_strings=None, search='AllSky', labels=None):
         """Upload this candidate to GraceDB, and annotate it with a few useful
         plots and comments.
 
@@ -356,6 +356,8 @@ class CandidateForGraceDB(object):
             test trigger (True) or a production trigger (False).
         search: str
             String going into the "search" field of the GraceDB event.
+        labels: list
+            Optional list of labels to tag the new event with.
         """
         import matplotlib
         matplotlib.use('Agg')
@@ -373,27 +375,39 @@ class CandidateForGraceDB(object):
         # as GraceDB operations can fail later
         self.save(fname)
 
+        # hardware injections need to be maked with the INJ tag
+        if self.is_hardware_injection:
+            labels = (labels or []) + ['INJ']
+
+        # connect to GraceDB if we are not reusing a connection
+        if not hasattr(self, 'gracedb'):
+            logging.info('Connecting to GraceDB')
+            gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+            if gracedb_server:
+                gdbargs['service_url'] = gracedb_server
+            try:
+                from ligo.gracedb.rest import GraceDb
+                self.gracedb = GraceDb(**gdbargs)
+            except Exception as exc:
+                logging.error('Failed to create GraceDB client')
+                logging.error(exc)
+
+        # create GraceDB event
+        logging.info('Uploading %s to GraceDB', fname)
+        group = 'Test' if testing else 'CBC'
         gid = None
         try:
-            if not hasattr(self, 'gracedb'):
-                from ligo.gracedb.rest import GraceDb
-                gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
-                self.gracedb = GraceDb(gracedb_server, **gdbargs) \
-                    if gracedb_server else GraceDb(**gdbargs)
-            # create GraceDB event
-            group = 'Test' if testing else 'CBC'
-            r = self.gracedb.create_event(group, "pycbc", fname, search).json()
-            gid = r["graceid"]
+            response = self.gracedb.create_event(
+                group,
+                "pycbc",
+                fname,
+                search=search,
+                labels=labels
+            )
+            gid = response.json()["graceid"]
             logging.info("Uploaded event %s", gid)
-
-            if self.is_hardware_injection:
-                self.gracedb.write_label(gid, 'INJ')
-                logging.info("Tagging event %s as an injection", gid)
-
         except Exception as exc:
-            logging.error('Something failed during the upload of event %s on '
-                          'GraceDB. The event may not have been uploaded!',
-                          fname)
+            logging.error('Failed to create GraceDB event')
             logging.error(str(exc))
 
         # Upload em_bright properties JSON

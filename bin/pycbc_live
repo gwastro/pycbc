@@ -95,6 +95,9 @@ class LiveEventManager(object):
         self.use_date_prefix = args.day_hour_output_prefix
         self.ifar_upload_threshold = args.ifar_upload_threshold
         self.pvalue_livetime = args.pvalue_combination_livetime
+        self.gracedb_server = args.gracedb_server
+        self.gracedb_search = args.gracedb_search
+        self.gracedb_labels = args.gracedb_labels
         self.gracedb_testing = not args.enable_production_gracedb_upload
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
@@ -328,8 +331,11 @@ class LiveEventManager(object):
 
         cmd += '--params-file {} '.format(curr_fname)
         cmd += '--approximant {} '.format(apr)
-        cmd += '--gracedb-server {} '.format(args.gracedb_server)
-        cmd += '--gracedb-search {} '.format(args.gracedb_search)
+        cmd += '--gracedb-server {} '.format(self.gracedb_server)
+        cmd += '--gracedb-search {} '.format(self.gracedb_search)
+        # Don't pass labels to the SNR optimization job:
+        # currently labels are only required for Early Warning
+        # analysis, which does not use SNR opt
         if not self.gracedb_testing:
             cmd += '--production '
         cmd += '--verbose '
@@ -346,9 +352,9 @@ class LiveEventManager(object):
         if args.processing_scheme:
             # we will use the cores for multiple workers of the
             # optimization routine, so we force the processing scheme
-            # to a single core here.  this may be enforcing some
+            # to a single core here.  This may be enforcing some
             # assumptions about the optimal way to do ffts on the
-            # machine. however, the dominant cost of pycbc_optimize_snr
+            # machine. However, the dominant cost of pycbc_optimize_snr
             # is expected to be in waveform generation, which is
             # unlikely to benefit from a processing scheme with more
             # than 1 thread anyway.
@@ -365,9 +371,11 @@ class LiveEventManager(object):
 
     def create_gdb(self):
         """
-        Function to create GraceDB session.
+        Create a GraceDB session that will persist throughout the execution
+        of PyCBC Live.
         """
         from ligo.gracedb.rest import GraceDb
+
         logging.info('Creating GraceDB session')
         # Set up dict for args that reload the certificate if it will expire in the
         # reload_buffer time. These args are documented here:
@@ -375,20 +383,21 @@ class LiveEventManager(object):
         # Because we do not change any of the request session values when running the
         # code, it should remain thread safe. 
         gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
-        if args.gracedb_server:
-            gdbargs['service_url'] = args.gracedb_server 
+        if self.gracedb_server:
+            gdbargs['service_url'] = self.gracedb_server
         self.gracedb = GraceDb(**gdbargs)
 
     def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos,
-                         upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
+                         upload_checks, optimize_snr_checks):
         gid = None
         if upload_checks:
             gid = event.upload(
                 fname,
-                gracedb_server=gracedb_server,
+                gracedb_server=self.gracedb_server,
                 testing=self.gracedb_testing,
                 extra_strings=[comment],
-                search=gracedb_search
+                search=self.gracedb_search,
+                labels=self.gracedb_labels
             )
         if optimize_snr_checks:
             self.setup_optimize_snr(
@@ -478,8 +487,7 @@ class LiveEventManager(object):
             live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
             thread_args = (
                 event, fname, comment, coinc_results, live_ifos, coinc_ifos,
-                upload_checks, optimize_snr_checks, args.gracedb_server, 
-                args.gracedb_search,
+                upload_checks, optimize_snr_checks
             )
             gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
                                                  args=thread_args)
@@ -566,9 +574,8 @@ class LiveEventManager(object):
                 live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
                 thread_args = (
                     event, fname, comment, single, live_ifos, [ifo],
-                    upload_checks, optimize_snr_checks, args.gracedb_server, 
-                    args.gracedb_search,
-                    )
+                    upload_checks, optimize_snr_checks
+                )
                 gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
                                                      args=thread_args)
                 gdb_upload_thread.start()
@@ -823,6 +830,9 @@ parser.add_argument('--gracedb-server', metavar='URL',
 parser.add_argument('--gracedb-search', type=str, default='AllSky',
                     help='String going into the "search" field of the GraceDB '
                          'events')
+parser.add_argument('--gracedb-labels', metavar='LABEL', nargs='+',
+                    help='Apply the given list of labels to events uploaded '
+                         'to GraceDB.')
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading candidate '
                          'triggers to GraceDB, in years.')
