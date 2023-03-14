@@ -108,14 +108,14 @@ class LVKNewStyleInjectionSet(object):
     translation_dict = {
         'mass1_det': 'mass1',
         'mass2_det': 'mass2',
-        'f22_ref_spin': 'fref', # ????
+        'f22_ref_spin': 'f_ref',
         't_co_gps': 'tc',
         'd_lum': 'distance',
         'f22_start': 'f_lower',
         'cbc_model': 'approximant',
-        'longAscNodes': 'FIXME', # FIXME
-        'eccentricity': 'FIXME', # FIXME (check eccentricity params!)
-        'meanPerAno': 'FIXME', # FIXME
+        'longAscNodes': 'long_asc_nodes',
+        'eccentricity': 'eccentricity',
+        'meanPerAno': 'mean_per_ano',
         't_co_gps_add': 'FIXME', # FIXME (don't understand why this is needed?)
         'ModeArray': 'FIXME', # FIXME (Will need special handling. Need an example)
         'ModeArrayJframe': 'FIXME', # FIXME (Does this do anything useful?)
