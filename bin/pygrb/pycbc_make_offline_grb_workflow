@@ -436,6 +436,8 @@ ppDir = os.path.join(currDir, "post_processing")
 os.makedirs(ppDir)
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
                                          "postproc-method", tags)
+pp_files = _workflow.FileList([])
+results_files = _workflow.FileList([])
 if post_proc_method == "PYGRB_OFFLINE":
     pp_files = _workflow.setup_pygrb_pp_workflow(wflow, ppDir, segDir,
                                       sciSegs[ifo][0], inspiral_files,
