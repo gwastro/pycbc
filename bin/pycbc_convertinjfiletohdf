@@ -116,7 +116,7 @@ class LVKNewStyleInjectionSet(object):
         'longAscNodes': 'long_asc_nodes',
         'eccentricity': 'eccentricity',
         'meanPerAno': 'mean_per_ano',
-        't_co_gps_add': 'FIXME', # FIXME (don't understand why this is needed?)
+        't_co_gps_add': None,
         'ModeArray': 'FIXME', # FIXME (Will need special handling. Need an example)
         'ModeArrayJframe': 'FIXME', # FIXME (Does this do anything useful?)
     }
@@ -127,20 +127,31 @@ class LVKNewStyleInjectionSet(object):
     def columns_in_pycbc_format(self, subdir):
         # Loop over columns in input file
                          
-        for field_name in self.inj_file[subdir].keys():
+        for field_name in self.inj_file['cbc_waveform_params'].keys():
             if field_name in self.translation_dict:
-                yield (field_name, self.translation_dict[field_name])
+                if field_name == 't_co_gps_add':
+                    continue
+                else:
+                    yield (field_name, self.translation_dict[field_name])
             else:
                 yield (field_name, field_name)
 
+    def get_coalescence_time(self):
+        tcs = self.inj_file['cbc_waveform_params/t_co_gps'][:]
+        if 't_co_gps_add' in self.inj_file['cbc_waveform_params']:
+            tcs += self.inj_file['cbc_waveform_params/t_co_gps_add'][:] 
+        return tcs
+
     def pack_data_into_pycbc_format_input(self):
         data = {}
-        for subdir in ['cbc_waveform_params']:
-            for lvk_name, pycbc_name in self.columns_in_pycbc_format(subdir):
+        subdir = 'cbc_waveform_params'
+        for lvk_name, pycbc_name in self.columns_in_pycbc_format(subdir):
+            if lvk_name == 't_co_gps':
+                # Special case
+                data[pycbc_name] = self.get_coalescence_time()
+            else:
                 data[pycbc_name] = self.inj_file[f'{subdir}/{lvk_name}'][:]
         return data
-
-
 
 
 parser = argparse.ArgumentParser()
