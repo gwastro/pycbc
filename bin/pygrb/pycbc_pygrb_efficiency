@@ -108,7 +108,7 @@ opts = parser.parse_args()
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
-do_injections = True if opts.found_missed_file is not None
+do_injections = True if opts.found_missed_file is not None else False
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
