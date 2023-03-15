@@ -138,6 +138,8 @@ inj_data = load_data(inj_file, vetoes, injections=True)
 if snr_type == 'single':
     x_key = opts.ifo + '/end_time'
     y_key = opts.ifo + '/snr_' + opts.ifo.lower()
+    # TODO: Undoes current L710 in EventManagerCoherent.write_to_hdf
+    # and is ugly hardcoded!
     if opts.ifo.lower() != 'h1':
         y_key = y_key[:-1]
 else:
