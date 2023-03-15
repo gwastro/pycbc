@@ -22,7 +22,8 @@
 # =============================================================================
 #
 """
-This module provides coordinate transform between space-borne detectors and
+This module provides coordinate transformations related to space-borne detectors,
+such as coordinate transformations between space-borne detectors and
 ground-based detectors.
 """
 
@@ -31,7 +32,7 @@ from scipy.spatial.transform import Rotation
 from sympy import symbols, nsolve, sin, cos
 
 
-YRSID_SI = 31558149.763545603
+YRSID_SI = 31558149.763545603  # same as BBHx, but not for lal.YRJUL_SI
 OMEGA_0 = 1.99098659277e-7
 
 def localization_to_propagation_vector(lamda, beta):
@@ -55,13 +56,12 @@ def propagation_vector_to_localization(k):
     # beta already within [-pi/2, pi/2]
     beta = np.float64(np.arcsin(-k[2]))
     lamda = np.float64(np.arctan2(-k[1]/np.cos(beta), -k[0]/np.cos(beta)))
-    print("lamda before mod: ", lamda)
     # lamda should within [0, 2*pi]
     lamda = np.mod(lamda, 2*np.pi)
 
     return np.array([lamda, beta])
 
-def polarization_angle_newframe(psi, k, rotation_matrix):
+def polarization_newframe(psi, k, rotation_matrix):
     lamda, beta = propagation_vector_to_localization(k)
     u = np.array([[np.sin(lamda)], [-np.cos(lamda)], [0]])
     rotation_vector = psi * k
@@ -113,7 +113,7 @@ def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
     rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
     kL = rotation_matrix_L.T @ kSSB
     lamdaL, betaL = propagation_vector_to_localization(kL)
-    psiL = polarization_angle_newframe(psiSSB, kSSB, rotation_matrix_L)
+    psiL = polarization_newframe(psiSSB, kSSB, rotation_matrix_L)
 
     return (tL, lamdaL, betaL, psiL)
 
@@ -128,7 +128,7 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
         kSSB_approx = rotation_matrix_L @ kL
         lamdaSSB_approx, betaSSB_approx = propagation_vector_to_localization(kSSB_approx)
         tSSB_approx = tSSB_from_tL(tL, lamdaSSB_approx, betaSSB_approx, t0)
-    psiSSB = polarization_angle_newframe(psiL, kL, rotation_matrix_L.T)
+    psiSSB = polarization_newframe(psiL, kL, rotation_matrix_L.T)
 
     return (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB)
 
@@ -170,7 +170,7 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
     rotation_matrix_G = rotation_matrix_SSBtoGEO()
     kG = rotation_matrix_G.T @ kSSB
     lamdaG, betaG = propagation_vector_to_localization(kG)
-    psiG = polarization_angle_newframe(psiSSB, kSSB, rotation_matrix_G)
+    psiG = polarization_newframe(psiSSB, kSSB, rotation_matrix_G)
 
     return (tG, lamdaG, betaG, psiG)
 
@@ -184,13 +184,25 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0):
         kSSB_approx = rotation_matrix_G @ kG
         lamdaSSB_approx, betaSSB_approx = propagation_vector_to_localization(kSSB_approx)
         tSSB_approx = tSSB_from_tG(tG, lamdaSSB_approx, betaSSB_approx, t0)
-    psiSSB = polarization_angle_newframe(psiG, kG, rotation_matrix_G.T)
+    psiSSB = polarization_newframe(psiG, kG, rotation_matrix_G.T)
 
     return (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB)
 
+def LISA_to_GEO(tL, lamdaL, betaL, psiL, t0):
+    tSSB, lamdaSSB, betaSSB, psiSSB = LISA_to_SSB(tL, lamdaL, betaL, psiL, t0)
+    tG, lamdaG, betaG, psiG = SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0)
+
+    return tG, lamdaG, betaG, psiG
+
+def GEO_to_LISA(tG, lamdaG, betaG, psiG, t0):
+    tSSB, lamdaSSB, betaSSB, psiSSB = GEO_to_SSB(tG, lamdaG, betaG, psiG, t0)
+    tL, lamdaL, betaL, psiL = SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0)
+
+    return tL, lamdaL, betaL, psiL
+
 __all__ = ['localization_to_propagation_vector', 'rotation_matrix_SSBtoLISA',
-           'propagation_vector_to_localization', 'polarization_angle_newframe',
+           'propagation_vector_to_localization', 'polarization_newframe',
            'tL_from_SSB', 'tSSB_from_tL', 'SSB_to_LISA', 'LISA_to_SSB',
            'rotation_matrix_SSBtoGEO', 'tG_from_SSB', 'tSSB_from_tG',
-           'SSB_to_GEO', 'GEO_to_SSB',
+           'SSB_to_GEO', 'GEO_to_SSB', 'LISA_to_GEO', 'GEO_to_LISA',
           ]
