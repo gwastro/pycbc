@@ -76,6 +76,8 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
             data[null_stat_type] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
         elif null_stat_type == 'single':
             key = opts.ifo + '/snr_' + opts.ifo.lower()
+            # TODO: Undoes current L710 in EventManagerCoherent.write_to_hdf
+            # and is ugly hardcoded!
             if opts.ifo.lower() != 'h1':
                 key = key[:-1]
             data[null_stat_type] = trigs_or_injs[key][:]

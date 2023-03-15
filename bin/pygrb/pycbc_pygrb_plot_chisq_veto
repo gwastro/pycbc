@@ -77,6 +77,8 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
             data[snr_type] = trigs_or_injs['network/%s_snr' % snr_type][:]
         elif snr_type == 'single':
             key = opts.ifo + '/snr_' + opts.ifo.lower()
+            # TODO: Undoes current L710 in EventManagerCoherent.write_to_hdf
+            # and is ugly hardcoded!
             if opts.ifo.lower() != 'h1':
                 key = key[:-1]
             data[snr_type] = trigs_or_injs[key][:]
@@ -100,8 +102,9 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         numpy.putmask(data[veto_type], data[veto_type] == 0, 0.005)
 
         if not injections:
+            dof_key = '%s/%s_dof' % (opts.ifo, veto_tags[veto_type])
             data['dof'] = numpy.unique(
-                trigs_or_injs['%s/%s_dof' % (opts.ifo, veto_tags[veto_type])][:])
+                trigs_or_injs[dof_key][:])
 
         label = "injections" if injections else "triggers"
            
