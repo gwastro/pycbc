@@ -83,7 +83,7 @@ def html_table(columns, names, page_size=None, format_strings=None):
 
     column_descriptions = []
     for column, name in zip(columns, names):
-        if column.dtype.kind == 'S':
+        if column.dtype.kind == 'S' or column.dtype.kind == 'U':
             ctype = 'string'
         else:
             ctype = 'number'
