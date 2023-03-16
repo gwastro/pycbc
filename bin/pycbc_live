@@ -245,7 +245,7 @@ class LiveEventManager(object):
             triggers[f'foreground/{ifo}/{name}'] = triggers[key]
 
         # Set the detector-specific fields for which we have data
-        snr_series_peak = snr_series.at_time(
+        snr_series_peak = pvalue_info['snr_series'].at_time(
             pvalue_info['peak_time'],
             nearest_sample=True
         )
