@@ -53,10 +53,16 @@ class FisherSky():
     _params=['ra', 'dec']
 
     def __init__(self,**params):
-        self.mu_values = numpy.array([params['mean_ra'], params['mean_dec']])
         self.sigma = params['sigma']
-        self.alpha, self.beta = new_z_to_euler(self.mu_values)
         self.kappa = 1./((0.66*params['sigma']))**2
+        self.angle_unit = params['angle_unit']
+        if self.angle_unit == 'rad':
+            self.mu_values = numpy.array([params['mean_ra'], params['mean_dec']])
+        elif self.angle_unit == 'deg':
+            self.mu_values = numpy.array(numpy.deg2rad([params['mean_ra'], params['mean_dec']]))
+        else:
+            raise ValueError("Only deg or rad is allowed")
+        self.alpha, self.beta = new_z_to_euler(self.mu_values)
 
     @property
     def params(self):
@@ -72,7 +78,8 @@ class FisherSky():
         mean_ra = float(cp.get_opt_tag(section, 'mean_ra', tag))
         mean_dec = float(cp.get_opt_tag(section, 'mean_dec', tag))
         sigma = float(cp.get_opt_tag(section, 'sigma', tag))
-        return cls(mean_ra=mean_ra, mean_dec=mean_dec, sigma=sigma)
+        angle_unit = cp.get_opt_tag(section, 'angle_unit', tag)
+        return cls(mean_ra=mean_ra, mean_dec=mean_dec, sigma=sigma, angle_unit=angle_unit)
 
     def rvs(self,size):
         arr = numpy.array([
