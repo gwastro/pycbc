@@ -17,8 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """ This program converts standard injection file formats (e.g. XML format
-or the LIGO HDF format) into a PyCBC hdf format that includes a template hash
-used to associate triggers with their template.
+or the LIGO HDF format) into a PyCBC hdf injection format
 """
 
 import argparse
@@ -132,10 +131,7 @@ class LVKNewStyleInjectionSet(object):
                          
         for field_name in self.inj_file[self.subdir].keys():
             if field_name in self.translation_dict:
-                if field_name == 't_co_gps_add':
-                    continue
-                else:
-                    yield (field_name, self.translation_dict[field_name])
+                yield (field_name, self.translation_dict[field_name])
             else:
                 yield (field_name, field_name)
 
@@ -151,6 +147,8 @@ class LVKNewStyleInjectionSet(object):
             if lvk_name == 't_co_gps':
                 # Special case
                 data[pycbc_name] = self.get_coalescence_time()
+            elif lvk_name == 't_co_gps_add':
+                continue
             else:
                 data[pycbc_name] = self.inj_file[f'{self.subdir}/{lvk_name}'][:]
         return data
