@@ -118,7 +118,7 @@ class LVKNewStyleInjectionSet(object):
         'meanPerAno': 'mean_per_ano',
         't_co_gps_add': None,
         'ModeArray': 'FIXME', # FIXME (Will need special handling. Need an example)
-        'ModeArrayJframe': 'FIXME', # FIXME (Does this do anything useful?)
+        'ModeArrayJframe': 'FIXME', # FIXME (See ModeArray above)
     }
 
     subdir = 'cbc_waveform_params'
