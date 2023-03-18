@@ -18,6 +18,7 @@ from pycbc import bin_utils
 from pycbc.events import cuts, triggers, trigger_fits as trstats
 from pycbc.io import DictArray
 from pycbc.events import ranking
+from pycbc.events.coinc import cluster_over_time
 import argparse, logging, os, sys, h5py
 
 parser = argparse.ArgumentParser(usage="",
@@ -60,6 +61,15 @@ parser.add_argument("--duration-bin-spacing",
                     help="How to set spacing for bank split "
                          "if using --duration-bin-start, --duration-bin-end "
                          "and --num-duration-bins.")
+parser.add_argument('--prune-loudest', type=int,
+                    help="Maximum number of loudest trigger clusters to "
+                         "remove from each bin.")
+parser.add_argument("--prune-window", type=float,
+                    help="Window (seconds) either side of the --prune-loudest "
+                         "loudest triggers in each duration bin to remove.")
+parser.add_argument("--prune-stat-threshold", type=float,
+                    help="Minimum --sngl-ranking value to consider a "
+                         "trigger for pruning.")
 parser.add_argument("--fit-threshold", type=float, default=5,
                     help="Lower threshold used in fitting the triggers."
                          "Default 5.")
@@ -76,16 +86,23 @@ parser.add_argument("--sngl-ranking", default="newsnr",
 
 cuts.insert_cuts_option_group(parser)
 
-#Add some input sanitisation
 args = parser.parse_args()
 
-pycbc.init_logging(args.verbose)
+# Check input options
 
-# Check the bin inputs to see if they are sensible
+# Pruning options are mutually required or not needed
+prune_options = [args.prune_loudest, args.prune_window,
+                 args.prune_stat_threshold]
+
+if any(prune_options) and not all(prune_options):
+        parser.error("Require all or none of --prune-loudest, "
+                     "--prune-window and --prune-stat-threshold")
+
+# Check the bin options
 if args.duration_bin_edges and (args.duration_bin_start or
                                 args.duration_bin_end or
                                 args.num_duration_bins):
-    # duration bin edges specified as well as the linear/logarithmi
+    # duration bin edges specified as well as linear/logarithmic
     parser.error("Cannot use --duration-bin-edges with "
                  "--duration-bin-start, --duration-bin-end or "
                  "--num-duration-bins.")
@@ -103,7 +120,9 @@ if args.duration_bin_end and \
                  "--duration-bin-start, got "
                  f"{args.duration_bin_end} and {args.duration_bin_start}")
 
-# Create the duration bins:
+pycbc.init_logging(args.verbose)
+
+# Create the duration bins
 if args.duration_bin_edges:
     duration_bin_edges = np.array(args.duration_bin_edges)
 elif args.duration_bin_spacing == 'log':
@@ -132,8 +151,7 @@ args.template_cuts.append(f"template_duration:{max(duration_bin_edges)}:upper_in
 args.trigger_cuts = args.trigger_cuts or []
 args.trigger_cuts.insert(0, f"snr:{args.fit_threshold}:lower_inc")
 
-# We can cut out all of the stuff with sngl-ranking
-# below threshold now as well
+# Cut triggers with sngl-ranking below threshold
 args.trigger_cuts.append(f"{args.sngl_ranking}:{args.fit_threshold}:lower_inc")
 
 logging.info("Setting up the cut dictionaries")
@@ -177,14 +195,14 @@ for filename in files:
 
     f = os.path.join(date_directory, filename)
     skipping_file = False
-    #If there is an IOerror with the file, don't fail, just carry on
+    # If there is an IOerror with the file, don't fail, just carry on
     try:
         h5py.File(f, 'r')
     except IOError:
         logging.info('IOError with file ' + f)
         continue
 
-    # Triggers for this file only:
+    # Triggers for this file
     triggers = {}
     with h5py.File(f, 'r') as fin:
         # Open the file: does it have the ifo group and snr dataset?
@@ -205,15 +223,15 @@ for filename in files:
                 continue
 
             # Read trigger value datasets from file
+            # Get all datasets with the same size as the trigger SNRs, 
+            # except for edge cases where the number of loudest, gates etc.
+            # happens to be the same as the trigger count
             triggers[ifo] = {k: fin[ifo][k][:] for k in fin[ifo].keys()
                              if k not in ('loudest', 'stat', 'gates', 'psd')
                              and fin[ifo][k].size == n_triggers}
-            # The n_triggers filter should be enough, but the 'not in'
-            # list is for edge cases where the number of gates/loudest etc is
-            # the same as the number of triggers
 
-            # The stored chisq is actually reduced chisq, so we need to
-            # alter the chisq_dof dataset so we can use the standard conversions.
+            # The stored chisq is actually reduced chisq, so hack the
+            # chisq_dof dataset to use the standard conversions.
             # chisq_dof of 1.5 gives the right number (2 * 1.5 - 2 = 1)
             triggers[ifo]['chisq_dof'] = \
                 1.5 * np.ones_like(triggers[ifo]['snr'])
@@ -225,19 +243,19 @@ for filename in files:
         keep_idx = cuts.apply_trigger_cuts(trigs_ifo, trigger_cut_dict)
 
         # triggers contains the datasets that we want to use for
-        # the template cuts, so it can be used as the template bank
-        # in this use case
+        # the template cuts, so here it can be used as the template bank
         keep_idx = cuts.apply_template_cuts(trigs_ifo, template_cut_dict,
                                             template_ids=keep_idx)
 
         # Skip if no triggers survive the cuts
-        if not keep_idx.size: continue
+        if not keep_idx.size:
+            continue
 
         # Apply the cuts
         triggers_cut = {k: trigs_ifo[k][keep_idx]
                         for k in trigs_ifo.keys()}
 
-        # Calculate the sngl_ranking value to be used in the fits
+        # Calculate the sngl_ranking values
         sngls_value = ranking.get_sngls_ranking_from_trigs(
                           triggers_cut, args.sngl_ranking)
 
@@ -247,7 +265,6 @@ for filename in files:
 
         # If we are clustering, take the max sngl_ranking value
         if args.cluster:
-            # Use sngls_ranking parameter for clustering
             max_idx = sngls_value.argmax()
             triggers_cut = triggers_da.select(max_idx)
 
@@ -266,37 +283,95 @@ for ifo in args.ifos:
         logging.info("%s: %d in %.2fs",
                      ifo, len(events[ifo]), live_time[ifo])
 
-# split the events into bins by template duration
 logging.info('Sorting events into template duration bins')
 
-# Fit the triggers within each bin
+# Set up bins and prune loud events in each bin
 n_bins = duration_bin_edges.size - 1
 alphas = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 counts = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
-binned_sngl_stats = {ifo: {} for ifo in args.ifos}
+event_bins = {}
+times_to_prune = {ifo: [] for ifo in args.ifos}
 
 for ifo in events.keys():
     # Sort the events into their bins
-    event_bin = np.array([tbins[d]
-                          for d in events[ifo].data['template_duration']])
+    event_bins[ifo] = np.array([tbins[d]
+                               for d in events[ifo].data['template_duration']])
 
-    # For each bin, do the fit
+    if args.prune_loudest:
+        for bin_num in range(n_bins):
+            inbin = event_bins[ifo] == bin_num
+
+            binned_events = events[ifo].data[args.sngl_ranking][inbin]
+            binned_event_times = events[ifo].data['end_time'][inbin]
+
+            # Cluster triggers in time with the pruning window to ensure
+            # that clusters are independent
+            cidx = cluster_over_time(binned_events, binned_event_times,
+                                     args.prune_window)
+
+            # Find clusters at/above the statistic threshold
+            above_stat_min = binned_events[cidx] >= args.prune_stat_threshold
+            cidx = cidx[above_stat_min]
+
+            if args.prune_loudest > cidx.size:
+                # There are fewer clusters than the number specified,
+                # so prune them all
+                times_to_prune[ifo] += list(binned_event_times[cidx])
+                continue
+
+            # Find the loudest of the triggers in this bin
+            argloudest = np.argsort(binned_events[cidx])[-args.prune_loudest:]
+            times_to_prune[ifo] += list(binned_event_times[cidx][argloudest])
+
+n_pruned = {ifo: [] for ifo in args.ifos}
+pruned_trigger_times = {}
+if args.prune_loudest:
+    logging.info("Pruning triggers %.2fs either side of the loudest %d "
+                 "triggers in each bin if %s > %.2f", args.prune_window,
+                 args.prune_loudest, args.sngl_ranking,
+                 args.prune_stat_threshold)
+    for ifo in events.keys():
+        times = events[ifo].data['end_time'][:]
+        outwith_window = np.ones_like(times, dtype=bool)
+        for t in times_to_prune[ifo]:
+            outwith_window &= abs(times - t) > args.prune_window
+            # Need to make an (ever-so-small) correction to the live time
+            live_time[ifo] -= 2 * args.prune_window
+
+        # Save the pruned events for reporting
+        within_window = np.logical_not(outwith_window)
+        pruned_trigger_bins = event_bins[ifo][within_window]
+        pruned_trigger_times[ifo] = times[within_window]
+
+        # Remove pruned events from the arrays we will fit
+        events[ifo] = events[ifo].select(outwith_window)
+        event_bins[ifo] = event_bins[ifo][outwith_window]
+
+        # Report the number of pruned triggers in each bin
+        for bin_num in range(n_bins):
+            pruned_inbin = pruned_trigger_bins == bin_num
+            n_pruned_thisbin = np.count_nonzero(pruned_inbin)
+            n_pruned[ifo].append(n_pruned_thisbin)
+            logging.info("Pruned %d triggers from %s bin %d",
+                         n_pruned_thisbin, ifo, bin_num)
+
+# Do the fitting for each bin
+for ifo in events.keys():
     for bin_num in range(n_bins):
-        inbin = event_bin == bin_num
+
+        inbin = event_bins[ifo] == bin_num
+
         if not np.count_nonzero(inbin):
             # No triggers, alpha and count are -1
             counts[ifo][bin_num] = -1
             alphas[ifo][bin_num] = -1
             continue
 
-        # For ease, keep the sngl_ranking values as this will be used later
-        binned_sngl_stats[ifo][bin_num] = \
-            events[ifo].data[args.sngl_ranking][inbin]
-
         counts[ifo][bin_num] = np.count_nonzero(inbin)
-        alphas[ifo][bin_num], _ = trstats.fit_above_thresh(args.fit_function,
-                                      binned_sngl_stats[ifo][bin_num],
-                                      args.fit_threshold)
+        alphas[ifo][bin_num], _ = trstats.fit_above_thresh(
+                args.fit_function,
+                events[ifo].data[args.sngl_ranking][inbin],
+                args.fit_threshold)
 
 logging.info("Writing results")
 with h5py.File(args.output, 'w') as fout:
@@ -306,10 +381,14 @@ with h5py.File(args.output, 'w') as fout:
         fout[ifo].create_group('triggers')
         for key in events[ifo].data:
             fout[ifo]['triggers'][key] = events[ifo].data[key]
+        if ifo in pruned_trigger_times:
+            fout[ifo]['pruned_trigger_times'] = pruned_trigger_times[ifo]
 
         fout[ifo]['fit_coeff'] = alphas[ifo]
         fout[ifo]['counts'] = counts[ifo]
         fout[ifo].attrs['live_time'] = live_time[ifo]
+        fout[ifo].attrs['pruned_times'] = times_to_prune[ifo]
+        fout[ifo].attrs['n_pruned'] = n_pruned[ifo]
 
     fout['bins_upper'] = tbins.upper()
     fout['bins_lower'] = tbins.lower()

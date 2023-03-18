@@ -17,7 +17,7 @@ for ifo in ['H1', 'L1']:
 
     # remove some of the high and low
     smooth = highpass_fir(white_strain, 35, 8)
-    smooth = lowpass_fir(white_strain, 300, 8)
+    smooth = lowpass_fir(smooth, 300, 8)
 
     # time shift and flip L1
     if ifo == 'L1':
