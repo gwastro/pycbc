@@ -29,7 +29,8 @@ ground-based detectors.
 
 import numpy as np
 from scipy.spatial.transform import Rotation
-from sympy import symbols, nsolve, sin, cos
+from scipy.optimize import fsolve
+from astropy.constants import c, au
 from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
 
 
@@ -199,17 +200,17 @@ def tSSB_from_tL(tL, lamdaSSB, betaSSB, t0=0.0):
     tSSB : float
         The time when a GW signal arrives at the origin of SSB frame.
     """
-    tSSB = symbols('tSSB')
     t0 *= YRSID_SI
     R_ORBIT = au.value
     OMEGA_L = 2 * np.pi / YRSID_SI
 
-    equation = tL - tSSB + R_ORBIT * cos(betaSSB) * (
-        cos(lamdaSSB) * cos(OMEGA_L * (tSSB + t0)) +
-        sin(lamdaSSB) * sin(OMEGA_L * (tSSB + t0))
-    ) / c.value
+    def equation(tSSB):
+        return tL - tSSB + R_ORBIT * np.cos(betaSSB) * (
+            np.cos(lamdaSSB) * np.cos(OMEGA_L * (tSSB + t0)) +
+            np.sin(lamdaSSB) * np.sin(OMEGA_L * (tSSB + t0))
+        ) / c.value
 
-    return np.float64(nsolve(equation, tL))
+    return fsolve(equation, tL)[0]
 
 def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
     """ Converting the arrive time, the sky localization, and the polarization
@@ -379,20 +380,20 @@ def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
 
     Returns
     -------
-    tG : float
-        The time when a GW signal arrives at the origin of geocentric frame.
+    tSSB : float
+        The time when a GW signal arrives at the origin of SSB frame.
     """
-    tSSB = symbols('tSSB')
     t0 *= YRSID_SI
     R_ORBIT = au.value
     OMEGA_G = 2 * np.pi / YRSID_SI
 
-    equation = tG - tSSB + R_ORBIT * cos(betaSSB) * (
-        cos(lamdaSSB) * cos(OMEGA_G * (tSSB + t0)) +
-        sin(lamdaSSB) * sin(OMEGA_G * (tSSB + t0))
-    ) / c.value
+    def equation(tSSB):
+        return tG - tSSB + R_ORBIT * np.cos(betaSSB) * (
+            np.cos(lamdaSSB) * np.cos(OMEGA_G * (tSSB + t0)) +
+            np.sin(lamdaSSB) * np.sin(OMEGA_G * (tSSB + t0))
+        ) / c.value
 
-    return np.float64(nsolve(equation, tG))
+    return fsolve(equation, tG)[0]
 
 def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
