@@ -30,6 +30,7 @@ and ground-based detectors.
 import numpy as np
 from scipy.spatial.transform import Rotation
 from scipy.optimize import fsolve
+from astropy import units as u
 from astropy.constants import c, au
 from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
 
@@ -45,9 +46,9 @@ def localization_to_propagation_vector(lamda, beta):
     Parameters
     ----------
     lamda : float
-        The right ascension or ecliptic longitude, in the unit of 'deg'.
+        The right ascension or ecliptic longitude, in the unit of 'radian'.
     beta : float
-        The declination or ecliptic latitude, in the unit of 'deg'.
+        The declination or ecliptic latitude, in the unit of 'radian'.
 
     Returns
     -------
@@ -67,7 +68,7 @@ def rotation_matrix_SSBtoLISA(alpha):
     Parameters
     ----------
     alpha : float
-        The angular displacement of LISA in SSB frame, in the unit of 'deg'.
+        The angular displacement of LISA in SSB frame, in the unit of 'radian'.
 
     Returns
     -------
@@ -114,7 +115,7 @@ def polarization_newframe(psi, k, rotation_matrix):
     Parameters
     ----------
     psi : float
-        The polarization angle in the old frame, in the unit of 'deg'.
+        The polarization angle in the old frame, in the unit of 'radian'.
     k : numpy.array
         The propagation unit vector of a GW signal in the old frame.
     rotation_matrix : numpy.array
@@ -159,10 +160,10 @@ def tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
         In the unit of 's'.
     lamdaSSB : float
         The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
 
@@ -194,10 +195,10 @@ def tSSB_from_tL(tL, lamdaSSB, betaSSB, t0=0.0):
         In the unit of 's'.
     lamdaSSB : float
         The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
 
@@ -230,13 +231,13 @@ def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
         In the unit of 's'.
     lamdaSSB : float
         The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     psiSSB : float
         The polarization angle of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
 
@@ -247,16 +248,16 @@ def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
         The time when a GW signal arrives at the origin of LISA frame.
         In the unit of 's'.
     lamdaL : float
-        The longitude of a GW signal in LISA frame, in the unit of 'deg'.
+        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
     betaL : float
-        The latitude of a GW signal in LISA frame, in the unit of 'deg'.
+        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
     psiL : float
         The polarization angle of a GW signal in LISA frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     """
     tL = tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0)
     kSSB = localization_to_propagation_vector(lamdaSSB, betaSSB)
-    alpha = OMEGA_0 * (tSSB + t0*YRSID_SI)
+    alpha = OMEGA_0 * (tSSB + t0 * YRSID_SI)
     rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
     kL = rotation_matrix_L.T @ kSSB
     lamdaL, betaL = propagation_vector_to_localization(kL)
@@ -275,12 +276,12 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
         The time when a GW signal arrives at the origin of LISA frame.
         In the unit of 's'.
     lamdaL : float
-        The longitude of a GW signal in LISA frame, in the unit of 'deg'.
+        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
     betaL : float
-        The latitude of a GW signal in LISA frame, in the unit of 'deg'.
+        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
     psiL : float
         The polarization angle of a GW signal in LISA frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
 
@@ -292,20 +293,20 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
         In the unit of 's'.
     lamdaSSB_approx : float
         The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaSSB_approx : float
         The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     psiSSB : float
         The polarization angle of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     """
     lamdaSSB_approx = 0.0
     betaSSB_approx = 0.0
     tSSB_approx = tL
     kL = localization_to_propagation_vector(lamdaL, betaL)
     for i in range(3):
-        alpha = OMEGA_0 * (tSSB_approx + t0*YRSID_SI)
+        alpha = OMEGA_0 * (tSSB_approx + t0 * YRSID_SI)
         rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
         kSSB_approx = rotation_matrix_L @ kL
         lamdaSSB_approx, betaSSB_approx = \
@@ -316,14 +317,14 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
     return (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB)
 
 
-def rotation_matrix_SSBtoGEO(epsilon=np.deg2rad(23.44)):
+def rotation_matrix_SSBtoGEO(epsilon=np.deg2rad(23.439281)):
     """ The rotation matrix (of frame basis) from SSB frame to
     geocentric frame.
 
     Parameters
     ----------
     epsilon : float
-        The Earth's axial tilt (obliquity), in the unit of 'deg'.
+        The Earth's axial tilt (obliquity), in the unit of 'radian'.
 
     Returns
     -------
@@ -348,10 +349,10 @@ def tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
         In the unit of 's'.
     lamdaSSB : float
         The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
 
@@ -384,10 +385,10 @@ def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
         In the unit of 's'.
     lamdaSSB : float
         The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
 
@@ -420,13 +421,13 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
         In the unit of 's'.
     lamdaSSB : float
         The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     psiSSB : float
         The polarization angle of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
     useAstropy : bool
@@ -441,21 +442,21 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
         In the unit of 's'.
     lamdaG : float
         The longitude of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaG : float
         The latitude of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     psiG : float
         The polarization angle of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     """
     tG = tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0)
     kSSB = localization_to_propagation_vector(lamdaSSB, betaSSB)
     rotation_matrix_G = rotation_matrix_SSBtoGEO()
     if useAstropy:
-        c = BarycentricMeanEcliptic(lon=lamdaSSB, lat=betaSSB,
-                                    equinox='J2000', unit='deg')
-        geo_sky = c.transform_to(PrecessedGeocentric)
+        c = BarycentricMeanEcliptic(lon=lamdaSSB*u.radian,
+                                    lat=betaSSB*u.radian, equinox='J2000')
+        geo_sky = c.transform_to(PrecessedGeocentric(equinox='J2000'))
         lamdaG = geo_sky.ra.rad
         betaG = geo_sky.dec.rad
     else:
@@ -477,13 +478,13 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
         In the unit of 's'.
     lamdaG : float
         The longitude of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaG : float
         The latitude of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     psiG : float
         The polarization angle of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
     useAstropy : bool
@@ -498,13 +499,13 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
         In the unit of 's'.
     lamdaSSB_approx : float
         The ecliptic longitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaSSB_approx : float
         The ecliptic latitude of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     psiSSB : float
         The polarization angle of a GW signal in SSB frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     """
     lamdaSSB_approx = 0.0
     betaSSB_approx = 0.0
@@ -518,11 +519,11 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
         tSSB_approx = tSSB_from_tG(tG, lamdaSSB_approx, betaSSB_approx, t0)
     psiSSB = polarization_newframe(psiG, kG, rotation_matrix_G.T)
     if useAstropy:
-        c = PrecessedGeocentric(ra=lamdaG, dec=betaG,
-                                equinox='J2000', unit='deg')
-        ssb_sky = c.transform_to(BarycentricMeanEcliptic)
-        lamdaSSB_approx = ssb_sky.lat.rad
-        betaSSB_approx = ssb_sky.lon.rad
+        c = PrecessedGeocentric(ra=lamdaG*u.radian, dec=betaG*u.radian,
+                                equinox='J2000')
+        ssb_sky = c.transform_to(BarycentricMeanEcliptic(equinox='J2000'))
+        lamdaSSB_approx = ssb_sky.lon.rad
+        betaSSB_approx = ssb_sky.lat.rad
 
     return (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB)
 
@@ -537,12 +538,12 @@ def LISA_to_GEO(tL, lamdaL, betaL, psiL, t0, useAstropy=True):
         The time when a GW signal arrives at the origin of LISA frame.
         In the unit of 's'.
     lamdaL : float
-        The longitude of a GW signal in LISA frame, in the unit of 'deg'.
+        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
     betaL : float
-        The latitude of a GW signal in LISA frame, in the unit of 'deg'.
+        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
     psiL : float
         The polarization angle of a GW signal in LISA frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
     useAstropy : bool
@@ -557,17 +558,17 @@ def LISA_to_GEO(tL, lamdaL, betaL, psiL, t0, useAstropy=True):
         In the unit of 's'.
     lamdaG : float
         The ecliptic longitude of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaG : float
         The ecliptic latitude of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     psiG : float
         The polarization angle of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     """
     tSSB, lamdaSSB, betaSSB, psiSSB = LISA_to_SSB(tL, lamdaL, betaL, psiL, t0)
     tG, lamdaG, betaG, psiG = SSB_to_GEO(
-        tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True)
+        tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy)
 
     return (tG, lamdaG, betaG, psiG)
 
@@ -583,13 +584,13 @@ def GEO_to_LISA(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
         In the unit of 's'.
     lamdaG : float
         The longitude of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     betaG : float
         The latitude of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     psiG : float
         The polarization angle of a GW signal in geocentric frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     t0 : float
         The initial time offset, in the unit of 'year', default is 0.
     useAstropy : bool
@@ -603,15 +604,15 @@ def GEO_to_LISA(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
         The time when a GW signal arrives at the origin of LISA frame.
         In the unit of 's'.
     lamdaL : float
-        The longitude of a GW signal in LISA frame, in the unit of 'deg'.
+        The longitude of a GW signal in LISA frame, in the unit of 'radian'.
     betaL : float
-        The latitude of a GW signal in LISA frame, in the unit of 'deg'.
+        The latitude of a GW signal in LISA frame, in the unit of 'radian'.
     psiG : float
         The polarization angle of a GW signal in LISA frame.
-        In the unit of 'deg'.
+        In the unit of 'radian'.
     """
     tSSB, lamdaSSB, betaSSB, psiSSB = GEO_to_SSB(
-        tG, lamdaG, betaG, psiG, t0, useAstropy=True)
+        tG, lamdaG, betaG, psiG, t0, useAstropy)
     tL, lamdaL, betaL, psiL = SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0)
 
     return (tL, lamdaL, betaL, psiL)
