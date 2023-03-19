@@ -427,8 +427,8 @@ tc_ssb = Parameter("tc_ssb",
                    description="Coalescence time (s) in SSB coords.")
 delta_tc = Parameter("delta_tc", dtype=float,
                      label=r"$\Delta t_c~(\rm{s})$",
-                     description=\
-                     "Coalesence time offset in geocentric coords.")
+                     description="Coalesence time offset in " +
+                     "geocentric coords.")
 ra = Parameter("ra",
                dtype=float, default=0., label=r"$\alpha$",
                description="Right ascension (rad) in geocentric coords.")
