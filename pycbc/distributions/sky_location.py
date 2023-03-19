@@ -59,7 +59,7 @@ class FisherSky():
         if self.angle_unit == 'rad':
             self.mu_values = numpy.array([params['mean_ra'], params['mean_dec']])
         elif self.angle_unit == 'deg':
-            self.mu_values = numpy.array(numpy.deg2rad([params['mean_ra'], params['mean_dec']]))
+            self.mu_values = numpy.deg2rad([params['mean_ra'], params['mean_dec']])
         else:
             raise ValueError("Only deg or rad is allowed")
         self.alpha, self.beta = new_z_to_euler(self.mu_values)
