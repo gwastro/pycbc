@@ -22,9 +22,9 @@
 # =============================================================================
 #
 """
-This module provides coordinate transformations related to space-borne detectors,
-such as coordinate transformations between space-borne detectors and
-ground-based detectors.
+This module provides coordinate transformations related to space-borne
+detectors, such as coordinate transformations between space-borne detectors
+and ground-based detectors.
 """
 
 import numpy as np
@@ -36,6 +36,7 @@ from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
 
 YRSID_SI = 31558149.763545603  # same as BBHx, but not for lal.YRJUL_SI
 OMEGA_0 = 1.99098659277e-7
+
 
 def localization_to_propagation_vector(lamda, beta):
     """ Converting the sky localization to the corresponding
@@ -59,6 +60,7 @@ def localization_to_propagation_vector(lamda, beta):
 
     return np.array([[x], [y], [z]])
 
+
 def rotation_matrix_SSBtoLISA(alpha):
     """ The rotation matrix (of frame basis) from SSB frame to LISA frame.
 
@@ -81,6 +83,7 @@ def rotation_matrix_SSBtoLISA(alpha):
 
     return r_total
 
+
 def propagation_vector_to_localization(k):
     """ Converting the propagation unit vector to the corresponding
     sky localization of a GW signal.
@@ -102,6 +105,7 @@ def propagation_vector_to_localization(k):
     lamda = np.mod(lamda, 2*np.pi)
 
     return np.array([lamda, beta])
+
 
 def polarization_newframe(psi, k, rotation_matrix):
     """ Converting a polarization angle from a frame to a new frame
@@ -143,6 +147,7 @@ def polarization_newframe(psi, k, rotation_matrix):
 
     return psi_newframe
 
+
 def tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
     """ Calculating the time when a GW signal arrives at the barycenter
     of LISA, by using the time and sky localization in SSB frame.
@@ -176,6 +181,7 @@ def tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
     tL = tSSB + np.vdot(k, v_LISA) / c.value
 
     return tL
+
 
 def tSSB_from_tL(tL, lamdaSSB, betaSSB, t0=0.0):
     """ Calculating the time when a GW signal arrives at the barycenter
@@ -211,6 +217,7 @@ def tSSB_from_tL(tL, lamdaSSB, betaSSB, t0=0.0):
         ) / c.value
 
     return fsolve(equation, tL)[0]
+
 
 def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
     """ Converting the arrive time, the sky localization, and the polarization
@@ -256,6 +263,7 @@ def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
     psiL = polarization_newframe(psiSSB, kSSB, rotation_matrix_L)
 
     return (tL, lamdaL, betaL, psiL)
+
 
 def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
     """ Converting the arrive time, the sky localization, and the polarization
@@ -307,8 +315,10 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
 
     return (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB)
 
+
 def rotation_matrix_SSBtoGEO(epsilon=np.deg2rad(23.44)):
-    """ The rotation matrix (of frame basis) from SSB frame to geocentric frame.
+    """ The rotation matrix (of frame basis) from SSB frame to
+    geocentric frame.
 
     Parameters
     ----------
@@ -325,6 +335,7 @@ def rotation_matrix_SSBtoGEO(epsilon=np.deg2rad(23.44)):
     ]).as_matrix()
 
     return np.array(r[0])
+
 
 def tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
     """ Calculating the time when a GW signal arrives at the barycenter
@@ -360,9 +371,11 @@ def tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
 
     return tG
 
+
 def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
     """ Calculating the time when a GW signal arrives at the barycenter
-    of SSB, by using the time in geocentric frame and sky localization in SSB frame.
+    of SSB, by using the time in geocentric frame and sky localization
+    in SSB frame.
 
     Parameters
     ----------
@@ -394,6 +407,7 @@ def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
         ) / c.value
 
     return fsolve(equation, tG)[0]
+
 
 def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
@@ -438,7 +452,7 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
     tG = tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0)
     kSSB = localization_to_propagation_vector(lamdaSSB, betaSSB)
     rotation_matrix_G = rotation_matrix_SSBtoGEO()
-    if useAstropy == True:
+    if useAstropy:
         c = BarycentricMeanEcliptic(lon=lamdaSSB, lat=betaSSB,
                                     equinox='J2000', unit='deg')
         geo_sky = c.transform_to(PrecessedGeocentric)
@@ -450,6 +464,7 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
     psiG = polarization_newframe(psiSSB, kSSB, rotation_matrix_G)
 
     return (tG, lamdaG, betaG, psiG)
+
 
 def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
@@ -502,7 +517,7 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
             propagation_vector_to_localization(kSSB_approx)
         tSSB_approx = tSSB_from_tG(tG, lamdaSSB_approx, betaSSB_approx, t0)
     psiSSB = polarization_newframe(psiG, kG, rotation_matrix_G.T)
-    if useAstropy == True:
+    if useAstropy:
         c = PrecessedGeocentric(ra=lamdaG, dec=betaG,
                                 equinox='J2000', unit='deg')
         ssb_sky = c.transform_to(BarycentricMeanEcliptic)
@@ -510,6 +525,7 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
         betaSSB_approx = ssb_sky.lon.rad
 
     return (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB)
+
 
 def LISA_to_GEO(tL, lamdaL, betaL, psiL, t0, useAstropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
@@ -555,6 +571,7 @@ def LISA_to_GEO(tL, lamdaL, betaL, psiL, t0, useAstropy=True):
 
     return (tG, lamdaG, betaG, psiG)
 
+
 def GEO_to_LISA(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
     from the geocentric frame to the LISA frame.
@@ -599,9 +616,10 @@ def GEO_to_LISA(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
 
     return (tL, lamdaL, betaL, psiL)
 
+
 __all__ = ['localization_to_propagation_vector', 'rotation_matrix_SSBtoLISA',
            'propagation_vector_to_localization', 'polarization_newframe',
            'tL_from_SSB', 'tSSB_from_tL', 'SSB_to_LISA', 'LISA_to_SSB',
            'rotation_matrix_SSBtoGEO', 'tG_from_SSB', 'tSSB_from_tG',
            'SSB_to_GEO', 'GEO_to_SSB', 'LISA_to_GEO', 'GEO_to_LISA',
-          ]
+        ]

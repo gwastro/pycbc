@@ -426,8 +426,9 @@ tc_ssb = Parameter("tc_ssb",
                    dtype=float, default=None, label=r"$t_c^{SSB}$ (s)",
                    description="Coalescence time (s) in SSB coords.")
 delta_tc = Parameter("delta_tc", dtype=float,
-            label=r"$\Delta t_c~(\rm{s})$",
-            description="Coalesence time offset in geocentric coords.")
+                     label=r"$\Delta t_c~(\rm{s})$",
+                     description=\
+                     "Coalesence time offset in geocentric coords.")
 ra = Parameter("ra",
                dtype=float, default=0., label=r"$\alpha$",
                description="Right ascension (rad) in geocentric coords.")
@@ -571,12 +572,13 @@ dbeta3 = Parameter("dbeta3",
 # =============================================================================
 #
 
-# parameters describing the location of a binary w.r.t. the geocentric/LISA/SSB frame.
-# Note: we do not include distance here. This is because these parameters are not
+# parameters describing the location of a binary w.r.t.
+# the geocentric/LISA/SSB frame.
+# Note: we do not include distance here. This is because these are not
 # passed to the waveform generators in lalsimulation, but are instead applied
 # after a waveform is generated. Distance, however, is a parameter used by
 # the waveform generators.
-location_params = ParameterList([tc, tc_lisa, tc_ssb, 
+location_params = ParameterList([tc, tc_lisa, tc_ssb,
                                 ra, dec, polarization,
                                 polarization_lisa, polarization_ssb,
                                 eclipticlatitude, eclipticlongitude,
