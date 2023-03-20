@@ -12,28 +12,60 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
 """Provides functions and utilities for generating waveforms mode-by-mode.
 """
 
 from string import Formatter
+
 import lal
+from gwsignal.core import waveform as wfm
 
 from pycbc import libutils, pnutils
-from pycbc.types import (TimeSeries, FrequencySeries)
-from .waveform import (props, _check_lal_pars, check_args)
+from pycbc.types import FrequencySeries, TimeSeries
+
 from . import parameters
+from .waveform import _check_lal_pars, check_args, props
+from .waveform.gwsignal_utils import to_gwsignal_dict
 
 lalsimulation = libutils.import_optional('lalsimulation')
+
+
+## FIXME: How to actually include extra-GR parameters?
+def _lalsim_fd_waveform(**p):
+    # convert paramaters to gwsignal parameters
+    p_gws = to_gwsignal_dict(p)
+    gen = wfm.LALCompactBinaryCoalescenceGenerator(p['approximant'])
+    hlm = wfm.GenerateFDModes(python_dict, gen)
+    fs = hlm.pop('frequency_array')
+    pidx = fs >= 0
+    hlms = {}
+    for k, v in hlm.items():
+        hlms[k[0], k[1]] = v[pidx].to_pycbc()
+
+    return hlms
+
+
+## FIXME: How to actually include extra-GR parameters?
+def _lalsim_td_waveform(**p):
+    # convert paramaters to gwsignal parameters
+    p_gws = to_gwsignal_dict(p)
+    gen = wfm.LALCompactBinaryCoalescenceGenerator(p['approximant'])
+    hlm = wfm.GenerateTDModes(python_dict, gen)
+    hlms = {}
+    for k, v in hlm.items():
+        hlms[k[0], k[1]] = v.to_pycbc()
+    return hlm
+
 
 def _formatdocstr(docstr):
     """Utility for formatting docstrings with parameter information.
     """
     return docstr.format(
-        **{_p[1]: getattr(parameters, _p[1]).docstr(
-            prefix="    ", include_label=False).lstrip(' ')
-           for _p in Formatter().parse(docstr) if _p[1] is not None
-           })
+        **{
+            _p[1]: getattr(parameters, _p[1]).docstr(
+                prefix="    ", include_label=False).lstrip(' ')
+            for _p in Formatter().parse(docstr) if _p[1] is not None
+        })
 
 
 def _formatdocstrlist(docstr, paramlist, skip_params=None):
@@ -41,8 +73,10 @@ def _formatdocstrlist(docstr, paramlist, skip_params=None):
     """
     if skip_params is None:
         skip_params = []
-    pl = '\n'.join([_p.docstr(prefix="    ", include_label=False)
-                    for _p in paramlist if _p not in skip_params]).lstrip(' ')
+    pl = '\n'.join([
+        _p.docstr(prefix="    ", include_label=False) for _p in paramlist
+        if _p not in skip_params
+    ]).lstrip(' ')
     return docstr.format(params=pl)
 
 
@@ -96,7 +130,7 @@ def default_modes(approximant):
         ma += [(l, -m) for l, m in ma]
     elif approximant.startswith('NRSur7dq4'):
         # according to arXiv:1905.09300
-        ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]
+        ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l + 1)]
     else:
         raise ValueError("I don't know what the default modes are for "
                          "approximant {}, sorry!".format(approximant))
@@ -161,18 +195,16 @@ def get_nrsur_modes(**params):
     """
     laldict = _check_lal_pars(params)
     ret = lalsimulation.SimInspiralPrecessingNRSurModes(
-        params['delta_t'],
-        params['mass1']*lal.MSUN_SI,
-        params['mass2']*lal.MSUN_SI,
-        params['spin1x'], params['spin1y'], params['spin1z'],
-        params['spin2x'], params['spin2y'], params['spin2z'],
+        params['delta_t'], params['mass1'] * lal.MSUN_SI,
+        params['mass2'] * lal.MSUN_SI, params['spin1x'], params['spin1y'],
+        params['spin1z'], params['spin2x'], params['spin2y'], params['spin2z'],
         params['f_lower'], params['f_ref'],
-        params['distance']*1e6*lal.PC_SI, laldict,
-        getattr(lalsimulation, params['approximant'])
-    )
+        params['distance'] * 1e6 * lal.PC_SI, laldict,
+        getattr(lalsimulation, params['approximant']))
     hlms = {}
     while ret:
-        hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
+        hlm = TimeSeries(ret.mode.data.data,
+                         delta_t=ret.mode.deltaT,
                          epoch=ret.mode.epoch)
         hlms[ret.l, ret.m] = (hlm.real(), hlm.imag())
         ret = ret.next
@@ -197,6 +229,7 @@ def get_imrphenomxh_modes(**params):
     for (l, m) in mode_array:
         params['mode_array'] = [(l, m)]
         laldict = _check_lal_pars(params)
+<<<<<<< HEAD
         hlm = lalsimulation.SimIMRPhenomXHMGenerateFDOneMode(
             float(pnutils.solar_mass_to_kg(params['mass1'])),
             float(pnutils.solar_mass_to_kg(params['mass2'])),
@@ -224,6 +257,47 @@ _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
                      }
 # 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented
 # LAL function do not split strain mode by mode
+=======
+        hpos, hneg = lalsimulation.SimIMRPhenomXPHMOneMode(
+            l, m, params['mass1'] * lal.MSUN_SI, params['mass2'] * lal.MSUN_SI,
+            params['spin1x'], params['spin1y'], params['spin1z'],
+            params['spin2x'], params['spin2y'], params['spin2z'],
+            params['distance'] * 1e6 * lal.PC_SI, params['coa_phase'],
+            params['delta_f'], params['f_lower'], params['f_final'],
+            params['f_ref'], laldict)
+        hpos = FrequencySeries(hpos.data.data,
+                               delta_f=hpos.deltaF,
+                               epoch=hpos.epoch)
+        hneg = FrequencySeries(hneg.data.data,
+                               delta_f=hneg.deltaF,
+                               epoch=hneg.epoch)
+        if return_posneg:
+            hlms[l, m] = (hpos, hneg)
+        else:
+            # convert to ulm, vlm
+            ulm = 0.5 * (hpos + hneg.conj())
+            vlm = 0.5j * (hneg.conj() - hpos)
+            hlms[l, m] = (ulm, vlm)
+    return hlms
+
+
+_mode_waveform_td = {
+    'NRSur7dq4': get_nrsur_modes,
+    'IMRPhenomXHM': _lalsim_fd_waveform,
+    'IMRPhenomXPHM': _lalsim_fd_waveform,
+    'SEOBNRv4HM_ROM': _lalsim_fd_waveform,
+    'SEOBNRv4HM': _lalsim_td_waveform,
+    'SEOBNRv4PHM': _lalsim_td_waveform,
+    'IMRPhenomTHM': _lalsim_td_waveform,
+    'IMRPhenomTPHM': _lalsim_td_waveform,
+}
+
+# Remove commented out once IMRPhenomX one mode is fixed
+_mode_waveform_fd = {  #'IMRPhenomXHM': get_imrphenomhm_modes,
+    #'IMRPhenomXPHM' : get_imrphenomhm_modes,
+}
+
+>>>>>>> 0c4a4282 (cleaner waveform inteface implimentation, for polarizations and for modes)
 
 def fd_waveform_mode_approximants():
     """Frequency domain approximants that will return separate modes."""
@@ -265,13 +339,13 @@ def get_fd_waveform_modes(template=None, **kwargs):
     check_args(params, required)
     apprx = params['approximant']
     if apprx not in _mode_waveform_fd:
-        raise ValueError("I don't support approximant {}, sorry"
-                         .format(apprx))
+        raise ValueError("I don't support approximant {}, sorry".format(apprx))
     return _mode_waveform_fd[apprx](**params)
 
 
 get_fd_waveform_modes.__doc__ = _formatdocstrlist(
-    get_fd_waveform_modes.__doc__, parameters.fd_waveform_params,
+    get_fd_waveform_modes.__doc__,
+    parameters.fd_waveform_params,
     skip_params=['inclination', 'coa_phase'])
 
 
@@ -309,11 +383,11 @@ def get_td_waveform_modes(template=None, **kwargs):
     check_args(params, required)
     apprx = params['approximant']
     if apprx not in _mode_waveform_td:
-        raise ValueError("I don't support approximant {}, sorry"
-                         .format(apprx))
+        raise ValueError("I don't support approximant {}, sorry".format(apprx))
     return _mode_waveform_td[apprx](**params)
 
 
 get_td_waveform_modes.__doc__ = _formatdocstrlist(
-    get_td_waveform_modes.__doc__, parameters.td_waveform_params,
+    get_td_waveform_modes.__doc__,
+    parameters.td_waveform_params,
     skip_params=['inclination', 'coa_phase'])
