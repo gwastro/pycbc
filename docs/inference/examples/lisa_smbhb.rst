@@ -1,17 +1,19 @@
+.. _lisa_smbhb_example:
+
 ----------------------------------------------
 LISA parameter estimation for simulated SMBHB
 ----------------------------------------------
 
-This example shows how to use PyCBC for parameter estimation of supermassive black hole binaries (SMBHB) 
-in LISA mock data. The `data <https://zenodo.org/record/7497853>`_ are generated from 
-`LISA Data Challenge 2a: Sangria <https://lisa-ldc.lal.in2p3.fr/challenge2a>`_, 
-and `BBHx <https://github.com/mikekatz04/BBHx>`_ package is used to generate the ``IMRPhenomD`` template and calculate 
-the corresponding TDI response for LISA. Relative binning (heterodyned likelihood) 
-is used during sampling to speed up the computation of likelihood functions. Before doing parameter estimation, 
-you need to install `BBHx <https://github.com/mikekatz04/BBHx>`_ and `the corresponding PyCBC waveform plugin <https://github.com/ConWea/BBHX-waveform-model>`_, 
+This example shows how to use PyCBC for parameter estimation of supermassive black hole binaries (SMBHB)
+in LISA mock data. The `data <https://zenodo.org/record/7497853>`_ are generated from
+`LISA Data Challenge 2a: Sangria <https://lisa-ldc.lal.in2p3.fr/challenge2a>`_,
+and `BBHx <https://github.com/mikekatz04/BBHx>`_ package is used to generate the ``IMRPhenomD`` template and calculate
+the corresponding TDI response for LISA. Relative binning (heterodyned likelihood)
+is used during sampling to speed up the computation of likelihood functions. Before doing parameter estimation,
+you need to install `BBHx <https://github.com/mikekatz04/BBHx>`_ and `the corresponding PyCBC waveform plugin <https://github.com/ConWea/BBHX-waveform-model>`_,
 please click the corresponding link to see the detailed description of the installation.
 
-First, we create the following configuration file, here we just set chirp mass, mass ratio and tc as variable parameters, 
+First, we create the following configuration file, here we just set chirp mass, mass ratio and tc as variable parameters,
 `tc`, `eclipticlongitude`, `eclipticlatitude` and `polarization` are defined in the LISA frame:
 
 .. literalinclude:: ../../../examples/inference/lisa_smbhb/lisa_smbhb_relbin.ini
@@ -22,7 +24,7 @@ First, we create the following configuration file, here we just set chirp mass, 
 By setting the model name to ``relative`` we are using
 :py:class:`Relative <pycbc.inference.models.relbin.Relative>` model.
 
-In this simple example, we do the parameter estimation for the first SMBHB signal in the LDC Sangria dataset 
+In this simple example, we do the parameter estimation for the first SMBHB signal in the LDC Sangria dataset
 (you can also run parameter estimation for other SMBHB signals by choosing appropriate prior range),
 we need download the data first (`MBHB_params_v2_LISA_frame.pkl` contains all the true parameters):
 
@@ -56,7 +58,7 @@ Or you can run the advanced one:
 
 :download:`Download <../../../examples/inference/lisa_smbhb/advanced_plot.py>`
 
-You can modify this advanced plot script to generate the posterior of any SMBHB signals in the LDC Sangria dataset. 
+You can modify this advanced plot script to generate the posterior of any SMBHB signals in the LDC Sangria dataset.
 In this example it will create the following plot:
 
 .. image:: ../../_include/lisa_smbhb_mass_tc_0.png

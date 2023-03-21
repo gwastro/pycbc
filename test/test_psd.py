@@ -24,7 +24,7 @@
 '''
 These are the unittests for the pycbc PSD module.
 '''
-from __future__ import division
+
 import os
 import tempfile
 import pycbc
@@ -51,9 +51,10 @@ class TestPSD(unittest.TestCase):
         sample_freq = 4096.
         delta_f = sample_freq / noise_size
         numpy.random.seed(132435)
-        noise = numpy.random.normal(loc=0, scale=1, size=noise_size//2+1) + \
-            1j * numpy.random.normal(loc=0, scale=1, size=noise_size//2+1)
-        noise_model = 1. / numpy.linspace(1., 100., noise_size // 2 + 1)
+        fd_size = noise_size // 2 + 1
+        noise = numpy.random.normal(loc=0, scale=1, size=fd_size) + \
+            1j * numpy.random.normal(loc=0, scale=1, size=fd_size)
+        noise_model = 1. / numpy.linspace(1., 100., fd_size)
         noise *= noise_model / numpy.sqrt(delta_f) / 2
         noise[0] = noise[0].real
         noise_fs = FrequencySeries(noise, delta_f=delta_f)
