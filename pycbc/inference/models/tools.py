@@ -564,7 +564,9 @@ class DistMarg():
             peak_lock_region = int(peak_lock_region)
 
             for ifo in snrs:
-                z = snrs[ifo].time_slice(tstart, tstart + tmax, mode='nearest')
+                s = max(tstart, snrs[ifo].start_time)
+                e = min(tstart + tmax, snrs[ifo].end_time)
+                z = snrs[ifo].time_slice(s, e, mode='nearest')
                 peak_snr, imax = z.abs_max_loc()
                 times = z.sample_times
                 peak_time = times[imax]
@@ -613,6 +615,8 @@ class DistMarg():
         """
         if 'tc' not in self.marginalized_vector_priors:
             return
+
+        peak_snr_threshold = float(peak_snr_threshold)
 
         tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
         ifos = list(snrs.keys())
