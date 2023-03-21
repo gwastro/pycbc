@@ -610,7 +610,9 @@ class Relative(DistMarg, BaseGaussianNoise):
 
 
 class RelativeTime(Relative):
-    """ Heterodyne likelihood optimized for time marginalization
+    """ Heterodyne likelihood optimized for time marginalization. In addition
+    it supports phase (dominant-mode), sky location, and polarization
+    marginalization.
     """
     name = "relative_time"
 
@@ -704,7 +706,9 @@ class RelativeTime(Relative):
 
 
 class RelativeTimeDom(RelativeTime):
-    """ Heterodyne likelihood optimized for time marginalization
+    """ Heterodyne likelihood optimized for time marginalization and only
+    dominant-mode waveforms. This enables the ability to do inclination
+    marginalization in addition to the other forms supportedy by RelativeTime.
     """
     name = "relative_time_dom"
 
