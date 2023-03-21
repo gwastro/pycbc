@@ -60,7 +60,7 @@ distribs = {
     DistributionFunctionFromFile.name: DistributionFunctionFromFile,
     FixedSamples.name: FixedSamples,
     MchirpfromUniformMass1Mass2.name: MchirpfromUniformMass1Mass2,
-    QfromUniformMass1Mass2.name: QfromUniformMass1Mass2
+    QfromUniformMass1Mass2.name: QfromUniformMass1Mass2,
     FisherSky.name: FisherSky
 }
 

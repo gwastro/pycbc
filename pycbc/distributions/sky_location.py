@@ -42,9 +42,10 @@ class FisherSky():
     pole and rotate it to be centered at the (ra, dec) coordinate mu.
     Assume kappa = 1 / (0.66*sigma)**2
     As in UniformSky, the declination (dec) varies from pi/2 to-pi/2
-    and right ascension (ra) varies from 0 to 2pi. And the angles
-    should be provided in (ra,dec) format in radians (mu_radians=True),
-    rather than factors of pi, or in degrees (mu_radians=False).
+    and right ascension (ra) varies from 0 to 2pi. The angles
+    should be provided in (ra,dec) format in radians (the variable
+    angle_unit='rad' by default), rather than factors of pi, or
+    in degrees (in this case set angle_unit='deg').
     References:
       * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
       * http://arxiv.org/pdf/0902.0737v1 (states the Rayleigh limit)
@@ -52,13 +53,12 @@ class FisherSky():
     name = 'fisher_sky'
     _params=['ra', 'dec']
 
-    def __init__(self,**params):
+    def __init__(self,angle_unit='rad',**params):
         self.sigma = params['sigma']
         self.kappa = 1./((0.66*params['sigma']))**2
-        self.angle_unit = params['angle_unit']
-        if self.angle_unit == 'rad':
+        if angle_unit == 'rad':
             self.mu_values = numpy.array([params['mean_ra'], params['mean_dec']])
-        elif self.angle_unit == 'deg':
+        elif angle_unit == 'deg':
             self.mu_values = numpy.deg2rad([params['mean_ra'], params['mean_dec']])
         else:
             raise ValueError("Only deg or rad is allowed as unit")
@@ -79,7 +79,8 @@ class FisherSky():
         mean_dec = float(cp.get_opt_tag(section, 'mean_dec', tag))
         sigma = float(cp.get_opt_tag(section, 'sigma', tag))
         angle_unit = cp.get_opt_tag(section, 'angle_unit', tag)
-        return cls(mean_ra=mean_ra, mean_dec=mean_dec, sigma=sigma, angle_unit=angle_unit)
+        return cls(mean_ra=mean_ra, mean_dec=mean_dec, sigma=sigma,
+                   angle_unit=angle_unit)
 
     def rvs(self,size):
         arr = numpy.array([
