@@ -74,6 +74,7 @@ memory when the files are loaded.
 ^^^^^^^^^^^^^^^^^^^^^
 Configuring the model
 ^^^^^^^^^^^^^^^^^^^^^
+See :ref:`explanation of common likelihood models<models_detailed>`
 
 The ``[model]`` section sets up what model to use for the analysis. At minimum,
 a ``name`` argument must be provided, specifying which model to use. For
@@ -106,6 +107,7 @@ analytic distribution for more details.
 ^^^^^^^^^^^^^^^^^^^^^^^
 Configuring the sampler
 ^^^^^^^^^^^^^^^^^^^^^^^
+See :ref:`example of trying different samplers<inference_example_samplers>`
 
 The ``[sampler]`` section sets up what sampler to use for the analysis. As
 with the ``[model]`` section, a ``name`` must be provided to specify which
@@ -116,7 +118,6 @@ sampler to use. The currently available samplers are:
 
     .. include:: _include/samplers-table.rst
 
-See :ref:`example of trying different samplers<inference_example_samplers>`
 
 Configuration options for the sampler should also be specified in the
 ``[sampler]`` section. For example:
@@ -497,7 +498,6 @@ Examples
 .. toctree::
     :maxdepth: 1
 
-    inference/examples/sampler_platter.rst
     inference/examples/analytic.rst
     inference/examples/bbh.rst
     inference/examples/gw150914.rst
@@ -505,7 +505,9 @@ Examples
     inference/examples/single.rst
     inference/examples/relative.rst
     inference/examples/hierarchical.rst
-    /inference/examples/lisa_smbhb.rst
+    inference/examples/lisa_smbhb.rst
+    inference/examples/sampler_platter.rst
+    inference/models.rst
 
 ----------------------------
 Visualizing the Posteriors

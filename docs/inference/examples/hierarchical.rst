@@ -1,3 +1,5 @@
+.. _hierachical_model:
+
 -----------------------------------
 Using the hierarchical model
 -----------------------------------
