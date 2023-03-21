@@ -766,21 +766,14 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
             raise ValueError("Approximant %s _filter_time_lengths function \
                              not available" % (nparams['approximant']))
         full_duration = duration = \
-            _filter_time_lengths[nparams['approximant']](
-                m1=kwds['mass1'], m2=kwds['mass2'],
-                s1z=kwds['spin1z'], s2z=kwds['spin1z'],
-                f_lower=kwds['f_lower']
-            )
+            _filter_time_lengths[nparams['approximant']](**params)
 
     while full_duration < duration * 1.5:
         if nparams['approximant'] not in fd_det:
             full_duration = get_waveform_filter_length_in_time(**nparams)
         else:
-            full_duration = _filter_time_lengths[nparams['approximant']](
-                m1=kwds['mass1'], m2=kwds['mass2'],
-                s1z=kwds['spin1z'], s2z=kwds['spin1z'],
-                f_lower=nparams['f_lower']
-            )
+            full_duration = \
+                _filter_time_lengths[nparams['approximant']](**params)
         nparams['f_lower'] *= 0.99
 
     if 'f_ref' not in nparams:
