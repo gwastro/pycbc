@@ -87,10 +87,10 @@ class FisherSky():
 
     def rvs(self, size):
         arr = numpy.array([
-                           numpy.random.rayleigh(
-                                                 scale=1./numpy.sqrt(self.kappa),
-                           numpy.random.uniform(low=0, high=(2*numpy.pi),
-                                                size=size)]).T
+            numpy.random.rayleigh(scale=1./numpy.sqrt(self.kappa),
+                                  numpy.random.uniform(low=0,
+                                                       high=(2*numpy.pi),
+                                                       size=size)]).T
         euler = rotate_euler(arr, self.alpha, self.beta, 0)
         rot_euler = FieldArray(size, dtype=[('ra', '<f8'), ('dec', '<f8')])
         rot_euler['ra'], rot_euler['dec'] = euler[:, 0], euler[:, 1]
