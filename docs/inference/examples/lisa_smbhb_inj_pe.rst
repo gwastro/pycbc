@@ -1,3 +1,5 @@
+.. _inference_example_lisa_smbhb_inj:
+
 ---------------------------------------------
 LISA SMBHB injection and parameter estimation
 ---------------------------------------------

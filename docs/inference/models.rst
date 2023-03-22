@@ -133,7 +133,7 @@ Heterodyne / Relative Models
     to the models that need to generate a full waveform for every likelihood
     as these will usually be much faster.
 
-    There is also support in this model for use with :ref:`LISA data analysis <lisa_smbhb_example>`.
+    There is also support in this model for use with :ref:`LISA Sangria data analysis <inference_example_lisa_smbhb_ldc>` and :ref:`LISA injection data analysis <inference_example_lisa_smbhb_inj>`.
 
     Supported Marginalizations: distance, coa_phase (dominant mode), polarization
     +++
