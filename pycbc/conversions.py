@@ -848,6 +848,7 @@ def optimal_ra_from_detector(detector_name, tc):
         The name of the detector, e.g., 'H1'.
     tc : float
         The GPS time of the coalescence of the signal in the `ref_frame`.
+
     Returns
     -------
     float :
