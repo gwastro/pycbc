@@ -2549,4 +2549,3 @@ def rotate_euler(sph_coords, alpha, beta, gamma):
     sph_new[:, 1] = numpy.arctan2(cart_new[:, 1], cart_new[:, 0])
 
     return sph_new
-

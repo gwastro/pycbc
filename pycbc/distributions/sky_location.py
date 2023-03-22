@@ -51,15 +51,17 @@ class FisherSky():
       * http://arxiv.org/pdf/0902.0737v1 (states the Rayleigh limit)
     """
     name = 'fisher_sky'
-    _params=['ra', 'dec']
+    _params = ['ra', 'dec']
 
-    def __init__(self,angle_unit='rad',**params):
+    def __init__(self, angle_unit='rad', **params):
         self.sigma = params['sigma']
         self.kappa = 1./((0.66*params['sigma']))**2
         if angle_unit == 'rad':
-            self.mu_values = numpy.array([params['mean_ra'], params['mean_dec']])
+            self.mu_values = numpy.array([params['mean_ra'],
+                             params['mean_dec']])
         elif angle_unit == 'deg':
-            self.mu_values = numpy.deg2rad([params['mean_ra'], params['mean_dec']])
+            self.mu_values = numpy.deg2rad([params['mean_ra'],
+                             params['mean_dec']])
         else:
             raise ValueError("Only deg or rad is allowed as unit")
         self.alpha, self.beta = new_z_to_euler(self.mu_values)
@@ -67,7 +69,7 @@ class FisherSky():
     @property
     def params(self):
         return self._params
- 
+
     @classmethod
     def from_config(cls, cp, section, variable_args):
         tag = variable_args
@@ -82,16 +84,14 @@ class FisherSky():
         return cls(mean_ra=mean_ra, mean_dec=mean_dec, sigma=sigma,
                    angle_unit=angle_unit)
 
-    def rvs(self,size):
+    def rvs(self, size):
         arr = numpy.array([
-            numpy.random.rayleigh(scale = 1./numpy.sqrt(self.kappa),
-                                  size = size),
-            numpy.random.uniform(low = 0,
-                                 high = (2*numpy.pi),
-                                 size = size)]).T
+                           numpy.random.rayleigh(scale = 1./numpy.sqrt(self.kappa),
+                           numpy.random.uniform(low = 0, high = (2*numpy.pi),
+                           size = size)]).T
         euler = rotate_euler(arr, self.alpha, self.beta, 0)
-        rot_euler = FieldArray(size,dtype = [('ra','<f8'), ('dec','<f8')])
-        rot_euler['ra'], rot_euler['dec'] = euler[:,0], euler[:,1]
+        rot_euler = FieldArray(size, dtype=[('ra','<f8'), ('dec','<f8')])
+        rot_euler['ra'], rot_euler['dec'] = euler[:, 0], euler[:, 1]
         return rot_euler
 
 
