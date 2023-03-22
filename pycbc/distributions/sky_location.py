@@ -97,4 +97,5 @@ class FisherSky():
         rot_euler['ra'], rot_euler['dec'] = euler[:, 0], euler[:, 1]
         return rot_euler
 
+
 __all__ = ['UniformSky', 'FisherSky']
