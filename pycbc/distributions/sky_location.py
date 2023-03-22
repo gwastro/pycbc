@@ -57,11 +57,11 @@ class FisherSky():
         self.sigma = params['sigma']
         if angle_unit == 'rad':
             self.mu_values = numpy.array([params['mean_ra'],
-                             params['mean_dec']])
+                                          params['mean_dec']])
             self.kappa = 1./((0.66*params['sigma']))**2
         elif angle_unit == 'deg':
             self.mu_values = numpy.deg2rad([params['mean_ra'],
-                             params['mean_dec']])
+                                            params['mean_dec']])
             self.kappa = 1./((0.66*numpy.deg2rad(params['sigma'])))**2
         else:
             raise ValueError("Only deg or rad is allowed as unit")
@@ -87,13 +87,13 @@ class FisherSky():
 
     def rvs(self, size):
         arr = numpy.array([
-                           numpy.random.rayleigh(scale = 1./numpy.sqrt(self.kappa),
-                           numpy.random.uniform(low = 0, high = (2*numpy.pi),
-                           size = size)]).T
+                           numpy.random.rayleigh(
+                                                 scale=1./numpy.sqrt(self.kappa),
+                           numpy.random.uniform(low=0, high=(2*numpy.pi),
+                                                size=size)]).T
         euler = rotate_euler(arr, self.alpha, self.beta, 0)
-        rot_euler = FieldArray(size, dtype=[('ra','<f8'), ('dec','<f8')])
+        rot_euler = FieldArray(size, dtype=[('ra', '<f8'), ('dec', '<f8')])
         rot_euler['ra'], rot_euler['dec'] = euler[:, 0], euler[:, 1]
         return rot_euler
-
 
 __all__ = ['UniformSky', 'FisherSky']
