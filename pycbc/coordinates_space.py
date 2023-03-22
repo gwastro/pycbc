@@ -173,15 +173,19 @@ def tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
         The time when a GW signal arrives at the origin of LISA frame.
     """
     R_ORBIT = au.value
-    OMEGA_L = 2 * np.pi / YRSID_SI
     t0 *= YRSID_SI
-    alpha = (tSSB + t0) * OMEGA_L
     k = localization_to_propagation_vector(lamdaSSB, betaSSB)
-    v_LISA = np.array([[R_ORBIT * np.cos(alpha)],
-                       [R_ORBIT * np.sin(alpha)], [0]])
-    tL = tSSB + np.vdot(k, v_LISA) / c.value
 
-    return tL
+    def equation(tL):
+        # LISA is moving, when GW arrives at LISA center,
+        # time is tL, not tSSB.
+        alpha = OMEGA_0 * (tL + t0)
+        p = np.array([[R_ORBIT * np.cos(alpha)],
+                      [R_ORBIT * np.sin(alpha)],
+                      [0]], dtype=object)
+        return tL - tSSB - np.vdot(k, p) / c.value
+
+    return fsolve(equation, tSSB)[0]
 
 
 def tSSB_from_tL(tL, lamdaSSB, betaSSB, t0=0.0):
@@ -207,15 +211,17 @@ def tSSB_from_tL(tL, lamdaSSB, betaSSB, t0=0.0):
     tSSB : float
         The time when a GW signal arrives at the origin of SSB frame.
     """
-    t0 *= YRSID_SI
     R_ORBIT = au.value
-    OMEGA_L = 2 * np.pi / YRSID_SI
+    t0 *= YRSID_SI
+    alpha = OMEGA_0 * (tL + t0)
+    k = localization_to_propagation_vector(lamdaSSB, betaSSB)
+    # LISA is moving, when GW arrives at LISA center, time is tL, not tSSB.
+    p = np.array([[R_ORBIT * np.cos(alpha)],
+                  [R_ORBIT * np.sin(alpha)],
+                  [0]], dtype=object)
 
     def equation(tSSB):
-        return tL - tSSB + R_ORBIT * np.cos(betaSSB) * (
-            np.cos(lamdaSSB) * np.cos(OMEGA_L * (tSSB + t0)) +
-            np.sin(lamdaSSB) * np.sin(OMEGA_L * (tSSB + t0))
-        ) / c.value
+        return tL - tSSB - np.vdot(k, p) / c.value
 
     return fsolve(equation, tL)[0]
 
@@ -257,7 +263,7 @@ def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
     """
     tL = tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0)
     kSSB = localization_to_propagation_vector(lamdaSSB, betaSSB)
-    alpha = OMEGA_0 * (tSSB + t0 * YRSID_SI)
+    alpha = OMEGA_0 * (tL + t0 * YRSID_SI)
     rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
     kL = rotation_matrix_L.T @ kSSB
     lamdaL, betaL = propagation_vector_to_localization(kL)
@@ -287,34 +293,29 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
 
     Returns
     -------
-    (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB) : tuple
-    tSSB_approx : float
+    (tSSB, lamdaSSB, betaSSB, psiSSB) : tuple
+    tSSB : float
         The time when a GW signal arrives at the origin of SSB frame.
         In the unit of 's'.
-    lamdaSSB_approx : float
+    lamdaSSB : float
         The ecliptic longitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    betaSSB_approx : float
+    betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
     psiSSB : float
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
-    lamdaSSB_approx = 0.0
-    betaSSB_approx = 0.0
-    tSSB_approx = tL
     kL = localization_to_propagation_vector(lamdaL, betaL)
-    for i in range(3):
-        alpha = OMEGA_0 * (tSSB_approx + t0 * YRSID_SI)
-        rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
-        kSSB_approx = rotation_matrix_L @ kL
-        lamdaSSB_approx, betaSSB_approx = \
-            propagation_vector_to_localization(kSSB_approx)
-        tSSB_approx = tSSB_from_tL(tL, lamdaSSB_approx, betaSSB_approx, t0)
+    alpha = OMEGA_0 * (tL + t0 * YRSID_SI)
+    rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
+    kSSB = rotation_matrix_L @ kL
+    lamdaSSB, betaSSB = propagation_vector_to_localization(kSSB)
+    tSSB = tSSB_from_tL(tL, lamdaSSB, betaSSB, t0)
     psiSSB = polarization_newframe(psiL, kL, rotation_matrix_L.T)
 
-    return (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB)
+    return (tSSB, lamdaSSB, betaSSB, psiSSB)
 
 
 def rotation_matrix_SSBtoGEO(epsilon=np.deg2rad(23.439281)):
@@ -362,15 +363,19 @@ def tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
         The time when a GW signal arrives at the origin of geocentric frame.
     """
     R_ORBIT = au.value
-    OMEGA_G = 2 * np.pi / YRSID_SI
     t0 *= YRSID_SI
-    alpha = (tSSB + t0) * OMEGA_G
     k = localization_to_propagation_vector(lamdaSSB, betaSSB)
-    v_GEO = np.array([[R_ORBIT * np.cos(alpha)],
-                      [R_ORBIT * np.sin(alpha)], [0]])
-    tG = tSSB + np.vdot(k, v_GEO) / c.value
 
-    return tG
+    def equation(tG):
+        # Earth is moving, when GW arrives at Earth center,
+        # time is tG, not tSSB.
+        alpha = OMEGA_0 * (tG + t0)
+        p = np.array([[R_ORBIT * np.cos(alpha)],
+                      [R_ORBIT * np.sin(alpha)],
+                      [0]], dtype=object)
+        return tG - tSSB - np.vdot(k, p) / c.value
+
+    return fsolve(equation, tSSB)[0]
 
 
 def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
@@ -397,15 +402,17 @@ def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
     tSSB : float
         The time when a GW signal arrives at the origin of SSB frame.
     """
-    t0 *= YRSID_SI
     R_ORBIT = au.value
-    OMEGA_G = 2 * np.pi / YRSID_SI
+    t0 *= YRSID_SI
+    alpha = OMEGA_0 * (tG + t0)
+    k = localization_to_propagation_vector(lamdaSSB, betaSSB)
+    # Earth is moving, when GW arrives at Earth center, time is tG, not tSSB.
+    p = np.array([[R_ORBIT * np.cos(alpha)],
+                  [R_ORBIT * np.sin(alpha)],
+                  [0]], dtype=object)
 
     def equation(tSSB):
-        return tG - tSSB + R_ORBIT * np.cos(betaSSB) * (
-            np.cos(lamdaSSB) * np.cos(OMEGA_G * (tSSB + t0)) +
-            np.sin(lamdaSSB) * np.sin(OMEGA_G * (tSSB + t0))
-        ) / c.value
+        return tG - tSSB - np.vdot(k, p) / c.value
 
     return fsolve(equation, tG)[0]
 
@@ -493,39 +500,34 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
 
     Returns
     -------
-    (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB) : tuple
-    tSSB_approx : float
+    (tSSB, lamdaSSB, betaSSB, psiSSB) : tuple
+    tSSB : float
         The time when a GW signal arrives at the origin of SSB frame.
         In the unit of 's'.
-    lamdaSSB_approx : float
+    lamdaSSB : float
         The ecliptic longitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    betaSSB_approx : float
+    betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
     psiSSB : float
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
-    lamdaSSB_approx = 0.0
-    betaSSB_approx = 0.0
-    tSSB_approx = tG
     kG = localization_to_propagation_vector(lamdaG, betaG)
-    for i in range(3):
-        rotation_matrix_G = rotation_matrix_SSBtoGEO()
-        kSSB_approx = rotation_matrix_G @ kG
-        lamdaSSB_approx, betaSSB_approx = \
-            propagation_vector_to_localization(kSSB_approx)
-        tSSB_approx = tSSB_from_tG(tG, lamdaSSB_approx, betaSSB_approx, t0)
+    rotation_matrix_G = rotation_matrix_SSBtoGEO()
+    kSSB = rotation_matrix_G @ kG
+    lamdaSSB, betaSSB = propagation_vector_to_localization(kSSB)
+    tSSB = tSSB_from_tG(tG, lamdaSSB, betaSSB, t0)
     psiSSB = polarization_newframe(psiG, kG, rotation_matrix_G.T)
     if useAstropy:
         c = PrecessedGeocentric(ra=lamdaG*u.radian, dec=betaG*u.radian,
                                 equinox='J2000')
         ssb_sky = c.transform_to(BarycentricMeanEcliptic(equinox='J2000'))
-        lamdaSSB_approx = ssb_sky.lon.rad
-        betaSSB_approx = ssb_sky.lat.rad
+        lamdaSSB = ssb_sky.lon.rad
+        betaSSB = ssb_sky.lat.rad
 
-    return (tSSB_approx, lamdaSSB_approx, betaSSB_approx, psiSSB)
+    return (tSSB, lamdaSSB, betaSSB, psiSSB)
 
 
 def LISA_to_GEO(tL, lamdaL, betaL, psiL, t0, useAstropy=True):
