@@ -183,7 +183,7 @@ get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 
 
 def get_imrphenomxh_modes(**params):
-    """Generates ``IMRPhenomXHM` waveforms mode-by-mode. """
+    """Generates ``IMRPhenomXHM`` waveforms mode-by-mode. """
     approx = params['approximant']
     if not approx.startswith('IMRPhenomX'):
         raise ValueError("unsupported approximant")
