@@ -170,8 +170,6 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     times = [idx * strain.delta_t + strain.start_time \
              for idx in indices[cluster_idx]]
 
-    print("detect loud glitches strain duration = {} s".format(strain.duration))
-
     return times
 
 def from_cli(opt, dyn_range_fac=1, precision='single',
@@ -1902,7 +1900,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # apply gating if needed
         if self.autogating_threshold is not None:
             glitch_times = detect_loud_glitches(
-                    strain[autogating_start_sample:-self.corruption],
+                    self.strain[autogating_start_sample:-self.corruption],
                     psd_duration=self.autogating_psd_duration, psd_stride=self.autogating_psd_stride,
                     threshold=self.autogating_threshold,
                     cluster_window=self.autogating_cluster,
