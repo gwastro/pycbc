@@ -55,13 +55,14 @@ class FisherSky():
 
     def __init__(self, angle_unit='rad', **params):
         self.sigma = params['sigma']
-        self.kappa = 1./((0.66*params['sigma']))**2
         if angle_unit == 'rad':
             self.mu_values = numpy.array([params['mean_ra'],
                              params['mean_dec']])
+            self.kappa = 1./((0.66*params['sigma']))**2
         elif angle_unit == 'deg':
             self.mu_values = numpy.deg2rad([params['mean_ra'],
                              params['mean_dec']])
+            self.kappa = 1./((0.66*numpy.deg2rad(params['sigma'])))**2
         else:
             raise ValueError("Only deg or rad is allowed as unit")
         self.alpha, self.beta = new_z_to_euler(self.mu_values)
