@@ -1,3 +1,5 @@
+.. _marginalized_time_example:
+
 ######################################
 Marginalized time model
 ######################################
@@ -15,9 +17,9 @@ approximant is dominant mode only).
 This example demonstrates using the ``marginalized_time`` model with the
 ``dynesty`` sampler in a configuration designed to run in couple minutes on a
 laptop. Actual sampling will only occur over the component masses and
-inclination. The remaining parameters are marginalized over, but will 
+inclination. The remaining parameters are marginalized over, but will
 be reconstructed after running the parameter estimation by a follow-up
-script. 
+script.
 
 First, we create the following configuration file:
 
