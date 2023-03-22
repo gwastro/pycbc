@@ -785,6 +785,14 @@ parser.add_argument('--autogating-taper', type=float, metavar='SECONDS',
                     help='Taper the strain before and after '
                          'each gating window over a duration '
                          'of SECONDS.')
+parser.add_argument('--autogating-psd-duration', type=int, default=2,
+                    metavar='SECONDS',
+                    help='Length in seconds of each segment used to estimate the PSD
+                    with Welchs method and median averaging')
+parser.add_argument('--autogating-psd-stride', type=int, default=1,
+                    metavar='SECONDS',
+                    help='Length in seconds of the overlap between each segment used
+                    to estimate the PSD with Welchs method and median averaging')
 
 parser.add_argument('--sync', action='store_true',
                     help="Imposes an MPI synchronization at each transfer of"
