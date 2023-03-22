@@ -1435,6 +1435,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  autogating_pad=None,
                  autogating_width=None,
                  autogating_taper=None,
+                 autogating_psd_duration=None,
+                 autogating_psd_stride=None,
                  state_channel=None,
                  data_quality_channel=None,
                  idq_channel=None,
@@ -1597,6 +1599,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.autogating_pad = autogating_pad
         self.autogating_width = autogating_width
         self.autogating_taper = autogating_taper
+        self.autogating_psd_duration = autogating_psd_duration
+        self.autogating_psd_stride = autogating_psd_stride
         self.gate_params = []
 
         self.sample_rate = sample_rate
