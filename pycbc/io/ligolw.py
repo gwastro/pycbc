@@ -31,15 +31,6 @@ from ligo.lw.array import Array as LIGOLWArray
 import pycbc.version as pycbc_version
 
 
-__all__ = (
-    'default_null_value',
-    'return_empty_sngl',
-    'return_search_summary',
-    'legacy_row_id_converter',
-    'get_table_columns',
-    'LIGOLWContentHandler'
-)
-
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
@@ -344,3 +335,14 @@ def get_table_columns(table):
 @lsctables.use_in
 class LIGOLWContentHandler(OrigLIGOLWContentHandler):
     "Dummy class needed for loading LIGOLW files"
+
+
+__all__ = (
+    'default_null_value',
+    'return_empty_sngl',
+    'return_search_summary',
+    'create_process_table',
+    'legacy_row_id_converter',
+    'get_table_columns',
+    'LIGOLWContentHandler'
+)
