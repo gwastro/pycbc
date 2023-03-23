@@ -230,6 +230,10 @@ class LiveEventManager(object):
         pvalue_info,
         recalculate_ifar=False
     ):
+        peak_time = pvalue_info['peak_time']
+        pv = pvalue_info['pvalue']
+        pv_sat = pvalue_info['pvalue_saturated']
+
         # Copy the common fields from the other detector;
         # ignore fields that contain detector-specific data
         fields_to_ignore = set([
@@ -246,11 +250,11 @@ class LiveEventManager(object):
 
         # Set the detector-specific fields for which we have data
         snr_series_peak = pvalue_info['snr_series'].at_time(
-            pvalue_info['peak_time'],
+            peak_time,
             nearest_sample=True
         )
         base = f'foreground/{ifo}/'
-        triggers[base + 'end_time'] = float(pvalue_info['peak_time'])
+        triggers[base + 'end_time'] = float(peak_time)
         triggers[base + 'snr'] = triggers[base + 'stat'] = abs(snr_series_peak)
         triggers[base + 'coa_phase'] = numpy.angle(snr_series_peak)
         triggers[base + 'sigmasq'] = pvalue_info['sigma2']
@@ -258,11 +262,12 @@ class LiveEventManager(object):
             # Calculate new ifar
             triggers['foreground/ifar'] = combine_ifar_pvalue(
                 triggers['foreground/ifar'],
-                pvalue_info['pvalue'],
+                pv,
                 self.pvalue_livetime
             )
-            triggers[f'foreground/pvalue_{ifo}'] = pvalue_info['pvalue']
-            triggers[f'foreground/pvalue_{ifo}_saturated'] = pvalue_info['pvalue_saturated']
+            triggers['foreground/ifar_saturated'] |= pv_sat
+            triggers[f'foreground/pvalue_{ifo}'] = pv
+            triggers[f'foreground/pvalue_{ifo}_saturated'] = pv_sat
 
     def setup_optimize_snr(
         self, results, live_ifos, triggering_ifos, fname, gid
