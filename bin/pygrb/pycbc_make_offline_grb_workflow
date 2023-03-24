@@ -276,17 +276,17 @@ if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
 
 
 if IPN:
-    search_pts_file = _workflow.get_ipn_sky_files(wflow,
-            wflow.cp.get("workflow-inspiral", "ipn-search-points"),
-            tags=["SEARCH"])
+    file_attrs = {
+        'ifos': wflow.ifos,
+        'segs': wflow.analysis_time,
+        'exe_name': "IPN_SKY_POINTS",
+        'tags': ["SEARCH"]
+    }
+    search_pts_file = configparser_value_to_file(wflow.cp,
+                                                 'workflow-inspiral',
+                                                 'ipn-search-points',
+                                                 file_attrs=file_attrs)
     datafind_veto_files.extend(_workflow.FileList([search_pts_file]))
-
-# Make ExtTrig xml file (needed for lalapps_inspinj and summary pages)
-# TODO: how will this work with the new code
-if wflow.cp.has_option("inspiral", "do-exttrig"):
-    ext_file = _workflow.make_exttrig_file(wflow.cp, ifos, sciSegs[ifo][0],
-                                           baseDir)
-    all_files.extend(_workflow.FileList([ext_file]))
 
 all_files.extend(datafind_veto_files)
 
@@ -312,15 +312,25 @@ if wflow.cp.has_section("workflow-injections"):
 
     # Generate injection files
     if IPN:
-        sim_pts_file = _workflow.get_ipn_sky_files(wflow,
-                wflow.cp.get("workflow-injections", "ipn-sim-points"),
-                tags=["SIM"])
+        # TODO: we used to pass this file to setup_injection_workflow as
+        # exttrig_file = sim_pts_file to then use it in lalapps_insping.
+        # The code below picks it up but does not pass it: get
+        # setup_injection_workflow or pycbc_create_injections handle it
+        # directly via configparser_value_to_file
+        file_attrs = {
+            'ifos': wflow.ifos,
+            'segs': wflow.analysis_time,
+            'exe_name': "IPN_SKY_POINTS",
+            'tags': ["SIM"]
+        }
+        sim_pts_file = configparser_value_to_file(wflow.cp,
+                                                  'workflow-inspiral',
+                                                  'ipn-sim-points',
+                                                  file_attrs=file_attrs)
         all_files.extend(_workflow.FileList([sim_pts_file]))
-        inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir,
-                exttrig_file=sim_pts_file)
+        inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir)
     else:
-        inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir,
-                exttrig_file=ext_file)
+        inj_files, inj_tags = _workflow.setup_injection_workflow(wflow, injDir)
     all_files.extend(inj_files)
     injs = inj_files
 
