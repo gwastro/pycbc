@@ -1492,6 +1492,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Half-duration of the zeroed-out portion of autogates.
         autogating_taper: float, Optional
             Duration of taper on either side of the gating window in seconds.
+        autogating_psd_duration: float, Optional
+            The length in seconds of each segment used to estimate the PSD with Welch's method.
+        autogating_psd_stride: float, Optional
+            The overlap in seconds between each segment used to estimate the PSD with Welch's method.
         state_channel: {str, None}, Optional
             Channel to use for state information about the strain
         data_quality_channel: {str, None}, Optional
