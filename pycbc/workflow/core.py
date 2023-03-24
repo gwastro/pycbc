@@ -2074,6 +2074,30 @@ def resolve_url_to_file(curr_pfn, attrs=None):
     return curr_file
 
 
+def configparser_value_to_file(cp, sec, opt):
+    """
+    Fetch a file given its url location via the section
+    and option in the workflow configuration parser.
+
+    Parameters
+    -----------
+    cp : ConfigParser object
+         The ConfigParser object holding the workflow configuration settings
+    sec : string
+         The section containing options for this job.
+    opt : string
+         Name of option (e.g. --output-file)
+
+    Returns
+    --------
+    fileobj_from_path : workflow.File object obtained from the path
+        specified by opt, within sec, in cp.
+    """
+    path = cp.get(sec, opt)
+    fileobj_from_path = resolve_url_to_file(path)
+    return fileobj_from_path
+
+
 def get_full_analysis_chunk(science_segs):
     """
     Function to find the first and last time point contained in the science segments

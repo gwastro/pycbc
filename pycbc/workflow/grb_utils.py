@@ -40,7 +40,8 @@ from ligo.lw import ligolw, lsctables, utils
 from gwdatafind.utils import filename_metadata
 from pycbc import makedir
 from pycbc.workflow.core import \
-    File, FileList, resolve_url_to_file, Executable, Node
+    File, FileList, configparser_value_to_file, resolve_url_to_file,\
+    Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable
@@ -512,16 +513,6 @@ class PycbcGrbInjCombinerExecutable(Executable):
         return node, out_file
 
 
-# [Never invoked outside this file]
-def opt_to_file(workflow, section, option):
-    """Fetch a file given its url location via the section
-    and option in the workflow configuraiton file."""
-
-    path = workflow.cp.get(section, option)
-
-    return resolve_url_to_file(path)
-
-
 def build_veto_filelist(workflow):
     """Construct a FileList instance containing all veto xml files"""
 
@@ -610,7 +601,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Output files and final input file (passed as a File instance)
     if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
-        onsource_file = opt_to_file(workflow, 'workflow', 'onsource-file')
+        onsource_file = configparser_value_to_file(workflow.cp,
+                                                   'workflow', 'onsource-file')
         node.add_input_opt('--onsource-file', onsource_file)
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--background-output-file',
@@ -713,8 +705,9 @@ def make_pygrb_injs_tables(workflow, out_dir,  # exclude=None, require=None,
     # Handle input/output for injections
     if inj_set:
         # Found-missed injection file (passed as File instance)
-        fm_file = opt_to_file(workflow, 'injections-'+inj_set,
-                              'found-missed-file')
+        fm_file = configparser_value_to_file(workflow.cp,
+                                             'injections-'+inj_set,
+                                             'found-missed-file')
         node.add_input_opt('--found-missed-file', fm_file)
         # Missed-found and quiet-found injections html output files
         for mf_or_qf in ['missed-found', 'quiet-found']:
@@ -729,7 +722,8 @@ def make_pygrb_injs_tables(workflow, out_dir,  # exclude=None, require=None,
     # Handle input/output for onsource/offsource
     else:
         # Onsource input file (passed as File instance)
-        onsource_file = opt_to_file(workflow, 'workflow', 'onsource-file')
+        onsource_file = configparser_value_to_file(workflow.cp,
+                                                   'workflow', 'onsource-file')
         node.add_input_opt('--onsource-file', onsource_file)
         # Loudest offsource triggers and onsource trigger html and h5 output
         for source_type in ['onsource-trig', 'offsource-trigs']:

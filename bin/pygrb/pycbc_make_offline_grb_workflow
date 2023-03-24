@@ -33,6 +33,7 @@ import os
 import argparse
 import logging
 import pycbc.workflow as _workflow
+from pycbc.workflow.core import configparser_value_to_file
 from ligo.segments import segment, segmentlist, segmentlistdict
 import matplotlib
 matplotlib.use('agg')
@@ -249,8 +250,8 @@ else:
 
 # Get bank_veto_bank.xml if running bank veto
 if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
-    bank_veto_file_path = wflow.cp.get('workflow-inspiral', 'bank-veto-bank-file')
-    bank_veto_file = _workflow.FileList([_workflow.resolve_url_to_file(bank_veto_file_path)])
+    bank_veto_file = configparser_value_to_file(wflow.cp, 'workflow-inspiral',
+                                                'bank-veto-bank-file')
     datafind_veto_files.extend(bank_veto_file)
 # TODO: Finalize location of bank veto bank and make the above automatic
 # Below is the snippet of old grb_utils.py code that used to handle this
