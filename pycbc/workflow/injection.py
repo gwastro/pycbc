@@ -203,7 +203,6 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     # Get full analysis segment for output file naming
     full_segment = workflow.analysis_time
-    ifos = workflow.ifos
 
     # Identify which injections to do by presence of sub-sections in
     # the configuration file

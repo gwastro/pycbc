@@ -30,13 +30,8 @@ http://pycbc.org/pycbc/latest/html/workflow.html
 
 import glob
 import os
-# import shutil
-from urllib.request import pathname2url
-from urllib.parse import urljoin
 import numpy as np
 from scipy.stats import rayleigh
-# from ligo import segments
-from ligo.lw import ligolw, lsctables, utils
 from gwdatafind.utils import filename_metadata
 from pycbc import makedir
 from pycbc.workflow.core import \

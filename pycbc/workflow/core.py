@@ -2095,7 +2095,7 @@ def configparser_value_to_file(cp, sec, opt, attrs=None):
         specified by opt, within sec, in cp.
     """
     path = cp.get(sec, opt)
-    fileobj_from_path = resolve_url_to_file(path, attrs=file_attrs)
+    fileobj_from_path = resolve_url_to_file(path, attrs=attrs)
     return fileobj_from_path
 
 
