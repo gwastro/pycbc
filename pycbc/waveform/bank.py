@@ -1298,7 +1298,7 @@ class _PhenomTemplate():
         self.comps = {}
         self.has_comps = False
 
-    def gen_harmonics_comp(self, thetaJN, alpha0, phi0, psi, df, f_final):
+    def gen_hp_hc(self, thetaJN, alpha0, phi0, df, f_final):
         # calculate cartesian spins for waveform generator
         a1 = np.sqrt(
             np.sum(np.square([self.spin1x, self.spin1y, self.spin1z]))
@@ -1317,20 +1317,31 @@ class _PhenomTemplate():
         phi12 = phi2 - phi1
         if phi12 < 0:
             phi12 += 2 * np.pi
-        tilt1 = np.arccos(self.spin1z / a1)
-        tilt2 = np.arccos(self.spin2z / a2)
+        # prevent failure when s1z = a1 = 0
+        if not self.spin1z and not a1:
+            tilt1 = 0.
+        else:
+            tilt1 = np.arccos(self.spin1z / a1)
+        if not self.spin2z and not a2:
+            tilt2 = 0.
+        else:
+            tilt2 = np.arccos(self.spin2z / a2)
         iota, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
             lalsim.SimInspiralTransformPrecessingNewInitialConditions(
                 thetaJN, alpha0, tilt1, tilt2, phi12, a1, a2,
                 self.mass1*lal.MSUN_SI, self.mass2*lal.MSUN_SI, self.fref, phi0
             )
         # generate hp, hc for given orientation with lalsimulation
-        hp, hc = lalsim.SimInspiralChooseFDWaveform(
+        return lalsim.SimInspiralChooseFDWaveform(
             self.mass1*lal.MSUN_SI, self.mass2*lal.MSUN_SI, spin1x, spin1y,
             spin1z, spin2x, spin2y, spin2z, 1.e6*lal.PC_SI, iota, phi0,
             0, 0, 0, df, self.flow, f_final, self.fref, lal.CreateDict(),
             lalsim.GetApproximantFromString(self.approximant)
         )
+
+    def gen_harmonics_comp(self, thetaJN, alpha0, phi0, psi, df, f_final):
+        # generate hp, hc
+        hp, hc = self.gen_hp_hc(thetaJN, alpha0, phi0, df, f_final)
         # 1908.05707 defines psi in J-aligned frame. Need to rotate to
         # L-aligned frame and multiply by w+, wx
         dpsi = _dpsi(thetaJN, alpha0, self.beta)
@@ -1379,14 +1390,17 @@ class _PhenomTemplate():
                                               side='left')
         return large
 
-    def compute_waveform_five_comps(self, df, f_final, num_comps=5):
+    def compute_waveform_five_comps(self, df, f_final, num_comps=5, interp=True):
+        if interp:
+            def _func(*args, **kwargs):
+                return self.get_interpolated_harmonic_comp(*args, **kwargs)
+        else:
+            def _func(*args, **kwargs):
+                h = self.gen_harmonics_comp(*args, **kwargs)
+                return FrequencySeries(h.data.data[:], delta_f=h.deltaF, epoch=h.epoch)
         # calculate 5 harmonic decomposition as defined in 1908.05707
-        hgen1a = self.get_interpolated_harmonic_comp(
-            0., 0., 0., 0., df, f_final
-            )
-        hgen1b = self.get_interpolated_harmonic_comp(
-            0., 0., np.pi/4., np.pi/4, df, f_final
-        )
+        hgen1a = _func(0., 0., 0., 0., df, f_final)
+        hgen1b = _func(0., 0., np.pi/4., np.pi/4, df, f_final)
         tmp = hgen1a - hgen1b
         hgen1b = (hgen1a + hgen1b) / 2.
         hgen1a = tmp / 2.
@@ -1397,12 +1411,8 @@ class _PhenomTemplate():
 
 
         # These are both negative w.r.t 1908.05707
-        hgen2a = self.get_interpolated_harmonic_comp(
-            np.pi/2., 0., np.pi/4., np.pi/4, df, f_final
-        )
-        hgen2b = self.get_interpolated_harmonic_comp(
-            np.pi/2., np.pi/2., 0., np.pi/4, df, f_final
-        )
+        hgen2a = _func(np.pi/2., 0., np.pi/4., np.pi/4, df, f_final)
+        hgen2b = _func(np.pi/2., np.pi/2., 0., np.pi/4, df, f_final)
         tmp = hgen2a + hgen2b
         hgen2b = -0.25 * (hgen2a - hgen2b)
         hgen2a = -0.25 * tmp
@@ -1411,12 +1421,8 @@ class _PhenomTemplate():
         if num_comps == 2:
             return h1, h2, None, None, None
 
-        hgen3a = self.get_interpolated_harmonic_comp(
-            np.pi/2., 0., 0., 0., df, f_final
-        )
-        hgen3b = self.get_interpolated_harmonic_comp(
-            np.pi/2., np.pi/2., 0., 0., df, f_final
-        )
+        hgen3a = _func(np.pi/2., 0., 0., 0., df, f_final)
+        hgen3b = _func(np.pi/2., np.pi/2., 0., 0., df, f_final)
         hgen3a = 1./6. * (hgen3a + hgen3b)
         h3 = hgen3a
 
