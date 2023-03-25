@@ -61,7 +61,7 @@ def load_ns_sequence(eos_name):
     return (ns_sequence, max_ns_g_mass)
 
 
-def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence):
+def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence, extrapolate=False):
     """
     Determines the baryonic mass of an NS given its gravitational
     mass and an NS equilibrium sequence (in solar masses).
@@ -74,6 +74,9 @@ def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence):
         Contains the sequence data in the form NS gravitational
         mass (in solar masses), NS baryonic mass (in solar
         masses), NS compactness (dimensionless)
+    extrapolate : boolean, optional
+        Invoke extrapolation in scipy.interpolate.interp1d.
+        Default is False (so ValueError is raised for ns_g_mass out of bounds)
 
     Returns
     ----------
@@ -81,12 +84,12 @@ def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence):
     """
     x = ns_sequence[:, 0]
     y = ns_sequence[:, 1]
-    f = interp1d(x, y)
-
+    fill_value = "extrapolate" if extrapolate else np.nan 
+    f = interp1d(x, y, fill_value=fill_value)
     return f(ns_g_mass)
 
 
-def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence):
+def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence, extrapolate=False):
     """
     Determines the dimensionless compactness parameter of an NS given
     its gravitational mass and an NS equilibrium sequence.
@@ -99,6 +102,9 @@ def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence):
         Contains the sequence data in the form NS gravitational
         mass (in solar masses), NS baryonic mass (in solar
         masses), NS compactness (dimensionless)
+    extrapolate : boolean, optional
+        Invoke extrapolation in scipy.interpolate.interp1d.
+        Default is False (so ValueError is raised for ns_g_mass out of bounds)
 
     Returns
     ----------
@@ -106,12 +112,12 @@ def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence):
     """
     x = ns_sequence[:, 0]
     y = ns_sequence[:, 2]
-    f = interp1d(x, y)
-
+    fill_value = "extrapolate" if extrapolate else np.nan 
+    f = interp1d(x, y, fill_value=fill_value)
     return f(ns_g_mass)
 
 
-def initialize_eos(ns_mass, eos):
+def initialize_eos(ns_mass, eos, extrapolate=False):
     """Load an equation of state and return the compactness and baryonic
     mass for a given neutron star mass
 
@@ -121,6 +127,9 @@ def initialize_eos(ns_mass, eos):
         The mass of the neutron star, in solar masses.
     eos : str
         Name of the equation of state.
+    extrapolate : boolean, optional
+        Invoke extrapolation in scipy.interpolate.interp1d.
+        Default is False (so ValueError is raised for ns_g_mass out of bounds)
 
     Returns
     -------
@@ -144,8 +153,10 @@ def initialize_eos(ns_mass, eos):
                     f'Maximum NS mass for {eos} is {ns_max}, received '
                     f'{ns_mass}')
         # Interpolate NS compactness and rest mass
-        ns_compactness = interp_grav_mass_to_compactness(ns_mass, ns_seq)
-        ns_b_mass = interp_grav_mass_to_baryon_mass(ns_mass, ns_seq)
+        ns_compactness = interp_grav_mass_to_compactness(ns_mass, ns_seq,
+                                                         extrapolate=extrapolate)
+        ns_b_mass = interp_grav_mass_to_baryon_mass(ns_mass, ns_seq,
+                                                    extrapolate=extrapolate)
     elif eos in lalsim.SimNeutronStarEOSNames:
         #eos_obj = lalsim.SimNeutronStarEOSByName(eos)
         #eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
