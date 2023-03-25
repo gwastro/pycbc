@@ -423,6 +423,42 @@ def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
     return lambdav
 
 
+def swap_companions(mass1, mass2, spin1a, spin1pol, spin2a, spin2pol):
+    """Returns masses and spins enforcing that mass1 is the primary."""
+    mass1, mass2, spin1a, spin1pol, spin2a, spin2pol, input_is_array = \
+        ensurearray(mass1, mass2, spin1a, spin1pol, spin2a, spin2pol)
+    shapes = numpy.array((mass2.shape,
+                          spin1a.shape, spin1pol.shape,
+                          spin2a.shape, spin2pol.shape))
+    if any(shapes != mass1.shape):
+        raise ValueError("Inputs must have same shape")
+    mask = mass1 < mass2
+    # primary (p) mass
+    mp = copy.copy(mass1)
+    mp[mask] = mass2[mask]
+    # secondary (s) mass
+    ms = copy.copy(mass2)
+    ms[mask] = mass1[mask]
+    # primary spin magnitude
+    spa = copy.copy(spin1a)
+    spa[mask] = spin2a[mask]
+    # secondary spin magnitude
+    ssa = copy.copy(spin2a)
+    ssa[mask] = spin1a[mask]
+    # primary spin polar component
+    spp = copy.copy(spin1pol)
+    spp[mask] = spin2pol[mask]
+    # secondary spin polar component
+    ssp = copy.copy(spin2pol)
+    ssp[mask] = spin1pol[mask]
+    return formatreturn(mp, input_is_array),\
+        formatreturn(ms, input_is_array),\
+        formatreturn(spa, input_is_array),\
+        formatreturn(spp, input_is_array),\
+        formatreturn(ssa, input_is_array),\
+        formatreturn(ssp, input_is_array)
+
+
 def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H'):
     """
@@ -434,7 +470,7 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     Stone, Loeb & Berger, PRD 87, 084053 (2013), which was originally
     devised for a previous NS-BH remnant mass fit of
     Foucart, PRD 86, 124007 (2012).
-    Note: NS spin is assumed to be 0!
+    Note: The NS spin does not play any role in this fit!
 
     Parameters
     -----------
