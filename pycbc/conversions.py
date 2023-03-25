@@ -106,6 +106,8 @@ def sec_to_year(sec):
 def primary_mass(mass1, mass2):
     """Returns the larger of mass1 and mass2 (p = primary)."""
     mass1, mass2, input_is_array = ensurearray(mass1, mass2)
+    if mass1.shape != mass2.shape:
+        raise ValueError("mass1 and mass2 must have same shape")
     mp = copy.copy(mass1)
     mask = mass1 < mass2
     mp[mask] = mass2[mask]
