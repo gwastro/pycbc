@@ -33,17 +33,17 @@ def load_ns_sequence(eos_name):
 
     Parameters
     -----------
-    eos_name: string
+    eos_name : string
         NS equation of state label ('2H' is the only supported
         choice at the moment)
 
     Returns
     ----------
-    ns_sequence: numpy.array
+    ns_sequence : numpy.array
         contains the sequence data in the form NS gravitational
         mass (in solar masses), NS baryonic mass (in solar
         masses), NS compactness (dimensionless)
-    max_ns_g_mass: float
+    max_ns_g_mass : float
         the maximum NS gravitational mass (in solar masses) in
         the sequence (this is the mass of the most massive stable
         NS)
@@ -68,10 +68,10 @@ def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence):
 
     Parameters
     -----------
-    ns_g_mass: float
+    ns_g_mass : float
         NS gravitational mass (in solar masses)
-    ns_sequence: numpy.array
-        contains the sequence data in the form NS gravitational
+    ns_sequence : numpy.array
+        Contains the sequence data in the form NS gravitational
         mass (in solar masses), NS baryonic mass (in solar
         masses), NS compactness (dimensionless)
 
@@ -93,10 +93,10 @@ def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence):
 
     Parameters
     -----------
-    ns_g_mass: float
+    ns_g_mass : float
         NS gravitational mass (in solar masses)
-    ns_sequence: numpy.array
-        contains the sequence data in the form NS gravitational
+    ns_sequence : numpy.array
+        Contains the sequence data in the form NS gravitational
         mass (in solar masses), NS baryonic mass (in solar
         masses), NS compactness (dimensionless)
 
