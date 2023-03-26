@@ -153,8 +153,8 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
                     f'Maximum NS mass for {eos} is {ns_max}, received '
                     f'{ns_mass}')
         # Interpolate NS compactness and rest mass
-        ns_compactness = interp_grav_mass_to_compactness(ns_mass, ns_seq,
-                                                         extrapolate=extrapolate)
+        ns_compactness = interp_grav_mass_to_compactness(
+            ns_mass, ns_seq, extrapolate=extrapolate)
         ns_b_mass = interp_grav_mass_to_baryon_mass(
             ns_mass, ns_seq, extrapolate=extrapolate)
     elif eos in lalsim.SimNeutronStarEOSNames:
