@@ -423,45 +423,59 @@ def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
     return lambdav
 
 
-def swap_companions(mass1, mass2, spin1a, spin1pol, spin2a, spin2pol):
-    """Returns masses and spins enforcing that mass1 is the primary."""
-    mass1, mass2, spin1a, spin1pol, spin2a, spin2pol, input_is_array = \
-        ensurearray(mass1, mass2, spin1a, spin1pol, spin2a, spin2pol)
-    shapes = numpy.array((mass2.shape,
-                          spin1a.shape, spin1pol.shape,
-                          spin2a.shape, spin2pol.shape))
-    if any(shapes != mass1.shape):
-        raise ValueError("Inputs must have same shape")
+def ensure_obj1_is_primary(mass1, mass2, *params):
+    """
+    Enforce that the object labelled as 1 is the primary.
+
+    Parameters
+    ----------
+    mass1 : float, numpy.array
+        Mass values labelled as 1.
+    mass2 : float, numpy.array
+        Mass values labelled as 2.
+    *params :
+        The binary parameters to be swapped around when mass1 < mass2.
+        The list must have length 2N and it must be organized so that
+        params[i] and params[i+1] are the same kind of quantity, but
+        for object 1 and object 2, respsectively.
+        E.g., spin1z, spin2z, lambda1, lambda2.
+
+    Returns
+    -------
+    list :
+        A list with mass1, mass2, params as arrays, with elements, each
+        with elements re-arranged so that object 1 is the primary.
+    """
+    # Check params are 2N
+    if len(params) % 2 != 0:
+        raise ValueError("params must be 2N floats or arrays")
+    input_properties, input_is_array = ensurearray((mass1, mass2)+params)
+    # Check inputs are all the same length
+    shapes = [par.shape for par in input_properties]
+    if len(set(shapes)) != 1:
+        raise ValueError("Individual masses and params must have same shape")
+    # What needs to be swapped
     mask = mass1 < mass2
-    # primary (p) mass
-    mp = copy.copy(mass1)
-    mp[mask] = mass2[mask]
-    # secondary (s) mass
-    ms = copy.copy(mass2)
-    ms[mask] = mass1[mask]
-    # primary spin magnitude
-    spa = copy.copy(spin1a)
-    spa[mask] = spin2a[mask]
-    # secondary spin magnitude
-    ssa = copy.copy(spin2a)
-    ssa[mask] = spin1a[mask]
-    # primary spin polar component
-    spp = copy.copy(spin1pol)
-    spp[mask] = spin2pol[mask]
-    # secondary spin polar component
-    ssp = copy.copy(spin2pol)
-    ssp[mask] = spin1pol[mask]
-    return formatreturn(mp, input_is_array),\
-        formatreturn(ms, input_is_array),\
-        formatreturn(spa, input_is_array),\
-        formatreturn(spp, input_is_array),\
-        formatreturn(ssa, input_is_array),\
-        formatreturn(ssp, input_is_array)
+    # Output containter
+    output_properties = []
+    for i in numpy.arange(0, len(shapes), 2):
+        # primary (p)
+        p = copy.copy(input_properties[i])
+        # secondary (s)
+        s = copy.copy(input_properties[i+1])
+        # Swap
+        p[mask] = input_properties[i+1][mask]
+        s[mask] = input_properties[i][mask]
+        # Format and include in output object
+        output_properties.append(formatreturn(p, input_is_array))
+        output_properties.append(formatreturn(s, input_is_array))
+    # Release output
+    return output_properties
 
 
 def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H',
-        spin2a=0.0, spin2pol=0.0, swap_indices=False,
+        spin2a=0.0, spin2pol=0.0, swap_companions=False,
         max_ns_mass=None, extrapolate=False):
     """
     Function that determines the remnant disk mass of an NS-BH system
@@ -490,7 +504,7 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         The dimensionless magnitude of the spin of mass2. Default = 0.
     spin2pol : float, optional
         The tilt angle of the spin of mass2. Default = 0 (aligned w L).
-    swap_indices : boolean, optional
+    swap_companions : boolean, optional
         If mass2 > mass1, swap mass and spin of object 1 and 2 prior
         to applying the fitting formula (otherwise fail). Default is False.
     max_ns_mass : float, optional
@@ -509,9 +523,10 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     mass1, mass2, spin1a, spin1pol, spin2a, spin2pol, input_is_array = \
         ensurearray(mass1, mass2, spin1a, spin1pol, spin2a, spin2pol)
     # mass1 must be greater than mass2: swap the properties of 1 and 2 or fail
-    if swap_indices:
-        mass1, mass2, spin1a, spin1pol, spin2a, spin2pol = \
-            swap_companions(mass1, mass2, spin1a, spin1pol, spin2a, spin2pol)
+    if swap_companions:
+        mass1, mass2, spin1a, spin2a, spin1pol, spin2pol = \
+            ensure_obj1_is_primary(mass1, mass2, spin1a, spin2a,
+                                   spin1pol, spin2pol)
     else:
         try:
             if any(mass2 > mass1) and input_is_array:
@@ -538,7 +553,7 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
 
 def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         mass1, mass2, spin1x=0.0, spin1y=0.0, spin1z=0.0, eos='2H',
-        spin2x=0.0, spin2y=0.0, spin2z=0.0, swap_indices=False,
+        spin2x=0.0, spin2y=0.0, spin2z=0.0, swap_companions=False,
         max_ns_mass=None, extrapolate=False):
     """
     Function that determines the remnant disk mass of an NS-BH system
@@ -571,7 +586,7 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         The dimensionless y-component of the spin of mass2. Default = 0.
     spin2z : float, optional
         The dimensionless z-component of the spin of mass2. Default = 0.
-    swap_indices : boolean, optional
+    swap_companions : boolean, optional
         If mass2 > mass1, swap mass and spin of object 1 and 2 prior
         to applying the fitting formula (otherwise fail). Default is False.
     max_ns_mass : float, optional
@@ -588,7 +603,7 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         The remnant mass in solar masses
     """
     spin1a, _, spin1pol = _cartesian_to_spherical(spin1x, spin1y, spin1z)
-    if swap_indices:
+    if swap_companions:
         spin2a, _, spin2pol = _cartesian_to_spherical(spin2x, spin2y, spin2z)
     else:
         size = ensurearray(spin1a)[0].size
@@ -596,7 +611,7 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         spin2pol = numpy.zeros(size)
     return remnant_mass_from_mass1_mass2_spherical_spin_eos(
         mass1, mass2, spin1a, spin1pol, eos=eos,
-        spin2a=spin2a, spin2pol=spin2pol, swap_indices=swap_indices,
+        spin2a=spin2a, spin2pol=spin2pol, swap_companions=swap_companions,
         max_ns_mass=max_ns_mass, extrapolate=extrapolate)
 
 
