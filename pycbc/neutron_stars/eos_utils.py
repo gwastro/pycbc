@@ -154,10 +154,9 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
                     f'{ns_mass}')
         # Interpolate NS compactness and rest mass
         ns_compactness = interp_grav_mass_to_compactness(ns_mass, ns_seq,
-                                                         extrapolate=\
-                                                             extrapolate)
-        ns_b_mass = interp_grav_mass_to_baryon_mass(ns_mass, ns_seq,
-                                                    extrapolate=extrapolate)
+                                                         extrapolate=extrapolate)
+        ns_b_mass = interp_grav_mass_to_baryon_mass(
+            ns_mass, ns_seq, extrapolate=extrapolate)
     elif eos in lalsim.SimNeutronStarEOSNames:
         #eos_obj = lalsim.SimNeutronStarEOSByName(eos)
         #eos_fam = lalsim.CreateSimNeutronStarFamily(eos_obj)
