@@ -84,7 +84,7 @@ def interp_grav_mass_to_baryon_mass(ns_g_mass, ns_sequence, extrapolate=False):
     """
     x = ns_sequence[:, 0]
     y = ns_sequence[:, 1]
-    fill_value = "extrapolate" if extrapolate else np.nan 
+    fill_value = "extrapolate" if extrapolate else np.nan
     f = interp1d(x, y, fill_value=fill_value)
     return f(ns_g_mass)
 
@@ -112,7 +112,7 @@ def interp_grav_mass_to_compactness(ns_g_mass, ns_sequence, extrapolate=False):
     """
     x = ns_sequence[:, 0]
     y = ns_sequence[:, 2]
-    fill_value = "extrapolate" if extrapolate else np.nan 
+    fill_value = "extrapolate" if extrapolate else np.nan
     f = interp1d(x, y, fill_value=fill_value)
     return f(ns_g_mass)
 
@@ -154,7 +154,8 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
                     f'{ns_mass}')
         # Interpolate NS compactness and rest mass
         ns_compactness = interp_grav_mass_to_compactness(ns_mass, ns_seq,
-                                                         extrapolate=extrapolate)
+                                                         extrapolate=\
+                                                             extrapolate)
         ns_b_mass = interp_grav_mass_to_baryon_mass(ns_mass, ns_seq,
                                                     extrapolate=extrapolate)
     elif eos in lalsim.SimNeutronStarEOSNames:
