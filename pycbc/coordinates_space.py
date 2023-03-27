@@ -35,11 +35,7 @@ from astropy.constants import c, au
 from astropy.time import Time
 from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
 from astropy.coordinates import get_body_barycentric
-from astropy.coordinates import solar_system_ephemeris
 from astropy.coordinates import SkyCoord
-
-
-solar_system_ephemeris.set('jpl')
 
 
 def localization_to_propagation_vector(lamda, beta):
