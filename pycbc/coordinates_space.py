@@ -32,11 +32,14 @@ from scipy.spatial.transform import Rotation
 from scipy.optimize import fsolve
 from astropy import units as u
 from astropy.constants import c, au
+from astropy.time import Time
 from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
+from astropy.coordinates import get_body_barycentric
+from astropy.coordinates import solar_system_ephemeris
+from astropy.coordinates import SkyCoord
 
 
-YRSID_SI = 31558149.763545603  # same as BBHx, but not for lal.YRJUL_SI
-OMEGA_0 = 1.99098659277e-7
+solar_system_ephemeris.set('jpl')
 
 
 def localization_to_propagation_vector(lamda, beta):
@@ -83,6 +86,36 @@ def rotation_matrix_SSBtoLISA(alpha):
     r_total = np.array(r[0]) @ np.array(r[1]) @ np.array(r[2])
 
     return r_total
+
+
+def lisa_position_SSB(tL, t0=0.0):
+    """ Calculating the position vector and angular displacement of LISA
+    in the SSB frame, at a given time.
+
+    Parameters
+    ----------
+    tL : float
+        The time when a GW signal arrives at the origin of LISA frame,
+        or any other time you want.
+    t0 : float
+        The initial time offset of LISA, in the unit of 'year', default is 0.
+
+    Returns
+    -------
+    (p, alpha) : tuple
+    p : numpy.array
+        The position vector of LISA in the SSB frame.
+    alpha : float
+    """
+    YRSID_SI = 31558149.763545603  # same as BBHx, but not for lal.YRJUL_SI
+    OMEGA_0 = 1.99098659277e-7
+    R_ORBIT = au.value
+    t0 *= YRSID_SI
+    alpha = OMEGA_0 * (tL + t0)
+    p = np.array([[R_ORBIT * np.cos(alpha)],
+                  [R_ORBIT * np.sin(alpha)],
+                  [0]], dtype=object)
+    return (p, alpha)
 
 
 def propagation_vector_to_localization(k):
@@ -165,24 +198,19 @@ def tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
+        The initial time offset of LISA, in the unit of 'year', default is 0.
 
     Returns
     -------
     tL : float
         The time when a GW signal arrives at the origin of LISA frame.
     """
-    R_ORBIT = au.value
-    t0 *= YRSID_SI
     k = localization_to_propagation_vector(lamdaSSB, betaSSB)
 
     def equation(tL):
         # LISA is moving, when GW arrives at LISA center,
         # time is tL, not tSSB.
-        alpha = OMEGA_0 * (tL + t0)
-        p = np.array([[R_ORBIT * np.cos(alpha)],
-                      [R_ORBIT * np.sin(alpha)],
-                      [0]], dtype=object)
+        p = lisa_position_SSB(tL, t0)[0]
         return tL - tSSB - np.vdot(k, p) / c.value
 
     return fsolve(equation, tSSB)[0]
@@ -204,21 +232,16 @@ def tSSB_from_tL(tL, lamdaSSB, betaSSB, t0=0.0):
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
+        The initial time offset of LISA, in the unit of 'year', default is 0.
 
     Returns
     -------
     tSSB : float
         The time when a GW signal arrives at the origin of SSB frame.
     """
-    R_ORBIT = au.value
-    t0 *= YRSID_SI
-    alpha = OMEGA_0 * (tL + t0)
     k = localization_to_propagation_vector(lamdaSSB, betaSSB)
     # LISA is moving, when GW arrives at LISA center, time is tL, not tSSB.
-    p = np.array([[R_ORBIT * np.cos(alpha)],
-                  [R_ORBIT * np.sin(alpha)],
-                  [0]], dtype=object)
+    p = lisa_position_SSB(tL, t0)[0]
 
     def equation(tSSB):
         return tL - tSSB - np.vdot(k, p) / c.value
@@ -245,7 +268,7 @@ def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
+        The initial time offset of LISA, in the unit of 'year', default is 0.
 
     Returns
     -------
@@ -263,7 +286,7 @@ def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
     """
     tL = tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0)
     kSSB = localization_to_propagation_vector(lamdaSSB, betaSSB)
-    alpha = OMEGA_0 * (tL + t0 * YRSID_SI)
+    alpha = lisa_position_SSB(tL, t0)[1]
     rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
     kL = rotation_matrix_L.T @ kSSB
     lamdaL, betaL = propagation_vector_to_localization(kL)
@@ -289,7 +312,7 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
+        The initial time offset of LISA, in the unit of 'year', default is 0.
 
     Returns
     -------
@@ -308,7 +331,7 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
         In the unit of 'radian'.
     """
     kL = localization_to_propagation_vector(lamdaL, betaL)
-    alpha = OMEGA_0 * (tL + t0 * YRSID_SI)
+    alpha = lisa_position_SSB(tL, t0)[1]
     rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
     kSSB = rotation_matrix_L @ kL
     lamdaSSB, betaSSB = propagation_vector_to_localization(kSSB)
@@ -339,7 +362,36 @@ def rotation_matrix_SSBtoGEO(epsilon=np.deg2rad(23.439281)):
     return np.array(r[0])
 
 
-def tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
+def earth_position_vector_SSB(tG):
+    """ Calculating the position vector of the Earth in the SSB frame,
+    at a given time. By using Astropy.
+
+    Parameters
+    ----------
+    tG : float
+        The time when a GW signal arrives at the origin of geocentric frame,
+        or any other time you want.
+
+    Returns
+    -------
+    p : numpy.array
+        The position vector of the Earth in the SSB frame.
+    """
+    t = Time(tG, format='gps')
+    pos = get_body_barycentric('earth', t)
+    icrs_coord = SkyCoord(pos.x, pos.y, pos.z, frame='icrs',
+                          representation_type='cartesian')
+    bme_coord = icrs_coord.transform_to(
+                    BarycentricMeanEcliptic(equinox='J2000'))
+    x = bme_coord.cartesian.x.value
+    y = bme_coord.cartesian.y.value
+    z = bme_coord.cartesian.z.value
+    p = np.array([[x], [y], [z]])
+
+    return p
+
+
+def tG_from_SSB(tSSB, lamdaSSB, betaSSB):
     """ Calculating the time when a GW signal arrives at the barycenter
     of the Earth, by using the time and sky localization in SSB frame.
 
@@ -354,31 +406,24 @@ def tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0=0.0):
     betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
 
     Returns
     -------
     tG : float
         The time when a GW signal arrives at the origin of geocentric frame.
     """
-    R_ORBIT = au.value
-    t0 *= YRSID_SI
     k = localization_to_propagation_vector(lamdaSSB, betaSSB)
 
     def equation(tG):
         # Earth is moving, when GW arrives at Earth center,
         # time is tG, not tSSB.
-        alpha = OMEGA_0 * (tG + t0)
-        p = np.array([[R_ORBIT * np.cos(alpha)],
-                      [R_ORBIT * np.sin(alpha)],
-                      [0]], dtype=object)
+        p = earth_position_vector_SSB(tG)
         return tG - tSSB - np.vdot(k, p) / c.value
 
     return fsolve(equation, tSSB)[0]
 
 
-def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
+def tSSB_from_tG(tG, lamdaSSB, betaSSB):
     """ Calculating the time when a GW signal arrives at the barycenter
     of SSB, by using the time in geocentric frame and sky localization
     in SSB frame.
@@ -394,22 +439,15 @@ def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
     betaSSB : float
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
 
     Returns
     -------
     tSSB : float
         The time when a GW signal arrives at the origin of SSB frame.
     """
-    R_ORBIT = au.value
-    t0 *= YRSID_SI
-    alpha = OMEGA_0 * (tG + t0)
     k = localization_to_propagation_vector(lamdaSSB, betaSSB)
     # Earth is moving, when GW arrives at Earth center, time is tG, not tSSB.
-    p = np.array([[R_ORBIT * np.cos(alpha)],
-                  [R_ORBIT * np.sin(alpha)],
-                  [0]], dtype=object)
+    p = earth_position_vector_SSB(tG)
 
     def equation(tSSB):
         return tG - tSSB - np.vdot(k, p) / c.value
@@ -417,7 +455,7 @@ def tSSB_from_tG(tG, lamdaSSB, betaSSB, t0=0.0):
     return fsolve(equation, tG)[0]
 
 
-def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
+def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, useAstropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
     from the SSB frame to the geocentric frame.
 
@@ -435,8 +473,6 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
     psiSSB : float
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
-    t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
     useAstropy : bool
         Using Astropy to calculate the sky localization or not.
         Default is True.
@@ -457,7 +493,7 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     """
-    tG = tG_from_SSB(tSSB, lamdaSSB, betaSSB, t0)
+    tG = tG_from_SSB(tSSB, lamdaSSB, betaSSB)
     kSSB = localization_to_propagation_vector(lamdaSSB, betaSSB)
     rotation_matrix_G = rotation_matrix_SSBtoGEO()
     if useAstropy:
@@ -474,7 +510,7 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy=True):
     return (tG, lamdaG, betaG, psiG)
 
 
-def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
+def GEO_to_SSB(tG, lamdaG, betaG, psiG, useAstropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
     from the geocentric frame to the SSB frame.
 
@@ -492,8 +528,6 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
     psiG : float
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
     useAstropy : bool
         Using Astropy to calculate the sky localization or not.
         Default is True.
@@ -518,7 +552,7 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
     rotation_matrix_G = rotation_matrix_SSBtoGEO()
     kSSB = rotation_matrix_G @ kG
     lamdaSSB, betaSSB = propagation_vector_to_localization(kSSB)
-    tSSB = tSSB_from_tG(tG, lamdaSSB, betaSSB, t0)
+    tSSB = tSSB_from_tG(tG, lamdaSSB, betaSSB)
     psiSSB = polarization_newframe(psiG, kG, rotation_matrix_G.T)
     if useAstropy:
         c = PrecessedGeocentric(ra=lamdaG*u.radian, dec=betaG*u.radian,
@@ -547,7 +581,7 @@ def LISA_to_GEO(tL, lamdaL, betaL, psiL, t0, useAstropy=True):
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
+        The initial time offset of LISA, in the unit of 'year', default is 0.
     useAstropy : bool
         Using Astropy to calculate the sky localization or not.
         Default is True.
@@ -570,7 +604,7 @@ def LISA_to_GEO(tL, lamdaL, betaL, psiL, t0, useAstropy=True):
     """
     tSSB, lamdaSSB, betaSSB, psiSSB = LISA_to_SSB(tL, lamdaL, betaL, psiL, t0)
     tG, lamdaG, betaG, psiG = SSB_to_GEO(
-        tSSB, lamdaSSB, betaSSB, psiSSB, t0, useAstropy)
+        tSSB, lamdaSSB, betaSSB, psiSSB, useAstropy)
 
     return (tG, lamdaG, betaG, psiG)
 
@@ -594,7 +628,7 @@ def GEO_to_LISA(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset, in the unit of 'year', default is 0.
+        The initial time offset of LISA, in the unit of 'year', default is 0.
     useAstropy : bool
         Using Astropy to calculate the sky localization or not.
         Default is True.
@@ -614,15 +648,17 @@ def GEO_to_LISA(tG, lamdaG, betaG, psiG, t0, useAstropy=True):
         In the unit of 'radian'.
     """
     tSSB, lamdaSSB, betaSSB, psiSSB = GEO_to_SSB(
-        tG, lamdaG, betaG, psiG, t0, useAstropy)
+        tG, lamdaG, betaG, psiG, useAstropy)
     tL, lamdaL, betaL, psiL = SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0)
 
     return (tL, lamdaL, betaL, psiL)
 
 
-__all__ = ['localization_to_propagation_vector', 'rotation_matrix_SSBtoLISA',
+__all__ = ['localization_to_propagation_vector',
            'propagation_vector_to_localization', 'polarization_newframe',
            'tL_from_SSB', 'tSSB_from_tL', 'SSB_to_LISA', 'LISA_to_SSB',
-           'rotation_matrix_SSBtoGEO', 'tG_from_SSB', 'tSSB_from_tG',
-           'SSB_to_GEO', 'GEO_to_SSB', 'LISA_to_GEO', 'GEO_to_LISA',
+           'rotation_matrix_SSBtoLISA', 'rotation_matrix_SSBtoGEO',
+           'lisa_position_SSB', 'earth_position_vector_SSB',
+           'tG_from_SSB', 'tSSB_from_tG', 'SSB_to_GEO', 'GEO_to_SSB',
+           'LISA_to_GEO', 'GEO_to_LISA',
            ]
