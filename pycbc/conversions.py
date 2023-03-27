@@ -476,7 +476,7 @@ def ensure_obj1_is_primary(mass1, mass2, *params):
 def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H',
         spin2a=0.0, spin2pol=0.0, swap_companions=False,
-        max_ns_mass=None, extrapolate=False):
+        ns_bh_mass_boundary=None, extrapolate=False):
     """
     Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
@@ -507,13 +507,14 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     swap_companions : boolean, optional
         If mass2 > mass1, swap mass and spin of object 1 and 2 prior
         to applying the fitting formula (otherwise fail). Default is False.
-    max_ns_mass : float, optional
+    ns_bh_mass_boundary : float, optional
         If mass2 is greater than this value, the NS is effectively
         treated as a BH and the returned value is 0. Default is None.
     extrapolate : boolean, optional
         Invoke extrapolation of NS baryonic mass and NS compactness in
-        scipy.interpolate.interp1d. If max_ns_mass is provided, it is
-        applied first. Default is False.
+        scipy.interpolate.interp1d at low masses. If ns_bh_mass_boundary is
+        provided, it is applied at high masses, otherwise the equation of
+        state prescribes the maximum possible mass2. Default is False.
 
     Returns
     ----------
@@ -537,11 +538,11 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     eta = eta_from_mass1_mass2(mass1, mass2)
     # If a maximum NS mass is not provided, accept all values and
     # let the EOS handle this (in ns.initialize_eos)
-    if max_ns_mass is None:
+    if ns_bh_mass_boundary is None:
         mask = numpy.ones(ensurearray(mass2).size[0], dtype=bool)
     # Otherwise perform the calculation only for small enough NS masses...
     else:
-        mask = mass2 <= max_ns_mass
+        mask = mass2 <= ns_bh_mass_boundary
     # ...and return 0's otherwise
     remnant_mass = numpy.zeros(ensurearray(mass2)[0].size)
     ns_compactness, ns_b_mass = ns.initialize_eos(mass2[mask], eos,
@@ -554,7 +555,7 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
 def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         mass1, mass2, spin1x=0.0, spin1y=0.0, spin1z=0.0, eos='2H',
         spin2x=0.0, spin2y=0.0, spin2z=0.0, swap_companions=False,
-        max_ns_mass=None, extrapolate=False):
+        ns_bh_mass_boundary=None, extrapolate=False):
     """
     Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
@@ -589,13 +590,14 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
     swap_companions : boolean, optional
         If mass2 > mass1, swap mass and spin of object 1 and 2 prior
         to applying the fitting formula (otherwise fail). Default is False.
-    max_ns_mass : float, optional
+    ns_bh_mass_boundary : float, optional
         If mass2 is greater than this value, the NS is effectively
         treated as a BH and the returned value is 0. Default is None.
     extrapolate : boolean, optional
         Invoke extrapolation of NS baryonic mass and NS compactness in
-        scipy.interpolate.interp1d. If max_ns_mass is provided, it is
-        applied first. Default is False.
+        scipy.interpolate.interp1d at low masses. If ns_bh_mass_boundary is
+        provided, it is applied at high masses, otherwise the equation of
+        state prescribes the maximum possible mass2. Default is False.
 
     Returns
     ----------
@@ -612,7 +614,7 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
     return remnant_mass_from_mass1_mass2_spherical_spin_eos(
         mass1, mass2, spin1a=spin1a, spin1pol=spin1pol, eos=eos,
         spin2a=spin2a, spin2pol=spin2pol, swap_companions=swap_companions,
-        max_ns_mass=max_ns_mass, extrapolate=extrapolate)
+        ns_bh_mass_boundary=ns_bh_mass_boundary, extrapolate=extrapolate)
 
 
 #

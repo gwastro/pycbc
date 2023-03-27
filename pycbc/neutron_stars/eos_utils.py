@@ -124,12 +124,14 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
     Parameters
     ----------
     ns_mass : {float, array}
-        The mass of the neutron star, in solar masses.
+        The gravitational mass of the neutron star, in solar masses.
     eos : str
         Name of the equation of state.
     extrapolate : boolean, optional
-        Invoke extrapolation in scipy.interpolate.interp1d.
-        Default is False (so ValueError is raised for ns_mass out of bounds)
+        Invoke extrapolation in scipy.interpolate.interp1d in the low-mass
+        regime. In the high-mass regime, the maximum NS mass supported by the
+        equation of state is not allowed to be exceeded. Default is False
+        (so ValueError is raised whenever ns_mass is out of bounds).
 
     Returns
     -------
@@ -142,6 +144,7 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
         input_is_array = True
     if eos in NS_SEQUENCES:
         ns_seq, ns_max = load_ns_sequence(eos)
+        # Never extrapolate beyond the maximum NS mass allowed by the EOS
         try:
             if any(ns_mass > ns_max) and input_is_array:
                 raise ValueError(
