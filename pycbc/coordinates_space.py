@@ -102,6 +102,7 @@ def lisa_position_SSB(tL, t0=0.0):
     p : numpy.array
         The position vector of LISA in the SSB frame.
     alpha : float
+        The angular displacement of LISA in the SSB frame.
     """
     YRSID_SI = 31558149.763545603  # same as BBHx, but not for lal.YRJUL_SI
     OMEGA_0 = 1.99098659277e-7
@@ -125,7 +126,7 @@ def propagation_vector_to_localization(k):
 
     Returns
     -------
-    [lamda, beta] : numpy.array
+    (lamda, beta) : tuple
         The sky localization of that GW signal.
     """
     # beta already within [-pi/2, pi/2]
@@ -134,7 +135,7 @@ def propagation_vector_to_localization(k):
     # lamda should within [0, 2*pi]
     lamda = np.mod(lamda, 2*np.pi)
 
-    return np.array([lamda, beta])
+    return (lamda, beta)
 
 
 def polarization_newframe(psi, k, rotation_matrix):
@@ -358,9 +359,9 @@ def rotation_matrix_SSBtoGEO(epsilon=np.deg2rad(23.439281)):
     return np.array(r[0])
 
 
-def earth_position_vector_SSB(tG):
-    """ Calculating the position vector of the Earth in the SSB frame,
-    at a given time. By using Astropy.
+def earth_position_SSB(tG):
+    """ Calculating the position vector and angular displacement of the Earth
+    in the SSB frame, at a given time. By using Astropy.
 
     Parameters
     ----------
@@ -370,8 +371,11 @@ def earth_position_vector_SSB(tG):
 
     Returns
     -------
+    (p, alpha) : tuple
     p : numpy.array
         The position vector of the Earth in the SSB frame.
+    alpha : float
+        The angular displacement of the Earth in the SSB frame.
     """
     t = Time(tG, format='gps')
     pos = get_body_barycentric('earth', t)
@@ -383,8 +387,9 @@ def earth_position_vector_SSB(tG):
     y = bme_coord.cartesian.y.value
     z = bme_coord.cartesian.z.value
     p = np.array([[x], [y], [z]])
+    alpha = bme_coord.lon.value
 
-    return p
+    return (p, alpha)
 
 
 def tG_from_SSB(tSSB, lamdaSSB, betaSSB):
@@ -413,7 +418,7 @@ def tG_from_SSB(tSSB, lamdaSSB, betaSSB):
     def equation(tG):
         # Earth is moving, when GW arrives at Earth center,
         # time is tG, not tSSB.
-        p = earth_position_vector_SSB(tG)
+        p = earth_position_SSB(tG)[0]
         return tG - tSSB - np.vdot(k, p) / c.value
 
     return fsolve(equation, tSSB)[0]
@@ -443,7 +448,7 @@ def tSSB_from_tG(tG, lamdaSSB, betaSSB):
     """
     k = localization_to_propagation_vector(lamdaSSB, betaSSB)
     # Earth is moving, when GW arrives at Earth center, time is tG, not tSSB.
-    p = earth_position_vector_SSB(tG)
+    p = earth_position_SSB(tG)[0]
 
     def equation(tSSB):
         return tG - tSSB - np.vdot(k, p) / c.value
@@ -654,7 +659,7 @@ __all__ = ['localization_to_propagation_vector',
            'propagation_vector_to_localization', 'polarization_newframe',
            'tL_from_SSB', 'tSSB_from_tL', 'SSB_to_LISA', 'LISA_to_SSB',
            'rotation_matrix_SSBtoLISA', 'rotation_matrix_SSBtoGEO',
-           'lisa_position_SSB', 'earth_position_vector_SSB',
+           'lisa_position_SSB', 'earth_position_SSB',
            'tG_from_SSB', 'tSSB_from_tG', 'SSB_to_GEO', 'GEO_to_SSB',
            'LISA_to_GEO', 'GEO_to_LISA',
            ]
