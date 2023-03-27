@@ -67,7 +67,8 @@ def rotation_matrix_SSBtoLISA(alpha):
     Parameters
     ----------
     alpha : float
-        The angular displacement of LISA in SSB frame, in the unit of 'radian'.
+        The angular displacement of LISA in SSB frame.
+        In the unit of 'radian'.
 
     Returns
     -------
@@ -103,6 +104,7 @@ def lisa_position_SSB(tL, t0=0.0):
         The position vector of LISA in the SSB frame.
     alpha : float
         The angular displacement of LISA in the SSB frame.
+        In the unit of 'radian'.
     """
     YRSID_SI = 31558149.763545603  # same as BBHx, but not for lal.YRJUL_SI
     OMEGA_0 = 1.99098659277e-7
@@ -376,6 +378,7 @@ def earth_position_SSB(tG):
         The position vector of the Earth in the SSB frame.
     alpha : float
         The angular displacement of the Earth in the SSB frame.
+        In the unit of 'radian'.
     """
     t = Time(tG, format='gps')
     pos = get_body_barycentric('earth', t)
@@ -387,7 +390,7 @@ def earth_position_SSB(tG):
     y = bme_coord.cartesian.y.value
     z = bme_coord.cartesian.z.value
     p = np.array([[x], [y], [z]])
-    alpha = bme_coord.lon.value
+    alpha = bme_coord.lon.rad
 
     return (p, alpha)
 
