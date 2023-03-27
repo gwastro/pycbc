@@ -419,10 +419,10 @@ mean_per_ano = Parameter("mean_per_ano",
 tc = Parameter("tc",
                dtype=float, default=None, label=r"$t_c$ (s)",
                description="Coalescence time (s) in geocentric coords.")
-tc_lisa = Parameter("tc_lisa",
+tL = Parameter("tL",
                     dtype=float, default=None, label=r"$t_c^{L}$ (s)",
                     description="Coalescence time (s) in LISA coords.")
-tc_ssb = Parameter("tc_ssb",
+tSSB = Parameter("tSSB",
                    dtype=float, default=None, label=r"$t_c^{SSB}$ (s)",
                    description="Coalescence time (s) in SSB coords.")
 delta_tc = Parameter("delta_tc", dtype=float,
@@ -438,10 +438,10 @@ dec = Parameter("dec",
 polarization = Parameter("polarization",
                 dtype=float, default=0., label=r"$\psi$",
                 description="Polarization (rad) in geocentric coords.")
-polarization_lisa = Parameter("polarization_lisa",
+polarizationL = Parameter("polarizationL",
                         dtype=float, default=0., label=r"$\psi_L$",
                         description="Polarization (rad) in LISA coords.")
-polarization_ssb = Parameter("polarization_ssb",
+polarizationSSB = Parameter("polarizationSSB",
                         dtype=float, default=0., label=r"$\psi_{SSB}$",
                         description="Polarization (rad) in SSB coords.")
 redshift = Parameter("redshift",
@@ -456,10 +456,10 @@ eclipticlatitude = Parameter("eclipticlatitude",
 eclipticlongitude = Parameter("eclipticlongitude",
                         dtype=float, default=0., label=r"$\lambda$_{SSB}",
                         description="eclipticlongitude in SSB coords.")
-eclipticlatitude_lisa = Parameter("eclipticlatitude_lisa",
+eclipticlatitudeL = Parameter("eclipticlatitudeL",
                             dtype=float, default=0., label=r"$\beta_L$",
                             description="eclipticlatitude in LISA coords.")
-eclipticlongitude_lisa = Parameter("eclipticlongitude_lisa",
+eclipticlongitudeL = Parameter("eclipticlongitudeL",
                             dtype=float, default=0., label=r"$\lambda_L$",
                             description="eclipticlongitude in LISA coords.")
 
@@ -578,11 +578,11 @@ dbeta3 = Parameter("dbeta3",
 # passed to the waveform generators in lalsimulation, but are instead applied
 # after a waveform is generated. Distance, however, is a parameter used by
 # the waveform generators.
-location_params = ParameterList([tc, tc_lisa, tc_ssb,
+location_params = ParameterList([tc, tL, tSSB,
                                 ra, dec, polarization,
-                                polarization_lisa, polarization_ssb,
+                                polarizationL, polarizationSSB,
                                 eclipticlatitude, eclipticlongitude,
-                                eclipticlatitude_lisa, eclipticlongitude_lisa])
+                                eclipticlatitudeL, eclipticlongitudeL])
 
 # parameters describing the orientation of a binary w.r.t. the radiation
 # frame. Note: we include distance here, as it is typically used for generating
