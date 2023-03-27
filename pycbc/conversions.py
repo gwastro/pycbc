@@ -610,7 +610,7 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         spin2a = numpy.zeros(size)
         spin2pol = numpy.zeros(size)
     return remnant_mass_from_mass1_mass2_spherical_spin_eos(
-        mass1, mass2, spin1a, spin1pol, eos=eos,
+        mass1, mass2, spin1a=spin1a, spin1pol=spin1pol, eos=eos,
         spin2a=spin2a, spin2pol=spin2pol, swap_companions=swap_companions,
         max_ns_mass=max_ns_mass, extrapolate=extrapolate)
 

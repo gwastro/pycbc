@@ -129,7 +129,7 @@ def initialize_eos(ns_mass, eos, extrapolate=False):
         Name of the equation of state.
     extrapolate : boolean, optional
         Invoke extrapolation in scipy.interpolate.interp1d.
-        Default is False (so ValueError is raised for ns_g_mass out of bounds)
+        Default is False (so ValueError is raised for ns_mass out of bounds)
 
     Returns
     -------
