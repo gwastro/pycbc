@@ -276,7 +276,7 @@ class CustomTransform(BaseTransform):
                    for p, func in self.transform_functions.items()}
         else:
             out = {p: self._scratch[func[0]][getslice]
-                   for p, func in self.transform_functions.items()}            
+                   for p, func in self.transform_functions.items()}
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
