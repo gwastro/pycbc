@@ -269,10 +269,14 @@ class CustomTransform(BaseTransform):
         # ensure that we return the same data type in each dict
         getslice = self._getslice(maps)
         # evaluate the functions
-        out = {
-            p: self._scratch[func][getslice]
-            for p, func in self.transform_functions.items()
-        }
+        # func[0] is the function itself, func[1] is the index (default is 0),
+        # this supports multiple returning values function
+        if hasattr(self._scratch[func[0]][getslice], '__getitem__'):
+            out = {p: self._scratch[func[0]][getslice][func[1]]
+                   for p, func in self.transform_functions.items()}
+        else:
+            out = {p: self._scratch[func[0]][getslice]
+                   for p, func in self.transform_functions.items()}            
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
@@ -301,15 +305,21 @@ class CustomTransform(BaseTransform):
             jacobian = func(inputs)
         """
         tag = outputs
-        outputs = set(outputs.split(VARARGS_DELIM))
+        outputs = list(outputs.split(VARARGS_DELIM))
+        all_vars = ", ".join(outputs)
         inputs = map(str.strip,
                      cp.get_opt_tag(section, "inputs", tag).split(","))
         # get the functions for each output
         transform_functions = {}
+        output_index = 0
         for var in outputs:
             # check if option can be cast as a float
-            func = cp.get_opt_tag(section, var, tag)
-            transform_functions[var] = func
+            if cp.get_opt_tag(section, all_vars, tag):
+                output_index = outputs.index(var)
+                func = cp.get_opt_tag(section, all_vars, tag)
+            else:
+                func = cp.get_opt_tag(section, var, tag)
+            transform_functions[var] = [func, output_index]
         s = "-".join([section, tag])
         if cp.has_option(s, "jacobian"):
             jacobian = cp.get_opt_tag(section, "jacobian", tag)
