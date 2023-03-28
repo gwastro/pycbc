@@ -283,6 +283,14 @@ def SSB_to_LISA(tSSB, lamdaSSB, betaSSB, psiSSB, t0):
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     """
+    if isinstance(tSSB, np.ndarray):
+        tSSB = tSSB.item()
+    if isinstance(lamdaSSB, np.ndarray):
+        lamdaSSB = lamdaSSB.item()
+    if isinstance(betaSSB, np.ndarray):
+        betaSSB = betaSSB.item()
+    if isinstance(psiSSB, np.ndarray):
+        psiSSB = psiSSB.item()
     tL = tL_from_SSB(tSSB, lamdaSSB, betaSSB, t0)
     kSSB = localization_to_propagation_vector(lamdaSSB, betaSSB)
     alpha = lisa_position_SSB(tL, t0)[1]
@@ -329,6 +337,14 @@ def LISA_to_SSB(tL, lamdaL, betaL, psiL, t0):
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
+    if isinstance(tL, np.ndarray):
+        tL = tL.item()
+    if isinstance(lamdaL, np.ndarray):
+        lamdaL = lamdaL.item()
+    if isinstance(betaL, np.ndarray):
+        betaL = betaL.item()
+    if isinstance(psiL, np.ndarray):
+        psiL = psiL.item()
     kL = localization_to_propagation_vector(lamdaL, betaL)
     alpha = lisa_position_SSB(tL, t0)[1]
     rotation_matrix_L = rotation_matrix_SSBtoLISA(alpha)
@@ -497,6 +513,14 @@ def SSB_to_GEO(tSSB, lamdaSSB, betaSSB, psiSSB, useAstropy=True):
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     """
+    if isinstance(tSSB, np.ndarray):
+        tSSB = tSSB.item()
+    if isinstance(lamdaSSB, np.ndarray):
+        lamdaSSB = lamdaSSB.item()
+    if isinstance(betaSSB, np.ndarray):
+        betaSSB = betaSSB.item()
+    if isinstance(psiSSB, np.ndarray):
+        psiSSB = psiSSB.item()
     tG = tG_from_SSB(tSSB, lamdaSSB, betaSSB)
     kSSB = localization_to_propagation_vector(lamdaSSB, betaSSB)
     rotation_matrix_G = rotation_matrix_SSBtoGEO()
@@ -552,6 +576,14 @@ def GEO_to_SSB(tG, lamdaG, betaG, psiG, useAstropy=True):
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
+    if isinstance(tG, np.ndarray):
+        tG = tG.item()
+    if isinstance(lamdaG, np.ndarray):
+        lamdaG = lamdaG.item()
+    if isinstance(betaG, np.ndarray):
+        betaG = betaG.item()
+    if isinstance(psiG, np.ndarray):
+        psiG = psiG.item()
     kG = localization_to_propagation_vector(lamdaG, betaG)
     rotation_matrix_G = rotation_matrix_SSBtoGEO()
     kSSB = rotation_matrix_G @ kG
