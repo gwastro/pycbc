@@ -508,8 +508,10 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         If mass2 > mass1, swap mass and spin of object 1 and 2 prior
         to applying the fitting formula (otherwise fail). Default is False.
     ns_bh_mass_boundary : float, optional
-        If mass2 is greater than this value, the NS is effectively
-        treated as a BH and the returned value is 0. Default is None.
+        If mass2 is greater than this value, the neutron star is effectively
+        treated as a black hole and the returned value is 0. For consistency
+        with the eos, set this to the maximum mass allowed by the eos; set
+        a lower value for a more stringent cut. Default is None.
     extrapolate : boolean, optional
         Invoke extrapolation of NS baryonic mass and NS compactness in
         scipy.interpolate.interp1d at low masses. If ns_bh_mass_boundary is
@@ -591,8 +593,10 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         If mass2 > mass1, swap mass and spin of object 1 and 2 prior
         to applying the fitting formula (otherwise fail). Default is False.
     ns_bh_mass_boundary : float, optional
-        If mass2 is greater than this value, the NS is effectively
-        treated as a BH and the returned value is 0. Default is None.
+        If mass2 is greater than this value, the neutron star is effectively
+        treated as a black hole and the returned value is 0. For consistency
+        with the eos, set this to the maximum mass allowed by the eos; set
+        a lower value for a more stringent cut. Default is None.
     extrapolate : boolean, optional
         Invoke extrapolation of NS baryonic mass and NS compactness in
         scipy.interpolate.interp1d at low masses. If ns_bh_mass_boundary is
