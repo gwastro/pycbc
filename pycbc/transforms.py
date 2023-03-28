@@ -271,12 +271,10 @@ class CustomTransform(BaseTransform):
         # evaluate the functions
         # func[0] is the function itself, func[1] is the index (default is 0),
         # this supports multiple returning values function
-        if hasattr(self._scratch[func[0]][getslice], '__getitem__'):
-            out = {p: self._scratch[func[0]][getslice][func[1]]
-                   for p, func in self.transform_functions.items()}
-        else:
-            out = {p: self._scratch[func[0]][getslice]
-                   for p, func in self.transform_functions.items()}
+        out = {p: self._scratch[func[0]][getslice][func[1]] if
+               hasattr(self._scratch[func[0]][getslice], '__getitem__') else
+               self._scratch[func[0]][getslice]
+               for p, func in self.transform_functions.items()}           
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
