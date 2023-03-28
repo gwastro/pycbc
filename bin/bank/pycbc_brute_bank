@@ -92,8 +92,7 @@ if args.input_config is not None:
 
 fdict = {}
 if args.fixed_params:
-    for p, v in zip(args.fixed_params, args.fixed_values):
-        fdict[p] = v
+    fdict = {p: v for (p, v) in zip(args.fixed_params, args.fixed_values)}
 
 class Shrinker(object):
     def __init__(self, data):
@@ -321,18 +320,16 @@ if args.input_file:
 
 
 def draw(rtype):
-    params = {}
 
     if rtype == 'uniform':
         if args.input_config is None:
-            for name, pmin, pmax in zip(args.params, args.min, args.max):
-                params[name] = numpy.random.uniform(pmin, pmax, size=size)
+            params = {name: numpy.random.uniform(pmin, pmax, size=size)
+                      for name, pmin, pmax in zip(args.params, args.min, args.max)}
         else:
             # `draw_samples_from_config` has its own fixed seed, so must overwrite it.
             random_seed = numpy.random.randint(low=0, high=2**32-1)
             samples = draw_samples_from_config(args.input_config, size, random_seed)
-            for name in samples.fieldnames:
-                params[name] = samples[name]
+            params = {name: samples[name] for name in samples.fieldnames}
             # Add `static_args` back.
             if static_args is not None:
                 for k in static_args.keys():
@@ -351,8 +348,7 @@ def draw(rtype):
 
         kde = gaussian_kde(bdata)
         points = kde.resample(size=size)
-        for k, v in zip(p, points):
-            params[k] = v
+        params = {k: v for k, v in zip(p, points)}
 
         # Add `static_args` back, some transformations may need them.
         if args.input_config is not None and static_args is not None:
@@ -392,8 +388,7 @@ def draw(rtype):
     else:
         l = dists_joint.contains(params)
 
-    for k in params:
-        params[k] = params[k][l]
+    params = {k: params[k][l] for k in params}
 
     return params
 
@@ -405,22 +400,19 @@ def cdraw(rtype, ts, te):
         t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
                                   args.tau0_cutoff_frequency)
         l = (t < te) & (t > ts)
-        for k in p:
-            p[k] = p[k][l]
+        p = {k: p[k][l] for k in p}
 
     i = 0
     while len(p[list(p.keys())[0]]) < size:
 
         tp = draw(rtype)
-        for k in p:
-            p[k] = numpy.concatenate([p[k], tp[k]])
+        p = {k: numpy.concatenate([p[k], tp[k]]) for k in p}
 
         if  len(p[list(p.keys())[0]]) > 0:
             t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
                                       args.tau0_cutoff_frequency)
             l = (t < te) & (t > ts)
-            for k in p:
-                p[k] = p[k][l]
+            p = {k: p[k][l] for k in p}
 
         i += 1
         if i > 1000:
