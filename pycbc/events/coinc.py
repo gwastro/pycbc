@@ -1234,7 +1234,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             logging.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                   self.timeslide_interval,
-                                  self.analysis_block,
+                                  self.analysis_block + 2*self.time_window,
                                   method='cython')
             offsets = offsets[cidx]
             zerolag_idx = (offsets == 0)
