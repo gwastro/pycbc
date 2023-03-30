@@ -1979,7 +1979,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                    autogating_pad=args.autogating_pad,
                    autogating_width=args.autogating_width,
                    autogating_taper=args.autogating_taper,
-                   autogating_duration=args.autogating_duration
+                   autogating_duration=args.autogating_duration,
                    autogating_psd_segment_length=args.autogating_psd_segment_length,
                    autogating_psd_stride=args.autogating_psd_stride,
                    psd_abort_difference=args.psd_abort_difference,
