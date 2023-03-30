@@ -785,7 +785,7 @@ parser.add_argument('--autogating-taper', type=float, metavar='SECONDS',
                     help='Taper the strain before and after '
                          'each gating window over a duration '
                          'of SECONDS.')
-parser.add_arugment('--autogating-duration', type=float, default=16,
+parser.add_argument('--autogating-duration', type=float, default=16,
                     metavar='SECONDS',
                     help='Amount of data in seconds to apply autogating on.')
 parser.add_argument('--autogating-psd-segment-length', type=float, default=2,
