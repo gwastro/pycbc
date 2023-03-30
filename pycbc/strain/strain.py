@@ -1433,7 +1433,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  autogating_pad=None,
                  autogating_width=None,
                  autogating_taper=None,
-                 autogating_psd_duration=None,
+                 autogating_duration=None,
+                 autogating_psd_segment_length=None,
                  autogating_psd_stride=None,
                  state_channel=None,
                  data_quality_channel=None,
@@ -1492,7 +1493,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Half-duration of the zeroed-out portion of autogates.
         autogating_taper: float, Optional
             Duration of taper on either side of the gating window in seconds.
-        autogating_psd_duration: float, Optional
+        autogating_duration: float, Optional
+            Amount of data in seconds to apply autogating on.
+        autogating_psd_segment_length: float, Optional
             The length in seconds of each segment used to estimate the PSD with Welch's method.
         autogating_psd_stride: float, Optional
             The overlap in seconds between each segment used to estimate the PSD with Welch's method.
@@ -1601,7 +1604,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.autogating_pad = autogating_pad
         self.autogating_width = autogating_width
         self.autogating_taper = autogating_taper
-        self.autogating_psd_duration = autogating_psd_duration
+        self.autogating_duration = autogating_duration
+        self.autogating_psd_segment_length = autogating_psd_segment_length
         self.autogating_psd_stride = autogating_psd_stride
         self.gate_params = []
 
@@ -1897,15 +1901,13 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain[len(self.strain) - csize + self.corruption:] = strain[:]
         self.strain.start_time += blocksize
 
-        # Apply autogating on the last 16 s of the buffer
-        autogating_duration = 16 * self.sample_rate
-        autogating_start_sample = int(len(self.strain) - autogating_duration)
-
-        # apply gating if needed
+        # apply gating on the last 16 s of the buffer if needed
         if self.autogating_threshold is not None:
+            autogating_duration_length = self.autogating_duration * self.sample_rate
+            autogating_start_sample = int(len(self.strain) - autogating_duration_length)
             glitch_times = detect_loud_glitches(
                     self.strain[autogating_start_sample:-self.corruption],
-                    psd_duration=self.autogating_psd_duration, psd_stride=self.autogating_psd_stride,
+                    psd_duration=self.autogating_psd_segment_length, psd_stride=self.autogating_psd_stride,
                     threshold=self.autogating_threshold,
                     cluster_window=self.autogating_cluster,
                     low_freq_cutoff=self.highpass_frequency,
@@ -1977,7 +1979,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                    autogating_pad=args.autogating_pad,
                    autogating_width=args.autogating_width,
                    autogating_taper=args.autogating_taper,
-                   autogating_psd_duration=args.autogating_psd_duration,
+                   autogating_duration=args.autogating_duration
+                   autogating_psd_segment_length=args.autogating_psd_segment_length,
                    autogating_psd_stride=args.autogating_psd_stride,
                    psd_abort_difference=args.psd_abort_difference,
                    psd_recalculate_difference=args.psd_recalculate_difference,
