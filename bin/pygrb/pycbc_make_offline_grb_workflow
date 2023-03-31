@@ -252,6 +252,7 @@ else:
 if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
     bank_veto_file = configparser_value_to_file(wflow.cp, 'workflow-inspiral',
                                                 'bank-veto-bank-file')
+    bank_veto_file = _workflow.FileList([bank_veto_file])
     datafind_veto_files.extend(bank_veto_file)
 # TODO: Finalize location of bank veto bank and make the above automatic
 # Below is the snippet of old grb_utils.py code that used to handle this
