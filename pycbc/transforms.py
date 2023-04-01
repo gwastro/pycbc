@@ -316,7 +316,7 @@ class CustomTransform(BaseTransform):
             try:
                 output_index = outputs.index(var)
                 func = cp.get_opt_tag(section, all_vars, tag)
-            except:
+            except Exception:
                 func = cp.get_opt_tag(section, var, tag)
             transform_functions[var] = [func, output_index]
         s = "-".join([section, tag])
