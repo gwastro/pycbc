@@ -272,7 +272,8 @@ class CustomTransform(BaseTransform):
         # func[0] is the function itself, func[1] is the index (default is 0),
         # this supports multiple returning values function
         out = {p: self._scratch[func[0]][getslice][func[1]] if
-               len(self._scratch[func[0]][getslice]) > 1 else
+               (hasattr(self._scratch[func[0]][getslice], '__len__') and
+               len(self._scratch[func[0]][getslice]) > 1) else
                self._scratch[func[0]][getslice]
                for p, func in self.transform_functions.items()}
         return self.format_output(maps, out)
