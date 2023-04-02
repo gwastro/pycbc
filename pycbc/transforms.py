@@ -269,13 +269,14 @@ class CustomTransform(BaseTransform):
         # ensure that we return the same data type in each dict
         getslice = self._getslice(maps)
         # evaluate the functions
-        # func[0] is the function itself, func[1] is the index (default is 0),
+        # func[0] is the function itself, func[1] is the index,
         # this supports multiple returning values function
-        out = {p: self._scratch[func[0]][getslice][func[1]] if
-               (hasattr(self._scratch[func[0]][getslice], '__len__') and
-               len(self._scratch[func[0]][getslice]) > 1) else
-               self._scratch[func[0]][getslice]
-               for p, func in self.transform_functions.items()}
+        out = {
+                p: self._scratch[func[0]][func[1]][getslice] if
+                len(self._scratch[func[0]]) > 1 else
+                self._scratch[func[0]][getslice]
+                for p, func in self.transform_functions.items()
+            }
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
@@ -310,14 +311,14 @@ class CustomTransform(BaseTransform):
                      cp.get_opt_tag(section, "inputs", tag).split(","))
         # get the functions for each output
         transform_functions = {}
-        output_index = 0
+        output_index = slice(None, None, None)
         for var in outputs:
             # check if option can be cast as a float
             try:
-                output_index = outputs.index(var)
-                func = cp.get_opt_tag(section, all_vars, tag)
-            except Exception:
                 func = cp.get_opt_tag(section, var, tag)
+            except Exception:
+                func = cp.get_opt_tag(section, all_vars, tag)
+                output_index = slice(outputs.index(var), outputs.index(var)+1)
             transform_functions[var] = [func, output_index]
         s = "-".join([section, tag])
         if cp.has_option(s, "jacobian"):
