@@ -38,29 +38,6 @@ from astropy.coordinates import get_body_barycentric
 from astropy.coordinates import SkyCoord
 
 
-def localization_to_propagation_vector(lamda, beta):
-    """ Converting the sky localization to the corresponding
-    propagation unit vector of a GW signal.
-
-    Parameters
-    ----------
-    lamda : float
-        The right ascension or ecliptic longitude, in the unit of 'radian'.
-    beta : float
-        The declination or ecliptic latitude, in the unit of 'radian'.
-
-    Returns
-    -------
-    [[x], [y], [z]] : numpy.array
-        The propagation unit vector of that GW signal.
-    """
-    x = -np.cos(beta) * np.cos(lamda)
-    y = -np.cos(beta) * np.sin(lamda)
-    z = -np.sin(beta)
-
-    return np.array([[x], [y], [z]])
-
-
 def rotation_matrix_SSBtoLISA(alpha):
     """ The rotation matrix (of frame basis) from SSB frame to LISA frame.
 
@@ -101,7 +78,7 @@ def lisa_position_SSB(tL, t0=0.0):
     -------
     (p, alpha) : tuple
     p : numpy.array
-        The position vector of LISA in the SSB frame.
+        The position vector of LISA in the SSB frame. In the unit of 'm'.
     alpha : float
         The angular displacement of LISA in the SSB frame.
         In the unit of 'radian'.
@@ -115,6 +92,29 @@ def lisa_position_SSB(tL, t0=0.0):
                   [R_ORBIT * np.sin(alpha)],
                   [0]], dtype=object)
     return (p, alpha)
+
+
+def localization_to_propagation_vector(lamda, beta):
+    """ Converting the sky localization to the corresponding
+    propagation unit vector of a GW signal.
+
+    Parameters
+    ----------
+    lamda : float
+        The right ascension or ecliptic longitude, in the unit of 'radian'.
+    beta : float
+        The declination or ecliptic latitude, in the unit of 'radian'.
+
+    Returns
+    -------
+    [[x], [y], [z]] : numpy.array
+        The propagation unit vector of that GW signal.
+    """
+    x = -np.cos(beta) * np.cos(lamda)
+    y = -np.cos(beta) * np.sin(lamda)
+    z = -np.sin(beta)
+
+    return np.array([[x], [y], [z]])
 
 
 def propagation_vector_to_localization(k):
@@ -391,7 +391,7 @@ def earth_position_SSB(tG):
     -------
     (p, alpha) : tuple
     p : numpy.array
-        The position vector of the Earth in the SSB frame.
+        The position vector of the Earth in the SSB frame. In the unit of 'm'.
     alpha : float
         The angular displacement of the Earth in the SSB frame.
         In the unit of 'radian'.
@@ -402,9 +402,9 @@ def earth_position_SSB(tG):
                           representation_type='cartesian')
     bme_coord = icrs_coord.transform_to(
                     BarycentricMeanEcliptic(equinox='J2000'))
-    x = bme_coord.cartesian.x.value
-    y = bme_coord.cartesian.y.value
-    z = bme_coord.cartesian.z.value
+    x = bme_coord.cartesian.x.to(u.m).value
+    y = bme_coord.cartesian.y.to(u.m).value
+    z = bme_coord.cartesian.z.to(u.m).value
     p = np.array([[x], [y], [z]])
     alpha = bme_coord.lon.rad
 
