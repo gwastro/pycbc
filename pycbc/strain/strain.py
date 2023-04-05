@@ -1901,7 +1901,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain[len(self.strain) - csize + self.corruption:] = strain[:]
         self.strain.start_time += blocksize
 
-        # apply gating on the last 16 s of the buffer if needed
+        # apply gating if needed
         if self.autogating_threshold is not None:
             autogating_duration_length = self.autogating_duration * self.sample_rate
             autogating_start_sample = int(len(self.strain) - autogating_duration_length)
