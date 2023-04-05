@@ -1,4 +1,5 @@
-import numpy, h5py
+import numpy
+import h5py
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from ligo.lw import ligolw, lsctables, utils as ligolw_utils
 from pycbc import pnutils
@@ -7,6 +8,7 @@ from pycbc.io.ligolw import (
     return_empty_sngl, return_search_summary, create_process_table
 )
 
+from pycbc.waveform import get_waveform_filter_length_in_time as gwflit
 
 def convert_to_sngl_inspiral_table(params, proc_id):
     '''
@@ -199,8 +201,9 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     return fMax_theor, gammaVals
 
 def output_sngl_inspiral_table(outputFile, tempBank, metricParams=None,
-                               ethincaParams=None, programName="", optDict = None,
-                               outdoc=None, **kwargs):
+                               ethincaParams=None, programName="",
+                               optDict = None, outdoc=None,
+                               **kwargs): # pylint:disable=unused-argument
     """
     Function that converts the information produced by the various PyCBC bank
     generation codes into a valid LIGOLW XML file containing a sngl_inspiral
@@ -237,7 +240,6 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams=None,
     if outdoc is None:
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
-
 
     # get IFO to put in search summary table
     ifos = []
@@ -305,7 +307,32 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams=None,
 
 
 def output_bank_to_hdf(outputFile, tempBank, optDict=None, programName='',
-                       approximant=None, output_duration=False, **kwargs):
+                       approximant=None, output_duration=False,
+                       **kwargs): # pylint:disable=unused-argument
+    """
+    Function that converts the information produced by the various PyCBC bank
+    generation codes into a hdf5 file.
+
+    Parameters
+    -----------
+    outputFile : string
+        Name of the file that the bank will be written to
+    tempBank : iterable
+        Each entry in the tempBank iterable should be a sequence of
+        [mass1,mass2,spin1z,spin2z] in that order.
+    programName (key-word-argument) : string
+        Name of the executable that has been run
+    optDict (key-word argument) : dictionary
+        Dictionary of the command line arguments passed to the program
+    approximant : string
+        The approximant to be outputted to the file,
+        if output_duration is True, this is also used for that calculation.
+    output_duration : boolean
+        Output the duration of the template, calculated using
+        get_waveform_filter_length_in_time, to the file.
+    kwargs : optional key-word arguments
+        Allows unused options to be passed to this function (for modularity)
+    """
     bank_dict = {}
     mass1, mass2, spin1z, spin2z = list(zip(*tempBank))
     bank_dict['mass1'] = mass1
@@ -322,13 +349,11 @@ def output_bank_to_hdf(outputFile, tempBank, optDict=None, programName='',
         argument_string = [f'{k}:{v}' for k, v in optDict.items()]
 
     if approximant:
-        if not type(approximant) == bytes:
+        if not isinstance(approximant) == bytes:
             appx = approximant.encode()
         bank_dict['approximant'] = numpy.repeat(appx, len(mass1))
 
     if output_duration:
-        from pycbc.waveform import get_waveform_filter_length_in_time
-        gwflit = get_waveform_filter_length_in_time
         appx = approximant if approximant else 'SPAtmplt'
         tmplt_durations = numpy.zeros_like(mass1)
         for i in range(len(mass1)):
@@ -339,7 +364,6 @@ def output_bank_to_hdf(outputFile, tempBank, optDict=None, programName='',
                                  phase_order=7)
             tmplt_durations[i] = wfrm_length
         bank_dict['template_duration'] = tmplt_durations
-
 
     with h5py.File(outputFile, 'w') as bankf_out:
         bankf_out.attrs['program'] = programName
@@ -365,4 +389,3 @@ def output_bank_to_file(outputFile, tempBank, **kwargs):
     else:
         err_msg = f"Unrecognized extension for file {outputFile}."
         raise ValueError(err_msg)
-
