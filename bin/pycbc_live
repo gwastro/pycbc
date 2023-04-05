@@ -15,6 +15,7 @@ import os.path
 import itertools
 import platform
 import subprocess
+import multiprocessing
 from multiprocessing.dummy import threading
 from matplotlib import use
 use('agg')
@@ -109,7 +110,11 @@ class LiveEventManager(object):
         if self.run_snr_optimization:
             # preestimate the number of CPU cores that we can afford giving
             # to followup processes without slowing down the main search
-            available_cores = len(os.sched_getaffinity(0))
+                # if the machine isn't a mac
+            if platform.system() != 'Darwin':
+                available_cores = len(os.sched_getaffinity(0))
+            else:
+                available_cores = multiprocessing.cpu_count()
             bg_cores = len(tuple(itertools.combinations(ifos, 2)))
             analysis_cores = 1 + bg_cores
             self.fu_cores = available_cores - analysis_cores
