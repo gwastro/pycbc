@@ -375,8 +375,11 @@ class CustomTransformMultiOutputs(CustomTransform):
     @classmethod
     def from_config(cls, cp, section, outputs):
         """Loads a CustomTransformMultiOutputs from the given config file.
+
         Example section:
+
         .. code-block:: ini
+
             [{section}-outvar1+outvar2]
             name = custom_multi
             inputs = inputvar1, inputvar2
