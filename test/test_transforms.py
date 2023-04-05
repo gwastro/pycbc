@@ -23,6 +23,8 @@ from utils import simple_exit
 # list of transforms without an inverse function and to ignore
 IGNORE = [t.name for t in transforms.common_cbc_transforms
           if t.inverse is None]
+IGNORE += ['geo_to_ssb', 'ssb_to_geo', 'lisa_to_ssb', 'ssb_to_lisa',
+           'lisa_to_geo', 'geo_to_lisa']
 
 # ranges to draw random numbers for each parameter
 RANGES = {

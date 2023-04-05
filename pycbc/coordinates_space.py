@@ -62,7 +62,7 @@ def rotation_matrix_ssb_to_lisa(alpha):
     return r_total
 
 
-def lisa_position_ssb(t_lisa, t_0=0.23358470369407391):
+def lisa_position_ssb(t_lisa, t0=0.23358470369407391):
     """ Calculating the position vector and angular displacement of LISA
     in the SSB frame, at a given time.
 
@@ -71,7 +71,7 @@ def lisa_position_ssb(t_lisa, t_0=0.23358470369407391):
     t_lisa : float
         The time when a GW signal arrives at the origin of LISA frame,
         or any other time you want.
-    t_0 : float
+    t0 : float
         The initial time offset of LISA, in the unit of 'year',
         default is 0.23358470369407391. This makes sure LISA is behind
         the Earth by 19-23 degrees.
@@ -88,8 +88,8 @@ def lisa_position_ssb(t_lisa, t_0=0.23358470369407391):
     YRSID_SI = 31558149.763545603  # same as BBHx, but not for lal.YRJUL_SI
     OMEGA_0 = 1.99098659277e-7
     R_ORBIT = au.value
-    t_0 *= YRSID_SI
-    alpha = np.mod(OMEGA_0 * (t_lisa + t_0), 2*np.pi)
+    t0 *= YRSID_SI
+    alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2*np.pi)
     p = np.array([[R_ORBIT * np.cos(alpha)],
                   [R_ORBIT * np.sin(alpha)],
                   [0]], dtype=object)
@@ -183,7 +183,7 @@ def polarization_newframe(psi, k, rotation_matrix):
     return psi_newframe
 
 
-def t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t_0=0.23358470369407391):
+def t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0=0.23358470369407391):
     """ Calculating the time when a GW signal arrives at the barycenter
     of LISA, by using the time and sky localization in SSB frame.
 
@@ -198,7 +198,7 @@ def t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t_0=0.23358470369407391):
     beta_ssb : float
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    t_0 : float
+    t0 : float
         The initial time offset of LISA, in the unit of 'year',
         default is 0.23358470369407391. This makes sure LISA is behind
         the Earth by 19-23 degrees.
@@ -213,13 +213,13 @@ def t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t_0=0.23358470369407391):
     def equation(t_lisa):
         # LISA is moving, when GW arrives at LISA center,
         # time is t_lisa, not t_ssb.
-        p = lisa_position_ssb(t_lisa, t_0)[0]
+        p = lisa_position_ssb(t_lisa, t0)[0]
         return t_lisa - t_ssb - np.vdot(k, p) / c.value
 
     return fsolve(equation, t_ssb)[0]
 
 
-def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t_0=0.23358470369407391):
+def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t0=0.23358470369407391):
     """ Calculating the time when a GW signal arrives at the barycenter
     of SSB, by using the time in LISA frame and sky localization in SSB frame.
 
@@ -234,7 +234,7 @@ def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t_0=0.23358470369407391):
     beta_ssb : float
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    t_0 : float
+    t0 : float
         The initial time offset of LISA, in the unit of 'year',
         default is 0.23358470369407391. This makes sure LISA is behind
         the Earth by 19-23 degrees.
@@ -245,8 +245,9 @@ def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t_0=0.23358470369407391):
         The time when a GW signal arrives at the origin of SSB frame.
     """
     k = localization_to_propagation_vector(lamda_ssb, beta_ssb)
-    # LISA is moving, when GW arrives at LISA center, time is t_lisa, not t_ssb.
-    p = lisa_position_ssb(t_lisa, t_0)[0]
+    # LISA is moving, when GW arrives at LISA center,
+    # time is t_lisa, not t_ssb.
+    p = lisa_position_ssb(t_lisa, t0)[0]
 
     def equation(t_ssb):
         return t_lisa - t_ssb - np.vdot(k, p) / c.value
@@ -254,7 +255,7 @@ def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t_0=0.23358470369407391):
     return fsolve(equation, t_lisa)[0]
 
 
-def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t_0=0.23358470369407391):
+def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0=0.23358470369407391):
     """ Converting the arrive time, the sky localization, and the polarization
     from the SSB frame to the LISA frame.
 
@@ -272,7 +273,7 @@ def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t_0=0.23358470369407391):
     psi_ssb : float
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
-    t_0 : float
+    t0 : float
         The initial time offset of LISA, in the unit of 'year',
         default is 0.23358470369407391. This makes sure LISA is behind
         the Earth by 19-23 degrees.
@@ -299,9 +300,9 @@ def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t_0=0.23358470369407391):
         beta_ssb = beta_ssb.item()
     if isinstance(psi_ssb, np.ndarray):
         psi_ssb = psi_ssb.item()
-    t_lisa = t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t_0)
+    t_lisa = t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0)
     k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
-    alpha = lisa_position_ssb(t_lisa, t_0)[1]
+    alpha = lisa_position_ssb(t_lisa, t0)[1]
     rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
     k_lisa = rotation_matrix_lisa.T @ k_ssb
     lamda_lisa, beta_lisa = propagation_vector_to_localization(k_lisa)
@@ -310,7 +311,8 @@ def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t_0=0.23358470369407391):
     return (t_lisa, lamda_lisa, beta_lisa, psi_lisa)
 
 
-def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t_0=0.23358470369407391):
+def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
+                t0=0.23358470369407391):
     """ Converting the arrive time, the sky localization, and the polarization
     from the LISA frame to the SSB frame.
 
@@ -326,7 +328,7 @@ def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t_0=0.23358470369407391
     psi_lisa : float
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
-    t_0 : float
+    t0 : float
         The initial time offset of LISA, in the unit of 'year',
         default is 0.23358470369407391. This makes sure LISA is behind
         the Earth by 19-23 degrees.
@@ -356,11 +358,11 @@ def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t_0=0.23358470369407391
     if isinstance(psi_lisa, np.ndarray):
         psi_lisa = psi_lisa.item()
     k_lisa = localization_to_propagation_vector(lamda_lisa, beta_lisa)
-    alpha = lisa_position_ssb(t_lisa, t_0)[1]
+    alpha = lisa_position_ssb(t_lisa, t0)[1]
     rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
     k_ssb = rotation_matrix_lisa @ k_lisa
     lamda_ssb, beta_ssb = propagation_vector_to_localization(k_ssb)
-    t_ssb = t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t_0)
+    t_ssb = t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t0)
     psi_ssb = polarization_newframe(psi_lisa, k_lisa, rotation_matrix_lisa.T)
 
     return (t_ssb, lamda_ssb, beta_ssb, psi_ssb)
@@ -476,7 +478,8 @@ def t_ssb_from_t_geo(t_geo, lamda_ssb, beta_ssb):
         The time when a GW signal arrives at the origin of SSB frame.
     """
     k = localization_to_propagation_vector(lamda_ssb, beta_ssb)
-    # Earth is moving, when GW arrives at Earth center, time is t_geo, not t_ssb.
+    # Earth is moving, when GW arrives at Earth center,
+    # time is t_geo, not t_ssb.
     p = earth_position_ssb(t_geo)[0]
 
     def equation(t_ssb):
@@ -611,7 +614,7 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
 
 
 def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
-                t_0=0.23358470369407391, use_astropy=True):
+                t0=0.23358470369407391, use_astropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
     from the LISA frame to the geocentric frame.
 
@@ -627,7 +630,7 @@ def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
     psi_lisa : float
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
-    t_0 : float
+    t0 : float
         The initial time offset of LISA, in the unit of 'year',
         default is 0.23358470369407391. This makes sure LISA is behind
         the Earth by 19-23 degrees.
@@ -651,7 +654,8 @@ def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     """
-    t_ssb, lamda_ssb, beta_ssb, psi_ssb = lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t_0)
+    t_ssb, lamda_ssb, beta_ssb, psi_ssb = lisa_to_ssb(
+        t_lisa, lamda_lisa, beta_lisa, psi_lisa, t0)
     t_geo, lamda_geo, beta_geo, psi_geo = ssb_to_geo(
         t_ssb, lamda_ssb, beta_ssb, psi_ssb, use_astropy)
 
@@ -659,7 +663,7 @@ def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
 
 
 def geo_to_lisa(t_geo, lamda_geo, beta_geo, psi_geo,
-                t_0=0.23358470369407391, use_astropy=True):
+                t0=0.23358470369407391, use_astropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
     from the geocentric frame to the LISA frame.
 
@@ -677,7 +681,7 @@ def geo_to_lisa(t_geo, lamda_geo, beta_geo, psi_geo,
     psi_geo : float
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    t_0 : float
+    t0 : float
         The initial time offset of LISA, in the unit of 'year',
         default is 0.23358470369407391. This makes sure LISA is behind
         the Earth by 19-23 degrees.
@@ -701,14 +705,16 @@ def geo_to_lisa(t_geo, lamda_geo, beta_geo, psi_geo,
     """
     t_ssb, lamda_ssb, beta_ssb, psi_ssb = geo_to_ssb(
         t_geo, lamda_geo, beta_geo, psi_geo, use_astropy)
-    t_lisa, lamda_lisa, beta_lisa, psi_lisa = ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t_0)
+    t_lisa, lamda_lisa, beta_lisa, psi_lisa = ssb_to_lisa(
+        t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0)
 
     return (t_lisa, lamda_lisa, beta_lisa, psi_lisa)
 
 
 __all__ = ['localization_to_propagation_vector',
            'propagation_vector_to_localization', 'polarization_newframe',
-           't_lisa_from_ssb', 't_ssb_from_t_lisa', 'ssb_to_lisa', 'lisa_to_ssb',
+           't_lisa_from_ssb', 't_ssb_from_t_lisa',
+           'ssb_to_lisa', 'lisa_to_ssb',
            'rotation_matrix_ssb_to_lisa', 'rotation_matrix_ssb_to_geo',
            'lisa_position_ssb', 'earth_position_ssb',
            't_geo_from_ssb', 't_ssb_from_t_geo', 'ssb_to_geo', 'geo_to_ssb',
