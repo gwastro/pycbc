@@ -1,4 +1,4 @@
-import numpy
+import numpy, h5py
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from ligo.lw import ligolw, lsctables, utils as ligolw_utils
 from pycbc import pnutils
@@ -299,3 +299,50 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
 
     # write the xml doc to disk
     ligolw_utils.write_filename(outdoc, outputFile)
+
+
+def output_bank_to_hdf(outputFile, tempBank, programName="", optDict=None):
+    bank_dict = {}
+    mass1, mass2, spin1z, spin2z = list(zip(*tempBank))
+    bank_dict['mass1'] = mass1
+    bank_dict['mass2'] = mass2
+    bank_dict['spin1z'] = spin1z
+    bank_dict['spin2z'] = spin2z
+
+    # Add other values to the bank dictionary as appropriate
+    if optDict is not None:
+        bank_dict['f_lower'] = numpy.ones_like(mass1) * \
+            optDict['f_low']
+        bank_dict['f_final'] = numpy.ones_like(mass1) * \
+            optDict['f_upper']
+        argument_string = [f'{k}:{v}' for k, v in optDict.items()]
+
+    with h5py.File(outputFile, 'w') as bankf_out:
+        bankf_out.attrs['program'] = programName
+        if optDict is not None:
+            bankf_out.attrs['arguments'] = argument_string
+        for k, v in bank_dict.items():
+            bankf_out[k] = v
+
+
+
+def output_bank_to_file(outputFile, tempBank, metricParams,
+                        ethincaParams, **kwargs):
+    if outputFile.endswith(('.xml','.xml.gz','.xmlgz')):
+        output_sngl_inspiral_table(
+            outputFile,
+            tempBank,
+            metricParams,
+            ethincaParams,
+            **kwargs
+        )
+    elif outputFile.endswith(('.h5','.hdf','.hdf5')):
+        output_bank_to_hdf(
+            outputFile,
+            tempBank,
+            **kwargs
+        )
+    else:
+        err_msg = "Unrecognized extension for file {}.".format(options.output_file)
+        raise ValueError(err_msg)
+
