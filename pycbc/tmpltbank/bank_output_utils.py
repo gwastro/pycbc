@@ -198,9 +198,9 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
 
     return fMax_theor, gammaVals
 
-def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
-                               ethincaParams, programName="", optDict = None,
-                               outdoc=None):
+def output_sngl_inspiral_table(outputFile, tempBank, metricParams=None,
+                               ethincaParams=None, programName="", optDict = None,
+                               outdoc=None, **kwargs):
     """
     Function that converts the information produced by the various PyCBC bank
     generation codes into a valid LIGOLW XML file containing a sngl_inspiral
@@ -229,12 +229,15 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     outdoc (key-word argument) : ligolw xml document
         If given add template bank to this representation of a xml document and
         write to disk. If not given create a new document.
+    kwargs : optional key-word arguments
+        Allows unused options to be passed to this function (for modularity)
     """
     if optDict is None:
         optDict = {}
     if outdoc is None:
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
+
 
     # get IFO to put in search summary table
     ifos = []
@@ -251,7 +254,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     proc_id = proc.process_id
     sngl_inspiral_table = convert_to_sngl_inspiral_table(tempBank, proc_id)
     # Calculate Gamma components if needed
-    if ethincaParams is not None:
+    if ethincaParams is not None and metricParams is not None:
         if ethincaParams.doEthinca:
             for sngl in sngl_inspiral_table:
                 # Set tau_0 and tau_3 values needed for the calculation of
@@ -301,7 +304,8 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     ligolw_utils.write_filename(outdoc, outputFile)
 
 
-def output_bank_to_hdf(outputFile, tempBank, programName="", optDict=None):
+def output_bank_to_hdf(outputFile, tempBank, optDict=None, programName='',
+                       approximant=None, output_duration=False, **kwargs):
     bank_dict = {}
     mass1, mass2, spin1z, spin2z = list(zip(*tempBank))
     bank_dict['mass1'] = mass1
@@ -317,6 +321,26 @@ def output_bank_to_hdf(outputFile, tempBank, programName="", optDict=None):
             optDict['f_upper']
         argument_string = [f'{k}:{v}' for k, v in optDict.items()]
 
+    if approximant:
+        if not type(approximant) == bytes:
+            appx = approximant.encode()
+        bank_dict['approximant'] = numpy.repeat(appx, len(mass1))
+
+    if output_duration:
+        from pycbc.waveform import get_waveform_filter_length_in_time
+        gwflit = get_waveform_filter_length_in_time
+        appx = approximant if approximant else 'SPAtmplt'
+        tmplt_durations = numpy.zeros_like(mass1)
+        for i in range(len(mass1)):
+            wfrm_length = gwflit(appx,
+                                 mass1=mass1[i],
+                                 mass2=mass2[i],
+                                 f_lower=optDict['f_low'],
+                                 phase_order=7)
+            tmplt_durations[i] = wfrm_length
+        bank_dict['template_duration'] = tmplt_durations
+
+
     with h5py.File(outputFile, 'w') as bankf_out:
         bankf_out.attrs['program'] = programName
         if optDict is not None:
@@ -325,15 +349,11 @@ def output_bank_to_hdf(outputFile, tempBank, programName="", optDict=None):
             bankf_out[k] = v
 
 
-
-def output_bank_to_file(outputFile, tempBank, metricParams,
-                        ethincaParams, **kwargs):
+def output_bank_to_file(outputFile, tempBank, **kwargs):
     if outputFile.endswith(('.xml','.xml.gz','.xmlgz')):
         output_sngl_inspiral_table(
             outputFile,
             tempBank,
-            metricParams,
-            ethincaParams,
             **kwargs
         )
     elif outputFile.endswith(('.h5','.hdf','.hdf5')):
@@ -343,6 +363,6 @@ def output_bank_to_file(outputFile, tempBank, metricParams,
             **kwargs
         )
     else:
-        err_msg = "Unrecognized extension for file {}.".format(options.output_file)
+        err_msg = f"Unrecognized extension for file {outputFile}."
         raise ValueError(err_msg)
 

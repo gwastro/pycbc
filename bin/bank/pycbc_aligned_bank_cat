@@ -172,6 +172,8 @@ bank_output.output_bank_to_file(
     metricParams,
     ethincaParams,
     programName=__program__,
+    output_duration=True,
+    approximant="SPAtmplt",
     optDict=options.__dict__,
     outdoc=outdoc
 )
