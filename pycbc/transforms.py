@@ -1598,7 +1598,7 @@ class GEOToSSB(BaseTransform):
                         self.betaG_param, self.psiG_param]
         self._outputs = [self.tSSB_param, self.lamdaSSB_param,
                          self.betaSSB_param, self.psiSSB_param]
-        super(GEOToSSB, self).__init__()    
+        super(GEOToSSB, self).__init__()
 
     def transform(self, maps):
         """This function transforms arrival time, sky localization,
@@ -1617,11 +1617,11 @@ class GEOToSSB(BaseTransform):
         """
         out = {}
         out[self.tSSB_param], out[self.lamdaSSB_param], \
-        out[self.betaSSB_param], out[self.psiSSB_param] = \
-            coordinates_space.GEO_to_SSB(
-                maps[self.tG_param], maps[self.lamdaG_param],
-                maps[self.betaG_param], maps[self.psiG_param]
-        )
+            out[self.betaSSB_param], out[self.psiSSB_param] = \
+                coordinates_space.GEO_to_SSB(
+                    maps[self.tG_param], maps[self.lamdaG_param],
+                    maps[self.betaG_param], maps[self.psiG_param]
+                    )
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -1641,11 +1641,11 @@ class GEOToSSB(BaseTransform):
         """
         out = {}
         out[self.tG_param], out[self.lamdaG_param], \
-        out[self.betaG_param], out[self.psiG_param] = \
-            coordinates_space.SSB_to_GEO(
-                maps[self.tSSB_param], maps[self.lamdaSSB_param],
-                maps[self.betaSSB_param], maps[self.psiSSB_param]
-        )
+            out[self.betaG_param], out[self.psiG_param] = \
+                coordinates_space.SSB_to_GEO(
+                    maps[self.tSSB_param], maps[self.lamdaSSB_param],
+                    maps[self.betaSSB_param], maps[self.psiSSB_param]
+                    )
         return self.format_output(maps, out)
 
 
@@ -1689,7 +1689,7 @@ class LISAToSSB(BaseTransform):
                         self.betaL_param, self.psiL_param]
         self._outputs = [self.tSSB_param, self.lamdaSSB_param,
                          self.betaSSB_param, self.psiSSB_param]
-        super(LISAToSSB, self).__init__()    
+        super(LISAToSSB, self).__init__()
 
     def transform(self, maps):
         """This function transforms arrival time, sky localization,
@@ -1708,11 +1708,11 @@ class LISAToSSB(BaseTransform):
         """
         out = {}
         out[self.tSSB_param], out[self.lamdaSSB_param], \
-        out[self.betaSSB_param], out[self.psiSSB_param] = \
-            coordinates_space.LISA_to_SSB(
-                maps[self.tL_param], maps[self.lamdaL_param],
-                maps[self.betaL_param], maps[self.psiL_param]
-        )
+            out[self.betaSSB_param], out[self.psiSSB_param] = \
+                coordinates_space.LISA_to_SSB(
+                    maps[self.tL_param], maps[self.lamdaL_param],
+                    maps[self.betaL_param], maps[self.psiL_param]
+                    )
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -1732,11 +1732,11 @@ class LISAToSSB(BaseTransform):
         """
         out = {}
         out[self.tL_param], out[self.lamdaL_param], \
-        out[self.betaL_param], out[self.psiL_param] = \
-            coordinates_space.SSB_to_LISA(
-                maps[self.tSSB_param], maps[self.lamdaSSB_param],
-                maps[self.betaSSB_param], maps[self.psiSSB_param]
-        )
+            out[self.betaL_param], out[self.psiL_param] = \
+                coordinates_space.SSB_to_LISA(
+                    maps[self.tSSB_param], maps[self.lamdaSSB_param],
+                    maps[self.betaSSB_param], maps[self.psiSSB_param]
+                    )
         return self.format_output(maps, out)
 
 
@@ -1780,7 +1780,7 @@ class LISAToGEO(BaseTransform):
                         self.betaL_param, self.psiL_param]
         self._outputs = [self.tG_param, self.lamdaG_param,
                          self.betaG_param, self.psiG_param]
-        super(LISAToGEO, self).__init__()    
+        super(LISAToGEO, self).__init__()
 
     def transform(self, maps):
         """This function transforms arrival time, sky localization,
@@ -1799,11 +1799,11 @@ class LISAToGEO(BaseTransform):
         """
         out = {}
         out[self.tG_param], out[self.lamdaG_param], \
-        out[self.betaG_param], out[self.psiG_param] = \
-            coordinates_space.LISA_to_GEO(
-                maps[self.tL_param], maps[self.lamdaL_param],
-                maps[self.betaL_param], maps[self.psiL_param]
-        )
+            out[self.betaG_param], out[self.psiG_param] = \
+                coordinates_space.LISA_to_GEO(
+                    maps[self.tL_param], maps[self.lamdaL_param],
+                    maps[self.betaL_param], maps[self.psiL_param]
+                    )
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -1823,11 +1823,11 @@ class LISAToGEO(BaseTransform):
         """
         out = {}
         out[self.tL_param], out[self.lamdaL_param], \
-        out[self.betaL_param], out[self.psiL_param] = \
-            coordinates_space.GEO_to_LISA(
-                maps[self.tG_param], maps[self.lamdaG_param],
-                maps[self.betaG_param], maps[self.psiG_param]
-        )
+            out[self.betaL_param], out[self.psiL_param] = \
+                coordinates_space.GEO_to_LISA(
+                    maps[self.tG_param], maps[self.lamdaG_param],
+                    maps[self.betaG_param], maps[self.psiG_param]
+                    )
         return self.format_output(maps, out)
 
 
@@ -2461,11 +2461,11 @@ class SSBToGEO(GEOToSSB):
         self.lamdaSSB_param = lamdaSSB_param
         self.betaSSB_param = betaSSB_param
         self.psiSSB_param = psiSSB_param
-        self._inputs =  [self.tSSB_param, self.lamdaSSB_param,
-                         self.betaSSB_param, self.psiSSB_param]
+        self._inputs = [self.tSSB_param, self.lamdaSSB_param,
+                        self.betaSSB_param, self.psiSSB_param]
         self._outputs = [self.tG_param, self.lamdaG_param,
                          self.betaG_param, self.psiG_param]
-        super(SSBToGEO, self).__init__()    
+        super(SSBToGEO, self).__init__()
 
 
 class SSBToLISA(LISAToSSB):
