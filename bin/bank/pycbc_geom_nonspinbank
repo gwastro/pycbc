@@ -381,8 +381,6 @@ logging.info("Writing output to file %s", opts.output_file)
 bank_output.output_bank_to_file(
     opts.output_file,
     tempBank,
-    metricParams=metricParams,
-    ethincaParams=ethincaParams,
     programName=__program__,
     optDict=opts.__dict__
 )

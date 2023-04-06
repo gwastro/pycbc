@@ -200,8 +200,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
 
     return fMax_theor, gammaVals
 
-def output_sngl_inspiral_table(outputFile, tempBank, metricParams=None,
-                               ethincaParams=None, programName="",
+def output_sngl_inspiral_table(outputFile, tempBank, programName="",
                                optDict = None, outdoc=None,
                                **kwargs): # pylint:disable=unused-argument
     """
@@ -216,15 +215,6 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams=None,
     tempBank : iterable
         Each entry in the tempBank iterable should be a sequence of
         [mass1,mass2,spin1z,spin2z] in that order.
-    metricParams : metricParameters instance
-        Structure holding all the options for construction of the metric
-        and the eigenvalues, eigenvectors and covariance matrix
-        needed to manipulate the space.
-    ethincaParams: {ethincaParameters instance, None}
-        Structure holding options relevant to the ethinca metric computation
-        including the upper frequency cutoff to be used for filtering.
-        NOTE: The computation is currently only valid for non-spinning systems
-        and uses the TaylorF2 approximant.
     programName (key-word-argument) : string
         Name of the executable that has been run
     optDict (key-word argument) : dictionary
@@ -255,29 +245,6 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams=None,
     )
     proc_id = proc.process_id
     sngl_inspiral_table = convert_to_sngl_inspiral_table(tempBank, proc_id)
-    # Calculate Gamma components if needed
-    if ethincaParams is not None and metricParams is not None:
-        if ethincaParams.doEthinca:
-            for sngl in sngl_inspiral_table:
-                # Set tau_0 and tau_3 values needed for the calculation of
-                # ethinca metric distances
-                (sngl.tau0,sngl.tau3) = pnutils.mass1_mass2_to_tau0_tau3(
-                    sngl.mass1, sngl.mass2, metricParams.f0)
-                fMax_theor, GammaVals = calculate_ethinca_metric_comps(
-                    metricParams, ethincaParams,
-                    sngl.mass1, sngl.mass2, spin1z=sngl.spin1z,
-                    spin2z=sngl.spin2z, full_ethinca=ethincaParams.full_ethinca)
-                # assign the upper frequency cutoff and Gamma0-5 values
-                sngl.f_final = fMax_theor
-                for i in range(len(GammaVals)):
-                    setattr(sngl, "Gamma"+str(i), GammaVals[i])
-        # If Gamma metric components are not wanted, assign f_final from an
-        # upper frequency cutoff specified in ethincaParams
-        elif ethincaParams.cutoff is not None:
-            for sngl in sngl_inspiral_table:
-                sngl.f_final = pnutils.frequency_cutoff_from_name(
-                    ethincaParams.cutoff,
-                    sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z)
 
     # set per-template low-frequency cutoff
     if 'f_low_column' in optDict and 'f_low' in optDict and \
