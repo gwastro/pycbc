@@ -1620,7 +1620,7 @@ class GEOToSSB(BaseTransform):
         out = {}
         out[self.t_ssb_param], out[self.lamda_ssb_param], \
             out[self.beta_ssb_param], out[self.psi_ssb_param] = \
-            coordinates_space.geo_to_ssb(
+            coordinates.geo_to_ssb(
                 maps[self.t_geo_param], maps[self.lamda_geo_param],
                 maps[self.beta_geo_param], maps[self.psi_geo_param]
                 )
@@ -1644,7 +1644,7 @@ class GEOToSSB(BaseTransform):
         out = {}
         out[self.t_geo_param], out[self.lamda_geo_param], \
             out[self.beta_geo_param], out[self.psi_geo_param] = \
-            coordinates_space.ssb_to_geo(
+            coordinates.ssb_to_geo(
                 maps[self.t_ssb_param], maps[self.lamda_ssb_param],
                 maps[self.beta_ssb_param], maps[self.psi_ssb_param]
                 )
@@ -1711,7 +1711,7 @@ class LISAToSSB(BaseTransform):
         out = {}
         out[self.t_ssb_param], out[self.lamda_ssb_param], \
             out[self.beta_ssb_param], out[self.psi_ssb_param] = \
-            coordinates_space.lisa_to_ssb(
+            coordinates.lisa_to_ssb(
                 maps[self.t_lisa_param], maps[self.lamda_lisa_param],
                 maps[self.beta_lisa_param], maps[self.psi_lisa_param]
                 )
@@ -1735,7 +1735,7 @@ class LISAToSSB(BaseTransform):
         out = {}
         out[self.t_lisa_param], out[self.lamda_lisa_param], \
             out[self.beta_lisa_param], out[self.psi_lisa_param] = \
-            coordinates_space.ssb_to_lisa(
+            coordinates.ssb_to_lisa(
                 maps[self.t_ssb_param], maps[self.lamda_ssb_param],
                 maps[self.beta_ssb_param], maps[self.psi_ssb_param]
                 )
@@ -1802,7 +1802,7 @@ class LISAToGEO(BaseTransform):
         out = {}
         out[self.t_geo_param], out[self.lamda_geo_param], \
             out[self.beta_geo_param], out[self.psi_geo_param] = \
-            coordinates_space.lisa_to_geo(
+            coordinates.lisa_to_geo(
                 maps[self.t_lisa_param], maps[self.lamda_lisa_param],
                 maps[self.beta_lisa_param], maps[self.psi_lisa_param]
                 )
@@ -1826,7 +1826,7 @@ class LISAToGEO(BaseTransform):
         out = {}
         out[self.t_lisa_param], out[self.lamda_lisa_param], \
             out[self.beta_lisa_param], out[self.psi_lisa_param] = \
-            coordinates_space.geo_to_lisa(
+            coordinates.geo_to_lisa(
                 maps[self.t_geo_param], maps[self.lamda_geo_param],
                 maps[self.beta_geo_param], maps[self.psi_geo_param]
                 )
