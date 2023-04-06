@@ -38,6 +38,14 @@ from astropy.coordinates import get_body_barycentric
 from astropy.coordinates import SkyCoord
 
 
+# This constant makes sure LISA is behind the Earth by 19-23 degrees.
+# Making this a stand-alone constant will also make it readable by
+# the waveform plugin.
+TIME_OFFSET = 0.23358470369407391
+
+# "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
+# more general for other detectors in the near future.
+
 def rotation_matrix_ssb_to_lisa(alpha):
     """ The rotation matrix (of frame basis) from SSB frame to LISA frame.
 
@@ -62,7 +70,7 @@ def rotation_matrix_ssb_to_lisa(alpha):
     return r_total
 
 
-def lisa_position_ssb(t_lisa, t0=0.23358470369407391):
+def lisa_position_ssb(t_lisa, t0=TIME_OFFSET):
     """ Calculating the position vector and angular displacement of LISA
     in the SSB frame, at a given time.
 
@@ -183,7 +191,7 @@ def polarization_newframe(psi, k, rotation_matrix):
     return psi_newframe
 
 
-def t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0=0.23358470369407391):
+def t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0=TIME_OFFSET):
     """ Calculating the time when a GW signal arrives at the barycenter
     of LISA, by using the time and sky localization in SSB frame.
 
@@ -219,7 +227,7 @@ def t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0=0.23358470369407391):
     return fsolve(equation, t_ssb)[0]
 
 
-def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t0=0.23358470369407391):
+def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t0=TIME_OFFSET):
     """ Calculating the time when a GW signal arrives at the barycenter
     of SSB, by using the time in LISA frame and sky localization in SSB frame.
 
@@ -255,7 +263,7 @@ def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t0=0.23358470369407391):
     return fsolve(equation, t_lisa)[0]
 
 
-def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0=0.23358470369407391):
+def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0=TIME_OFFSET):
     """ Converting the arrive time, the sky localization, and the polarization
     from the SSB frame to the LISA frame.
 
@@ -311,8 +319,7 @@ def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0=0.23358470369407391):
     return (t_lisa, lamda_lisa, beta_lisa, psi_lisa)
 
 
-def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
-                t0=0.23358470369407391):
+def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t0=TIME_OFFSET):
     """ Converting the arrive time, the sky localization, and the polarization
     from the LISA frame to the SSB frame.
 
@@ -614,7 +621,7 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
 
 
 def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
-                t0=0.23358470369407391, use_astropy=True):
+                t0=TIME_OFFSET, use_astropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
     from the LISA frame to the geocentric frame.
 
@@ -663,7 +670,7 @@ def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
 
 
 def geo_to_lisa(t_geo, lamda_geo, beta_geo, psi_geo,
-                t0=0.23358470369407391, use_astropy=True):
+                t0=TIME_OFFSET, use_astropy=True):
     """ Converting the arrive time, the sky localization, and the polarization
     from the geocentric frame to the LISA frame.
 
