@@ -311,9 +311,11 @@ def output_bank_to_hdf(outputFile, tempBank, optDict=None, programName='',
     if optDict is not None:
         bank_dict['f_lower'] = numpy.ones_like(mass1) * \
             optDict['f_low']
+        argument_string = [f'{k}:{v}' for k, v in optDict.items()]
+
+    if optDict is not None and optDict['output_f_final']:
         bank_dict['f_final'] = numpy.ones_like(mass1) * \
             optDict['f_upper']
-        argument_string = [f'{k}:{v}' for k, v in optDict.items()]
 
     if approximant:
         if not isinstance(approximant, bytes):
