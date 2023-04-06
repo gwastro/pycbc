@@ -20,7 +20,7 @@ import os
 import logging
 import numpy
 from pycbc import conversions
-from pycbc.coordinates import *
+from pycbc import coordinates
 from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
