@@ -316,7 +316,7 @@ def output_bank_to_hdf(outputFile, tempBank, optDict=None, programName='',
         argument_string = [f'{k}:{v}' for k, v in optDict.items()]
 
     if approximant:
-        if not isinstance(approximant) == bytes:
+        if not isinstance(approximant, bytes):
             appx = approximant.encode()
         bank_dict['approximant'] = numpy.repeat(appx, len(mass1))
 
