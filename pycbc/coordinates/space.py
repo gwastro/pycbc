@@ -30,7 +30,7 @@ and ground-based detectors.
 import numpy as np
 from scipy.spatial.transform import Rotation
 from scipy.optimize import fsolve
-from astropy import units as u
+from astropy import units
 from astropy.constants import c, au
 from astropy.time import Time
 from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
@@ -46,8 +46,12 @@ TIME_OFFSET = 0.23358470369407391
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
 # more general for other detectors in the near future.
 
+
 def rotation_matrix_ssb_to_lisa(alpha):
     """ The rotation matrix (of frame basis) from SSB frame to LISA frame.
+    This function assumes the angle between LISA plane and the ecliptic
+    is 60 degrees, and the period of LISA's self-rotation and orbital
+    revolution is both one year.
 
     Parameters
     ----------
@@ -72,7 +76,9 @@ def rotation_matrix_ssb_to_lisa(alpha):
 
 def lisa_position_ssb(t_lisa, t0=TIME_OFFSET):
     """ Calculating the position vector and angular displacement of LISA
-    in the SSB frame, at a given time.
+    in the SSB frame, at a given time. This function assumes LISA's barycenter
+    is orbiting around a circular orbit within the ecliptic behind the Earth.
+    The period of it is one year.
 
     Parameters
     ----------
@@ -169,7 +175,7 @@ def polarization_newframe(psi, k, rotation_matrix):
     psi_newframe : float
         The polarization angle in the new frame of that GW signal.
     """
-    lamda, beta = propagation_vector_to_localization(k)
+    lamda, _ = propagation_vector_to_localization(k)
     u = np.array([[np.sin(lamda)], [-np.cos(lamda)], [0]])
     rotation_vector = psi * k
     rotation_psi = Rotation.from_rotvec(rotation_vector.T[0])
@@ -421,9 +427,9 @@ def earth_position_ssb(t_geo):
                           representation_type='cartesian')
     bme_coord = icrs_coord.transform_to(
                     BarycentricMeanEcliptic(equinox='J2000'))
-    x = bme_coord.cartesian.x.to(u.m).value
-    y = bme_coord.cartesian.y.to(u.m).value
-    z = bme_coord.cartesian.z.to(u.m).value
+    x = bme_coord.cartesian.x.to(units.m).value
+    y = bme_coord.cartesian.y.to(units.m).value
+    z = bme_coord.cartesian.z.to(units.m).value
     p = np.array([[x], [y], [z]])
     alpha = bme_coord.lon.rad
 
@@ -545,9 +551,10 @@ def ssb_to_geo(t_ssb, lamda_ssb, beta_ssb, psi_ssb, use_astropy=True):
     k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
     rotation_matrix_geo = rotation_matrix_ssb_to_geo()
     if use_astropy:
-        c = BarycentricMeanEcliptic(lon=lamda_ssb*u.radian,
-                                    lat=beta_ssb*u.radian, equinox='J2000')
-        geo_sky = c.transform_to(PrecessedGeocentric(equinox='J2000'))
+        bme_coord = BarycentricMeanEcliptic(lon=lamda_ssb*units.radian,
+                                            lat=beta_ssb*units.radian,
+                                            equinox='J2000')
+        geo_sky = bme_coord.transform_to(PrecessedGeocentric(equinox='J2000'))
         lamda_geo = geo_sky.ra.rad
         beta_geo = geo_sky.dec.rad
     else:
@@ -611,9 +618,11 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
     t_ssb = t_ssb_from_t_geo(t_geo, lamda_ssb, beta_ssb)
     psi_ssb = polarization_newframe(psi_geo, k_geo, rotation_matrix_geo.T)
     if use_astropy:
-        c = PrecessedGeocentric(ra=lamda_geo*u.radian, dec=beta_geo*u.radian,
-                                equinox='J2000')
-        ssb_sky = c.transform_to(BarycentricMeanEcliptic(equinox='J2000'))
+        bme_coord = PrecessedGeocentric(ra=lamda_geo*units.radian,
+                                        dec=beta_geo*units.radian,
+                                        equinox='J2000')
+        ssb_sky = bme_coord.transform_to(
+                    BarycentricMeanEcliptic(equinox='J2000'))
         lamda_ssb = ssb_sky.lon.rad
         beta_ssb = ssb_sky.lat.rad
 
@@ -716,14 +725,3 @@ def geo_to_lisa(t_geo, lamda_geo, beta_geo, psi_geo,
         t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0)
 
     return (t_lisa, lamda_lisa, beta_lisa, psi_lisa)
-
-
-__all__ = ['localization_to_propagation_vector',
-           'propagation_vector_to_localization', 'polarization_newframe',
-           't_lisa_from_ssb', 't_ssb_from_t_lisa',
-           'ssb_to_lisa', 'lisa_to_ssb',
-           'rotation_matrix_ssb_to_lisa', 'rotation_matrix_ssb_to_geo',
-           'lisa_position_ssb', 'earth_position_ssb',
-           't_geo_from_ssb', 't_ssb_from_t_geo', 'ssb_to_geo', 'geo_to_ssb',
-           'lisa_to_geo', 'geo_to_lisa',
-           ]
