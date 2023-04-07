@@ -189,20 +189,26 @@ class LiveEventManager(object):
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
 
-        # Determine if the other ifos can contribute to the coincident event
+        # Determine if the other ifos can contribute to the coincident event,
+        # if so then update the info in `triggers` appropriately
         for ifo in followup_ifos:
-            snr_series, ptime, pvalue, sigma2 = followup_event_significance(
+            pvalue_info = followup_event_significance(
                 ifo,
                 self.data_readers[ifo],
                 self.bank,
                 template_id,
                 coinc_times
             )
-            if snr_series is not None:
-                out[ifo] = {'snr_series': snr_series}
-                self.get_followup_info(ifos[0], ifo, triggers, snr_series,
-                                       ptime, pvalue, sigma2,
-                                       recalculate_ifar=recalculate_ifar)
+            if pvalue_info is None:
+                continue
+            out[ifo] = {'snr_series': pvalue_info['snr_series']}
+            self.get_followup_info(
+                ifos[0],
+                ifo,
+                triggers,
+                pvalue_info,
+                recalculate_ifar=recalculate_ifar
+            )
 
         # the SNR time series sample rate can vary slightly due to
         # rounding errors, so force all of them to be identical
@@ -217,31 +223,52 @@ class LiveEventManager(object):
 
         return out
 
-    def get_followup_info(self, coinc_ifo, ifo, triggers, snr_series, ptime,
-                          pvalue, sigma2, recalculate_ifar=False):
-        # Copy the common fields from the other detector
+    def get_followup_info(
+        self,
+        coinc_ifo,
+        ifo,
+        triggers,
+        pvalue_info,
+        recalculate_ifar=False
+    ):
+        peak_time = pvalue_info['peak_time']
+        pv = pvalue_info['pvalue']
+        pv_sat = pvalue_info['pvalue_saturated']
+
+        # Copy the common fields from the other detector;
         # ignore fields that contain detector-specific data
-        fields_to_ignore = set(['end_time', 'snr', 'stat', 'coa_phase',
-                                'chisq', 'chisq_dof', 'sg_chisq', 'sigmasq'])
+        fields_to_ignore = set([
+            'end_time', 'snr', 'stat', 'coa_phase',
+            'chisq', 'chisq_dof', 'sg_chisq', 'sigmasq'
+        ])
         for key in set(triggers):
-            if 'foreground/{}/'.format(coinc_ifo) in key:
-                _, _, name = key.split('/')
-                if name in fields_to_ignore:
-                    continue
-                triggers['foreground/{}/{}'.format(ifo, name)] = triggers[key]
+            if f'foreground/{coinc_ifo}/' not in key:
+                continue
+            _, _, name = key.split('/')
+            if name in fields_to_ignore:
+                continue
+            triggers[f'foreground/{ifo}/{name}'] = triggers[key]
 
         # Set the detector-specific fields for which we have data
-        snr_series_peak = snr_series.at_time(ptime, nearest_sample=True)
-        base = 'foreground/{}/'.format(ifo)
-        triggers[base + 'end_time'] = float(ptime)
+        snr_series_peak = pvalue_info['snr_series'].at_time(
+            peak_time,
+            nearest_sample=True
+        )
+        base = f'foreground/{ifo}/'
+        triggers[base + 'end_time'] = float(peak_time)
         triggers[base + 'snr'] = triggers[base + 'stat'] = abs(snr_series_peak)
         triggers[base + 'coa_phase'] = numpy.angle(snr_series_peak)
-        triggers[base + 'sigmasq'] = sigma2
+        triggers[base + 'sigmasq'] = pvalue_info['sigma2']
         if recalculate_ifar:
             # Calculate new ifar
             triggers['foreground/ifar'] = combine_ifar_pvalue(
-                    triggers['foreground/ifar'], pvalue, self.pvalue_livetime)
-            triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
+                triggers['foreground/ifar'],
+                pv,
+                self.pvalue_livetime
+            )
+            triggers['foreground/ifar_saturated'] |= pv_sat
+            triggers[f'foreground/pvalue_{ifo}'] = pv
+            triggers[f'foreground/pvalue_{ifo}_saturated'] = pv_sat
 
     def setup_optimize_snr(
         self, results, live_ifos, triggering_ifos, fname, gid
