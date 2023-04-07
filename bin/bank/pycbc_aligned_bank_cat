@@ -55,13 +55,13 @@ parser.add_argument("-i", "--input-glob",
                     help="file glob the list of paramters")
 parser.add_argument("-I", "--input-files", nargs='+',
                     help="Explicit list of input files.")
-parser.add_argument("-o", "--output-file",  help="Output file name")
 parser.add_argument('--f-low-column', type=str, metavar='NAME',
                     help='If given, store the lower frequency cutoff into '
                          'column NAME of the single-inspiral table.')
 parser.add_argument("-m", "--metadata-file", metavar="METADATA_FILE",
                   help="XML file containing the process and process_params "
                   "tables that the aligned_bank code was run with.")
+
 
 # Insert the metric calculation options
 tmpltbank.insert_metric_calculation_options(parser)
@@ -74,6 +74,8 @@ pycbc.strain.insert_strain_option_group(parser)
 
 # Add the ethinca calculation options
 tmpltbank.insert_ethinca_metric_options(parser)
+
+tmpltbank.insert_base_bank_options(parser)
 
 options = parser.parse_args()
 
