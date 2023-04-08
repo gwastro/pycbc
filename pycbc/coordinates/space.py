@@ -40,8 +40,8 @@ from astropy.coordinates import SkyCoord
 
 # This constant makes sure LISA is behind the Earth by 19-23 degrees.
 # Making this a stand-alone constant will also make it readable by
-# the waveform plugin.
-TIME_OFFSET = 0.23358470369407391
+# the waveform plugin. In the unit of 's'.
+TIME_OFFSET = 7365189.431698299
 
 # "rotation_matrix_ssb_to_lisa" and "lisa_position_ssb" should be
 # more general for other detectors in the near future.
@@ -86,8 +86,8 @@ def lisa_position_ssb(t_lisa, t0=TIME_OFFSET):
         The time when a GW signal arrives at the origin of LISA frame,
         or any other time you want.
     t0 : float
-        The initial time offset of LISA, in the unit of 'year',
-        default is 0.23358470369407391. This makes sure LISA is behind
+        The initial time offset of LISA, in the unit of 's',
+        default is 7365189.431698299. This makes sure LISA is behind
         the Earth by 19-23 degrees.
 
     Returns
@@ -99,10 +99,8 @@ def lisa_position_ssb(t_lisa, t0=TIME_OFFSET):
         The angular displacement of LISA in the SSB frame.
         In the unit of 'radian'.
     """
-    YRSID_SI = 31558149.763545603  # same as BBHx, but not for lal.YRJUL_SI
     OMEGA_0 = 1.99098659277e-7
     R_ORBIT = au.value
-    t0 *= YRSID_SI
     alpha = np.mod(OMEGA_0 * (t_lisa + t0), 2*np.pi)
     p = np.array([[R_ORBIT * np.cos(alpha)],
                   [R_ORBIT * np.sin(alpha)],
@@ -213,8 +211,8 @@ def t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0=TIME_OFFSET):
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset of LISA, in the unit of 'year',
-        default is 0.23358470369407391. This makes sure LISA is behind
+        The initial time offset of LISA, in the unit of 's',
+        default is 7365189.431698299. This makes sure LISA is behind
         the Earth by 19-23 degrees.
 
     Returns
@@ -249,8 +247,8 @@ def t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t0=TIME_OFFSET):
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset of LISA, in the unit of 'year',
-        default is 0.23358470369407391. This makes sure LISA is behind
+        The initial time offset of LISA, in the unit of 's',
+        default is 7365189.431698299. This makes sure LISA is behind
         the Earth by 19-23 degrees.
 
     Returns
@@ -288,8 +286,8 @@ def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0=TIME_OFFSET):
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset of LISA, in the unit of 'year',
-        default is 0.23358470369407391. This makes sure LISA is behind
+        The initial time offset of LISA, in the unit of 's',
+        default is 7365189.431698299. This makes sure LISA is behind
         the Earth by 19-23 degrees.
 
     Returns
@@ -342,8 +340,8 @@ def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t0=TIME_OFFSET):
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset of LISA, in the unit of 'year',
-        default is 0.23358470369407391. This makes sure LISA is behind
+        The initial time offset of LISA, in the unit of 's',
+        default is 7365189.431698299. This makes sure LISA is behind
         the Earth by 19-23 degrees.
 
     Returns
@@ -647,8 +645,8 @@ def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset of LISA, in the unit of 'year',
-        default is 0.23358470369407391. This makes sure LISA is behind
+        The initial time offset of LISA, in the unit of 's',
+        default is 7365189.431698299. This makes sure LISA is behind
         the Earth by 19-23 degrees.
     use_astropy : bool
         Using Astropy to calculate the sky localization or not.
@@ -698,8 +696,8 @@ def geo_to_lisa(t_geo, lamda_geo, beta_geo, psi_geo,
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     t0 : float
-        The initial time offset of LISA, in the unit of 'year',
-        default is 0.23358470369407391. This makes sure LISA is behind
+        The initial time offset of LISA, in the unit of 's',
+        default is 7365189.431698299. This makes sure LISA is behind
         the Earth by 19-23 degrees.
     use_astropy : bool
         Using Astropy to calculate the sky localization or not.
