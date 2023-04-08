@@ -285,6 +285,7 @@ class DistMarg():
         series of each detector
         """
         p = self.current_params
+        self.precalc_antenna_factors = None
 
         if (not numpy.isscalar(p['tc']) and
             'tc' in self.marginalized_vector_priors and
@@ -438,7 +439,6 @@ class DistMarg():
             self.tinfo[ikey] = make_init()
 
         dmap, tcmin, tcmax, fp, fc, ra, dec, dtc = self.tinfo[ikey]
-        self.antenna_factors = None
 
         # draw times from each snr time series
         # Is it worth doing this if some detector has low SNR?

@@ -777,7 +777,7 @@ class RelativeTimeDom(RelativeTime):
         self.snr_draw(snrs)
 
         for ifo in self.sh:
-            if self.precalc_antenna_factors is not None:  
+            if self.precalc_antenna_factors:  
                 fp, fc, dt = self.get_precalc_antenna_factors(ifo)  
             else:
                 dt = self.det[ifo].time_delay_from_earth_center(p['ra'], 
@@ -785,13 +785,15 @@ class RelativeTimeDom(RelativeTime):
                                                                 p['tc'])
                 fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                        0, p['tc'])
-                                                       
+            #print(fp, fc, dt, self.precalc_antenna_factors)                             
             dts = p['tc'] + dt
             f = (fp + 1.0j * fc) * pol_phase
 
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
+            
+            #print(dts, self.sh[ifo].start_time, self.sh[ifo].end_time)
             sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
