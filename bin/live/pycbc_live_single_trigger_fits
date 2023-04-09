@@ -266,7 +266,7 @@ for filename in files:
         # If we are clustering, take the max sngl_ranking value
         if args.cluster:
             max_idx = sngls_value.argmax()
-            triggers_cut = triggers_da.select(max_idx)
+            triggers_da = triggers_da.select(max_idx)
 
         if ifo in events:
             events[ifo] += triggers_da
