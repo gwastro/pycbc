@@ -176,7 +176,7 @@ if not os.path.exists(date_directory):
     raise FileNotFoundError(f"The directory {date_directory} does not exist.")
 
 files = [f for f in os.listdir(date_directory)
-         if args.file_identifier in f]
+         if args.file_identifier in f and f.endswith('hdf')]
 
 events = {}
 counter = 0
