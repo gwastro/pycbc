@@ -25,8 +25,6 @@
 These are the unittests for the pycbc.tmpltbank module
 """
 
-from __future__ import division
-import os
 import math
 import numpy
 from astropy.utils.data import download_file

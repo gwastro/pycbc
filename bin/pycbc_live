@@ -95,6 +95,9 @@ class LiveEventManager(object):
         self.use_date_prefix = args.day_hour_output_prefix
         self.ifar_upload_threshold = args.ifar_upload_threshold
         self.pvalue_livetime = args.pvalue_combination_livetime
+        self.gracedb_server = args.gracedb_server
+        self.gracedb_search = args.gracedb_search
+        self.gracedb_labels = args.gracedb_labels
         self.gracedb_testing = not args.enable_production_gracedb_upload
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
@@ -185,20 +188,26 @@ class LiveEventManager(object):
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
 
-        # Determine if the other ifos can contribute to the coincident event
+        # Determine if the other ifos can contribute to the coincident event,
+        # if so then update the info in `triggers` appropriately
         for ifo in followup_ifos:
-            snr_series, ptime, pvalue, sigma2 = followup_event_significance(
+            pvalue_info = followup_event_significance(
                 ifo,
                 self.data_readers[ifo],
                 self.bank,
                 template_id,
                 coinc_times
             )
-            if snr_series is not None:
-                out[ifo] = {'snr_series': snr_series}
-                self.get_followup_info(ifos[0], ifo, triggers, snr_series,
-                                       ptime, pvalue, sigma2,
-                                       recalculate_ifar=recalculate_ifar)
+            if pvalue_info is None:
+                continue
+            out[ifo] = {'snr_series': pvalue_info['snr_series']}
+            self.get_followup_info(
+                ifos[0],
+                ifo,
+                triggers,
+                pvalue_info,
+                recalculate_ifar=recalculate_ifar
+            )
 
         # the SNR time series sample rate can vary slightly due to
         # rounding errors, so force all of them to be identical
@@ -213,31 +222,52 @@ class LiveEventManager(object):
 
         return out
 
-    def get_followup_info(self, coinc_ifo, ifo, triggers, snr_series, ptime,
-                          pvalue, sigma2, recalculate_ifar=False):
-        # Copy the common fields from the other detector
+    def get_followup_info(
+        self,
+        coinc_ifo,
+        ifo,
+        triggers,
+        pvalue_info,
+        recalculate_ifar=False
+    ):
+        peak_time = pvalue_info['peak_time']
+        pv = pvalue_info['pvalue']
+        pv_sat = pvalue_info['pvalue_saturated']
+
+        # Copy the common fields from the other detector;
         # ignore fields that contain detector-specific data
-        fields_to_ignore = set(['end_time', 'snr', 'stat', 'coa_phase',
-                                'chisq', 'chisq_dof', 'sg_chisq', 'sigmasq'])
+        fields_to_ignore = set([
+            'end_time', 'snr', 'stat', 'coa_phase',
+            'chisq', 'chisq_dof', 'sg_chisq', 'sigmasq'
+        ])
         for key in set(triggers):
-            if 'foreground/{}/'.format(coinc_ifo) in key:
-                _, _, name = key.split('/')
-                if name in fields_to_ignore:
-                    continue
-                triggers['foreground/{}/{}'.format(ifo, name)] = triggers[key]
+            if f'foreground/{coinc_ifo}/' not in key:
+                continue
+            _, _, name = key.split('/')
+            if name in fields_to_ignore:
+                continue
+            triggers[f'foreground/{ifo}/{name}'] = triggers[key]
 
         # Set the detector-specific fields for which we have data
-        snr_series_peak = snr_series.at_time(ptime, nearest_sample=True)
-        base = 'foreground/{}/'.format(ifo)
-        triggers[base + 'end_time'] = float(ptime)
+        snr_series_peak = pvalue_info['snr_series'].at_time(
+            peak_time,
+            nearest_sample=True
+        )
+        base = f'foreground/{ifo}/'
+        triggers[base + 'end_time'] = float(peak_time)
         triggers[base + 'snr'] = triggers[base + 'stat'] = abs(snr_series_peak)
         triggers[base + 'coa_phase'] = numpy.angle(snr_series_peak)
-        triggers[base + 'sigmasq'] = sigma2
+        triggers[base + 'sigmasq'] = pvalue_info['sigma2']
         if recalculate_ifar:
             # Calculate new ifar
             triggers['foreground/ifar'] = combine_ifar_pvalue(
-                    triggers['foreground/ifar'], pvalue, self.pvalue_livetime)
-            triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
+                triggers['foreground/ifar'],
+                pv,
+                self.pvalue_livetime
+            )
+            triggers['foreground/ifar_saturated'] |= pv_sat
+            triggers[f'foreground/pvalue_{ifo}'] = pv
+            triggers[f'foreground/pvalue_{ifo}_saturated'] = pv_sat
 
     def setup_optimize_snr(
         self, results, live_ifos, triggering_ifos, fname, gid
@@ -328,8 +358,11 @@ class LiveEventManager(object):
 
         cmd += '--params-file {} '.format(curr_fname)
         cmd += '--approximant {} '.format(apr)
-        cmd += '--gracedb-server {} '.format(args.gracedb_server)
-        cmd += '--gracedb-search {} '.format(args.gracedb_search)
+        cmd += '--gracedb-server {} '.format(self.gracedb_server)
+        cmd += '--gracedb-search {} '.format(self.gracedb_search)
+        # Don't pass labels to the SNR optimization job:
+        # currently labels are only required for Early Warning
+        # analysis, which does not use SNR opt
         if not self.gracedb_testing:
             cmd += '--production '
         cmd += '--verbose '
@@ -346,9 +379,9 @@ class LiveEventManager(object):
         if args.processing_scheme:
             # we will use the cores for multiple workers of the
             # optimization routine, so we force the processing scheme
-            # to a single core here.  this may be enforcing some
+            # to a single core here.  This may be enforcing some
             # assumptions about the optimal way to do ffts on the
-            # machine. however, the dominant cost of pycbc_optimize_snr
+            # machine. However, the dominant cost of pycbc_optimize_snr
             # is expected to be in waveform generation, which is
             # unlikely to benefit from a processing scheme with more
             # than 1 thread anyway.
@@ -365,25 +398,33 @@ class LiveEventManager(object):
 
     def create_gdb(self):
         """
-        Function to create GraceDB session.
+        Create a GraceDB session that will persist throughout the execution
+        of PyCBC Live.
         """
         from ligo.gracedb.rest import GraceDb
-        logging.info('Creating GraceDB session')
-        # Set up dict for args that reload the certificate if it will expire in the reload_buffer time
-        # These args are documented here: https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
-        # Because we do not change any of the request session values when running the code, it should remain thread safe. 
-        gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
-        self.gracedb = GraceDb(args.gracedb_server, **gdbargs) if args.gracedb_server else GraceDb(**gdbargs)
 
-    def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos, upload_checks, optimize_snr_checks, gracedb_server, gracedb_search):
+        logging.info('Creating GraceDB session')
+        # Set up dict for args that reload the certificate if it will expire in the
+        # reload_buffer time. These args are documented here:
+        # https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
+        # Because we do not change any of the request session values when running the
+        # code, it should remain thread safe. 
+        gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+        if self.gracedb_server:
+            gdbargs['service_url'] = self.gracedb_server
+        self.gracedb = GraceDb(**gdbargs)
+
+    def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos,
+                         upload_checks, optimize_snr_checks):
         gid = None
         if upload_checks:
             gid = event.upload(
                 fname,
-                gracedb_server=gracedb_server,
+                gracedb_server=self.gracedb_server,
                 testing=self.gracedb_testing,
                 extra_strings=[comment],
-                search=gracedb_search
+                search=self.gracedb_search,
+                labels=self.gracedb_labels
             )
         if optimize_snr_checks:
             self.setup_optimize_snr(
@@ -471,7 +512,12 @@ class LiveEventManager(object):
                 if hasattr(event, 'p_terr') and event.p_terr is not None:
                     coinc_results['p_terr'] = event.p_terr
             live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
-            gdb_upload_thread = threading.Thread(target = self.upload_in_thread, args = (event, fname, comment, coinc_results, live_ifos, coinc_ifos, upload_checks, optimize_snr_checks,args.gracedb_server, args.gracedb_search,))
+            thread_args = (
+                event, fname, comment, coinc_results, live_ifos, coinc_ifos,
+                upload_checks, optimize_snr_checks
+            )
+            gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
+                                                 args=thread_args)
             gdb_upload_thread.start()
 
     def check_singles(self, results, psds):
@@ -537,8 +583,13 @@ class LiveEventManager(object):
                     event.merger_time
                 )
 
-            upload_checks = args.enable_single_detector_upload and self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs)
-            optimize_snr_checks = self.ifar_upload_threshold < single['foreground/ifar'] and not any(nearby_coincs) and self.run_snr_optimization
+            upload_checks = args.enable_single_detector_upload and \
+                self.ifar_upload_threshold < single['foreground/ifar'] and \
+                not any(nearby_coincs)
+            optimize_snr_checks = \
+                self.ifar_upload_threshold < single['foreground/ifar'] and \
+                not any(nearby_coincs) and \
+                self.run_snr_optimization
             if not upload_checks:
                 event.save(fname)
             if upload_checks or optimize_snr_checks:
@@ -548,7 +599,12 @@ class LiveEventManager(object):
                     if hasattr(event, 'p_terr') and event.p_terr is not None:
                         single['p_terr'] = event.p_terr
                 live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
-                gdb_upload_thread = threading.Thread(target = self.upload_in_thread, args = (event, fname, comment, single, live_ifos, [ifo], upload_checks, optimize_snr_checks, args.gracedb_server, args.gracedb_search,))
+                thread_args = (
+                    event, fname, comment, single, live_ifos, [ifo],
+                    upload_checks, optimize_snr_checks
+                )
+                gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
+                                                     args=thread_args)
                 gdb_upload_thread.start()
 
     def get_out_dir_path(self, time_gps):
@@ -653,13 +709,13 @@ parser.add_argument('--channel-name', action=MultiDetMultiColonOptionAction,
                     required=True)
 parser.add_argument('--state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing frame status information. Used "
-                         "to determine when to analyze the hoft data. This somewhat "
-                         "corresponds to CAT1 information")
+                         "to determine when to analyze the hoft data. This somewhat"
+                         " corresponds to CAT1 information")
 parser.add_argument('--analyze-flags', action=MultiDetOptionAction, nargs='+',
                     help='The flags that must be in the "good" state to analyze data')
 parser.add_argument('--idq-channel', action=MultiDetMultiColonOptionAction,
-                    help="Channel to read iDQ timeseries from. iDQ timeseries are required "
-                         "by certain ranking statistics.")
+                    help="Channel to read iDQ timeseries from. iDQ timeseries are "
+                         "required by certain ranking statistics.")
 parser.add_argument('--idq-state-channel', action=MultiDetMultiColonOptionAction,
                     help="Channel containing information about the state of idq."
                          "Used to determine when idq is usable for statistics. ")
@@ -669,14 +725,15 @@ parser.add_argument('--idq-threshold', type=float,
 parser.add_argument('--data-quality-channel',
                     action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
-                         "to determine when hoft may be suspect and may be used to veto"
-                         "triggers or not analyze a segment of data. This roughly "
-                         "corresponds to CAT2 information")
+                         "to determine when hoft may be suspect and may be used to "
+                         "veto triggers or not analyze a segment of data. This "
+                         "roughly corresponds to CAT2 information")
 parser.add_argument('--data-quality-flags', action=MultiDetOptionAction, nargs='+',
                     help='Flags used to determine when to throw triggers away. '
                          'For each detector, give a comma-separated list of flags.')
 parser.add_argument('--data-quality-padding', type=float, default=0,
-                    help='Time in seconds around a bad dq time to additionally remove triggers')
+                    help='Time in seconds around a bad dq time to additionally remove '
+                         'triggers')
 parser.add_argument('--frame-src', action=MultiDetOptionAction, nargs='+')
 parser.add_argument('--frame-type', action=MultiDetOptionAction, nargs='+')
 parser.add_argument('--force-update-cache', action='store_true')
@@ -800,6 +857,9 @@ parser.add_argument('--gracedb-server', metavar='URL',
 parser.add_argument('--gracedb-search', type=str, default='AllSky',
                     help='String going into the "search" field of the GraceDB '
                          'events')
+parser.add_argument('--gracedb-labels', metavar='LABEL', nargs='+',
+                    help='Apply the given list of labels to events uploaded '
+                         'to GraceDB.')
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading candidate '
                          'triggers to GraceDB, in years.')
@@ -921,7 +981,8 @@ with ctx:
         args.start_time = evnt.comm.bcast(tnow, root=0)
 
     if args.round_start_time:
-        args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
+        args.start_time = int(args.start_time / args.round_start_time + 1) *\
+            args.round_start_time
         logging.info('Starting from: %s', args.start_time)
 
     # initialize the data readers for all detectors
@@ -1099,14 +1160,22 @@ with ctx:
                 bg_fn = os.path.join(args.output_background[1], bg_fn)
                 with h5py.File(bg_fn, 'w') as bgf:
                     for bg_ifos, bg_data, bg_time in bg_dists:
-                        if args.output_background_n_loudest and (args.output_background_n_loudest < len(bg_data)-1):
+                        if args.output_background_n_loudest and \
+                                args.output_background_n_loudest < (len(bg_data) - 1):
                             n_loudest = args.output_background_n_loudest
-                            assert (n_loudest > 0), "We can only store positive int loudest triggers."
-                            ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
-                                    data=-numpy.partition(-bg_data, n_loudest)[:n_loudest], compression='gzip')
+                            assert (n_loudest > 0), \
+                                "We can only store positive int loudest triggers."
+                            ds = bgf.create_dataset(
+                                ','.join(sorted(bg_ifos)),
+                                data=-numpy.partition(-bg_data, n_loudest)[:n_loudest],
+                                compression='gzip'
+                            )
                         else:
-                            ds = bgf.create_dataset(','.join(sorted(bg_ifos)),
-                                                    data=bg_data, compression='gzip')
+                            ds = bgf.create_dataset(
+                                ','.join(sorted(bg_ifos)),
+                                data=bg_data,
+                                compression='gzip'
+                            )
                         ds.attrs['background_time'] = bg_time
                     bgf.attrs['gps_time'] = last_bg_dump_time
 

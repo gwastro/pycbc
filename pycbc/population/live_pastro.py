@@ -31,6 +31,27 @@ def check_template_param_bin_data(spec_json):
     return spec_json
 
 
+def check_template_param_bin_farlim_data(spec_json):
+    """
+    Parameters
+    ----------
+    spec_json: JSON dictionary-like object
+        Result of parsing json file containing static data
+
+    Returns
+    -------
+    spec_json: dictionary
+    """
+    # Standard template param bin checks
+    check_template_param_bin_data(spec_json)
+
+    # In addition, need limiting FAR and SNR values
+    assert 'limit_far' in spec_json
+    assert 'limit_snr' in spec_json
+
+    return spec_json
+
+
 def read_template_bank_param(spec_d, bankf):
     """
     Parameters
@@ -206,7 +227,7 @@ def template_param_bin_types_pa(padata, trdata, horizons):
     else:
         expfac = padata.spec['bg_fac']
 
-    # Ifos over trigger threshold
+    # List of ifos over trigger threshold
     tr_ifos = trdata['triggered']
 
     # FAR is in Hz, therefore convert to rate per year (per SNR)
@@ -238,6 +259,29 @@ def template_param_bin_types_pa(padata, trdata, horizons):
     return p_astro, 1 - p_astro
 
 
+def template_param_bin_types_farlim_pa(padata, trdata, horizons):
+    """
+    Parameters
+    ----------
+    padata: PAstroData instance
+        Static information on p astro calculation
+    trdata: dictionary
+        Trigger properties
+    horizons: dictionary
+        BNS horizon distances keyed on ifo
+
+    Returns
+    -------
+    p_astro, p_terr: tuple of floats
+    """
+    # If the network SNR and FAR indicate saturation of the FAR estimate,
+    # set them to specified fixed values
+    trdata = padata.apply_significance_limits(trdata)
+
+    # Now perform standard calculation with event types
+    return template_param_bin_types_pa(padata, trdata, horizons)
+
+
 __all__ = [
     "check_template_param_bin_data",
     "read_template_bank_param",
@@ -247,4 +291,5 @@ __all__ = [
     "signal_rate_trig_type",
     "template_param_bin_pa",
     "template_param_bin_types_pa",
+    "template_param_bin_types_farlim_pa",
 ]
