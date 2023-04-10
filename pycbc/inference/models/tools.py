@@ -285,7 +285,6 @@ class DistMarg():
         series of each detector
         """
         p = self.current_params
-        self.precalc_antenna_factors = None
 
         if (not numpy.isscalar(p['tc']) and
             'tc' in self.marginalized_vector_priors and
@@ -300,6 +299,7 @@ class DistMarg():
         else:
             # OK, we couldn't do anything with the requested monte-carlo
             # marginalizations.
+            self.precalc_antenna_factors = None
             pass
 
     def draw_times(self, snrs):
