@@ -418,9 +418,9 @@ class DistMarg():
 
             fp, fc, dtc = {}, {}, {}
             for ifo in self.data:
-                fp[ifo], fc[ifo] = d[ifo].antenna_pattern(ra, dec, 0.0, tcave)  
-                dtc[ifo] = d[ifo].time_delay_from_earth_center(ra, dec, tcave)  
-    
+                fp[ifo], fc[ifo] = d[ifo].antenna_pattern(ra, dec, 0.0, tcave)
+                dtc[ifo] = d[ifo].time_delay_from_earth_center(ra, dec, tcave)
+
             dmap = {}
             for i, t in enumerate(tqdm.tqdm(zip(*dts))):
                 if t not in dmap:
@@ -429,7 +429,7 @@ class DistMarg():
 
             if len(ifos) == 1:
                 dmap[()] = numpy.arange(0, size, 1).astype(int)
-                
+
             return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc
 
         if not hasattr(self, 'tinfo'):
@@ -494,13 +494,13 @@ class DistMarg():
 
         # fill back to fixed size with repeat samples
         # sample order is random, so this should be OK statistically
-        ix = numpy.resize(numpy.array(ix, dtype=int), self.vsamples)   
+        ix = numpy.resize(numpy.array(ix, dtype=int), self.vsamples)
         self.sample_idx = ix
         self.precalc_antenna_factors = fp, fc, dtc
-          
+
         ra = ra[ix]
         dec = dec[ix]
-        dtc = {ifo: dtc[ifo][ix] for ifo in dtc}     
+        dtc = {ifo: dtc[ifo][ix] for ifo in dtc}
 
         ti = numpy.resize(numpy.array(ti, dtype=int), self.vsamples)
         wi = numpy.resize(numpy.array(wi), self.vsamples)
@@ -516,7 +516,7 @@ class DistMarg():
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['ra'] = ra
         self.marginalize_vector_params['dec'] = dec
-        
+
         self._current_params.update(self.marginalize_vector_params)
 
         # Update the importance weights for each vector sample
@@ -527,7 +527,7 @@ class DistMarg():
         """ Get the antenna factors for marginalized samples if they exist """
         ix = self.sample_idx
         fp, fc, dtc = self.precalc_antenna_factors
-        return fp[ifo][ix], fc[ifo][ix], dtc[ifo][ix]   
+        return fp[ifo][ix], fc[ifo][ix], dtc[ifo][ix]
 
     def setup_peak_lock(self,
                         sample_rate=4096,

@@ -422,7 +422,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             hc = hc.numpy()
             wfs.append((hp, hc))
         wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
-        
+
         self.wf_ret = wf_ret
         return wf_ret
 
@@ -777,15 +777,15 @@ class RelativeTimeDom(RelativeTime):
         self.snr_draw(snrs)
 
         for ifo in self.sh:
-            if self.precalc_antenna_factors:  
-                fp, fc, dt = self.get_precalc_antenna_factors(ifo)  
+            if self.precalc_antenna_factors:
+                fp, fc, dt = self.get_precalc_antenna_factors(ifo)
             else:
-                dt = self.det[ifo].time_delay_from_earth_center(p['ra'], 
+                dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
                                                                 p['dec'],
                                                                 p['tc'])
                 fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                        0, p['tc'])
-                           
+
             dts = p['tc'] + dt
             f = (fp + 1.0j * fc) * pol_phase
 
