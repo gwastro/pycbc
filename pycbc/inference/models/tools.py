@@ -49,7 +49,7 @@ def draw_sample(loglr, size=None):
 
 
 class DistMarg():
-    """Help class to add bookkeeping for distance marginalization"""
+    """Help class to add bookkeeping for likelihood marginalization"""
 
     marginalize_phase = None
     distance_marginalization = None
@@ -66,6 +66,7 @@ class DistMarg():
                               marginalize_distance_density=None,
                               marginalize_vector_params=None,
                               marginalize_vector_samples=1e3,
+                              marginalize_sky_initial_samples=1e6,
                               **kwargs):
         """ Setup the model for use with distance marginalization
 
@@ -124,6 +125,9 @@ class DistMarg():
         self.marginalize_vector_params = {}
         self.marginalized_vector_priors = {}
         self.vsamples = int(marginalize_vector_samples)
+
+        self.marginalize_sky_initial_samples = \
+            int(float(marginalize_sky_initial_samples))
 
         for param in str_to_tuple(marginalize_vector_params, str):
             logging.info('Marginalizing over %s, %s points from prior',
@@ -393,8 +397,8 @@ class DistMarg():
 
         def make_init():
             logging.info('pregenerating sky pointings')
-            size = int(1e6)
-            logging.info('drawing samples')
+            size = self.marginalize_sky_initial_samples
+            logging.info('drawing samples: %s', size)
             ra = self.marginalized_vector_priors['ra'].rvs(size=size)['ra']
             dec = self.marginalized_vector_priors['dec'].rvs(size=size)['dec']
             tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
