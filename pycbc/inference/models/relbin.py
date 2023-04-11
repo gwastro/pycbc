@@ -262,35 +262,28 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             # make copy of fiducial wfs, adding back in low frequencies
             if self.no_det_response:
-                curr_wav.resize(len(self.f[ifo]))
-                curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
                 # get detector-specific arrival times relative to end of data
-                self.ta[ifo] = -self.end_time[ifo]
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-                h00 = numpy.array(curr_wav) * tshift
-                self.h00[ifo] = h00
+                self.ta[ifo] = 0
             else:
-                fid_hp.resize(len(self.f[ifo]))
-                fid_hc.resize(len(self.f[ifo]))
-                hp0 = numpy.roll(fid_hp, self.kmin[ifo])
-                hc0 = numpy.roll(fid_hc, self.kmin[ifo])
-
                 self.det[ifo] = Detector(ifo)
                 dt = self.det[ifo].time_delay_from_earth_center(
                     self.fid_params["ra"],
                     self.fid_params["dec"],
                     self.fid_params["tc"],
                 )
-                self.ta[ifo] = self.fid_params["tc"] + dt - self.end_time[ifo]
-
+                self.ta[ifo] = self.fid_params["tc"] + dt
                 fp, fc = self.det[ifo].antenna_pattern(
                     self.fid_params["ra"], self.fid_params["dec"],
                     self.fid_params["polarization"], self.fid_params["tc"])
+                curr_wav = (fid_hp * fp + fid_hc * fc)
 
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
+            self.ta[ifo] -= self.end_time[ifo]
+            curr_wav.resize(len(self.f[ifo]))
+            curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
 
-                h00 = (hp0 * fp + hc0 * fc) * tshift
-                self.h00[ifo] = h00
+            tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
+            h00 = curr_wav * tshift
+            self.h00[ifo] = numpy.array(h00 * tshift)
 
             # compute frequency bins
             logging.info("Computing frequency bins")
