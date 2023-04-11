@@ -194,7 +194,6 @@ for filename in files:
                              events[ifo].data['snr'].size, live_time[ifo])
 
     f = os.path.join(date_directory, filename)
-    skipping_file = False
     # If there is an IOerror with the file, don't fail, just carry on
     try:
         h5py.File(f, 'r')
