@@ -265,11 +265,12 @@ for filename in files:
         # If we are clustering, take the max sngl_ranking value
         if args.cluster:
             max_idx = sngls_value.argmax()
+            # Make sure that the DictArray has array data, not float
             triggers_da = triggers_da.select([max_idx])
 
-        if ifo in events:
+        if ifo in events:  # DictArray already exists for the ifo
             events[ifo] += triggers_da
-        else:
+        else:  # Set up a new dictionary entry
             events[ifo] = triggers_da
 
 logging.info("All events processed")
