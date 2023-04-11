@@ -363,10 +363,8 @@ class LiveEventManager(object):
         cmd += '--gracedb-search {} '.format(self.gracedb_search)
 
         labels = self.snr_opt_label
-        if self.gracedb_labels:
-            for glabel in self.gracedb_labels:
-                labels += ' ' + glabel
-        cmd += '--gracedb-labels {} '.format(labels)
+        labels += ' '.join(self.gracedb_labels or [])
+        cmd += f'--gracedb-labels {labels} '
 
         if not self.gracedb_testing:
             cmd += '--production '
