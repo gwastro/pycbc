@@ -157,6 +157,8 @@ class DictArray(object):
 
     def __add__(self, other):
         if self.data is None:  # special case: add to empty DictArray
+            logging.debug('Adding data to a DictArray instance which
+                was initialized without data or files')
             return self._return(data=other)
 
         data = {}
