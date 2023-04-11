@@ -189,16 +189,15 @@ class Relative(DistMarg, BaseGaussianNoise):
 
         # If the waveform handles the detector response internally, set
         # self.det_response = True
-        self.no_det_response = False
+        self.apply_det_response = False
         if self.static_params['approximant'] in fd_det_sequence:
-            self.no_det_response = True
+            self.apply_det_response = True
 
         # reference waveform and bin edges
         self.f, self.df, self.end_time, self.det = {}, {}, {}, {}
         self.h00, self.h00_sparse = {}, {}
         self.fedges, self.edges = {}, {}
-        self.ta = {}
-        self.antenna_time = {}
+        self.ta, self.antenna_time = {}, {}
 
         # filtered summary data for linear approximation
         self.sdat = {}
@@ -231,15 +230,27 @@ class Relative(DistMarg, BaseGaussianNoise):
             fpoints = Array(self.f[ifo].astype(numpy.float64))
             fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
 
-            if self.no_det_response:
+            if self.apply_det_response:
                 wave = get_fd_det_waveform_sequence(ifos=ifo,
                                                     sample_points=fpoints,
                                                     **self.fid_params)
                 curr_wav = wave[ifo]
+                self.ta[ifo] = 0
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
-                curr_wav = fid_hp
+                # Apply detector response if not handled by the waveform generator
+                self.det[ifo] = Detector(ifo)
+                dt = self.det[ifo].time_delay_from_earth_center(
+                    self.fid_params["ra"],
+                    self.fid_params["dec"],
+                    self.fid_params["tc"],
+                )
+                self.ta[ifo] = self.fid_params["tc"] + dt
+                fp, fc = self.det[ifo].antenna_pattern(
+                    self.fid_params["ra"], self.fid_params["dec"],
+                    self.fid_params["polarization"], self.fid_params["tc"])
+                curr_wav = (fid_hp * fp + fid_hc * fc)
 
             # check for zeros at low and high frequencies
             # make sure only nonzero samples are included in bins
@@ -260,30 +271,12 @@ class Relative(DistMarg, BaseGaussianNoise):
                     "high-frequency-cutoff, final bin frequency "
                     "will be %s Hz", f_hi)
 
-            # make copy of fiducial wfs, adding back in low frequencies
-            if self.no_det_response:
-                # get detector-specific arrival times relative to end of data
-                self.ta[ifo] = 0
-            else:
-                self.det[ifo] = Detector(ifo)
-                dt = self.det[ifo].time_delay_from_earth_center(
-                    self.fid_params["ra"],
-                    self.fid_params["dec"],
-                    self.fid_params["tc"],
-                )
-                self.ta[ifo] = self.fid_params["tc"] + dt
-                fp, fc = self.det[ifo].antenna_pattern(
-                    self.fid_params["ra"], self.fid_params["dec"],
-                    self.fid_params["polarization"], self.fid_params["tc"])
-                curr_wav = (fid_hp * fp + fid_hc * fc)
-
             self.ta[ifo] -= self.end_time[ifo]
             curr_wav.resize(len(self.f[ifo]))
             curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
 
             tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-            h00 = curr_wav * tshift
-            self.h00[ifo] = numpy.array(h00 * tshift)
+            self.h00[ifo] = numpy.array(curr_wav * tshift)
 
             # compute frequency bins
             logging.info("Computing frequency bins")
@@ -296,7 +289,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
 
-            self.init_from_frequencies(h00, fbin_ind, ifo)
+            self.init_from_frequencies(self.h00, fbin_ind, ifo)
             self.antenna_time[ifo] = self.setup_antenna(earth_rotation,
                                                         self.fedges[ifo])
         self.combine_layout()
@@ -310,7 +303,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         )
 
         # store low res copy of fiducial waveform
-        self.h00_sparse[ifo] = h00.copy().take(fbin_ind)
+        self.h00_sparse[ifo] = h00[ifo].copy().take(fbin_ind)
 
         # compute summary data
         logging.info(
@@ -318,8 +311,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.df[ifo],
         )
 
-        a0, a1 = self.summary_product(self.data[ifo], h00, bins, ifo)
-        b0, b1 = self.summary_product(h00, h00, bins, ifo)
+        a0, a1 = self.summary_product(self.data[ifo], h00[ifo], bins, ifo)
+        b0, b1 = self.summary_product(h00[ifo], h00[ifo], bins, ifo)
         self.sdat[ifo] = {"a0": a0, "a1": a1, "b0": abs(b0), "b1": abs(b1)}
 
     def combine_layout(self):
@@ -357,7 +350,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.mlik = likelihood_parts_multi_v
         else:
             atimes = self.fid_params["tc"]
-            if self.no_det_response:
+            if self.apply_det_response:
                 self.lik = likelihood_parts_det
             else:
                 self.lik = likelihood_parts
@@ -401,7 +394,7 @@ class Relative(DistMarg, BaseGaussianNoise):
     def get_waveforms(self, params):
         """ Get the waveform polarizations for each ifo
         """
-        if self.no_det_response:
+        if self.apply_det_response:
             wfs = {}
             for ifo in self.data:
                 wfs.update(get_fd_det_waveform_sequence(
@@ -519,7 +512,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             # project waveform to detector frame if waveform does not deal
             # with detector response. Otherwise, skip detector response.
 
-            if self.no_det_response:
+            if self.apply_det_response:
                 dtc = -end_time
                 channel = wfs[ifo].numpy()
                 filter_i, norm_i = lik(freqs, dtc, channel, h00,
