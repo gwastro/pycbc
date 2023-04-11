@@ -275,10 +275,12 @@ class Relative(DistMarg, BaseGaussianNoise):
             curr_wav.resize(len(self.f[ifo]))
             curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
 
-            tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-            self.h00[ifo] = numpy.array(curr_wav * tshift)
+            # We'll apply this to the data, in lieu of the ref waveform
+            # This makes it easier to compare target signal to reference later
+            tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])            
+            self.h00[ifo] = numpy.array(curr_wav) # * tshift
+            data = self.data[ifo] * numpy.conjugate(tshift)
 
-            # compute frequency bins
             logging.info("Computing frequency bins")
             fbin_ind = setup_bins(
                 f_full=self.f[ifo], f_lo=f_lo, f_hi=f_hi,
@@ -288,13 +290,13 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
-
-            self.init_from_frequencies(self.h00, fbin_ind, ifo)
+            
+            self.init_from_frequencies(data, self.h00, fbin_ind, ifo)
             self.antenna_time[ifo] = self.setup_antenna(earth_rotation,
                                                         self.fedges[ifo])
         self.combine_layout()
 
-    def init_from_frequencies(self, h00, fbin_ind, ifo):
+    def init_from_frequencies(self, data, h00, fbin_ind, ifo):
         bins = numpy.array(
             [
                 (fbin_ind[i], fbin_ind[i + 1])
@@ -311,7 +313,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.df[ifo],
         )
 
-        a0, a1 = self.summary_product(self.data[ifo], h00[ifo], bins, ifo)
+        a0, a1 = self.summary_product(data, h00[ifo], bins, ifo)
         b0, b1 = self.summary_product(h00[ifo], h00[ifo], bins, ifo)
         self.sdat[ifo] = {"a0": a0, "a1": a1, "b0": abs(b0), "b1": abs(b1)}
 
@@ -513,9 +515,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             # with detector response. Otherwise, skip detector response.
 
             if self.apply_det_response:
-                dtc = -end_time
                 channel = wfs[ifo].numpy()
-                filter_i, norm_i = lik(freqs, dtc, channel, h00,
+                filter_i, norm_i = lik(freqs, 0.0, channel, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
             else:
@@ -524,7 +525,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                 fp, fc = det.antenna_pattern(p["ra"], p["dec"],
                                              p["polarization"], times)
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-                dtc = p["tc"] + dt - end_time
+                dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
                 filter_i, norm_i = lik(freqs, fp, fc, dtc,
                                        hp, hc, h00,
@@ -627,10 +628,7 @@ class RelativeTime(Relative):
         snrs = {}
         for ifo in wfs:
             sdat = self.sdat[ifo]
-            dtc = self.tstart[ifo] - self.end_time[ifo]
-
-            if reference:
-                dtc -= self.ta[ifo]
+            dtc = self.tstart[ifo] - self.end_time[ifo] - self.ta[ifo]
 
             snr = snr_predictor(self.fedges[ifo],
                                 dtc, delta_t,
@@ -681,7 +679,7 @@ class RelativeTime(Relative):
             fp, fc = det.antenna_pattern(p["ra"], p["dec"],
                                          p["polarization"], times)
             dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-            dtc = p["tc"] + dt - end_time
+            dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
             filter_i, norm_i = lik(freqs, fp, fc, dtc,
                                    hp, hc, h00,
@@ -709,10 +707,7 @@ class RelativeTimeDom(RelativeTime):
         self.hh = {}
         for ifo in wfs:
             sdat = self.sdat[ifo]
-            dtc = self.tstart[ifo] - self.end_time[ifo]
-
-            if reference:
-                dtc -= self.ta[ifo]
+            dtc = self.tstart[ifo] - self.end_time[ifo] - self.ta[ifo]
 
             sh, hh = snr_predictor_dom(self.fedges[ifo],
                                        dtc - delta_t * 2.0, delta_t,
@@ -771,7 +766,6 @@ class RelativeTimeDom(RelativeTime):
                                                                 p['tc'])
                 fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                        0, p['tc'])
-
             dts = p['tc'] + dt
             f = (fp + 1.0j * fc) * pol_phase
 
