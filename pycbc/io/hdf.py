@@ -1,6 +1,4 @@
 # Convenience classes for accessing hdf5 trigger files
-# The 'get_column()' method is implemented parallel to
-# legacy pylal.SnglInspiralUtils functions
 
 import h5py
 import numpy as np
@@ -158,6 +156,9 @@ class DictArray(object):
         return len(self.data[tuple(self.data.keys())[0]])
 
     def __add__(self, other):
+        if self.data is None:  # special case: add to empty DictArray
+            return self._return(data=other)
+
         data = {}
         for k in self.data:
             try:
@@ -171,7 +172,8 @@ class DictArray(object):
         """
         data = {}
         for k in self.data:
-            data[k] = self.data[k][idx]
+            # Make sure each entry is an array (not a scalar)
+            data[k] = np.array(self.data[k][idx])
         return self._return(data=data)
 
     def remove(self, idx):
@@ -273,7 +275,6 @@ class MultiifoStatmapData(StatmapData):
 
 
 class FileData(object):
-
     def __init__(self, fname, group=None, columnlist=None, filter_func=None):
         """
         Parameters
@@ -287,6 +288,7 @@ class FileData(object):
             of the class instance derived from columns: ex. 'self.snr < 6.5'
         """
         if not fname: raise RuntimeError("Didn't get a file!")
+
         self.fname = fname
         self.h5file = HFile(fname, "r")
         if group is None:
@@ -328,6 +330,9 @@ class FileData(object):
 
     def get_column(self, col):
         """
+        Method designed to be analogous to legacy pylal.SnglInspiralUtils
+        functionality
+
         Parameters
         ----------
         col : string
