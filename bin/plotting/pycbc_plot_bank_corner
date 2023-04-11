@@ -1,0 +1,329 @@
+#!/usr/bin/python
+# Copyright (C) 2023 Gareth S. Cabourn Davies
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot as plt
+import h5py
+import numpy as np
+import argparse
+import logging
+from pycbc import init_logging
+from pycbc import conversions as conv
+from pycbc.tmpltbank import bank_conversions as bconv
+from pycbc.pnutils import get_imr_duration
+
+parser = argparse.ArgumentParser(usage='pycbc_plot_bank_corner [--options]',
+                    description='Plots various parameters against one '
+                          'another for pycbc banks in an hdf file.')
+parser.add_argument("--bank-file", required=True,
+    help="The bank file to read in and plot")
+parser.add_argument("--parameters", nargs='+',
+    default=['mass1','mass2'],
+    help="Parameters to plot, in the order they will be plotted.")
+parser.add_argument("--log-parameters", nargs='+', default=[],
+    help="Which parameters are to be plotted on a log scale? Must also be "
+         "present in --parameters")
+parser.add_argument("--parameter-limit", nargs='+', default=[],
+    help="Plot parameter limits, supply as parameter:limit:upper (or lower). "
+         "Limit must be a float")
+parser.add_argument("--histogram-bins", type=int, default=50,
+    help="Number of bins to use in the histogram 1D plots. Default=50")
+parser.add_argument("--output-plot-file", required=True,
+    help="Name of the output file")
+parser.add_argument("--manual-parameter-override", nargs='+',
+    help="Manually set a value of particular parameter(s), "
+         "supply as parameter:value pairs, value must be a float.")
+parser.add_argument("--color-parameter",
+    help="Color scatter points according to the parameter given, must be "
+         "in --parameters")
+parser.add_argument("--color-min-max", nargs=2, type=float,
+    help="Minimum-maximum values for the color option")
+parser.add_argument("--verbose", action='count',
+    help="Output progress and information to stderr")
+args = parser.parse_args()
+
+init_logging(args.verbose)
+
+required_params = args.parameters[:]
+
+# Input checks:
+for lp in args.log_parameters:
+    if lp not in args.parameters:
+        parser.error(f"--log-parameters value {lp} is not in --parameters")
+
+for p_l in args.parameter_limit:
+    par, _, _ = p_l.split(':')
+    if par not in args.parameters:
+        parser.error(f"--parameter-limit value {p_l} not in --parameters")
+
+# Add the color parameter to the required_params list - we take the unique
+# ones later anyway so if it is already there it doesn't matter
+if args.color_parameter:
+    required_params.append(args.color_parameter)
+
+duration_required_keys = ['mass1', 'mass2', 'spin1z',
+                          'spin2z', 'f_lower']
+if 'template_duration' in args.parameters \
+    or 'premerger_duration' in args.parameters:
+        required_params += duration_required_keys
+
+if 'premerger_duration' in args.parameters:
+    required_params.append('f_final')
+
+required_params = np.unique(required_params)
+
+logging.info("Loading the bank file")
+bank = {}
+with h5py.File(args.bank_file, 'r') as bankf:
+    for p in bankf.keys():
+        bank[p] = bankf[p][:]
+
+banklen = list(bank.values())[0].size
+
+if args.manual_parameter_override:
+    for par_val in args.manual_parameter_override:
+        par, val = par_val.split(':')
+        if par in bank:
+            logging.warning("Parameter %s already in bank, overriding with value %s",
+                            par, val)
+        else:
+            logging.info("Adding parameter %s to bank with value %s", par, val)
+        bank[par] = np.ones(banklen) * float(val)
+
+
+for p in required_params:
+    if p in bank: continue
+    if p in ['template_duration', 'premerger_duration']: continue
+    if p not in bconv.conversion_options:
+        raise KeyError(f"ERROR Parameter {p} not in bank conversion options, choose from " +
+                       ', '.join(bconv.conversion_options))
+
+    logging.info("Converting %s", p)
+    bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
+
+if 'template_duration' in args.parameters or 'premerger_duration' in args.parameters:
+    if not all([k in bank for k in duration_required_keys]):
+        not_in_bank = ', '.join([k for k in duration_required_keys if k not in bank])
+        raise ValueError(not_in_bank + ' are required for duration calculations')
+
+    # Calculate template duration from input
+    fullband_duration = get_imr_duration(
+            bank['mass1'],
+            bank['mass2'],
+            bank['spin1z'],
+            bank['spin2z'],
+            bank['f_lower'],
+            approximant='TaylorF2')
+    if 'f_final' in bank:
+        premerger_duration = get_imr_duration(
+                bank['mass1'],
+                bank['mass2'],
+                bank['spin1z'],
+                bank['spin2z'],
+                bank['f_final'],
+                approximant='TaylorF2')
+    else:
+        premerger_duration = np.zeros(banklen)
+
+    if 'premerger_duration' in args.parameters:
+        bank['premerger_duration'] = premerger_duration
+    if 'template_duration' in args.parameters:
+        bank['template_duration'] = fullband_duration - premerger_duration
+
+
+# All parameters should be in the bank now, check they are the right size:
+assert all([len(bank[p]) == banklen for p in args.parameters])
+
+plot_pars = args.parameters
+n_plot_pars = len(plot_pars)
+
+fig, axes = plt.subplots(n_plot_pars, n_plot_pars,
+                         figsize = (4 * n_plot_pars, 4 * n_plot_pars))
+
+fig.suptitle(f"Bank length: {banklen}")
+# Blank out unused axes:
+for i in range(n_plot_pars):
+    for j in range(n_plot_pars):
+        if j > i: axes[i, j].set_visible(False)
+
+par_upperlim = {}
+par_lowerlim = {}
+
+
+for i, par in enumerate(plot_pars):
+    if i:
+        # Move labels to the right for 1D histograms:
+        axes[i, i].yaxis.set_label_position("right")
+        axes[i, i].yaxis.tick_right()
+        axes[i, 0].set_ylabel(par)
+    axes[i, i].set_ylabel("Density")
+    axes[i ,i].ticklabel_format(useOffset=False)
+    # Add xlabels to the bottom plots:
+    axes[n_plot_pars - 1, i].set_xlabel(par)
+    logging.info(f"Generating {par} histogram")
+    if par in args.log_parameters:
+        bin_range = np.log(bank[par].max()) - np.log(bank[par].min())
+        if not bin_range:
+            # values are singular - use one percent either side of the value
+            bin_range = 0.2 * np.log(bank[par].max())
+        ulim = np.log(bank[par].max()) + 0.05 * bin_range
+        llim = np.log(bank[par].min()) - 0.05 * bin_range
+        # check that the bin is not negative:
+        if llim <= 0:
+            llim = np.log(bank[par].min())
+        bins = np.exp(np.linspace(llim, ulim, args.histogram_bins + 1))
+        par_upperlim[par] = bins.max()
+        par_lowerlim[par] = bins.min()
+    else:
+        bin_range = bank[par].max() - bank[par].min()
+        if not bin_range:
+            # values are singular - use one percent either side of the value
+            bin_range = 0.01 * bank[par].max()
+        par_upperlim[par] = bank[par].max() + 0.05 * bin_range
+        par_lowerlim[par] = bank[par].min() - 0.05 * bin_range
+        bins = np.linspace(par_lowerlim[par], par_upperlim[par], args.histogram_bins + 1)
+
+    hist, _ = np.histogram(bank[par], density=True, bins=bins)
+    axes[i, i].bar(bins[:-1], hist, color='g', align='edge', width=(bins[1:] - bins[:-1]))
+    if par in args.log_parameters:
+        axes[i, i].set_xscale('log')
+    axes[i, i].set_xlim([bins.min(), bins.max()])
+    axes[i, i].set_ylim(bottom=0)
+    axes[i, i].xaxis.grid(True)
+
+cmap = matplotlib.colormaps['rainbow']
+if args.color_min_max:
+    norm = matplotlib.colors.Normalize(vmin=args.color_min_max[0],
+                                       vmax=args.color_min_max[1])
+elif args.color_parameter:
+    norm = matplotlib.colors.Normalize(vmin=bank[args.color_parameter].min() - 1,
+                                       vmax=bank[args.color_parameter].max() + 1)
+
+
+for y, pary in enumerate(plot_pars):
+    for x, parx in enumerate(plot_pars):
+        if y >= x: continue
+        if not y == 0:
+            axes[x, y].sharey(axes[x, 0])
+            ticks = axes[x, y].yaxis.get_major_ticks() + axes[x, y].yaxis.get_minor_ticks()
+            for tick in ticks:
+                tick.tick1line.set_visible(False)
+                tick.tick2line.set_visible(False)
+                tick.label1.set_visible(False)
+                tick.label2.set_visible(False)
+
+        if args.color_parameter:
+            scax = axes[x, y].scatter(bank[pary], bank[parx], s=10, alpha=0.5,
+                                      c=bank[args.color_parameter], norm=norm, cmap=cmap)
+        else:
+            scax = axes[x, y].scatter(bank[pary], bank[parx], s=10, alpha=0.5, c='k')
+        axes[x, y].grid()
+        if parx in args.log_parameters:
+            axes[x, y].set_yscale('log')
+        axes[x, y].set_ylim([par_lowerlim[parx], par_upperlim[parx]])
+
+        if pary in args.log_parameters:
+            axes[x, y].set_xscale('log')
+        axes[x, y].set_xlim([par_lowerlim[pary], par_upperlim[pary]])
+
+def shade_area(par1, par2, direction, function, color='gray'):
+    logging.info(f"Shading physical limits on {par2} and {par2}")
+    ax_p1 = np.argmax(np.array(plot_pars) == par1)
+    ax_p2 = np.argmax(np.array(plot_pars) == par2)
+    ax_x = max(ax_p1, ax_p2)
+    ax_y = min(ax_p1, ax_p2)
+    par_x = plot_pars[ax_x]
+    par_y = plot_pars[ax_y]
+    ax_p1p2 = axes[ax_x, ax_y]
+    # mass1 mass2 plot - shade excluded mass2 > mass1 region
+    in_parx = np.linspace(par_lowerlim[par_y], par_upperlim[par_y], 10)
+    out_pary = function(in_parx)
+    if direction == 'x':
+        ax_p1p2.fill_betweenx(out_pary, in_parx,
+                              color=color, zorder=-100, alpha=0.5)
+    else:
+        ax_p1p2.fill_between(in_parx, out_pary,
+                             color=color, zorder=-100, alpha=0.5)
+
+    return
+
+
+def equal_mass(x):
+    return x
+
+def mchirp_equal(x):
+    return conv.mchirp_from_mass1_mass2(x, x)
+
+def shade_area_1d(par, limit, upper_lower='upper'):
+    logging.info(f"Shading {upper_lower} limits on {par}")
+    ax_p = np.argmax(np.array(plot_pars) == par)
+    plot_lim = par_upperlim[par] if upper_lower == 'upper' else 0
+    for i in range(ax_p):
+        pari = plot_pars[i]
+        axes[ax_p, i].fill_between([par_lowerlim[pari],
+                                    par_upperlim[pari]],
+                                   [limit, limit],
+                                   plot_lim,
+                                   color='r', alpha=0.5,
+                                   zorder=-100)
+    for i in range(ax_p + 1, len(plot_pars)):
+        pari = plot_pars[i]
+        axes[i, ax_p].fill_betweenx([par_lowerlim[pari],
+                                     par_upperlim[pari]],
+                                    plot_lim, [limit, limit],
+                                    color='r',
+                                    alpha=0.5,
+                                    zorder=-100)
+    axes[ax_p, ax_p].fill_betweenx([0, axes[ax_p, ax_p].get_ylim()[1]],
+                                   [limit, limit], plot_lim,
+                                   color='r', alpha=0.5,
+                                   zorder=-100)
+    return
+
+# Shade some nonphysical areas
+if 'mass1' in plot_pars and 'mass2' in plot_pars:
+    shade_area('mass1', 'mass2', 'x', equal_mass)
+
+if 'mass1' in plot_pars and 'mchirp' in plot_pars:
+    shade_area('mass1', 'mchirp', 'x', mchirp_equal)
+
+if 'mass2' in plot_pars and 'mchirp' in plot_pars:
+    shade_area('mass2', 'mchirp', 'y', mchirp_equal)
+
+# Shade the limits of the bank
+for p_l_l in args.parameter_limit:
+    parameter, limit, limit_type = p_l_l.split(':')
+    if parameter not in bank: continue
+    shade_area_1d(parameter, float(limit), limit_type)
+
+
+if args.color_parameter:
+    cbax = fig.add_axes([0.55, 0.75, 0.3, 0.05])
+    cb = fig.colorbar(scax, cax=cbax, orientation='horizontal')
+    cb.ax.ticklabel_format(useOffset=False)
+    cb.set_label(args.color_parameter)
+    unq_ff = np.unique(bank[args.color_parameter])
+    if len(unq_ff) < 20:
+        for ff in unq_ff:
+            cbax.axvline(ff, c=cmap(norm(ff)))
+
+fig.subplots_adjust(wspace=0.02, hspace=0.02)
+
+logging.info("Saving")
+fig.savefig(args.output_plot_file)
+logging.info("Done!")
