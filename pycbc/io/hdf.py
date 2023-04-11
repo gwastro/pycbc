@@ -125,6 +125,10 @@ class DictArray(object):
         if data and files:
             raise RuntimeError('DictArray can only have data or files as '
                                'input, not both.')
+        if data is None and files is None:
+            raise RuntimeError('DictArray needs either data or files at'
+                               'initialization. To set up an empty instance'
+                               'use DictArray(data={})')
         if files and not groups:
             raise RuntimeError('If files are given then need groups.')
 
@@ -156,9 +160,9 @@ class DictArray(object):
         return len(self.data[tuple(self.data.keys())[0]])
 
     def __add__(self, other):
-        if self.data is None:  # special case: add to empty DictArray
+        if self.data == {}:
             logging.debug('Adding data to a DictArray instance which'
-                          ' was initialized without data or files')
+                          ' was initialized with an empty dict')
             return self._return(data=other)
 
         data = {}
