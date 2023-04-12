@@ -101,6 +101,7 @@ class LiveEventManager(object):
         self.gracedb_testing = not args.enable_production_gracedb_upload
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
+        self.snr_opt_label = args.snr_opt_label
         self.gracedb = None
 
         # Keep track of which events have been uploaded
@@ -360,9 +361,11 @@ class LiveEventManager(object):
         cmd += '--approximant {} '.format(apr)
         cmd += '--gracedb-server {} '.format(self.gracedb_server)
         cmd += '--gracedb-search {} '.format(self.gracedb_search)
-        # Don't pass labels to the SNR optimization job:
-        # currently labels are only required for Early Warning
-        # analysis, which does not use SNR opt
+
+        labels = self.snr_opt_label
+        labels += ' '.join(self.gracedb_labels or [])
+        cmd += f'--gracedb-labels {labels} '
+
         if not self.gracedb_testing:
             cmd += '--production '
         cmd += '--verbose '
@@ -880,6 +883,8 @@ parser.add_argument('--run-snr-optimization', action='store_true',
                          'any trigger uploaded to GraceDB')
 parser.add_argument('--snr-opt-timeout', type=int, default=400, metavar='SECONDS',
                     help='Maximum allowed duration of followup process to maximize SNR')
+parser.add_argument('--snr-opt-label', type=str, default='SNR_OPTIMIZED',
+                    help='Label to apply to snr-optimized GraceDB uploads')
 
 
 scheme.insert_processing_option_group(parser)

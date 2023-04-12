@@ -230,6 +230,9 @@ parser.add_argument('--gracedb-server', metavar='URL',
 parser.add_argument('--gracedb-search', type=str, default='AllSky',
                     help='String going into the "search" field of the GraceDB '
                          'events')
+parser.add_argument('--gracedb-labels', metavar='LABEL', nargs='+',
+                    help='Apply the given list of labels to events uploaded '
+                         'to GraceDB.')
 parser.add_argument('--production', action='store_true',
                     help='Upload a production event rather than a test event')
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
@@ -511,7 +514,7 @@ if args.enable_gracedb_upload:
 
     gid = doc.upload(xml_path, gracedb_server=args.gracedb_server,
                      testing=(not args.production), extra_strings=[comment],
-                     search=args.gracedb_search)
+                     search=args.gracedb_search, labels=args.gracedb_labels)
     if gid is not None:
         logging.info('Event uploaded as %s', gid)
 
