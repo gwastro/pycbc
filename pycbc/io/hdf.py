@@ -1,4 +1,6 @@
-# Convenience classes for accessing hdf5 trigger files
+"""
+Convenience classes for accessing hdf5 trigger files
+"""
 
 import h5py
 import numpy as np
