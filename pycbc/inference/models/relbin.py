@@ -557,6 +557,17 @@ class Relative(DistMarg, BaseGaussianNoise):
         for p, v in self.fid_params.items():
             attrs["{}_ref".format(p)] = v
 
+    def max_curvature_from_reference(self):
+        """ Return the maximum change in slope between frequency bins
+        relative to the reference waveform.
+        """
+        dmax = 0
+        for ifo in self.data:
+            r = self.wf_ret[ifo][0] / self.h00_sparse[ifo]
+            d = abs(numpy.diff(r / abs(r).min(), n=2)).max()
+            dmax = d if dmax < d else dmax
+        return dmax
+
     @staticmethod
     def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
         """Adds reading fiducial waveform parameters from config file."""
