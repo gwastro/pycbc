@@ -285,11 +285,13 @@ class DistMarg():
         
         # Update the current proposed times and the marginalization values
         logw = self.premarg['logw_partial']
-        choice = numpy.random.randint(0, len(logw), size=self.vsamples))
+        choice = numpy.random.randint(0, len(logw), size=self.vsamples)
         
-        for k in self.premarg:
-            self.marginalize_vector_params[k] = self.premarg[choice]
+        for k in self.snr_params:
+            self.marginalize_vector_params[k] = self.premarg[k][choice]
+
         self._current_params.update(self.marginalize_vector_params)
+        self.sample_idx = self.premarg['sample_idx'][choice]
 
         # Update the importance weights for each vector sample
         logw = self.marginalize_vector_weights + logw[choice]
@@ -306,13 +308,18 @@ class DistMarg():
         if snrs is None:
             snrs = self.get_snr(wfs)
         
-        p = self.current_params
-        if (not numpy.isscalar(p['tc']) and
+        try:
+            p = self.current_params
+            set_scalar = numpy.isscalar(p['tc'])
+        except:
+            set_scalar = False
+        
+        if (not set_scalar and
             'tc' in self.marginalized_vector_priors and
             not ('ra' in self.marginalized_vector_priors
                  or 'dec' in self.marginalized_vector_priors)):
             return self.draw_times(snrs, size=size)
-        elif (not numpy.isscalar(p['tc']) and
+        elif (not set_scalar and
               'tc' in self.marginalized_vector_priors and
               'ra' in self.marginalized_vector_priors and
               'dec' in self.marginalized_vector_priors):
@@ -339,6 +346,7 @@ class DistMarg():
                 ifos = self.keep_ifos
             d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
             self.tinfo = tcmin, tcmax, tcave, ifos, d
+            self.snr_params = ['tc']
 
         tcmin, tcmax, tcave, ifos, d = self.tinfo
         vsamples = size if size is not  None else self.vsamples
@@ -400,11 +408,12 @@ class DistMarg():
         logw = - logweight[tci]
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['logw_partial'] = logw
-        self._current_params['tc'] = tc
-
-        # Update the importance weights for each vector sample
-        logw = self.marginalize_vector_weights + logw
-        self.marginalize_vector_weights = logw - logsumexp(logw)
+        
+        if self._current_params is not None:
+            # Update the importance weights for each vector sample
+            logw = self.marginalize_vector_weights + logw
+            self._current_params.update(self.marginalize_vector_params)
+            self.marginalize_vector_weights = logw - logsumexp(logw)
         
         return self.marginalize_vector_params
 
@@ -425,6 +434,7 @@ class DistMarg():
 
         def make_init():
             logging.info('pregenerating sky pointings')
+            self.snr_params = ['tc', 'ra', 'dec']
             size = self.marginalize_sky_initial_samples
             logging.info('drawing samples: %s', size)
             ra = self.marginalized_vector_priors['ra'].rvs(size=size)['ra']
@@ -547,11 +557,11 @@ class DistMarg():
         self.marginalize_vector_params['dec'] = dec
         self.marginalize_vector_params['logw_partial'] = logw_sky
 
-        self._current_params.update(self.marginalize_vector_params)
-
-        # Update the importance weights for each vector sample
-        logw = self.marginalize_vector_weights + logw_sky
-        self.marginalize_vector_weights = logw - logsumexp(logw)
+        if self._current_params is not None:
+            # Update the importance weights for each vector sample
+            logw = self.marginalize_vector_weights + logw_sky
+            self._current_params.update(self.marginalize_vector_params)
+            self.marginalize_vector_weights = logw - logsumexp(logw)
         
         return self.marginalize_vector_params
 
@@ -689,8 +699,9 @@ class DistMarg():
         self.keep_ifos = keep_ifos
         
         if precalculate_marginalization_points:
-            num_points = int(precalculate_marginalization_points)
-            self.premarg = self.snr_draw(size=num_points, snrs=snrs)
+            num_points = int(float(precalculate_marginalization_points))
+            self.premarg = self.snr_draw(size=num_points, snrs=snrs).copy()
+            self.premarg['sample_idx'] = self.sample_idx
             
         return keep_ifos
 
