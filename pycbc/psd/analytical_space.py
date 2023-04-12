@@ -379,8 +379,8 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
     cwd = getcwd()
     if path.exists(cwd+"/AvFXp2_Raw.npy") is False:
         url = "https://zenodo.org/record/7497853/files/AvFXp2_Raw.npy"
-        context = ssl._create_unverified_context()
-        request.urlretrieve(url, cwd+"/AvFXp2_Raw.npy", context=context)
+        ssl._create_default_https_context = ssl._create_unverified_context
+        request.urlretrieve(url, cwd+"/AvFXp2_Raw.npy")
     freqs, fp_sq = np.load(cwd+"/AvFXp2_Raw.npy")
     # Padding the end.
     freqs = np.append(freqs, 2)
