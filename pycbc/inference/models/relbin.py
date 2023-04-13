@@ -765,7 +765,8 @@ class RelativeTimeDom(RelativeTime):
         ip = 0.5 * (1.0 + ic * ic)
         pol_phase = numpy.exp(-2.0j * p['polarization'])
 
-        self.snr_draw(wfs)
+        snrs = self.get_snr(wfs)
+        self.snr_draw(snrs=snrs)
 
         for ifo in self.sh:
             if self.precalc_antenna_factors:
