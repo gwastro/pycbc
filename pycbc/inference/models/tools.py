@@ -301,29 +301,27 @@ class DistMarg():
     def snr_draw(self, wfs=None, snrs=None, size=None):
         """ Improve the monte-carlo vector marginalization using the SNR time
         series of each detector
-        """
-        if hasattr(self, 'premarg'):
-            return self.premarg_draw()
-        
-        if snrs is None:
-            snrs = self.get_snr(wfs)
-        
+        """        
         try:
             p = self.current_params
             set_scalar = numpy.isscalar(p['tc'])
         except:
             set_scalar = False
         
-        if (not set_scalar and
-            'tc' in self.marginalized_vector_priors and
-            not ('ra' in self.marginalized_vector_priors
-                 or 'dec' in self.marginalized_vector_priors)):
-            return self.draw_times(snrs, size=size)
-        elif (not set_scalar and
-              'tc' in self.marginalized_vector_priors and
-              'ra' in self.marginalized_vector_priors and
-              'dec' in self.marginalized_vector_priors):
-            return self.draw_sky_times(snrs, size=size)
+        if not set_scalar:
+            if hasattr(self, 'premarg'):
+                return self.premarg_draw()
+        
+            if snrs is None:
+                snrs = self.get_snr(wfs)            
+            if ('tc' in self.marginalized_vector_priors and
+                not ('ra' in self.marginalized_vector_priors
+                     or 'dec' in self.marginalized_vector_priors)):
+                return self.draw_times(snrs, size=size)
+            elif ('tc' in self.marginalized_vector_priors and
+                  'ra' in self.marginalized_vector_priors and
+                  'dec' in self.marginalized_vector_priors):
+                return self.draw_sky_times(snrs, size=size)
         else:
             # OK, we couldn't do anything with the requested monte-carlo
             # marginalizations.
