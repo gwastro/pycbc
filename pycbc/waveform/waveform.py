@@ -775,8 +775,8 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
         full_duration = get_waveform_filter_length_in_time(**nparams)
         nparams['f_lower'] *= 0.99
         if 't_obs_start' in nparams and \
-            full_duration >= nparams['t_obs_start']:
-                break
+           full_duration >= nparams['t_obs_start']:
+            break
 
     if 'f_ref' not in nparams:
         nparams['f_ref'] = params['f_lower']
