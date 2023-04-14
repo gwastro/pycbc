@@ -72,7 +72,7 @@ pycbc.strain.insert_strain_option_group(parser)
 # Add the ethinca calculation options
 tmpltbank.insert_ethinca_metric_options(parser)
 
-tmpltbank.insert_base_bank_options(parser)
+tmpltbank.insert_base_bank_options(parser, match_req=False)
 
 options = parser.parse_args()
 

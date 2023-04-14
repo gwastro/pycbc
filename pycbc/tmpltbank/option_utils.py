@@ -107,7 +107,7 @@ def get_options_from_group(option_group):
                 command_lines.append(string)
     return command_lines
 
-def insert_base_bank_options(parser):
+def insert_base_bank_options(parser, match_req=True):
     """
     Adds essential common options for template bank generation to an
     ArgumentParser instance.
@@ -124,7 +124,7 @@ def insert_base_bank_options(parser):
         return value
 
     parser.add_argument(
-            '-m', '--min-match', type=match_type, required=True,
+            '-m', '--min-match', type=match_type, required=match_req,
             help="Generate bank with specified minimum match. Required.")
     parser.add_argument(
             '-O', '--output-file', required=True,
