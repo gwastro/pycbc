@@ -18,6 +18,9 @@ https://github.com/willvousden/ptemcee/archive/master.tar.gz
 # useful to look at PyCBC Live with htop
 setproctitle
 
+# Needed for ringdown and time-domain injection (fix wrap-around issue for SMBHB)
+pykerr
+
 # Needed for `population_models` module
 sympy>=1.9
 
