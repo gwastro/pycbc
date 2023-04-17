@@ -997,10 +997,25 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return pickle.load(filename)
 
     def ifar(self, coinc_stat):
-        """Return the far that would be associated with the coincident given.
+        """Map a given value of the coincident ranking statistic to an inverse
+        false-alarm rate (IFAR) using the interally stored background sample.
+
+        Parameters
+        ----------
+        coinc_stat: float
+            Value of the coincident ranking statistic to be converted.
+
+        Returns
+        -------
+        ifar: float
+            Inverse false-alarm rate in unit of years.
+        ifar_saturated: bool
+            True if `coinc_stat` is larger than all the available background,
+            in which case `ifar` is to be considered an upper limit.
         """
         n = self.coincs.num_greater(coinc_stat)
-        return self.background_time / lal.YRJUL_SI / (n + 1)
+        ifar = self.background_time / lal.YRJUL_SI / (n + 1)
+        return ifar, n == 0
 
     def set_singles_buffer(self, results):
         """Create the singles buffer
@@ -1234,7 +1249,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             logging.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                   self.timeslide_interval,
-                                  self.analysis_block,
+                                  self.analysis_block + 2*self.time_window,
                                   method='cython')
             offsets = offsets[cidx]
             zerolag_idx = (offsets == 0)
@@ -1254,21 +1269,22 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         coinc_results = {}
         # Save information about zerolag triggers
         if num_zerolag > 0:
-            zerolag_results = {}
             idx = cidx[zerolag_idx][0]
             zerolag_cstat = cstat[cidx][zerolag_idx]
-            zerolag_results['foreground/ifar'] = self.ifar(zerolag_cstat)
-            zerolag_results['foreground/stat'] = zerolag_cstat
+            ifar, ifar_sat = self.ifar(zerolag_cstat)
+            zerolag_results = {
+                'foreground/ifar': ifar,
+                'foreground/ifar_saturated': ifar_sat,
+                'foreground/stat': zerolag_cstat,
+                'foreground/type': '-'.join(self.ifos)
+            }
             template = template_ids[idx]
             for ifo in self.ifos:
                 trig_id = trigger_ids[ifo][idx]
                 single_data = self.singles[ifo].data(template)[trig_id]
                 for key in single_data.dtype.names:
-                    path = 'foreground/%s/%s' % (ifo, key)
+                    path = f'foreground/{ifo}/{key}'
                     zerolag_results[path] = single_data[key]
-
-            zerolag_results['foreground/type'] = '-'.join(self.ifos)
-
             coinc_results.update(zerolag_results)
 
         # Save some summary statistics about the background
