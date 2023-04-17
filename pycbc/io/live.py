@@ -268,14 +268,15 @@ class CandidateForGraceDB(object):
                                                     min(eff_distances),
                                                     kwargs['mc_area_args'])
             if 'embright_mg_max' in kwargs['mc_area_args']:
-                kwargs['hasmassgap_args'] = copy.deepcopy(kwargs['mc_area_args'])
-                kwargs['hasmassgap_args']['mass_gap'] = True
-                kwargs['hasmassgap_args']['mass_bdary']['gap_max'] = kwargs['mc_area_args']['embright_mg_max']
+                kwargs['hasmg_args'] = copy.deepcopy(kwargs['mc_area_args'])
+                kwargs['hasmg_args']['mass_gap'] = True
+                kwargs['hasmg_args']['mass_bdary']['gap_max'] = \
+                    kwargs['mc_area_args']['embright_mg_max']
                 self.hasmassgap = calc_probabilities(
                                       coinc_inspiral_row.mchirp,
                                       coinc_inspiral_row.snr,
                                       min(eff_distances),
-                                      kwargs['hasmassgap_args'])['Mass Gap']
+                                      kwargs['hasmg_args'])['Mass Gap']
             else:
                 self.hasmassgap = None
         else:
