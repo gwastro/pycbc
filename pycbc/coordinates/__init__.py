@@ -13,18 +13,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-This modules provides functions for basic coordinate transformations, and
+This modules provides functions for base coordinate transformations, and
 more advanced transformations between ground-based detectors and space-borne
 detectors.
 """
 
-from pycbc.coordinates.basic import *
+from pycbc.coordinates.base import *
 from pycbc.coordinates.space import *
 
 
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'cartesian_to_spherical_polar', 'cartesian_to_spherical',
            'spherical_to_cartesian',
+           'TIME_OFFSET',
            'localization_to_propagation_vector',
            'propagation_vector_to_localization', 'polarization_newframe',
            't_lisa_from_ssb', 't_ssb_from_t_lisa',
