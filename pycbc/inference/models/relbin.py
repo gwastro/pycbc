@@ -628,9 +628,9 @@ class Relative(DistMarg, BaseGaussianNoise):
                         fid_params['tc'], opt_params['ra'],
                         opt_params['dec'], opt_params['polarization'])
             else:
-                logging.info("Don't recognise reference frame %s. " +
-                             "Known frames are 'LISA' and 'SSB'."
-                             % static_params['ref_frame'])
+                logging.info("Don't recognise reference frame %s. ".format(
+                             static_params['ref_frame']) +
+                             "Known frames are 'LISA' and 'SSB'.")
 
         fid_params.update(
             {p: opt_params[p] for p in opt_params if p not in fid_params}
