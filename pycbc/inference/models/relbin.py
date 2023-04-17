@@ -626,10 +626,11 @@ class Relative(DistMarg, BaseGaussianNoise):
                 opt_params['polarization_lisa'] = \
                     space.geo_to_lisa(
                         fid_params['tc'], opt_params['ra'],
-                        opt_params['dec'], opt_params['polarization'])   
+                        opt_params['dec'], opt_params['polarization'])
             else:
-                err_msg = f"Don't recognise reference frame {ref_frame}. "
-                err_msg = f"Known frames are 'LISA' and 'SSB'."
+                logging.info("Don't recognise reference frame %s. " +
+                             "Known frames are 'LISA' and 'SSB'."
+                             % static_params['ref_frame'])
 
         fid_params.update(
             {p: opt_params[p] for p in opt_params if p not in fid_params}
