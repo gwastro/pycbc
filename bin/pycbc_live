@@ -122,7 +122,6 @@ class LiveEventManager(object):
                 self.fu_cores = 1
 
         if args.enable_embright_has_massgap:
-            # check if HasMassGap is enabled and set mass gap max limit
             if args.embright_massgap_max < self.mc_area_args['mass_bdary']['ns_max']:
                 parser.error('MAX_GAP value cannot be lower than MAX_NS limit')
             self.mc_area_args['embright_mg_max'] = args.embright_massgap_max
@@ -894,7 +893,9 @@ parser.add_argument('--snr-opt-label', type=str, default='SNR_OPTIMIZED',
 
 
 parser.add_argument('--enable-embright-has-massgap', action='store_true', default=False,
-                    help='Estimate HasMassGap probability for EMBright info.')
+                    help='Estimate HasMassGap probability for EMBright info. Lower limit '
+                         'of the mass gap is equal to the maximum NS mass used for '
+                         'the source classification.')
 parser.add_argument('--embright-massgap-max', type=float, default=5.0, metavar='SOLAR MASSES',
                     help='Upper limit of the mass gap, used for estimating '
                          'HasMassGap probability.')
