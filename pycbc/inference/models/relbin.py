@@ -35,6 +35,8 @@ from pycbc.waveform import (get_fd_waveform_sequence,
                             get_fd_det_waveform_sequence, fd_det_sequence)
 from pycbc.detector import Detector
 from pycbc.types import Array, TimeSeries
+from pycbc.coordinates import space
+from pycbc import distributions
 
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
@@ -595,6 +597,10 @@ class Relative(DistMarg, BaseGaussianNoise):
             if p.endswith("_ref")
         }
 
+        _, static_params = distributions.read_params_from_config(
+            cp, prior_section='prior', vargs_section='variable_params',
+            sargs_section='static_params')
+
         # add optional params with default values if not specified
         opt_params = {
             "ra": numpy.pi,
@@ -602,6 +608,29 @@ class Relative(DistMarg, BaseGaussianNoise):
             "inclination": 0.0,
             "polarization": numpy.pi,
         }
+
+        # add coordinate transform
+        if 'ref_frame' in static_params:
+            if static_params['ref_frame'] == 'SSB':
+                opt_params['tc_ssb'], \
+                opt_params['eclipticlongitude'],\
+                opt_params['eclipticlatitude'], \
+                opt_params['polarization_ssb'] = \
+                    space.geo_to_ssb(
+                        fid_params['tc'], opt_params['ra'],
+                        opt_params['dec'], opt_params['polarization'])
+            elif static_params['ref_frame'] == 'LISA':
+                opt_params['tc_lisa'], \
+                opt_params['eclipticlongitude_lisa'],\
+                opt_params['eclipticlatitude_lisa'], \
+                opt_params['polarization_lisa'] = \
+                    space.geo_to_lisa(
+                        fid_params['tc'], opt_params['ra'],
+                        opt_params['dec'], opt_params['polarization'])   
+            else:
+                err_msg = f"Don't recognise reference frame {ref_frame}. "
+                err_msg = f"Known frames are 'LISA' and 'SSB'."
+
         fid_params.update(
             {p: opt_params[p] for p in opt_params if p not in fid_params}
         )
