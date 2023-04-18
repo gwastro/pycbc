@@ -170,7 +170,7 @@ bank_output.output_bank_to_file(
     temp_bank,
     programName=__program__,
     output_duration=True,
-    approximant="SPAtmplt",
+    approximant="TaylorF2",
     optDict=options.__dict__,
     outdoc=outdoc
 )
