@@ -2,6 +2,10 @@ name: run small template bank generation using pegasus + condor
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -25,7 +29,7 @@ jobs:
         wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
         echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu bionic main" | sudo tee -a /etc/apt/sources.list
         sudo apt-get update
-        sudo apt-get install pegasus
+        sudo apt-get install pegasus=5.0.3-1+ubuntu18
     - run: sudo apt-get install *fftw3* intel-mkl*
     - name: Install pycbc
       run: |

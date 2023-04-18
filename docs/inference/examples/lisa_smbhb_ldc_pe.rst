@@ -1,6 +1,8 @@
-----------------------------------------------
-LISA parameter estimation for simulated SMBHB
-----------------------------------------------
+.. _inference_example_lisa_smbhb_ldc:
+
+------------------------------------------------------
+LISA parameter estimation for simulated SMBHB from LDC
+------------------------------------------------------
 
 This example shows how to use PyCBC for parameter estimation of supermassive black hole binaries (SMBHB) 
 in LISA mock data. The `data <https://zenodo.org/record/7497853>`_ are generated from 
@@ -14,10 +16,10 @@ please click the corresponding link to see the detailed description of the insta
 First, we create the following configuration file, here we just set chirp mass, mass ratio and tc as variable parameters, 
 `tc`, `eclipticlongitude`, `eclipticlatitude` and `polarization` are defined in the LISA frame:
 
-.. literalinclude:: ../../../examples/inference/lisa_smbhb/lisa_smbhb_relbin.ini
+.. literalinclude:: ../../../examples/inference/lisa_smbhb_ldc/lisa_smbhb_relbin.ini
    :language: ini
 
-:download:`Download <../../../examples/inference/lisa_smbhb/lisa_smbhb_relbin.ini>`
+:download:`Download <../../../examples/inference/lisa_smbhb_ldc/lisa_smbhb_relbin.ini>`
 
 By setting the model name to ``relative`` we are using
 :py:class:`Relative <pycbc.inference.models.relbin.Relative>` model.
@@ -26,17 +28,17 @@ In this simple example, we do the parameter estimation for the first SMBHB signa
 (you can also run parameter estimation for other SMBHB signals by choosing appropriate prior range),
 we need download the data first (`MBHB_params_v2_LISA_frame.pkl` contains all the true parameters):
 
-.. literalinclude:: ../../../examples/inference/lisa_smbhb/get.sh
+.. literalinclude:: ../../../examples/inference/lisa_smbhb_ldc/get.sh
    :language: bash
 
-:download:`Download <../../../examples/inference/lisa_smbhb/get.sh>`
+:download:`Download <../../../examples/inference/lisa_smbhb_ldc/get.sh>`
 
 Now run:
 
-.. literalinclude:: ../../../examples/inference/lisa_smbhb/run.sh
+.. literalinclude:: ../../../examples/inference/lisa_smbhb_ldc/run.sh
    :language: bash
 
-:download:`Download <../../../examples/inference/lisa_smbhb/run.sh>`
+:download:`Download <../../../examples/inference/lisa_smbhb_ldc/run.sh>`
 
 This will run the ``dynesty`` sampler. When it is done, you will have a file called
 ``lisa_smbhb.hdf`` which contains the results. It should take about three minutes to
@@ -44,17 +46,17 @@ run.
 
 To plot the posterior distribution after the last iteration, you can run the following simplified script:
 
-.. literalinclude:: ../../../examples/inference/lisa_smbhb/plot.sh
+.. literalinclude:: ../../../examples/inference/lisa_smbhb_ldc/plot.sh
    :language: bash
 
-:download:`Download <../../../examples/inference/lisa_smbhb/plot.sh>`
+:download:`Download <../../../examples/inference/lisa_smbhb_ldc/plot.sh>`
 
 Or you can run the advanced one:
 
-.. literalinclude:: ../../../examples/inference/lisa_smbhb/advanced_plot.py
+.. literalinclude:: ../../../examples/inference/lisa_smbhb_ldc/advanced_plot.py
    :language: python
 
-:download:`Download <../../../examples/inference/lisa_smbhb/advanced_plot.py>`
+:download:`Download <../../../examples/inference/lisa_smbhb_ldc/advanced_plot.py>`
 
 You can modify this advanced plot script to generate the posterior of any SMBHB signals in the LDC Sangria dataset. 
 In this example it will create the following plot:

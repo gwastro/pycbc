@@ -287,8 +287,8 @@ with ctx:
         # Check if waveform is too long
         tlen = (flen-1) * 2
         # FIXME: Hardcoded 7./8. factor here, but I'm not too bothered by this.
-        if len(td_template) > (7 * tlen /8):
-            new_start_idx = len(td_template) - (7 * tlen /8)
+        if len(td_template) > (7 * tlen // 8):
+            new_start_idx = len(td_template) - (7 * tlen // 8)
             td_template = td_template[new_start_idx:]
             taper_func = pycbc.waveform.utils.taper_timeseries
             td_template = taper_func(td_template, tapermethod='TAPER_START')

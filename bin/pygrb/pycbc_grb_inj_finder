@@ -127,6 +127,7 @@ def read_hdf5_triggers(inputfiles, verbose=False):
 
     # create datasets
     for dset, (shape, dtype) in datasets.items():
+        # 8: chops off network/ from the dset string
         out[dset[8:]] = numpy.empty(shape, dtype=dtype)
 
     # copy dataset contents
@@ -281,7 +282,7 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
                 found.append(i)
                 eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
                 for col in triggers:
-                    trigs[col].append(triggers[col][i])
+                    trigs[col].append(triggers[col][eid])
 
         # record all injections
         if allinjections is None:

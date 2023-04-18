@@ -34,16 +34,20 @@ from scipy.interpolate import interp1d
 from pycbc.waveform import (get_fd_waveform_sequence,
                             get_fd_det_waveform_sequence, fd_det_sequence)
 from pycbc.detector import Detector
-from pycbc.types import Array
+from pycbc.types import Array, TimeSeries
 
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
-                         likelihood_parts_det)
+                         likelihood_parts_det, likelihood_parts_vector,
+                         likelihood_parts_vectorp, snr_predictor,
+                         snr_predictor_dom)
 from .tools import DistMarg
 
 
-def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5, gammas=None):
+def setup_bins(f_full, f_lo, f_hi, chi=1.0,
+               eps=0.1, gammas=None,
+               ):
     """Construct frequency bins for use in a relative likelihood
     model. For details, see [Barak, Dai & Venumadhav 2018].
 
@@ -277,13 +281,13 @@ class Relative(DistMarg, BaseGaussianNoise):
                     self.fid_params["dec"],
                     self.fid_params["tc"],
                 )
-                self.ta = self.fid_params["tc"] + dt - self.end_time[ifo]
+                self.ta[ifo] = self.fid_params["tc"] + dt - self.end_time[ifo]
 
                 fp, fc = self.det[ifo].antenna_pattern(
                     self.fid_params["ra"], self.fid_params["dec"],
                     self.fid_params["polarization"], self.fid_params["tc"])
 
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta)
+                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
 
                 h00 = (hp0 * fp + hc0 * fc) * tshift
                 self.h00[ifo] = h00
@@ -364,8 +368,22 @@ class Relative(DistMarg, BaseGaussianNoise):
                 self.lik = likelihood_parts_det
             else:
                 self.lik = likelihood_parts
-            self.mlik = likelihood_parts_multi
+                self.mlik = likelihood_parts_multi
         return atimes
+
+    @property
+    def likelihood_function(self):
+        if self.marginalize_vector_params:
+            p = self.current_params
+
+            for k in ['ra', 'dec', 'tc']:
+                if k in p and not numpy.isscalar(p[k]):
+                    return likelihood_parts_vector
+
+            if 'polarization' in p and not numpy.isscalar(p['polarization']):
+                return likelihood_parts_vectorp
+
+        return self.lik
 
     def summary_product(self, h1, h2, bins, ifo):
         """ Calculate the summary values for the inner product <h1|h2>
@@ -404,6 +422,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             hc = hc.numpy()
             wfs.append((hp, hc))
         wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+
+        self.wf_ret = wf_ret
         return wf_ret
 
     @property
@@ -489,15 +509,14 @@ class Relative(DistMarg, BaseGaussianNoise):
             The value of the log likelihood ratio.
         """
         # get model params
-        p = self.current_params.copy()
-        p.update(self.static_params)
+        p = self.current_params
         wfs = self.get_waveforms(p)
-
+        lik = self.likelihood_function
         norm = 0.0
         filt = 0j
         self._current_wf_parts = {}
-        for ifo in self.data:
 
+        for ifo in self.data:
             freqs = self.fedges[ifo]
             sdat = self.sdat[ifo]
             h00 = self.h00_sparse[ifo]
@@ -510,9 +529,9 @@ class Relative(DistMarg, BaseGaussianNoise):
             if self.no_det_response:
                 dtc = -end_time
                 channel = wfs[ifo].numpy()
-                filter_i, norm_i = self.lik(freqs, dtc, channel, h00,
-                                            sdat['a0'], sdat['a1'],
-                                            sdat['b0'], sdat['b1'])
+                filter_i, norm_i = lik(freqs, dtc, channel, h00,
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
@@ -521,14 +540,15 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time
 
-                filter_i, norm_i = self.lik(freqs, fp, fc, dtc,
-                                            hp, hc, h00,
-                                            sdat['a0'], sdat['a1'],
-                                            sdat['b0'], sdat['b1'])
+                filter_i, norm_i = lik(freqs, fp, fc, dtc,
+                                       hp, hc, h00,
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
                 self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
             filt += filter_i
             norm += norm_i
-        return self.marginalize_loglr(filt, norm)
+        loglr = self.marginalize_loglr(filt, norm)
+        return loglr
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
@@ -589,3 +609,193 @@ class Relative(DistMarg, BaseGaussianNoise):
         )
         args.update({"fiducial_params": fid_params, "gammas": gammas})
         return args
+
+
+class RelativeTime(Relative):
+    """ Heterodyne likelihood optimized for time marginalization. In addition
+    it supports phase (dominant-mode), sky location, and polarization
+    marginalization.
+    """
+    name = "relative_time"
+
+    def __init__(self, *args,
+                 sample_rate=4096,
+                 **kwargs):
+        super(RelativeTime, self).__init__(*args, **kwargs)
+        self.sample_rate = float(sample_rate)
+        self.setup_peak_lock(sample_rate=self.sample_rate, **kwargs)
+        self.draw_ifos(self.ref_snr, **kwargs)
+
+    @property
+    def ref_snr(self):
+        if not hasattr(self, '_ref_snr'):
+            wfs = {ifo: (self.h00_sparse[ifo],
+                         self.h00_sparse[ifo]) for ifo in self.h00_sparse}
+            self._ref_snr = self.get_snr(wfs, reference=True)
+        return self._ref_snr
+
+    def get_snr(self, wfs, reference=False):
+        """ Return hp/hc maximized SNR time series
+        """
+        delta_t = 1.0 / self.sample_rate
+        snrs = {}
+        for ifo in wfs:
+            sdat = self.sdat[ifo]
+            dtc = self.tstart[ifo] - self.end_time[ifo]
+
+            if reference:
+                dtc -= self.ta[ifo]
+
+            snr = snr_predictor(self.fedges[ifo],
+                                dtc, delta_t,
+                                self.num_samples[ifo],
+                                wfs[ifo][0], wfs[ifo][1],
+                                self.h00_sparse[ifo],
+                                sdat['a0'], sdat['a1'],
+                                sdat['b0'], sdat['b1'])
+            snrs[ifo] = TimeSeries(snr, delta_t=delta_t,
+                                   epoch=self.tstart[ifo])
+        return snrs
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        # get model params
+        p = self.current_params
+        wfs = self.get_waveforms(p)
+        lik = self.likelihood_function
+        norm = 0.0
+        filt = 0j
+
+        self.snr_draw(self.get_snr(wfs))
+        p = self.current_params
+
+        for ifo in self.data:
+            freqs = self.fedges[ifo]
+            sdat = self.sdat[ifo]
+            h00 = self.h00_sparse[ifo]
+            end_time = self.end_time[ifo]
+            times = self.antenna_time[ifo]
+
+            hp, hc = wfs[ifo]
+            det = self.det[ifo]
+            fp, fc = det.antenna_pattern(p["ra"], p["dec"],
+                                         p["polarization"], times)
+            dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
+            dtc = p["tc"] + dt - end_time
+
+            filter_i, norm_i = lik(freqs, fp, fc, dtc,
+                                   hp, hc, h00,
+                                   sdat['a0'], sdat['a1'],
+                                   sdat['b0'], sdat['b1'])
+            filt += filter_i
+            norm += norm_i
+        loglr = self.marginalize_loglr(filt, norm)
+        return loglr
+
+
+class RelativeTimeDom(RelativeTime):
+    """ Heterodyne likelihood optimized for time marginalization and only
+    dominant-mode waveforms. This enables the ability to do inclination
+    marginalization in addition to the other forms supportedy by RelativeTime.
+    """
+    name = "relative_time_dom"
+
+    def get_snr(self, wfs, reference=False):
+        """ Return hp/hc maximized SNR time series
+        """
+        delta_t = 1.0 / self.sample_rate
+        snrs = {}
+        self.sh = {}
+        self.hh = {}
+        for ifo in wfs:
+            sdat = self.sdat[ifo]
+            dtc = self.tstart[ifo] - self.end_time[ifo]
+
+            if reference:
+                dtc -= self.ta[ifo]
+
+            sh, hh = snr_predictor_dom(self.fedges[ifo],
+                                       dtc - delta_t * 2.0, delta_t,
+                                       self.num_samples[ifo] + 4,
+                                       wfs[ifo][0],
+                                       self.h00_sparse[ifo],
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
+            snr = TimeSeries(abs(sh[2:-2]) / hh ** 0.5, delta_t=delta_t,
+                             epoch=self.tstart[ifo])
+            self.sh[ifo] = TimeSeries(sh, delta_t=delta_t,
+                                      epoch=self.tstart[ifo] - delta_t * 2.0)
+            self.hh[ifo] = hh
+            snrs[ifo] = snr
+
+        return snrs
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
+        p = self.current_params
+
+        p2 = p.copy()
+        p2.pop('inclination')
+        wfs = self.get_waveforms(p2)
+        snrs = self.get_snr(wfs)
+
+        sh_total = hh_total = 0
+
+        ic = numpy.cos(p['inclination'])
+        ip = 0.5 * (1.0 + ic * ic)
+        pol_phase = numpy.exp(-2.0j * p['polarization'])
+
+        self.snr_draw(snrs)
+
+        for ifo in self.sh:
+            if self.precalc_antenna_factors:
+                fp, fc, dt = self.get_precalc_antenna_factors(ifo)
+            else:
+                dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
+                                                                p['dec'],
+                                                                p['tc'])
+                fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
+                                                       0, p['tc'])
+
+            dts = p['tc'] + dt
+            f = (fp + 1.0j * fc) * pol_phase
+
+            # Note, this includes complex conjugation already
+            # as our stored inner products were hp* x data
+            htf = (f.real * ip + 1.0j * f.imag * ic)
+
+            sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
+            sh_total += sh * htf
+            hh_total += self.hh[ifo] * abs(htf) ** 2.0
+
+        loglr = self.marginalize_loglr(sh_total, hh_total)
+        return loglr
