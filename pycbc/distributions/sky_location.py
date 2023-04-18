@@ -40,17 +40,24 @@ class UniformSky(angular.UniformSolidAngle):
 
 class FisherSky():
     """A distribution that returns a random angle drawn from an approximate
-    Fisher distribution. Assumes that the concentration parameter
-    kappa = 1 / (0.66*σ)**2
-    is large, so that we can use a Fisher distribution centered at the North
-    Pole (which factors as a uniform distribution for the right ascension, and
-    a Rayleigh distribution for the declination) and then rotate it to be
-    centered at the specified mean position. As in UniformSky, the declination
-    varies from π/2 to -π/2 and the right ascension varies from 0 to 2π.
+    `Von_Mises-Fisher distribution`_. Assumes that the Fisher concentration
+    parameter is large, so that we can draw the samples from a simple
+    rotationally-invariant distribution centered at the North Pole (which
+    factors as a uniform distribution for the right ascension, and a Rayleigh
+    distribution for the declination, as described in
+    `Fabrycky and Winn 2009 ApJ 696 1230`) and then rotate the samples to be
+    centered around the specified mean position. As in UniformSky, the
+    declination varies from π/2 to -π/2 and the right ascension varies from
+    0 to 2π.
 
-    References:
-      * http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
-      * http://arxiv.org/pdf/0902.0737v1 (states the Rayleigh limit)
+    .. _Von_Mises-Fisher distribution:
+        http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution
+
+    .. _Fabrycky and Winn 2009 ApJ 696 1230:
+        https://doi.org/10.1088/0004-637X/696/2/1230
+
+    .. _Briggs et al 1999 ApJS 122 503:
+        https://doi.org/10.1086/313221
 
     Parameters
     ----------
@@ -59,7 +66,9 @@ class FisherSky():
     mean_dec: float
         Declination of the center of the distribution.
     sigma: float
-        Spread of the distribution.
+        Spread of the distribution. For the precise interpretation, see Eq 8
+        of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than
+        about 20 deg for the approximation to be valid.
     angle_unit: str
         Unit for the angle parameters: either "deg" or "rad".
     """
@@ -89,7 +98,7 @@ class FisherSky():
             raise ValueError(
                 'Sigma must be positive and much smaller than 2π'
             )
-        if sigma > 2:
+        if sigma > 0.35:
             logging.warning(
                 f'Warning: sigma = {sigma} rad is probably too large for the '
                 'Fisher approximation to be valid'
