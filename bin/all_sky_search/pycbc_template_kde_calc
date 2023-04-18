@@ -13,6 +13,7 @@
 # Public License for more details.
 
 import numpy, h5py, operator, argparse, logging
+from scipy.integrate import quad
 from pycbc import init_logging
 import pycbc.conversions as convert
 from pycbc import libutils
@@ -26,6 +27,8 @@ parser.add_argument('--signal-file', help='File with parameters of GW signals '
                     'for KDE calculation')
 parser.add_argument('--template-file', required=True, help='Hdf5 file with '
                     'template masses and spins')
+parser.add_argument('--attr-filename', required=True, help='Saved as an attr '
+                    'in the output-file')
 parser.add_argument('--min-mass', type=float, default=None,
                     help='Used only on signal masses: remove all' 
                          'signal events with mass2 < min_mass')
@@ -47,9 +50,11 @@ parser.add_argument('--alpha-grid', type=float, nargs="+",
                          ' local bandwidth')
 parser.add_argument('--bw-grid', type=float, nargs='+', 
                     help='Grid of choices of global bandwidth')
-parser.add_argument('--verbose', action='count')
+parser.add_argument('--fraction', type=float,
+                    help='Fraction of the extra component in the signal density')
+parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
-init_logging(args.verbose)
+init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
 
 assert len(args.fit_param) == len(args.log_param)
 if args.make_signal_kde and args.make_template_kde:
@@ -142,12 +147,41 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'True', or 'False'")
 
-# Copy standard data to output file
+# copy standard data to output file
 f_dest.attrs['fit_param'] = args.fit_param
 f_dest.attrs['log_param'] = args.log_param
 with h5py.File(args.template_file, "r") as f_src:
     f_src.copy(f_src["./"], f_dest["./"], "input_template_params")
 temp_samples = numpy.vstack((template_pars)).T
+
+# define the maximum and minimum values for each parameter
+mchirpmax, mchirpmin = numpy.amax(temp_samples[:,0]), numpy.amin(temp_samples[:,0])
+etamax, etamin = numpy.amax(temp_samples[:,1]), numpy.amin(temp_samples[:,1])
+chieffmax, chieffmin = numpy.amax(temp_samples[:,2]), numpy.amin(temp_samples[:,2])
+
+
+def f_mchirp(x):
+    # define the cosine distribution for mchirp
+    return numpy.cos(numpy.pi * (x - mchirpmin) / (mchirpmax - mchirpmin))
+
+def f_eta(x):
+    # define the cosine distribution for eta
+    return numpy.cos(numpy.pi * (x - etamin) / (etamax - etamin))
+
+def f_chieff(x):
+    # define the cosine distribution for chi_eff
+    return numpy.cos(numpy.pi * (x - chieffmin) / (chieffmax - chieffmin))
+
+def volume_cosine():
+    # calculate the volume using the cosine distribution for each parameter
+    mchirp_int = quad(f_mchirp, mchirpmin, mchirpmax)[0]
+    eta_int = quad(f_eta, etamin, etamax)[0]
+    chieff_int = quad(f_chieff, chieffmin, chieffmax)[0]
+    return mchirp_int * eta_int * chieff_int
+
+# calculate the volume covered by the template bank
+temp_volume = volume_cosine()
+
 
 if args.make_template_kde:
     logging.info('Starting optimization of template KDE parameters')
@@ -159,12 +193,23 @@ if args.make_template_kde:
                              gl_bandwidth=optbw)
     f_dest.create_dataset("data_kde", data=template_kde)
     f_dest.attrs['stat'] = "template-kde_file"
+    f_dest.attrs['template-file'] = args.attr_filename
+
+
+def new_signal_kde(signal_samples, temp_samples, signal_kde, frac, volume, alp, gl_bandwidth):
+    # calculate the constant density value for the additional component
+    const_density = 1 / volume
+    # calculate the modified signal density
+    modified_kde = (frac * signal_kde) + ((1 - frac) * const_density)
+    return modified_kde
+
 
 # Obtaining signal parameters
 if args.make_signal_kde:
     signal_pars = []
     signal_file = numpy.genfromtxt(args.signal_file, dtype=float,
                                    delimiter=',', names=True)
+    f_dest.attrs['signal-file'] = args.attr_filename
     mass2_sgnl = signal_file['mass2']
     N_original = len(mass2_sgnl)
     if args.min_mass:
@@ -197,7 +242,10 @@ if args.make_signal_kde:
     logging.info('Evaluating signal KDE')
     signal_kde = kde_awkde(signal_samples, temp_samples, \
                            alp=optalpha, gl_bandwidth=optbw)
-    f_dest.create_dataset("data_kde", data=signal_kde)
+    modified_kde = new_signal_kde(signal_samples, temp_samples, signal_kde,\
+                                  frac=args.fraction, volume=temp_volume,\
+                                  alp=optalpha, gl_bandwidth=optbw)
+    f_dest.create_dataset("data_kde", data=modified_kde)
     f_dest.attrs['stat'] = "signal-kde_file"
 
 f_dest.attrs['alpha'] = optalpha
