@@ -351,6 +351,13 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def setup_antenna(self, earth_rotation, fedges):
         # Calculate the times to evaluate fp/fc
+        if 'ref_frame' in self.static_params:
+            if self.static_params['ref_frame'] == 'SSB':
+                fid_tc = self.fid_params['tc_ssb']
+            elif self.static_params['ref_frame'] == 'LISA':
+                fid_tc = self.fid_params['tc_lisa']
+            else:
+                fid_tc = self.fid_params['tc']
         if earth_rotation is not False:
             logging.info("Enabling frequency-dependent earth rotation")
             from pycbc.waveform.spa_tmplt import spa_length_in_time
@@ -361,11 +368,11 @@ class Relative(DistMarg, BaseGaussianNoise):
                 mass2=self.fid_params["mass2"],
                 f_lower=fedges,
             )
-            atimes = self.fid_params["tc"] - times
+            atimes = fid_tc - times
             self.lik = likelihood_parts_v
             self.mlik = likelihood_parts_multi_v
         else:
-            atimes = self.fid_params["tc"]
+            atimes = fid_tc
             if self.no_det_response:
                 self.lik = likelihood_parts_det
             else:
@@ -612,21 +619,27 @@ class Relative(DistMarg, BaseGaussianNoise):
         # add coordinate transform
         if 'ref_frame' in static_params:
             if static_params['ref_frame'] == 'SSB':
-                opt_params['tc_ssb'], \
-                opt_params['eclipticlongitude'],\
-                opt_params['eclipticlatitude'], \
-                opt_params['polarization_ssb'] = \
-                    space.geo_to_ssb(
-                        fid_params['tc'], opt_params['ra'],
-                        opt_params['dec'], opt_params['polarization'])
+                ssb_params = ['tc_ssb', 'eclipticlongitude',
+                              'eclipticlatitude', 'polarization_ssb']
+                if not set(ssb_params).issubset(set(fid_params.keys())):
+                    opt_params['tc_ssb'], \
+                    opt_params['eclipticlongitude'],\
+                    opt_params['eclipticlatitude'], \
+                    opt_params['polarization_ssb'] = \
+                        space.geo_to_ssb(
+                            fid_params['tc'], opt_params['ra'],
+                            opt_params['dec'], opt_params['polarization'])
             elif static_params['ref_frame'] == 'LISA':
-                opt_params['tc_lisa'], \
-                opt_params['eclipticlongitude_lisa'],\
-                opt_params['eclipticlatitude_lisa'], \
-                opt_params['polarization_lisa'] = \
-                    space.geo_to_lisa(
-                        fid_params['tc'], opt_params['ra'],
-                        opt_params['dec'], opt_params['polarization'])
+                lisa_params = ['tc_lisa', 'eclipticlongitude_lisa',
+                               'eclipticlatitude_lisa', 'polarization_lisa']
+                if not set(lisa_params).issubset(set(fid_params.keys())):
+                    opt_params['tc_lisa'], \
+                    opt_params['eclipticlongitude_lisa'],\
+                    opt_params['eclipticlatitude_lisa'], \
+                    opt_params['polarization_lisa'] = \
+                        space.geo_to_lisa(
+                            fid_params['tc'], opt_params['ra'],
+                            opt_params['dec'], opt_params['polarization'])
             else:
                 logging.info("Don't recognise reference frame {}. ".format(
                              static_params['ref_frame']) +
