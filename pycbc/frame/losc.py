@@ -14,11 +14,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """
-This modules contains functions for getting data from the LOSC
+This modules contains functions for getting data from the GWOSC
 """
 from pycbc.io import get_file
 
-_losc_url = "https://www.gw-openscience.org/archive/links/%s/%s/%s/%s/json/"
+_gwosc_url = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
 
 def get_run(time, ifo=None):
     """ Return the run name for a given time
@@ -90,7 +90,7 @@ def losc_frame_json(ifo, start_time, end_time):
                          'You have requested data that uses '
                          'both %s and %s' % (run, run2))
 
-    url = _losc_url % (run, ifo, int(start_time), int(end_time))
+    url = _gwosc_url % (run, ifo, int(start_time), int(end_time))
 
     try:
         return json.loads(urlopen(url).read().decode())
@@ -100,7 +100,7 @@ def losc_frame_json(ifo, start_time, end_time):
             'ifo=%s, run=%s, between %s-%s' % (ifo, run, start_time, end_time))
 
 def losc_frame_urls(ifo, start_time, end_time):
-    """ Get a list of urls to losc frame files
+    """ Get a list of urls to GWOSC frame files
 
     Parameters
     ----------
@@ -121,7 +121,7 @@ def losc_frame_urls(ifo, start_time, end_time):
     return [d['url'] for d in data if d['format'] == 'gwf']
 
 def read_frame_losc(channels, start_time, end_time):
-    """ Read channels from losc data
+    """ Read channels from GWOSC data
 
     Parameters
     ----------
@@ -162,7 +162,7 @@ def read_frame_losc(channels, start_time, end_time):
         return ts
 
 def read_strain_losc(ifo, start_time, end_time):
-    """ Get the strain data from the LOSC data
+    """ Get the strain data from the GWOSC data
 
     Parameters
     ----------
