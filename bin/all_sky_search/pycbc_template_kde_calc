@@ -50,8 +50,10 @@ parser.add_argument('--alpha-grid', type=float, nargs="+",
                          ' local bandwidth')
 parser.add_argument('--bw-grid', type=float, nargs='+', 
                     help='Grid of choices of global bandwidth')
-parser.add_argument('--fraction', type=float,
+parser.add_argument('--extra-cpt-fraction', type=float,
                     help='Fraction of the extra component in the signal density')
+parser.add_argument('--temp-volume', type=float, 
+                    help='Volume covered by the template bank')
 parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
 init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
@@ -63,7 +65,7 @@ if args.make_signal_kde and args.make_template_kde:
 
 
 def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth=None, ret_kde=False):
-    if gl_bandwidth is None:  # use default from awkde
+    if gl_bandwidth is None:  # Use default from awkde
         kde = akde.GaussianKDE(alpha=alp, diag_cov=True)
     else:
         kde = akde.GaussianKDE(glob_bw=gl_bandwidth, alpha=alp, diag_cov=True)
@@ -147,40 +149,17 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'True', or 'False'")
 
-# copy standard data to output file
+# Copy standard data to output file
 f_dest.attrs['fit_param'] = args.fit_param
 f_dest.attrs['log_param'] = args.log_param
 with h5py.File(args.template_file, "r") as f_src:
     f_src.copy(f_src["./"], f_dest["./"], "input_template_params")
 temp_samples = numpy.vstack((template_pars)).T
 
-# define the maximum and minimum values for each parameter
+# Define the maximum and minimum values for each parameter
 mchirpmax, mchirpmin = numpy.amax(temp_samples[:,0]), numpy.amin(temp_samples[:,0])
 etamax, etamin = numpy.amax(temp_samples[:,1]), numpy.amin(temp_samples[:,1])
 chieffmax, chieffmin = numpy.amax(temp_samples[:,2]), numpy.amin(temp_samples[:,2])
-
-
-def f_mchirp(x):
-    # define the cosine distribution for mchirp
-    return numpy.cos(numpy.pi * (x - mchirpmin) / (mchirpmax - mchirpmin))
-
-def f_eta(x):
-    # define the cosine distribution for eta
-    return numpy.cos(numpy.pi * (x - etamin) / (etamax - etamin))
-
-def f_chieff(x):
-    # define the cosine distribution for chi_eff
-    return numpy.cos(numpy.pi * (x - chieffmin) / (chieffmax - chieffmin))
-
-def volume_cosine():
-    # calculate the volume using the cosine distribution for each parameter
-    mchirp_int = quad(f_mchirp, mchirpmin, mchirpmax)[0]
-    eta_int = quad(f_eta, etamin, etamax)[0]
-    chieff_int = quad(f_chieff, chieffmin, chieffmax)[0]
-    return mchirp_int * eta_int * chieff_int
-
-# calculate the volume covered by the template bank
-temp_volume = volume_cosine()
 
 
 if args.make_template_kde:
@@ -196,10 +175,10 @@ if args.make_template_kde:
     f_dest.attrs['template-file'] = args.attr_filename
 
 
-def new_signal_kde(signal_samples, temp_samples, signal_kde, frac, volume, alp, gl_bandwidth):
-    # calculate the constant density value for the additional component
+def new_signal_kde(signal_kde, frac, volume):
+    # Calculate the constant density value for the additional component
     const_density = 1 / volume
-    # calculate the modified signal density
+    # Calculate the modified signal density
     modified_kde = (frac * signal_kde) + ((1 - frac) * const_density)
     return modified_kde
 
@@ -242,9 +221,8 @@ if args.make_signal_kde:
     logging.info('Evaluating signal KDE')
     signal_kde = kde_awkde(signal_samples, temp_samples, \
                            alp=optalpha, gl_bandwidth=optbw)
-    modified_kde = new_signal_kde(signal_samples, temp_samples, signal_kde,\
-                                  frac=args.fraction, volume=temp_volume,\
-                                  alp=optalpha, gl_bandwidth=optbw)
+    modified_kde = new_signal_kde(signal_kde, frac=args.extra_cpt_fraction, \
+                                  volume=args.temp_volume)
     f_dest.create_dataset("data_kde", data=modified_kde)
     f_dest.attrs['stat'] = "signal-kde_file"
 
