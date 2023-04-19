@@ -351,14 +351,15 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def setup_antenna(self, earth_rotation, fedges):
         # Calculate the times to evaluate fp/fc
-        fid_tc = None
+        fid_tc = self.fid_params['tc']
         if 'ref_frame' in self.static_params:
             if self.static_params['ref_frame'] == 'SSB':
                 fid_tc = self.fid_params['tc_ssb']
             elif self.static_params['ref_frame'] == 'LISA':
                 fid_tc = self.fid_params['tc_lisa']
             else:
-                fid_tc = self.fid_params['tc']
+                logging.info(
+                    "Unknown reference frame,choose from LISA or SSB.")
         if earth_rotation is not False:
             logging.info("Enabling frequency-dependent earth rotation")
             from pycbc.waveform.spa_tmplt import spa_length_in_time
