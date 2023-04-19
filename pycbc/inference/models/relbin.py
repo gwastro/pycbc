@@ -351,6 +351,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def setup_antenna(self, earth_rotation, fedges):
         # Calculate the times to evaluate fp/fc
+        fid_tc = None
         if 'ref_frame' in self.static_params:
             if self.static_params['ref_frame'] == 'SSB':
                 fid_tc = self.fid_params['tc_ssb']
