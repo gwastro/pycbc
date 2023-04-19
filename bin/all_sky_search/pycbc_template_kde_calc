@@ -153,7 +153,7 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'True', or 'False'")
 
-# copy standard data to output file
+# Copy standard data to output file
 f_dest.attrs['fit_param'] = args.fit_param
 f_dest.attrs['log_param'] = args.log_param
 with h5py.File(args.template_file, "r") as f_src:
