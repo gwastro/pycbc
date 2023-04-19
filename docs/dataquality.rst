@@ -27,8 +27,8 @@ Finding times of hardware injections
 What flags can I query?
 ========================
 
-A list of many of the flags which can be quiered is `available here <https://www.gw-openscience.org/archive/dataset/O1/>`_. Instead, just give the
-raw name such as "DATA" instead of "H1_DATA".
+A list of many of the flags which can be quiered is `available here <https://www.gwosc.org/archive/dataset/O1/>`_.
+Instead, just give the raw name such as "DATA" instead of "H1_DATA".
 
 There are two additional types of flags which can be queried. These are
 the negation of the flags like "NO_CBC_HW_INJ". The flag "CBC_HW_INJ" would

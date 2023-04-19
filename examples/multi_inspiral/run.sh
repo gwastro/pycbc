@@ -3,11 +3,11 @@
 CONFIG_URL=https://github.com/gwastro/pycbc-config/raw/master/test/multi_inspiral
 BANK_FILE=gw170817_single_template.hdf
 BANK_VETO_FILE=bank_veto_bank.xml
-H1_FRAME=https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW170817/v3/H-H1_GWOSC_4KHZ_R1-1187006835-4096.gwf
+H1_FRAME=https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW170817/v3/H-H1_GWOSC_4KHZ_R1-1187006835-4096.gwf
 H1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
 L1_FRAME=https://dcc.ligo.org/public/0144/T1700406/003/L-L1_CLEANED_HOFT_C02_T1700406_v3-1187008667-4096.gwf
 L1_CHANNEL=DCH-CLEAN_STRAIN_C02_T1700406_v3
-V1_FRAME=https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW170817/v3/V-V1_GWOSC_4KHZ_R1-1187006835-4096.gwf
+V1_FRAME=https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW170817/v3/V-V1_GWOSC_4KHZ_R1-1187006835-4096.gwf
 V1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
 
 echo -e "\\n\\n>> [`date`] Getting template bank"
