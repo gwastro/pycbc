@@ -156,11 +156,6 @@ with h5py.File(args.template_file, "r") as f_src:
     f_src.copy(f_src["./"], f_dest["./"], "input_template_params")
 temp_samples = numpy.vstack((template_pars)).T
 
-# Define the maximum and minimum values for each parameter
-mchirpmax, mchirpmin = numpy.amax(temp_samples[:,0]), numpy.amin(temp_samples[:,0])
-etamax, etamin = numpy.amax(temp_samples[:,1]), numpy.amin(temp_samples[:,1])
-chieffmax, chieffmin = numpy.amax(temp_samples[:,2]), numpy.amin(temp_samples[:,2])
-
 
 if args.make_template_kde:
     logging.info('Starting optimization of template KDE parameters')
