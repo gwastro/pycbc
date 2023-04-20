@@ -42,7 +42,8 @@ sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()
 
 trigger_param_choices = list(sngl_rank_keys)
 trigger_param_choices += [cc + '_chisq' for cc in hdf.chisq_choices]
-trigger_param_choices += ['end_time', 'psd_var_val', 'sigmasq', "sigma_multiple"]
+trigger_param_choices += ['end_time', 'psd_var_val', 'sigmasq',
+                          'sigma_multiple']
 
 template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
                               'fit_by_count_above_thresh',
@@ -192,7 +193,7 @@ def ingest_cuts_option_group(args):
 
 
 def sigma_multiple_cut_thresh(template_ids, statistic,
-                             cut_thresh, ifo):
+                              cut_thresh, ifo):
     """
     Apply cuts based on a multiple of the median sigma value for the template
 
@@ -217,11 +218,12 @@ def sigma_multiple_cut_thresh(template_ids, statistic,
         An array of the indices of triggers which meet the criteria
         set by the dictionary
     """
+    statistic_classname = statistic.__class__.__name__
     if not hasattr(statistic, 'fits_by_tid'):
-        raise ValueError("Cut parameter " + parameter + " cannot "
-                 "be used when the ranking statistic " +
-                 statistic_classname + " does not use "
-                 "template fitting.")
+        raise ValueError("Cut parameter 'sigma_muliple' cannot "
+                         "be used when the ranking statistic " +
+                         statistic_classname + " does not use "
+                         "template fitting.")
     tid_med_sigma = statistic.fits_by_tid[ifo]['median_sigma']
     return cut_thresh * tid_med_sigma[template_ids]
 
@@ -267,12 +269,17 @@ def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
             value = value[idx_out]
         elif parameter == "sigma_multiple":
             if isinstance(triggers, ReadByTemplate):
-                value = np.sqrt(triggers.file[triggers.ifo]['sigmasq'][idx_out])
-                template_ids = triggers.file[triggers.ifo]['template_id'][idx_out]
-                # Get a cut threshold value, this will be different depending on the
-                # template ID, so we rewrite cut_thresh as a value for each trigger
-                cut_thresh = sigma_multiple_cut_thresh(template_ids, statistic,
-                                                       cut_thresh, triggers.ifo)
+                ifo_grp = triggers.file[triggers.ifo]
+                value = np.sqrt(ifo_grp['sigmasq'][idx_out])
+                template_ids = ifo_grp['template_id'][idx_out]
+                # Get a cut threshold value, this will be different
+                # depending on the template ID, so we rewrite cut_thresh
+                # as a value for each trigger, numpy comparison functions
+                # allow this
+                cut_thresh = sigma_multiple_cut_thresh(template_ids,
+                                                       statistic,
+                                                       cut_thresh,
+                                                       triggers.ifo)
             else:
                 err_msg = "Cuts on 'sigma_multiple' are only implemented for "
                 err_msg += "triggers in a ReadByTemplate format. This code "
