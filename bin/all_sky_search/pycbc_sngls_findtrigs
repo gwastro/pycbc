@@ -121,7 +121,6 @@ logging.info("%d out of %d templates kept after applying template cuts",
 logging.info('Clustering events over %s s window within each template',
              args.cluster_window)
 
-# Stat class instance to calculate the ranking statistic
 extra_kwargs = {}
 for inputstr in args.statistic_keywords:
     try:
@@ -148,6 +147,7 @@ for tnum in template_ids:
     n_tot_trigs = tids_full.size
     if not n_tot_trigs: continue
 
+    # Stat class instance to calculate the ranking statistic
     sds = rank_method.single(trigs)[trigger_keep_ids]
     stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)
