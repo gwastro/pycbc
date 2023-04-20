@@ -422,6 +422,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             hc = hc.numpy()
             wfs.append((hp, hc))
         wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+
+        self.wf_ret = wf_ret
         return wf_ret
 
     @property
@@ -775,17 +777,22 @@ class RelativeTimeDom(RelativeTime):
         self.snr_draw(snrs)
 
         for ifo in self.sh:
-            dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
-                                                            p['tc'])
-            dts = p['tc'] + dt
+            if self.precalc_antenna_factors:
+                fp, fc, dt = self.get_precalc_antenna_factors(ifo)
+            else:
+                dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
+                                                                p['dec'],
+                                                                p['tc'])
+                fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
+                                                       0, p['tc'])
 
-            fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                                   0, p['tc'])
+            dts = p['tc'] + dt
             f = (fp + 1.0j * fc) * pol_phase
 
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
+
             sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0

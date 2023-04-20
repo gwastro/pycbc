@@ -32,7 +32,7 @@ from pycbc.io import get_file
 # FIXME with posteriors when available and we can just post-process that
 
 # LVC catalogs
-base_lvc_url = "https://www.gw-openscience.org/eventapi/jsonfull/{}/"
+base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
 _catalogs = {'GWTC-1-confident': 'LVC',
              'GWTC-1-marginal': 'LVC',
              'Initial_LIGO_Virgo': 'LVC',
