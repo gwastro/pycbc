@@ -121,6 +121,11 @@ class LiveEventManager(object):
                                 available_cores)
                 self.fu_cores = 1
 
+        if args.enable_embright_has_massgap:
+            if args.embright_massgap_max < self.mc_area_args['mass_bdary']['ns_max']:
+                parser.error('MAX_GAP value cannot be lower than MAX_NS limit')
+            self.mc_area_args['embright_mg_max'] = args.embright_massgap_max
+
     def commit_results(self, results):
         logging.info('Committing triggers')
         self.comm.gather(results, root=0)
@@ -886,6 +891,14 @@ parser.add_argument('--snr-opt-timeout', type=int, default=400, metavar='SECONDS
 parser.add_argument('--snr-opt-label', type=str, default='SNR_OPTIMIZED',
                     help='Label to apply to snr-optimized GraceDB uploads')
 
+
+parser.add_argument('--enable-embright-has-massgap', action='store_true', default=False,
+                    help='Estimate HasMassGap probability for EMBright info. Lower limit '
+                         'of the mass gap is equal to the maximum NS mass used for '
+                         'the source classification.')
+parser.add_argument('--embright-massgap-max', type=float, default=5.0, metavar='SOLAR MASSES',
+                    help='Upper limit of the mass gap, used for estimating '
+                         'HasMassGap probability.')
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
