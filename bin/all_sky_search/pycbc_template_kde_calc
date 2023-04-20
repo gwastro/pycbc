@@ -27,8 +27,6 @@ parser.add_argument('--signal-file', help='File with parameters of GW signals '
                     'for KDE calculation')
 parser.add_argument('--template-file', required=True, help='Hdf5 file with '
                     'template masses and spins')
-parser.add_argument('--attr-filename', required=True, help='Saved as an attr '
-                    'in the output-file')
 parser.add_argument('--min-mass', type=float, default=None,
                     help='Used only on signal masses: remove all' 
                          'signal events with mass2 < min_mass')
@@ -167,7 +165,7 @@ if args.make_template_kde:
                              gl_bandwidth=optbw)
     f_dest.create_dataset("data_kde", data=template_kde)
     f_dest.attrs['stat'] = "template-kde_file"
-    f_dest.attrs['template-file'] = args.attr_filename
+    f_dest.attrs['template-file'] = args.template_file
 
 
 def new_signal_kde(signal_kde, frac, volume):
@@ -183,7 +181,7 @@ if args.make_signal_kde:
     signal_pars = []
     signal_file = numpy.genfromtxt(args.signal_file, dtype=float,
                                    delimiter=',', names=True)
-    f_dest.attrs['signal-file'] = args.attr_filename
+    f_dest.attrs['signal-file'] = args.signal_file
     mass2_sgnl = signal_file['mass2']
     N_original = len(mass2_sgnl)
     if args.min_mass:
