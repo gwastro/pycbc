@@ -181,13 +181,13 @@ if opts.vary_fupper==False:
         refFreq = metricParams.fUpper
     else:
         # use the maximum frequency for which the moments were calculated
-        fs = numpy.array(metricParams.evals.keys(), dtype=float)
+        fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
         fs.sort()
         refFreq = fs.max()
 else:
     # determine upper frequency cutoffs corresponding to the min and max
     # total masses
-    fs = numpy.array(metricParams.evals.keys(), dtype=float)
+    fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
     fs.sort()
     lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
                               opts.bank_fupper_formula, massRangeParams, fs)

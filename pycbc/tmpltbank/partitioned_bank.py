@@ -549,7 +549,7 @@ class PartitionedTmpltbank(object):
             mass_dict['m2'] = numpy.array([mass2])
             mass_dict['s1z'] = numpy.array([spin1z])
             mass_dict['s2z'] = numpy.array([spin2z])
-            freqs = numpy.array([self.frequency_map.keys()], dtype=float)
+            freqs = numpy.array(list(self.frequency_map.keys()), dtype=float)
             freq_cutoff = coord_utils.return_nearest_cutoff(\
                                      self.upper_freq_formula, mass_dict, freqs)
             freq_cutoff = freq_cutoff[0]
