@@ -96,12 +96,24 @@ def get_bank_property(parameter, bank, template_ids,
             # is given, but 'template_duration' is in the bank
             values = bank['template_duration'][:][template_ids]
         else:
-            values = pnutils.get_imr_duration(bank['mass1'][:][template_ids],
-                                              bank['mass2'][:][template_ids],
-                                              bank['spin1z'][:][template_ids],
-                                              bank['spin2z'][:][template_ids],
-                                              bank['f_lower'][:][template_ids],
-                                              approximant=duration_approximant)
+            fullband_dur = pnutils.get_imr_duration(
+                    bank['mass1'][:][template_ids],
+                    bank['mass2'][:][template_ids],
+                    bank['spin1z'][:][template_ids],
+                    bank['spin2z'][:][template_ids],
+                    bank['f_lower'][:][template_ids],
+                    approximant=duration_approximant)
+            if 'f_final' not in bank:
+                values = fullband_dur
+            else:
+                prem_dur = pnutils.get_imr_duration(
+                    bank['mass1'][:][template_ids],
+                    bank['mass2'][:][template_ids],
+                    bank['spin1z'][:][template_ids],
+                    bank['spin2z'][:][template_ids],
+                    bank['f_final'][:][template_ids],
+                    approximant=duration_approximant)
+                values = fullband_dur - prem_dur
     # Basic conversions
     elif parameter in mass_conversions.keys():
         values = mass_conversions[parameter](bank['mass1'][:][template_ids],

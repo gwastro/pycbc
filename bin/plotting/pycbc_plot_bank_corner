@@ -51,6 +51,7 @@ parser.add_argument("--manual-parameter-override", nargs='+',
 parser.add_argument("--color-parameter",
     help="Color scatter points according to the parameter given, must be "
          "in --parameters")
+parser.add_argument("--color-parameter-log", action='store_true')
 parser.add_argument("--color-min-max", nargs=2, type=float,
     help="Minimum-maximum values for the color option")
 parser.add_argument("--verbose", action='count',
@@ -78,12 +79,9 @@ if args.color_parameter:
 
 duration_required_keys = ['mass1', 'mass2', 'spin1z',
                           'spin2z', 'f_lower']
-if 'template_duration' in args.parameters \
-    or 'premerger_duration' in args.parameters:
-        required_params += duration_required_keys
 
 if 'premerger_duration' in args.parameters:
-    required_params.append('f_final')
+    required_params += duration_required_keys
 
 required_params = np.unique(required_params)
 
@@ -91,6 +89,7 @@ logging.info("Loading the bank file")
 bank = {}
 with h5py.File(args.bank_file, 'r') as bankf:
     for p in bankf.keys():
+        if p == 'compressed_waveforms': continue
         bank[p] = bankf[p][:]
 
 banklen = list(bank.values())[0].size
@@ -108,46 +107,58 @@ if args.manual_parameter_override:
 
 for p in required_params:
     if p in bank: continue
-    if p in ['template_duration', 'premerger_duration']: continue
+    if p == 'premerger_duration': continue
     if p not in bconv.conversion_options:
-        raise KeyError(f"ERROR Parameter {p} not in bank conversion options, choose from " +
-                       ', '.join(bconv.conversion_options))
+        raise KeyError(f"ERROR Parameter {p} not in bank conversion options, "
+                       "choose from " + ', '.join(bconv.conversion_options))
 
     logging.info("Converting %s", p)
     bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
 
-if 'template_duration' in args.parameters or 'premerger_duration' in args.parameters:
+# For durations we need an approximant, but it may not be set
+approximant = bank['approximant'] if 'approximant' in bank else 'SPAtmplt'
+
+if 'premerger_duration' in args.parameters:
     if not all([k in bank for k in duration_required_keys]):
-        not_in_bank = ', '.join([k for k in duration_required_keys if k not in bank])
+        not_in_bank = ', '.join([k for k in duration_required_keys
+                                 if k not in bank])
         raise ValueError(not_in_bank + ' are required for duration calculations')
 
     # Calculate template duration from input
-    fullband_duration = get_imr_duration(
-            bank['mass1'],
-            bank['mass2'],
-            bank['spin1z'],
-            bank['spin2z'],
-            bank['f_lower'],
-            approximant='TaylorF2')
     if 'f_final' in bank:
+        fullband_duration = get_imr_duration(
+                bank['mass1'],
+                bank['mass2'],
+                bank['spin1z'],
+                bank['spin2z'],
+                bank['f_lower'],
+                approximant=approximant)
         premerger_duration = get_imr_duration(
                 bank['mass1'],
                 bank['mass2'],
                 bank['spin1z'],
                 bank['spin2z'],
                 bank['f_final'],
-                approximant='TaylorF2')
+                approximant=approximant)
     else:
         premerger_duration = np.zeros(banklen)
 
-    if 'premerger_duration' in args.parameters:
-        bank['premerger_duration'] = premerger_duration
-    if 'template_duration' in args.parameters:
-        bank['template_duration'] = fullband_duration - premerger_duration
+    bank['premerger_duration'] = premerger_duration
 
 
 # All parameters should be in the bank now, check they are the right size:
 assert all([len(bank[p]) == banklen for p in args.parameters])
+
+# Check that the parameters we are using log scale for are all positive
+log_parameters = args.log_parameters[:]
+if args.color_parameter_log:
+    log_parameters += args.color_parameter
+
+for lp in log_parameters:
+    if not all(bank[lp] > 0):
+        n_not_positive = np.count_nonzero(bank[lp] <= 0)
+        raise ValueError(f"{lp} cannot be set as a log parameter as "
+                         f"{n_not_positive} values are not positive.")
 
 plot_pars = args.parameters
 n_plot_pars = len(plot_pars)
@@ -164,6 +175,11 @@ for i in range(n_plot_pars):
 par_upperlim = {}
 par_lowerlim = {}
 
+# Some parameters are positive-definite, so we don't want
+# bins or plot below zero
+positive_definite_params = ['mass1' ,'mass2', 'mchirp', 'eta',
+                            'f_final', 'f_lower', 'template_duration',
+                            'premerger_duration']
 
 for i, par in enumerate(plot_pars):
     if i:
@@ -172,7 +188,6 @@ for i, par in enumerate(plot_pars):
         axes[i, i].yaxis.tick_right()
         axes[i, 0].set_ylabel(par)
     axes[i, i].set_ylabel("Density")
-    axes[i ,i].ticklabel_format(useOffset=False)
     # Add xlabels to the bottom plots:
     axes[n_plot_pars - 1, i].set_xlabel(par)
     logging.info(f"Generating {par} histogram")
@@ -190,12 +205,17 @@ for i, par in enumerate(plot_pars):
         par_upperlim[par] = bins.max()
         par_lowerlim[par] = bins.min()
     else:
+        axes[i ,i].ticklabel_format(useOffset=False)
         bin_range = bank[par].max() - bank[par].min()
         if not bin_range:
             # values are singular - use one percent either side of the value
             bin_range = 0.01 * bank[par].max()
         par_upperlim[par] = bank[par].max() + 0.05 * bin_range
         par_lowerlim[par] = bank[par].min() - 0.05 * bin_range
+        if par in positive_definite_params:
+            # Positive-definite parameter, increase lower limit to zero if appropriate
+            par_lowerlim[par] = max(par_lowerlim[par], 0)
+            logging.info(f"{par} lower limit shifted")
         bins = np.linspace(par_lowerlim[par], par_upperlim[par], args.histogram_bins + 1)
 
     hist, _ = np.histogram(bank[par], density=True, bins=bins)
@@ -207,12 +227,14 @@ for i, par in enumerate(plot_pars):
     axes[i, i].xaxis.grid(True)
 
 cmap = matplotlib.colormaps['rainbow']
+norm_func = matplotlib.colors.LogNorm if args.color_parameter_log else matplotlib.colors.Normalize
+
 if args.color_min_max:
-    norm = matplotlib.colors.Normalize(vmin=args.color_min_max[0],
-                                       vmax=args.color_min_max[1])
+    norm = norm_func(vmin=args.color_min_max[0],
+                     vmax=args.color_min_max[1])
 elif args.color_parameter:
-    norm = matplotlib.colors.Normalize(vmin=bank[args.color_parameter].min() - 1,
-                                       vmax=bank[args.color_parameter].max() + 1)
+    norm = norm_func(vmin=bank[args.color_parameter].min() - 1,
+                     vmax=bank[args.color_parameter].max() + 1)
 
 
 for y, pary in enumerate(plot_pars):
@@ -242,7 +264,7 @@ for y, pary in enumerate(plot_pars):
         axes[x, y].set_xlim([par_lowerlim[pary], par_upperlim[pary]])
 
 def shade_area(par1, par2, direction, function, color='gray'):
-    logging.info(f"Shading physical limits on {par2} and {par2}")
+    logging.info(f"Shading physical limits on {par1} and {par2}")
     ax_p1 = np.argmax(np.array(plot_pars) == par1)
     ax_p2 = np.argmax(np.array(plot_pars) == par2)
     ax_x = max(ax_p1, ax_p2)
@@ -251,7 +273,7 @@ def shade_area(par1, par2, direction, function, color='gray'):
     par_y = plot_pars[ax_y]
     ax_p1p2 = axes[ax_x, ax_y]
     # mass1 mass2 plot - shade excluded mass2 > mass1 region
-    in_parx = np.linspace(par_lowerlim[par_y], par_upperlim[par_y], 10)
+    in_parx = np.linspace(par_lowerlim[par_y], par_upperlim[par_y], 1000)
     out_pary = function(in_parx)
     if direction == 'x':
         ax_p1p2.fill_betweenx(out_pary, in_parx,
@@ -305,6 +327,12 @@ if 'mass1' in plot_pars and 'mchirp' in plot_pars:
 if 'mass2' in plot_pars and 'mchirp' in plot_pars:
     shade_area('mass2', 'mchirp', 'y', mchirp_equal)
 
+if 'eta' in plot_pars:
+    shade_area_1d('eta', 0.25, 'upper')
+
+if 'q' in plot_pars:
+    shade_area_1d('q', 1, 'lower')
+
 # Shade the limits of the bank
 for p_l_l in args.parameter_limit:
     parameter, limit, limit_type = p_l_l.split(':')
@@ -315,7 +343,8 @@ for p_l_l in args.parameter_limit:
 if args.color_parameter:
     cbax = fig.add_axes([0.55, 0.75, 0.3, 0.05])
     cb = fig.colorbar(scax, cax=cbax, orientation='horizontal')
-    cb.ax.ticklabel_format(useOffset=False)
+    if not args.color_parameter_log:
+        cb.ax.ticklabel_format(useOffset=False)
     cb.set_label(args.color_parameter)
     unq_ff = np.unique(bank[args.color_parameter])
     if len(unq_ff) < 20:
