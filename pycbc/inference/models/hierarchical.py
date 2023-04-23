@@ -350,9 +350,7 @@ class HierarchicalModel(BaseModel):
                 submodel.static_params.pop(p.subname)
             submodel.variable_params = tuple(p.subname
                                              for p in vparam_map[lbl])
-            # remove the waveform transform parameters
-            for p in wfparam_map[lbl]:
-                submodel.static_params.pop(p.subname)
+
             # store
             submodels[lbl] = submodel
             logging.info("")
