@@ -40,6 +40,7 @@ from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
                          likelihood_parts_det, likelihood_parts_vector,
+                         likelihood_parts_v_pol,
                          likelihood_parts_vectorp, snr_predictor,
                          snr_predictor_dom)
 from .tools import DistMarg
@@ -340,6 +341,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def setup_antenna(self, earth_rotation, mode, fedges):
         # Calculate the times to evaluate fp/fc
+        self.earth_rotation = earth_rotation
         if earth_rotation is not False:
             logging.info("Enabling frequency-dependent earth rotation")
             from pycbc.waveform.spa_tmplt import spa_length_in_time
@@ -372,7 +374,10 @@ class Relative(DistMarg, BaseGaussianNoise):
                     return likelihood_parts_vector
 
             if 'polarization' in p and not numpy.isscalar(p['polarization']):
-                return likelihood_parts_vectorp
+                if self.earth_rotation:
+                    return likelihood_parts_v_pol
+                else:
+                    return likelihood_parts_vectorp
 
         return self.lik
 
@@ -531,14 +536,22 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
-                f = (fp + 1.0j * fc) * pol_phase
-                fp = f.real.copy()
-                fc = f.imag.copy()
-                filter_i, norm_i = lik(freqs, fp, fc, dtc,
-                                       hp, hc, h00,
-                                       sdat['a0'], sdat['a1'],
-                                       sdat['b0'], sdat['b1'])
-                self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
+
+                if self.earth_rotation and not numpy.isscalar(p['polarization']):
+                    filter_i, norm_i = lik(freqs, fp, fc, dtc, pol_phase,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
+                else:
+                    f = (fp + 1.0j * fc) * pol_phase
+                    fp = f.real.copy()
+                    fc = f.imag.copy()
+                    filter_i, norm_i = lik(freqs, fp, fc, dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
+                    self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
+                
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
@@ -711,7 +724,6 @@ class RelativeTime(Relative):
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
         return loglr
-
 
 class RelativeTimeDom(RelativeTime):
     """ Heterodyne likelihood optimized for time marginalization and only
