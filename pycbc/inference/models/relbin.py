@@ -239,7 +239,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
-                # Apply detector response if not handled by the waveform generator
+                # Apply detector response if not handled by 
+                # the waveform generator
                 self.det[ifo] = Detector(ifo)
                 dt = self.det[ifo].time_delay_from_earth_center(
                     self.fid_params["ra"],
