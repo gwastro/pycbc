@@ -13,7 +13,6 @@
 # Public License for more details.
 
 import numpy, h5py, operator, argparse, logging
-from scipy.integrate import quad
 from pycbc import init_logging
 import pycbc.conversions as convert
 from pycbc import libutils
@@ -168,7 +167,7 @@ if args.make_template_kde:
     f_dest.attrs['template-file'] = args.template_file
 
 
-def new_signal_kde(signal_kde, frac, volume):
+def signal_kde_extra_cpt(signal_kde, frac=0, volume=1):
     # Calculate the constant density value for the additional component
     const_density = 1 / volume
     # Calculate the modified signal density
@@ -214,8 +213,11 @@ if args.make_signal_kde:
     logging.info('Evaluating signal KDE')
     signal_kde = kde_awkde(signal_samples, temp_samples, \
                            alp=optalpha, gl_bandwidth=optbw)
-    modified_kde = new_signal_kde(signal_kde, frac=args.extra_cpt_fraction, \
-                                  volume=args.temp_volume)
+    if args.extra_cpt_fraction and args.temp_volume:
+        modified_kde = signal_kde_extra_cpt(signal_kde, frac=args.extra_cpt_fraction,\
+                                            volume=args.temp_volume)
+    else:
+        modified_kde = signal_kde_extra_cpt(signal_kde)
     f_dest.create_dataset("data_kde", data=modified_kde)
     f_dest.attrs['stat'] = "signal-kde_file"
 
