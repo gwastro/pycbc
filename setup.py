@@ -52,7 +52,6 @@ install_requires = setup_requires + [
     'ligo-segments',
     'lalsuite!=7.2',
     'lscsoft-glue>=1.59.3',
-    'pykerr',
 ]
 
 def find_files(dirname, relpath=None):
