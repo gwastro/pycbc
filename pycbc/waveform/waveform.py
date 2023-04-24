@@ -759,7 +759,8 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
     kwds = props(template, **params)
     nparams = kwds.copy()
 
-    if set(['mass1', 'mass2', 'spin1z', 'spin2z']).issubset(set(nparams)):
+    mass_spin_params = set(['mass1', 'mass2', 'spin1z', 'spin2z'])
+    if mass_spin_params.issubset(set(nparams.keys())):
         m_final, spin_final = get_final_from_initial(
             mass1=nparams['mass1'], mass2=nparams['mass2'],
             spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
