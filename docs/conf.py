@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
 import pycbc.version
 import subprocess
 import glob
@@ -263,9 +263,10 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None,
-                       'h5py': ('http://docs.h5py.org/en/stable/', None),
-                      }
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/', None),
+    'h5py': ('http://docs.h5py.org/en/stable/', None),
+}
 
 napoleon_use_ivar = False
 
