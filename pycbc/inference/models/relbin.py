@@ -239,7 +239,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
-                # Apply detector response if not handled by 
+                # Apply detector response if not handled by
                 # the waveform generator
                 self.det[ifo] = Detector(ifo)
                 dt = self.det[ifo].time_delay_from_earth_center(
@@ -278,7 +278,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             # We'll apply this to the data, in lieu of the ref waveform
             # This makes it easier to compare target signal to reference later
-            tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])            
+            tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
             self.h00[ifo] = numpy.array(curr_wav) # * tshift
             data = self.data[ifo] * numpy.conjugate(tshift)
 
@@ -291,7 +291,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
-            
+
             self.init_from_frequencies(data, self.h00, fbin_ind, ifo)
             self.antenna_time[ifo] = self.setup_antenna(earth_rotation,
                                                         self.fedges[ifo])
