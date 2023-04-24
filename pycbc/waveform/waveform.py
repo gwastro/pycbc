@@ -759,13 +759,14 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
     kwds = props(template, **params)
     nparams = kwds.copy()
 
-    m_final, spin_final = get_final_from_initial(
-        mass1=nparams['mass1'], mass2=nparams['mass2'],
-        spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
-    t_damping = tau_from_final_mass_spin(m_final, spin_final) * 10
+    if set(['mass1', 'mass2', 'spin1z', 'spin2z']).issubset(set(nparams)):
+        m_final, spin_final = get_final_from_initial(
+            mass1=nparams['mass1'], mass2=nparams['mass2'],
+            spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
+        t_damping = tau_from_final_mass_spin(m_final, spin_final) * 10
 
-    if rwrap < t_damping:
-        rwrap = t_damping
+        if rwrap < t_damping:
+            rwrap = t_damping
 
     if nparams['approximant'] not in _filter_time_lengths:
         raise ValueError("Approximant %s _filter_time_lengths function \
