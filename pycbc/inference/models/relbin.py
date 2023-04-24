@@ -759,7 +759,7 @@ class RelativeTimeDom(RelativeTime):
         p2 = p.copy()
         p2.pop('inclination')
         wfs = self.get_waveforms(p2)
-        
+
         sh_total = hh_total = 0
         ic = numpy.cos(p['inclination'])
         ip = 0.5 * (1.0 + ic * ic)

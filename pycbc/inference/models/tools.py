@@ -282,11 +282,11 @@ class DistMarg():
 
     def premarg_draw(self):
         """ Choose random samples from prechosen set"""
-        
+
         # Update the current proposed times and the marginalization values
         logw = self.premarg['logw_partial']
         choice = numpy.random.randint(0, len(logw), size=self.vsamples)
-        
+
         for k in self.snr_params:
             self.marginalize_vector_params[k] = self.premarg[k][choice]
 
@@ -295,25 +295,25 @@ class DistMarg():
 
         # Update the importance weights for each vector sample
         logw = self.marginalize_vector_weights + logw[choice]
-        self.marginalize_vector_weights = logw - logsumexp(logw)      
-        return self.marginalize_vector_params   
+        self.marginalize_vector_weights = logw - logsumexp(logw)
+        return self.marginalize_vector_params
 
     def snr_draw(self, wfs=None, snrs=None, size=None):
         """ Improve the monte-carlo vector marginalization using the SNR time
         series of each detector
-        """        
+        """
         try:
             p = self.current_params
             set_scalar = numpy.isscalar(p['tc'])
         except:
             set_scalar = False
-        
+
         if not set_scalar:
             if hasattr(self, 'premarg'):
                 return self.premarg_draw()
-        
+
             if snrs is None:
-                snrs = self.get_snr(wfs)            
+                snrs = self.get_snr(wfs)
             if ('tc' in self.marginalized_vector_priors and
                 not ('ra' in self.marginalized_vector_priors
                      or 'dec' in self.marginalized_vector_priors)):
@@ -348,7 +348,7 @@ class DistMarg():
 
         tcmin, tcmax, tcave, ifos, d = self.tinfo
         vsamples = size if size is not  None else self.vsamples
-        
+
         # Determine the weights for the valid time range
         ra = self._current_params['ra']
         dec = self._current_params['dec']
@@ -406,13 +406,13 @@ class DistMarg():
         logw = - logweight[tci]
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['logw_partial'] = logw
-        
+
         if self._current_params is not None:
             # Update the importance weights for each vector sample
             logw = self.marginalize_vector_weights + logw
             self._current_params.update(self.marginalize_vector_params)
             self.marginalize_vector_weights = logw - logsumexp(logw)
-        
+
         return self.marginalize_vector_params
 
     def draw_sky_times(self, snrs, size=None):
@@ -560,7 +560,7 @@ class DistMarg():
             logw = self.marginalize_vector_weights + logw_sky
             self._current_params.update(self.marginalize_vector_params)
             self.marginalize_vector_weights = logw - logsumexp(logw)
-        
+
         return self.marginalize_vector_params
 
     def get_precalc_antenna_factors(self, ifo):
@@ -664,7 +664,7 @@ class DistMarg():
         for ifo in snrs:
             self.tend[ifo] += self.num_samples[ifo] / sample_rate
 
-    def draw_ifos(self, snrs, peak_snr_threshold=4.0, log=True, 
+    def draw_ifos(self, snrs, peak_snr_threshold=4.0, log=True,
                   precalculate_marginalization_points=False,
                   **kwargs):
         """ Helper utility to determine which ifos we should use based on the
@@ -695,12 +695,12 @@ class DistMarg():
                          keep_ifos, psnrs, peak_snr_threshold)
 
         self.keep_ifos = keep_ifos
-        
+
         if precalculate_marginalization_points:
             num_points = int(float(precalculate_marginalization_points))
             self.premarg = self.snr_draw(size=num_points, snrs=snrs).copy()
             self.premarg['sample_idx'] = self.sample_idx
-            
+
         return keep_ifos
 
     @property
