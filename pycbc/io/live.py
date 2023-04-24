@@ -261,24 +261,24 @@ class CandidateForGraceDB(object):
             self.p_astro, self.p_terr = None, None
 
         # Source probabilities and hasmassgap estimation
+        self.probabilities = None
+        self.hasmassgap = None
         if 'mc_area_args' in kwargs:
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
             self.probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
                                                     coinc_inspiral_row.snr,
                                                     min(eff_distances),
                                                     kwargs['mc_area_args'])
-            kwargs['hasmassgap_args'] = copy.deepcopy(kwargs['mc_area_args'])
-            kwargs['hasmassgap_args']['mass_gap'] = True
-            kwargs['hasmassgap_args']['mass_bdary']['ns_max'] = 3.0
-            kwargs['hasmassgap_args']['mass_bdary']['gap_max'] = 5.0
-            self.hasmassgap = calc_probabilities(
-                                  coinc_inspiral_row.mchirp,
-                                  coinc_inspiral_row.snr,
-                                  min(eff_distances),
-                                  kwargs['hasmassgap_args'])['Mass Gap']
-        else:
-            self.probabilities = None
-            self.hasmassgap = None
+            if 'embright_mg_max' in kwargs['mc_area_args']:
+                hasmg_args = copy.deepcopy(kwargs['mc_area_args'])
+                hasmg_args['mass_gap'] = True
+                hasmg_args['mass_bdary']['gap_max'] = \
+                    kwargs['mc_area_args']['embright_mg_max']
+                self.hasmassgap = calc_probabilities(
+                                      coinc_inspiral_row.mchirp,
+                                      coinc_inspiral_row.snr,
+                                      min(eff_distances),
+                                      hasmg_args)['Mass Gap']
 
         # Combine p astro and source probs
         if self.p_astro is not None and self.probabilities is not None:
