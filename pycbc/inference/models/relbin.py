@@ -174,6 +174,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         gammas=None,
         epsilon=0.5,
         earth_rotation=False,
+        earth_rotation_mode=2,
         marginalize_phase=True,
         **kwargs
     ):
@@ -294,6 +295,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             self.init_from_frequencies(data_shifted, self.h00, fbin_ind, ifo)
             self.antenna_time[ifo] = self.setup_antenna(earth_rotation,
+                                                        int(earth_rotation_mode),
                                                         self.fedges[ifo])
         self.combine_layout()
 
@@ -336,7 +338,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                     self.edge_unique.append(Array(self.fedges[ifo]))
         logging.info("%s unique ifo layouts", len(self.edge_unique))
 
-    def setup_antenna(self, earth_rotation, fedges):
+    def setup_antenna(self, earth_rotation, mode, fedges):
         # Calculate the times to evaluate fp/fc
         if earth_rotation is not False:
             logging.info("Enabling frequency-dependent earth rotation")
@@ -346,7 +348,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                 phase_order=-1,
                 mass1=self.fid_params["mass1"],
                 mass2=self.fid_params["mass2"],
-                f_lower=fedges,
+                f_lower=numpy.array(fedges) / mode * 2.0,
             )
             atimes = self.fid_params["tc"] - times
             self.lik = likelihood_parts_v
@@ -504,6 +506,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         norm = 0.0
         filt = 0j
         self._current_wf_parts = {}
+        pol_phase = numpy.exp(-2.0j * p['polarization'])
 
         for ifo in self.data:
             freqs = self.fedges[ifo]
@@ -524,10 +527,13 @@ class Relative(DistMarg, BaseGaussianNoise):
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
                 fp, fc = det.antenna_pattern(p["ra"], p["dec"],
-                                             p["polarization"], times)
+                                             0.0, times)
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
+                f = (fp + 1.0j * fc) * pol_phase
+                fp = f.real.copy()
+                fc = f.imag.copy()
                 filter_i, norm_i = lik(freqs, fp, fc, dtc,
                                        hp, hc, h00,
                                        sdat['a0'], sdat['a1'],
@@ -675,6 +681,7 @@ class RelativeTime(Relative):
         lik = self.likelihood_function
         norm = 0.0
         filt = 0j
+        pol_phase = numpy.exp(-2.0j * p['polarization'])
 
         self.snr_draw(wfs)
         p = self.current_params
@@ -689,10 +696,13 @@ class RelativeTime(Relative):
             hp, hc = wfs[ifo]
             det = self.det[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"],
-                                         p["polarization"], times)
+                                         0, times)
             dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
             dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
+            f = (fp + 1.0j * fc) * pol_phase
+            fp = f.real.copy()
+            fc = f.imag.copy()
             filter_i, norm_i = lik(freqs, fp, fc, dtc,
                                    hp, hc, h00,
                                    sdat['a0'], sdat['a1'],

@@ -431,7 +431,6 @@ class DistMarg():
             return
 
         def make_init():
-            logging.info('pregenerating sky pointings')
             self.snr_params = ['tc', 'ra', 'dec']
             size = self.marginalize_sky_initial_samples
             logging.info('drawing samples: %s', size)
@@ -470,6 +469,7 @@ class DistMarg():
             self.tinfo = {}
 
         if ikey not in self.tinfo:
+            logging.info('pregenerating sky pointings')
             self.tinfo[ikey] = make_init()
 
         dmap, tcmin, tcmax, fp, fc, ra, dec, dtc = self.tinfo[ikey]
