@@ -633,7 +633,7 @@ class RelativeTime(Relative):
             self._ref_snr = self.get_snr(wfs, reference=True)
         return self._ref_snr
 
-    def get_snr(self, wfs, reference=False):
+    def get_snr(self, wfs):
         """ Return hp/hc maximized SNR time series
         """
         delta_t = 1.0 / self.sample_rate
@@ -710,7 +710,7 @@ class RelativeTimeDom(RelativeTime):
     """
     name = "relative_time_dom"
 
-    def get_snr(self, wfs, reference=False):
+    def get_snr(self, wfs):
         """ Return hp/hc maximized SNR time series
         """
         delta_t = 1.0 / self.sample_rate
