@@ -90,6 +90,8 @@ if args.randomize_template_order:
 else:
     template_ids = np.array(range(tmin, tmax))
 
+original_bank_len = len(template_ids)
+
 from pycbc.io.hdf import ReadByTemplate
 trigs = ReadByTemplate(trigger_file,
                        args.template_bank,
@@ -114,14 +116,28 @@ template_ids = cuts.apply_template_cuts(
     template_ids=template_ids)
 
 logging.info("%d out of %d templates kept after applying template cuts",
-             len(template_ids), len(trigs.bank))
+             len(template_ids), original_bank_len)
 
 logging.info('Clustering events over %s s window within each template',
              args.cluster_window)
+
+extra_kwargs = {}
+for inputstr in args.statistic_keywords:
+    try:
+        key, value = inputstr.split(':')
+        extra_kwargs[key] = value
+    except ValueError:
+        err_txt = "--statistic-keywords must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                  "Received {}".format(args.statistic_keywords)
+        raise ValueError(err_txt)
+
+
 for tnum in template_ids:
     tids_uncut = trigs.set_template(tnum)
 
-    trigger_keep_ids = cuts.apply_trigger_cuts(trigs, trigger_cut_dict)
+    trigger_keep_ids = cuts.apply_trigger_cuts(trigs, trigger_cut_dict,
+                                               statistic=rank_method)
     tids_full = tids_uncut[trigger_keep_ids]
     logging.info('%s:%s', tnum, len(tids_uncut))
     if len(tids_full) < len(tids_uncut):
@@ -132,17 +148,6 @@ for tnum in template_ids:
     if not n_tot_trigs: continue
 
     # Stat class instance to calculate the ranking statistic
-    extra_kwargs = {}
-    for inputstr in args.statistic_keywords:
-        try:
-            key, value = inputstr.split(':')
-            extra_kwargs[key] = value
-        except ValueError:
-            err_txt = "--statistic-keywords must take input in the " \
-                      "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                      "Received {}".format(args.statistic_keywords)
-            raise ValueError(err_txt)
-
     sds = rank_method.single(trigs)[trigger_keep_ids]
     stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)

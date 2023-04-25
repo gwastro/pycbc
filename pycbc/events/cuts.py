@@ -34,12 +34,16 @@ from pycbc.io import hdf
 from pycbc.tmpltbank import bank_conversions as bank_conv
 from pycbc.io import get_chisq_from_file_choice
 
+# Only used to check isinstance:
+from pycbc.io.hdf import ReadByTemplate
+
 # sngl_rank_keys are the allowed names of reweighted SNR functions
 sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()
 
 trigger_param_choices = list(sngl_rank_keys)
 trigger_param_choices += [cc + '_chisq' for cc in hdf.chisq_choices]
-trigger_param_choices += ['end_time', 'psd_var_val', 'sigmasq']
+trigger_param_choices += ['end_time', 'psd_var_val', 'sigmasq',
+                          'sigma_multiple']
 
 template_fit_param_choices = ['fit_by_fit_coeff', 'smoothed_fit_coeff',
                               'fit_by_count_above_thresh',
@@ -188,7 +192,43 @@ def ingest_cuts_option_group(args):
     return trigger_cut_dict, template_cut_dict
 
 
-def apply_trigger_cuts(triggers, trigger_cut_dict):
+def sigma_multiple_cut_thresh(template_ids, statistic,
+                              cut_thresh, ifo):
+    """
+    Apply cuts based on a multiple of the median sigma value for the template
+
+    Parameters
+    ----------
+
+    template_ids:
+        template_id values for each of the triggers to be considered,
+        this will be used to associate a sigma threshold for each trigger
+    statistic:
+        A PyCBC ranking statistic instance. Used to get the median_sigma
+        value for the cuts. If fits_by_tid does not exist for the specified
+        ifo (where median_sigma lives), an error will be raised.
+    ifo:
+        The IFO for which we want to read median_sigma
+    cut_thresh: int or float
+        The multiple of median_sigma to compare triggers to
+
+    Returns
+    -------
+    idx_out: numpy array
+        An array of the indices of triggers which meet the criteria
+        set by the dictionary
+    """
+    statistic_classname = statistic.__class__.__name__
+    if not hasattr(statistic, 'fits_by_tid'):
+        raise ValueError("Cut parameter 'sigma_muliple' cannot "
+                         "be used when the ranking statistic " +
+                         statistic_classname + " does not use "
+                         "template fitting.")
+    tid_med_sigma = statistic.fits_by_tid[ifo]['median_sigma']
+    return cut_thresh * tid_med_sigma[template_ids]
+
+
+def apply_trigger_cuts(triggers, trigger_cut_dict, statistic=None):
     """
     Fetch/Calculate the parameter for triggers, and then
     apply the cuts defined in template_cut_dict
@@ -204,6 +244,7 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
         Dictionary with tuples of (parameter, cut_function)
         as keys, cut_thresholds as values
         made using ingest_cuts_option_group function
+
 
     Returns
     -------
@@ -226,11 +267,29 @@ def apply_trigger_cuts(triggers, trigger_cut_dict):
             value = get_chisq_from_file_choice(triggers, chisq_choice)
             # Apply any previous cuts to the value for comparison
             value = value[idx_out]
+        elif parameter == "sigma_multiple":
+            if isinstance(triggers, ReadByTemplate):
+                ifo_grp = triggers.file[triggers.ifo]
+                value = np.sqrt(ifo_grp['sigmasq'][idx_out])
+                template_ids = ifo_grp['template_id'][idx_out]
+                # Get a cut threshold value, this will be different
+                # depending on the template ID, so we rewrite cut_thresh
+                # as a value for each trigger, numpy comparison functions
+                # allow this
+                cut_thresh = sigma_multiple_cut_thresh(template_ids,
+                                                       statistic,
+                                                       cut_thresh,
+                                                       triggers.ifo)
+            else:
+                err_msg = "Cuts on 'sigma_multiple' are only implemented for "
+                err_msg += "triggers in a ReadByTemplate format. This code "
+                err_msg += f"uses a {type(triggers).__name__} format."
+                raise NotImplementedError(err_msg)
         elif ((not hasattr(triggers, "file") and parameter in triggers)
                 or (hasattr(triggers, "file")
                     and parameter in triggers.file[triggers.ifo])):
             # parameter can be read direct from the trigger dictionary / file
-            if parameter in triggers:
+            if not hasattr(triggers, 'file') and parameter in triggers:
                 value = triggers[parameter]
             else:
                 value = triggers.file[triggers.ifo][parameter]
@@ -270,7 +329,7 @@ def apply_template_fit_cut(statistic, ifos, parameter_cut_function, cut_thresh,
         List of IFOS used in this findtrigs instance.
         Templates must pass cuts in all IFOs.
 
-    parameter_cut_function: thresh
+    parameter_cut_function: tuple
         First entry: Which parameter is being used for the cut?
         Second entry: Cut function
 
