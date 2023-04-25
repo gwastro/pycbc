@@ -41,7 +41,10 @@ from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
                          likelihood_parts_det, likelihood_parts_vector,
                          likelihood_parts_v_pol,
+                         likelihood_parts_v_time,
+                         likelihood_parts_v_pol_time,
                          likelihood_parts_vectorp, snr_predictor,
+                         likelihood_parts_vectort,
                          snr_predictor_dom)
 from .tools import DistMarg
 
@@ -366,17 +369,28 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     @property
     def likelihood_function(self):
+        self.lformat = None
         if self.marginalize_vector_params:
             p = self.current_params
 
-            for k in ['ra', 'dec', 'tc']:
-                if k in p and not numpy.isscalar(p[k]):
-                    return likelihood_parts_vector
-
-            if 'polarization' in p and not numpy.isscalar(p['polarization']):
-                if self.earth_rotation:
+            vmarg = set([k for k in self.marginalize_vector_params if not numpy.isscalar(p[k])])
+                 
+            if self.earth_rotation:
+                if vmarg == set(['tc', 'polarization']):
+                    self.lformat = 'earth_time_pol'
+                    return likelihood_parts_v_pol_time
+                if vmarg == set(['polarization']):
+                    self.lformat = 'earth_pol'
                     return likelihood_parts_v_pol
-                else:
+                if vmarg == set(['tc']):
+                    self.lformat = 'earth_time'
+                    return likelihood_parts_v_time
+            else: 
+                if vmarg == set(['ra', 'dec', 'tc'])
+                    return likelihood_parts_vector
+                if vmarg == set(['tc']):
+                    return likelihood_parts_vectort
+                if vmarg == set(['polarization']):
                     return likelihood_parts_vectorp
 
         return self.lik
@@ -537,7 +551,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
 
-                if self.earth_rotation and not numpy.isscalar(p['polarization']):
+                if self.lformat == 'earth_pol':
                     filter_i, norm_i = lik(freqs, fp, fc, dtc, pol_phase,
                                            hp, hc, h00,
                                            sdat['a0'], sdat['a1'],
@@ -710,16 +724,30 @@ class RelativeTime(Relative):
             det = self.det[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"],
                                          0, times)
-            dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-            dtc = p["tc"] + dt - end_time - self.ta[ifo]
+            times = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
+            dtc = p["tc"] - end_time - self.ta[ifo]
 
-            f = (fp + 1.0j * fc) * pol_phase
-            fp = f.real.copy()
-            fc = f.imag.copy()
-            filter_i, norm_i = lik(freqs, fp, fc, dtc,
-                                   hp, hc, h00,
-                                   sdat['a0'], sdat['a1'],
-                                   sdat['b0'], sdat['b1'])
+            if self.lformat == 'earth_pol_time':
+                filter_i, norm_i = lik(
+                                       freqs, fp, fc, dtc, times, pol_phase,
+                                       hp, hc, h00,
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
+            else
+                f = (fp + 1.0j * fc) * pol_phase
+                fp = f.real.copy()
+                fc = f.imag.copy()           
+                if self.lformat == 'earth_time':
+                    filter_i, norm_i = lik(
+                                           freqs, fp, fc, dtc, times,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])                
+                else:
+                    filter_i, norm_i = lik(freqs, fp, fc, times + dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
