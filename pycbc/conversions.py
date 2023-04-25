@@ -140,12 +140,12 @@ def invq_from_mass1_mass2(mass1, mass2):
 
 def eta_from_mass1_mass2(mass1, mass2):
     """Returns the symmetric mass ratio from mass1 and mass2."""
-    return mass1*mass2 / (mass1+mass2)**2.
+    return mass1*mass2 / (mass1 + mass2)**2.
 
 
 def mchirp_from_mass1_mass2(mass1, mass2):
     """Returns the chirp mass from mass1 and mass2."""
-    return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1+mass2)
+    return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1 + mass2)
 
 
 def mass1_from_mtotal_q(mtotal, q):
@@ -155,7 +155,7 @@ def mass1_from_mtotal_q(mtotal, q):
     (heavier) mass. If q < 1, the returned mass will be the secondary
     (lighter) mass.
     """
-    return q*mtotal / (1.+q)
+    return q*mtotal / (1. + q)
 
 
 def mass2_from_mtotal_q(mtotal, q):
@@ -165,7 +165,7 @@ def mass2_from_mtotal_q(mtotal, q):
     (lighter) mass. If q < 1, the returned mass will be the primary (heavier)
     mass.
     """
-    return mtotal / (1.+q)
+    return mtotal / (1. + q)
 
 
 def mass1_from_mtotal_eta(mtotal, eta):
@@ -185,7 +185,7 @@ def mass2_from_mtotal_eta(mtotal, eta):
 def mtotal_from_mchirp_eta(mchirp, eta):
     """Returns the total mass from the chirp mass and symmetric mass ratio.
     """
-    return mchirp / (eta**(3./5.))
+    return mchirp / eta**(3./5.)
 
 
 def mass1_from_mchirp_eta(mchirp, eta):
@@ -219,7 +219,7 @@ def _mass2_from_mchirp_mass1(mchirp, mass1):
     This has 3 solutions but only one will be real.
     """
     a = mchirp**5 / mass1**3
-    roots = numpy.roots([1,0,-a,-a*mass1])
+    roots = numpy.roots([1, 0, -a, -a * mass1])
     # Find the real one
     real_root = roots[(abs(roots - roots.real)).argmin()]
     return real_root.real
@@ -261,7 +261,7 @@ def _mass_from_knownmass_eta(known_mass, eta, known_is_secondary=False,
     float
         The other component mass.
     """
-    roots = numpy.roots([eta, (2*eta - 1)*known_mass, eta*known_mass**2.])
+    roots = numpy.roots([eta, (2*eta - 1) * known_mass, eta * known_mass**2.])
     if force_real:
         roots = numpy.real(roots)
     if known_is_secondary:
@@ -292,30 +292,32 @@ def eta_from_q(q):
     r"""Returns the symmetric mass ratio from the given mass ratio.
 
     This is given by:
-
     .. math::
         \eta = \frac{q}{(1+q)^2}.
 
     Note that the mass ratio may be either < 1 or > 1.
     """
-    return q / (1.+q)**2
+    return q / (1. + q)**2
 
 
 def mass1_from_mchirp_q(mchirp, q):
     """Returns the primary mass from the given chirp mass and mass ratio."""
-    mass1 = (q**(2./5.))*((1.0 + q)**(1./5.))*mchirp
+    mass1 = q**(2./5.) * (1.0 + q)**(1./5.) * mchirp
     return mass1
+
 
 def mass2_from_mchirp_q(mchirp, q):
     """Returns the secondary mass from the given chirp mass and mass ratio."""
-    mass2 = (q**(-3./5.))*((1.0 + q)**(1./5.))*mchirp
+    mass2 = q**(-3./5.) * (1.0 + q)**(1./5.) * mchirp
     return mass2
+
 
 def _a0(f_lower):
     """Used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
        appendix 1, also lalinspiral/python/sbank/tau0tau3.py.
     """
     return 5. / (256. * (numpy.pi * f_lower)**(8./3.))
+
 
 def _a3(f_lower):
     """Another parameter used for chirp times"""
@@ -330,6 +332,15 @@ def tau0_from_mtotal_eta(mtotal, eta, f_lower):
     mtotal = mtotal * lal.MTSUN_SI
     # formulae from arxiv.org:0706.4437
     return _a0(f_lower) / (mtotal**(5./3.) * eta)
+
+
+def tau0_from_mchirp(mchirp, f_lower):
+    r"""Returns :math:`\tau_0` from the chirp mass and the given frequency.
+    """
+    # convert to seconds
+    mchirp = mchirp * lal.MTSUN_SI
+    # formulae from arxiv.org:0706.4437
+    return _a0(f_lower) / mchirp ** (5./3.)
 
 
 def tau3_from_mtotal_eta(mtotal, eta, f_lower):
@@ -356,6 +367,14 @@ def tau3_from_mass1_mass2(mass1, mass2, f_lower):
     mtotal = mass1 + mass2
     eta = eta_from_mass1_mass2(mass1, mass2)
     return tau3_from_mtotal_eta(mtotal, eta, f_lower)
+
+
+def mchirp_from_tau0(tau0, f_lower):
+    r"""Returns chirp mass from :math:`\tau_0` and the given frequency.
+    """
+    mchirp = (_a0(f_lower) / tau0) ** (3./5.)  # in seconds
+    # convert back to solar mass units
+    return mchirp / lal.MTSUN_SI
 
 
 def mtotal_from_tau0_tau3(tau0, tau3, f_lower,
