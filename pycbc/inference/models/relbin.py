@@ -374,23 +374,23 @@ class Relative(DistMarg, BaseGaussianNoise):
             p = self.current_params
 
             vmarg = set([k for k in self.marginalize_vector_params if not numpy.isscalar(p[k])])
-                 
+            
             if self.earth_rotation:
-                if vmarg == set(['tc', 'polarization']):
+                if set(['tc', 'polarization']).issubset(vmarg):
                     self.lformat = 'earth_time_pol'
                     return likelihood_parts_v_pol_time
-                if vmarg == set(['polarization']):
+                elif set(['polarization']).issubset(vmarg):
                     self.lformat = 'earth_pol'
                     return likelihood_parts_v_pol
-                if vmarg == set(['tc']):
+                elif set(['tc']).issubset(vmarg):
                     self.lformat = 'earth_time'
                     return likelihood_parts_v_time
             else: 
-                if vmarg == set(['ra', 'dec', 'tc'])
+                if set(['ra', 'dec', 'tc']).issubset(vmarg):
                     return likelihood_parts_vector
-                if vmarg == set(['tc']):
+                elif set(['tc']) in vmarg:
                     return likelihood_parts_vectort
-                if vmarg == set(['polarization']):
+                elif set(['polarization']).issubset(vmarg):
                     return likelihood_parts_vectorp
 
         return self.lik
@@ -676,8 +676,8 @@ class RelativeTime(Relative):
             dtc = self.tstart[ifo] - self.end_time[ifo] - self.ta[ifo]
 
             snr = snr_predictor(self.fedges[ifo],
-                                dtc, delta_t,
-                                self.num_samples[ifo],
+                                dtc - delta_t * 2.0, delta_t,
+                                self.num_samples[ifo] + 4,
                                 wfs[ifo][0], wfs[ifo][1],
                                 self.h00_sparse[ifo],
                                 sdat['a0'], sdat['a1'],
@@ -727,13 +727,13 @@ class RelativeTime(Relative):
             times = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
             dtc = p["tc"] - end_time - self.ta[ifo]
 
-            if self.lformat == 'earth_pol_time':
+            if self.lformat == 'earth_time_pol':
                 filter_i, norm_i = lik(
                                        freqs, fp, fc, dtc, times, pol_phase,
                                        hp, hc, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
-            else
+            else:
                 f = (fp + 1.0j * fc) * pol_phase
                 fp = f.real.copy()
                 fc = f.imag.copy()           
