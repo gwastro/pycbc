@@ -411,7 +411,7 @@ class CandidateForGraceDB(object):
             logging.error(str(exc))
 
         # Upload em_bright properties JSON
-        if self.hasmassgap is not None:
+        if self.hasmassgap is not None and gid is not None:
             try:
                 self.gracedb.write_log(
                     gid, 'EM Bright properties JSON file upload',
@@ -425,7 +425,7 @@ class CandidateForGraceDB(object):
                 logging.error(str(exc))
 
         # Upload multi-cpt p_astro JSON
-        if self.astro_probs is not None:
+        if self.astro_probs is not None and gid is not None:
             try:
                 self.gracedb.write_log(
                     gid, 'Multi-component p_astro JSON file upload',
@@ -435,11 +435,14 @@ class CandidateForGraceDB(object):
                 )
                 logging.info('Uploaded multi p_astro for %s', gid)
             except Exception as exc:
-                logging.error('Failed to upload multi p_astro file for %s', gid)
+                logging.error(
+                    'Failed to upload multi p_astro file for %s',
+                    gid
+                )
                 logging.error(str(exc))
 
         # If there is p_astro but no probabilities, upload p_astro JSON
-        if hasattr(self, 'pastro_file'):
+        if hasattr(self, 'pastro_file') and gid is not None:
             try:
                 self.gracedb.write_log(
                     gid, '2-component p_astro JSON file upload',
@@ -487,7 +490,7 @@ class CandidateForGraceDB(object):
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
 
         # Upload SNR series in HDF format and plots
-        if self.snr_series is not None:
+        if self.snr_series is not None and gid is not None:
             try:
                 self.gracedb.write_log(
                     gid, 'SNR timeseries HDF file upload',
@@ -525,24 +528,31 @@ class CandidateForGraceDB(object):
             ax.axis('equal')
             fig.savefig(self.prob_plotf)
             pl.close()
-            try:
-                self.gracedb.write_log(
-                    gid, 'Source probabilities JSON file upload',
-                    filename=self.prob_file,
-                    tag_name=['pe']
-                )
-                logging.info('Uploaded source probabilities for %s', gid)
-                self.gracedb.write_log(
-                    gid, 'Source probabilities plot upload',
-                    filename=self.prob_plotf,
-                    tag_name=['pe']
-                )
-                logging.info('Uploaded source probabilities pie chart for %s',
-                             gid)
-            except Exception as exc:
-                logging.error(
-                    'Failed to upload source probability results for %s', gid)
-                logging.error(str(exc))
+            if gid is not None:
+                try:
+                    self.gracedb.write_log(
+                        gid,
+                        'Source probabilities JSON file upload',
+                        filename=self.prob_file,
+                        tag_name=['pe']
+                    )
+                    logging.info('Uploaded source probabilities for %s', gid)
+                    self.gracedb.write_log(
+                        gid,
+                        'Source probabilities plot upload',
+                        filename=self.prob_plotf,
+                        tag_name=['pe']
+                    )
+                    logging.info(
+                        'Uploaded source probabilities pie chart for %s',
+                        gid
+                    )
+                except Exception as exc:
+                    logging.error(
+                        'Failed to upload source probability results for %s',
+                        gid
+                    )
+                    logging.error(str(exc))
 
         if gid is not None:
             try:
