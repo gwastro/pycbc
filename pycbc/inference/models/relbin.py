@@ -388,7 +388,9 @@ class Relative(DistMarg, BaseGaussianNoise):
             else: 
                 if set(['ra', 'dec', 'tc']).issubset(vmarg):
                     return likelihood_parts_vector
-                elif set(['tc']) in vmarg:
+                elif set(['tc', 'polarization']).issubset(vmarg):
+                    return likelihood_parts_vector
+                elif set(['tc']).issubset(vmarg):
                     return likelihood_parts_vectort
                 elif set(['polarization']).issubset(vmarg):
                     return likelihood_parts_vectorp
@@ -683,7 +685,7 @@ class RelativeTime(Relative):
                                 sdat['a0'], sdat['a1'],
                                 sdat['b0'], sdat['b1'])
             snrs[ifo] = TimeSeries(snr, delta_t=delta_t,
-                                   epoch=self.tstart[ifo])
+                                   epoch=self.tstart[ifo] - delta_t * 2.0)
         return snrs
 
     def _loglr(self):
