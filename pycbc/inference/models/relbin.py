@@ -630,7 +630,7 @@ class RelativeTime(Relative):
         if not hasattr(self, '_ref_snr'):
             wfs = {ifo: (self.h00_sparse[ifo],
                          self.h00_sparse[ifo]) for ifo in self.h00_sparse}
-            self._ref_snr = self.get_snr(wfs, reference=True)
+            self._ref_snr = self.get_snr(wfs)
         return self._ref_snr
 
     def get_snr(self, wfs):
