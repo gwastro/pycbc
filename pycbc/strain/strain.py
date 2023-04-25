@@ -1565,8 +1565,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             else:
                 sb_kwargs['valid_mask'] = pycbc.frame.flag_names_to_bitmask(
                         self.data_quality_flags)
-                logging.info('DQ channel %s interpreted as bitmask %s = good',
-                             data_quality_channel, bin(valid_mask))
+                logging.info(
+                    'DQ channel %s interpreted as bitmask %s = good',
+                    data_quality_channel,
+                    bin(sb_kwargs['valid_mask'])
+                )
             self.dq = pycbc.frame.StatusBuffer(frame_src, data_quality_channel,
                                                start_time, **sb_kwargs)
 
