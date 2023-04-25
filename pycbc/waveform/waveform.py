@@ -751,7 +751,7 @@ get_fd_det_waveform.__doc__ = get_fd_det_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
            include_label=False).lstrip(' '))
 
-def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
+def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     """ The base function to calculate time domain version of fourier
     domain approximant which not include or includes detector response.
     Called by `get_td_waveform_from_fd` and `get_td_det_waveform_from_fd_det`.
@@ -759,15 +759,15 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
     kwds = props(template, **params)
     nparams = kwds.copy()
 
-    mass_spin_params = set(['mass1', 'mass2', 'spin1z', 'spin2z'])
-    if mass_spin_params.issubset(set(nparams.keys())):
-        m_final, spin_final = get_final_from_initial(
-            mass1=nparams['mass1'], mass2=nparams['mass2'],
-            spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
-        t_damping = tau_from_final_mass_spin(m_final, spin_final) * 10
-
-        if rwrap < t_damping:
-            rwrap = t_damping
+    if rwrap == None:
+        mass_spin_params = set(['mass1', 'mass2', 'spin1z', 'spin2z'])
+        if mass_spin_params.issubset(set(nparams.keys())):
+            m_final, spin_final = get_final_from_initial(
+                mass1=nparams['mass1'], mass2=nparams['mass2'],
+                spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
+            rwrap = tau_from_final_mass_spin(m_final, spin_final) * 10
+        else:
+            rwrap = 0.2
 
     if nparams['approximant'] not in _filter_time_lengths:
         raise ValueError("Approximant %s _filter_time_lengths function \
