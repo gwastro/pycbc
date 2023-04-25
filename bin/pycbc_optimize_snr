@@ -16,6 +16,7 @@ from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
 from pycbc.filter import matched_filter_core
 import pycbc.waveform.bank
 from pycbc.conversions import (
+    tau0_from_mass1_mass2, mchirp_from_tau0,
     mchirp_from_mass1_mass2, mtotal_from_mchirp_eta,
     mass1_from_mtotal_eta, mass2_from_mtotal_eta
 )
@@ -119,8 +120,8 @@ def compute_minus_network_snr(v, *argv):
 
 def compute_minus_network_snr_pso(v, *argv, **kwargs):
     argv = kwargs['args']
-    nsnr_array = numpy.array([-compute_network_snr_core(v_i, *argv)[0] for v_i in v])
-    return nsnr_array
+    nsnr_array = numpy.array([compute_network_snr_core(v_i, *argv)[0] for v_i in v])
+    return -nsnr_array
 
 
 def optimize_di(bounds, cli_args, extra_args):
@@ -224,6 +225,10 @@ parser.add_argument('--approximant', required=True,
 parser.add_argument('--snr-threshold', default=4.0,
                     help='If the SNR in ifo X is below this threshold do not '
                          'consider it part of the coincidence. Not implemented')
+parser.add_argument('--chirp-time-f-lower', default=20.,
+                    help='Starting frequency for chirp time window (Hz).')
+parser.add_argument('--chirp-time-window', default=2.,
+                    help='Chirp time window (s).')
 parser.add_argument('--gracedb-server', metavar='URL',
                     help='URL of GraceDB server API for uploading events. '
                          'If not provided, the default URL is used.')
@@ -327,14 +332,19 @@ sample_rate = fp['sample_rate'][()]
 extra_args = [data, coinc_times, coinc_ifos, flen,
               approximant, flow, f_end, delta_f, sample_rate]
 
-mchirp = mchirp_from_mass1_mass2(
-    fp['mass1'][()],
-    fp['mass2'][()]
-)
-minchirp = mchirp * (1 - mchirp / 50.0)
-maxchirp = mchirp * (1 + mchirp / 50.0)
-minchirp = 1 if minchirp < 1 else minchirp
-maxchirp = 80 if maxchirp > 80 else maxchirp
+# Determine chirp mass bounds from constant chirp time window
+tau0flow = args.chirp_time_f_lower
+tau0 = tau0_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()], tau0flow)
+# Arbitrarily set max mchirp to 100 Msun if tau0 hits the window
+mintau0 = max(tau0 - args.chirp_time_window.,
+              tau0_from_mchirp(100., tau0flow))
+maxtau0 = tau0 + args.chirp_time_window
+minchirp = mchirp_from_tau0(maxtau0, tau0flow)
+maxchirp = mchirp_from_tau0(mintau0, tau0flow)
+# Check basic sanity
+assert minchirp > 0.5
+assert minchirp < maxchirp
+assert maxchirp < 150.
 
 # boundary of the optimization space (dict of (min, max) tuples)
 bounds = {
