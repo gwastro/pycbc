@@ -210,7 +210,8 @@ cpdef likelihood_parts_v_pol(double [::1] freqs,
     cdef numpy.ndarray[numpy.float64_t, ndim=1] hhv = numpy.empty(num_samples, dtype=numpy.float64)
 
     for j in range(num_samples):
-        N = freqs.shape[0]
+        hh = 0
+        hd = 0
         for i in range(N):
         
             f = (fp[i] + 1.0j * fc[i]) * pol_phase[j]
@@ -264,12 +265,12 @@ cpdef likelihood_parts_v_time(double [::1] freqs,
     cdef numpy.ndarray[numpy.float64_t, ndim=1] hhv = numpy.empty(num_samples, dtype=numpy.float64)
 
     for j in range(num_samples):
-        N = freqs.shape[0]
+        hh = 0
+        hd = 0
         for i in range(N):   
             # This allows for multiple time offsets
             ttime = times[i] + dtc[j]
-            
-            r0n = (exp(-2.0j * 3.141592653 * dtc[i] * freqs[i])
+            r0n = (exp(-2.0j * 3.141592653 * ttime * freqs[i])
                    * (fp[i] * hp[i] + fc[i] * hc[i])) / h00[i]
             r1 = r0n - r0
 
@@ -317,7 +318,8 @@ cpdef likelihood_parts_v_pol_time(double [::1] freqs,
     cdef numpy.ndarray[numpy.float64_t, ndim=1] hhv = numpy.empty(num_samples, dtype=numpy.float64)
 
     for j in range(num_samples):
-        N = freqs.shape[0]
+        hh = 0
+        hd = 0
         for i in range(N):
         
             f = (fp[i] + 1.0j * fc[i]) * pol_phase[j]
@@ -326,8 +328,7 @@ cpdef likelihood_parts_v_pol_time(double [::1] freqs,
         
             # This allows for multiple time offsets
             ttime = times[i] + dtc[j]
-            
-            r0n = (exp(-2.0j * 3.141592653 * dtc[i] * freqs[i])
+            r0n = (exp(-2.0j * 3.141592653 * ttime * freqs[i])
                    * (fp2 * hp[i] + fc2 * hc[i])) / h00[i]
             r1 = r0n - r0
 

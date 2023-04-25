@@ -721,7 +721,7 @@ class RelativeTime(Relative):
             h00 = self.h00_sparse[ifo]
             end_time = self.end_time[ifo]
             times = self.antenna_time[ifo]
-
+            
             hp, hc = wfs[ifo]
             det = self.det[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"],
@@ -731,20 +731,30 @@ class RelativeTime(Relative):
 
             if self.lformat == 'earth_time_pol':
                 filter_i, norm_i = lik(
-                                       freqs, fp, fc, dtc, times, pol_phase,
+                                       freqs, fp, fc, times, dtc, pol_phase,
                                        hp, hc, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
             else:
                 f = (fp + 1.0j * fc) * pol_phase
                 fp = f.real.copy()
-                fc = f.imag.copy()           
-                if self.lformat == 'earth_time':
-                    filter_i, norm_i = lik(
-                                           freqs, fp, fc, dtc, times,
+                fc = f.imag.copy()       
+               
+               
+                filter_i, norm_i = likelihood_parts_vectort(freqs, fp[-1], fc[-1], times[-1] + dtc,
                                            hp, hc, h00,
                                            sdat['a0'], sdat['a1'],
-                                           sdat['b0'], sdat['b1'])                
+                                           sdat['b0'], sdat['b1'])                          
+                if self.lformat == 'earth_time':
+                    fp[:] = fp[-1]
+                    fc[:] = fc[-1]
+                    dtc[:] = dtc + times[-1]
+                    times[:] = 0
+                    filter_i, norm_i = lik(
+                                           freqs, fp, fc, times, dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])           
                 else:
                     filter_i, norm_i = lik(freqs, fp, fc, times + dtc,
                                            hp, hc, h00,
