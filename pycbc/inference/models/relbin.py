@@ -738,18 +738,8 @@ class RelativeTime(Relative):
             else:
                 f = (fp + 1.0j * fc) * pol_phase
                 fp = f.real.copy()
-                fc = f.imag.copy()       
-               
-               
-                filter_i, norm_i = likelihood_parts_vectort(freqs, fp[-1], fc[-1], times[-1] + dtc,
-                                           hp, hc, h00,
-                                           sdat['a0'], sdat['a1'],
-                                           sdat['b0'], sdat['b1'])                          
+                fc = f.imag.copy()                                         
                 if self.lformat == 'earth_time':
-                    fp[:] = fp[-1]
-                    fc[:] = fc[-1]
-                    dtc[:] = dtc + times[-1]
-                    times[:] = 0
                     filter_i, norm_i = lik(
                                            freqs, fp, fc, times, dtc,
                                            hp, hc, h00,
