@@ -2650,7 +2650,8 @@ class SSBToGEO(GEOToSSB):
                         self.beta_ssb_param, self.psi_ssb_param]
         self._outputs = [self.tc_geo_param, self.lamda_geo_param,
                          self.beta_geo_param, self.psi_geo_param]
-        super(SSBToGEO, self).__init__()
+        self.inputs = set(self._inputs)
+        self.outputs = set(self._outputs)
 
 
 class SSBToLISA(LISAToSSB):
@@ -2695,7 +2696,8 @@ class SSBToLISA(LISAToSSB):
                         self.beta_ssb_param, self.psi_ssb_param]
         self._outputs = [self.tc_lisa_param, self.lamda_lisa_param,
                          self.beta_lisa_param, self.psi_lisa_param]
-        super(SSBToLISA, self).__init__()
+        self.inputs = set(self._inputs)
+        self.outputs = set(self._outputs)
 
 
 class GEOToLISA(LISAToGEO):
@@ -2740,7 +2742,8 @@ class GEOToLISA(LISAToGEO):
                         self.beta_geo_param, self.psi_geo_param]
         self._outputs = [self.tc_lisa_param, self.lamda_lisa_param,
                          self.beta_lisa_param, self.psi_lisa_param]
-        super(GEOToLISA, self).__init__()
+        self.inputs = set(self._inputs)
+        self.outputs = set(self._outputs)
 
 
 class Exponent(Log):
