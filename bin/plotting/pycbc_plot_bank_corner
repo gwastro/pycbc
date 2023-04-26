@@ -127,7 +127,9 @@ logging.info("Got %d templates from the bank", banklen)
 
 # If no parameters are given - just plot whatever is in the bank
 if not args.parameters:
-    args.parameters = list(bank.keys())
+    # Plot anything which is not singular
+    args.parameters = [k for k in bank.keys()
+                       if len(np.unique(bank[k])) > 1]
     args.parameters_labels = {k: k for k in list(bank.keys())}
 
 # Check through the conversion options to see if any are used in

@@ -110,8 +110,6 @@ def get_bank_property(parameter, bank, template_ids):
                 bank['spin2z'][:][template_ids],
                 bank['f_lower'][:][template_ids],
                 approximant=duration_approximant)
-            print(fullband_dur.min())
-            print(fullband_dur.max())
 
         if prem_required and 'f_final' in bank:
             # If f_final is in the bank, then we need to calculate
@@ -123,8 +121,6 @@ def get_bank_property(parameter, bank, template_ids):
                 bank['spin2z'][:][template_ids],
                 bank['f_final'][:][template_ids],
                 approximant=duration_approximant)
-            print(prem_dur.min())
-            print(prem_dur.max())
         elif prem_required:
             # Pre-merger for bank without f_final is zero
             prem_dur = np.zeros_like(template_ids)
