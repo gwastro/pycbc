@@ -97,15 +97,19 @@ def get_bank_property(parameter, bank, template_ids,
             values = bank['template_duration'][:][template_ids]
         else:
             fullband_dur = pnutils.get_imr_duration(
-                    bank['mass1'][:][template_ids],
-                    bank['mass2'][:][template_ids],
-                    bank['spin1z'][:][template_ids],
-                    bank['spin2z'][:][template_ids],
-                    bank['f_lower'][:][template_ids],
-                    approximant=duration_approximant)
+                bank['mass1'][:][template_ids],
+                bank['mass2'][:][template_ids],
+                bank['spin1z'][:][template_ids],
+                bank['spin2z'][:][template_ids],
+                bank['f_lower'][:][template_ids],
+                approximant=duration_approximant)
+
             if 'f_final' not in bank:
                 values = fullband_dur
             else:
+                # If f_final is in the bank, then we need to calculate
+                # the premerger time of the end of the template, and remove
+                # this from the IMR duration to get template duration
                 prem_dur = pnutils.get_imr_duration(
                     bank['mass1'][:][template_ids],
                     bank['mass2'][:][template_ids],
