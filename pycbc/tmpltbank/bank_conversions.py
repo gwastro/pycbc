@@ -26,9 +26,9 @@ This module is supplied to make a convenience function for converting into
 specific values from PyCBC template banks.
 """
 
+import numpy as np
 from pycbc import conversions as conv
 from pycbc import pnutils
-import numpy as np
 
 # Convert from parameter name to helper function
 # some multiple names are used for the same function
@@ -128,7 +128,8 @@ def get_bank_property(parameter, bank, template_ids):
         # Now we decide what to return:
         if parameter in ['template_duration', 'duration']:
             values = fullband_dur
-            if prem_required: values -= prem_dur
+            if prem_required:
+                values -= prem_dur
         else:
             values = prem_dur
 
