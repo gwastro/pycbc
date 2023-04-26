@@ -55,10 +55,17 @@ parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
 init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
 
+
 assert len(args.fit_param) == len(args.log_param)
 if args.make_signal_kde and args.make_template_kde:
     parser.error("Choose only one option out of --make-signal-kde and \
                  --make-template-kde")
+
+
+if (args.extra_cpt_fraction is None and args.temp_volume is not None) or \
+    (args.extra_cpt_fraction is not None and args.temp_volume is None):  \
+    parser.error("Both --extra-cpt-fraction and --temp-volume arguments  \
+                  must be provided or neither one should be provided")
 
 
 def kde_awkde(x, x_grid, alp=0.5, gl_bandwidth=None, ret_kde=False):
@@ -97,7 +104,7 @@ def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
     FOM = {}
     for gbw in bwgrid:
         for alphavals in alphagrid:
-            FOM[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals, \
+            FOM[(gbw, alphavals)] = kfcv_awkde(sampleval, gbw, alphavals,
                                                k=nfold)
     optval = max(FOM.items(), key=operator.itemgetter(1))[0]
     optbw, optalpha = optval[0], optval[1]
@@ -111,7 +118,7 @@ def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
         for bw in bwgrid:
             FOMlist = [FOM[(bw, al)] for al in alphagrid]
             ax.plot(alphagrid, FOMlist, label='{0:.3f}'.format(bw))
-        ax.plot(optalpha, maxFOM, 'ko', linewidth=10, label= \
+        ax.plot(optalpha, maxFOM, 'ko', linewidth=10, label=
                 r'$\alpha={0:.3f},bw={1:.3f}$'.format(optalpha, optbw))
         ax.set_xlabel(r'$\alpha$', fontsize=15)
         ax.set_ylabel(r'$FOM$', fontsize=15)
@@ -156,18 +163,18 @@ temp_samples = numpy.vstack((template_pars)).T
 
 if args.make_template_kde:
     logging.info('Starting optimization of template KDE parameters')
-    optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,\
-                              bwgrid=args.bw_grid, nfold=args.nfold_template)
+    optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,
+                                     bwgrid=args.bw_grid, nfold=args.nfold_template)
     logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
     logging.info('Evaluating template KDE')
-    template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha, \
+    template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha,
                              gl_bandwidth=optbw)
     f_dest.create_dataset("data_kde", data=template_kde)
     f_dest.attrs['stat'] = "template-kde_file"
     f_dest.attrs['template-file'] = args.template_file
 
 
-def signal_kde_extra_cpt(signal_kde, frac=0, volume=1):
+def signal_kde_extra_cpt(signal_kde, frac=None, volume=None):
     # Calculate the constant density value for the additional component
     const_density = 1 / volume
     # Calculate the modified signal density
@@ -207,17 +214,17 @@ if args.make_signal_kde:
     
     signal_samples = numpy.vstack((signal_pars)).T
     logging.info('Starting optimization of signal KDE parameters')  
-    optbw, optalpha = optimizedparam(signal_samples, bwgrid=args.bw_grid, \
+    optbw, optalpha = optimizedparam(signal_samples, bwgrid=args.bw_grid,
                       alphagrid=args.alpha_grid, nfold=args.nfold_signal)
     logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
     logging.info('Evaluating signal KDE')
-    signal_kde = kde_awkde(signal_samples, temp_samples, \
+    signal_kde = kde_awkde(signal_samples, temp_samples,
                            alp=optalpha, gl_bandwidth=optbw)
-    if args.extra_cpt_fraction and args.temp_volume:
-        modified_kde = signal_kde_extra_cpt(signal_kde, frac=args.extra_cpt_fraction,\
+    if args.extra_cpt_fraction is not None and args.temp_volume is not None:
+        modified_kde = signal_kde_extra_cpt(signal_kde, frac=args.extra_cpt_fraction,
                                             volume=args.temp_volume)
     else:
-        modified_kde = signal_kde_extra_cpt(signal_kde)
+        modified_kde = signal_kde
     f_dest.create_dataset("data_kde", data=modified_kde)
     f_dest.attrs['stat'] = "signal-kde_file"
 
