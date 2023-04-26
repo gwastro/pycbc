@@ -613,7 +613,6 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
     rotation_matrix_geo = rotation_matrix_ssb_to_geo()
     k_ssb = rotation_matrix_geo @ k_geo
     lamda_ssb, beta_ssb = propagation_vector_to_localization(k_ssb)
-    t_ssb = t_ssb_from_t_geo(t_geo, lamda_ssb, beta_ssb)
     psi_ssb = polarization_newframe(psi_geo, k_geo, rotation_matrix_geo.T)
     if use_astropy:
         bme_coord = PrecessedGeocentric(ra=lamda_geo*units.radian,
@@ -623,6 +622,7 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
                     BarycentricMeanEcliptic(equinox='J2000'))
         lamda_ssb = ssb_sky.lon.rad
         beta_ssb = ssb_sky.lat.rad
+    t_ssb = t_ssb_from_t_geo(t_geo, lamda_ssb, beta_ssb)
 
     return (t_ssb, lamda_ssb, beta_ssb, psi_ssb)
 
