@@ -57,8 +57,7 @@ spin_conversions = {
 }
 
 
-def get_bank_property(parameter, bank, template_ids,
-                      duration_approximant="SEOBNRv4"):
+def get_bank_property(parameter, bank, template_ids):
     """ Get a specific value from a hdf file object in standard PyCBC
     template bank format
 
@@ -74,12 +73,6 @@ def get_bank_property(parameter, bank, template_ids,
     template_ids: numpy array
         Array of template IDs for reading a set of templates from the bank
 
-    Optional Parameters
-    -------------------
-    duration_approximant: string
-        The approximant used to calculate the duration of the template if
-        not already given
-
     Returns
     -------
     values: numpy array, same size as template_ids
@@ -92,6 +85,9 @@ def get_bank_property(parameter, bank, template_ids,
         values = bank[parameter][:][template_ids]
     # Duration may be in the bank, but if not, we need to calculate
     elif parameter.endswith('duration'):
+        duration_approximant = bank['template_duration'][:][template_ids] \
+            if 'approximant' in bank \
+            else np.repeat("SPAtmplt", len(template_ids))
         fullband_req = False
         prem_required = False
         if parameter != "premerger_duration" and 'template_duration' in bank:
@@ -114,6 +110,8 @@ def get_bank_property(parameter, bank, template_ids,
                 bank['spin2z'][:][template_ids],
                 bank['f_lower'][:][template_ids],
                 approximant=duration_approximant)
+            print(fullband_dur.min())
+            print(fullband_dur.max())
 
         if prem_required and 'f_final' in bank:
             # If f_final is in the bank, then we need to calculate
@@ -125,6 +123,8 @@ def get_bank_property(parameter, bank, template_ids,
                 bank['spin2z'][:][template_ids],
                 bank['f_final'][:][template_ids],
                 approximant=duration_approximant)
+            print(prem_dur.min())
+            print(prem_dur.max())
         elif prem_required:
             # Pre-merger for bank without f_final is zero
             prem_dur = np.zeros_like(template_ids)

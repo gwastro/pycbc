@@ -177,6 +177,13 @@ for p in required_params:
     logging.info("Converting %s", p)
     bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
 
+# Durations can be negative where get_imr_duration is not perfect - 
+# set a minimum value of 0.15s
+if 'duration' in bank:
+    bank['duration'] = np.maximum(bank['duration'], 0.15)
+if 'template_duration' in bank:
+    bank['template_duration'] = np.maximum(bank['template_duration'], 0.15)
+
 if args.mpl_style == 'dark_background':
     hist_color = 'white'
 else:
