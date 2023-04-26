@@ -31,7 +31,7 @@ from pycbc.pnutils import get_imr_duration
 from pycbc.results.scatter_histograms import create_multidim_plot
 from pycbc.results import metadata
 
-conversion_options = bconv.conversion_options + ['premerger_duration']
+conversion_options = bconv.conversion_options
 
 parser = argparse.ArgumentParser(usage='pycbc_plot_bank_corner [--options]',
                     description='Plots various parameters against one '
@@ -142,6 +142,16 @@ for co in conversion_options:
     if cpar and co in cpar:
         required_params.append(co)
 
+# Check for possible double-counting of duration parameter:
+if 'duration' in required_params and any([p.endswith('_duration')
+                                          for p in required_params]):
+    # Check whether duration was specified directly:
+    dur_pars = [par for par in args.parameters if 'duration' in par]
+    _dur_pars = [par for par in args.parameters if '_duration' in par]
+    if len(dur_pars) == len(_dur_pars):
+        # It looks like duration has been added where it didnt need to be
+        required_params.remove('duration')
+
 logging.info("Required parameters to get from bank: %s",
              ', '.join(required_params))
 
@@ -159,8 +169,6 @@ required_params = np.unique(required_params)
 # Get parameters not directly in the bank:
 for p in required_params:
     if p in bank: continue
-    # We deal with durations separately later
-    if p.endswith('duration'): continue
     if p not in bconv.conversion_options:
         raise KeyError(f"ERROR Parameter {p} not in bank or conversion "
                        "options, choose from bank parameters or " + \
@@ -168,85 +176,6 @@ for p in required_params:
 
     logging.info("Converting %s", p)
     bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
-
-# For durations we need an approximant, but it may not be set:
-approximant = [ap.decode() for ap in bank['approximant']] \
-        if 'approximant' in bank else np.repeat('SPAtmplt', banklen)
-
-un_appx = np.unique(approximant)
-
-def get_durations(bank, approximant):
-    """
-    A function to get the duration and premerger durations
-
-    Parameters
-    ----------
-    bank: dictionary
-        the bank for which to calculate the durations
-    approximant: string
-        approximant to use for the calculation duration
-
-    Returns
-    -------
-    template_duration, premerger_duration: both floats or arrays of floats
-        The duration (accounting for pre-merger cutoff frequency) and
-        pre-merger duration - if no f_final is set premerger duration is zero
-
-    """
-    fullband_duration = get_imr_duration(
-            bank['mass1'],
-            bank['mass2'],
-            bank['spin1z'],
-            bank['spin2z'],
-            bank['f_lower'],
-            approximant=approximant)
-    # Calculate premerger duration if appropriate
-    if 'f_final' in bank:
-        premerger_duration = get_imr_duration(
-                bank['mass1'],
-                bank['mass2'],
-                bank['spin1z'],
-                bank['spin2z'],
-                bank['f_final'],
-                approximant=approximant)
-    else:
-        premerger_duration = np.zeros_like(bank['mass1'])
-
-    return fullband_duration - premerger_duration, premerger_duration
-
-# Logic as to whether we need to calculate durations:
-# Are any of the duration parameters requested?
-calculate_durations = any(p.endswith('duration') for p in required_params)
-# Which durations are we wanting?
-duration_pars = [p for p in required_params if p.endswith('duration')]
-# Are all the required durations already in the bank?
-calculate_durations &= not all(p in bank for p in duration_pars)
-
-if calculate_durations:
-    logging.info("Calculating durations")
-    if not all(k in bank for k in duration_required_keys):
-        not_in_bank = ', '.join(k for k in duration_required_keys
-                                 if k not in bank)
-        raise ValueError(not_in_bank + ' are required for duration calculations')
-    
-    try:
-        template_duration, premerger_duration = get_durations(bank, approximant)
-    except RuntimeError:
-
-        logging.warning(f"Couldn't get all of {un_appx} durations.")
-        logging.warning("Rertying and using SPAtmplt as approximant instead")
-        template_duration, premerger_duration = get_durations(bank, "SPAtmplt")
-
-    if 'template_duration' in required_params and "template_duration" not in bank:
-        # Hack to make template duration be sensible (useful for high mass 
-        # things where the duration function is not always reliable)
-        template_duration = np.maximum(template_duration, 0.15)
-        # template duration may already be in the bank, so we use that one
-        bank['template_duration'] = template_duration
-
-    if 'premerger_duration' in required_params:
-        bank['premerger_duration'] = premerger_duration
-
 
 if args.mpl_style == 'dark_background':
     hist_color = 'white'

@@ -28,6 +28,7 @@ specific values from PyCBC template banks.
 
 from pycbc import conversions as conv
 from pycbc import pnutils
+import numpy as np
 
 # Convert from parameter name to helper function
 # some multiple names are used for the same function
@@ -89,14 +90,23 @@ def get_bank_property(parameter, bank, template_ids,
     # These just give things already in the bank
     if parameter in bank:
         values = bank[parameter][:][template_ids]
-
-    # These things may be in the bank, but if not, we need to calculate
+    # Duration may be in the bank, but if not, we need to calculate
     elif parameter.endswith('duration'):
+        fullband_req = False
+        prem_required = False
         if parameter != "premerger_duration" and 'template_duration' in bank:
             # This statement should be the reached only if 'duration'
             # is given, but 'template_duration' is in the bank
             values = bank['template_duration'][:][template_ids]
-        else:
+        elif parameter in ['template_duration', 'duration']:
+            # Only calculate fullband/premerger durations if we need to
+            fullband_req = True
+            if 'f_final' in bank:
+                prem_required = True
+        elif parameter == "premerger_duration":
+            prem_required = True
+
+        if fullband_req:
             fullband_dur = pnutils.get_imr_duration(
                 bank['mass1'][:][template_ids],
                 bank['mass2'][:][template_ids],
@@ -105,24 +115,26 @@ def get_bank_property(parameter, bank, template_ids,
                 bank['f_lower'][:][template_ids],
                 approximant=duration_approximant)
 
-            if 'f_final' in bank:
-                # If f_final is in the bank, then we need to calculate
-                # the premerger time of the end of the template
-                prem_dur = pnutils.get_imr_duration(
-                    bank['mass1'][:][template_ids],
-                    bank['mass2'][:][template_ids],
-                    bank['spin1z'][:][template_ids],
-                    bank['spin2z'][:][template_ids],
-                    bank['f_final'][:][template_ids],
-                    approximant=duration_approximant)
-            else:
-                prem_dur = np.zeros_like(template_ids)
+        if prem_required and 'f_final' in bank:
+            # If f_final is in the bank, then we need to calculate
+            # the premerger time of the end of the template
+            prem_dur = pnutils.get_imr_duration(
+                bank['mass1'][:][template_ids],
+                bank['mass2'][:][template_ids],
+                bank['spin1z'][:][template_ids],
+                bank['spin2z'][:][template_ids],
+                bank['f_final'][:][template_ids],
+                approximant=duration_approximant)
+        elif prem_required:
+            # Pre-merger for bank without f_final is zero
+            prem_dur = np.zeros_like(template_ids)
 
-            # Now we decide what to return:
-            if parameter in ['template_duration', 'tduration']:
-                values = fullband_dur - prem_dur
-            else:
-                values = prem_dur
+        # Now we decide what to return:
+        if parameter in ['template_duration', 'duration']:
+            values = fullband_dur
+            if prem_required: values -= prem_dur
+        else:
+            values = prem_dur
 
     # Basic conversions
     elif parameter in mass_conversions.keys():
