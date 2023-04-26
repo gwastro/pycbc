@@ -34,7 +34,8 @@ from pycbc import pnutils
 conversion_options = ['mass1', 'mass2', 'spin1z', 'spin2z', 'duration',
                       'template_duration', 'mtotal', 'total_mass',
                       'q', 'invq', 'eta', 'chirp_mass', 'mchirp',
-                      'chieff', 'chi_eff', 'effective_spin', 'chi_a']
+                      'chieff', 'chi_eff', 'effective_spin', 'chi_a',
+                      'premerger_duration']
 
 
 mass_conversions = {
@@ -90,8 +91,8 @@ def get_bank_property(parameter, bank, template_ids,
         values = bank[parameter][:][template_ids]
 
     # These things may be in the bank, but if not, we need to calculate
-    elif parameter in ['template_duration', 'duration']:
-        if 'template_duration' in bank:
+    elif parameter.endswith('duration'):
+        if parameter != "premerger_duration" and 'template_duration' in bank:
             # This statement should be the reached only if 'duration'
             # is given, but 'template_duration' is in the bank
             values = bank['template_duration'][:][template_ids]
@@ -104,12 +105,9 @@ def get_bank_property(parameter, bank, template_ids,
                 bank['f_lower'][:][template_ids],
                 approximant=duration_approximant)
 
-            if 'f_final' not in bank:
-                values = fullband_dur
-            else:
+            if 'f_final' in bank:
                 # If f_final is in the bank, then we need to calculate
-                # the premerger time of the end of the template, and remove
-                # this from the IMR duration to get template duration
+                # the premerger time of the end of the template
                 prem_dur = pnutils.get_imr_duration(
                     bank['mass1'][:][template_ids],
                     bank['mass2'][:][template_ids],
@@ -117,7 +115,15 @@ def get_bank_property(parameter, bank, template_ids,
                     bank['spin2z'][:][template_ids],
                     bank['f_final'][:][template_ids],
                     approximant=duration_approximant)
+            else:
+                prem_dur = np.zeros_like(template_ids)
+
+            # Now we decide what to return:
+            if parameter in ['template_duration', 'tduration']:
                 values = fullband_dur - prem_dur
+            else:
+                values = prem_dur
+
     # Basic conversions
     elif parameter in mass_conversions.keys():
         values = mass_conversions[parameter](bank['mass1'][:][template_ids],
