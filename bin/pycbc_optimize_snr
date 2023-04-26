@@ -335,8 +335,8 @@ extra_args = [data, coinc_times, coinc_ifos, flen,
 # Determine chirp mass bounds from constant chirp time window
 tau0flow = args.chirp_time_f_lower
 tau0 = tau0_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()], tau0flow)
-# Arbitrarily set max mchirp to 100 Msun if tau0 hits the window
-mintau0 = max(tau0 - args.chirp_time_window.,
+# Arbitrarily set max mchirp to 100 Msun if tau0 - window is too small
+mintau0 = max(tau0 - args.chirp_time_window,
               tau0_from_mchirp(100., tau0flow))
 maxtau0 = tau0 + args.chirp_time_window
 minchirp = mchirp_from_tau0(maxtau0, tau0flow)
