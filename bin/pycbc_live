@@ -284,7 +284,7 @@ class LiveEventManager(object):
             triggers[f'foreground/pvalue_{ifo}_saturated'] = pv_sat
 
     def setup_optimize_snr(
-        self, results, live_ifos, triggering_ifos, fname, gid
+        self, results, live_ifos, triggering_ifos, fname
     ):
         """Setup and start the network SNR optimization process for a
         candidate event. See arXiv:2008.07494 for details.
@@ -303,8 +303,6 @@ class LiveEventManager(object):
             File name where the candidate information has been saved.
             Used to name other files produced as part of setting up the
             SNR optimization.
-        gid : str
-            GraceDB ID of the candidate.
         """
         template_id = results[f'foreground/{live_ifos[0]}/template_id']
         p = props(self.bank.table[template_id])
@@ -360,8 +358,6 @@ class LiveEventManager(object):
             hdfp['ifar'] = results['foreground/ifar']
             if 'p_terr' in results:
                 hdfp['p_terr'] = results['p_terr']
-            if gid is not None:
-                hdfp['gid'] = gid
 
             for ifo in args.channel_name:
                 hdfp[f'channel_names/{ifo}'] = args.channel_name[ifo]
@@ -404,6 +400,13 @@ class LiveEventManager(object):
             opt_scheme = args.processing_scheme.split(':')[0]
             cmd += '--processing-scheme {}:1 '.format(opt_scheme)
 
+        return cmd, out_dir_path
+
+    def run_optimize_snr(self, cmd, out_dir_path, fname, gid):
+        curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
+        with h5py.File(curr_fname, 'a') as hdfp:
+            if gid is not None:
+                hdfp['gid'] = gid
         log_fname = os.path.join(out_dir_path, 'optimize_snr.log')
 
         logging.info('running %s with log to %s', cmd, log_fname)
@@ -430,8 +433,8 @@ class LiveEventManager(object):
             gdbargs['service_url'] = self.gracedb_server
         self.gracedb = GraceDb(**gdbargs)
 
-    def upload_in_thread(self, event, fname, comment, results, live_ifos, ifos,
-                         upload_checks, optimize_snr_checks):
+    def upload_in_thread(self, event, fname, comment, cmd, out_dir_path,
+                        upload_checks, optimize_snr_checks):
         gid = None
         if upload_checks:
             gid = event.upload(
@@ -443,12 +446,11 @@ class LiveEventManager(object):
                 labels=self.gracedb_labels
             )
         if optimize_snr_checks:
-            self.setup_optimize_snr(
-                results,
-                live_ifos,
-                ifos,
-                fname,
-                gid
+            self.run_optimize_snr(
+                    cmd,
+                    out_dir_path,
+                    fname,
+                    gid
             )
 
     def check_coincs(self, ifos, coinc_results, psds):
@@ -523,14 +525,22 @@ class LiveEventManager(object):
         if not upload_checks:
             event.save(fname)
         if upload_checks or optimize_snr_checks:
+            live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+            cmd, out_dir_path = None, None
             if optimize_snr_checks:
                 logging.info('Optimizing SNR for coinc above threshold ..')
                 # Tell snr optimized event about p_terr
                 if hasattr(event, 'p_terr') and event.p_terr is not None:
                     coinc_results['p_terr'] = event.p_terr
-            live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+                # Run the setup to gather/save all the data before threading
+                cmd, out_dir_path = self.setup_optimize_snr(
+                    coinc_results,
+                    live_ifos,
+                    coinc_ifos,
+                    fname,
+                )
             thread_args = (
-                event, fname, comment, coinc_results, live_ifos, coinc_ifos,
+                event, fname, comment, cmd, out_dir_path,
                 upload_checks, optimize_snr_checks
             )
             gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
@@ -611,14 +621,21 @@ class LiveEventManager(object):
             if not upload_checks:
                 event.save(fname)
             if upload_checks or optimize_snr_checks:
+                live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+                cmd, out_dir_path = None, None
                 if optimize_snr_checks:
                     logging.info('Optimizing SNR for single above threshold ..')
                     # Tell snr optimized event about p_terr
                     if hasattr(event, 'p_terr') and event.p_terr is not None:
                         single['p_terr'] = event.p_terr
-                live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+                cmd, out_dir_path = self.setup_optimize_snr(
+                    single,
+                    live_ifos,
+                    [ifo],
+                    fname,
+                )
                 thread_args = (
-                    event, fname, comment, single, live_ifos, [ifo],
+                    event, fname, comment, cmd, out_dir_path,
                     upload_checks, optimize_snr_checks
                 )
                 gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
