@@ -292,6 +292,7 @@ def eta_from_q(q):
     r"""Returns the symmetric mass ratio from the given mass ratio.
 
     This is given by:
+
     .. math::
         \eta = \frac{q}{(1+q)^2}.
 
