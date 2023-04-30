@@ -214,8 +214,6 @@ else:
     draw_size = 4000 # Just a default so it's not super slow drawing large sets
     old_samples = None
 
-samples_fieldnames_old = []
-
 while True:
     logging.info("Drawing samples")
     samples = randomsampler.rvs(size=draw_size)
@@ -229,7 +227,6 @@ while True:
                     samples = samples.add_fields([numpy.repeat(static_params[item],
                                                  draw_size).astype(float)],
                                                  [item])
-        samples_fieldnames_old = samples.fieldnames
         samples = transforms.apply_transforms(samples, waveform_transforms)
 
     # We are drawing until we hit a time so check if we've reached it
@@ -263,10 +260,7 @@ while True:
 
 # write results
 logging.info("Writing results")
-# overwrite the parameters when transformed parameters have same the same name
-write_args = [arg for arg in samples.fieldnames]
-for arg in samples_fieldnames_old:
-    static_params.pop(arg)
-
+write_args = [arg for arg in samples.fieldnames
+              if arg not in static_params.keys()]
 InjectionSet.write(opts.output_file, samples, write_args, static_params,
                    cmd=" ".join(sys.argv))
