@@ -336,7 +336,7 @@ maxchirp = mchirp * (1 + mchirp / 50.0)
 minchirp = 1 if minchirp < 1 else minchirp
 maxchirp = 80 if maxchirp > 80 else maxchirp
 
-# Astrophysical spin bounds dependent on system masses - https://surface.syr.edu/etd/316/ pg. 15
+# Astrophysical spin bounds dependent on system masses - https://inspirehep.net/literature/1124003
 minspin1z = -0.4 if fp['mass1'][()] < 3 else -0.9
 maxspin1z = 0.4 if fp['mass1'][()] < 3 else 0.9
 minspin2z = -0.4 if fp['mass2'][()] < 3 else -0.9
