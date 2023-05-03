@@ -31,7 +31,7 @@ import pycbc.psd
 import pycbc.strain
 from pycbc import tmpltbank
 # Old ligolw output functions no longer imported at package level
-import pycbc.tmpltbank.bank_output_utils as llw_output
+import pycbc.tmpltbank.bank_output_utils as bank_output
 from pycbc import pnutils
 
 
@@ -376,16 +376,11 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
     # print >>fileP, masses[0],masses[1],masses[2],masses[3],masses[4],\
     #  masses[5],masses[6],masses[7],masses[8],masses[9],v1,v2
 
-logging.info("Writing output")
+logging.info("Writing output to file %s", opts.output_file)
 
-# Currently this is hardcoded to dump as a sngl_inspiral table. But this is
-# easily changed.
-
-llw_output.output_sngl_inspiral_table(
+bank_output.output_bank_to_file(
     opts.output_file,
     tempBank,
-    metricParams,
-    ethincaParams,
     programName=__program__,
     optDict=opts.__dict__
 )

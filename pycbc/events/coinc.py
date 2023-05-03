@@ -358,9 +358,6 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
-
-    logging.info('clustering coinc triggers over %ss window' % window)
-
     if len(time1) == 0 or len(time2) == 0:
         logging.info('No coinc triggers in one, or both, ifos.')
         return numpy.array([])
@@ -377,7 +374,9 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
+    logging.info('Clustering events over %s s window', window)
     cidx = cluster_over_time(stat, time, window, **kwargs)
+    logging.info('%d triggers remaining', len(cidx))
     return cidx
 
 
@@ -430,7 +429,9 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
+    logging.info('Clustering events over %s s window', window)
     cidx = cluster_over_time(stat, time_avg, window, **kwargs)
+    logging.info('%d triggers remaining', len(cidx))
 
     return cidx
 
@@ -482,7 +483,6 @@ def cluster_over_time(stat, time, window, method='python',
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
-    logging.info('Clustering events over %s s window', window)
 
     indices = []
     time_sorting = time.argsort()
@@ -492,6 +492,8 @@ def cluster_over_time(stat, time, window, method='python',
     left = time.searchsorted(time - window)
     right = time.searchsorted(time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
+
+    logging.debug('%d triggers before clustering', len(time))
 
     if method == 'cython':
         j = timecluster_cython(indices, left, right, stat, len(left))
@@ -531,7 +533,7 @@ def cluster_over_time(stat, time, window, method='python',
 
     indices = indices[:j]
 
-    logging.info('%d triggers remaining', len(indices))
+    logging.debug('%d triggers remaining', len(indices))
     return time_sorting[indices]
 
 
@@ -604,8 +606,8 @@ class MultiRingBuffer(object):
             self.valid_ends[i] -= 1
 
     def advance_time(self):
-        """Advance the internal time increment by 1, expiring any triggers that
-        are now too old.
+        """Advance the internal time increment by 1, expiring any triggers
+        that are now too old.
         """
         self.time += 1
 
@@ -613,9 +615,13 @@ class MultiRingBuffer(object):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
         for i, v in zip(indices, values):
-            curr_pos = self.valid_ends[i]
             # Expand ring buffer size if needed
             if self.valid_ends[i] == len(self.buffer[i]):
+                # First clear out any old triggers before resizing
+                self.update_valid_start(i)
+                self.check_expired_triggers(i)
+
+                # Then increase arrays by buffer_increment
                 self.buffer[i] = numpy.resize(
                     self.buffer[i],
                     max(
@@ -630,6 +636,7 @@ class MultiRingBuffer(object):
                         self.min_buffer_size
                     )
                 )
+            curr_pos = self.valid_ends[i]
             self.buffer[i][curr_pos] = v
             self.buffer_expire[i][curr_pos] = self.time
             self.valid_ends[i] = self.valid_ends[i] + 1
@@ -647,9 +654,8 @@ class MultiRingBuffer(object):
         """Return the expiration vector of a given ring buffer """
         return self.buffer_expire[buffer_index][self.valid_slice(buffer_index)]
 
-    def data(self, buffer_index):
-        """Return the data vector for a given ring buffer"""
-        # Check for expired elements and discard if they exist
+    def update_valid_start(self, buffer_index):
+        """Update the valid_start for the given buffer index"""
         expired = self.time - self.max_time
         exp = self.buffer_expire[buffer_index]
         j = self.valid_starts[buffer_index]
@@ -659,6 +665,14 @@ class MultiRingBuffer(object):
                 break
             j += 1
         self.valid_starts[buffer_index] = j
+
+    def check_expired_triggers(self, buffer_index):
+        """Check if we should free memory for this buffer index.
+
+        Check what fraction of triggers are expired in the specified buffer
+        and if it is more than the allowed fraction (set by
+        self.resize_invalid_fraction) resize the array to remove them.
+        """
         val_start = self.valid_starts[buffer_index]
         val_end = self.valid_ends[buffer_index]
         buf_len = len(self.buffer[buffer_index])
@@ -670,6 +684,11 @@ class MultiRingBuffer(object):
             self.buffer[buffer_index] = self.buffer[buffer_index][val_start:val_end].copy()
             self.valid_ends[buffer_index] -= val_start
             self.valid_starts[buffer_index] = 0
+
+    def data(self, buffer_index):
+        """Return the data vector for a given ring buffer"""
+        self.update_valid_start(buffer_index)
+        self.check_expired_triggers(buffer_index)
 
         return self.buffer[buffer_index][self.valid_slice(buffer_index)]
 
@@ -978,10 +997,25 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return pickle.load(filename)
 
     def ifar(self, coinc_stat):
-        """Return the far that would be associated with the coincident given.
+        """Map a given value of the coincident ranking statistic to an inverse
+        false-alarm rate (IFAR) using the interally stored background sample.
+
+        Parameters
+        ----------
+        coinc_stat: float
+            Value of the coincident ranking statistic to be converted.
+
+        Returns
+        -------
+        ifar: float
+            Inverse false-alarm rate in unit of years.
+        ifar_saturated: bool
+            True if `coinc_stat` is larger than all the available background,
+            in which case `ifar` is to be considered an upper limit.
         """
         n = self.coincs.num_greater(coinc_stat)
-        return self.background_time / lal.YRJUL_SI / (n + 1)
+        ifar = self.background_time / lal.YRJUL_SI / (n + 1)
+        return ifar, n == 0
 
     def set_singles_buffer(self, results):
         """Create the singles buffer
@@ -1212,10 +1246,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
-
+            logging.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                   self.timeslide_interval,
-                                  self.analysis_block,
+                                  self.analysis_block + 2*self.time_window,
                                   method='cython')
             offsets = offsets[cidx]
             zerolag_idx = (offsets == 0)
@@ -1235,21 +1269,22 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         coinc_results = {}
         # Save information about zerolag triggers
         if num_zerolag > 0:
-            zerolag_results = {}
             idx = cidx[zerolag_idx][0]
             zerolag_cstat = cstat[cidx][zerolag_idx]
-            zerolag_results['foreground/ifar'] = self.ifar(zerolag_cstat)
-            zerolag_results['foreground/stat'] = zerolag_cstat
+            ifar, ifar_sat = self.ifar(zerolag_cstat)
+            zerolag_results = {
+                'foreground/ifar': ifar,
+                'foreground/ifar_saturated': ifar_sat,
+                'foreground/stat': zerolag_cstat,
+                'foreground/type': '-'.join(self.ifos)
+            }
             template = template_ids[idx]
             for ifo in self.ifos:
                 trig_id = trigger_ids[ifo][idx]
                 single_data = self.singles[ifo].data(template)[trig_id]
                 for key in single_data.dtype.names:
-                    path = 'foreground/%s/%s' % (ifo, key)
+                    path = f'foreground/{ifo}/{key}'
                     zerolag_results[path] = single_data[key]
-
-            zerolag_results['foreground/type'] = '-'.join(self.ifos)
-
             coinc_results.update(zerolag_results)
 
         # Save some summary statistics about the background

@@ -49,7 +49,7 @@ def draw_sample(loglr, size=None):
 
 
 class DistMarg():
-    """Help class to add bookkeeping for distance marginalization"""
+    """Help class to add bookkeeping for likelihood marginalization"""
 
     marginalize_phase = None
     distance_marginalization = None
@@ -66,6 +66,7 @@ class DistMarg():
                               marginalize_distance_density=None,
                               marginalize_vector_params=None,
                               marginalize_vector_samples=1e3,
+                              marginalize_sky_initial_samples=1e6,
                               **kwargs):
         """ Setup the model for use with distance marginalization
 
@@ -119,11 +120,15 @@ class DistMarg():
         self.reconstruct_phase = False
         self.reconstruct_distance = False
         self.reconstruct_vector = False
+        self.precalc_antennna_factors = False
 
         # Handle any requested parameter vector / brute force marginalizations
         self.marginalize_vector_params = {}
         self.marginalized_vector_priors = {}
         self.vsamples = int(marginalize_vector_samples)
+
+        self.marginalize_sky_initial_samples = \
+            int(float(marginalize_sky_initial_samples))
 
         for param in str_to_tuple(marginalize_vector_params, str):
             logging.info('Marginalizing over %s, %s points from prior',
@@ -294,6 +299,7 @@ class DistMarg():
         else:
             # OK, we couldn't do anything with the requested monte-carlo
             # marginalizations.
+            self.precalc_antenna_factors = None
             pass
 
     def draw_times(self, snrs):
@@ -308,6 +314,8 @@ class DistMarg():
             tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
             tcave = (tcmax + tcmin) / 2.0
             ifos = list(snrs.keys())
+            if hasattr(self, 'keep_ifos'):
+                ifos = self.keep_ifos
             d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
             self.tinfo = tcmin, tcmax, tcave, ifos, d
 
@@ -325,8 +333,13 @@ class DistMarg():
         starts = []
         ends = []
 
-        starts.append(max(tcmin + dt, snrs[iref].start_time))
-        ends.append(min(tcmax + dt, snrs[iref].end_time))
+        tmin, tmax = tcmin - dt, tcmax + dt
+        if hasattr(self, 'tstart'):
+            tmin = self.tstart[iref]
+            tmax = self.tend[iref]
+
+        starts.append(max(tmin, snrs[iref].start_time))
+        ends.append(min(tmax, snrs[iref].end_time))
 
         idels = {}
         for ifo in ifos[1:]:
@@ -375,16 +388,24 @@ class DistMarg():
         """
         # First setup
         # precalculate dense sky grid and make dict and or array of the results
-        if not hasattr(self, 'tinfo'):
+        ifos = list(snrs.keys())
+        if hasattr(self, 'keep_ifos'):
+            ifos = self.keep_ifos
+        ikey = ''.join(ifos)
+
+        # No good SNR peaks, go with prior draw
+        if len(ifos) == 0:
+            return
+
+        def make_init():
             logging.info('pregenerating sky pointings')
-            size = int(1e6)
-            logging.info('drawing samples')
+            size = self.marginalize_sky_initial_samples
+            logging.info('drawing samples: %s', size)
             ra = self.marginalized_vector_priors['ra'].rvs(size=size)['ra']
             dec = self.marginalized_vector_priors['dec'].rvs(size=size)['dec']
             tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
             tcave = (tcmax + tcmin) / 2.0
-            ifos = list(snrs.keys())
-            d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
+            d = {ifo: Detector(ifo, reference_time=tcave) for ifo in self.data}
 
             # What data structure to hold times? Dict of offset -> list?
             logging.info('sorting into time delay dict')
@@ -395,18 +416,29 @@ class DistMarg():
                 dt = numpy.rint(dt / snrs[ifos[0]].delta_t)
                 dts.append(dt)
 
-            dtc = d[ifos[0]].time_delay_from_earth_center(ra, dec, tcave)
+            fp, fc, dtc = {}, {}, {}
+            for ifo in self.data:
+                fp[ifo], fc[ifo] = d[ifo].antenna_pattern(ra, dec, 0.0, tcave)
+                dtc[ifo] = d[ifo].time_delay_from_earth_center(ra, dec, tcave)
 
             dmap = {}
             for i, t in enumerate(tqdm.tqdm(zip(*dts))):
-                v = ra[i], dec[i], dtc[i]
                 if t not in dmap:
                     dmap[t] = []
-                dmap[t].append(v)
+                dmap[t].append(i)
 
-            self.tinfo = ifos, dmap, d, tcmin, tcmax
+            if len(ifos) == 1:
+                dmap[()] = numpy.arange(0, size, 1).astype(int)
 
-        ifos, dmap, d, tcmin, tcmax = self.tinfo
+            return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc
+
+        if not hasattr(self, 'tinfo'):
+            self.tinfo = {}
+
+        if ikey not in self.tinfo:
+            self.tinfo[ikey] = make_init()
+
+        dmap, tcmin, tcmax, fp, fc, ra, dec, dtc = self.tinfo[ikey]
 
         # draw times from each snr time series
         # Is it worth doing this if some detector has low SNR?
@@ -417,48 +449,59 @@ class DistMarg():
         mcweight = None
         for ifo in ifos:
             snr = snrs[ifo]
-            start = max(tcmin - EARTH_RADIUS, snr.start_time)
-            end = min(tcmax + EARTH_RADIUS, snr.end_time)
+            tmin, tmax = tcmin - EARTH_RADIUS, tcmax + EARTH_RADIUS
+            if hasattr(self, 'tstart'):
+                tmin = self.tstart[ifo]
+                tmax = self.tend[ifo]
+
+            start = max(tmin, snrs[ifo].start_time)
+            end = min(tmax, snrs[ifo].end_time)
+
             snr = snr.time_slice(start, end, mode='nearest')
 
             w = snr.squared_norm().numpy() / 2.0
             i = draw_sample(w, size=self.vsamples)
 
             if sref is not None:
+                mcweight -= w[i]
                 delt = float(snr.start_time - sref.start_time)
                 i += round(delt / sref.delta_t)
                 dx.append(iref - i)
-                mcweight -= w[i]
             else:
                 sref = snr
                 iref = i
-                mcweight = w[i]
+                mcweight = -w[i]
 
             idx.append(i)
 
         # check if delay is in dict, if not, throw out
-        ra = []
-        dec = []
-        dtc = []
         ti = []
+        ix = []
         wi = []
         rand = numpy.random.uniform(0, 1, size=self.vsamples)
         for i in range(self.vsamples):
             t = tuple(x[i] for x in dx)
             if t in dmap:
                 randi = int(rand[i] * (len(dmap[t])))
-                xra, xdec, xdtc = dmap[t][randi]
-                ra.append(xra)
-                dec.append(xdec)
-                dtc.append(xdtc)
+                ix.append(dmap[t][randi])
                 wi.append(len(dmap[t]))
                 ti.append(i)
 
+        # If we had really poor efficiency at finding a point, we should
+        # give up and just use the original random draws
+        if len(ra) < 0.05 * self.vsamples:
+            return
+
         # fill back to fixed size with repeat samples
         # sample order is random, so this should be OK statistically
-        ra = numpy.resize(numpy.array(ra), self.vsamples)
-        dec = numpy.resize(numpy.array(dec), self.vsamples)
-        dtc = numpy.resize(numpy.array(dtc), self.vsamples)
+        ix = numpy.resize(numpy.array(ix, dtype=int), self.vsamples)
+        self.sample_idx = ix
+        self.precalc_antenna_factors = fp, fc, dtc
+
+        ra = ra[ix]
+        dec = dec[ix]
+        dtc = {ifo: dtc[ifo][ix] for ifo in dtc}
+
         ti = numpy.resize(numpy.array(ti, dtype=int), self.vsamples)
         wi = numpy.resize(numpy.array(wi), self.vsamples)
 
@@ -467,17 +510,150 @@ class DistMarg():
                                    snr.delta_t / 2.0,
                                    size=len(ti))
 
-        tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc
+        tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc[ifos[0]]
 
         # Update the current proposed times and the marginalization values
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['ra'] = ra
         self.marginalize_vector_params['dec'] = dec
+
         self._current_params.update(self.marginalize_vector_params)
 
         # Update the importance weights for each vector sample
         logw = self.marginalize_vector_weights + mcweight[ti] + numpy.log(wi)
         self.marginalize_vector_weights = logw - logsumexp(logw)
+
+    def get_precalc_antenna_factors(self, ifo):
+        """ Get the antenna factors for marginalized samples if they exist """
+        ix = self.sample_idx
+        fp, fc, dtc = self.precalc_antenna_factors
+        return fp[ifo][ix], fc[ifo][ix], dtc[ifo][ix]
+
+    def setup_peak_lock(self,
+                        sample_rate=4096,
+                        snrs=None,
+                        peak_lock_snr=None,
+                        peak_lock_ratio=1e4,
+                        peak_lock_region=4,
+                        **kwargs):
+        """ Determine where to constrain marginalization based on
+        the observed reference SNR peaks.
+
+        Parameters
+        ----------
+        sample_rate : float
+            The SNR sample rate
+        snrs : Dict of SNR time series
+            Either provide this or the model needs a function
+            to get the reference SNRs.
+        peak_lock_snr: float
+            The minimum SNR to bother restricting from the prior range
+        peak_lock_ratio: float
+            The likelihood ratio (not log) relative to the peak to
+            act as a threshold bounding region.
+        peak_lock_region: int
+            Number of samples to inclue beyond the strict region
+            determined by the relative likelihood
+        """
+
+        if 'tc' not in self.marginalized_vector_priors:
+            return
+
+        tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+        tstart = tcmin - EARTH_RADIUS
+        tmax = tcmax - tcmin + EARTH_RADIUS * 2.0
+        num_samples = int(tmax * sample_rate)
+        self.tstart = {ifo: tstart for ifo in self.data}
+        self.num_samples = {ifo: num_samples for ifo in self.data}
+
+        if snrs is None:
+            if not hasattr(self, 'ref_snr'):
+                raise ValueError("Model didn't have a reference SNR!")
+            snrs = self.ref_snr
+
+        # Restrict the time range for constructing SNR time series
+        # to identifiable peaks
+        if peak_lock_snr is not None:
+            peak_lock_snr = float(peak_lock_snr)
+            peak_lock_ratio = float(peak_lock_ratio)
+            peak_lock_region = int(peak_lock_region)
+
+            for ifo in snrs:
+                s = max(tstart, snrs[ifo].start_time)
+                e = min(tstart + tmax, snrs[ifo].end_time)
+                z = snrs[ifo].time_slice(s, e, mode='nearest')
+                peak_snr, imax = z.abs_max_loc()
+                times = z.sample_times
+                peak_time = times[imax]
+
+                logging.info('%s: Max Ref SNR Peak of %s at %s',
+                             ifo, peak_snr, peak_time)
+
+                if peak_snr > peak_lock_snr:
+                    target = peak_snr ** 2.0 / 2.0 - numpy.log(peak_lock_ratio)
+                    target = (target * 2.0) ** 0.5
+
+                    region = numpy.where(abs(z) > target)[0]
+                    ts = times[region[0]] - peak_lock_region / sample_rate
+                    te = times[region[-1]] + peak_lock_region / sample_rate
+                    self.tstart[ifo] = ts
+                    self.num_samples[ifo] = int((te - ts) * sample_rate)
+
+            # Check times are commensurate with each other
+            for ifo in snrs:
+                ts = self.tstart[ifo]
+                te = ts + self.num_samples[ifo] / sample_rate
+
+                for ifo2 in snrs:
+                    if ifo == ifo2:
+                        continue
+                    ts2 = self.tstart[ifo2]
+                    te2 = ts2 + self.num_samples[ifo2] / sample_rate
+                    det = Detector(ifo)
+                    dt = Detector(ifo2).light_travel_time_to_detector(det)
+
+                    ts = max(ts, ts2 - dt)
+                    te = min(te, te2 + dt)
+
+                self.tstart[ifo] = ts
+                self.num_samples[ifo] = int((te - ts) * sample_rate) + 1
+                logging.info('%s: use region %s-%s, %s points',
+                             ifo, ts, te, self.num_samples[ifo])
+
+        self.tend = self.tstart.copy()
+        for ifo in snrs:
+            self.tend[ifo] += self.num_samples[ifo] / sample_rate
+
+    def draw_ifos(self, snrs, peak_snr_threshold=4.0, log=True, **kwargs):
+        """ Helper utility to determine which ifos we should use based on the
+        reference SNR time series.
+        """
+        if 'tc' not in self.marginalized_vector_priors:
+            return
+
+        peak_snr_threshold = float(peak_snr_threshold)
+
+        tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+        ifos = list(snrs.keys())
+        keep_ifos = []
+        psnrs = []
+        for ifo in ifos:
+            snr = snrs[ifo]
+            start = max(tcmin - EARTH_RADIUS, snr.start_time)
+            end = min(tcmax + EARTH_RADIUS, snr.end_time)
+            snr = snr.time_slice(start, end, mode='nearest')
+            psnr = abs(snr).max()
+            if psnr > peak_snr_threshold:
+                keep_ifos.append(ifo)
+            psnrs.append(psnr)
+
+        if log:
+            logging.info("Ifos used for SNR based draws:"
+                         " %s, snrs: %s, peak_snr_threshold=%s",
+                         keep_ifos, psnrs, peak_snr_threshold)
+
+        self.keep_ifos = keep_ifos
+        return keep_ifos
 
     @property
     def current_params(self):
@@ -494,14 +670,15 @@ class DistMarg():
         self.marginalize_vector_weights = - numpy.log(self.vsamples)
         return params
 
-    def reconstruct(self, seed=None):
+    def reconstruct(self, rec=None, seed=None):
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
         if seed:
             numpy.random.seed(seed)
 
-        rec = {}
+        if rec is None:
+            rec = {}
 
         def get_loglr():
             p = self.current_params.copy()

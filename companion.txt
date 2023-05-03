@@ -4,8 +4,8 @@ gwpy>=0.8.1
 # HEALPix is very useful for some analysis.
 healpy
 
-# Needed for gracedb uploads and skymap generation
-ligo-gracedb
+# Needed for GraceDB uploads and skymap generation
+ligo-gracedb>=2.10.0
 ligo.skymap
 
 # Needed for ringdown
@@ -25,5 +25,6 @@ setproctitle
 sympy>=1.9
 
 # Needed for KDE trigger statistics
-git+https://github.com/mennthor/awkde.git@master
+# FIXME Tito's fork to fix an awkde build error on Python 3.11
+git+https://github.com/titodalcanton/awkde.git@py311_fix
 scikit-learn

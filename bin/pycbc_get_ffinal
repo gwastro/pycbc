@@ -124,8 +124,11 @@ phi0 = 0.
 
 # load the xml file
 if infile is not None:
-    xmldoc = ligolw_utils.load_filename(infile, gz=infile.endswith('.gz'),
-        verbose=opts.verbose)
+    xmldoc = ligolw_utils.load_filename(
+        infile,
+        compress='auto',
+        verbose=opts.verbose
+    )
     this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__)
     sngl_insp_table = table.Table.get_table(xmldoc, 'sngl_inspiral')
 else:

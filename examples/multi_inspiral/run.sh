@@ -3,11 +3,11 @@
 CONFIG_URL=https://github.com/gwastro/pycbc-config/raw/master/test/multi_inspiral
 BANK_FILE=gw170817_single_template.hdf
 BANK_VETO_FILE=bank_veto_bank.xml
-H1_FRAME=https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW170817/v3/H-H1_GWOSC_4KHZ_R1-1187006835-4096.gwf
+H1_FRAME=https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW170817/v3/H-H1_GWOSC_4KHZ_R1-1187006835-4096.gwf
 H1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
 L1_FRAME=https://dcc.ligo.org/public/0144/T1700406/003/L-L1_CLEANED_HOFT_C02_T1700406_v3-1187008667-4096.gwf
 L1_CHANNEL=DCH-CLEAN_STRAIN_C02_T1700406_v3
-V1_FRAME=https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW170817/v3/V-V1_GWOSC_4KHZ_R1-1187006835-4096.gwf
+V1_FRAME=https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW170817/v3/V-V1_GWOSC_4KHZ_R1-1187006835-4096.gwf
 V1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
 
 echo -e "\\n\\n>> [`date`] Getting template bank"
@@ -30,7 +30,7 @@ TRIG_START=$((GPS_START + START_PAD))
 TRIG_END=$((GPS_END - END_PAD))
 OUTPUT=GW170817_test_output.hdf
 
-echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral with ${POL} projection"
+echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral on GW170817 data"
 pycbc_multi_inspiral \
     --verbose \
     --projection left+right \
@@ -66,6 +66,8 @@ pycbc_multi_inspiral \
     --psd-segment-length 32 \
     --psd-segment-stride 8 \
     --psd-num-segments 29 \
+    --num-slides 1 \
+    --slide-shift 1 \
     --output ${OUTPUT}
 
 echo -e "\\n\\n>> [`date`] Checking output files"

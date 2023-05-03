@@ -2,6 +2,10 @@ name: Build Wheels
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
@@ -11,17 +15,18 @@ jobs:
         os: [ubuntu-20.04, macos-latest]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.7      
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel==2.3.1
-
       - name: Build wheels
         run: python -m cibuildwheel --output-dir wheelhouse
         env:
-          CIBW_BUILD: cp37-* cp38-* cp39-* cp310-*
+          CIBW_BUILD: cp37-* cp38-* cp39-* cp310-* cp311-*
           CIBW_SKIP: "*musllinux*"
           CIBW_ARCHS_MACOS: x86_64 arm64
       - uses: actions/upload-artifact@v2
@@ -32,11 +37,11 @@ jobs:
     runs-on: ubuntu-20.04
     needs: build_wheels
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Set up Python 3.7
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: 3.7
     - uses: actions/download-artifact@v2

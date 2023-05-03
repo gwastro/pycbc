@@ -1,5 +1,5 @@
 # For LDG service access
-ciecplib>=0.4.4
+ciecplib[kerberos]>=0.7.0
 dqsegdb2>=1.0.1
 amqplib
 htchirp >= 2.0

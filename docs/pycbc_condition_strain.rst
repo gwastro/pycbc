@@ -115,4 +115,4 @@ might read more data than what specified by the ``--gps-start-time`` and
 value that causes ``pycbc_condition_strain`` to request data outside the range
 of availability.
 
-.. _GWOSC: https://www.gw-openscience.org/about/
+.. _GWOSC: https://www.gwosc.org/about/

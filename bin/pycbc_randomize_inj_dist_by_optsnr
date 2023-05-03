@@ -200,8 +200,7 @@ if opts.verbose:
     print("", file=sys.stdout)
     sys.stdout.flush()
 
-ligolw_utils.write_filename(xmldoc, opts.output_file,
-                            gz=opts.output_file.endswith('gz'))
+ligolw_utils.write_filename(xmldoc, opts.output_file, compress='auto')
 if opts.verbose:
     print("Finished!", file=sys.stdout)
 sys.exit(0)

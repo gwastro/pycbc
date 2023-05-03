@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+""" Plot the log likelihood percentiles for a DQ bin
+"""
+import logging
+import sys
+import argparse
+import numpy
+import pycbc
+import h5py
+from matplotlib import use; use('Agg')
+from matplotlib import pyplot
+from pycbc.version import git_verbose_msg as version
+import pycbc.results
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="store_true")
+parser.add_argument("--ifo", type=str,required=True)
+parser.add_argument("--dq-file", required=True)
+parser.add_argument('--background-bin', default='all_bin')
+parser.add_argument("--x-max",default=100)
+parser.add_argument("--x-min",default=0)
+parser.add_argument('--log-x', action="store_true")
+parser.add_argument("--output-file", required=True)
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+ifo = args.ifo
+
+f = h5py.File(args.dq_file, 'r')
+
+bin_name = args.background_bin
+
+if bin_name not in f['%s/dq_percentiles'%ifo].keys():
+    raise ValueError("Background bin name not found in DQ file")
+else:
+    yvals = f['%s/dq_percentiles/%s'%(ifo,bin_name)][:]
+
+xvals = numpy.linspace(0,100,len(yvals)+1)
+centers = (xvals[1:] + xvals[:-1]) / 2
+dq_name = f.attrs['stat'].split('-')[0] 
+
+xmax = float(args.x_max)
+xmin = float(args.x_min)
+
+if args.log_x and xmin==0:
+    raise ValueError("Cannot set the x axis to log scale when xmin=0")
+
+ymax = 1.2 * max(yvals)
+
+color = pycbc.results.ifo_color(ifo)
+
+# create a figure to add a histogram
+fig = pyplot.figure(0)
+ax = fig.add_subplot(111)
+
+counts_, bins_, _ = ax.hist(centers, bins=len(yvals),
+                             weights=yvals, color=color,
+                             label=' '.join([ifo,dq_name,bin_name]), 
+                             range=(min(xvals), max(xvals)))
+ax.legend(loc='upper left', markerscale=5)
+
+# format plot
+ax.set_ylabel('Data quality log likelihood')
+ax.set_xlabel('Percentile')
+ax.set_ylim(ymin=0,ymax=ymax)
+ax.set_xlim(xmin=xmin,xmax=xmax)
+if args.log_x:
+    ax.set_xscale('log')
+
+# add a grid to the plot
+ax.grid()
+
+yticks = ax.get_yticks()
+
+# add second axis
+ax2=ax.twinx()
+ax2_ymax = numpy.exp(ymax)
+ax2.set_ylim(1,ax2_ymax)
+ax2.plot(xmax+1e9,100)
+new_ticks = range(0,int(numpy.ceil(numpy.log10(ax2_ymax))))
+ax2.set_yticks([10**t for t in new_ticks])
+ax2.set_ylabel('Relative Trigger Rate')
+ax2.set_xlim(xmin, xmax)
+ax2.set_yscale('log')
+
+# add meta data and save figure
+plot_title = '%s: %s log likelihood versus percentile' % (ifo, dq_name)
+plot_caption = 'The log likelihood verus percentile of a DQ product.'
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
+                title = plot_title,
+                caption = plot_caption,
+                cmd = ' '.join(sys.argv))
+

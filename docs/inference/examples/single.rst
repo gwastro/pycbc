@@ -1,3 +1,5 @@
+.. _single_template_examples:
+
 ######################################
 Using the single template model
 ######################################
