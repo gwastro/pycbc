@@ -1028,41 +1028,38 @@ class ForegroundTriggers(object):
         # Some fields are special cases
         logging.info("Outputting search results")
         time = self.get_end_time()
-        ofd.create_dataset('time', data=time, dtype=np.float32)
+        ofd['time'] = time
 
         if self._inclusive:
             ifar = self.get_coincfile_array('ifar')
-            ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
+            ofd['ifar'] = ifar
 
         ifar_exc = self.get_coincfile_array('ifar_exc')
-        ofd.create_dataset('ifar_exclusive', data=ifar_exc,
-                           dtype=np.float32)
+        ofd['ifar_exclusive'] = ifar_exc
 
         if self._inclusive:
             fap = self.get_coincfile_array('fap')
-            ofd.create_dataset('p_value', data=fap,
-                               dtype=np.float32)
+            ofd['p_value'] = fap
 
         fap_exc = self.get_coincfile_array('fap_exc')
-        ofd.create_dataset('p_value_exclusive', data=fap_exc,
-                           dtype=np.float32)
+        ofd['p_value_exclusive'] = fap_exc
 
         # Coinc fields
         for field in ['stat']:
             vals = self.get_coincfile_array(field)
-            ofd.create_dataset(field, data=vals, dtype=np.float32)
+            ofd[field] = vals
 
         logging.info("Outputting template information")
         # Bank fields
         for field in ['mass1','mass2','spin1z','spin2z']:
             vals = self.get_bankfile_array(field)
-            ofd.create_dataset(field, data=vals, dtype=np.float32)
+            ofd[field] = vals
 
         mass1 = self.get_bankfile_array('mass1')
         mass2 = self.get_bankfile_array('mass2')
         mchirp, _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
-        ofd.create_dataset('chirp_mass', data=mchirp, dtype=np.float32)
+        ofd['chirp_mass'] = mchirp
 
         logging.info("Outputting single-trigger information")
         logging.info("reduced chisquared")
@@ -1074,8 +1071,7 @@ class ForegroundTriggers(object):
             chisq_dof_vals = chisq_dof_vals_valid[ifo][0]
             rchisq = chisq_vals / (2. * chisq_dof_vals - 2.)
             rchisq[np.logical_not(chisq_valid)] = -1.
-            ofd.create_dataset(ifo + '_chisq', data=rchisq,
-                               dtype=np.float64)
+            ofd[ifo + '_chisq'] = rchisq
 
         # Single-detector fields
         for field in ['sg_chisq', 'end_time', 'sigmasq',
@@ -1090,8 +1086,7 @@ class ForegroundTriggers(object):
                 vals = vals_valid[ifo][0]
                 valid = vals_valid[ifo][1]
                 vals[np.logical_not(valid)] = -1.
-                ofd.create_dataset(ifo + '_'+field, data=vals,
-                                   dtype=np.float32)
+                ofd[f'{ifo}_{field}'] = vals
 
         snr_vals_valid = self.get_snglfile_array_dict('snr')
         network_snr_sq = np.zeros_like(snr_vals_valid[self.ifos[0]][0])
@@ -1099,11 +1094,10 @@ class ForegroundTriggers(object):
             vals = snr_vals_valid[ifo][0]
             valid = snr_vals_valid[ifo][1]
             vals[np.logical_not(valid)] = -1.
-            ofd.create_dataset(ifo + '_snr', data=vals,
-                               dtype=np.float32)
+            ofd[ifo + '_snr'] = vals
             network_snr_sq[valid] += vals[valid] ** 2.0
         network_snr = np.sqrt(network_snr_sq)
-        ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
+        ofd['network_snr'] = network_snr
 
         logging.info("Triggered detectors")
         # Create a n_ifos by n_events matrix, with the ifo letter if the
