@@ -1028,6 +1028,7 @@ class ForegroundTriggers(object):
         # Some fields are special cases
         logging.info("Outputting search results")
         time = self.get_end_time()
+        # time will be used later to determine active ifos
         ofd['time'] = time
 
         if self._inclusive:
