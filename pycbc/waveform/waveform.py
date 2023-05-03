@@ -766,6 +766,8 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
                 mass1=nparams['mass1'], mass2=nparams['mass2'],
                 spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
             rwrap = tau_from_final_mass_spin(m_final, spin_final) * 10
+            if rwrap < 0.2:
+                rwrap = 0.2
         else:
             rwrap = 0.2
 
@@ -825,7 +827,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
                                         kwds['f_lower']))
         return wfs
 
-def get_td_waveform_from_fd(rwrap=0.2, **params):
+def get_td_waveform_from_fd(rwrap=None, **params):
     """ Return time domain version of fourier domain approximant.
 
     This returns a time domain version of a fourier domain approximant, with
@@ -850,7 +852,7 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     """
     return _base_get_td_waveform_from_fd(None, rwrap, **params)
 
-def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
+def get_td_det_waveform_from_fd_det(template=None, rwrap=None, **params):
     """ Return time domain version of fourier domain approximant which
     includes detector response, with padding and tapering at the start
     of the waveform.
