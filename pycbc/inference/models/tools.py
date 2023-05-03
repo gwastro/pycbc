@@ -347,7 +347,7 @@ class DistMarg():
             self.snr_params = ['tc']
 
         tcmin, tcmax, tcave, ifos, d = self.tinfo
-        vsamples = size if size is not  None else self.vsamples
+        vsamples = size if size is not None else self.vsamples
 
         # Determine the weights for the valid time range
         ra = self._current_params['ra']
@@ -474,7 +474,7 @@ class DistMarg():
 
         dmap, tcmin, tcmax, fp, fc, ra, dec, dtc = self.tinfo[ikey]
 
-        vsamples = size if size is not  None else self.vsamples
+        vsamples = size if size is not None else self.vsamples
 
         # draw times from each snr time series
         # Is it worth doing this if some detector has low SNR?
