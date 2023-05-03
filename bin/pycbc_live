@@ -101,6 +101,7 @@ class LiveEventManager(object):
         self.gracedb_testing = not args.enable_production_gracedb_upload
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
+        self.snr_opt_label = args.snr_opt_label
         self.gracedb = None
 
         # Keep track of which events have been uploaded
@@ -119,6 +120,11 @@ class LiveEventManager(object):
                                 'triggers will momentarily increase the lag',
                                 available_cores)
                 self.fu_cores = 1
+
+        if args.enable_embright_has_massgap:
+            if args.embright_massgap_max < self.mc_area_args['mass_bdary']['ns_max']:
+                parser.error('MAX_GAP value cannot be lower than MAX_NS limit')
+            self.mc_area_args['embright_mg_max'] = args.embright_massgap_max
 
     def commit_results(self, results):
         logging.info('Committing triggers')
@@ -188,20 +194,26 @@ class LiveEventManager(object):
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
 
-        # Determine if the other ifos can contribute to the coincident event
+        # Determine if the other ifos can contribute to the coincident event,
+        # if so then update the info in `triggers` appropriately
         for ifo in followup_ifos:
-            snr_series, ptime, pvalue, sigma2 = followup_event_significance(
+            pvalue_info = followup_event_significance(
                 ifo,
                 self.data_readers[ifo],
                 self.bank,
                 template_id,
                 coinc_times
             )
-            if snr_series is not None:
-                out[ifo] = {'snr_series': snr_series}
-                self.get_followup_info(ifos[0], ifo, triggers, snr_series,
-                                       ptime, pvalue, sigma2,
-                                       recalculate_ifar=recalculate_ifar)
+            if pvalue_info is None:
+                continue
+            out[ifo] = {'snr_series': pvalue_info['snr_series']}
+            self.get_followup_info(
+                ifos[0],
+                ifo,
+                triggers,
+                pvalue_info,
+                recalculate_ifar=recalculate_ifar
+            )
 
         # the SNR time series sample rate can vary slightly due to
         # rounding errors, so force all of them to be identical
@@ -216,31 +228,52 @@ class LiveEventManager(object):
 
         return out
 
-    def get_followup_info(self, coinc_ifo, ifo, triggers, snr_series, ptime,
-                          pvalue, sigma2, recalculate_ifar=False):
-        # Copy the common fields from the other detector
+    def get_followup_info(
+        self,
+        coinc_ifo,
+        ifo,
+        triggers,
+        pvalue_info,
+        recalculate_ifar=False
+    ):
+        peak_time = pvalue_info['peak_time']
+        pv = pvalue_info['pvalue']
+        pv_sat = pvalue_info['pvalue_saturated']
+
+        # Copy the common fields from the other detector;
         # ignore fields that contain detector-specific data
-        fields_to_ignore = set(['end_time', 'snr', 'stat', 'coa_phase',
-                                'chisq', 'chisq_dof', 'sg_chisq', 'sigmasq'])
+        fields_to_ignore = set([
+            'end_time', 'snr', 'stat', 'coa_phase',
+            'chisq', 'chisq_dof', 'sg_chisq', 'sigmasq'
+        ])
         for key in set(triggers):
-            if 'foreground/{}/'.format(coinc_ifo) in key:
-                _, _, name = key.split('/')
-                if name in fields_to_ignore:
-                    continue
-                triggers['foreground/{}/{}'.format(ifo, name)] = triggers[key]
+            if f'foreground/{coinc_ifo}/' not in key:
+                continue
+            _, _, name = key.split('/')
+            if name in fields_to_ignore:
+                continue
+            triggers[f'foreground/{ifo}/{name}'] = triggers[key]
 
         # Set the detector-specific fields for which we have data
-        snr_series_peak = snr_series.at_time(ptime, nearest_sample=True)
-        base = 'foreground/{}/'.format(ifo)
-        triggers[base + 'end_time'] = float(ptime)
+        snr_series_peak = pvalue_info['snr_series'].at_time(
+            peak_time,
+            nearest_sample=True
+        )
+        base = f'foreground/{ifo}/'
+        triggers[base + 'end_time'] = float(peak_time)
         triggers[base + 'snr'] = triggers[base + 'stat'] = abs(snr_series_peak)
         triggers[base + 'coa_phase'] = numpy.angle(snr_series_peak)
-        triggers[base + 'sigmasq'] = sigma2
+        triggers[base + 'sigmasq'] = pvalue_info['sigma2']
         if recalculate_ifar:
             # Calculate new ifar
             triggers['foreground/ifar'] = combine_ifar_pvalue(
-                    triggers['foreground/ifar'], pvalue, self.pvalue_livetime)
-            triggers['foreground/pvalue_{}'.format(ifo)] = pvalue
+                triggers['foreground/ifar'],
+                pv,
+                self.pvalue_livetime
+            )
+            triggers['foreground/ifar_saturated'] |= pv_sat
+            triggers[f'foreground/pvalue_{ifo}'] = pv
+            triggers[f'foreground/pvalue_{ifo}_saturated'] = pv_sat
 
     def setup_optimize_snr(
         self, results, live_ifos, triggering_ifos, fname, gid
@@ -333,9 +366,11 @@ class LiveEventManager(object):
         cmd += '--approximant {} '.format(apr)
         cmd += '--gracedb-server {} '.format(self.gracedb_server)
         cmd += '--gracedb-search {} '.format(self.gracedb_search)
-        # Don't pass labels to the SNR optimization job:
-        # currently labels are only required for Early Warning
-        # analysis, which does not use SNR opt
+
+        labels = self.snr_opt_label
+        labels += ' '.join(self.gracedb_labels or [])
+        cmd += f'--gracedb-labels {labels} '
+
         if not self.gracedb_testing:
             cmd += '--production '
         cmd += '--verbose '
@@ -755,6 +790,17 @@ parser.add_argument('--autogating-taper', type=float, metavar='SECONDS',
                     help='Taper the strain before and after '
                          'each gating window over a duration '
                          'of SECONDS.')
+parser.add_argument('--autogating-duration', type=float, default=16,
+                    metavar='SECONDS',
+                    help='Amount of data in seconds to apply autogating on.')
+parser.add_argument('--autogating-psd-segment-length', type=float, default=2,
+                    metavar='SECONDS',
+                    help='Length in seconds of each segment used to estimate the PSD '
+                    'with Welchs method and median averaging.')
+parser.add_argument('--autogating-psd-stride', type=float, default=1,
+                    metavar='SECONDS',
+                    help='Length in seconds of the overlap between each segment used '
+                    'to estimate the PSD with Welchs method and median averaging.')
 
 parser.add_argument('--sync', action='store_true',
                     help="Imposes an MPI synchronization at each transfer of"
@@ -853,7 +899,17 @@ parser.add_argument('--run-snr-optimization', action='store_true',
                          'any trigger uploaded to GraceDB')
 parser.add_argument('--snr-opt-timeout', type=int, default=400, metavar='SECONDS',
                     help='Maximum allowed duration of followup process to maximize SNR')
+parser.add_argument('--snr-opt-label', type=str, default='SNR_OPTIMIZED',
+                    help='Label to apply to snr-optimized GraceDB uploads')
 
+
+parser.add_argument('--enable-embright-has-massgap', action='store_true', default=False,
+                    help='Estimate HasMassGap probability for EMBright info. Lower limit '
+                         'of the mass gap is equal to the maximum NS mass used for '
+                         'the source classification.')
+parser.add_argument('--embright-massgap-max', type=float, default=5.0, metavar='SOLAR MASSES',
+                    help='Upper limit of the mass gap, used for estimating '
+                         'HasMassGap probability.')
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)

@@ -101,7 +101,7 @@ def parse_veto_definer(veto_def_filename, ifos):
     return data
 
 
-GWOSC_URL = 'https://www.gw-openscience.org/timeline/segments/json/{}/{}_{}/{}/{}/'
+GWOSC_URL = 'https://www.gwosc.org/timeline/segments/json/{}/{}_{}/{}/{}/'
 
 
 def query_dqsegdb2(detector, flag_name, start_time, end_time, server):

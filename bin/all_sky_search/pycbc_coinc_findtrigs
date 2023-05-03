@@ -181,7 +181,9 @@ if args.randomize_template_order:
     shuffle(template_ids)
     template_ids = template_ids[tmin:tmax]
 else:
-    template_ids = range(tmin, tmax)
+    template_ids = np.array([range(tmin, tmax)])
+
+original_bank_len = len(template_ids)
 
 # Only analyze templates which might have coincs
 if tids_with_trigs is not None:
@@ -196,7 +198,7 @@ template_ids = cuts.apply_template_cuts(
     template_ids=template_ids)
 
 logging.info("%d out of %d templates kept after applying template cuts",
-             len(template_ids), len(trigs.singles[0].bank))
+             len(template_ids), original_bank_len)
 
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
@@ -240,7 +242,8 @@ def process_template(tnum):
     for i, sngl in zip(trigs.ifos, trigs.singles):
         # Apply cuts to triggers
         tids_uncut = sngl.set_template(tnum)
-        trigger_keep_ids = cuts.apply_trigger_cuts(sngl, trigger_cut_dict)
+        trigger_keep_ids = cuts.apply_trigger_cuts(sngl, trigger_cut_dict,
+                                                   statistic=rank_method)
 
         tids_full[i] = tids_uncut[trigger_keep_ids]
         times_full[i] = sngl['end_time'][trigger_keep_ids]
