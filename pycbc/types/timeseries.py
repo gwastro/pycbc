@@ -240,7 +240,8 @@ class TimeSeries(Array):
     sample_times = property(get_sample_times,
                             doc="Array containing the sample times.")
 
-    def at_time(self, time, nearest_sample=False, interpolate=None, extrapolate=None):
+    def at_time(self, time, nearest_sample=False,
+                interpolate=None, extrapolate=None):
         """ Return the value at the specified gps time
 
         Parameters
@@ -256,7 +257,7 @@ class TimeSeries(Array):
             method of extrapolating the value.
         """
         if nearest_sample:
-            time += self.delta_t / 2.0
+            time = time + self.delta_t / 2.0
         vtime = _numpy.array(time, ndmin=1)
 
         fill_value = None
