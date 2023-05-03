@@ -9,11 +9,9 @@ from scipy.special import logsumexp
 from scipy.stats import gaussian_kde
 from scipy.stats import entropy as sentropy
 
-from pycbc.inference.io import PosteriorFile
 from pycbc.inference import models
 from pycbc.pool import choose_pool
 from pycbc.inference.io import loadfile
-from pycbc.io.record import FieldArray
 
 from .base import setup_output, initial_dist_from_config
 from .dummy import DummySampler
@@ -23,6 +21,7 @@ def call_model(params):
     models._global_instance.update(**params)
     return (models._global_instance.logposterior,
             models._global_instance.loglikelihood)
+
 
 def resample_equal(samples, logwt, seed=0):
     weights = numpy.exp(logwt - logsumexp(logwt))
@@ -46,6 +45,7 @@ def resample_equal(samples, logwt, seed=0):
         rng = numpy.random.RandomState(seed)
     rng.shuffle(idx)
     return {p: samples[p][idx] for p in samples}
+
 
 class RefineSampler(DummySampler):
     """Sampler for kde drawn refinement of existing posterior estimate
@@ -72,12 +72,12 @@ class RefineSampler(DummySampler):
 
     def __init__(self, model, *args, nprocesses=1, use_mpi=False,
                  num_samples=int(1e5),
-                 iterative_kde_samples = int(1e3),
-                 min_refinement_steps = 5,
-                 max_refinement_steps = 40,
-                 entropy = 0.001,
-                 dlogz = 0.01,
-                 kde = None,
+                 iterative_kde_samples=int(1e3),
+                 min_refinement_steps=5,
+                 max_refinement_steps=40,
+                 entropy=0.001,
+                 dlogz=0.01,
+                 kde=None,
                  **kwargs):
         super().__init__(model, *args)
 
@@ -99,12 +99,14 @@ class RefineSampler(DummySampler):
     def draw_samples(self, size):
         """Draw new samples within the model priors"""
         ksamples = self.kde.resample(size=size)
-        params = {k:ksamples[i,:] for i, k in enumerate(self.vparam)}
+        params = {k: ksamples[i, :] for i, k in enumerate(self.vparam)}
         keep = self.model.prior_distribution.contains(params)
         return ksamples[:, keep]
 
     @staticmethod
     def compare_kde(kde1, kde2, size=int(1e4)):
+        """ Calculate information difference between two kde distributions
+        """
         s = kde1.resample(size=size)
         return sentropy(kde1.pdf(s), kde2.pdf(s))
 
@@ -112,7 +114,7 @@ class RefineSampler(DummySampler):
         """ Check that kde is converged by comparing to previous iteration
         """
         if not hasattr(self, 'old_logz'):
-            self.old_logz =  numpy.inf
+            self.old_logz = numpy.inf
 
         entropy_diff = self.compare_kde(self.kde, kde_new)
 
@@ -129,7 +131,8 @@ class RefineSampler(DummySampler):
         logz3 = logsumexp(choice3) - numpy.log(len(choice3))
         dlogz2 = logz3 - logz2
 
-        logging.info('%s: Checking convergence: dlogz_iter=%.4f, dlogz_half=%.4f, entropy=%.4f',
+        logging.info('%s: Checking convergence: dlogz_iter=%.4f,'
+                     'dlogz_half=%.4f, entropy=%.4f',
                      step,  dlogz, dlogz2, entropy_diff)
         if (entropy_diff < self.entropy and step >= self.min_refinement_steps
             and max(abs(dlogz), abs(dlogz2)) < self.dlogz_target):
@@ -168,6 +171,8 @@ class RefineSampler(DummySampler):
         self.kde = gaussian_kde(ksamples)
 
     def run_samples(self, ksamples):
+        """ Calculate the likelihoods and weights for a set of samples
+        """
         # Calculate likelihood for each sample
         args = []
         for i in range(len(ksamples[0])):
@@ -200,7 +205,8 @@ class RefineSampler(DummySampler):
             logging.info('..done')
 
             if total_samples is not None:
-                total_samples = numpy.concatenate([total_samples, ksamples], axis=1)
+                total_samples = numpy.concatenate([total_samples,
+                                                   ksamples], axis=1)
                 total_logp = numpy.concatenate([total_logp, logp])
                 total_logw = numpy.concatenate([total_logw, logw])
                 total_logl = numpy.concatenate([total_logl, logl])
@@ -212,13 +218,15 @@ class RefineSampler(DummySampler):
 
             logging.info('setting up next kde iteration..')
             ntotal_logw = total_logw - logsumexp(total_logw)
-            kde_new = gaussian_kde(total_samples, weights=numpy.exp(ntotal_logw))
+            kde_new = gaussian_kde(total_samples,
+                                   weights=numpy.exp(ntotal_logw))
             logging.info('done')
             if self.converged(r, kde_new, total_logl + total_logw):
                 break
 
             self.kde = kde_new
 
+        logging.info('Drawing final samples')
         ksamples = self.draw_samples(self.num_samples)
         ksamples, logp, logl, logw = self.run_samples(ksamples)
         self._samples = {k: ksamples[j,:] for j, k in enumerate(self.vparam)}
