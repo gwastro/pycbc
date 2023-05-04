@@ -33,7 +33,7 @@ import logging
 from .libutils import get_ctypes_library
 
 try:
-    _libgomp = get_ctypes_library("gomp", ['gomp'])
+    _libgomp = get_ctypes_library("gomp", ['gomp'], mode=ctypes.RTLD_GLOBAL)
 except:
     # Should we fail or give a warning if we cannot import
     # libgomp? Seems to work even for MKL scheme, but
