@@ -79,6 +79,7 @@ class LiveEventManager(object):
     def __init__(self, args, bank):
         self.low_frequency_cutoff = args.low_frequency_cutoff
         self.bank = bank
+        self.skymap_only_ifos = [] if args.skymap_only_ifos is None else list(set(args.skymap_only_ifos))
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
@@ -165,8 +166,7 @@ class LiveEventManager(object):
         return combined, data_ends[0]
 
     def compute_followup_data(self, ifos, triggers,
-                              followup_ifos=None, skymap_only_ifos=[],
-                              recalculate_ifar=False):
+                              followup_ifos=None, recalculate_ifar=False):
         """Figure out which of the followup detectors are usable, and compute
         SNR time series for all the available detectors.
         """
@@ -213,7 +213,7 @@ class LiveEventManager(object):
                 ifo,
                 triggers,
                 pvalue_info,
-                recalculate_ifar=recalculate_ifar and ifo not in skymap_only_ifos
+                recalculate_ifar=recalculate_ifar and ifo not in self.skymap_only_ifos
             )
 
         # the SNR time series sample rate can vary slightly due to
@@ -444,7 +444,7 @@ class LiveEventManager(object):
                 gid
             )
 
-    def check_coincs(self, ifos, coinc_results, psds, skymap_only_ifos=[]):
+    def check_coincs(self, ifos, coinc_results, psds):
         """ Perform any followup and save zerolag triggers to a coinc xml file
         """
         # Check for hardware injection
@@ -469,7 +469,6 @@ class LiveEventManager(object):
             coinc_ifos,
             coinc_results,
             followup_ifos=followup_ifos,
-            skymap_only_ifos=skymap_only_ifos,
             recalculate_ifar=True
         )
 
@@ -530,7 +529,7 @@ class LiveEventManager(object):
                                                  args=thread_args)
             gdb_upload_thread.start()
 
-    def check_singles(self, results, psds, skymap_only_ifos=[]):
+    def check_singles(self, results, psds):
         active = [k for k in results if results[k] is not None]
         for ifo in active:
             single = sngl_estimator[ifo].check(
@@ -550,7 +549,6 @@ class LiveEventManager(object):
                 [ifo],
                 single,
                 followup_ifos=followup_ifos,
-                skymap_only_ifos=skymap_only_ifos,
                 recalculate_ifar=False
             )
             # Apply a trials factor of the number of active detectors
@@ -913,8 +911,8 @@ parser.add_argument('--enable-embright-has-massgap', action='store_true', defaul
 parser.add_argument('--embright-massgap-max', type=float, default=5.0, metavar='SOLAR MASSES',
                     help='Upper limit of the mass gap, used for estimating '
                          'HasMassGap probability.')
-parser.add_argument('--skymap-only-ifos', nargs='+', default=[],
-                    help="IFOs that only contribute in sky localization")
+parser.add_argument('--skymap-only-ifos', nargs='+',
+                    help="Detectors that only contribute in sky localization")
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
@@ -954,11 +952,10 @@ if bank.min_f_lower < args.low_frequency_cutoff:
                  '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
 ifos = set(args.channel_name.keys())
-skymap_only_ifos = list(set(args.skymap_only_ifos))
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
-logging.info('Detectors that only aid in the sky localization %s', ppdets(skymap_only_ifos))
 
 evnt = LiveEventManager(args, bank)
+logging.info('Detectors that only aid in the sky localization %s', ppdets(evnt.skymap_only_ifos))
 
 # include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
@@ -1036,7 +1033,7 @@ with ctx:
 
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
-        trigg_ifos = [ifo for ifo in ifos if ifo not in skymap_only_ifos]
+        trigg_ifos = [ifo for ifo in ifos if ifo not in evnt.skymap_only_ifos]
         ifo_combos = itertools.combinations(trigg_ifos, 2)
         estimators = []
         for combo in ifo_combos:
@@ -1108,11 +1105,12 @@ with ctx:
                                  args.max_psd_abort_distance)
                     status = False
 
-            if ifo not in skymap_only_ifos and status is True:
-                evnt.live_detectors.add(ifo)
-                if evnt.rank > 0:
-                    logging.info('Filtering %s', ifo)
-                    results[ifo] = mf.process_data(data_reader[ifo])
+            if status is True:
+                if ifo not in evnt.skymap_only_ifos:
+                    evnt.live_detectors.add(ifo)
+                    if evnt.rank > 0:
+                        logging.info('Filtering %s', ifo)
+                        results[ifo] = mf.process_data(data_reader[ifo])
             else:
                 logging.info('Insufficient data for %s analysis', ifo)
 
@@ -1168,11 +1166,11 @@ with ctx:
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
 
-                evnt.check_coincs(list(results.keys()), best_coinc, psds, skymap_only_ifos=skymap_only_ifos)
+                evnt.check_coincs(list(results.keys()), best_coinc, psds)
 
             # Check for singles
             if args.enable_single_detector_background:
-                evnt.check_singles(results, psds, skymap_only_ifos=skymap_only_ifos)
+                evnt.check_singles(results, psds)
 
             gates = {ifo: data_reader[ifo].gate_params for ifo in data_reader}
 
