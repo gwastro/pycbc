@@ -277,7 +277,7 @@ class TimeSeries(Array):
                 keep_idx = _numpy.where(left & right)[0]
                 vtime = vtime[keep_idx]
             else:
-                raise ValueError("Unsuported extrapolate: %s", extrapolate)
+                raise ValueError("Unsuported extrapolate: %s" % extrapolate)
 
         fi = (vtime - float(self.start_time))*self.sample_rate
         i = _numpy.asarray(_numpy.floor(fi)).astype(int)
@@ -305,7 +305,7 @@ class TimeSeries(Array):
             ans = _numpy.array(ans, ndmin=1)
 
         if _numpy.isscalar(time):
-            return  ans[0]
+            return ans[0]
         else:
             return ans
 
