@@ -165,14 +165,13 @@ class LiveEventManager(object):
         return combined, data_ends[0]
 
     def compute_followup_data(self, ifos, triggers,
-                              followup_ifos=None, skymap_only_ifos=None,
+                              followup_ifos=None, skymap_only_ifos=[],
                               recalculate_ifar=False):
         """Figure out which of the followup detectors are usable, and compute
         SNR time series for all the available detectors.
         """
         out = {}
         followup_ifos = [] if followup_ifos is None else followup_ifos
-        skymap_only_ifos = [] if skymap_only_ifos is None else skymap_only_ifos
 
         template_id = triggers[f'foreground/{ifos[0]}/template_id']
         htilde = self.bank[template_id]
@@ -209,22 +208,13 @@ class LiveEventManager(object):
             if pvalue_info is None:
                 continue
             out[ifo] = {'snr_series': pvalue_info['snr_series']}
-            if ifo in skymap_only_ifos:
-                self.get_followup_info(
-                    ifos[0],
-                    ifo,
-                    triggers,
-                    pvalue_info,
-                    recalculate_ifar=False
-                )
-            else:
-                self.get_followup_info(
-                    ifos[0],
-                    ifo,
-                    triggers,
-                    pvalue_info,
-                    recalculate_ifar=recalculate_ifar
-                )
+            self.get_followup_info(
+                ifos[0],
+                ifo,
+                triggers,
+                pvalue_info,
+                recalculate_ifar=recalculate_ifar and ifo not in skymap_only_ifos
+            )
 
         # the SNR time series sample rate can vary slightly due to
         # rounding errors, so force all of them to be identical
@@ -454,11 +444,10 @@ class LiveEventManager(object):
                 gid
             )
 
-    def check_coincs(self, ifos, coinc_results, psds, skymap_only_ifos=None):
+    def check_coincs(self, ifos, coinc_results, psds, skymap_only_ifos=[]):
         """ Perform any followup and save zerolag triggers to a coinc xml file
         """
         # Check for hardware injection
-        skymap_only_ifos = [] if skymap_only_ifos is None else skymap_only_ifos
         for ifo in ifos:
             if self.data_readers[ifo].near_hwinj():
                 coinc_results['HWINJ'] = True
@@ -516,7 +505,7 @@ class LiveEventManager(object):
         ifar = coinc_results['foreground/ifar']
         upload_checks = self.enable_gracedb_upload and self.ifar_upload_threshold < ifar
         optimize_snr_checks = self.run_snr_optimization and self.ifar_upload_threshold < ifar
-        
+
         # Keep track of the last few coincs uploaded in order to
         # prevent singles being uploaded as well for coinc events
         self.last_few_coincs_uploaded.append(event.merger_time)
@@ -541,8 +530,7 @@ class LiveEventManager(object):
                                                  args=thread_args)
             gdb_upload_thread.start()
 
-    def check_singles(self, results, psds, skymap_only_ifos=None):
-        skymap_only_ifos = [] if skymap_only_ifos is None else skymap_only_ifos
+    def check_singles(self, results, psds, skymap_only_ifos=[]):
         active = [k for k in results if results[k] is not None]
         for ifo in active:
             single = sngl_estimator[ifo].check(
@@ -925,7 +913,7 @@ parser.add_argument('--enable-embright-has-massgap', action='store_true', defaul
 parser.add_argument('--embright-massgap-max', type=float, default=5.0, metavar='SOLAR MASSES',
                     help='Upper limit of the mass gap, used for estimating '
                          'HasMassGap probability.')
-parser.add_argument('--skymap-only-ifos', nargs='+', default=['V1', 'K1'],
+parser.add_argument('--skymap-only-ifos', nargs='+', default=[],
                     help="IFOs that only contribute in sky localization")
 
 scheme.insert_processing_option_group(parser)
@@ -966,7 +954,7 @@ if bank.min_f_lower < args.low_frequency_cutoff:
                  '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
 ifos = set(args.channel_name.keys())
-skymap_only_ifos = set(args.skymap_only_ifos)
+skymap_only_ifos = list(set(args.skymap_only_ifos))
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
 logging.info('Detectors that only aid in the sky localization %s', ppdets(skymap_only_ifos))
 
