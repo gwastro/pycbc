@@ -1,6 +1,5 @@
 import logging
 import os
-import glob
 import pathlib
 import datetime
 import pycbc
@@ -610,7 +609,8 @@ def filter_file(filename, start_time, end_time):
         Does any of the file lie within the start/end times
     """
     # FIX ME eventually - this uses the gps time and duration from the filename
-    # Is there a better way? (i.e. trigger gps times in the file or add an attribute)
+    # Is there a better way? (i.e. trigger gps times in the file or
+    # add an attribute)
     fend = filename.split('-')[-2:]
     file_start = float(fend[0])
     duration = float(fend[1][:-4])
@@ -625,7 +625,6 @@ def find_trigger_files(directory, gps_start_time, gps_end_time,
     Find a list of PyCBC live trigger files which are between the gps
     start and end times given
     """
-
 
     # Find the string at the start of the gps time which will match all
     # files in this range - this helps to cut which ones we need to
@@ -660,7 +659,7 @@ def find_trigger_files(directory, gps_start_time, gps_end_time,
     matching_files = [f for f in matching_files
                       if filter_file(f, gps_start_time, gps_end_time)]
 
-
     return sorted(matching_files)
+
 
 __all__ = ['CandidateForGraceDB', 'gracedb_tag_with_version', 'find_trigger_files']
