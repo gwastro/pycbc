@@ -148,7 +148,7 @@ def propagation_vector_to_localization(k):
     # beta already within [-pi/2, pi/2]
     beta = np.float64(np.arcsin(-k[2]))
     lamda = np.float64(np.arctan2(-k[1]/np.cos(beta), -k[0]/np.cos(beta)))
-    # lamda should within [0, 2*pi]
+    # lamda should within [0, 2*pi)
     lamda = np.mod(lamda, 2*np.pi)
 
     return (lamda, beta)
@@ -312,10 +312,18 @@ def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0=TIME_OFFSET):
         beta_ssb = beta_ssb.item()
     if isinstance(psi_ssb, np.ndarray):
         psi_ssb = psi_ssb.item()
+    if lamda_ssb < 0 or lamda_ssb >= 2*np.pi:
+        raise ValueError("Longitude should within [0, 2*pi).")
+    if beta_ssb < -np.pi/2 or beta_ssb > np.pi/2:
+        raise ValueError("Latitude should within [-pi/2, pi/2].")
+    if psi_ssb < 0 or psi_ssb >= 2*np.pi:
+        raise ValueError("Polarization angle should within [0, 2*pi).")
     t_lisa = t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0)
     k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
-    # t_lisa already include t0
-    alpha = lisa_position_ssb(t_lisa, t0=0)[1]
+    # Although t_lisa calculated above using the corrected LISA position vector by
+    # adding t0, it corresponds to the true t_ssb, not t_ssb+t0,
+    # we need to include t0 again to correct LISA position.
+    alpha = lisa_position_ssb(t_lisa, t0)[1]
     rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
     k_lisa = rotation_matrix_lisa.T @ k_ssb
     lamda_lisa, beta_lisa = propagation_vector_to_localization(k_lisa)
@@ -369,6 +377,12 @@ def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t0=TIME_OFFSET):
         beta_lisa = beta_lisa.item()
     if isinstance(psi_lisa, np.ndarray):
         psi_lisa = psi_lisa.item()
+    if lamda_lisa < 0 or lamda_lisa >= 2*np.pi:
+        raise ValueError("Longitude should within [0, 2*pi).")
+    if beta_lisa < -np.pi/2 or beta_lisa > np.pi/2:
+        raise ValueError("Latitude should within [-pi/2, pi/2].")
+    if psi_lisa < 0 or psi_lisa >= 2*np.pi:
+        raise ValueError("Polarization angle should within [0, 2*pi).")
     k_lisa = localization_to_propagation_vector(lamda_lisa, beta_lisa)
     alpha = lisa_position_ssb(t_lisa, t0)[1]
     rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
@@ -546,6 +560,12 @@ def ssb_to_geo(t_ssb, lamda_ssb, beta_ssb, psi_ssb, use_astropy=True):
         beta_ssb = beta_ssb.item()
     if isinstance(psi_ssb, np.ndarray):
         psi_ssb = psi_ssb.item()
+    if lamda_ssb < 0 or lamda_ssb >= 2*np.pi:
+        raise ValueError("Longitude should within [0, 2*pi).")
+    if beta_ssb < -np.pi/2 or beta_ssb > np.pi/2:
+        raise ValueError("Latitude should within [-pi/2, pi/2].")
+    if psi_ssb < 0 or psi_ssb >= 2*np.pi:
+        raise ValueError("Polarization angle should within [0, 2*pi).")
     t_geo = t_geo_from_ssb(t_ssb, lamda_ssb, beta_ssb)
     k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
     rotation_matrix_geo = rotation_matrix_ssb_to_geo()
@@ -610,6 +630,12 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
         beta_geo = beta_geo.item()
     if isinstance(psi_geo, np.ndarray):
         psi_geo = psi_geo.item()
+    if lamda_geo < 0 or lamda_geo >= 2*np.pi:
+        raise ValueError("Longitude should within [0, 2*pi).")
+    if beta_geo < -np.pi/2 or beta_geo > np.pi/2:
+        raise ValueError("Latitude should within [-pi/2, pi/2].")
+    if psi_geo < 0 or psi_geo >= 2*np.pi:
+        raise ValueError("Polarization angle should within [0, 2*pi).")
     k_geo = localization_to_propagation_vector(lamda_geo, beta_geo)
     rotation_matrix_geo = rotation_matrix_ssb_to_geo()
     k_ssb = rotation_matrix_geo @ k_geo
