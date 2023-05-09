@@ -15,10 +15,7 @@ from pycbc import (
 from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
 from pycbc.filter import matched_filter_core
 import pycbc.waveform.bank
-from pycbc.conversions import (
-    mchirp_from_mass1_mass2, mtotal_from_mchirp_eta,
-    mass1_from_mtotal_eta, mass2_from_mtotal_eta
-)
+import pycbc.conversions as cv
 from pycbc.io import live
 from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
@@ -29,6 +26,12 @@ try:
 except:
     ps = None
 
+# Set a minimum mass for points tried in optimization allowing for
+# minimal slop relative to the lightest template
+MIN_CPT_MASS = 0.99
+
+# Set a large maximum total mass
+MAX_MTOTAL = 500.
 
 Nfeval = 0
 start_time = time.time()
@@ -56,12 +59,12 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     delta_f = argv[7]
     sample_rate = argv[8]
     distance = 1.0 / DYN_RANGE_FAC
-    mtotal = mtotal_from_mchirp_eta(v[0], v[1])
-    mass1 = mass1_from_mtotal_eta(mtotal, v[1])
-    mass2 = mass2_from_mtotal_eta(mtotal, v[1])
+    mtotal = cv.mtotal_from_mchirp_eta(v[0], v[1])
+    mass1 = cv.mass1_from_mtotal_eta(mtotal, v[1])
+    mass2 = cv.mass2_from_mtotal_eta(mtotal, v[1])
 
     # enforce broadly accepted search space boundaries
-    if mass1 < 1 or mass2 < 1 or mtotal > 500:
+    if mass1 < MIN_CPT_MASS or mass2 < MIN_CPT_MASS or mtotal > MAX_MTOTAL:
         return -numpy.inf, {}
 
     try:
@@ -70,7 +73,7 @@ def compute_network_snr_core(v, *argv, raise_err=False):
                 approximant=approximant,
                 mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3],
                 f_lower=flow, f_final=f_end, delta_f=delta_f,
-                delta_t=1.0/sample_rate, distance=distance)
+                delta_t=1./sample_rate, distance=distance)
     except RuntimeError:
         if raise_err:
             raise
@@ -119,8 +122,8 @@ def compute_minus_network_snr(v, *argv):
 
 def compute_minus_network_snr_pso(v, *argv, **kwargs):
     argv = kwargs['args']
-    nsnr_array = numpy.array([-compute_network_snr_core(v_i, *argv)[0] for v_i in v])
-    return nsnr_array
+    nsnr_array = numpy.array([compute_network_snr_core(v_i, *argv)[0] for v_i in v])
+    return -nsnr_array
 
 
 def optimize_di(bounds, cli_args, extra_args):
@@ -224,6 +227,10 @@ parser.add_argument('--approximant', required=True,
 parser.add_argument('--snr-threshold', default=4.0,
                     help='If the SNR in ifo X is below this threshold do not '
                          'consider it part of the coincidence. Not implemented')
+parser.add_argument('--chirp-time-f-lower', default=20.,
+                    help='Starting frequency for chirp time window (Hz).')
+parser.add_argument('--chirp-time-window', default=2.,
+                    help='Chirp time window (s).')
 parser.add_argument('--gracedb-server', metavar='URL',
                     help='URL of GraceDB server API for uploading events. '
                          'If not provided, the default URL is used.')
@@ -327,19 +334,29 @@ sample_rate = fp['sample_rate'][()]
 extra_args = [data, coinc_times, coinc_ifos, flen,
               approximant, flow, f_end, delta_f, sample_rate]
 
-mchirp = mchirp_from_mass1_mass2(
-    fp['mass1'][()],
-    fp['mass2'][()]
-)
-minchirp = mchirp * (1 - mchirp / 50.0)
-maxchirp = mchirp * (1 + mchirp / 50.0)
-minchirp = 1 if minchirp < 1 else minchirp
-maxchirp = 80 if maxchirp > 80 else maxchirp
+# Determine chirp mass bounds from constant chirp time window
+tau0flow = args.chirp_time_f_lower
+tau0 = cv.tau0_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()], tau0flow)
+# Arbitrarily set max mchirp to 200 Msun if tau0 - window is too small
+mintau0 = max(tau0 - args.chirp_time_window,
+              cv.tau0_from_mchirp(200., tau0flow))
+maxtau0 = tau0 + args.chirp_time_window
+minchirp = cv.mchirp_from_tau0(maxtau0, tau0flow)
+maxchirp = cv.mchirp_from_tau0(mintau0, tau0flow)
+# Check basic sanity
+assert minchirp > 0.5
+assert minchirp < maxchirp
+assert maxchirp < 250.
 
-# boundary of the optimization space (dict of (min, max) tuples)
+# Establish minimum eta: find the most asymmetric mass point
+# nb function name is 'mass2' but it doesn't enforce m2 < m1!
+maxm1 = cv._mass2_from_mchirp_mass1(maxchirp, MIN_CPT_MASS)
+mineta = max(cv.eta_from_mass1_mass2(maxm1, MIN_CPT_MASS), 0.01)
+
+# Boundaries of the optimization space: dict of (min, max) tuples
 bounds = {
     'mchirp': (minchirp, maxchirp),
-    'eta': (0.01, 0.2499),
+    'eta': (mineta, 0.24999999999),
     'spin1z': (-0.9, 0.9),
     'spin2z': (-0.9, 0.9)
 }
@@ -360,9 +377,9 @@ with scheme_context:
 
     _, snr_series_dict = compute_network_snr_core(opt_params, *extra_args)
 
-mtotal = mtotal_from_mchirp_eta(opt_params[0], opt_params[1])
-mass1 = mass1_from_mtotal_eta(mtotal, opt_params[1])
-mass2 = mass2_from_mtotal_eta(mtotal, opt_params[1])
+mtotal = cv.mtotal_from_mchirp_eta(opt_params[0], opt_params[1])
+mass1 = cv.mass1_from_mtotal_eta(mtotal, opt_params[1])
+mass2 = cv.mass2_from_mtotal_eta(mtotal, opt_params[1])
 spin1z = opt_params[2]
 spin2z = opt_params[3]
 
