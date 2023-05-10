@@ -469,6 +469,9 @@ fore_xmlall = wf.make_foreground_table(workflow, combined_bg_file,
 fore_xmlloudest = wf.make_foreground_table(workflow, combined_bg_file,
                     hdfbank, rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
+fore_hdfall = wf.make_foreground_table(workflow, combined_bg_file,
+                    hdfbank, rdir['open_box_result'], singles=insps,
+                    extension='.hdf', tags=["hdfall"])
 
 symlink_result(table, 'open_box_result/significance')
 
@@ -563,31 +566,36 @@ splitbank_files_inj = wf.setup_splittable_workflow(workflow, [hdfbank],
 
 # setup the injection files
 inj_files_base, inj_tags = wf.setup_injection_workflow(workflow,
-                                                  output_dir="inj_files")
-
+                                                       output_dir="inj_files")
 inj_files = []
 for inj_file, tag in zip(inj_files_base, inj_tags):
-    inj_files.append(wf.inj_to_hdf(workflow, inj_file, 'inj_files', [tag]))
+    if inj_file is None:
+        # No injection file to convert
+        inj_files.append(inj_file)
+    else:
+        inj_files.append(wf.inj_to_hdf(workflow, inj_file, 'inj_files', [tag]))
 
 inj_coincs = wf.FileList()
 
 found_inj_dict ={}
 insps_dict = {}
+combined_inj_bg_files = {}
 
 files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
     ctags = [tag, 'injections']
     output_dir = '%s_coinc' % tag
 
-    if workflow.cp.has_option_tags('workflow-injections',
-                                   'compute-optimal-snr', tags=ctags):
-        optimal_snr_file = wf.compute_inj_optimal_snr(
-                workflow, inj_file, psd_files, 'inj_files', tags=ctags)
-        file_for_injfind = optimal_snr_file
-    else:
-        file_for_injfind = inj_file
+    if inj_file is not None:
+        if workflow.cp.has_option_tags('workflow-injections',
+                                       'compute-optimal-snr', tags=ctags):
+            optimal_snr_file = wf.compute_inj_optimal_snr(
+                    workflow, inj_file, psd_files, 'inj_files', tags=ctags)
+            file_for_injfind = optimal_snr_file
+        else:
+            file_for_injfind = inj_file
 
-    files_for_combined_injfind.append(file_for_injfind)
+        files_for_combined_injfind.append(file_for_injfind)
 
     # setup the matchedfilter jobs
     insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
@@ -664,20 +672,22 @@ for inj_file, tag in zip(inj_files, inj_tags):
         output_dir,
         tags=combctags
     )
+    combined_inj_bg_files[tag] = combined_inj_bg_file
 
-    found_inj = wf.find_injections_in_hdf_coinc(
-        workflow,
-        [combined_inj_bg_file],
-        [file_for_injfind],
-        censored_veto,
-        censored_veto_name,
-        output_dir,
-        tags=combctags)
+    if inj_file is not None:
+        found_inj = wf.find_injections_in_hdf_coinc(
+            workflow,
+            [combined_inj_bg_file],
+            [file_for_injfind],
+            censored_veto,
+            censored_veto_name,
+            output_dir,
+            tags=combctags)
+        found_inj_dict[tag] = found_inj
 
     inj_coincs += [combined_inj_bg_file]
 
     # Set files for plots
-    found_inj_dict[tag] = found_inj
     insps_dict[tag] = insps
 
 # And the combined INJFIND file
@@ -695,6 +705,9 @@ if len(files_for_combined_injfind) > 0:
 ############################ Injection plots #################################
 # Per injection run plots
 for inj_file, tag in zip(inj_files, inj_tags):
+    if inj_file is None:
+        # This is an unknown injection set
+        continue
     found_inj = found_inj_dict[tag]
     insps = insps_dict[tag]
     injdir = rdir['injections/%s' % tag]
@@ -751,7 +764,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
         wf.make_throughput_plot(workflow, insps, rdir['workflow/throughput'],
                                 tags=[tag])
 
-######################## Make combined injection plots ##########################
+####################### Make combined injection plots #########################
 if len(files_for_combined_injfind) > 0:
     sen_all = wf.make_sensitivity_plot(workflow, found_inj_comb,
                                        rdir['search_sensitivity'],
@@ -771,13 +784,46 @@ if len(files_for_combined_injfind) > 0:
                                      require='summ')
     inj_summ = list(layout.grouper(inj_s + sen_s, 2))
 
+###################### Results page for unknown injections ####################
+for inj_file, tag in zip(inj_files, inj_tags):
+    if inj_file is not None:
+        # This is a known injection set and we will plot in the usual way
+        continue
+    # run minifollowups on the output of the loudest events
+    mfup_dir_inj = rdir[f'open_box_result/{tag}_injection_followup']
+    wf.setup_foreground_minifollowups(workflow, combined_inj_bg_files[tag],
+                                      insps_dict[tag],
+                                      hdfbank,
+                                      insp_files_seg_file,
+                                      data_analysed_name,
+                                      trig_generated_name,
+                                      'daxes',
+                                      mfup_dir_inj,
+                                      tags=[tag])
+    table = wf.make_foreground_table(workflow,
+                                     combined_inj_bg_files[tag],
+                                     hdfbank,
+                                     rdir['open_box_result'],
+                                     singles=insps_dict[tag],
+                                     extension='.html',
+                                     tags=[tag])
+    # Make a summary hdf file
+    wf.make_foreground_table(workflow,
+                             combined_inj_bg_files[tag],
+                             hdfbank,
+                             rdir['open_box_result'],
+                             singles=insps_dict[tag],
+                             extension='.hdf',
+                             tags=[tag])
+
+
 # Make analysis time summary
 analysis_time_summ = [time_file, seg_summ_plot]
 for f in analysis_time_summ:
     symlink_result(f, 'analysis_time')
 layout.single_layout(rdir['analysis_time'], (analysis_time_summ))
 
-########################## Make full summary ####################################
+######################### Make full summary ###################################
 if len(files_for_combined_injfind) > 0:
     summ = ([(time_file,)] + [(seg_summ_plot,)] +
             [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ +
