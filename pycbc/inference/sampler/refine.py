@@ -98,8 +98,10 @@ class RefineSampler(DummySampler):
 
     def draw_samples(self, size):
         """Draw new samples within the model priors"""
+        logging.info('getting from kde')
         ksamples = self.kde.resample(size=size)
         params = {k: ksamples[i, :] for i, k in enumerate(self.vparam)}
+        logging.info('checking prior')
         keep = self.model.prior_distribution.contains(params)
         return ksamples[:, keep]
 
@@ -228,7 +230,9 @@ class RefineSampler(DummySampler):
 
         logging.info('Drawing final samples')
         ksamples = self.draw_samples(self.num_samples)
+        logging.info('Calculating final likelihoods')
         ksamples, logp, logl, logw = self.run_samples(ksamples)
         self._samples = {k: ksamples[j,:] for j, k in enumerate(self.vparam)}
         self._samples['loglikelihood'] = logl
+        logging.info("Reweighting to equal samples")
         self._samples = resample_equal(self._samples, logw)
