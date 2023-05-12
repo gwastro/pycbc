@@ -125,16 +125,16 @@ with h5py.File(args.bank_file, 'r') as bankf:
         # be histogrammed - e.g. approximant
         if not np.issubdtype(bankf[p].dtype, np.number): continue
         bank[p] = bankf[p][:]
+        banklen = bankf[p].size
 
-banklen = list(bank.values())[0].size
 logging.info("Got %d templates from the bank", banklen)
 
 # If no parameters are given - just plot whatever is in the bank
 if not args.parameters:
     # Plot anything which is not singular
-    args.parameters = [k for k in bank.keys()
+    args.parameters = [k for k in bank
                        if len(np.unique(bank[k])) > 1]
-    args.parameters_labels = {k: k for k in list(bank.keys())}
+    args.parameters_labels = {k: k for k in bank}
 
 # Check through the conversion options to see if any are used in
 # the parameters argument:
@@ -272,8 +272,8 @@ logging.info("Plot generated")
 fig.set_dpi(args.dpi)
 
 # save
-caption = "Template bank as a corner plot with "
-caption += "scatter points for each waveform."
+caption = ("Template bank as a corner plot with "
+           "scatter points for each waveform.")
 
 metadata.save_fig_with_metadata(
                  fig, args.output_plot_file,
