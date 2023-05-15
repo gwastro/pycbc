@@ -20,6 +20,7 @@ another for pycbc banks in an hdf file.
 """
 
 
+import os
 import sys
 import h5py
 import numpy as np
@@ -183,13 +184,6 @@ for p in required_params:
     logging.info("Converting %s", p)
     bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
 
-# Durations can be negative where get_imr_duration is not perfect - 
-# set a minimum value of 0.15s
-if 'duration' in bank:
-    bank['duration'] = np.maximum(bank['duration'], 0.15)
-if 'template_duration' in bank:
-    bank['template_duration'] = np.maximum(bank['template_duration'], 0.15)
-
 if args.mpl_style == 'dark_background':
     hist_color = 'white'
 else:
@@ -225,7 +219,7 @@ fig, axis_dict = create_multidim_plot(
     plot_marginal=args.plot_histogram,
     plot_scatter=True,
     plot_contours=False,
-    scatter_cmap="rainbow",
+    scatter_cmap="plasma",
     marginal_title=False,
     marginal_percentiles=[],
     fill_color='g',
@@ -239,7 +233,7 @@ fig, axis_dict = create_multidim_plot(
     maxs=maxs
 )
 
-fig.suptitle(f"Bank length: {banklen}")
+fig.suptitle(f"{os.path.basename(args.bank_file)} - {banklen} templates")
 for k, v in axis_dict.items():
     # Some may be long labels - tilt the label a little to fit together
     xlab = v[0].get_xlabel()
