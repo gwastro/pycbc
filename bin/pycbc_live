@@ -1099,13 +1099,10 @@ with ctx:
             else:
                 psd_count[ifo] -= 1
 
-            if data_reader[ifo].psd is not None:
-                dist = data_reader[ifo].psd.dist
-                if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
-                    logging.info("%s PSD dist %s outside acceptable range [%s, %s]",
-                                 ifo, dist, args.min_psd_abort_distance,
-                                 args.max_psd_abort_distance)
-                    status = False
+            status &= data_reader[ifo].check_psd_dist(
+                args.min_psd_abort_distance,
+                args.max_psd_abort_distance
+            )
 
             if status is True:
                 evnt.live_detectors.add(ifo)
