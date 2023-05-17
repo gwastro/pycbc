@@ -1711,6 +1711,27 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         logging.info("Recalculating %s PSD, %s", self.detector, psd.dist)
         return True
 
+    def check_psd_dist(self, min_dist, max_dist):
+        """Check that the horizon distance of a detector is within a required
+        range. If so, return True, otherwise log a warning and return False.
+        """
+        if self.psd is None:
+            # ignore check
+            return True
+        # Note that the distance can in principle be inf or nan, e.g. if h(t)
+        # is identically zero. The check must fail in those cases.  Be careful
+        # with how the logic works out when comparing inf's or nan's!
+        good = self.psd.dist >= min_dist and self.psd.dist <= max_dist
+        if not good:
+            logging.info(
+                "%s PSD dist %s outside acceptable range [%s, %s]",
+                self.detector,
+                self.psd.dist,
+                min_dist,
+                max_dist
+            )
+        return good
+
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
 
