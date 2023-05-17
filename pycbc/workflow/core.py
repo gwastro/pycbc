@@ -315,16 +315,45 @@ class Executable(pegasus_workflow.Executable):
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
 
+    def add_or_replace_common_options(self, opt, value):
+        """
+        Check whether a value opt already exists in the list opts,
+        if it does, then update the next enrty in the list to the
+        new value, if not, append it to the list
+        Parameters
+        ----------
+        opt : string
+            The option to check for in the list, should start with '--'
+        value : string
+            The value to add to the list for option opt
+        opts : list
+            Existing option list
+        """
+        if opt in self.common_options:
+            # Need to find which option is going to be overwritten
+            # by this new value
+            idx = self.common_options.index(opt)
+            # Overwrite the value with the new one
+            self.common_options[idx + 1] = value
+        else:
+            self.common_options += [opt, value]
+
     def add_ini_opts(self, cp, sec):
         """Add job-specific options from configuration file.
 
         Parameters
         -----------
         cp : ConfigParser object
-            The ConfigParser object holding the workflow configuration settings
+            The ConfigParser object holding the workflow configuration
+            settings
         sec : string
             The section containing options for this job.
         """
+        # First - check if there are any defaultvalue sections
+        # appropriate for this job
+        if cp.has_section(f'{sec}-defaultvalues'):
+            self.add_ini_opts(cp, f'{sec}-defaultvalues')
+
         for opt in cp.options(sec):
             value = cp.get(sec, opt).strip()
             opt = '--%s' %(opt,)
@@ -380,7 +409,8 @@ class Executable(pegasus_workflow.Executable):
                 # stuff later.
                 self.unresolved_td_options[opt] = value
             else:
-                self.common_options += [opt, value]
+                # This option comes from the config file(s)
+                self.add_or_replace_common_options(opt, value)
 
     def add_opt(self, opt, value=None):
         """Add option to job.

@@ -241,7 +241,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         for sec in subsections:
             sp = sec.split("-")
-            # This is unusual, but a format [section-subsection-tag] is okay. Just
+            # The format [section-subsection-tag] is okay. Just
             # check that [section-subsection] section exists. If not it is possible
             # the user is trying to use an subsection name with '-' in it
             if (len(sp) > 1) and not self.has_section(
@@ -442,7 +442,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             provided items.
             This will override so that the options+values given in items
             will replace the original values if the value is set to True.
-            Default = True
+            Default = False
         """
         # Sanity checking
         if not self.has_section(section):
@@ -463,14 +463,14 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
     def sanity_check_subsections(self):
         """
-        This function goes through the ConfigParset and checks that any options
+        This function goes through the ConfigParser and checks that any options
         given in the [SECTION_NAME] section are not also given in any
         [SECTION_NAME-SUBSECTION] sections.
 
         """
         # Loop over the sections in the ini file
         for section in self.sections():
-            # [pegasus_profile] specially is allowed to be overriden by
+            # [pegasus_profile] is specially allowed to be overriden by
             # sub-sections
             if section == "pegasus_profile":
                 continue
@@ -479,6 +479,10 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             for section2 in self.sections():
                 # Check if any are subsections of section
                 if section2.startswith(section + "-"):
+                    if section2 == "defaultvalues":
+                        # defaultvalues is storage for defaults, and will
+                        # be over-written by anything in the sections-proper
+                        continue
                     # Check for duplicate options whenever this exists
                     self.check_duplicate_options(
                         section, section2, raise_error=True
@@ -512,6 +516,12 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             raise ValueError(
                 "Section %s not present in ConfigParser." % (section2,)
             )
+
+        if section1.endswith("-defaultvalues") or \
+                section2.endswith("-defaultvalues"):
+            # Override the raise_error variable not to error when
+            # defaultvalues are given
+            raise_error = False
 
         items1 = self.options(section1)
         items2 = self.options(section2)
@@ -556,8 +566,9 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         """
         Supplement to ConfigParser.ConfigParser.get(). This will search for an
         option in [section] and if it doesn't find it will also try in
-        [section-tag] for every value of tag in tags.
-        Will raise a ConfigParser.Error if it cannot find a value.
+        [section-defaultvalues], and [section-tag] for every value of tag
+        in tags. [section-tag] will overwrite any [section-defaultvalues]
+        values. Will raise a ConfigParser.Error if it cannot find a value.
 
         Parameters
         -----------
@@ -587,6 +598,14 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             if not tags:
                 raise ConfigParser.Error(err_string + ".")
             return_vals = []
+            # First, check if there are any default values set:
+            overwrite = False
+            if self.has_section(f"{section}-defaultvalues"):
+                return_vals.append(
+                    self.get(f"{section}-{sub}", option)
+                )
+                overwrite = True
+
             sub_section_list = []
             for sec_len in range(1, len(tags) + 1):
                 for tag_permutation in itertools.permutations(tags, sec_len):
@@ -602,8 +621,12 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                             self.get("%s-%s" % (section, sub), option)
                         )
 
-            # We also want to recursively go into sections
+            if overwrite and len(return_vals) > 1:
+                # option supplied which should overwrite the default
+                # default will be first in the list, so remove it
+                return_vals = return_vals[1:]
 
+            # We also want to recursively go into sections
             if not return_vals:
                 err_string += "or in sections [%s]." % (
                     "] [".join(section_list)
