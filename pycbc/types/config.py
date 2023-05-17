@@ -31,6 +31,7 @@ import logging
 from io import StringIO
 import configparser as ConfigParser
 
+_force_override = "!"
 
 class DeepCopyableConfigParser(ConfigParser.ConfigParser):
     """
@@ -107,6 +108,17 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         # Populate shared options from the [sharedoptions] section
         self.populate_shared_sections()
+
+        # Make sure any _force_override sections are set
+        for section in self.sections():
+            if not section.endswith(_force_override):
+                continue
+            new_section = section.rstrip(_force_override)
+            if not self.has_section(new_section):
+                self.add_section(new_section)
+            for option, value in self.items(section):
+                self.set(new_section,
+                         option, value)
 
         # Do deletes from command line
         for delete in deleteTuples:
@@ -234,7 +246,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         """Return a list of subsections for the given section name"""
         # Keep only subsection names
         subsections = [
-            sec[len(section_name) + 1:]
+            sec[len(section_name) + 1:].rstrip(_force_override)
             for sec in self.sections()
             if sec.startswith(section_name + "-")
         ]
@@ -463,22 +475,47 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
     def sanity_check_subsections(self):
         """
-        This function goes through the ConfigParset and checks that any options
+        This function goes through the ConfigParser and checks that any options
         given in the [SECTION_NAME] section are not also given in any
-        [SECTION_NAME-SUBSECTION] sections.
+        [SECTION_NAME-SUBSECTION] sections. In the case that exactly one of the
+        sections ends in the _force_override character, this will not error.
 
         """
         # Loop over the sections in the ini file
         for section in self.sections():
-            # [pegasus_profile] specially is allowed to be overriden by
-            # sub-sections
+            # [pegasus_profile] is specially allowed to be overriden by
+            # sub-sections without the _force_override character set
             if section == "pegasus_profile":
                 continue
-
+            # Skip anything with a _force_override - this has been
+            # added as a standard section already
+            if section.endswith(_force_override):
+                continue
+            # Section cannot contain the _force_override character and
+            # then have subsections
+            if f'{_force_override}-' in section:
+                raise ValueError(
+                    f"Section {section.split(_force_override)[0]} cannot be "
+                    f"enforced within a subsection definition: {section}"
+                    )
+            override = self.has_section(f"{section}{_force_override}")
             # Loop over the sections again
             for section2 in self.sections():
+                if section2.endswith(_force_override):
+                    # Skip anything with a _force_override - this has been
+                    # added as a standard section already
+                    continue
+                override2 = self.has_section(f"{section2}{_force_override}")
+
                 # Check if any are subsections of section
                 if section2.startswith(section + "-"):
+                    if override and override2:
+                        raise ValueError(
+                            f"Both section {section}! and {section2} end "
+                            + f"with force character {_force_override}. "
+                            + "This is not allowed."
+                        )
+
                     # Check for duplicate options whenever this exists
                     self.check_duplicate_options(
                         section, section2, raise_error=True
@@ -512,6 +549,11 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             raise ValueError(
                 "Section %s not present in ConfigParser." % (section2,)
             )
+
+        # If the override flag is set, don't error on this section/option
+        override1 = self.has_section(f"{section1}{_force_override}")
+        override2 = self.has_section(f"{section2}{_force_override}")
+        raise_error = raise_error and not(override1 or override2)
 
         items1 = self.options(section1)
         items2 = self.options(section2)

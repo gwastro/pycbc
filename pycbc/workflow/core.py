@@ -46,6 +46,7 @@ from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
+from pycbc.types.config import _force_override
 
 
 def make_analysis_dir(path):
@@ -325,6 +326,7 @@ class Executable(pegasus_workflow.Executable):
         sec : string
             The section containing options for this job.
         """
+        override = cp.has_section(f"{sec}{_force_override}")
         for opt in cp.options(sec):
             value = cp.get(sec, opt).strip()
             opt = '--%s' %(opt,)
@@ -380,7 +382,29 @@ class Executable(pegasus_workflow.Executable):
                 # stuff later.
                 self.unresolved_td_options[opt] = value
             else:
-                self.common_options += [opt, value]
+                existing_opt_match = [ov == opt
+                                      for ov in self.common_options]
+                if numpy.count_nonzero(existing_opt_match) > 1:
+                        # Config file options cannot be given multiple times,
+                        # so there should not be multiple versions of this,
+                        # raise an error.
+                        raise ValueError(
+                            "The option exists more than once already!"
+                        )
+                if not any(existing_opt_match):
+                    # This option doesn't exist yet - add it as normal
+                    self.common_options += [opt, value]
+                elif not override:
+                    # This option already exists in the list and does not have
+                    # the _force_override character set, so do not add it
+                    pass
+                else:
+                    # This value is already in the options, but
+                    # should be overridden by the forced option
+                    # There will be exactly one match given checks already
+                    # performed
+                    replace_idx = numpy.flatnonzero(existing_opt_match)[0] + 1
+                    self.common_options[replace_idx] = value
 
     def add_opt(self, opt, value=None):
         """Add option to job.
