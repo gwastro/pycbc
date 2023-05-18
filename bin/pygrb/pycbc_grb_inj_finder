@@ -64,7 +64,6 @@ TQDM_KW = {
     "smoothing": 0.05,
 }
 
-
 # -- utilities ----------------------------------
 
 def find_split_files(filelist, split):
@@ -83,8 +82,7 @@ def read_segment_files(segfiles):
         map(_read, segfiles),
         segmentlist()))
 
-
-def read_hdf5_triggers(inputfiles, verbose=False):
+def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
     """Merge several HDF5 files into a single file
 
     Parameters
@@ -95,56 +93,101 @@ def read_hdf5_triggers(inputfiles, verbose=False):
     outputfile : `str`
         the path of the output HDF5 file to write
     """
-    datasets = {}
+    datasets_n = {}
+    datasets_ifo = {}
 
-    def _scan_dataset(name, obj):
-        if not name.startswith("network") or not isinstance(obj, h5py.Dataset):
+    def _scan_dataset_ifo(name, obj):
+        if name.startswith("network") or not isinstance(obj, h5py.Dataset) or "search" in name:
+            return
+        if NETWORK_IFO_EVENT_ID_REGEX.match(name):
+            return
+        
+        shape = obj.shape
+        dtype = obj.dtype
+        try:
+            shape = numpy.sum(datasets_ifo[name][0] + shape, keepdims=True)
+        except KeyError:
+            pass
+        else:
+            assert dtype == datasets_ifo[name][1], (
+                "Cannot merge {0}/{1}, does not match dtype".format(
+                    obj.file.filename, name,
+                ))
+        datasets_ifo[name] = (shape, dtype)
+        
+    def _scan_dataset_network(name, obj):
+        if not name.startswith("network") or not isinstance(obj, h5py.Dataset) or "search" in name:
             return
         if NETWORK_IFO_EVENT_ID_REGEX.match(name):
             return
         shape = obj.shape
         dtype = obj.dtype
         try:
-            shape = numpy.sum(datasets[name][0] + shape, keepdims=True)
+            shape = numpy.sum(datasets_n[name][0] + shape, keepdims=True)
         except KeyError:
             pass
         else:
-            assert dtype == datasets[name][1], (
+            assert dtype == datasets_n[name][1], (
                 "Cannot merge {0}/{1}, does not match dtype".format(
                     obj.file.filename, name,
                 ))
-        datasets[name] = (shape, dtype)
+        datasets_n[name] = (shape, dtype)
 
     # get list of datasets
-    datasets = {}
+    datasets_n = {}
+    datasets_ifo = {}
     for filename in inputfiles:
         with h5py.File(filename, 'r') as h5f:
-            h5f.visititems(_scan_dataset)
+            h5f.visititems(_scan_dataset_ifo)
+            h5f.visititems(_scan_dataset_network)
 
     position = defaultdict(int)
+    
+    out_dict = {}
+    for x in trig_dict:
+        out_dict[x] = {}
+        
+    placeholder = 0
 
-    out = {}
-
-    # create datasets
-    for dset, (shape, dtype) in datasets.items():
-        # 8: chops off network/ from the dset string
-        out[dset[8:]] = numpy.empty(shape, dtype=dtype)
+    # create datasets    
+    for dset, (shape, dtype) in datasets_ifo.items():
+        # 3: chops off H1/ or L1/ or V1/ from the dset string
+        for x in trig_dict:
+            if placeholder == 0 and x!= 'network':
+                placeholder = x
+            if dset.startswith(x):
+                out_dict[x][dset[3:]] = numpy.empty(shape, dtype=dtype)
+            
+    for dset, (shape, dtype) in datasets_n.items():
+        out_dict['network'][dset[8:]] = numpy.empty(shape, dtype=dtype)
 
     # copy dataset contents
     for filename in inputfiles:
         with h5py.File(filename, 'r') as h5in:
-            for dset in datasets:
-                data = h5in[dset][:]
-                size = data.shape[0]
-                pos = position[dset]
-                if EVENT_ID_REGEX.search(dset):
-                    out[dset[8:]][pos:pos+size] = data + pos
-                else:
-                    out[dset[8:]][pos:pos+size] = data
-                position[dset] += size
+            if len(h5in[placeholder].keys()) != 1:
+                for dset in datasets_ifo:            
+                    for x in trig_dict:
+                        if dset[:2] == x and x!='network':
+                            data = h5in[dset][:]
+                            size = data.shape[0]
+                            pos = position[dset]
+                            if EVENT_ID_REGEX.search(dset):
+                                out_dict[x][dset[3:]][pos:pos+size] = data + pos
+                            else:
+                                out_dict[x][dset[3:]][pos:pos+size] = data
+                            position[dset] += size
+                        
+                for dset in datasets_n: 
+                    data = h5in[dset][:]
+                    size = data.shape[0]
+                    pos = position[dset]
+                    if EVENT_ID_REGEX.search(dset):
+                        out_dict['network'][dset[8:]][pos:pos+size] = data + pos
+                    else:
+                        out_dict['network'][dset[8:]][pos:pos+size] = data
+                    position[dset] += size
 
-    return out
-
+    return out_dict
 
 # -- parse command line -------------------------
 
@@ -228,7 +271,16 @@ exclude = read_segment_files(args.exclude_segments)
 nexcluded = 0
 missed = []
 found = []
-trigs = defaultdict(list)
+
+# dictionary that will contain ifo names and 'network' 
+ifo_trigs_dict = {}
+# open first injection file
+firstfile = h5py.File(args.input_files[0], "r")
+for key in firstfile.keys():
+    # populate ifo_trigs_dict with ifo names and 'network' 
+    ifo_trigs_dict[key] = defaultdict(list)
+    
+print(ifo_trigs_dict)
 
 allinjections = None
 
@@ -251,14 +303,18 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         nexcluded += (~keep).sum()
         injections = tmpinj[keep]
         injtime = injtime[keep]
-
+        
         # read triggers
-        triggers = read_hdf5_triggers(trigfiles)
-        time = triggers["end_time_gc"]
-        snr = triggers[args.rank_column]
-        event_id = triggers["event_id"]
+        triggers_dict = read_hdf5_triggers(trigfiles, ifo_trigs_dict)
+        
+        #print(triggers_dict['network'].keys())
+        #print(ifotriggers.keys())
+        
+        time = triggers_dict['network']['end_time_gc']
+        snr = triggers_dict['network'][args.rank_column]
+        event_id = triggers_dict['network']["event_id"]
         time_sorting = time.argsort()
-
+        
         # determine found or missed
         _left = numpy.searchsorted(
             time[time_sorting],
@@ -281,8 +337,9 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
             else:
                 found.append(i)
                 eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
-                for col in triggers:
-                    trigs[col].append(triggers[col][eid])
+                for x in ifo_trigs_dict:
+                    for col in triggers_dict[x]:
+                        ifo_trigs_dict[x][col].append(triggers_dict[x][col][eid])
 
         # record all injections
         if allinjections is None:
@@ -321,15 +378,18 @@ with h5py.File(outfilename, "w") as h5out:
                 grp[field] = injs[field]
             else:
                 grp[field] = [str(s) for s in injs[field]]
+                
     # write triggers
-    netg = h5out.create_group("network")
-    for col in trigs:
-        netg.create_dataset(
-            col,
-            data=trigs[col],
-            compression="gzip",
-            compression_opts=9,
-        )
-
+    
+    for x in ifo_trigs_dict:
+        next = h5out.create_group(x)
+        for col in ifo_trigs_dict[x]:
+            next.create_dataset(
+                col,
+                data=ifo_trigs_dict[x][col],
+                compression="gzip",
+                compression_opts=9,
+            )
+    
 if args.verbose:
     print("Found/missed written to {}".format(outfilename))
