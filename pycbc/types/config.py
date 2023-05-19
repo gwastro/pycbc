@@ -244,16 +244,20 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
     def get_subsections(self, section_name):
         """Return a list of subsections for the given section name"""
-        # Keep only subsection names
+        # Keep only subsection names, ignore if the _force_override
+        # character is set. Override sections are duplicated without
+        # the character so ignore these as well
         subsections = [
-            sec[len(section_name) + 1:].rstrip(_force_override)
+            sec[len(section_name) + 1:]
             for sec in self.sections()
             if sec.startswith(section_name + "-")
+            and not self.has_section(sec + _force_override)
+            and not sec.endswith(_force_override)
         ]
 
         for sec in subsections:
             sp = sec.split("-")
-            # This is unusual, but a format [section-subsection-tag] is okay. Just
+            # The format [section-subsection-tag] is okay. Just
             # check that [section-subsection] section exists. If not it is possible
             # the user is trying to use an subsection name with '-' in it
             if (len(sp) > 1) and not self.has_section(
@@ -551,8 +555,10 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             )
 
         # If the override flag is set, don't error on this section/option
-        override1 = self.has_section(f"{section1}{_force_override}")
-        override2 = self.has_section(f"{section2}{_force_override}")
+        override1 = self.has_section(f"{section1}{_force_override}") \
+            or section1.endswith(_force_override)
+        override2 = self.has_section(f"{section2}{_force_override}") \
+            or section2.endswith(_force_override)
         raise_error = raise_error and not(override1 or override2)
 
         items1 = self.options(section1)
