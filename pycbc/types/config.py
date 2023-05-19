@@ -33,6 +33,7 @@ import configparser as ConfigParser
 
 _force_override = "!"
 
+
 class DeepCopyableConfigParser(ConfigParser.ConfigParser):
     """
     The standard SafeConfigParser no longer supports deepcopy() as of python
