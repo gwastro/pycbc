@@ -66,20 +66,35 @@ class LiveSingle(object):
                                  'a single value or as detector-value pairs, '
                                  'e.g. H1:mean L1:mean V1:conservative')
 
+
+    @staticmethod
+    def verify_args(args, parser):
+        sngl_opts = [args.single_fit_file,
+                     args.single_reduced_chisq_threshold,
+                     args.single_duration_threshold,
+                     args.single_newsnr_threshold]
+        sngl_opts_str = ("--single-fit-file, "
+                         "--single-reduced-chisq-threshold, "
+                         "--single-duration-threshold, "
+                         "--single-newsnr-threshold")
+        if args.enable_single_detector_background and not all(sngl_opts):
+            parser.error(f"Single detector trigger options ({sngl_opts_str}) "
+                         "must ALL be given if "
+                         "--enable-single-detector-background is set.")
+        if any(sngl_opts) and not args.enable_single_detector_background:
+            parser.error(f"Single detector trigger options ({sngl_opts_str}) "
+                         "given, but --enable-single-detector-background "
+                         "is not set.")
+        if args.enable_single_detector_upload \
+                and not all([args.enable_single_detector_background,
+                             args.enable_gracedb_upload]):
+            parser.error("--enable-single-detector-upload does not make "
+                         "sense without both --enable-gracedb-upload "
+                         "and --enable-single-detector-background set.")
+
+
     @classmethod
     def from_cli(cls, args, ifo):
-        sngl_opts_required = all([args.single_fit_file,
-                                  args.single_reduced_chisq_threshold,
-                                  args.single_duration_threshold,
-                                  args.single_newsnr_threshold])
-        if args.enable_single_detector_background and not sngl_opts_required:
-            raise RuntimeError("Single detector trigger options "
-                               "(--single-fit-file, "
-                               "--single-reduced-chisq-threshold, "
-                               "--single-duration-threshold, "
-                               "--single-newsnr-threshold) "
-                               "must ALL be given if single detector "
-                               "background is enabled")
         return cls(
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],

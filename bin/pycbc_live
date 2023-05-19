@@ -927,8 +927,10 @@ mchirp_area.insert_args(parser)
 livepau.insert_live_pastro_option_group(parser)
 
 args = parser.parse_args()
+
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
+LiveSingle.verify_args(args, parser)
 
 if args.output_background is not None and len(args.output_background) != 2:
     parser.error('--output-background takes two parameters: period and path')
