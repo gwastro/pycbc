@@ -384,15 +384,15 @@ class Executable(pegasus_workflow.Executable):
             else:
                 # This option comes from the config file(s)
                 existing_option_match = [ov == opt
-                                      for ov in self.common_options]
+                                         for ov in self.common_options]
                 if numpy.count_nonzero(existing_option_match) > 1:
-                        # Config file options cannot be given multiple times,
-                        # so there should not be multiple versions of this,
-                        # raise an error.
-                        raise ValueError(
-                            "An option exists more than once already "
-                            "- this should not happen!"
-                        )
+                    # Config file options cannot be given multiple times,
+                    # so there should not be multiple versions of this,
+                    # raise an error.
+                    raise ValueError(
+                        "An option exists more than once already "
+                        "- this should not happen!"
+                    )
                 if not any(existing_option_match):
                     # This option doesn't exist yet - add it as normal
                     self.common_options += [opt, value]
@@ -401,8 +401,8 @@ class Executable(pegasus_workflow.Executable):
                     # should be overridden by the forced option
                     # There will be exactly one match given checks already
                     # performed
-                    replace_idx = numpy.flatnonzero(existing_option_match)[0] + 1
-                    self.common_options[replace_idx] = value
+                    option_idx = numpy.flatnonzero(existing_option_match)[0]
+                    self.common_options[option_idx + 1] = value
 
     def add_opt(self, opt, value=None):
         """Add option to job.
