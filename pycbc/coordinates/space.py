@@ -190,8 +190,7 @@ def polarization_newframe(psi, k, rotation_matrix):
     p_dot_u_newframe = np.vdot(p_newframe, u_newframe)
     p_dot_v_newframe = np.vdot(p_newframe, v_newframe)
     psi_newframe = np.arctan2(p_dot_v_newframe, p_dot_u_newframe)
-    # psi_newframe = np.mod(psi_newframe, 2*np.pi)
-    psi_newframe = np.mod(psi_newframe, np.pi)
+    psi_newframe = np.mod(psi_newframe, 2*np.pi)
 
     return psi_newframe
 
