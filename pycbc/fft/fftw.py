@@ -3,7 +3,7 @@ from pycbc.types import zeros
 import numpy as _np
 import ctypes
 import pycbc.scheme as _scheme
-from pycbc.libutils import get_ctypes_library
+from pycbc.libutils import get_ctypes_library_optional_namespace, HAVE_DLMOPEN
 from .core import _BaseFFT, _BaseIFFT
 from ..types import check_aligned
 
@@ -20,7 +20,7 @@ if hasattr(os, 'RTLD_DEEPBIND'):
     FFTW_RTLD_MODE = os.RTLD_DEEPBIND
 else:
     FFTW_RTLD_MODE = ctypes.DEFAULT_MODE
-
+    
 #FFTW constants, these are pulled from fftw3.h
 FFTW_FORWARD = -1
 FFTW_BACKWARD = 1
@@ -36,11 +36,25 @@ FFTW_ESTIMATE = 1 << 6
 FFTW_WISDOM_ONLY = 1 << 21
 
 # Load the single and double precision libraries
-# We need to construct them directly with CDLL so
-# we can give the RTLD_GLOBAL mode, which we must do
-# in order to use the threaded libraries as well.
-double_lib = get_ctypes_library('fftw3', ['fftw3'], mode=FFTW_RTLD_MODE)
-float_lib = get_ctypes_library('fftw3f', ['fftw3f'], mode=FFTW_RTLD_MODE)
+#
+# NOTE: The first call (for double precision) establishes
+# the namespace that is used for all other ctypes calls!
+# In environments where the underlying implementation of
+# dynamic loading does not provide 'dlmopen' (which is a
+# GNU extension), all cases where we open a library will
+# internally fall back to opening FFTW libraries with
+# the standard ctypes machinery and whatever
+# FFTW_RTLD_MODE has been set to above.
+
+double_lib, fftw_ns = get_ctypes_library_optional_namespace('fftw3',
+                          ['fftw3'], mode=FFTW_RTLD_MODE,
+                          use_namespace = HAVE_DLMOPEN,
+                          namespace = None)
+float_lib, _ = get_ctypes_library_optional_namespace('fftw3f',
+                          ['fftw3f'], mode=FFTW_RTLD_MODE,
+                          use_namespace = HAVE_DLMOPEN,
+                          namespace = fftw_ns)
+
 if (double_lib is None) or (float_lib is None):
     raise ImportError("Unable to find FFTW libraries")
 
@@ -104,21 +118,20 @@ def _init_threads(backend):
         float_threaded_libname =  _fftw_threading_libnames[backend]['float']
     except KeyError:
         raise ValueError("Backend {0} for FFTW threading does not exist!".format(backend))
+
     if double_threaded_libname is not None:
         try:
             # Note that the threaded libraries don't have their own pkg-config
             # files we must look for them wherever we look for double or single
             # FFTW itself.
-            _double_threaded_lib = get_ctypes_library(
-                double_threaded_libname,
-                ['fftw3'],
-                mode=FFTW_RTLD_MODE
-            )
-            _float_threaded_lib =  get_ctypes_library(
-                float_threaded_libname,
-                ['fftw3f'],
-                mode=FFTW_RTLD_MODE
-            )
+            _double_threaded_lib, _ = get_ctypes_library_optional_namespace(double_threaded_libname,
+                                          ['fftw3'], mode=FFTW_RTLD_MODE,
+                                          use_namespace = HAVE_DLMOPEN,
+                                          namespace = fftw_ns)
+            _float_threaded_lib, _ = get_ctypes_library_optional_namespace(float_threaded_libname,
+                                          ['fftw3f'], mode=FFTW_RTLD_MODE,
+                                          use_namespace = HAVE_DLMOPEN,
+                                          namespace = fftw_ns)
             if (_double_threaded_lib is None) or (_float_threaded_lib is None):
                 err_str = 'Unable to load threaded libraries'
                 err_str += f'{double_threaded_libname} or '

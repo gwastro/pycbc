@@ -30,7 +30,7 @@ from subprocess import getoutput
 # Be careful setting the mode for opening libraries! Some libraries (e.g.
 # libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when
 # MKL is also present) require that os.RTLD_DEEPBIND is used. If seeing
-# segfaults around this code, play about this this!
+# segfaults around this code, play around with this!
 DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
 
 
@@ -154,14 +154,7 @@ def get_libpath_from_dirlist(libname, dirs):
     # If we get here, we didn't find it...
     return None
 
-def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
-    """
-    This function takes a library name, specified in architecture-independent fashion (i.e.
-    omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and
-    a list of packages that may provide that library, and according first to LD_LIBRARY_PATH,
-    then the results of pkg-config, and falling back to the system search path, will try to
-    return a CDLL ctypes object.  If 'mode' is given it will be used when loading the library.
-    """
+def get_ctypes_fullpath(libname, packages):
     libdirs = []
     # First try to get from LD_LIBRARY_PATH
     if "LD_LIBRARY_PATH" in os.environ:
@@ -185,6 +178,111 @@ def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
         # that can be found by CDLL
         fullpath = find_library(libname)
 
+    return fullpath
+
+# Next, where possible we setup the capability to use dlmopen (which is present in
+# GNU libc) to open libraries within a unique namespace, to avoid symbol collision
+# when other packages may import the same library
+#
+# The following is based off of this github comment by user ihnorton:
+#   https://github.com/pytorch/pytorch/issues/31300#issuecomment-567545126
+#
+
+_libc = ctypes.CDLL('')
+if hasattr(_libc, 'dlmopen'):
+    _dlmopen = _libc.dlmopen
+    _dlmopen.restype = ctypes.c_void_p
+else:
+    _dlmopen = None
+
+if hasattr(_libc, 'dlinfo'):
+    _dlinfo = _libc.dlinfo
+    _dlinfo.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+else:
+    _dlinfo = None
+
+# From <dlfcn.h> in GNU libc
+LM_ID_NEWLM = -1
+RTLD_DI_LMID = 1
+
+# Also in <dlfcn.h> is:
+#     typedef long int Lmid_t
+# so we will use that when calling dlmopen and dlinfo
+
+HAVE_DLMOPEN = ((_dlinfo is not None ) and (_dlmopen is not None))
+
+def get_ctypes_library_and_namespace(libpath, namespace=None):
+    """
+    This function takes a full library path (such as returned by
+    libutils.get_ctypes_fullpath) and attempts to open it in a dedicated
+    namespace. This is a GNU extension of the dynamic loader that is not
+    available on all platforms.
+
+    Parameters:
+        libpath: The fully-qualified path to the library to open. May be
+            of type 'str' or 'bytes'
+        namespace: A ctypes.c_long value specifying the namespace, or
+            'None'. Typically this function should be called the first
+            time with 'None' for the namespace, and then the returned
+            namespace should be reused on subsequent calls to libraries
+            that should be opened in the same namespace
+
+    Output:
+        libobj: A ctypes.CDLL opened via 'dlmopen' in either a new, unique
+            namespace (if 'namespace' was 'None' when called), or the
+            specified namespace otherwise. If a failure occurred but no
+            exception was raised, then this will also be 'None', and callers
+            should check for that.
+        namespace: The unique namespace in which the CDLL was opened. It
+            will be new if 'None' was passed as 'namespace' on invocation,
+            and the same as 'namespace' otherwise.
+    """
+
+    if not HAVE_DLMOPEN:
+        return (None, None)
+
+    # We insist on RTLD_DEEPBIND, because some versions of glibc segfault
+    # on RTLD_GLOBAL. If you care about RTLD_GLOBAL you don't have a reason
+    # to use namespaces. We also use RTLD_NOW for consistency with ctypes.
+    flags = os.RTLD_DEEPBIND | os.RTLD_NOW
+
+    if namespace is None:
+        _dlmopen_ns = LM_ID_NEWLM
+    else:
+        _dlmopen_ns = namespace
+
+    if not isinstance(libpath, bytes):
+        truepath = libpath.encode('utf-8')
+    else:
+        trupath = libpath
+        
+    libhandle = _dlmopen(_dlmopen_ns, truepath, flags)
+    if libhandle is None:
+        return (None, None)
+        
+    libobj = ctypes.CDLL(truepath, handle=libhandle)
+    if libobj is None:
+        return (None, None)
+    
+    if namespace is None:
+        namespace = ctypes.c_long(0)
+        retval = _dlinfo(libhandle, RTLD_DI_LMID, ctypes.byref(namespace))
+        if retval != 0:
+            raise RuntimeError("Could not get value of new namespace for library {0}".format(libpath))
+
+    return (libobj, namespace)
+
+def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
+    """
+    This function takes a library name, specified in architecture-independent fashion (i.e.
+    omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and
+    a list of packages that may provide that library, and according first to LD_LIBRARY_PATH,
+    then the results of pkg-config, and falling back to the system search path, will try to
+    return a CDLL ctypes object.  If 'mode' is given it will be used when loading the library.
+    """
+
+    fullpath = get_ctypes_fullpath(libname, packages)
+    
     if fullpath is None:
         # We got nothin'
         return None
@@ -194,6 +292,45 @@ def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
         else:
             return ctypes.CDLL(fullpath, mode=mode)
 
+def get_ctypes_library_optional_namespace(libname, packages,
+                                          mode=DEFAULT_RTLD_MODE,
+                                          use_namespace=False,
+                                          namespace=None):
+    """
+    This function is a wrapper around both of 'get_ctypes_library' and
+    'get_ctypes_library_namespace'. If 'use_namespace' is 'False', then
+    it returns the tuple:
+        (get_ctypes_library(libname, packages, mode), 'None')
+    and the value of 'namespace' is ignored.
+
+    If 'use_namespace' is True, then it returns the tuple:
+        get_ctypes_library_and_namespace(libpath, namespace)
+    and the value of 'mode' is ignored (the library is always opened
+    with os.RTLD_DEEPBIND | os.RTLD_NOW). In this case, libpath is
+    first determined by calling get_ctypes_fullpath(libname, packages).
+
+    Thus, in most cases, this function can be called with 'use_namespace'
+    set to 'libutils.HAVE_DLMOPEN', and expect a pair of return values,
+    where the second only need be preserved if you expect to reuse a
+    namespace. In all cases, if the first value of the return tuple is
+    'None', then the call failed.
+
+    In principle, if HAVE_DLMOPEN is 'True' but the call still fails, then
+    this function can be called again with 'use_namespace = False', and
+    the alternate path using 'get_ctypes_library' will be used on the
+    second call.
+    """
+
+    if use_namespace:
+        libpath = get_ctypes_fullpath(libname, packages)
+        if libpath is None:
+            return (None, None)
+        else:
+            return get_ctypes_library_and_namespace(libpath, namespace)
+    else:
+        libobj = get_ctypes_library(libname, packages, mode)
+        return (libobj, None)
+        
 def import_optional(library_name):
     """ Try to import library but and return stub if not found
 
