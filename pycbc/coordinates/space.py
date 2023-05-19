@@ -190,7 +190,8 @@ def polarization_newframe(psi, k, rotation_matrix):
     p_dot_u_newframe = np.vdot(p_newframe, u_newframe)
     p_dot_v_newframe = np.vdot(p_newframe, v_newframe)
     psi_newframe = np.arctan2(p_dot_v_newframe, p_dot_u_newframe)
-    psi_newframe = np.mod(psi_newframe, 2*np.pi)
+    # psi_newframe = np.mod(psi_newframe, 2*np.pi)
+    psi_newframe = np.mod(psi_newframe, np.pi)
 
     return psi_newframe
 
@@ -436,8 +437,7 @@ def earth_position_ssb(t_geo):
     """
     t = Time(t_geo, format='gps')
     pos = get_body_barycentric('earth', t)
-    icrs_coord = SkyCoord(pos.x, pos.y, pos.z, frame='icrs',
-                          representation_type='cartesian')
+    icrs_coord = SkyCoord(pos, frame='icrs', obstime=t)
     bme_coord = icrs_coord.transform_to(
                     BarycentricMeanEcliptic(equinox='J2000'))
     x = bme_coord.cartesian.x.to(units.m).value
@@ -572,7 +572,8 @@ def ssb_to_geo(t_ssb, lamda_ssb, beta_ssb, psi_ssb, use_astropy=True):
     if use_astropy:
         bme_coord = BarycentricMeanEcliptic(lon=lamda_ssb*units.radian,
                                             lat=beta_ssb*units.radian,
-                                            equinox='J2000')
+                                            equinox='J2000',
+                                            obstime=Time(t_ssb, format='gps'))
         geo_sky = bme_coord.transform_to(PrecessedGeocentric(equinox='J2000'))
         lamda_geo = geo_sky.ra.rad
         beta_geo = geo_sky.dec.rad
@@ -644,7 +645,8 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
     if use_astropy:
         bme_coord = PrecessedGeocentric(ra=lamda_geo*units.radian,
                                         dec=beta_geo*units.radian,
-                                        equinox='J2000')
+                                        equinox='J2000',
+                                        obstime=Time(t_geo, format='gps'))
         ssb_sky = bme_coord.transform_to(
                     BarycentricMeanEcliptic(equinox='J2000'))
         lamda_ssb = ssb_sky.lon.rad
