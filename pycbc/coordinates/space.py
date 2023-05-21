@@ -191,6 +191,9 @@ def polarization_newframe(psi, k, rotation_matrix):
     p_dot_v_newframe = np.vdot(p_newframe, v_newframe)
     psi_newframe = np.arctan2(p_dot_v_newframe, p_dot_u_newframe)
     psi_newframe = np.mod(psi_newframe, 2*np.pi)
+    # avoid the round error
+    if psi_newframe == 2*np.pi:
+        psi_newframe = 0
 
     return psi_newframe
 
@@ -436,6 +439,8 @@ def earth_position_ssb(t_geo):
     """
     t = Time(t_geo, format='gps')
     pos = get_body_barycentric('earth', t)
+    # BarycentricMeanEcliptic doesn't have obstime attribute,
+    # it's a good inertial frame, but ICRS is not.
     icrs_coord = SkyCoord(pos, frame='icrs', obstime=t)
     bme_coord = icrs_coord.transform_to(
                     BarycentricMeanEcliptic(equinox='J2000'))
@@ -569,11 +574,13 @@ def ssb_to_geo(t_ssb, lamda_ssb, beta_ssb, psi_ssb, use_astropy=True):
     k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
     rotation_matrix_geo = rotation_matrix_ssb_to_geo()
     if use_astropy:
+        # BarycentricMeanEcliptic doesn't have obstime attribute,
+        # it's a good inertial frame, but PrecessedGeocentric is not.
         bme_coord = BarycentricMeanEcliptic(lon=lamda_ssb*units.radian,
                                             lat=beta_ssb*units.radian,
-                                            equinox='J2000',
-                                            obstime=Time(t_ssb, format='gps'))
-        geo_sky = bme_coord.transform_to(PrecessedGeocentric(equinox='J2000'))
+                                            equinox='J2000')
+        geo_sky = bme_coord.transform_to(PrecessedGeocentric(
+            equinox='J2000', obstime=Time(t_geo, format='gps')))
         lamda_geo = geo_sky.ra.rad
         beta_geo = geo_sky.dec.rad
     else:
@@ -642,6 +649,8 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
     lamda_ssb, beta_ssb = propagation_vector_to_localization(k_ssb)
     psi_ssb = polarization_newframe(psi_geo, k_geo, rotation_matrix_geo.T)
     if use_astropy:
+        # BarycentricMeanEcliptic doesn't have obstime attribute,
+        # it's a good inertial frame, but PrecessedGeocentric is not.
         bme_coord = PrecessedGeocentric(ra=lamda_geo*units.radian,
                                         dec=beta_geo*units.radian,
                                         equinox='J2000',
