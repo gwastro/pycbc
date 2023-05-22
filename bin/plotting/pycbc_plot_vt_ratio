@@ -68,8 +68,9 @@ for ftop in args.vt_files_one:
     with h5py.File(ftop, 'r') as f:
         # Check the input bins
         if list(f['data'].keys()) != keys:
-            parser.error(f'keys do not match for the given input files - '
-                         '{keys} v {list(f["data"].keys())}')
+            raise ValueError(
+                f'keys do not match for the given input files - '
+                '{keys} v {list(f["data"].keys())}')
         # Add the data
         for k in keys:
             vt_top[k] += f['data'][k][idxs]
@@ -81,8 +82,9 @@ for ftop in args.vt_files_one:
 for fbot in args.vt_files_two:
     with h5py.File(fbot, 'r') as f:
         if list(f['data'].keys()) != keys:
-            parser.error(f'keys do not match for the given input files - '
-                         '{keys} v {list(f["data"].keys())}')
+            raise ValueError(
+                f'keys do not match for the given input files - '
+                '{keys} v {list(f["data"].keys())}')
         for k in keys:
             vt_bot[k] += f['data'][k][idxs]
             vt_bot_errsqhi[k] += f['errorhi'][k][idxs] ** 2.
