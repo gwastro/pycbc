@@ -8,6 +8,7 @@ sets of injections. It reads two HDF files produced by pycbc_page_sensitivity's
 
 import sys
 import argparse
+import logging
 import h5py
 import matplotlib
 matplotlib.use('Agg')
@@ -43,7 +44,8 @@ args = parser.parse_args()
 
 # Warn user if different numbers of files in numerator vs denominator
 if len(args.vt_files_one) != len(args.vt_files_two):
-    print('WATCH OUT! You have different numbers of One and Two files!!')
+    logging.warning(
+        'WATCH OUT! You gave different numbers of One and Two files!')
 
 
 # Load in the first numerator file
