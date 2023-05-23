@@ -187,8 +187,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, **kwargs
         )
 
-        # If the waveform handles the detector response internally, set
-        # self.det_response = True
+        # If the waveform needs us to apply the detector response,
+        # set flag to true (most cases for ground-based observatories).
         self.still_needs_det_response = False
         if self.static_params['approximant'] in fd_det_sequence:
             self.still_needs_det_response = True
