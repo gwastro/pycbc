@@ -105,7 +105,7 @@ def spa_amplitude_factor(**kwds):
 
     _, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
-    FTaN = 32. * eta*eta / 5.
+    FTaN = 32. * eta * eta / 5.
     dETaN = 2. * -eta / 2.
 
     M = m1 + m2
@@ -257,4 +257,5 @@ def spa_tmplt(**kwds):
         spa_tmplt_inline_sequence(
             piM, pfaN, pfa2, pfa3, pfa4, pfa5, pfl5, pfa6, pfl6, pfa7,
             amp_factor, kwds['sample_points'], htilde)
+
     return htilde
