@@ -189,9 +189,9 @@ class Relative(DistMarg, BaseGaussianNoise):
 
         # If the waveform handles the detector response internally, set
         # self.det_response = True
-        self.apply_det_response = False
+        self.still_needs_det_response = False
         if self.static_params['approximant'] in fd_det_sequence:
-            self.apply_det_response = True
+            self.still_needs_det_response = True
 
         # reference waveform and bin edges
         self.f, self.df, self.end_time, self.det = {}, {}, {}, {}
@@ -230,7 +230,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             fpoints = Array(self.f[ifo].astype(numpy.float64))
             fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
 
-            if self.apply_det_response:
+            if self.still_needs_det_response:
                 wave = get_fd_det_waveform_sequence(ifos=ifo,
                                                     sample_points=fpoints,
                                                     **self.fid_params)
@@ -280,7 +280,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             # This makes it easier to compare target signal to reference later
             tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
             self.h00[ifo] = numpy.array(curr_wav) # * tshift
-            data = self.data[ifo] * numpy.conjugate(tshift)
+            data_shifted = self.data[ifo] * numpy.conjugate(tshift)
 
             logging.info("Computing frequency bins")
             fbin_ind = setup_bins(
@@ -292,7 +292,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
 
-            self.init_from_frequencies(data, self.h00, fbin_ind, ifo)
+            self.init_from_frequencies(data_shifted, self.h00, fbin_ind, ifo)
             self.antenna_time[ifo] = self.setup_antenna(earth_rotation,
                                                         self.fedges[ifo])
         self.combine_layout()
@@ -353,7 +353,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.mlik = likelihood_parts_multi_v
         else:
             atimes = self.fid_params["tc"]
-            if self.apply_det_response:
+            if self.still_needs_det_response:
                 self.lik = likelihood_parts_det
             else:
                 self.lik = likelihood_parts
@@ -397,7 +397,7 @@ class Relative(DistMarg, BaseGaussianNoise):
     def get_waveforms(self, params):
         """ Get the waveform polarizations for each ifo
         """
-        if self.apply_det_response:
+        if self.still_needs_det_response:
             wfs = {}
             for ifo in self.data:
                 wfs.update(get_fd_det_waveform_sequence(
@@ -515,7 +515,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             # project waveform to detector frame if waveform does not deal
             # with detector response. Otherwise, skip detector response.
 
-            if self.apply_det_response:
+            if self.still_needs_det_response:
                 channel = wfs[ifo].numpy()
                 filter_i, norm_i = lik(freqs, 0.0, channel, h00,
                                        sdat['a0'], sdat['a1'],
