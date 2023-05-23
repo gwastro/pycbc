@@ -292,7 +292,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
-            self.init_from_frequencies(data, self.h00, fbin_ind, ifo)
+            self.init_from_frequencies(data_shifted, self.h00, fbin_ind, ifo)
             self.antenna_time[ifo] = self.setup_antenna(
                                         earth_rotation,
                                         int(earth_rotation_mode),
