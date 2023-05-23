@@ -119,14 +119,17 @@ rm -rf ./output
 
 echo -e "\\n\\n>> [`date`] Running PyCBC Live"
 
+# -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
+
+python_version=/home/gareth.cabourndavies/environments/singles_input_checking/bin/python
+pycbc_live_version=/home/gareth.cabourndavies/test_codes/pycbclive/singles_input_checking/singles_input_checking/pycbc/bin/pycbc_live
 
 mpirun \
 -host localhost,localhost \
 -n 2 \
 --bind-to none \
- -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
-python -m mpi4py `which pycbc_live` \
+$python_version -m mpi4py $pycbc_live_version \
 --bank-file template_bank.hdf \
 --sample-rate 2048 \
 --enable-bank-start-frequency \
@@ -194,14 +197,14 @@ python -m mpi4py `which pycbc_live` \
 --src-class-mchirp-to-delta 0.01 \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
---run-snr-optimization \
---enable-single-detector-background \
---single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
+--single-newsnr-threshold 9 \
 --single-reduced-chisq-threshold 2 \
 --single-fit-file single_trigger_fits.hdf \
 --sngl-ifar-est-dist conservative \
+--run-snr-optimization \
 --verbose
+
 
 # note that, at this point, some SNR optimization processes may still be
 # running, so the checks below may ignore their results

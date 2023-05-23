@@ -867,8 +867,6 @@ parser.add_argument('--ifar-double-followup-threshold', type=float, required=Tru
 parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
                     help="Livetime used for p-value combination with followup "
                          "detectors, in years")
-parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
-
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
                     help='Upload triggers to GraceDB')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False,
@@ -1032,7 +1030,7 @@ with ctx:
     evnt.data_readers = data_reader
 
     # create single-detector background "estimators"
-    if args.enable_single_detector_background and evnt.rank == 0:
+    if evnt.rank == 0:
         sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
                           for ifo in ifos}
 
@@ -1169,8 +1167,7 @@ with ctx:
                 evnt.check_coincs(list(results.keys()), best_coinc, psds)
 
             # Check for singles
-            if args.enable_single_detector_background:
-                evnt.check_singles(results, psds)
+            evnt.check_singles(results, psds)
 
             gates = {ifo: data_reader[ifo].gate_params for ifo in data_reader}
 

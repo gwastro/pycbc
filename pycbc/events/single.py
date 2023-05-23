@@ -76,20 +76,13 @@ class LiveSingle(object):
                          "--single-reduced-chisq-threshold, "
                          "--single-duration-threshold, "
                          "--single-newsnr-threshold")
-        if args.enable_single_detector_background and not all(sngl_opts):
+        if any(sngl_opts) and not all(sngl_opts):
             parser.error(f"Single detector trigger options ({sngl_opts_str}) "
-                         "must ALL be given if "
-                         "--enable-single-detector-background is set.")
-        if any(sngl_opts) and not args.enable_single_detector_background:
-            parser.error(f"Single detector trigger options ({sngl_opts_str}) "
-                         "given, but --enable-single-detector-background "
-                         "is not set.")
+                         "must either all be given or none.")
         if args.enable_single_detector_upload \
-                and not all([args.enable_single_detector_background,
-                             args.enable_gracedb_upload]):
+                and not args.enable_gracedb_upload:
             parser.error("--enable-single-detector-upload does not make "
-                         "sense without both --enable-gracedb-upload "
-                         "and --enable-single-detector-background set.")
+                         "sense without --enable-gracedb-upload set.")
 
     @classmethod
     def from_cli(cls, args, ifo):
