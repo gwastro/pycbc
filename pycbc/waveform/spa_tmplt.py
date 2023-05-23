@@ -78,7 +78,7 @@ def findchirp_chirptime(m1, m2, fLower, porder):
 
     # This formula works for any PN order, because
     # higher order coeffs will be set to zero.
-    return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T +\
+    return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T +
                   (c6T + c6LogT * numpy.log(xT)) * x6T + c7T * x7T) / x8T
 
 
@@ -98,7 +98,7 @@ def spa_length_in_time(**kwds):
     # with a function using PN coeffs from lalsimulation.
     return findchirp_chirptime(m1, m2, flow, porder)
 
-   
+
 def spa_amplitude_factor(**kwds):
     m1 = kwds['mass1']
     m2 = kwds['mass2']
@@ -122,7 +122,7 @@ def spa_amplitude_factor(**kwds):
 _prec = None
 def spa_tmplt_precondition(length, delta_f, kmin=0):
     """Return the amplitude portion of the TaylorF2 approximant, used to precondition
-    the strain data. The result is cached, and so should not be modified only read.
+    the strain data. The result is cached, and so should not be modified, only read.
     """
     global _prec
     if _prec is None or _prec.delta_f != delta_f or len(_prec) < length:
@@ -142,7 +142,7 @@ def spa_tmplt_norm(psd, length, delta_f, f_lower):
 
 
 def spa_tmplt_end(**kwds):
-    return pycbc.pnutils.f_SchwarzISCO(kwds['mass1']+kwds['mass2'])
+    return pycbc.pnutils.f_SchwarzISCO(kwds['mass1'] + kwds['mass2'])
 
 
 def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
@@ -151,7 +151,7 @@ def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
     """
     kend = int(spa_tmplt_end(mass1=mass1, mass2=mass2) / psd.delta_f)
     norm1 = spa_tmplt_norm(psd, len(psd), psd.delta_f, lower_frequency_cutoff)
-    norm2 = (spa_amplitude_factor(mass1=mass1, mass2=mass2)) ** 2.0
+    norm2 = spa_amplitude_factor(mass1=mass1, mass2=mass2) ** 2.0
 
     if kend >= len(psd):
         kend = len(psd) - 2
@@ -197,7 +197,7 @@ def spa_tmplt(**kwds):
         lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(
             lal_pars, spin_order)
 
-    #Calculate the PN terms
+    # Calculate the PN terms
     phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
                                     float(mass1), float(mass2),
                                     float(s1z), float(s2z),
