@@ -110,11 +110,11 @@ for f in args.trfits_files:
 
 trigger_file_starts = np.array(trigger_file_starts)
 trigger_file_ends = np.array(trigger_file_ends)
-ad_order = np.argsort(np.array(trigger_file_starts))
-start_date_n = trigger_file_starts[ad_order[0]]
-ad = trigger_file_ends[ad_order] - start_date_n
+ad_order = np.argsort(trigger_file_starts)
+start_time_n = trigger_file_starts[ad_order[0]]
+ad = trigger_file_ends[ad_order] - start_time_n
 
-# Get the counts and alphas sorted by date
+# Get the counts and alphas
 counts_bin = {ifo: [c for c in zip(*counts_all[ifo])] for ifo in args.ifos}
 alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
 
@@ -129,7 +129,7 @@ fout.attrs['fit_threshold'] = fit_thresh
 fout.attrs['conservative_percentile'] = args.conservative_percentile
 fout.attrs['ifos'] = args.ifos
 fout['bins_edges'] = list(bl) + [bu[-1]]
-fout['fits_dates'] = ad + start_date_n
+fout['fits_dates'] = ad + start_time_n
 
 for ifo in args.ifos:
     fout.create_group(ifo)
@@ -146,7 +146,7 @@ for ifo in args.ifos:
     alpha_all = np.mean(counts_bin[ifo], axis=0) / invalphan_all
     meant = l_times.mean()
 
-    fout_ifo[f'separate_fits/live_times'] = l_times
+    fout_ifo[f'separate_fits/live_times'] = l_times[ad_order]
     fout_ifo[f'separate_fits/start_time'] = trigger_file_starts[ad_order]
     fout_ifo[f'separate_fits/end_time'] = trigger_file_ends[ad_order]
 
