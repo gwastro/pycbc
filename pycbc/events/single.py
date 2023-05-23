@@ -66,7 +66,6 @@ class LiveSingle(object):
                                  'a single value or as detector-value pairs, '
                                  'e.g. H1:mean L1:mean V1:conservative')
 
-
     @staticmethod
     def verify_args(args, parser):
         sngl_opts = [args.single_fit_file,
@@ -91,7 +90,6 @@ class LiveSingle(object):
             parser.error("--enable-single-detector-upload does not make "
                          "sense without both --enable-gracedb-upload "
                          "and --enable-single-detector-background set.")
-
 
     @classmethod
     def from_cli(cls, args, ifo):
