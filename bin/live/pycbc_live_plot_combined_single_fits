@@ -118,6 +118,7 @@ xtix = []
 xtix_labels = []
 t = min_start
 while t < max_end:
+    # Strip off the time information, ticks are at midnight
     time_dt = gpstime.gps_to_utc(t).date()
     xtix_labels.append(time_dt.strftime("%Y-%m-%d"))
     xtix.append(gpstime.utc_to_gps(time_dt).gpsSeconds)
@@ -151,8 +152,6 @@ for ifo in ifos:
         l_times = separate_times[ifo]
         rate = counts / l_times
 
-        ad = (separate_starts[ifo] - min_start) / 86400.
-
         ma = mean_alpha[ifo][i]
         ca = cons_alpha[ifo][i]
         mr = mean_count[ifo][i] / live_total[ifo]
@@ -162,7 +161,7 @@ for ifo in ifos:
                                   log_spacing=args.log_colormap)
         bin_colour = plt.get_cmap(args.colormap)(bin_prop)
         bin_label = f"duration {bl:.2f}-{bu:.2f}"
-        alpha_lines += ax_alpha.plot(ad, alphas, c=bin_colour,
+        alpha_lines += ax_alpha.plot(separate_starts[ifo], alphas, c=bin_colour,
                                      label=bin_label)
         alpha_lines.append(ax_alpha.axhline(ma,
                                             label="total fit = %.2f" % ma,
@@ -172,7 +171,7 @@ for ifo in ifos:
                                             c=bin_colour, linestyle=':',
                                             label=alpha_lab))
 
-        count_lines += ax_count.plot(ad, rate, c=bin_colour,
+        count_lines += ax_count.plot(separate_starts[ifo], rate, c=bin_colour,
                                      label=bin_label)
         count_lines.append(ax_count.axhline(mr,
                                             c=bin_colour, linestyle='--',
@@ -182,22 +181,24 @@ for ifo in ifos:
                                             c=bin_colour, linestyle=':',
                                             label=count_lab))
 
-    ax_alpha.set_ylabel('Fit coefficient')
     alpha_labels = [l.get_label() for l in alpha_lines]
-    ax_alpha.grid(zorder=-30)
     ax_alpha.legend(alpha_lines, alpha_labels, loc='lower center',
                     ncol=5, bbox_to_anchor=(0.5, 1.01))
-    fig_alpha.tight_layout()
-    fig_alpha.savefig(args.output_plot_name_format.format(ifo=ifo, type='fit_coeffs'))
-    ax_count.set_ylabel('Counts per live time')
+    ax_alpha.set_ylabel('Fit coefficient')
+
     count_labels = [l.get_label() for l in count_lines]
     ax_count.legend(count_lines, count_labels, loc='lower center',
                     ncol=5, bbox_to_anchor=(0.5, 1.01))
-    ax_count.grid(zorder=-30)
+    ax_count.set_ylabel('Counts per live time')
 
     for ax in [ax_count, ax_alpha]:
-        ax.set_xticks((xtix - min_start) / 86400)
+        ax.set_xticks(xtix)
         ax.set_xticklabels(xtix_labels, rotation=90)
-        ax.set_xlim(-0.5, len(xtix) - 0.5)
+        # Add 1/4 day padding either side
+        ax.set_xlim(xtix[0] - 21600, xtix[-1] + 21600)
+        ax.grid(zorder=-30)
+
     fig_count.tight_layout()
     fig_count.savefig(args.output_plot_name_format.format(ifo=ifo, type='counts'))
+    fig_alpha.tight_layout()
+    fig_alpha.savefig(args.output_plot_name_format.format(ifo=ifo, type='fit_coeffs'))
