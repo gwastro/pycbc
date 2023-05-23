@@ -22,7 +22,7 @@
    vectors.
 """
 from math import sqrt, log
-import logging
+import warnings
 import numpy, lal, pycbc.pnutils
 from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
@@ -226,8 +226,8 @@ def spa_tmplt(**kwds):
             fISCO = kwds['f_final']
         elif 'f_upper' in kwds:
             fISCO = kwds['f_upper']
-            logging.warn('You used f_upper for spa_tmplt, this is deprecated '
-                         'in favour of f_final !')
+            warnings.warn('f_upper is deprecated in favour of f_final !',
+                          DeprecationWarning)
         else:
             vISCO = 1. / sqrt(6.)
             fISCO = vISCO * vISCO * vISCO / piM
