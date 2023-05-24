@@ -222,7 +222,8 @@ def spa_tmplt(**kwds):
         kmin = int(f_lower / float(delta_f))
 
         # Get ISCO frequency one way or another
-        if 'f_final' in kwds:
+        # f_final is assigned default value 0 in parameters.py 
+        if 'f_final' in kwds and kwds['f_final'] > 0.:
             fISCO = kwds['f_final']
         elif 'f_upper' in kwds:
             fISCO = kwds['f_upper']
