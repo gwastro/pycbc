@@ -27,7 +27,6 @@ import numpy, lal, pycbc.pnutils
 from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 from pycbc.waveform.utils import ceilpow2
-from .waveform import NoWaveformError
 
 lalsimulation = pycbc.libutils.import_optional('lalsimulation')
 
