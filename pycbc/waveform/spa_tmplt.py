@@ -225,20 +225,20 @@ def spa_tmplt(**kwds):
         # Get max frequency one way or another
         # f_final is assigned default value 0 in parameters.py
         if 'f_final' in kwds and kwds['f_final'] > 0.:
-            fmax = kwds['f_final']
+            fstop = kwds['f_final']
         elif 'f_upper' in kwds:
-            fmax = kwds['f_upper']
-            warnings.warn('f_upper is deprecated in favour of f_final !',
+            fstop = kwds['f_upper']
+            warnings.warn('f_upper is deprecated in favour of f_final!',
                           DeprecationWarning)
         else:
             # Schwarzschild ISCO frequency
             vISCO = 1. / sqrt(6.)
-            fmax = vISCO * vISCO * vISCO / piM
-        if fmax <= f_lower:
-            raise NoWaveformError("cannot generate waveform: f_lower >= "
-                                  "f_final")
+            fstop = vISCO * vISCO * vISCO / piM
+        if fstop <= f_lower:
+            raise ValueError("cannot generate waveform! f_lower >= f_final"
+                             f" ({f_lower}, {fstop})")
 
-        kmax = int(fmax / delta_f)
+        kmax = int(fstop / delta_f)
         f_max = ceilpow2(fmax)
         n = int(f_max / delta_f) + 1
 
