@@ -95,6 +95,8 @@ def add_condorpool_symlink_site(sitecat, cp):
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
+    site.add_profiles(Namespace.CONDOR, key="use_oauth_services",
+                      value="igwn")
     site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
                       value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
@@ -126,6 +128,8 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
+    site.add_profiles(Namespace.CONDOR, key="use_oauth_services",
+                      value="igwn")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
     site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
                       value='"nogrid"')
@@ -168,6 +172,8 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
                       value="ON_EXIT_OR_EVICT")
     site.add_profiles(Namespace.CONDOR, key="getenv", value="True")
+    site.add_profiles(Namespace.CONDOR, key="use_oauth_services",
+                      value="igwn")
     site.add_profiles(Namespace.CONDOR, key="+DESIRED_Sites",
                       value='"nogrid"')
     site.add_profiles(Namespace.CONDOR, key="+IS_GLIDEIN",
@@ -213,6 +219,8 @@ def add_osg_site(sitecat, cp):
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="use_x509userproxy",
                       value="True")
+    site.add_profiles(Namespace.CONDOR, key="use_oauth_services",
+                      value="igwn")
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(HAS_LIGO_FRAMES =?= True) && "
