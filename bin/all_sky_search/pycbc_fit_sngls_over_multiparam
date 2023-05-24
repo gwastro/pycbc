@@ -146,11 +146,27 @@ def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
 # templates to contain n triggers, which we cannot know beforehand
 
 _smooth_cut = {
-    'smooth_tophat': 1,
+    'smooth_tophat': 1.1,
     'n_closest': numpy.inf,
-    'distance_weighted': 3,
+    'distance_weighted': 3.1,
 }
 
+
+def report_percentage(i, length):
+    """
+    Convenience function - report how long through the loop we are.
+    Every ten percent
+    Parameters
+    ----------
+    i: integer
+        index being looped through
+    length : integer
+        number of loops we will go through in total
+    """
+    pc = int(numpy.floor(i / length * 100))
+    pc_last = int(numpy.floor((i - 1) / length * 100))
+    if not pc % 10 and pc_last % 10:
+        logging.info(f"Template {i} out of {length} ({pc:.0f}%)")
 
 parser = argparse.ArgumentParser(usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -331,6 +347,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     logging.info("Smoothing ...")
     slices = [slice(l,r) for l, r in zip(lefts, rights)]
     for i in rang:
+        report_percentage(i, rang.max())
         slc = slices[i]
         d = dist(i, slc, parvals, args.smoothing_width)
 
@@ -353,6 +370,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
 else:
     logging.info("Smoothing ...")
     for i in rang:
+        report_percentage(i, rang.max())
         d = dist(i, rang, parvals, args.smoothing_width)
         smoothed_tuple = smooth(nabove, invalphan, ntotal, d,
                                 args.smoothing_method, **kwarg_dict)
