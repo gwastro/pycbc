@@ -27,6 +27,7 @@ import numpy, lal, pycbc.pnutils
 from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
 from pycbc.waveform.utils import ceilpow2
+from .waveform import NoWaveformError
 
 lalsimulation = pycbc.libutils.import_optional('lalsimulation')
 
@@ -221,20 +222,24 @@ def spa_tmplt(**kwds):
         delta_f = kwds['delta_f']
         kmin = int(f_lower / float(delta_f))
 
-        # Get ISCO frequency one way or another
-        # f_final is assigned default value 0 in parameters.py 
+        # Get max frequency one way or another
+        # f_final is assigned default value 0 in parameters.py
         if 'f_final' in kwds and kwds['f_final'] > 0.:
-            fISCO = kwds['f_final']
+            fmax = kwds['f_final']
         elif 'f_upper' in kwds:
-            fISCO = kwds['f_upper']
+            fmax = kwds['f_upper']
             warnings.warn('f_upper is deprecated in favour of f_final !',
                           DeprecationWarning)
         else:
+            # Schwarzschild ISCO frequency
             vISCO = 1. / sqrt(6.)
-            fISCO = vISCO * vISCO * vISCO / piM
+            fmax = vISCO * vISCO * vISCO / piM
+        if fmax <= f_lower:
+            raise NoWaveformError("cannot generate waveform: f_lower >= "
+                                  "f_final")
 
-        kmax = int(fISCO / delta_f)
-        f_max = ceilpow2(fISCO)
+        kmax = int(fmax / delta_f)
+        f_max = ceilpow2(fmax)
         n = int(f_max / delta_f) + 1
 
         if not out:
