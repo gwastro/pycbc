@@ -351,6 +351,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     ntotal_smoothed = numpy.array(ntotal_smoothed)[unsort]
 
 else:
+    logging.info("Smoothing ...")
     for i in rang:
         d = dist(i, rang, parvals, args.smoothing_width)
         smoothed_tuple = smooth(nabove, invalphan, ntotal, d,
