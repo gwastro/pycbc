@@ -238,7 +238,7 @@ def spa_tmplt(**kwds):
                              f" ({f_lower}, {fstop})")
 
         kmax = int(fstop / delta_f)
-        f_max = ceilpow2(fmax)
+        f_max = ceilpow2(fstop)
         n = int(f_max / delta_f) + 1
 
         if not out:
