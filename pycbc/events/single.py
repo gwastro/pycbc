@@ -133,7 +133,6 @@ class LiveSingle(object):
         # The checks already performed mean that all(sngl_opts) is okay
         return all(sngl_opts)
 
-
     @classmethod
     def from_cli(cls, args, ifo):
         return cls(
