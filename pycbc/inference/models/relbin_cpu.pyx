@@ -350,7 +350,7 @@ cpdef snr_predictor(double [::1] freqs,
     return snr
 
 
-# Standard likelihood but simultaneously handling multiple sky or time points
+# calculate a rough SNR for use in predicting sky location consistency
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.cdivision(True)     # Disable checking for dividing by zero

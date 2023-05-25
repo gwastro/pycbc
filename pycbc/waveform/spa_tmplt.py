@@ -22,6 +22,7 @@
    vectors.
 """
 from math import sqrt, log
+import warnings
 import numpy, lal, pycbc.pnutils
 from pycbc.scheme import schemed
 from pycbc.types import FrequencySeries, Array, complex64, float32, zeros
@@ -71,13 +72,15 @@ def findchirp_chirptime(m1, m2, fLower, porder):
     x7T = x3T * x4T
     x8T = x4T * x4T
 
-    # Computes the chirp time as tC = t(v_low)
+    # Computes the chirp time as tC = t(v_low);
     # tC = t(v_low) - t(v_upper) would be more
-    # correct, but the difference is negligble.
+    # correct, but the difference is negligible.
 
     # This formula works for any PN order, because
     # higher order coeffs will be set to zero.
-    return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T + (c6T + c6LogT * numpy.log(xT)) * x6T + c7T * x7T) / x8T
+    return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T +
+                  (c6T + c6LogT * numpy.log(xT)) * x6T + c7T * x7T) / x8T
+
 
 def spa_length_in_time(**kwds):
     """
@@ -95,47 +98,52 @@ def spa_length_in_time(**kwds):
     # with a function using PN coeffs from lalsimulation.
     return findchirp_chirptime(m1, m2, flow, porder)
 
+
 def spa_amplitude_factor(**kwds):
     m1 = kwds['mass1']
     m2 = kwds['mass2']
 
     _, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
-    FTaN = 32.0 * eta*eta / 5.0
-    dETaN = 2 * -eta/2.0
+    FTaN = 32. * eta * eta / 5.
+    dETaN = 2. * -eta / 2.
 
     M = m1 + m2
 
     m_sec = M * lal.MTSUN_SI
     piM = lal.PI * m_sec
 
-    amp0 = 4. * m1 * m2 / (1e6 * lal.PC_SI ) * lal.MRSUN_SI * lal.MTSUN_SI * sqrt(lal.PI/12.0)
+    amp0 = 4. * m1 * m2 / (1e6 * lal.PC_SI) * lal.MRSUN_SI * lal.MTSUN_SI * sqrt(lal.PI / 12.)
 
-    fac = numpy.sqrt( -dETaN / FTaN) * amp0 * (piM ** (-7.0/6.0))
+    fac = numpy.sqrt(-dETaN / FTaN) * amp0 * (piM ** (-7./6.))
     return -fac
+
 
 _prec = None
 def spa_tmplt_precondition(length, delta_f, kmin=0):
     """Return the amplitude portion of the TaylorF2 approximant, used to precondition
-    the strain data. The result is cached, and so should not be modified only read.
+    the strain data. The result is cached, and so should not be modified, only read.
     """
     global _prec
     if _prec is None or _prec.delta_f != delta_f or len(_prec) < length:
-        v = numpy.arange(0, (kmin+length*2), 1.0) * delta_f
-        v = numpy.power(v[1:len(v)], -7.0/6.0)
+        v = numpy.arange(0, (kmin + length*2), 1.) * delta_f
+        v = numpy.power(v[1:len(v)], -7./6.)
         _prec = FrequencySeries(v, delta_f=delta_f, dtype=float32)
     return _prec[kmin:kmin + length]
+
 
 def spa_tmplt_norm(psd, length, delta_f, f_lower):
     amp = spa_tmplt_precondition(length, delta_f)
     k_min = int(f_lower / delta_f)
-    sigma = (amp[k_min:length].numpy() ** 2.0 / psd[k_min:length].numpy())
+    sigma = (amp[k_min:length].numpy() ** 2. / psd[k_min:length].numpy())
     norm_vec = numpy.zeros(length)
-    norm_vec[k_min:length] = sigma.cumsum() * 4 * delta_f
+    norm_vec[k_min:length] = sigma.cumsum() * 4. * delta_f
     return norm_vec
 
+
 def spa_tmplt_end(**kwds):
-    return pycbc.pnutils.f_SchwarzISCO(kwds['mass1']+kwds['mass2'])
+    return pycbc.pnutils.f_SchwarzISCO(kwds['mass1'] + kwds['mass2'])
+
 
 def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
     """ Return the distance at a given snr (default=8) of the SPA TaylorF2
@@ -143,11 +151,12 @@ def spa_distance(psd, mass1, mass2, lower_frequency_cutoff, snr=8):
     """
     kend = int(spa_tmplt_end(mass1=mass1, mass2=mass2) / psd.delta_f)
     norm1 = spa_tmplt_norm(psd, len(psd), psd.delta_f, lower_frequency_cutoff)
-    norm2 = (spa_amplitude_factor(mass1=mass1, mass2=mass2)) ** 2.0
+    norm2 = spa_amplitude_factor(mass1=mass1, mass2=mass2) ** 2.0
 
     if kend >= len(psd):
         kend = len(psd) - 2
     return sqrt(norm1[kend] * norm2) / snr
+
 
 @schemed("pycbc.waveform.spa_tmplt_")
 def spa_tmplt_engine(htilde, kmin, phase_order, delta_f, piM, pfaN,
@@ -159,10 +168,10 @@ def spa_tmplt_engine(htilde, kmin, phase_order, delta_f, piM, pfaN,
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
+
 def spa_tmplt(**kwds):
     """ Generate a minimal TaylorF2 approximant with optimizations for the sin/cos
     """
-    # Pull out the input arguments
     distance = kwds['distance']
     mass1 = kwds['mass1']
     mass2 = kwds['mass2']
@@ -188,7 +197,7 @@ def spa_tmplt(**kwds):
         lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(
             lal_pars, spin_order)
 
-    #Calculate the PN terms
+    # Calculate the PN terms
     phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
                                     float(mass1), float(mass2),
                                     float(s1z), float(s2z),
@@ -211,14 +220,25 @@ def spa_tmplt(**kwds):
         f_lower = kwds['f_lower']
         delta_f = kwds['delta_f']
         kmin = int(f_lower / float(delta_f))
-        vISCO = 1. / sqrt(6.)
-        fISCO = vISCO * vISCO * vISCO / piM
 
-        if 'f_upper' in kwds:
-            fISCO = kwds['f_upper']
+        # Get max frequency one way or another
+        # f_final is assigned default value 0 in parameters.py
+        if 'f_final' in kwds and kwds['f_final'] > 0.:
+            fstop = kwds['f_final']
+        elif 'f_upper' in kwds:
+            fstop = kwds['f_upper']
+            warnings.warn('f_upper is deprecated in favour of f_final!',
+                          DeprecationWarning)
+        else:
+            # Schwarzschild ISCO frequency
+            vISCO = 1. / sqrt(6.)
+            fstop = vISCO * vISCO * vISCO / piM
+        if fstop <= f_lower:
+            raise ValueError("cannot generate waveform! f_lower >= f_final"
+                             f" ({f_lower}, {fstop})")
 
-        kmax = int(fISCO / delta_f)
-        f_max = ceilpow2(fISCO)
+        kmax = int(fstop / delta_f)
+        f_max = ceilpow2(fstop)
         n = int(f_max / delta_f) + 1
 
         if not out:
@@ -242,5 +262,5 @@ def spa_tmplt(**kwds):
         spa_tmplt_inline_sequence(
             piM, pfaN, pfa2, pfa3, pfa4, pfa5, pfl5, pfa6, pfl6, pfa7,
             amp_factor, kwds['sample_points'], htilde)
-    return htilde
 
+    return htilde

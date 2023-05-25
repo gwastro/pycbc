@@ -1,3 +1,4 @@
+set -e
 OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
 --config-file `dirname "$0"`/reltime.ini \
 --nprocesses=1 \
@@ -5,6 +6,7 @@ OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
 --seed 0 \
 --force \
 --verbose
+
 
 # This reconstructs any marginalized parameters
 # and would be optional if you don't need them or

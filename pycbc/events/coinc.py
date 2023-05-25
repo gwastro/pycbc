@@ -369,8 +369,8 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
     else:
         time = 0.5 * (time2 + time1)
 
-    tslide = timeslide_id.astype(numpy.float128)
-    time = time.astype(numpy.float128)
+    tslide = timeslide_id.astype(numpy.longdouble)
+    time = time.astype(numpy.longdouble)
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
@@ -424,8 +424,8 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
         nifos_minusone = (num_ifos - numpy.ones_like(num_ifos))
         time_avg = time_avg + (nifos_minusone * timeslide_id * slide)/num_ifos
 
-    tslide = timeslide_id.astype(numpy.float128)
-    time_avg = time_avg.astype(numpy.float128)
+    tslide = timeslide_id.astype(numpy.longdouble)
+    time_avg = time_avg.astype(numpy.longdouble)
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
