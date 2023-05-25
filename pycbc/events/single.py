@@ -8,6 +8,7 @@ from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
 from pycbc import bin_utils
 
+
 class LiveSingle(object):
     def __init__(self, ifo,
                  newsnr_threshold=10.0,
@@ -68,7 +69,7 @@ class LiveSingle(object):
         sngl_opts = [args.single_reduced_chisq_threshold,
                      args.single_duration_threshold,
                      args.single_newsnr_threshold,
-                     args.sngl_ifar_est_dist,]
+                     args.sngl_ifar_est_dist]
         sngl_opts_str = ("--single-reduced-chisq-threshold, "
                          "--single-duration-threshold, "
                          "--single-newsnr-threshold, "
@@ -128,8 +129,7 @@ class LiveSingle(object):
                                  "given if --single-ifar-est-dist is fixed. "
                                  f"This is true for at least {ifo}.")
 
-
-        # Return values is a boolean whether we are analysing singles or not
+        # Return value is a boolean whether we are analysing singles or not
         # The checks already performed mean that all(sngl_opts) is okay
         return all(sngl_opts)
 
