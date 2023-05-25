@@ -197,14 +197,13 @@ $python_version -m mpi4py $pycbc_live_version \
 --src-class-mchirp-to-delta 0.01 \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
+--single-reduced-chisq-threshold 2 \
 --single-duration-threshold 7 \
 --single-newsnr-threshold 9 \
---single-reduced-chisq-threshold 2 \
---single-fit-file single_trigger_fits.hdf \
 --sngl-ifar-est-dist conservative \
---run-snr-optimization \
 --verbose
 
+#--run-snr-optimization \
 
 # note that, at this point, some SNR optimization processes may still be
 # running, so the checks below may ignore their results
@@ -225,6 +224,7 @@ echo -e "\\n\\n>> [`date`] Checking results"
     --injections injections.hdf \
     --detectors H1 L1 V1
 
+exit
 echo -e "\\n\\n>> [`date`] Running Bayestar"
 for XMLFIL in `find output -type f -name \*.xml\* | sort`
 do
