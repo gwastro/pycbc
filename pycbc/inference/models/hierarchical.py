@@ -217,6 +217,14 @@ class HierarchicalModel(BaseModel):
         for lbl, model in self.submodels.items():
             model.write_metadata(fp, group=prefix+lbl)
 
+        # if all submodels support it, write a combined lognl parameter
+        try:
+            sampattrs = fp.getattrs(group=fp.samples_group)
+            lognl = [self.submodels[k].lognl for k in self.submodels]
+            sampattrs['{}lognl'.format(prefix)] = sum(lognl)
+        except AttributeError:
+            pass
+
     @classmethod
     def from_config(cls, cp, **kwargs):
         r"""Initializes an instance of this class from the given config file.
@@ -547,6 +555,33 @@ class MultiSignalModel(HierarchicalModel):
         self.other_models = self.submodels.copy()
         self.other_models.pop(self.primary_model)
         self.other_models = list(self.other_models.values())
+
+    def write_metadata(self, fp, group=None):
+        """Adds metadata to the output files
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.BaseInferenceFile instance
+            The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
+        """
+        super().write_metadata(fp, group=group)
+        sampattrs = fp.getattrs(group=fp.samples_group)
+        # if a group is specified, prepend the lognl names with it
+        if group is None or group == '/':
+            prefix = ''
+        else:
+            prefix = group.replace('/', '__')
+            if not prefix.endswith('__'):
+                prefix += '__'
+        try:
+            model = self.submodels[self.primary_model]
+            sampattrs['{}lognl'.format(prefix)] = model.lognl
+        except AttributeError:
+            pass
 
     def _loglikelihood(self):
         for lbl, model in self.submodels.items():
