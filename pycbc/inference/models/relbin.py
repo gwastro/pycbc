@@ -536,8 +536,8 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
-
-                if self.earth_rotation and not numpy.isscalar(p['polarization']):
+                if (self.earth_rotation 
+                    and not numpy.isscalar(p['polarization']):
                     filter_i, norm_i = lik(freqs, fp, fc, dtc, pol_phase,
                                            hp, hc, h00,
                                            sdat['a0'], sdat['a1'],
@@ -551,7 +551,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                                            sdat['a0'], sdat['a1'],
                                            sdat['b0'], sdat['b1'])
                     self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
-                
+
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
@@ -724,6 +724,7 @@ class RelativeTime(Relative):
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
         return loglr
+
 
 class RelativeTimeDom(RelativeTime):
     """ Heterodyne likelihood optimized for time marginalization and only
