@@ -373,8 +373,9 @@ class Relative(DistMarg, BaseGaussianNoise):
         if self.marginalize_vector_params:
             p = self.current_params
 
-            vmarg = set([k for k in self.marginalize_vector_params if not numpy.isscalar(p[k])])
-            
+            vmarg = set(k for k in self.marginalize_vector_params
+                        if not numpy.isscalar(p[k]))
+
             if self.earth_rotation:
                 if set(['tc', 'polarization']).issubset(vmarg):
                     self.lformat = 'earth_time_pol'
@@ -385,7 +386,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                 elif set(['tc']).issubset(vmarg):
                     self.lformat = 'earth_time'
                     return likelihood_parts_v_time
-            else: 
+            else:
                 if set(['ra', 'dec', 'tc']).issubset(vmarg):
                     return likelihood_parts_vector
                 elif set(['tc', 'polarization']).issubset(vmarg):
@@ -552,7 +553,6 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
-
                 if self.lformat == 'earth_pol':
                     filter_i, norm_i = lik(freqs, fp, fc, dtc, pol_phase,
                                            hp, hc, h00,
@@ -567,7 +567,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                                            sdat['a0'], sdat['a1'],
                                            sdat['b0'], sdat['b1'])
                     self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
-                
+
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
@@ -721,7 +721,7 @@ class RelativeTime(Relative):
             h00 = self.h00_sparse[ifo]
             end_time = self.end_time[ifo]
             times = self.antenna_time[ifo]
-            
+
             hp, hc = wfs[ifo]
             det = self.det[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"],
@@ -738,13 +738,13 @@ class RelativeTime(Relative):
             else:
                 f = (fp + 1.0j * fc) * pol_phase
                 fp = f.real.copy()
-                fc = f.imag.copy()                                         
+                fc = f.imag.copy()
                 if self.lformat == 'earth_time':
                     filter_i, norm_i = lik(
                                            freqs, fp, fc, times, dtc,
                                            hp, hc, h00,
                                            sdat['a0'], sdat['a1'],
-                                           sdat['b0'], sdat['b1'])           
+                                           sdat['b0'], sdat['b1'])
                 else:
                     filter_i, norm_i = lik(freqs, fp, fc, times + dtc,
                                            hp, hc, h00,
