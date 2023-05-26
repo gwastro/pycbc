@@ -146,9 +146,9 @@ def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
 # templates to contain n triggers, which we cannot know beforehand
 
 _smooth_cut = {
-    'smooth_tophat': 1.1,
+    'smooth_tophat': 1,
     'n_closest': numpy.inf,
-    'distance_weighted': 3.1,
+    'distance_weighted': 3,
 }
 
 
@@ -340,6 +340,9 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
             parvals[sort_dim] - cut_lengths[sort_dim])
     rights = numpy.searchsorted(parvals[sort_dim],
             parvals[sort_dim] + cut_lengths[sort_dim])
+    n_removed = len(parvals[0]) - rights + lefts
+    logging.info("Cutting between %d and %d templates for each smoothing",
+                 n_removed.min(), n_removed.max())
     # Sort the values to be smoothed into paramaeter's order
     nabove = nabove[par_sort]
     invalphan = invalphan[par_sort]
