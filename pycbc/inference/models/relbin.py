@@ -755,6 +755,7 @@ class RelativeTime(Relative):
         loglr = self.marginalize_loglr(filt, norm)
         return loglr
 
+
 class RelativeTimeDom(RelativeTime):
     """ Heterodyne likelihood optimized for time marginalization and only
     dominant-mode waveforms. This enables the ability to do inclination
