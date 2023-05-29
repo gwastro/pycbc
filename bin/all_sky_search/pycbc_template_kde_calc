@@ -51,6 +51,8 @@ parser.add_argument('--extra-cpt-fraction', type=float,
                     help='Fraction of the extra component in the signal density')
 parser.add_argument('--temp-volume', type=float, 
                     help='Volume covered by the template bank')
+parser.add_argument('--mchirp-downsample-power', type=float, default=1.0,
+<                   help='Exponent value for the power law distribution')
 parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
 init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
@@ -133,7 +135,7 @@ def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
 
 # Obtaining template parameters
 temp_file = h5py.File(args.template_file, 'r')
-mass1 = temp_file['mass1']
+mass1 = temp_file['mass1'][:]
 tid = numpy.arange(len(mass1))  # Array of template ids
 mass_spin = triggers.get_mass_spin(temp_file, tid)
 
@@ -158,7 +160,31 @@ f_dest.attrs['fit_param'] = args.fit_param
 f_dest.attrs['log_param'] = args.log_param
 with h5py.File(args.template_file, "r") as f_src:
     f_src.copy(f_src["./"], f_dest["./"], "input_template_params")
-temp_samples = numpy.vstack((template_pars)).T
+
+
+# Rejection Sampling
+beta = args.mchirp_downsample_power
+power_law = lambda x: x**(beta)
+max_mchirp = numpy.max(template_pars[0])
+max_prob = power_law(max_mchirp)
+new_mchirp = []
+additional_params = []
+
+for vals in zip(*template_pars):
+    val = vals[0]
+    if val == max_mchirp:
+        probability = 1.0
+    else:
+        probability = power_law(val) / max_prob
+
+    rand_nums = numpy.random.uniform(0, 1)
+    if rand_nums < probability:
+        new_mchirp.append(val)
+        additional_params.append(list(vals[1:]))
+
+new_mchirp = numpy.array(new_mchirp)
+additional_params = numpy.array(additional_params)
+temp_samples = numpy.column_stack((new_mchirp, additional_params))
 
 
 if args.make_template_kde:
