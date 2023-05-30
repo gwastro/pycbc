@@ -645,7 +645,7 @@ resides.
 The URI in the ``PHYSICAL_FILE_URL`` can be any of the URIs that Pegasus
 recognizes. The URIs ``file://``,  ``https://`` are likely
 the most useful. Pegasus will take care of adding transfer jobs for
-and ``https://`` URIs, if the data is not available locally.
+``https://`` URIs, if the data is not available locally.
 
 The string ``SITE`` is a hint that tells Pegasus on which site the
 ``PHYSICAL_FILE_URL`` can be found. The ``SITE`` string should be one of the
