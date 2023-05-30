@@ -166,13 +166,15 @@ with h5py.File(args.template_file, "r") as f_src:
 # Rejection Sampling
 beta = args.mchirp_downsample_power
 power_law = lambda x: x**(beta)
-max_mchirp = numpy.max(template_pars[0])
+mchirp_index = args.fit_param.index('mchirp') # Index of mchirp in fit parameters
+# Get the maximum mchirp value dynamically based on its position in template_pars
+max_mchirp = numpy.max(template_pars[mchirp_index])
 max_prob = power_law(max_mchirp)
 new_mchirp = []
 additional_params = []
 
 for vals in zip(*template_pars):
-    val = vals[0]  
+    val = vals[mchirp_index]
     if val == max_mchirp:
         probability = 1.0
     else:
@@ -181,7 +183,7 @@ for vals in zip(*template_pars):
     rand_nums = numpy.random.uniform(0, 1)
     if rand_nums < probability:
         new_mchirp.append(val)
-        additional_params.append(list(vals[1:]))
+        additional_params.append(list(vals[:mchirp_index] + vals[mchirp_index+1:]))
 
 new_mchirp = numpy.array(new_mchirp)
 additional_params = numpy.array(additional_params)
