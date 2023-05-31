@@ -952,8 +952,11 @@ def run_datafind_instance(cp, outputDir, observatory, frameType,
     # Determine if we should override the default datafind server
     if cp.has_option_tags("workflow-datafind",
                           "datafind-ligo-datafind-server", tags):
-        datafind_server = cp.get_opt_tags("workflow-datafind",
-                                        "datafind-ligo-datafind-server", tags)
+        datafind_server = cp.get_opt_tags(
+            "workflow-datafind",
+            "datafind-ligo-datafind-server",
+            tags
+        )
     else:
         datafind_server = None
 
