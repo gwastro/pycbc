@@ -195,7 +195,6 @@ logging.info("Getting events which meet criteria")
 # criteria
 events = {}
 counter = 0
-no_triggers_yet = {ifo: True for ifo in args.ifos}
 
 for counter, filename in enumerate(files):
     if counter % 1000 == 0 and counter > 0:
