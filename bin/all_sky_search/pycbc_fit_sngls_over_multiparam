@@ -290,8 +290,8 @@ invalpha = 1. / fits['fit_coeff'][:]
 invalphan = invalpha * nabove
 
 nabove_smoothed = []
-ntotal_smoothed = []
 alpha_smoothed = []
+ntotal_smoothed = []
 rang = numpy.arange(0, len(nabove))
 
 # Handle the one-dimensional case of tophat smoothing separately
@@ -309,16 +309,16 @@ if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
     del parvals_0
     # Precompute the sums so we can quickly look up differences between
     # templates
-    ntsum = ntotal.cumsum()
     nasum = nabove.cumsum()
     invsum = invalphan.cumsum()
+    ntsum = ntotal.cumsum()
     num = right - left
 
     logging.info("Smoothing ...")
-    ntotal_smoothed = (ntsum[right] - ntsum[left]) / num
     nabove_smoothed = (nasum[right] - nasum[left]) / num
     invmean = (invsum[right] - invsum[left]) / num
     alpha_smoothed = nabove_smoothed / invmean
+    ntotal_smoothed = (ntsum[right] - ntsum[left]) / num
 
 elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     c = _smooth_cut[args.smoothing_method]
@@ -332,8 +332,6 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     par_sort = numpy.argsort(parvals[sort_dim])
     parvals = [p[par_sort] for p in parvals]
 
-    # We will want this later to undo the sorting
-    unsort = numpy.argsort(par_sort)
     # For each template, find the range of nearby templates which fall within
     # the chosen window.
     lefts = numpy.searchsorted(parvals[sort_dim],
@@ -343,7 +341,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     n_removed = len(parvals[0]) - rights + lefts
     logging.info("Cutting between %d and %d templates for each smoothing",
                  n_removed.min(), n_removed.max())
-    # Sort the values to be smoothed into paramaeter's order
+    # Sort the values to be smoothed by parameter value
     nabove = nabove[par_sort]
     invalphan = invalphan[par_sort]
     ntotal = ntotal[par_sort]
@@ -365,6 +363,7 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
         ntotal_smoothed.append(smoothed_tuple[2])
 
     # Undo the sorts
+    unsort = numpy.argsort(par_sort)
     parvals = [p[unsort] for p in parvals]
     nabove_smoothed = numpy.array(nabove_smoothed)[unsort]
     alpha_smoothed = numpy.array(alpha_smoothed)[unsort]
