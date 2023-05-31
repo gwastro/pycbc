@@ -1,3 +1,3 @@
-pycbc_submit_dax --no-grid --no-create-proxy \
+pycbc_submit_dax \
 --local-dir ./ \
 --no-query-db \
