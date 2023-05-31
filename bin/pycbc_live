@@ -15,6 +15,7 @@ import os.path
 import itertools
 import platform
 import subprocess
+import multiprocessing
 from multiprocessing.dummy import threading
 from matplotlib import use
 use('agg')
@@ -110,15 +111,21 @@ class LiveEventManager(object):
         if self.run_snr_optimization:
             # preestimate the number of CPU cores that we can afford giving
             # to followup processes without slowing down the main search
-            available_cores = len(os.sched_getaffinity(0))
             bg_cores = len(tuple(itertools.combinations(ifos, 2)))
             analysis_cores = 1 + bg_cores
-            self.fu_cores = available_cores - analysis_cores
-            if self.fu_cores <= 0:
-                logging.warning('Insufficient number of CPU cores (%d) to '
-                                'run search and trigger followups. Uploaded '
-                                'triggers will momentarily increase the lag',
-                                available_cores)
+            if platform.system() != 'Darwin':
+                available_cores = len(os.sched_getaffinity(0))
+                self.fu_cores = available_cores - analysis_cores
+                if self.fu_cores <= 0:
+                    logging.warning(
+                        'Insufficient number of CPU cores (%d) to '
+                        'run search and trigger followups. Uploaded '
+                        'triggers will momentarily increase the lag',
+                        available_cores
+                    )
+                    self.fu_cores = 1
+            else:
+                # To enable mac testing, this is just set to 1
                 self.fu_cores = 1
 
         if args.enable_embright_has_massgap:
@@ -1092,13 +1099,10 @@ with ctx:
             else:
                 psd_count[ifo] -= 1
 
-            if data_reader[ifo].psd is not None:
-                dist = data_reader[ifo].psd.dist
-                if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
-                    logging.info("%s PSD dist %s outside acceptable range [%s, %s]",
-                                 ifo, dist, args.min_psd_abort_distance,
-                                 args.max_psd_abort_distance)
-                    status = False
+            status &= data_reader[ifo].check_psd_dist(
+                args.min_psd_abort_distance,
+                args.max_psd_abort_distance
+            )
 
             if status is True:
                 evnt.live_detectors.add(ifo)
