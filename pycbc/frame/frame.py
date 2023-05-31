@@ -285,7 +285,7 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     """
     site = frame_type[0]
     cache = find_frame_urls(site, frame_type, start_time, end_time,
-                            urltype=url_type)
+                            urltype=url_type, host=server)
     return [urlparse(entry).path for entry in cache]
 
 def query_and_read_frame(frame_type, channels, start_time, end_time,

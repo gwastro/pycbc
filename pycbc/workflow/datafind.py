@@ -34,8 +34,8 @@ import logging
 from ligo import segments
 from ligo.lw import utils, table
 from glue import lal
-from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from gwdatafind import find_urls as find_frame_urls
+from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
