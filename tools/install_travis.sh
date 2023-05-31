@@ -7,7 +7,7 @@ set -e
 # We should ask pegasus to update their requirement to psycopg2 2.7 which fixes
 # this bug
 echo -e "Trying to get rid of pg_config"
-sudo apt-get -y purge libpq-dev
+sudo apt-get -o Acquire::Retries=3 -y purge libpq-dev
 echo -e "Making sure it is really gone..."
 if [ -n "`which pg_config`" ]
 then

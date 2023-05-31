@@ -5,17 +5,17 @@ set -e
 # update apt
 grep '^deb http://archive.debian.org/debian/' /etc/apt/sources.list ||
   echo 'deb http://archive.debian.org/debian/ etch main' >>/etc/apt/sources.list
-apt-get -y update || true
-apt-get -y install debian-keyring debian-archive-keyring
-apt-get -y update
+apt-get -o Acquire::Retries=3 -y update || true
+apt-get -o Acquire::Retries=3 -y install debian-keyring debian-archive-keyring
+apt-get -o Acquire::Retries=3 -y update
 # tools for pycbc
-apt-get -y install git-core gcc g++ gfortran automake autoconf make libtool pkg-config bzip2
+apt-get -o Acquire::Retries=3 -y install git-core gcc g++ gfortran automake autoconf make libtool pkg-config bzip2
 # libraries for pycbc
-apt-get -y install libpcre3-dev libfreetype6-dev libjpeg-dev libpng-dev libmysqlclient-dev libpq-dev libssl-dev libsqlite3-dev libdb4.4-dev
+apt-get -o Acquire::Retries=3 -y install libpcre3-dev libfreetype6-dev libjpeg-dev libpng-dev libmysqlclient-dev libpq-dev libssl-dev libsqlite3-dev libdb4.4-dev
 # make sure these libraries aren't on the system
-apt-get -y remove lapack3-dev atlas3-base atlas3-headers refblas3
+apt-get -o Acquire::Retries=3 -y remove lapack3-dev atlas3-base atlas3-headers refblas3
 # further necessary / useful tools
-apt-get -y install openssh-server ntpdate zip gettext curl libcurl3-openssl-dev wget bzip2 libbz2-dev screen emacs
+apt-get -o Acquire::Retries=3 -y install openssh-server ntpdate zip gettext curl libcurl3-openssl-dev wget bzip2 libbz2-dev screen emacs
 
 test ".$PREFIX" = "." &&
   PREFIX=/usr/local

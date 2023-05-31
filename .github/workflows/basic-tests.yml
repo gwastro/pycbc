@@ -23,8 +23,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: installing system packages
       run: |
-        sudo apt-get update
-        sudo apt-get install *fftw3* mpi intel-mkl* git-lfs graphviz
+        sudo apt-get -o Acquire::Retries=3 update
+        sudo apt-get -o Acquire::Retries=3 install *fftw3* mpi intel-mkl* git-lfs graphviz
         pip install "tox<4.0.0" pip setuptools --upgrade
     - name: installing auxiliary data files
       run: |
