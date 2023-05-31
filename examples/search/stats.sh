@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+if [ ! -f statHL.hdf ] ; then
 pycbc_dtphase \
 --ifos H1 L1 \
 --relative-sensitivities .7 1 \
@@ -10,7 +11,9 @@ pycbc_dtphase \
 --output-file statHL.hdf \
 --smoothing-sigma 1 \
 --verbose
+fi
 
+if [ ! -f statLV.hdf ] ; then
 pycbc_dtphase \
 --ifos L1 V1 \
 --relative-sensitivities 1 0.3 \
@@ -20,7 +23,9 @@ pycbc_dtphase \
 --output-file statLV.hdf \
 --smoothing-sigma 1 \
 --verbose
+fi
 
+if [ ! -f statHV.hdf ] ; then
 pycbc_dtphase \
 --ifos H1 V1 \
 --relative-sensitivities .7 .3 \
@@ -30,8 +35,9 @@ pycbc_dtphase \
 --output-file statHV.hdf \
 --smoothing-sigma 1 \
 --verbose
+fi
 
-
+if [ ! -f statHLV.hdf ] ; then
 pycbc_dtphase \
 --ifos H1 L1 V1 \
 --relative-sensitivities .7 1 .3 \
@@ -42,3 +48,4 @@ pycbc_dtphase \
 --output-file statHLV.hdf \
 --smoothing-sigma 1 \
 --verbose
+fi

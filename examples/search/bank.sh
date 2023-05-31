@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+if [ ! -f bank.hdf ] ; then
 pycbc_brute_bank \
 --verbose \
 --output-file bank.hdf \
@@ -19,3 +20,4 @@ pycbc_brute_bank \
 --params mass1 mass2 spin1z spin2z \
 --seed 1 \
 --low-frequency-cutoff 20.0
+fi

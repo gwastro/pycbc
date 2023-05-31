@@ -44,6 +44,10 @@ jobs:
       run: bash -e examples/search/bank.sh
     - name: generating statistic files
       run: bash -e examples/search/stats.sh
+    - name: generating unknown injection files
+      run: |
+        cp examples/search/generate_injections.py ./
+        bash -e examples/search/generate_unknown_injections.sh
     - name: running workflow
       run: |
         cp examples/search/*.ini ./
