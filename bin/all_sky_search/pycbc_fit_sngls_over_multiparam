@@ -138,11 +138,9 @@ def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
     return _smooth_dist_func[smoothing_method](nabove, invalphan,
                                                ntotal, dists, **kwargs)
 
-# This is used to pre-calculate the templates which could be cut
-# before calculating distances
-# The value is used to determine the 1D-extent of the used templates;
-# number of smoothing lengths to cut anything outwith this range.
-# n_closest has no cut as it needs to contain enough
+# Number of smoothing lengths around the current template where
+# distances will be calculated
+# n_closest has no limit as it needs to contain enough
 # templates to contain n triggers, which we cannot know beforehand
 
 _smooth_cut = {
