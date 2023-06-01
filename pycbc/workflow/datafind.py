@@ -34,8 +34,8 @@ import logging
 from ligo import segments
 from ligo.lw import utils, table
 from glue import lal
+from gwdatafind import find_urls as find_frame_urls
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
-from pycbc.frame import datafind_connection
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
@@ -396,11 +396,6 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     if tags is None:
         tags = []
 
-    # First job is to do setup for the datafind jobs
-    # First get the server name
-    logging.info("Setting up connection to datafind server.")
-    connection = setup_datafind_server_connection(cp, tags=tags)
-
     # Now ready to loop over the input segments
     datafindouts = []
     datafindcaches = []
@@ -419,14 +414,27 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
 
             # Sometimes the connection can drop, so try a backup here
             try:
-                cache, cache_file = run_datafind_instance(cp, outputDir,
-                                           connection, observatory, frameType,
-                                           startTime, endTime, ifo, tags=tags)
+                cache, cache_file = run_datafind_instance(
+                    cp,
+                    outputDir,
+                    observatory,
+                    frameType,
+                    startTime,
+                    endTime,
+                    ifo,
+                    tags=tags
+                )
             except:
-                connection = setup_datafind_server_connection(cp, tags=tags)
-                cache, cache_file = run_datafind_instance(cp, outputDir,
-                                           connection, observatory, frameType,
-                                           startTime, endTime, ifo, tags=tags)
+                cache, cache_file = run_datafind_instance(
+                    cp,
+                    outputDir,
+                    observatory,
+                    frameType,
+                    startTime,
+                    endTime,
+                    ifo,
+                    tags=tags
+                )
             datafindouts.append(cache_file)
             datafindcaches.append(cache)
     return datafindcaches, datafindouts
@@ -475,11 +483,6 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     """
     if tags is None:
         tags = []
-
-    # First job is to do setup for the datafind jobs
-    # First get the server name
-    logging.info("Setting up connection to datafind server.")
-    connection = setup_datafind_server_connection(cp, tags=tags)
 
     # We want to ignore gaps as the detectors go up and down and calling this
     # way will give gaps. See the setup_datafind_runtime_generated function
@@ -530,7 +533,6 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
                 cache, cache_file = run_datafind_instance(
                     cp,
                     outputDir,
-                    connection,
                     observatory,
                     ftype,
                     start,
@@ -539,11 +541,9 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
                     tags=tags
                 )
             except:
-                connection = setup_datafind_server_connection(cp, tags=tags)
                 cache, cache_file = run_datafind_instance(
                     cp,
                     outputDir,
-                    connection,
                     observatory,
                     ftype,
                     start,
@@ -846,31 +846,6 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
                 missingFrames[ifo].extend(currMissingFrames)
     return missingFrameSegs, missingFrames
 
-def setup_datafind_server_connection(cp, tags=None):
-    """
-    This function is resposible for setting up the connection with the datafind
-    server.
-
-    Parameters
-    -----------
-    cp : pycbc.workflow.configuration.WorkflowConfigParser
-        The memory representation of the ConfigParser
-    Returns
-    --------
-    connection
-        The open connection to the datafind server.
-    """
-    if tags is None:
-        tags = []
-
-    if cp.has_option_tags("workflow-datafind",
-                          "datafind-ligo-datafind-server", tags):
-        datafind_server = cp.get_opt_tags("workflow-datafind",
-                                        "datafind-ligo-datafind-server", tags)
-    else:
-        datafind_server = None
-
-    return datafind_connection(datafind_server)
 
 def get_segment_summary_times(scienceFile, segmentName):
     """
@@ -928,7 +903,7 @@ def get_segment_summary_times(scienceFile, segmentName):
 
     return summSegList
 
-def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
+def run_datafind_instance(cp, outputDir, observatory, frameType,
                           startTime, endTime, ifo, tags=None):
     """
     This function will query the datafind server once to find frames between
@@ -941,9 +916,6 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     outputDir : Output cache files will be written here. We also write the
         commands for reproducing what is done in this function to this
         directory.
-    connection : datafind connection object
-        Initialized through the `gwdatafind` module, this is the open
-        connection to the datafind server.
     observatory : string
         The observatory to query frames for. Ex. 'H', 'L' or 'V'.  NB: not
         'H1', 'L1', 'V1' which denote interferometers.
@@ -977,6 +949,17 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     if tags is None:
         tags = []
 
+    # Determine if we should override the default datafind server
+    if cp.has_option_tags("workflow-datafind",
+                          "datafind-ligo-datafind-server", tags):
+        datafind_server = cp.get_opt_tags(
+            "workflow-datafind",
+            "datafind-ligo-datafind-server",
+            tags
+        )
+    else:
+        datafind_server = None
+
     seg = segments.segment([startTime, endTime])
     # Take the datafind kwargs from config (usually urltype=file is
     # given).
@@ -997,8 +980,14 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                          os.path.join(outputDir,'logs'), **dfKwargs)
     logging.debug("Asking datafind server for frames.")
     dfCache = lal.Cache.from_urls(
-        connection.find_frame_urls(observatory, frameType,
-                                   startTime, endTime, **dfKwargs),
+        find_frame_urls(
+            observatory,
+            frameType,
+            startTime,
+            endTime,
+            host=datafind_server,
+            **dfKwargs
+        ),
     )
     logging.debug("Frames returned")
     # workflow format output file

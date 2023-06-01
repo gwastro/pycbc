@@ -1,4 +1,4 @@
-from . frame import (locations_to_cache, read_frame, datafind_connection,
+from . frame import (locations_to_cache, read_frame,
                      query_and_read_frame, frame_paths, write_frame,
                      DataBuffer, StatusBuffer, iDQBuffer)
 
