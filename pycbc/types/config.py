@@ -602,7 +602,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             overwrite = False
             if self.has_section(f"{section}-defaultvalues"):
                 return_vals.append(
-                    self.get(f"{section}-{sub}", option)
+                    self.get(f"{section}-defaultvalues", option)
                 )
                 overwrite = True
 
