@@ -229,7 +229,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                 generator_class=generator.FDomainDetFrameTwoPolNoRespGenerator,
                 gates=self.gates, **kwargs['static_params'])
         else:
-            # create a waveform generator for each ifo respestively
+            # create a waveform generator for each ifo respectively
             self.waveform_generator = {}
             for det in self.data:
                 self.waveform_generator[det] = create_waveform_generator(
@@ -386,7 +386,7 @@ class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
                 generator_class=generator.FDomainDetFrameTwoPolGenerator,
                 gates=self.gates, **kwargs['static_params'])
         else:
-            # create a waveform generator for each ifo respestively
+            # create a waveform generator for each ifo respectively
             self.waveform_generator = {}
             for det in self.data:
                 self.waveform_generator[det] = create_waveform_generator(

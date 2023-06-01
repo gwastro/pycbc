@@ -27,7 +27,7 @@ from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
-from pycbc.waveform.utils import time_from_frequencyseries
+from pycbc.waveform.utils import (time_from_frequencyseries, apply_fd_time_shift)
 from pycbc.waveform import generator
 from pycbc.filter import highpass
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
@@ -559,6 +559,14 @@ class GatedGaussianNoise(BaseGatedGaussian):
             ht = h.to_timeseries()
             res = data - ht
             rtilde = res.to_frequencyseries()
+            #get the subsampling offset time
+            gateenddelay = gatestartdelay + dgatedelay
+            gateidx = numpy.floor(float(gateenddelay - res.start_time) * res.sample_rate)
+            shifttime = gateenddelay - res.get_sample_times[gateidx]
+            #apply time shift such that the gating start time lands on a data sample
+            rtilde = apply_fd_time_shift(rtilde, -shifttime, copy=False)
+            res = rtilde.to_timeseries()
+            #gating
             gated_res = res.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
