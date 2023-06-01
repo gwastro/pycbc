@@ -155,7 +155,7 @@ class FisherSky():
 
         # Convert the samples back to spherical coordinates.
         # Some unpleasant conditional operations are needed
-        # to get the right angle convention.
+        # to get the correct angle convention.
         rot_radec = FieldArray(
             size,
             dtype=[
