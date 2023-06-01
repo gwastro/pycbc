@@ -96,6 +96,8 @@ parser.add_argument("--user-tag", type=str, metavar="TAG",
                          "compatibility with pipedown post-processing. Option "
                          "will be removed when no longer needed.")
 # Arguments added for the coherent stuff
+parser.add_argument("--latitude", type=float, help="Latitude, in radians")
+parser.add_argument("--longitude", type=float, help="Longitude, in radians")
 parser.add_argument("--sky-grid", type=str,
                     help="Sky-grid (hdf file) containing two datasets : "
                     "latitude and longitude, both in radians")
@@ -192,10 +194,18 @@ with ctx:
     # same for all ifos, so just send the first ifo
     template_mem = zeros(tlen, dtype=complex64)
     
-    #Read the sky grid
-    sky_grid = h5py.File(args.sky_grid, 'r')
-    longitude = np.array(sky_grid['longitude'])
-    latitude = np.array(sky_grid['latitude'])
+    #Read the sky grid or the single sky position
+    if args.sky_grid is not None and args.latitude is not None and args.longitude is not None:
+        parser.error('Give either a sky grid or a sky position, not both')
+    
+    if args.sky_grid is not None:
+        sky_grid = h5py.File(args.sky_grid, 'r')
+        longitude = np.array(sky_grid['longitude'])
+        latitude = np.array(sky_grid['latitude'])
+    if args.latitude is not None and args.longitude is not None:
+        longitude = np.array([args.longitude])
+        latitude = np.array([args.latitude])
+    
     sky_positions = np.array([longitude, latitude])
     num_sky_positions = sky_positions.shape[1]
     positions_array = np.arange(num_sky_positions)
