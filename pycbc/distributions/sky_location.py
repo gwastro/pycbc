@@ -96,7 +96,7 @@ class FisherSky():
             )
         if sigma <= 0 or sigma > 2 * numpy.pi:
             raise ValueError(
-                'Sigma must be positive and much smaller than 2π'
+                'Sigma must be positive and smaller than 2π (preferably much smaller)'
             )
         if sigma > 0.35:
             logging.warning(
