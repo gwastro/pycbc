@@ -96,12 +96,13 @@ class FisherSky():
             )
         if sigma <= 0 or sigma > 2 * numpy.pi:
             raise ValueError(
-                'Sigma must be positive and smaller than 2π (preferably much smaller)'
+                'Sigma must be positive and smaller than 2π '
+                '(preferably much smaller)'
             )
         if sigma > 0.35:
             logging.warning(
-                f'Warning: sigma = {sigma} rad is probably too large for the '
-                'Fisher approximation to be valid'
+                'Warning: sigma = %s rad is probably too large for the '
+                'Fisher approximation to be valid', sigma
             )
         self.rayleigh_scale = 0.66 * sigma
         # Prepare a rotation that puts the North Pole at the mean position
