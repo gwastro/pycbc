@@ -34,15 +34,14 @@ echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral on GW170817 data"
 pycbc_multi_inspiral \
     --verbose \
     --projection left+right \
-    --processing-scheme mkl \
     --instruments H1 L1 V1 \
     --trigger-time ${EVENT} \
     --gps-start-time ${GPS_START} \
     --gps-end-time ${GPS_END} \
     --trig-start-time ${TRIG_START} \
     --trig-end-time ${TRIG_END} \
-    --ra 3.44527994344 \
-    --dec -0.408407044967 \
+    --longitude 3.44527994344 \
+    --latitude -0.408407044967 \
     --bank-file ${BANK_FILE} \
     --approximant IMRPhenomD \
     --order -1 \
