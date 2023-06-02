@@ -51,7 +51,7 @@ parser.add_argument('--extra-cpt-fraction', type=float,
                     help='Fraction of the extra component in the signal density')
 parser.add_argument('--temp-volume', type=float, 
                     help='Volume covered by the template bank')
-parser.add_argument('--mchirp-downsample-power', type=float, default=1.0,
+parser.add_argument('--mchirp-downsample-power', type=float, default=None,
                     help='Exponent value for the power law distribution')
 parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
@@ -144,7 +144,6 @@ f_dest.create_dataset("template_id", data=tid)
 template_pars = []
 for param, slog in zip(args.fit_param, args.log_param):
     pvals = triggers.get_param(param, args, *mass_spin)
-    
     # Write the KDE param values to output file
     f_dest.create_dataset(param, data=pvals)
     if slog in ['False']:
@@ -161,46 +160,42 @@ f_dest.attrs['fit_param'] = args.fit_param
 f_dest.attrs['log_param'] = args.log_param
 with h5py.File(args.template_file, "r") as f_src:
     f_src.copy(f_src["./"], f_dest["./"], "input_template_params")
+temp_samples = numpy.vstack((template_pars)).T
 
 
 # Rejection Sampling
-beta = args.mchirp_downsample_power
-power_law = lambda x: x**(beta)
-mchirp_index = args.fit_param.index('mchirp') # Index of mchirp in fit parameters
-# Get the maximum mchirp value dynamically based on its position in template_pars
-max_mchirp = numpy.max(template_pars[mchirp_index])
-max_prob = power_law(max_mchirp)
-new_mchirp = []
-additional_params = []
-
-for vals in zip(*template_pars):
-    val = vals[mchirp_index]
-    if val == max_mchirp:
-        probability = 1.0
-    else:
-        probability = power_law(val) / max_prob
-
-    rand_nums = numpy.random.uniform(0, 1)
-    if rand_nums < probability:
-        new_mchirp.append(val)
-        additional_params.append(list(vals[:mchirp_index] + vals[mchirp_index+1:]))
-
-new_mchirp = numpy.array(new_mchirp)
-additional_params = numpy.array(additional_params)
-temp_samples = numpy.column_stack((new_mchirp, additional_params))
+if 'mchirp' not in args.fit_param:
+    raise ValueError("mchirp does not exist in args.fit_param")
+mchirp_index = args.fit_param.index('mchirp')
+if args.mchirp_downsample_power is not None:
+    power_vals = template_pars[mchirp_index] ** args.mchirp_downsample_power
+    f_dest.attrs['mchirp_downsample_power'] = args.mchirp_downsample_power
+    probabilities = power_vals / numpy.max(power_vals)
+    rand_nums = numpy.random.uniform(0, 1, len(mass1))
+    ind = rand_nums < probabilities
+    new_mchirp = template_pars[mchirp_index][ind]
+    additional_params = numpy.delete(temp_samples, mchirp_index, axis=1)[ind]
+    new_temp_samples = numpy.column_stack((new_mchirp, additional_params))
 
 
 if args.make_template_kde:
     logging.info('Starting optimization of template KDE parameters')
-    optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,
+    optbw, optalpha = optimizedparam(new_temp_samples, alphagrid=args.alpha_grid,
                                      bwgrid=args.bw_grid, nfold=args.nfold_template)
     logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
     logging.info('Evaluating template KDE')
-    template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha,
+    template_kde = kde_awkde(new_temp_samples, temp_samples, alp=optalpha,
                              gl_bandwidth=optbw)
+    
+    compensation_factor = numpy.ones_like(template_kde)
+    if args.mchirp_downsample_power is not None:
+        mchirp_downsample_factor = power_vals[ind]
+        compensation_factor[ind] = 1 / mchirp_downsample_factor
+    template_kde *= compensation_factor
+    
     f_dest.create_dataset("data_kde", data=template_kde)
     f_dest.attrs['stat'] = "template-kde_file"
-    f_dest.attrs['template-file'] = args.template_file
+f_dest.attrs['template-file'] = args.template_file
 
 
 def signal_kde_extra_cpt(signal_kde, frac=None, volume=None):
@@ -252,8 +247,7 @@ if args.make_signal_kde:
     if args.extra_cpt_fraction is not None and args.temp_volume is not None:
         modified_kde = signal_kde_extra_cpt(signal_kde, frac=args.extra_cpt_fraction,
                                             volume=args.temp_volume)
-    else:
-        modified_kde = signal_kde
+    else: modified_kde = signal_kde
     f_dest.create_dataset("data_kde", data=modified_kde)
     f_dest.attrs['stat'] = "signal-kde_file"
 
