@@ -276,16 +276,16 @@ def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0=TIME_OFFSET):
 
     Parameters
     ----------
-    t_ssb : float
+    t_ssb : float or numpy.array
         The time when a GW signal arrives at the origin of SSB frame.
         In the unit of 's'.
-    lamda_ssb : float
+    lamda_ssb : float or numpy.array
         The ecliptic longitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    beta_ssb : float
+    beta_ssb : float or numpy.array
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    psi_ssb : float
+    psi_ssb : float or numpy.array
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     t0 : float
@@ -296,43 +296,70 @@ def ssb_to_lisa(t_ssb, lamda_ssb, beta_ssb, psi_ssb, t0=TIME_OFFSET):
     Returns
     -------
     (t_lisa, lamda_lisa, beta_lisa, psi_lisa) : tuple
-    t_lisa : float
+    t_lisa : float or numpy.array
         The time when a GW signal arrives at the origin of LISA frame.
         In the unit of 's'.
-    lamda_lisa : float
+    lamda_lisa : float or numpy.array
         The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    beta_lisa : float
+    beta_lisa : float or numpy.array
         The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    psi_lisa : float
+    psi_lisa : float or numpy.array
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     """
     if isinstance(t_ssb, np.ndarray):
-        t_ssb = t_ssb.item()
+        t_ssb_array = t_ssb.copy()
+    else:
+        t_ssb_array = np.array([t_ssb])
     if isinstance(lamda_ssb, np.ndarray):
-        lamda_ssb = lamda_ssb.item()
+        lamda_ssb_array = lamda_ssb.copy()
+    else:
+        lamda_ssb_array = np.array([lamda_ssb])
     if isinstance(beta_ssb, np.ndarray):
-        beta_ssb = beta_ssb.item()
+        beta_ssb_array = beta_ssb.copy()
+    else:
+        beta_ssb_array = np.array([beta_ssb])
     if isinstance(psi_ssb, np.ndarray):
-        psi_ssb = psi_ssb.item()
-    if lamda_ssb < 0 or lamda_ssb >= 2*np.pi:
-        raise ValueError("Longitude should within [0, 2*pi).")
-    if beta_ssb < -np.pi/2 or beta_ssb > np.pi/2:
-        raise ValueError("Latitude should within [-pi/2, pi/2].")
-    if psi_ssb < 0 or psi_ssb >= 2*np.pi:
-        raise ValueError("Polarization angle should within [0, 2*pi).")
-    t_lisa = t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0)
-    k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
-    # Although t_lisa calculated above using the corrected LISA position vector by
-    # adding t0, it corresponds to the true t_ssb, not t_ssb+t0,
-    # we need to include t0 again to correct LISA position.
-    alpha = lisa_position_ssb(t_lisa, t0)[1]
-    rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
-    k_lisa = rotation_matrix_lisa.T @ k_ssb
-    lamda_lisa, beta_lisa = propagation_vector_to_localization(k_lisa)
-    psi_lisa = polarization_newframe(psi_ssb, k_ssb, rotation_matrix_lisa)
+        psi_ssb_array = psi_ssb.copy()
+    else:
+        psi_ssb_array = np.array([psi_ssb])
+    num = len(t_ssb_array)
+    t_lisa_array, lamda_lisa_array = np.zeros(num), np.zeros(num)
+    beta_lisa_array, psi_lisa_array = np.zeros(num), np.zeros(num)
 
-    return (t_lisa, lamda_lisa, beta_lisa, psi_lisa)
+    for i in range(num):
+        t_ssb = t_ssb_array[i]
+        lamda_ssb = lamda_ssb_array[i]
+        beta_ssb = beta_ssb_array[i]
+        psi_ssb = psi_ssb_array[i]
+        if lamda_ssb < 0 or lamda_ssb >= 2*np.pi:
+            raise ValueError("Longitude should within [0, 2*pi).")
+        if beta_ssb < -np.pi/2 or beta_ssb > np.pi/2:
+            raise ValueError("Latitude should within [-pi/2, pi/2].")
+        if psi_ssb < 0 or psi_ssb >= 2*np.pi:
+            raise ValueError("Polarization angle should within [0, 2*pi).")
+        t_lisa = t_lisa_from_ssb(t_ssb, lamda_ssb, beta_ssb, t0)
+        k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
+        # Although t_lisa calculated above using the corrected LISA position vector by
+        # adding t0, it corresponds to the true t_ssb, not t_ssb+t0,
+        # we need to include t0 again to correct LISA position.
+        alpha = lisa_position_ssb(t_lisa, t0)[1]
+        rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
+        k_lisa = rotation_matrix_lisa.T @ k_ssb
+        lamda_lisa, beta_lisa = propagation_vector_to_localization(k_lisa)
+        psi_lisa = polarization_newframe(psi_ssb, k_ssb, rotation_matrix_lisa)
+        t_lisa_array[i] = t_lisa
+        lamda_lisa_array[i] = lamda_lisa
+        beta_lisa_array[i] = beta_lisa
+        psi_lisa_array[i] = psi_lisa
+    if num == 1:
+        params_lisa = (t_lisa_array[0], lamda_lisa_array[0],
+                       beta_lisa_array[0], psi_lisa_array[0])
+    else:
+        params_lisa = (t_lisa_array, lamda_lisa_array,
+                       beta_lisa_array, psi_lisa_array)
+
+    return params_lisa
 
 
 def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t0=TIME_OFFSET):
@@ -341,14 +368,14 @@ def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t0=TIME_OFFSET):
 
     Parameters
     ----------
-    t_lisa : float
+    t_lisa : float or numpy.array
         The time when a GW signal arrives at the origin of LISA frame.
         In the unit of 's'.
-    lamda_lisa : float
+    lamda_lisa : float or numpy.array
         The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    beta_lisa : float
+    beta_lisa : float or numpy.array
         The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    psi_lisa : float
+    psi_lisa : float or numpy.array
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     t0 : float
@@ -359,42 +386,69 @@ def lisa_to_ssb(t_lisa, lamda_lisa, beta_lisa, psi_lisa, t0=TIME_OFFSET):
     Returns
     -------
     (t_ssb, lamda_ssb, beta_ssb, psi_ssb) : tuple
-    t_ssb : float
+    t_ssb : float or numpy.array
         The time when a GW signal arrives at the origin of SSB frame.
         In the unit of 's'.
-    lamda_ssb : float
+    lamda_ssb : float or numpy.array
         The ecliptic longitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    beta_ssb : float
+    beta_ssb : float or numpy.array
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    psi_ssb : float
+    psi_ssb : float or numpy.array
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
     if isinstance(t_lisa, np.ndarray):
-        t_lisa = t_lisa.item()
+        t_lisa_array = t_lisa.copy()
+    else:
+        t_lisa_array = np.array([t_lisa])
     if isinstance(lamda_lisa, np.ndarray):
-        lamda_lisa = lamda_lisa.item()
+        lamda_lisa_array = lamda_lisa.copy()
+    else:
+        lamda_lisa_array = np.array([lamda_lisa])
     if isinstance(beta_lisa, np.ndarray):
-        beta_lisa = beta_lisa.item()
+        beta_lisa_array = beta_lisa.copy()
+    else:
+        beta_lisa_array = np.array([beta_lisa])
     if isinstance(psi_lisa, np.ndarray):
-        psi_lisa = psi_lisa.item()
-    if lamda_lisa < 0 or lamda_lisa >= 2*np.pi:
-        raise ValueError("Longitude should within [0, 2*pi).")
-    if beta_lisa < -np.pi/2 or beta_lisa > np.pi/2:
-        raise ValueError("Latitude should within [-pi/2, pi/2].")
-    if psi_lisa < 0 or psi_lisa >= 2*np.pi:
-        raise ValueError("Polarization angle should within [0, 2*pi).")
-    k_lisa = localization_to_propagation_vector(lamda_lisa, beta_lisa)
-    alpha = lisa_position_ssb(t_lisa, t0)[1]
-    rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
-    k_ssb = rotation_matrix_lisa @ k_lisa
-    lamda_ssb, beta_ssb = propagation_vector_to_localization(k_ssb)
-    t_ssb = t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t0)
-    psi_ssb = polarization_newframe(psi_lisa, k_lisa, rotation_matrix_lisa.T)
+        psi_lisa_array = psi_lisa.copy()
+    else:
+        psi_lisa_array = np.array([psi_lisa])
+    num = len(t_lisa_array)
+    t_ssb_array, lamda_ssb_array = np.zeros(num), np.zeros(num)
+    beta_ssb_array, psi_ssb_array = np.zeros(num), np.zeros(num)
 
-    return (t_ssb, lamda_ssb, beta_ssb, psi_ssb)
+    for i in range(num):
+        t_lisa = t_lisa_array[i]
+        lamda_lisa = lamda_lisa_array[i]
+        beta_lisa = beta_lisa_array[i]
+        psi_lisa = psi_lisa_array[i]
+        if lamda_lisa < 0 or lamda_lisa >= 2*np.pi:
+            raise ValueError("Longitude should within [0, 2*pi).")
+        if beta_lisa < -np.pi/2 or beta_lisa > np.pi/2:
+            raise ValueError("Latitude should within [-pi/2, pi/2].")
+        if psi_lisa < 0 or psi_lisa >= 2*np.pi:
+            raise ValueError("Polarization angle should within [0, 2*pi).")
+        k_lisa = localization_to_propagation_vector(lamda_lisa, beta_lisa)
+        alpha = lisa_position_ssb(t_lisa, t0)[1]
+        rotation_matrix_lisa = rotation_matrix_ssb_to_lisa(alpha)
+        k_ssb = rotation_matrix_lisa @ k_lisa
+        lamda_ssb, beta_ssb = propagation_vector_to_localization(k_ssb)
+        t_ssb = t_ssb_from_t_lisa(t_lisa, lamda_ssb, beta_ssb, t0)
+        psi_ssb = polarization_newframe(psi_lisa, k_lisa, rotation_matrix_lisa.T)
+        t_ssb_array[i] = t_ssb
+        lamda_ssb_array[i] = lamda_ssb
+        beta_ssb_array[i] = beta_ssb
+        psi_ssb_array[i] = psi_ssb
+    if num == 1:
+        params_ssb = (t_ssb_array[0], lamda_ssb_array[0],
+                      beta_ssb_array[0], psi_ssb_array[0])
+    else:
+        params_ssb = (t_ssb_array, lamda_ssb_array,
+                      beta_ssb_array, psi_ssb_array)
+
+    return params_ssb
 
 
 def rotation_matrix_ssb_to_geo(epsilon=np.deg2rad(23.439281)):
@@ -524,16 +578,16 @@ def ssb_to_geo(t_ssb, lamda_ssb, beta_ssb, psi_ssb, use_astropy=True):
 
     Parameters
     ----------
-    t_ssb : float
+    t_ssb : float or numpy.array
         The time when a GW signal arrives at the origin of SSB frame.
         In the unit of 's'.
-    lamda_ssb : float
+    lamda_ssb : float or numpy.array
         The ecliptic longitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    beta_ssb : float
+    beta_ssb : float or numpy.array
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    psi_ssb : float
+    psi_ssb : float or numpy.array
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     use_astropy : bool
@@ -543,52 +597,79 @@ def ssb_to_geo(t_ssb, lamda_ssb, beta_ssb, psi_ssb, use_astropy=True):
     Returns
     -------
     (t_geo, lamda_geo, beta_geo, psi_geo) : tuple
-    t_geo : float
+    t_geo : float or numpy.array
         The time when a GW signal arrives at the origin of geocentric frame.
         In the unit of 's'.
-    lamda_geo : float
+    lamda_geo : float or numpy.array
         The longitude of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    beta_geo : float
+    beta_geo : float or numpy.array
         The latitude of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    psi_geo : float
+    psi_geo : float or numpy.array
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     """
     if isinstance(t_ssb, np.ndarray):
-        t_ssb = t_ssb.item()
-    if isinstance(lamda_ssb, np.ndarray):
-        lamda_ssb = lamda_ssb.item()
-    if isinstance(beta_ssb, np.ndarray):
-        beta_ssb = beta_ssb.item()
-    if isinstance(psi_ssb, np.ndarray):
-        psi_ssb = psi_ssb.item()
-    if lamda_ssb < 0 or lamda_ssb >= 2*np.pi:
-        raise ValueError("Longitude should within [0, 2*pi).")
-    if beta_ssb < -np.pi/2 or beta_ssb > np.pi/2:
-        raise ValueError("Latitude should within [-pi/2, pi/2].")
-    if psi_ssb < 0 or psi_ssb >= 2*np.pi:
-        raise ValueError("Polarization angle should within [0, 2*pi).")
-    t_geo = t_geo_from_ssb(t_ssb, lamda_ssb, beta_ssb)
-    k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
-    rotation_matrix_geo = rotation_matrix_ssb_to_geo()
-    if use_astropy:
-        # BarycentricMeanEcliptic doesn't have obstime attribute,
-        # it's a good inertial frame, but PrecessedGeocentric is not.
-        bme_coord = BarycentricMeanEcliptic(lon=lamda_ssb*units.radian,
-                                            lat=beta_ssb*units.radian,
-                                            equinox='J2000')
-        geo_sky = bme_coord.transform_to(PrecessedGeocentric(
-            equinox='J2000', obstime=Time(t_geo, format='gps')))
-        lamda_geo = geo_sky.ra.rad
-        beta_geo = geo_sky.dec.rad
+        t_ssb_array = t_ssb.copy()
     else:
-        k_geo = rotation_matrix_geo.T @ k_ssb
-        lamda_geo, beta_geo = propagation_vector_to_localization(k_geo)
-    psi_geo = polarization_newframe(psi_ssb, k_ssb, rotation_matrix_geo)
+        t_ssb_array = np.array([t_ssb])
+    if isinstance(lamda_ssb, np.ndarray):
+        lamda_ssb_array = lamda_ssb.copy()
+    else:
+        lamda_ssb_array = np.array([lamda_ssb])
+    if isinstance(beta_ssb, np.ndarray):
+        beta_ssb_array = beta_ssb.copy()
+    else:
+        beta_ssb_array = np.array([beta_ssb])
+    if isinstance(psi_ssb, np.ndarray):
+        psi_ssb_array = psi_ssb.copy()
+    else:
+        psi_ssb_array = np.array([psi_ssb])
+    num = len(t_ssb_array)
+    t_geo_array, lamda_geo_array = np.zeros(num), np.zeros(num)
+    beta_geo_array, psi_geo_array = np.zeros(num), np.zeros(num)
 
-    return (t_geo, lamda_geo, beta_geo, psi_geo)
+    for i in range(num):
+        t_ssb = t_ssb_array[i]
+        lamda_ssb = lamda_ssb_array[i]
+        beta_ssb = beta_ssb_array[i]
+        psi_ssb = psi_ssb_array[i]
+        if lamda_ssb < 0 or lamda_ssb >= 2*np.pi:
+            raise ValueError("Longitude should within [0, 2*pi).")
+        if beta_ssb < -np.pi/2 or beta_ssb > np.pi/2:
+            raise ValueError("Latitude should within [-pi/2, pi/2].")
+        if psi_ssb < 0 or psi_ssb >= 2*np.pi:
+            raise ValueError("Polarization angle should within [0, 2*pi).")
+        t_geo = t_geo_from_ssb(t_ssb, lamda_ssb, beta_ssb)
+        k_ssb = localization_to_propagation_vector(lamda_ssb, beta_ssb)
+        rotation_matrix_geo = rotation_matrix_ssb_to_geo()
+        if use_astropy:
+            # BarycentricMeanEcliptic doesn't have obstime attribute,
+            # it's a good inertial frame, but PrecessedGeocentric is not.
+            bme_coord = BarycentricMeanEcliptic(lon=lamda_ssb*units.radian,
+                                                lat=beta_ssb*units.radian,
+                                                equinox='J2000')
+            geo_sky = bme_coord.transform_to(PrecessedGeocentric(
+                equinox='J2000', obstime=Time(t_geo, format='gps')))
+            lamda_geo = geo_sky.ra.rad
+            beta_geo = geo_sky.dec.rad
+        else:
+            k_geo = rotation_matrix_geo.T @ k_ssb
+            lamda_geo, beta_geo = propagation_vector_to_localization(k_geo)
+        psi_geo = polarization_newframe(psi_ssb, k_ssb, rotation_matrix_geo)
+        t_geo_array[i] = t_geo
+        lamda_geo_array[i] = lamda_geo
+        beta_geo_array[i] = beta_geo
+        psi_geo_array[i] = psi_geo
+    if num == 1:
+        params_geo = (t_geo_array[0], lamda_geo_array[0],
+                      beta_geo_array[0], psi_geo_array[0])
+    else:
+        params_geo = (t_geo_array, lamda_geo_array,
+                      beta_geo_array, psi_geo_array)
+
+    return params_geo
 
 
 def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
@@ -597,16 +678,16 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
 
     Parameters
     ----------
-    t_geo : float
+    t_geo : float or numpy.array
         The time when a GW signal arrives at the origin of geocentric frame.
         In the unit of 's'.
-    lamda_geo : float
+    lamda_geo : float or numpy.array
         The longitude of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    beta_geo : float
+    beta_geo : float or numpy.array
         The latitude of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    psi_geo : float
+    psi_geo : float or numpy.array
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     use_astropy : bool
@@ -616,52 +697,79 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
     Returns
     -------
     (t_ssb, lamda_ssb, beta_ssb, psi_ssb) : tuple
-    t_ssb : float
+    t_ssb : float or numpy.array
         The time when a GW signal arrives at the origin of SSB frame.
         In the unit of 's'.
-    lamda_ssb : float
+    lamda_ssb : float or numpy.array
         The ecliptic longitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    beta_ssb : float
+    beta_ssb : float or numpy.array
         The ecliptic latitude of a GW signal in SSB frame.
         In the unit of 'radian'.
-    psi_ssb : float
+    psi_ssb : float or numpy.array
         The polarization angle of a GW signal in SSB frame.
         In the unit of 'radian'.
     """
     if isinstance(t_geo, np.ndarray):
-        t_geo = t_geo.item()
+        t_geo_array = t_geo.copy()
+    else:
+        t_geo_array = np.array([t_geo])
     if isinstance(lamda_geo, np.ndarray):
-        lamda_geo = lamda_geo.item()
+        lamda_geo_array = lamda_geo.copy()
+    else:
+        lamda_geo_array = np.array([lamda_geo])
     if isinstance(beta_geo, np.ndarray):
-        beta_geo = beta_geo.item()
+        beta_geo_array = beta_geo.copy()
+    else:
+        beta_geo_array = np.array([beta_geo])
     if isinstance(psi_geo, np.ndarray):
-        psi_geo = psi_geo.item()
-    if lamda_geo < 0 or lamda_geo >= 2*np.pi:
-        raise ValueError("Longitude should within [0, 2*pi).")
-    if beta_geo < -np.pi/2 or beta_geo > np.pi/2:
-        raise ValueError("Latitude should within [-pi/2, pi/2].")
-    if psi_geo < 0 or psi_geo >= 2*np.pi:
-        raise ValueError("Polarization angle should within [0, 2*pi).")
-    k_geo = localization_to_propagation_vector(lamda_geo, beta_geo)
-    rotation_matrix_geo = rotation_matrix_ssb_to_geo()
-    k_ssb = rotation_matrix_geo @ k_geo
-    lamda_ssb, beta_ssb = propagation_vector_to_localization(k_ssb)
-    psi_ssb = polarization_newframe(psi_geo, k_geo, rotation_matrix_geo.T)
-    if use_astropy:
-        # BarycentricMeanEcliptic doesn't have obstime attribute,
-        # it's a good inertial frame, but PrecessedGeocentric is not.
-        bme_coord = PrecessedGeocentric(ra=lamda_geo*units.radian,
-                                        dec=beta_geo*units.radian,
-                                        equinox='J2000',
-                                        obstime=Time(t_geo, format='gps'))
-        ssb_sky = bme_coord.transform_to(
-                    BarycentricMeanEcliptic(equinox='J2000'))
-        lamda_ssb = ssb_sky.lon.rad
-        beta_ssb = ssb_sky.lat.rad
-    t_ssb = t_ssb_from_t_geo(t_geo, lamda_ssb, beta_ssb)
+        psi_geo_array = psi_geo.copy()
+    else:
+        psi_geo_array = np.array([psi_geo])
+    num = len(t_geo_array)
+    t_ssb_array, lamda_ssb_array = np.zeros(num), np.zeros(num)
+    beta_ssb_array, psi_ssb_array = np.zeros(num), np.zeros(num)
 
-    return (t_ssb, lamda_ssb, beta_ssb, psi_ssb)
+    for i in range(num):
+        t_geo = t_geo_array[i]
+        lamda_geo = lamda_geo_array[i]
+        beta_geo = beta_geo_array[i]
+        psi_geo = psi_geo_array[i]
+        if lamda_geo < 0 or lamda_geo >= 2*np.pi:
+            raise ValueError("Longitude should within [0, 2*pi).")
+        if beta_geo < -np.pi/2 or beta_geo > np.pi/2:
+            raise ValueError("Latitude should within [-pi/2, pi/2].")
+        if psi_geo < 0 or psi_geo >= 2*np.pi:
+            raise ValueError("Polarization angle should within [0, 2*pi).")
+        k_geo = localization_to_propagation_vector(lamda_geo, beta_geo)
+        rotation_matrix_geo = rotation_matrix_ssb_to_geo()
+        k_ssb = rotation_matrix_geo @ k_geo
+        lamda_ssb, beta_ssb = propagation_vector_to_localization(k_ssb)
+        psi_ssb = polarization_newframe(psi_geo, k_geo, rotation_matrix_geo.T)
+        if use_astropy:
+            # BarycentricMeanEcliptic doesn't have obstime attribute,
+            # it's a good inertial frame, but PrecessedGeocentric is not.
+            bme_coord = PrecessedGeocentric(ra=lamda_geo*units.radian,
+                                            dec=beta_geo*units.radian,
+                                            equinox='J2000',
+                                            obstime=Time(t_geo, format='gps'))
+            ssb_sky = bme_coord.transform_to(
+                        BarycentricMeanEcliptic(equinox='J2000'))
+            lamda_ssb = ssb_sky.lon.rad
+            beta_ssb = ssb_sky.lat.rad
+        t_ssb = t_ssb_from_t_geo(t_geo, lamda_ssb, beta_ssb)
+        t_ssb_array[i] = t_ssb
+        lamda_ssb_array[i] = lamda_ssb
+        beta_ssb_array[i] = beta_ssb
+        psi_ssb_array[i] = psi_ssb
+    if num == 1:
+        params_ssb = (t_ssb_array[0], lamda_ssb_array[0],
+                      beta_ssb_array[0], psi_ssb_array[0])
+    else:
+        params_ssb = (t_ssb_array, lamda_ssb_array,
+                      beta_ssb_array, psi_ssb_array)
+
+    return params_ssb
 
 
 def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
@@ -671,14 +779,14 @@ def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
 
     Parameters
     ----------
-    t_lisa : float
+    t_lisa : float or numpy.array
         The time when a GW signal arrives at the origin of LISA frame.
         In the unit of 's'.
-    lamda_lisa : float
+    lamda_lisa : float or numpy.array
         The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    beta_lisa : float
+    beta_lisa : float or numpy.array
         The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    psi_lisa : float
+    psi_lisa : float or numpy.array
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     t0 : float
@@ -692,16 +800,16 @@ def lisa_to_geo(t_lisa, lamda_lisa, beta_lisa, psi_lisa,
     Returns
     -------
     (t_geo, lamda_geo, beta_geo, psi_geo) : tuple
-    t_geo : float
+    t_geo : float or numpy.array
         The time when a GW signal arrives at the origin of geocentric frame.
         In the unit of 's'.
-    lamda_geo : float
+    lamda_geo : float or numpy.array
         The ecliptic longitude of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    beta_geo : float
+    beta_geo : float or numpy.array
         The ecliptic latitude of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    psi_geo : float
+    psi_geo : float or numpy.array
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     """
@@ -720,16 +828,16 @@ def geo_to_lisa(t_geo, lamda_geo, beta_geo, psi_geo,
 
     Parameters
     ----------
-    t_geo : float
+    t_geo : float or numpy.array
         The time when a GW signal arrives at the origin of geocentric frame.
         In the unit of 's'.
-    lamda_geo : float
+    lamda_geo : float or numpy.array
         The longitude of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    beta_geo : float
+    beta_geo : float or numpy.array
         The latitude of a GW signal in geocentric frame.
         In the unit of 'radian'.
-    psi_geo : float
+    psi_geo : float or numpy.array
         The polarization angle of a GW signal in geocentric frame.
         In the unit of 'radian'.
     t0 : float
@@ -743,14 +851,14 @@ def geo_to_lisa(t_geo, lamda_geo, beta_geo, psi_geo,
     Returns
     -------
     (t_lisa, lamda_lisa, beta_lisa, psi_lisa) : tuple
-    t_lisa : float
+    t_lisa : float or numpy.array
         The time when a GW signal arrives at the origin of LISA frame.
         In the unit of 's'.
-    lamda_lisa : float
+    lamda_lisa : float or numpy.array
         The longitude of a GW signal in LISA frame, in the unit of 'radian'.
-    beta_lisa : float
+    beta_lisa : float or numpy.array
         The latitude of a GW signal in LISA frame, in the unit of 'radian'.
-    psi_geo : float
+    psi_geo : float or numpy.array
         The polarization angle of a GW signal in LISA frame.
         In the unit of 'radian'.
     """
