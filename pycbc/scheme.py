@@ -32,13 +32,6 @@ from functools import wraps
 import logging
 from .libutils import get_ctypes_library
 
-try:
-    _libgomp = get_ctypes_library("gomp", ['gomp'])
-except:
-    # Should we fail or give a warning if we cannot import
-    # libgomp? Seems to work even for MKL scheme, but
-    # not entirely sure why...
-    _libgomp = None
 
 class _SchemeManager(object):
     _single = None
@@ -129,17 +122,27 @@ class CPUScheme(Scheme):
         else:
             import multiprocessing
             self.num_threads = multiprocessing.cpu_count()
+        self._libgomp = None
 
     def __enter__(self):
         Scheme.__enter__(self)
+        try:
+            self._libgomp = get_ctypes_library("gomp", ['gomp'],
+                                               mode=ctypes.RTLD_GLOBAL)
+        except:
+            # Should we fail or give a warning if we cannot import
+            # libgomp? Seems to work even for MKL scheme, but
+            # not entirely sure why...
+            pass
+
         os.environ["OMP_NUM_THREADS"] = str(self.num_threads)
-        if _libgomp is not None:
-            _libgomp.omp_set_num_threads( int(self.num_threads) )
+        if self._libgomp is not None:
+            self._libgomp.omp_set_num_threads( int(self.num_threads) )
 
     def __exit__(self, type, value, traceback):
         os.environ["OMP_NUM_THREADS"] = "1"
-        if _libgomp is not None:
-            _libgomp.omp_set_num_threads(1)
+        if self._libgomp is not None:
+            self._libgomp.omp_set_num_threads(1)
         Scheme.__exit__(self, type, value, traceback)
 
 class MKLScheme(CPUScheme):

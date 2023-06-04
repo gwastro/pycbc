@@ -29,7 +29,7 @@ from pycbc.distributions.angular import UniformAngle, SinAngle, CosAngle, \
 from pycbc.distributions.arbitrary import Arbitrary, FromFile
 from pycbc.distributions.gaussian import Gaussian
 from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
-from pycbc.distributions.sky_location import UniformSky
+from pycbc.distributions.sky_location import UniformSky, FisherSky
 from pycbc.distributions.uniform import Uniform
 from pycbc.distributions.uniform_log import UniformLog10
 from pycbc.distributions.spins import IndependentChiPChiEff
@@ -60,7 +60,8 @@ distribs = {
     DistributionFunctionFromFile.name: DistributionFunctionFromFile,
     FixedSamples.name: FixedSamples,
     MchirpfromUniformMass1Mass2.name: MchirpfromUniformMass1Mass2,
-    QfromUniformMass1Mass2.name: QfromUniformMass1Mass2
+    QfromUniformMass1Mass2.name: QfromUniformMass1Mass2,
+    FisherSky.name: FisherSky
 }
 
 def read_distributions_from_config(cp, section="prior"):

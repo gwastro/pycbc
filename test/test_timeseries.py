@@ -477,6 +477,33 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
             self.assertAlmostEqual(self.b.duration, 0.3)
             self.assertAlmostEqual(self.bad3.duration, 0.6)
 
+    def test_at_time(self):
+        a = TimeSeries([0, 1, 2, 3, 4, 5, 6, 7], delta_t=1.0)
+
+        self.assertAlmostEqual(a.at_time(0.5), 0.0)
+        self.assertAlmostEqual(a.at_time(0.6,  nearest_sample=True), 1.0)
+        self.assertAlmostEqual(a.at_time(0.5, interpolate='linear'), 0.5)
+        self.assertAlmostEqual(a.at_time([2.5],
+                               interpolate='quadratic'), 2.5)
+
+        i = numpy.array([-0.2, 0.5, 1.5, 7.0])
+
+        x = a.at_time(i, extrapolate=0)
+        n = numpy.array([0, 0.0, 1.0, 7.0])
+        self.assertAlmostEqual((x-n).sum(), 0)
+
+        x = a.at_time(i, extrapolate=0, nearest_sample=True)
+        n = numpy.array([0, 1.0, 2.0, 7.0])
+        self.assertAlmostEqual((x-n).sum(), 0)
+
+        x = a.at_time(i, extrapolate=0, interpolate='linear')
+        n = numpy.array([0, 0.5, 1.5, 0.0])
+        self.assertAlmostEqual((x-n).sum(), 0)
+
+        x = a.at_time(i, extrapolate=0, interpolate='quadratic')
+        n = numpy.array([0, 0.0, 1.5, 0.0])
+        self.assertAlmostEqual((x-n).sum(), 0)
+
     def test_inject(self):
         a = TimeSeries(numpy.zeros(2**20, dtype=numpy.float32),
                                    delta_t=1.0)
