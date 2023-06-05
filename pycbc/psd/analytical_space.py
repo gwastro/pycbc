@@ -370,7 +370,7 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
         Pease see Eq.(36) in <LISA-LCST-SGS-TN-001> for more details.
     """
     from os import getcwd, path
-    import requests
+    from urllib import request
     from scipy.interpolate import interp1d
 
     if len_arm != 2.5e9:
@@ -378,9 +378,7 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
     cwd = getcwd()
     if path.exists(cwd+"/AvFXp2_Raw.npy") is False:
         url = "https://zenodo.org/record/7497853/files/AvFXp2_Raw.npy"
-        response = requests.get(url, verify=False)
-        with open(cwd+"/AvFXp2_Raw.npy", 'wb') as f:
-            f.write(response.content)
+        request.urlretrieve(url, cwd+"/AvFXp2_Raw.npy")
     freqs, fp_sq = np.load(cwd+"/AvFXp2_Raw.npy")
     # Padding the end.
     freqs = np.append(freqs, 2)
@@ -567,7 +565,7 @@ def sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
         base_curve = sensitivity_curve_lisa_semi_analytical(
             length, delta_f, low_freq_cutoff,
             len_arm, acc_noise_level, oms_noise_level)
-    elif base_model == "SciRD":
+    elif base_curve == "SciRD":
         base_curve = sensitivity_curve_lisa_SciRD(
             length, delta_f, low_freq_cutoff)
     else:
@@ -644,5 +642,103 @@ def sh_transformed_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
     psd = 2*sh.data * fseries_response.data
     fseries = from_numpy_arrays(sh.sample_frequencies, psd,
                                 length, delta_f, low_freq_cutoff)
+
+    return fseries
+
+
+def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
+                                             len_arm=2.5e9, duration=1.0,
+                                             tdi="1.5"):
+    """ The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA Galactic confusion noise,
+    no instrumental noise.
+
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of LISA, in the unit of "m".
+    duration : float
+        The duration of observation, between 0 and 10, in the unit of years.
+    tdi : string
+        The version of TDI, currently only for 1.5 or 2.0.
+
+    Returns
+    -------
+    fseries : FrequencySeries
+        The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA Galactic confusion
+        noise, no instrumental noise.
+    """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
+    if tdi == "1.5":
+        response = averaged_response_lisa_tdi_1p5(fr, len_arm)
+    elif tdi == "2.0":
+        response = averaged_response_lisa_tdi_2p0(fr, len_arm)
+    else:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    fseries_response = from_numpy_arrays(fr, np.array(response),
+                                         length, delta_f, low_freq_cutoff)
+    sh_confusion = []
+    f1 = 10**(-0.25*np.log10(duration)-2.7)
+    fk = 10**(-0.27*np.log10(duration)-2.47)
+    for f in fr:
+        sh_confusion.append(0.5*1.14e-44*f**(-7/3)*np.exp(-(f/f1)**1.8) *
+                            (1.0+np.tanh((fk-f)/(0.31e-3))))
+    fseries_confusion = from_numpy_arrays(fr, np.array(sh_confusion),
+                                          length, delta_f, low_freq_cutoff)
+    psd_confusion = 2*fseries_confusion.data * fseries_response.data
+    fseries = from_numpy_arrays(fseries_confusion.sample_frequencies,
+                                psd_confusion, length, delta_f,
+                                low_freq_cutoff)
+
+    return fseries
+
+def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
+                                         len_arm=2.5e9, acc_noise_level=3e-15,
+                                         oms_noise_level=15e-12,
+                                         duration=1.0, tdi="1.5"):
+    """ The TDI-1.5 PSD (A,E channel) for LISA
+    with Galactic confusion noise.
+
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of LISA, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+    duration : float
+        The duration of observation, between 0 and 10, in the unit of years.
+    tdi : string
+        The version of TDI, currently only for 1.5.
+
+    Returns
+    -------
+    fseries : FrequencySeries
+        The TDI-1.5 PSD (A,E channel) for LISA with Galactic confusion
+        noise.
+    """
+    if tdi != "1.5":
+        raise Exception("The version of TDI, currently only for 1.5.")
+    psd_AE = analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
+                                            len_arm, acc_noise_level,
+                                            oms_noise_level)
+    psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(
+                        length, delta_f, low_freq_cutoff,
+                        len_arm, duration, tdi)
+    # Here we assume the confusion noise's contribution to the CSD Sxy is
+    # negligible for low-frequency part. So Sxy doesn't change.
+    fseries = psd_AE + psd_X_confusion
 
     return fseries
