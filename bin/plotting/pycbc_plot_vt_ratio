@@ -8,6 +8,7 @@ sets of injections. It reads two HDF files produced by pycbc_page_sensitivity's
 
 import sys
 import argparse
+import logging
 import h5py
 import matplotlib
 matplotlib.use('Agg')
@@ -17,11 +18,11 @@ from pycbc.results import save_fig_with_metadata
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--vt-file-one', required=True,
-                    help='HDF file containing VT curves, data for '
+parser.add_argument('--vt-files-one', nargs='+',
+                    help='HDF files containing VT curves, data for '
                          'the numerator (top) of the ratio')
-parser.add_argument('--vt-file-two', required=True,
-                    help='HDF file containing VT curves, data for '
+parser.add_argument('--vt-files-two', nargs='+',
+                    help='HDF files containing VT curves, data for '
                          'the denominator (bottom) of the ratio')
 parser.add_argument('--desc-one',  required=True,
                     help='Descriptor tag for first set of data '
@@ -41,18 +42,55 @@ parser.add_argument('--log-y', action='store_true',
                     help='Use logarithmic y-axis')
 args = parser.parse_args()
 
-# Load in the two datasets
-ftop = h5py.File(args.vt_file_one, 'r')
-fbottom = h5py.File(args.vt_file_two, 'r')
+# Warn user if different numbers of files in numerator vs denominator
+if len(args.vt_files_one) != len(args.vt_files_two):
+    logging.warning(
+        'WATCH OUT! You gave different numbers of One and Two files!')
 
-# Find the index closest to the given IFAR value
-idxs = [np.argmin(np.abs(ftop['xvals'][:] - ifv)) for ifv in args.ifars]
 
-keys = ftop['data'].keys()
-# sanitise the input so that the files have the same binning parameter and bins
-if keys != fbottom['data'].keys():
-    parser.error('keys do not match for the given input files - '
-                 '{} vs {}'.format(keys, fbottom['data'].keys()))
+# Load in the first numerator file
+with h5py.File(args.vt_files_one[0], 'r') as ftop_init:
+    # Find the index closest to the given IFAR value
+    idxs = [np.argmin(np.abs(ftop_init['xvals'][:] - ifv))
+            for ifv in args.ifars]
+    plot_ifars = ftop_init['xvals'][idxs]
+    # Get binning keys for reference
+    keys = list(ftop_init['data'].keys())
+
+# Dicts holding data for total VT and variances
+vt_top = {k: np.zeros_like(plot_ifars) for k in keys}
+vt_top_errsqhi = {k: np.zeros_like(plot_ifars) for k in keys}
+vt_top_errsqlow = {k: np.zeros_like(plot_ifars) for k in keys}
+vt_bot = {k: np.zeros_like(plot_ifars) for k in keys}
+vt_bot_errsqhi = {k: np.zeros_like(plot_ifars) for k in keys}
+vt_bot_errsqlow = {k: np.zeros_like(plot_ifars) for k in keys}
+
+# Cycle over inputs for numerator
+for ftop in args.vt_files_one:
+    with h5py.File(ftop, 'r') as f:
+        # Check the input bins
+        if list(f['data'].keys()) != keys:
+            raise ValueError(
+                f'keys do not match for the given input files - '
+                '{keys} v {list(f["data"].keys())}')
+        # Add the data
+        for k in keys:
+            vt_top[k] += f['data'][k][idxs]
+            # Variances add over files
+            vt_top_errsqhi[k] += f['errorhi'][k][idxs] ** 2.
+            vt_top_errsqlow[k] += f['errorlow'][k][idxs] ** 2.
+
+# Same for denominator
+for fbot in args.vt_files_two:
+    with h5py.File(fbot, 'r') as f:
+        if list(f['data'].keys()) != keys:
+            raise ValueError(
+                f'keys do not match for the given input files - '
+                '{keys} v {list(f["data"].keys())}')
+        for k in keys:
+            vt_bot[k] += f['data'][k][idxs]
+            vt_bot_errsqhi[k] += f['errorhi'][k][idxs] ** 2.
+            vt_bot_errsqlow[k] += f['errorlow'][k][idxs] ** 2.
 
 # make the plot pretty
 plt.rc('axes.formatter', limits=[-3, 4])
@@ -63,10 +101,10 @@ ax_mi = fig_mi.gca()
 ax_mi.grid(True, zorder=1)
 
 # read in labels for the different plotting points
-labels = ['$ ' + label.split('\\in')[-1] for label in ftop['data'].keys()]
+labels = ['$ ' + label.split('\\in')[-1] for label in keys]
 
 # read in the splitting parameter name from the first data set
-x_param = r'$' + tuple(ftop['data'].keys())[0].split('\\in')[0].strip('$').strip() + r'$'
+x_param = r'$' + tuple(keys)[0].split('\\in')[0].strip('$').strip() + r'$'
 
 # read in the positions from the labels
 xpos = np.array([float(l.split('[')[1].split(',')[0]) for l in labels])
@@ -80,7 +118,7 @@ try:
         xpos_diffmean = np.diff(xpos).mean()
         xpos_add_dx = 0.05 * np.ones_like(xpos) * xpos_diffmean
 except IndexError:
-    #If there's only one value of xpos, then diff doesnt work
+    # If there's only one value of xpos, then diff doesn't work
     xpos_add_dx = 0.05
 
 # set the x ticks to be the positions given in the labels
@@ -89,32 +127,29 @@ plt.xticks(xpos, labels, rotation='horizontal')
 colors = ['#7b85d4', '#f37738', '#83c995', '#d7369e', '#c4c9d8', '#859795']
 
 # loop through each IFAR and plot the VT ratio with error bars
-for count, idv in enumerate(idxs):
-    data1 = np.array([ftop['data'][key][idv] for key in keys])
-    errhigh1 = np.array([ftop['errorhigh'][key][idv] for key in keys])
-    errlow1 = np.array([ftop['errorlow'][key][idv] for key in keys])
+for j in range(len(idxs)):
+    data1 = np.array([vt_top[key][j] for key in keys])
+    errsqhi1 = np.array([vt_top_errsqhi[key][j] for key in keys])
+    errsqlow1 = np.array([vt_top_errsqlow[key][j] for key in keys])
     
-    data2 = np.array([fbottom['data'][key][idv] for key in keys])
-    errhigh2 = np.array([fbottom['errorhigh'][key][idv] for key in keys])
-    errlow2 = np.array([fbottom['errorlow'][key][idv] for key in keys])
+    data2 = np.array([vt_bot[key][j] for key in keys])
+    errsqhi2 = np.array([vt_bot_errsqhi[key][j] for key in keys])
+    errsqlow2 = np.array([vt_bot_errsqlow[key][j] for key in keys])
 
-    ys = np.divide(data1, data2)
-    yerr_errlow = np.multiply(np.sqrt(np.divide(errlow1, data1)**2 +
-                np.divide(errlow2, data2)**2), ys)
-    yerr_errhigh = np.multiply(np.sqrt(np.divide(errhigh1, data1)**2 +
-                np.divide(errhigh2, data2)**2), ys)
+    ys = data1 / data2
+    # fractional error propagation
+    yerr_low = (errsqlow1 / (data1**2.) + errsqlow2 / (data2**2.)) ** 0.5 * ys
+    yerr_hi = (errsqhi1 / (data1**2.) + errsqhi2 / (data2**2.)) ** 0.5 * ys
 
     if args.log_x:
         xvals = np.exp(np.log(xpos) +
-                       xpos_add_dx * (count -
-                                      float(len(args.ifars) - 1) / 2.))
+                       xpos_add_dx * (j - float(len(args.ifars) - 1) / 2.))
     else:
-        xvals = xpos + xpos_add_dx * (count -
-                                      float(len(args.ifars) - 1) / 2.)
+        xvals = xpos + xpos_add_dx * (j - float(len(args.ifars) - 1) / 2.)
     ax_mi.errorbar(xvals, ys,
-        yerr=[yerr_errlow, yerr_errhigh], fmt='o', markersize=7, linewidth=5,
-        label='IFAR = %d yr' % ftop['xvals'][idv], capsize=5,
-        capthick=2, mec='k', color=colors[count % len(colors)])
+        yerr=[yerr_low, yerr_hi], fmt='o', markersize=7, linewidth=5,
+        label='IFAR = %d yr' % plot_ifars[j], capsize=5,
+        capthick=2, mec='k', color=colors[j % len(colors)])
 
 if args.log_x:
     plt.xscale('log')
@@ -125,7 +160,7 @@ plt.xticks(xpos, labels, rotation='horizontal')
 # get the limit of the x axes, and draw a black line in order to highlight
 # equal comparison
 xlimits = plt.xlim()
-plt.plot(xlimits, [1, 1], 'k', lw=3, zorder=0)
+plt.plot(xlimits, [1, 1], 'k', lw=2, zorder=0)
 plt.xlim(xlimits) # reassert the x limits so that the plot doesn't expand
 
 ax_mi.legend(bbox_to_anchor=(0.5, 1.01), ncol=len(args.ifars),
@@ -138,11 +173,10 @@ ax_mi.set_ylabel(r'$\frac{VT(\mathrm{' + args.desc_one +'})}\
                  size='large')
 plt.tight_layout()
 
-title = 'VT sensitivity comparison between {} and {}'.format(
-        args.vt_file_one, args.vt_file_two)
-
-# write out to file
+title = f'VT sensitivity comparison between {args.desc_one} and ' \
+        f'{args.desc_two}'
 save_fig_with_metadata(fig_mi, args.outfile, cmd=' '.join(sys.argv),
                        title=title)
 
 plt.close()
+

@@ -204,7 +204,7 @@ class SingleTemplate(DistMarg, BaseGaussianNoise):
         ip = 0.5 * (1.0 + ic * ic)
         pol_phase = numpy.exp(-2.0j * p['polarization'])
 
-        self.snr_draw(self.snr)
+        self.snr_draw(snrs=self.snr)
 
         for ifo in self.sh:
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],

@@ -862,7 +862,6 @@ def optimal_ra_from_detector(detector_name, tc):
     """For a given detector and GPS time, return the optimal orientation
     (directly overhead of the detector) in right ascension.
 
-
     Parameters
     ----------
     detector_name : string
@@ -876,6 +875,7 @@ def optimal_ra_from_detector(detector_name, tc):
         The declination of the signal, in radians.
     """
     return optimal_orientation_from_detector(detector_name, tc)[0]
+
 
 #
 # =============================================================================
@@ -1625,6 +1625,7 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'mass1_from_mass2_eta', 'eta_from_q', 'mass1_from_mchirp_q',
            'mass2_from_mchirp_q', 'tau0_from_mtotal_eta',
            'tau3_from_mtotal_eta', 'tau0_from_mass1_mass2',
+           'tau0_from_mchirp', 'mchirp_from_tau0',
            'tau3_from_mass1_mass2', 'mtotal_from_tau0_tau3',
            'eta_from_tau0_tau3', 'mass1_from_tau0_tau3',
            'mass2_from_tau0_tau3', 'primary_spin', 'secondary_spin',
