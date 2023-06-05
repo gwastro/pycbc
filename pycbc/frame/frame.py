@@ -17,6 +17,7 @@
 This modules contains functions for reading in data from frame files or caches
 """
 
+import functools
 import lalframe, logging
 import lal
 import numpy
@@ -95,6 +96,9 @@ def _is_gwf(file_path):
         pass
     return False
 
+@functools.lru_cache(maxsize=1000)
+def _cached_lal_cache_from_frame(dir_name, file_name):
+    return lalframe.FrStreamOpen(str(dir_name), str(file_name)).cache
 
 def locations_to_cache(locations, latest=False):
     """ Return a cumulative cache file build from the list of locations
@@ -137,7 +141,7 @@ def locations_to_cache(locations, latest=False):
             if file_extension in [".lcf", ".cache"]:
                 cache = lal.CacheImport(file_path)
             elif file_extension == ".gwf" or _is_gwf(file_path):
-                cache = lalframe.FrOpen(str(dir_name), str(file_name)).cache
+                cache = _cached_lal_cache_from_frame(str(dir_name), str(file_name))
             else:
                 raise TypeError("Invalid location name")
 
