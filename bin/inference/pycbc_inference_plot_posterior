@@ -133,16 +133,7 @@ if opts.z_arg is not None:
     for fp in fps:
         zsamples = fp.samples_from_cli(opts, parameters=z_arg)
         if opts.z_arg == 'snr':
-            lognl = 0
-            if hasattr(zsamples, 'lognl'):
-                lognl = zsamples.lognl
-            else:
-                for attr in dir(zsamples):
-                    if '__lognl' in attr:
-                        logging.info("Combining lognl from sub-model: ", attr)
-                        lognl += getattr(zsamples, attr)
-            loglr = zsamples[z_arg] - lognl
-
+            loglr = zsamples[z_arg] - zsamples.lognl
             zsamples[z_arg] = conversions.snr_from_loglr(loglr)
         zvals.append(zsamples[z_arg])
 else:
