@@ -39,6 +39,7 @@ start_time = time.time()
 def callback_func(Xi, convergence=0):
     global Nfeval
     logging.info("Currently at %d %s", Nfeval, convergence)
+
     if (time.time() - start_time) > 360:
         return True
     Nfeval += 1
@@ -59,9 +60,13 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     delta_f = argv[7]
     sample_rate = argv[8]
     distance = 1.0 / DYN_RANGE_FAC
+
     mtotal = cv.mtotal_from_mchirp_eta(v[0], v[1])
     mass1 = cv.mass1_from_mtotal_eta(mtotal, v[1])
     mass2 = cv.mass2_from_mtotal_eta(mtotal, v[1])
+
+    spin1z = v[2]
+    spin2z = v[3]
 
     # enforce broadly accepted search space boundaries
     if mass1 < MIN_CPT_MASS or mass2 < MIN_CPT_MASS or mtotal > MAX_MTOTAL:
@@ -353,11 +358,16 @@ assert maxchirp < 250.
 maxm1 = cv._mass2_from_mchirp_mass1(maxchirp, MIN_CPT_MASS)
 mineta = max(cv.eta_from_mass1_mass2(maxm1, MIN_CPT_MASS), 0.01)
 
+# Use max chirp and min eta to find the upper bounds on mass1 and mass2
+#  If masses can be > 3 then allow them BH spin range
+maxmass1 = cv.mass1_from_mchirp_eta(maxchirp, mineta)
+maxmass2 = cv.mass2_from_mchirp_eta(maxchirp, mineta)
+
 # Astrophysical spin bounds dependent on system masses - https://inspirehep.net/literature/1124003
-minspin1z = -0.4 if fp['mass1'][()] < 3 else -0.9
-maxspin1z = 0.4 if fp['mass1'][()] < 3 else 0.9
-minspin2z = -0.4 if fp['mass2'][()] < 3 else -0.9
-maxspin2z = 0.4 if fp['mass2'][()] < 3 else 0.9
+minspin1z = -0.4 if maxmass1 < 3 else -0.9
+maxspin1z = 0.4 if maxmass1 < 3 else 0.9
+minspin2z = -0.4 if maxmass2 < 3 else -0.9
+maxspin2z = 0.4 if maxmass2 < 3 else 0.9
 
 # boundary of the optimization space (dict of (min, max) tuples)
 bounds = {
