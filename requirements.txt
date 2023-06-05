@@ -1,5 +1,5 @@
 # requirements for most basic library use
-astropy>=2.0.3,!=4.2.1,!=4.0.5
+astropy>=2.0.3,!=4.2.1,!=4.0.5,<=5.2.2
 Mako>=1.0.1
 scipy>=0.16.0
 matplotlib>=2.0.0
