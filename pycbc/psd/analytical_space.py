@@ -699,6 +699,7 @@ def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
 
     return fseries
 
+
 def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
                                          len_arm=2.5e9, acc_noise_level=3e-15,
                                          oms_noise_level=15e-12,
