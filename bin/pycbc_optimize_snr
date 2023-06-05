@@ -60,13 +60,9 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     delta_f = argv[7]
     sample_rate = argv[8]
     distance = 1.0 / DYN_RANGE_FAC
-
     mtotal = cv.mtotal_from_mchirp_eta(v[0], v[1])
     mass1 = cv.mass1_from_mtotal_eta(mtotal, v[1])
     mass2 = cv.mass2_from_mtotal_eta(mtotal, v[1])
-
-    spin1z = v[2]
-    spin2z = v[3]
 
     # enforce broadly accepted search space boundaries
     if mass1 < MIN_CPT_MASS or mass2 < MIN_CPT_MASS or mtotal > MAX_MTOTAL:
