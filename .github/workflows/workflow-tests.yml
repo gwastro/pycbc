@@ -14,6 +14,7 @@ jobs:
       matrix:
         os: [ubuntu-20.04]
         test-type: [simple_subworkflow_data, multilevel_subworkflow_data]
+      fail-fast: false    
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
