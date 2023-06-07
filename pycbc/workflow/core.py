@@ -315,31 +315,8 @@ class Executable(pegasus_workflow.Executable):
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
 
-    def add_or_replace_common_options(self, opt, value):
-        """
-        Check whether a value opt already exists in the list opts,
-        if it does, then update the next enrty in the list to the
-        new value, if not, append it to the list
 
-        Parameters
-        ----------
-        opt : string
-            The option to check for in the list, should start with '--'
-        value : string
-            The value to add to the list for option opt
-        opts : list
-            Existing option list
-        """
-        if opt in self.common_options:
-            # Need to find which option is going to be overwritten
-            # by this new value
-            idx = self.common_options.index(opt)
-            # Overwrite the value with the new one
-            self.common_options[idx + 1] = value
-        else:
-            self.common_options += [opt, value]
-
-    def add_ini_opts(self, cp, sec):
+    def add_ini_opts(self, cp, sec, ignore_existing=False):
         """Add job-specific options from configuration file.
 
         Parameters
@@ -350,12 +327,16 @@ class Executable(pegasus_workflow.Executable):
         sec : string
             The section containing options for this job.
         """
-        # First - check if there are any defaultvalue sections
-        # appropriate for this job
-        if cp.has_section(f'{sec}-defaultvalues'):
-            self.add_ini_opts(cp, f'{sec}-defaultvalues')
-
         for opt in cp.options(sec):
+            if opt in self.all_added_options:
+                if not ignore_existing:
+                    raise ValueError("Option %s has already been added", opt)
+                else:
+                    # We are ignoring any options which have already
+                    # been given
+                    continue
+            self.all_added_options.append(opt)
+
             value = cp.get(sec, opt).strip()
             opt = '--%s' %(opt,)
             if opt in self.file_input_options:
@@ -411,7 +392,7 @@ class Executable(pegasus_workflow.Executable):
                 self.unresolved_td_options[opt] = value
             else:
                 # This option comes from the config file(s)
-                self.add_or_replace_common_options(opt, value)
+                self.common_options += [opt, value]
 
     def add_opt(self, opt, value=None):
         """Add option to job.
@@ -593,6 +574,7 @@ class Executable(pegasus_workflow.Executable):
 
         # collect the options and profile information
         # from the ini file section(s)
+        self.all_added_options = []
         self.common_options = []
         self.common_raw_options = []
         self.unresolved_td_options = {}
@@ -604,6 +586,8 @@ class Executable(pegasus_workflow.Executable):
                 warn_string = "warning: config file is missing section "
                 warn_string += "[{0}]".format(sec)
                 logging.warn(warn_string)
+
+        self.add_ini_opts(f'{self.cp}-defaultvalues', sec, ignore_existing=True)
 
     def update_output_directory(self, out_dir=None):
         """Update the default output directory for output files.
