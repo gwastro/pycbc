@@ -1,10 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 
 # sampler parameters
 PRIOR_CONFIG=../priors/gw150914_like.ini
 DATA_CONFIG=data.ini
 SAMPLER_CONFIG=../samplers/emcee_pt-gw150914_like.ini
 OUTPUT_PATH=inference.hdf
+
+# Debugging: see what our conda environment looks like
+
+echo "DEBUG: inspiral test"
+echo "CONDA_PREFIX= $CONDA_PREFIX"
+echo "Conda environment is:"
+conda list
+ls -lh $CONDA_PREFIX/lib/*gomp*
+ldd $CONDA_PREFIX/lib/libgomp.so.1
 
 # the following sets the number of cores to use; adjust as needed to
 # your computer's capabilities
