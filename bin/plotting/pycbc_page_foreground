@@ -194,10 +194,12 @@ if args.output_file.endswith('.html'):
     save_fig_with_metadata(str(html_table), args.output_file, **kwds)
 
 elif args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
-    fortrigs.to_coinc_xml_object(args.output_file)
+    fortrigs.to_coinc_xml_object(args.output_file,
+            exclusive=args.use_exclusive_ifar)
 
 elif args.output_file.endswith('.hdf'):
-    fortrigs.to_coinc_hdf_object(args.output_file)
+    fortrigs.to_coinc_hdf_object(args.output_file,
+            exclusive=args.use_exclusive_ifar)
 
 else:
     raise NotImplementedError("Output file format not recognised")

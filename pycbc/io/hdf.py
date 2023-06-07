@@ -853,7 +853,7 @@ class ForegroundTriggers(object):
                      for trig in iter(np.array(ifo_or_minus).T)]
         return ifos_list
 
-    def to_coinc_xml_object(self, file_name):
+    def to_coinc_xml_object(self, file_name, exclusive=False):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
@@ -917,7 +917,11 @@ class ForegroundTriggers(object):
         for name in bank_col_names:
             bank_col_vals[name] = self.get_bankfile_array(name)
 
-        coinc_event_names = ['ifar', 'time', 'fap', 'stat']
+        coinc_event_names = ['time', 'stat']
+        if exclusive:
+            coinc_event_names += ['ifar_exc', 'fap_exc']
+        else:
+            coinc_event_names += ['ifar', 'fap']
         coinc_event_vals = {}
         for name in coinc_event_names:
             if name == 'time':
@@ -1022,7 +1026,7 @@ class ForegroundTriggers(object):
 
         ligolw_utils.write_filename(outdoc, file_name)
 
-    def to_coinc_hdf_object(self, file_name):
+    def to_coinc_hdf_object(self, file_name, exclusive=False):
         ofd = h5py.File(file_name,'w')
 
         # Some fields are special cases
@@ -1031,7 +1035,7 @@ class ForegroundTriggers(object):
         # time will be used later to determine active ifos
         ofd['time'] = time
 
-        if self._inclusive:
+        if not exclusive:
             ofd['ifar'] = self.get_coincfile_array('ifar')
             ofd['p_value'] = self.get_coincfile_array('fap')
 
