@@ -316,7 +316,7 @@ class Executable(pegasus_workflow.Executable):
             self.add_profile(namespace, key, value)
 
 
-    def add_ini_opts(self, cp, sec, ignore_existing=False):
+    def _add_ini_opts(self, cp, sec, ignore_existing=False):
         """Add job-specific options from configuration file.
 
         Parameters
@@ -581,13 +581,13 @@ class Executable(pegasus_workflow.Executable):
         self.common_input_files = []
         for sec in sections:
             if self.cp.has_section(sec):
-                self.add_ini_opts(self.cp, sec)
+                self._add_ini_opts(self.cp, sec)
             else:
                 warn_string = "warning: config file is missing section "
                 warn_string += "[{0}]".format(sec)
                 logging.warn(warn_string)
 
-        self.add_ini_opts(f'{self.cp}-defaultvalues', sec, ignore_existing=True)
+        self._add_ini_opts(f'{self.cp}-defaultvalues', sec, ignore_existing=True)
 
     def update_output_directory(self, out_dir=None):
         """Update the default output directory for output files.
