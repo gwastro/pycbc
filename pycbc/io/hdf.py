@@ -1007,8 +1007,16 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.mass = sngl_combined_mtot
             coinc_inspiral_row.end = LIGOTimeGPS(coinc_event_vals['time'][idx])
             coinc_inspiral_row.snr = net_snrsq**0.5
-            coinc_inspiral_row.false_alarm_rate = coinc_event_vals['fap'][idx]
-            coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
+            if exclusive:
+                coinc_inspiral_row.false_alarm_rate = \
+                        coinc_event_vals['fap_exc'][idx]
+                coinc_inspiral_row.combined_far = \
+                        1./coinc_event_vals['ifar_exc'][idx]
+            else:
+                coinc_inspiral_row.false_alarm_rate = \
+                        coinc_event_vals['fap'][idx]
+                coinc_inspiral_row.combined_far = \
+                        1./coinc_event_vals['ifar'][idx]
             # Transform to Hz
             coinc_inspiral_row.combined_far = \
                                     coinc_inspiral_row.combined_far / YRJUL_SI
