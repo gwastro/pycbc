@@ -517,11 +517,16 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 "Section %s not present in ConfigParser." % (section2,)
             )
 
+        section_and_default = (section1 == f"{section2}-defaultvalues" or
+                    section2 == f"{section1}-defaultvalues")
+
         if section1.endswith("-defaultvalues") or \
                 section2.endswith("-defaultvalues"):
-            # Override the raise_error variable not to error when
-            # defaultvalues are given
-            raise_error = False
+            if not section_and_default:
+                # Override the raise_error variable not to error when
+                # defaultvalues are given and the sections are not
+                # otherwise the same
+                raise_error = False
 
         items1 = self.options(section1)
         items2 = self.options(section2)
@@ -530,10 +535,11 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         duplicates = [x for x in items1 if x in items2]
 
         if duplicates and raise_error:
-            raise ValueError(
-                "The following options appear in both section "
-                + "%s and %s: %s" % (section1, section2, " ".join(duplicates))
-            )
+            err_msg = ("The following options appear in both section "
+                       f"{section1} and {section2}: " + ", ".join(duplicates))
+            if section_and_default:
+                err_msg += ". Default values are unused in this case."
+            raise ValueError(err_msg)
 
         return duplicates
 
@@ -599,12 +605,12 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 raise ConfigParser.Error(err_string + ".")
             return_vals = []
             # First, check if there are any default values set:
-            overwrite = False
+            has_defaultvalue = False
             if self.has_section(f"{section}-defaultvalues"):
                 return_vals.append(
                     self.get(f"{section}-defaultvalues", option)
                 )
-                overwrite = True
+                has_defaultvalue = True
 
             sub_section_list = []
             for sec_len in range(1, len(tags) + 1):
@@ -621,8 +627,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                             self.get("%s-%s" % (section, sub), option)
                         )
 
-            if overwrite and len(return_vals) > 1:
-                # option supplied which should overwrite the default
+            if has_defaultvalue and len(return_vals) > 1:
+                # option supplied which should overwrite the default;
                 # default will be first in the list, so remove it
                 return_vals = return_vals[1:]
 

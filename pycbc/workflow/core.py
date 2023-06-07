@@ -320,6 +320,7 @@ class Executable(pegasus_workflow.Executable):
         Check whether a value opt already exists in the list opts,
         if it does, then update the next enrty in the list to the
         new value, if not, append it to the list
+
         Parameters
         ----------
         opt : string
