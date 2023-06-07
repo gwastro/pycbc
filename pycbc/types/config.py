@@ -476,7 +476,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 continue
 
             if section.endswith('-defaultvalues') and \
-                    not len(section.split()) == 2:
+                    not len(section.split('-')) == 2:
                 # Only allow defaultvalues for top-level sections
                 raise NotImplementedError(
                     "-defaultvalues subsections are only allowed for "
