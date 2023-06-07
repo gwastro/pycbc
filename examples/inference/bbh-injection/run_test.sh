@@ -13,7 +13,11 @@ echo "CONDA_PREFIX= $CONDA_PREFIX"
 echo "Conda environment is:"
 conda list
 ls -lh $CONDA_PREFIX/lib/*gomp*
+echo "ldd of libgomp:"
 ldd $CONDA_PREFIX/lib/libgomp.so.1
+echo "ldd of matchedfilter_cpu.cpython"
+ldd $CONDA_PREFIX/lib/python3.11/site-packages/pycbc/filter/matchedfilter_cpu.cpython-311-x86_64-linux-gnu.so
+
 
 # the following sets the number of cores to use; adjust as needed to
 # your computer's capabilities
