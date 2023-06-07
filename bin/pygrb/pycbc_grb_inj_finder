@@ -90,6 +90,9 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
     inputfiles : `list` of `str`
         the paths of the input HDF5 files to merge
 
+    trig_dict: dictionary 
+        dictionary with IFO or network identifier as keys
+
     outputfile : `str`
         the path of the output HDF5 file to write
     """
@@ -133,6 +136,32 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
                 ))
         datasets_n[name] = (shape, dtype)
 
+    def cp_dataset_cont(dataset, xlen, xidentifier, out_dct, pos_full):
+        """Copy dataset contnets into out dictionary.
+
+        Parameters
+        ----------
+        dataset : iteration of datasets_ifo or datasets_n
+
+        xlen : int. The length of IFO identifier (3) or network (8). 
+
+        xidentifier : IFO identifier (ex. 'H1') or 'network'.
+
+        out_dct: out_dict to be modified
+
+        pos_full: position within the dataset, incremented within this function
+        """
+
+        data = h5in[dataset][:]
+        size = data.shape[0]
+        pos = pos_full[dataset]
+        if EVENT_ID_REGEX.search(dataset):
+            out_dct[xidentifier][dataset[xlen:]][pos:pos+size] = data + pos
+        else:
+            out_dct[xidentifier][dataset[xlen:]][pos:pos+size] = data
+        pos_full[dataset] += size
+        return out_dct, pos_full
+
     # get list of datasets
     datasets_n = {}
     datasets_ifo = {}
@@ -143,15 +172,13 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
 
     position = defaultdict(int)
     
-    out_dict = {}
-    for x in trig_dict:
-        out_dict[x] = {}
-        
+    out_dict = dict.fromkeys(trig_dict, {})
+
     placeholder = 0
 
     # create datasets    
     for dset, (shape, dtype) in datasets_ifo.items():
-        # 3: chops off H1/ or L1/ or V1/ from the dset string
+        # 3: chops off H1/ or L1/ or V1/ or K1/ from the dset string
         for x in trig_dict:
             if placeholder == 0 and x!= 'network':
                 placeholder = x
@@ -159,6 +186,7 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
                 out_dict[x][dset[3:]] = numpy.empty(shape, dtype=dtype)
             
     for dset, (shape, dtype) in datasets_n.items():
+        # 8: chops off 'network/' stem from the dset string 
         out_dict['network'][dset[8:]] = numpy.empty(shape, dtype=dtype)
 
     # copy dataset contents
@@ -168,24 +196,12 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
                 for dset in datasets_ifo:            
                     for x in trig_dict:
                         if dset[:2] == x and x!='network':
-                            data = h5in[dset][:]
-                            size = data.shape[0]
-                            pos = position[dset]
-                            if EVENT_ID_REGEX.search(dset):
-                                out_dict[x][dset[3:]][pos:pos+size] = data + pos
-                            else:
-                                out_dict[x][dset[3:]][pos:pos+size] = data
-                            position[dset] += size
-                        
+                            # the use of 3 chops off H1/ or L1/ or V1/ or K1 from the dset string 
+                            out_dict, position = cp_dataset_cont(dset, 3, x, out_dict, position)
+
                 for dset in datasets_n: 
-                    data = h5in[dset][:]
-                    size = data.shape[0]
-                    pos = position[dset]
-                    if EVENT_ID_REGEX.search(dset):
-                        out_dict['network'][dset[8:]][pos:pos+size] = data + pos
-                    else:
-                        out_dict['network'][dset[8:]][pos:pos+size] = data
-                    position[dset] += size
+                    # # the use of 8 chops off 'network/' stem from the dset string 
+                    out_dict, position = cp_dataset_cont(dset, 8, 'network', out_dict, position)
 
     return out_dict
 
@@ -279,8 +295,6 @@ firstfile = h5py.File(args.input_files[0], "r")
 for key in firstfile.keys():
     # populate ifo_trigs_dict with ifo names and 'network' 
     ifo_trigs_dict[key] = defaultdict(list)
-    
-print(ifo_trigs_dict)
 
 allinjections = None
 
@@ -303,18 +317,15 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         nexcluded += (~keep).sum()
         injections = tmpinj[keep]
         injtime = injtime[keep]
-        
+
         # read triggers
         triggers_dict = read_hdf5_triggers(trigfiles, ifo_trigs_dict)
-        
-        #print(triggers_dict['network'].keys())
-        #print(ifotriggers.keys())
-        
+
         time = triggers_dict['network']['end_time_gc']
         snr = triggers_dict['network'][args.rank_column]
         event_id = triggers_dict['network']["event_id"]
         time_sorting = time.argsort()
-        
+
         # determine found or missed
         _left = numpy.searchsorted(
             time[time_sorting],
@@ -382,9 +393,9 @@ with h5py.File(outfilename, "w") as h5out:
     # write triggers
     
     for x in ifo_trigs_dict:
-        next = h5out.create_group(x)
+        xgroup = h5out.create_group(x)
         for col in ifo_trigs_dict[x]:
-            next.create_dataset(
+            xgroup.create_dataset(
                 col,
                 data=ifo_trigs_dict[x][col],
                 compression="gzip",
