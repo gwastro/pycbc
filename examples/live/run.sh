@@ -4,6 +4,13 @@
 
 set -e
 
+# Debugging: see what our conda environment looks like
+
+echo "DEBUG: "
+echo "CONDA_PREFIX= $CONDA_PREFIX"
+echo "Conda environment is:"
+conda list
+
 export OMP_NUM_THREADS=4
 export HDF5_USE_FILE_LOCKING="FALSE"
 

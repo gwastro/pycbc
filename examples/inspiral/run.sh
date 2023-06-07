@@ -74,6 +74,13 @@ pycbc_condition_strain \
 --gps-end-time 1126259946 \
 --output-strain-file DATA_FILE.gwf \
 
+# Debugging: see what our conda environment looks like
+
+echo "DEBUG: inspiral test"
+echo "CONDA_PREFIX= $CONDA_PREFIX"
+echo "Conda environment is:"
+conda list
+
 
 start=`date +%s`
 inspiral_run fftw 16 openmp

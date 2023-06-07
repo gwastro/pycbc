@@ -30,6 +30,13 @@ TRIG_START=$((GPS_START + START_PAD))
 TRIG_END=$((GPS_END - END_PAD))
 OUTPUT=GW170817_test_output.hdf
 
+# Debugging: see what our conda environment looks like
+
+echo "DEBUG: "
+echo "CONDA_PREFIX= $CONDA_PREFIX"
+echo "Conda environment is:"
+conda list
+
 echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral on GW170817 data"
 pycbc_multi_inspiral \
     --verbose \
