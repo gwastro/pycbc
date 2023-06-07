@@ -163,38 +163,36 @@ with h5py.File(args.template_file, "r") as f_src:
 temp_samples = numpy.vstack((template_pars)).T
 
 
-# Rejection Sampling
-if 'mchirp' not in args.fit_param:
-    raise ValueError("mchirp does not exist in args.fit_param")
-mchirp_index = args.fit_param.index('mchirp')
-if args.mchirp_downsample_power is not None:
-    power_vals = template_pars[mchirp_index] ** args.mchirp_downsample_power
-    f_dest.attrs['mchirp_downsample_power'] = args.mchirp_downsample_power
-    probabilities = power_vals / numpy.max(power_vals)
-    rand_nums = numpy.random.uniform(0, 1, len(mass1))
-    ind = rand_nums < probabilities
-    new_mchirp = template_pars[mchirp_index][ind]
-    additional_params = numpy.delete(temp_samples, mchirp_index, axis=1)[ind]
-    new_temp_samples = numpy.column_stack((new_mchirp, additional_params))
-
-
 if args.make_template_kde:
-    logging.info('Starting optimization of template KDE parameters')
-    optbw, optalpha = optimizedparam(new_temp_samples, alphagrid=args.alpha_grid,
-                                     bwgrid=args.bw_grid, nfold=args.nfold_template)
-    logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
-    logging.info('Evaluating template KDE')
-    template_kde = kde_awkde(new_temp_samples, temp_samples, alp=optalpha,
-                             gl_bandwidth=optbw)
-    
-    compensation_factor = numpy.ones_like(template_kde)
+    # Rejection Sampling
     if args.mchirp_downsample_power is not None:
-        mchirp_downsample_factor = power_vals[ind]
-        compensation_factor[ind] = 1 / mchirp_downsample_factor
-    template_kde *= compensation_factor
-    
-    f_dest.create_dataset("data_kde", data=template_kde)
-    f_dest.attrs['stat'] = "template-kde_file"
+        f_dest.attrs['mchirp_downsample_power'] = args.mchirp_downsample_power
+        if 'mchirp' not in args.fit_param:
+            raise ValueError("mchirp does not exist in args.fit_param")
+        mchirp_index = args.fit_param.index('mchirp')
+        power_vals = template_pars[mchirp_index] ** args.mchirp_downsample_power
+        probabilities = power_vals / numpy.max(power_vals)
+        rand_nums = numpy.random.uniform(0, 1, len(mass1))
+        ind = rand_nums < probabilities
+        kde_train_samples = temp_samples[ind]
+        logging.info('Starting optimization of template KDE parameters')
+        optbw, optalpha = optimizedparam(kde_train_samples, alphagrid=args.alpha_grid,
+                                         bwgrid=args.bw_grid, nfold=args.nfold_template)
+        logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
+        logging.info('Evaluating template KDE')
+        template_kde = kde_awkde(kde_train_samples, temp_samples, alp=optalpha,
+                                 gl_bandwidth=optbw)
+        compensation_factor = numpy.ones_like(template_kde)
+        compensation_factor = 1 / power_vals
+        template_kde *= compensation_factor
+    else:
+        logging.info('Starting optimization of template KDE parameters')
+        optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,
+                                         bwgrid=args.bw_grid, nfold=args.nfold_template)
+        logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
+        logging.info('Evaluating template KDE')
+        template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha,
+                                 gl_bandwidth=optbw)
 f_dest.attrs['template-file'] = args.template_file
 
 
@@ -247,7 +245,8 @@ if args.make_signal_kde:
     if args.extra_cpt_fraction is not None and args.temp_volume is not None:
         modified_kde = signal_kde_extra_cpt(signal_kde, frac=args.extra_cpt_fraction,
                                             volume=args.temp_volume)
-    else: modified_kde = signal_kde
+    else:
+        modified_kde = signal_kde
     f_dest.create_dataset("data_kde", data=modified_kde)
     f_dest.attrs['stat'] = "signal-kde_file"
 
