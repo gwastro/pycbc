@@ -185,6 +185,9 @@ if args.make_template_kde:
         compensation_factor = numpy.ones_like(template_kde)
         compensation_factor = 1 / power_vals
         template_kde *= compensation_factor
+        f_dest.create_dataset("data_kde", data=template_kde)
+        f_dest.attrs['stat'] = "template-kde_file"
+        f_dest.attrs['template-file'] = args.template_file
     else:
         logging.info('Starting optimization of template KDE parameters')
         optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,
@@ -193,8 +196,10 @@ if args.make_template_kde:
         logging.info('Evaluating template KDE')
         template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha,
                                  gl_bandwidth=optbw)
-f_dest.attrs['template-file'] = args.template_file
-
+        f_dest.create_dataset("data_kde", data=template_kde)
+        f_dest.attrs['stat'] = "template-kde_file"
+        f_dest.attrs['template-file'] = args.template_file
+        
 
 def signal_kde_extra_cpt(signal_kde, frac=None, volume=None):
     # Calculate the constant density value for the additional component
