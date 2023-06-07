@@ -24,6 +24,10 @@ parser.add_argument('--output-file')
 parser.add_argument('--num-to-write', type=int)
 parser.add_argument('--table-title', default='Loudest Event Table',
                     help="Title to use for the table.")
+parser.add_argument('--use-exclusive-ifar', action='store_true',
+                    help='Indicate to use exclusive IFAR rather than '
+                         'inclusive. Incompatible with '
+                         '--use-hierarchical-level.')
 parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which FARs to write to the table '
                          'based on the number of hierarchical removals done. '
@@ -36,6 +40,10 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
                          'fail if the user selects a number above the number '
                          'of hierarchical removals done. [default=None]')
 args = parser.parse_args()
+
+if args.use_exclusive_ifar and args.use_hierarchical_level:
+    parser.error("Exclusive IFAR and hierarchical removal "
+                 "level given, this makes no sense.")
 
 f = h5py.File(args.trigger_file, 'r')
 
@@ -94,8 +102,12 @@ else :
                                       n_loudest=args.num_to_write)
 
 if args.output_file.endswith('.html'):
-    ifar = fortrigs.get_coincfile_array('ifar')
-    fap = fortrigs.get_coincfile_array('fap')
+    if args.use_exclusive_ifar:
+        ifar = fortrigs.get_coincfile_array('ifar_exc')
+        fap = fortrigs.get_coincfile_array('fap_exc')
+    else:
+        ifar = fortrigs.get_coincfile_array('ifar')
+        fap = fortrigs.get_coincfile_array('fap')
     stat = fortrigs.get_coincfile_array('stat')
     mass1 = fortrigs.get_bankfile_array('mass1')
     mass2 = fortrigs.get_bankfile_array('mass2')
