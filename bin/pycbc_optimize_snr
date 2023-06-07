@@ -353,27 +353,22 @@ assert maxchirp < 250.
 # nb function name is 'mass2' but it doesn't enforce m2 < m1!
 maxm1 = cv._mass2_from_mchirp_mass1(maxchirp, MIN_CPT_MASS)
 mineta = max(cv.eta_from_mass1_mass2(maxm1, MIN_CPT_MASS), 0.01)
+maxeta = 0.24999999999
 
 # Use max chirp and min eta to find the upper bounds on mass1 and mass2
 #  If masses can be > 3 then allow them BH spin range
-maxmass1 = cv.mass1_from_mchirp_eta(maxchirp, mineta)
-maxmass2 = cv.mass2_from_mchirp_eta(minchirp, 0.24999999999)
+maxmass2 = cv.mass2_from_mchirp_eta(minchirp, maxeta)
 
 # Astrophysical spin bounds dependent on system masses - https://inspirehep.net/literature/1124003
-minspin1z = -0.4 if maxmass1 < 3 else -0.9
-maxspin1z = 0.4 if maxmass1 < 3 else 0.9
+minspin1z = -0.4 if maxm1 < 3 else -0.9
+maxspin1z = 0.4 if maxm1 < 3 else 0.9
 minspin2z = -0.4 if maxmass2 < 3 else -0.9
 maxspin2z = 0.4 if maxmass2 < 3 else 0.9
-
-print()
-print(fp['mass1'][()], fp['mass2'][()], fp['spin1z'][()], fp['spin2z'][()] )
-print(maxmass1, maxmass2, maxspin1z, maxspin2z)
-print()
 
 # boundary of the optimization space (dict of (min, max) tuples)
 bounds = {
     'mchirp': (minchirp, maxchirp),
-    'eta': (mineta, 0.24999999999),
+    'eta': (mineta, maxeta),
     'spin1z': (minspin1z, maxspin1z),
     'spin2z': (minspin2z, maxspin2z)
 }
@@ -399,8 +394,6 @@ mass1 = cv.mass1_from_mtotal_eta(mtotal, opt_params[1])
 mass2 = cv.mass2_from_mtotal_eta(mtotal, opt_params[1])
 spin1z = opt_params[2]
 spin2z = opt_params[3]
-
-print(mass1, mass2, spin1z, spin2z)
 
 # Prepare for GraceDB upload
 coinc_results = {}
