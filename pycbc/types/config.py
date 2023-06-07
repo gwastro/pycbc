@@ -475,11 +475,19 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             if section == "pegasus_profile":
                 continue
 
+            if section.endswith('-defaultvalues') and \
+                    not len(section.split()) == 2:
+                # Only allow defaultvalues for top-level sections
+                raise NotImplementedError(
+                    "-defaultvalues subsections are only allowed for "
+                    "top-level sections; given %s" % section
+                )
+
             # Loop over the sections again
             for section2 in self.sections():
                 # Check if any are subsections of section
                 if section2.startswith(section + "-"):
-                    if section2 == "defaultvalues":
+                    if section2.endswith("defaultvalues"):
                         # defaultvalues is storage for defaults, and will
                         # be over-written by anything in the sections-proper
                         continue
@@ -573,7 +581,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         Supplement to ConfigParser.ConfigParser.get(). This will search for an
         option in [section] and if it doesn't find it will also try in
         [section-defaultvalues], and [section-tag] for every value of tag
-        in tags. [section-tag] will overwrite any [section-defaultvalues]
+        in tags. [section-tag] will be preferred to [section-defaultvalues]
         values. Will raise a ConfigParser.Error if it cannot find a value.
 
         Parameters
