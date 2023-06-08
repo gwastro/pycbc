@@ -147,7 +147,7 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
 
         xidentifier : IFO identifier (ex. 'H1') or 'network'.
 
-        out_dct: out_dict to be modified
+        out_dct: output dictionary to be modified
 
         pos_full: position within the dataset, incremented within this function
         """
