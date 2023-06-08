@@ -474,8 +474,8 @@ def ensure_obj1_is_primary(mass1, mass2, *params):
 
 
 def remnant_mass_from_mass1_mass2_spherical_spin_eos(
-        mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H',
-        spin2a=0.0, spin2pol=0.0, swap_companions=False,
+        mass1, mass2, spin1_a=0.0, spin1_polar=0.0, eos='2H',
+        spin2_a=0.0, spin2_polar=0.0, swap_companions=False,
         ns_bh_mass_boundary=None, extrapolate=False):
     """
     Function that determines the remnant disk mass of an NS-BH system
@@ -494,15 +494,15 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         The mass of the black hole, in solar masses.
     mass2 : float
         The mass of the neutron star, in solar masses.
-    spin1a : float, optional
+    spin1_a : float, optional
         The dimensionless magnitude of the spin of mass1. Default = 0.
-    spin1pol : float, optional
+    spin1_polar : float, optional
         The tilt angle of the spin of mass1. Default = 0 (aligned w L).
     eos : str, optional
         Name of the equation of state being adopted. Default is '2H'.
-    spin2a : float, optional
+    spin2_a : float, optional
         The dimensionless magnitude of the spin of mass2. Default = 0.
-    spin2pol : float, optional
+    spin2_polar : float, optional
         The tilt angle of the spin of mass2. Default = 0 (aligned w L).
     swap_companions : boolean, optional
         If mass2 > mass1, swap mass and spin of object 1 and 2 prior
@@ -523,13 +523,13 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     remnant_mass: float
         The remnant mass in solar masses
     """
-    mass1, mass2, spin1a, spin1pol, spin2a, spin2pol, input_is_array = \
-        ensurearray(mass1, mass2, spin1a, spin1pol, spin2a, spin2pol)
+    mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar, input_is_array = \
+        ensurearray(mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar)
     # mass1 must be greater than mass2: swap the properties of 1 and 2 or fail
     if swap_companions:
-        mass1, mass2, spin1a, spin2a, spin1pol, spin2pol = \
-            ensure_obj1_is_primary(mass1, mass2, spin1a, spin2a,
-                                   spin1pol, spin2pol)
+        mass1, mass2, spin1_a, spin2_a, spin1_polar, spin2_polar = \
+            ensure_obj1_is_primary(mass1, mass2, spin1_a, spin2_a,
+                                   spin1_polar, spin2_polar)
     else:
         try:
             if any(mass2 > mass1) and input_is_array:
@@ -550,7 +550,8 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     ns_compactness, ns_b_mass = ns.initialize_eos(mass2[mask], eos,
                                                   extrapolate=extrapolate)
     remnant_mass[mask] = ns.foucart18(
-            eta[mask], ns_compactness, ns_b_mass, spin1a[mask], spin1pol[mask])
+            eta[mask], ns_compactness, ns_b_mass,
+            spin1_a[mask], spin1_polar[mask])
     return formatreturn(remnant_mass, input_is_array)
 
 
@@ -608,16 +609,18 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
     remnant_mass: float
         The remnant mass in solar masses
     """
-    spin1a, _, spin1pol = _cartesian_to_spherical(spin1x, spin1y, spin1z)
+    spin1_a, _, spin1_polar = _cartesian_to_spherical(spin1x, spin1y, spin1z)
     if swap_companions:
-        spin2a, _, spin2pol = _cartesian_to_spherical(spin2x, spin2y, spin2z)
+        spin2_a, _, spin2_polar = _cartesian_to_spherical(spin2x,
+                                                          spin2y, spin2z)
     else:
-        size = ensurearray(spin1a)[0].size
-        spin2a = numpy.zeros(size)
-        spin2pol = numpy.zeros(size)
+        size = ensurearray(spin1_a)[0].size
+        spin2_a = numpy.zeros(size)
+        spin2_polar = numpy.zeros(size)
     return remnant_mass_from_mass1_mass2_spherical_spin_eos(
-        mass1, mass2, spin1a=spin1a, spin1pol=spin1pol, eos=eos,
-        spin2a=spin2a, spin2pol=spin2pol, swap_companions=swap_companions,
+        mass1, mass2, spin1_a=spin1_a, spin1_polar=spin1_polar, eos=eos,
+        spin2_a=spin2_a, spin2_polar=spin2_polar,
+        swap_companions=swap_companions,
         ns_bh_mass_boundary=ns_bh_mass_boundary, extrapolate=extrapolate)
 
 
