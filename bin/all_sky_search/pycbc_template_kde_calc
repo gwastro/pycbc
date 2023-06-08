@@ -51,6 +51,8 @@ parser.add_argument('--extra-cpt-fraction', type=float,
                     help='Fraction of the extra component in the signal density')
 parser.add_argument('--temp-volume', type=float, 
                     help='Volume covered by the template bank')
+parser.add_argument('--seed', type=int, default=None,
+                    help='Random number generator seed')
 parser.add_argument('--mchirp-downsample-power', type=float, default=None,
                     help='Exponent value for the power law distribution')
 parser.add_argument('--verbose', action='store_true')
@@ -172,9 +174,12 @@ if args.make_template_kde:
         mchirp_index = args.fit_param.index('mchirp')
         power_vals = template_pars[mchirp_index] ** args.mchirp_downsample_power
         probabilities = power_vals / numpy.max(power_vals)
+        if args.seed is not None:
+            numpy.random.seed(args.seed)
         rand_nums = numpy.random.uniform(0, 1, len(mass1))
         ind = rand_nums < probabilities
         kde_train_samples = temp_samples[ind]
+        f_dest.create_dataset("kde_train_samples", data=kde_train_samples)
         logging.info('Starting optimization of template KDE parameters')
         optbw, optalpha = optimizedparam(kde_train_samples, alphagrid=args.alpha_grid,
                                          bwgrid=args.bw_grid, nfold=args.nfold_template)
