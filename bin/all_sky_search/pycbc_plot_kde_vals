@@ -63,10 +63,10 @@ if args.plot_type == 'kde_vs_param':
 elif args.plot_type == 'param_vs_param':
     fig, ax = plt.subplots(1, figsize=(12,7), constrained_layout=True)
     if args.which_kde == 'signal_kde':
-        im = ax.scatter(param0, param1, marker=".", c=signal_kde, cmap='RdBu_r',
+        im = ax.scatter(param0, param1, marker=".", c=signal_kde, cmap='plasma',
                         s=5, norm=LogNorm())
     elif args.which_kde == 'template_kde':
-        im = ax.scatter(param0, param1, marker=".", c=template_kde, cmap='RdBu_r',
+        im = ax.scatter(param0, param1, marker=".", c=template_kde, cmap='plasma',
                         s=5, norm=LogNorm())
     elif args.which_kde == 'ratio_kde':
         im = ax.scatter(param0, param1, marker=".", c=signal_kde / template_kde,
