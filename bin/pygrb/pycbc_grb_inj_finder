@@ -137,7 +137,7 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
         datasets_n[name] = (shape, dtype)
 
     def cp_dataset_cont(dataset, xlen, xidentifier, out_dct, pos_full):
-        """Copy dataset contnets into out dictionary.
+        """Copy dataset contents into output dictionary (out_dct).
 
         Parameters
         ----------
