@@ -141,18 +141,16 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
         bounds['spin2z']
     ])
 
+
+    # Currently only implemented for random seed initial array
+    rng = numpy.random.mtrand._rand
+    population_shape=(cli_args.di_popsize, 4)
+    population = rng.uniform(size=population_shape)
     if cli_args.include_candidate_in_optimizer:
-        # Currently only implemented for random seed initial array
-        rng = numpy.random.mtrand._rand
-        population_shape=(cli_args.di_popsize - 1, 4)
-        population = rng.uniform(size=population_shape)
         # Re-normalize the initial point into the correct range
         point_init = normalize_initial_point(initial_point, bounds)
         # add the initial point to the population
-        population = numpy.concatenate((population, point_init))
-    else:
-        # Default behavior
-        population = 'latinhypercube'
+        population = numpy.concatenate((population[:-1], point_init))
 
     results = differential_evolution(
         compute_minus_network_snr,
@@ -187,12 +185,9 @@ def optimize_shgo(bounds, cli_args, extra_args, initial_point): # pylint: disabl
     return results.x
 
 def normalize_population(population, min_bounds, max_bounds):
-    new_pop = numpy.zeros_like(population.T)
-    for i, pop, mnb, mxb in zip(numpy.arange(population.shape[0]),
-                                population.T,
-                                min_bounds, max_bounds):
-        new_pop[i] = mnb + pop * (mxb-mnb)
-    return new_pop.T
+    norm_pop = min_bounds + population * (max_bounds - min_bounds)
+
+    return norm_pop
 
 def optimize_pso(bounds, cli_args, extra_args, initial_point):
     options = {
@@ -200,18 +195,18 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
         'c2': cli_args.pso_c2,
         'w': cli_args.pso_w
     }
-    min_bounds = [
+    min_bounds = numpy.array([
         bounds['mchirp'][0],
         bounds['eta'][0],
         bounds['spin1z'][0],
         bounds['spin2z'][0]
-    ]
-    max_bounds = [
+    ])
+    max_bounds = numpy.array([
         bounds['mchirp'][1],
         bounds['eta'][1],
         bounds['spin1z'][1],
         bounds['spin2z'][1]
-    ]
+    ])
 
     # Manually generate the initial points, this is the same as the default
     # method, but allows us to make some modifications
