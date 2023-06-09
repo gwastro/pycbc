@@ -412,13 +412,13 @@ bounds = {
     'spin2z': (minspin2z, maxspin2z)
 }
 
-# Initial point from found candidate
-mchirp_init = cv.mchirp_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()])
-eta_init = cv.eta_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()])
-spin1z_init = fp['spin1z'][()]
-spin2z_init = fp['spin2z'][()]
-
 if args.include_candidate_in_optimizer:
+    # Initial point from found candidate
+    mchirp_init = cv.mchirp_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()])
+    eta_init = cv.eta_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()])
+    spin1z_init = fp['spin1z'][()]
+    spin2z_init = fp['spin2z'][()]
+
     initial_point = numpy.array([
         mchirp_init,
         eta_init,
