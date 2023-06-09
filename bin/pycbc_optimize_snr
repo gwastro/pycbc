@@ -319,7 +319,7 @@ parser.add_argument('--pso-w', type=float, default=0.01,
                     help='Only relevant for --optimizer pso: '
                     'The hyperparameter w: the inertia parameter.')
 parser.add_argument('--include-candidate-in-optimizer', action='store_true',
-                    help='Include appropriate points from the template bank in the '
+                    help='Include parameters of the candidate event in the '
                     'initialised array for the optimizer')
 
 scheme.insert_processing_option_group(parser)
