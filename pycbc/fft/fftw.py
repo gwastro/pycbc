@@ -108,7 +108,7 @@ def _init_threads(backend):
         try:
             # For reasons Ian doesn't understand we should not load libgomp
             # first using RTLD_DEEPBIND, so force loading it here if needed
-            if double_threaded_libname.endswith('omp')::
+            if double_threaded_libname.endswith('omp'):
                 get_ctypes_library('gomp', [], mode=ctypes.DEFAULT_MODE)
             # Note that the threaded libraries don't have their own pkg-config
             # files we must look for them wherever we look for double or single
