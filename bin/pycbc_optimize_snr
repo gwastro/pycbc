@@ -33,8 +33,9 @@ MIN_CPT_MASS = 0.99
 # Set a large maximum total mass
 MAX_MTOTAL = 500.
 
-# Set a notional maximum eta
+# Set a notional maximum and minimum eta
 MAX_ETA = 0.24999999999
+MIN_ETA = 0.01
 
 Nfeval = 0
 start_time = time.time()
@@ -354,10 +355,10 @@ assert maxchirp < 250.
 # Establish minimum eta: find the most asymmetric mass point
 # nb function name is 'mass2' but it doesn't enforce m2 < m1!
 maxm1 = cv._mass2_from_mchirp_mass1(maxchirp, MIN_CPT_MASS)
-mineta = max(cv.eta_from_mass1_mass2(maxm1, MIN_CPT_MASS), 0.01)
+mineta = max(cv.eta_from_mass1_mass2(maxm1, MIN_CPT_MASS), MIN_ETA)
 
 # Use max chirp and min eta to find the upper bound on mass2
-maxm2 = cv.mass2_from_mchirp_eta(minchirp, maxeta)
+maxm2 = cv.mass2_from_mchirp_eta(minchirp, MAX_ETA)
 
 # Astrophysical spin bounds dependent on system masses - https://inspirehep.net/literature/1124003
 # If masses can be > 3 then allow them BH spin range
