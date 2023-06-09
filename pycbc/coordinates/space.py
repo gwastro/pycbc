@@ -658,6 +658,9 @@ def ssb_to_geo(t_ssb, lamda_ssb, beta_ssb, psi_ssb, use_astropy=True):
             k_geo = rotation_matrix_geo.T @ k_ssb
             lamda_geo, beta_geo = propagation_vector_to_localization(k_geo)
         psi_geo = polarization_newframe(psi_ssb, k_ssb, rotation_matrix_geo)
+        # As mentioned in LDC manual, the p,q vectors are opposite between 
+        # LDC and LAL conventions.
+        psi_geo = np.mod(psi_geo+np.pi, 2*np.pi)
         t_geo_array[i] = t_geo
         lamda_geo_array[i] = lamda_geo
         beta_geo_array[i] = beta_geo
@@ -746,6 +749,9 @@ def geo_to_ssb(t_geo, lamda_geo, beta_geo, psi_geo, use_astropy=True):
         k_ssb = rotation_matrix_geo @ k_geo
         lamda_ssb, beta_ssb = propagation_vector_to_localization(k_ssb)
         psi_ssb = polarization_newframe(psi_geo, k_geo, rotation_matrix_geo.T)
+        # As mentioned in LDC manual, the p,q vectors are opposite between 
+        # LDC and LAL conventions.
+        psi_ssb = np.mod(psi_ssb-np.pi, 2*np.pi)
         if use_astropy:
             # BarycentricMeanEcliptic doesn't have obstime attribute,
             # it's a good inertial frame, but PrecessedGeocentric is not.
