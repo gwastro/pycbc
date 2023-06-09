@@ -33,7 +33,7 @@ MIN_CPT_MASS = 0.99
 # Set a large maximum total mass
 MAX_MTOTAL = 500.
 
-# Set a notional maximum and minimum eta
+# Set a notional maximum and minimum possible eta
 MAX_ETA = 0.24999999999
 MIN_ETA = 0.01
 
@@ -370,7 +370,7 @@ maxspin2z = 0.4 if maxm2 < 3 else 0.9
 # boundary of the optimization space (dict of (min, max) tuples)
 bounds = {
     'mchirp': (minchirp, maxchirp),
-    'eta': (mineta, maxeta),
+    'eta': (mineta, MAX_ETA),
     'spin1z': (minspin1z, maxspin1z),
     'spin2z': (minspin2z, maxspin2z)
 }
