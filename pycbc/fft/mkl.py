@@ -69,7 +69,7 @@ def check_status(status):
     there is an error.
     """
     if status:
-        lib.DftiErrorMessage.restype=ctypes.c_char_p
+        lib.DftiErrorMessage.restype = ctypes.c_char_p
         msg = lib.DftiErrorMessage(status)
         raise RuntimeError(msg)
 
