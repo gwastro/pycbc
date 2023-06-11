@@ -25,7 +25,7 @@ from pycbc.coordinates.space import *
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'cartesian_to_spherical_polar', 'cartesian_to_spherical',
            'spherical_to_cartesian',
-           'TIME_OFFSET',
+           'TIME_OFFSET_20_DEGREES',
            'localization_to_propagation_vector',
            'propagation_vector_to_localization', 'polarization_newframe',
            't_lisa_from_ssb', 't_ssb_from_t_lisa',
