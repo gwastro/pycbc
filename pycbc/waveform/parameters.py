@@ -417,21 +417,20 @@ mean_per_ano = Parameter("mean_per_ano",
                 dtype=float, default=0., label=r"$\delta$",
                 description="Mean anomaly of the periastron (rad).")
 tc = Parameter("tc",
-               dtype=float, default=None, label=r"$t_c$ (s)",
-               description="Coalescence time (s) in geocentric/SSB/LISA coords.")
+                dtype=float, default=None, label=r"$t_c$ (s)",
+                description="Coalescence time (s).")
 delta_tc = Parameter("delta_tc", dtype=float,
                      label=r"$\Delta t_c~(\rm{s})$",
-                     description="Coalesence time offset in " +
-                     "geocentric/SSB/LISA coords.")
+                     description="Coalesence time offset.")
 ra = Parameter("ra",
-               dtype=float, default=0., label=r"$\alpha$",
-               description="Right ascension (rad) in geocentric coords.")
+                dtype=float, default=0., label=r"$\alpha$",
+                description="Right ascension (rad).")
 dec = Parameter("dec",
                 dtype=float, default=0., label=r"$\delta$",
-                description="Declination (rad) in geocentric coords.")
+                description="Declination (rad).")
 polarization = Parameter("polarization",
                 dtype=float, default=0., label=r"$\psi$",
-                description="Polarization (rad) in geocentric/SSB/LISA coords.")
+                description="Polarization (rad).")
 redshift = Parameter("redshift",
                 dtype=float, default=None, label=r"$z$",
                 description="Redshift.")
@@ -439,11 +438,11 @@ comoving_volume = Parameter("comoving_volume", dtype=float,
                             label=r"$V_C~(\rm{Mpc}^3)$",
                             description="Comoving volume (in cubic Mpc).")
 eclipticlatitude = Parameter("eclipticlatitude",
-                    dtype=float, default=0., label=r"$\beta$",
-                    description="eclipticlatitude in SSB/LISA coords.")
+                dtype=float, default=0., label=r"$\beta$",
+                description="eclipticlatitude wrt SSB coords.")
 eclipticlongitude = Parameter("eclipticlongitude",
-                        dtype=float, default=0., label=r"$\lambda$",
-                        description="eclipticlongitude in SSB/LISA coords.")
+                dtype=float, default=0., label=r"$\lambda$",
+                description="eclipticlongitude wrt SSB coords.")
 
 #
 #   Calibration parameters
@@ -554,9 +553,8 @@ dbeta3 = Parameter("dbeta3",
 # =============================================================================
 #
 
-# parameters describing the location of a binary w.r.t.
-# the geocentric/LISA/SSB frame.
-# Note: we do not include distance here. This is because these are not
+# parameters describing the location of a binary w.r.t. the Earth. Note: we
+# do not include distance here. This is because these parameters are not
 # passed to the waveform generators in lalsimulation, but are instead applied
 # after a waveform is generated. Distance, however, is a parameter used by
 # the waveform generators.
