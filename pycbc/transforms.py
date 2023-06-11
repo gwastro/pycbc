@@ -1575,48 +1575,63 @@ class GEOToSSB(BaseTransform):
         # get custom variable names
         if cp.has_option("-".join([section, outputs]), 'tc-geo'):
             skip_opts.append('tc-geo')
-            additional_opts.update({'tc_geo_param': cp.get_opt_tag(section, 'tc-geo', tag)})
+            additional_opts.update({'tc_geo_param': cp.get_opt_tag(
+                                    section, 'tc-geo', tag)})
         else:
             additional_opts.update({'tc_geo_param': cls._default_tc_geo})
         if cp.has_option("-".join([section, outputs]), 'longitude-geo'):
             skip_opts.append('longitude-geo')
-            additional_opts.update({'longitude_geo_param': cp.get_opt_tag(section, 'longitude-geo', tag)})
+            additional_opts.update({'longitude_geo_param': cp.get_opt_tag(
+                                    section, 'longitude-geo', tag)})
         else:
-            additional_opts.update({'longitude_geo_param': cls._default_longitude_geo})
+            additional_opts.update({'longitude_geo_param':
+                                    cls._default_longitude_geo})
         if cp.has_option("-".join([section, outputs]), 'latitude-geo'):
             skip_opts.append('latitude-geo')
-            additional_opts.update({'latitude_geo_param': cp.get_opt_tag(section, 'latitude-geo', tag)})
+            additional_opts.update({'latitude_geo_param': cp.get_opt_tag(
+                                    section, 'latitude-geo', tag)})
         else:
-            additional_opts.update({'latitude_geo_param': cls._default_latitude_geo})
+            additional_opts.update({'latitude_geo_param':
+                                    cls._default_latitude_geo})
         if cp.has_option("-".join([section, outputs]), 'polarization-geo'):
             skip_opts.append('polarization-geo')
-            additional_opts.update({'polarization_geo_param': cp.get_opt_tag(section, 'polarization-geo', tag)})
+            additional_opts.update({'polarization_geo_param': cp.get_opt_tag(
+                                    section, 'polarization-geo', tag)})
         else:
-            additional_opts.update({'polarization_geo_param': cls._default_polarization_geo})
+            additional_opts.update({'polarization_geo_param':
+                                    cls._default_polarization_geo})
 
         if cp.has_option("-".join([section, outputs]), 'tc-ssb'):
             skip_opts.append('tc-ssb')
-            additional_opts.update({'tc_ssb_param': cp.get_opt_tag(section, 'tc-ssb', tag)})
+            additional_opts.update({'tc_ssb_param': cp.get_opt_tag(
+                                    section, 'tc-ssb', tag)})
         else:
             additional_opts.update({'tc_ssb_param': cls._default_tc_ssb})
         if cp.has_option("-".join([section, outputs]), 'longitude-ssb'):
             skip_opts.append('longitude-ssb')
-            additional_opts.update({'longitude_ssb_param': cp.get_opt_tag(section, 'longitude-ssb', tag)})
+            additional_opts.update({'longitude_ssb_param': cp.get_opt_tag(
+                                    section, 'longitude-ssb', tag)})
         else:
-            additional_opts.update({'longitude_ssb_param': cls._default_longitude_ssb})
+            additional_opts.update({'longitude_ssb_param':
+                                    cls._default_longitude_ssb})
         if cp.has_option("-".join([section, outputs]), 'latitude-ssb'):
             skip_opts.append('latitude-ssb')
-            additional_opts.update({'latitude_ssb_param': cp.get_opt_tag(section, 'latitude-ssb', tag)})
+            additional_opts.update({'latitude_ssb_param': cp.get_opt_tag(
+                                    section, 'latitude-ssb', tag)})
         else:
-            additional_opts.update({'latitude_ssb_param': cls._default_latitude_ssb})
+            additional_opts.update({'latitude_ssb_param':
+                                    cls._default_latitude_ssb})
         if cp.has_option("-".join([section, outputs]), 'polarization-ssb'):
             skip_opts.append('polarization-ssb')
-            additional_opts.update({'polarization_ssb_param': cp.get_opt_tag(section, 'polarization-ssb', tag)})
+            additional_opts.update({'polarization_ssb_param': cp.get_opt_tag(
+                                    section, 'polarization-ssb', tag)})
         else:
-            additional_opts.update({'polarization_ssb_param': cls._default_polarization_ssb})
+            additional_opts.update({'polarization_ssb_param':
+                                    cls._default_polarization_ssb})
 
         return super(GEOToSSB, cls).from_config(
-            cp, section, outputs, skip_opts=skip_opts, additional_opts=additional_opts
+            cp, section, outputs, skip_opts=skip_opts,
+            additional_opts=additional_opts
         )
 
 
