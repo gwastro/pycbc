@@ -631,6 +631,10 @@ class Relative(DistMarg, BaseGaussianNoise):
             if p.endswith("_ref")
         }
 
+        _, static_params = distributions.read_params_from_config(
+            cp, prior_section='prior', vargs_section='variable_params',
+            sargs_section='static_params')
+
         # add optional params with default values if not specified
         opt_params = {
             "ra": numpy.pi,
@@ -638,6 +642,36 @@ class Relative(DistMarg, BaseGaussianNoise):
             "inclination": 0.0,
             "polarization": numpy.pi,
         }
+
+        # add coordinate transform
+        if 'ref_frame' in static_params:
+            if static_params['ref_frame'] == 'SSB':
+                ssb_params = ['tc', 'eclipticlongitude',
+                              'eclipticlatitude', 'polarization']
+                if not set(ssb_params).issubset(set(fid_params.keys())):
+                    opt_params['tc'], \
+                    opt_params['eclipticlongitude'],\
+                    opt_params['eclipticlatitude'], \
+                    opt_params['polarization'] = \
+                        space.geo_to_ssb(
+                            fid_params['tc'], opt_params['ra'],
+                            opt_params['dec'], opt_params['polarization'])
+            elif static_params['ref_frame'] == 'LISA':
+                lisa_params = ['tc', 'eclipticlongitude',
+                               'eclipticlatitude', 'polarization']
+                if not set(lisa_params).issubset(set(fid_params.keys())):
+                    opt_params['tc'], \
+                    opt_params['eclipticlongitude'],\
+                    opt_params['eclipticlatitude'], \
+                    opt_params['polarization'] = \
+                        space.geo_to_lisa(
+                            fid_params['tc'], opt_params['ra'],
+                            opt_params['dec'], opt_params['polarization'])
+            else:
+                logging.info("Don't recognise reference frame {}. ".format(
+                             static_params['ref_frame']) +
+                             "Known frames are 'LISA' and 'SSB'.")
+
         fid_params.update(
             {p: opt_params[p] for p in opt_params if p not in fid_params}
         )
