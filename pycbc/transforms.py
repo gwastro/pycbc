@@ -1474,48 +1474,48 @@ class GEOToSSB(BaseTransform):
 
     name = "geo_to_ssb"
     _default_tc_geo = parameters.tc
-    _default_lamda_geo = parameters.ra
-    _default_beta_geo = parameters.dec
-    _default_psi_geo = parameters.polarization
+    _default_longitude_geo = parameters.ra
+    _default_latitude_geo = parameters.dec
+    _default_polarization_geo = parameters.polarization
     _default_tc_ssb = parameters.tc
-    _default_lamda_ssb = parameters.eclipticlongitude
-    _default_beta_ssb = parameters.eclipticlatitude
-    _default_psi_ssb = parameters.polarization
+    _default_longitude_ssb = parameters.eclipticlongitude
+    _default_latitude_ssb = parameters.eclipticlatitude
+    _default_polarization_ssb = parameters.polarization
 
     def __init__(
-        self, tc_geo_param=None, lamda_geo_param=None,
-        beta_geo_param=None, psi_geo_param=None,
-        tc_ssb_param=None, lamda_ssb_param=None,
-        beta_ssb_param=None, psi_ssb_param=None
+        self, tc_geo_param=None, longitude_geo_param=None,
+        latitude_geo_param=None, polarization_geo_param=None,
+        tc_ssb_param=None, longitude_ssb_param=None,
+        latitude_ssb_param=None, polarization_ssb_param=None
     ):
         if tc_geo_param is None:
             tc_geo_param = self._default_tc_geo
-        if lamda_geo_param is None:
-            lamda_geo_param = self._default_lamda_geo
-        if beta_geo_param is None:
-            beta_geo_param = self._default_beta_geo
-        if psi_geo_param is None:
-            psi_geo_param = self._default_psi_geo
+        if longitude_geo_param is None:
+            longitude_geo_param = self._default_longitude_geo
+        if latitude_geo_param is None:
+            latitude_geo_param = self._default_latitude_geo
+        if polarization_geo_param is None:
+            polarization_geo_param = self._default_polarization_geo
         if tc_ssb_param is None:
             tc_ssb_param = self._default_tc_ssb
-        if lamda_ssb_param is None:
-            lamda_ssb_param = self._default_lamda_ssb
-        if beta_ssb_param is None:
-            beta_ssb_param = self._default_beta_ssb
-        if psi_ssb_param is None:
-            psi_ssb_param = self._default_psi_ssb
+        if longitude_ssb_param is None:
+            longitude_ssb_param = self._default_longitude_ssb
+        if latitude_ssb_param is None:
+            latitude_ssb_param = self._default_latitude_ssb
+        if polarization_ssb_param is None:
+            polarization_ssb_param = self._default_polarization_ssb
         self.tc_geo_param = tc_geo_param
-        self.lamda_geo_param = lamda_geo_param
-        self.beta_geo_param = beta_geo_param
-        self.psi_geo_param = psi_geo_param
+        self.longitude_geo_param = longitude_geo_param
+        self.latitude_geo_param = latitude_geo_param
+        self.polarization_geo_param = polarization_geo_param
         self.tc_ssb_param = tc_ssb_param
-        self.lamda_ssb_param = lamda_ssb_param
-        self.beta_ssb_param = beta_ssb_param
-        self.psi_ssb_param = psi_ssb_param
-        self._inputs = [self.tc_geo_param, self.lamda_geo_param,
-                        self.beta_geo_param, self.psi_geo_param]
-        self._outputs = [self.tc_ssb_param, self.lamda_ssb_param,
-                         self.beta_ssb_param, self.psi_ssb_param]
+        self.longitude_ssb_param = longitude_ssb_param
+        self.latitude_ssb_param = latitude_ssb_param
+        self.polarization_ssb_param = polarization_ssb_param
+        self._inputs = [self.tc_geo_param, self.longitude_geo_param,
+                        self.latitude_geo_param, self.polarization_geo_param]
+        self._outputs = [self.tc_ssb_param, self.longitude_ssb_param,
+                         self.latitude_ssb_param, self.polarization_ssb_param]
         super(GEOToSSB, self).__init__()
 
     def transform(self, maps):
@@ -1534,11 +1534,11 @@ class GEOToSSB(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[self.tc_ssb_param], out[self.lamda_ssb_param], \
-            out[self.beta_ssb_param], out[self.psi_ssb_param] = \
+        out[self.tc_ssb_param], out[self.longitude_ssb_param], \
+            out[self.latitude_ssb_param], out[self.polarization_ssb_param] = \
             coordinates.geo_to_ssb(
-                maps[self.tc_geo_param], maps[self.lamda_geo_param],
-                maps[self.beta_geo_param], maps[self.psi_geo_param]
+                maps[self.tc_geo_param], maps[self.longitude_geo_param],
+                maps[self.latitude_geo_param], maps[self.polarization_geo_param]
                 )
         return self.format_output(maps, out)
 
@@ -1558,11 +1558,11 @@ class GEOToSSB(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[self.tc_geo_param], out[self.lamda_geo_param], \
-            out[self.beta_geo_param], out[self.psi_geo_param] = \
+        out[self.tc_geo_param], out[self.longitude_geo_param], \
+            out[self.latitude_geo_param], out[self.polarization_geo_param] = \
             coordinates.ssb_to_geo(
-                maps[self.tc_ssb_param], maps[self.lamda_ssb_param],
-                maps[self.beta_ssb_param], maps[self.psi_ssb_param]
+                maps[self.tc_ssb_param], maps[self.longitude_ssb_param],
+                maps[self.latitude_ssb_param], maps[self.polarization_ssb_param]
                 )
         return self.format_output(maps, out)
 
@@ -1578,42 +1578,42 @@ class GEOToSSB(BaseTransform):
             additional_opts.update({'tc_geo_param': cp.get_opt_tag(section, 'tc-geo', tag)})
         else:
             additional_opts.update({'tc_geo_param': cls._default_tc_geo})
-        if cp.has_option("-".join([section, outputs]), 'lamda-geo'):
-            skip_opts.append('lamda-geo')
-            additional_opts.update({'lamda_geo_param': cp.get_opt_tag(section, 'lamda-geo', tag)})
+        if cp.has_option("-".join([section, outputs]), 'longitude-geo'):
+            skip_opts.append('longitude-geo')
+            additional_opts.update({'longitude_geo_param': cp.get_opt_tag(section, 'longitude-geo', tag)})
         else:
-            additional_opts.update({'lamda_geo_param': cls._default_lamda_geo})
-        if cp.has_option("-".join([section, outputs]), 'beta-geo'):
-            skip_opts.append('beta-geo')
-            additional_opts.update({'beta_geo_param': cp.get_opt_tag(section, 'beta-geo', tag)})
+            additional_opts.update({'longitude_geo_param': cls._default_longitude_geo})
+        if cp.has_option("-".join([section, outputs]), 'latitude-geo'):
+            skip_opts.append('latitude-geo')
+            additional_opts.update({'latitude_geo_param': cp.get_opt_tag(section, 'latitude-geo', tag)})
         else:
-            additional_opts.update({'beta_geo_param': cls._default_beta_geo})
-        if cp.has_option("-".join([section, outputs]), 'psi-geo'):
-            skip_opts.append('psi-geo')
-            additional_opts.update({'psi_geo_param': cp.get_opt_tag(section, 'psi-geo', tag)})
+            additional_opts.update({'latitude_geo_param': cls._default_latitude_geo})
+        if cp.has_option("-".join([section, outputs]), 'polarization-geo'):
+            skip_opts.append('polarization-geo')
+            additional_opts.update({'polarization_geo_param': cp.get_opt_tag(section, 'polarization-geo', tag)})
         else:
-            additional_opts.update({'psi_geo_param': cls._default_psi_geo})
+            additional_opts.update({'polarization_geo_param': cls._default_polarization_geo})
 
         if cp.has_option("-".join([section, outputs]), 'tc-ssb'):
             skip_opts.append('tc-ssb')
             additional_opts.update({'tc_ssb_param': cp.get_opt_tag(section, 'tc-ssb', tag)})
         else:
             additional_opts.update({'tc_ssb_param': cls._default_tc_ssb})
-        if cp.has_option("-".join([section, outputs]), 'lamda-ssb'):
-            skip_opts.append('lamda-ssb')
-            additional_opts.update({'lamda_ssb_param': cp.get_opt_tag(section, 'lamda-ssb', tag)})
+        if cp.has_option("-".join([section, outputs]), 'longitude-ssb'):
+            skip_opts.append('longitude-ssb')
+            additional_opts.update({'longitude_ssb_param': cp.get_opt_tag(section, 'longitude-ssb', tag)})
         else:
-            additional_opts.update({'lamda_ssb_param': cls._default_lamda_ssb})
-        if cp.has_option("-".join([section, outputs]), 'beta-ssb'):
-            skip_opts.append('beta-ssb')
-            additional_opts.update({'beta_ssb_param': cp.get_opt_tag(section, 'beta-ssb', tag)})
+            additional_opts.update({'longitude_ssb_param': cls._default_longitude_ssb})
+        if cp.has_option("-".join([section, outputs]), 'latitude-ssb'):
+            skip_opts.append('latitude-ssb')
+            additional_opts.update({'latitude_ssb_param': cp.get_opt_tag(section, 'latitude-ssb', tag)})
         else:
-            additional_opts.update({'beta_ssb_param': cls._default_beta_ssb})
-        if cp.has_option("-".join([section, outputs]), 'psi-ssb'):
-            skip_opts.append('psi-ssb')
-            additional_opts.update({'psi_ssb_param': cp.get_opt_tag(section, 'psi-ssb', tag)})
+            additional_opts.update({'latitude_ssb_param': cls._default_latitude_ssb})
+        if cp.has_option("-".join([section, outputs]), 'polarization-ssb'):
+            skip_opts.append('polarization-ssb')
+            additional_opts.update({'polarization_ssb_param': cp.get_opt_tag(section, 'polarization-ssb', tag)})
         else:
-            additional_opts.update({'psi_ssb_param': cls._default_psi_ssb})
+            additional_opts.update({'polarization_ssb_param': cls._default_polarization_ssb})
 
         return super(GEOToSSB, cls).from_config(
             cp, section, outputs, skip_opts=skip_opts, additional_opts=additional_opts
@@ -1626,48 +1626,48 @@ class LISAToSSB(BaseTransform):
 
     name = "lisa_to_ssb"
     _default_tc_lisa = parameters.tc
-    _default_lamda_lisa = parameters.eclipticlongitude
-    _default_beta_lisa = parameters.eclipticlatitude
-    _default_psi_lisa = parameters.polarization
+    _default_longitude_lisa = parameters.eclipticlongitude
+    _default_latitude_lisa = parameters.eclipticlatitude
+    _default_polarization_lisa = parameters.polarization
     _default_tc_ssb = parameters.tc
-    _default_lamda_ssb = parameters.eclipticlongitude
-    _default_beta_ssb = parameters.eclipticlatitude
-    _default_psi_ssb = parameters.polarization
+    _default_longitude_ssb = parameters.eclipticlongitude
+    _default_latitude_ssb = parameters.eclipticlatitude
+    _default_polarization_ssb = parameters.polarization
 
     def __init__(
-        self, tc_lisa_param=None, lamda_lisa_param=None,
-        beta_lisa_param=None, psi_lisa_param=None,
-        tc_ssb_param=None, lamda_ssb_param=None,
-        beta_ssb_param=None, psi_ssb_param=None
+        self, tc_lisa_param=None, longitude_lisa_param=None,
+        latitude_lisa_param=None, polarization_lisa_param=None,
+        tc_ssb_param=None, longitude_ssb_param=None,
+        latitude_ssb_param=None, polarization_ssb_param=None
     ):
         if tc_lisa_param is None:
             tc_lisa_param = self._default_tc_lisa
-        if lamda_lisa_param is None:
-            lamda_lisa_param = self._default_lamda_lisa
-        if beta_lisa_param is None:
-            beta_lisa_param = self._default_beta_lisa
-        if psi_lisa_param is None:
-            psi_lisa_param = self._default_psi_lisa
+        if longitude_lisa_param is None:
+            longitude_lisa_param = self._default_longitude_lisa
+        if latitude_lisa_param is None:
+            latitude_lisa_param = self._default_latitude_lisa
+        if polarization_lisa_param is None:
+            polarization_lisa_param = self._default_polarization_lisa
         if tc_ssb_param is None:
             tc_ssb_param = self._default_tc_ssb
-        if lamda_ssb_param is None:
-            lamda_ssb_param = self._default_lamda_ssb
-        if beta_ssb_param is None:
-            beta_ssb_param = self._default_beta_ssb
-        if psi_ssb_param is None:
-            psi_ssb_param = self._default_psi_ssb
+        if longitude_ssb_param is None:
+            longitude_ssb_param = self._default_longitude_ssb
+        if latitude_ssb_param is None:
+            latitude_ssb_param = self._default_latitude_ssb
+        if polarization_ssb_param is None:
+            polarization_ssb_param = self._default_polarization_ssb
         self.tc_lisa_param = tc_lisa_param
-        self.lamda_lisa_param = lamda_lisa_param
-        self.beta_lisa_param = beta_lisa_param
-        self.psi_lisa_param = psi_lisa_param
+        self.longitude_lisa_param = longitude_lisa_param
+        self.latitude_lisa_param = latitude_lisa_param
+        self.polarization_lisa_param = polarization_lisa_param
         self.tc_ssb_param = tc_ssb_param
-        self.lamda_ssb_param = lamda_ssb_param
-        self.beta_ssb_param = beta_ssb_param
-        self.psi_ssb_param = psi_ssb_param
-        self._inputs = [self.tc_lisa_param, self.lamda_lisa_param,
-                        self.beta_lisa_param, self.psi_lisa_param]
-        self._outputs = [self.tc_ssb_param, self.lamda_ssb_param,
-                         self.beta_ssb_param, self.psi_ssb_param]
+        self.longitude_ssb_param = longitude_ssb_param
+        self.latitude_ssb_param = latitude_ssb_param
+        self.polarization_ssb_param = polarization_ssb_param
+        self._inputs = [self.tc_lisa_param, self.longitude_lisa_param,
+                        self.latitude_lisa_param, self.polarization_lisa_param]
+        self._outputs = [self.tc_ssb_param, self.longitude_ssb_param,
+                         self.latitude_ssb_param, self.polarization_ssb_param]
         super(LISAToSSB, self).__init__()
 
     def transform(self, maps):
@@ -1686,11 +1686,11 @@ class LISAToSSB(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[self.tc_ssb_param], out[self.lamda_ssb_param], \
-            out[self.beta_ssb_param], out[self.psi_ssb_param] = \
+        out[self.tc_ssb_param], out[self.longitude_ssb_param], \
+            out[self.latitude_ssb_param], out[self.polarization_ssb_param] = \
             coordinates.lisa_to_ssb(
-                maps[self.tc_lisa_param], maps[self.lamda_lisa_param],
-                maps[self.beta_lisa_param], maps[self.psi_lisa_param]
+                maps[self.tc_lisa_param], maps[self.longitude_lisa_param],
+                maps[self.latitude_lisa_param], maps[self.polarization_lisa_param]
                 )
         return self.format_output(maps, out)
 
@@ -1710,11 +1710,11 @@ class LISAToSSB(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[self.tc_lisa_param], out[self.lamda_lisa_param], \
-            out[self.beta_lisa_param], out[self.psi_lisa_param] = \
+        out[self.tc_lisa_param], out[self.longitude_lisa_param], \
+            out[self.latitude_lisa_param], out[self.polarization_lisa_param] = \
             coordinates.ssb_to_lisa(
-                maps[self.tc_ssb_param], maps[self.lamda_ssb_param],
-                maps[self.beta_ssb_param], maps[self.psi_ssb_param]
+                maps[self.tc_ssb_param], maps[self.longitude_ssb_param],
+                maps[self.latitude_ssb_param], maps[self.polarization_ssb_param]
                 )
         return self.format_output(maps, out)
 
@@ -1730,42 +1730,42 @@ class LISAToSSB(BaseTransform):
             additional_opts.update({'tc_lisa_param': cp.get_opt_tag(section, 'tc-lisa', tag)})
         else:
             additional_opts.update({'tc_lisa_param': cls._default_tc_lisa})
-        if cp.has_option("-".join([section, outputs]), 'lamda-lisa'):
-            skip_opts.append('lamda-lisa')
-            additional_opts.update({'lamda_lisa_param': cp.get_opt_tag(section, 'lamda-lisa', tag)})
+        if cp.has_option("-".join([section, outputs]), 'longitude-lisa'):
+            skip_opts.append('longitude-lisa')
+            additional_opts.update({'longitude_lisa_param': cp.get_opt_tag(section, 'longitude-lisa', tag)})
         else:
-            additional_opts.update({'lamda_lisa_param': cls._default_lamda_lisa})
-        if cp.has_option("-".join([section, outputs]), 'beta-lisa'):
-            skip_opts.append('beta-lisa')
-            additional_opts.update({'beta_lisa_param': cp.get_opt_tag(section, 'beta-lisa', tag)})
+            additional_opts.update({'longitude_lisa_param': cls._default_longitude_lisa})
+        if cp.has_option("-".join([section, outputs]), 'latitude-lisa'):
+            skip_opts.append('latitude-lisa')
+            additional_opts.update({'latitude_lisa_param': cp.get_opt_tag(section, 'latitude-lisa', tag)})
         else:
-            additional_opts.update({'beta_lisa_param': cls._default_beta_lisa})
-        if cp.has_option("-".join([section, outputs]), 'psi-lisa'):
-            skip_opts.append('psi-lisa')
-            additional_opts.update({'psi_lisa_param': cp.get_opt_tag(section, 'psi-lisa', tag)})
+            additional_opts.update({'latitude_lisa_param': cls._default_latitude_lisa})
+        if cp.has_option("-".join([section, outputs]), 'polarization-lisa'):
+            skip_opts.append('polarization-lisa')
+            additional_opts.update({'polarization_lisa_param': cp.get_opt_tag(section, 'polarization-lisa', tag)})
         else:
-            additional_opts.update({'psi_lisa_param': cls._default_psi_lisa})
+            additional_opts.update({'polarization_lisa_param': cls._default_polarization_lisa})
 
         if cp.has_option("-".join([section, outputs]), 'tc-ssb'):
             skip_opts.append('tc-ssb')
             additional_opts.update({'tc_ssb_param': cp.get_opt_tag(section, 'tc-ssb', tag)})
         else:
             additional_opts.update({'tc_ssb_param': cls._default_tc_ssb})
-        if cp.has_option("-".join([section, outputs]), 'lamda-ssb'):
-            skip_opts.append('lamda-ssb')
-            additional_opts.update({'lamda_ssb_param': cp.get_opt_tag(section, 'lamda-ssb', tag)})
+        if cp.has_option("-".join([section, outputs]), 'longitude-ssb'):
+            skip_opts.append('longitude-ssb')
+            additional_opts.update({'longitude_ssb_param': cp.get_opt_tag(section, 'longitude-ssb', tag)})
         else:
-            additional_opts.update({'lamda_ssb_param': cls._default_lamda_ssb})
-        if cp.has_option("-".join([section, outputs]), 'beta-ssb'):
-            skip_opts.append('beta-ssb')
-            additional_opts.update({'beta_ssb_param': cp.get_opt_tag(section, 'beta-ssb', tag)})
+            additional_opts.update({'longitude_ssb_param': cls._default_longitude_ssb})
+        if cp.has_option("-".join([section, outputs]), 'latitude-ssb'):
+            skip_opts.append('latitude-ssb')
+            additional_opts.update({'latitude_ssb_param': cp.get_opt_tag(section, 'latitude-ssb', tag)})
         else:
-            additional_opts.update({'beta_ssb_param': cls._default_beta_ssb})
-        if cp.has_option("-".join([section, outputs]), 'psi-ssb'):
-            skip_opts.append('psi-ssb')
-            additional_opts.update({'psi_ssb_param': cp.get_opt_tag(section, 'psi-ssb', tag)})
+            additional_opts.update({'latitude_ssb_param': cls._default_latitude_ssb})
+        if cp.has_option("-".join([section, outputs]), 'polarization-ssb'):
+            skip_opts.append('polarization-ssb')
+            additional_opts.update({'polarization_ssb_param': cp.get_opt_tag(section, 'polarization-ssb', tag)})
         else:
-            additional_opts.update({'psi_ssb_param': cls._default_psi_ssb})
+            additional_opts.update({'polarization_ssb_param': cls._default_polarization_ssb})
 
         return super(GEOToSSB, cls).from_config(
             cp, section, outputs, skip_opts=skip_opts, additional_opts=additional_opts
@@ -1778,48 +1778,48 @@ class LISAToGEO(BaseTransform):
 
     name = "lisa_to_geo"
     _default_tc_lisa = parameters.tc
-    _default_lamda_lisa = parameters.eclipticlongitude
-    _default_beta_lisa = parameters.eclipticlatitude
-    _default_psi_lisa = parameters.polarization
+    _default_longitude_lisa = parameters.eclipticlongitude
+    _default_latitude_lisa = parameters.eclipticlatitude
+    _default_polarization_lisa = parameters.polarization
     _default_tc_geo = parameters.tc
-    _default_lamda_geo = parameters.ra
-    _default_beta_geo = parameters.dec
-    _default_psi_geo = parameters.polarization
+    _default_longitude_geo = parameters.ra
+    _default_latitude_geo = parameters.dec
+    _default_polarization_geo = parameters.polarization
 
     def __init__(
-        self, tc_lisa_param=None, lamda_lisa_param=None,
-        beta_lisa_param=None, psi_lisa_param=None,
-        tc_geo_param=None, lamda_geo_param=None,
-        beta_geo_param=None, psi_geo_param=None
+        self, tc_lisa_param=None, longitude_lisa_param=None,
+        latitude_lisa_param=None, polarization_lisa_param=None,
+        tc_geo_param=None, longitude_geo_param=None,
+        latitude_geo_param=None, polarization_geo_param=None
     ):
         if tc_lisa_param is None:
             tc_lisa_param = self._default_tc_lisa
-        if lamda_lisa_param is None:
-            lamda_lisa_param = self._default_lamda_lisa
-        if beta_lisa_param is None:
-            beta_lisa_param = self._default_beta_lisa
-        if psi_lisa_param is None:
-            psi_lisa_param = self._default_psi_lisa
+        if longitude_lisa_param is None:
+            longitude_lisa_param = self._default_longitude_lisa
+        if latitude_lisa_param is None:
+            latitude_lisa_param = self._default_latitude_lisa
+        if polarization_lisa_param is None:
+            polarization_lisa_param = self._default_polarization_lisa
         if tc_geo_param is None:
             tc_geo_param = self._default_tc_geo
-        if lamda_geo_param is None:
-            lamda_geo_param = self._default_lamda_geo
-        if beta_geo_param is None:
-            beta_geo_param = self._default_beta_geo
-        if psi_geo_param is None:
-            psi_geo_param = self._default_psi_geo
+        if longitude_geo_param is None:
+            longitude_geo_param = self._default_longitude_geo
+        if latitude_geo_param is None:
+            latitude_geo_param = self._default_latitude_geo
+        if polarization_geo_param is None:
+            polarization_geo_param = self._default_polarization_geo
         self.tc_lisa_param = tc_lisa_param
-        self.lamda_lisa_param = lamda_lisa_param
-        self.beta_lisa_param = beta_lisa_param
-        self.psi_lisa_param = psi_lisa_param
+        self.longitude_lisa_param = longitude_lisa_param
+        self.latitude_lisa_param = latitude_lisa_param
+        self.polarization_lisa_param = polarization_lisa_param
         self.tc_geo_param = tc_geo_param
-        self.lamda_geo_param = lamda_geo_param
-        self.beta_geo_param = beta_geo_param
-        self.psi_geo_param = psi_geo_param
-        self._inputs = [self.tc_lisa_param, self.lamda_lisa_param,
-                        self.beta_lisa_param, self.psi_lisa_param]
-        self._outputs = [self.tc_geo_param, self.lamda_geo_param,
-                         self.beta_geo_param, self.psi_geo_param]
+        self.longitude_geo_param = longitude_geo_param
+        self.latitude_geo_param = latitude_geo_param
+        self.polarization_geo_param = polarization_geo_param
+        self._inputs = [self.tc_lisa_param, self.longitude_lisa_param,
+                        self.latitude_lisa_param, self.polarization_lisa_param]
+        self._outputs = [self.tc_geo_param, self.longitude_geo_param,
+                         self.latitude_geo_param, self.polarization_geo_param]
         super(LISAToGEO, self).__init__()
 
     def transform(self, maps):
@@ -1838,11 +1838,11 @@ class LISAToGEO(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[self.tc_geo_param], out[self.lamda_geo_param], \
-            out[self.beta_geo_param], out[self.psi_geo_param] = \
+        out[self.tc_geo_param], out[self.longitude_geo_param], \
+            out[self.latitude_geo_param], out[self.polarization_geo_param] = \
             coordinates.lisa_to_geo(
-                maps[self.tc_lisa_param], maps[self.lamda_lisa_param],
-                maps[self.beta_lisa_param], maps[self.psi_lisa_param]
+                maps[self.tc_lisa_param], maps[self.longitude_lisa_param],
+                maps[self.latitude_lisa_param], maps[self.polarization_lisa_param]
                 )
         return self.format_output(maps, out)
 
@@ -1862,11 +1862,11 @@ class LISAToGEO(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[self.tc_lisa_param], out[self.lamda_lisa_param], \
-            out[self.beta_lisa_param], out[self.psi_lisa_param] = \
+        out[self.tc_lisa_param], out[self.longitude_lisa_param], \
+            out[self.latitude_lisa_param], out[self.polarization_lisa_param] = \
             coordinates.geo_to_lisa(
-                maps[self.tc_geo_param], maps[self.lamda_geo_param],
-                maps[self.beta_geo_param], maps[self.psi_geo_param]
+                maps[self.tc_geo_param], maps[self.longitude_geo_param],
+                maps[self.latitude_geo_param], maps[self.polarization_geo_param]
                 )
         return self.format_output(maps, out)
 
@@ -1882,42 +1882,42 @@ class LISAToGEO(BaseTransform):
             additional_opts.update({'tc_lisa_param': cp.get_opt_tag(section, 'tc-lisa', tag)})
         else:
             additional_opts.update({'tc_lisa_param': cls._default_tc_lisa})
-        if cp.has_option("-".join([section, outputs]), 'lamda-lisa'):
-            skip_opts.append('lamda-lisa')
-            additional_opts.update({'lamda_lisa_param': cp.get_opt_tag(section, 'lamda-lisa', tag)})
+        if cp.has_option("-".join([section, outputs]), 'longitude-lisa'):
+            skip_opts.append('longitude-lisa')
+            additional_opts.update({'longitude_lisa_param': cp.get_opt_tag(section, 'longitude-lisa', tag)})
         else:
-            additional_opts.update({'lamda_lisa_param': cls._default_lamda_lisa})
-        if cp.has_option("-".join([section, outputs]), 'beta-lisa'):
-            skip_opts.append('beta-lisa')
-            additional_opts.update({'beta_lisa_param': cp.get_opt_tag(section, 'beta-lisa', tag)})
+            additional_opts.update({'longitude_lisa_param': cls._default_longitude_lisa})
+        if cp.has_option("-".join([section, outputs]), 'latitude-lisa'):
+            skip_opts.append('latitude-lisa')
+            additional_opts.update({'latitude_lisa_param': cp.get_opt_tag(section, 'latitude-lisa', tag)})
         else:
-            additional_opts.update({'beta_lisa_param': cls._default_beta_lisa})
-        if cp.has_option("-".join([section, outputs]), 'psi-lisa'):
-            skip_opts.append('psi-lisa')
-            additional_opts.update({'psi_lisa_param': cp.get_opt_tag(section, 'psi-lisa', tag)})
+            additional_opts.update({'latitude_lisa_param': cls._default_latitude_lisa})
+        if cp.has_option("-".join([section, outputs]), 'polarization-lisa'):
+            skip_opts.append('polarization-lisa')
+            additional_opts.update({'polarization_lisa_param': cp.get_opt_tag(section, 'polarization-lisa', tag)})
         else:
-            additional_opts.update({'psi_lisa_param': cls._default_psi_lisa})
+            additional_opts.update({'polarization_lisa_param': cls._default_polarization_lisa})
 
         if cp.has_option("-".join([section, outputs]), 'tc-geo'):
             skip_opts.append('tc-geo')
             additional_opts.update({'tc_geo_param': cp.get_opt_tag(section, 'tc-geo', tag)})
         else:
             additional_opts.update({'tc_geo_param': cls._default_tc_geo})
-        if cp.has_option("-".join([section, outputs]), 'lamda-geo'):
-            skip_opts.append('lamda-geo')
-            additional_opts.update({'lamda_geo_param': cp.get_opt_tag(section, 'lamda-geo', tag)})
+        if cp.has_option("-".join([section, outputs]), 'longitude-geo'):
+            skip_opts.append('longitude-geo')
+            additional_opts.update({'longitude_geo_param': cp.get_opt_tag(section, 'longitude-geo', tag)})
         else:
-            additional_opts.update({'lamda_geo_param': cls._default_lamda_geo})
-        if cp.has_option("-".join([section, outputs]), 'beta-geo'):
-            skip_opts.append('beta-geo')
-            additional_opts.update({'beta_geo_param': cp.get_opt_tag(section, 'beta-geo', tag)})
+            additional_opts.update({'longitude_geo_param': cls._default_longitude_geo})
+        if cp.has_option("-".join([section, outputs]), 'latitude-geo'):
+            skip_opts.append('latitude-geo')
+            additional_opts.update({'latitude_geo_param': cp.get_opt_tag(section, 'latitude-geo', tag)})
         else:
-            additional_opts.update({'beta_geo_param': cls._default_beta_geo})
-        if cp.has_option("-".join([section, outputs]), 'psi-geo'):
-            skip_opts.append('psi-geo')
-            additional_opts.update({'psi_geo_param': cp.get_opt_tag(section, 'psi-geo', tag)})
+            additional_opts.update({'latitude_geo_param': cls._default_latitude_geo})
+        if cp.has_option("-".join([section, outputs]), 'polarization-geo'):
+            skip_opts.append('polarization-geo')
+            additional_opts.update({'polarization_geo_param': cp.get_opt_tag(section, 'polarization-geo', tag)})
         else:
-            additional_opts.update({'psi_geo_param': cls._default_psi_geo})
+            additional_opts.update({'polarization_geo_param': cls._default_polarization_geo})
 
         return super(GEOToSSB, cls).from_config(
             cp, section, outputs, skip_opts=skip_opts, additional_opts=additional_opts
@@ -2525,39 +2525,39 @@ class SSBToGEO(GEOToSSB):
     inverse_transform = inverse.transform
 
     def __init__(
-        self, tc_geo_param=None, lamda_geo_param=None,
-        beta_geo_param=None, psi_geo_param=None,
-        tc_ssb_param=None, lamda_ssb_param=None,
-        beta_ssb_param=None, psi_ssb_param=None
+        self, tc_geo_param=None, longitude_geo_param=None,
+        latitude_geo_param=None, polarization_geo_param=None,
+        tc_ssb_param=None, longitude_ssb_param=None,
+        latitude_ssb_param=None, polarization_ssb_param=None
     ):
         if tc_geo_param is None:
             tc_geo_param = self._default_tc_geo
-        if lamda_geo_param is None:
-            lamda_geo_param = self._default_lamda_geo
-        if beta_geo_param is None:
-            beta_geo_param = self._default_beta_geo
-        if psi_geo_param is None:
-            psi_geo_param = self._default_psi_geo
+        if longitude_geo_param is None:
+            longitude_geo_param = self._default_longitude_geo
+        if latitude_geo_param is None:
+            latitude_geo_param = self._default_latitude_geo
+        if polarization_geo_param is None:
+            polarization_geo_param = self._default_polarization_geo
         if tc_ssb_param is None:
             tc_ssb_param = self._default_tc_ssb
-        if lamda_ssb_param is None:
-            lamda_ssb_param = self._default_lamda_ssb
-        if beta_ssb_param is None:
-            beta_ssb_param = self._default_beta_ssb
-        if psi_ssb_param is None:
-            psi_ssb_param = self._default_psi_ssb
+        if longitude_ssb_param is None:
+            longitude_ssb_param = self._default_longitude_ssb
+        if latitude_ssb_param is None:
+            latitude_ssb_param = self._default_latitude_ssb
+        if polarization_ssb_param is None:
+            polarization_ssb_param = self._default_polarization_ssb
         self.tc_geo_param = tc_geo_param
-        self.lamda_geo_param = lamda_geo_param
-        self.beta_geo_param = beta_geo_param
-        self.psi_geo_param = psi_geo_param
+        self.longitude_geo_param = longitude_geo_param
+        self.latitude_geo_param = latitude_geo_param
+        self.polarization_geo_param = polarization_geo_param
         self.tc_ssb_param = tc_ssb_param
-        self.lamda_ssb_param = lamda_ssb_param
-        self.beta_ssb_param = beta_ssb_param
-        self.psi_ssb_param = psi_ssb_param
-        self._inputs = [self.tc_ssb_param, self.lamda_ssb_param,
-                        self.beta_ssb_param, self.psi_ssb_param]
-        self._outputs = [self.tc_geo_param, self.lamda_geo_param,
-                         self.beta_geo_param, self.psi_geo_param]
+        self.longitude_ssb_param = longitude_ssb_param
+        self.latitude_ssb_param = latitude_ssb_param
+        self.polarization_ssb_param = polarization_ssb_param
+        self._inputs = [self.tc_ssb_param, self.longitude_ssb_param,
+                        self.latitude_ssb_param, self.polarization_ssb_param]
+        self._outputs = [self.tc_geo_param, self.longitude_geo_param,
+                         self.latitude_geo_param, self.polarization_geo_param]
         self.inputs = set(self._inputs)
         self.outputs = set(self._outputs)
 
@@ -2571,39 +2571,39 @@ class SSBToLISA(LISAToSSB):
     inverse_transform = inverse.transform
 
     def __init__(
-        self, tc_lisa_param=None, lamda_lisa_param=None,
-        beta_lisa_param=None, psi_lisa_param=None,
-        tc_ssb_param=None, lamda_ssb_param=None,
-        beta_ssb_param=None, psi_ssb_param=None
+        self, tc_lisa_param=None, longitude_lisa_param=None,
+        latitude_lisa_param=None, polarization_lisa_param=None,
+        tc_ssb_param=None, longitude_ssb_param=None,
+        latitude_ssb_param=None, polarization_ssb_param=None
     ):
         if tc_lisa_param is None:
             tc_lisa_param = self._default_tc_lisa
-        if lamda_lisa_param is None:
-            lamda_lisa_param = self._default_lamda_lisa
-        if beta_lisa_param is None:
-            beta_lisa_param = self._default_beta_lisa
-        if psi_lisa_param is None:
-            psi_lisa_param = self._default_psi_lisa
+        if longitude_lisa_param is None:
+            longitude_lisa_param = self._default_longitude_lisa
+        if latitude_lisa_param is None:
+            latitude_lisa_param = self._default_latitude_lisa
+        if polarization_lisa_param is None:
+            polarization_lisa_param = self._default_polarization_lisa
         if tc_ssb_param is None:
             tc_ssb_param = self._default_tc_ssb
-        if lamda_ssb_param is None:
-            lamda_ssb_param = self._default_lamda_ssb
-        if beta_ssb_param is None:
-            beta_ssb_param = self._default_beta_ssb
-        if psi_ssb_param is None:
-            psi_ssb_param = self._default_psi_ssb
+        if longitude_ssb_param is None:
+            longitude_ssb_param = self._default_longitude_ssb
+        if latitude_ssb_param is None:
+            latitude_ssb_param = self._default_latitude_ssb
+        if polarization_ssb_param is None:
+            polarization_ssb_param = self._default_polarization_ssb
         self.tc_lisa_param = tc_lisa_param
-        self.lamda_lisa_param = lamda_lisa_param
-        self.beta_lisa_param = beta_lisa_param
-        self.psi_lisa_param = psi_lisa_param
+        self.longitude_lisa_param = longitude_lisa_param
+        self.latitude_lisa_param = latitude_lisa_param
+        self.polarization_lisa_param = polarization_lisa_param
         self.tc_ssb_param = tc_ssb_param
-        self.lamda_ssb_param = lamda_ssb_param
-        self.beta_ssb_param = beta_ssb_param
-        self.psi_ssb_param = psi_ssb_param
-        self._inputs = [self.tc_ssb_param, self.lamda_ssb_param,
-                        self.beta_ssb_param, self.psi_ssb_param]
-        self._outputs = [self.tc_lisa_param, self.lamda_lisa_param,
-                         self.beta_lisa_param, self.psi_lisa_param]
+        self.longitude_ssb_param = longitude_ssb_param
+        self.latitude_ssb_param = latitude_ssb_param
+        self.polarization_ssb_param = polarization_ssb_param
+        self._inputs = [self.tc_ssb_param, self.longitude_ssb_param,
+                        self.latitude_ssb_param, self.polarization_ssb_param]
+        self._outputs = [self.tc_lisa_param, self.longitude_lisa_param,
+                         self.latitude_lisa_param, self.polarization_lisa_param]
         self.inputs = set(self._inputs)
         self.outputs = set(self._outputs)
 
@@ -2617,39 +2617,39 @@ class GEOToLISA(LISAToGEO):
     inverse_transform = inverse.transform
 
     def __init__(
-        self, tc_lisa_param=None, lamda_lisa_param=None,
-        beta_lisa_param=None, psi_lisa_param=None,
-        tc_geo_param=None, lamda_geo_param=None,
-        beta_geo_param=None, psi_geo_param=None
+        self, tc_lisa_param=None, longitude_lisa_param=None,
+        latitude_lisa_param=None, polarization_lisa_param=None,
+        tc_geo_param=None, longitude_geo_param=None,
+        latitude_geo_param=None, polarization_geo_param=None
     ):
         if tc_lisa_param is None:
             tc_lisa_param = self._default_tc_lisa
-        if lamda_lisa_param is None:
-            lamda_lisa_param = self._default_lamda_lisa
-        if beta_lisa_param is None:
-            beta_lisa_param = self._default_beta_lisa
-        if psi_lisa_param is None:
-            psi_lisa_param = self._default_psi_lisa
+        if longitude_lisa_param is None:
+            longitude_lisa_param = self._default_longitude_lisa
+        if latitude_lisa_param is None:
+            latitude_lisa_param = self._default_latitude_lisa
+        if polarization_lisa_param is None:
+            polarization_lisa_param = self._default_polarization_lisa
         if tc_geo_param is None:
             tc_geo_param = self._default_tc_geo
-        if lamda_geo_param is None:
-            lamda_geo_param = self._default_lamda_geo
-        if beta_geo_param is None:
-            beta_geo_param = self._default_beta_geo
-        if psi_geo_param is None:
-            psi_geo_param = self._default_psi_geo
+        if longitude_geo_param is None:
+            longitude_geo_param = self._default_longitude_geo
+        if latitude_geo_param is None:
+            latitude_geo_param = self._default_latitude_geo
+        if polarization_geo_param is None:
+            polarization_geo_param = self._default_polarization_geo
         self.tc_lisa_param = tc_lisa_param
-        self.lamda_lisa_param = lamda_lisa_param
-        self.beta_lisa_param = beta_lisa_param
-        self.psi_lisa_param = psi_lisa_param
+        self.longitude_lisa_param = longitude_lisa_param
+        self.latitude_lisa_param = latitude_lisa_param
+        self.polarization_lisa_param = polarization_lisa_param
         self.tc_geo_param = tc_geo_param
-        self.lamda_geo_param = lamda_geo_param
-        self.beta_geo_param = beta_geo_param
-        self.psi_geo_param = psi_geo_param
-        self._inputs = [self.tc_geo_param, self.lamda_geo_param,
-                        self.beta_geo_param, self.psi_geo_param]
-        self._outputs = [self.tc_lisa_param, self.lamda_lisa_param,
-                         self.beta_lisa_param, self.psi_lisa_param]
+        self.longitude_geo_param = longitude_geo_param
+        self.latitude_geo_param = latitude_geo_param
+        self.polarization_geo_param = polarization_geo_param
+        self._inputs = [self.tc_geo_param, self.longitude_geo_param,
+                        self.latitude_geo_param, self.polarization_geo_param]
+        self._outputs = [self.tc_lisa_param, self.longitude_lisa_param,
+                         self.latitude_lisa_param, self.polarization_lisa_param]
         self.inputs = set(self._inputs)
         self.outputs = set(self._outputs)
 
