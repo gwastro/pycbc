@@ -1726,7 +1726,8 @@ class LISAToSSB(BaseTransform):
         """
         out = {}
         out[self.tc_lisa_param], out[self.longitude_lisa_param], \
-            out[self.latitude_lisa_param], out[self.polarization_lisa_param] = \
+            out[self.latitude_lisa_param], \
+            out[self.polarization_lisa_param] = \
             coordinates.ssb_to_lisa(
                 maps[self.tc_ssb_param], maps[self.longitude_ssb_param],
                 maps[self.latitude_ssb_param], maps[self.polarization_ssb_param]
@@ -1749,7 +1750,8 @@ class LISAToSSB(BaseTransform):
             skip_opts.append('longitude-lisa')
             additional_opts.update({'longitude_lisa_param': cp.get_opt_tag(section, 'longitude-lisa', tag)})
         else:
-            additional_opts.update({'longitude_lisa_param': cls._default_longitude_lisa})
+            additional_opts.update({'longitude_lisa_param':
+                                    cls._default_longitude_lisa})
         if cp.has_option("-".join([section, outputs]), 'latitude-lisa'):
             skip_opts.append('latitude-lisa')
             additional_opts.update({'latitude_lisa_param': cp.get_opt_tag(section, 'latitude-lisa', tag)})
@@ -1763,19 +1765,23 @@ class LISAToSSB(BaseTransform):
 
         if cp.has_option("-".join([section, outputs]), 'tc-ssb'):
             skip_opts.append('tc-ssb')
-            additional_opts.update({'tc_ssb_param': cp.get_opt_tag(section, 'tc-ssb', tag)})
+            additional_opts.update({'tc_ssb_param': cp.get_opt_tag(
+                                    section, 'tc-ssb', tag)})
         else:
             additional_opts.update({'tc_ssb_param': cls._default_tc_ssb})
         if cp.has_option("-".join([section, outputs]), 'longitude-ssb'):
             skip_opts.append('longitude-ssb')
-            additional_opts.update({'longitude_ssb_param': cp.get_opt_tag(section, 'longitude-ssb', tag)})
+            additional_opts.update({'longitude_ssb_param': cp.get_opt_tag(
+                                    section, 'longitude-ssb', tag)})
         else:
             additional_opts.update({'longitude_ssb_param': cls._default_longitude_ssb})
         if cp.has_option("-".join([section, outputs]), 'latitude-ssb'):
             skip_opts.append('latitude-ssb')
-            additional_opts.update({'latitude_ssb_param': cp.get_opt_tag(section, 'latitude-ssb', tag)})
+            additional_opts.update({'latitude_ssb_param': cp.get_opt_tag(
+                                    section, 'latitude-ssb', tag)})
         else:
-            additional_opts.update({'latitude_ssb_param': cls._default_latitude_ssb})
+            additional_opts.update({'latitude_ssb_param':
+                                    cls._default_latitude_ssb})
         if cp.has_option("-".join([section, outputs]), 'polarization-ssb'):
             skip_opts.append('polarization-ssb')
             additional_opts.update({'polarization_ssb_param': cp.get_opt_tag(section, 'polarization-ssb', tag)})
@@ -1878,7 +1884,8 @@ class LISAToGEO(BaseTransform):
         """
         out = {}
         out[self.tc_lisa_param], out[self.longitude_lisa_param], \
-            out[self.latitude_lisa_param], out[self.polarization_lisa_param] = \
+            out[self.latitude_lisa_param], \
+            out[self.polarization_lisa_param] = \
             coordinates.geo_to_lisa(
                 maps[self.tc_geo_param], maps[self.longitude_geo_param],
                 maps[self.latitude_geo_param], maps[self.polarization_geo_param]
@@ -1894,45 +1901,59 @@ class LISAToGEO(BaseTransform):
         # get custom variable names
         if cp.has_option("-".join([section, outputs]), 'tc-lisa'):
             skip_opts.append('tc-lisa')
-            additional_opts.update({'tc_lisa_param': cp.get_opt_tag(section, 'tc-lisa', tag)})
+            additional_opts.update({'tc_lisa_param': cp.get_opt_tag(
+                                    section, 'tc-lisa', tag)})
         else:
             additional_opts.update({'tc_lisa_param': cls._default_tc_lisa})
         if cp.has_option("-".join([section, outputs]), 'longitude-lisa'):
             skip_opts.append('longitude-lisa')
-            additional_opts.update({'longitude_lisa_param': cp.get_opt_tag(section, 'longitude-lisa', tag)})
+            additional_opts.update({'longitude_lisa_param': cp.get_opt_tag(
+                                    section, 'longitude-lisa', tag)})
         else:
-            additional_opts.update({'longitude_lisa_param': cls._default_longitude_lisa})
+            additional_opts.update({'longitude_lisa_param':
+                                    cls._default_longitude_lisa})
         if cp.has_option("-".join([section, outputs]), 'latitude-lisa'):
             skip_opts.append('latitude-lisa')
-            additional_opts.update({'latitude_lisa_param': cp.get_opt_tag(section, 'latitude-lisa', tag)})
+            additional_opts.update({'latitude_lisa_param': cp.get_opt_tag(
+                                    section, 'latitude-lisa', tag)})
         else:
-            additional_opts.update({'latitude_lisa_param': cls._default_latitude_lisa})
+            additional_opts.update({'latitude_lisa_param':
+                                    cls._default_latitude_lisa})
         if cp.has_option("-".join([section, outputs]), 'polarization-lisa'):
             skip_opts.append('polarization-lisa')
-            additional_opts.update({'polarization_lisa_param': cp.get_opt_tag(section, 'polarization-lisa', tag)})
+            additional_opts.update({'polarization_lisa_param': cp.get_opt_tag(
+                                    section, 'polarization-lisa', tag)})
         else:
-            additional_opts.update({'polarization_lisa_param': cls._default_polarization_lisa})
+            additional_opts.update({'polarization_lisa_param':
+                                    cls._default_polarization_lisa})
 
         if cp.has_option("-".join([section, outputs]), 'tc-geo'):
             skip_opts.append('tc-geo')
-            additional_opts.update({'tc_geo_param': cp.get_opt_tag(section, 'tc-geo', tag)})
+            additional_opts.update({'tc_geo_param': cp.get_opt_tag(
+                                    section, 'tc-geo', tag)})
         else:
             additional_opts.update({'tc_geo_param': cls._default_tc_geo})
         if cp.has_option("-".join([section, outputs]), 'longitude-geo'):
             skip_opts.append('longitude-geo')
-            additional_opts.update({'longitude_geo_param': cp.get_opt_tag(section, 'longitude-geo', tag)})
+            additional_opts.update({'longitude_geo_param': cp.get_opt_tag(
+                                    section, 'longitude-geo', tag)})
         else:
-            additional_opts.update({'longitude_geo_param': cls._default_longitude_geo})
+            additional_opts.update({'longitude_geo_param':
+                                    cls._default_longitude_geo})
         if cp.has_option("-".join([section, outputs]), 'latitude-geo'):
             skip_opts.append('latitude-geo')
-            additional_opts.update({'latitude_geo_param': cp.get_opt_tag(section, 'latitude-geo', tag)})
+            additional_opts.update({'latitude_geo_param': cp.get_opt_tag(
+                                    section, 'latitude-geo', tag)})
         else:
-            additional_opts.update({'latitude_geo_param': cls._default_latitude_geo})
+            additional_opts.update({'latitude_geo_param':
+                                    cls._default_latitude_geo})
         if cp.has_option("-".join([section, outputs]), 'polarization-geo'):
             skip_opts.append('polarization-geo')
-            additional_opts.update({'polarization_geo_param': cp.get_opt_tag(section, 'polarization-geo', tag)})
+            additional_opts.update({'polarization_geo_param': cp.get_opt_tag(
+                                    section, 'polarization-geo', tag)})
         else:
-            additional_opts.update({'polarization_geo_param': cls._default_polarization_geo})
+            additional_opts.update({'polarization_geo_param':
+                                    cls._default_polarization_geo})
 
         return super(GEOToSSB, cls).from_config(
             cp, section, outputs, skip_opts=skip_opts, additional_opts=additional_opts
