@@ -35,14 +35,16 @@ from pycbc.waveform import (get_fd_waveform_sequence,
                             get_fd_det_waveform_sequence, fd_det_sequence)
 from pycbc.detector import Detector
 from pycbc.types import Array, TimeSeries
-from pycbc.coordinates import space
-from pycbc import distributions
 
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
                          likelihood_parts_det, likelihood_parts_vector,
+                         likelihood_parts_v_pol,
+                         likelihood_parts_v_time,
+                         likelihood_parts_v_pol_time,
                          likelihood_parts_vectorp, snr_predictor,
+                         likelihood_parts_vectort,
                          snr_predictor_dom)
 from .tools import DistMarg
 
@@ -342,6 +344,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def setup_antenna(self, earth_rotation, mode, fedges):
         # Calculate the times to evaluate fp/fc
+        self.earth_rotation = earth_rotation
         if earth_rotation is not False:
             logging.info("Enabling frequency-dependent earth rotation")
             from pycbc.waveform.spa_tmplt import spa_length_in_time
@@ -366,15 +369,32 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     @property
     def likelihood_function(self):
+        self.lformat = None
         if self.marginalize_vector_params:
             p = self.current_params
 
-            for k in ['ra', 'dec', 'tc']:
-                if k in p and not numpy.isscalar(p[k]):
-                    return likelihood_parts_vector
+            vmarg = set(k for k in self.marginalize_vector_params
+                        if not numpy.isscalar(p[k]))
 
-            if 'polarization' in p and not numpy.isscalar(p['polarization']):
-                return likelihood_parts_vectorp
+            if self.earth_rotation:
+                if set(['tc', 'polarization']).issubset(vmarg):
+                    self.lformat = 'earth_time_pol'
+                    return likelihood_parts_v_pol_time
+                elif set(['polarization']).issubset(vmarg):
+                    self.lformat = 'earth_pol'
+                    return likelihood_parts_v_pol
+                elif set(['tc']).issubset(vmarg):
+                    self.lformat = 'earth_time'
+                    return likelihood_parts_v_time
+            else:
+                if set(['ra', 'dec', 'tc']).issubset(vmarg):
+                    return likelihood_parts_vector
+                elif set(['tc', 'polarization']).issubset(vmarg):
+                    return likelihood_parts_vector
+                elif set(['tc']).issubset(vmarg):
+                    return likelihood_parts_vectort
+                elif set(['polarization']).issubset(vmarg):
+                    return likelihood_parts_vectorp
 
         return self.lik
 
@@ -533,14 +553,21 @@ class Relative(DistMarg, BaseGaussianNoise):
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
                 dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
-                f = (fp + 1.0j * fc) * pol_phase
-                fp = f.real.copy()
-                fc = f.imag.copy()
-                filter_i, norm_i = lik(freqs, fp, fc, dtc,
-                                       hp, hc, h00,
-                                       sdat['a0'], sdat['a1'],
-                                       sdat['b0'], sdat['b1'])
-                self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
+                if self.lformat == 'earth_pol':
+                    filter_i, norm_i = lik(freqs, fp, fc, dtc, pol_phase,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
+                else:
+                    f = (fp + 1.0j * fc) * pol_phase
+                    fp = f.real.copy()
+                    fc = f.imag.copy()
+                    filter_i, norm_i = lik(freqs, fp, fc, dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
+                    self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
+
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
@@ -604,10 +631,6 @@ class Relative(DistMarg, BaseGaussianNoise):
             if p.endswith("_ref")
         }
 
-        _, static_params = distributions.read_params_from_config(
-            cp, prior_section='prior', vargs_section='variable_params',
-            sargs_section='static_params')
-
         # add optional params with default values if not specified
         opt_params = {
             "ra": numpy.pi,
@@ -615,36 +638,6 @@ class Relative(DistMarg, BaseGaussianNoise):
             "inclination": 0.0,
             "polarization": numpy.pi,
         }
-
-        # add coordinate transform
-        if 'ref_frame' in static_params:
-            if static_params['ref_frame'] == 'SSB':
-                ssb_params = ['tc', 'eclipticlongitude',
-                              'eclipticlatitude', 'polarization']
-                if not set(ssb_params).issubset(set(fid_params.keys())):
-                    opt_params['tc'], \
-                    opt_params['eclipticlongitude'],\
-                    opt_params['eclipticlatitude'], \
-                    opt_params['polarization'] = \
-                        space.geo_to_ssb(
-                            fid_params['tc'], opt_params['ra'],
-                            opt_params['dec'], opt_params['polarization'])
-            elif static_params['ref_frame'] == 'LISA':
-                lisa_params = ['tc', 'eclipticlongitude',
-                               'eclipticlatitude', 'polarization']
-                if not set(lisa_params).issubset(set(fid_params.keys())):
-                    opt_params['tc'], \
-                    opt_params['eclipticlongitude'],\
-                    opt_params['eclipticlatitude'], \
-                    opt_params['polarization'] = \
-                        space.geo_to_lisa(
-                            fid_params['tc'], opt_params['ra'],
-                            opt_params['dec'], opt_params['polarization'])
-            else:
-                logging.info("Don't recognise reference frame {}. ".format(
-                             static_params['ref_frame']) +
-                             "Known frames are 'LISA' and 'SSB'.")
-
         fid_params.update(
             {p: opt_params[p] for p in opt_params if p not in fid_params}
         )
@@ -685,14 +678,14 @@ class RelativeTime(Relative):
             dtc = self.tstart[ifo] - self.end_time[ifo] - self.ta[ifo]
 
             snr = snr_predictor(self.fedges[ifo],
-                                dtc, delta_t,
-                                self.num_samples[ifo],
+                                dtc - delta_t * 2.0, delta_t,
+                                self.num_samples[ifo] + 4,
                                 wfs[ifo][0], wfs[ifo][1],
                                 self.h00_sparse[ifo],
                                 sdat['a0'], sdat['a1'],
                                 sdat['b0'], sdat['b1'])
             snrs[ifo] = TimeSeries(snr, delta_t=delta_t,
-                                   epoch=self.tstart[ifo])
+                                   epoch=self.tstart[ifo] - delta_t * 2.0)
         return snrs
 
     def _loglr(self):
@@ -733,16 +726,30 @@ class RelativeTime(Relative):
             det = self.det[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"],
                                          0, times)
-            dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-            dtc = p["tc"] + dt - end_time - self.ta[ifo]
+            times = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
+            dtc = p["tc"] - end_time - self.ta[ifo]
 
-            f = (fp + 1.0j * fc) * pol_phase
-            fp = f.real.copy()
-            fc = f.imag.copy()
-            filter_i, norm_i = lik(freqs, fp, fc, dtc,
-                                   hp, hc, h00,
-                                   sdat['a0'], sdat['a1'],
-                                   sdat['b0'], sdat['b1'])
+            if self.lformat == 'earth_time_pol':
+                filter_i, norm_i = lik(
+                                       freqs, fp, fc, times, dtc, pol_phase,
+                                       hp, hc, h00,
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
+            else:
+                f = (fp + 1.0j * fc) * pol_phase
+                fp = f.real.copy()
+                fc = f.imag.copy()
+                if self.lformat == 'earth_time':
+                    filter_i, norm_i = lik(
+                                           freqs, fp, fc, times, dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
+                else:
+                    filter_i, norm_i = lik(freqs, fp, fc, times + dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
