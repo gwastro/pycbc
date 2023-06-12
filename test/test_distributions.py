@@ -32,6 +32,7 @@ from pycbc.workflow import WorkflowConfigParser
 # some of these distributons have their own specific unit test
 EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
                       "external", "external_func_fromfile",
+                      "fisher_sky",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff",
                       "uniform_f0_tau", "fixed_samples"]

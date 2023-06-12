@@ -20,7 +20,7 @@ from .core import _list_available
 _backend_dict = {'fftw' : 'fftw',
                  'mkl' : 'mkl',
                  'numpy' : 'npfft'}
-_backend_list = ['fftw','mkl','numpy']
+_backend_list = ['mkl', 'fftw', 'numpy']
 
 _alist, _adict = _list_available(_backend_list, _backend_dict)
 

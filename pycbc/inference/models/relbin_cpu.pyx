@@ -5,6 +5,7 @@ cdef extern from "complex.h":
     double norm(double complex)
     double complex conj(double complex)
     double real(double complex)
+    double imag(double complex)
 
 import numpy
 cimport cython, numpy
@@ -180,6 +181,171 @@ cpdef likelihood_parts_v(double [::1] freqs,
         x0 = x0n
     return conj(hd), hh
 
+# Used where the antenna response may be frequency varying
+# and there is a polarization vector marginalization
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.cdivision(True)     # Disable checking for dividing by zero
+cpdef likelihood_parts_v_pol(double [::1] freqs,
+                     double[::1] fp,
+                     double[::1] fc,
+                     double[::1] dtc,
+                     double complex[::1] pol_phase,
+                     double complex[::1] hp,
+                     double complex[::1] hc,
+                     double complex[::1] h00,
+                     double complex[::1] a0,
+                     double complex[::1] a1,
+                     double [::1] b0,
+                     double [::1] b1,
+                     ) :
+    cdef size_t i
+    cdef double complex hd=0, r0, r0n, r1, x0, x0n, x1, fp2, fc2
+    cdef double hh=0
+
+    N = freqs.shape[0]
+    num_samples = pol_phase.shape[0]
+
+    cdef numpy.ndarray[numpy.complex128_t, ndim=1] hdv = numpy.empty(num_samples, dtype=numpy.complex128)
+    cdef numpy.ndarray[numpy.float64_t, ndim=1] hhv = numpy.empty(num_samples, dtype=numpy.float64)
+
+    for j in range(num_samples):
+        hh = 0
+        hd = 0
+        for i in range(N):
+        
+            f = (fp[i] + 1.0j * fc[i]) * pol_phase[j]
+            fp2 = real(f)
+            fc2 = imag(f)
+        
+            r0n = (exp(-2.0j * 3.141592653 * dtc[i] * freqs[i])
+                   * (fp2 * hp[i] + fc2 * hc[i])) / h00[i]
+            r1 = r0n - r0
+
+            x0n = norm(r0n)
+            x1 = x0n - x0
+
+            if i > 0:
+                hd += a0[i-1] * r0 + a1[i-1] * r1
+                hh += real(b0[i-1] * x0 + b1[i-1] * x1)
+
+            r0 = r0n
+            x0 = x0n
+            
+        hdv[j] = conj(hd)
+        hhv[j] = hh
+    return hdv, hhv
+
+# Used where the antenna response may be frequency varying
+# and there is a polarization vector marginalization
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.cdivision(True)     # Disable checking for dividing by zero
+cpdef likelihood_parts_v_time(double [::1] freqs,
+                     double[::1] fp,
+                     double[::1] fc,
+                     double[::1] times,
+                     double[::1] dtc,
+                     double complex[::1] hp,
+                     double complex[::1] hc,
+                     double complex[::1] h00,
+                     double complex[::1] a0,
+                     double complex[::1] a1,
+                     double [::1] b0,
+                     double [::1] b1,
+                     ) :
+    cdef size_t i
+    cdef double complex hd=0, r0, r0n, r1, x0, x0n, x1
+    cdef double hh=0, ttime;
+
+    N = freqs.shape[0]
+    num_samples = dtc.shape[0]
+
+    cdef numpy.ndarray[numpy.complex128_t, ndim=1] hdv = numpy.empty(num_samples, dtype=numpy.complex128)
+    cdef numpy.ndarray[numpy.float64_t, ndim=1] hhv = numpy.empty(num_samples, dtype=numpy.float64)
+
+    for j in range(num_samples):
+        hh = 0
+        hd = 0
+        for i in range(N):   
+            # This allows for multiple time offsets
+            ttime = times[i] + dtc[j]
+            r0n = (exp(-2.0j * 3.141592653 * ttime * freqs[i])
+                   * (fp[i] * hp[i] + fc[i] * hc[i])) / h00[i]
+            r1 = r0n - r0
+
+            x0n = norm(r0n)
+            x1 = x0n - x0
+
+            if i > 0:
+                hd += a0[i-1] * r0 + a1[i-1] * r1
+                hh += real(b0[i-1] * x0 + b1[i-1] * x1)
+
+            r0 = r0n
+            x0 = x0n
+            
+        hdv[j] = conj(hd)
+        hhv[j] = hh
+    return hdv, hhv
+
+# Used where the antenna response may be frequency varying
+# and there is a polarization vector marginalization
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.cdivision(True)     # Disable checking for dividing by zero
+cpdef likelihood_parts_v_pol_time(double [::1] freqs,
+                     double[::1] fp,
+                     double[::1] fc,
+                     double[::1] times,
+                     double[::1] dtc,
+                     double complex[::1] pol_phase,
+                     double complex[::1] hp,
+                     double complex[::1] hc,
+                     double complex[::1] h00,
+                     double complex[::1] a0,
+                     double complex[::1] a1,
+                     double [::1] b0,
+                     double [::1] b1,
+                     ) :
+    cdef size_t i
+    cdef double complex hd=0, r0, r0n, r1, x0, x0n, x1, fp2, fc2
+    cdef double hh=0, ttime;
+
+    N = freqs.shape[0]
+    num_samples = pol_phase.shape[0]
+
+    cdef numpy.ndarray[numpy.complex128_t, ndim=1] hdv = numpy.empty(num_samples, dtype=numpy.complex128)
+    cdef numpy.ndarray[numpy.float64_t, ndim=1] hhv = numpy.empty(num_samples, dtype=numpy.float64)
+
+    for j in range(num_samples):
+        hh = 0
+        hd = 0
+        for i in range(N):
+        
+            f = (fp[i] + 1.0j * fc[i]) * pol_phase[j]
+            fp2 = real(f)
+            fc2 = imag(f)
+        
+            # This allows for multiple time offsets
+            ttime = times[i] + dtc[j]
+            r0n = (exp(-2.0j * 3.141592653 * ttime * freqs[i])
+                   * (fp2 * hp[i] + fc2 * hc[i])) / h00[i]
+            r1 = r0n - r0
+
+            x0n = norm(r0n)
+            x1 = x0n - x0
+
+            if i > 0:
+                hd += a0[i-1] * r0 + a1[i-1] * r1
+                hh += real(b0[i-1] * x0 + b1[i-1] * x1)
+
+            r0 = r0n
+            x0 = x0n
+            
+        hdv[j] = conj(hd)
+        hhv[j] = hh
+    return hdv, hhv
+
 # Standard likelihood but simultaneously handling multiple sky or time points
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
@@ -211,6 +377,52 @@ cpdef likelihood_parts_vector(double [::1] freqs,
         for i in range(N):
             r0n = (exp(-2.0j * 3.141592653 * dtc[j] * freqs[i])
                    * (fp[j] * hp[i] + fc[j] * hc[i])) / h00[i]
+            r1 = r0n - r0
+
+            x0n = norm(r0n)
+            x1 = x0n - x0
+
+            if i > 0:
+                hd += a0[i-1] * r0 + a1[i-1] * r1
+                hh += real(b0[i-1] * x0 + b1[i-1] * x1)
+
+            r0 = r0n
+            x0 = x0n
+        hdv[j] = conj(hd)
+        hhv[j] = hh
+    return hdv, hhv
+    
+# Standard likelihood but simultaneously handling multiple time points
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.cdivision(True)     # Disable checking for dividing by zero
+cpdef likelihood_parts_vectort(double [::1] freqs,
+                     double fp,
+                     double fc,
+                     double[::1] dtc,
+                     double complex[::1] hp,
+                     double complex[::1] hc,
+                     double complex[::1] h00,
+                     double complex[::1] a0,
+                     double complex[::1] a1,
+                     double [::1] b0,
+                     double [::1] b1,
+                     ) :
+    cdef size_t i
+    cdef double complex hd, r0, r0n, r1, x0, x0n, x1
+    cdef double hh
+    N = freqs.shape[0]
+    num_samples = dtc.shape[0]
+
+    cdef numpy.ndarray[numpy.complex128_t, ndim=1] hdv = numpy.empty(num_samples, dtype=numpy.complex128)
+    cdef numpy.ndarray[numpy.float64_t, ndim=1] hhv = numpy.empty(num_samples, dtype=numpy.float64)
+
+    for j in range(num_samples):
+        hd = 0
+        hh = 0
+        for i in range(N):
+            r0n = (exp(-2.0j * 3.141592653 * dtc[j] * freqs[i])
+                   * (fp * hp[i] + fc * hc[i])) / h00[i]
             r1 = r0n - r0
 
             x0n = norm(r0n)

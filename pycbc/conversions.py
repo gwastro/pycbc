@@ -862,7 +862,6 @@ def optimal_ra_from_detector(detector_name, tc):
     """For a given detector and GPS time, return the optimal orientation
     (directly overhead of the detector) in right ascension.
 
-
     Parameters
     ----------
     detector_name : string
@@ -876,6 +875,7 @@ def optimal_ra_from_detector(detector_name, tc):
         The declination of the signal, in radians.
     """
     return optimal_orientation_from_detector(detector_name, tc)[0]
+
 
 #
 # =============================================================================
