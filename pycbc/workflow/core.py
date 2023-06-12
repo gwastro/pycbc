@@ -582,7 +582,7 @@ class Executable(pegasus_workflow.Executable):
                 warn_string += "[{0}]".format(sec)
                 logging.warn(warn_string)
 
-        self._add_ini_opts(f'{self.cp}-defaultvalues', sec,
+        self._add_ini_opts(self.cp, f'{sec}-defaultvalues',
                            ignore_existing=True)
 
     def update_output_directory(self, out_dir=None):
