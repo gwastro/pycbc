@@ -315,7 +315,6 @@ class Executable(pegasus_workflow.Executable):
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
 
-
     def _add_ini_opts(self, cp, sec, ignore_existing=False):
         """Add job-specific options from configuration file.
 
