@@ -15,7 +15,7 @@ lalsuite!=7.2
 lscsoft-glue>=1.59.3
 ligo-segments
 tqdm
-gwdatafind
+gwdatafind>=1.1.3
 
 # Requirements for full pegasus env
 pegasus-wms.api >= 5.0.3
