@@ -106,6 +106,10 @@ def _init_threads(backend):
         raise ValueError("Backend {0} for FFTW threading does not exist!".format(backend))
     if double_threaded_libname is not None:
         try:
+            # For reasons Ian doesn't understand we should not load libgomp
+            # first using RTLD_DEEPBIND, so force loading it here if needed
+            if backend == 'openmp':
+                get_ctypes_library('gomp', [], mode=ctypes.DEFAULT_MODE)
             # Note that the threaded libraries don't have their own pkg-config
             # files we must look for them wherever we look for double or single
             # FFTW itself.
@@ -152,8 +156,9 @@ def set_threads_backend(backend=None):
         if retval != 0:
             raise RuntimeError("Could not initialize FFTW threading backend {0}".format(backend))
     else:
-        # Note that we pop() from the end, so 'openmp' is the first thing tried
-        _backend_list = ['unthreaded','pthreads','openmp']
+        # Note that we pop() from the end, so 'pthreads'
+        # is the first thing tried
+        _backend_list = ['unthreaded','openmp', 'pthreads']
         while not _fftw_threaded_set:
             _next_backend = _backend_list.pop()
             retval = _init_threads(_next_backend)
