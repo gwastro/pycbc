@@ -358,7 +358,7 @@ maxm1 = cv._mass2_from_mchirp_mass1(maxchirp, MIN_CPT_MASS)
 mineta = max(cv.eta_from_mass1_mass2(maxm1, MIN_CPT_MASS), MIN_ETA)
 
 # Use max chirp and min eta to find the upper bound on mass2
-maxm2 = cv.mass2_from_mchirp_eta(minchirp, MAX_ETA)
+maxm2 = cv.mass2_from_mchirp_eta(maxchirp, MAX_ETA)
 
 # Astrophysical spin bounds dependent on system masses - https://inspirehep.net/literature/1124003
 # If masses can be > 3 then allow them BH spin range
