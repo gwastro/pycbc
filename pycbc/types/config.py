@@ -526,7 +526,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             )
 
         section_and_default = (section1 == f"{section2}-defaultvalues" or
-                    section2 == f"{section1}-defaultvalues")
+                               section2 == f"{section1}-defaultvalues")
 
         if section1.endswith("-defaultvalues") or \
                 section2.endswith("-defaultvalues"):

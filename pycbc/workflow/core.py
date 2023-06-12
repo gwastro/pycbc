@@ -328,13 +328,8 @@ class Executable(pegasus_workflow.Executable):
             The section containing options for this job.
         """
         for opt in cp.options(sec):
-            if opt in self.all_added_options:
-                if not ignore_existing:
-                    raise ValueError("Option %s has already been added", opt)
-                else:
-                    # We are ignoring any options which have already
-                    # been given
-                    continue
+            if not ignore_exising and opt in self.all_added_options:
+                raise ValueError("Option %s has already been added" % opt)
             self.all_added_options.append(opt)
 
             value = cp.get(sec, opt).strip()
@@ -587,7 +582,8 @@ class Executable(pegasus_workflow.Executable):
                 warn_string += "[{0}]".format(sec)
                 logging.warn(warn_string)
 
-        self._add_ini_opts(f'{self.cp}-defaultvalues', sec, ignore_existing=True)
+        self._add_ini_opts(f'{self.cp}-defaultvalues', sec,
+                           ignore_existing=True)
 
     def update_output_directory(self, out_dir=None):
         """Update the default output directory for output files.
