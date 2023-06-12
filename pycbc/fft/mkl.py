@@ -69,8 +69,8 @@ def check_status(status):
     there is an error.
     """
     if status:
+        lib.DftiErrorMessage.restype = ctypes.c_char_p
         msg = lib.DftiErrorMessage(status)
-        msg = ctypes.c_char_p(msg).value
         raise RuntimeError(msg)
 
 def create_descriptor(size, idtype, odtype, inplace):
