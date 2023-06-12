@@ -367,7 +367,7 @@ maxspin1z = 0.4 if maxm1 < 3 else 0.9
 minspin2z = -0.4 if maxm2 < 3 else -0.9
 maxspin2z = 0.4 if maxm2 < 3 else 0.9
 
-# boundary of the optimization space (dict of (min, max) tuples)
+# Boundary of the optimization space
 bounds = {
     'mchirp': (minchirp, maxchirp),
     'eta': (mineta, MAX_ETA),
