@@ -60,7 +60,8 @@ with h5py.File(args.trfits_files[0], 'r') as fit_f0:
 
 live_times = {ifo : [] for ifo in args.ifos}
 
-trigger_file_times = []
+trigger_file_starts = []
+trigger_file_ends = []
 
 n_files = len(args.trfits_files)
 logging.info("Checking through %d files", n_files)
@@ -77,16 +78,18 @@ for f in args.trfits_files:
     assert all(fits_f['bins_lower'][:] == bl)
     assert all(fits_f['bins_upper'][:] == bu)
 
-    # Get the time of the last trigger in the trigger_fits file
+    # Get the time of the first/last triggers in the trigger_fits file
     gps_last = 0
+    gps_first = np.inf
     for ifo in args.ifos:
         if ifo not in fits_f:
             continue
         else:
             trig_times = fits_f[ifo]['triggers']['end_time'][:]
-            gps_last = max(gps_last,
-                           trig_times.max())
-    trigger_file_times.append(gps_last)
+            gps_last = max(gps_last, trig_times.max())
+            gps_first = min(gps_first, trig_times.min())
+    trigger_file_starts.append(gps_first)
+    trigger_file_ends.append(gps_last)
 
     for ifo in args.ifos:
         if ifo not in fits_f:
@@ -102,16 +105,16 @@ for f in args.trfits_files:
                 logging.info(fits_f[ifo + '/fit_coeff'][:])
     fits_f.close()
 
-# Set up the date array, this is stored as an offset from the start date of
-# the combination to the end of the trigger_fits file.
-# This allows for missing or empty days
+# Set up the date array, this is stored as an offset from the first trigger time of
+# the first file to the last trigger of the file
 
-trigger_file_times = np.array(trigger_file_times)
-ad_order = np.argsort(np.array(trigger_file_times))
-start_date_n = trigger_file_times[ad_order[0]]
-ad = trigger_file_times[ad_order] - start_date_n
+trigger_file_starts = np.array(trigger_file_starts)
+trigger_file_ends = np.array(trigger_file_ends)
+ad_order = np.argsort(trigger_file_starts)
+start_time_n = trigger_file_starts[ad_order[0]]
+ad = trigger_file_ends[ad_order] - start_time_n
 
-# Get the counts and alphas sorted by bin rather than by date
+# Get the counts and alphas
 counts_bin = {ifo: [c for c in zip(*counts_all[ifo])] for ifo in args.ifos}
 alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
 
@@ -126,7 +129,7 @@ fout.attrs['fit_threshold'] = fit_thresh
 fout.attrs['conservative_percentile'] = args.conservative_percentile
 fout.attrs['ifos'] = args.ifos
 fout['bins_edges'] = list(bl) + [bu[-1]]
-fout['fits_dates'] = ad + start_date_n
+fout['fits_dates'] = ad + start_time_n
 
 for ifo in args.ifos:
     fout.create_group(ifo)
@@ -143,13 +146,16 @@ for ifo in args.ifos:
     alpha_all = np.mean(counts_bin[ifo], axis=0) / invalphan_all
     meant = l_times.mean()
 
-    fout_ifo[f'separate_fits/live_times'] = l_times
-    fout_ifo[f'separate_fits/date'] = ad + start_date_n
+    fout_ifo[f'separate_fits/live_times'] = l_times[ad_order]
+    fout_ifo[f'separate_fits/start_time'] = trigger_file_starts[ad_order]
+    fout_ifo[f'separate_fits/end_time'] = trigger_file_ends[ad_order]
+
     for counter, a_c_u_l in enumerate(zip(alphas_bin[ifo],
                                           counts_bin[ifo], bu, bl)):
         a, c, u, l = a_c_u_l
-        a = np.array(a)
-        c = np.array(c)
+        # Sort alpha and counts by date
+        a = np.array(a)[ad_order]
+        c = np.array(c)[ad_order]
         invalphan = c / a
         mean_alpha = c.mean() / invalphan.mean()
         cons_alpha = np.percentile(a, 100 - args.conservative_percentile)
