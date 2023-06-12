@@ -320,7 +320,12 @@ parser.add_argument('--pso-w', type=float, default=0.01,
                     'The hyperparameter w: the inertia parameter.')
 parser.add_argument('--include-candidate-in-optimizer', action='store_true',
                     help='Include parameters of the candidate event in the '
-                    'initialised array for the optimizer')
+                    'initialised array for the optimizer. Only relevant for '
+                    '--optimizer pso or differential_evolution')
+parser.add_argument('--seed', type=int,
+                    help='Seed to supply to the random generation of initial '
+                    'array to pass to the optimizer. Only relevant for '
+                    '--optimizer pso or differential_evolution')
 
 scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
@@ -332,6 +337,9 @@ if args.snr_threshold != 4:
 if args.optimizer == 'pso' and ps == None:
     parser.error('You need to install pyswarms to use the pso optimizer.')
 pycbc.init_logging(args.verbose)
+
+if args.seed:
+    numpy.random.seed(args.seed)
 
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
