@@ -237,6 +237,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             sec[len(section_name) + 1:]
             for sec in self.sections()
             if sec.startswith(section_name + "-")
+            and not sec.endswith('defaultvalues')
         ]
 
         for sec in subsections:
