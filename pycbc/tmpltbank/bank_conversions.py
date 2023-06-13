@@ -26,6 +26,7 @@ This module is supplied to make a convenience function for converting into
 specific values from PyCBC template banks.
 """
 
+import numpy as np
 from pycbc import conversions as conv
 from pycbc import pnutils
 
@@ -34,7 +35,8 @@ from pycbc import pnutils
 conversion_options = ['mass1', 'mass2', 'spin1z', 'spin2z', 'duration',
                       'template_duration', 'mtotal', 'total_mass',
                       'q', 'invq', 'eta', 'chirp_mass', 'mchirp',
-                      'chieff', 'chi_eff', 'effective_spin', 'chi_a']
+                      'chieff', 'chi_eff', 'effective_spin', 'chi_a',
+                      'premerger_duration']
 
 
 mass_conversions = {
@@ -55,8 +57,7 @@ spin_conversions = {
 }
 
 
-def get_bank_property(parameter, bank, template_ids,
-                      duration_approximant="SEOBNRv4"):
+def get_bank_property(parameter, bank, template_ids):
     """ Get a specific value from a hdf file object in standard PyCBC
     template bank format
 
@@ -72,12 +73,6 @@ def get_bank_property(parameter, bank, template_ids,
     template_ids: numpy array
         Array of template IDs for reading a set of templates from the bank
 
-    Optional Parameters
-    -------------------
-    duration_approximant: string
-        The approximant used to calculate the duration of the template if
-        not already given
-
     Returns
     -------
     values: numpy array, same size as template_ids
@@ -88,20 +83,55 @@ def get_bank_property(parameter, bank, template_ids,
     # These just give things already in the bank
     if parameter in bank:
         values = bank[parameter][:][template_ids]
-
-    # These things may be in the bank, but if not, we need to calculate
-    elif parameter in ['template_duration', 'duration']:
-        if 'template_duration' in bank:
+    # Duration may be in the bank, but if not, we need to calculate
+    elif parameter.endswith('duration'):
+        fullband_req = False
+        prem_required = False
+        if parameter != "premerger_duration" and 'template_duration' in bank:
             # This statement should be the reached only if 'duration'
             # is given, but 'template_duration' is in the bank
             values = bank['template_duration'][:][template_ids]
+        elif parameter in ['template_duration', 'duration']:
+            # Only calculate fullband/premerger durations if we need to
+            fullband_req = True
+            if 'f_final' in bank:
+                prem_required = True
+        elif parameter == "premerger_duration":
+            prem_required = True
+
+        # Set up the arguments for get_imr_duration
+        imr_args = ['mass1', 'mass2', 'spin1z', 'spin2z']
+        if 'approximant' in bank:
+            kwargs = {'approximant': bank['approximant'][:][template_ids]}
         else:
-            values = pnutils.get_imr_duration(bank['mass1'][:][template_ids],
-                                              bank['mass2'][:][template_ids],
-                                              bank['spin1z'][:][template_ids],
-                                              bank['spin2z'][:][template_ids],
-                                              bank['f_lower'][:][template_ids],
-                                              approximant=duration_approximant)
+            kwargs = {}
+
+        if fullband_req:
+            # Unpack the appropriate arguments
+            fullband_dur = pnutils.get_imr_duration(
+                *[bank[k][:][template_ids]
+                  for k in imr_args + ['f_lower']],
+                **kwargs)
+
+        if prem_required and 'f_final' in bank:
+            # If f_final is in the bank, then we need to calculate
+            # the premerger time of the end of the template
+            prem_dur = pnutils.get_imr_duration(
+                *[bank[k][:][template_ids]
+                  for k in imr_args + ['f_final']],
+                **kwargs)
+        elif prem_required:
+            # Pre-merger for bank without f_final is zero
+            prem_dur = np.zeros_like(template_ids)
+
+        # Now we decide what to return:
+        if parameter in ['template_duration', 'duration']:
+            values = fullband_dur
+            if prem_required:
+                values -= prem_dur
+        else:
+            values = prem_dur
+
     # Basic conversions
     elif parameter in mass_conversions.keys():
         values = mass_conversions[parameter](bank['mass1'][:][template_ids],
