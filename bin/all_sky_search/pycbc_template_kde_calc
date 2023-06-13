@@ -172,7 +172,7 @@ if args.make_template_kde:
         if 'mchirp' not in args.fit_param:
             raise ValueError("mchirp does not exist in args.fit_param")
         mchirp_index = args.fit_param.index('mchirp')
-        power_vals = template_pars[mchirp_index] ** args.mchirp_downsample_power
+        power_vals = numpy.exp(template_pars[mchirp_index]) ** args.mchirp_downsample_power
         probabilities = power_vals / numpy.max(power_vals)
         if args.seed is not None:
             numpy.random.seed(args.seed)
@@ -204,7 +204,7 @@ if args.make_template_kde:
         f_dest.create_dataset("data_kde", data=template_kde)
         f_dest.attrs['stat'] = "template-kde_file"
         f_dest.attrs['template-file'] = args.template_file
-        
+ 
 
 def signal_kde_extra_cpt(signal_kde, frac=None, volume=None):
     # Calculate the constant density value for the additional component
