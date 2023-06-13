@@ -24,7 +24,9 @@
 """
 This module provides coordinate transformations related to space-borne
 detectors, such as coordinate transformations between space-borne detectors
-and ground-based detectors.
+and ground-based detectors. Note that current LISA orbit used in this module
+is a circular orbit, need to be replaced by a more realistic and general orbit
+model in the near future.
 """
 
 import numpy as np
@@ -891,3 +893,14 @@ def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
         t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0)
 
     return (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)
+
+__all__ = ['TIME_OFFSET_20_DEGREES',
+           'localization_to_propagation_vector',
+           'propagation_vector_to_localization', 'polarization_newframe',
+           't_lisa_from_ssb', 't_ssb_from_t_lisa',
+           'ssb_to_lisa', 'lisa_to_ssb',
+           'rotation_matrix_ssb_to_lisa', 'rotation_matrix_ssb_to_geo',
+           'lisa_position_ssb', 'earth_position_ssb',
+           't_geo_from_ssb', 't_ssb_from_t_geo', 'ssb_to_geo', 'geo_to_ssb',
+           'lisa_to_geo', 'geo_to_lisa',
+           ]
