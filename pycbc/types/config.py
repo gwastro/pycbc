@@ -525,9 +525,13 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                 "Section %s not present in ConfigParser." % (section2,)
             )
 
+        # Are section1 and section2 a section-and-defaultvalues pair?
         section_and_default = (section1 == f"{section2}-defaultvalues" or
                                section2 == f"{section1}-defaultvalues")
 
+        # Is one the sections defaultvalues, but the other is not the
+        # top-level section? This is to catch the case where we are
+        # comparing section-defaultvalues with section-subsection
         if section1.endswith("-defaultvalues") or \
                 section2.endswith("-defaultvalues"):
             if not section_and_default:

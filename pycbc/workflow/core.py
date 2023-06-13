@@ -327,15 +327,18 @@ class Executable(pegasus_workflow.Executable):
             The section containing options for this job.
         """
         for opt in cp.options(sec):
-            if not ignore_existing and opt in self.all_added_options:
-                raise ValueError("Option %s has already been added" % opt)
+            if opt in self.all_added_options:
+                if ignore_existing:
+                    continue
+                else:
+                    raise ValueError("Option %s has already been added" % opt)
             self.all_added_options.append(opt)
 
             value = cp.get(sec, opt).strip()
-            opt = '--%s' %(opt,)
+            opt = f'--{opt}'
             if opt in self.file_input_options:
                 # This now expects the option to be a file
-                # Check is we have a list of files
+                # Check if we have a list of files
                 values = [path for path in value.split(' ') if path]
 
                 self.common_raw_options.append(opt)
