@@ -318,6 +318,98 @@ class CustomTransform(BaseTransform):
         return cls(inputs, outputs, transform_functions, jacobian=jacobian)
 
 
+class CustomTransformMultiOutputs(CustomTransform):
+    """Allows for any transform to be defined. Based on CustomTransform,
+    but also supports multi-returning value functions.
+
+    Parameters
+    ----------
+    input_args : (list of) str
+        The names of the input parameters.
+    output_args : (list of) str
+        The names of the output parameters.
+    transform_functions : dict
+        Dictionary mapping input args to a string giving a function call;
+        e.g., ``{'q': 'q_from_mass1_mass2(mass1, mass2)'}``.
+    jacobian : str, optional
+        String giving a jacobian function. The function must be in terms of
+        the input arguments.
+    """
+
+    name = "custom_multi"
+
+    def __init__(self, input_args, output_args, transform_functions,
+                 jacobian=None):
+        super(CustomTransformMultiOutputs, self).__init__(
+            input_args, output_args, transform_functions, jacobian)
+
+    def transform(self, maps):
+        """Applies the transform functions to the given maps object.
+        Parameters
+        ----------
+        maps : dict, or FieldArray
+        Returns
+        -------
+        dict or FieldArray
+            A map object containing the transformed variables, along with the
+            original variables. The type of the output will be the same as the
+            input.
+        """
+        if self.transform_functions is None:
+            raise NotImplementedError("no transform function(s) provided")
+        # copy values to scratch
+        self._copytoscratch(maps)
+        # ensure that we return the same data type in each dict
+        getslice = self._getslice(maps)
+        # evaluate the functions
+        # func[0] is the function itself, func[1] is the index,
+        # this supports multiple returning values function
+        out = {
+                p: self._scratch[func[0]][func[1]][getslice] if
+                len(self._scratch[func[0]]) > 1 else
+                self._scratch[func[0]][getslice]
+                for p, func in self.transform_functions.items()
+            }
+        return self.format_output(maps, out)
+
+    @classmethod
+    def from_config(cls, cp, section, outputs):
+        """Loads a CustomTransformMultiOutputs from the given config file.
+
+        Example section:
+
+        .. code-block:: ini
+
+            [{section}-outvar1+outvar2]
+            name = custom_multi
+            inputs = inputvar1, inputvar2
+            outvar1, outvar2 = func1(inputs)
+            jacobian = func2(inputs)
+        """
+        tag = outputs
+        outputs = list(outputs.split(VARARGS_DELIM))
+        all_vars = ", ".join(outputs)
+        inputs = map(str.strip,
+                     cp.get_opt_tag(section, "inputs", tag).split(","))
+        # get the functions for each output
+        transform_functions = {}
+        output_index = slice(None, None, None)
+        for var in outputs:
+            # check if option can be cast as a float
+            try:
+                func = cp.get_opt_tag(section, var, tag)
+            except Exception:
+                func = cp.get_opt_tag(section, all_vars, tag)
+                output_index = slice(outputs.index(var), outputs.index(var)+1)
+            transform_functions[var] = [func, output_index]
+        s = "-".join([section, tag])
+        if cp.has_option(s, "jacobian"):
+            jacobian = cp.get_opt_tag(section, "jacobian", tag)
+        else:
+            jacobian = None
+        return cls(inputs, outputs, transform_functions, jacobian=jacobian)
+
+
 #
 # =============================================================================
 #
@@ -1494,10 +1586,9 @@ class GEOToSSB(BaseTransform):
                   latitude_geo_param, polarization_geo_param,
                   tc_ssb_param, longitude_ssb_param,
                   latitude_ssb_param, polarization_ssb_param]
-        for param in params:
-            if param is None:
-                key = '_default_' + param[:-6]
-                param = self.default_params_name[key]
+        for index in range(len(params)):
+            if params[index] is None:
+                params[index] = self.default_params_name[index]
 
         self.tc_geo_param = tc_geo_param
         self.longitude_geo_param = longitude_geo_param
@@ -1621,10 +1712,9 @@ class LISAToSSB(BaseTransform):
                   latitude_lisa_param, polarization_lisa_param,
                   tc_ssb_param, longitude_ssb_param,
                   latitude_ssb_param, polarization_ssb_param]
-        for param in params:
-            if param is None:
-                key = '_default_' + param[:-6]
-                param = self.default_params_name[key]
+        for index in range(len(params)):
+            if params[index] is None:
+                params[index] = self.default_params_name[index]
 
         self.tc_lisa_param = tc_lisa_param
         self.longitude_lisa_param = longitude_lisa_param
@@ -1749,10 +1839,9 @@ class LISAToGEO(BaseTransform):
                   latitude_lisa_param, polarization_lisa_param,
                   tc_geo_param, longitude_geo_param,
                   latitude_geo_param, polarization_geo_param]
-        for param in params:
-            if param is None:
-                key = '_default_' + param[:-6]
-                param = self.default_params_name[key]
+        for index in range(len(params)):
+            if params[index] is None:
+                params[index] = self.default_params_name[index]
 
         self.tc_lisa_param = tc_lisa_param
         self.longitude_lisa_param = longitude_lisa_param
@@ -2457,10 +2546,9 @@ class SSBToGEO(GEOToSSB):
         tc_ssb_param=None, longitude_ssb_param=None,
         latitude_ssb_param=None, polarization_ssb_param=None
     ):
-        for param in self.params:
-            if param is None:
-                key = '_default_' + param[:-6]
-                param = self.default_params_name[key]
+        for index in range(len(params)):
+            if params[index] is None:
+                params[index] = self.default_params_name[index]
 
         self.tc_geo_param = tc_geo_param
         self.longitude_geo_param = longitude_geo_param
@@ -2492,10 +2580,9 @@ class SSBToLISA(LISAToSSB):
         tc_ssb_param=None, longitude_ssb_param=None,
         latitude_ssb_param=None, polarization_ssb_param=None
     ):
-        for param in self.params:
-            if param is None:
-                key = '_default_' + param[:-6]
-                param = self.default_params_name[key]
+        for index in range(len(params)):
+            if params[index] is None:
+                params[index] = self.default_params_name[index]
 
         self.tc_lisa_param = tc_lisa_param
         self.longitude_lisa_param = longitude_lisa_param
@@ -2527,10 +2614,9 @@ class GEOToLISA(LISAToGEO):
         tc_geo_param=None, longitude_geo_param=None,
         latitude_geo_param=None, polarization_geo_param=None
     ):
-        for param in self.params:
-            if param is None:
-                key = '_default_' + param[:-6]
-                param = self.default_params_name[key]
+        for index in range(len(params)):
+            if params[index] is None:
+                params[index] = self.default_params_name[index]
 
         self.tc_lisa_param = tc_lisa_param
         self.longitude_lisa_param = longitude_lisa_param
@@ -2706,6 +2792,7 @@ LISAToGEO.inverse = GEOToLISA
 # dictionary of all transforms
 transforms = {
     CustomTransform.name: CustomTransform,
+    CustomTransformMultiOutputs.name: CustomTransformMultiOutputs,
     MchirpQToMass1Mass2.name: MchirpQToMass1Mass2,
     Mass1Mass2ToMchirpQ.name: Mass1Mass2ToMchirpQ,
     MchirpEtaToMass1Mass2.name: MchirpEtaToMass1Mass2,
