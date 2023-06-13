@@ -332,7 +332,7 @@ class Executable(pegasus_workflow.Executable):
                     continue
                 else:
                     raise ValueError("Option %s has already been added" % opt)
-            self.all_added_options.append(opt)
+            self.all_added_options.add(opt)
 
             value = cp.get(sec, opt).strip()
             opt = f'--{opt}'
@@ -570,7 +570,7 @@ class Executable(pegasus_workflow.Executable):
 
         # collect the options and profile information
         # from the ini file section(s)
-        self.all_added_options = []
+        self.all_added_options = set()
         self.common_options = []
         self.common_raw_options = []
         self.unresolved_td_options = {}
