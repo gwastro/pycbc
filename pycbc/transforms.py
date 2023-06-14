@@ -1473,15 +1473,16 @@ class GEOToSSB(BaseTransform):
     geocentric frame to the corresponding values in the SSB frame."""
 
     name = "geo_to_ssb"
+
     default_params_name = {
-        '_default_tc_geo': parameters.tc,
-        '_default_longitude_geo': parameters.ra,
-        '_default_latitude_geo': parameters.dec,
-        '_default_polarization_geo': parameters.polarization,
-        '_default_tc_ssb': parameters.tc,
-        '_default_longitude_ssb': parameters.eclipticlongitude,
-        '_default_latitude_ssb': parameters.eclipticlatitude,
-        '_default_polarization_ssb': parameters.polarization
+        'default_tc_geo': parameters.tc,
+        'default_longitude_geo': parameters.ra,
+        'default_latitude_geo': parameters.dec,
+        'default_polarization_geo': parameters.polarization,
+        'default_tc_ssb': parameters.tc,
+        'default_longitude_ssb': parameters.eclipticlongitude,
+        'default_latitude_ssb': parameters.eclipticlatitude,
+        'default_polarization_ssb': parameters.polarization
     }
 
     def __init__(
@@ -1494,22 +1495,25 @@ class GEOToSSB(BaseTransform):
                   latitude_geo_param, polarization_geo_param,
                   tc_ssb_param, longitude_ssb_param,
                   latitude_ssb_param, polarization_ssb_param]
+
         for index in range(len(params)):
             if params[index] is None:
-                params[index] = self.default_params_name[index]
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
 
-        self.tc_geo_param = tc_geo_param
-        self.longitude_geo_param = longitude_geo_param
-        self.latitude_geo_param = latitude_geo_param
-        self.polarization_geo_param = polarization_geo_param
-        self.tc_ssb_param = tc_ssb_param
-        self.longitude_ssb_param = longitude_ssb_param
-        self.latitude_ssb_param = latitude_ssb_param
-        self.polarization_ssb_param = polarization_ssb_param
+        self.tc_geo_param = params[0]
+        self.longitude_geo_param = params[1]
+        self.latitude_geo_param = params[2]
+        self.polarization_geo_param = params[3]
+        self.tc_ssb_param = params[4]
+        self.longitude_ssb_param = params[5]
+        self.latitude_ssb_param = params[6]
+        self.polarization_ssb_param = params[7]
         self._inputs = [self.tc_geo_param, self.longitude_geo_param,
                         self.latitude_geo_param, self.polarization_geo_param]
         self._outputs = [self.tc_ssb_param, self.longitude_ssb_param,
                          self.latitude_ssb_param, self.polarization_ssb_param]
+
         super(GEOToSSB, self).__init__()
 
     def transform(self, maps):
@@ -1568,14 +1572,14 @@ class GEOToSSB(BaseTransform):
 
         # get custom variable names
         variables = {
-            'tc-geo': cls.default_params_name['_default_tc_geo'],
-            'longitude-geo': cls.default_params_name['_default_longitude_geo'],
-            'latitude-geo': cls.default_params_name['_default_latitude_geo'],
-            'polarization-geo': cls.default_params_name['_default_polarization_geo'],
-            'tc-ssb': cls.default_params_name['_default_tc_ssb'],
-            'longitude-ssb': cls.default_params_name['_default_longitude_ssb'],
-            'latitude-ssb': cls.default_params_name['_default_latitude_ssb'],
-            'polarization-ssb': cls.default_params_name['_default_polarization_ssb']
+            'tc-geo': cls.default_params_name['default_tc_geo'],
+            'longitude-geo': cls.default_params_name['default_longitude_geo'],
+            'latitude-geo': cls.default_params_name['default_latitude_geo'],
+            'polarization-geo': cls.default_params_name['default_polarization_geo'],
+            'tc-ssb': cls.default_params_name['default_tc_ssb'],
+            'longitude-ssb': cls.default_params_name['default_longitude_ssb'],
+            'latitude-ssb': cls.default_params_name['default_latitude_ssb'],
+            'polarization-ssb': cls.default_params_name['default_polarization_ssb']
         }
         for param_name in variables.keys():
             name_underline = param_name.replace('-', '_')
@@ -1599,15 +1603,16 @@ class LISAToSSB(BaseTransform):
     LISA frame to the corresponding values in the SSB frame."""
 
     name = "lisa_to_ssb"
+
     default_params_name = {
-        '_default_tc_lisa': parameters.tc,
-        '_default_longitude_lisa': parameters.eclipticlongitude,
-        '_default_latitude_lisa': parameters.eclipticlatitude,
-        '_default_polarization_lisa': parameters.polarization,
-        '_default_tc_ssb': parameters.tc,
-        '_default_longitude_ssb': parameters.eclipticlongitude,
-        '_default_latitude_ssb': parameters.eclipticlatitude,
-        '_default_polarization_ssb': parameters.polarization
+        'default_tc_lisa': parameters.tc,
+        'default_longitude_lisa': parameters.eclipticlongitude,
+        'default_latitude_lisa': parameters.eclipticlatitude,
+        'default_polarization_lisa': parameters.polarization,
+        'default_tc_ssb': parameters.tc,
+        'default_longitude_ssb': parameters.eclipticlongitude,
+        'default_latitude_ssb': parameters.eclipticlatitude,
+        'default_polarization_ssb': parameters.polarization
     }
 
     def __init__(
@@ -1622,16 +1627,17 @@ class LISAToSSB(BaseTransform):
                   latitude_ssb_param, polarization_ssb_param]
         for index in range(len(params)):
             if params[index] is None:
-                params[index] = self.default_params_name[index]
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
 
-        self.tc_lisa_param = tc_lisa_param
-        self.longitude_lisa_param = longitude_lisa_param
-        self.latitude_lisa_param = latitude_lisa_param
-        self.polarization_lisa_param = polarization_lisa_param
-        self.tc_ssb_param = tc_ssb_param
-        self.longitude_ssb_param = longitude_ssb_param
-        self.latitude_ssb_param = latitude_ssb_param
-        self.polarization_ssb_param = polarization_ssb_param
+        self.tc_lisa_param = params[0]
+        self.longitude_lisa_param = params[1]
+        self.latitude_lisa_param = params[2]
+        self.polarization_lisa_param = params[3]
+        self.tc_ssb_param = params[4]
+        self.longitude_ssb_param = params[5]
+        self.latitude_ssb_param = params[6]
+        self.polarization_ssb_param = params[7]
         self._inputs = [self.tc_lisa_param, self.longitude_lisa_param,
                         self.latitude_lisa_param, self.polarization_lisa_param]
         self._outputs = [self.tc_ssb_param, self.longitude_ssb_param,
@@ -1695,14 +1701,14 @@ class LISAToSSB(BaseTransform):
 
         # get custom variable names
         variables = {
-            'tc-lisa': cls.default_params_name['_default_tc_lisa'],
-            'longitude-lisa': cls.default_params_name['_default_longitude_lisa'],
-            'latitude-lisa': cls.default_params_name['_default_latitude_lisa'],
-            'polarization-lisa': cls.default_params_name['_default_polarization_lisa'],
-            'tc-ssb': cls.default_params_name['_default_tc_ssb'],
-            'longitude-ssb': cls.default_params_name['_default_longitude_ssb'],
-            'latitude-ssb': cls.default_params_name['_default_latitude_ssb'],
-            'polarization-ssb': cls.default_params_name['_default_polarization_ssb']
+            'tc-lisa': cls.default_params_name['default_tc_lisa'],
+            'longitude-lisa': cls.default_params_name['default_longitude_lisa'],
+            'latitude-lisa': cls.default_params_name['default_latitude_lisa'],
+            'polarization-lisa': cls.default_params_name['default_polarization_lisa'],
+            'tc-ssb': cls.default_params_name['default_tc_ssb'],
+            'longitude-ssb': cls.default_params_name['default_longitude_ssb'],
+            'latitude-ssb': cls.default_params_name['default_latitude_ssb'],
+            'polarization-ssb': cls.default_params_name['default_polarization_ssb']
         }
         for param_name in variables.keys():
             name_underline = param_name.replace('-', '_')
@@ -1726,15 +1732,16 @@ class LISAToGEO(BaseTransform):
     LISA frame to the corresponding values in the geocentric frame."""
 
     name = "lisa_to_geo"
+
     default_params_name = {
-        '_default_tc_lisa': parameters.tc,
-        '_default_longitude_lisa': parameters.eclipticlongitude,
-        '_default_latitude_lisa': parameters.eclipticlatitude,
-        '_default_polarization_lisa': parameters.polarization,
-        '_default_tc_geo': parameters.tc,
-        '_default_longitude_geo': parameters.ra,
-        '_default_latitude_geo': parameters.dec,
-        '_default_polarization_geo': parameters.polarization
+        'default_tc_lisa': parameters.tc,
+        'default_longitude_lisa': parameters.eclipticlongitude,
+        'default_latitude_lisa': parameters.eclipticlatitude,
+        'default_polarization_lisa': parameters.polarization,
+        'default_tc_geo': parameters.tc,
+        'default_longitude_geo': parameters.ra,
+        'default_latitude_geo': parameters.dec,
+        'default_polarization_geo': parameters.polarization
     }
 
     def __init__(
@@ -1749,16 +1756,17 @@ class LISAToGEO(BaseTransform):
                   latitude_geo_param, polarization_geo_param]
         for index in range(len(params)):
             if params[index] is None:
-                params[index] = self.default_params_name[index]
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
 
-        self.tc_lisa_param = tc_lisa_param
-        self.longitude_lisa_param = longitude_lisa_param
-        self.latitude_lisa_param = latitude_lisa_param
-        self.polarization_lisa_param = polarization_lisa_param
-        self.tc_geo_param = tc_geo_param
-        self.longitude_geo_param = longitude_geo_param
-        self.latitude_geo_param = latitude_geo_param
-        self.polarization_geo_param = polarization_geo_param
+        self.tc_lisa_param = params[0]
+        self.longitude_lisa_param = params[1]
+        self.latitude_lisa_param = params[2]
+        self.polarization_lisa_param = params[3]
+        self.tc_geo_param = params[4]
+        self.longitude_geo_param = params[5]
+        self.latitude_geo_param = params[6]
+        self.polarization_geo_param = params[7]
         self._inputs = [self.tc_lisa_param, self.longitude_lisa_param,
                         self.latitude_lisa_param, self.polarization_lisa_param]
         self._outputs = [self.tc_geo_param, self.longitude_geo_param,
@@ -1822,14 +1830,14 @@ class LISAToGEO(BaseTransform):
 
         # get custom variable names
         variables = {
-            'tc-lisa': cls.default_params_name['_default_tc_lisa'],
-            'longitude-lisa': cls.default_params_name['_default_longitude_lisa'],
-            'latitude-lisa': cls.default_params_name['_default_latitude_lisa'],
-            'polarization-lisa': cls.default_params_name['_default_polarization_lisa'],
-            'tc-geo': cls.default_params_name['_default_tc_geo'],
-            'longitude-geo': cls.default_params_name['_default_longitude_geo'],
-            'latitude-geo': cls.default_params_name['_default_latitude_geo'],
-            'polarization-geo': cls.default_params_name['_default_polarization_geo']
+            'tc-lisa': cls.default_params_name['default_tc_lisa'],
+            'longitude-lisa': cls.default_params_name['default_longitude_lisa'],
+            'latitude-lisa': cls.default_params_name['default_latitude_lisa'],
+            'polarization-lisa': cls.default_params_name['default_polarization_lisa'],
+            'tc-geo': cls.default_params_name['default_tc_geo'],
+            'longitude-geo': cls.default_params_name['default_longitude_geo'],
+            'latitude-geo': cls.default_params_name['default_latitude_geo'],
+            'polarization-geo': cls.default_params_name['default_polarization_geo']
         }
         for param_name in variables.keys():
             name_underline = param_name.replace('-', '_')
@@ -2454,24 +2462,27 @@ class SSBToGEO(GEOToSSB):
         tc_ssb_param=None, longitude_ssb_param=None,
         latitude_ssb_param=None, polarization_ssb_param=None
     ):
+        params = [tc_geo_param, longitude_geo_param,
+                  latitude_geo_param, polarization_geo_param,
+                  tc_ssb_param, longitude_ssb_param,
+                  latitude_ssb_param, polarization_ssb_param]
         for index in range(len(params)):
             if params[index] is None:
-                params[index] = self.default_params_name[index]
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
 
-        self.tc_geo_param = tc_geo_param
-        self.longitude_geo_param = longitude_geo_param
-        self.latitude_geo_param = latitude_geo_param
-        self.polarization_geo_param = polarization_geo_param
-        self.tc_ssb_param = tc_ssb_param
-        self.longitude_ssb_param = longitude_ssb_param
-        self.latitude_ssb_param = latitude_ssb_param
-        self.polarization_ssb_param = polarization_ssb_param
+        self.tc_geo_param = params[0]
+        self.longitude_geo_param = params[1]
+        self.latitude_geo_param = params[2]
+        self.polarization_geo_param = params[3]
+        self.tc_ssb_param = params[4]
+        self.longitude_ssb_param = params[5]
+        self.latitude_ssb_param = params[6]
+        self.polarization_ssb_param = params[7]
         self._inputs = [self.tc_ssb_param, self.longitude_ssb_param,
                         self.latitude_ssb_param, self.polarization_ssb_param]
         self._outputs = [self.tc_geo_param, self.longitude_geo_param,
                          self.latitude_geo_param, self.polarization_geo_param]
-        self.inputs = set(self._inputs)
-        self.outputs = set(self._outputs)
 
 
 class SSBToLISA(LISAToSSB):
@@ -2488,24 +2499,27 @@ class SSBToLISA(LISAToSSB):
         tc_ssb_param=None, longitude_ssb_param=None,
         latitude_ssb_param=None, polarization_ssb_param=None
     ):
+        params = [tc_lisa_param, longitude_lisa_param,
+                  latitude_lisa_param, polarization_lisa_param,
+                  tc_ssb_param, longitude_ssb_param,
+                  latitude_ssb_param, polarization_ssb_param]
         for index in range(len(params)):
             if params[index] is None:
-                params[index] = self.default_params_name[index]
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
 
-        self.tc_lisa_param = tc_lisa_param
-        self.longitude_lisa_param = longitude_lisa_param
-        self.latitude_lisa_param = latitude_lisa_param
-        self.polarization_lisa_param = polarization_lisa_param
-        self.tc_ssb_param = tc_ssb_param
-        self.longitude_ssb_param = longitude_ssb_param
-        self.latitude_ssb_param = latitude_ssb_param
-        self.polarization_ssb_param = polarization_ssb_param
+        self.tc_lisa_param = params[0]
+        self.longitude_lisa_param = params[1]
+        self.latitude_lisa_param = params[2]
+        self.polarization_lisa_param = params[3]
+        self.tc_ssb_param = params[4]
+        self.longitude_ssb_param = params[5]
+        self.latitude_ssb_param = params[6]
+        self.polarization_ssb_param = params[7]
         self._inputs = [self.tc_ssb_param, self.longitude_ssb_param,
                         self.latitude_ssb_param, self.polarization_ssb_param]
         self._outputs = [self.tc_lisa_param, self.longitude_lisa_param,
                          self.latitude_lisa_param, self.polarization_lisa_param]
-        self.inputs = set(self._inputs)
-        self.outputs = set(self._outputs)
 
 
 class GEOToLISA(LISAToGEO):
@@ -2522,24 +2536,27 @@ class GEOToLISA(LISAToGEO):
         tc_geo_param=None, longitude_geo_param=None,
         latitude_geo_param=None, polarization_geo_param=None
     ):
+        params = [tc_lisa_param, longitude_lisa_param,
+                  latitude_lisa_param, polarization_lisa_param,
+                  tc_geo_param, longitude_geo_param,
+                  latitude_geo_param, polarization_geo_param]
         for index in range(len(params)):
             if params[index] is None:
-                params[index] = self.default_params_name[index]
+                key = list(self.default_params_name.keys())[index]
+                params[index] = self.default_params_name[key]
 
-        self.tc_lisa_param = tc_lisa_param
-        self.longitude_lisa_param = longitude_lisa_param
-        self.latitude_lisa_param = latitude_lisa_param
-        self.polarization_lisa_param = polarization_lisa_param
-        self.tc_geo_param = tc_geo_param
-        self.longitude_geo_param = longitude_geo_param
-        self.latitude_geo_param = latitude_geo_param
-        self.polarization_geo_param = polarization_geo_param
+        self.tc_lisa_param = params[0]
+        self.longitude_lisa_param = params[1]
+        self.latitude_lisa_param = params[2]
+        self.polarization_lisa_param = params[3]
+        self.tc_geo_param = params[4]
+        self.longitude_geo_param = params[5]
+        self.latitude_geo_param = params[6]
+        self.polarization_geo_param = params[7]
         self._inputs = [self.tc_geo_param, self.longitude_geo_param,
                         self.latitude_geo_param, self.polarization_geo_param]
         self._outputs = [self.tc_lisa_param, self.longitude_lisa_param,
                          self.latitude_lisa_param, self.polarization_lisa_param]
-        self.inputs = set(self._inputs)
-        self.outputs = set(self._outputs)
 
 
 class Exponent(Log):
