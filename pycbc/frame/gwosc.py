@@ -25,6 +25,7 @@ from pycbc.frame import read_frame
 
 _GWOSC_URL = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
 
+
 def get_run(time, ifo=None):
     """Return the run name for a given time.
 
@@ -95,11 +96,9 @@ def gwosc_frame_json(ifo, start_time, end_time):
     try:
         return json.loads(urlopen(url).read().decode())
     except Exception as exc:
-        print(exc)
-        raise ValueError(
-            'Failed to find gwf files for '
-            f'ifo={ifo}, run={run}, between {start_time}-{end_time}'
-        )
+        msg = ('Failed to find gwf files for '
+               f'ifo={ifo}, run={run}, between {start_time}-{end_time}')
+        raise ValueError(msg) from exc
 
 
 def gwosc_frame_urls(ifo, start_time, end_time):
