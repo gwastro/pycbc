@@ -126,3 +126,6 @@ def from_cli(opt):
         backend.from_cli(opt)
     except AttributeError:
         pass
+
+    if opt.fft_backends:
+        backend.set_from_cli = True

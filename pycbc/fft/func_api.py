@@ -26,10 +26,17 @@ This package provides a front-end to various fast Fourier transform
 implementations within PyCBC.
 """
 
+import logging
 from pycbc.types import TimeSeries as _TimeSeries
 from pycbc.types import FrequencySeries as _FrequencySeries
 from .core import _check_fft_args, _check_fwd_args, _check_inv_args
-from .backend_support import get_backend
+from .backend_support import get_backend, set_backend
+
+def check_backend(invec, backend):
+    if len(invec) > 2 ** 24 and backend.__name__ == 'pycbc.fft.mkl':
+        logging.warning("MKL cannot handle arrays longer than 2^24 in "
+                        "(inverse) FFTs.")
+    return backend
 
 def fft(invec, outvec):
     """ Fourier transform from invec to outvec.
@@ -49,6 +56,7 @@ def fft(invec, outvec):
 
     # The following line is where all the work is done:
     backend = get_backend()
+    backend = check_backend(invec, backend)
     backend.fft(invec, outvec, prec, itype, otype)
     # For a forward FFT, the length of the *input* vector is the length
     # we should divide by, whether C2C or R2HC transform
@@ -79,6 +87,7 @@ def ifft(invec, outvec):
 
     # The following line is where all the work is done:
     backend = get_backend()
+    backend = check_backend(invec, backend)
     backend.ifft(invec, outvec, prec, itype, otype)
     # For an inverse FFT, the length of the *output* vector is the length
     # we should divide by, whether C2C or HC2R transform
