@@ -23,7 +23,7 @@ from pycbc.io import get_file
 from pycbc.frame import read_frame
 
 
-_gwosc_url = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
+_GWOSC_URL = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
 
 def get_run(time, ifo=None):
     """Return the run name for a given time.
@@ -57,10 +57,12 @@ def get_run(time, ifo=None):
             return name
     raise ValueError(f'Time {time} not available in a public dataset')
 
+
 def _get_channel(time):
     if time < 1164556817:
         return 'LOSC-STRAIN'
     return 'GWOSC-16KHZ_R1_STRAIN'
+
 
 def gwosc_frame_json(ifo, start_time, end_time):
     """Get the information about the public data files in a duration of time.
@@ -88,7 +90,7 @@ def gwosc_frame_json(ifo, start_time, end_time):
             f'You have requested data that uses both {run} and {run2}'
         )
 
-    url = _gwosc_url % (run, ifo, int(start_time), int(end_time))
+    url = _GWOSC_URL % (run, ifo, int(start_time), int(end_time))
 
     try:
         return json.loads(urlopen(url).read().decode())
@@ -98,6 +100,7 @@ def gwosc_frame_json(ifo, start_time, end_time):
             'Failed to find gwf files for '
             f'ifo={ifo}, run={run}, between {start_time}-{end_time}'
         )
+
 
 def gwosc_frame_urls(ifo, start_time, end_time):
     """Get a list of URLs to GWOSC frame files.
@@ -119,6 +122,7 @@ def gwosc_frame_urls(ifo, start_time, end_time):
     """
     data = gwosc_frame_json(ifo, start_time, end_time)['strain']
     return [d['url'] for d in data if d['format'] == 'gwf']
+
 
 def read_frame_gwosc(channels, start_time, end_time):
     """Read channels from GWOSC data.
@@ -159,6 +163,7 @@ def read_frame_gwosc(channels, start_time, end_time):
     if len(ts) == 1:
         return ts[0]
     return ts
+
 
 def read_strain_gwosc(ifo, start_time, end_time):
     """Get the strain data from the GWOSC data.
