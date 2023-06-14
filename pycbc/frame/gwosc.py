@@ -94,8 +94,8 @@ def gwosc_frame_json(ifo, start_time, end_time):
 
     try:
         return json.loads(urlopen(url).read().decode())
-    except Exception as e:
-        print(e)
+    except Exception as exc:
+        print(exc)
         raise ValueError(
             'Failed to find gwf files for '
             f'ifo={ifo}, run={run}, between {start_time}-{end_time}'
@@ -157,12 +157,12 @@ def read_frame_gwosc(channels, start_time, end_time):
             fname = get_file(url, cache=True)
             fnames[ifo].append(fname)
 
-    ts = [read_frame(fnames[channel[0:2]], channel,
-                     start_time=start_time, end_time=end_time)
-          for channel in channels]
-    if len(ts) == 1:
-        return ts[0]
-    return ts
+    ts_list = [read_frame(fnames[channel[0:2]], channel,
+                          start_time=start_time, end_time=end_time)
+               for channel in channels]
+    if len(ts_list) == 1:
+        return ts_list[0]
+    return ts_list
 
 
 def read_strain_gwosc(ifo, start_time, end_time):
