@@ -60,7 +60,7 @@ def _get_channel(time):
     else:
         return 'GWOSC-16KHZ_R1_STRAIN'
 
-def losc_frame_json(ifo, start_time, end_time):
+def gwosc_frame_json(ifo, start_time, end_time):
     """ Get the information about the public data files in a duration of time
 
     Parameters
@@ -99,7 +99,7 @@ def losc_frame_json(ifo, start_time, end_time):
         raise ValueError('Failed to find gwf files for '
             'ifo=%s, run=%s, between %s-%s' % (ifo, run, start_time, end_time))
 
-def losc_frame_urls(ifo, start_time, end_time):
+def gwosc_frame_urls(ifo, start_time, end_time):
     """ Get a list of urls to GWOSC frame files
 
     Parameters
@@ -117,10 +117,10 @@ def losc_frame_urls(ifo, start_time, end_time):
         A dictionary containing information about the files that span the
         requested times.
     """
-    data = losc_frame_json(ifo, start_time, end_time)['strain']
+    data = gwosc_frame_json(ifo, start_time, end_time)['strain']
     return [d['url'] for d in data if d['format'] == 'gwf']
 
-def read_frame_losc(channels, start_time, end_time):
+def read_frame_gwosc(channels, start_time, end_time):
     """ Read channels from GWOSC data
 
     Parameters
@@ -143,7 +143,7 @@ def read_frame_losc(channels, start_time, end_time):
     ifos = [c[0:2] for c in channels]
     urls = {}
     for ifo in ifos:
-        urls[ifo] = losc_frame_urls(ifo, start_time, end_time)
+        urls[ifo] = gwosc_frame_urls(ifo, start_time, end_time)
         if len(urls[ifo]) == 0:
             raise ValueError("No data found for %s so we "
                              "can't produce a time series" % ifo)
@@ -161,7 +161,7 @@ def read_frame_losc(channels, start_time, end_time):
     else:
         return ts
 
-def read_strain_losc(ifo, start_time, end_time):
+def read_strain_gwosc(ifo, start_time, end_time):
     """ Get the strain data from the GWOSC data
 
     Parameters
@@ -179,5 +179,5 @@ def read_strain_losc(ifo, start_time, end_time):
         Returns a timeseries with the strain data.
     """
     channel = _get_channel(start_time)
-    return read_frame_losc('%s:%s' % (ifo, channel), start_time, end_time)
+    return read_frame_gwosc('%s:%s' % (ifo, channel), start_time, end_time)
 

@@ -29,7 +29,7 @@ import logging
 import json
 import numpy
 from ligo.segments import segmentlist, segment
-from pycbc.frame.losc import get_run
+from pycbc.frame.gwosc import get_run
 from pycbc.io import get_file
 
 
@@ -133,9 +133,9 @@ def query_flag(ifo, segment_name, start_time, end_time,
     ifo: string
         The interferometer to query (H1, L1).
     segment_name: string
-        The status flag to query from LOSC.
+        The status flag to query from GWOSC.
     start_time: int
-        The starting gps time to begin querying from LOSC
+        The starting gps time to begin querying from GWOSC
     end_time: int
         The end gps time of the query
     source: str, Optional
@@ -157,7 +157,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
     flag_segments = segmentlist([])
 
     if source in ['GWOSC', 'any']:
-        # Special cases as the LOSC convention is backwards from normal
+        # Special cases as the GWOSC convention is backwards from normal
         # LIGO / Virgo operation!!!!
         if (('_HW_INJ' in segment_name and 'NO' not in segment_name) or
                 'VETO' in segment_name):
@@ -253,9 +253,9 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
         The interferometer to query (H1, L1). If a dict, an element for each
         flag name must be provided.
     segment_name: list of strings
-        The status flag to query from LOSC.
+        The status flag to query from GWOSC.
     start_time: int
-        The starting gps time to begin querying from LOSC
+        The starting gps time to begin querying from GWOSC
     end_time: int
         The end gps time of the query
     source: str, Optional
