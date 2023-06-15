@@ -195,11 +195,9 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
                 for dset in datasets_ifo:            
                     for x in trig_dict:
                         if dset[:2] == x and x!='network':
-                            # the use of 3 chops off H1/ or L1/ or V1/ or K1 from the dset string 
                             out_dict, position = cp_dataset_cont(dset, x, out_dict, position)
 
                 for dset in datasets_n: 
-                    # # the use of 8 chops off 'network/' stem from the dset string 
                     out_dict, position = cp_dataset_cont(dset, 'network', out_dict, position)
 
     return out_dict
