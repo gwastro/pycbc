@@ -30,7 +30,7 @@ import logging
 from pycbc.types import TimeSeries as _TimeSeries
 from pycbc.types import FrequencySeries as _FrequencySeries
 from .core import _check_fft_args, _check_fwd_args, _check_inv_args
-from .backend_support import get_backend, set_backend
+from .backend_support import get_backend
 
 def check_backend(invec, backend):
     """
