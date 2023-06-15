@@ -57,22 +57,30 @@ echo -e "\\n\\n>> [`date`] Getting template bank"
 wget -nv -nc https://github.com/gwastro/pycbc-config/raw/master/test/inspiral/SMALLER_BANK_FOR_GW150914.hdf
 
 echo -e "\\n\\n>> [`date`] Compressing template bank"
-pycbc_compress_bank --bank-file SMALLER_BANK_FOR_GW150914.hdf --output COMPRESSED_BANK.hdf --sample-rate 4096 --segment-length 256 --compression-algorithm mchirp --psd-model aLIGOZeroDetHighPower --low-frequency-cutoff 30 --approximant "SEOBNRv4_ROM"
+pycbc_compress_bank \
+    --bank-file SMALLER_BANK_FOR_GW150914.hdf \
+    --output COMPRESSED_BANK.hdf \
+    --sample-rate 4096 \
+    --segment-length 256 \
+    --compression-algorithm mchirp \
+    --psd-model aLIGOZeroDetHighPower \
+    --low-frequency-cutoff 30 \
+    --approximant "SEOBNRv4_ROM"
 
 echo -e "\\n\\n>> [`date`] Creating data file"
 pycbc_condition_strain \
---frame-type LOSC \
---sample-rate 2048 \
---pad-data 8 \
---autogating-width 0.25 \
---autogating-threshold 100 \
---autogating-cluster 0.5 \
---autogating-taper 0.25 \
---strain-high-pass 10 \
---channel-name H1:LOSC-STRAIN \
---gps-start-time 1126258578 \
---gps-end-time 1126259946 \
---output-strain-file DATA_FILE.gwf \
+    --frame-type GWOSC \
+    --sample-rate 2048 \
+    --pad-data 8 \
+    --autogating-width 0.25 \
+    --autogating-threshold 100 \
+    --autogating-cluster 0.5 \
+    --autogating-taper 0.25 \
+    --strain-high-pass 10 \
+    --channel-name H1:LOSC-STRAIN \
+    --gps-start-time 1126258578 \
+    --gps-end-time 1126259946 \
+    --output-strain-file DATA_FILE.gwf \
 
 
 start=`date +%s`

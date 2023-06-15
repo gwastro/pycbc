@@ -32,7 +32,7 @@ The following command downloads a 64 s segment of gravitational-wave data from
     pycbc_condition_strain \
         --gps-start-time 1242442818 \
         --gps-end-time 1242442882 \
-        --frame-type LOSC \
+        --frame-type GWOSC \
         --channel-name H1:GWOSC-16KHZ_R1_STRAIN \
         --frame-duration 16 \
         --output-strain-file 'H1-STRAIN-{start}-{duration}.gwf'
@@ -53,7 +53,7 @@ a high-pass filter with corner frequency of 15 Hz, downsamples the data to
     pycbc_condition_strain \
         --gps-start-time 1242442818 \
         --gps-end-time 1242442882 \
-        --frame-type LOSC \
+        --frame-type GWOSC \
         --channel-name H1:GWOSC-16KHZ_R1_STRAIN \
         --strain-high-pass 15 \
         --sample-rate 2048 \
@@ -70,7 +70,7 @@ write the result to four frame files of 16 s duration::
     pycbc_condition_strain \
         --gps-start-time 1242442818 \
         --gps-end-time 1242442882 \
-        --frame-type LOSC \
+        --frame-type GWOSC \
         --channel-name H1:GWOSC-16KHZ_R1_STRAIN \
         --injection-file injections.hdf \
         --frame-duration 16 \
