@@ -561,17 +561,19 @@ class GatedGaussianNoise(BaseGatedGaussian):
             rtilde = res.to_frequencyseries()
             #get the subsampling offset time
             gateenddelay = gatestartdelay + dgatedelay
-            gateidx = numpy.floor(float(gateenddelay - res.start_time) * res.sample_rate).astype(int)
-            shifttime = gateenddelay - res.sample_times[gateidx]
+            gateidx = numpy.floor(
+                float(gateenddelay - res.start_time) * res.sample_rate).astype(int)
             #apply time shift such that the gating start time lands on a data sample
-            rtilde = apply_fd_time_shift(rtilde, -shifttime, copy=False)
-            res = rtilde.to_timeseries()
+            rtilde_shift = apply_fd_time_shift(rtilde, res.sample_times[gateidx], copy=True)
+            res_shift = rtilde_shift.to_timeseries()
             #gating
-            gated_res = res.gate(gatestartdelay + dgatedelay/2,
+            gated_res_shift = res_shift.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
             self.current_proj[det] = (gated_res.proj, gated_res.projslc)
-            gated_rtilde = gated_res.to_frequencyseries()
+            gated_rtilde_shift = gated_res_shift.to_frequencyseries()
+            # shift back to the actual starting time
+            gated_rtilde = apply_fd_time_shift(gated_rtilde_shift, gateenddelay, copy=True)
             # overwhiten
             gated_rtilde *= invpsd
             rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
