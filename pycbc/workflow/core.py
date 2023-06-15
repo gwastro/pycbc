@@ -675,6 +675,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         self.ifos = ifos
         self.ifos.sort(key=str.lower)
+        self.get_ifo_combinations()
         self.ifo_string = ''.join(self.ifos)
 
         # Set up input and output file lists for workflow
@@ -858,6 +859,16 @@ class Workflow(pegasus_workflow.Workflow):
         # set the storage path to be the same
         ini_file.storage_path = ini_file_path
         return FileList([ini_file])
+
+    def get_ifo_combinations(self):
+        """
+        Get a list of strings for all possible combinations of IFOs
+        in the workflow
+        """
+        self.ifo_combinations = []
+        for n in range(len(self.ifos)):
+            self.ifo_combinations += [''.join(ifos).lower() for ifos in
+                                      combinations(self.ifos, n + 1)]
 
 
 class Node(pegasus_workflow.Node):
