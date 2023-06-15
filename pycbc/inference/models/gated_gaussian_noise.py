@@ -570,7 +570,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             gated_res_shift = res_shift.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
-            self.current_proj[det] = (gated_res.proj, gated_res.projslc)
+            self.current_proj[det] = (gated_res_shift.proj, gated_res_shift.projslc)
             gated_rtilde_shift = gated_res_shift.to_frequencyseries()
             # shift back to the actual starting time
             gated_rtilde = apply_fd_time_shift(gated_rtilde_shift, gateenddelay, copy=True)
