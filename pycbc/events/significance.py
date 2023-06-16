@@ -159,10 +159,10 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
         count_n_louder(back_stat[bg_below], fore_stat[fg_below], dec_facs)
 
     # As we have only counted the louder below-threshold events, need to
-    # add the above threshold events, which by definition are louder than
+    # add the above threshold events, whcih by definition are louder than
     # all the below-threshold events
-    back_cnum[bg_below] += n_above
-    fnlouder[fg_below] += n_above
+    back_cnum += n_above
+    fnlouder += n_above
 
     return back_cnum, fnlouder
 
