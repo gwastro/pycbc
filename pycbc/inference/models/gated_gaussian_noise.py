@@ -563,8 +563,9 @@ class GatedGaussianNoise(BaseGatedGaussian):
             gateenddelay = gatestartdelay + dgatedelay
             gateidx = numpy.floor(
                 float(gateenddelay - res.start_time) * res.sample_rate).astype(int)
-            #apply time shift such that the gating start time lands on a data sample
-            rtilde_shift = apply_fd_time_shift(rtilde, res.sample_times[gateidx], copy=True)
+            offset = res.sample_times[gateidx] - gateenddelay
+            #apply time shift such that the gating time range lands on a data sample
+            rtilde_shift = apply_fd_time_shift(rtilde, offset + rtilde.epoch, copy=True)
             res_shift = rtilde_shift.to_timeseries()
             #gating
             gated_res_shift = res_shift.gate(gatestartdelay + dgatedelay/2,
@@ -572,11 +573,9 @@ class GatedGaussianNoise(BaseGatedGaussian):
                                  invpsd=invpsd, method='paint')
             self.current_proj[det] = (gated_res_shift.proj, gated_res_shift.projslc)
             gated_rtilde_shift = gated_res_shift.to_frequencyseries()
-            # shift back to the actual starting time
-            gated_rtilde = apply_fd_time_shift(gated_rtilde_shift, gateenddelay, copy=True)
             # overwhiten
-            gated_rtilde *= invpsd
-            rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
+            gated_rtilde_shift *= invpsd
+            rr = 4 * invpsd.delta_f * rtilde_shift[slc].inner(gated_rtilde_shift[slc]).real
             logl += norm - 0.5*rr
         return float(logl)
 
