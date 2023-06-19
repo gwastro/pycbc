@@ -49,8 +49,12 @@ parser.add_argument('--bw-grid', type=float, nargs='+',
                     help='Grid of choices of global bandwidth')
 parser.add_argument('--extra-cpt-fraction', type=float,
                     help='Fraction of the extra component in the signal density')
-parser.add_argument('--temp-volume', type=float, 
+parser.add_argument('--temp-volume', type=float,
                     help='Volume covered by the template bank')
+parser.add_argument('--seed', type=int,
+                    help='Random number generator seed')
+parser.add_argument('--mchirp-downsample-power', type=float,
+                    help='Exponent value for the power law distribution')
 parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
 init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
@@ -133,7 +137,7 @@ def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
 
 # Obtaining template parameters
 temp_file = h5py.File(args.template_file, 'r')
-mass1 = temp_file['mass1']
+mass1 = temp_file['mass1'][:]
 tid = numpy.arange(len(mass1))  # Array of template ids
 mass_spin = triggers.get_mass_spin(temp_file, tid)
 
@@ -162,13 +166,47 @@ temp_samples = numpy.vstack((template_pars)).T
 
 
 if args.make_template_kde:
-    logging.info('Starting optimization of template KDE parameters')
-    optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,
-                                     bwgrid=args.bw_grid, nfold=args.nfold_template)
-    logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
-    logging.info('Evaluating template KDE')
-    template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha,
-                             gl_bandwidth=optbw)
+
+    # Rejection Sampling
+    if args.mchirp_downsample_power is not None:
+        logging.info('Downsampling with mchirp power '
+                     f'{args.mchirp_downsample_power}')
+        f_dest.attrs['mchirp_downsample_power'] = args.mchirp_downsample_power
+        try:
+            mchirp_index = args.fit_param.index('mchirp')
+        except:
+            raise ValueError("mchirp does not exist in args.fit_param")
+        mc_vals = template_pars[mchirp_index]
+        if args.log_param[mchirp_index] is True:
+            mc_vals = numpy.exp(mc_vals)
+        power_vals = mc_vals ** args.mchirp_downsample_power
+        probabilities = power_vals / numpy.max(power_vals)
+        if args.seed is not None:
+            numpy.random.seed(args.seed)
+        rand_nums = numpy.random.uniform(0, 1, len(mass1))
+        ind = rand_nums < probabilities
+        logging.info(f'{ind.sum()} templates after downsampling')
+        kde_train_samples = temp_samples[ind]
+        f_dest.create_dataset("kde_train_samples", data=kde_train_samples)
+        logging.info('Starting optimization of template KDE parameters')
+        optbw, optalpha = optimizedparam(kde_train_samples, alphagrid=args.alpha_grid,
+                                         bwgrid=args.bw_grid, nfold=args.nfold_template)
+        logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
+        logging.info('Evaluating template KDE')
+        template_kde = kde_awkde(kde_train_samples, temp_samples, alp=optalpha,
+                                 gl_bandwidth=optbw)
+        # Compensation factor for downsampling of templates
+        template_kde *= 1. / probabilities
+
+    else:
+        logging.info('Starting optimization of template KDE parameters')
+        optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,
+                                         bwgrid=args.bw_grid, nfold=args.nfold_template)
+        logging.info('Bandwidth %.4f, alpha %.2f' % (optbw, optalpha))
+        logging.info('Evaluating template KDE')
+        template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha,
+                                 gl_bandwidth=optbw)
+
     f_dest.create_dataset("data_kde", data=template_kde)
     f_dest.attrs['stat'] = "template-kde_file"
     f_dest.attrs['template-file'] = args.template_file
