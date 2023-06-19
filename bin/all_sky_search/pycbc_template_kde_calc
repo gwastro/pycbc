@@ -49,11 +49,11 @@ parser.add_argument('--bw-grid', type=float, nargs='+',
                     help='Grid of choices of global bandwidth')
 parser.add_argument('--extra-cpt-fraction', type=float,
                     help='Fraction of the extra component in the signal density')
-parser.add_argument('--temp-volume', type=float, 
+parser.add_argument('--temp-volume', type=float,
                     help='Volume covered by the template bank')
-parser.add_argument('--seed', type=int, default=None,
+parser.add_argument('--seed', type=int,
                     help='Random number generator seed')
-parser.add_argument('--mchirp-downsample-power', type=float, default=None,
+parser.add_argument('--mchirp-downsample-power', type=float,
                     help='Exponent value for the power law distribution')
 parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
@@ -166,18 +166,26 @@ temp_samples = numpy.vstack((template_pars)).T
 
 
 if args.make_template_kde:
+
     # Rejection Sampling
     if args.mchirp_downsample_power is not None:
+        logging.info('Downsampling with mchirp power '
+                     f'{args.mchirp_downsample_power}')
         f_dest.attrs['mchirp_downsample_power'] = args.mchirp_downsample_power
-        if 'mchirp' not in args.fit_param:
+        try:
+            mchirp_index = args.fit_param.index('mchirp')
+        except:
             raise ValueError("mchirp does not exist in args.fit_param")
-        mchirp_index = args.fit_param.index('mchirp')
-        power_vals = numpy.exp(template_pars[mchirp_index]) ** args.mchirp_downsample_power
+        mc_vals = template_pars[mchirp_index]
+        if args.log_param[mchirp_index] is True:
+            mc_vals = numpy.exp(mc_vals)
+        power_vals = mc_vals ** args.mchirp_downsample_power
         probabilities = power_vals / numpy.max(power_vals)
         if args.seed is not None:
             numpy.random.seed(args.seed)
         rand_nums = numpy.random.uniform(0, 1, len(mass1))
         ind = rand_nums < probabilities
+        logging.info(f'{ind.sum()} templates after downsampling')
         kde_train_samples = temp_samples[ind]
         f_dest.create_dataset("kde_train_samples", data=kde_train_samples)
         logging.info('Starting optimization of template KDE parameters')
@@ -187,12 +195,9 @@ if args.make_template_kde:
         logging.info('Evaluating template KDE')
         template_kde = kde_awkde(kde_train_samples, temp_samples, alp=optalpha,
                                  gl_bandwidth=optbw)
-        compensation_factor = numpy.ones_like(template_kde)
-        compensation_factor = 1 / power_vals
-        template_kde *= compensation_factor
-        f_dest.create_dataset("data_kde", data=template_kde)
-        f_dest.attrs['stat'] = "template-kde_file"
-        f_dest.attrs['template-file'] = args.template_file
+        # Compensation factor for downsampling of templates
+        template_kde *= 1. / probabilities
+
     else:
         logging.info('Starting optimization of template KDE parameters')
         optbw, optalpha = optimizedparam(temp_samples, alphagrid=args.alpha_grid,
@@ -201,10 +206,11 @@ if args.make_template_kde:
         logging.info('Evaluating template KDE')
         template_kde = kde_awkde(temp_samples, temp_samples, alp=optalpha,
                                  gl_bandwidth=optbw)
-        f_dest.create_dataset("data_kde", data=template_kde)
-        f_dest.attrs['stat'] = "template-kde_file"
-        f_dest.attrs['template-file'] = args.template_file
- 
+
+    f_dest.create_dataset("data_kde", data=template_kde)
+    f_dest.attrs['stat'] = "template-kde_file"
+    f_dest.attrs['template-file'] = args.template_file
+
 
 def signal_kde_extra_cpt(signal_kde, frac=None, volume=None):
     # Calculate the constant density value for the additional component
