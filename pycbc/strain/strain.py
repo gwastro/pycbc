@@ -1433,6 +1433,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  autogating_pad=None,
                  autogating_width=None,
                  autogating_taper=None,
+                 autogating_duration=None,
+                 autogating_psd_segment_length=None,
+                 autogating_psd_stride=None,
                  state_channel=None,
                  data_quality_channel=None,
                  idq_channel=None,
@@ -1490,6 +1493,12 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Half-duration of the zeroed-out portion of autogates.
         autogating_taper: float, Optional
             Duration of taper on either side of the gating window in seconds.
+        autogating_duration: float, Optional
+            Amount of data in seconds to apply autogating on.
+        autogating_psd_segment_length: float, Optional
+            The length in seconds of each segment used to estimate the PSD with Welch's method.
+        autogating_psd_stride: float, Optional
+            The overlap in seconds between each segment used to estimate the PSD with Welch's method.
         state_channel: {str, None}, Optional
             Channel to use for state information about the strain
         data_quality_channel: {str, None}, Optional
@@ -1565,8 +1574,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             else:
                 sb_kwargs['valid_mask'] = pycbc.frame.flag_names_to_bitmask(
                         self.data_quality_flags)
-                logging.info('DQ channel %s interpreted as bitmask %s = good',
-                             data_quality_channel, bin(valid_mask))
+                logging.info(
+                    'DQ channel %s interpreted as bitmask %s = good',
+                    data_quality_channel,
+                    bin(sb_kwargs['valid_mask'])
+                )
             self.dq = pycbc.frame.StatusBuffer(frame_src, data_quality_channel,
                                                start_time, **sb_kwargs)
 
@@ -1595,6 +1607,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.autogating_pad = autogating_pad
         self.autogating_width = autogating_width
         self.autogating_taper = autogating_taper
+        self.autogating_duration = autogating_duration
+        self.autogating_psd_segment_length = autogating_psd_segment_length
+        self.autogating_psd_stride = autogating_psd_stride
         self.gate_params = []
 
         self.sample_rate = sample_rate
@@ -1695,6 +1710,27 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.psds = {}
         logging.info("Recalculating %s PSD, %s", self.detector, psd.dist)
         return True
+
+    def check_psd_dist(self, min_dist, max_dist):
+        """Check that the horizon distance of a detector is within a required
+        range. If so, return True, otherwise log a warning and return False.
+        """
+        if self.psd is None:
+            # ignore check
+            return True
+        # Note that the distance can in principle be inf or nan, e.g. if h(t)
+        # is identically zero. The check must fail in those cases.  Be careful
+        # with how the logic works out when comparing inf's or nan's!
+        good = self.psd.dist >= min_dist and self.psd.dist <= max_dist
+        if not good:
+            logging.info(
+                "%s PSD dist %s outside acceptable range [%s, %s]",
+                self.detector,
+                self.psd.dist,
+                min_dist,
+                max_dist
+            )
+        return good
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
@@ -1891,9 +1927,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # apply gating if needed
         if self.autogating_threshold is not None:
+            autogating_duration_length = self.autogating_duration * self.sample_rate
+            autogating_start_sample = int(len(self.strain) - autogating_duration_length)
             glitch_times = detect_loud_glitches(
-                    strain[:-self.corruption],
-                    psd_duration=2., psd_stride=1.,
+                    self.strain[autogating_start_sample:-self.corruption],
+                    psd_duration=self.autogating_psd_segment_length, psd_stride=self.autogating_psd_stride,
                     threshold=self.autogating_threshold,
                     cluster_window=self.autogating_cluster,
                     low_freq_cutoff=self.highpass_frequency,
@@ -1965,6 +2003,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                    autogating_pad=args.autogating_pad,
                    autogating_width=args.autogating_width,
                    autogating_taper=args.autogating_taper,
+                   autogating_duration=args.autogating_duration,
+                   autogating_psd_segment_length=args.autogating_psd_segment_length,
+                   autogating_psd_stride=args.autogating_psd_stride,
                    psd_abort_difference=args.psd_abort_difference,
                    psd_recalculate_difference=args.psd_recalculate_difference,
                    force_update_cache=args.force_update_cache,

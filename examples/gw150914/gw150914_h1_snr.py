@@ -8,7 +8,7 @@ from pycbc.psd import welch, interpolate
 
 # Read data and remove low frequency content
 fname = 'H-H1_LOSC_4_V2-1126259446-32.gwf'
-url = "https://www.gw-openscience.org/GW150914data/" + fname
+url = "https://www.gwosc.org/GW150914data/" + fname
 urlretrieve(url, filename=fname)
 h1 = read_frame('H-H1_LOSC_4_V2-1126259446-32.gwf', 'H1:LOSC-STRAIN')
 h1 = highpass_fir(h1, 15, 8)

@@ -8,9 +8,6 @@ healpy
 ligo-gracedb>=2.10.0
 ligo.skymap
 
-# Needed for ringdown
-pykerr
-
 # auxiliary samplers
 epsie>=1.0
 cpnest

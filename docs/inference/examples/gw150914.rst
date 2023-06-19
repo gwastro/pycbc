@@ -9,12 +9,12 @@ as was :ref:`used for the simulated BBH example<inference_example_bbh>`. We only
 data configuration file, so that we will run on real gravitational-wave data.
 
 First, we need to download the data from the `Gravitational Wave Open Science
-Center <https://www.gw-openscience.org>`_. Run:
+Center <https://www.gwosc.org>`_. Run:
 
   .. code-block:: bash
 
-     wget https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW150914/v3/H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf
-     wget https://www.gw-openscience.org/eventapi/html/GWTC-1-confident/GW150914/v3/L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+     wget https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW150914/v3/H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+     wget https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW150914/v3/L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf
 
 This will download the appropriate data ("frame") files to your current working
 directory.  You can now use the following data configuration file:
