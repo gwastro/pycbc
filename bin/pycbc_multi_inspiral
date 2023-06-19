@@ -324,24 +324,17 @@ with ctx:
     if not len(bank) == n_bank:
         n_bank = len(bank)
         logging.info("Template bank size after thinning: %d", n_bank)
-    
+   
     # Antenna patterns
-    fp = {
-            position_index: {
-                ifo: detector.Detector(ifo).antenna_pattern(sky_positions[0][position_index], sky_positions[1][position_index], polarization=0, t_gps=t_gps)[0]
-                for ifo in args.instruments
-                }
-            for position_index in positions_array
-            }
+    antenna_patterns = [[[0 for i in range(2)] for position_index in positions_array] for i in range(3)]
+    for i, ifo in enumerate(args.instruments):
+        for position_index in positions_array:
+            antenna_patterns[i][position_index] = detector.Detector(ifo).antenna_pattern(sky_positions[0][position_index], sky_positions[1][position_index], polarization=0, t_gps=t_gps)
 
-    fc = {
-            position_index: {
-                ifo: detector.Detector(ifo).antenna_pattern(sky_positions[0][position_index], sky_positions[1][position_index], polarization=0, t_gps=t_gps)[1]
-                for ifo in args.instruments
-                }
-            for position_index in positions_array
-            }
-    
+    ap = {}
+    for i, ifo in enumerate(args.instruments):
+        ap[ifo] = antenna_patterns[i]
+
     # Loop over templates
     for t_num, template in enumerate(bank):
         # Loop over segments
@@ -480,9 +473,12 @@ with ctx:
                     # ifos, then calculate the coherent statistics
                     if len(coinc_idx) != 0 and nifo > 2:
                         if args.projection=='left+right':
+                            #Plus and cross polarization
+                            fp = {ifo: ap[ifo][position_index][0] for ifo in args.instruments}
+                            fc = {ifo: ap[ifo][position_index][1] for ifo in args.instruments}
                             # Left polarized coherent SNR
                             project_l = coh.get_projection_matrix(
-                                fp[position_index], fc[position_index], sigma, projection='left')
+                                fp, fc, sigma, projection='left')
                             (rho_coh_l, coinc_idx_l, coinc_triggers_l,
                                     rho_coinc_l) = \
                                 coh.coherent_snr(
@@ -490,7 +486,7 @@ with ctx:
                                     args.coinc_threshold, project_l, rho_coinc)
                             # Right polarized coherent SNR
                             project_r = coh.get_projection_matrix(
-                                fp[position_index], fc[position_index], sigma, projection='right')
+                                fp, fc, sigma, projection='right')
                             (rho_coh_r, coinc_idx_r, coinc_triggers_r,
                                     rho_coinc_r) = \
                                 coh.coherent_snr(
@@ -511,7 +507,7 @@ with ctx:
                                 max_idx==0, rho_coinc_l, rho_coinc_r)
                         else:
                             project = coh.get_projection_matrix(
-                                fp[position_index], fc[position_index], sigma, projection=args.projection)
+                                fp, fc, sigma, projection=args.projection)
                             rho_coh, coinc_idx, coinc_triggers, rho_coinc = \
                                 coh.coherent_snr(
                                     coinc_triggers, coinc_idx,
