@@ -31,7 +31,7 @@ pycbc_page_segplot
 pycbc_plot_bank_bins
 pycbc_plot_singles_timefreq
 pycbc_plot_hist
-pycbc_make_coinc_search_workflow
+pycbc_make_offline_search_workflow
 pycbc_page_recovery
 pycbc_page_coinc_snrchi
 pycbc_page_injtable

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-echo -e "\\n>> [`date`] Testing pycbc_make_coinc_search_workflow"
+echo -e "\\n>> [`date`] Testing pycbc_make_offline_search_workflow"
 
 VENV_PATH=${1}
 TRAVIS_TAG=${2}
@@ -39,7 +39,7 @@ echo "DUMMY STAT FILE" > statHLV.hdf
 
 echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 
-pycbc_make_coinc_search_workflow \
+pycbc_make_offline_search_workflow \
 --workflow-name ${WORKFLOW_NAME} --output-dir output \
 --config-files \
 /pycbc/examples/search/analysis.ini \

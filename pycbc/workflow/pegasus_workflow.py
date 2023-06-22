@@ -50,17 +50,17 @@ else
 fi
 
 # Check that the proxy is valid
-grid-proxy-info -exists
+ecp-cert-info -exists
 RESULT=${?}
 if [ ${RESULT} -eq 0 ] ; then
-  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+  PROXY_TYPE=`ecp-cert-info -type | tr -d ' '`
   if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
-    grid-proxy-info
+    ecp-cert-info
   else
     cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
     grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
     rm -f /tmp/x509up_u`id -u`.orig
-    grid-proxy-info
+    ecp-cert-info
   fi
 else
   echo "Error: Could not find a valid grid proxy to submit workflow."

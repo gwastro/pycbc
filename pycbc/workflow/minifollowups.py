@@ -402,6 +402,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     name = 'single_template_plot'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         for ifo in workflow.ifos:
@@ -485,6 +486,7 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
     name = 'single_template_plot'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_waveform', ifos=ifos,
@@ -577,6 +579,7 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
     name = 'plot_trigger_timeseries'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,

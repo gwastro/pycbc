@@ -370,7 +370,7 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
         Pease see Eq.(36) in <LISA-LCST-SGS-TN-001> for more details.
     """
     from os import getcwd, path
-    from urllib import request
+    import requests
     from scipy.interpolate import interp1d
 
     if len_arm != 2.5e9:
@@ -378,7 +378,9 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
     cwd = getcwd()
     if path.exists(cwd+"/AvFXp2_Raw.npy") is False:
         url = "https://zenodo.org/record/7497853/files/AvFXp2_Raw.npy"
-        request.urlretrieve(url, cwd+"/AvFXp2_Raw.npy")
+        response = requests.get(url, verify=False)
+        with open(cwd+"/AvFXp2_Raw.npy", 'wb') as f:
+            f.write(response.content)
     freqs, fp_sq = np.load(cwd+"/AvFXp2_Raw.npy")
     # Padding the end.
     freqs = np.append(freqs, 2)
@@ -565,7 +567,7 @@ def sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
         base_curve = sensitivity_curve_lisa_semi_analytical(
             length, delta_f, low_freq_cutoff,
             len_arm, acc_noise_level, oms_noise_level)
-    elif base_curve == "SciRD":
+    elif base_model == "SciRD":
         base_curve = sensitivity_curve_lisa_SciRD(
             length, delta_f, low_freq_cutoff)
     else:
