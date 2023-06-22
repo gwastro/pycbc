@@ -82,6 +82,7 @@ def read_segment_files(segfiles):
         map(_read, segfiles),
         segmentlist()))
 
+
 def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
     """Merge several HDF5 files into a single file
 
@@ -92,113 +93,57 @@ def read_hdf5_triggers(inputfiles, trig_dict, verbose=False):
 
     trig_dict: dictionary 
         dictionary with IFO or network identifier as keys
-
-    outputfile : `str`
-        the path of the output HDF5 file to write
     """
-    datasets_n = {}
-    datasets_ifo = {}
+    datasets = {}
 
-    def _scan_dataset_ifo(name, obj):
-        if name.startswith("network") or not isinstance(obj, h5py.Dataset) or "search" in name:
+    def _scan_dataset(name, obj):
+        if not isinstance(obj, h5py.Dataset) or "search" in name:
             return
-        if NETWORK_IFO_EVENT_ID_REGEX.match(name):
-            return
-        
-        shape = obj.shape
-        dtype = obj.dtype
-        try:
-            shape = numpy.sum(datasets_ifo[name][0] + shape, keepdims=True)
-        except KeyError:
-            pass
+        elif name.startswith("network") and \
+            NETWORK_IFO_EVENT_ID_REGEX.match(name):
+                return
         else:
-            assert dtype == datasets_ifo[name][1], (
-                "Cannot merge {0}/{1}, does not match dtype".format(
-                    obj.file.filename, name,
-                ))
-        datasets_ifo[name] = (shape, dtype)
-        
-    def _scan_dataset_network(name, obj):
-        if not name.startswith("network") or not isinstance(obj, h5py.Dataset) or "search" in name:
-            return
-        if NETWORK_IFO_EVENT_ID_REGEX.match(name):
-            return
-        shape = obj.shape
-        dtype = obj.dtype
-        try:
-            shape = numpy.sum(datasets_n[name][0] + shape, keepdims=True)
-        except KeyError:
-            pass
-        else:
-            assert dtype == datasets_n[name][1], (
-                "Cannot merge {0}/{1}, does not match dtype".format(
-                    obj.file.filename, name,
-                ))
-        datasets_n[name] = (shape, dtype)
-
-    def cp_dataset_cont(dataset, xidentifier, out_dct, pos_full):
-        """Copy dataset contents into output dictionary (out_dct).
-
-        Parameters
-        ----------
-        dataset : iteration of datasets_ifo or datasets_n
-
-        xidentifier : IFO identifier (ex. 'H1') or 'network'.
-
-        out_dct: output dictionary to be modified
-
-        pos_full: position within the dataset, incremented within this function
-        """
-
-        data = h5in[dataset][:]
-        size = data.shape[0]
-        pos = pos_full[dataset]
-        if EVENT_ID_REGEX.search(dataset):
-            # len(xidentifier)+1 chops off the H1/, L1/ V1/, K1/, or network/ prefix
-            out_dct[xidentifier][dataset[len(xidentifier)+1:]][pos:pos+size] = data + pos
-        else:
-            out_dct[xidentifier][dataset[len(xidentifier)+1:]][pos:pos+size] = data
-        pos_full[dataset] += size
-        return out_dct, pos_full
+            shape = obj.shape
+            dtype = obj.dtype
+            try:
+                shape = numpy.sum(datasets[name][0] + shape, keepdims=True)
+            except KeyError:
+                pass
+            else:
+                assert dtype == datasets[name][1], (
+                    "Cannot merge {0}/{1}, does not match dtype".format(
+                        obj.file.filename, name,
+                    ))
+            datasets[name] = (shape, dtype)
 
     # get list of datasets
-    datasets_n = {}
-    datasets_ifo = {}
+    #datasets = {}
     for filename in inputfiles:
         with h5py.File(filename, 'r') as h5f:
-            h5f.visititems(_scan_dataset_ifo)
-            h5f.visititems(_scan_dataset_network)
+            h5f.visititems(_scan_dataset)
 
     position = defaultdict(int)
-    
-    out_dict = dict.fromkeys(trig_dict, {})
 
-    placeholder = 0
+    out_dict = dict.fromkeys(datasets.keys(), {})
 
-    # create datasets    
-    for dset, (shape, dtype) in datasets_ifo.items():
-        # 3: chops off H1/ or L1/ or V1/ or K1/ from the dset string
-        for x in trig_dict:
-            if placeholder == 0 and x!= 'network':
-                placeholder = x
-            if dset.startswith(x):
-                out_dict[x][dset[3:]] = numpy.empty(shape, dtype=dtype)
-            
-    for dset, (shape, dtype) in datasets_n.items():
-        # 8: chops off 'network/' stem from the dset string 
-        out_dict['network'][dset[8:]] = numpy.empty(shape, dtype=dtype)
+    # create datasets
+    for dset, (shape, dtype) in datasets.items():
+        out_dict[dset] = numpy.empty(shape, dtype=dtype)
 
     # copy dataset contents
     for filename in inputfiles:
         with h5py.File(filename, 'r') as h5in:
-            if len(h5in[placeholder].keys()) != 1:
-                for dset in datasets_ifo:            
-                    for x in trig_dict:
-                        if dset[:2] == x and x!='network':
-                            out_dict, position = cp_dataset_cont(dset, x, out_dict, position)
-
-                for dset in datasets_n: 
-                    out_dict, position = cp_dataset_cont(dset, 'network', out_dict, position)
+            # Skipping emtpy files
+            if len(h5in['network']['end_time_gc'][:]):
+                for dset in datasets:
+                    data = h5in[dset][:]
+                    size = data.shape[0]
+                    pos = position[dset]
+                    if EVENT_ID_REGEX.search(dset):
+                        out_dict[dset][pos:pos+size] = data + pos
+                    else:
+                        out_dict[dset][pos:pos+size] = data
+                    position[dset] += size
 
     return out_dict
 
@@ -285,13 +230,14 @@ nexcluded = 0
 missed = []
 found = []
 
-# dictionary that will contain ifo names and 'network' 
-ifo_trigs_dict = {}
+# dictionary that will contain ifo names and 'network' as keys and information
+# on triggers to be written to file 
+out_trigs = {}
 # open first injection file
 firstfile = h5py.File(args.input_files[0], "r")
 for key in firstfile.keys():
-    # populate ifo_trigs_dict with ifo names and 'network' 
-    ifo_trigs_dict[key] = defaultdict(list)
+    # associate ifo names and 'network' with [] so we can append later 
+    out_trigs[key] = defaultdict(list)
 
 allinjections = None
 
@@ -316,11 +262,10 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         injtime = injtime[keep]
 
         # read triggers
-        triggers_dict = read_hdf5_triggers(trigfiles, ifo_trigs_dict)
-
-        time = triggers_dict['network']['end_time_gc']
-        snr = triggers_dict['network'][args.rank_column]
-        event_id = triggers_dict['network']["event_id"]
+        triggers = read_hdf5_triggers(trigfiles, out_trigs)
+        time = triggers['network/end_time_gc']
+        snr = triggers['network/'+args.rank_column]
+        event_id = triggers['network/event_id']
         time_sorting = time.argsort()
 
         # determine found or missed
@@ -345,9 +290,9 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
             else:
                 found.append(i)
                 eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
-                for x in ifo_trigs_dict:
-                    for col in triggers_dict[x]:
-                        ifo_trigs_dict[x][col].append(triggers_dict[x][col][eid])
+                for x in triggers:
+                    ij = x.split('/')
+                    out_trigs[ij[0]][ij[1]].append(triggers[x][eid])
 
         # record all injections
         if allinjections is None:
@@ -388,13 +333,12 @@ with h5py.File(outfilename, "w") as h5out:
                 grp[field] = [str(s) for s in injs[field]]
                 
     # write triggers
-    
-    for x in ifo_trigs_dict:
+    for x in out_trigs:
         xgroup = h5out.create_group(x)
-        for col in ifo_trigs_dict[x]:
+        for col in out_trigs[x]:
             xgroup.create_dataset(
                 col,
-                data=ifo_trigs_dict[x][col],
+                data=out_trigs[x][col],
                 compression="gzip",
                 compression_opts=9,
             )
