@@ -203,20 +203,6 @@ parser.add_argument("--multiprocessing-nprocesses", type=int,
                          "to a multiple of the number of processes.")
 # Add options groups
 psd.insert_psd_option_group(parser)
-parser.add_argument("--use-precomputed-psd", action="store_true", default=False,
-                    help='Use compressed waveforms from the bank file.')
-
-# FIXME: We may need to use multiple files based on chunk if those are not
-# generated in the workflow.
-# psd.add_argument('--psd-files', metavar='FILE', nargs='*',
-#                         help='Instead of time-independent PSDs, use time-varying '
-#                         'PSDs from the given HDF5 files and pick the appropriate '
-#                         'PSD for each injection')
-
-parser.add_argument("--precomputed-psd-file", metavar='FILE', type=str,
-                        help='Instead of time-independent PSDs, use time-varying '
-                        'PSDs from the given HDF5 files and pick the appropriate '
-                        'PSD for each injection')
 strain.insert_strain_option_group(parser)
 strain.StrainSegments.insert_segment_option_group(parser)
 scheme.insert_processing_option_group(parser)

@@ -242,6 +242,17 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="Maximum frequency to consider in strain "
                              "bandpass.")
 
+    psd_options.add_argument("--use-precomputed-psd", action="store_true", default=False,
+                        help='Use precomputed MERGE psd files to compute match. This requires --precomputed-psd-file to work')
+    # FIXME: We may need to use multiple files based on chunk if those are not
+    # generated in the workflow.
+    # psd_options.add_argument('--psd-files', metavar='FILE', nargs='*',
+                            #  help='PSDs from the given HDF5 files and pick the appropriate '
+                            #  'PSD for each injection')
+    psd_options.add_argument("--precomputed-psd-file", metavar='FILE', type=str,
+                            help='PSDs from the given HDF5 files and pick the appropriate '
+                            'PSD for each strain segment')
+
     if include_data_options :
         psd_options.add_argument("--psd-estimation",
                                  help="Measure PSD from the data, using "
