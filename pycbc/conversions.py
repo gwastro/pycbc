@@ -543,7 +543,8 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     remnant_mass: float
         The remnant mass in solar masses
     """
-    mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar, input_is_array = \
+    mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar, \
+        input_is_array = \
         ensurearray(mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar)
     # mass1 must be greater than mass2: swap the properties of 1 and 2 or fail
     if swap_companions:
