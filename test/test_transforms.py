@@ -102,4 +102,3 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTransforms))
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)
-
