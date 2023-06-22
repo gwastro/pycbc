@@ -220,9 +220,11 @@ class PrecomputedTimeVaryingPSD(object):
         nearest = segments.segment(self.start_times[sidx[0]], self.end_times[sidx[0]])
         next_nearest = segments.segment(self.start_times[sidx[1]], self.end_times[sidx[1]])
 
+        psd_overlap = 0
         if inp_seg.intersects(nearest):
             psd_overlap = abs(nearest & inp_seg)
             best_psd = self.get_psd(sidx[0], delta_f)
+
         if inp_seg.intersects(next_nearest):
             if psd_overlap < abs(next_nearest & inp_seg):
                 psd_overlap = abs(next_nearest & inp_seg)
