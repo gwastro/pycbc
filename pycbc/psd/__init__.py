@@ -538,13 +538,13 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         tpsd = PrecomputedTimeVaryingPSD(opt.precomputed_psd_file,
                                          length=len(fd_segments[0].data),
                                          delta_f=fd_segments[0].delta_f,
-                                         f_low=opt.low_freq_cutoff):
+                                         f_low=opt.low_freq_cutoff)
 
         for fd_segment in fd_segments:
             inp_seg = segments.segment(fd_segment.start_time,
                                        fd_segment.end_time)
             best_psd = assosiate_psd_to_inspiral_segment(self, inp_seg,
-                                                         delta_f=fd_segment.delta_f):
+                                                         delta_f=fd_segment.delta_f)
             if best_psd is None:
                 err_msg = "No PSDs found intersecting segment!"
                 raise ValueError(err_msg)
