@@ -65,11 +65,11 @@ parser.add_argument("--plot-prior", nargs="+", type=str,
 parser.add_argument("--prior-nsamples", type=int, default=10000,
                     help="The number of samples to use for plotting the "
                          "prior. Default is 10000.")
-parser.add_argument("--colors-multi-inj", nargs="+", type=str,
-                    help="For multiple injections, provide colours to be used for successive injections. Default setting is to use the successive colours specified in matplotlib.")
+parser.add_argument("--colors-multi-run", nargs="+", type=str,
+                    help="For multiple runs, provide colours to be used for successively. Default setting is to use the successive colours specified in matplotlib color cycle.")
 parser.add_argument("--fill-hist", action="store_true", default=False,
                     help="Fill the 1D marginalized histograms")
-parser.add_argument("--hist-color", default='k',
+parser.add_argument("--hist-color", 
                     help="Provide color for histogram outline. Default is black")
 parser.add_argument("--hist-fill-color", default='gray',
                     help="Provide the fill_color for filled histograms. Default is gray")
@@ -253,8 +253,8 @@ expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
 
 # get the color cycle to use
 color_cycle = [c['color'] for c in matplotlib.rcParams['axes.prop_cycle']]
-if opts.colors_multi_inj is not None:
-    colors = itertools.cycle(opts.colors_multi_inj)
+if opts.colors_multi_run is not None:
+    colors = itertools.cycle(opts.colors_multi_run)
 else:
     colors = itertools.cycle(color_cycle)
 
@@ -269,10 +269,10 @@ for (i, s) in enumerate(samples):
         axis_dict = None
 
     # get a default line color; this is used for the 1D marginal lines
-    if not opts.hist_color:
-        linecolor = next(colors)
-    else:
+    if opts.hist_color:
         linecolor = opts.hist_color
+    else:
+        linecolor = next(colors)
     # set different colors depending on if one or more files was provided
     if len(opts.input_file) == 1:
         # make the hist color black or white, depending on if dark background
@@ -280,7 +280,10 @@ for (i, s) in enumerate(samples):
         if opts.mpl_style == 'dark_background':
             hist_color = 'white'
         else:
-            hist_color = opts.hist_color
+            if opts.hist_color:
+                hist_color = opts.hist_color
+            else:
+                hist_color = 'black'
         # fill histogram if fill_hist is True
         if opts.fill_hist:
             fill_color = opts.hist_fill_color
