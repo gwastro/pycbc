@@ -559,18 +559,18 @@ class GatedGaussianNoise(BaseGatedGaussian):
             ht = h.to_timeseries()
             res = data - ht
             rtilde = res.to_frequencyseries()
-            #get the subsampling offset time
+            # get the subsampling offset time
             gateenddelay = gatestartdelay + dgatedelay
-            gateidx = numpy.floor(
-                float(gateenddelay - res.start_time) * res.sample_rate).astype(int)
+            gateidx = numpy.floor(float(
+                gateenddelay - res.start_time) * res.sample_rate).astype(int)
             offset = res.sample_times[gateidx] - gateenddelay
-            #apply time shift such that the gating time range lands on a data sample
+            # shift such that the end gating time lands on a data sample
             rtilde_shift = apply_fd_time_shift(rtilde, offset + rtilde.epoch, copy=True)
             res_shift = rtilde_shift.to_timeseries()
-            #gating
+            # gating
             gated_res_shift = res_shift.gate(gatestartdelay + dgatedelay/2,
-                                 window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint')
+                                             window=dgatedelay/2, copy=True,
+                                             invpsd=invpsd, method='paint')
             self.current_proj[det] = (gated_res_shift.proj, gated_res_shift.projslc)
             gated_rtilde_shift = gated_res_shift.to_frequencyseries()
             # overwhiten
