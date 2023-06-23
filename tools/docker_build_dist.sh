@@ -114,10 +114,10 @@ EOF
       echo -e "\\n>> [`date`] Deploying release ${SOURCE_TAG} to CVMFS"
       # remove lalsuite source and deploy on cvmfs
       rm -rf ${VENV_PATH}/src/lalsuite
-      ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "sudo -u repo.software cvmfs_server transaction"
-      ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "mkdir -p /cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}"
-      rsync --rsh="ssh -o StrictHostKeyChecking=no" $RSYNC_OPTIONS -qraz ${VENV_PATH}/ cvmfs.pycbc@cvmfs-software.ligo.caltech.edu:/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}/
-      ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "sudo -u repo.software cvmfs_server publish"
+      if ! bash /pycbc/tools/venv_transfer_commands.sh; then
+        ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "sudo -u repo.software cvmfs_server publish"
+        exit 1
+      fi
     fi
     echo -e "\\n>> [`date`] virtualenv deployment complete"
   fi
