@@ -133,7 +133,7 @@ def localization_to_propagation_vector(longitude, latitude,
     [[x], [y], [z]] : numpy.array
         The propagation unit vector of that GW signal.
     """
-    if use_astropy == True:
+    if use_astropy:
         x = -frame.cartesian.x.value
         y = -frame.cartesian.y.value
         z = -frame.cartesian.z.value
@@ -166,18 +166,18 @@ def propagation_vector_to_localization(k, use_astropy=True, frame=None):
     (longitude, latitude) : tuple
         The sky localization of that GW signal.
     """
-    if use_astropy == True:
+    if use_astropy:
         try:
             longitude = frame.lon.rad
             latitude = frame.lat.rad
-        except:
+        except Exception:
             longitude = frame.ra.rad
-            latitude = frame.dec.rad            
+            latitude = frame.dec.rad
     else:
         # latitude already within [-pi/2, pi/2]
         latitude = np.float64(np.arcsin(-k[2]))
         longitude = np.float64(np.arctan2(-k[1]/np.cos(latitude),
-                            -k[0]/np.cos(latitude)))
+                               -k[0]/np.cos(latitude)))
         # longitude should within [0, 2*pi)
         longitude = np.mod(longitude, 2*np.pi)
 
@@ -214,7 +214,8 @@ def polarization_newframe(polarization, k, rotation_matrix, use_astropy=True,
     polarization_new_frame : float
         The polarization angle in the new frame of that GW signal.
     """
-    longitude, _ = propagation_vector_to_localization(k, use_astropy, old_frame)
+    longitude, _ = propagation_vector_to_localization(
+                        k, use_astropy, old_frame)
     u = np.array([[np.sin(longitude)], [-np.cos(longitude)], [0]])
     rotation_vector = polarization * k
     rotation_polarization = Rotation.from_rotvec(rotation_vector.T[0])
@@ -373,7 +374,8 @@ def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
             raise ValueError("Latitude should within [-pi/2, pi/2].")
         if polarization_ssb[i] < 0 or polarization_ssb[i] >= 2*np.pi:
             raise ValueError("Polarization angle should within [0, 2*pi).")
-        t_lisa[i] = t_lisa_from_ssb(t_ssb[i], longitude_ssb[i], latitude_ssb[i], t0)
+        t_lisa[i] = t_lisa_from_ssb(t_ssb[i], longitude_ssb[i],
+                                    latitude_ssb[i], t0)
         k_ssb = localization_to_propagation_vector(
                     longitude_ssb[i], latitude_ssb[i], use_astropy=False)
         # Although t_lisa calculated above using the corrected LISA position
@@ -462,7 +464,8 @@ def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
         k_ssb = rotation_matrix_lisa @ k_lisa
         longitude_ssb[i], latitude_ssb[i] = \
             propagation_vector_to_localization(k_ssb, use_astropy=False)
-        t_ssb[i] = t_ssb_from_t_lisa(t_lisa[i], longitude_ssb[i], latitude_ssb[i], t0)
+        t_ssb[i] = t_ssb_from_t_lisa(t_lisa[i], longitude_ssb[i],
+                                     latitude_ssb[i], t0)
         polarization_ssb[i] = polarization_newframe(
             polarization_lisa[i], k_lisa, rotation_matrix_lisa.T,
             use_astropy=False)
@@ -566,7 +569,8 @@ def t_geo_from_ssb(t_ssb, longitude_ssb, latitude_ssb, use_astropy, frame):
     return fsolve(equation, t_ssb)[0]
 
 
-def t_ssb_from_t_geo(t_geo, longitude_ssb, latitude_ssb, use_astropy=True, frame=None):
+def t_ssb_from_t_geo(t_geo, longitude_ssb, latitude_ssb,
+                     use_astropy=True, frame=None):
     """ Calculating the time when a GW signal arrives at the barycenter
     of SSB, by using the time in geocentric frame and sky localization
     in SSB frame.
@@ -920,6 +924,7 @@ def geo_to_lisa(t_geo, longitude_geo, latitude_geo, polarization_geo,
         t_ssb, longitude_ssb, latitude_ssb, polarization_ssb, t0)
 
     return (t_lisa, longitude_lisa, latitude_lisa, polarization_lisa)
+
 
 __all__ = ['TIME_OFFSET_20_DEGREES',
            'localization_to_propagation_vector',
