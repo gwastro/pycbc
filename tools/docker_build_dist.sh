@@ -32,8 +32,6 @@ if [ "x${DOCKER_SECURE_ENV_VARS}" == "xtrue" ] ; then
   mkdir -p ~/.ssh
   cp /pycbc/.ssh/* ~/.ssh
   chmod 600 ~/.ssh/id_rsa
-  # Uncomment this line once it works and remove "don't do host checking below"
-  #cat "@cert-authority * ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHa03AZF3CvJ1C4Po15swSaMYI4kPszyBH/uOKHQYvu+EpehSfMZMaX5D7pUpc5cAXvMEEFzlZJQH4pOioIlqyE= IGWN_CIT_SSH_CERT_AUTHORITY" >> known_hosts
 fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
@@ -114,8 +112,9 @@ EOF
       echo -e "\\n>> [`date`] Deploying release ${SOURCE_TAG} to CVMFS"
       # remove lalsuite source and deploy on cvmfs
       rm -rf ${VENV_PATH}/src/lalsuite
+      export RSYNC_OPTIONS VENV_PATH ENV_OS SOURCE_TAG
       if ! bash /pycbc/tools/venv_transfer_commands.sh; then
-        ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "sudo -u repo.software cvmfs_server publish"
+        ssh cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "sudo -u repo.software cvmfs_server abort -f"
         exit 1
       fi
     fi
