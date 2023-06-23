@@ -171,7 +171,9 @@ if len(zdata) > 0:
         ifar[i] = background_time / (fnlouder[i] + 1)
         fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
         logging.info('processed %s, %s' % (i, fstat))
-    else:
+
+    if args.ignore_inclusive:
+        # ifar and fap definition will have been skipped in the above loop
         ifar = numpy.array([])
         fap = numpy.array([])
 
