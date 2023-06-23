@@ -17,9 +17,9 @@ done
 
 if [ "x$SOURCE_TAG" == "x" ] ; then
   SOURCE_TAG="master"
-  RSYNC_OPTIONS="--delete"
+  RSYNC_OPTIONS="--delete --filter='-p .cvmfscatalog' --filter='-p .cvmfsautocatalog'"
 else
-  RSYNC_OPTIONS=""
+  RSYNC_OPTIONS="--filter='-p .cvmfscatalog' --filter='-p .cvmfsautocatalog'"
 fi
 
 echo -e "\\n>> [`date`] Inside container ${PYCBC_CONTAINER}"
@@ -32,6 +32,8 @@ if [ "x${DOCKER_SECURE_ENV_VARS}" == "xtrue" ] ; then
   mkdir -p ~/.ssh
   cp /pycbc/.ssh/* ~/.ssh
   chmod 600 ~/.ssh/id_rsa
+  # Uncomment this line once it works and remove "don't do host checking below"
+  #cat "@cert-authority * ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHa03AZF3CvJ1C4Po15swSaMYI4kPszyBH/uOKHQYvu+EpehSfMZMaX5D7pUpc5cAXvMEEFzlZJQH4pOioIlqyE= IGWN_CIT_SSH_CERT_AUTHORITY" >> known_hosts
 fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
@@ -112,8 +114,8 @@ EOF
       echo -e "\\n>> [`date`] Deploying release ${SOURCE_TAG} to CVMFS"
       # remove lalsuite source and deploy on cvmfs
       rm -rf ${VENV_PATH}/src/lalsuite
-      ssh cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "mkdir -p /cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}"
-      rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ cvmfs.pycbc@cvmfs-software.ligo.caltech.edu:/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}/
+      ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "mkdir -p /cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}"
+      rsync --rsh="ssh -o StrictHostKeyChecking=no" $RSYNC_OPTIONS -qraz ${VENV_PATH}/ cvmfs.pycbc@cvmfs-software.ligo.caltech.edu:/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}/
       # This would not be osg-oasis-update. Not yet sure what it would be!
       #ssh cvmfs.pycbc@cvmfs-software.ligo.caltech.edu osg-oasis-update
     fi
