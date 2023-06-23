@@ -153,7 +153,8 @@ def spherical_to_cartesian(rho, phi, theta):
     z = rho * numpy.cos(theta)
     return x, y, z
 
+
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'cartesian_to_spherical_polar', 'cartesian_to_spherical',
            'spherical_to_cartesian',
-          ]
+           ]
