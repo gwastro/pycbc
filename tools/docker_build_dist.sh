@@ -17,9 +17,9 @@ done
 
 if [ "x$SOURCE_TAG" == "x" ] ; then
   SOURCE_TAG="master"
-  RSYNC_OPTIONS="--delete --filter='-p .cvmfscatalog' --filter='-p .cvmfsautocatalog'"
+  RSYNC_OPTIONS="--delete"
 else
-  RSYNC_OPTIONS="--filter='-p .cvmfscatalog' --filter='-p .cvmfsautocatalog'"
+  RSYNC_OPTIONS=""
 fi
 
 echo -e "\\n>> [`date`] Inside container ${PYCBC_CONTAINER}"
