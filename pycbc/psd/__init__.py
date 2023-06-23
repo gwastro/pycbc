@@ -242,16 +242,16 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="Maximum frequency to consider in strain "
                              "bandpass.")
 
-    psd_options.add_argument("--use-precomputed-psd", action="store_true", default=False,
-                        help='Use precomputed MERGE psd files to compute match. This requires --precomputed-psd-file to work')
+    #  psd_options.add_argument("--use-precomputed-psd", action="store_true", default=False,
+                        #  help='Use precomputed MERGE psd files to compute match. This requires --precomputed-psd-file to work')
     # FIXME: We may need to use multiple files based on chunk if those are not
     # generated in the workflow.
     # psd_options.add_argument('--psd-files', metavar='FILE', nargs='*',
                             #  help='PSDs from the given HDF5 files and pick the appropriate '
                             #  'PSD for each injection')
     psd_options.add_argument("--precomputed-psd-file", metavar='FILE', type=str,
-                            help='PSDs from the given HDF5 files and pick the appropriate '
-                            'PSD for each strain segment')
+                            help='Given HDF5 MERGE PSD file as the option, appropriate '
+                            'PSD for each strain segment will be chosen and use which is precomputed. PSD from the strain data wil not be computed when this option is provided.')
 
     if include_data_options :
         psd_options.add_argument("--psd-estimation",
@@ -545,7 +545,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
     """
-    if opt.use_precomputed_psd and opt.precomputed_psd_file:
+    if opt.precomputed_psd_file:
         tpsd = PrecomputedTimeVaryingPSD(opt.precomputed_psd_file,
                                          length=len(fd_segments[0].data),
                                          delta_f=fd_segments[0].delta_f,
