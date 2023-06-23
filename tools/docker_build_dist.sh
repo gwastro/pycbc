@@ -78,7 +78,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   pip install jupyter
 
   echo -e "\\n>> [`date`] Running basic tests"
-  #pytest
+  pytest
 
   cat << EOF >> $VIRTUAL_ENV/bin/activate
 
