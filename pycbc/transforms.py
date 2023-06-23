@@ -1575,11 +1575,13 @@ class GEOToSSB(BaseTransform):
             'tc-geo': cls.default_params_name['default_tc_geo'],
             'longitude-geo': cls.default_params_name['default_longitude_geo'],
             'latitude-geo': cls.default_params_name['default_latitude_geo'],
-            'polarization-geo': cls.default_params_name['default_polarization_geo'],
+            'polarization-geo': cls.default_params_name[
+                                    'default_polarization_geo'],
             'tc-ssb': cls.default_params_name['default_tc_ssb'],
             'longitude-ssb': cls.default_params_name['default_longitude_ssb'],
             'latitude-ssb': cls.default_params_name['default_latitude_ssb'],
-            'polarization-ssb': cls.default_params_name['default_polarization_ssb']
+            'polarization-ssb': cls.default_params_name[
+                                    'default_polarization_ssb']
         }
         for param_name in variables.keys():
             name_underline = param_name.replace('-', '_')
@@ -1702,13 +1704,16 @@ class LISAToSSB(BaseTransform):
         # get custom variable names
         variables = {
             'tc-lisa': cls.default_params_name['default_tc_lisa'],
-            'longitude-lisa': cls.default_params_name['default_longitude_lisa'],
+            'longitude-lisa': cls.default_params_name[
+                                    'default_longitude_lisa'],
             'latitude-lisa': cls.default_params_name['default_latitude_lisa'],
-            'polarization-lisa': cls.default_params_name['default_polarization_lisa'],
+            'polarization-lisa': cls.default_params_name[
+                                    'default_polarization_lisa'],
             'tc-ssb': cls.default_params_name['default_tc_ssb'],
             'longitude-ssb': cls.default_params_name['default_longitude_ssb'],
             'latitude-ssb': cls.default_params_name['default_latitude_ssb'],
-            'polarization-ssb': cls.default_params_name['default_polarization_ssb']
+            'polarization-ssb': cls.default_params_name[
+                                    'default_polarization_ssb']
         }
         for param_name in variables.keys():
             name_underline = param_name.replace('-', '_')
@@ -1831,13 +1836,16 @@ class LISAToGEO(BaseTransform):
         # get custom variable names
         variables = {
             'tc-lisa': cls.default_params_name['default_tc_lisa'],
-            'longitude-lisa': cls.default_params_name['default_longitude_lisa'],
+            'longitude-lisa': cls.default_params_name[
+                                    'default_longitude_lisa'],
             'latitude-lisa': cls.default_params_name['default_latitude_lisa'],
-            'polarization-lisa': cls.default_params_name['default_polarization_lisa'],
+            'polarization-lisa': cls.default_params_name[
+                                    'default_polarization_lisa'],
             'tc-geo': cls.default_params_name['default_tc_geo'],
             'longitude-geo': cls.default_params_name['default_longitude_geo'],
             'latitude-geo': cls.default_params_name['default_latitude_geo'],
-            'polarization-geo': cls.default_params_name['default_polarization_geo']
+            'polarization-geo': cls.default_params_name[
+                                    'default_polarization_geo']
         }
         for param_name in variables.keys():
             name_underline = param_name.replace('-', '_')
