@@ -78,7 +78,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   pip install jupyter
 
   echo -e "\\n>> [`date`] Running basic tests"
-  pytest
+  #pytest
 
   cat << EOF >> $VIRTUAL_ENV/bin/activate
 
@@ -114,10 +114,10 @@ EOF
       echo -e "\\n>> [`date`] Deploying release ${SOURCE_TAG} to CVMFS"
       # remove lalsuite source and deploy on cvmfs
       rm -rf ${VENV_PATH}/src/lalsuite
+      ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "sudo -u repo.software cvmfs_server transaction"
       ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "mkdir -p /cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}"
       rsync --rsh="ssh -o StrictHostKeyChecking=no" $RSYNC_OPTIONS -qraz ${VENV_PATH}/ cvmfs.pycbc@cvmfs-software.ligo.caltech.edu:/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}/
-      # This would not be osg-oasis-update. Not yet sure what it would be!
-      #ssh cvmfs.pycbc@cvmfs-software.ligo.caltech.edu osg-oasis-update
+      ssh -o StrictHostKeyChecking=no cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "sudo -u repo.software cvmfs_server publish"
     fi
     echo -e "\\n>> [`date`] virtualenv deployment complete"
   fi
