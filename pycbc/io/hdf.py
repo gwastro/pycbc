@@ -1,6 +1,6 @@
-# Convenience classes for accessing hdf5 trigger files
-# The 'get_column()' method is implemented parallel to
-# legacy pylal.SnglInspiralUtils functions
+"""
+Convenience classes for accessing hdf5 trigger files
+"""
 
 import h5py
 import numpy as np
@@ -127,6 +127,10 @@ class DictArray(object):
         if data and files:
             raise RuntimeError('DictArray can only have data or files as '
                                'input, not both.')
+        if data is None and files is None:
+            raise RuntimeError('DictArray needs either data or files at'
+                               'initialization. To set up an empty instance'
+                               'use DictArray(data={})')
         if files and not groups:
             raise RuntimeError('If files are given then need groups.')
 
@@ -158,6 +162,11 @@ class DictArray(object):
         return len(self.data[tuple(self.data.keys())[0]])
 
     def __add__(self, other):
+        if self.data == {}:
+            logging.debug('Adding data to a DictArray instance which'
+                          ' was initialized with an empty dict')
+            return self._return(data=other)
+
         data = {}
         for k in self.data:
             try:
@@ -171,7 +180,8 @@ class DictArray(object):
         """
         data = {}
         for k in self.data:
-            data[k] = self.data[k][idx]
+            # Make sure each entry is an array (not a scalar)
+            data[k] = np.array(self.data[k][idx])
         return self._return(data=data)
 
     def remove(self, idx):
@@ -273,7 +283,6 @@ class MultiifoStatmapData(StatmapData):
 
 
 class FileData(object):
-
     def __init__(self, fname, group=None, columnlist=None, filter_func=None):
         """
         Parameters
@@ -287,6 +296,7 @@ class FileData(object):
             of the class instance derived from columns: ex. 'self.snr < 6.5'
         """
         if not fname: raise RuntimeError("Didn't get a file!")
+
         self.fname = fname
         self.h5file = HFile(fname, "r")
         if group is None:
@@ -328,6 +338,9 @@ class FileData(object):
 
     def get_column(self, col):
         """
+        Method designed to be analogous to legacy pylal.SnglInspiralUtils
+        functionality
+
         Parameters
         ----------
         col : string
@@ -1015,41 +1028,28 @@ class ForegroundTriggers(object):
         # Some fields are special cases
         logging.info("Outputting search results")
         time = self.get_end_time()
-        ofd.create_dataset('time', data=time, dtype=np.float32)
+        # time will be used later to determine active ifos
+        ofd['time'] = time
 
         if self._inclusive:
-            ifar = self.get_coincfile_array('ifar')
-            ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
+            ofd['ifar'] = self.get_coincfile_array('ifar')
+            ofd['p_value'] = self.get_coincfile_array('fap')
 
-        ifar_exc = self.get_coincfile_array('ifar_exc')
-        ofd.create_dataset('ifar_exclusive', data=ifar_exc,
-                           dtype=np.float32)
-
-        if self._inclusive:
-            fap = self.get_coincfile_array('fap')
-            ofd.create_dataset('p_value', data=fap,
-                               dtype=np.float32)
-
-        fap_exc = self.get_coincfile_array('fap_exc')
-        ofd.create_dataset('p_value_exclusive', data=fap_exc,
-                           dtype=np.float32)
+        ofd['ifar_exclusive'] = self.get_coincfile_array('ifar_exc')
+        ofd['p_value_exclusive'] = self.get_coincfile_array('fap_exc')
 
         # Coinc fields
         for field in ['stat']:
-            vals = self.get_coincfile_array(field)
-            ofd.create_dataset(field, data=vals, dtype=np.float32)
+            ofd[field] = self.get_coincfile_array(field)
 
         logging.info("Outputting template information")
         # Bank fields
         for field in ['mass1','mass2','spin1z','spin2z']:
-            vals = self.get_bankfile_array(field)
-            ofd.create_dataset(field, data=vals, dtype=np.float32)
+            ofd[field] = self.get_bankfile_array(field)
 
         mass1 = self.get_bankfile_array('mass1')
         mass2 = self.get_bankfile_array('mass2')
-        mchirp, _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
-
-        ofd.create_dataset('chirp_mass', data=mchirp, dtype=np.float32)
+        ofd['chirp_mass'], _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
         logging.info("Outputting single-trigger information")
         logging.info("reduced chisquared")
@@ -1061,8 +1061,7 @@ class ForegroundTriggers(object):
             chisq_dof_vals = chisq_dof_vals_valid[ifo][0]
             rchisq = chisq_vals / (2. * chisq_dof_vals - 2.)
             rchisq[np.logical_not(chisq_valid)] = -1.
-            ofd.create_dataset(ifo + '_chisq', data=rchisq,
-                               dtype=np.float64)
+            ofd[ifo + '_chisq'] = rchisq
 
         # Single-detector fields
         for field in ['sg_chisq', 'end_time', 'sigmasq',
@@ -1073,12 +1072,15 @@ class ForegroundTriggers(object):
             except KeyError:
                 logging.info(field + " is not present in the "
                              "single-detector files")
+
             for ifo in self.ifos:
+                # Some of the values will not be valid for all IFOs,
+                # the `valid` parameter out of get_snglfile_array_dict
+                # tells us this, and we set the values to -1
                 vals = vals_valid[ifo][0]
                 valid = vals_valid[ifo][1]
                 vals[np.logical_not(valid)] = -1.
-                ofd.create_dataset(ifo + '_'+field, data=vals,
-                                   dtype=np.float32)
+                ofd[f'{ifo}_{field}'] = vals
 
         snr_vals_valid = self.get_snglfile_array_dict('snr')
         network_snr_sq = np.zeros_like(snr_vals_valid[self.ifos[0]][0])
@@ -1086,11 +1088,9 @@ class ForegroundTriggers(object):
             vals = snr_vals_valid[ifo][0]
             valid = snr_vals_valid[ifo][1]
             vals[np.logical_not(valid)] = -1.
-            ofd.create_dataset(ifo + '_snr', data=vals,
-                               dtype=np.float32)
+            ofd[ifo + '_snr'] = vals
             network_snr_sq[valid] += vals[valid] ** 2.0
-        network_snr = np.sqrt(network_snr_sq)
-        ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
+        ofd['network_snr'] = np.sqrt(network_snr_sq)
 
         logging.info("Triggered detectors")
         # Create a n_ifos by n_events matrix, with the ifo letter if the

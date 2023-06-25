@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
 import pycbc.version
 import subprocess
 import glob
@@ -34,6 +34,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
               'sphinx.ext.napoleon', 'sphinx.ext.mathjax',
               'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
               'sphinx.ext.inheritance_diagram', 'sphinx_design',
+              "sphinxcontrib.jquery",
               ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -263,9 +264,10 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None,
-                       'h5py': ('http://docs.h5py.org/en/stable/', None),
-                      }
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/', None),
+    'h5py': ('http://docs.h5py.org/en/stable/', None),
+}
 
 napoleon_use_ivar = False
 

@@ -49,7 +49,7 @@ def draw_sample(loglr, size=None):
 
 
 class DistMarg():
-    """Help class to add bookkeeping for distance marginalization"""
+    """Help class to add bookkeeping for likelihood marginalization"""
 
     marginalize_phase = None
     distance_marginalization = None
@@ -66,6 +66,7 @@ class DistMarg():
                               marginalize_distance_density=None,
                               marginalize_vector_params=None,
                               marginalize_vector_samples=1e3,
+                              marginalize_sky_initial_samples=1e6,
                               **kwargs):
         """ Setup the model for use with distance marginalization
 
@@ -119,11 +120,15 @@ class DistMarg():
         self.reconstruct_phase = False
         self.reconstruct_distance = False
         self.reconstruct_vector = False
+        self.precalc_antennna_factors = False
 
         # Handle any requested parameter vector / brute force marginalizations
         self.marginalize_vector_params = {}
         self.marginalized_vector_priors = {}
         self.vsamples = int(marginalize_vector_samples)
+
+        self.marginalize_sky_initial_samples = \
+            int(float(marginalize_sky_initial_samples))
 
         for param in str_to_tuple(marginalize_vector_params, str):
             logging.info('Marginalizing over %s, %s points from prior',
@@ -275,28 +280,55 @@ class DistMarg():
                                       return_complex=return_complex,
                                       return_peak=return_peak)
 
-    def snr_draw(self, snrs):
+    def premarg_draw(self):
+        """ Choose random samples from prechosen set"""
+
+        # Update the current proposed times and the marginalization values
+        logw = self.premarg['logw_partial']
+        choice = numpy.random.randint(0, len(logw), size=self.vsamples)
+
+        for k in self.snr_params:
+            self.marginalize_vector_params[k] = self.premarg[k][choice]
+
+        self._current_params.update(self.marginalize_vector_params)
+        self.sample_idx = self.premarg['sample_idx'][choice]
+
+        # Update the importance weights for each vector sample
+        logw = self.marginalize_vector_weights + logw[choice]
+        self.marginalize_vector_weights = logw - logsumexp(logw)
+        return self.marginalize_vector_params
+
+    def snr_draw(self, wfs=None, snrs=None, size=None):
         """ Improve the monte-carlo vector marginalization using the SNR time
         series of each detector
         """
-        p = self.current_params
+        try:
+            p = self.current_params
+            set_scalar = numpy.isscalar(p['tc'])
+        except:
+            set_scalar = False
 
-        if (not numpy.isscalar(p['tc']) and
-            'tc' in self.marginalized_vector_priors and
-            not ('ra' in self.marginalized_vector_priors
-                 or 'dec' in self.marginalized_vector_priors)):
-            self.draw_times(snrs)
-        elif (not numpy.isscalar(p['tc']) and
-              'tc' in self.marginalized_vector_priors and
-              'ra' in self.marginalized_vector_priors and
-              'dec' in self.marginalized_vector_priors):
-            self.draw_sky_times(snrs)
+        if not set_scalar:
+            if hasattr(self, 'premarg'):
+                return self.premarg_draw()
+
+            if snrs is None:
+                snrs = self.get_snr(wfs)
+            if ('tc' in self.marginalized_vector_priors and
+                not ('ra' in self.marginalized_vector_priors
+                     or 'dec' in self.marginalized_vector_priors)):
+                return self.draw_times(snrs, size=size)
+            elif ('tc' in self.marginalized_vector_priors and
+                  'ra' in self.marginalized_vector_priors and
+                  'dec' in self.marginalized_vector_priors):
+                return self.draw_sky_times(snrs, size=size)
         else:
             # OK, we couldn't do anything with the requested monte-carlo
             # marginalizations.
-            pass
+            self.precalc_antenna_factors = None
+            return None
 
-    def draw_times(self, snrs):
+    def draw_times(self, snrs, size=None):
         """ Draw times consistent with the incoherent network SNR
 
         Parameters
@@ -312,8 +344,10 @@ class DistMarg():
                 ifos = self.keep_ifos
             d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
             self.tinfo = tcmin, tcmax, tcave, ifos, d
+            self.snr_params = ['tc']
 
         tcmin, tcmax, tcave, ifos, d = self.tinfo
+        vsamples = size if size is not None else self.vsamples
 
         # Determine the weights for the valid time range
         ra = self._current_params['ra']
@@ -361,22 +395,27 @@ class DistMarg():
 
         # Draw proportional to the incoherent likelihood
         # Draw first which time sample
-        tci = draw_sample(logweight, size=self.vsamples)
+        tci = draw_sample(logweight, size=vsamples)
         # Second draw a subsample size offset so that all times are covered
         tct = numpy.random.uniform(-snr.delta_t / 2.0,
                                    snr.delta_t / 2.0,
-                                   size=self.vsamples)
+                                   size=vsamples)
         tc = tct + tci * snr.delta_t + float(snr.start_time) - dt
 
         # Update the current proposed times and the marginalization values
+        logw = - logweight[tci]
         self.marginalize_vector_params['tc'] = tc
-        self._current_params['tc'] = tc
+        self.marginalize_vector_params['logw_partial'] = logw
 
-        # Update the importance weights for each vector sample
-        logw = self.marginalize_vector_weights - logweight[tci]
-        self.marginalize_vector_weights = logw - logsumexp(logw)
+        if self._current_params is not None:
+            # Update the importance weights for each vector sample
+            logw = self.marginalize_vector_weights + logw
+            self._current_params.update(self.marginalize_vector_params)
+            self.marginalize_vector_weights = logw - logsumexp(logw)
 
-    def draw_sky_times(self, snrs):
+        return self.marginalize_vector_params
+
+    def draw_sky_times(self, snrs, size=None):
         """ Draw ra, dec, and tc together using SNR timeseries to determine
         monte-carlo weights.
         """
@@ -392,14 +431,14 @@ class DistMarg():
             return
 
         def make_init():
-            logging.info('pregenerating sky pointings')
-            size = int(1e6)
-            logging.info('drawing samples')
+            self.snr_params = ['tc', 'ra', 'dec']
+            size = self.marginalize_sky_initial_samples
+            logging.info('drawing samples: %s', size)
             ra = self.marginalized_vector_priors['ra'].rvs(size=size)['ra']
             dec = self.marginalized_vector_priors['dec'].rvs(size=size)['dec']
             tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
             tcave = (tcmax + tcmin) / 2.0
-            d = {ifo: Detector(ifo, reference_time=tcave) for ifo in ifos}
+            d = {ifo: Detector(ifo, reference_time=tcave) for ifo in self.data}
 
             # What data structure to hold times? Dict of offset -> list?
             logging.info('sorting into time delay dict')
@@ -410,26 +449,32 @@ class DistMarg():
                 dt = numpy.rint(dt / snrs[ifos[0]].delta_t)
                 dts.append(dt)
 
-            dtc = d[ifos[0]].time_delay_from_earth_center(ra, dec, tcave)
+            fp, fc, dtc = {}, {}, {}
+            for ifo in self.data:
+                fp[ifo], fc[ifo] = d[ifo].antenna_pattern(ra, dec, 0.0, tcave)
+                dtc[ifo] = d[ifo].time_delay_from_earth_center(ra, dec, tcave)
 
             dmap = {}
             for i, t in enumerate(tqdm.tqdm(zip(*dts))):
-                v = ra[i], dec[i], dtc[i]
                 if t not in dmap:
                     dmap[t] = []
-                dmap[t].append(v)
+                dmap[t].append(i)
 
             if len(ifos) == 1:
-                dmap[()] = list(zip(ra, dec, dtc))
-            return ifos, dmap, tcmin, tcmax
+                dmap[()] = numpy.arange(0, size, 1).astype(int)
+
+            return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc
 
         if not hasattr(self, 'tinfo'):
             self.tinfo = {}
 
         if ikey not in self.tinfo:
+            logging.info('pregenerating sky pointings')
             self.tinfo[ikey] = make_init()
 
-        ifos, dmap, tcmin, tcmax = self.tinfo[ikey]
+        dmap, tcmin, tcmax, fp, fc, ra, dec, dtc = self.tinfo[ikey]
+
+        vsamples = size if size is not None else self.vsamples
 
         # draw times from each snr time series
         # Is it worth doing this if some detector has low SNR?
@@ -451,7 +496,7 @@ class DistMarg():
             snr = snr.time_slice(start, end, mode='nearest')
 
             w = snr.squared_norm().numpy() / 2.0
-            i = draw_sample(w, size=self.vsamples)
+            i = draw_sample(w, size=vsamples)
 
             if sref is not None:
                 mcweight -= w[i]
@@ -466,53 +511,63 @@ class DistMarg():
             idx.append(i)
 
         # check if delay is in dict, if not, throw out
-        ra = []
-        dec = []
-        dtc = []
         ti = []
+        ix = []
         wi = []
-        rand = numpy.random.uniform(0, 1, size=self.vsamples)
-        for i in range(self.vsamples):
+        rand = numpy.random.uniform(0, 1, size=vsamples)
+        for i in range(vsamples):
             t = tuple(x[i] for x in dx)
             if t in dmap:
                 randi = int(rand[i] * (len(dmap[t])))
-                xra, xdec, xdtc = dmap[t][randi]
-                ra.append(xra)
-                dec.append(xdec)
-                dtc.append(xdtc)
+                ix.append(dmap[t][randi])
                 wi.append(len(dmap[t]))
                 ti.append(i)
 
         # If we had really poor efficiency at finding a point, we should
         # give up and just use the original random draws
-        if len(ra) < 0.05 * self.vsamples:
+        if len(ra) < 0.05 * vsamples:
             return
 
         # fill back to fixed size with repeat samples
         # sample order is random, so this should be OK statistically
+        ix = numpy.resize(numpy.array(ix, dtype=int), vsamples)
+        self.sample_idx = ix
+        self.precalc_antenna_factors = fp, fc, dtc
 
-        ra = numpy.resize(numpy.array(ra), self.vsamples)
-        dec = numpy.resize(numpy.array(dec), self.vsamples)
-        dtc = numpy.resize(numpy.array(dtc), self.vsamples)
-        ti = numpy.resize(numpy.array(ti, dtype=int), self.vsamples)
-        wi = numpy.resize(numpy.array(wi), self.vsamples)
+        ra = ra[ix]
+        dec = dec[ix]
+        dtc = {ifo: dtc[ifo][ix] for ifo in dtc}
+
+        ti = numpy.resize(numpy.array(ti, dtype=int), vsamples)
+        wi = numpy.resize(numpy.array(wi), vsamples)
 
         # Second draw a subsample size offset so that all times are covered
         tct = numpy.random.uniform(-snr.delta_t / 2.0,
                                    snr.delta_t / 2.0,
                                    size=len(ti))
 
-        tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc
+        tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc[ifos[0]]
 
         # Update the current proposed times and the marginalization values
+        logw_sky = mcweight[ti] + numpy.log(wi)
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['ra'] = ra
         self.marginalize_vector_params['dec'] = dec
-        self._current_params.update(self.marginalize_vector_params)
+        self.marginalize_vector_params['logw_partial'] = logw_sky
 
-        # Update the importance weights for each vector sample
-        logw = self.marginalize_vector_weights + mcweight[ti] + numpy.log(wi)
-        self.marginalize_vector_weights = logw - logsumexp(logw)
+        if self._current_params is not None:
+            # Update the importance weights for each vector sample
+            logw = self.marginalize_vector_weights + logw_sky
+            self._current_params.update(self.marginalize_vector_params)
+            self.marginalize_vector_weights = logw - logsumexp(logw)
+
+        return self.marginalize_vector_params
+
+    def get_precalc_antenna_factors(self, ifo):
+        """ Get the antenna factors for marginalized samples if they exist """
+        ix = self.sample_idx
+        fp, fc, dtc = self.precalc_antenna_factors
+        return fp[ifo][ix], fc[ifo][ix], dtc[ifo][ix]
 
     def setup_peak_lock(self,
                         sample_rate=4096,
@@ -564,7 +619,9 @@ class DistMarg():
             peak_lock_region = int(peak_lock_region)
 
             for ifo in snrs:
-                z = snrs[ifo].time_slice(tstart, tstart + tmax, mode='nearest')
+                s = max(tstart, snrs[ifo].start_time)
+                e = min(tstart + tmax, snrs[ifo].end_time)
+                z = snrs[ifo].time_slice(s, e, mode='nearest')
                 peak_snr, imax = z.abs_max_loc()
                 times = z.sample_times
                 peak_time = times[imax]
@@ -607,12 +664,16 @@ class DistMarg():
         for ifo in snrs:
             self.tend[ifo] += self.num_samples[ifo] / sample_rate
 
-    def draw_ifos(self, snrs, peak_snr_threshold=4.0, log=True, **kwargs):
+    def draw_ifos(self, snrs, peak_snr_threshold=4.0, log=True,
+                  precalculate_marginalization_points=False,
+                  **kwargs):
         """ Helper utility to determine which ifos we should use based on the
         reference SNR time series.
         """
         if 'tc' not in self.marginalized_vector_priors:
             return
+
+        peak_snr_threshold = float(peak_snr_threshold)
 
         tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
         ifos = list(snrs.keys())
@@ -634,6 +695,12 @@ class DistMarg():
                          keep_ifos, psnrs, peak_snr_threshold)
 
         self.keep_ifos = keep_ifos
+
+        if precalculate_marginalization_points:
+            num_points = int(float(precalculate_marginalization_points))
+            self.premarg = self.snr_draw(size=num_points, snrs=snrs).copy()
+            self.premarg['sample_idx'] = self.sample_idx
+
         return keep_ifos
 
     @property

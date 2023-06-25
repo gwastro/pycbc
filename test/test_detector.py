@@ -22,9 +22,9 @@
 # =============================================================================
 #
 """
-These are the unittests for the pycbc.waveform module
+These are the unittests for the pycbc.detector module
 """
-from __future__ import print_function
+
 import pycbc.detector as det
 import unittest, numpy
 from numpy.random import uniform, seed

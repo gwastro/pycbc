@@ -41,8 +41,8 @@ def query_gwosc(ifo, segment_name, gps_start_time, duration):
     """
 
     response = urlopen(
-        'https://www.gw-openscience.org/timeline/segments/json/O1/{}_{}/{}/{}/'.format(
-        ifo, segment_name, gps_start_time, duration))
+        f'https://www.gwosc.org/timeline/segments/json/O1/{ifo}_{segment_name}/{gps_start_time}/{duration}/'
+    )
 
     logging.info(response.info())
     json_segment_data = json.loads(response.read())

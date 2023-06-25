@@ -320,7 +320,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             snr_estimate[det] = (0.5 * snr_proxy) ** 0.5
 
         self.draw_ifos(snr_estimate, log=False, **self.kwargs)
-        self.snr_draw(snr_estimate)
+        self.snr_draw(snrs=snr_estimate)
 
         for det in wfs:
             if det not in self.dets:

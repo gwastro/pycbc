@@ -13,7 +13,7 @@ template banks) should read the documentation at:
 
    inference
    workflow/pycbc_make_psd_estimation_workflow
-   workflow/pycbc_make_coinc_search_workflow
+   workflow/pycbc_make_offline_search_workflow
    workflow/pygrb.rst
    tmpltbank
    hwinj

@@ -35,6 +35,7 @@ __all__ = (
     'default_null_value',
     'return_empty_sngl',
     'return_search_summary',
+    'create_process_table',
     'legacy_row_id_converter',
     'get_table_columns',
     'LIGOLWContentHandler'
