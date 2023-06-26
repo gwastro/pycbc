@@ -112,9 +112,11 @@ EOF
       echo -e "\\n>> [`date`] Deploying release ${SOURCE_TAG} to CVMFS"
       # remove lalsuite source and deploy on cvmfs
       rm -rf ${VENV_PATH}/src/lalsuite
-      ssh ouser.ligo@oasis-login.opensciencegrid.org "mkdir -p /home/login/ouser.ligo/ligo/deploy/sw/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}"
-      rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ ouser.ligo@oasis-login.opensciencegrid.org:/home/login/ouser.ligo/ligo/deploy/sw/pycbc/${ENV_OS}/virtualenv/pycbc-${SOURCE_TAG}/
-      ssh ouser.ligo@oasis-login.opensciencegrid.org osg-oasis-update
+      export RSYNC_OPTIONS VENV_PATH ENV_OS SOURCE_TAG
+      if ! bash /pycbc/tools/venv_transfer_commands.sh; then
+        ssh cvmfs.pycbc@cvmfs-software.ligo.caltech.edu "sudo -u repo.software cvmfs_server abort -f"
+        exit 1
+      fi
     fi
     echo -e "\\n>> [`date`] virtualenv deployment complete"
   fi
