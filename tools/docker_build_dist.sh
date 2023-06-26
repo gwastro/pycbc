@@ -15,7 +15,7 @@ done
 
 # set the lalsuite checkout to use
 
-if [ "x$SOURCE_TAG" != "x" ] ; then
+if [ "x$SOURCE_TAG" == "x" ] ; then
   SOURCE_TAG="master"
   RSYNC_OPTIONS="--delete"
 else
@@ -108,7 +108,7 @@ EOF
     chmod -R go+r ${VENV_PATH}
 
     echo -e "\\n>> [`date`] Deploying virtual environment ${VENV_PATH}"
-    if [ "x${SOURCE_TAG}" == "xmaster" ] ; then
+    if [ "x${SOURCE_TAG}" != "xmaster" ] ; then
       echo -e "\\n>> [`date`] Deploying release ${SOURCE_TAG} to CVMFS"
       # remove lalsuite source and deploy on cvmfs
       rm -rf ${VENV_PATH}/src/lalsuite
