@@ -326,7 +326,7 @@ with ctx:
         logging.info("Template bank size after thinning: %d", n_bank)
    
     # Antenna patterns
-    antenna_patterns = [[[0 for i in range(2)] for position_index in positions_array] for i in range(3)]
+    antenna_patterns = [[[0 for i in range(2)] for position_index in positions_array] for i in range(len(args.instruments))]
     for i, ifo in enumerate(args.instruments):
         for position_index in positions_array:
             antenna_patterns[i][position_index] = detector.Detector(ifo).antenna_pattern(sky_positions[0][position_index], sky_positions[1][position_index], polarization=0, t_gps=t_gps)
