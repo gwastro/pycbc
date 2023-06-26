@@ -458,7 +458,8 @@ class LiveEventManager(object):
 
         logging.info('computing followup data for coinc')
         coinc_ifos = coinc_results['foreground/type'].split('-')
-        followup_ifos = list(set(ifos) - set(coinc_ifos))
+        followup_ifos = set(ifos) - set(coinc_ifos)
+        followup_ifos = list(followup_ifos | set(self.skymap_only_ifos))
 
         double_ifar = coinc_results['foreground/ifar']
         if double_ifar < args.ifar_double_followup_threshold:
