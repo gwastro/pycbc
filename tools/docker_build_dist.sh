@@ -15,7 +15,7 @@ done
 
 # set the lalsuite checkout to use
 
-if [ "x$SOURCE_TAG" == "x" ] ; then
+if [ "x$SOURCE_TAG" != "x" ] ; then
   SOURCE_TAG="master"
   RSYNC_OPTIONS="--delete"
 else
