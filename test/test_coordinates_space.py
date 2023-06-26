@@ -54,7 +54,7 @@ def almost_equal(derived_val, check_val, precision=1e-2):
 
 def curve_similarity(curve_1, curve_2):
     """Using the Euclidean distance to check
-    the similarity between two curves
+    the similarity between two curves.
     """
     return numpy.linalg.norm(curve_1 - curve_2)
 
@@ -199,9 +199,11 @@ class TestParams(unittest.TestCase):
             return ht_list
 
         # cunstom E3
-        fine_tunning_2 = 7992204.094271309
+        # All of those hard-coded numbers are carefully chosen,
+        # in order to almost co-align and co-locate both 2 detectors.
+        fine_tunning = 7992204.094271309
         OMEGA_0 = 1.99098659277e-7
-        yangle = numpy.pi / 2 + fine_tunning_2 * OMEGA_0
+        yangle = numpy.pi / 2 + fine_tunning * OMEGA_0
         add_detector_on_earth(name='D1', longitude=1.8895427761465164,
                               latitude=0.11450614784814996, yangle=yangle,
                               xangle=yangle+numpy.pi/3, height=0)
@@ -226,9 +228,7 @@ class TestParams(unittest.TestCase):
         params['f_final'] = 0.1
         params['delta_t'] = 1/0.2
         params['t_offset'] = 9206958.120016199 # 0 degrees
-
-        fine_tunning_2 = 7992204.094271309
-        t_lisa = YRSID_SI-params['t_offset'] + fine_tunning_2
+        t_lisa = YRSID_SI - params['t_offset'] + fine_tunning
 
         nx = 100
         longitude_array_high_res = numpy.linspace(
@@ -308,6 +308,17 @@ class TestParams(unittest.TestCase):
                                     amp_LISA3_psi/numpy.mean(amp_LISA3_psi))
         dist_phase = curve_similarity(numpy.array(phase_E3_psi),
                                       numpy.array(phase_LISA3_psi))
+        # Here we compare the amplitude and phase as a function of the
+        # polarization angle in the LISA frame, because E3 and LISA-Z are almost
+        # co-aligned and co-located, their detector response should be very
+        # similar (when long-wavelength approximation holds), in our case,
+        # `dist_amp` and `dist_phase` should be very similar
+        # (if the frame transform functions work correctly), users can modify
+        # this script to plot those curves (amp_E3_psi, amp_LISA3_psi,
+        # phase_E3_psi, amp_LISA3_psi). The hard-coded values below are the
+        # reference values for the difference which I got on my laptop,
+        # those curves are not exactly the same, especially for the phase,
+        # but they are almost consistent with each other visually.
         if (numpy.abs(dist_amp - 0.2838670151034317) < 1e-2) and \
             (numpy.abs(dist_phase - 151.77197349820668) < 1e-2):
             passed = True
