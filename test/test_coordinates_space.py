@@ -152,15 +152,19 @@ class TestParams(unittest.TestCase):
         used in the calculation.
         """
         from pycbc.waveform import get_fd_det_waveform
-        from pycbc.coordinates.space import ssb_to_lisa, lisa_to_ssb, ssb_to_geo, lisa_to_geo
+        from pycbc.coordinates.space import (ssb_to_lisa, lisa_to_ssb,
+                                             ssb_to_geo, lisa_to_geo)
 
         from pycbc.types.frequencyseries import FrequencySeries
-        from pycbc.detector import Detector, load_detector_config, add_detector_on_earth, _custom_ground_detectors
+        from pycbc.detector import (Detector, load_detector_config,
+                                    add_detector_on_earth,
+                                    _custom_ground_detectors)
         from pycbc.waveform import get_td_waveform, get_fd_waveform
 
 
         def strain_generator(det='D1', model='IMRPhenomD', fs=4096, df=None,
-                             flow=2, fref=2, tc=0, params=None, fd_taper=False):
+                             flow=2, fref=2, tc=0, params=None,
+                             fd_taper=False):
 
             # Generate a waveform at the detector-frame.
             hp, hc = get_td_waveform(approximant=model, 
@@ -168,7 +172,8 @@ class TestParams(unittest.TestCase):
                         spin1x=0, spin1y=0,
                         spin1z=params['spin1z'], spin2x=0,
                         spin2y=0, spin2z=params['spin2z'],
-                        distance=params['distance'], coa_phase=params['coa_phase'],
+                        distance=params['distance'],
+                        coa_phase=params['coa_phase'],
                         inclination=params['inclination'], f_lower=flow,
                         f_ref=fref, delta_t=1.0/fs)
 
@@ -184,7 +189,8 @@ class TestParams(unittest.TestCase):
 
             det_1 = Detector("D1")
             fp_1, fc_1 = det_1.antenna_pattern(
-                            right_ascension=ra, declination=dec, polarization=psi, t_gps=tc)
+                            right_ascension=ra, declination=dec,
+                            polarization=psi, t_gps=tc)
 
             # Not take the rotation of the earth into account.
             ht_1 = fp_1*hp + fc_1*hc
@@ -195,8 +201,10 @@ class TestParams(unittest.TestCase):
         # cunstom E3
         fine_tunning_2 = 7992204.094271309
         OMEGA_0 = 1.99098659277e-7
-        yangle = numpy.pi / 2 + fine_tunning_2 * OMEGA_0 + numpy.pi/3 * 0
-        add_detector_on_earth(name='D1', longitude=1.8895427761465164, latitude=0.11450614784814996, yangle=yangle, xangle=yangle+numpy.pi/3, height=0)
+        yangle = numpy.pi / 2 + fine_tunning_2 * OMEGA_0
+        add_detector_on_earth(name='D1', longitude=1.8895427761465164,
+                              latitude=0.11450614784814996, yangle=yangle,
+                              xangle=yangle+numpy.pi/3, height=0)
 
         # set parameters
         params = {}
@@ -223,28 +231,42 @@ class TestParams(unittest.TestCase):
         t_lisa = YRSID_SI-params['t_offset'] + fine_tunning_2
 
         nx = 100
-        longitude_array_high_res = numpy.linspace(0, 2*numpy.pi, num=nx, endpoint=False)
+        longitude_array_high_res = numpy.linspace(
+                        0, 2*numpy.pi, num=nx, endpoint=False)
 
         amp_E3_psi = []
         phase_E3_psi = []
         amp_LISA3_psi = []
         phase_LISA3_psi = []
 
-        for polarization_lisa in numpy.linspace(0, 2*numpy.pi, endpoint=False, num=nx):
-            params['tc'], params['eclipticlongitude'], params['eclipticlatitude'], params['polarization'] = lisa_to_ssb(t_lisa, 0, numpy.pi/4, polarization_lisa, params['t_offset'])
+        for polarization_lisa in numpy.linspace(
+                0, 2*numpy.pi, endpoint=False, num=nx):
+            params['tc'], params['eclipticlongitude'], \
+            params['eclipticlatitude'], params['polarization'] = \
+                lisa_to_ssb(t_lisa, 0, numpy.pi/4,
+                            polarization_lisa, params['t_offset'])
 
             nparams = {'mass1':params['mass1'], 'mass2':params['mass2'],
                         'spin1z':params['spin1z'], 'spin2z':params['spin2z'],
                         'f_lower':params['f_lower']}
 
-            bbhx_fd = get_fd_det_waveform(ifos=['LISA_A','LISA_E','LISA_T'], **params)
-            lisa_X_fd = -numpy.sqrt(2)/2 * bbhx_fd['LISA_A'] + numpy.sqrt(6)/6 * bbhx_fd['LISA_E'] + numpy.sqrt(3)/3 * bbhx_fd['LISA_T']
-            lisa_Y_fd = -numpy.sqrt(6)/3 * bbhx_fd['LISA_E'] + numpy.sqrt(3)/3 * bbhx_fd['LISA_T']
-            lisa_Z_fd = numpy.sqrt(2)/2 * bbhx_fd['LISA_A'] + numpy.sqrt(6)/6 * bbhx_fd['LISA_E'] + numpy.sqrt(3)/3 * bbhx_fd['LISA_T']
-            channel_xyz_fd = {'LISA_X':lisa_X_fd, 'LISA_Y':lisa_Y_fd, 'LISA_Z':lisa_Z_fd}
+            bbhx_fd = get_fd_det_waveform(ifos=['LISA_A','LISA_E','LISA_T'],
+                                          **params)
+            lisa_X_fd = -numpy.sqrt(2)/2 * bbhx_fd['LISA_A'] + \
+                        numpy.sqrt(6)/6 * bbhx_fd['LISA_E'] + \
+                        numpy.sqrt(3)/3 * bbhx_fd['LISA_T']
+            lisa_Y_fd = -numpy.sqrt(6)/3 * bbhx_fd['LISA_E'] + \
+                        numpy.sqrt(3)/3 * bbhx_fd['LISA_T']
+            lisa_Z_fd = numpy.sqrt(2)/2 * bbhx_fd['LISA_A'] + \
+                        numpy.sqrt(6)/6 * bbhx_fd['LISA_E'] + \
+                        numpy.sqrt(3)/3 * bbhx_fd['LISA_T']
+            channel_xyz_fd = {'LISA_X':lisa_X_fd,
+                              'LISA_Y':lisa_Y_fd,
+                              'LISA_Z':lisa_Z_fd}
 
-            t_geo, ra, dec, polarization_geo = ssb_to_geo(params['tc'], params['eclipticlongitude'], 
-                                                        params['eclipticlatitude'], params['polarization'])
+            t_geo, ra, dec, polarization_geo = \
+                ssb_to_geo(params['tc'], params['eclipticlongitude'], 
+                           params['eclipticlatitude'], params['polarization'])
 
             params_3g = params.copy()
             params_3g['tc'] = t_geo
@@ -253,27 +275,41 @@ class TestParams(unittest.TestCase):
             params_3g['polarization'] = polarization_geo
             params_3g['coa_phase'] = numpy.pi/2 - params['coa_phase']
 
-            E3_signal = strain_generator(det='D1', model='IMRPhenomD', fs=1./params_3g['delta_t'],
-                                flow=params_3g['f_lower'], fref=params_3g['f_ref'], tc=params_3g['tc'], params=params_3g, fd_taper=False)          
+            E3_signal = strain_generator(det='D1', model='IMRPhenomD',
+                                         fs=1./params_3g['delta_t'],
+                                         flow=params_3g['f_lower'],
+                                         fref=params_3g['f_ref'],
+                                         tc=params_3g['tc'],
+                                         params=params_3g,
+                                         fd_taper=False)          
             E3_signal_fd = {
                 'DIY_E3':E3_signal[0].to_frequencyseries(params_3g['delta_f'])
             }
 
-            index_E3 = numpy.where(numpy.abs(E3_signal_fd['DIY_E3'].sample_frequencies - params_3g['f_ref']) < 1e-7)
-            index_LISA3 = numpy.where(numpy.abs(bbhx_fd['LISA_A'].sample_frequencies - params['f_ref']) < 1e-7)
+            index_E3 = numpy.where(numpy.abs(
+                        E3_signal_fd['DIY_E3'].sample_frequencies -
+                        params_3g['f_ref']) < 1e-7)
+            index_LISA3 = numpy.where(numpy.abs(
+                        bbhx_fd['LISA_A'].sample_frequencies - 
+                        params['f_ref']) < 1e-7)
             amp_E3 = numpy.abs(E3_signal_fd['DIY_E3'])[index_E3[0][0]]
             amp_LISA3 = numpy.abs(channel_xyz_fd['LISA_Z'][index_LISA3[0][0]])
-            phase_E3 = numpy.rad2deg(numpy.angle(E3_signal_fd['DIY_E3'][index_E3[0][0]]))
-            phase_LISA3 = numpy.rad2deg(numpy.angle(channel_xyz_fd['LISA_Z'][index_LISA3[0][0]]))
+            phase_E3 = numpy.rad2deg(numpy.angle(
+                        E3_signal_fd['DIY_E3'][index_E3[0][0]]))
+            phase_LISA3 = numpy.rad2deg(numpy.angle(
+                        channel_xyz_fd['LISA_Z'][index_LISA3[0][0]]))
 
             amp_E3_psi.append(amp_E3)
             phase_E3_psi.append(phase_E3)
             amp_LISA3_psi.append(amp_LISA3)
             phase_LISA3_psi.append(phase_LISA3)
 
-        dist_amp = curve_similarity(amp_E3_psi/numpy.mean(amp_E3_psi), amp_LISA3_psi/numpy.mean(amp_LISA3_psi))
-        dist_phase = curve_similarity(numpy.array(phase_E3_psi), numpy.array(phase_LISA3_psi))
-        if (numpy.abs(dist_amp - 0.2838670151034317) < 1e-2) and (numpy.abs(dist_phase - 151.77197349820668) < 1e-2):
+        dist_amp = curve_similarity(amp_E3_psi/numpy.mean(amp_E3_psi),
+                                    amp_LISA3_psi/numpy.mean(amp_LISA3_psi))
+        dist_phase = curve_similarity(numpy.array(phase_E3_psi),
+                                      numpy.array(phase_LISA3_psi))
+        if (numpy.abs(dist_amp - 0.2838670151034317) < 1e-2) and \
+            (numpy.abs(dist_phase - 151.77197349820668) < 1e-2):
             passed = True
         else:
             passed = False
