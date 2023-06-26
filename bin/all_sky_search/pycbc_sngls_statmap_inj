@@ -56,6 +56,8 @@ parser.add_argument('--background-removal-statistic', type=float,
                     help="Remove any triggers with statistic higher "
                          "than this from the background. "
                           "Default=None removed")
+parser.add_argument('--ignore-inclusive', action='store_true',
+                    help="Do not calculate an inclusive IFAR")
 significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
@@ -143,9 +145,13 @@ f.attrs['foreground_time_exc'] = fg_time_exc
 
 logging.info("calculating foreground ifar/fap values")
 
-fap = 1 - numpy.exp(- fg_time / fg_ifar)
-f['foreground/ifar'] = conv.sec_to_year(fg_ifar)
-f['foreground/fap'] = fap
+if args.ignore_inclusive:
+    f['foreground/ifar'] = numpy.array([])
+    f['foreground/fap'] = numpy.array([])
+else:
+    fap = 1 - numpy.exp(- fg_time / fg_ifar)
+    f['foreground/ifar'] = conv.sec_to_year(fg_ifar)
+    f['foreground/fap'] = fap
 fap_exc = 1 - numpy.exp(- fg_time_exc / fg_ifar_exc)
 f['foreground/ifar_exc'] = conv.sec_to_year(fg_ifar_exc)
 f['foreground/fap_exc'] = fap_exc
