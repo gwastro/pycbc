@@ -545,6 +545,7 @@ class LiveEventManager(object):
             logging.info(f'Found {ifo} single with ifar {sifar}')
 
             followup_ifos = [i for i in active if i is not ifo]
+            followup_ifos = list(set(followup_ifos) | set(self.skymap_only_ifos))
             # Don't recompute ifar considering other ifos
             sld = self.compute_followup_data(
                 [ifo],
