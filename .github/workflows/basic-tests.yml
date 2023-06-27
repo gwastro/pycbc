@@ -43,12 +43,12 @@ jobs:
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$PWD
-        tox -e tox -e py-help
+        tox -e py-help
     - name: run inference tests
       if: matrix.test-type == 'search'
       run: |
         export LAL_DATA_PATH=$PWD
-        tox -e tox -e py-inference
+        tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
       uses: actions/upload-artifact@v2
