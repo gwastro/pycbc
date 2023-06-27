@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import os
+import time
 import pycbc.version
 import subprocess
 import glob
@@ -274,6 +275,21 @@ napoleon_use_ivar = False
 suppress_warnings = ['image.nonlocal_uri']
 
 # build the dynamic files in _include
+def check_finished(proc):
+    status = proc.poll()
+    if status == 0:
+        r = proc.returncode
+        out = proc.stdout.read().decode()
+        err = proc.stderr.read().decode()
+        if r == 0:
+            print('DONE with :{}'.format(' '.join(proc.args)))
+        else:
+            print(out, err, r)
+            raise RuntimeError(f"Failure to run {fn}") 
+        return True
+    else:
+        return False
+
 def build_includes():
     """Creates rst files in the _include directory using the python scripts
     there.
@@ -284,14 +300,35 @@ def build_includes():
     cwd = os.getcwd()
     os.chdir('_include')
     pyfiles = glob.glob('*.py') + glob.glob('*.sh')
+    run_args = []
     for fn in pyfiles:
         if not fn.startswith('_'):
-            print(' {}'.format(fn))
             if fn.endswith('.py'):
-                subprocess.check_output(['python', fn])
+                exe = 'python'
             elif fn.endswith('.sh'):
-                subprocess.check_output(['bash', fn])
-            print('DONE with {}'.format(fn))
+                exe = 'bash'
+             
+            args = [exe, fn]
+            run_args.append(args)
+    
+    run_num = 2
+    i = 0
+    running = []
+    while i < len(run_args): 
+        time.sleep(0.25)
+        if len(running) < run_num:
+            args = run_args[i]
+            proc = subprocess.Popen(args,
+                                    stdout=subprocess.PIPE, 
+                                    stderr=subprocess.PIPE)
+            print('Running: {}'.format(' '.join(proc.args)))
+            i += 1
+            running.append(proc)
+
+        for proc in running:
+            if check_finished(proc):
+                running.remove(proc)
+
     os.chdir(cwd)
 
 if not 'SKIP_PYCBC_DOCS_INCLUDE' in os.environ:
@@ -301,8 +338,6 @@ def setup(app):
     app.add_js_file('typed.min.js')
     app.add_js_file('terminal.css')
     app.add_js_file("theme_overrides.css")
-
-
 
 # -- Options for inheritance graphs -------------------------------------------
 
