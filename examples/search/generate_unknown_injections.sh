@@ -29,7 +29,7 @@ then
             --channel-name $1:SIMULATED_STRAIN \
             --frame-duration 3584 \
             --injection-file injections.hdf \
-	    --fft-backends mkl
+	    --fft-backends fftw
 
 
 	echo "${1::1} ${1}_simulated 1186740069 3584 $pwd/strain/$1/$1-SIMULATED_STRAIN-$start_time-3584.gwf" >> strain/$1/$1-cache.lcf
