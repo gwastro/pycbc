@@ -198,11 +198,10 @@ files = _workflow.FileList([])
 # Loop over vetoes request by the user
 vetoes = wflow.cp.get_subsections('pygrb_plot_chisq_veto')
 for veto in vetoes:
-    chisq_veto_plots = _workflow.FileList([])
-    # Plots with and without injections
-    for inj_file in set([tuning_inj_file, None]):
-        # FIXING: loop over ifos
-        for ifo in ifos:
+    # Loop over ifos
+    for ifo in ifos:
+        # Plot with and without injections
+        for inj_file in set([tuning_inj_file, None]):
             # If the inj_file is used for the plot, include the tuning
             # injection set tag in assembling the plot name
             tags = [veto] if inj_file is None else [veto, tuning_inj_set]
@@ -212,14 +211,14 @@ for veto in vetoes:
                                           inj_file=inj_file, ifo=ifo,
                                           tags=tags)
             plotting_nodes.append(plot_node)
-        # We want a File, not a 1-element list with a File
-        # pycbc_pygrb_plot_chisq_veto produces only one plot: take [0]
-        chisq_veto_plots.append(output_files[0])
-    files.append(chisq_veto_plots)
-layout.two_column_layout(out_dir, files)
+            # We want a File, not a 1-element list with a File
+            # pycbc_pygrb_plot_chisq_veto produces only one plot: take [0]
+            files.append(output_files[0])
+chisq_layout = list(layout.grouper(files, 2))
+layout.two_column_layout(out_dir, chisq_layout)
 
 # Single detector chi-square plots: zoomed in and zoomed out
-out_dir = rdir['signal_consistency/individual_detectors']
+out_dir = rdir['signal_consistency/individual_detector_snrs']
 _workflow.makedir(out_dir)
 files = _workflow.FileList([])
 # Single IFO SNR vs Coherent SNR plots: zoomed in and zoomed out
