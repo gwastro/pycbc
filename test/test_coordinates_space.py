@@ -208,7 +208,7 @@ class TestParams(unittest.TestCase):
 
         # Checking if bbhx is installed, if not, then ignore this test
         # and raise a warning.
-        # TODO: we need implement a better way to install bbhx package.
+        # TODO: we need to implement a better way to install bbhx package.
         bbhx_installed = is_module_installed('bbhx')
         if not bbhx_installed:
             passed = True
