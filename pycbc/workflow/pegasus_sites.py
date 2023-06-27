@@ -242,7 +242,6 @@ def add_osg_site(sitecat, cp):
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(IS_GLIDEIN =?= True)")
     cvmfs_loc = '"docker://spxiwh/pycbc:tha-docker-tmp"'
-    cvmfs_loc += last_release + '"'
     site.add_profiles(Namespace.CONDOR, key="My.SingularityImage",
                       value=cvmfs_loc)
     # On OSG failure rate is high
