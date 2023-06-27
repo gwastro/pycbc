@@ -15,12 +15,15 @@ import os
 import time
 import pycbc.version
 import subprocess
+import logging
 import glob
+import pycbc
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+pycbc.init_logging(True)
 
 # -- General configuration -----------------------------------------------------
 
@@ -277,15 +280,18 @@ suppress_warnings = ['image.nonlocal_uri']
 # build the dynamic files in _include
 def check_finished(proc):
     status = proc.poll()
-    if status == 0:
+    if status is not None:
         r = proc.returncode
         out = proc.stdout.read().decode()
         err = proc.stderr.read().decode()
         if r == 0:
             print('DONE with :{}'.format(' '.join(proc.args)))
         else:
-            print(out, err, r)
-            raise RuntimeError(f"Failure to run {fn}") 
+            logging.info(out)
+            logging.info(err)
+            logging.info(r)
+            msg = "Failure to run {fn}".format(' '.join(proc.args))
+            raise RuntimeError(msg) 
         return True
     else:
         return False
@@ -296,7 +302,7 @@ def build_includes():
 
     This will ignore any files in the _include directory that start with ``_``.
     """
-    print("Running scripts in _include:")
+    logging.info("Running scripts in _include:")
     cwd = os.getcwd()
     os.chdir('_include')
     pyfiles = glob.glob('*.py') + glob.glob('*.sh')
@@ -314,20 +320,24 @@ def build_includes():
     run_num = 2
     i = 0
     running = []
-    while i < len(run_args): 
+    still_running = True
+    while still_running:
         time.sleep(0.25)
-        if len(running) < run_num:
+        if len(running) < run_num and i < len(run_args):
             args = run_args[i]
             proc = subprocess.Popen(args,
                                     stdout=subprocess.PIPE, 
                                     stderr=subprocess.PIPE)
-            print('Running: {}'.format(' '.join(proc.args)))
+            logging.info('Running: {}'.format(' '.join(proc.args)))
             i += 1
             running.append(proc)
 
         for proc in running:
             if check_finished(proc):
                 running.remove(proc)
+        if len(running) == 0 and i == len(run_args):
+            still_running = False
+        #print(i, len(run_args),  still_running, running[0].poll())
 
     os.chdir(cwd)
 
