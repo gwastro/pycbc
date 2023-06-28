@@ -305,7 +305,7 @@ def build_includes():
     running = []
     still_running = True
     while still_running:
-        #time.sleep(0.01)
+        time.sleep(0.01)
         if len(running) < run_num and i < len(run_args):
             args = run_args[i]
             proc = subprocess.Popen(args,
@@ -331,7 +331,7 @@ def build_includes():
                     logging.info(out)
                     logging.info(err)
                     logging.info(r)
-                    msg = "Failure to run {fn}".format(' '.join(proc.args))
+                    msg = "Failure to run {}".format(' '.join(proc.args))
                     raise RuntimeError(msg) 
                 running.remove(ptrack)   
 
