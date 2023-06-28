@@ -433,9 +433,9 @@ def build_segment_filelist(workflow):
     return seg_files
 
 
+# exclude=None, require=None,
 def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None, tags=None):
-                    # exclude=None, require=None,
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -483,8 +483,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
                 if workflow.cp.has_option('workflow', opt):
                     node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
     # Pass the injection file as an input File instance
-    if inj_file is not None and exec_name not in ['pygrb_plot_skygrid',
-                                                  'pygrb_plot_stats_distribution']:
+    if inj_file is not None and exec_name not in \
+        ['pygrb_plot_skygrid', 'pygrb_plot_stats_distribution']:
         fm_file = resolve_url_to_file(inj_file)
         node.add_input_opt('--found-missed-file', fm_file)
     # IFO option
@@ -510,7 +510,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     else:
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--output-file', tags=extra_tags)
-        if exec_name in ['pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats'] and 'zoomin' in tags:
+        if exec_name in ['pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats'] \
+            and 'zoomin' in tags:
             node.add_opt('--zoom-in')
     # Quantity to be displayed on the y-axis of the plot
     if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_null_stats',
@@ -623,14 +624,14 @@ def make_pygrb_injs_tables(workflow, out_dir,  # exclude=None, require=None,
                                                    'workflow', 'onsource-file')
         node.add_input_opt('--onsource-file', onsource_file)
         # Loudest offsource triggers and onsource trigger html and h5 output
-        for source_type in ['onsource-trig', 'offsource-trigs']:
-            source_type_tags = [source_type.upper().replace('-', '_')]
+        for src_type in ['onsource-trig', 'offsource-trigs']:
+            src_type_tags = [src_type.upper().replace('-', '_')]
             node.new_output_file_opt(workflow.analysis_time, '.html',
-                                     '--loudest-'+source_type+'-output-file',
-                                     tags=extra_tags+source_type_tags)
+                                     '--loudest-'+src_type+'-output-file',
+                                     tags=extra_tags+src_type_tags)
             node.new_output_file_opt(workflow.analysis_time, '.h5',
-                                     '--loudest-'+source_type+'-h5-output-file',
-                                     tags=extra_tags+source_type_tags)
+                                     '--loudest-'+src_type+'-h5-output-file',
+                                     tags=extra_tags+src_type_tags)
 
     # Add job node to the workflow
     workflow += node
@@ -716,7 +717,7 @@ def setup_pygrb_minifollowups(workflow, followups_file,
 
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
-                                 onsource_file, inj_files, tags=None,
+                                 inj_files, tags=None,
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.
@@ -728,7 +729,6 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
     res_dir: The post-processing directory where
         results (plots, etc.) will be stored
     trig_file: The triggers File object
-    onsource_file: The onsource File object
     inj_files: FileList of injection results
     tags: {None, optional}
         Tags to add to the executables
@@ -766,7 +766,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
                              '--dax-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.map',
                              '--output-map', tags=tags)
-                            # + ['MAP'], use_tmp_subdirs=True)
+    # + ['MAP'], use_tmp_subdirs=True)
     name = node.output_files[0].name
     assert name.endswith('.dax')
     map_file = node.output_files[1]
