@@ -300,12 +300,12 @@ def build_includes():
             args = [exe, fn]
             run_args.append(args)
     
-    run_num = 2
+    run_num = 1
     i = 0
     running = []
     still_running = True
     while still_running:
-        #time.sleep(0.25)
+        time.sleep(0.01)
         if len(running) < run_num and i < len(run_args):
             args = run_args[i]
             proc = subprocess.Popen(args,
@@ -320,10 +320,9 @@ def build_includes():
             proc, out, err = ptrack
             status = proc.poll()
             r = proc.returncode
-            out += proc.stdout.read().decode()
-            err += proc.stderr.read().decode()
+            out += proc.stdout.readline().decode()
+            err += proc.stderr.readline().decode()
             if status is not None:
-                print(out, err)
                 if r == 0:
                     print('DONE with :{}'.format(' '.join(proc.args)))
                 else:
