@@ -278,7 +278,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 
 # Load triggers. Time-slides not yet available
 trig_data = load_trig_data(trig_file, vetoes)
-max_reweighted_snr = max(trig_data['network/reweighted_snr'][:])*0.2 # FIXME: Lower for testing purposes with GRB 170817A
+max_reweighted_snr = max(trig_data['network/reweighted_snr'][:])
 
 # =======================
 # Post-process injections
