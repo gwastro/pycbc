@@ -485,8 +485,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Pass the injection file as an input File instance
     if inj_file is not None and exec_name not in \
         ['pygrb_plot_skygrid', 'pygrb_plot_stats_distribution']:
-        fm_file = resolve_url_to_file(inj_file)
-        node.add_input_opt('--found-missed-file', fm_file)
+            fm_file = resolve_url_to_file(inj_file)
+            node.add_input_opt('--found-missed-file', fm_file)
     # IFO option
     if ifo:
         node.add_opt('--ifo', ifo)
@@ -512,7 +512,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
                                  '--output-file', tags=extra_tags)
         if exec_name in ['pygrb_plot_coh_ifosnr', 'pygrb_plot_null_stats'] \
             and 'zoomin' in tags:
-            node.add_opt('--zoom-in')
+                node.add_opt('--zoom-in')
     # Quantity to be displayed on the y-axis of the plot
     if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_null_stats',
                      'pygrb_plot_snr_timeseries']:
