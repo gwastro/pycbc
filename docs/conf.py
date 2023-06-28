@@ -277,24 +277,7 @@ napoleon_use_ivar = False
 
 suppress_warnings = ['image.nonlocal_uri']
 
-# build the dynamic files in _include
-def check_finished(proc):
-    status = proc.poll()
-    if status is not None:
-        r = proc.returncode
-        out = proc.stdout.read().decode()
-        err = proc.stderr.read().decode()
-        if r == 0:
-            print('DONE with :{}'.format(' '.join(proc.args)))
-        else:
-            logging.info(out)
-            logging.info(err)
-            logging.info(r)
-            msg = "Failure to run {fn}".format(' '.join(proc.args))
-            raise RuntimeError(msg) 
-        return True
-    else:
-        return False
+
 
 def build_includes():
     """Creates rst files in the _include directory using the python scripts
@@ -322,7 +305,7 @@ def build_includes():
     running = []
     still_running = True
     while still_running:
-        time.sleep(0.25)
+        #time.sleep(0.25)
         if len(running) < run_num and i < len(run_args):
             args = run_args[i]
             proc = subprocess.Popen(args,
@@ -330,14 +313,30 @@ def build_includes():
                                     stderr=subprocess.PIPE)
             logging.info('Running: {}'.format(' '.join(proc.args)))
             i += 1
-            running.append(proc)
+            running.append([proc, "", ""])
 
-        for proc in running:
-            if check_finished(proc):
-                running.remove(proc)
+        #print(i, len(run_args),  still_running, running[0].poll(), running[0].pid)
+        for ptrack in running:
+            proc, out, err = ptrack
+            status = proc.poll()
+            r = proc.returncode
+            out += proc.stdout.read().decode()
+            err += proc.stderr.read().decode()
+            if status is not None:
+                print(out, err)
+                if r == 0:
+                    print('DONE with :{}'.format(' '.join(proc.args)))
+                else:
+                    logging.info(out)
+                    logging.info(err)
+                    logging.info(r)
+                    msg = "Failure to run {fn}".format(' '.join(proc.args))
+                    raise RuntimeError(msg) 
+                running.remove(ptrack)   
+
         if len(running) == 0 and i == len(run_args):
             still_running = False
-        #print(i, len(run_args),  still_running, running[0].poll())
+
 
     os.chdir(cwd)
 
