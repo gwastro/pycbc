@@ -332,6 +332,8 @@ def build_includes():
                     logging.info(err)
                     logging.info(r)
                     msg = "Failure to run {}".format(' '.join(proc.args))
+                    for p, o, e in running:
+                        p.terminate()
                     raise RuntimeError(msg) 
                 running.remove(ptrack)   
 
