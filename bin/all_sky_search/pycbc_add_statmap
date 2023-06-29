@@ -226,7 +226,7 @@ for f_in in files:
                 bg_exc_trig_ids[ifo] = np.concatenate([bg_exc_trig_ids[ifo],
                     -1 * np.ones_like(f_in['background_exc/stat'][:],
                     dtype=int)])
-n_triggers = f['foreground/ifar'].size
+n_triggers = f['foreground/stat'].size
 logging.info('{} foreground events before clustering'.format(n_triggers))
 
 for ifo in all_ifos:
@@ -266,15 +266,19 @@ def filter_dataset(h5file, name, idx):
 # multiple files
 for key in f['foreground'].keys():
     if key not in all_ifos:
+        if f['foreground/%s' % key].size == 0:
+            # This is an indicator that the column was specifically
+            # not calculated
+            logging.info('foreground/%s dataset is being ignored', key)
+            continue
         filter_dataset(f, 'foreground/%s' % key, cidx)
     else:  # key is an ifo
         for k in f['foreground/%s' % key].keys():
             filter_dataset(f, 'foreground/{}/{}'.format(key, k), cidx)
 
-fg_ifar_init = f['foreground/ifar'][:]
 fg_ifar_exc_init = f['foreground/ifar_exc'][:]
 
-n_triggers = fg_ifar_init.size
+n_triggers = fg_ifar_exc_init.size
 
 logging.info('Calculating event times to determine which types of coinc '
              'are available')
