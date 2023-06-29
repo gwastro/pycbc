@@ -521,6 +521,9 @@ for key in final_bg_files:
         # as it is just blank
         ifar_cb = wf.make_ifar_plot(workflow, bg_file, closed_dir,
                                     tags=bg_file.tags + ['closed_box'])
+        closed_page = [(snrifar_cb, ifar_cb)]
+    else:
+        closed_page = [(snrifar_cb,)]
     table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
                                      singles=insps, extension='.html',
                                      tags=bg_file.tags)
@@ -528,7 +531,6 @@ for key in final_bg_files:
     detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
     layout.two_column_layout(open_dir, detailed_page)
 
-    closed_page = [(snrifar_cb, ifar_cb)]
     snrifar_summ += closed_page
     layout.two_column_layout(closed_dir, closed_page)
 
