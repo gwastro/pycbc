@@ -50,7 +50,10 @@ def gmst_accurate(gps_time):
 
 def get_available_detectors():
     """ List the available detectors """
-    return list(_ground_detectors.keys())
+    dets = list(_ground_detectors.keys())
+    for pfx, name in get_available_lal_detectors():
+        dets += [pfx]
+    return dets
 
 def get_available_lal_detectors():
     """Return list of detectors known in the currently sourced lalsuite.
@@ -206,7 +209,7 @@ class Detector(object):
         self.name = str(detector_name)
         
         lal_detectors = [pfx for pfx, name in get_available_lal_detectors()]
-        if detector_name in get_available_detectors():
+        if detector_name in _ground_detectors:
             self.info = _ground_detectors[detector_name]
             self.response = self.info['response']
             self.location = self.info['location']
