@@ -138,6 +138,33 @@ def smooth(nabove, invalphan, ntotal, dists, smoothing_method, **kwargs):
     return _smooth_dist_func[smoothing_method](nabove, invalphan,
                                                ntotal, dists, **kwargs)
 
+# Number of smoothing lengths around the current template where
+# distances will be calculated
+# n_closest has no limit as it needs to contain enough
+# templates to contain n triggers, which we cannot know beforehand
+
+_smooth_cut = {
+    'smooth_tophat': 1,
+    'n_closest': numpy.inf,
+    'distance_weighted': 3,
+}
+
+
+def report_percentage(i, length):
+    """
+    Convenience function - report how long through the loop we are.
+    Every ten percent
+    Parameters
+    ----------
+    i: integer
+        index being looped through
+    length : integer
+        number of loops we will go through in total
+    """
+    pc = int(numpy.floor(i / length * 100))
+    pc_last = int(numpy.floor((i - 1) / length * 100))
+    if not pc % 10 and pc_last % 10:
+        logging.info(f"Template {i} out of {length} ({pc:.0f}%)")
 
 parser = argparse.ArgumentParser(usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -238,15 +265,18 @@ bank = h5py.File(args.bank_file, 'r')
 m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 
 parvals = []
+parnames = []
 
 for param, slog in zip(args.fit_param, args.log_param):
     data = triggers.get_param(param, args, m1, m2, s1z, s2z)
     if slog in ['false', 'False', 'FALSE']:
         logging.info('Using param: %s', param)
         parvals.append(data)
+        parnames.append(param)
     elif slog in ['true', 'True', 'TRUE']:
         logging.info('Using log param: %s', param)
         parvals.append(numpy.log(data))
+        parnames.append(f"log({param})")
     else:
         raise ValueError("invalid log param argument, use 'true', or 'false'")
 
@@ -258,11 +288,9 @@ invalpha = 1. / fits['fit_coeff'][:]
 invalphan = invalpha * nabove
 
 nabove_smoothed = []
-ntotal_smoothed = []
 alpha_smoothed = []
+ntotal_smoothed = []
 rang = numpy.arange(0, len(nabove))
-
-logging.info("Smoothing ...")
 
 # Handle the one-dimensional case of tophat smoothing separately
 # as it is easier to optimize computational performance.
@@ -279,18 +307,70 @@ if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
     del parvals_0
     # Precompute the sums so we can quickly look up differences between
     # templates
-    ntsum = ntotal.cumsum()
     nasum = nabove.cumsum()
     invsum = invalphan.cumsum()
+    ntsum = ntotal.cumsum()
     num = right - left
 
-    ntotal_smoothed = (ntsum[right] - ntsum[left]) / num
+    logging.info("Smoothing ...")
     nabove_smoothed = (nasum[right] - nasum[left]) / num
     invmean = (invsum[right] - invsum[left]) / num
     alpha_smoothed = nabove_smoothed / invmean
+    ntotal_smoothed = (ntsum[right] - ntsum[left]) / num
+
+elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
+    c = _smooth_cut[args.smoothing_method]
+    cut_lengths = [s * c for s in args.smoothing_width]
+    # Find the "longest" dimension in cut lengths
+    sort_dim = numpy.argmax([(v.max() - v.min()) / c
+                              for v, c in zip(parvals, cut_lengths)])
+    logging.info("Sorting / Cutting on dimension %s", parnames[sort_dim])
+
+    # Sort parvals by the sort dimension
+    par_sort = numpy.argsort(parvals[sort_dim])
+    parvals = [p[par_sort] for p in parvals]
+
+    # For each template, find the range of nearby templates which fall within
+    # the chosen window.
+    lefts = numpy.searchsorted(parvals[sort_dim],
+            parvals[sort_dim] - cut_lengths[sort_dim])
+    rights = numpy.searchsorted(parvals[sort_dim],
+            parvals[sort_dim] + cut_lengths[sort_dim])
+    n_removed = len(parvals[0]) - rights + lefts
+    logging.info("Cutting between %d and %d templates for each smoothing",
+                 n_removed.min(), n_removed.max())
+    # Sort the values to be smoothed by parameter value
+    nabove = nabove[par_sort]
+    invalphan = invalphan[par_sort]
+    ntotal = ntotal[par_sort]
+    logging.info("Smoothing ...")
+    slices = [slice(l,r) for l, r in zip(lefts, rights)]
+    for i in rang:
+        report_percentage(i, rang.max())
+        slc = slices[i]
+        d = dist(i, slc, parvals, args.smoothing_width)
+
+        smoothed_tuple = smooth(nabove[slc],
+                                invalphan[slc],
+                                ntotal[slc],
+                                d,
+                                args.smoothing_method,
+                                **kwarg_dict)
+        nabove_smoothed.append(smoothed_tuple[0])
+        alpha_smoothed.append(smoothed_tuple[1])
+        ntotal_smoothed.append(smoothed_tuple[2])
+
+    # Undo the sorts
+    unsort = numpy.argsort(par_sort)
+    parvals = [p[unsort] for p in parvals]
+    nabove_smoothed = numpy.array(nabove_smoothed)[unsort]
+    alpha_smoothed = numpy.array(alpha_smoothed)[unsort]
+    ntotal_smoothed = numpy.array(ntotal_smoothed)[unsort]
 
 else:
-    for i in range(len(nabove)):
+    logging.info("Smoothing ...")
+    for i in rang:
+        report_percentage(i, rang.max())
         d = dist(i, rang, parvals, args.smoothing_width)
         smoothed_tuple = smooth(nabove, invalphan, ntotal, d,
                                 args.smoothing_method, **kwarg_dict)

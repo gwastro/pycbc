@@ -22,7 +22,7 @@ import lal
 import numpy
 import math
 import os.path, glob, time
-import gwdatafind
+from gwdatafind import find_urls as find_frame_urls
 import pycbc
 from urllib.parse import urlparse
 from pycbc.types import TimeSeries, zeros
@@ -256,22 +256,6 @@ def read_frame(location, channels, start_time=None,
     else:
         return _read_channel(channels, stream, start_time, duration)
 
-def datafind_connection(server=None):
-    """ Return a connection to the datafind server
-
-    Parameters
-    -----------
-    server : {SERVER:PORT, string}, optional
-       A string representation of the server and port.
-       The port may be ommitted.
-
-    Returns
-    --------
-    connection
-        The open connection to the datafind server.
-    """
-    return gwdatafind.connect(host=server)
-
 def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     """Return the paths to a span of frame files
 
@@ -300,10 +284,8 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     >>> paths = frame_paths('H1_LDAS_C02_L2', 968995968, 968995968+2048)
     """
     site = frame_type[0]
-    connection = datafind_connection(server)
-    connection.find_times(site, frame_type,
-                          gpsstart=start_time, gpsend=end_time)
-    cache = connection.find_frame_urls(site, frame_type, start_time, end_time,urltype=url_type)
+    cache = find_frame_urls(site, frame_type, start_time, end_time,
+                            urltype=url_type, host=server)
     return [urlparse(entry).path for entry in cache]
 
 def query_and_read_frame(frame_type, channels, start_time, end_time,
@@ -344,16 +326,16 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     """
     # Allows compatibility with our standard tools
     # We may want to place this into a higher level frame getting tool
-    if frame_type == 'LOSC_STRAIN':
-        from pycbc.frame.losc import read_strain_losc
+    if frame_type in ['LOSC_STRAIN', 'GWOSC_STRAIN']:
+        from pycbc.frame.gwosc import read_strain_gwosc
         if not isinstance(channels, list):
             channels = [channels]
-        data = [read_strain_losc(c[:2], start_time, end_time)
+        data = [read_strain_gwosc(c[:2], start_time, end_time)
                 for c in channels]
         return data if len(data) > 1 else data[0]
-    if frame_type == 'LOSC':
-        from pycbc.frame.losc import read_frame_losc
-        return read_frame_losc(channels, start_time, end_time)
+    if frame_type in ['LOSC', 'GWOSC']:
+        from pycbc.frame.gwosc import read_frame_gwosc
+        return read_frame_gwosc(channels, start_time, end_time)
 
     logging.info('querying datafind server')
     paths = frame_paths(frame_type, int(start_time), int(numpy.ceil(end_time)))
@@ -365,7 +347,6 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
                       check_integrity=check_integrity)
 
 __all__ = ['read_frame', 'frame_paths',
-           'datafind_connection',
            'query_and_read_frame']
 
 def write_frame(location, channels, timeseries):
