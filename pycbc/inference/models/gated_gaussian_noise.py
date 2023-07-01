@@ -438,6 +438,17 @@ class BaseGatedGaussian(BaseGaussianNoise):
         if lfs is not None:
             opts.low_frequency_cutoff = lfs
         return out
+    
+    @staticmethod
+    def shift_to_integer_sample(fs, gate_end_time):
+        """Shift the gating end time to the cloest (floor) data sample
+        """
+        gateidx = numpy.floor(float(
+                gateenddelay - res.start_time) * res.sample_rate).astype(int)
+        offset = res.sample_times[gateidx] - gateenddelay
+            # shift such that the end gating time lands on a data sample
+        fs_shift = apply_fd_time_shift(fs, offset + rtilde.epoch, copy=True)
+        return fs_shift
 
     def write_metadata(self, fp, group=None):
         """Adds writing the psds, and analyzed detectors.
@@ -534,9 +545,9 @@ class GatedGaussianNoise(BaseGatedGaussian):
         float
             The value of the log likelihood.
         """
-        # generate the template waveform
+        # generate the residuals
         try:
-            wfs = self.get_waveforms()
+            rtildes = self.get_residuals()
         except NoWaveformError:
             return self._nowaveform_logl()
         except FailedWaveformError as e:
@@ -547,25 +558,16 @@ class GatedGaussianNoise(BaseGatedGaussian):
         gate_times = self.get_gate_times()
         logl = 0.
         self.current_proj.clear()
-        for det, h in wfs.items():
+        for det, rtilde in rtiles.items():
             invpsd = self._invpsds[det]
             norm = self.det_lognorm(det)
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
-            # calculate the residual
-            data = self.td_data[det]
-            ht = h.to_timeseries()
-            res = data - ht
-            rtilde = res.to_frequencyseries()
             # get the subsampling offset time
             gateenddelay = gatestartdelay + dgatedelay
-            gateidx = numpy.floor(float(
-                gateenddelay - res.start_time) * res.sample_rate).astype(int)
-            offset = res.sample_times[gateidx] - gateenddelay
-            # shift such that the end gating time lands on a data sample
-            rtilde_shift = apply_fd_time_shift(rtilde, offset + rtilde.epoch, copy=True)
+            rtilde_shift = self.shift_to_integer_sample(rtilde,gateenddelay)
             res_shift = rtilde_shift.to_timeseries()
             # gating
             gated_res_shift = res_shift.gate(gatestartdelay + dgatedelay/2,
