@@ -90,7 +90,7 @@ class TimeVaryingPSD(object):
                 psd = psd2
             if self.f_low is not None and self.f_low < self.file_f_low:
                 # avoid using the PSD below the f_low given in the file
-                k = int(file_f_low / psd.delta_f)
+                k = int(self.file_f_low / psd.delta_f)
                 psd[0:k] = np.inf
             self._curr_psd[curr_pid] = psd
             self._curr_psd_index[curr_pid] = index

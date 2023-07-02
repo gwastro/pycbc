@@ -38,7 +38,7 @@ from utils import simple_exit
 class TestDetector(unittest.TestCase):
     def setUp(self):
         self.d = [det.Detector(ifo)
-                  for ifo, name in det.get_available_detectors()]
+                  for ifo in det.get_available_detectors()]
 
         # not distributed sanely, but should provide some good coverage
         N = 1000
