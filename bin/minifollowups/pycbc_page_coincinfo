@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Make tables describing a coincident foreground event"""
+""" Make tables describing a foreground event"""
 
 import h5py, argparse, logging, sys
 import matplotlib; matplotlib.use('Agg')
@@ -33,7 +33,7 @@ parser.add_argument('--bank-file',
     help="HDF format template bank file")
 parser.add_argument('--output-file')
 parser.add_argument('--statmap-file', required=True,
-    help="HDF format clustered coincident statmap file containing the result "
+    help="HDF format clustered statmap file containing the result "
          "triggers. Required")
 parser.add_argument('--statmap-file-subspace-name', default='background_exc',
     help="If given look in this 'sub-directory' of the HDF file for triggers, "
@@ -71,27 +71,27 @@ if args.n_loudest is not None:
     if args.sort_order == 'descending':
         sorting = sorting[::-1]
     n = sorting[args.n_loudest]
-    title = 'Parameters of coincident event ranked %s' % (args.n_loudest + 1)
+    title = 'Parameters of event ranked %s' % (args.n_loudest + 1)
     caption = ('Parameters of event ranked %s by %s %s in the search. The figures below'
                ' show the mini-followup data for this event.' % 
                (args.n_loudest + 1, args.sort_order, args.sort_variable))
 elif args.trigger_id is not None:
     n = args.trigger_id
-    title = 'Details of coincident trigger'
-    caption = ('Parameters of coincident event. The figures below show the '
+    title = 'Details of trigger'
+    caption = ('Parameters of event. The figures below show the '
                'mini-followup data for this event.')
 else:
     # It shouldn't be possible to get here!
     raise ValueError()
 
-# Make a table for the coincident information #################################
+# Make a table for the event information #################################
 
-hdrs = ["Coincident ranking statistic",
-           "Inclusive IFAR (yr)",
-           "Inclusive FAP",
-           "Exclusive IFAR (yr)",
-           "Exclusive FAP"
-        ]
+hdrs = ["Ranking statistic",
+        "Inclusive IFAR (yr)",
+        "Inclusive FAP",
+        "Exclusive IFAR (yr)",
+        "Exclusive FAP"
+       ]
 
 dsets = ['stat', 'ifar', 'fap', 'ifar_exc', 'fap_exc']
 formats = ['%5.2f', '%5.2f', '%5.2e', '%5.2f', '%5.2e']

@@ -158,7 +158,7 @@ except ImportError:
 try:
     import pycbc.fft.mkl
     HAVE_MKL=True
-except ImportError:
+except (ImportError, OSError):
     HAVE_MKL=False
 
 # Check for openmp suppport, currently we pressume it exists, unless on

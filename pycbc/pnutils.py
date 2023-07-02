@@ -475,6 +475,8 @@ named_frequency_cutoffs = {
     "SEOBNRv4RD": lambda p: get_freq("fSEOBNRv4RD", p["mass1"], p["mass2"],
                                      p["spin1z"], p["spin2z"]),
     "SEOBNRv4Peak": lambda p: get_freq("fSEOBNRv4Peak", p["mass1"], p["mass2"],
+                                       p["spin1z"], p["spin2z"]),
+    "SEOBNRv5Peak": lambda p: get_freq("fSEOBNRv5Peak", p["mass1"], p["mass2"],
                                        p["spin1z"], p["spin2z"])
     }
 

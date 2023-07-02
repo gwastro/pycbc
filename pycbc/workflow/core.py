@@ -315,22 +315,30 @@ class Executable(pegasus_workflow.Executable):
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
 
-    def add_ini_opts(self, cp, sec):
+    def _add_ini_opts(self, cp, sec, ignore_existing=False):
         """Add job-specific options from configuration file.
 
         Parameters
         -----------
         cp : ConfigParser object
-            The ConfigParser object holding the workflow configuration settings
+            The ConfigParser object holding the workflow configuration
+            settings
         sec : string
             The section containing options for this job.
         """
         for opt in cp.options(sec):
+            if opt in self.all_added_options:
+                if ignore_existing:
+                    continue
+                else:
+                    raise ValueError("Option %s has already been added" % opt)
+            self.all_added_options.add(opt)
+
             value = cp.get(sec, opt).strip()
-            opt = '--%s' %(opt,)
+            opt = f'--{opt}'
             if opt in self.file_input_options:
                 # This now expects the option to be a file
-                # Check is we have a list of files
+                # Check if we have a list of files
                 values = [path for path in value.split(' ') if path]
 
                 self.common_raw_options.append(opt)
@@ -380,6 +388,7 @@ class Executable(pegasus_workflow.Executable):
                 # stuff later.
                 self.unresolved_td_options[opt] = value
             else:
+                # This option comes from the config file(s)
                 self.common_options += [opt, value]
 
     def add_opt(self, opt, value=None):
@@ -536,7 +545,6 @@ class Executable(pegasus_workflow.Executable):
             self.tagged_name = "{0}-{1}".format(self.tagged_name,
                                                 self.ifo_string)
 
-
         # Determine the sections from the ini file that will configure
         # this executable
         sections = [self.name]
@@ -562,17 +570,23 @@ class Executable(pegasus_workflow.Executable):
 
         # collect the options and profile information
         # from the ini file section(s)
+        self.all_added_options = set()
         self.common_options = []
         self.common_raw_options = []
         self.unresolved_td_options = {}
         self.common_input_files = []
         for sec in sections:
             if self.cp.has_section(sec):
-                self.add_ini_opts(self.cp, sec)
+                self._add_ini_opts(self.cp, sec)
             else:
                 warn_string = "warning: config file is missing section "
                 warn_string += "[{0}]".format(sec)
                 logging.warn(warn_string)
+
+        # get uppermost section
+        if self.cp.has_section(f'{self.name}-defaultvalues'):
+            self._add_ini_opts(self.cp, f'{self.name}-defaultvalues',
+                               ignore_existing=True)
 
     def update_output_directory(self, out_dir=None):
         """Update the default output directory for output files.
@@ -661,6 +675,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         self.ifos = ifos
         self.ifos.sort(key=str.lower)
+        self.get_ifo_combinations()
         self.ifo_string = ''.join(self.ifos)
 
         # Set up input and output file lists for workflow
@@ -844,6 +859,16 @@ class Workflow(pegasus_workflow.Workflow):
         # set the storage path to be the same
         ini_file.storage_path = ini_file_path
         return FileList([ini_file])
+
+    def get_ifo_combinations(self):
+        """
+        Get a list of strings for all possible combinations of IFOs
+        in the workflow
+        """
+        self.ifo_combinations = []
+        for n in range(len(self.ifos)):
+            self.ifo_combinations += [''.join(ifos).lower() for ifos in
+                                      combinations(self.ifos, n + 1)]
 
 
 class Node(pegasus_workflow.Node):

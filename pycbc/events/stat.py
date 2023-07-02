@@ -121,7 +121,8 @@ class Stat(object):
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise NotImplementedError(err_msg)
 
-    def rank_stat_single(self, single_info):
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -205,7 +206,8 @@ class QuadratureSumStatistic(Stat):
         """
         return self.get_sngl_ranking(trigs)
 
-    def rank_stat_single(self, single_info):
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -658,7 +660,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def rank_stat_single(self, single_info):
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -900,7 +903,8 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         return self.lognoiserate(trigs)
 
-    def rank_stat_single(self, single_info):
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -1039,7 +1043,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
-    def rank_stat_single(self, single_info):
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the statistic for single detector candidates
 
@@ -1170,7 +1175,8 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def rank_stat_single(self, single_info):
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -1488,7 +1494,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
         return numpy.array(singles, ndmin=1)
 
-    def rank_stat_single(self, single_info):
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the statistic for single detector candidates
 
