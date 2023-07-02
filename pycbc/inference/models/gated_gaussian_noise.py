@@ -457,10 +457,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
         fs_shift : FrequencySeries
             Frequency series after being shifted
         """
+        dt = 1 / fs.sample_rate
         floor_idx = numpy.floor(
-            (gate_end_time - float(fs.start_time)) * fs.sample_rate).astype(int)
-        # offset is less than 0 to shift to an earlier time
-        offset = fs.sample_times[floor_idx] - gate_end_time 
+            (gate_end_time - float(fs.start_time)) / dt).astype(int)
+        floor_time = float(fs.start_time) + floor_idx * dt
+        # offset is less than 0, so shifting to an earlier time
+        offset = floor_time - gate_end_time 
         fs_shift = apply_fd_time_shift(fs, offset + fs.epoch, copy=True)
         return fs_shift
 
