@@ -572,7 +572,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         gate_times = self.get_gate_times()
         logl = 0.
         self.current_proj.clear()
-        for det, rtilde in rtiles.items():
+        for det, rtilde in rtildes.items():
             invpsd = self._invpsds[det]
             norm = self.det_lognorm(det)
             gatestartdelay, dgatedelay = gate_times[det]
