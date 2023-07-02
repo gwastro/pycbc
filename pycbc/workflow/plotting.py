@@ -78,6 +78,7 @@ def make_range_plot(workflow, psd_files, out_dir, exclude=None, require=None,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_range'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_range', ifos=workflow.ifos,
@@ -165,6 +166,7 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_sensitivity'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
@@ -181,6 +183,7 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_coinc_snrchi'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         exe = PlotExecutable(workflow.cp, 'plot_coinc_snrchi',
@@ -315,6 +318,7 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_snrchi'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
@@ -341,6 +345,7 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_foundmissed'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         exe = PlotExecutable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
@@ -431,6 +436,7 @@ def make_single_hist(workflow, trig_file, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_hist'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_hist',
@@ -455,6 +461,7 @@ def make_binned_hist(workflow, trig_file, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_binnedhist'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_binnedhist',
@@ -478,6 +485,7 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_singles'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
