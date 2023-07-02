@@ -441,13 +441,27 @@ class BaseGatedGaussian(BaseGaussianNoise):
     
     @staticmethod
     def shift_to_integer_sample(fs, gate_end_time):
-        """Shift the gating end time to the cloest (floor) data sample
+        """Shift the frequency series by an amount of time such that the
+        gate_end_time lands on a specific data sample (chosen to be the
+        nearest floor data sample).
+        
+        Parameters
+        ----------
+        fs : FrequencySeries
+            Frequency series to be shifted.
+        gate_end_time : float
+            Gating end time.
+        
+        Returns
+        -------
+        fs_shift : FrequencySeries
+            Frequency series after being shifted
         """
-        gateidx = numpy.floor(float(
-                gateenddelay - res.start_time) * res.sample_rate).astype(int)
-        offset = res.sample_times[gateidx] - gateenddelay
-            # shift such that the end gating time lands on a data sample
-        fs_shift = apply_fd_time_shift(fs, offset + rtilde.epoch, copy=True)
+        floor_idx = numpy.floor(
+            (gate_end_delay - float(fs.start_time)) * fs.sample_rate).astype(int)
+        # offset is less than 0 to shift to an earlier time
+        offset = fs.sample_times[floor_idx] - gate_end_delay 
+        fs_shift = apply_fd_time_shift(fs, offset + fs.epoch, copy=True)
         return fs_shift
 
     def write_metadata(self, fp, group=None):
@@ -565,7 +579,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
-            # get the subsampling offset time
+            # get the end time of gating mask
             gateenddelay = gatestartdelay + dgatedelay
             rtilde_shift = self.shift_to_integer_sample(rtilde,gateenddelay)
             res_shift = rtilde_shift.to_timeseries()
