@@ -583,7 +583,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
             slc = slice(self._kmin[det], self._kmax[det])
             # get the end time of gating mask
             gateenddelay = gatestartdelay + dgatedelay
-            rtilde_shift = self.shift_to_integer_sample(rtilde,gateenddelay)
+            rtilde_shift = self.shift_to_integer_sample(rtilde, gateenddelay)
             res_shift = rtilde_shift.to_timeseries()
             # gating
             gated_res_shift = res_shift.gate(gatestartdelay + dgatedelay/2,
