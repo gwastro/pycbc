@@ -44,12 +44,9 @@ __program__ = "pycbc_pygrb_plot_injs_results"
 def process_var_strings(qty):
     """Add underscores to match HDF column name conventions"""
 
-    #qty = qty.replace('effdist', 'eff_dist')
-    #qty = qty.replace('effsitedist', 'eff_site_dist')
     qty = qty.replace('skyerror', 'sky_error')
     qty = qty.replace('cos', 'cos_')
     qty = qty.replace('abs', 'abs_')
-    #qty = qty.replace('coaphase', 'coa_phase')
     qty = qty.replace('endtime', 'end_time')
     qty = qty.replace('spin1a', 'spin1_a')
     qty = qty.replace('spin2a', 'spin2_a')

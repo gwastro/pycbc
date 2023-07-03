@@ -159,15 +159,6 @@ def pygrb_add_bestnr_opts(parser):
                         "increase above the threshold")
 
 
-# def pygrb_add_missed_injs_input_opt(parser):
-#     """Add to parser object the arguments for missed injection file."""
-#     if parser is None:
-#         parser = argparse.ArgumentParser()
-#     parser.add_argument("-m", "--missed-file", action="store",
-#                         default=None,
-#                         help="Location of the missed injections file.")
-
-
 # =============================================================================
 # Wrapper to read segments files [never invoked outside this file]
 # =============================================================================
@@ -359,10 +350,6 @@ def load_triggers(input_file, vetoes):
 # * Function to calculate the antenna response F+^2 + Fx^2
 # * Function to calculate the antenna distance factor
 # =============================================================================
-# The call, e.g., Detector("H1", reference_time=None), will not always work in
-# Python 2.7 as it needs an old version of astropy which cannot download
-# recent enough IERS tables. TEMPORARILY use the default time (GW150914) as
-# reference, thus approximating the sidereal time.
 # [Never invoked outside this file]
 def get_antenna_factors(antenna, ra, dec, geocent_time):
     """Returns the antenna responses F+ and Fx of an IFO (passed as pycbc
@@ -568,18 +555,6 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
-
-
-# =============================================================================
-# Find GRB trigger time
-# =============================================================================
-# def get_grb_time(seg_files, on_after):
-#     """Determine GRB trigger time"""
-#
-#     segs = read_seg_files(seg_files)
-#     grb_time = segs['on'][1] - on_after
-#
-#     return grb_time
 
 
 # =============================================================================
@@ -819,62 +794,6 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
                                            (1 + wf_dist_red))
 
     return inj_dist_mc
-
-
-# def read_multiinspiral_timeslides_from_files(file_list):
-#     """
-#     Read time-slid multiInspiral tables from a list of files
-#     """
-#
-#     multis = None
-#     time_slides = []
-#
-#     contenthandler = glsctables.use_in(LIGOLWContentHandler)
-#     for this_file in file_list:
-#         doc = utils.load_filename(this_file, compress='auto',
-#                                   contenthandler=contenthandler)
-#
-#         # Extract the time slide table
-#         time_slide_table = \
-#             Table.get_table(doc, lsctables.TimeSlideTable.tableName)
-#         slide_mapping = {}
-#         curr_slides = {}
-#         for slide in time_slide_table:
-#             curr_id = int(slide.time_slide_id)
-#             if curr_id not in curr_slides:
-#                 curr_slides[curr_id] = {}
-#                 curr_slides[curr_id][slide.instrument] = slide.offset
-#             elif slide.instrument not in curr_slides[curr_id]:
-#                 curr_slides[curr_id][slide.instrument] = slide.offset
-#
-#         for slide_id, offset_dict in curr_slides.items():
-#             try:
-#                 # Is the slide already in the list and where?
-#                 offset_index = time_slides.index(offset_dict)
-#                 slide_mapping[slide_id] = offset_index
-#             except ValueError:
-#                 # If not then add it
-#                 time_slides.append(offset_dict)
-#                 slide_mapping[slide_id] = len(time_slides) - 1
-#
-#         # Extract the multi inspiral table
-#         try:
-#             multi_inspiral_table = Table.get_table(doc, 'multi_inspiral')
-#             # Remap the time slide IDs
-#             for multi in multi_inspiral_table:
-#                 new_id = slide_mapping[int(multi.time_slide_id)]
-#                 multi.time_slide_id = gilwdchar(
-#                                       f"time_slide:time_slide_id:{new_id}")
-#             if multis:
-#                 multis.extend(multi_inspiral_table)
-#             else:
-#                 multis = multi_inspiral_table
-#         except Exception as exc:
-#             err_msg = "Unable to read a time-slid multiInspiral table "
-#             err_msg += f"from {this_file}."
-#             raise RuntimeError(err_msg) from exc
-#
-#     return multis, time_slides
 
 
 # =============================================================================

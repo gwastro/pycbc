@@ -433,7 +433,6 @@ def build_segment_filelist(workflow):
     return seg_files
 
 
-# exclude=None, require=None,
 def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None, tags=None):
     """Adds a node for a plot of PyGRB results to the workflow"""

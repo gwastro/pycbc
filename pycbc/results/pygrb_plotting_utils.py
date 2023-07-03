@@ -59,7 +59,7 @@ def contour_plotter(axis, snr_vals, contours, colors, vert_spike=False):
 
 # =============================================================================
 # Plot trigger time and offsource extent over segments
-# Copyright (C) 2015 Andrew R. Williamson
+# Courtesy of Alex Dietz
 # =============================================================================
 def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
                            out_dir, coherent_seg=None, fail_criterion=None):
