@@ -73,7 +73,6 @@ logging.info("Post-processing output will be generated in %s", args.output_dir)
 if not os.path.exists(args.output_dir):
     _workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
-#args.output_dir = '.' # BUG!
 
 # Setup results directory
 rdir = layout.SectionNumber('webpage', ['offsource_triggers_vs_time',
@@ -326,27 +325,12 @@ for inj_set in inj_sets:
                 # pycbc_pygrb_plot_injs_results produces only one plot: take [0]
                 files.append(output_files[0])
     # Generate quiet-found and missed-found html tables
-    # TODO:  pass lont/lofft arguments if inj_set=None
-    # FIXME
-    #html_node, [mf_table, qf_table, qf_h5] =\
-    #     _workflow.make_pygrb_injs_tables(wflow, out_dir, inj_set=inj_set)
-    #html_nodes.append(html_node)
-    inj_layout = list(layout.grouper(files, 2)) # + [(mf_table,), (qf_table,)]
+    # TODO:  pass loudest-onsource-trigger/loudest-offsource-triggers
+    # arguments if inj_set=None
+    inj_layout = list(layout.grouper(files, 2))
     layout.two_column_layout(out_dir, inj_layout)
 
-    # Follow up of loudest N quiet-found injections:
-    # qf_h5 includes quiet and missed found injections
-    #out_dir = rdir['injections/'+inj_set+'loudest_quiet_found_followups']
-    #if not wflow.cp.has_section('workflow-minifollowups'):
-    #        msg = 'No [workflow-minifollowups] section found in configuration file'
-    #        logging.info(msg)
-    #else:
-    #        logging.info('Entering minifollowups module')
-    #        _workflow.setup_pygrb_minifollowups(wflow, qf_h5,
-    #                                            'daxes', out_dir,
-    #                                            tags=[inj_set,
-    #                                            'loudest_quiet_found_injs'])
-    #        logging.info('Leaving minifollowups')
+    # TODO: Follow up of loudest N quiet-found injections:
 
 
 #
@@ -354,7 +338,6 @@ for inj_set in inj_sets:
 #
 out_dir = rdir['loudest_offsource_events']
 _workflow.makedir(out_dir)
-#files = _workflow.FileList([])
 files = []
 # Loop over statistics requested by the user
 stats = wflow.cp.get_subsections('pygrb_plot_stats_distribution')
@@ -367,28 +350,8 @@ for stat in stats:
     # We want a File, not a 1-element list with a File
     # pycbc_pygrb_plot_stats_distribution produces only one plot: take [0]
     files.append(output_file[0])
-##layout.single_layout(out_dir, files)
-##layout.single_layout(out_dir, (files))
-#layout.group_layout(out_dir, files)
 
-#FIXME
-#html_node, [lont_table, lont_h5, lofft_table, lofft_h5] =\
-#     _workflow.make_pygrb_injs_tables(wflow, out_dir, inj_set=None)
-#html_nodes.append(html_node)
-#lofft_layout = list(layout.grouper(files, 2)) + [(lofft_table,)]
-#layout.two_column_layout(out_dir, lofft_layout)
-
-# Follow up N loudest offsource triggers (parent-child)
-#out_dir = rdir['loudest_offsource_events/followups']
-#if not wflow.cp.has_section('workflow-minifollowups'):
-#        msg = 'No [workflow-minifollowups] section found in configuration file'
-#        logging.info(msg)
-#else:
-#        logging.info('Entering minifollowups module')
-#        _workflow.setup_pygrb_minifollowups(wflow, lofft_h5,
-#                                            'daxes', out_dir,
-#                                             tags=['loudest_offsource_events'])
-#        logging.info('Leaving minifollowups')
+# TODO: Include minifollow-ups materiale
 
 
 #
@@ -401,19 +364,7 @@ _workflow.makedir(out_dir)
 num_trials = int(wflow.cp.get('trig_combiner', 'num-trials'))
 offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
 inj_sets = wflow.cp.get_subsections('injections')
-#FIXME
-#for offtrial in offtrials:
-#    out_dir = rdir['exclusion_distances/'+offtrial]
-#    _workflow.makedir(out_dir)
-#    files = _workflow.FileList([])
-#    for inj_set in inj_sets:
-#        plot_node, output_files = \
-#            _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency', out_dir,
-#                                      trig_file=trig_file,
-#                                      inj_set=inj_set, tags=[offtrial])
-#        plotting_nodes.append(plot_node)
-#        files.append(output_files)
-#    layout.two_column_layout(out_dir, files)
+# TODO: (randomly extracted) offrtials pages
 
 
 #
@@ -467,16 +418,6 @@ out_dir = rdir['open_box']
 _workflow.makedir(out_dir)
 os.chmod(out_dir, 0o0700)
 # TODO: follow up loudest offsource trigger
-#out_dir = rdir['open_box/loudest_event/followup']
-#if not wflow.cp.has_section('workflow-minifollowups'):
-#        msg = 'No [workflow-minifollowups] section found in configuration file'
-#        logging.info(msg)
-#else:
-#        logging.info('Entering minifollowups module')
-#        _workflow.setup_pygrb_minifollowups(wflow, lont_h5, #wflow.ifos,
-#                                            'daxes', out_dir,
-#                                            tags=['loudest_onsource_event'])
-#        logging.info('Leaving minifollowups')
 
 # Close the log and flush to the html file
 logging.shutdown()

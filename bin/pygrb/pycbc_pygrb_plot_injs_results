@@ -189,18 +189,6 @@ def load_trig_data(input_file, vetoes):
     return trigs
 
 
-# Function to cherry-pick a subset of full_data specified by fap_mask.
-# Reweighted SNR values are picked separately since they are extracted
-# in different manners
-#def grab_injs_subset(full_data, fap_mask):
-#    """Separate out a subset of full_data based on fap_mask"""
-#
-#    data_subset = {}
-#
-#    for qty in full_data.keys():
-#        data_subset[qty] = full_data[qty][fap_mask]
-#
-#    return data_subset
 
 
 # =============================================================================
@@ -238,9 +226,6 @@ parser.add_argument("--y-log", action="store_true",
                     help="Use log vertical axis")
 parser.add_argument("--colormap",default='cividis_r',
                    help="Type of colormap to be used for the plots.")
-# TODO: what was the intention of this being an option?
-#parser.add_argument('--gradient-far', action='store_true',
-#                    help="Show far of found injections as a gradient")
 parser.add_argument("--far-type", choices=('inclusive', 'exclusive'),
                     default='inclusive',
                     help="Type of far to plot for the color. Choices are "
@@ -327,11 +312,8 @@ if len(list(f['network'].keys())) > 0:
     """
 
     # 3) Missed due to vetoes
-    #vetoed = grab_injs_subset(inj_data, missed_after_vetoes)
-    #vetoed['reweighted_snr'] = np.array([])
-    #for vetoed_index in missed_after_vetoes:
-    #    found_index = list(found).index(vetoed_index)
-    #    vetoed['reweighted_snr'].append(f['found/stat'][found_index])
+    # TODO: needs function to cherry-pick a subset of inj_data specified by
+    # a mask on FAP values.
 else:
     found_louder = {x_qty: np.array([]), y_qty: np.array([])}
     found_quieter = {x_qty: np.array([]), y_qty: np.array([])}
