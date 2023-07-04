@@ -239,6 +239,19 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     Generate post-processing section of PyGRB offline workflow
     """
     pp_outs = FileList([])
+    # pp_outs is returned by this function. It is structured as follows:
+    # pp_outs[0]: [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
+    #             FileList (N can be set by the user and is 6 by default)
+    # pp_outs[1]: ALL_TIMES_CLUSTERED File
+    # pp_outs[2]: OFFSOURCE_CLUSTERED File
+    # pp_outs[3]: ONSOURCE_CLUSTERED File
+    # pp_outs[4]: OFFTRIAL_1_CLUSTERED File
+    # ...
+    # pp_outs[4+N]: OFFTRIAL_N_CLUSTERED File
+    # pp_outs[-2]: FOUNDMISSED FileList covering all injection sets
+    # pp_outs[-1]: FOUNDMISSED-FILTERED FileList covering all injection sets
+    #              in the same order as pp_outs[-2]
+
     # Begin setting up trig combiner job(s)
     # Select executable class and initialize
     exe_class = _select_grb_pp_class(wf, "trig_combiner")

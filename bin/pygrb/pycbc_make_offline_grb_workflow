@@ -429,13 +429,11 @@ post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
 pp_files = _workflow.FileList([])
 results_files = _workflow.FileList([])
 if post_proc_method == "PYGRB_OFFLINE":
+    # The content and structure of pp_files are described in the definition
+    # of _workflow.setup_pygrb_pp_workflow
     pp_files = _workflow.setup_pygrb_pp_workflow(wflow, pp_dir, seg_dir,
                                       sciSegs[ifo][0], inspiral_files,
                                       injs, inj_insp_files, inj_tags)
-    # pp_files[1] ALLTIMES_CLUSTERED File
-    # pp_files[3] ONSOURCE_CLUSTERED File
-    # pp_files[-2] FOUNDMISSED FileList
-    # pp_files[-1] FOUNDMISSED-FILTERED FileList
     sec_name = 'workflow-pygrb_pp_workflow'
     if not wflow.cp.has_section(sec_name):
         msg = 'No {0} section found in configuration file.'.format(sec_name)
