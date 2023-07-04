@@ -369,19 +369,20 @@ def averaged_lisa_fplus_sq_approx(f, len_arm=2.5e9):
     -----
         Pease see Eq.(36) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    from os import getcwd, path
+    from os import path
     import requests
     from scipy.interpolate import interp1d
+    import pycbc.psd
 
     if len_arm != 2.5e9:
         raise Exception("Currently only support 'len_arm=2.5e9'.")
-    cwd = getcwd()
-    if path.exists(cwd+"/AvFXp2_Raw.npy") is False:
+    module_path = pycbc.psd.__path__[0]
+    if path.exists(module_path+"/AvFXp2_Raw.npy") is False:
         url = "https://zenodo.org/record/7497853/files/AvFXp2_Raw.npy"
         response = requests.get(url, verify=False)
-        with open(cwd+"/AvFXp2_Raw.npy", 'wb') as f:
-            f.write(response.content)
-    freqs, fp_sq = np.load(cwd+"/AvFXp2_Raw.npy")
+        with open(module_path+"/AvFXp2_Raw.npy", 'wb') as file:
+            file.write(response.content)
+    freqs, fp_sq = np.load(module_path+"/AvFXp2_Raw.npy")
     # Padding the end.
     freqs = np.append(freqs, 2)
     fp_sq = np.append(fp_sq, 0.0012712348970728724)
