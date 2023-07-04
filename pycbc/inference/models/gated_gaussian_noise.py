@@ -270,11 +270,16 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 cache = self._gated_data[det] = {}
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
+            gateenddelay = gatestartdelay + dgatedel
             try:
                 dtilde = cache[gatestartdelay, dgatedelay]
             except KeyError:
                 # doesn't exist yet, or the gate times changed
                 cache.clear()
+                dtilde = d.to_frequencyseries()
+                dtilde = self.shift_to_integer_sample(
+                    dtilde, gateenddelay)
+                d = dtilde.to_timeseries()
                 d = d.gate(gatestartdelay + dgatedelay/2,
                            window=dgatedelay/2, copy=True,
                            invpsd=invpsd, method='paint')
@@ -698,9 +703,11 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         for det in wfs:
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
+            gateenddelay = gatedstartdelay + dgatedelay
             # the waveforms are a dictionary of (hp, hc)
             pols = []
             for h in wfs[det]:
+                h = self.shift_to_integer_sample(h, gateenddelay)
                 ht = h.to_timeseries()
                 ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
