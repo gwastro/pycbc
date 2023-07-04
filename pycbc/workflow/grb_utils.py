@@ -42,8 +42,7 @@ from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable
 
 
-# Never invoked outside this file
-def select_grb_pp_class(wflow, curr_exe):
+def _select_grb_pp_class(wflow, curr_exe):
     """
     This function returns the class for PyGRB post-processing scripts.
 
@@ -242,7 +241,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs = FileList([])
     # Begin setting up trig combiner job(s)
     # Select executable class and initialize
-    exe_class = select_grb_pp_class(wf, "trig_combiner")
+    exe_class = _select_grb_pp_class(wf, "trig_combiner")
     job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
     node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
@@ -251,7 +250,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs.append(trig_files)
 
     # Trig clustering for each trig file
-    exe_class = select_grb_pp_class(wf, "trig_cluster")
+    exe_class = _select_grb_pp_class(wf, "trig_cluster")
     job_instance = exe_class(wf.cp, "trig_cluster")
     for trig_file in trig_files:
         # Create and add nodes
@@ -260,7 +259,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
         pp_outs.append(out_file)
 
     # Find injections from triggers
-    exe_class = select_grb_pp_class(wf, "inj_finder")
+    exe_class = _select_grb_pp_class(wf, "inj_finder")
     job_instance = exe_class(wf.cp, "inj_finder")
     inj_find_files = FileList([])
     for inj_tag in inj_tags:
@@ -279,7 +278,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     pp_outs.append(inj_find_files)
 
     # Combine injections
-    exe_class = select_grb_pp_class(wf, "inj_combiner")
+    exe_class = _select_grb_pp_class(wf, "inj_combiner")
     job_instance = exe_class(wf.cp, "inj_combiner")
     inj_comb_files = FileList([])
     for in_file in inj_find_files:

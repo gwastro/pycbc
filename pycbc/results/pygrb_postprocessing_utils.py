@@ -160,9 +160,9 @@ def pygrb_add_bestnr_opts(parser):
 
 
 # =============================================================================
-# Wrapper to read segments files [never invoked outside this file]
+# Wrapper to read segments files
 # =============================================================================
-def read_seg_files(seg_files):
+def _read_seg_files(seg_files):
     """Read segments txt files"""
 
     if len(seg_files) != 3:
@@ -198,9 +198,9 @@ def load_xml_table(file_name, table_name):
 
 
 # ==============================================================================
-# Function to load segments from an xml file [never invoked outside this file]
+# Function to load segments from an xml file
 # ==============================================================================
-def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
+def _load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
     """Read a ligo.segments.segmentlist from the file object file containing an
     xml segment table.
 
@@ -255,9 +255,9 @@ def load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
 
 
 # =============================================================================
-# Function to extract vetoes [never invoked outside this file]
+# Function to extract vetoes
 # =============================================================================
-def extract_vetoes(all_veto_files, ifos, veto_cat):
+def _extract_vetoes(all_veto_files, ifos, veto_cat):
     """Extracts vetoes from veto filelist"""
 
     if all_veto_files and (veto_cat is None):
@@ -286,7 +286,7 @@ def extract_vetoes(all_veto_files, ifos, veto_cat):
             ifo = os.path.basename(veto_file)[:2]
             if ifo in ifos:
                 # This returns a coalesced list of the vetoes
-                tmp_veto_segs = load_segments_from_xml(veto_file)
+                tmp_veto_segs = _load_segments_from_xml(veto_file)
                 for entry in tmp_veto_segs:
                     vetoes[ifo].append(entry)
     for ifo in ifos:
@@ -297,9 +297,8 @@ def extract_vetoes(all_veto_files, ifos, veto_cat):
 
 # =============================================================================
 # Function to get the ID numbers from a LIGO-LW table
-# [never invoked outside this file]
 # =============================================================================
-def get_id_numbers(ligolw_table, column):
+def _get_id_numbers(ligolw_table, column):
     """Grab the IDs of a LIGO-LW table"""
 
     ids = [int(getattr(row, column)) for row in ligolw_table]
@@ -309,9 +308,8 @@ def get_id_numbers(ligolw_table, column):
 
 # =============================================================================
 # Function to build a dictionary (indexed by ifo) of time-slid vetoes
-# [never invoked outside this file]
 # =============================================================================
-def slide_vetoes(vetoes, slide_dict_or_list, slide_id):
+def _slide_vetoes(vetoes, slide_dict_or_list, slide_id):
     """Build a dictionary (indexed by ifo) of time-slid vetoes"""
 
     # Copy vetoes
@@ -350,8 +348,7 @@ def load_triggers(input_file, vetoes):
 # * Function to calculate the antenna response F+^2 + Fx^2
 # * Function to calculate the antenna distance factor
 # =============================================================================
-# [Never invoked outside this file]
-def get_antenna_factors(antenna, ra, dec, geocent_time):
+def _get_antenna_factors(antenna, ra, dec, geocent_time):
     """Returns the antenna responses F+ and Fx of an IFO (passed as pycbc
     Detector type) at a given sky location and time."""
 
@@ -360,18 +357,17 @@ def get_antenna_factors(antenna, ra, dec, geocent_time):
     return f_plus, f_cross
 
 
-# [Never invoked outside this file]
-def get_antenna_single_response(antenna, ra, dec, geocent_time):
+def _get_antenna_single_response(antenna, ra, dec, geocent_time):
     """Returns the antenna response F+^2 + Fx^2 of an IFO (passed as pycbc
     Detector type) at a given sky location and time."""
 
-    fp, fc = get_antenna_factors(antenna, ra, dec, geocent_time)
+    fp, fc = _get_antenna_factors(antenna, ra, dec, geocent_time)
 
     return fp**2 + fc**2
 
 
 # Vectorize the function above on all but the first argument
-get_antenna_responses = numpy.vectorize(get_antenna_single_response,
+get_antenna_responses = numpy.vectorize(_get_antenna_single_response,
                                         otypes=[float])
 get_antenna_responses.excluded.add(0)
 
@@ -381,7 +377,7 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
     Duncan Brown's Ph.D.) for an IFO (passed as pycbc Detector type) at
     a given sky location and time."""
 
-    fp, fc = get_antenna_factors(antenna, ra, dec, geocent_time)
+    fp, fc = _get_antenna_factors(antenna, ra, dec, geocent_time)
 
     return numpy.sqrt(fp ** 2 * (1 + numpy.cos(inc)) ** 2 / 4 + fc ** 2)
 
@@ -589,7 +585,7 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
 
     # Extract vetoes
     if veto_files is not None:
-        vetoes = extract_vetoes(veto_files, ifos, veto_cat)
+        vetoes = _extract_vetoes(veto_files, ifos, veto_cat)
     else:
         vetoes = None
 
@@ -640,8 +636,8 @@ def load_time_slides(xml_file):
     time_slide_dict = {int(time_slide.get_time_slide_id(ov)): ov
                        for ov in time_slide_list}
     # Check time_slide_ids are ordered correctly.
-    ids = get_id_numbers(time_slide,
-                         "time_slide_id")[::len(time_slide_dict[0].keys())]
+    ids = _get_id_numbers(time_slide,
+                          "time_slide_id")[::len(time_slide_dict[0].keys())]
     if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0] == 0):
         err_msg = "time_slide_ids list should start at zero and increase by "
         err_msg += "one for every element"
@@ -695,7 +691,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
     trial_dict = {}
 
     # Get segments
-    segs = read_seg_files(seg_files)
+    segs = _read_seg_files(seg_files)
 
     # Separate segments
     trial_time = abs(segs['on'])
@@ -715,7 +711,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
         seg_buffer.coalesce()
 
         # Construct the ifo-indexed dictionary of slid veteoes
-        slid_vetoes = slide_vetoes(vetoes, slide_dict, slide_id)
+        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id)
 
         # Construct trial list and check against buffer
         trial_dict[slide_id] = segments.segmentlist()
