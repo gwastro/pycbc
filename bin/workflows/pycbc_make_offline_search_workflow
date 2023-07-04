@@ -458,7 +458,7 @@ ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
                                     rdir['open_box_result'],
                                     tags=combined_bg_file.tags + ['open_box'],
                                     executable='page_ifar_catalog')
-table = wf.make_foreground_table(workflow, combined_bg_file,
+fore_table = wf.make_foreground_table(workflow, combined_bg_file,
                                  hdfbank, rdir['open_box_result'],
                                  singles=insps, extension='.html',
                                  tags=combined_bg_file.tags)
@@ -473,12 +473,8 @@ fore_hdfall = wf.make_foreground_table(workflow, combined_bg_file,
                     hdfbank, rdir['open_box_result'], singles=insps,
                     extension='.hdf', tags=["hdfall"])
 
-symlink_result(table, 'open_box_result/significance')
-
-# Set html pages
-main_page = [(ifar_ob,), (table, )]
-layout.two_column_layout(rdir['open_box_result'], main_page)
-
+main_page = [(ifar_ob,), (fore_table, )]
+#symlink_result(table, 'open_box_result/significance')
 #detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
 #layout.two_column_layout(rdir['open_box_result/significance'], detailed_page)
 
@@ -598,10 +594,29 @@ for inj_file, tag in zip(inj_files, inj_tags):
         files_for_combined_injfind.append(file_for_injfind)
 
     # setup the matchedfilter jobs
-    insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
-                                         datafind_files, splitbank_files_inj,
-                                         output_dir, tags=ctags,
-                                         injection_file=inj_file)
+    if inj_file is None:
+        # datafind may be different for unknown injections
+        datafind_files_inj, _, analyzable_segs_inj, _ = \
+            wf.setup_datafind_workflow(
+                workflow,
+                ssegs,
+                "datafind",
+                seg_file=science_seg_file,
+                tags=hoft_tags + ctags
+            )
+    else:
+        datafind_files_inj = datafind_files
+        analyzable_segs_inj = analyzable_segs
+
+    insps = wf.setup_matchedfltr_workflow(
+        workflow,
+        analyzable_segs_inj,
+        datafind_files_inj,
+        splitbank_files_inj,
+        output_dir,
+        tags=ctags,
+        injection_file=inj_file
+    )
 
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                                insps, output_dir, tags=ctags)
@@ -800,22 +815,29 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                       'daxes',
                                       mfup_dir_inj,
                                       tags=[tag])
-    table = wf.make_foreground_table(workflow,
-                                     combined_inj_bg_files[tag],
-                                     hdfbank,
-                                     rdir['open_box_result'],
-                                     singles=insps_dict[tag],
-                                     extension='.html',
-                                     tags=[tag])
+    uk_table = wf.make_foreground_table(
+        workflow,
+        combined_inj_bg_files[tag],
+        hdfbank,
+        rdir['open_box_result'],
+        singles=insps_dict[tag],
+        extension='.html',
+        tags=[tag]
+    )
+    main_page.append((uk_table,))
     # Make a summary hdf file
-    wf.make_foreground_table(workflow,
-                             combined_inj_bg_files[tag],
-                             hdfbank,
-                             rdir['open_box_result'],
-                             singles=insps_dict[tag],
-                             extension='.hdf',
-                             tags=[tag])
+    wf.make_foreground_table(
+        workflow,
+        combined_inj_bg_files[tag],
+        hdfbank,
+        rdir['open_box_result'],
+        singles=insps_dict[tag],
+        extension='.hdf',
+        tags=[tag]
+    )
 
+# Set html pages
+layout.two_column_layout(rdir['open_box_result'], main_page)
 
 # Make analysis time summary
 analysis_time_summ = [time_file, seg_summ_plot]
