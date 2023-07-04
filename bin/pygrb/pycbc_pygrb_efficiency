@@ -98,6 +98,9 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
                     "exclusion efficiencies this value is multiplied " +
                     "to the offsource around the injection trigger to " +
                     "determine if it is just a loud glitch.")
+parser.add_argument("--injection-set-name", action="store", type=str,
+                    default="", help="Name of the injection set to be " +
+                    "used in the plot title.")
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
@@ -118,7 +121,7 @@ outdir = os.path.split(os.path.abspath(opts.background_output_file))[0]
 trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
-inj_set_name = os.path.split(os.path.abspath(found_missed_file))[1].split('INSPINJ')[1].split('_')[1]
+inj_set_name = opts.injection_set_name
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
 wf_err = opts.waveform_error
