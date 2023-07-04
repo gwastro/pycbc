@@ -344,24 +344,14 @@ def load_triggers(input_file, vetoes):
 
 # =============================================================================
 # Detector utils:
-# * Function to calculate the antenna factors F+ and Fx
 # * Function to calculate the antenna response F+^2 + Fx^2
 # * Function to calculate the antenna distance factor
 # =============================================================================
-def _get_antenna_factors(antenna, ra, dec, geocent_time):
-    """Returns the antenna responses F+ and Fx of an IFO (passed as pycbc
-    Detector type) at a given sky location and time."""
-
-    f_plus, f_cross = antenna.antenna_pattern(ra, dec, 0, geocent_time)
-
-    return f_plus, f_cross
-
-
 def _get_antenna_single_response(antenna, ra, dec, geocent_time):
     """Returns the antenna response F+^2 + Fx^2 of an IFO (passed as pycbc
     Detector type) at a given sky location and time."""
 
-    fp, fc = _get_antenna_factors(antenna, ra, dec, geocent_time)
+    fp, fc = antenna.antenna_pattern(ra, dec, 0, geocent_time)
 
     return fp**2 + fc**2
 
@@ -377,7 +367,7 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
     Duncan Brown's Ph.D.) for an IFO (passed as pycbc Detector type) at
     a given sky location and time."""
 
-    fp, fc = _get_antenna_factors(antenna, ra, dec, geocent_time)
+    fp, fc = antenna.antenna_pattern(ra, dec, 0, geocent_time)
 
     return numpy.sqrt(fp ** 2 * (1 + numpy.cos(inc)) ** 2 / 4 + fc ** 2)
 
