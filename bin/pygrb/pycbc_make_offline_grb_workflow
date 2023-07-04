@@ -419,27 +419,7 @@ all_files.extend(_workflow.FileList([inspiral_cache]))
 inspiral_cache_entries = inspiral_files.convert_to_lal_cache()
 inspiral_cache_entries.tofile(open(inspiral_cache.storage_path, "w"))
 
-# LONG TIME SLIDES: unlikely to be done in the (near) future
-long_slides = True if wflow.cp.has_option("workflow", "do-long-slides") else False
-if long_slides:
-    ts_dir = os.path.join(curr_dir, "timeslides")
-    if wflow.cp.has_option("workflow", "num-long-slides"):
-        num_slides = int(wflow.cp.get("workflow", "num-long-slides"))
-    else:
-        num_slides = int((int(wflow.cp.get("workflow", "end-time")) - \
-                         int(wflow.cp.get("workflow", "start-time"))) / \
-                         float(int(wflow.cp.get("inspiral", "segment-length")) * \
-                               (len(ifo_list) - 1)))
-    logging.info("Doing {} long slides".format(num_slides))
-    inspiral_ts_files = _workflow.FileList([])
-    for slide in range(num_slides):
-        inspiral_slide_files = _workflow.setup_matchedfltr_workflow(wflow,
-                sciSegs, datafind_veto_files, splitbank_files, ts_dir,
-                tags=[mf_tag + "_no_injections", "slide{}".format(slide)])
-        inspiral_ts_files.extend(inspiral_slide_files)
-        all_files.extend(inspiral_slide_files)
-else:
-    inspiral_ts_files=None
+# TODO: LONG TIME SLIDES
 
 # POST-PROCESSING
 pp_dir = os.path.join(curr_dir, "post_processing")
