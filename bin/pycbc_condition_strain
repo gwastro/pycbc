@@ -29,6 +29,7 @@ import argparse
 import pycbc.strain
 import pycbc.version
 import pycbc.frame
+import pycbc.fft
 from pycbc.types import float32, float64
 
 
@@ -75,7 +76,12 @@ parser.add_argument('--frame-duration', metavar='SECONDS', type=int,
                          'in seconds')
 
 pycbc.strain.insert_strain_option_group(parser)
+pycbc.fft.insert_fft_option_group(parser)
 args = parser.parse_args()
+
+# Take in / deal with the FFT options
+pycbc.fft.verify_fft_options(args, parser)
+pycbc.fft.from_cli(args)
 
 if args.frame_duration is not None and args.frame_duration <= 0:
     parser.error('Frame duration should be positive integer, {} given'.format(args.frame_duration))
