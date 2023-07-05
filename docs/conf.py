@@ -300,12 +300,12 @@ def build_includes():
             args = [exe, fn]
             run_args.append(args)
     
-    run_num = 2
+    run_num = 2 # Number of scripts to run in parallel
     i = 0
     running = []
     still_running = True
     while still_running:
-        time.sleep(0.01)
+        time.sleep(0.01) # Sleep so this process doesn't eat CPU time
         if len(running) < run_num and i < len(run_args):
             args = run_args[i]
             proc = subprocess.Popen(args,
@@ -313,33 +313,24 @@ def build_includes():
                                     stderr=None)
             logging.info('Running: {}'.format(' '.join(proc.args)))
             i += 1
-            running.append([proc, "", ""])
+            running.append(proc)
 
-        #print(i, len(run_args),  still_running, running[0].poll(), running[0].pid)
-        for ptrack in running:
-            proc, out, err = ptrack
+        for proc in running:
             status = proc.poll()
             r = proc.returncode
             
-            #out += proc.stdout.readline().decode()
-            #err += proc.stderr.readline().decode()
-            #print(out, err)
             if status is not None:
                 if r == 0:
                     print('DONE with :{}'.format(' '.join(proc.args)))
                 else:
-                    logging.info(out)
-                    logging.info(err)
-                    logging.info(r)
                     msg = "Failure to run {}".format(' '.join(proc.args))
-                    for p, o, e in running:
+                    for p in running:
                         p.terminate()
                     raise RuntimeError(msg) 
-                running.remove(ptrack)   
+                running.remove(proc)   
 
         if len(running) == 0 and i == len(run_args):
             still_running = False
-
 
     os.chdir(cwd)
 
