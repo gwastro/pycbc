@@ -254,27 +254,6 @@ if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
                                                 'bank-veto-bank-file')
     bank_veto_file = _workflow.FileList([bank_veto_file])
     datafind_veto_files.extend(bank_veto_file)
-# TODO: Finalize location of bank veto bank and make the above automatic
-# Below is the snippet of old grb_utils.py code that used to handle this
-# if os.getenv("LAL_SRC") is None:
-#     raise ValueError("The environment variable LAL_SRC must be set to a "
-#                      "location containing the file lalsuite.git")
-# else:
-#     lal_dir = os.getenv("LAL_SRC")
-#     sci_seg = segments.segment(int(cp.get("workflow", "start-time")),
-#                                int(cp.get("workflow", "end-time")))
-#     file_list = FileList([])
-#
-#     # Bank veto
-#     shutil.copy("%s/lalapps/src/ring/coh_PTF_config_files/" \
-#                 "bank_veto_bank.xml" % lal_dir, "%s" % run_dir)
-#     bank_veto_url = "file://localhost%s/bank_veto_bank.xml" % run_dir
-#     bank_veto = File(ifos, "bank_veto_bank", sci_seg,
-#                      file_url=bank_veto_url)
-#     # FIXME: If this is an input file, use the from_path classmethod
-#     bank_veto.add_pfn(bank_veto.cache_entry.path, site="local")
-#     file_list.append(bank_veto)
-
 
 if IPN:
     file_attrs = {

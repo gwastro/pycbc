@@ -357,9 +357,9 @@ def _get_antenna_single_response(antenna, ra, dec, geocent_time):
 
 
 # Vectorize the function above on all but the first argument
-_get_antenna_responses = numpy.vectorize(_get_antenna_single_response,
+get_antenna_responses = numpy.vectorize(_get_antenna_single_response,
                                         otypes=[float])
-_get_antenna_responses.excluded.add(0)
+get_antenna_responses.excluded.add(0)
 
 
 def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
@@ -421,8 +421,8 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
     ifo_snr = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
     for ifo in ifos:
         antenna = Detector(ifo)
-        sens[ifo] = sigmasqs[ifo] * _get_antenna_responses(antenna, ra,
-                                                           dec, time)
+        sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra,
+                                                          dec, time)
     # Apply this cut only if there is more than 1 IFO
     if len(ifos) > 1:
         for i_trig, _ in enumerate(trigs):

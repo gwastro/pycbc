@@ -69,7 +69,8 @@ parser.add_argument("--cluster-method", choices=["template", "window"],
                          "chirp length.")
 parser.add_argument("--cluster-window", type=float, default=0,
                     help="Length of clustering window in seconds.")
-parser.add_argument("--bank-veto-bank-file", type=str)
+parser.add_argument("--bank-veto-bank-file", type=str, help="Path to the "
+                    "bank file used to compute the the bank chi-square veto.")
 parser.add_argument("--chisq-bins", default=0)
 # Commenting out options which are not yet implemented
 # parser.add_argument("--chisq-threshold", type=float, default=0) 
