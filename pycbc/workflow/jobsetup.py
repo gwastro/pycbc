@@ -664,7 +664,8 @@ class PyCBCMultiInspiralExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
 
     # bank-veto-bank-file is a file input option for pycbc_multi_inspiral
-    file_input_options = Executable.file_input_options + ['--bank-veto-bank-file']
+    file_input_options = Executable.file_input_options + \
+        ['--bank-veto-bank-file']
 
     def __init__(self, cp, name, ifo=None, injection_file=None,
                  gate_files=None, out_dir=None, tags=None):
