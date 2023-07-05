@@ -140,8 +140,9 @@ if 'hoft' in workflow.cp.get_subsections('workflow-datafind'):
 
 datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
                                            wf.setup_datafind_workflow(workflow,
-                                     ssegs, "datafind",
-                                     seg_file=science_seg_file, tags=hoft_tags)
+                                           ssegs, "datafind",
+                                           seg_file=science_seg_file,
+                                           tags=['full_data'] + hoft_tags)
 
 final_veto_name = 'vetoes'
 final_veto_file = wf.get_segments_file(workflow, final_veto_name,
@@ -607,6 +608,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     else:
         datafind_files_inj = datafind_files
         analyzable_segs_inj = analyzable_segs
+
 
     insps = wf.setup_matchedfltr_workflow(
         workflow,
