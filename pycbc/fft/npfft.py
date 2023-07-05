@@ -94,3 +94,12 @@ class IFFT(_BaseIFFT):
 
     def execute(self):
         ifft(self.invec, self.outvec, self.prec, self.itype, self.otype)
+
+def insert_fft_options(optgroup):
+    """
+    Inserts the options that affect the behavior of this backend
+
+    This backend has no options
+    """
+    return
+
