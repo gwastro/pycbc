@@ -701,6 +701,9 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     )
             else:
                 f[col] = network_events[col]
+        # Write time slides
+        for ifo in self.ifos:
+            f['timeslides/'+ifo] = numpy.array(self.time_slides[ifo])
         # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
             tid = self.events['template_id'][self.events['ifo'] == i]
@@ -817,12 +820,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                                         [g[1] for g in gating_info[gate_type]])
                         f['gating/' + gate_type + '/pad'] = numpy.array(
                                         [g[2] for g in gating_info[gate_type]])
-
-            # Write time slides
-            f.prefix = 'time_slides'
-            for ifo in self.ifos:
-                f[ifo] = numpy.array(self.time_slides[ifo])
-
 
     def finalize_template_events(self):
         # Check that none of the template events have the same time index as an
