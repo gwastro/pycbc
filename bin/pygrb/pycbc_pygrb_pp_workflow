@@ -32,7 +32,7 @@ import os
 import pycbc.version
 from pycbc import init_logging
 import pycbc.workflow as _workflow
-from pycbc.results import create_versioning_page, layout
+from pycbc.results import layout
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos
 from pycbc.results.versioning import save_fig_with_metadata
 
@@ -385,9 +385,13 @@ ini_file = _workflow.FileList([_workflow.File(wflow.ifos, '',
                                               wflow.analysis_time,
                                               file_url='file://' + ini_file_path)])
 layout.single_layout(base, ini_file)
-
+ 
 # Create versioning information
-create_versioning_page(rdir['workflow/version'], wflow.cp)
+wf.make_versioning_page(
+    _workflow,
+    wflow.cp,
+    rdir['workflow/version'],
+)
 
 # Create the final log file
 log_file_html = _workflow.File(wflow.ifos, 'WORKFLOW-LOG', wflow.analysis_time,
