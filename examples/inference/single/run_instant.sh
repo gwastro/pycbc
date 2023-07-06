@@ -1,6 +1,6 @@
 pycbc_inference \
 --config-file `dirname "$0"`/single_instant.ini \
---nprocesses=8 \
+--nprocesses=1 \
 --output-file single_instant.hdf \
 --seed 0 \
 --force \
