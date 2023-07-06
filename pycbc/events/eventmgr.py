@@ -594,7 +594,7 @@ class EventManagerMultiDetBase(EventManager):
 
 class EventManagerCoherent(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, network_column,
-                 network_column_types, psd=None, **kwargs):
+                 network_column_types, time_slides, psd=None, **kwargs):
         super(EventManagerCoherent, self).__init__(
             opt, ifos, column, column_types, psd=None, **kwargs)
         self.network_event_dtype = \
@@ -610,6 +610,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.event_index['network'] = 0
         self.template_event_dict['network'] = numpy.array(
             [], dtype=self.network_event_dtype)
+        self.time_slides = time_slides
 
     def cluster_template_network_events(self, tcolumn, column, window_size,
                                         slide=0):
@@ -816,6 +817,12 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                                         [g[1] for g in gating_info[gate_type]])
                         f['gating/' + gate_type + '/pad'] = numpy.array(
                                         [g[2] for g in gating_info[gate_type]])
+
+            # Write time slides
+            f.prefix = 'time_slides'
+            for ifo in self.ifos:
+                f[ifo] = numpy.array(self.time_slides[ifo])
+
 
     def finalize_template_events(self):
         # Check that none of the template events have the same time index as an
