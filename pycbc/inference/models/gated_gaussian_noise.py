@@ -749,6 +749,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # get the gated waveforms and data
         gated_wfs = self.get_gated_waveforms()
         gated_data = self.get_gated_data()
+        gate_times = self.get_gate_times()
         # cycle over
         loglr = 0.
         lognl = 0.
@@ -764,12 +765,16 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
+            # get gated end time
+            gatestartdelay, dgatedelay = gate_times[det]
+            gateenddelay = gatedstartdelay + dgatedelay
             # get the gated values
             gated_hp, gated_hc = gated_wfs[det]
             gated_d = gated_data[det]
             # we'll overwhiten the ungated data and waveforms for computing
             # inner products
             d = self._overwhitened_data[det]
+            d = self.shift_to_integer_sample(d, gateenddelay)
             # overwhiten the hp and hc
             # we'll do this in place for computational efficiency, but as a
             # result we'll clear the current waveforms cache so a repeated call
@@ -778,6 +783,8 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             invpsd = self._invpsds[det]
             hp *= invpsd
             hc *= invpsd
+            hp = self.shift_to_integer_sample(hp, gateenddelay)
+            hc = self.shift_to_integer_sample(hc, gateenddelay)
             # get the various gated inner products
             hpd = hp[slc].inner(gated_d[slc]).real  # <hp, d>
             hcd = hc[slc].inner(gated_d[slc]).real  # <hc, d>
