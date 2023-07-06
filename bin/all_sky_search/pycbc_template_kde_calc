@@ -62,8 +62,8 @@ parser.add_argument('--seed', type=int,
                     help='Random number generator seed')
 parser.add_argument('--mchirp-downsample-power', type=float,
                     help='Exponent value for the power law distribution')
-parser.add_argument('--min-val', type=float, help='Minimum value for template_kde')
-parser.add_argument('--max-val', type=float, help='Maximum value for template_kde')
+parser.add_argument('--min-ratio', type=float, 
+                    help='Minimum ratio for template_kde relative to the maximum')
 parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
 init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
@@ -207,9 +207,10 @@ if args.make_template_kde:
                                  gl_bandwidth=optbw)
         # Compensation factor for downsampling of templates
         template_kde *= 1. / probabilities
-        if args.min_val is not None and args.max_val is not None:
-            f_dest.attrs.update({'min-kde-val': args.min_val, 'max-kde-val': args.max_val})
-            template_kde = numpy.clip(template_kde, args.min_val, args.max_val)
+        if args.min_ratio is not None:
+            f_dest.attrs['min-kde-ratio'] = args.min_ratio
+            min_val = args.min_ratio * numpy.max(template_kde)
+            template_kde = numpy.maximum(template_kde, min_val)
 
     else:
         logging.info('Starting optimization of template KDE parameters')
