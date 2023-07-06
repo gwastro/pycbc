@@ -269,7 +269,7 @@ with ctx:
         'bank_chisq': float32,
         'bank_chisq_dof': int,
         'cont_chisq': float32,
-        'slide_id': int
+        'slide_offset': float32
         }
     ifo_out_vals = {
         'time_index': None,
@@ -280,7 +280,7 @@ with ctx:
         'bank_chisq': None,
         'bank_chisq_dof': None,
         'cont_chisq': None,
-        'slide_id': int
+        'slide_offset': None
         }
     ifo_names = sorted(ifo_out_vals.keys())
     network_out_types = {
@@ -303,7 +303,7 @@ with ctx:
         'nifo': None,
         'my_network_chisq': None, 
         'reweighted_snr': None,
-        'slide_id': int
+        'slide_id': None
         }
     network_names = sorted(network_out_vals.keys())
     event_mgr = EventManagerCoherent(

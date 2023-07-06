@@ -615,16 +615,20 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
 # =============================================================================
 # Function to load timeslides
 # =============================================================================
-def load_time_slides(xml_file):
+def load_time_slides(hdf_file_path):
     """Loads timeslides from PyGRB output file as a dictionary"""
 
-    # Get all timeslides: these are number_of_ifos * number_of_timeslides
-    time_slide = load_xml_table(xml_file, glsctables.TimeSlideTable.tableName)
-    # Get a list of unique timeslide dictionaries
-    time_slide_list = [dict(i) for i in time_slide.as_dict().values()]
-    # Turn it into a dictionary indexed by the timeslide ID
-    time_slide_dict = {int(time_slide.get_time_slide_id(ov)): ov
-                       for ov in time_slide_list}
+    hdf_file = h5py.File(hdf_file_path, 'r')
+    ifos = extract_ifos(hdf_file_path)
+    time_slide_dict = {ifo: sorted(list(set(hdf_file[f'{ifo}/slide_offset']))) for ifo in ifos}
+
+    # # Get all timeslides: these are number_of_ifos * number_of_timeslides
+    # time_slide = load_xml_table(xml_file, glsctables.TimeSlideTable.tableName)
+    # # Get a list of unique timeslide dictionaries
+    # time_slide_list = [dict(i) for i in time_slide.as_dict().values()]
+    # # Turn it into a dictionary indexed by the timeslide ID
+    # time_slide_dict = {int(time_slide.get_time_slide_id(ov)): ov
+    #                    for ov in time_slide_list}
     # Check time_slide_ids are ordered correctly.
     ids = _get_id_numbers(time_slide,
                           "time_slide_id")[::len(time_slide_dict[0].keys())]
