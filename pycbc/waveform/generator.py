@@ -709,6 +709,84 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         return select_waveform_generator(approximant, domain)
 
 
+class FDomainLISAEWGenerator(BaseFDomainDetFrameGenerator):
+    def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
+                 variable_args=(), recalib=None, gates=None, **frozen_params):
+        super().__init__(rFrameGeneratorClass, epoch, detectors=detectors,
+                         variable_args=variable_args, recalib=recalib,
+                         gates=gates, **frozen_params)
+        # Need to define:
+        # PSD whiteners, flen, delta_f, kmin, f_lower
+
+
+
+    def process_waveform(self, wform, whitener, end_freq):
+        # FIXME: Needs to be the time-limited, not f-limited version!!
+        end_freq_idx = int(end_freq / self.delta_f)
+        wform.resize(self.flen)
+        wform = wform.astype(numpy.complex64)
+        if numpy.isnan(wform.data).any():
+            print("NAN after resizing + converting")
+        wform[self.kmin:-1] *= whitener
+        wform[end_freq_idx:] *= 0
+        if abs(wform).max() == 0:
+            print(len(wform), end_freq_idx, end_freq, self.kmin, self.f_lower)
+        if numpy.isnan(wform.data).any():
+            print("NAN after whitening")
+        sigmasq = pycbc.filter.sigmasq(wform, low_frequency_cutoff=self.f_lower)
+        s = float(1.0 / sigmasq**0.5)
+        if numpy.isinf(s):
+            print(abs(wform).sum(), abs(wform).max(), abs(wform).min())
+        wform *= s
+        if numpy.isnan(wform.data).any():
+            print("NAN after sigmasq", s)
+
+        wform.view = wform[self.kmin:-1]
+        wform.sigma = sigmasq
+        return wform
+
+    def get_start_frequency(self, mass1, mass2, start_time):
+        from pycbc.waveform.spa_tmplt import findchirp_chirptime
+        f_lower = 1E-3
+        duration = findchirp_chirptime(m1=mass1, m2=mass2, fLower=f_lower, porder=7)
+        while duration < 0:
+            f_lower *= 0.1
+            duration = findchirp_chirptime(m1=mass1, m2=mass2, fLower=f_lower, porder=7)
+        while abs((duration - start_time) / start_time) > 0.00001:
+            f_lower = (duration / start_time)**(3/8.) * f_lower # 0-PN approximation
+            duration = findchirp_chirptime(m1=mass1, m2=mass2, fLower=f_lower, porder=7)
+            if duration < 0:
+                # Hope this doesn't become an infinite loop :fingers-crossed:
+                f_lower *= 0.1
+        return f_lower
+
+    def generate(self, **kwargs):
+        """Generates a waveform, applies a time shift and the detector response
+        function from the given kwargs.
+        """
+        self.current_params.update(kwargs)
+        start_time = self.current_params['ew_end_time']
+        cparams = {param: self.current_params[param]
+            for param in kwargs if not param=='ew_end_time'}
+
+        print(cparams)
+        assert(delta_f in cparams)
+        assert(f_lower in cparams)
+
+        ws = pycbc.waveform.get_fd_det_waveform(
+            ifos=self.detectors.items(),
+            **cparams
+        )
+        end_freq = self.get_start_frequency(kwds['mass1'],kwds['mass2'], (60*60*24)*start_time)
+
+        for item in ws:
+            ws['LISA_A'] = self.process_waveform(ws['LISA_A'], self.w_a,
+                                                 end_freq)
+            ws['LISA_E'] = self.process_waveform(ws['LISA_E'], self.w_a, 
+                                                 end_freq)
+        return ws
+
+
 class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
     """Generates frequency-domain waveform in a specific frame.
 
