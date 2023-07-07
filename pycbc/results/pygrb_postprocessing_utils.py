@@ -620,7 +620,10 @@ def load_time_slides(hdf_file_path):
 
     hdf_file = h5py.File(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
-    time_slide_dict = {ifo: sorted(list(set(hdf_file[f'{ifo}/slide_offset']))) for ifo in ifos}
+    slide_ids = numpy.arange(0, len(hdf_file[f'network/timeslides/{ifos[0]}'])-1)
+    time_slide_dict = {slide_id: {ifo: hdf_file[f'network/timeslides/{ifo}'][:] for ifo in ifos}
+                       for slide_id in slide_ids}
+
 
     # # Get all timeslides: these are number_of_ifos * number_of_timeslides
     # time_slide = load_xml_table(xml_file, glsctables.TimeSlideTable.tableName)
