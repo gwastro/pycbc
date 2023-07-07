@@ -105,8 +105,6 @@ class CandidateForGraceDB(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        # FIXME is it safe (in terms of downstream operations) to let
-        # `program_name` default to the actual script name?
         proc_id = create_process_table(outdoc, program_name='pycbc',
                                        detectors=snr_ifos).process_id
 
