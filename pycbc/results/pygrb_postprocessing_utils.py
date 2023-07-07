@@ -620,31 +620,23 @@ def load_time_slides(hdf_file_path):
 
     hdf_file = h5py.File(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
-    slide_ids = numpy.arange(0, len(hdf_file[f'network/timeslides/{ifos[0]}'])-1)
-    time_slide_dict = {slide_id: {ifo: hdf_file[f'network/timeslides/{ifo}'][:] for ifo in ifos}
-                       for slide_id in slide_ids}
+    ids = numpy.arange(0, len(hdf_file[f'network/timeslides/{ifos[0]}'])-1)
+    time_slide_dict = {
+        slide_id: {
+            ifo: hdf_file[f'network/timeslides/{ifo}'][slide_id] for ifo in ifos
+        } for slide_id in ids}
 
-
-    # # Get all timeslides: these are number_of_ifos * number_of_timeslides
-    # time_slide = load_xml_table(xml_file, glsctables.TimeSlideTable.tableName)
-    # # Get a list of unique timeslide dictionaries
-    # time_slide_list = [dict(i) for i in time_slide.as_dict().values()]
-    # # Turn it into a dictionary indexed by the timeslide ID
-    # time_slide_dict = {int(time_slide.get_time_slide_id(ov)): ov
-    #                    for ov in time_slide_list}
     # Check time_slide_ids are ordered correctly.
-    # ids = get_id_numbers(time_slide,
-    #                      "time_slide_id")[::len(time_slide_dict[0].keys())]
-    # if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0] == 0):
-    #     err_msg = "time_slide_ids list should start at zero and increase by "
-    #     err_msg += "one for every element"
-    #     raise RuntimeError(err_msg)
-    # # Check that the zero-lag slide has time_slide_id == 0.
-    # if not numpy.all(numpy.array(list(time_slide_dict[0].values())) == 0):
-    #     err_msg = "The slide with time_slide_id == 0 should be the "
-    #     err_msg += "zero-lag-slide but it has non-zero slide values: "
-    #     err_msg += f"{time_slide_dict[0]}."
-    #     raise RuntimeError(err_msg)
+    if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0] == 0):
+        err_msg = "time_slide_ids list should start at zero and increase by "
+        err_msg += "one for every element"
+        raise RuntimeError(err_msg)
+    # Check that the zero-lag slide has time_slide_id == 0.
+    if not numpy.all(numpy.array(list(time_slide_dict[0].values())) == 0):
+        err_msg = "The slide with time_slide_id == 0 should be the "
+        err_msg += "zero-lag-slide but it has non-zero slide values: "
+        err_msg += f"{time_slide_dict[0]}."
+        raise RuntimeError(err_msg)
 
     return time_slide_dict
 
