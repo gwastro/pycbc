@@ -605,7 +605,7 @@ with ctx:
                                 [event_mgr.ifo_dict[ifo]] * num_events
                                 )
                             # Time slide ID
-                            ifo_out_vals['slide_offset'] = time_slides[ifo][slide] * num_events
+                            ifo_out_vals['slide_shift'] = time_slides[ifo][slide] * num_events
                             event_mgr.add_template_events_to_ifo(
                                 ifo, ifo_names,
                                 [ifo_out_vals[n] for n in ifo_names])
