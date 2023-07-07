@@ -269,7 +269,7 @@ with ctx:
         'bank_chisq': float32,
         'bank_chisq_dof': int,
         'cont_chisq': float32,
-        'slide_offset': float32
+        'slide_shift': float32
         }
     ifo_out_vals = {
         'time_index': None,
@@ -280,7 +280,7 @@ with ctx:
         'bank_chisq': None,
         'bank_chisq_dof': None,
         'cont_chisq': None,
-        'slide_offset': None
+        'slide_shift': None
         }
     ifo_names = sorted(ifo_out_vals.keys())
     network_out_types = {

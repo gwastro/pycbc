@@ -729,7 +729,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                         float(self.opt.sample_rate[ifo_str]) + \
                         self.opt.gps_start_time[ifo_str]
                 f['time_index'] = ifo_events['time_index']
-                f['slide_offset'] = ifo_events['slide_offset']
+                f['slide_shift'] = ifo_events['slide_shift']
                 try:
                     # Precessing
                     template_sigmasq_plus = numpy.array(
