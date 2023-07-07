@@ -176,7 +176,7 @@ temp_samples = numpy.vstack((template_pars)).T
 
 if args.make_template_kde:
 
-    # Rejection Sampling
+    # Rejection sampling to reduce computational load
     if args.mchirp_downsample_power is not None:
         logging.info('Downsampling with mchirp power '
                      f'{args.mchirp_downsample_power}')
@@ -185,6 +185,7 @@ if args.make_template_kde:
             mchirp_index = args.fit_param.index('mchirp')
         except:
             raise ValueError("mchirp does not exist in args.fit_param")
+
         mc_vals = template_pars[mchirp_index]
         if args.log_param[mchirp_index]:
             mc_vals = numpy.exp(mc_vals)
@@ -198,6 +199,7 @@ if args.make_template_kde:
         logging.info(f'{ind.sum()} templates after downsampling')
         kde_train_samples = temp_samples[ind]
         f_dest.create_dataset("kde_train_samples", data=kde_train_samples)
+
         logging.info('Starting optimization of template KDE parameters')
         optbw, optalpha = optimizedparam(kde_train_samples, alphagrid=args.alpha_grid,
                                          bwgrid=args.bw_grid, nfold=args.nfold_template)
@@ -205,9 +207,11 @@ if args.make_template_kde:
         logging.info('Evaluating template KDE')
         template_kde = kde_awkde(kde_train_samples, temp_samples, alp=optalpha,
                                  gl_bandwidth=optbw)
+
         # Compensation factor for downsampling of templates
         template_kde *= 1. / probabilities
         if args.min_ratio is not None:
+            logging.info(f'Applying minimum template KDE ratio {args.min_ratio}')
             f_dest.attrs['min-kde-ratio'] = args.min_ratio
             min_val = args.min_ratio * numpy.max(template_kde)
             template_kde = numpy.maximum(template_kde, min_val)
