@@ -432,7 +432,7 @@ dec = Parameter("dec",
                 description="Declination (rad).")
 polarization = Parameter("polarization",
                 dtype=float, default=0., label=r"$\psi$",
-                description="Polarization (rad) in geocentric/SSB/LISA coords.")
+                description="Polarization angle (rad) in a certain coordinate system.")
 redshift = Parameter("redshift",
                 dtype=float, default=None, label=r"$z$",
                 description="Redshift.")
