@@ -418,8 +418,8 @@ mean_per_ano = Parameter("mean_per_ano",
                 description="Mean anomaly of the periastron (rad).")
 tc = Parameter("tc",
                dtype=float, default=None, label=r"$t_c$ (s)",
-               description="Coalescence time (s) is the time when a GW reaches "
-                           "the origin of a certain coordinate system.")
+               description="Coalescence time (s) is the time when a GW "
+                           "reaches the origin of a certain coordinate system.")
 delta_tc = Parameter("delta_tc", dtype=float,
                      label=r"$\Delta t_c~(\rm{s})$",
                      description="Coalesence time offset in " +
@@ -432,7 +432,8 @@ dec = Parameter("dec",
                 description="Declination (rad).")
 polarization = Parameter("polarization",
                 dtype=float, default=0., label=r"$\psi$",
-                description="Polarization angle (rad) in a certain coordinate system.")
+                description="Polarization angle (rad) in "
+                            "a certain coordinate system.")
 redshift = Parameter("redshift",
                 dtype=float, default=None, label=r"$z$",
                 description="Redshift.")
