@@ -418,18 +418,18 @@ mean_per_ano = Parameter("mean_per_ano",
                 description="Mean anomaly of the periastron (rad).")
 tc = Parameter("tc",
                dtype=float, default=None, label=r"$t_c$ (s)",
-               description="Coalescence time (s) in "
-                           "geocentric/SSB/LISA coords.")
+               description="Coalescence time (s) is the time when a GW reaches "
+                           "the origin of a certain coordinate system.")
 delta_tc = Parameter("delta_tc", dtype=float,
                      label=r"$\Delta t_c~(\rm{s})$",
                      description="Coalesence time offset in " +
-                     "geocentric/SSB/LISA coords.")
+                     "a certain coordinate system.")
 ra = Parameter("ra",
                dtype=float, default=0., label=r"$\alpha$",
-               description="Right ascension (rad) in geocentric coords.")
+               description="Right ascension (rad).")
 dec = Parameter("dec",
                 dtype=float, default=0., label=r"$\delta$",
-                description="Declination (rad) in geocentric coords.")
+                description="Declination (rad).")
 polarization = Parameter("polarization",
                 dtype=float, default=0., label=r"$\psi$",
                 description="Polarization (rad) in geocentric/SSB/LISA coords.")
