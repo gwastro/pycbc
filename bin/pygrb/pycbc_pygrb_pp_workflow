@@ -34,7 +34,7 @@ from pycbc import init_logging
 import pycbc.workflow as _workflow
 from pycbc.results import layout
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos
-from pycbc.results.versioning import save_fig_with_metadata
+from pycbc.results import save_fig_with_metadata
 
 __author__ = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
