@@ -14,7 +14,7 @@ OMP_NUM_THREADS=1 python -m cProfile -o log `which pycbc_inference` \
 OMP_NUM_THREADS=1 python -m cProfile -o log2 `which pycbc_inference_model_stats` \
 --input-file reltime.hdf \
 --output-file reltime2.hdf \
---nprocesses 2 \
+--nprocesses 1 \
 --reconstruct-parameters \
 --force \
 --verbose
