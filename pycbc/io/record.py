@@ -1917,8 +1917,10 @@ class WaveformArray(_FieldArrayWithDefaults):
     def remnant_mass(self):
         """Returns the remnant mass for an NS-BH binary."""
         return conversions.remnant_mass_from_mass1_mass2_cartesian_spin_eos(
-                                     self.mass1, self.mass2, self.spin1x,
-                                     self.spin1y, self.spin1z)
+                                     self.mass1, self.mass2,
+                                     spin1x=self.spin1x,
+                                     spin1y=self.spin1y,
+                                     spin1z=self.spin1z)
 
 
 __all__ = ['FieldArray', 'WaveformArray']

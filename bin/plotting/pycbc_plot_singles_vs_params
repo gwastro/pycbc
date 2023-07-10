@@ -116,18 +116,17 @@ if opts.log_x:
     hexbin_style['xscale'] = 'log'
 if opts.log_y:
     hexbin_style['yscale'] = 'log'
-if opts.min_z is not None:
-    hexbin_style['vmin'] = opts.min_z
-if opts.max_z is not None:
-    hexbin_style['vmax'] = opts.max_z
+minz = opts.min_z if opts.min_z else 1
+maxz = opts.max_z
+hexbin_style['norm'] = LogNorm(vmin=minz, vmax=maxz)
 
 logging.info('Plotting')
 fig = pl.figure()
 ax = fig.gca()
 
+
 if opts.z_var == 'density':
-    norm = LogNorm()
-    hb = ax.hexbin(x, y, norm=norm, vmin=1, **hexbin_style)
+    hb = ax.hexbin(x, y, **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
 elif opts.z_var in ranking.sngls_ranking_function_dict:
     cb_style = {}
@@ -137,7 +136,6 @@ elif opts.z_var in ranking.sngls_ranking_function_dict:
     min_z = z.min() if opts.min_z is None else opts.min_z
     max_z = z.max() if opts.max_z is None else opts.max_z
     if max_z / min_z > 10:
-        hexbin_style['norm'] = LogNorm()
         cb_style['ticks'] = LogLocator(subs=range(10))
     hb = ax.hexbin(x, y, C=z, reduce_C_function=max, **hexbin_style)
     fig.colorbar(hb, **cb_style)
