@@ -35,8 +35,9 @@ import pycbc.workflow.minifollowups as mini
 import pycbc.version
 import pycbc.events
 from pycbc.results import layout
-from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.results.pygrb_postprocessing_utils import extract_ifos
 from pycbc.workflow.plotting import PlotExecutable
+from pycbc.workflow.grb_utils import build_veto_filelist, build_segment_filelist
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -72,10 +73,10 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
                           tags=tags+extra_tags).create_node()
     node.add_input_opt('--trig-file', trig_file)
     # Pass the veto files
-    veto_files = ppu.build_veto_filelist(workflow)
+    veto_files = build_veto_filelist(workflow)
     node.add_input_list_opt('--veto-files', veto_files)
     # Pass the segment files
-    seg_files = ppu.build_segment_filelist(workflow)
+    seg_files = build_segment_filelist(workflow)
     node.add_input_list_opt('--seg-files', seg_files)
     # Other shared tuning values
     for opt in ['chisq-index', 'chisq-nhigh', 'null-snr-threshold',
@@ -155,7 +156,7 @@ num_events = min(num_events, len(fp['BestNR'][:]))
 
 # Determine ifos used in the analysis
 trig_file = resolve_url_to_file(os.path.abspath(args.trig_file))
-ifos = ppu.extract_ifos(os.path.abspath(args.trig_file))
+ifos = extract_ifos(os.path.abspath(args.trig_file))
 num_ifos = len(ifos)
 
 # (Loudest) off/on-source events are on time-slid data so the
