@@ -106,6 +106,8 @@ def sec_to_year(sec):
 def primary_mass(mass1, mass2):
     """Returns the larger of mass1 and mass2 (p = primary)."""
     mass1, mass2, input_is_array = ensurearray(mass1, mass2)
+    if mass1.shape != mass2.shape:
+        raise ValueError("mass1 and mass2 must have same shape")
     mp = copy.copy(mass1)
     mask = mass1 < mass2
     mp[mask] = mass2[mask]
@@ -140,12 +142,12 @@ def invq_from_mass1_mass2(mass1, mass2):
 
 def eta_from_mass1_mass2(mass1, mass2):
     """Returns the symmetric mass ratio from mass1 and mass2."""
-    return mass1*mass2 / (mass1+mass2)**2.
+    return mass1*mass2 / (mass1 + mass2)**2.
 
 
 def mchirp_from_mass1_mass2(mass1, mass2):
     """Returns the chirp mass from mass1 and mass2."""
-    return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1+mass2)
+    return eta_from_mass1_mass2(mass1, mass2)**(3./5) * (mass1 + mass2)
 
 
 def mass1_from_mtotal_q(mtotal, q):
@@ -155,7 +157,7 @@ def mass1_from_mtotal_q(mtotal, q):
     (heavier) mass. If q < 1, the returned mass will be the secondary
     (lighter) mass.
     """
-    return q*mtotal / (1.+q)
+    return q*mtotal / (1. + q)
 
 
 def mass2_from_mtotal_q(mtotal, q):
@@ -165,7 +167,7 @@ def mass2_from_mtotal_q(mtotal, q):
     (lighter) mass. If q < 1, the returned mass will be the primary (heavier)
     mass.
     """
-    return mtotal / (1.+q)
+    return mtotal / (1. + q)
 
 
 def mass1_from_mtotal_eta(mtotal, eta):
@@ -185,7 +187,7 @@ def mass2_from_mtotal_eta(mtotal, eta):
 def mtotal_from_mchirp_eta(mchirp, eta):
     """Returns the total mass from the chirp mass and symmetric mass ratio.
     """
-    return mchirp / (eta**(3./5.))
+    return mchirp / eta**(3./5.)
 
 
 def mass1_from_mchirp_eta(mchirp, eta):
@@ -219,7 +221,7 @@ def _mass2_from_mchirp_mass1(mchirp, mass1):
     This has 3 solutions but only one will be real.
     """
     a = mchirp**5 / mass1**3
-    roots = numpy.roots([1,0,-a,-a*mass1])
+    roots = numpy.roots([1, 0, -a, -a * mass1])
     # Find the real one
     real_root = roots[(abs(roots - roots.real)).argmin()]
     return real_root.real
@@ -261,7 +263,7 @@ def _mass_from_knownmass_eta(known_mass, eta, known_is_secondary=False,
     float
         The other component mass.
     """
-    roots = numpy.roots([eta, (2*eta - 1)*known_mass, eta*known_mass**2.])
+    roots = numpy.roots([eta, (2*eta - 1) * known_mass, eta * known_mass**2.])
     if force_real:
         roots = numpy.real(roots)
     if known_is_secondary:
@@ -298,24 +300,27 @@ def eta_from_q(q):
 
     Note that the mass ratio may be either < 1 or > 1.
     """
-    return q / (1.+q)**2
+    return q / (1. + q)**2
 
 
 def mass1_from_mchirp_q(mchirp, q):
     """Returns the primary mass from the given chirp mass and mass ratio."""
-    mass1 = (q**(2./5.))*((1.0 + q)**(1./5.))*mchirp
+    mass1 = q**(2./5.) * (1.0 + q)**(1./5.) * mchirp
     return mass1
+
 
 def mass2_from_mchirp_q(mchirp, q):
     """Returns the secondary mass from the given chirp mass and mass ratio."""
-    mass2 = (q**(-3./5.))*((1.0 + q)**(1./5.))*mchirp
+    mass2 = q**(-3./5.) * (1.0 + q)**(1./5.) * mchirp
     return mass2
+
 
 def _a0(f_lower):
     """Used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
        appendix 1, also lalinspiral/python/sbank/tau0tau3.py.
     """
     return 5. / (256. * (numpy.pi * f_lower)**(8./3.))
+
 
 def _a3(f_lower):
     """Another parameter used for chirp times"""
@@ -330,6 +335,15 @@ def tau0_from_mtotal_eta(mtotal, eta, f_lower):
     mtotal = mtotal * lal.MTSUN_SI
     # formulae from arxiv.org:0706.4437
     return _a0(f_lower) / (mtotal**(5./3.) * eta)
+
+
+def tau0_from_mchirp(mchirp, f_lower):
+    r"""Returns :math:`\tau_0` from the chirp mass and the given frequency.
+    """
+    # convert to seconds
+    mchirp = mchirp * lal.MTSUN_SI
+    # formulae from arxiv.org:0706.4437
+    return _a0(f_lower) / mchirp ** (5./3.)
 
 
 def tau3_from_mtotal_eta(mtotal, eta, f_lower):
@@ -356,6 +370,14 @@ def tau3_from_mass1_mass2(mass1, mass2, f_lower):
     mtotal = mass1 + mass2
     eta = eta_from_mass1_mass2(mass1, mass2)
     return tau3_from_mtotal_eta(mtotal, eta, f_lower)
+
+
+def mchirp_from_tau0(tau0, f_lower):
+    r"""Returns chirp mass from :math:`\tau_0` and the given frequency.
+    """
+    mchirp = (_a0(f_lower) / tau0) ** (3./5.)  # in seconds
+    # convert back to solar mass units
+    return mchirp / lal.MTSUN_SI
 
 
 def mtotal_from_tau0_tau3(tau0, tau3, f_lower,
@@ -421,8 +443,60 @@ def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
     return lambdav
 
 
+def ensure_obj1_is_primary(mass1, mass2, *params):
+    """
+    Enforce that the object labelled as 1 is the primary.
+
+    Parameters
+    ----------
+    mass1 : float, numpy.array
+        Mass values labelled as 1.
+    mass2 : float, numpy.array
+        Mass values labelled as 2.
+    *params :
+        The binary parameters to be swapped around when mass1 < mass2.
+        The list must have length 2N and it must be organized so that
+        params[i] and params[i+1] are the same kind of quantity, but
+        for object 1 and object 2, respsectively.
+        E.g., spin1z, spin2z, lambda1, lambda2.
+
+    Returns
+    -------
+    list :
+        A list with mass1, mass2, params as arrays, with elements, each
+        with elements re-arranged so that object 1 is the primary.
+    """
+    # Check params are 2N
+    if len(params) % 2 != 0:
+        raise ValueError("params must be 2N floats or arrays")
+    input_properties, input_is_array = ensurearray((mass1, mass2)+params)
+    # Check inputs are all the same length
+    shapes = [par.shape for par in input_properties]
+    if len(set(shapes)) != 1:
+        raise ValueError("Individual masses and params must have same shape")
+    # What needs to be swapped
+    mask = mass1 < mass2
+    # Output containter
+    output_properties = []
+    for i in numpy.arange(0, len(shapes), 2):
+        # primary (p)
+        p = copy.copy(input_properties[i])
+        # secondary (s)
+        s = copy.copy(input_properties[i+1])
+        # Swap
+        p[mask] = input_properties[i+1][mask]
+        s[mask] = input_properties[i][mask]
+        # Format and include in output object
+        output_properties.append(formatreturn(p, input_is_array))
+        output_properties.append(formatreturn(s, input_is_array))
+    # Release output
+    return output_properties
+
+
 def remnant_mass_from_mass1_mass2_spherical_spin_eos(
-        mass1, mass2, spin1a=0.0, spin1pol=0.0, eos='2H'):
+        mass1, mass2, spin1_a=0.0, spin1_polar=0.0, eos='2H',
+        spin2_a=0.0, spin2_polar=0.0, swap_companions=False,
+        ns_bh_mass_boundary=None, extrapolate=False):
     """
     Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
@@ -432,7 +506,7 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     Stone, Loeb & Berger, PRD 87, 084053 (2013), which was originally
     devised for a previous NS-BH remnant mass fit of
     Foucart, PRD 86, 124007 (2012).
-    Note: NS spin is assumed to be 0!
+    Note: The NS spin does not play any role in this fit!
 
     Parameters
     -----------
@@ -440,36 +514,72 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
         The mass of the black hole, in solar masses.
     mass2 : float
         The mass of the neutron star, in solar masses.
-    spin1a : float, optional
+    spin1_a : float, optional
         The dimensionless magnitude of the spin of mass1. Default = 0.
-    spin1pol : float, optional
+    spin1_polar : float, optional
         The tilt angle of the spin of mass1. Default = 0 (aligned w L).
     eos : str, optional
         Name of the equation of state being adopted. Default is '2H'.
+    spin2_a : float, optional
+        The dimensionless magnitude of the spin of mass2. Default = 0.
+    spin2_polar : float, optional
+        The tilt angle of the spin of mass2. Default = 0 (aligned w L).
+    swap_companions : boolean, optional
+        If mass2 > mass1, swap mass and spin of object 1 and 2 prior
+        to applying the fitting formula (otherwise fail). Default is False.
+    ns_bh_mass_boundary : float, optional
+        If mass2 is greater than this value, the neutron star is effectively
+        treated as a black hole and the returned value is 0. For consistency
+        with the eos, set this to the maximum mass allowed by the eos; set
+        a lower value for a more stringent cut. Default is None.
+    extrapolate : boolean, optional
+        Invoke extrapolation of NS baryonic mass and NS compactness in
+        scipy.interpolate.interp1d at low masses. If ns_bh_mass_boundary is
+        provided, it is applied at high masses, otherwise the equation of
+        state prescribes the maximum possible mass2. Default is False.
 
     Returns
     ----------
     remnant_mass: float
         The remnant mass in solar masses
     """
-    mass1, mass2, spin1a, spin1pol, input_is_array = ensurearray(
-        mass1, mass2, spin1a, spin1pol)
-    # mass1 must be greater than mass2
-    try:
-        if any(mass2 > mass1) and input_is_array:
-            raise ValueError(f'Require mass1 >= mass2')
-    except TypeError:
-        if mass2 > mass1 and not input_is_array:
-            raise ValueError(f'Require mass1 >= mass2. {mass1} < {mass2}')
-    ns_compactness, ns_b_mass = ns.initialize_eos(mass2, eos)
+    mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar, \
+        input_is_array = \
+        ensurearray(mass1, mass2, spin1_a, spin1_polar, spin2_a, spin2_polar)
+    # mass1 must be greater than mass2: swap the properties of 1 and 2 or fail
+    if swap_companions:
+        mass1, mass2, spin1_a, spin2_a, spin1_polar, spin2_polar = \
+            ensure_obj1_is_primary(mass1, mass2, spin1_a, spin2_a,
+                                   spin1_polar, spin2_polar)
+    else:
+        try:
+            if any(mass2 > mass1) and input_is_array:
+                raise ValueError(f'Require mass1 >= mass2')
+        except TypeError:
+            if mass2 > mass1 and not input_is_array:
+                raise ValueError(f'Require mass1 >= mass2. {mass1} < {mass2}')
     eta = eta_from_mass1_mass2(mass1, mass2)
-    remnant_mass = ns.foucart18(
-        eta, ns_compactness, ns_b_mass, spin1a, spin1pol)
+    # If a maximum NS mass is not provided, accept all values and
+    # let the EOS handle this (in ns.initialize_eos)
+    if ns_bh_mass_boundary is None:
+        mask = numpy.ones(ensurearray(mass2).size[0], dtype=bool)
+    # Otherwise perform the calculation only for small enough NS masses...
+    else:
+        mask = mass2 <= ns_bh_mass_boundary
+    # ...and return 0's otherwise
+    remnant_mass = numpy.zeros(ensurearray(mass2)[0].size)
+    ns_compactness, ns_b_mass = ns.initialize_eos(mass2[mask], eos,
+                                                  extrapolate=extrapolate)
+    remnant_mass[mask] = ns.foucart18(
+            eta[mask], ns_compactness, ns_b_mass,
+            spin1_a[mask], spin1_polar[mask])
     return formatreturn(remnant_mass, input_is_array)
 
 
 def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
-        mass1, mass2, spin1x=0.0, spin1y=0.0, spin1z=0.0, eos='2H'):
+        mass1, mass2, spin1x=0.0, spin1y=0.0, spin1z=0.0, eos='2H',
+        spin2x=0.0, spin2y=0.0, spin2z=0.0, swap_companions=False,
+        ns_bh_mass_boundary=None, extrapolate=False):
     """
     Function that determines the remnant disk mass of an NS-BH system
     using the fit to numerical-relativity results discussed in
@@ -495,15 +605,44 @@ def remnant_mass_from_mass1_mass2_cartesian_spin_eos(
         The dimensionless z-component of the spin of mass1. Default = 0.
     eos: str, optional
         Name of the equation of state being adopted. Default is '2H'.
+    spin2x : float, optional
+        The dimensionless x-component of the spin of mass2. Default = 0.
+    spin2y : float, optional
+        The dimensionless y-component of the spin of mass2. Default = 0.
+    spin2z : float, optional
+        The dimensionless z-component of the spin of mass2. Default = 0.
+    swap_companions : boolean, optional
+        If mass2 > mass1, swap mass and spin of object 1 and 2 prior
+        to applying the fitting formula (otherwise fail). Default is False.
+    ns_bh_mass_boundary : float, optional
+        If mass2 is greater than this value, the neutron star is effectively
+        treated as a black hole and the returned value is 0. For consistency
+        with the eos, set this to the maximum mass allowed by the eos; set
+        a lower value for a more stringent cut. Default is None.
+    extrapolate : boolean, optional
+        Invoke extrapolation of NS baryonic mass and NS compactness in
+        scipy.interpolate.interp1d at low masses. If ns_bh_mass_boundary is
+        provided, it is applied at high masses, otherwise the equation of
+        state prescribes the maximum possible mass2. Default is False.
 
     Returns
     ----------
     remnant_mass: float
         The remnant mass in solar masses
     """
-    spin1a, _, spin1pol = _cartesian_to_spherical(spin1x, spin1y, spin1z)
+    spin1_a, _, spin1_polar = _cartesian_to_spherical(spin1x, spin1y, spin1z)
+    if swap_companions:
+        spin2_a, _, spin2_polar = _cartesian_to_spherical(spin2x,
+                                                          spin2y, spin2z)
+    else:
+        size = ensurearray(spin1_a)[0].size
+        spin2_a = numpy.zeros(size)
+        spin2_polar = numpy.zeros(size)
     return remnant_mass_from_mass1_mass2_spherical_spin_eos(
-        mass1, mass2, spin1a, spin1pol, eos=eos)
+        mass1, mass2, spin1_a=spin1_a, spin1_polar=spin1_polar, eos=eos,
+        spin2_a=spin2_a, spin2_polar=spin2_polar,
+        swap_companions=swap_companions,
+        ns_bh_mass_boundary=ns_bh_mass_boundary, extrapolate=extrapolate)
 
 
 #
@@ -842,7 +981,6 @@ def optimal_ra_from_detector(detector_name, tc):
     """For a given detector and GPS time, return the optimal orientation
     (directly overhead of the detector) in right ascension.
 
-
     Parameters
     ----------
     detector_name : string
@@ -856,6 +994,7 @@ def optimal_ra_from_detector(detector_name, tc):
         The declination of the signal, in radians.
     """
     return optimal_orientation_from_detector(detector_name, tc)[0]
+
 
 #
 # =============================================================================
@@ -1605,6 +1744,7 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'mass1_from_mass2_eta', 'eta_from_q', 'mass1_from_mchirp_q',
            'mass2_from_mchirp_q', 'tau0_from_mtotal_eta',
            'tau3_from_mtotal_eta', 'tau0_from_mass1_mass2',
+           'tau0_from_mchirp', 'mchirp_from_tau0',
            'tau3_from_mass1_mass2', 'mtotal_from_tau0_tau3',
            'eta_from_tau0_tau3', 'mass1_from_tau0_tau3',
            'mass2_from_tau0_tau3', 'primary_spin', 'secondary_spin',

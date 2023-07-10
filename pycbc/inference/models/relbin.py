@@ -40,7 +40,11 @@ from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
                          likelihood_parts_det, likelihood_parts_vector,
+                         likelihood_parts_v_pol,
+                         likelihood_parts_v_time,
+                         likelihood_parts_v_pol_time,
                          likelihood_parts_vectorp, snr_predictor,
+                         likelihood_parts_vectort,
                          snr_predictor_dom)
 from .tools import DistMarg
 
@@ -174,6 +178,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         gammas=None,
         epsilon=0.5,
         earth_rotation=False,
+        earth_rotation_mode=2,
         marginalize_phase=True,
         **kwargs
     ):
@@ -187,18 +192,17 @@ class Relative(DistMarg, BaseGaussianNoise):
             variable_params, data, low_frequency_cutoff, **kwargs
         )
 
-        # If the waveform handles the detector response internally, set
-        # self.det_response = True
-        self.no_det_response = False
+        # If the waveform needs us to apply the detector response,
+        # set flag to true (most cases for ground-based observatories).
+        self.still_needs_det_response = False
         if self.static_params['approximant'] in fd_det_sequence:
-            self.no_det_response = True
+            self.still_needs_det_response = True
 
         # reference waveform and bin edges
         self.f, self.df, self.end_time, self.det = {}, {}, {}, {}
         self.h00, self.h00_sparse = {}, {}
         self.fedges, self.edges = {}, {}
-        self.ta = {}
-        self.antenna_time = {}
+        self.ta, self.antenna_time = {}, {}
 
         # filtered summary data for linear approximation
         self.sdat = {}
@@ -231,15 +235,28 @@ class Relative(DistMarg, BaseGaussianNoise):
             fpoints = Array(self.f[ifo].astype(numpy.float64))
             fpoints = fpoints[self.kmin[ifo]:self.kmax[ifo]+1]
 
-            if self.no_det_response:
+            if self.still_needs_det_response:
                 wave = get_fd_det_waveform_sequence(ifos=ifo,
                                                     sample_points=fpoints,
                                                     **self.fid_params)
                 curr_wav = wave[ifo]
+                self.ta[ifo] = 0
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
-                curr_wav = fid_hp
+                # Apply detector response if not handled by
+                # the waveform generator
+                self.det[ifo] = Detector(ifo)
+                dt = self.det[ifo].time_delay_from_earth_center(
+                    self.fid_params["ra"],
+                    self.fid_params["dec"],
+                    self.fid_params["tc"],
+                )
+                self.ta[ifo] = self.fid_params["tc"] + dt
+                fp, fc = self.det[ifo].antenna_pattern(
+                    self.fid_params["ra"], self.fid_params["dec"],
+                    self.fid_params["polarization"], self.fid_params["tc"])
+                curr_wav = (fid_hp * fp + fid_hc * fc)
 
             # check for zeros at low and high frequencies
             # make sure only nonzero samples are included in bins
@@ -260,39 +277,16 @@ class Relative(DistMarg, BaseGaussianNoise):
                     "high-frequency-cutoff, final bin frequency "
                     "will be %s Hz", f_hi)
 
-            # make copy of fiducial wfs, adding back in low frequencies
-            if self.no_det_response:
-                curr_wav.resize(len(self.f[ifo]))
-                curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
-                # get detector-specific arrival times relative to end of data
-                self.ta[ifo] = -self.end_time[ifo]
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-                h00 = numpy.array(curr_wav) * tshift
-                self.h00[ifo] = h00
-            else:
-                fid_hp.resize(len(self.f[ifo]))
-                fid_hc.resize(len(self.f[ifo]))
-                hp0 = numpy.roll(fid_hp, self.kmin[ifo])
-                hc0 = numpy.roll(fid_hc, self.kmin[ifo])
+            self.ta[ifo] -= self.end_time[ifo]
+            curr_wav.resize(len(self.f[ifo]))
+            curr_wav = numpy.roll(curr_wav, self.kmin[ifo])
 
-                self.det[ifo] = Detector(ifo)
-                dt = self.det[ifo].time_delay_from_earth_center(
-                    self.fid_params["ra"],
-                    self.fid_params["dec"],
-                    self.fid_params["tc"],
-                )
-                self.ta[ifo] = self.fid_params["tc"] + dt - self.end_time[ifo]
+            # We'll apply this to the data, in lieu of the ref waveform
+            # This makes it easier to compare target signal to reference later
+            tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
+            self.h00[ifo] = numpy.array(curr_wav) # * tshift
+            data_shifted = self.data[ifo] * numpy.conjugate(tshift)
 
-                fp, fc = self.det[ifo].antenna_pattern(
-                    self.fid_params["ra"], self.fid_params["dec"],
-                    self.fid_params["polarization"], self.fid_params["tc"])
-
-                tshift = numpy.exp(-2.0j * numpy.pi * self.f[ifo] * self.ta[ifo])
-
-                h00 = (hp0 * fp + hc0 * fc) * tshift
-                self.h00[ifo] = h00
-
-            # compute frequency bins
             logging.info("Computing frequency bins")
             fbin_ind = setup_bins(
                 f_full=self.f[ifo], f_lo=f_lo, f_hi=f_hi,
@@ -302,13 +296,14 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             self.fedges[ifo] = self.f[ifo][fbin_ind]
             self.edges[ifo] = fbin_ind
-
-            self.init_from_frequencies(h00, fbin_ind, ifo)
-            self.antenna_time[ifo] = self.setup_antenna(earth_rotation,
-                                                        self.fedges[ifo])
+            self.init_from_frequencies(data_shifted, self.h00, fbin_ind, ifo)
+            self.antenna_time[ifo] = self.setup_antenna(
+                                        earth_rotation,
+                                        int(earth_rotation_mode),
+                                        self.fedges[ifo])
         self.combine_layout()
 
-    def init_from_frequencies(self, h00, fbin_ind, ifo):
+    def init_from_frequencies(self, data, h00, fbin_ind, ifo):
         bins = numpy.array(
             [
                 (fbin_ind[i], fbin_ind[i + 1])
@@ -317,7 +312,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         )
 
         # store low res copy of fiducial waveform
-        self.h00_sparse[ifo] = h00.copy().take(fbin_ind)
+        self.h00_sparse[ifo] = h00[ifo].copy().take(fbin_ind)
 
         # compute summary data
         logging.info(
@@ -325,8 +320,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.df[ifo],
         )
 
-        a0, a1 = self.summary_product(self.data[ifo], h00, bins, ifo)
-        b0, b1 = self.summary_product(h00, h00, bins, ifo)
+        a0, a1 = self.summary_product(data, h00[ifo], bins, ifo)
+        b0, b1 = self.summary_product(h00[ifo], h00[ifo], bins, ifo)
         self.sdat[ifo] = {"a0": a0, "a1": a1, "b0": abs(b0), "b1": abs(b1)}
 
     def combine_layout(self):
@@ -347,8 +342,9 @@ class Relative(DistMarg, BaseGaussianNoise):
                     self.edge_unique.append(Array(self.fedges[ifo]))
         logging.info("%s unique ifo layouts", len(self.edge_unique))
 
-    def setup_antenna(self, earth_rotation, fedges):
+    def setup_antenna(self, earth_rotation, mode, fedges):
         # Calculate the times to evaluate fp/fc
+        self.earth_rotation = earth_rotation
         if earth_rotation is not False:
             logging.info("Enabling frequency-dependent earth rotation")
             from pycbc.waveform.spa_tmplt import spa_length_in_time
@@ -357,14 +353,14 @@ class Relative(DistMarg, BaseGaussianNoise):
                 phase_order=-1,
                 mass1=self.fid_params["mass1"],
                 mass2=self.fid_params["mass2"],
-                f_lower=fedges,
+                f_lower=numpy.array(fedges) / mode * 2.0,
             )
             atimes = self.fid_params["tc"] - times
             self.lik = likelihood_parts_v
             self.mlik = likelihood_parts_multi_v
         else:
             atimes = self.fid_params["tc"]
-            if self.no_det_response:
+            if self.still_needs_det_response:
                 self.lik = likelihood_parts_det
             else:
                 self.lik = likelihood_parts
@@ -373,15 +369,32 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     @property
     def likelihood_function(self):
+        self.lformat = None
         if self.marginalize_vector_params:
             p = self.current_params
 
-            for k in ['ra', 'dec', 'tc']:
-                if k in p and not numpy.isscalar(p[k]):
-                    return likelihood_parts_vector
+            vmarg = set(k for k in self.marginalize_vector_params
+                        if not numpy.isscalar(p[k]))
 
-            if 'polarization' in p and not numpy.isscalar(p['polarization']):
-                return likelihood_parts_vectorp
+            if self.earth_rotation:
+                if set(['tc', 'polarization']).issubset(vmarg):
+                    self.lformat = 'earth_time_pol'
+                    return likelihood_parts_v_pol_time
+                elif set(['polarization']).issubset(vmarg):
+                    self.lformat = 'earth_pol'
+                    return likelihood_parts_v_pol
+                elif set(['tc']).issubset(vmarg):
+                    self.lformat = 'earth_time'
+                    return likelihood_parts_v_time
+            else:
+                if set(['ra', 'dec', 'tc']).issubset(vmarg):
+                    return likelihood_parts_vector
+                elif set(['tc', 'polarization']).issubset(vmarg):
+                    return likelihood_parts_vector
+                elif set(['tc']).issubset(vmarg):
+                    return likelihood_parts_vectort
+                elif set(['polarization']).issubset(vmarg):
+                    return likelihood_parts_vectorp
 
         return self.lik
 
@@ -408,7 +421,7 @@ class Relative(DistMarg, BaseGaussianNoise):
     def get_waveforms(self, params):
         """ Get the waveform polarizations for each ifo
         """
-        if self.no_det_response:
+        if self.still_needs_det_response:
             wfs = {}
             for ifo in self.data:
                 wfs.update(get_fd_det_waveform_sequence(
@@ -422,6 +435,8 @@ class Relative(DistMarg, BaseGaussianNoise):
             hc = hc.numpy()
             wfs.append((hp, hc))
         wf_ret = {ifo: wfs[self.ifo_map[ifo]] for ifo in self.data}
+
+        self.wf_ret = wf_ret
         return wf_ret
 
     @property
@@ -513,6 +528,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         norm = 0.0
         filt = 0j
         self._current_wf_parts = {}
+        pol_phase = numpy.exp(-2.0j * p['polarization'])
 
         for ifo in self.data:
             freqs = self.fedges[ifo]
@@ -524,25 +540,34 @@ class Relative(DistMarg, BaseGaussianNoise):
             # project waveform to detector frame if waveform does not deal
             # with detector response. Otherwise, skip detector response.
 
-            if self.no_det_response:
-                dtc = -end_time
+            if self.still_needs_det_response:
                 channel = wfs[ifo].numpy()
-                filter_i, norm_i = lik(freqs, dtc, channel, h00,
+                filter_i, norm_i = lik(freqs, 0.0, channel, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
                 fp, fc = det.antenna_pattern(p["ra"], p["dec"],
-                                             p["polarization"], times)
+                                             0.0, times)
                 dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-                dtc = p["tc"] + dt - end_time
+                dtc = p["tc"] + dt - end_time - self.ta[ifo]
 
-                filter_i, norm_i = lik(freqs, fp, fc, dtc,
-                                       hp, hc, h00,
-                                       sdat['a0'], sdat['a1'],
-                                       sdat['b0'], sdat['b1'])
-                self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
+                if self.lformat == 'earth_pol':
+                    filter_i, norm_i = lik(freqs, fp, fc, dtc, pol_phase,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
+                else:
+                    f = (fp + 1.0j * fc) * pol_phase
+                    fp = f.real.copy()
+                    fc = f.imag.copy()
+                    filter_i, norm_i = lik(freqs, fp, fc, dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
+                    self._current_wf_parts[ifo] = (fp, fc, dtc, hp, hc, h00)
+
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
@@ -567,6 +592,17 @@ class Relative(DistMarg, BaseGaussianNoise):
             attrs = fp[group].attrs
         for p, v in self.fid_params.items():
             attrs["{}_ref".format(p)] = v
+
+    def max_curvature_from_reference(self):
+        """ Return the maximum change in slope between frequency bins
+        relative to the reference waveform.
+        """
+        dmax = 0
+        for ifo in self.data:
+            r = self.wf_ret[ifo][0] / self.h00_sparse[ifo]
+            d = abs(numpy.diff(r / abs(r).min(), n=2)).max()
+            dmax = d if dmax < d else dmax
+        return dmax
 
     @staticmethod
     def extra_args_from_config(cp, section, skip_args=None, dtypes=None):
@@ -629,30 +665,27 @@ class RelativeTime(Relative):
         if not hasattr(self, '_ref_snr'):
             wfs = {ifo: (self.h00_sparse[ifo],
                          self.h00_sparse[ifo]) for ifo in self.h00_sparse}
-            self._ref_snr = self.get_snr(wfs, reference=True)
+            self._ref_snr = self.get_snr(wfs)
         return self._ref_snr
 
-    def get_snr(self, wfs, reference=False):
+    def get_snr(self, wfs):
         """ Return hp/hc maximized SNR time series
         """
         delta_t = 1.0 / self.sample_rate
         snrs = {}
         for ifo in wfs:
             sdat = self.sdat[ifo]
-            dtc = self.tstart[ifo] - self.end_time[ifo]
-
-            if reference:
-                dtc -= self.ta[ifo]
+            dtc = self.tstart[ifo] - self.end_time[ifo] - self.ta[ifo]
 
             snr = snr_predictor(self.fedges[ifo],
-                                dtc, delta_t,
-                                self.num_samples[ifo],
+                                dtc - delta_t * 2.0, delta_t,
+                                self.num_samples[ifo] + 4,
                                 wfs[ifo][0], wfs[ifo][1],
                                 self.h00_sparse[ifo],
                                 sdat['a0'], sdat['a1'],
                                 sdat['b0'], sdat['b1'])
             snrs[ifo] = TimeSeries(snr, delta_t=delta_t,
-                                   epoch=self.tstart[ifo])
+                                   epoch=self.tstart[ifo] - delta_t * 2.0)
         return snrs
 
     def _loglr(self):
@@ -677,8 +710,9 @@ class RelativeTime(Relative):
         lik = self.likelihood_function
         norm = 0.0
         filt = 0j
+        pol_phase = numpy.exp(-2.0j * p['polarization'])
 
-        self.snr_draw(self.get_snr(wfs))
+        self.snr_draw(wfs)
         p = self.current_params
 
         for ifo in self.data:
@@ -691,14 +725,31 @@ class RelativeTime(Relative):
             hp, hc = wfs[ifo]
             det = self.det[ifo]
             fp, fc = det.antenna_pattern(p["ra"], p["dec"],
-                                         p["polarization"], times)
-            dt = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
-            dtc = p["tc"] + dt - end_time
+                                         0, times)
+            times = det.time_delay_from_earth_center(p["ra"], p["dec"], times)
+            dtc = p["tc"] - end_time - self.ta[ifo]
 
-            filter_i, norm_i = lik(freqs, fp, fc, dtc,
-                                   hp, hc, h00,
-                                   sdat['a0'], sdat['a1'],
-                                   sdat['b0'], sdat['b1'])
+            if self.lformat == 'earth_time_pol':
+                filter_i, norm_i = lik(
+                                       freqs, fp, fc, times, dtc, pol_phase,
+                                       hp, hc, h00,
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
+            else:
+                f = (fp + 1.0j * fc) * pol_phase
+                fp = f.real.copy()
+                fc = f.imag.copy()
+                if self.lformat == 'earth_time':
+                    filter_i, norm_i = lik(
+                                           freqs, fp, fc, times, dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
+                else:
+                    filter_i, norm_i = lik(freqs, fp, fc, times + dtc,
+                                           hp, hc, h00,
+                                           sdat['a0'], sdat['a1'],
+                                           sdat['b0'], sdat['b1'])
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
@@ -712,7 +763,7 @@ class RelativeTimeDom(RelativeTime):
     """
     name = "relative_time_dom"
 
-    def get_snr(self, wfs, reference=False):
+    def get_snr(self, wfs):
         """ Return hp/hc maximized SNR time series
         """
         delta_t = 1.0 / self.sample_rate
@@ -721,10 +772,7 @@ class RelativeTimeDom(RelativeTime):
         self.hh = {}
         for ifo in wfs:
             sdat = self.sdat[ifo]
-            dtc = self.tstart[ifo] - self.end_time[ifo]
-
-            if reference:
-                dtc -= self.ta[ifo]
+            dtc = self.tstart[ifo] - self.end_time[ifo] - self.ta[ifo]
 
             sh, hh = snr_predictor_dom(self.fedges[ifo],
                                        dtc - delta_t * 2.0, delta_t,
@@ -764,28 +812,31 @@ class RelativeTimeDom(RelativeTime):
         p2 = p.copy()
         p2.pop('inclination')
         wfs = self.get_waveforms(p2)
-        snrs = self.get_snr(wfs)
 
         sh_total = hh_total = 0
-
         ic = numpy.cos(p['inclination'])
         ip = 0.5 * (1.0 + ic * ic)
         pol_phase = numpy.exp(-2.0j * p['polarization'])
 
-        self.snr_draw(snrs)
+        snrs = self.get_snr(wfs)
+        self.snr_draw(snrs=snrs)
 
         for ifo in self.sh:
-            dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
-                                                            p['tc'])
+            if self.precalc_antenna_factors:
+                fp, fc, dt = self.get_precalc_antenna_factors(ifo)
+            else:
+                dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
+                                                                p['dec'],
+                                                                p['tc'])
+                fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
+                                                       0, p['tc'])
             dts = p['tc'] + dt
-
-            fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                                   0, p['tc'])
             f = (fp + 1.0j * fc) * pol_phase
 
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
+
             sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0

@@ -29,6 +29,8 @@ provides additional abstraction and argument handling.
 import os
 import shutil
 import tempfile
+import subprocess
+from packaging import version
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
@@ -50,17 +52,17 @@ else
 fi
 
 # Check that the proxy is valid
-grid-proxy-info -exists
+ecp-cert-info -exists
 RESULT=${?}
 if [ ${RESULT} -eq 0 ] ; then
-  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+  PROXY_TYPE=`ecp-cert-info -type | tr -d ' '`
   if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
-    grid-proxy-info
+    ecp-cert-info
   else
     cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
     grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
     rm -f /tmp/x509up_u`id -u`.orig
-    grid-proxy-info
+    ecp-cert-info
   fi
 else
   echo "Error: Could not find a valid grid proxy to submit workflow."
@@ -788,6 +790,15 @@ class SubWorkflow(dax.SubWorkflow):
 
         self.add_planner_arg('pegasus.dir.storage.mapper.replica.file',
                              os.path.basename(output_map_file.name))
+        # Ensure output_map_file has the for_planning flag set. There's no
+        # API way to set this after the File is initialized, so we have to
+        # change the attribute here.
+        # WORSE, we only want to set this if the pegasus *planner* is version
+        # 5.0.4 or larger
+        sproc_out = subprocess.check_output(['pegasus-version']).strip()
+        sproc_out = sproc_out.decode()
+        if version.parse(sproc_out) >= version.parse('5.0.4'):
+            output_map_file.for_planning=True
         self.add_inputs(output_map_file)
 
         # I think this is needed to deal with cases where the subworkflow file

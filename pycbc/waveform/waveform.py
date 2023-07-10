@@ -36,6 +36,7 @@ from pycbc.fft import fft
 from pycbc import pnutils, libutils
 from pycbc.waveform import utils as wfutils
 from pycbc.waveform import parameters
+from pycbc.conversions import get_final_from_initial, tau_from_final_mass_spin
 from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
@@ -733,8 +734,8 @@ def get_fd_det_waveform(template=None, **kwargs):
         domain. Keys are requested data channels, values are FrequencySeries.
     """
     input_params = props(template, **kwargs)
-    input_params['delta_f'] = -1
-    input_params['f_lower'] = -1
+    if 'f_lower' not in input_params:
+        input_params['f_lower'] = -1
     if input_params['approximant'] not in fd_det:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
@@ -750,13 +751,24 @@ get_fd_det_waveform.__doc__ = get_fd_det_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
            include_label=False).lstrip(' '))
 
-def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
+def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     """ The base function to calculate time domain version of fourier
     domain approximant which not include or includes detector response.
     Called by `get_td_waveform_from_fd` and `get_td_det_waveform_from_fd_det`.
     """
     kwds = props(template, **params)
     nparams = kwds.copy()
+
+    if rwrap is None:
+        mass_spin_params = set(['mass1', 'mass2', 'spin1z', 'spin2z'])
+        if mass_spin_params.issubset(set(nparams.keys())):
+            m_final, spin_final = get_final_from_initial(
+                mass1=nparams['mass1'], mass2=nparams['mass2'],
+                spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
+            rwrap = tau_from_final_mass_spin(m_final, spin_final) * 10
+        else:
+            rwrap = 0.2
+
     if nparams['approximant'] not in _filter_time_lengths:
         raise ValueError("Approximant %s _filter_time_lengths function \
                          not available" % (nparams['approximant']))
@@ -766,6 +778,9 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=0.2, **params):
     while full_duration < duration * 1.5:
         full_duration = get_waveform_filter_length_in_time(**nparams)
         nparams['f_lower'] *= 0.99
+        if 't_obs_start' in nparams and \
+           full_duration >= nparams['t_obs_start']:
+            break
 
     if 'f_ref' not in nparams:
         nparams['f_ref'] = params['f_lower']

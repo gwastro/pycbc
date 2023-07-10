@@ -11,15 +11,19 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import time
 import pycbc.version
 import subprocess
+import logging
 import glob
+import pycbc
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+pycbc.init_logging(True)
 
 # -- General configuration -----------------------------------------------------
 
@@ -34,6 +38,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
               'sphinx.ext.napoleon', 'sphinx.ext.mathjax',
               'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
               'sphinx.ext.inheritance_diagram', 'sphinx_design',
+              "sphinxcontrib.jquery",
               ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -263,33 +268,70 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None,
-                       'h5py': ('http://docs.h5py.org/en/stable/', None),
-                      }
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/', None),
+    'h5py': ('http://docs.h5py.org/en/stable/', None),
+}
 
 napoleon_use_ivar = False
 
 suppress_warnings = ['image.nonlocal_uri']
 
-# build the dynamic files in _include
+
+
 def build_includes():
     """Creates rst files in the _include directory using the python scripts
     there.
 
     This will ignore any files in the _include directory that start with ``_``.
     """
-    print("Running scripts in _include:")
+    logging.info("Running scripts in _include:")
     cwd = os.getcwd()
     os.chdir('_include')
     pyfiles = glob.glob('*.py') + glob.glob('*.sh')
+    run_args = []
     for fn in pyfiles:
         if not fn.startswith('_'):
-            print(' {}'.format(fn))
             if fn.endswith('.py'):
-                subprocess.check_output(['python', fn])
+                exe = 'python'
             elif fn.endswith('.sh'):
-                subprocess.check_output(['bash', fn])
-            print('DONE with {}'.format(fn))
+                exe = 'bash'
+             
+            args = [exe, fn]
+            run_args.append(args)
+    
+    run_num = 2 # Number of scripts to run in parallel
+    i = 0
+    running = []
+    still_running = True
+    while still_running:
+        time.sleep(0.01) # Sleep so this process doesn't eat CPU time
+        if len(running) < run_num and i < len(run_args):
+            args = run_args[i]
+            proc = subprocess.Popen(args,
+                                    stdout=None, 
+                                    stderr=None)
+            logging.info('Running: {}'.format(' '.join(proc.args)))
+            i += 1
+            running.append(proc)
+
+        for proc in running:
+            status = proc.poll()
+            r = proc.returncode
+            
+            if status is not None:
+                if r == 0:
+                    print('DONE with :{}'.format(' '.join(proc.args)))
+                else:
+                    msg = "Failure to run {}".format(' '.join(proc.args))
+                    for p in running:
+                        p.terminate()
+                    raise RuntimeError(msg) 
+                running.remove(proc)   
+
+        if len(running) == 0 and i == len(run_args):
+            still_running = False
+
     os.chdir(cwd)
 
 if not 'SKIP_PYCBC_DOCS_INCLUDE' in os.environ:
@@ -299,8 +341,6 @@ def setup(app):
     app.add_js_file('typed.min.js')
     app.add_js_file('terminal.css')
     app.add_js_file("theme_overrides.css")
-
-
 
 # -- Options for inheritance graphs -------------------------------------------
 

@@ -1799,7 +1799,12 @@ def followup_event_significance(ifo, data_reader, bank,
                                 template_id, coinc_times,
                                 coinc_threshold=0.005,
                                 lookback=150, duration=0.095):
-    """ Followup an event in another detector and determine its significance
+    """Given a detector, a template waveform and a set of candidate event
+    times in different detectors, perform an on-source/off-source analysis
+    to determine if the SNR in the first detector has a significant peak
+    in the on-source window. The significance is given in terms of a
+    p-value. See Dal Canton et al. 2021 (https://arxiv.org/abs/2008.07494)
+    for details.
     """
     from pycbc.waveform import get_waveform_filter_length_in_time
     tmplt = bank.table[template_id]
@@ -1814,7 +1819,7 @@ def followup_event_significance(ifo, data_reader, bank,
 
     for cifo in coinc_times:
         time = coinc_times[cifo]
-        dtravel =  Detector(cifo).light_travel_time_to_detector(fdet)
+        dtravel = Detector(cifo).light_travel_time_to_detector(fdet)
         if time - dtravel > onsource_start:
             onsource_start = time - dtravel
         if time + dtravel < onsource_end:
@@ -1836,7 +1841,7 @@ def followup_event_significance(ifo, data_reader, bank,
         state_start_time = data_reader.strain.end_time \
                 - data_reader.reduced_pad * data_reader.strain.delta_t - bdur
         if not data_reader.state.is_extent_valid(state_start_time, bdur):
-            return None, None, None, None
+            return None
 
     # We won't require that all DQ checks be valid for now, except at
     # onsource time.
@@ -1844,7 +1849,7 @@ def followup_event_significance(ifo, data_reader, bank,
         dq_start_time = onsource_start - duration / 2.0
         dq_duration = onsource_end - onsource_start + duration
         if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
-            return None, None, None, None
+            return None
 
     # Calculate SNR time series for this duration
     htilde = bank.get_template(template_id, min_buffer=bdur)
@@ -1866,7 +1871,9 @@ def followup_event_significance(ifo, data_reader, bank,
     nsamples = int(len(bkg) / window)
 
     peaks = bkg[:nsamples*window].reshape(nsamples, window).max(axis=1)
-    pvalue = (1 + (peaks >= peak_value).sum()) / float(1 + nsamples)
+    num_louder_bg = (peaks >= peak_value).sum()
+    pvalue = (1 + num_louder_bg) / float(1 + nsamples)
+    pvalue_saturated = num_louder_bg == 0
 
     # Return recentered source SNR for bayestar, along with p-value, and trig
     peak_full = int((peak_time - snr.start_time) / snr.delta_t)
@@ -1878,7 +1885,13 @@ def followup_event_significance(ifo, data_reader, bank,
     logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
                  pvalue, nsamples)
 
-    return baysnr * norm, peak_time, pvalue, sigma2
+    return {
+        'snr_series': baysnr * norm,
+        'peak_time': peak_time,
+        'pvalue': pvalue,
+        'pvalue_saturated': pvalue_saturated,
+        'sigma2': sigma2
+    }
 
 def compute_followup_snr_series(data_reader, htilde, trig_time,
                                 duration=0.095, check_state=True,

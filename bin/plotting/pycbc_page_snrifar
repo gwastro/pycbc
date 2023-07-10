@@ -334,7 +334,7 @@ if not args.cumulative:
         ax2.plot([],[])
     pylab.sca(ax1)
 
-pylab.xlabel(r'Coincident Ranking Statistic')
+pylab.xlabel(r'Ranking Statistic')
 pylab.yscale('log')
 pylab.ylim(plot_ymin, plot_ymax * 10.0)
 pylab.xlim(plot_xmin, plot_xmax)
