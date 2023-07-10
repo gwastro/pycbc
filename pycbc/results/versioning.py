@@ -17,10 +17,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging
-import os
 import subprocess
 import urllib.parse
-from pycbc.results import save_fig_with_metadata, html_escape
 
 import lal, lalframe
 import pycbc.version, glue.git_version

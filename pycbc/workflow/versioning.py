@@ -21,18 +21,26 @@
 #
 # =============================================================================
 #
+"""
+Module to generate/manage the executable used for version information
+in workflows
+"""
+
 from urllib.request import pathname2url
 from urllib.parse import urljoin
-from pycbc.workflow.core import File, FileList, makedir, Executable, Node
+from pycbc.workflow.core import File, FileList, Executable
+
 
 class VersioningExecutable(Executable):
+    """
+    Executable for getting version information
+    """
     current_retention_level = Executable.FINAL_RESULT
 
-    def create_node(self):
-        node=Node(self)
-        return node
-
-def make_versioning_page(workflow, cp, out_dir, tags=None):
+def make_versioning_page(workflow, config_parser, out_dir, tags=None):
+    """
+    Make executable for versioning information
+    """
     vers_exe = VersioningExecutable(
         workflow.cp,
         'page_versioning',
@@ -43,11 +51,10 @@ def make_versioning_page(workflow, cp, out_dir, tags=None):
     node = vers_exe.create_node()
     exe_names = []
     exe_paths = []
-    for name, path in cp.items('executables'):
-        if path in exe_paths: continue
+    for name, path in config_parser.items('executables'):
         file_url = urljoin('file:', pathname2url(path))
         exe_to_test = File(workflow.ifos, '',
-                        workflow.analysis_time, file_url=file_url)
+                           workflow.analysis_time, file_url=file_url)
         exe_to_test.add_pfn(file_url, site='local')
         if exe_to_test in exe_paths:
             # executable is already part of the list,
