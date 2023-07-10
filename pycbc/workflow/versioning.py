@@ -55,7 +55,7 @@ def make_versioning_page(workflow, cp, out_dir, tags=None):
             # one already stored
             path_idx = exe_paths.index(exe_to_test)
             name_orig = exe_names[path_idx]
-            exe_names[path_idx] = f"{name_orig}, {exe_name}"
+            exe_names[path_idx] = f"{name_orig}, {name}"
         else:
             exe_names.append(name)
             exe_paths.append(exe_to_test)
