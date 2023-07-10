@@ -269,7 +269,7 @@ with ctx:
         'bank_chisq': float32,
         'bank_chisq_dof': int,
         'cont_chisq': float32,
-        'slide_shift': float32
+        'slide_id': int
         }
     ifo_out_vals = {
         'time_index': None,
@@ -280,7 +280,7 @@ with ctx:
         'bank_chisq': None,
         'bank_chisq_dof': None,
         'cont_chisq': None,
-        'slide_shift': None
+        'slide_id': None
         }
     ifo_names = sorted(ifo_out_vals.keys())
     network_out_types = {
@@ -605,7 +605,7 @@ with ctx:
                                 [event_mgr.ifo_dict[ifo]] * num_events
                                 )
                             # Time slide ID
-                            ifo_out_vals['slide_shift'] = time_slides[ifo][slide] * num_events
+                            ifo_out_vals['slide_id'] = [slide] * num_events
                             event_mgr.add_template_events_to_ifo(
                                 ifo, ifo_names,
                                 [ifo_out_vals[n] for n in ifo_names])
