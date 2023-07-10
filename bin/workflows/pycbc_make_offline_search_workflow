@@ -709,8 +709,6 @@ for inj_file, tag in zip(inj_files, inj_tags):
     # Set files for plots
     insps_dict[tag] = insps
 
-exit()
-
 # And the combined INJFIND file
 if len(files_for_combined_injfind) > 0:
     found_inj_comb = wf.find_injections_in_hdf_coinc(
@@ -880,7 +878,7 @@ layout.single_layout(base, ini_file)
 
 
 # Create versioning information
-create_versioning_page(rdir['workflow/version'], container.cp)
+#create_versioning_page(rdir['workflow/version'], container.cp)
 
 
 ############################ Finalization ####################################

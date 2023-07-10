@@ -540,10 +540,9 @@ class PyCBCInspiralExecutable(Executable):
         data_seg = segments.segment([int(data_seg[0]), int(data_seg[1])])
         fil.add_metadata('data_seg', data_seg)
         node.add_input_opt('--bank-file', parent)
-        print(df_parents)
         if df_parents is not None:
             node.add_input_list_opt('--frame-files', df_parents)
-        print(node._options)
+
         return node
 
     def get_valid_times(self):
