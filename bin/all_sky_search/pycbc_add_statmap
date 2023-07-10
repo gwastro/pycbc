@@ -378,8 +378,6 @@ if not injection_style:
     # Only output non-exclusive ifar/fap if it is _not_ an injection case
     f['foreground/ifar'][:] = fg_ifar
     f['foreground/fap'] = 1 - np.exp(-conv.sec_to_year(fg_time) / fg_ifar)
-else:
-    del f['foreground/ifar']
 
 del test_times
 
