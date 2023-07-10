@@ -37,6 +37,7 @@ class VersioningExecutable(Executable):
     """
     current_retention_level = Executable.FINAL_RESULT
 
+
 def make_versioning_page(workflow, config_parser, out_dir, tags=None):
     """
     Make executable for versioning information
