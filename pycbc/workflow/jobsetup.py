@@ -128,7 +128,6 @@ def select_generic_executable(workflow, exe_tag):
         'ligolw_add'               : LigolwAddExecutable,
         'lalapps_inspinj'          : LalappsInspinjExecutable,
         'pycbc_create_injections'  : PycbcCreateInjectionsExecutable,
-        'pycbc_dark_vs_bright_injections' : PycbcDarkVsBrightInjectionsExecutable,
         'pycbc_condition_strain'         : PycbcConditionStrainExecutable
     }
     try:
@@ -663,6 +662,11 @@ class PyCBCMultiInspiralExecutable(Executable):
     pycbc_multi_inspiral executable.
     """
     current_retention_level = Executable.ALL_TRIGGERS
+
+    # bank-veto-bank-file is a file input option for pycbc_multi_inspiral
+    file_input_options = Executable.file_input_options + \
+        ['--bank-veto-bank-file']
+
     def __init__(self, cp, name, ifo=None, injection_file=None,
                  gate_files=None, out_dir=None, tags=None):
         if tags is None:
@@ -988,82 +992,6 @@ class LalappsInspinjExecutable(Executable):
 
         node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
         node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
-        return node
-
-
-class PycbcDarkVsBrightInjectionsExecutable(Executable):
-    """
-    The clase used to create jobs for the pycbc_dark_vs_bright_injections Executable.
-    """
-    current_retention_level = Executable.FINAL_RESULT
-
-    def create_node(self, parent, segment, tags=None):
-        if tags is None:
-            tags = []
-        node = Node(self)
-        if not parent:
-            raise ValueError("Must provide an input file.")
-
-        node = Node(self)
-        # Standard injection file produced by lalapps_inspinj
-        # becomes the input here
-        node.add_input_opt('-i', parent)
-        if self.has_opt('write-compress'):
-            ext = '.xml.gz'
-        else:
-            ext = '.xml'
-        # The output are two files:
-        # 1) the list of potentially EM bright injections
-        tag=['POTENTIALLY_BRIGHT']
-        node.new_output_file_opt(segment, ext, '--output-bright',
-                                 store_file=self.retain_files, tags=tags+tag)
-        # 2) the list of EM dim injections
-        tag=['DIM_ONLY']
-        node.new_output_file_opt(segment,
-                                 ext, '--output-dim',
-                                 store_file=self.retain_files, tags=tags+tag)
-        return node
-
-class LigolwCBCJitterSkylocExecutable(Executable):
-    """
-    The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
-    """
-    current_retention_level = Executable.MERGED_TRIGGERS
-
-    def create_node(self, parent, segment, tags=None):
-        if tags is None:
-            tags = []
-        if not parent:
-            raise ValueError("Must provide an input file.")
-
-        node = Node(self)
-        node.add_input_opt('--input-file', parent)
-        output_file = File(parent.ifo_list, self.name,
-                           segment, extension='.xml', store_file=True,
-                           directory=self.out_dir, tags=tags)
-        node.add_output_opt('--output-file', output_file)
-
-        return node
-
-
-class LigolwCBCAlignTotalSpinExecutable(Executable):
-    """
-    The class used to create jobs for the ligolw_cbc_skyloc_jitter executable.
-    """
-    current_retention_level = Executable.MERGED_TRIGGERS
-
-    def create_node(self, parent, segment, tags=None):
-        if tags is None:
-            tags = []
-        if not parent:
-            raise ValueError("Must provide an input file.")
-
-        node = Node(self)
-        output_file = File(parent.ifo_list, self.name, segment,
-                           extension='.xml', store_file=self.retain_files,
-                           directory=self.out_dir, tags=tags)
-        node.add_output_opt('--output-file', output_file)
-        node.add_input_arg(parent)
         return node
 
 
