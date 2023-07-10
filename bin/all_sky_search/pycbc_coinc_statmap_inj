@@ -82,36 +82,20 @@ f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
+
     _, fnlouder_exc = significance.get_n_louder(
         back_stat,
         zdata.stat,
         dec_fac,
         **significance_dict[ifo_key])
+
     ifar_exc = background_time / (fnlouder_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
 
-    logging.info('calculating injection backgrounds')
-    ifotimes = numpy.array([zdata.data['%s/time' % ifo] for ifo in args.ifos])
-    ftimes = ifotimes.mean(axis=0)
-    start, end = ftimes - args.veto_window, ftimes + args.veto_window
-
-    fnlouder = numpy.zeros(len(ftimes), dtype=numpy.float32)
-    ifar = numpy.zeros(len(ftimes), dtype=numpy.float32)
-    fap = numpy.zeros(len(ftimes), dtype=numpy.float32)
-
-    # most of the triggers are here so presort to speed up later sorting
-    bsort = back_stat.argsort()
-    dec_fac = dec_fac[bsort]
-    back_stat = back_stat[bsort]
-
 else:
     f['foreground/ifar_exc'] = numpy.array([])
     f['foreground/fap_exc'] = numpy.array([])
-
-# Indicate that inclusive IFAR is not calculated
-f['foreground/ifar'] = numpy.array([])
-f['foreground/fap'] = numpy.array([])
 
 logging.info("Done")

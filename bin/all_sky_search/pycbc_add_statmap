@@ -266,19 +266,12 @@ def filter_dataset(h5file, name, idx):
 # multiple files
 for key in f['foreground'].keys():
     if key not in all_ifos:
-        if f['foreground/%s' % key].size == 0:
-            # This is an indicator that the column was specifically
-            # not calculated
-            logging.info('foreground/%s dataset is being ignored', key)
-            continue
         filter_dataset(f, 'foreground/%s' % key, cidx)
     else:  # key is an ifo
         for k in f['foreground/%s' % key].keys():
             filter_dataset(f, 'foreground/{}/{}'.format(key, k), cidx)
 
-fg_ifar_exc_init = f['foreground/ifar_exc'][:]
-
-n_triggers = fg_ifar_exc_init.size
+n_triggers = f['foreground/stat'].size
 
 logging.info('Calculating event times to determine which types of coinc '
              'are available')
