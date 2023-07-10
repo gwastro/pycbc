@@ -45,12 +45,20 @@ def make_versioning_page(workflow, cp, out_dir, tags=None):
     exe_paths = []
     for name, path in cp.items('executables'):
         if path in exe_paths: continue
-        exe_names.append(name)
         file_url = urljoin('file:', pathname2url(path))
         exe_to_test = File(workflow.ifos, '',
                         workflow.analysis_time, file_url=file_url)
         exe_to_test.add_pfn(file_url, site='local')
-        exe_paths.append(exe_to_test)
+        if exe_to_test in exe_paths:
+            # executable is already part of the list,
+            # find which index and add the name to the
+            # one already stored
+            path_idx = exe_paths.index(exe_to_test)
+            name_orig = exe_names[path_idx]
+            exe_names[path_idx] = f"{name_orig}, {exe_name}"
+        else:
+            exe_names.append(name)
+            exe_paths.append(exe_to_test)
     node.add_input_list_opt('--executables-files', FileList(exe_paths))
     node.add_list_opt('--executables-names', exe_names)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
