@@ -142,7 +142,7 @@ datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
                                            wf.setup_datafind_workflow(workflow,
                                            ssegs, "datafind",
                                            seg_file=science_seg_file,
-                                           tags=['full_data'] + hoft_tags)
+                                           tags=hoft_tags)
 
 final_veto_name = 'vetoes'
 final_veto_file = wf.get_segments_file(workflow, final_veto_name,
@@ -580,7 +580,7 @@ combined_inj_bg_files = {}
 
 files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
-    ctags = [tag, 'injections']
+    ctags = [tag.lower(), 'injections']
     output_dir = '%s_coinc' % tag
 
     if inj_file is not None:
@@ -593,6 +593,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
             file_for_injfind = inj_file
 
         files_for_combined_injfind.append(file_for_injfind)
+
+    print(datafind_files)
 
     # setup the matchedfilter jobs
     if inj_file is None:
@@ -609,7 +611,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
         datafind_files_inj = datafind_files
         analyzable_segs_inj = analyzable_segs
 
-
+    
     insps = wf.setup_matchedfltr_workflow(
         workflow,
         analyzable_segs_inj,
@@ -706,6 +708,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     # Set files for plots
     insps_dict[tag] = insps
+
+exit()
 
 # And the combined INJFIND file
 if len(files_for_combined_injfind) > 0:
