@@ -760,14 +760,20 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
     nparams = kwds.copy()
 
     if rwrap is None:
+        # In the `pycbc.waveform.parameters` module, spin1z and
+        # spin2z have the default value 0. Users must have input
+        # masses, so no else is needed.
         mass_spin_params = set(['mass1', 'mass2', 'spin1z', 'spin2z'])
         if mass_spin_params.issubset(set(nparams.keys())):
             m_final, spin_final = get_final_from_initial(
                 mass1=nparams['mass1'], mass2=nparams['mass2'],
                 spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
             rwrap = tau_from_final_mass_spin(m_final, spin_final) * 10
-        else:
-            rwrap = 0.2
+            if rwrap < 5:
+                # Long enough for very massive BBHs in XG detectors,
+                # up to (3000, 3000) solar mass, while still not a
+                # computational burden for 2G cases.
+                rwrap = 5
 
     if nparams['approximant'] not in _filter_time_lengths:
         raise ValueError("Approximant %s _filter_time_lengths function \
@@ -825,7 +831,7 @@ def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
                                         kwds['f_lower']))
         return wfs
 
-def get_td_waveform_from_fd(rwrap=0.2, **params):
+def get_td_waveform_from_fd(rwrap=None, **params):
     """ Return time domain version of fourier domain approximant.
 
     This returns a time domain version of a fourier domain approximant, with
@@ -850,7 +856,7 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     """
     return _base_get_td_waveform_from_fd(None, rwrap, **params)
 
-def get_td_det_waveform_from_fd_det(template=None, rwrap=0.2, **params):
+def get_td_det_waveform_from_fd_det(template=None, rwrap=None, **params):
     """ Return time domain version of fourier domain approximant which
     includes detector response, with padding and tapering at the start
     of the waveform.
