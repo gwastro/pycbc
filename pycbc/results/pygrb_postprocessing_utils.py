@@ -622,8 +622,9 @@ def load_time_slides(hdf_file_path):
     ids = numpy.arange(len(hdf_file[f'network/timeslides/{ifos[0]}']))
     time_slide_dict = {
         slide_id: {
-            ifo: hdf_file[f'network/timeslides/{ifo}'][slide_id] for ifo in ifos
-        } for slide_id in ids}
+            ifo: hdf_file[f'network/timeslides/{ifo}'][slide_id]
+            for ifo in ifos}
+        for slide_id in ids}
 
     # Check time_slide_ids are ordered correctly.
     if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0] == 0):
