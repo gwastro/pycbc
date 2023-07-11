@@ -23,7 +23,7 @@ import h5py
 import scipy.interpolate
 
 from ligo import segments
-from pycbc.types import FrequencySeries, load_frequencyseries, zeros, float32
+from pycbc.types import FrequencySeries, load_frequencyseries, zeros
 import pycbc.psd
 
 
@@ -52,7 +52,8 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     # Only include points above the low frequency cutoff
     if freq_data[0] > low_freq_cutoff:
         raise ValueError('Lowest frequency in input data '
-                         ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
+                         ' is higher than requested low-frequency cutoff '
+                         + str(low_freq_cutoff))
 
     kmin = int(low_freq_cutoff / delta_f)
     flow = kmin * delta_f
@@ -194,8 +195,13 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
                              low_freq_cutoff)
 
 
-class PrecomputedTimeVaryingPSD(object):
+class PrecomputedTimeVaryingPSD:
+    '''Class to read merge psd like files and to attach
+    appropriate PSD to the data segment
+    '''
+
     def __init__(self, file_name, length=None, delta_f=None, f_low=None):
+
         with h5py.File(file_name, 'r') as f:
             self.file_name = file_name
             detector = tuple(f.keys())[0]
@@ -244,6 +250,8 @@ class PrecomputedTimeVaryingPSD(object):
         return best_psd
 
     def get_psd(self, index, delta_f=None):
+        '''fetch psd based on index corresponding to times.
+        '''
         group = self.detector + '/psds/' + str(index)
         psd = load_frequencyseries(self.file_name, group=group)
         if delta_f is not None and psd.delta_f != delta_f:

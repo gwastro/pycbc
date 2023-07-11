@@ -318,17 +318,17 @@ def insert_psd_option_group_multi_ifo(parser):
                              "mean, median or median-mean.")
     psd_options.add_argument("--psd-segment-length", type=float, nargs="+",
                              action=MultiDetOptionAction, metavar='IFO:LENGTH',
-                             help="(Required for --psd-estimation) The segment "
-                             "length for PSD estimation (s)")
+                             help="(Required for --psd-estimation) The "
+                             "segment length for PSD estimation (s)")
     psd_options.add_argument("--psd-segment-stride", type=float, nargs="+",
                              action=MultiDetOptionAction, metavar='IFO:STRIDE',
-                             help="(Required for --psd-estimation) The separation"
-                             " between consecutive segments (s)")
+                             help="(Required for --psd-estimation) The "
+                             "separation between consecutive segments (s)")
     psd_options.add_argument("--psd-num-segments", type=int, nargs="+",
                              default=None,
                              action=MultiDetOptionAction, metavar='IFO:NUM',
-                             help="(Optional, used only with --psd-estimation). "
-                             "If given PSDs will be estimated using only "
+                             help="(Optional, used only with --psd-estimation)"
+                             " If given PSDs will be estimated using only "
                              "this number of segments. If more data is "
                              "given than needed to make this number of "
                              "segments than excess data will not be used in "
@@ -336,8 +336,8 @@ def insert_psd_option_group_multi_ifo(parser):
                              "the code will fail.")
     psd_options.add_argument("--psd-inverse-length", type=float, nargs="+",
                              action=MultiDetOptionAction, metavar='IFO:LENGTH',
-                             help="(Optional) The maximum length of the impulse"
-                             " response of the overwhitening filter (s)")
+                             help="(Optional) The maximum length of the "
+                             "impulse response of the overwhitening filter(s)")
     psd_options.add_argument("--invpsd-trunc-method", default=None,
                              choices=["hann"],
                              help="(Optional) What truncation method to use "
