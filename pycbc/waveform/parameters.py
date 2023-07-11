@@ -422,8 +422,7 @@ tc = Parameter("tc",
                            "reaches the origin of a certain coordinate system.")
 delta_tc = Parameter("delta_tc", dtype=float,
                      label=r"$\Delta t_c~(\rm{s})$",
-                     description="Coalesence time offset in " +
-                     "a certain coordinate system.")
+                     description="Coalesence time offset.")
 ra = Parameter("ra",
                dtype=float, default=0., label=r"$\alpha$",
                description="Right ascension (rad).")
