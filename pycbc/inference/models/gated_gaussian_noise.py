@@ -27,7 +27,7 @@ from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
-from pycbc.waveform.utils import (time_from_frequencyseries, apply_fd_time_shift)
+from pycbc.waveform.utils import time_from_frequencyseries
 from pycbc.waveform import generator
 from pycbc.filter import highpass
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
@@ -438,33 +438,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         if lfs is not None:
             opts.low_frequency_cutoff = lfs
         return out
-    
-    @staticmethod
-    def shift_to_integer_sample(fs, gate_end_time):
-        """Shift the frequency series by an amount of time such that the
-        gate_end_time lands on a specific data sample (chosen to be the
-        nearest floor data sample).
-        
-        Parameters
-        ----------
-        fs : FrequencySeries
-            Frequency series to be shifted.
-        gate_end_time : float
-            Gating end time.
-        
-        Returns
-        -------
-        fs_shift : FrequencySeries
-            Frequency series after being shifted
-        """
-        dt = 1 / fs.sample_rate
-        floor_idx = numpy.floor(
-            (gate_end_time - float(fs.start_time)) / dt).astype(int)
-        floor_time = float(fs.start_time) + floor_idx * dt
-        # offset is less than 0, so shifting to an earlier time
-        offset = floor_time - gate_end_time 
-        fs_shift = apply_fd_time_shift(fs, offset + fs.epoch, copy=True)
-        return fs_shift
 
     def write_metadata(self, fp, group=None):
         """Adds writing the psds, and analyzed detectors.
@@ -561,9 +534,9 @@ class GatedGaussianNoise(BaseGatedGaussian):
         float
             The value of the log likelihood.
         """
-        # generate the residuals
+        # generate the template waveform
         try:
-            rtildes = self.get_residuals()
+            wfs = self.get_waveforms()
         except NoWaveformError:
             return self._nowaveform_logl()
         except FailedWaveformError as e:
@@ -574,26 +547,26 @@ class GatedGaussianNoise(BaseGatedGaussian):
         gate_times = self.get_gate_times()
         logl = 0.
         self.current_proj.clear()
-        for det, rtilde in rtildes.items():
+        for det, h in wfs.items():
             invpsd = self._invpsds[det]
             norm = self.det_lognorm(det)
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
-            # get the end time of gating mask
-            gateenddelay = gatestartdelay + dgatedelay
-            rtilde_shift = self.shift_to_integer_sample(rtilde, gateenddelay)
-            res_shift = rtilde_shift.to_timeseries()
-            # gating
-            gated_res_shift = res_shift.gate(gatestartdelay + dgatedelay/2,
-                                             window=dgatedelay/2, copy=True,
-                                             invpsd=invpsd, method='paint')
-            self.current_proj[det] = (gated_res_shift.proj, gated_res_shift.projslc)
-            gated_rtilde_shift = gated_res_shift.to_frequencyseries()
+            # calculate the residual
+            data = self.td_data[det]
+            ht = h.to_timeseries()
+            res = data - ht
+            rtilde = res.to_frequencyseries()
+            gated_res = res.gate(gatestartdelay + dgatedelay/2,
+                                 window=dgatedelay/2, copy=True,
+                                 invpsd=invpsd, method='paint')
+            self.current_proj[det] = (gated_res.proj, gated_res.projslc)
+            gated_rtilde = gated_res.to_frequencyseries()
             # overwhiten
-            gated_rtilde_shift *= invpsd
-            rr = 4 * invpsd.delta_f * rtilde_shift[slc].inner(gated_rtilde_shift[slc]).real
+            gated_rtilde *= invpsd
+            rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
             logl += norm - 0.5*rr
         return float(logl)
 
