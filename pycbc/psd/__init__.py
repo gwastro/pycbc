@@ -21,12 +21,13 @@ from pycbc.psd.analytical import *
 from pycbc.psd.analytical_space import *
 from pycbc.psd.estimate import *
 from pycbc.psd.variation import *
-from pycbc.types import float32,float64
+from pycbc.types import float32, float64
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import DictOptionAction, MultiDetDictOptionAction
 from pycbc.types import copy_opts_for_single_ifo
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
+
 
 def from_cli(opt, length, delta_f, low_frequency_cutoff,
              strain=None, dyn_range_factor=1, precision=None):
@@ -66,7 +67,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         The frequency series containing the PSD.
     """
     f_low = low_frequency_cutoff
-    sample_rate = (length -1) * 2 * delta_f
+    sample_rate = (length - 1) * 2 * delta_f
 
     try:
         psd_estimation = opt.psd_estimation is not None
@@ -125,9 +126,10 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
 
     if opt.psd_inverse_length:
         psd = inverse_spectrum_truncation(psd,
-            int(opt.psd_inverse_length * sample_rate),
-            low_frequency_cutoff=f_low,
-            trunc_method=opt.invpsd_trunc_method)
+                                          int(opt.psd_inverse_length *
+                                              sample_rate),
+                                          low_frequency_cutoff=f_low,
+                                          trunc_method=opt.invpsd_trunc_method)
 
     if hasattr(opt, 'psd_output') and opt.psd_output:
         (psd.astype(float64) / (dyn_range_factor ** 2)).save(opt.psd_output)
@@ -140,17 +142,19 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         return psd.astype(float64)
     else:
         err_msg = "If provided the precision kwarg must be either 'single' "
-        err_msg += "or 'double'. You provided %s." %(precision)
+        err_msg += "or 'double'. You provided %s." % (precision)
         raise ValueError(err_msg)
 
+
 def from_cli_single_ifo(opt, length, delta_f, low_frequency_cutoff, ifo,
-             **kwargs):
+                        **kwargs):
     """
     Get the PSD for a single ifo when using the multi-detector CLI
     """
     single_det_opt = copy_opts_for_single_ifo(opt, ifo)
     return from_cli(single_det_opt, length, delta_f, low_frequency_cutoff,
                     **kwargs)
+
 
 def from_cli_multi_ifos(opt, length_dict, delta_f_dict,
                         low_frequency_cutoff_dict, ifos, strain_dict=None,
@@ -169,6 +173,7 @@ def from_cli_multi_ifos(opt, length_dict, delta_f_dict,
                                        strain=strain, **kwargs)
     return psd
 
+
 def insert_psd_option_group(parser, output=True, include_data_options=True):
     """
     Adds the options used to call the pycbc.psd.from_cli function to an
@@ -181,9 +186,9 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
         OptionParser instance.
     """
     psd_options = parser.add_argument_group(
-                          "Options to select the method of PSD generation",
-                          "The options --psd-model, --psd-file, --asd-file, "
-                          "and --psd-estimation are mutually exclusive.")
+        "Options to select the method of PSD generation",
+        "The options --psd-model, --psd-file, --asd-file, "
+        "and --psd-estimation are mutually exclusive.")
     psd_options.add_argument("--psd-model",
                              help="Get PSD from given analytical model. ",
                              choices=get_psd_model_list())
@@ -241,19 +246,14 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
     psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",
                              help="Maximum frequency to consider in strain "
                              "bandpass.")
+    psd_options.add_argument("--precomputed-psd-file", metavar='FILE',
+                             type=str, help='Given HDF5 MERGE PSD file '
+                             'as the option, appropriate PSD for each strain '
+                             'segment will be chosen and use which is '
+                             'precomputed. PSD from the strain data wil not '
+                             'be computed when this option is provided.')
 
-    #  psd_options.add_argument("--use-precomputed-psd", action="store_true", default=False,
-                        #  help='Use precomputed MERGE psd files to compute match. This requires --precomputed-psd-file to work')
-    # FIXME: We may need to use multiple files based on chunk if those are not
-    # generated in the workflow.
-    # psd_options.add_argument('--psd-files', metavar='FILE', nargs='*',
-                            #  help='PSDs from the given HDF5 files and pick the appropriate '
-                            #  'PSD for each injection')
-    psd_options.add_argument("--precomputed-psd-file", metavar='FILE', type=str,
-                            help='Given HDF5 MERGE PSD file as the option, appropriate '
-                            'PSD for each strain segment will be chosen and use which is precomputed. PSD from the strain data wil not be computed when this option is provided.')
-
-    if include_data_options :
+    if include_data_options:
         psd_options.add_argument("--psd-estimation",
                                  help="Measure PSD from the data, using "
                                  "given average method.",
@@ -276,9 +276,10 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                                  "is given, the code will fail.")
     if output:
         psd_options.add_argument("--psd-output",
-                          help="(Optional) Write PSD to specified file")
+                                 help="(Optional) Write PSD to specified file")
 
     return psd_options
+
 
 def insert_psd_option_group_multi_ifo(parser):
     """
@@ -292,59 +293,59 @@ def insert_psd_option_group_multi_ifo(parser):
         OptionParser instance.
     """
     psd_options = parser.add_argument_group(
-                          "Options to select the method of PSD generation",
-                          "The options --psd-model, --psd-file, --asd-file, "
-                          "and --psd-estimation are mutually exclusive.")
+        "Options to select the method of PSD generation",
+        "The options --psd-model, --psd-file, --asd-file, "
+        "and --psd-estimation are mutually exclusive.")
     psd_options.add_argument("--psd-model", nargs="+",
-                          action=MultiDetOptionAction, metavar='IFO:MODEL',
-                          help="Get PSD from given analytical model. "
-                          "Choose from %s" %(', '.join(get_psd_model_list()),))
+                             action=MultiDetOptionAction, metavar='IFO:MODEL',
+                             help="Get PSD from given analytical model. "
+                             "Choose from %s" % (', '.join(get_psd_model_list()),))
     psd_options.add_argument("--psd-extra-args",
                              nargs='+', action=MultiDetDictOptionAction,
                              metavar='DETECTOR:PARAM:VALUE', default={},
                              type=float, help="(optional) Extra arguments "
                              "passed to the PSD models.")
     psd_options.add_argument("--psd-file", nargs="+",
-                          action=MultiDetOptionAction, metavar='IFO:FILE',
-                          help="Get PSD using given PSD ASCII file")
+                             action=MultiDetOptionAction, metavar='IFO:FILE',
+                             help="Get PSD using given PSD ASCII file")
     psd_options.add_argument("--asd-file", nargs="+",
-                          action=MultiDetOptionAction, metavar='IFO:FILE',
-                          help="Get PSD using given ASD ASCII file")
+                             action=MultiDetOptionAction, metavar='IFO:FILE',
+                             help="Get PSD using given ASD ASCII file")
     psd_options.add_argument("--psd-estimation", nargs="+",
-                          action=MultiDetOptionAction, metavar='IFO:FILE',
-                          help="Measure PSD from the data, using given "
-                          "average method. Choose from "
-                          "mean, median or median-mean.")
+                             action=MultiDetOptionAction, metavar='IFO:FILE',
+                             help="Measure PSD from the data, using given "
+                             "average method. Choose from "
+                             "mean, median or median-mean.")
     psd_options.add_argument("--psd-segment-length", type=float, nargs="+",
-                          action=MultiDetOptionAction, metavar='IFO:LENGTH',
-                          help="(Required for --psd-estimation) The segment "
-                               "length for PSD estimation (s)")
+                             action=MultiDetOptionAction, metavar='IFO:LENGTH',
+                             help="(Required for --psd-estimation) The segment "
+                             "length for PSD estimation (s)")
     psd_options.add_argument("--psd-segment-stride", type=float, nargs="+",
-                          action=MultiDetOptionAction, metavar='IFO:STRIDE',
-                          help="(Required for --psd-estimation) The separation"
-                               " between consecutive segments (s)")
+                             action=MultiDetOptionAction, metavar='IFO:STRIDE',
+                             help="(Required for --psd-estimation) The separation"
+                             " between consecutive segments (s)")
     psd_options.add_argument("--psd-num-segments", type=int, nargs="+",
-                          default=None,
-                          action=MultiDetOptionAction, metavar='IFO:NUM',
-                          help="(Optional, used only with --psd-estimation). "
-                               "If given PSDs will be estimated using only "
-                               "this number of segments. If more data is "
-                               "given than needed to make this number of "
-                               "segments than excess data will not be used in "
-                               "the PSD estimate. If not enough data is given "
-                               "the code will fail.")
+                             default=None,
+                             action=MultiDetOptionAction, metavar='IFO:NUM',
+                             help="(Optional, used only with --psd-estimation). "
+                             "If given PSDs will be estimated using only "
+                             "this number of segments. If more data is "
+                             "given than needed to make this number of "
+                             "segments than excess data will not be used in "
+                             "the PSD estimate. If not enough data is given "
+                             "the code will fail.")
     psd_options.add_argument("--psd-inverse-length", type=float, nargs="+",
-                          action=MultiDetOptionAction, metavar='IFO:LENGTH',
-                          help="(Optional) The maximum length of the impulse"
-                          " response of the overwhitening filter (s)")
+                             action=MultiDetOptionAction, metavar='IFO:LENGTH',
+                             help="(Optional) The maximum length of the impulse"
+                             " response of the overwhitening filter (s)")
     psd_options.add_argument("--invpsd-trunc-method", default=None,
                              choices=["hann"],
                              help="(Optional) What truncation method to use "
                                   "when applying psd-inverse-length. If not "
                                   "provided, a hard truncation will be used.")
     psd_options.add_argument("--psd-output", nargs="+",
-                          action=MultiDetOptionAction, metavar='IFO:FILE',
-                          help="(Optional) Write PSD to specified file")
+                             action=MultiDetOptionAction, metavar='IFO:FILE',
+                             help="(Optional) Write PSD to specified file")
 
     # Options for PSD variation
     psd_options.add_argument("--psdvar-segment", type=float,
@@ -372,9 +373,11 @@ def insert_psd_option_group_multi_ifo(parser):
 
     return psd_options
 
+
 ensure_one_opt_groups = []
 ensure_one_opt_groups.append(['--psd-file', '--psd-model',
                               '--psd-estimation', '--asd-file'])
+
 
 def verify_psd_options(opt, parser):
     """Parses the CLI options and verifies that they are consistent and
@@ -400,7 +403,8 @@ def verify_psd_options(opt, parser):
     if psd_estimation:
         required_opts(opt, parser,
                       ['--psd-segment-stride', '--psd-segment-length'],
-                      required_by = "--psd-estimation")
+                      required_by="--psd-estimation")
+
 
 def verify_psd_options_multi_ifo(opt, parser, ifos):
     """Parses the CLI options and verifies that they are consistent and
@@ -421,8 +425,10 @@ def verify_psd_options_multi_ifo(opt, parser, ifos):
 
         if opt.psd_estimation[ifo]:
             required_opts_multi_ifo(opt, parser, ifo,
-                      ['--psd-segment-stride', '--psd-segment-length'],
-                          required_by = "--psd-estimation")
+                                    ['--psd-segment-stride',
+                                        '--psd-segment-length'],
+                                    required_by="--psd-estimation")
+
 
 def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
                               dyn_range_factor=1., precision=None):
@@ -466,7 +472,7 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
     if not opt.psd_estimation:
         psd = from_cli(opt, flen, delta_f, flow, strain=gwstrain,
                        dyn_range_factor=dyn_range_factor, precision=precision)
-        psds_and_times = [ (0, len(gwstrain), psd) ]
+        psds_and_times = [(0, len(gwstrain), psd)]
         return psds_and_times
 
     # Figure out the data length used for PSD generation
@@ -489,15 +495,16 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
     if input_data_len < psd_data_len:
         err_msg = "Input data length must be longer than data length needed "
         err_msg += "to estimate a PSD. You specified that a PSD should be "
-        err_msg += "estimated with %d seconds. " %(psd_data_len)
-        err_msg += "Input data length is %d seconds. " %(input_data_len)
+        err_msg += "estimated with %d seconds. " % (psd_data_len)
+        err_msg += "Input data length is %d seconds. " % (input_data_len)
         raise ValueError(err_msg)
     elif input_data_len == psd_data_len:
         num_psd_measurements = 1
         psd_stride = 0
     else:
         num_psd_measurements = int(2 * (input_data_len-1) / psd_data_len)
-        psd_stride = int((input_data_len - psd_data_len) / num_psd_measurements)
+        psd_stride = int((input_data_len - psd_data_len) /
+                         num_psd_measurements)
 
     for idx in range(num_psd_measurements):
         if idx == (num_psd_measurements - 1):
@@ -509,8 +516,9 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         strain_part = gwstrain[start_idx:end_idx]
         psd = from_cli(opt, flen, delta_f, flow, strain=strain_part,
                        dyn_range_factor=dyn_range_factor, precision=precision)
-        psds_and_times.append( (start_idx, end_idx, psd) )
+        psds_and_times.append((start_idx, end_idx, psd))
     return psds_and_times
+
 
 def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
                                dyn_range_factor=1., precision=None):
@@ -555,7 +563,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
             inp_seg = segments.segment(fd_segment.start_time,
                                        fd_segment.end_time)
             best_psd = tpsd.assosiate_psd_to_inspiral_segment(inp_seg,
-                                                         delta_f=fd_segment.delta_f)
+                                                              delta_f=fd_segment.delta_f)
             if best_psd is None:
                 err_msg = "No PSDs found intersecting segment!"
                 raise ValueError(err_msg)
@@ -563,14 +571,14 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
 
     else:
         psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
-                                        flow, dyn_range_factor=dyn_range_factor,
-                                        precision=precision)
+                                                   flow, dyn_range_factor=dyn_range_factor,
+                                                   precision=precision)
 
         for fd_segment in fd_segments:
             best_psd = None
             psd_overlap = 0
             inp_seg = segments.segment(fd_segment.seg_slice.start,
-                                    fd_segment.seg_slice.stop)
+                                       fd_segment.seg_slice.stop)
             for start_idx, end_idx, psd in psds_and_times:
                 psd_seg = segments.segment(start_idx, end_idx)
                 if psd_seg.intersects(inp_seg):
@@ -583,6 +591,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
                 raise ValueError(err_msg)
             fd_segment.psd = best_psd
 
+
 def associate_psds_to_single_ifo_segments(opt, fd_segments, gwstrain, flen,
                                           delta_f, flow, ifo,
                                           dyn_range_factor=1., precision=None):
@@ -594,6 +603,7 @@ def associate_psds_to_single_ifo_segments(opt, fd_segments, gwstrain, flen,
     associate_psds_to_segments(single_det_opt, fd_segments, gwstrain, flen,
                                delta_f, flow, dyn_range_factor=dyn_range_factor,
                                precision=precision)
+
 
 def associate_psds_to_multi_ifo_segments(opt, fd_segments, gwstrain, flen,
                                          delta_f, flow, ifos,
@@ -613,5 +623,5 @@ def associate_psds_to_multi_ifo_segments(opt, fd_segments, gwstrain, flen,
             segments = None
 
         associate_psds_to_single_ifo_segments(opt, segments, strain, flen,
-                delta_f, flow, ifo, dyn_range_factor=dyn_range_factor,
-                precision=precision)
+                                              delta_f, flow, ifo, dyn_range_factor=dyn_range_factor,
+                                              precision=precision)

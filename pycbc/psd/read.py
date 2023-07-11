@@ -26,6 +26,7 @@ from ligo import segments
 from pycbc.types import FrequencySeries, load_frequencyseries, zeros, float32
 import pycbc.psd
 
+
 def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     """Interpolate n PSD (as two 1-dimensional arrays of frequency and data)
     to the desired length, delta_f and low frequency cutoff.
@@ -51,12 +52,13 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     # Only include points above the low frequency cutoff
     if freq_data[0] > low_freq_cutoff:
         raise ValueError('Lowest frequency in input data '
-          ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
+                         ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
 
     kmin = int(low_freq_cutoff / delta_f)
     flow = kmin * delta_f
 
-    data_start = (0 if freq_data[0]==low_freq_cutoff else numpy.searchsorted(freq_data, flow) - 1)
+    data_start = (0 if freq_data[0] == low_freq_cutoff else numpy.searchsorted(
+        freq_data, flow) - 1)
 
     # If the cutoff is exactly in the file, start there
     if freq_data[data_start+1] == low_freq_cutoff:
@@ -122,7 +124,7 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
     """
     file_data = numpy.loadtxt(filename)
     if (file_data < 0).any() or \
-                            numpy.logical_not(numpy.isfinite(file_data)).any():
+            numpy.logical_not(numpy.isfinite(file_data)).any():
         raise ValueError('Invalid data in ' + filename)
 
     freq_data = file_data[:, 0]
@@ -132,6 +134,7 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
 
     return from_numpy_arrays(freq_data, noise_data, length, delta_f,
                              low_freq_cutoff)
+
 
 def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
              root_name='psd'):
@@ -214,11 +217,15 @@ class PrecomputedTimeVaryingPSD(object):
         best_psd = None
         if inp_seg[0] > self.end or inp_seg[1] < self.begin:
             err_msg = "PSD file doesn't contain require times. \n"
-            err_msg += "PSDs are within range ({}, {})".format(self.begin, self.end)
+            err_msg += "PSDs are within range ({}, {})".format(self.begin,
+                                                               self.end)
             raise ValueError(err_msg)
-        sidx = numpy.argpartition(numpy.abs(self.start_times - inp_seg[0]), 2)[:2]
-        nearest = segments.segment(self.start_times[sidx[0]], self.end_times[sidx[0]])
-        next_nearest = segments.segment(self.start_times[sidx[1]], self.end_times[sidx[1]])
+        sidx = numpy.argpartition(numpy.abs(self.start_times - inp_seg[0]),
+                                  2)[:2]
+        nearest = segments.segment(
+            self.start_times[sidx[0]], self.end_times[sidx[0]])
+        next_nearest = segments.segment(
+            self.start_times[sidx[1]], self.end_times[sidx[1]])
 
         psd_overlap = 0
         if inp_seg.intersects(nearest):
@@ -243,7 +250,7 @@ class PrecomputedTimeVaryingPSD(object):
             psd = pycbc.psd.interpolate(psd, delta_f)
         if self.length is not None and self.length != len(psd):
             psd2 = FrequencySeries(zeros(self.length, dtype=psd.dtype),
-                                    delta_f=psd.delta_f)
+                                   delta_f=psd.delta_f)
             if self.length > len(psd):
                 psd2[:] = numpy.inf
                 psd2[0:len(psd)] = psd
@@ -256,4 +263,3 @@ class PrecomputedTimeVaryingPSD(object):
             psd[0:k] = numpy.inf
 
         return psd
-
