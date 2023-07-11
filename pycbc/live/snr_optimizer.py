@@ -234,16 +234,6 @@ optimize_funcs = {
 # For each optimizer, we have a dictionary of the options, its help
 # message and default value
 
-# TODO: Add the options for the initial array
-#parser.add_argument('--include-candidate-in-optimizer', action='store_true',
-#             help='Include parameters of the candidate event in the '
-#             'initialised array for the optimizer. Only relevant for '
-#             '--optimizer pso or differential_evolution')
-# parser.add_argument('--seed', type=int, default=42,
-#             help='Seed to supply to the random generation of initial '
-#             'array to pass to the optimizer. Only relevant for '
-#             '--optimizer pso or differential_evolution')
-
 option_dict = {
     'differential_evolution': {
         'maxiter': ('The maximum number of generations over which the entire '
