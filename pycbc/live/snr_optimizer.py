@@ -265,21 +265,36 @@ option_dict = {
         'c2': ('The hyperparameter c2: the social parameter.', 2.0),
         'w': ('The hyperparameter w: the inertia parameter.', 0.01),
     },
+    'include-candidate-in-optimizer': ('Include parameters of the candidate '
+                                       'event in the initialised array for the '
+                                       'optimizer. Only relevant for '
+                                       '--optimizer pso or '
+                                       'differential_evolution', False),
+    'seed': ('Seed to supply to the random generation of initial array to pass '
+             'to the optimizer. Only relevant for --optimizer pso or '
+             'differential_evolution', 42),
 }
 
 def insert_snr_optimizer_options(parser):
-    opt_opt_group = parser.add_argument_group(
-        "SNR optimizer "
-        "configuration options."
-    )
+    opt_opt_group = parser.add_argument_group("SNR optimizer configuration options.")
     # Option to choose which optimizer to use:
     optimizer_choices = sorted(list(option_dict.keys()))
     opt_opt_group.add_argument('--optimizer',
         type=str,
         default='differential_evolution',
         choices=optimizer_choices,
-        help='The optimizer to use, choose from '
-              ', '.join(optimizer_choices))
+        help='The optimizer to use, choose from ' + ', '.join(optimizer_choices))
+
+    # Add the generic options
+    opt_opt_group.add_argument('--include-candidate-in-optimizer',
+        action='store_true',
+        help='Include parameters of the candidate event in the initialized array for the optimizer. '
+             'Only relevant for --optimizer pso or differential_evolution')
+    opt_opt_group.add_argument('--seed',
+        type=int,
+        default=42,
+        help='Seed to supply to the random generation of initial array to pass to the optimizer. '
+             'Only relevant for --optimizer pso or differential_evolution')
 
     # For each optimizer, add the possible options
     for optimizer, option_subdict in option_dict.items():
@@ -291,6 +306,7 @@ def insert_snr_optimizer_options(parser):
                 help=f'Only relevant for --optimizer {optimizer}: ' +
                      opt_help_default[0] +
                      f' Default = {opt_help_default[1]}')
+
 
 def check_snr_optimizer_options(args, parser):
     """
@@ -308,7 +324,8 @@ def check_snr_optimizer_options(args, parser):
     # Have any options been given for a different optimizer?
     # If so, raise a warning
     for k in options.keys():
-        if args.optimizer == k: continue
+        if args.optimizer == k:
+            continue
         if any(options[k]):
             parser.error("Argument has been supplied which is not suitable " +
                          f"for the optimizer given ({args.optimizer})")
