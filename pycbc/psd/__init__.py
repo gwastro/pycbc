@@ -530,7 +530,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
         required attributes (psd_model, psd_file, asd_file, psd_estimation,
-        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output).
+        psd_segment_length, psd_segment_stride, psd_inverse_length, psd_output)
     fd_segments : StrainSegments.fourier_segments() object
         The fourier transforms of the various analysis segments. The psd
         attribute of each segment is updated to point to the appropriate PSD.
@@ -562,17 +562,18 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         for fd_segment in fd_segments:
             inp_seg = segments.segment(fd_segment.start_time,
                                        fd_segment.end_time)
-            best_psd = tpsd.assosiate_psd_to_inspiral_segment(inp_seg,
-                                                              delta_f=fd_segment.delta_f)
+            best_psd = tpsd.assosiate_psd_to_inspiral_segment(
+                inp_seg, delta_f=fd_segment.delta_f)
             if best_psd is None:
                 err_msg = "No PSDs found intersecting segment!"
                 raise ValueError(err_msg)
             fd_segment.psd = best_psd
 
     else:
-        psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
-                                                   flow, dyn_range_factor=dyn_range_factor,
-                                                   precision=precision)
+        psds_and_times = \
+            generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
+                                      dyn_range_factor=dyn_range_factor,
+                                      precision=precision)
 
         for fd_segment in fd_segments:
             best_psd = None
@@ -600,8 +601,9 @@ def associate_psds_to_single_ifo_segments(opt, fd_segments, gwstrain, flen,
     CLI
     """
     single_det_opt = copy_opts_for_single_ifo(opt, ifo)
-    associate_psds_to_segments(single_det_opt, fd_segments, gwstrain, flen,
-                               delta_f, flow, dyn_range_factor=dyn_range_factor,
+    associate_psds_to_segments(single_det_opt, fd_segments,
+                               gwstrain, flen, delta_f, flow,
+                               dyn_range_factor=dyn_range_factor,
                                precision=precision)
 
 
@@ -622,6 +624,6 @@ def associate_psds_to_multi_ifo_segments(opt, fd_segments, gwstrain, flen,
         else:
             segments = None
 
-        associate_psds_to_single_ifo_segments(opt, segments, strain, flen,
-                                              delta_f, flow, ifo, dyn_range_factor=dyn_range_factor,
-                                              precision=precision)
+        associate_psds_to_single_ifo_segments(
+            opt, segments, strain, flen, delta_f, flow,
+            ifo, dyn_range_factor=dyn_range_factor, precision=precision)

@@ -250,7 +250,7 @@ class PrecomputedTimeVaryingPSD:
         return best_psd
 
     def get_psd(self, index, delta_f=None):
-        '''fetch psd based on index corresponding to times.
+        '''Fetch psd based on index corresponding to times.
         '''
         group = self.detector + '/psds/' + str(index)
         psd = load_frequencyseries(self.file_name, group=group)
