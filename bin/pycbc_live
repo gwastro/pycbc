@@ -113,7 +113,6 @@ class LiveEventManager(object):
         if self.run_snr_optimization:
             # preestimate the number of CPU cores that we can afford giving
             # to followup processes without slowing down the main search
-            available_cores = len(os.sched_getaffinity(0))
             bg_cores = len(tuple(itertools.combinations(ifos, 2)))
             analysis_cores = 1 + bg_cores
             if platform.system() != 'Darwin':
@@ -1119,14 +1118,6 @@ with ctx:
                 args.min_psd_abort_distance,
                 args.max_psd_abort_distance
             )
-
-            if data_reader[ifo].psd is not None:
-                dist = data_reader[ifo].psd.dist
-                if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
-                    logging.info("%s PSD dist %s outside acceptable range [%s, %s]",
-                                 ifo, dist, args.min_psd_abort_distance,
-                                 args.max_psd_abort_distance)
-                    status = False
 
             if status is True:
                 if ifo not in evnt.skymap_only_ifos:
