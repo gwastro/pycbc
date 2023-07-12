@@ -90,8 +90,7 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         output_fp.close()
 
     else:
-        # TODO: We could support other schemes such as gsiftp by
-        # calling out to globus-url-copy
+        # TODO: We could support other schemes as needed
         errmsg = "Unknown URL scheme: %s\n" % (u.scheme)
         errmsg += "Currently supported are: file, http, and https."
         raise ValueError(errmsg)
