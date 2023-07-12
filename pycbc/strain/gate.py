@@ -177,7 +177,7 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     # remove the projection into the null space
     proj = linalg.solve_toeplitz(tdfilter[:(rindex + 1 - lindex)],
                                  owhgated_data[lindex:rindex+1])
-    data[lindex:rindex] -= proj
+    data[lindex:rindex+1] -= proj
     data.projslc = (lindex, rindex)
     data.proj = proj
     return data

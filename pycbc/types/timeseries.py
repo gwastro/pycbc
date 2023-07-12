@@ -607,14 +607,19 @@ class TimeSeries(Array):
             # shift data such that gate_end_time lands on a specific data sample
             fdata = data.to_frequencyseries()
             rindex_time = data.sample_times[rindex]
-            # offset is less than 0, so shifting to an earlier time
             offset = rindex_time - (time + window)
-            fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=False)
+            fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=copy)
             # gate and paint in time domain
-            data = gate_and_paint(fdata.to_timeseries(), lindex, rindex, invpsd, copy=False)
+            data = fdata.to_timeseries()
+            data = gate_and_paint(data, lindex, rindex, invpsd, copy=copy)
             # shift back to the original time
-            return apply_fd_time_shift(data.to_frequencyseries(), -offset + fdata.epoch, 
-                                        copy=False).to_timeseries()
+            fdata = data.to_frequencyseries()
+            fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=copy)
+            tdata = fdata.to_timeseries()
+            # fill in projslc information
+            tdata.projslc = data.projslc
+            tdata.proj = data.proj
+            return tdata
         elif method == 'hard':
             tslice = data.time_slice(time - window, time + window)
             tslice[:] = 0
