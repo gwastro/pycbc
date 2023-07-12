@@ -197,7 +197,7 @@ class Executable(pegasus_workflow.Executable):
             # need to do anything here, as I cannot easily check it exists.
             exe_path = exe_url.path
         else:
-            # Could be http, gsiftp, etc. so it needs fetching if run now
+            # Could be http, https, etc. so it needs fetching if run now
             self.needs_fetching = True
             if self.needs_fetching and not self.installed:
                 err_msg = "Non-file path URLs cannot be used unless the "
