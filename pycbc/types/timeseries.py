@@ -604,22 +604,25 @@ class TimeSeries(Array):
             rindex = int((time + window - self.start_time) / self.delta_t)
             lindex = lindex if lindex >= 0 else 0
             rindex = rindex if rindex <= len(self) else len(self)
-            # shift data such that gate_end_time lands on a specific data sample
-            fdata = data.to_frequencyseries()
             rindex_time = data.sample_times[rindex]
             offset = rindex_time - (time + window)
-            fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=copy)
-            # gate and paint in time domain
-            data = fdata.to_timeseries()
-            data = gate_and_paint(data, lindex, rindex, invpsd, copy=copy)
-            # shift back to the original time
-            fdata = data.to_frequencyseries()
-            fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=copy)
-            tdata = fdata.to_timeseries()
-            # fill in projslc information
-            tdata.projslc = data.projslc
-            tdata.proj = data.proj
-            return tdata
+            if offset == 0:
+                return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+            else:
+                # time shift such that gate end time lands on a specific data sample
+                fdata = data.to_frequencyseries()
+                fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=False)
+                # gate and paint in time domain
+                data = fdata.to_timeseries()
+                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                # shift back to the original time
+                fdata = data.to_frequencyseries()
+                fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
+                tdata = fdata.to_timeseries()
+                # fill in projslc information
+                tdata.projslc = data.projslc
+                tdata.proj = data.proj
+                return tdata
         elif method == 'hard':
             tslice = data.time_slice(time - window, time + window)
             tslice[:] = 0
