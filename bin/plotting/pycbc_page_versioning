@@ -9,7 +9,8 @@ pycbc results pages
 import argparse, logging
 import pycbc.version
 from pycbc import init_logging
-from pycbc.results import save_fig_with_metadata, html_escape, get_library_version_info, get_code_version_numbers
+from pycbc.results import (save_fig_with_metadata, html_escape,
+    get_library_version_info, get_code_version_numbers)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action="version",
