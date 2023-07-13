@@ -277,8 +277,10 @@ for trigger_file, injection_file in zip(args.trigger_files,
             # This is a coincident statmap file
             fo[key].attrs['pivot'] = fkey.attrs['pivot']
             fo[key].attrs['fixed'] = fkey.attrs['fixed']
-        fo[key].attrs['foreground_time'] = fkey.attrs['foreground_time']
-        fo[key].attrs['foreground_time_exc'] = fkey.attrs['foreground_time_exc']
+        if 'foreground_time' in fkey.attrs.keys():
+            fo[key].attrs['foreground_time'] = fkey.attrs['foreground_time']
+        if 'foreground_time_exc' in fkey.attrs.keys():
+            fo[key].attrs['foreground_time_exc'] = fkey.attrs['foreground_time_exc']
 
     hdf_append(fo, 'missed/all', missed + injection_index)
     hdf_append(fo, 'missed/within_analysis', missed_within_time + injection_index)
