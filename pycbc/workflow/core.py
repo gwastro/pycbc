@@ -147,7 +147,12 @@ class Executable(pegasus_workflow.Executable):
         self.update_output_directory(out_dir=out_dir)
 
         # Determine the level at which output files should be kept
-        self.update_current_retention_level(self.current_retention_level)
+        if cp.has_option_tags('pegasus_profile-%s' % name,
+                              'pycbc|discard_output', tags):
+            # Flag to say not to keep file, whatever the retention level
+            self.update_current_retention_level(-1)
+        else:
+            self.update_current_retention_level(self.current_retention_level)
 
         # Should I reuse this executable?
         if reuse_executable:
