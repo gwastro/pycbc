@@ -25,9 +25,7 @@
 Module to generate/manage the executable used for version information
 in workflows
 """
-
-from urllib.request import pathname2url
-from urllib.parse import urljoin
+import os
 from pycbc.workflow.core import File, FileList, Executable
 
 
@@ -50,25 +48,22 @@ def make_versioning_page(workflow, config_parser, out_dir, tags=None):
         tags=tags,
     )
     node = vers_exe.create_node()
-    exe_names = []
-    exe_paths = []
+    config_names = []
+    exes = []
     for name, path in config_parser.items('executables'):
-        file_url = urljoin('file:', pathname2url(path))
-        exe_to_test = File(workflow.ifos, '',
-                           workflow.analysis_time, file_url=file_url)
-        exe_to_test.add_pfn(file_url, site='local')
-        if exe_to_test in exe_paths:
+        exe_to_test = os.path.basename(path)
+        if exe_to_test in exes:
             # executable is already part of the list,
             # find which index and add the name to the
             # one already stored
-            path_idx = exe_paths.index(exe_to_test)
-            name_orig = exe_names[path_idx]
-            exe_names[path_idx] = f"{name_orig},{name}"
+            path_idx = exes.index(exe_to_test)
+            name_orig = config_names[path_idx]
+            config_names[path_idx] = f"{name_orig},{name}"
         else:
-            exe_names.append(name)
-            exe_paths.append(exe_to_test)
-    node.add_input_list_opt('--executables-files', FileList(exe_paths))
-    node.add_list_opt('--executables-names', exe_names)
+            config_names.append(name)
+            exes.append(exe_to_test)
+    node.add_list_opt('--executables', exes)
+    node.add_list_opt('--executables-names', config_names)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow.add_node(node)
 

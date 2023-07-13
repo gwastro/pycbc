@@ -385,7 +385,7 @@ ini_file = _workflow.FileList([_workflow.File(wflow.ifos, '',
                                               wflow.analysis_time,
                                               file_url='file://' + ini_file_path)])
 layout.single_layout(base, ini_file)
- 
+
 # Create versioning information
 wf.make_versioning_page(
     _workflow,
