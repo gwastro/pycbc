@@ -47,6 +47,14 @@ from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
 
+# FIXME: Are these names suitably descriptive?
+_retention_choices = {
+    'do_not_keep' : 0,
+    'all_files' : 1,
+    'all_triggers' : 2,
+    'merged_triggers' : 3,
+    'results' : 4
+}
 
 def make_analysis_dir(path):
     """
@@ -148,9 +156,12 @@ class Executable(pegasus_workflow.Executable):
 
         # Determine the level at which output files should be kept
         if cp.has_option_tags('pegasus_profile-%s' % name,
-                              'pycbc|discard_output', tags):
-            # Flag to say not to keep file, whatever the retention level
-            self.update_current_retention_level(-1)
+                              'pycbc|retention_level', tags):
+            cfg_ret_level = cp.get_opt_tags('pegasus_profile-%s' % name,
+                                            'pycbc|retention_level', tags)
+            self.update_current_retention_level(
+                _retention_choices[cfg_ret_level]
+            )
         else:
             self.update_current_retention_level(self.current_retention_level)
 
@@ -482,16 +493,9 @@ class Executable(pegasus_workflow.Executable):
             self.global_retention_threshold = 1
             self.cp.set("workflow", "file-retention-level", "all_files")
         else:
-            # FIXME: Are these names suitably descriptive?
-            retention_choices = {
-                                 'all_files' : 1,
-                                 'all_triggers' : 2,
-                                 'merged_triggers' : 3,
-                                 'results' : 4
-                                }
             try:
                 self.global_retention_threshold = \
-                      retention_choices[global_retention_level]
+                      _retention_choices[global_retention_level]
             except KeyError:
                 err_msg = "Cannot recognize the file-retention-level in the "
                 err_msg += "[workflow] section of the ini file. "
