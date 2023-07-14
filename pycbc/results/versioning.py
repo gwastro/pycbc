@@ -144,7 +144,7 @@ def get_code_version_numbers(executable_names, executable_files):
                 version_string = subprocess.check_output(
                     [value.path, '--version'],
                     stderr=subprocess.STDOUT
-                )
+                ).decode()
             except subprocess.CalledProcessError:
                 version_string = "Executable fails on {} --version"
                 version_string = version_string.format(value.path)

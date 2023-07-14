@@ -26,7 +26,7 @@ Module to generate/manage the executable used for version information
 in workflows
 """
 import os
-from pycbc.workflow.core import File, FileList, Executable
+from pycbc.workflow.core import Executable
 
 
 class VersioningExecutable(Executable):

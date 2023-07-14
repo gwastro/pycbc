@@ -51,7 +51,6 @@ code_version_dict = get_code_version_numbers(
 
 html_text += f'<h2>Version Information from Executables</h2>:<br>\n'
 for key, value in code_version_dict.items():
-    value = value.decode()
     html_text += '<li><b>%s</b>:<br><pre>%s</pre></li><hr><br><br>\n' \
         % (key, str(value).replace('@', '&#64;'))
 
