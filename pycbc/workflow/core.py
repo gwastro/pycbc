@@ -56,6 +56,7 @@ _retention_choices = {
     'results' : 4
 }
 
+
 def make_analysis_dir(path):
     """
     Make the analysis directory path, any parent directories that don't already
