@@ -23,7 +23,37 @@ from pycbc.events import select_segments_by_definer, coinc
 from pycbc.io import get_all_subkeys
 import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file
+import numpy as np
 import pycbc.version
+
+def get_params(curr_idx, times, tids, bank_id, bank_data, fsdt):
+    params = {}
+    for ifo in times:
+        params['%s_end_time' % ifo] = times[ifo][curr_idx]
+        try:
+            # Only present for precessing case
+            params['u_vals_%s'%ifo] = \
+                                 fsdt[ifo][ifo]['u_vals'][tids[ifo][curr_idx]]
+        except:
+            pass
+    params['mean_time'] = coinc.mean_if_greater_than_zero([times[ifo][curr_idx]
+                                                    for ifo in times])[0]
+
+    params['mass1'] = bank_data['mass1'][bank_id]
+    params['mass2'] = bank_data['mass2'][bank_id]
+    params['spin1z'] = bank_data['spin1z'][bank_id]
+    params['spin2z'] = bank_data['spin2z'][bank_id]
+    params['f_lower'] = bank_data['f_lower'][bank_id]
+    # don't require precessing template info if not present
+    try:
+        params['spin1x'] = bank_data['spin1x'][bank_id]
+        params['spin1y'] = bank_data['spin1y'][bank_id]
+        params['spin2x'] = bank_data['spin2x'][bank_id]
+        params['spin2y'] = bank_data['spin2y'][bank_id]
+        params['inclination'] = bank_data['inclination'][bank_id]
+    except KeyError:
+        pass
+    return params
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -54,6 +84,9 @@ parser.add_argument('--sort-order', default='descending',
                     choices=['ascending','descending'],
                     help='Which direction to use when sorting on '
                          '--sort-variable. Default=descending')
+parser.add_argument('--ifar-thresh-for-upload-prep', type=float,
+                    help="IFAR threshold for preparing SNR timeseries "
+                         "files for upload. Default=No upload")
 
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
@@ -188,40 +221,26 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                              ifo_times, args.output_dir, special_tids=ifo_tids,
                              tags=args.tags + [str(event_count)])
 
-    params = {}
-    for ifo in times:
-        params['%s_end_time' % ifo] = times[ifo][curr_idx]
-        try:
-            # Only present for precessing case
-            params['u_vals_%s'%ifo] = \
-                                 fsdt[ifo][ifo]['u_vals'][tids[ifo][curr_idx]]
-        except:
-            pass
+    params = get_params(curr_idx, times, tids, bank_id, bank_data, fsdt)
 
-    params['mass1'] = bank_data['mass1'][bank_id]
-    params['mass2'] = bank_data['mass2'][bank_id]
-    params['spin1z'] = bank_data['spin1z'][bank_id]
-    params['spin2z'] = bank_data['spin2z'][bank_id]
-    params['f_lower'] = bank_data['f_lower'][bank_id]
-    # don't require precessing template info if not present
-    try:
-        params['spin1x'] = bank_data['spin1x'][bank_id]
-        params['spin1y'] = bank_data['spin1y'][bank_id]
-        params['spin2x'] = bank_data['spin2x'][bank_id]
-        params['spin2y'] = bank_data['spin2y'][bank_id]
-        params['inclination'] = bank_data['inclination'][bank_id]
-    except KeyError:
-        pass
+    sngl_tmplt_files, sngl_tmplt_plots = mini.make_single_template_plots(
+        workflow,
+        insp_segs,
+        args.inspiral_data_read_name,
+        args.inspiral_data_analyzed_name,
+        params,
+        args.output_dir,
+        data_segments=insp_data_seglists,
+        tags=args.tags + [str(event_count)]
+    )
+    files += sngl_tmplt_plots
 
-    files += mini.make_single_template_plots(workflow, insp_segs,
-                                    args.inspiral_data_read_name,
-                                    args.inspiral_data_analyzed_name, params,
-                                    args.output_dir,
-                                    tags=args.tags + [str(event_count)])
 
     for single in single_triggers:
         time = times[single.ifo][curr_idx]
         if time==-1:
+            # If this detector did not trigger, still make the plot, but use
+            # the average time of detectors which did trigger
             time = coinc.mean_if_greater_than_zero([times[sngl.ifo][curr_idx]
                                                     for sngl in single_triggers])[0]
         for seg in insp_analysed_seglists[single.ifo]:
@@ -241,5 +260,48 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
 
     layouts += list(layout.grouper(files, 2))
 
-workflow.save()
 layout.two_column_layout(args.output_dir, layouts)
+
+# For foreground events, we will make single_template files for all events
+# with IFAR above a threshold
+
+ifar_limit = args.ifar_thresh_for_upload_prep
+if file_val == 'foreground' and ifar_limit:
+    # Get indices of all events which pass the IFAR threshold
+    event_ifars = f['{}/ifar'.format(file_val)][:]
+    events_to_read = np.count_nonzero(event_ifars > ifar_limit)
+    # Sort by IFAR, descending
+    event_idx = event_ifars.argsort()[::-1][:events_to_read]
+    # Save to a subdirectory of the main one
+    single_template_dir = os.path.join(args.output_dir, "single_template_files")
+    files = wf.FileList([])
+    # Times and tids need to be reset for this set of events:
+    times = {}
+    tids = {}
+    # Version used for multi-ifo coinc code
+    ifo_list = f.attrs['ifos'].split(' ')
+    for ifo in ifo_list:
+        times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
+        tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
+    for curr_idx in range(event_idx.size):
+
+        params = get_params(curr_idx, times, tids, bank_id, bank_data, fsdt)
+        for ifo in ifo_list:
+            if params['mean_time'] not in insp_analysed_seglists[ifo]:
+                continue
+            data = mini.make_single_template_files(
+                workflow,
+                insp_segs,
+                ifo,
+                args.inspiral_data_read_name,
+                args.inspiral_data_analyzed_name,
+                params,
+                single_template_dir,
+                store_file=True,
+                use_mean_time=True,
+                tags=args.tags+['upload', str(curr_idx)],
+            )
+            files += data
+
+
+workflow.save()

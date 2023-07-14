@@ -340,10 +340,124 @@ class PlotQScanExecutable(PlotExecutable):
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
+def make_single_template_files(workflow, segs, ifo, data_read_name, analyzed_name,
+                               params, out_dir, inj_file=None, exclude=None,
+                               require=None, tags=None, store_file=False,
+                               use_mean_time=False, use_exact_inj_params=False):
+    """Function for creating jobs to run the pycbc_single_template code and
+    add these jobs to the workflow.
+
+    Parameters
+    -----------
+    workflow : workflow.Workflow instance
+        The pycbc.workflow.Workflow instance to add these jobs to.
+    segs : workflow.File instance
+        The pycbc.workflow.File instance that points to the XML file containing
+        the segment lists of data read in and data analyzed.
+    ifo: str
+        The name of the interferometer
+    data_read_name : str
+        The name of the segmentlist containing the data read in by each
+        inspiral job in the segs file.
+    analyzed_name : str
+        The name of the segmentlist containing the data analyzed by each
+        inspiral job in the segs file.
+    params : dictionary
+        A dictionary containing the parameters of the template to be used.
+        params[ifo+'end_time'] is required for all ifos in workflow.ifos.
+        If use_exact_inj_params is False then also need to supply values for
+        [mass1, mass2, spin1z, spin2x]. For precessing templates one also
+        needs to supply [spin1y, spin1x, spin2x, spin2y, inclination]
+        additionally for precession one must supply u_vals or
+        u_vals_+ifo for all ifos. u_vals is the ratio between h_+ and h_x to
+        use when constructing h(t). h(t) = (h_+ * u_vals) + h_x.
+    out_dir : str
+        Directory in which to store the output files.
+    inj_file : workflow.File (optional, default=None)
+        If given send this injection file to the job so that injections are
+        made into the data.
+    exclude : list (optional, default=None)
+        If given, then when considering which subsections in the ini file to
+        parse for options to add to single_template_plot, only use subsections
+        that *do not* match strings in this list.
+    require : list (optional, default=None)
+        If given, then when considering which subsections in the ini file to
+        parse for options to add to single_template_plot, only use subsections
+        matching strings in this list.
+    tags : list (optional, default=None)
+        The tags to use for this job.
+    store_file : boolean (optional, default=False)
+        Keep the output files of this job.
+    use_mean_time : boolean (optional, default=False)
+        Use the mean time as the center time for all ifos
+    use_exact_inj_params : boolean (optional, default=False)
+        If True do not use masses and spins listed in the params dictionary
+        but instead use the injection closest to the filter time as a template.
+
+    Returns
+    --------
+    output_files : workflow.FileList
+        The list of workflow.Files created in this function.
+    """
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'single_template'
+    secs = requirestr(workflow.cp.get_subsections(name), require)
+    secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
+    # Reanalyze the time around the trigger in each detector
+    curr_exe = SingleTemplateExecutable(workflow.cp, 'single_template',
+                                        ifos=[ifo], out_dir=out_dir,
+                                        tags=tags)
+    start = int(params[ifo + '_end_time'])
+    end = start + 1
+    cseg = segments.segment([start, end])
+    node = curr_exe.create_node(valid_seg=cseg)
+
+    if use_exact_inj_params:
+        node.add_opt('--use-params-of-closest-injection')
+    else:
+        node.add_opt('--mass1', "%.6f" % params['mass1'])
+        node.add_opt('--mass2', "%.6f" % params['mass2'])
+        node.add_opt('--spin1z',"%.6f" % params['spin1z'])
+        node.add_opt('--spin2z',"%.6f" % params['spin2z'])
+        node.add_opt('--template-start-frequency',
+                     "%.6f" % params['f_lower'])
+        # Is this precessing?
+        if 'u_vals' in params or 'u_vals_%s' % ifo in params:
+            node.add_opt('--spin1x',"%.6f" % params['spin1x'])
+            node.add_opt('--spin1y',"%.6f" % params['spin1y'])
+            node.add_opt('--spin2x',"%.6f" % params['spin2x'])
+            node.add_opt('--spin2y',"%.6f" % params['spin2y'])
+            node.add_opt('--inclination',"%.6f" % params['inclination'])
+            try:
+                node.add_opt('--u-val',"%.6f" % params['u_vals'])
+            except:
+                node.add_opt('--u-val',
+                             "%.6f" % params['u_vals_%s' % ifo])
+
+    # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
+    if params[ifo + '_end_time'] > 0 and not use_mean_time:
+        str_trig_time = f"{params[ifo + '_end_time']:.6f}"
+    else:
+        str_trig_time = f"{params['mean_time']:.6f}"
+    node.add_opt('--trigger-time', str_trig_time)
+    node.add_input_opt('--inspiral-segments', segs)
+    if inj_file is not None:
+        node.add_input_opt('--injection-file', inj_file)
+    node.add_opt('--data-read-name', data_read_name)
+    node.add_opt('--data-analyzed-name', analyzed_name)
+    node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                             '--output-file', store_file=store_file)
+    workflow += node
+    return node.output_files
+
+
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
-                                  params, out_dir, inj_file=None, exclude=None,
-                                  require=None, tags=None, params_str=None,
-                                  use_exact_inj_params=False):
+                               params, out_dir, inj_file=None, exclude=None,
+                               data_segments=None,
+                               require=None, tags=None, params_str=None,
+                               use_exact_inj_params=False):
     """Function for creating jobs to run the pycbc_single_template code and
     to run the associated plotting code pycbc_single_template_plots and add
     these jobs to the workflow.
@@ -383,6 +497,10 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
         If given, then when considering which subsections in the ini file to
         parse for options to add to single_template_plot, only use subsections
         matching strings in this list.
+    data_segments : dictionary of segment lists
+        Dictionary of segment lists keyed on the IFO. Used to decide if an
+        IFO is plotted if there is valid data. If not given, will plot if
+        the IFO produced a trigger whihc contributed to the event
     tags : list (optional, default=None)
         Add this list of tags to all jobs.
     params_str : str (optional, default=None)
@@ -394,8 +512,12 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
 
     Returns
     --------
-    output_files : workflow.FileList
-        The list of workflow.Files created in this function.
+    plot_files : workflow.FileList
+        The list of workflow.Files created by single_template_plot jobs
+        in this function.
+    plot_files : workflow.FileList
+        The list of workflow.Files created by single_template jobs
+        in this function.
     """
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -403,58 +525,37 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
     secs = excludestr(secs, workflow.ifo_combinations)
-    files = FileList([])
+    hdf_files = FileList([])
+    plot_files = FileList([])
+    valid = {}
+    for ifo in workflow.ifos:
+        valid[ifo] = params['mean_time'] in data_segments[ifo] if data_segments \
+                else params['%s_end_time' % ifo] > 0
     for tag in secs:
         for ifo in workflow.ifos:
-            if params['%s_end_time' % ifo] == -1.0:
+            if not valid[ifo]:
+                # If the IFO is not being used, continue
                 continue
-            # Reanalyze the time around the trigger in each detector
-            curr_exe = SingleTemplateExecutable(workflow.cp, 'single_template',
-                                                ifos=[ifo], out_dir=out_dir,
-                                                tags=[tag] + tags)
-            start = int(params[ifo + '_end_time'])
-            end = start + 1
-            cseg = segments.segment([start, end])
-            node = curr_exe.create_node(valid_seg=cseg)
-
-            if use_exact_inj_params:
-                node.add_opt('--use-params-of-closest-injection')
-            else:
-                node.add_opt('--mass1', "%.6f" % params['mass1'])
-                node.add_opt('--mass2', "%.6f" % params['mass2'])
-                node.add_opt('--spin1z',"%.6f" % params['spin1z'])
-                node.add_opt('--spin2z',"%.6f" % params['spin2z'])
-                node.add_opt('--template-start-frequency',
-                             "%.6f" % params['f_lower'])
-                # Is this precessing?
-                if 'u_vals' in params or 'u_vals_%s' % ifo in params:
-                    node.add_opt('--spin1x',"%.6f" % params['spin1x'])
-                    node.add_opt('--spin1y',"%.6f" % params['spin1y'])
-                    node.add_opt('--spin2x',"%.6f" % params['spin2x'])
-                    node.add_opt('--spin2y',"%.6f" % params['spin2y'])
-                    node.add_opt('--inclination',"%.6f" % params['inclination'])
-                    try:
-                        node.add_opt('--u-val',"%.6f" % params['u_vals'])
-                    except:
-                        node.add_opt('--u-val',
-                                     "%.6f" % params['u_vals_%s' % ifo])
-
-            # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
-            str_trig_time = '%.6f' %(params[ifo + '_end_time'])
-            node.add_opt('--trigger-time', str_trig_time)
-            node.add_input_opt('--inspiral-segments', segs)
-            if inj_file is not None:
-                node.add_input_opt('--injection-file', inj_file)
-            node.add_opt('--data-read-name', data_read_name)
-            node.add_opt('--data-analyzed-name', analyzed_name)
-            node.new_output_file_opt(workflow.analysis_time, '.hdf',
-                                     '--output-file', store_file=False)
-            data = node.output_files[0]
-            workflow += node
+            data = make_single_template_files(
+                workflow,
+                segs,
+                ifo,
+                data_read_name,
+                analyzed_name,
+                params,
+                out_dir,
+                inj_file=inj_file,
+                exclude=exclude,
+                require=require,
+                tags=tags + [tag],
+                store_file=False,
+                use_exact_inj_params=use_exact_inj_params
+            )
+            hdf_files += data
             # Make the plot for this trigger and detector
             node = PlotExecutable(workflow.cp, name, ifos=[ifo],
                               out_dir=out_dir, tags=[tag] + tags).create_node()
-            node.add_input_opt('--single-template-file', data)
+            node.add_input_opt('--single-template-file', data[0])
             node.new_output_file_opt(workflow.analysis_time, '.png',
                                      '--output-file')
             title="'%s SNR and chi^2 timeseries" %(ifo)
@@ -474,8 +575,8 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                          params['spin2z'])
             node.add_opt('--plot-caption', caption)
             workflow += node
-            files += node.output_files
-    return files
+            plot_files += node.output_files
+    return hdf_files, plot_files
 
 def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
                             require=None, tags=None):

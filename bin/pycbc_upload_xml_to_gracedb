@@ -36,10 +36,14 @@ from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 from pycbc.io.live import gracedb_tag_with_version
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.ligolw import (
+    LIGOLWContentHandler,
+    snr_series_to_xml,
+)
 from pycbc.psd import interpolate
-from pycbc.types import FrequencySeries
-from pycbc.results import generate_asd_plot
+from pycbc.types import FrequencySeries, TimeSeries
+from pycbc.results import generate_asd_plot, generate_snr_plot
+from gwpy.time import to_gps
 
 def check_gracedb_for_event(gdb_handle, query, far):
     """
@@ -70,6 +74,8 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to upload')
+parser.add_argument("--snr-timeseries", nargs='+', required=True,
+                    help='HDF file(s) containing the SNR timeseries to upload')
 parser.add_argument('--input-file', required=True, type=str,
                     help='Input LIGOLW XML file of coincidences.')
 parser.add_argument('--log-message', type=str, metavar='MESSAGE',
@@ -130,6 +136,18 @@ for psd_file in args.psd_files:
     psds[ifo] = segmentlist(psd_segment(*segargs) for segargs in zip(
         psd, group["start_time"], group["end_time"]))
 
+snr_timeseries = {}
+snr_epoch = {}
+snr_delta_t = {}
+for snr_filename in args.snr_timeseries:
+    with h5py.File(snr_filename, 'r') as snr_f:
+        ifo = snr_f.attrs['ifo']
+        time = snr_f.attrs['event_time']
+        snr_timeseries[(ifo, time)] = snr_f['snr'][:]
+        snr_epoch[time] = snr_f['snr'].attrs['start_time']
+        snr_delta_t[time] = snr_f['snr'].attrs['delta_t']
+
+
 coinc_table = lsctables.CoincTable.get_table(xmldoc)
 coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
 coinc_event_map_table = lsctables.CoincMapTable.get_table(xmldoc)
@@ -172,6 +190,7 @@ for event in coinc_table:
     psddict = {}
     lal_psddict = {}
     sample_freqs = {}
+    snr_series_curr_event = {}
     for sngl in sngl_inspiral_table:
         if sngl.event_id in sngl_ids:
             sngl_inspiral_table_curr.append(sngl)
@@ -208,6 +227,21 @@ for event in coinc_table:
             fseries.data.data = psd_fs[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
             lal_psddict[sngl.ifo] = fseries
 
+            match = [abs(snrk[1] - sngl.end) < 0.1 and snrk[0] == sngl.ifo
+                     for snrk in snr_timeseries.keys()]
+            idx = np.flatnonzero(match)[0]
+            ts_key = list(snr_timeseries.keys())[idx]
+            snr_series_curr_event[sngl.ifo] = TimeSeries(
+                    snr_timeseries[ts_key],
+                    delta_t=snr_delta_t[ts_key[1]],
+                    epoch=snr_epoch[ts_key[1]],
+                    dtype=np.csingle,
+            )
+            snr_series_to_xml(snr_series_curr_event[sngl.ifo], xmldoc, sngl.event_id)
+
+
+
+
     xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].appendChild(coinc_inspiral_table_curr)
     xmldoc.childNodes[-1].appendChild(coinc_event_map_table_curr)
@@ -221,6 +255,22 @@ for event in coinc_table:
     fullpath_xml = os.path.join(args.output_directory, filename_xml)
 
     ligolw_utils.write_filename(xmldoc, fullpath_xml)
+
+    # Making SNR / PSD file for uploading
+    snr_hdf_fname = f'{ifos_str}-PYCBC_{id_str}-{time:d}-1.hdf'
+    fullpath_hdf = os.path.join(args.output_directory, snr_hdf_fname)
+    with h5py.File(fullpath_hdf, 'w') as snr_hdf:
+        for ifo in snr_series_curr_event.keys():
+            ifo_gr = snr_hdf.create_group(ifo)
+            ifo_gr['snr'] = snr_series_curr_event[ifo]
+            ifo_gr['snr'].attrs['delta_t'] = snr_delta_t[ts_key[1]]
+            ifo_gr['snr'].attrs['start_time'] = snr_epoch[ts_key[1]]
+            ifo_gr['psd'] = psddict[ifo].numpy()
+            ifo_gr['psd'].attrs['delta_f'] = psddict[ifo].delta_f
+            epoch = psddict[ifo].epoch
+            epoch_flt = epoch.gpsSeconds + epoch.gpsNanoSeconds * 1e-9
+            ifo_gr['psd'].attrs['epoch'] = epoch_flt
+
 
     if args.no_upload:
         logging.info("Not uploading event")
@@ -245,6 +295,12 @@ for event in coinc_table:
             + os.path.abspath(args.input_file)
         gracedb.write_log(r['graceid'], input_file_str)
 
+        gracedb.write_log(
+            r["graceid"],
+            'SNR timeseries HDF file upload',
+            filename=fullpath_hdf
+        )
+
         # add the custom log message, if provided
         if args.log_message is not None:
             gracedb.write_log(
@@ -258,16 +314,33 @@ for event in coinc_table:
         fullpath_asd = os.path.join(args.output_directory, asd_png_filename)
         generate_asd_plot(psddict, fullpath_asd)
         logging.info("Saved ASD plot %s", asd_png_filename)
+
+        snr_png_filename = f'{ifos_str}-PYCBC_{id_str}_SNR-{time:d}-1.png'
+        fullpath_snr = os.path.join(args.output_directory, snr_png_filename)
+        generate_snr_plot(snr_series_curr_event, fullpath_snr, sngl_inspiral_table_curr)
+        logging.info("Saved SNR plot %s", snr_png_filename)
+
+
         if not args.no_upload:
             gracedb.write_log(
                 r["graceid"],
                 "PyCBC ASD estimate from the time of event",
-                filename=fullpath_psd,
+                filename=fullpath_asd,
                 tag_name=["psd"],
                 displayName=['ASDs']
             )
-            logging.info("Uploaded file %s to event %s.", psd_png_filename,
+            logging.info("Uploaded file %s to event %s.", asd_png_filename,
                          r["graceid"])
+            gracedb.write_log(
+                r["graceid"],
+                "SNR timeseries plot upload",
+                filename=fullpath_snr,
+                tag_name=["background"],
+                displayName=['SNR timeseries']
+            )
+            logging.info("Uploaded file %s to event %s.", snr_png_filename,
+                         r["graceid"])
+
 
     xmldoc.childNodes[-1].removeChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].removeChild(coinc_inspiral_table_curr)
