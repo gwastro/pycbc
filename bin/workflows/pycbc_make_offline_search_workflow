@@ -475,7 +475,7 @@ fore_hdfall = wf.make_foreground_table(workflow, combined_bg_file,
                     extension='.hdf', tags=["hdfall"])
 
 main_page = [(ifar_ob,), (fore_table, )]
-#symlink_result(table, 'open_box_result/significance')
+symlink_result(fore_table, 'open_box_result/significance')
 #detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
 #layout.two_column_layout(rdir['open_box_result/significance'], detailed_page)
 
@@ -580,7 +580,7 @@ combined_inj_bg_files = {}
 
 files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
-    ctags = [tag.lower(), 'injections']
+    ctags = [tag, 'injections']
     output_dir = '%s_coinc' % tag
 
     if inj_file is not None:
@@ -603,7 +603,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                 ssegs,
                 "datafind",
                 seg_file=science_seg_file,
-                tags=hoft_tags + ctags
+                tags=hoft_tags+ctags
             )
     else:
         datafind_files_inj = datafind_files
