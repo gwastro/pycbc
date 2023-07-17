@@ -870,8 +870,6 @@ parser.add_argument('--ifar-double-followup-threshold', type=float, required=Tru
 parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
                     help="Livetime used for p-value combination with followup "
                          "detectors, in years")
-parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
-
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
                     help='Upload triggers to GraceDB')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False,
@@ -932,8 +930,11 @@ mchirp_area.insert_args(parser)
 livepau.insert_live_pastro_option_group(parser)
 
 args = parser.parse_args()
+
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
+ifos = set(args.channel_name.keys())
+analyze_singles = LiveSingle.verify_args(args, parser, ifos)
 
 if args.output_background is not None and len(args.output_background) != 2:
     parser.error('--output-background takes two parameters: period and path')
@@ -960,7 +961,6 @@ if bank.min_f_lower < args.low_frequency_cutoff:
                  'minimum f_lower across all templates '
                  '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
-ifos = set(args.channel_name.keys())
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
 evnt = LiveEventManager(args, bank)
@@ -1036,7 +1036,7 @@ with ctx:
     evnt.data_readers = data_reader
 
     # create single-detector background "estimators"
-    if args.enable_single_detector_background and evnt.rank == 0:
+    if analyze_singles and evnt.rank == 0:
         sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
                           for ifo in ifos}
 
@@ -1175,7 +1175,7 @@ with ctx:
                 evnt.check_coincs(list(results.keys()), best_coinc, psds)
 
             # Check for singles
-            if args.enable_single_detector_background:
+            if analyze_singles:
                 evnt.check_singles(results, psds)
 
             gates = {ifo: data_reader[ifo].gate_params for ifo in data_reader}
