@@ -493,8 +493,7 @@ class Executable(pegasus_workflow.Executable):
                                  'all_triggers' : 2,
                                  'merged_triggers' : 3,
                                  'results' : 4
-                                 }
-
+                                }
             try:
                 self.global_retention_threshold = \
                       retention_choices[global_retention_level]
