@@ -232,7 +232,7 @@ for event in coinc_table:
 
     lal_psddict = {}
     sample_freqs = {}
-    snr_series_curr_event = {}
+
     for sngl in sngl_inspiral_table:
         if sngl.event_id in sngl_ids:
             sngl_inspiral_table_curr.append(sngl)
@@ -250,14 +250,7 @@ for event in coinc_table:
             fseries.data.data = psd_fs[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
             lal_psddict[sngl.ifo] = fseries
 
-            # Convert into the timeseries needed for xml conversion
-            snr_series_curr_event[sngl.ifo] = TimeSeries(
-                    snr_curr_event[sngl.ifo],
-                    delta_t=snr_delta_t[time_key],
-                    epoch=snr_epoch[time_key],
-                    dtype=np.csingle,
-            )
-            snr_series_to_xml(snr_series_curr_event[sngl.ifo], xmldoc, sngl.event_id)
+            snr_series_to_xml(snr_curr_event[sngl.ifo], xmldoc, sngl.event_id)
 
     xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
     xmldoc.childNodes[-1].appendChild(coinc_inspiral_table_curr)
@@ -335,7 +328,9 @@ for event in coinc_table:
 
         snr_png_filename = f'{ifos_str}-PYCBC_{id_str}_SNR-{base_time:d}-1.png'
         fullpath_snr = os.path.join(args.output_directory, snr_png_filename)
-        generate_snr_plot(snr_curr_event, fullpath_snr, sngl_inspiral_table_curr)
+        triggers = {sngl.ifo: (sngl.end_time + sngl.end_time_ns * 1e-9, sngl.snr)
+                    for sngl in sngl_inspiral_table_curr}
+        generate_snr_plot(snr_curr_event, fullpath_snr, triggers, base_time)
         logging.info("Saved SNR plot %s", snr_png_filename)
 
 

@@ -35,7 +35,8 @@ def grouper(iterable, n, fillvalue=None):
 
 def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
                        tmpltbank_file, insp_segs, insp_data_name,
-                       insp_anal_name, dax_output, out_dir, tags=None):
+                       insp_anal_name, dax_output, out_dir,
+                       tags=None):
     """ Create plots that followup the Nth loudest coincident injection
     from a statmap produced HDF file.
 
@@ -56,6 +57,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
         The name of the segmentlist storing data read.
     insp_anal_name: str
         The name of the segmentlist storing data analyzed.
+    dax_output : directory
+        Location of the dax outputs
     out_dir: path
         The directory to store minifollowups result plots and files
     tags: {None, optional}
@@ -114,7 +117,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     # determine if a staging site has been specified
     job = SubWorkflow(fil.name, is_planned=False)
-    input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
+    input_files = [tmpltbank_file, coinc_file, insp_segs] + \
+        single_triggers
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
                                    staging_site=workflow.staging_site,
@@ -340,10 +344,11 @@ class PlotQScanExecutable(PlotExecutable):
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
-def make_single_template_files(workflow, segs, ifo, data_read_name, analyzed_name,
-                               params, out_dir, inj_file=None, exclude=None,
-                               require=None, tags=None, store_file=False,
-                               use_mean_time=False, use_exact_inj_params=False):
+def make_single_template_files(workflow, segs, ifo, data_read_name,
+                               analyzed_name, params, out_dir, inj_file=None,
+                               exclude=None, require=None, tags=None,
+                               store_file=False, use_mean_time=False,
+                               use_exact_inj_params=False):
     """Function for creating jobs to run the pycbc_single_template code and
     add these jobs to the workflow.
 

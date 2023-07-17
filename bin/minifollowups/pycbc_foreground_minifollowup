@@ -279,7 +279,7 @@ if file_val == 'foreground' and ifar_limit:
     # Sort by IFAR, descending
     event_idx = event_ifars.argsort()[::-1][:events_to_read]
     # Save to a subdirectory of the main one
-    single_template_dir = os.path.join(args.output_dir, "single_template_files")
+    upload_dir = os.path.join(args.output_dir, "upload_files")
     files = wf.FileList([])
     # Times and tids need to be reset for this set of events:
     times = {}
@@ -306,12 +306,10 @@ if file_val == 'foreground' and ifar_limit:
                 args.inspiral_data_read_name,
                 args.inspiral_data_analyzed_name,
                 params,
-                single_template_dir,
+                upload_dir,
                 store_file=True,
-                use_mean_time=True,
                 tags=args.tags+['upload', str(curr_idx)],
             )
             files += data
-
 
 workflow.save()

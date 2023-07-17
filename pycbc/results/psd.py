@@ -50,7 +50,6 @@ def generate_asd_plot(psddict, output_filename):
     """
     from matplotlib import pyplot as plt
     asd_fig, asd_ax = plt.subplots(1)
-    min_frequency = 10000
     for ifo in sorted(psddict.keys()):
         curr_psd = psddict[ifo]
         # Can't plot log(0) so start from point 1

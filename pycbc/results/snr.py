@@ -24,16 +24,14 @@
 # =============================================================================
 #
 """
-Module to generate PSD figures
+Module to generate SNR figures
 """
-from pycbc.results import ifo_color
-from pycbc import DYN_RANGE_FAC
-import matplotlib
-matplotlib.use('Agg')
-import pylab as pl
 import numpy as np
+import matplotlib; matplotlib.use('Agg')
+import pylab as pl
+from pycbc.results import ifo_color
 
-def generate_snr_plot(snrdict, output_filename, sngl_table):
+def generate_snr_plot(snrdict, output_filename, triggers, ref_time):
     """
     Generate an SNR timeseries plot as used for upload to GraceDB.
 
@@ -41,34 +39,35 @@ def generate_snr_plot(snrdict, output_filename, sngl_table):
     ----------
 
     snrdict: dictionary
-        A dictionary keyed on ifo containing the SNRs as
+        A dictionary keyed on ifo containing the SNR
         TimeSeries objects
-
     output_filename: string
         The filename for the plot to be saved to
+    triggers : dictionary of tuples
+        A dictionary keyed on IFO, containing (trigger time, trigger snr)
+    ref_time : number, GPS seconds
+        Reference time which will be used as the zero point of the plot
+        This should be an integer value, but doesn't need to be an integer
 
     Returns
     -------
         None
     """
-    events = {sngl.ifo: sngl for sngl in sngl_table}
     pl.figure()
-    ref_time = np.floor(np.mean([evnt.end_time + 1e-9 * evnt.end_time_ns
-                                 for evnt in events.values()]))
     for ifo in sorted(snrdict.keys()):
         curr_snrs = snrdict[ifo]
 
         pl.plot(curr_snrs.sample_times - ref_time, abs(curr_snrs),
                 c=ifo_color(ifo), label=ifo)
-        if ifo in events:
-            pl.plot(events[ifo].end_time + 1e-9 * events[ifo].end_time_ns - ref_time,
-                    events[ifo].snr, marker='x', c=ifo_color(ifo))
-
+        if ifo in triggers:
+            pl.plot(triggers[ifo][0] - ref_time,
+                    triggers[ifo][1], marker='x', c=ifo_color(ifo))
 
     pl.legend()
-    pl.xlabel(f'GPS time from {ref_time} (s)')
+    pl.xlabel(f'GPS time from {int(ref_time)} (s)')
     pl.ylabel('SNR')
     pl.savefig(output_filename)
     pl.close()
+
 
 __all__ = ["generate_snr_plot"]
