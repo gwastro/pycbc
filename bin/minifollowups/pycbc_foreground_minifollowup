@@ -141,26 +141,32 @@ if args.sort_variable not in f[file_val]:
                    '{1} are {2}'.format(args.sort_variable, file_val,
                                         ', '.join(all_datasets)))
 
+# In case we are doing background minifollowup with repeated events,
+# we must include the ordering / template / trigger / time info for
+# _many_ more events to make wure we get enough
 events_to_read = num_events * 100
 
+# Hold your horses! - we've asked for more events than there are!
 if len(stat) < num_events:
     num_events = len(stat)
 if len(stat) < events_to_read:
     events_to_read = len(stat)
 
+# Get the indices of the events we are considering in the order specified
 sorting = f[file_val + '/' + args.sort_variable][:].argsort()
 if args.sort_order == 'descending':
     sorting = sorting[::-1]
 event_idx = sorting[0:events_to_read]
 stat = stat[event_idx]
 
+# Save the time / trigger / template ids for the events
 times = {}
 tids = {}
-# Version used for multi-ifo coinc code
 ifo_list = f.attrs['ifos'].split(' ')
 for ifo in ifo_list:
     times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
     tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
+bank_ids = f['{}/template_id'.format(file_val)][:][event_idx]
 
 bank_data = h5py.File(args.bank_file, 'r')
 
@@ -211,7 +217,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                         tags=['SKIP_{}'.format(event_count)]),)
         skipped_data = []
 
-    bank_id = f['{}/template_id'.format(file_val)][:][sorting][curr_idx]
+    bank_id = bank_ids[curr_idx]
 
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, args.output_dir, n_loudest=curr_idx,
@@ -278,16 +284,20 @@ if file_val == 'foreground' and ifar_limit:
     # Times and tids need to be reset for this set of events:
     times = {}
     tids = {}
-    # Version used for multi-ifo coinc code
+    bank_ids = {}
+
     ifo_list = f.attrs['ifos'].split(' ')
     for ifo in ifo_list:
         times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
         tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
-    for curr_idx in range(event_idx.size):
+    bank_ids = f['{}/template_id'.format(file_val)][:][event_idx]
 
-        params = get_params(curr_idx, times, tids, bank_id, bank_data, fsdt)
+    for curr_idx in range(event_idx.size):
+        params = get_params(curr_idx, times, tids, bank_ids[curr_idx], bank_data, fsdt)
         for ifo in ifo_list:
             if params['mean_time'] not in insp_analysed_seglists[ifo]:
+                logging.info("Mean time %.3f not in segment list",
+                             params['mean_time'])
                 continue
             data = mini.make_single_template_files(
                 workflow,
