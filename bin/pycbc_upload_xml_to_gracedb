@@ -267,8 +267,8 @@ for event in coinc_table:
     xmldoc.childNodes[-1].appendChild(sngl_inspiral_table_curr)
     lal.series.make_psd_xmldoc(lal_psddict, xmldoc.childNodes[-1])
 
-    ifos = sorted([sngl.ifo for sngl in sngl_inspiral_table_curr])
-    ifos_str = ''.join(ifos)
+    ifos_triggered = sorted([sngl.ifo for sngl in sngl_inspiral_table_curr])
+    ifos_str = ''.join(ifos_triggered)
     id_str = args.search_id_string
     base_time = int(np.floor(time))
     filename_xml = "{}-PYCBC_{}-{:d}-1.xml".format(ifos_str, id_str, base_time)
