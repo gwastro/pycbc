@@ -39,7 +39,8 @@ from pycbc.types import Array, TimeSeries
 from .gaussian_noise import BaseGaussianNoise
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
-                         likelihood_parts_det, likelihood_parts_vector,
+                         likelihood_parts_det, likelihood_parts_det_multi,
+                         likelihood_parts_vector,
                          likelihood_parts_v_pol,
                          likelihood_parts_v_time,
                          likelihood_parts_v_pol_time,
@@ -362,6 +363,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             atimes = self.fid_params["tc"]
             if self.still_needs_det_response:
                 self.lik = likelihood_parts_det
+                self.mlik = likelihood_parts_det_multi
             else:
                 self.lik = likelihood_parts
                 self.mlik = likelihood_parts_multi
