@@ -11,6 +11,7 @@ from pycbc.io import FieldArray
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw.utils import load_filename as load_xml_doc
 from ligo.lw import lsctables
+from pycbc import conversions as conv
 
 
 def close(a, b, c):
@@ -130,7 +131,8 @@ def check_found_events(args):
     # create field array to store properties of triggers
     dtype = [('mass1', float), ('mass2', float),
              ('spin1z', float), ('spin2z', float),
-             ('tc', float), ('net_snr', float)]
+             ('tc', float), ('net_snr', float),
+             ('ifar', float)]
     trig_props = FieldArray(n_found, dtype=dtype)
 
     # store properties of found triggers
@@ -139,18 +141,21 @@ def check_found_events(args):
         xmldoc = load_xml_doc(
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
         si_table = lsctables.SnglInspiralTable.get_table(xmldoc)
+        ci_table = lsctables.CoincInspiralTable.get_table(xmldoc)
 
         trig_props['tc'][x] = si_table[0].end
         trig_props['mass1'][x] = si_table[0].mass1
         trig_props['mass2'][x] = si_table[0].mass2
         trig_props['spin1z'][x] = si_table[0].spin1z
         trig_props['spin2z'][x] = si_table[0].spin2z
+        trig_props['ifar'][x] = conv.sec_to_year(1 / ci_table[0].combined_far)
 
         snr_list = si_table.getColumnByName('snr').asarray()
         trig_props['net_snr'][x] = sum(snr_list ** 2) ** 0.5
 
         log.info('Single-detector SNRs: %s', snr_list)
         log.info('Network SNR: %f', trig_props['net_snr'][x])
+        log.info('IFAR: %f', trig_props['ifar'][x])
         log.info('Merger time: %f', trig_props['tc'][x])
         log.info('Mass 1: %f', trig_props['mass1'][x])
         log.info('Mass 2: %f', trig_props['mass2'][x])
