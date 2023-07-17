@@ -1,0 +1,67 @@
+#!/bin/env python
+
+"""
+Create the html files needed to describe the versioning
+information for a set of libraries and executables in
+pycbc results pages
+"""
+
+import argparse, logging
+import pycbc.version
+from pycbc import init_logging
+from pycbc.results import (save_fig_with_metadata, html_escape,
+    get_library_version_info, get_code_version_numbers)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--executables', nargs='+', required=True,
+                    help="List of executables to provide version "
+                         "information for")
+parser.add_argument('--executables-names', nargs='+', required=True,
+                    help="Names of the executables, must be in the "
+                         "same order as --executables-files")
+parser.add_argument("--output-file", required=True,
+                    help="The directory for output html snippets")
+args = parser.parse_args()
+
+init_logging(args.verbose)
+
+if not len(args.executables) == len(args.executables_names):
+    raise parser.error("--executables-files and executables-names must be "
+                       "the same number of arguments")
+
+
+logging.info("Getting version information for libraries")
+library_list = get_library_version_info()
+html_text = ''
+for curr_lib in library_list:
+    lib_name = curr_lib['Name']
+    logging.info(f"Getting {lib_name} information")
+    html_text += f'<h2>{lib_name} Version Information</h2>:<br>\n'
+    for key, value in curr_lib.items():
+        html_text += '<li> %s : %s </li>\n' % (key, value)
+
+
+code_version_dict = get_code_version_numbers(
+    args.executables_names,
+    args.executables
+)
+
+html_text += f'<h2>Version Information from Executables</h2>:<br>\n'
+for key, value in code_version_dict.items():
+    html_text += '<li><b>%s</b>:<br><pre>%s</pre></li><hr><br><br>\n' \
+        % (key, str(value).replace('@', '&#64;'))
+
+kwds = {
+    'render-function' : 'render_text',
+    'title' : 'Version Information',
+}
+
+save_fig_with_metadata(
+    html_escape(html_text),
+    args.output_file,
+    **kwds
+)
+logging.info("Done")
