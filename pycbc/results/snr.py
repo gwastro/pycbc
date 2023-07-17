@@ -60,8 +60,9 @@ def generate_snr_plot(snrdict, output_filename, sngl_table):
 
         pl.plot(curr_snrs.sample_times - ref_time, abs(curr_snrs),
                 c=ifo_color(ifo), label=ifo)
-        pl.plot(events[ifo].end_time + 1e-9 * events[ifo].end_time_ns - ref_time,
-                events[ifo].snr, marker='x', c=ifo_color(ifo))
+        if ifo in events:
+            pl.plot(events[ifo].end_time + 1e-9 * events[ifo].end_time_ns - ref_time,
+                    events[ifo].snr, marker='x', c=ifo_color(ifo))
 
 
     pl.legend()
