@@ -47,15 +47,6 @@ from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
 
-# FIXME: Are these names suitably descriptive?
-_retention_choices = {
-    'do_not_keep' : 0,
-    'all_files' : 1,
-    'all_triggers' : 2,
-    'merged_triggers' : 3,
-    'results' : 4
-}
-
 
 def make_analysis_dir(path):
     """
@@ -70,6 +61,7 @@ file_input_from_config_dict = {}
 
 class Executable(pegasus_workflow.Executable):
     # These are the file retention levels
+    DO_NOT_KEEP = 0
     INTERMEDIATE_PRODUCT = 1
     ALL_TRIGGERS = 2
     MERGED_TRIGGERS = 3
@@ -158,13 +150,14 @@ class Executable(pegasus_workflow.Executable):
         # Determine the level at which output files should be kept
         if cp.has_option_tags('pegasus_profile-%s' % name,
                               'pycbc|retention_level', tags):
+            # Get the retention_level from the config file
+            # This method allows us to use the retention levels
+            # defined above
             cfg_ret_level = cp.get_opt_tags('pegasus_profile-%s' % name,
-                                            'pycbc|retention_level', tags)
-            self.update_current_retention_level(
-                _retention_choices[cfg_ret_level]
-            )
-        else:
-            self.update_current_retention_level(self.current_retention_level)
+                    'pycbc|retention_level', tags)
+            self.current_retention_level = getattr(self, cfg_ret_level)
+
+        self.update_current_retention_level(self.current_retention_level)
 
         # Should I reuse this executable?
         if reuse_executable:
@@ -494,9 +487,17 @@ class Executable(pegasus_workflow.Executable):
             self.global_retention_threshold = 1
             self.cp.set("workflow", "file-retention-level", "all_files")
         else:
+            # FIXME: Are these names suitably descriptive?
+            retention_choices = {
+                                 'all_files' : 1,
+                                 'all_triggers' : 2,
+                                 'merged_triggers' : 3,
+                                 'results' : 4
+                                 }
+
             try:
                 self.global_retention_threshold = \
-                      _retention_choices[global_retention_level]
+                      retention_choices[global_retention_level]
             except KeyError:
                 err_msg = "Cannot recognize the file-retention-level in the "
                 err_msg += "[workflow] section of the ini file. "
