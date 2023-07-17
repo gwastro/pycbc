@@ -193,6 +193,7 @@ for event in coinc_table:
     snr_timeseries_time_match = [snr_key for snr_key in snr_timeseries.keys()
                                  if abs(snr_key[1] - time) < 0.1]
     ifos = list(zip(*snr_timeseries_time_match))[0]
+    time_key = list(zip(*snr_timeseries_time_match))[1][0]
     # These are the SNR timeseries for this event only:
 
     snr_curr_event = {}
@@ -249,14 +250,11 @@ for event in coinc_table:
             fseries.data.data = psd_fs[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
             lal_psddict[sngl.ifo] = fseries
 
-            match = [abs(snrk[1] - sngl.end) < 0.1 and snrk[0] == sngl.ifo
-                     for snrk in snr_timeseries.keys()]
-            idx = np.flatnonzero(match)[0]
-            ts_key = list(snr_timeseries.keys())[idx]
+            # Convert into the timeseries needed for xml conversion
             snr_series_curr_event[sngl.ifo] = TimeSeries(
                     snr_curr_event[sngl.ifo],
-                    delta_t=snr_delta_t[ts_key[1]],
-                    epoch=snr_epoch[ts_key[1]],
+                    delta_t=snr_delta_t[time_key],
+                    epoch=snr_epoch[time_key],
                     dtype=np.csingle,
             )
             snr_series_to_xml(snr_series_curr_event[sngl.ifo], xmldoc, sngl.event_id)
@@ -283,8 +281,8 @@ for event in coinc_table:
         for ifo in ifos:
             ifo_gr = snr_hdf.create_group(ifo)
             ifo_gr['snr'] = snr_curr_event[ifo]
-            ifo_gr['snr'].attrs['delta_t'] = snr_delta_t[ts_key[1]]
-            ifo_gr['snr'].attrs['start_time'] = snr_epoch[ts_key[1]]
+            ifo_gr['snr'].attrs['delta_t'] = snr_delta_t[time_key]
+            ifo_gr['snr'].attrs['start_time'] = snr_epoch[time_key]
             ifo_gr['psd'] = psddict[ifo].numpy()
             ifo_gr['psd'].attrs['delta_f'] = psddict[ifo].delta_f
             epoch = psddict[ifo].epoch
