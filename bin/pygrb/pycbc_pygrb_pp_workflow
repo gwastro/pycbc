@@ -32,9 +32,9 @@ import os
 import pycbc.version
 from pycbc import init_logging
 import pycbc.workflow as _workflow
-from pycbc.results import create_versioning_page, layout
+from pycbc.results import layout
 from pycbc.results.pygrb_postprocessing_utils import extract_ifos
-from pycbc.results.versioning import save_fig_with_metadata
+from pycbc.results import save_fig_with_metadata
 
 __author__ = "Francesco Pannarale  <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -387,7 +387,11 @@ ini_file = _workflow.FileList([_workflow.File(wflow.ifos, '',
 layout.single_layout(base, ini_file)
 
 # Create versioning information
-create_versioning_page(rdir['workflow/version'], wflow.cp)
+wf.make_versioning_page(
+    _workflow,
+    wflow.cp,
+    rdir['workflow/version'],
+)
 
 # Create the final log file
 log_file_html = _workflow.File(wflow.ifos, 'WORKFLOW-LOG', wflow.analysis_time,
