@@ -492,19 +492,36 @@ class Relative(DistMarg, BaseGaussianNoise):
         if not hasattr(self, 'hihj'):
             self.calculate_hihjs(models)
 
-        # finally add in the lognl term from this model
-        for m1, m2 in itertools.combinations(models, 2):
-            for det in self.data:
-                a0, a1, fedge = self.hihj[(m1, m2)][det]
+        if self.still_needs_det_response:
+            # finally add in the lognl term from this model
+            for m1, m2 in itertools.combinations(models, 2):
+                for det in self.data:
+                    a0, a1, fedge = self.hihj[(m1, m2)][det]
 
-                fp, fc, dtc, hp, hc, h00 = m1._current_wf_parts[det]
-                fp2, fc2, dtc2, hp2, hc2, h002 = m2._current_wf_parts[det]
+                    # TODO Need to edit line 564 code chunk to return
+                    # appropriate wf parts
+                    dtc, channel, h00 = m1._current_wf_parts[det]
+                    dtc2, channel2, h002 = m2._current_wf_parts[det]
 
-                h1h2 = self.mlik(fedge,
-                                 fp, fc, dtc, hp, hc, h00,
-                                 fp2, fc2, dtc2, hp2, hc2, h002,
-                                 a0, a1)
-                loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
+                    c1c2 = self.mlik(fedge,
+                                    dtc, channel, h00,
+                                    dtc2, channel2, h002,
+                                    a0, a1)
+                    loglr += - c1c2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
+        else:
+            # finally add in the lognl term from this model
+            for m1, m2 in itertools.combinations(models, 2):
+                for det in self.data:
+                    a0, a1, fedge = self.hihj[(m1, m2)][det]
+
+                    fp, fc, dtc, hp, hc, h00 = m1._current_wf_parts[det]
+                    fp2, fc2, dtc2, hp2, hc2, h002 = m2._current_wf_parts[det]
+
+                    h1h2 = self.mlik(fedge,
+                                    fp, fc, dtc, hp, hc, h00,
+                                    fp2, fc2, dtc2, hp2, hc2, h002,
+                                    a0, a1)
+                    loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
     def _loglr(self):
@@ -547,6 +564,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                 filter_i, norm_i = lik(freqs, 0.0, channel, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
+                self._current_wf_parts[ifo] = (dtc, channel, h00)
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]

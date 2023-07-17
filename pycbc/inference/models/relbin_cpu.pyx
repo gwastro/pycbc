@@ -151,11 +151,9 @@ cpdef likelihood_parts_det(double [::1] freqs,
 # two signals when analyzing multiple signals
 # with no antenna response applied
 cpdef likelihood_parts_det_multi(double [::1] freqs,
-                     double fp,
                      double dtc,
                      double complex[::1] hp,
                      double complex[::1] h00,
-                     double fp2,
                      double dtc2,
                      double complex[::1] hp2,
                      double complex[::1] h002,
@@ -168,9 +166,9 @@ cpdef likelihood_parts_det_multi(double [::1] freqs,
     N = freqs.shape[0]
     for i in range(N):
         r0n = (exp(-2.0j * 3.141592653 * dtc * freqs[i])
-               * (fp * hp[i])) / h00[i]
+               * (hp[i])) / h00[i]
         r0n *= conj((exp(-2.0j * 3.141592653 * dtc2 * freqs[i])
-               * (fp2 * hp2[i])) / h002[i])
+               * (hp2[i])) / h002[i])
         r1 = r0n - r0
         if i > 0:
             hd += a0[i-1] * r0 + a1[i-1] * r1
