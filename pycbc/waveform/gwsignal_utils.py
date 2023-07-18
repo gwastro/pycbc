@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import astropy.units as u
+from lalsimulation import gwsignal
+from lalsimulation.gwsignal.core.parameter_conventions import (mass_params, mass_params_, default_dict, common_units_dictionary)
+
+
+mass_dimensionless = {mass_dimensionless:u.dimensionless_unscaled for mass_dimensionless in mass_params if mass_dimensionless not in mass_params_}
+gws_units = {k: v.unit for k,v in default_dict.items()}
 
 pycbc_to_gws = {
         'delta_t': 'deltaT',
@@ -12,33 +18,16 @@ pycbc_to_gws = {
         'mean_per_ano': 'meanPerAno'
         }
 
-gws_units = {'mass1': u.solMass,
-             'mass2': u.solMass,
-             'spin1x': u.dimensionless_unscaled,
-             'spin1y': u.dimensionless_unscaled,
-             'spin1z': u.dimensionless_unscaled,
-             'spin2x': u.dimensionless_unscaled,
-             'spin2y': u.dimensionless_unscaled,
-             'spin2z': u.dimensionless_unscaled,
-             'deltaT': u.s,
-             'deltaF': u.Hz,
-             'f22_stat': u.Hz,
-             'f22_ref': u.Hz,
-             'phi_ref': u.rad,
-             'distance': u.Mpc,
-             'inclination': u.rad,
-             'eccentricity': u.dimensionless_unscaled,
-             'longAscNodes': u.rad,
-             'meanPerAno': u.rad}
 
 def to_gwsignal_dict(p):
-    params = {}
-    for k in p:
-        knew = pycbc_to_gws.get(k)
-        if not knew:
-            knew = k
+    params = p.copy()
+    for key in pycbc_to_gws:
+        params[pycbc_to_gws.get(key)] = params.pop(key)
 
-        if knew in gws_units and p[k]:
-            params[knew] = p[k] * gws_units[knew]
+    for key in p:
+        if key in pycbc_to_gws:
+            params[pycbc_to_gws.get(key)] = params.pop(key)
+
+        params[key] *= gws_units.get(key)
 
     return params

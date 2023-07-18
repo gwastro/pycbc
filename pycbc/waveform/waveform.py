@@ -31,7 +31,7 @@ import os
 
 import lal
 import numpy
-from gwsignal.core import waveform as wfm
+from lalsimulation.gwsignal.core import waveform as wfm
 
 import pycbc
 import pycbc.scheme as _scheme
