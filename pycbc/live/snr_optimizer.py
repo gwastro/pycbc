@@ -322,7 +322,7 @@ def insert_snr_optimizer_options(parser):
         action='store_true',
         help='Include parameters of the candidate event in the initialized array for the optimizer. '
              'Only relevant for --optimizer pso or differential_evolution')
-    opt_opt_group.add_argument('--seed',
+    opt_opt_group.add_argument('--optimizer-seed',
         type=int,
         default=42,
         help='Seed to supply to the random generation of initial array to pass to the optimizer. '

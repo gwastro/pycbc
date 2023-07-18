@@ -194,12 +194,9 @@ python -m mpi4py `which pycbc_live` \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --run-snr-optimization \
---optimizer pso \
---pso-iters 5 \
---pso-particles 250 \
---pso-c1 0.5 \
---pso-c2 2.0 \
---pso-w 0.01 \
+--optimizer differential_evolution \
+--differential-evolution-maxiter 50 \
+--differential-evolution-popsize 100 \
 --include-candidate-in-optimizer \
 --seed 42 \
 --enable-single-detector-background \
@@ -210,8 +207,11 @@ python -m mpi4py `which pycbc_live` \
 --sngl-ifar-est-dist conservative \
 --verbose
 
-# --differential-evolution-maxiter 50 \
-# --differential-evolution-popsize 100 \
+# --pso-iters 5 \
+# --pso-particles 250 \
+# --pso-c1 0.5 \
+# --pso-c2 2.0 \
+# --pso-w 0.01 \
 
 # note that, at this point, some SNR optimization processes may still be
 # running, so the checks below may ignore their results

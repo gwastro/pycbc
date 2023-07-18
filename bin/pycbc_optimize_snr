@@ -68,6 +68,9 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
+if args.optimizer_seed:
+    numpy.random.seed(args.optimizer_seed)
+
 # Input checking
 if args.snr_threshold != 4:
     parser.error("Sorry, the SNR threshold option doesn't work yet")
