@@ -375,8 +375,9 @@ def args_to_string(args):
     a string - this is to be used when running subprocesses
     """
     argstr = f' --optimizer {args.optimizer} '
+    optimizer_name = args.optimizer.replace('_','-')
     for opt in option_dict[args.optimizer]:
-        option_fullname = f"--{args.optimizer}-{opt}"
+        option_fullname = f"--{optimizer_name}-{opt}"
         key_name = f'{args.optimizer}_{opt}'
         option_value = getattr(args, key_name)
         argstr += f'{option_fullname} {option_value} '

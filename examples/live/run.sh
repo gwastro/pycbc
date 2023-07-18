@@ -198,7 +198,7 @@ python -m mpi4py `which pycbc_live` \
 --differential-evolution-maxiter 50 \
 --differential-evolution-popsize 100 \
 --include-candidate-in-optimizer \
---seed 42 \
+--optimizer-seed 42 \
 --enable-single-detector-background \
 --single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
