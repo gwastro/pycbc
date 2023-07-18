@@ -109,9 +109,10 @@ class LiveSingle(object):
                              "if IFO-specific options are given.")
 
             if args.sngl_ifar_est_dist[ifo] is None:
-                #Default - no singles being used
+                # Default - no singles being used
                 continue
-            elif not args.sngl_ifar_est_dist[ifo] == 'fixed':
+
+            if not args.sngl_ifar_est_dist[ifo] == 'fixed':
                 if not args.single_fit_file:
                     # Fixed IFAR option doesnt need the fits file
                     parser.error(f"Single detector trigger fits file must be "

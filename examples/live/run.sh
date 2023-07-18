@@ -124,7 +124,6 @@ mpirun \
 -host localhost,localhost \
 -n 2 \
 --bind-to none \
- -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
 --bank-file template_bank.hdf \
@@ -195,12 +194,12 @@ python -m mpi4py `which pycbc_live` \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --run-snr-optimization \
+--verbose \
 --sngl-ifar-est-dist conservative \
 --single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
---single-reduced-chisq-threshold 2 \
 --single-fit-file single_trigger_fits.hdf \
---verbose
+#--single-reduced-chisq-threshold 2 \
 
 # note that, at this point, some SNR optimization processes may still be
 # running, so the checks below may ignore their results
