@@ -124,7 +124,6 @@ mpirun \
 -host localhost,localhost \
 -n 2 \
 --bind-to none \
- -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
 --bank-file template_bank.hdf \
@@ -195,6 +194,14 @@ python -m mpi4py `which pycbc_live` \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --run-snr-optimization \
+--optimizer pso \
+--pso-iters 5 \
+--pso-particles 250 \
+--pso-c1 0.5 \
+--pso-c2 2.0 \
+--pso-w 0.01 \
+--include-candidate-in-optimizer \
+--seed 42 \
 --enable-single-detector-background \
 --single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
@@ -202,6 +209,9 @@ python -m mpi4py `which pycbc_live` \
 --single-fit-file single_trigger_fits.hdf \
 --sngl-ifar-est-dist conservative \
 --verbose
+
+# --differential-evolution-maxiter 50 \
+# --differential-evolution-popsize 100 \
 
 # note that, at this point, some SNR optimization processes may still be
 # running, so the checks below may ignore their results

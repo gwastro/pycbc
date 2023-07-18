@@ -81,7 +81,7 @@ fft.from_cli(args)
 
 # Set a minimum mass for points tried in optimization allowing for
 # minimal slop relative to the lightest template
-MIN_CPT_MASS = 0.99
+MIN_CPT_MASS = snr_optimizer.MIN_CPT_MASS
 
 # Set a notional maximum and minimum possible eta
 MAX_ETA = 0.24999999999

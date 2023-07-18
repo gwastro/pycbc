@@ -29,6 +29,7 @@ start_time = time.time()
 def callback_func(Xi, convergence=0):
     global Nfeval
     logging.info("Currently at %d %s", Nfeval, convergence)
+    # Time out if the optimization takes longer than 6 minutes
     if (time.time() - start_time) > 360:
         return True
     Nfeval += 1
@@ -36,8 +37,57 @@ def callback_func(Xi, convergence=0):
 
 def compute_network_snr_core(v, *argv, raise_err=False):
     """
-    Compute network SNR as a function over mchirp, eta and two aligned
-    spin components, stored in that order in the sequence v
+    Compute network SNR as a function over mchirp, eta, and two aligned
+    spin components, stored in that order in the sequence v.
+
+    Parameters:
+    - v (sequence): A sequence containing the input values for mchirp,
+                    eta, and spin components.
+    - *argv: Additional arguments required for the snr calculation.
+    - raise_err (bool, optional): A flag indicating whether to raise an
+                                  error if an exception occurs during
+                                  the computation. Defaults to False.
+
+    Returns:
+    - network_snr (float): The computed network SNR (Signal-to-Noise
+                           Ratio) value.
+    - snr_series_dict (dict): A dictionary containing the snr timeseries
+                              from each ifo.
+
+    Notes:
+    - The function requires the following arguments to be passed in
+      *argv in the specified order:
+      - data (dict): A dictionary containing keys of ifos ('H1', 'L1') and
+                     values of the frequency series data for those ifos
+      - coinc_times (dict): A dictionary containing the coincidence times for
+                            the network.
+      - ifos (list): A list of the ifos, e.g. ['H1', 'L1']
+      - flen (float): The length of the data.
+      - approximant (str): The approximant used for the waveform model.
+      - flow (float): The lower frequency bound.
+      - f_end (float): The upper frequency bound.
+      - delta_f (float): The frequency spacing.
+      - sample_rate (float): The sampling rate of the data.
+
+    Example:
+    ```
+    v = [mchirp, eta, spin1, spin2]  # Input values
+    data = {'H1' : H1_data, 'L1' : L1_data}
+    coinc_times = {'H1' : H1_coinc_times, 'L1' : L1_coinc_times}
+    ifos = ['H1', 'L1']
+    flen = ...  # Length of the data
+    approximant = ...  # Approximant for the waveform model
+    flow = ...  # Lower frequency bound
+    f_end = ...  # Upper frequency bound
+    delta_f = ...  # Frequency spacing
+    sample_rate = ...  # Sampling rate
+
+    extra_args = [data, coinc_times, coinc_ifos, flen,
+                  approximant, flow, f_end, delta_f, sample_rate]
+
+    network_snr = compute_network_snr_core(v, extra_args)
+    ```
+
     """
     data = argv[0]
     coinc_times = argv[1]
@@ -130,7 +180,7 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
 
     # Currently only implemented for random seed initial array
     rng = numpy.random.mtrand._rand
-    population_shape=(cli_args.di_popsize, 4)
+    population_shape=(int(cli_args.differential_evolution_popsize), 4)
     population = rng.uniform(size=population_shape)
     if cli_args.include_candidate_in_optimizer:
         # Re-normalize the initial point into the correct range
@@ -141,9 +191,9 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
     results = differential_evolution(
         compute_minus_network_snr,
         bounds,
-        maxiter=cli_args.di_maxiter,
+        maxiter=int(cli_args.differential_evolution_maxiter),
         workers=(cli_args.cores or -1),
-        popsize=cli_args.di_popsize,
+        popsize=int(cli_args.differential_evolution_popsize),
         mutation=(0.5, 1),
         recombination=0.7,
         callback=callback_func,
@@ -164,8 +214,8 @@ def optimize_shgo(bounds, cli_args, extra_args, initial_point): # pylint: disabl
         compute_minus_network_snr,
         bounds=bounds,
         args=extra_args,
-        iters=args.shgo_iters,
-        n=args.shgo_samples,
+        iters=cli_args.shgo_iters,
+        n=cli_args.shgo_samples,
         sampling_method="sobol"
     )
     return results.x
@@ -197,7 +247,7 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
     # Manually generate the initial points, this is the same as the default
     # method, but allows us to make some modifications
     population = numpy.random.uniform(
-        low=0.0, high=1.0, size=(cli_args.pso_particles, 4)
+        low=0.0, high=1.0, size=(int(cli_args.pso_particles), 4)
     )
     population = normalize_population(population, min_bounds, max_bounds)
 
@@ -207,7 +257,7 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
                                         initial_point))
 
     optimizer = ps.single.GlobalBestPSO(
-        n_particles=cli_args.pso_particles,
+        n_particles=int(cli_args.pso_particles),
         dimensions=4,
         options=options,
         bounds=(min_bounds, max_bounds),
@@ -215,7 +265,7 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
     )
     _, results = optimizer.optimize(
         compute_minus_network_snr_pso,
-        iters=cli_args.pso_iters,
+        iters=int(cli_args.pso_iters),
         n_processes=cli_args.cores,
         args=extra_args
     )
@@ -254,15 +304,7 @@ option_dict = {
         'c1': ('The hyperparameter c1: the cognitive parameter.', 0.5),
         'c2': ('The hyperparameter c2: the social parameter.', 2.0),
         'w': ('The hyperparameter w: the inertia parameter.', 0.01),
-    },
-    'include-candidate-in-optimizer': ('Include parameters of the candidate '
-                                       'event in the initialised array for the '
-                                       'optimizer. Only relevant for '
-                                       '--optimizer pso or '
-                                       'differential_evolution', False),
-    'seed': ('Seed to supply to the random generation of initial array to pass '
-             'to the optimizer. Only relevant for --optimizer pso or '
-             'differential_evolution', 42),
+    }
 }
 
 def insert_snr_optimizer_options(parser):
@@ -306,7 +348,8 @@ def check_snr_optimizer_options(args, parser):
     options['differential_evolution'] = [args.differential_evolution_maxiter,
                                          args.differential_evolution_popsize]
     options['shgo'] = [args.shgo_samples, args.shgo_iters]
-    options['pso'] = [args.pso_particles, args.pso_c1, args.pso_c2, args.pso_w]
+    options['pso'] = [args.pso_iters, args.pso_particles, args.pso_c1,
+                      args.pso_c2, args.pso_w]
 
     if args.optimizer == 'pso' and ps == None:
         parser.error('You need to install pyswarms to use the pso optimizer.')
