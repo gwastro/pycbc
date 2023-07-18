@@ -224,7 +224,7 @@ def add_osg_site(sitecat, cp):
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
-                      value="/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation")
+                      value="/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation")
     # Add MKL location to LD_LIBRARY_PATH for OSG
     site.add_profiles(Namespace.ENV, key="LD_LIBRARY_PATH",
                       value="/usr/local/lib:/.singularity.d/libs")
