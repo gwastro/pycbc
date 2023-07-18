@@ -193,7 +193,7 @@ This section should contain the names of each of the executables that will be us
   tmpltbank = /full/path/to/lalapps_tmpltbank
   inspiral = /full/path/to/lalapps_inspiral
 
-Note that one can give gsiftp or http/https paths here and the workflow generator will download the code to the workflow directory when it is run.
+Note that one can give remote URLs here and the workflow generator will download the code to the workflow directory when it is run.
 
 One can also give a URL indicating singularity as the scheme. This will indicate that the executable will be run within a singularity container, and therefore the executables would not be directly accessible from the head node::
 

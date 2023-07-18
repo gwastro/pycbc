@@ -31,7 +31,7 @@ from ligo import segments
 
 import pycbc.version
 import pycbc.workflow as wf
-from pycbc.results import (create_versioning_page, static_table, layout)
+from pycbc.results import (static_table, layout)
 from pycbc.workflow.jobsetup import (select_generic_executable,
                                      int_gps_time_to_str,
                                      PycbcCreateInjectionsExecutable,
@@ -382,7 +382,12 @@ for tag in sorted(output_pointinjs):
 layout.single_layout(conf_dir, conf_file)
 
 # Create versioning information
-create_versioning_page(rdir['workflow/version'], workflow.cp)
+wf.make_versioning_page(
+    workflow,
+    workflow.cp,
+    rdir['workflow/version'],
+)
+
 
 wf.make_results_web_page(workflow, os.path.join(os.getcwd(), rdir.base),
                          explicit_dependencies=plotting_nodes)
