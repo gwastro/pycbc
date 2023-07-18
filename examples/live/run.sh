@@ -124,7 +124,7 @@ mpirun \
 -host localhost,localhost \
 -n 2 \
 --bind-to none \
--x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
+ -x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
 --bank-file template_bank.hdf \
@@ -200,11 +200,11 @@ python -m mpi4py `which pycbc_live` \
 --differential-evolution-popsize 100 \
 --include-candidate-in-optimizer \
 --optimizer-seed 42 \
+--sngl-ifar-est-dist conservative \
 --single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
 --single-reduced-chisq-threshold 2 \
 --single-fit-file single_trigger_fits.hdf \
---sngl-ifar-est-dist conservative \
 --verbose
 
 # If you would like to use the pso optimizer, change --optimizer to pso
