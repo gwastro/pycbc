@@ -124,6 +124,7 @@ mpirun \
 -host localhost,localhost \
 -n 2 \
 --bind-to none \
+-x PYTHONPATH -x LD_LIBRARY_PATH -x OMP_NUM_THREADS -x VIRTUAL_ENV -x PATH -x HDF5_USE_FILE_LOCKING \
 \
 python -m mpi4py `which pycbc_live` \
 --bank-file template_bank.hdf \
@@ -207,6 +208,9 @@ python -m mpi4py `which pycbc_live` \
 --sngl-ifar-est-dist conservative \
 --verbose
 
+# If you would like to use the pso optimizer, change --optimizer to pso
+#  and include these arguments while removing other optimizer args.
+#  You will need to install the pyswarms package into your environment.
 # --pso-iters 5 \
 # --pso-particles 250 \
 # --pso-c1 0.5 \
