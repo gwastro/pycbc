@@ -229,35 +229,6 @@ def get_imrphenomxh_modes(**params):
     for (l, m) in mode_array:
         params['mode_array'] = [(l, m)]
         laldict = _check_lal_pars(params)
-<<<<<<< HEAD
-        hlm = lalsimulation.SimIMRPhenomXHMGenerateFDOneMode(
-            float(pnutils.solar_mass_to_kg(params['mass1'])),
-            float(pnutils.solar_mass_to_kg(params['mass2'])),
-            float(params['spin1z']),
-            float(params['spin2z']), l, m,
-            pnutils.megaparsecs_to_meters(float(params['distance'])),
-            params['f_lower'], params['f_final'], params['delta_f'],
-            params['coa_phase'], params['f_ref'],
-            laldict)
-        hlm = FrequencySeries(hlm.data.data, delta_f=hlm.deltaF,
-                              epoch=hlm.epoch)
-        # Plus, cross strains without Y_lm.
-        # (-1)**(l) factor ALREADY included in FDOneMode
-        hplm = 0.5 * hlm  # Plus strain
-        hclm = 0.5j * hlm  # Cross strain
-        if m > 0:
-            hclm *= -1
-        hlms[l, m] = (hplm, hclm)
-    return hlms
-
-
-_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
-                     }
-_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
-                     }
-# 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented
-# LAL function do not split strain mode by mode
-=======
         hpos, hneg = lalsimulation.SimIMRPhenomXPHMOneMode(
             l, m, params['mass1'] * lal.MSUN_SI, params['mass2'] * lal.MSUN_SI,
             params['spin1x'], params['spin1y'], params['spin1z'],
@@ -296,8 +267,6 @@ _mode_waveform_td = {
 _mode_waveform_fd = {  #'IMRPhenomXHM': get_imrphenomhm_modes,
     #'IMRPhenomXPHM' : get_imrphenomhm_modes,
 }
-
->>>>>>> 0c4a4282 (cleaner waveform inteface implimentation, for polarizations and for modes)
 
 def fd_waveform_mode_approximants():
     """Frequency domain approximants that will return separate modes."""
