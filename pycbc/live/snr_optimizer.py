@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Arthur Tolley
+# Copyright (C) 2023 Arthur Tolley, Gareth Cabourn Davies
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
