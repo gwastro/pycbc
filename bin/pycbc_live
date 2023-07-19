@@ -80,6 +80,7 @@ class LiveEventManager(object):
     def __init__(self, args, bank):
         self.low_frequency_cutoff = args.low_frequency_cutoff
         self.bank = bank
+        self.skymap_only_ifos = [] if args.skymap_only_ifos is None else list(set(args.skymap_only_ifos))
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
@@ -219,7 +220,7 @@ class LiveEventManager(object):
                 ifo,
                 triggers,
                 pvalue_info,
-                recalculate_ifar=recalculate_ifar
+                recalculate_ifar=recalculate_ifar and ifo not in self.skymap_only_ifos
             )
 
         # the SNR time series sample rate can vary slightly due to
@@ -423,7 +424,7 @@ class LiveEventManager(object):
         # reload_buffer time. These args are documented here:
         # https://ligo-gracedb.readthedocs.io/en/latest/api.html#ligo.gracedb.rest.GraceDb
         # Because we do not change any of the request session values when running the
-        # code, it should remain thread safe. 
+        # code, it should remain thread safe.
         gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
         if self.gracedb_server:
             gdbargs['service_url'] = self.gracedb_server
@@ -464,7 +465,8 @@ class LiveEventManager(object):
 
         logging.info('computing followup data for coinc')
         coinc_ifos = coinc_results['foreground/type'].split('-')
-        followup_ifos = list(set(ifos) - set(coinc_ifos))
+        followup_ifos = set(ifos) - set(coinc_ifos)
+        followup_ifos = list(followup_ifos | set(self.skymap_only_ifos))
 
         double_ifar = coinc_results['foreground/ifar']
         if double_ifar < args.ifar_double_followup_threshold:
@@ -510,7 +512,7 @@ class LiveEventManager(object):
         ifar = coinc_results['foreground/ifar']
         upload_checks = self.enable_gracedb_upload and self.ifar_upload_threshold < ifar
         optimize_snr_checks = self.run_snr_optimization and self.ifar_upload_threshold < ifar
-        
+
         # Keep track of the last few coincs uploaded in order to
         # prevent singles being uploaded as well for coinc events
         self.last_few_coincs_uploaded.append(event.merger_time)
@@ -550,6 +552,7 @@ class LiveEventManager(object):
             logging.info(f'Found {ifo} single with ifar {sifar}')
 
             followup_ifos = [i for i in active if i is not ifo]
+            followup_ifos = list(set(followup_ifos) | set(self.skymap_only_ifos))
             # Don't recompute ifar considering other ifos
             sld = self.compute_followup_data(
                 [ifo],
@@ -867,8 +870,6 @@ parser.add_argument('--ifar-double-followup-threshold', type=float, required=Tru
 parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
                     help="Livetime used for p-value combination with followup "
                          "detectors, in years")
-parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
-
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
                     help='Upload triggers to GraceDB')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False,
@@ -917,6 +918,8 @@ parser.add_argument('--enable-embright-has-massgap', action='store_true', defaul
 parser.add_argument('--embright-massgap-max', type=float, default=5.0, metavar='SOLAR MASSES',
                     help='Upper limit of the mass gap, used for estimating '
                          'HasMassGap probability.')
+parser.add_argument('--skymap-only-ifos', nargs='+',
+                    help="Detectors that only contribute in sky localization")
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
@@ -927,8 +930,11 @@ mchirp_area.insert_args(parser)
 livepau.insert_live_pastro_option_group(parser)
 
 args = parser.parse_args()
+
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
+ifos = set(args.channel_name.keys())
+analyze_singles = LiveSingle.verify_args(args, parser, ifos)
 
 if args.output_background is not None and len(args.output_background) != 2:
     parser.error('--output-background takes two parameters: period and path')
@@ -955,10 +961,10 @@ if bank.min_f_lower < args.low_frequency_cutoff:
                  'minimum f_lower across all templates '
                  '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
-ifos = set(args.channel_name.keys())
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
 evnt = LiveEventManager(args, bank)
+logging.info('Detectors that only aid in the sky localization %s', ppdets(evnt.skymap_only_ifos))
 
 # include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
@@ -1030,13 +1036,14 @@ with ctx:
     evnt.data_readers = data_reader
 
     # create single-detector background "estimators"
-    if args.enable_single_detector_background and evnt.rank == 0:
+    if analyze_singles and evnt.rank == 0:
         sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
                           for ifo in ifos}
 
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
-        ifo_combos = itertools.combinations(ifos, 2)
+        trigg_ifos = [ifo for ifo in ifos if ifo not in evnt.skymap_only_ifos]
+        ifo_combos = itertools.combinations(trigg_ifos, 2)
         estimators = []
         for combo in ifo_combos:
             logging.info('Will calculate %s background', ppdets(combo, "-"))
@@ -1105,10 +1112,11 @@ with ctx:
             )
 
             if status is True:
-                evnt.live_detectors.add(ifo)
-                if evnt.rank > 0:
-                    logging.info('Filtering %s', ifo)
-                    results[ifo] = mf.process_data(data_reader[ifo])
+                if ifo not in evnt.skymap_only_ifos:
+                    evnt.live_detectors.add(ifo)
+                    if evnt.rank > 0:
+                        logging.info('Filtering %s', ifo)
+                        results[ifo] = mf.process_data(data_reader[ifo])
             else:
                 logging.info('Insufficient data for %s analysis', ifo)
 
@@ -1167,7 +1175,7 @@ with ctx:
                 evnt.check_coincs(list(results.keys()), best_coinc, psds)
 
             # Check for singles
-            if args.enable_single_detector_background:
+            if analyze_singles:
                 evnt.check_singles(results, psds)
 
             gates = {ifo: data_reader[ifo].gate_params for ifo in data_reader}

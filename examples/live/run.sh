@@ -195,12 +195,11 @@ python -m mpi4py `which pycbc_live` \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --run-snr-optimization \
---enable-single-detector-background \
+--sngl-ifar-est-dist conservative \
 --single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
 --single-reduced-chisq-threshold 2 \
 --single-fit-file single_trigger_fits.hdf \
---sngl-ifar-est-dist conservative \
 --verbose
 
 # note that, at this point, some SNR optimization processes may still be

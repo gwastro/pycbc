@@ -97,11 +97,11 @@ parser.add_argument("--user-tag", type=str, metavar="TAG",
                          "compatibility with pipedown post-processing. Option "
                          "will be removed when no longer needed.")
 # Arguments added for the coherent stuff
-parser.add_argument("--latitude", type=float, help="Latitude, in radians")
-parser.add_argument("--longitude", type=float, help="Longitude, in radians")
+parser.add_argument("--ra", type=float, help="Right ascension, in radians")
+parser.add_argument("--dec", type=float, help="Declination, in radians")
 parser.add_argument("--sky-grid", type=str,
                     help="Sky-grid (hdf file) containing two datasets : "
-                    "latitude and longitude, both in radians")
+                    "ra and dec, both in radians")
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Triggers with coincident/coherent snr below this "
                          "value will be discarded.")
@@ -196,18 +196,18 @@ with ctx:
     template_mem = zeros(tlen, dtype=complex64)
     
     #Read the sky grid or the single sky position
-    if args.sky_grid is not None and args.latitude is not None and args.longitude is not None:
+    if args.sky_grid is not None and args.ra is not None and args.dec is not None:
         parser.error('Give either a sky grid or a sky position, not both')
     
     if args.sky_grid is not None:
         sky_grid = h5py.File(args.sky_grid, 'r')
-        longitude = np.array(sky_grid['longitude'])
-        latitude = np.array(sky_grid['latitude'])
-    if args.latitude is not None and args.longitude is not None:
-        longitude = np.array([args.longitude])
-        latitude = np.array([args.latitude])
+        ra = np.array(sky_grid['ra'])
+        dec = np.array(sky_grid['dec'])
+    if args.ra is not None and args.dec is not None:
+        ra = np.array([args.ra])
+        dec = np.array([args.dec])
     
-    sky_positions = np.array([longitude, latitude])
+    sky_positions = np.array([ra, dec])
     num_sky_positions = sky_positions.shape[1]
     positions_array = np.arange(num_sky_positions)
 
@@ -284,8 +284,8 @@ with ctx:
         }
     ifo_names = sorted(ifo_out_vals.keys())
     network_out_types = {
-        'latitude': float32,
-        'longitude': float32,
+        'dec': float32,
+        'ra': float32,
         'time_index': int,
         'coherent_snr': float32,
         'null_snr': float32,
@@ -295,8 +295,8 @@ with ctx:
         'slide_id': int
         }
     network_out_vals = {
-        'latitude': None,
-        'longitude': None,
+        'dec': None,
+        'ra': None,
         'time_index': None,
         'coherent_snr': None,
         'null_snr': None,
@@ -626,8 +626,8 @@ with ctx:
                         network_out_vals['time_index'] = (
                             coinc_idx + stilde[ifo].cumulative_index)
                         network_out_vals['nifo'] = [nifo] * num_events
-                        network_out_vals['latitude'] = [sky_positions[1][position_index]] * num_events
-                        network_out_vals['longitude'] = [sky_positions[0][position_index]] * num_events
+                        network_out_vals['dec'] = [sky_positions[1][position_index]] * num_events
+                        network_out_vals['ra'] = [sky_positions[0][position_index]] * num_events
                         network_out_vals['slide_id'] = [slide] * num_events
                         event_mgr.add_template_events_to_network(
                             network_names,
