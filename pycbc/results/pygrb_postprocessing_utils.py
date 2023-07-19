@@ -619,10 +619,10 @@ def load_time_slides(hdf_file_path):
     """Loads timeslides from PyGRB output file as a dictionary"""
     hdf_file = h5py.File(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
-    ids = numpy.arange(len(hdf_file[f'network/timeslides/{ifos[0]}']))
+    ids = numpy.arange(len(hdf_file[f'search/time_slides/{ifos[0]}']))
     time_slide_dict = {
         slide_id: {
-            ifo: hdf_file[f'network/timeslides/{ifo}'][slide_id]
+            ifo: hdf_file[f'search/time_slides/{ifo}'][slide_id]
             for ifo in ifos}
         for slide_id in ids}
 
