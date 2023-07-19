@@ -774,7 +774,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 f['template_hash'] = th[tid]
             f.prefix = ''
             for ifo in self.ifos:
-                f['search/time_slides/'+ifo] = numpy.array(
+                f['search/time_slides_'+ifo] = numpy.array(
                     self.time_slides[ifo])
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([
