@@ -354,8 +354,7 @@ def check_snr_optimizer_options(args, parser):
     if args.optimizer == 'pso' and ps == None:
         parser.error('You need to install pyswarms to use the pso optimizer.')
 
-    # Have any options been given for a different optimizer?
-    # If so, raise a warning
+    # Check all the options are suitable for the chosen optimizer
     for k in options.keys():
         if args.optimizer == k:
             continue
