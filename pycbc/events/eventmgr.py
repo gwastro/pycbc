@@ -701,9 +701,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     )
             else:
                 f[col] = network_events[col]
-        # Write time slides
-        for ifo in self.ifos:
-            f['timeslides/'+ifo] = numpy.array(self.time_slides[ifo])
         # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
             tid = self.events['template_id'][self.events['ifo'] == i]
@@ -775,7 +772,10 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     f['chisq_dof'] = numpy.zeros(len(ifo_events))
 
                 f['template_hash'] = th[tid]
-
+            f.prefix = ''
+            for ifo in self.ifos:
+                f['search/time_slides/'+ifo] = numpy.array(
+                    self.time_slides[ifo])
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([
                              self.opt.trig_start_time[ifo]], dtype=numpy.int32)
