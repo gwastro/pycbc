@@ -1,4 +1,5 @@
-import argparse, numpy
+import argparse
+import numpy
 import time
 import logging
 import types
@@ -26,6 +27,7 @@ MAX_MTOTAL = 500.
 Nfeval = 0
 start_time = time.time()
 
+
 def callback_func(Xi, convergence=0):
     global Nfeval
     logging.info("Currently at %d %s", Nfeval, convergence)
@@ -40,19 +42,23 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     Compute network SNR as a function over mchirp, eta, and two aligned
     spin components, stored in that order in the sequence v.
 
-    Parameters:
-    - v (sequence): A sequence containing the input values for mchirp,
-                    eta, and spin components.
-    - *argv: Additional arguments required for the snr calculation.
-    - raise_err (bool, optional): A flag indicating whether to raise an
-                                  error if an exception occurs during
-                                  the computation. Defaults to False.
+    Parameters
+    ----------
+    v : list
+        A list containing the input values for mchirp, eta, and spin
+        components.
+    *argv
+        Additional arguments required for the snr calculation.
+    raise_err : bool, optional
+        A flag indicating whether to raise an error if an exception
+        occurs during the computation. Defaults to False.
 
-    Returns:
-    - network_snr (float): The computed network SNR (Signal-to-Noise
-                           Ratio) value.
-    - snr_series_dict (dict): A dictionary containing the snr timeseries
-                              from each ifo.
+    Returns
+    -------
+    network_snr : float
+        The computed network SNR (Signal-to-Noise Ratio) value.
+    snr_series_dict : dict
+        A dictionary containing the snr timeseries from each ifo.
 
     Notes:
     - The function requires the following arguments to be passed in
@@ -141,7 +147,8 @@ def compute_network_snr_core(v, *argv, raise_err=False):
                                            h_norm=sigmasq)
         duration = 0.095
         half_dur_samples = int(snr.sample_rate * duration / 2)
-        onsource_idx = float(coinc_times[ifo] - snr.start_time) * snr.sample_rate
+        onsource_idx = (float(coinc_times[ifo] - snr.start_time) *
+                        snr.sample_rate)
         onsource_idx = int(round(onsource_idx))
         onsource_slice = slice(onsource_idx - half_dur_samples,
                                onsource_idx + half_dur_samples + 1)
@@ -162,12 +169,15 @@ def compute_minus_network_snr(v, *argv):
 
 def compute_minus_network_snr_pso(v, *argv, **kwargs):
     argv = kwargs['args']
-    nsnr_array = numpy.array([compute_network_snr_core(v_i, *argv)[0] for v_i in v])
+    nsnr_array = numpy.array([
+        compute_network_snr_core(v_i, *argv)[0]
+        for v_i in v])
     return -nsnr_array
 
 
 def normalize_initial_point(initial_point, bounds):
     return (initial_point - bounds[:,0]) / (bounds[:,1] - bounds[:,0])
+
 
 def optimize_di(bounds, cli_args, extra_args, initial_point):
     bounds = numpy.array([
@@ -180,7 +190,7 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
 
     # Currently only implemented for random seed initial array
     rng = numpy.random.mtrand._rand
-    population_shape=(int(cli_args.differential_evolution_popsize), 4)
+    population_shape = (int(cli_args.differential_evolution_popsize), 4)
     population = rng.uniform(size=population_shape)
     if cli_args.include_candidate_in_optimizer:
         # Re-normalize the initial point into the correct range
@@ -220,10 +230,12 @@ def optimize_shgo(bounds, cli_args, extra_args, initial_point): # pylint: disabl
     )
     return results.x
 
+
 def normalize_population(population, min_bounds, max_bounds):
     norm_pop = min_bounds + population * (max_bounds - min_bounds)
 
     return norm_pop
+
 
 def optimize_pso(bounds, cli_args, extra_args, initial_point):
     options = {
@@ -287,7 +299,7 @@ optimize_funcs = {
 option_dict = {
     'differential_evolution': {
         'maxiter': ('The maximum number of generations over which the entire '
-             'population is evolved.', 50),
+                    'population is evolved.', 50),
         'popsize': ('A multiplier for setting the total population size.',
                     100),
     },
@@ -308,29 +320,32 @@ option_dict = {
 }
 
 def insert_snr_optimizer_options(parser):
-    opt_opt_group = parser.add_argument_group("SNR optimizer configuration options.")
+    opt_opt_group = parser.add_argument_group("SNR optimizer configuration "
+                                              "options.")
     # Option to choose which optimizer to use:
     optimizer_choices = sorted(list(option_dict.keys()))
     opt_opt_group.add_argument('--optimizer',
         type=str,
         default='differential_evolution',
         choices=optimizer_choices,
-        help='The optimizer to use, choose from ' + ', '.join(optimizer_choices))
+        help='SNR Optimizer choices: ' + ', '.join(optimizer_choices))
 
     # Add the generic options
     opt_opt_group.add_argument('--include-candidate-in-optimizer',
         action='store_true',
-        help='Include parameters of the candidate event in the initialized array for the optimizer. '
-             'Only relevant for --optimizer pso or differential_evolution')
+        help='Include parameters of the candidate event in the initialized '
+             'array for the optimizer. Only relevant for --optimizer pso or '
+             'differential_evolution')
     opt_opt_group.add_argument('--optimizer-seed',
         type=int,
         default=42,
-        help='Seed to supply to the random generation of initial array to pass to the optimizer. '
-             'Only relevant for --optimizer pso or differential_evolution')
+        help='Seed to supply to the random generation of initial array to '
+             'pass to the optimizer. Only relevant for --optimizer pso or '
+             'differential_evolution')
 
     # For each optimizer, add the possible options
     for optimizer, option_subdict in option_dict.items():
-        optimizer_name = optimizer.replace('_','-')
+        optimizer_name = optimizer.replace('_', '-')
         for opt_name, opt_help_default in option_subdict.items():
             option_name = f"--{optimizer_name}-{opt_name}"
             opt_opt_group.add_argument(option_name,
@@ -351,7 +366,7 @@ def check_snr_optimizer_options(args, parser):
     options['pso'] = [args.pso_iters, args.pso_particles, args.pso_c1,
                       args.pso_c2, args.pso_w]
 
-    if args.optimizer == 'pso' and ps == None:
+    if args.optimizer == 'pso' and ps is None:
         parser.error('You need to install pyswarms to use the pso optimizer.')
 
     # Check all the options are suitable for the chosen optimizer
@@ -374,7 +389,7 @@ def args_to_string(args):
     a string - this is to be used when running subprocesses
     """
     argstr = f'--optimizer {args.optimizer} '
-    optimizer_name = args.optimizer.replace('_','-')
+    optimizer_name = args.optimizer.replace('_', '-')
     for opt in option_dict[args.optimizer]:
         option_fullname = f'--{optimizer_name}-{opt}'
         key_name = f'{args.optimizer}_{opt}'
