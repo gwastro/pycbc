@@ -32,6 +32,7 @@ import os
 import lal
 import numpy
 from lalsimulation.gwsignal.core import waveform as wfm
+from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
 
 import pycbc
 import pycbc.scheme as _scheme
@@ -43,7 +44,7 @@ from pycbc.types import (Array, FrequencySeries, TimeSeries,
                          zeros)
 from pycbc.waveform import parameters
 from pycbc.waveform import utils as wfutils
-from pycbc.waveform.gwsignal_utils import to_gwsignal_dict
+from .waveform.gwsignal_utils import to_gwsignal_dict
 
 from .spa_tmplt import (spa_amplitude_factor, spa_length_in_time, spa_tmplt,
                         spa_tmplt_end, spa_tmplt_norm, spa_tmplt_precondition)
@@ -219,13 +220,15 @@ def _check_lal_pars(p):
 
 
 ## FIXME: How to actually include extra-GR parameters?
+_gws_waveform_generators = {}
 def _lalsim_td_waveform(**p):
     # convert paramaters to gwsignal parameters
+    lal_pars = _check_lal_pars(p)
     p_gws = to_gwsignal_dict(p)
-    gen = wfm.LALCompactBinaryCoalescenceGenerator(p['approximant'])
+    gen = _gws_waveform_generators.setdefault(p['approximant'],
+            wfm.LALCompactBinaryCoalescenceGenerator(p['approximant']))
     hp, hc = wfm.GenerateTDWaveform(p_gws, gen)
-    hp, hc = hp.to_pycbc(), hc.to_pycbc()
-    return hp, hc
+    return hp.to_pycbc(), hc.to_pycbc()
 
 
 def _lalsim_td_waveform_old(**p):
@@ -296,12 +299,13 @@ def _spintaylor_aligned_prec_swapper(**p):
 
 ## FIXME: How to actually include extra-GR parameters?
 def _lalsim_fd_waveform(**p):
+    lal_pars = _check_lal_pars(p)
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
-    gen = wfm.LALCompactBinaryCoalescenceGenerator(p['approximant'])
+    gen = _gws_waveform_generators.setdefault(p['approximant'],
+            wfm.LALCompactBinaryCoalescenceGenerator(p['approximant']))
     hp, hc = wfm.GenerateFDWaveform(p_gws, gen)
-    hp, hc = hp.to_pycbc(), hc.to_pycbc()
-    return hp, hc
+    return hp.to_pycbc(), hc.to_pycbc()
 
 
 def _lalsim_fd_waveform_old(**p):

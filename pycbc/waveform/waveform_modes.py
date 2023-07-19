@@ -18,7 +18,6 @@
 from string import Formatter
 
 import lal
-from gwsignal.core import waveform as wfm
 
 from pycbc import libutils, pnutils
 from pycbc.types import FrequencySeries, TimeSeries
@@ -26,15 +25,21 @@ from pycbc.types import FrequencySeries, TimeSeries
 from . import parameters
 from .waveform import _check_lal_pars, check_args, props
 from .waveform.gwsignal_utils import to_gwsignal_dict
+from lalsimulation.gwsignal.core import waveform as wfm
+from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
 
 lalsimulation = libutils.import_optional('lalsimulation')
 
 
+_gws_waveform_generators = {}
+
 ## FIXME: How to actually include extra-GR parameters?
 def _lalsim_fd_waveform(**p):
+    lal_pars = _check_lal_pars(p)
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
-    gen = wfm.LALCompactBinaryCoalescenceGenerator(p['approximant'])
+    gen = _gws_waveform_generators.setdefault(p['approximant'],
+            wfm.LALCompactBinaryCoalescenceGenerator(p['approximant']))
     hlm = wfm.GenerateFDModes(python_dict, gen)
     fs = hlm.pop('frequency_array')
     pidx = fs >= 0
@@ -47,9 +52,11 @@ def _lalsim_fd_waveform(**p):
 
 ## FIXME: How to actually include extra-GR parameters?
 def _lalsim_td_waveform(**p):
+    lal_pars = _check_lal_pars(p)
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
-    gen = wfm.LALCompactBinaryCoalescenceGenerator(p['approximant'])
+    gen = _gws_waveform_generators.setdefault(p['approximant'],
+            wfm.LALCompactBinaryCoalescenceGenerator(p['approximant']))
     hlm = wfm.GenerateTDModes(python_dict, gen)
     hlms = {}
     for k, v in hlm.items():
@@ -254,11 +261,13 @@ def get_imrphenomxh_modes(**params):
 
 _mode_waveform_td = {
     'NRSur7dq4': get_nrsur_modes,
-    'IMRPhenomXHM': _lalsim_fd_waveform,
-    'IMRPhenomXPHM': _lalsim_fd_waveform,
-    'SEOBNRv4HM_ROM': _lalsim_fd_waveform,
+    'IMRPhenomXHM': _lalsim_td_waveform,
+    'IMRPhenomXPHM': _lalsim_td_waveform,
+    'SEOBNRv4HM_ROM': _lalsim_td_waveform,
     'SEOBNRv4HM': _lalsim_td_waveform,
     'SEOBNRv4PHM': _lalsim_td_waveform,
+    'SEOBNRv5HM': _lalsim_td_waveform,
+    'SEOBNRv5PHM': _lalsim_td_waveform,
     'IMRPhenomTHM': _lalsim_td_waveform,
     'IMRPhenomTPHM': _lalsim_td_waveform,
 }
@@ -266,6 +275,10 @@ _mode_waveform_td = {
 # Remove commented out once IMRPhenomX one mode is fixed
 _mode_waveform_fd = {  #'IMRPhenomXHM': get_imrphenomhm_modes,
     #'IMRPhenomXPHM' : get_imrphenomhm_modes,
+    'SEOBNRv5HM': _lalsim_fd_waveform,
+    'SEOBNRv5PHM': _lalsim_fd_waveform,
+    'IMRPhenomXHM': _lalsim_fd_waveform,
+    'IMRPhenomXPHM': _lalsim_fd_waveform,
 }
 
 def fd_waveform_mode_approximants():
