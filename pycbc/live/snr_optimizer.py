@@ -194,9 +194,9 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
 
     # Currently only implemented for random seed initial array
     rng = numpy.random.mtrand._rand
-    population_shape = (int(cli_args.differential_evolution_popsize), 4)
+    population_shape = (int(cli_args.snr_opt_di_popsize), 4)
     population = rng.uniform(size=population_shape)
-    if cli_args.include_candidate_in_optimizer:
+    if cli_args.snr_opt_include_candidate:
         # Re-normalize the initial point into the correct range
         point_init = normalize_initial_point(initial_point, bounds)
         # add the initial point to the population
@@ -205,9 +205,9 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
     results = differential_evolution(
         compute_minus_network_snr,
         bounds,
-        maxiter=int(cli_args.differential_evolution_maxiter),
+        maxiter=int(cli_args.snr_opt_di_maxiter),
         workers=(cli_args.cores or -1),
-        popsize=int(cli_args.differential_evolution_popsize),
+        popsize=int(cli_args.snr_opt_di_popsize),
         mutation=(0.5, 1),
         recombination=0.7,
         callback=callback_func,
@@ -228,8 +228,8 @@ def optimize_shgo(bounds, cli_args, extra_args, initial_point): # pylint: disabl
         compute_minus_network_snr,
         bounds=bounds,
         args=extra_args,
-        iters=cli_args.shgo_iters,
-        n=cli_args.shgo_samples,
+        iters=cli_args.snr_opt_shgo_iters,
+        n=cli_args.snr_opt_shgo_samples,
         sampling_method="sobol"
     )
     return results.x
@@ -243,9 +243,9 @@ def normalize_population(population, min_bounds, max_bounds):
 
 def optimize_pso(bounds, cli_args, extra_args, initial_point):
     options = {
-        'c1': cli_args.pso_c1,
-        'c2': cli_args.pso_c2,
-        'w': cli_args.pso_w
+        'c1': cli_args.snr_opt_pso_c1,
+        'c2': cli_args.snr_opt_pso_c2,
+        'w': cli_args.snr_opt_pso_w
     }
     min_bounds = numpy.array([
         bounds['mchirp'][0],
@@ -263,17 +263,17 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
     # Manually generate the initial points, this is the same as the default
     # method, but allows us to make some modifications
     population = numpy.random.uniform(
-        low=0.0, high=1.0, size=(int(cli_args.pso_particles), 4)
+        low=0.0, high=1.0, size=(int(cli_args.snr_opt_pso_particles), 4)
     )
     population = normalize_population(population, min_bounds, max_bounds)
 
-    if cli_args.include_candidate_in_optimizer:
+    if cli_args.snr_opt_include_candidate:
         # add the initial point to the population
         population = numpy.concatenate((population[:-1],
                                         initial_point))
 
     optimizer = ps.single.GlobalBestPSO(
-        n_particles=int(cli_args.pso_particles),
+        n_particles=int(cli_args.snr_opt_pso_particles),
         dimensions=4,
         options=options,
         bounds=(min_bounds, max_bounds),
@@ -281,7 +281,7 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
     )
     _, results = optimizer.optimize(
         compute_minus_network_snr_pso,
-        iters=int(cli_args.pso_iters),
+        iters=int(cli_args.snr_opt_pso_iters),
         n_processes=cli_args.cores,
         args=extra_args
     )
@@ -328,30 +328,30 @@ def insert_snr_optimizer_options(parser):
                                               "options.")
     # Option to choose which optimizer to use:
     optimizer_choices = sorted(list(option_dict.keys()))
-    opt_opt_group.add_argument('--optimizer',
-        type=str,
+    opt_opt_group.add_argument('--snr-opt-method',
         default='differential_evolution',
         choices=optimizer_choices,
         help='SNR Optimizer choices: ' + ', '.join(optimizer_choices))
 
     # Add the generic options
-    opt_opt_group.add_argument('--include-candidate-in-optimizer',
+    opt_opt_group.add_argument('--snr-opt-include-candidate',
         action='store_true',
         help='Include parameters of the candidate event in the initialized '
              'array for the optimizer. Only relevant for --optimizer pso or '
              'differential_evolution')
-    opt_opt_group.add_argument('--optimizer-seed',
-        type=int,
-        default=42,
+    opt_opt_group.add_argument('--snr-opt-seed',
+        default='42',
         help='Seed to supply to the random generation of initial array to '
              'pass to the optimizer. Only relevant for --optimizer pso or '
-             'differential_evolution')
+             'differential_evolution. Set to ''random'' for a random seed')
 
     # For each optimizer, add the possible options
     for optimizer, option_subdict in option_dict.items():
         optimizer_name = optimizer.replace('_', '-')
+        if optimizer_name == 'differential-evolution':
+            optimizer_name = 'di'
         for opt_name, opt_help_default in option_subdict.items():
-            option_name = f"--{optimizer_name}-{opt_name}"
+            option_name = f"--snr-opt-{optimizer_name}-{opt_name}"
             opt_opt_group.add_argument(option_name,
                 type=float,
                 help=f'Only relevant for --optimizer {optimizer}: ' +
@@ -364,26 +364,30 @@ def check_snr_optimizer_options(args, parser):
     Deal with default options and required parameters given optimizer option
     """
     options = {}
-    options['differential_evolution'] = [args.differential_evolution_maxiter,
-                                         args.differential_evolution_popsize]
-    options['shgo'] = [args.shgo_samples, args.shgo_iters]
-    options['pso'] = [args.pso_iters, args.pso_particles, args.pso_c1,
-                      args.pso_c2, args.pso_w]
+    options['differential_evolution'] = [args.snr_opt_di_maxiter,
+                                         args.snr_opt_di_popsize]
+    options['shgo'] = [args.snr_opt_shgo_samples, args.snr_opt_shgo_iters]
+    options['pso'] = [args.snr_opt_pso_iters, args.snr_opt_pso_particles,
+                      args.snr_opt_pso_c1, args.snr_opt_pso_c2,
+                      args.snr_opt_pso_w]
 
-    if args.optimizer == 'pso' and ps is None:
+    if args.snr_opt_method == 'pso' and ps is None:
         parser.error('You need to install pyswarms to use the pso optimizer.')
 
     # Check all the options are suitable for the chosen optimizer
     for k in options.keys():
-        if args.optimizer == k:
+        if args.snr_opt_method == k:
             continue
         if any(options[k]):
             parser.error("Argument has been supplied which is not suitable " +
-                         f"for the optimizer given ({args.optimizer})")
+                         f"for the optimizer given ({args.snr_opt_method})")
 
     # Give the arguments the default values according to the dictionary
-    for key, value in option_dict[args.optimizer].items():
-        key_name = f'{args.optimizer}_{key}'
+    optimizer_name = args.snr_opt_method.replace('_', '-')
+    if optimizer_name == 'differential-evolution':
+        optimizer_name = 'di'
+    for key, value in option_dict[args.snr_opt_method].items():
+        key_name = f'snr_opt_{optimizer_name}_{key}'
         if not getattr(args, key_name):
             setattr(args, key_name, value[1])
 
@@ -392,11 +396,13 @@ def args_to_string(args):
     Convert the supplied arguments for SNR optimization config into
     a string - this is to be used when running subprocesses
     """
-    argstr = f'--optimizer {args.optimizer} '
-    optimizer_name = args.optimizer.replace('_', '-')
-    for opt in option_dict[args.optimizer]:
-        option_fullname = f'--{optimizer_name}-{opt}'
-        key_name = f'{args.optimizer}_{opt}'
+    argstr = f'--snr-opt-method {args.snr_opt_method} '
+    optimizer_name = args.snr_opt_method.replace('_', '-')
+    if optimizer_name == 'differential-evolution':
+        optimizer_name = 'di'
+    for opt in option_dict[args.snr_opt_method]:
+        option_fullname = f'--snr-opt-{optimizer_name}-{opt}'
+        key_name = f'snr_opt_{optimizer_name}_{opt}'
         option_value = getattr(args, key_name)
         argstr += f'{option_fullname} {option_value} '
     return argstr

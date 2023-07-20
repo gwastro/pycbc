@@ -68,8 +68,9 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-if args.optimizer_seed:
-    numpy.random.seed(args.optimizer_seed)
+if args.snr_opt_seed is not None and args.snr_opt_seed != 'random':
+    logging.info('Setting snr optimizer random seed.')
+    numpy.random.seed(int(args.snr_opt_seed))
 
 # Input checking
 if args.snr_threshold != 4:
@@ -163,7 +164,7 @@ bounds = {
     'spin2z': (minspin2z, maxspin2z)
 }
 
-if args.include_candidate_in_optimizer:
+if args.snr_opt_include_candidate:
     # Initial point from found candidate
     mchirp_init = cv.mchirp_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()])
     eta_init = cv.eta_from_mass1_mass2(fp['mass1'][()], fp['mass2'][()])
@@ -182,7 +183,7 @@ else:
 with scheme_context:
     logging.info('Starting optimization')
 
-    optimize_func = snr_optimizer.optimize_funcs[args.optimizer]
+    optimize_func = snr_optimizer.optimize_funcs[args.snr_opt_method]
     opt_params = optimize_func(bounds, args, extra_args, initial_point)
 
     logging.info('Optimization complete')
