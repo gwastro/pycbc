@@ -66,7 +66,8 @@ def callback_func(Xi, convergence=0):
     Nfeval += 1
 
 
-def compute_network_snr_core(v, *argv, raise_err=False):
+def compute_network_snr_core(v, data, coinc_times, ifos, flen, approximant,
+                             flow, f_end, delta_f, sample_rate, raise_err=False):
     """
     Compute network SNR as a function over mchirp, eta, and two aligned
     spin components, stored in that order in the sequence v.
@@ -76,8 +77,25 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     v : list
         A list containing the input values for mchirp, eta, and spin
         components.
-    *argv
-        Additional arguments required for the snr calculation.
+    data : dict
+        A dictionary containing keys of ifos ('H1', 'L1') and
+        values of the frequency series data for those ifos
+    coinc_times : dict
+        A dictionary containing the coincidence times for the network.
+    ifos : list
+        A list of the ifos, e.g. ['H1', 'L1']
+    flen : float
+        The length of the data.
+    approximant : str
+        The approximant used for the waveform model.
+    flow : float
+        The lower frequency bound.
+    f_end : float
+        The upper frequency bound.
+    delta_f : float
+        The frequency spacing.
+    sample_rate : float
+        The sampling rate of the data.
     raise_err : bool, optional
         A flag indicating whether to raise an error if an exception
         occurs during the computation. Defaults to False.
@@ -89,50 +107,7 @@ def compute_network_snr_core(v, *argv, raise_err=False):
     snr_series_dict : dict
         A dictionary containing the snr timeseries from each ifo.
 
-    Notes:
-    - The function requires the following arguments to be passed in
-      *argv in the specified order:
-      - data (dict): A dictionary containing keys of ifos ('H1', 'L1') and
-                     values of the frequency series data for those ifos
-      - coinc_times (dict): A dictionary containing the coincidence times for
-                            the network.
-      - ifos (list): A list of the ifos, e.g. ['H1', 'L1']
-      - flen (float): The length of the data.
-      - approximant (str): The approximant used for the waveform model.
-      - flow (float): The lower frequency bound.
-      - f_end (float): The upper frequency bound.
-      - delta_f (float): The frequency spacing.
-      - sample_rate (float): The sampling rate of the data.
-
-    Example:
-    ```
-    v = [mchirp, eta, spin1, spin2]  # Input values
-    data = {'H1' : H1_data, 'L1' : L1_data}
-    coinc_times = {'H1' : H1_coinc_times, 'L1' : L1_coinc_times}
-    ifos = ['H1', 'L1']
-    flen = ...  # Length of the data
-    approximant = ...  # Approximant for the waveform model
-    flow = ...  # Lower frequency bound
-    f_end = ...  # Upper frequency bound
-    delta_f = ...  # Frequency spacing
-    sample_rate = ...  # Sampling rate
-
-    extra_args = [data, coinc_times, coinc_ifos, flen,
-                  approximant, flow, f_end, delta_f, sample_rate]
-
-    network_snr = compute_network_snr_core(v, extra_args)
-    ```
-
     """
-    data = argv[0]
-    coinc_times = argv[1]
-    ifos = argv[2]
-    flen = argv[3]
-    approximant = argv[4]
-    flow = argv[5]
-    f_end = argv[6]
-    delta_f = argv[7]
-    sample_rate = argv[8]
     distance = 1.0 / DYN_RANGE_FAC
     mtotal = cv.mtotal_from_mchirp_eta(v[0], v[1])
     mass1 = cv.mass1_from_mtotal_eta(mtotal, v[1])
