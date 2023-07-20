@@ -203,10 +203,6 @@ python -m mpi4py `which pycbc_live` \
 --single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
 --single-reduced-chisq-threshold 2 \
---sngl-ifar-est-dist conservative \
---single-newsnr-threshold 9 \
---single-duration-threshold 7 \
---single-reduced-chisq-threshold 2 \
 --single-fit-file single_trigger_fits.hdf \
 --verbose
 
