@@ -230,7 +230,7 @@ def bin_events(inputfile, bins, outdir, filetag,
     ifotag, _, seg = filename_metadata(inputfile)
 
     with h5py.File(inputfile, "r") as h5in:
-        ifos = [k for k in h5in.keys() if k != "network"]
+        ifos = [k for k in h5in.keys() if k not in ("network", "search")]
         times = h5in[column][()]
 
         for bin_, segl in bins.items():

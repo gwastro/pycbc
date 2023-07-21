@@ -691,7 +691,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         # Write timeslides to search group
         f.prefix = 'search'
         for ifo in self.ifos:
-            f['time_slides_'+ifo] = timeslides[ifo] 
+            f['time_slides_'+ifo] = self.time_slides[ifo] 
         # Output network stuff
         f.prefix = 'network'
         network_events = numpy.array(
