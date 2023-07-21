@@ -185,7 +185,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
 
     # handle search datasets as a special case
     # (they will the same in all files)
-    search_datasets = set(filter(lambda x: "/search/" in x, dataset_names))
+    search_datasets = set(filter(lambda x: "search/" in x, dataset_names))
 
     # record where we are in the global dataset
     position = defaultdict(int)
@@ -490,9 +490,6 @@ for i, j in enumerate(offtrials):
 vprint("-- Merging events")
 
 if args.short_slides and args.long_slides:
-    raise NotImplementedError
-
-elif args.short_slides and not args.long_slides:
     raise NotImplementedError
 
 else:
