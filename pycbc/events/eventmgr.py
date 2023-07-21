@@ -688,10 +688,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         th = numpy.array(
             [p['tmplt'].template_hash for p in self.template_params])
         f = fw(outname)
-        # Write timeslides to search group
-        f.prefix = 'search'
-        for ifo in self.ifos:
-            f['time_slides_'+ifo] = self.time_slides[ifo] 
         # Output network stuff
         f.prefix = 'network'
         network_events = numpy.array(
@@ -776,6 +772,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     f['chisq_dof'] = numpy.zeros(len(ifo_events))
 
                 f['template_hash'] = th[tid]
+            f['search/time_slides'] = numpy.array(self.time_slides[ifo])
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([
                              self.opt.trig_start_time[ifo]], dtype=numpy.int32)

@@ -63,7 +63,7 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
         nevents = include.size
 
     with h5py.File(inputfile, "r") as h5in:
-        ifos = [k for k in h5in.keys() if k not in ("network", "search")]
+        ifos = [k for k in h5in.keys() if k != "network"]
 
         # find which single-ifo events to keep
         ifo_index = {
