@@ -84,13 +84,11 @@ parser.add_argument('--sort-order', default='descending',
                     choices=['ascending','descending'],
                     help='Which direction to use when sorting on '
                          '--sort-variable. Default=descending')
-parser.add_argument('--ifar-thresh-for-upload-prep', type=float,
-                    help="IFAR threshold for preparing SNR timeseries "
-                         "files for upload. Default=No upload")
 
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
+
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -266,50 +264,5 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
 
     layouts += list(layout.grouper(files, 2))
 
-layout.two_column_layout(args.output_dir, layouts)
-
-# For foreground events, we will make single_template files for all events
-# with IFAR above a threshold
-
-ifar_limit = args.ifar_thresh_for_upload_prep
-if file_val == 'foreground' and ifar_limit:
-    # Get indices of all events which pass the IFAR threshold
-    event_ifars = f['{}/ifar'.format(file_val)][:]
-    events_to_read = np.count_nonzero(event_ifars > ifar_limit)
-    # Sort by IFAR, descending
-    event_idx = event_ifars.argsort()[::-1][:events_to_read]
-    # Save to a subdirectory of the main one
-    upload_dir = os.path.join(args.output_dir, "upload_files")
-    files = wf.FileList([])
-    # Times and tids need to be reset for this set of events:
-    times = {}
-    tids = {}
-    bank_ids = {}
-
-    ifo_list = f.attrs['ifos'].split(' ')
-    for ifo in ifo_list:
-        times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
-        tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
-    bank_ids = f['{}/template_id'.format(file_val)][:][event_idx]
-
-    for curr_idx in range(event_idx.size):
-        params = get_params(curr_idx, times, tids, bank_ids[curr_idx], bank_data, fsdt)
-        for ifo in ifo_list:
-            if params['mean_time'] not in insp_analysed_seglists[ifo]:
-                logging.info("Mean time %.3f not in segment list",
-                             params['mean_time'])
-                continue
-            data = mini.make_single_template_files(
-                workflow,
-                insp_segs,
-                ifo,
-                args.inspiral_data_read_name,
-                args.inspiral_data_analyzed_name,
-                params,
-                upload_dir,
-                store_file=True,
-                tags=args.tags+['upload', str(curr_idx)],
-            )
-            files += data
-
 workflow.save()
+layout.two_column_layout(args.output_dir, layouts)

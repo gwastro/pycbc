@@ -952,3 +952,132 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
     workflow += node
     files = node.output_files
     return files
+
+
+def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
+                      event_id, out_dir, tags=None):
+    """
+    Make skymap fits for uploading to gracedb
+    """
+    indiv_xml_exe = Executable(
+        workflow.cp,
+        'generate_xml',
+        ifos=workflow.ifos, out_dir=out_dir,
+        tags=tags
+    )
+
+    xml_node = indiv_xml_exe.create_node()
+    xml_node.add_input_opt('--input-file', xml_all)
+    xml_node.add_opt('--event-id', event_id)
+    xml_node.add_input_list_opt('--psd-files', psd_files)
+    xml_node.add_input_list_opt('--snr-timeseries', snr_timeseries)
+    snr_plot = xml_node.new_output_file_opt(workflow.analysis_time, '.png', '--snr-timeseries-plot', tags=tags+['snr'])
+    psd_plot = xml_node.new_output_file_opt(workflow.analysis_time, '.png', '--psd-plot', tags=tags+['psd'])
+    xml_indiv = xml_node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+
+    workflow += xml_node
+
+    return xml_node.output_files
+
+
+def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file, single_triggers,
+                                    psd_files,
+                                    tmpltbank_file, insp_segs, insp_data_name,
+                                    insp_anal_name, dax_output, out_dir, tags=None):
+    """ Create plots that followup the Nth loudest coincident injection
+    from a statmap produced HDF file.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    coinc_file:
+    single_triggers: list of pycbc.workflow.File
+        A list cointaining the file objects associated with the merged
+        single detector trigger files for each ifo.
+    psd_files: list of pycbc.workflow.File
+        A list containing the file objects associated with the merged
+        psd files for each ifo.
+    xml_all_file : workflow file object
+        
+    tmpltbank_file: pycbc.workflow.File
+        The file object pointing to the HDF format template bank
+    insp_segs: SegFile
+       The segment file containing the data read and analyzed by each inspiral
+       job.
+       The segment file containing the data read and analyzed by each inspiral
+       job.
+    insp_data_name: str
+        The name of the segmentlist storing data read.
+    insp_anal_name: str
+        The name of the segmentlist storing data analyzed.
+    dax_output : directory
+        Location of the dax outputs
+    out_dir: path
+        The directory to store minifollowups result plots and files
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+
+    Returns
+    -------
+    layout: list
+        A list of tuples which specify the displayed file layout for the
+        minifollops plots.
+    """
+    logging.info('Entering minifollowups module')
+
+    if not workflow.cp.has_section('workflow-minifollowups'):
+        logging.info('There is no [workflow-minifollowups] section in configuration file')
+        logging.info('Leaving minifollowups')
+        return
+
+    tags = [] if tags is None else tags
+    makedir(dax_output)
+
+    # turn the config file into a File class
+    config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'upload_prep_minifollowup.ini')
+    workflow.cp.write(open(config_path, 'w'))
+
+    config_file = resolve_url_to_file(config_path)
+
+    exe = Executable(workflow.cp, 'upload_prep_minifollowup',
+                     ifos=workflow.ifos, out_dir=dax_output, tags=tags)
+
+    node = exe.create_node()
+    node.add_input_opt('--config-files', config_file)
+    node.add_input_opt('--xml-all-file', xml_all_file)
+    node.add_input_opt('--bank-file', tmpltbank_file)
+    node.add_input_opt('--statmap-file', coinc_file)
+    node.add_multiifo_input_list_opt('--single-detector-triggers',
+                                     single_triggers)
+    node.add_multiifo_input_list_opt('--psd-files', psd_files)
+    node.add_input_opt('--inspiral-segments', insp_segs)
+    node.add_opt('--inspiral-data-read-name', insp_data_name)
+    node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
+    if tags:
+        node.add_list_opt('--tags', tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
+
+    name = node.output_files[0].name
+    map_file = node.output_files[1]
+
+    node.add_opt('--workflow-name', name)
+    node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
+
+    workflow += node
+
+    # execute this in a sub-workflow
+    fil = node.output_files[0]
+
+    # determine if a staging site has been specified
+    job = SubWorkflow(fil.name, is_planned=False)
+    input_files = [tmpltbank_file, coinc_file, insp_segs] + \
+        single_triggers + psd_files
+    job.add_inputs(*input_files)
+    job.set_subworkflow_properties(map_file,
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
+    job.add_into_workflow(workflow)
+    logging.info('Leaving minifollowups module')

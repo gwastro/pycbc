@@ -1,0 +1,182 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2015 Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Take a coinc xml file containing multiple events and upload to gracedb.
+"""
+
+import os
+import argparse
+import logging
+from ligo.gracedb.rest import GraceDb
+import numpy as np
+import h5py
+import matplotlib
+matplotlib.use('agg')
+
+import pycbc
+import lal
+import lal.series
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.segments import segment, segmentlist
+from pycbc.io.live import gracedb_tag_with_version
+from pycbc.io.ligolw import (
+    LIGOLWContentHandler,
+    snr_series_to_xml,
+)
+from pycbc.psd import interpolate
+from pycbc.types import FrequencySeries, TimeSeries
+from pycbc.results import generate_asd_plot, generate_snr_plot
+from gwpy.time import to_gps
+
+def check_gracedb_for_event(gdb_handle, query, far):
+    """
+    Check if there is an event in gracedb with the queried string
+    which matches the FAR given
+    """
+    gdb_events_match_query = list(gdb_handle.events(query=query))
+    ifar = 1. / lal.YRJUL_SI / far
+    for gdb_event in gdb_events_match_query:
+        # Test each gracedb event to see if the FAR matches this event
+        if np.abs(gdb_event['far'] - far) < 1e-16:
+            # If an event has been found which matches the FAR
+            logging.info('Event already exists in GraceDb server with '
+                         'time %.3f and IFAR %.3e: %s',
+                         gdb_event['gpstime'], ifar,
+                         gdb_event['graceid'])
+            return True
+
+    # If no event has been found, log this, and return False
+    logging.info('No event found in GraceDb with IFAR %.3e when using '
+                 'query: "%s"', ifar, query)
+    return False
+
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    level=logging.INFO)
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--xml-file-for-upload', required=True, type=str,
+                    help='LIGOLW XML file containing the event.')
+parser.add_argument('--log-message', type=str, metavar='MESSAGE',
+                    help='Add a log entry to each upload with the given message')
+parser.add_argument('--testing', action="store_true", default=False,
+                    help="Upload event to the TEST group of gracedb.")
+parser.add_argument('--production-server', action="store_true", default=False,
+                    help="Upload event to production graceDB. If not given "
+                         "events will be uploaded to playground server.")
+parser.add_argument('--force-overwrite', action='store_true', default=False,
+                    help="GraceDb instance will be checked for if an event "
+                         "with the same event time and FAR already exist. "
+                         "If so, event will not be uploaded")
+parser.add_argument('--query-string', default='pycbc',
+                    help="If not using --force-overwrite, add a string to "
+                         "gracedb query to further filter events. "
+                         "Default='pycbc'")
+parser.add_argument('--search-id-string', default='AllSky',
+                    help="Using T050017-v1 naming convention for "
+                         "output XML filename. This is a string for "
+                         "search identifier in filename, e.g. 'AllSky' "
+                         "would give H1L1V1-PYCBC_AllSky-1234567890-1.xml. "
+                         "See https://dcc.ligo.org/LIGO-T050017/public. "
+                         "Default: 'AllSky'")
+parser.add_argument('--upload-files', nargs='+',
+                    help="Plots to be uploaded with the event. "
+                         "Filenames should contain the strings 'SNR', 'ASD' "
+                         "or be a '.fits' file to annotate correctly.")
+
+args = parser.parse_args()
+
+if args.production_server:
+    gracedb = GraceDb()
+else:
+    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
+
+group_tag = 'Test' if args.testing else 'CBC'
+r = gracedb.create_event(
+    group_tag,
+    'pycbc',
+    args.xml_file_for_upload,
+    filecontents=open(args.xml_file_for_upload, "rb").read(),
+    search=id_str,
+    offline=True
+).json()
+
+logging.info("Uploaded event %s.", r["graceid"])
+
+# add info for tracking code version
+gracedb_tag_with_version(gracedb, r['graceid'])
+
+# document the absolute path to the input file
+input_file_str = 'Candidate uploaded from ' \
+    + os.path.abspath(args.input_file)
+gracedb.write_log(r['graceid'], input_file_str)
+
+# add the custom log message, if provided
+if args.log_message is not None:
+    gracedb.write_log(
+        r['graceid'],
+        args.log_message,
+        tag_name=['analyst_comments']
+    )
+
+if args.upload_files:
+    for upload_filename in args.upload_files:
+        # Work out if this is an ASD, SNR timeseries, fits file or none:
+        if "_ASD-" in upload_filename and upload_filename.endswith('.png'):
+            logging.info("Found ASD plot %s", upload_filename)
+            comment = "PyCBC ASD estimate from the time of event"
+            tag = "psd"
+            displayname='ASDs'
+        elif "_SNR-" in upload_filename and upload_filename.endswith('.png'):
+            logging.info("Found SNR timeseries plot %s", upload_filename)
+            comment = "SNR timeseries plot upload"
+            tag = "background"
+            displayname='SNR timeseries'
+        elif upload_filename.endswith('.fits'):
+            logging.info("Found fits file %s", upload_filename)
+            comment = "sky localization complete"
+            tag = "sky_loc"
+            displayname=''
+        elif upload_filename.endswith('_skymap.png'):
+            logging.info("Found skymap plot %s", upload_filename)
+            comment = "Skymap plot upload"
+            tag = "sky_loc"
+            displayname=''
+        elif upload_filename.endswith('_src_probs.json'):
+            logging.info("Found source probabilities file %s", upload_filename)
+            comment = "Source probabilities JSON file upload"
+            tag = "pe"
+            displayname=''
+        elif upload_filename.endswith('_src_probs.png'):
+            logging.info("Found source probabilities plot %s", upload_filename)
+            comment = "Source probabilities plot upload"
+            tag = "pe"
+            displayname=''
+
+    gracedb.write_log(
+        r["graceid"],
+        comment,
+        filename=upload_filename,
+        tag_name=[tag],
+        displayName=[displayname]
+    )
+    logging.info("Uploaded file %s to event %s.", upload_filename,
+                 r["graceid"])
+
