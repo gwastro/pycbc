@@ -72,7 +72,8 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
             ) for ifo in ifos
         }
 
-        nsets = sum(isinstance(item, h5py.Dataset) for
+        nsets = sum(isinstance(item, h5py.Dataset)
+                    or isinstance(item, h5py.Group) for
                     group in h5in.values() for
                     item in group.values())
         msg = "Slicing {} network events into new file".format(nevents)
