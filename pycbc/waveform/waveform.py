@@ -32,7 +32,7 @@ import os
 import lal
 import numpy
 from lalsimulation.gwsignal.core import waveform as wfm
-from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
+# from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
 
 import pycbc
 import pycbc.scheme as _scheme
@@ -222,11 +222,13 @@ def _check_lal_pars(p):
 ## FIXME: How to actually include extra-GR parameters?
 _gws_waveform_generators = {}
 def _lalsim_td_waveform(**p):
-    # convert paramaters to gwsignal parameters
     lal_pars = _check_lal_pars(p)
+    # select or instantiate the generator
+    approx = p['approximant']
+    gen = _gws_waveform_generators.setdefault(approx,
+            wfm.LALCompactBinaryCoalescenceGenerator(approx))
+    # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
-    gen = _gws_waveform_generators.setdefault(p['approximant'],
-            wfm.LALCompactBinaryCoalescenceGenerator(p['approximant']))
     hp, hc = wfm.GenerateTDWaveform(p_gws, gen)
     return hp.to_pycbc(), hc.to_pycbc()
 
@@ -300,10 +302,12 @@ def _spintaylor_aligned_prec_swapper(**p):
 ## FIXME: How to actually include extra-GR parameters?
 def _lalsim_fd_waveform(**p):
     lal_pars = _check_lal_pars(p)
+    # select or instantiate the generator
+    approx = p['approximant']
+    gen = _gws_waveform_generators.setdefault(approx,
+            wfm.LALCompactBinaryCoalescenceGenerator(approx))
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
-    gen = _gws_waveform_generators.setdefault(p['approximant'],
-            wfm.LALCompactBinaryCoalescenceGenerator(p['approximant']))
     hp, hc = wfm.GenerateFDWaveform(p_gws, gen)
     return hp.to_pycbc(), hc.to_pycbc()
 
@@ -371,6 +375,17 @@ try:
                 approx_name] = _lalsim_sgburst_waveform
 except ImportError:
     lalsimulation = libutils.import_optional('lalsimulation')
+
+
+try:
+    import pyseobnr
+    _lalsim_td_approximants['SEOBNRv5HM'] = _lalsim_td_waveform
+    _lalsim_td_approximants['SEOBNRv5PHM'] = _lalsim_td_waveform
+
+    _lalsim_fd_approximants['SEOBNRv5HM'] = _lalsim_fd_waveform
+    _lalsim_fd_approximants['SEOBNRv5PHM'] = _lalsim_fd_waveform
+except ImportError:
+    lalsimulation = libutils.import_optional('pyseobnr')
 
 cpu_sgburst = _lalsim_sgburst_approximants
 cpu_td = dict(_lalsim_td_approximants.items())

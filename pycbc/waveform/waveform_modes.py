@@ -26,7 +26,7 @@ from . import parameters
 from .waveform import _check_lal_pars, check_args, props
 from .gwsignal_utils import to_gwsignal_dict
 from lalsimulation.gwsignal.core import waveform as wfm
-from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
+# from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
 
 lalsimulation = libutils.import_optional('lalsimulation')
 
@@ -36,11 +36,13 @@ _gws_waveform_generators = {}
 ## FIXME: How to actually include extra-GR parameters?
 def _lalsim_fd_waveform(**p):
     lal_pars = _check_lal_pars(p)
+    # select or instantiate the generator
+    approx = p['approximant']
+    gen = _gws_waveform_generators.setdefault(approx,
+            wfm.LALCompactBinaryCoalescenceGenerator(approx))
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
-    gen = _gws_waveform_generators.setdefault(p['approximant'],
-            wfm.LALCompactBinaryCoalescenceGenerator(p['approximant']))
-    hlm = wfm.GenerateFDModes(python_dict, gen)
+    hlm = wfm.GenerateFDModes(p_gws, gen)
     fs = hlm.pop('frequency_array')
     pidx = fs >= 0
     hlms = {}
@@ -53,11 +55,13 @@ def _lalsim_fd_waveform(**p):
 ## FIXME: How to actually include extra-GR parameters?
 def _lalsim_td_waveform(**p):
     lal_pars = _check_lal_pars(p)
+    # select or instantiate the generator
+    approx = p['approximant']
+    gen = _gws_waveform_generators.setdefault(approx,
+            wfm.LALCompactBinaryCoalescenceGenerator(approx))
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
-    gen = _gws_waveform_generators.setdefault(p['approximant'],
-            wfm.LALCompactBinaryCoalescenceGenerator(p['approximant']))
-    hlm = wfm.GenerateTDModes(python_dict, gen)
+    hlm = wfm.GenerateTDModes(p_gws, gen)
     hlms = {}
     for k, v in hlm.items():
         hlms[k[0], k[1]] = v.to_pycbc()
@@ -266,8 +270,6 @@ _mode_waveform_td = {
     'SEOBNRv4HM_ROM': _lalsim_td_waveform,
     'SEOBNRv4HM': _lalsim_td_waveform,
     'SEOBNRv4PHM': _lalsim_td_waveform,
-    'SEOBNRv5HM': _lalsim_td_waveform,
-    'SEOBNRv5PHM': _lalsim_td_waveform,
     'IMRPhenomTHM': _lalsim_td_waveform,
     'IMRPhenomTPHM': _lalsim_td_waveform,
 }
@@ -280,6 +282,17 @@ _mode_waveform_fd = {  #'IMRPhenomXHM': get_imrphenomhm_modes,
     'IMRPhenomXHM': _lalsim_fd_waveform,
     'IMRPhenomXPHM': _lalsim_fd_waveform,
 }
+
+try:
+    import pyseobnr
+    _mode_waveform_td['SEOBNRv5HM'] = _lalsim_td_waveform
+    _mode_waveform_td['SEOBNRv5PHM'] = _lalsim_td_waveform
+
+    _mode_waveform_fd['SEOBNRv5HM'] = _lalsim_fd_waveform
+    _mode_waveform_fd['SEOBNRv5PHM'] = _lalsim_fd_waveform
+except ImportError:
+    lalsimulation = libutils.import_optional('pyseobnr')
+
 
 def fd_waveform_mode_approximants():
     """Frequency domain approximants that will return separate modes."""
