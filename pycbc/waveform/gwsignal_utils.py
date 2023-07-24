@@ -1,7 +1,7 @@
 '''
 Code to covert pycbc waveform gen params to gwsignal params
 '''
-import lalsimulation as lalsim
+# import lalsimulation as lalsim
 from lalsimulation.gwsignal.core.parameter_conventions import (default_dict,
         common_units_dictionary)
 
@@ -27,9 +27,12 @@ def to_gwsignal_dict(par):
     '''
     params = par.copy()
     for key in par:
+        # if par[key]:
         knew = pycbc_to_gws.get(key, key)
         params[knew] = params.pop(key)
-        params[knew] *= gws_units.get(knew, 1.)
-        params.setdefault('condition', 1)
+        params[knew] = (params[knew]*gws_units.get(knew)) if params[knew] \
+                else params[knew]
+
+    _ = params.setdefault('condition', 1)
 
     return params

@@ -44,7 +44,7 @@ from pycbc.types import (Array, FrequencySeries, TimeSeries,
                          zeros)
 from pycbc.waveform import parameters
 from pycbc.waveform import utils as wfutils
-from .waveform.gwsignal_utils import to_gwsignal_dict
+from .gwsignal_utils import to_gwsignal_dict
 
 from .spa_tmplt import (spa_amplitude_factor, spa_length_in_time, spa_tmplt,
                         spa_tmplt_end, spa_tmplt_norm, spa_tmplt_precondition)

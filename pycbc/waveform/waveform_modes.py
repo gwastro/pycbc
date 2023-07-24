@@ -24,7 +24,7 @@ from pycbc.types import FrequencySeries, TimeSeries
 
 from . import parameters
 from .waveform import _check_lal_pars, check_args, props
-from .waveform.gwsignal_utils import to_gwsignal_dict
+from .gwsignal_utils import to_gwsignal_dict
 from lalsimulation.gwsignal.core import waveform as wfm
 from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
 
