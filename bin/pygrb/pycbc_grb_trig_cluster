@@ -99,6 +99,11 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
                             compression_opts=old.compression_opts,
                         )
                         bar.update()
+                    elif isinstance(old, h5py.Group):
+                        # If search group, copy it all over
+                        if "search" in old.name:
+                            h5in.copy(h5in[old.name], h5out, old.name)
+                            bar.update()
         bar.close()
         if verbose:
             print("Slice written to {}".format(outfile))
