@@ -20,10 +20,17 @@ pycbc_to_gws = {
         'f_final': 'f_max',
         }
 
+def fix_SEOBNRv5_fref(par):
+    '''SEOBNRv5 expects f_ref != 0. Here we set it to f_lower if not given
+    '''
+    if 'SEOBNRv5' in par['approximant'] and not par['f_ref']:
+        par['f_ref'] = par['f_lower']
+
 
 def to_gwsignal_dict(par):
     '''convert param dict to gws dict
     '''
+    fix_SEOBNRv5_fref(par) # this is in-place
     params = {pycbc_to_gws.get(k, k): v for k, v in par.items() if (v is not
         None and pycbc_to_gws.get(k, k) in gws_units)}
 
