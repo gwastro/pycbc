@@ -32,7 +32,7 @@ import os
 import lal
 import numpy
 from lalsimulation.gwsignal.core import waveform as wfm
-# from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
+from lalsimulation.gwsignal.models import gwsignal_get_waveform_generator
 
 import pycbc
 import pycbc.scheme as _scheme
@@ -226,7 +226,9 @@ def _lalsim_td_waveform(**p):
     # select or instantiate the generator
     approx = p['approximant']
     gen = _gws_waveform_generators.setdefault(approx,
-            wfm.LALCompactBinaryCoalescenceGenerator(approx))
+           gwsignal_get_waveform_generator(approx))
+    # gen = _gws_waveform_generators.setdefault(approx,
+    #         wfm.LALCompactBinaryCoalescenceGenerator(approx))
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
     hp, hc = wfm.GenerateTDWaveform(p_gws, gen)
@@ -305,7 +307,9 @@ def _lalsim_fd_waveform(**p):
     # select or instantiate the generator
     approx = p['approximant']
     gen = _gws_waveform_generators.setdefault(approx,
-            wfm.LALCompactBinaryCoalescenceGenerator(approx))
+           gwsignal_get_waveform_generator(approx))
+    # gen = _gws_waveform_generators.setdefault(approx,
+    #         wfm.LALCompactBinaryCoalescenceGenerator(approx))
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
     hp, hc = wfm.GenerateFDWaveform(p_gws, gen)

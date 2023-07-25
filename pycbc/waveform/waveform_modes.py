@@ -39,7 +39,9 @@ def _lalsim_fd_waveform(**p):
     # select or instantiate the generator
     approx = p['approximant']
     gen = _gws_waveform_generators.setdefault(approx,
-            wfm.LALCompactBinaryCoalescenceGenerator(approx))
+           gwsignal_get_waveform_generator(approx))
+    # gen = _gws_waveform_generators.setdefault(approx,
+    #         wfm.LALCompactBinaryCoalescenceGenerator(approx))
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
     hlm = wfm.GenerateFDModes(p_gws, gen)
@@ -58,7 +60,9 @@ def _lalsim_td_waveform(**p):
     # select or instantiate the generator
     approx = p['approximant']
     gen = _gws_waveform_generators.setdefault(approx,
-            wfm.LALCompactBinaryCoalescenceGenerator(approx))
+           gwsignal_get_waveform_generator(approx))
+    # gen = _gws_waveform_generators.setdefault(approx,
+    #         wfm.LALCompactBinaryCoalescenceGenerator(approx))
     # convert paramaters to gwsignal parameters
     p_gws = to_gwsignal_dict(p)
     hlm = wfm.GenerateTDModes(p_gws, gen)
