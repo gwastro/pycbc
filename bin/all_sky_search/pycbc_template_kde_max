@@ -4,9 +4,9 @@ import numpy, h5py, argparse, logging
 from pycbc import init_logging
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--template-files', nargs='+', required=True,
-                    help='Hdf5 files with template masses and spins')
-parser.add_argument('--output-file', required=True, help='Name of output .hdf file')
+parser.add_argument('--kde-files', nargs='+', required=True,
+                    help='HDF files with KDE values')
+parser.add_argument('--output-file', required=True, help='Name of output HDF file')
 parser.add_argument('--min-ratio', type=float,
                     help='Minimum ratio for template_kde relative to the maximum')
 parser.add_argument('--verbose', action='store_true')
@@ -41,7 +41,7 @@ if args.min_ratio is not None:
     f_dest.attrs['min-kde-ratio'] = args.min_ratio
     min_val = args.min_ratio * numpy.max(template_kde)
     template_kde = numpy.maximum(template_kde, min_val)
-    f_dest.create_dataset('data_kde', data=template_kde)
+f_dest.create_dataset('data_kde', data=template_kde)
 
 for temp_file in temp_files:
     temp_file.close()
