@@ -24,7 +24,6 @@ how a simple workflow is constructed with pycbc.workflow.
 """
 
 #imports
-from __future__ import division
 import os
 import argparse
 import pycbc

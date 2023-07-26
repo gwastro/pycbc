@@ -16,6 +16,7 @@
 This modules provides classes for evaluating multi-dimensional constraints.
 """
 
+import re
 import scipy.spatial
 import numpy
 import h5py
@@ -29,7 +30,23 @@ class Constraint(object):
     """
     name = "custom"
 
-    def __init__(self, constraint_arg, transforms=None, **kwargs):
+    def __init__(self, constraint_arg, static_args=None, transforms=None,
+                 **kwargs):
+        static_args = (
+            {} if static_args is None
+            else dict(sorted(
+                static_args.items(), key=lambda x: len(x[0]), reverse=True))
+            )
+        for arg, val in static_args.items():
+            swp = f"'{val}'" if isinstance(val, str) else str(val)
+            # Substitute static arg name for value if it appears in the
+            # constraint_arg string at the beginning of a word and is not
+            # followed by an underscore or equals sign.
+            # This ensures that static_args that are also kwargs in function calls are
+            # handled correctly, i.e., the kwarg is not touched while its value is replaced
+            # with the static_arg value.
+            constraint_arg = re.sub(
+                r'\b{}(?!\_|\=)'.format(arg), swp, constraint_arg)
         self.constraint_arg = constraint_arg
         self.transforms = transforms
         for kwarg in kwargs.keys():

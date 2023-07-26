@@ -17,7 +17,6 @@
 """
 Provides a class representing a frequency series.
 """
-from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, zeros, _noreal
 import lal as _lal
@@ -38,15 +37,6 @@ class FrequencySeries(Array):
         Sample data type.
     copy : boolean, optional
         If True, samples are copied to a new array.
-
-    Attributes
-    ----------
-    delta_f : float
-        Frequency spacing
-    epoch : lal.LIGOTimeGPS
-        Time at 0 index.
-    sample_frequencies : Array
-        Frequencies that each index corresponds to.
     """
 
     def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True):
@@ -408,7 +398,7 @@ class FrequencySeries(Array):
                                         self.numpy().imag)).T
             _numpy.savetxt(path, output)
         elif ext == '.xml' or path.endswith('.xml.gz'):
-            from pycbc.io.live import make_psd_xmldoc
+            from pycbc.io.ligolw import make_psd_xmldoc
             from ligo.lw import utils
 
             if self.kind != 'real':
@@ -422,8 +412,11 @@ class FrequencySeries(Array):
             if not first_idx == 0:
                 data_lal[:first_idx] = data_lal[first_idx]
             psddict = {ifo: output}
-            utils.write_filename(make_psd_xmldoc(psddict), path,
-                                 gz=path.endswith(".gz"))
+            utils.write_filename(
+                make_psd_xmldoc(psddict),
+                path,
+                compress='auto'
+            )
         elif ext == '.hdf':
             key = 'data' if group is None else group
             with h5py.File(path, 'a') as f:
@@ -484,6 +477,7 @@ class FrequencySeries(Array):
                            dtype=real_same_precision_as(self)),
                            delta_t=delta_t)
         ifft(tmp, f)
+        f._delta_t = delta_t
         return f
 
     @_noreal

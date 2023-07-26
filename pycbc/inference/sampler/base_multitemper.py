@@ -24,7 +24,6 @@
 """Provides constructor classes provide support for parallel tempered MCMC
 samplers."""
 
-from __future__ import absolute_import
 
 import logging
 import numpy

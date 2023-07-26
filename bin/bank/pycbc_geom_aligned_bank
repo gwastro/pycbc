@@ -23,23 +23,16 @@ translation between points in the chirp parameters parameter space is done
 in a workflow.
 """
 
-from __future__ import division
 import os
 import copy
 import argparse
-import tempfile
 import numpy
 import logging
-import distutils.spawn
 import h5py
 import configparser
 from scipy import spatial
 from ligo.lw import ligolw
-from ligo.lw import table
-from ligo.lw import lsctables
-from ligo.lw import ilwd
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 import pycbc
 import pycbc.psd
 import pycbc.strain
@@ -48,6 +41,8 @@ import pycbc.tmpltbank
 import pycbc.workflow as wf
 import pycbc.workflow.pegasus_workflow as pwf
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.workflow.core import resolve_url_to_file
+from pycbc.io.ligolw import create_process_table
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -147,7 +142,19 @@ class BankVerification(wf.Executable):
 
         return node
 
+def dict_to_string(arg_dict):
+    attr_str = ""
+    for i in arg_dict.keys():
+        if isinstance(arg_dict[i], dict):
+            for j in arg_dict[i].keys():
+                attr_str += "%s:%s:%s " % (i, j, arg_dict[i][j])
+        else:
+            attr_str += "%s:%s " % (i, arg_dict[i])
+    attr_str = attr_str[:-1]
+    return attr_str
+
 def add_commands_to_cp(commands, options, cp, section_name):
+    from pycbc.types.optparse import DictWithDefaultReturn
     for command in commands:
         command_uscore = (command.replace('-','_'))[2:]
         if hasattr(options, command_uscore):
@@ -155,7 +162,12 @@ def add_commands_to_cp(commands, options, cp, section_name):
             if attr is True:
                 cp.set(section_name, command[2:], '')
             elif attr:
-                cp.set(section_name, command[2:], str(attr))
+                if isinstance(attr, DictWithDefaultReturn):
+                    cp.set(section_name, command[2:], '{}')
+                elif isinstance(attr, dict):
+                    cp.set(section_name, command[2:], dict_to_string(attr))
+                else:
+                    cp.set(section_name, command[2:], str(attr))
 
 # Read command line options
 _desc = __doc__[1:]
@@ -232,14 +244,10 @@ opts = parser.parse_args()
 orig_opts = copy.deepcopy(opts)
 
 # Set up the process/process_params table and output xml document
-cmds_file_name = opts.metadata_file
 outdoc = ligolw.Document()
 outdoc.appendChild(ligolw.LIGO_LW())
-ligolw_process.register_to_xmldoc(outdoc, __program__, vars(opts), comment="",
-                            instruments="", version=pycbc.version.git_hash,
-                            cvs_repository='pycbc/'+pycbc.version.git_branch,
-                            cvs_entry_time=pycbc.version.date)
-ligolw_utils.write_filename(outdoc, cmds_file_name)
+create_process_table(outdoc, __program__, options=vars(opts))
+ligolw_utils.write_filename(outdoc, opts.metadata_file)
 
 if opts.verbose:
     log_level = logging.DEBUG
@@ -336,7 +344,7 @@ else:
     chi3Min = vals[2].min()
     chi3Diff = chi3Max - chi3Min
 
-logging.info("Lattice contains %d points" % len(v1s))
+logging.info("Lattice contains %d points", len(v1s))
 
 # Now remove points that are too far from edges of parameter space
 
@@ -386,7 +394,7 @@ if opts.filter_points:
             if opts.threed_lattice:
                 newV3s.append(v3s[i])
 
-    logging.info("Filtered lattice contains %d points" % len(newV1s))
+    logging.info("Filtered lattice contains %d points", len(newV1s))
 else:
     newV1s = v1s
     newV2s = v2s
@@ -563,8 +571,7 @@ else:
 stack_exe = GeomAligned2DStackExecutable(workflow.cp, 'aligned2dstack',
                                          ifos=workflow.ifos, out_dir=curr_dir)
 num_banks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
-input_h5file = wf.File.from_path(opts.intermediate_data_file)
-
+input_h5file = resolve_url_to_file(opts.intermediate_data_file)
 
 
 all_outs = wf.FileList([])
@@ -587,7 +594,7 @@ else:
 
 combine_exe = AlignedBankCatExecutable(workflow.cp, 'alignedbankcat',
                                         ifos=workflow.ifos, out_dir=curr_dir)
-metadata_file = wf.File.from_path(cmds_file_name)
+metadata_file = resolve_url_to_file(opts.metadata_file)
 combine_node = combine_exe.create_node(all_outs, metadata_file,
                                        workflow.analysis_time,
                                        output_file_path=opts.output_file)

@@ -18,12 +18,13 @@
 
 from string import Formatter
 import lal
-import lalsimulation
 
+from pycbc import libutils, pnutils
 from pycbc.types import (TimeSeries, FrequencySeries)
 from .waveform import (props, _check_lal_pars, check_args)
 from . import parameters
 
+lalsimulation = libutils.import_optional('lalsimulation')
 
 def _formatdocstr(docstr):
     """Utility for formatting docstrings with parameter information.
@@ -181,16 +182,8 @@ def get_nrsur_modes(**params):
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 
 
-def _get_imrphenomx_modes(return_posneg=False, **params):
-    """Generates ``IMRPhenomX[P]HM`` waveforms mode-by-mode.
-
-    Currently does not work; just raises a ``NotImplementedError``.
-    """
-    # FIXME: raising not implemented error because this currently does not
-    # work. The issue is the OneMode function adds the +/- m modes together
-    # automatically. Remove once this is fixed in lalsimulation, and/or I
-    # figure out a reliable way to separate the +/-m modes.
-    raise NotImplementedError("Currently not implemented")
+def get_imrphenomxh_modes(**params):
+    """Generates ``IMRPhenomXHM`` waveforms mode-by-mode. """
     approx = params['approximant']
     if not approx.startswith('IMRPhenomX'):
         raise ValueError("unsupported approximant")
@@ -204,151 +197,33 @@ def _get_imrphenomx_modes(return_posneg=False, **params):
     for (l, m) in mode_array:
         params['mode_array'] = [(l, m)]
         laldict = _check_lal_pars(params)
-        hpos, hneg = lalsimulation.SimIMRPhenomXPHMOneMode(
-            l, m,
-            params['mass1']*lal.MSUN_SI,
-            params['mass2']*lal.MSUN_SI,
-            params['spin1x'], params['spin1y'], params['spin1z'],
-            params['spin2x'], params['spin2y'], params['spin2z'],
-            params['distance']*1e6*lal.PC_SI, params['coa_phase'],
-            params['delta_f'], params['f_lower'], params['f_final'],
-            params['f_ref'],
+        hlm = lalsimulation.SimIMRPhenomXHMGenerateFDOneMode(
+            float(pnutils.solar_mass_to_kg(params['mass1'])),
+            float(pnutils.solar_mass_to_kg(params['mass2'])),
+            float(params['spin1z']),
+            float(params['spin2z']), l, m,
+            pnutils.megaparsecs_to_meters(float(params['distance'])),
+            params['f_lower'], params['f_final'], params['delta_f'],
+            params['coa_phase'], params['f_ref'],
             laldict)
-        hpos = FrequencySeries(hpos.data.data, delta_f=hpos.deltaF,
-                               epoch=hpos.epoch)
-        hneg = FrequencySeries(hneg.data.data, delta_f=hneg.deltaF,
-                               epoch=hneg.epoch)
-        if return_posneg:
-            hlms[l, m] = (hpos, hneg)
-        else:
-            # convert to ulm, vlm
-            ulm = 0.5 * (hpos + hneg.conj())
-            vlm = 0.5j * (hneg.conj() - hpos)
-            hlms[l, m] = (ulm, vlm)
+        hlm = FrequencySeries(hlm.data.data, delta_f=hlm.deltaF,
+                              epoch=hlm.epoch)
+        # Plus, cross strains without Y_lm.
+        # (-1)**(l) factor ALREADY included in FDOneMode
+        hplm = 0.5 * hlm  # Plus strain
+        hclm = 0.5j * hlm  # Cross strain
+        if m > 0:
+            hclm *= -1
+        hlms[l, m] = (hplm, hclm)
     return hlms
-
-
-def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
-                      spin1x=0., spin1y=0., spin1z=0.,
-                      spin2x=0., spin2y=0., spin2z=0.):
-    """Converts L0-frame parameters to J-frame.
-
-    Parameters
-    ----------
-    {mass1}
-    {mass2}
-    {f_ref}
-    phiref : float
-        The orbital phase at ``f_ref``.
-    {inclination}
-    {spin1x}
-    {spin1y}
-    {spin1z}
-    {spin2x}
-    {spin2y}
-    {spin2z}
-
-    Returns
-    -------
-    dict :
-        Dictionary of:
-        * thetajn : float
-            Angle between the line of sight and the total angular momentume J.
-        * phijl : float
-            Azimuthal angle of L on its cone about J.
-        * {spin1_a}
-        * {spin2_a}
-        * spin1_polar : float
-            Angle between L and the spin magnitude of the larger object.
-        * spin2_polar : float
-            Angle betwen L and the spin magnitude of the smaller object.
-        * spin12_deltaphi : float
-            Difference between the azimuthal angles of the spin of the larger
-            object (S1) and the spin of the smaller object (S2).
-    """
-    # Note: unlike other LALSimulation functions, this one takes masses in
-    # solar masses
-    thetajn, phijl, s1pol, s2pol, s12_deltaphi, spin1_a, spin2_a = \
-        lalsimulation.SimInspiralTransformPrecessingWvf2PE(
-            inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-            mass1, mass2, f_ref, phiref)
-    out = {'thetajn': thetajn,
-           'phijl': phijl,
-           'spin1_polar': s1pol,
-           'spin2_polar': s2pol,
-           'spin12_deltaphi': s12_deltaphi,
-           'spin1_a': spin1_a,
-           'spin2_a': spin2_a}
-    return out
-
-
-l0frame_to_jframe.__doc__ = _formatdocstr(l0frame_to_jframe.__doc__)
-
-
-def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
-                      spin1_a=0., spin2_a=0.,
-                      spin1_polar=0., spin2_polar=0.,
-                      spin12_deltaphi=0.):
-    """Converts J-frame parameters into L0 frame.
-
-    Parameters
-    ----------
-    {mass1}
-    {mass2}
-    {f_ref}
-    thetajn : float
-        Angle between the line of sight and the total angular momentume J.
-    phijl : float
-        Azimuthal angle of L on its cone about J.
-    {spin1_a}
-    {spin2_a}
-    spin1_polar : float
-        Angle between L and the spin magnitude of the larger object.
-    spin2_polar : float
-        Angle betwen L and the spin magnitude of the smaller object.
-    spin12_deltaphi : float
-        Difference between the azimuthal angles of the spin of the larger
-        object (S1) and the spin of the smaller object (S2).
-
-    Returns
-    -------
-    dict :
-        Dictionary of:
-        * {inclination}
-        * {spin1x}
-        * {spin1y}
-        * {spin1z}
-        * {spin2x}
-        * {spin2y}
-        * {spin2z}
-    """
-    inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
-        lalsimulation.SimInspiralTransformPrecessingNewInitialConditions(
-            thetajn, phijl, spin1_polar, spin2_polar, spin12_deltaphi,
-            spin1_a, spin2_a, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref,
-            phiref)
-    out = {'inclination': inclination,
-           'spin1x': spin1x,
-           'spin1y': spin1y,
-           'spin1z': spin1z,
-           'spin2x': spin2x,
-           'spin2y': spin2y,
-           'spin2z': spin2z}
-    return out
-
-
-jframe_to_l0frame.__doc__ = _formatdocstr(jframe_to_l0frame.__doc__)
 
 
 _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
                      }
-
-
-# Remove commented out once IMRPhenomX one mode is fixed
-_mode_waveform_fd = {#'IMRPhenomXHM': get_imrphenomhm_modes,
-                     #'IMRPhenomXPHM' : get_imrphenomhm_modes,
-                    }
-
+_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
+                     }
+# 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented
+# LAL function do not split strain mode by mode
 
 def fd_waveform_mode_approximants():
     """Frequency domain approximants that will return separate modes."""
@@ -430,7 +305,7 @@ def get_td_waveform_modes(template=None, **kwargs):
         :py:class:`pycbc.types.TimeSeries`.
     """
     params = props(template, **kwargs)
-    required = parameters.fd_required
+    required = parameters.td_required
     check_args(params, required)
     apprx = params['approximant']
     if apprx not in _mode_waveform_td:

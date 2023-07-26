@@ -1,5 +1,4 @@
 # Creates RST for the sampler inheritance diagrams
-from __future__ import print_function
 from pycbc.inference.sampler import samplers
 
 fname = 'sampler_inheritance_diagrams.rst'

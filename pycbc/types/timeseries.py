@@ -17,7 +17,6 @@
 """
 Provides a class representing a time series.
 """
-from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
@@ -42,15 +41,6 @@ class TimeSeries(Array):
         Sample data type.
     copy : boolean, optional
         If True, samples are copied to a new array.
-
-    Attributes
-    ----------
-    delta_t
-    duration
-    start_time
-    end_time
-    sample_times
-    sample_rate
     """
 
     def __init__(self, initial_array, delta_t=None,
@@ -82,6 +72,20 @@ class TimeSeries(Array):
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
         self._delta_t = delta_t
         self._epoch = epoch
+
+    def to_astropy(self, name='pycbc'):
+        """ Return an astropy.timeseries.TimeSeries instance
+        """
+        from astropy.timeseries import TimeSeries as ATimeSeries
+        from astropy.time import Time
+        from astropy.units import s
+
+        start = Time(float(self.start_time), format='gps', scale='utc')
+        delta = self.delta_t * s
+        return ATimeSeries({name: self.numpy()},
+                           time_start=start,
+                           time_delta=delta,
+                           n_samples=len(self))
 
     def epoch_close(self, other):
         """ Check if the epoch is close enough to allow operations """
@@ -236,12 +240,76 @@ class TimeSeries(Array):
     sample_times = property(get_sample_times,
                             doc="Array containing the sample times.")
 
-    def at_time(self, time, nearest_sample=False):
+    def at_time(self, time, nearest_sample=False,
+                interpolate=None, extrapolate=None):
         """ Return the value at the specified gps time
+
+        Parameters
+        ----------
+        nearest_sample: bool
+            Return the sample at the time nearest to the chosen time rather
+            than rounded down.
+        interpolate: str, None
+            Return the interpolated value of the time series. Choices
+            are simple linear or quadratic interpolation.
+        extrapolate: str or float, None
+            Value to return if time is outsidde the range of the vector or
+            method of extrapolating the value.
         """
         if nearest_sample:
-            time += self.delta_t / 2.0
-        return self[int((time-self.start_time)*self.sample_rate)]
+            time = time + self.delta_t / 2.0
+        vtime = _numpy.array(time, ndmin=1)
+
+        fill_value = None
+        keep_idx = None
+        size = len(vtime)
+        if extrapolate is not None:
+            if _numpy.isscalar(extrapolate) and _numpy.isreal(extrapolate):
+                fill_value = extrapolate
+                facl = facr = 0
+                if interpolate == 'quadratic':
+                    facl = facr = 1.1
+                elif interpolate == 'linear':
+                    facl, facr = 0.1, 1.1
+
+                left = (vtime >= self.start_time + self.delta_t * facl)
+                right = (vtime < self.end_time - self.delta_t * facr)
+                keep_idx = _numpy.where(left & right)[0]
+                vtime = vtime[keep_idx]
+            else:
+                raise ValueError("Unsuported extrapolate: %s" % extrapolate)
+
+        fi = (vtime - float(self.start_time))*self.sample_rate
+        i = _numpy.asarray(_numpy.floor(fi)).astype(int)
+        di = fi - i
+
+        if interpolate == 'linear':
+            a = self[i]
+            b = self[i+1]
+            ans = a + (b - a) * di
+        elif interpolate == 'quadratic':
+            c = self.data[i]
+            xr = self.data[i + 1] - c
+            xl = self.data[i - 1] - c
+            a = 0.5 * (xr + xl)
+            b = 0.5 * (xr - xl)
+            ans = a * di**2.0 + b * di + c
+        else:
+            ans = self[i]
+
+        ans = _numpy.array(ans, ndmin=1)
+        if fill_value is not None:
+            old = ans
+            ans = _numpy.zeros(size) + fill_value
+            ans[keep_idx] = old
+            ans = _numpy.array(ans, ndmin=1)
+
+        if _numpy.isscalar(time):
+            return ans[0]
+        else:
+            return ans
+
+    at_times = at_time
 
     def __eq__(self,other):
         """
@@ -486,7 +554,7 @@ class TimeSeries(Array):
             Frequency series containing the estimated PSD.
         """
         from pycbc.psd import welch
-        seg_len = int(segment_duration * self.sample_rate)
+        seg_len = int(round(segment_duration * self.sample_rate))
         seg_stride = int(seg_len / 2)
         return welch(self, seg_len=seg_len,
                            seg_stride=seg_stride,
@@ -567,7 +635,7 @@ class TimeSeries(Array):
         """
         from pycbc.psd import interpolate, inverse_spectrum_truncation
         p = self.psd(segment_duration)
-        samples = int(p.sample_rate * segment_duration)
+        samples = int(round(p.sample_rate * segment_duration))
         p = interpolate(p, delta_f)
         return inverse_spectrum_truncation(p, samples,
                                            low_frequency_cutoff=flow,
@@ -610,7 +678,7 @@ class TimeSeries(Array):
         # Estimate the noise spectrum
         psd = self.psd(segment_duration, **kwds)
         psd = interpolate(psd, self.delta_f)
-        max_filter_len = int(max_filter_duration * self.sample_rate)
+        max_filter_len = int(round(max_filter_duration * self.sample_rate))
 
         # Interpolate and smooth to the desired corruption length
         psd = inverse_spectrum_truncation(psd,
@@ -900,6 +968,7 @@ class TimeSeries(Array):
                            dtype=complex_same_precision_as(self)),
                            delta_f=delta_f)
         fft(tmp, f)
+        f._delta_f = delta_f
         return f
 
     def inject(self, other, copy=True):

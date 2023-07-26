@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-from __future__ import print_function
 
 __prog__ = 'pycbc_get_ffinal'
 __author__ = 'Collin Capano <collin.capano@ligo.org>'
@@ -125,10 +124,13 @@ phi0 = 0.
 
 # load the xml file
 if infile is not None:
-    xmldoc = ligolw_utils.load_filename(infile, gz=infile.endswith('.gz'),
-        verbose=opts.verbose)
+    xmldoc = ligolw_utils.load_filename(
+        infile,
+        compress='auto',
+        verbose=opts.verbose
+    )
     this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__)
-    sngl_insp_table = table.get_table(xmldoc, 'sngl_inspiral')
+    sngl_insp_table = table.Table.get_table(xmldoc, 'sngl_inspiral')
 else:
     # FIXME: try to get this from the waveformOpts group
     tmplt_args = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x',

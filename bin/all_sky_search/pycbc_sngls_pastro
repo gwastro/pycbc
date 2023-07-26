@@ -12,7 +12,7 @@ coincidences.
 
 import pycbc, pycbc.io, copy
 import argparse, logging, numpy as np
-from ligo.lw import table, lsctables, utils as ligolw_utils
+from ligo.lw import lsctables, utils as ligolw_utils
 from pycbc import conversions as conv
 from pycbc.events import veto, stat, ranking, coinc, single as sngl
 from pycbc.io.ligolw import LIGOLWContentHandler
@@ -219,7 +219,7 @@ for inj_filename, inj_trigger_filename in zip(args.inj_files,
     logging.info('Reading injection file')
     indoc = ligolw_utils.load_filename(inj_filename, False,
                                        contenthandler=LIGOLWContentHandler)
-    sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
+    sim_table = lsctables.SimInspiralTable.get_table(indoc)
     inj_time = np.array(sim_table.get_column('geocent_end_time') +
                         1e-9 * sim_table.get_column('geocent_end_time_ns'),
                         dtype=np.float64)

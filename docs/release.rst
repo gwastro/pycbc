@@ -53,5 +53,5 @@ tag and cherry pick the changes to that branch. For example, to create a
   git commit
   git push
 
-Then go to the `PyCBC release page <https://github.com/ligo-cbc/pycbc/releases>`_ and click on ``Draft a new release`` following the instructions above.
+Then go to the `PyCBC release page <https://github.com/gwastro/pycbc/releases>`_ and click on ``Draft a new release`` following the instructions above.
 

@@ -20,21 +20,22 @@
 Stochastic aligned spin bank generator.
 """
 
-from __future__ import division
-import sys, argparse, copy
+import argparse
 import numpy
 import logging
 import pycbc
 import pycbc.version
-from pycbc import tmpltbank, pnutils
+from pycbc import tmpltbank
+# Old ligolw output functions no longer imported at package level
+import pycbc.tmpltbank.bank_output_utils as bank_output
 from pycbc.types import positive_float
 import pycbc.psd
 import pycbc.strain
+from pycbc.pnutils import named_frequency_cutoffs
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
 __program__ = "pycbc_aligned_stoch_bank"
 
 # Read command line option
@@ -55,7 +56,7 @@ parser.add_argument("--bank-fupper-step", type=positive_float, default=10.,
                     "--ethinca-freq-step are also given, the code will use "
                     "the smaller of the two step values. OPTIONAL. Units=Hz")
 parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
-                    choices=pnutils.named_frequency_cutoffs.keys(),
+                    choices=named_frequency_cutoffs.keys(),
                     help="Frequency cutoff formula for varying fupper. "
                     "Frequencies will be rounded to the nearest discrete "
                     "step. OPTIONAL.")
@@ -180,13 +181,13 @@ if opts.vary_fupper==False:
         refFreq = metricParams.fUpper
     else:
         # use the maximum frequency for which the moments were calculated
-        fs = numpy.array(metricParams.evals.keys(), dtype=float)
+        fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
         fs.sort()
         refFreq = fs.max()
 else:
     # determine upper frequency cutoffs corresponding to the min and max
     # total masses
-    fs = numpy.array(metricParams.evals.keys(), dtype=float)
+    fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
     fs.sort()
     lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
                               opts.bank_fupper_formula, massRangeParams, fs)
@@ -253,7 +254,7 @@ while True:
         Ns = 0
     # Then we check each point for acceptance
     if not (Np % 100000):
-        logging.info("%d seeds" % Np)
+        logging.info("%d seeds", Np)
     vs = vecs[:,Ns]
     Np = Np + 1
     # Stop if we hit break condition
@@ -286,8 +287,8 @@ while True:
                            mus=curr_mus) 
     N = N + 1
     if not (N % 100000):
-        logging.info("%d templates" % N)
-    Ns = Ns + 1  
+        logging.info("%d templates", N)
+    Ns = Ns + 1
 
 logging.info("Outputting bank")
 
@@ -296,10 +297,11 @@ mass1, mass2, spin1z, spin2z = partitioned_bank_object.output_all_points()
 tempBank = zip(mass1, mass2, spin1z, spin2z)
 
 # Output to file
-tmpltbank.output_sngl_inspiral_table(
-    opts.output_file, tempBank, metricParams, ethincaParams,
-    programName=__program__, optDict=opts.__dict__, comment="",
-    version=pycbc.version.git_hash,
-    cvs_repository='pycbc/'+pycbc.version.git_branch,
-    cvs_entry_time=pycbc.version.date)
+bank_output.output_bank_to_file(
+    opts.output_file,
+    tempBank,
+    programName=__program__,
+    optDict=opts.__dict__
+)
 
+logging.info("Done")

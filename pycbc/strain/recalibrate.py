@@ -19,15 +19,12 @@
 
 from abc import (ABCMeta, abstractmethod)
 
-from six import add_metaclass
-
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 from pycbc.types import FrequencySeries
 
 
-@add_metaclass(ABCMeta)
-class Recalibrate(object):
+class Recalibrate(metaclass=ABCMeta):
     """ Base class for modifying calibration """
     name = None
 
@@ -181,11 +178,6 @@ class CubicSpline(Recalibrate):
 class PhysicalModel(object):
     """ Class for adjusting time-varying calibration parameters of given
     strain data.
-
-    Attributes
-    ----------
-    name : 'physical_model'
-        The name of this calibration model.
 
     Parameters
     ----------

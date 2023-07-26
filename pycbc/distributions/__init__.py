@@ -18,7 +18,7 @@ This modules provides classes and functions for drawing and calculating the
 probability density function of distributions.
 """
 # imports needed for functions below
-from six.moves import configparser as _ConfigParser
+import configparser as _ConfigParser
 from pycbc.distributions import constraints
 from pycbc import VARARGS_DELIM as _VARARGS_DELIM
 
@@ -29,13 +29,13 @@ from pycbc.distributions.angular import UniformAngle, SinAngle, CosAngle, \
 from pycbc.distributions.arbitrary import Arbitrary, FromFile
 from pycbc.distributions.gaussian import Gaussian
 from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
-from pycbc.distributions.sky_location import UniformSky
+from pycbc.distributions.sky_location import UniformSky, FisherSky
 from pycbc.distributions.uniform import Uniform
 from pycbc.distributions.uniform_log import UniformLog10
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.qnm import UniformF0Tau
 from pycbc.distributions.joint import JointDistribution
-from pycbc.distributions.external import External
+from pycbc.distributions.external import External, DistributionFunctionFromFile
 from pycbc.distributions.fixedsamples import FixedSamples
 from pycbc.distributions.mass import MchirpfromUniformMass1Mass2, \
                                      QfromUniformMass1Mass2
@@ -57,9 +57,11 @@ distribs = {
     UniformLog10.name : UniformLog10,
     UniformF0Tau.name : UniformF0Tau,
     External.name: External,
+    DistributionFunctionFromFile.name: DistributionFunctionFromFile,
     FixedSamples.name: FixedSamples,
     MchirpfromUniformMass1Mass2.name: MchirpfromUniformMass1Mass2,
-    QfromUniformMass1Mass2.name: QfromUniformMass1Mass2
+    QfromUniformMass1Mass2.name: QfromUniformMass1Mass2,
+    FisherSky.name: FisherSky
 }
 
 def read_distributions_from_config(cp, section="prior"):
@@ -173,7 +175,7 @@ def read_params_from_config(cp, prior_section='prior',
     return variable_args, static_args
 
 
-def read_constraints_from_config(cp, transforms=None,
+def read_constraints_from_config(cp, transforms=None, static_args=None,
                                  constraint_section='constraint'):
     """Loads parameter constraints from a configuration file.
 
@@ -183,6 +185,9 @@ def read_constraints_from_config(cp, transforms=None,
         An open config parser to read from.
     transforms : list, optional
         List of transforms to apply to parameters before applying constraints.
+    static_args : dict, optional
+        Dictionary of static parameters and their values to be applied
+        to constraints.
     constraint_section : str, optional
         The section to get the constraints from. Default is 'constraint'.
 
@@ -211,8 +216,8 @@ def read_constraints_from_config(cp, transforms=None,
                 except ValueError:
                     pass
             kwargs[key] = val
-        cons.append(constraints.constraints[name](constraint_arg,
-                                                  transforms=transforms,
-                                                  **kwargs))
+        cons.append(constraints.constraints[name](
+            constraint_arg, static_args=static_args, transforms=transforms,
+            **kwargs))
 
     return cons

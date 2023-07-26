@@ -24,20 +24,18 @@
 """
 This module is responsible for setting up the part of a pycbc workflow that
 will generate the injection files to be used for assessing the workflow's
-ability to detect predicted signals. (In ihope parlance, this sets up the
-inspinj jobs). Full documentation for this module can be found here:
+ability to detect predicted signals.
+Full documentation for this module can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 import logging
 import os.path
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
-        LigolwCBCJitterSkylocExecutable, LigolwCBCAlignTotalSpinExecutable,
-        PycbcDarkVsBrightInjectionsExecutable, LigolwAddExecutable,
-        select_generic_executable)
+        PycbcCreateInjectionsExecutable, select_generic_executable)
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -68,6 +66,19 @@ class PyCBCOptimalSNRExecutable(Executable):
                                  '--output-file')
         return node
 
+
+class PyCBCMergeHDFExecutable(Executable):
+    """Merge HDF injection files executable class"""
+    current_retention_level = Executable.MERGED_TRIGGERS
+
+    def create_node(self, workflow, input_files):
+        node = Node(self)
+        node.add_input_list_opt('--injection-files', input_files)
+        node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                                 '--output-file')
+        return node
+
+
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
     "Set up a job for computing optimal SNRs of a sim_inspiral file."
@@ -78,7 +89,8 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         factor = int(workflow.cp.get_opt_tags('workflow-optimal-snr',
                                               'parallelization-factor',
                                               tags))
-    except ConfigParser.Error:
+    except Exception as e:
+        logging.warning(e)
         factor = 1
 
     if factor == 1:
@@ -106,16 +118,21 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
         opt_snr_split_files += [node.output_files[0]]
         workflow += node
 
-    llwadd_exe = LigolwAddExecutable(workflow.cp, 'optimal_snr_merge',
-                                     ifos=workflow.ifos, out_dir=out_dir,
-                                     tags=tags)
-    llwadd_exe.update_current_retention_level(Executable.MERGED_TRIGGERS)
-    merge_node = llwadd_exe.create_node(workflow.analysis_time,
-                                        opt_snr_split_files,
-                                        use_tmp_subdirs=False)
-    workflow += merge_node
+    hdfcombine_exe = PyCBCMergeHDFExecutable(
+        workflow.cp,
+        'optimal_snr_merge',
+        ifos=workflow.ifos,
+        out_dir=out_dir,
+        tags=tags
+    )
 
-    return merge_node.output_files[0]
+    hdfcombine_node = hdfcombine_exe.create_node(
+        workflow,
+        opt_snr_split_files
+    )
+    workflow += hdfcombine_node
+
+    return hdfcombine_node.output_files[0]
 
 def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     "Set up a job for removing injections that are too distant to be seen"
@@ -147,8 +164,7 @@ def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
     return node.output_file
 
 def setup_injection_workflow(workflow, output_dir=None,
-                             inj_section_name='injections', exttrig_file=None,
-                             tags =None):
+                             inj_section_name='injections', tags=None):
     """
     This function is the gateway for setting up injection-generation jobs in a
     workflow. It should be possible for this function to support a number
@@ -187,7 +203,6 @@ def setup_injection_workflow(workflow, output_dir=None,
 
     # Get full analysis segment for output file naming
     full_segment = workflow.analysis_time
-    ifos = workflow.ifos
 
     # Identify which injections to do by presence of sub-sections in
     # the configuration file
@@ -208,7 +223,13 @@ def setup_injection_workflow(workflow, output_dir=None,
             inj_job = exe(workflow.cp, inj_section_name,
                           out_dir=output_dir, ifos='HL',
                           tags=curr_tags)
-            node = inj_job.create_node(full_segment)
+            if exe is PycbcCreateInjectionsExecutable:
+                config_url = workflow.cp.get('workflow-injections',
+                                             section+'-config-file')
+                config_file = resolve_url_to_file(config_url)
+                node, inj_file = inj_job.create_node(config_file)
+            else:
+                node = inj_job.create_node(full_segment)
             if injection_method == "AT_RUNTIME":
                 workflow.execute_node(node)
             else:
@@ -228,61 +249,6 @@ def setup_injection_workflow(workflow, output_dir=None,
             )
             curr_file = resolve_url_to_file(injection_path, attrs=file_attrs)
             inj_files.append(curr_file)
-        elif injection_method in ["IN_COH_PTF_WORKFLOW", "AT_COH_PTF_RUNTIME"]:
-            inj_job = LalappsInspinjExecutable(workflow.cp, inj_section_name,
-                                               out_dir=output_dir, ifos=ifos,
-                                               tags=curr_tags)
-            node = inj_job.create_node(full_segment, exttrig_file)
-            if injection_method == "AT_COH_PTF_RUNTIME":
-                workflow.execute_node(node)
-            else:
-                workflow.add_node(node)
-            inj_file = node.output_files[0]
-
-            if workflow.cp.has_option("workflow-injections",
-                                      "em-bright-only"):
-                em_filter_job = PycbcDarkVsBrightInjectionsExecutable(
-                                                 workflow.cp,
-                                                 'em_bright_filter',
-                                                 tags=curr_tags,
-                                                 out_dir=output_dir,
-                                                 ifos=ifos)
-                node = em_filter_job.create_node(inj_file, full_segment,
-                                                 curr_tags)
-                if injection_method == "AT_COH_PTF_RUNTIME":
-                    workflow.execute_node(node)
-                else:
-                    workflow.add_node(node)
-                inj_file = node.output_files[0]
-
-            if workflow.cp.has_option("workflow-injections",
-                                      "do-jitter-skyloc"):
-                jitter_job = LigolwCBCJitterSkylocExecutable(workflow.cp,
-                                                             'jitter_skyloc',
-                                                             tags=curr_tags,
-                                                             out_dir=output_dir,
-                                                             ifos=ifos)
-                node = jitter_job.create_node(inj_file, full_segment, curr_tags)
-                if injection_method == "AT_COH_PTF_RUNTIME":
-                    workflow.execute_node(node)
-                else:
-                    workflow.add_node(node)
-                inj_file = node.output_files[0]
-
-            if workflow.cp.has_option("workflow-injections",
-                                      "do-align-total-spin"):
-                align_job = LigolwCBCAlignTotalSpinExecutable(workflow.cp,
-                        'align_total_spin', tags=curr_tags, out_dir=output_dir,
-                        ifos=ifos)
-                node = align_job.create_node(inj_file, full_segment, curr_tags)
-
-                if injection_method == "AT_COH_PTF_RUNTIME":
-                    workflow.execute_node(node)
-                else:
-                    workflow.add_node(node)
-                inj_file = node.output_files[0]
-
-            inj_files.append(inj_file)
         else:
             err = "Injection method must be one of IN_WORKFLOW, "
             err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)

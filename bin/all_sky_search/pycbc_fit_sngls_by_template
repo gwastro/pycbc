@@ -12,7 +12,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-from __future__ import division
 
 import sys, h5py
 import argparse, logging
@@ -172,12 +171,19 @@ count_in_template = count_in_template_hashorder[tid_sort]
 # get the stat values
 logging.info('Calculating stat values')
 abovethresh, stat = get_stat(args, trigf[args.ifo], args.stat_threshold)
+logging.info('%i trigs left after thresholding' % len(stat))
 
 tid = trigf[args.ifo + '/template_id'][abovethresh]
 time = trigf[args.ifo + '/end_time'][abovethresh]
 if args.save_trig_param:
-    tparam = trigf[args.ifo + '/' + args.save_trig_param][abovethresh]
-logging.info('%i trigs left after thresholding' % len(stat))
+    tparam_region = trigf[args.ifo][args.save_trig_param + '_template'][:]
+    tparam = []
+    for region in tparam_region:
+        try:
+            tparam.append(trigf[args.ifo][args.save_trig_param][region][0])
+        except IndexError:
+            # Should only happen if there are no triggers in the template
+            tparam.append(np.nan)
 
 # Calculate total time being analysed from segments
 # use set() to eliminate duplicates
@@ -195,11 +201,9 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
-    if args.save_trig_param:
-        tparam = tparam[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
-#now include gating veto
+# Include gating vetoes
 if args.gating_veto_windows:
     gating_veto = args.gating_veto_windows[args.ifo].split(',')
     gveto_before = float(gating_veto[0])
@@ -208,7 +212,12 @@ if args.gating_veto_windows:
         raise ValueError("Gating veto window values must be negative before "
                          "gates and positive after gates.")
     if not (gveto_before == 0 and gveto_after == 0):
-        gate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
+        autogate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
+        if args.ifo + '/gating/file' in trigf:
+            detgate_times = trigf[args.ifo + '/gating/file/time'][:]
+        else:
+            detgate_times = []
+        gate_times = np.concatenate((autogate_times, detgate_times))
         gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
                                                        gate_times + gveto_after).coalesce()
         all_segments -= gveto_segs
@@ -218,8 +227,6 @@ if args.gating_veto_windows:
         stat = stat[gveto_retain_idx]
         tid = tid[gveto_retain_idx]
         time = time[gveto_retain_idx]
-        if args.save_trig_param:
-            tparam = tparam[gveto_retain_idx]
         logging.info('%i trigs left after vetoing triggers near gates' % len(stat))
 
 total_time = abs(all_segments)
@@ -289,8 +296,6 @@ if args.prune_param:
             logging.info('%i trigs remain' % len(stat))
             tid = tid[retain]
             time = time[retain]
-            if args.save_trig_param:
-                tparam = tparam[retain]
             # also for the reference trig arrays
             retain = abs(timepruneall - ltime) > args.prune_window
             statpruneall = statpruneall[retain]
@@ -344,9 +349,7 @@ for j, tnum in enumerate(trange):
     counts_total.append(count_total)
     fits.append(alpha)
     if args.save_trig_param:
-        # save the param value of the first trig in this template
-        param_in_template = tparam[tid == tnum]
-        tpars.append(param_in_template[0])
+        tpars.append(tparam[tnum])
     if (tnum % 1000 == 0): logging.info('Fitted template %i / %i' %
                                                     (tnum - tmin, tmax - tmin))
 
@@ -365,7 +368,7 @@ if args.save_trig_param:
     outfile.create_dataset("template_param", data=tpars)
 outfile.create_dataset("count_in_template", data=counts_total)
 outfile.create_dataset("median_sigma", data=median_sigma)
-# add some metadata
+# Add some metadata
 outfile.attrs.create("ifo", data=args.ifo.encode())
 outfile.attrs.create("fit_function", data=args.fit_function.encode())
 outfile.attrs.create("sngl_stat", data=args.sngl_ranking)

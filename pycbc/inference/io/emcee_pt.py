@@ -17,7 +17,6 @@
 """Provides I/O support for emcee_pt.
 """
 
-from __future__ import absolute_import
 
 import numpy
 

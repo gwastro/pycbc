@@ -29,7 +29,49 @@ in a Python script, rather than in the command line.
 import numpy as np
 from pycbc.types.config import InterpolatingConfigParser
 from pycbc import transforms
-import pycbc.distributions as distributions
+from pycbc import distributions
+
+
+def prior_from_config(cp, prior_section='prior'):
+    """Loads a prior distribution from the given config file.
+
+    Parameters
+    ----------
+    cp : pycbc.workflow.WorkflowConfigParser
+        The config file to read.
+    sections : list of str, optional
+        The sections to retrieve the prior from. If ``None`` (the default),
+        will look in sections starting with 'prior'.
+
+    Returns
+    -------
+    distributions.JointDistribution
+        The prior distribution.
+    """
+
+    # Read variable and static parameters from the config file
+    variable_params, static_params = distributions.read_params_from_config(
+        cp, prior_section=prior_section, vargs_section='variable_params',
+        sargs_section='static_params')
+
+    # Read waveform_transforms to apply to priors from the config file
+    if any(cp.get_subsections('waveform_transforms')):
+        waveform_transforms = transforms.read_transforms_from_config(
+                cp, 'waveform_transforms')
+    else:
+        waveform_transforms = None
+
+    # Read constraints to apply to priors from the config file
+    constraints = distributions.read_constraints_from_config(
+        cp, transforms=waveform_transforms, static_args=static_params)
+
+    # Get PyCBC distribution instances for each variable parameter in the
+    # config file
+    dists = distributions.read_distributions_from_config(cp, prior_section)
+
+    # construct class that will return draws from the prior
+    return distributions.JointDistribution(variable_params, *dists,
+                                           **{"constraints": constraints})
 
 
 def draw_samples_from_config(path, num=1, seed=150914):
@@ -78,33 +120,15 @@ def draw_samples_from_config(path, num=1, seed=150914):
     config_parser.read_file(file)
     file.close()
 
-    # Get the vairable arguments from the .ini file.
-    variable_args, _ = distributions.read_params_from_config(
-                            config_parser, prior_section='prior',
-                            vargs_section='variable_params')
-    constraints = distributions.read_constraints_from_config(config_parser)
-
-    if any(config_parser.get_subsections('waveform_transforms')):
-        waveform_transforms = transforms.read_transforms_from_config(
-            config_parser, 'waveform_transforms')
-    else:
-        waveform_transforms = None
-
-    # Get prior distribution for each variable parameter.
-    dists = distributions.read_distributions_from_config(config_parser)
-
     # Construct class that will draw the samples.
-    randomsampler = distributions.JointDistribution(
-                                variable_args, *dists,
-                                **{"constraints": constraints})
-
+    prior_dists = prior_from_config(cp=config_parser)
     # Draw samples from prior distribution.
-    samples = randomsampler.rvs(size=int(num))
+    samples = prior_dists.rvs(size=int(num))
 
     # Apply parameter transformation.
-    if waveform_transforms is not None:
+    if any(config_parser.get_subsections('waveform_transforms')):
+        waveform_transforms = transforms.read_transforms_from_config(
+                config_parser, 'waveform_transforms')
         samples = transforms.apply_transforms(samples, waveform_transforms)
-    else:
-        pass
 
     return samples

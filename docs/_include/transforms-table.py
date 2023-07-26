@@ -19,7 +19,6 @@
 """Prints an RST table of available distributions from the distributions
 module.
 """
-from __future__ import (print_function, absolute_import)
 from pycbc.transforms import transforms
 from _dict_to_rst import (rst_dict_table, format_class)
 

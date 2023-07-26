@@ -19,7 +19,7 @@
 import os.path, types
 import codecs
 
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import unescape
 

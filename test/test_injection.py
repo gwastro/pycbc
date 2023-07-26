@@ -85,7 +85,6 @@ class MyInjection(object):
 class TestInjection(unittest.TestCase):
     def setUp(self):
         available_detectors = get_available_detectors()
-        available_detectors = [a[0] for a in available_detectors]
         self.assertTrue('H1' in available_detectors)
         self.assertTrue('L1' in available_detectors)
         self.assertTrue('V1' in available_detectors)

@@ -13,11 +13,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-from __future__ import division
 import re
 import numpy
+import pycbc.libutils
 from lal import MTSUN_SI, PI, CreateREAL8Vector
-import lalsimulation
+
+lalsimulation = pycbc.libutils.import_optional('lalsimulation')
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
 pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\

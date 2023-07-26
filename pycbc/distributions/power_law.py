@@ -107,22 +107,9 @@ class UniformPowerLaw(bounded.BoundedDist):
 
     Attributes
     ----------
-    name : 'uniform_radius'
-        The name of this distribution.
     dim : int
         The dimension of volume space. In the notation above `dim`
         is :math:`n+1`. For a 3-dimensional sphere this is 3.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
     """
     name = "uniform_power_law"
     def __init__(self, dim=None, **params):
@@ -138,10 +125,12 @@ class UniformPowerLaw(bounded.BoundedDist):
 
     @property
     def norm(self):
+        """float: The normalization of the multi-dimensional pdf."""
         return self._norm
 
     @property
     def lognorm(self):
+        """float: The log of the normalization."""
         return self._lognorm
 
     def _cdfinv_param(self, param, value):

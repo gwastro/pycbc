@@ -3,3 +3,4 @@ template_bank.hdf
 injections.hdf
 stat*.hdf
 output/
+*.fits

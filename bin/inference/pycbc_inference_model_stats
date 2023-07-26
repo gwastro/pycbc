@@ -51,8 +51,10 @@ parser.add_argument("--nprocesses", type=int, default=1,
 parser.add_argument("--config-file", nargs="+", type=str, default=None,
                     help="Override the config file stored in the input file "
                           "with the given file(s).")
-parser.add_argument("--verbose", action="store_true", default=False,
+parser.add_argument("--verbose", action="count", default=0,
                     help="Print logging messages.")
+parser.add_argument('--reconstruct-parameters', action="store_true",
+                    help="Reconstruct marginalized parameters")
 
 
 # parse command line
@@ -91,49 +93,44 @@ model = models.read_from_config(cp)
 model.sampling_transforms = None
 
 # create function for calling the model to get the stats
-def callmodel(paramvals):
-    # paramvals should be a numpy record instance
-    model.update(**{p: paramvals[p] for p in model.variable_params})
+def callmodel(arg):
+    iteration, paramvals = arg
     # calculate the logposterior to get all stats populated
+    model.update(**{p: paramvals[p] for p in model.variable_params})
     _ = model.logposterior
-    return model.get_current_stats()
+    stats = model.get_current_stats()
 
-# these help for parallelization
+    rec = {}
+    if opts.reconstruct_parameters:
+        model.update(**{p: paramvals[p] for p in model.variable_params})
+        # Ensure unique random seed for each reconstruction
+        rec = model.reconstruct(seed=iteration)
+    return stats, rec
+
+# these help for parallelization for MPI
 models._global_instance = callmodel
 model_call = models._call_global_model
 
-# setup the pool
 pool = choose_pool(processes=opts.nprocesses)
 
-# load the samples
 logging.info('Getting samples')
 with loadfile(opts.input_file, 'r') as fp:
     # we'll need the shape; all the arrays in the samples group should have the
-    # same shape, so we'll just use the first one
-    shape = fp[fp.samples_group][model.variable_params[0]].shape
+    # same shape
+    shape = fp[fp.samples_group]['loglikelihood'].shape
     samples = {}
     for p in model.variable_params:
         samples[p] = fp[fp.samples_group][p][()].flatten()
+
 # convert the samples array to a FieldArray for easy iteration over
 samples = FieldArray.from_kwargs(**samples)
 logging.info("Loaded %i samples", samples.size)
 
-estsize = 100
-if samples.size > estsize:
-    logging.info("Estimating run time using first %i samples", estsize)
-    # estimate the time it will take
-    before = time.time()
-    stats = list(pool.map(model_call, samples[:estsize]))
-    now = time.time()
-    total = ((samples.size - estsize)*(now - before)/estsize)/opts.nprocesses
-    logging.info("Will take ~%.2f more minutes", total/60.)
-    samples = samples[estsize:]
-else:
-    stats = []
-
 # get the stats
 logging.info("Calculating stats")
-stats += list(pool.map(model_call, samples))
+data = list(pool.map(model_call, enumerate(samples)))
+stats = [x[0] for x in data]
+rec = [x[1] for x in data]
 
 # write to the output file
 logging.info("Copying input to output")
@@ -145,6 +142,12 @@ idx = range(len(stats))
 for pi, p in enumerate(model.default_stats):
     vals = numpy.array([stats[ii][pi] for ii in idx]).reshape(shape)
     out.write_data(p, vals, path=fp.samples_group, append=False)
-out.close()
 
+if opts.reconstruct_parameters:
+    logging.info("Writing reconstructed parameters")
+    for p in rec[0].keys():
+        vals = numpy.array([r[p] for r in rec]).reshape(shape)
+        out.write_data(p, vals, path=fp.samples_group, append=False)
+
+out.close()
 logging.info("Done")

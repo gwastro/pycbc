@@ -29,14 +29,13 @@ documentation for this function can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 """
 
-from __future__ import print_function
 import os, copy
 import logging
 from ligo import segments
 from ligo.lw import utils, table
 from glue import lal
+from gwdatafind import find_urls as find_frame_urls
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
-from pycbc.frame import datafind_connection
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
@@ -397,11 +396,6 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     if tags is None:
         tags = []
 
-    # First job is to do setup for the datafind jobs
-    # First get the server name
-    logging.info("Setting up connection to datafind server.")
-    connection = setup_datafind_server_connection(cp, tags=tags)
-
     # Now ready to loop over the input segments
     datafindouts = []
     datafindcaches = []
@@ -420,14 +414,27 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
 
             # Sometimes the connection can drop, so try a backup here
             try:
-                cache, cache_file = run_datafind_instance(cp, outputDir,
-                                           connection, observatory, frameType,
-                                           startTime, endTime, ifo, tags=tags)
+                cache, cache_file = run_datafind_instance(
+                    cp,
+                    outputDir,
+                    observatory,
+                    frameType,
+                    startTime,
+                    endTime,
+                    ifo,
+                    tags=tags
+                )
             except:
-                connection = setup_datafind_server_connection(cp, tags=tags)
-                cache, cache_file = run_datafind_instance(cp, outputDir,
-                                           connection, observatory, frameType,
-                                           startTime, endTime, ifo, tags=tags)
+                cache, cache_file = run_datafind_instance(
+                    cp,
+                    outputDir,
+                    observatory,
+                    frameType,
+                    startTime,
+                    endTime,
+                    ifo,
+                    tags=tags
+                )
             datafindouts.append(cache_file)
             datafindcaches.append(cache)
     return datafindcaches, datafindouts
@@ -476,11 +483,6 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     """
     if tags is None:
         tags = []
-
-    # First job is to do setup for the datafind jobs
-    # First get the server name
-    logging.info("Setting up connection to datafind server.")
-    connection = setup_datafind_server_connection(cp, tags=tags)
 
     # We want to ignore gaps as the detectors go up and down and calling this
     # way will give gaps. See the setup_datafind_runtime_generated function
@@ -531,7 +533,6 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
                 cache, cache_file = run_datafind_instance(
                     cp,
                     outputDir,
-                    connection,
                     observatory,
                     ftype,
                     start,
@@ -540,11 +541,9 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
                     tags=tags
                 )
             except:
-                connection = setup_datafind_server_connection(cp, tags=tags)
                 cache, cache_file = run_datafind_instance(
                     cp,
                     outputDir,
-                    connection,
                     observatory,
                     ftype,
                     start,
@@ -746,28 +745,15 @@ def convert_cachelist_to_filelist(datafindcache_list):
 
             # Populate the PFNs for the File() we just created
             if frame.url.startswith('file://'):
-                currFile.add_pfn(frame.url, site='local')
-                if frame.url.startswith(
-                    'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'):
-                    # Datafind returned a URL valid on the osg as well
-                    # so add the additional PFNs to allow OSG access.
-                    currFile.add_pfn(frame.url, site='osg')
-                    currFile.add_pfn(frame.url.replace(
-                        'file:///cvmfs/oasis.opensciencegrid.org/',
-                        'root://xrootd-local.unl.edu/user/'), site='osg')
-                    currFile.add_pfn(frame.url.replace(
-                        'file:///cvmfs/oasis.opensciencegrid.org/',
-                        'gsiftp://red-gridftp.unl.edu/user/'), site='osg')
-                    currFile.add_pfn(frame.url.replace(
-                        'file:///cvmfs/oasis.opensciencegrid.org/',
-                        'gsiftp://ldas-grid.ligo.caltech.edu/hdfs/'), site='osg')
-                elif frame.url.startswith(
-                    'file:///cvmfs/gwosc.osgstorage.org/'):
-                    # Datafind returned a URL valid on the osg as well
-                    # so add the additional PFNs to allow OSG access.
-                    for s in ['osg', 'orangegrid', 'osgconnect']:
-                        currFile.add_pfn(frame.url, site=s)
-                        currFile.add_pfn(frame.url, site="{}-scratch".format(s))
+                if frame.url.startswith('file:///cvmfs/'):
+                    # Frame is on CVMFS, so let all sites read it directly.
+                    currFile.add_pfn(frame.url, site='all')
+                else:
+                    # Frame not on CVMFS, so may need transferring.
+                    # Be careful here! If all your frames files are on site
+                    # = local and you try to run on OSG, it will likely
+                    # overwhelm the condor file transfer process!
+                    currFile.add_pfn(frame.url, site='local')
             else:
                 currFile.add_pfn(frame.url, site='notlocal')
 
@@ -847,31 +833,6 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
                 missingFrames[ifo].extend(currMissingFrames)
     return missingFrameSegs, missingFrames
 
-def setup_datafind_server_connection(cp, tags=None):
-    """
-    This function is resposible for setting up the connection with the datafind
-    server.
-
-    Parameters
-    -----------
-    cp : pycbc.workflow.configuration.WorkflowConfigParser
-        The memory representation of the ConfigParser
-    Returns
-    --------
-    connection
-        The open connection to the datafind server.
-    """
-    if tags is None:
-        tags = []
-
-    if cp.has_option_tags("workflow-datafind",
-                          "datafind-ligo-datafind-server", tags):
-        datafind_server = cp.get_opt_tags("workflow-datafind",
-                                        "datafind-ligo-datafind-server", tags)
-    else:
-        datafind_server = None
-
-    return datafind_connection(datafind_server)
 
 def get_segment_summary_times(scienceFile, segmentName):
     """
@@ -892,8 +853,8 @@ def get_segment_summary_times(scienceFile, segmentName):
     """
     # Parse the segmentName
     segmentName = segmentName.split(':')
-    if not len(segmentName) in [2,3]:
-        raise ValueError("Invalid channel name %s." %(segmentName))
+    if not len(segmentName) in [2, 3]:
+        raise ValueError(f"Invalid channel name {segmentName}.")
     ifo = segmentName[0]
     channel = segmentName[1]
     version = ''
@@ -901,12 +862,14 @@ def get_segment_summary_times(scienceFile, segmentName):
         version = int(segmentName[2])
 
     # Load the filename
-    xmldoc = utils.load_filename(scienceFile.cache_entry.path,
-                             gz=scienceFile.cache_entry.path.endswith("gz"),
-                             contenthandler=LIGOLWContentHandler)
+    xmldoc = utils.load_filename(
+        scienceFile.cache_entry.path,
+        compress='auto',
+        contenthandler=LIGOLWContentHandler
+    )
 
     # Get the segment_def_id for the segmentName
-    segmentDefTable = table.get_table(xmldoc, "segment_definer")
+    segmentDefTable = table.Table.get_table(xmldoc, "segment_definer")
     for entry in segmentDefTable:
         if (entry.ifos == ifo) and (entry.name == channel):
             if len(segmentName) == 2 or (entry.version==version):
@@ -917,7 +880,7 @@ def get_segment_summary_times(scienceFile, segmentName):
                          %(segmentName))
 
     # Get the segmentlist corresponding to this segmentName in segment_summary
-    segmentSummTable = table.get_table(xmldoc, "segment_summary")
+    segmentSummTable = table.Table.get_table(xmldoc, "segment_summary")
     summSegList = segments.segmentlist([])
     for entry in segmentSummTable:
         if entry.segment_def_id == segDefID:
@@ -927,7 +890,7 @@ def get_segment_summary_times(scienceFile, segmentName):
 
     return summSegList
 
-def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
+def run_datafind_instance(cp, outputDir, observatory, frameType,
                           startTime, endTime, ifo, tags=None):
     """
     This function will query the datafind server once to find frames between
@@ -940,9 +903,6 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     outputDir : Output cache files will be written here. We also write the
         commands for reproducing what is done in this function to this
         directory.
-    connection : datafind connection object
-        Initialized through the `gwdatafind` module, this is the open
-        connection to the datafind server.
     observatory : string
         The observatory to query frames for. Ex. 'H', 'L' or 'V'.  NB: not
         'H1', 'L1', 'V1' which denote interferometers.
@@ -976,6 +936,17 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     if tags is None:
         tags = []
 
+    # Determine if we should override the default datafind server
+    if cp.has_option_tags("workflow-datafind",
+                          "datafind-ligo-datafind-server", tags):
+        datafind_server = cp.get_opt_tags(
+            "workflow-datafind",
+            "datafind-ligo-datafind-server",
+            tags
+        )
+    else:
+        datafind_server = None
+
     seg = segments.segment([startTime, endTime])
     # Take the datafind kwargs from config (usually urltype=file is
     # given).
@@ -996,8 +967,14 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
                          os.path.join(outputDir,'logs'), **dfKwargs)
     logging.debug("Asking datafind server for frames.")
     dfCache = lal.Cache.from_urls(
-        connection.find_frame_urls(observatory, frameType,
-                                   startTime, endTime, **dfKwargs),
+        find_frame_urls(
+            observatory,
+            frameType,
+            startTime,
+            endTime,
+            host=datafind_server,
+            **dfKwargs
+        ),
     )
     logging.debug("Frames returned")
     # workflow format output file

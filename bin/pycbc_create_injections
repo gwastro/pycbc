@@ -190,7 +190,8 @@ variable_params, static_params = distributions.read_params_from_config(cp,
     prior_section=opts.dist_section,
     vargs_section=opts.variable_params_section,
     sargs_section=opts.static_params_section)
-constraints = distributions.read_constraints_from_config(cp)
+constraints = distributions.read_constraints_from_config(
+    cp, static_args=static_params)
 
 if any(cp.get_subsections('waveform_transforms')):
     waveform_transforms = transforms.read_transforms_from_config(cp,
@@ -205,7 +206,7 @@ dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
 # construct class that will draw the samples
 randomsampler = JointDistribution(variable_params, *dists,
-                               **{"constraints" : constraints})
+                               **{"constraints": constraints})
 
 if opts.ninjections:
     draw_size = opts.ninjections
@@ -238,7 +239,7 @@ while True:
         if old_samples is None:
             tstart = opts.gps_start_time
         else:
-            tstart = old_samples['tc'].max()
+            tstart = old_samples['tc'].max() + opts.time_step
 
         tc = numpy.arange(0, draw_size) * opts.time_step + tstart
         tc += uniform(0, high=opts.time_window, size=draw_size).cumsum()

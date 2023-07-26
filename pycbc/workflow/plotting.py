@@ -25,8 +25,8 @@
 This module is responsible for setting up plotting jobs.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
+from urllib.request import pathname2url
+from urllib.parse import urljoin
 from pycbc.workflow.core import File, FileList, makedir, Executable
 
 def excludestr(tags, substr):
@@ -55,7 +55,8 @@ class PlotExecutable(Executable):
         node.set_priority(1000)
         return node
 
-def make_template_plot(workflow, bank_file, out_dir, tags=None):
+def make_template_plot(workflow, bank_file, out_dir,bins=None, 
+                       tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_bank', ifos=workflow.ifos,
@@ -64,6 +65,7 @@ def make_template_plot(workflow, bank_file, out_dir, tags=None):
 
     if workflow.cp.has_option_tags('workflow-coincidence', 'background-bins', tags=tags):
         bins = workflow.cp.get_opt_tags('workflow-coincidence', 'background-bins', tags=tags)
+    if bins:
         node.add_opt('--background-bins', bins)
 
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
@@ -76,6 +78,7 @@ def make_range_plot(workflow, psd_files, out_dir, exclude=None, require=None,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_range'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_range', ifos=workflow.ifos,
@@ -163,6 +166,7 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_sensitivity'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_sensitivity', ifos=workflow.ifos,
@@ -179,6 +183,7 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_coinc_snrchi'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         exe = PlotExecutable(workflow.cp, 'plot_coinc_snrchi',
@@ -313,6 +318,7 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_snrchi'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
@@ -321,6 +327,8 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
                                  out_dir=out_dir,
                                  tags=[tag] + tags)
             node = exe.create_node()
+
+            node.set_memory(15000)
             node.add_input_opt('--trigger-file', trig_file)
             if veto_file is not None:
                 node.add_input_opt('--veto-file', veto_file)
@@ -337,6 +345,7 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_foundmissed'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         exe = PlotExecutable(workflow.cp, 'plot_foundmissed', ifos=workflow.ifos,
@@ -405,9 +414,9 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
     workflow += node
     return node.output_files[0]
 
-
-def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
-    template_path = 'templates/orange.html'
+def make_results_web_page(workflow, results_dir, template='orange',
+                          explicit_dependencies=None):
+    template_path = 'templates/'+template+'.html'
 
     out_dir = workflow.cp.get('results_page', 'output-path')
     makedir(out_dir)
@@ -420,7 +429,6 @@ def make_results_web_page(workflow, results_dir, explicit_dependencies=None):
         for dep in explicit_dependencies:
             workflow.add_explicit_dependancy(dep, node)
 
-
 def make_single_hist(workflow, trig_file, veto_file, veto_name,
                      out_dir, bank_file=None, exclude=None,
                      require=None, tags=None):
@@ -428,6 +436,7 @@ def make_single_hist(workflow, trig_file, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_hist'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_hist',
@@ -452,6 +461,7 @@ def make_binned_hist(workflow, trig_file, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_binnedhist'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_binnedhist',
@@ -475,6 +485,7 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
     makedir(out_dir)
     secs = requirestr(workflow.cp.get_subsections('plot_singles'), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         for trig_file in trig_files:
@@ -483,6 +494,7 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
                         out_dir=out_dir,
                         tags=[tag] + tags).create_node()
 
+            node.set_memory(15000)
             node.add_input_opt('--bank-file', bank_file)
             if veto_file is not None:
                 node.add_input_opt('--veto-file', veto_file)
@@ -490,6 +502,60 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
             node.add_opt('--detector', trig_file.ifo)
             node.add_input_opt('--single-trig-file', trig_file)
             node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
+            workflow += node
+            files += node.output_files
+    return files
+
+def make_dq_trigger_rate_plot(workflow, dq_files, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    files = FileList([])
+    for dq_file in dq_files:
+        if workflow.cp.has_option_tags('bin_trigger_rates_dq',
+                                       'background-bins', tags=tags):
+            background_bins = \
+                          workflow.cp.get_opt_tags('bin_trigger_rates_dq',
+                                              'background-bins', tags=tags)
+            bin_names = [tuple(bbin.split(':'))[0] for bbin
+                                             in background_bins.split(' ')]
+        else: bin_names = ['all_bin']
+        for bbin in bin_names:
+            plot_tags = [bbin] + tags
+            node = PlotExecutable(workflow.cp, 'plot_dq_likelihood_vs_time',
+                        ifos=dq_file.ifo,
+                        out_dir=out_dir,
+                        tags=plot_tags).create_node()
+            node.add_opt('--ifo', dq_file.ifo)
+            node.add_opt('--background-bin', bbin)
+            node.add_input_opt('--dq-file', dq_file)
+            node.new_output_file_opt(dq_file.segment, '.png', '--output-file')
+            workflow += node
+            files += node.output_files
+    return files
+
+def make_dq_percentile_plot(workflow, dq_files, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    files = FileList([])
+    for dq_file in dq_files:
+        if workflow.cp.has_option_tags('bin_trigger_rates_dq',
+                                       'background-bins', tags=tags):
+            background_bins = \
+                          workflow.cp.get_opt_tags('bin_trigger_rates_dq',
+                                              'background-bins', tags=tags)
+            bin_names = [tuple(bbin.split(':'))[0] for bbin
+                                             in background_bins.split(' ')]
+        else: bin_names = ['all_bin']
+        for bbin in bin_names:
+            plot_tags = [bbin] + tags
+            node = PlotExecutable(workflow.cp, 'plot_dq_percentiles',
+                        ifos=dq_file.ifo,
+                        out_dir=out_dir,
+                        tags=plot_tags).create_node()
+            node.add_opt('--ifo', dq_file.ifo)
+            node.add_opt('--background-bin', bbin)
+            node.add_input_opt('--dq-file', dq_file)
+            node.new_output_file_opt(dq_file.segment, '.png', '--output-file')
             workflow += node
             files += node.output_files
     return files

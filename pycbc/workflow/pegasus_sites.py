@@ -14,12 +14,14 @@ possible to implement a new site, but not sure how that would work in practice.
 
 import os.path
 import tempfile
-import distutils
 import urllib.parse
+from shutil import which
 from urllib.parse import urljoin
 from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
 from Pegasus.api import Arch, OS, SiteCatalog
+
+from pycbc.version import last_release  # noqa
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
@@ -54,7 +56,7 @@ def add_ini_site_profile(site, cp, sec):
 
 
 def add_local_site(sitecat, cp, local_path, local_url):
-    """Add the local site to sitecatalog"""
+    """Add the local site to site catalog"""
     # local_url must end with a '/'
     if not local_url.endswith('/'):
         local_url = local_url + '/'
@@ -80,8 +82,6 @@ def add_condorpool_symlink_site(sitecat, cp):
     add_site_pegasus_profile(site, cp)
 
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
-    site.add_profiles(Namespace.PEGASUS, key="transfer.links",
-                      value="true")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
@@ -115,6 +115,9 @@ def add_condorpool_copy_site(sitecat, cp):
                       value="nonsharedfs")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
+    # This explicitly disables symlinking
+    site.add_profiles(Namespace.PEGASUS, key='nosymlink',
+                      value=True)
     site.add_profiles(Namespace.PEGASUS, key='auxillary.local',
                       value="true")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
@@ -173,15 +176,16 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
                       value="True")
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     # Need to set PEGASUS_HOME
-    peg_home = distutils.spawn.find_executable('pegasus-plan')
+    peg_home = which('pegasus-plan')
     assert peg_home.endswith('bin/pegasus-plan')
     peg_home = peg_home.replace('bin/pegasus-plan', '')
     site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
     sitecat.add_sites(site)
 
-# Would like to add this, but need to figure out some issues with copy
-# protocol. Probably condorio would be the ideal thing to use here, but that
-# doesn't work with our INSPIRAL 111111/FILENAME.xml LFN schem
+
+# NOTE: We should now be able to add a nonfs site. I'll leave this for a
+#       future patch/as demanded feature though. The setup would largely be
+#       the same as the OSG site, except without the OSG specific things.
 
 # def add_condorpool_nonfs_site(sitecat, cp):
 
@@ -192,13 +196,15 @@ def add_osg_site(sitecat, cp):
     add_site_pegasus_profile(site, cp)
     site.add_profiles(Namespace.PEGASUS, key="style", value="condor")
     site.add_profiles(Namespace.PEGASUS, key="data.configuration",
-                      value="nonsharedfs")
+                      value="condorio")
     site.add_profiles(Namespace.PEGASUS, key='transfer.bypass.input.staging',
                       value="true")
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
-                      value="ON_EXIT_OR_EVICT")
+                      value="ON_SUCCESS")
+    site.add_profiles(Namespace.CONDOR, key="success_exit_code",
+                      value="0")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="getenv",
@@ -211,19 +217,22 @@ def add_osg_site(sitecat, cp):
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(HAS_LIGO_FRAMES =?= True) && "
                             "(IS_GLIDEIN =?= True)")
-    # FIXME: This one should be moved to be latest release and/or chosen in the
-    #        config file.
+    cvmfs_loc = '"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v'
+    cvmfs_loc += last_release + '"'
     site.add_profiles(Namespace.CONDOR, key="+SingularityImage",
-                      value='"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el7:v1.18.0"')
+                      value=cvmfs_loc)
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
-                      value="/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation")
+                      value="/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation")
+    # Add MKL location to LD_LIBRARY_PATH for OSG
+    site.add_profiles(Namespace.ENV, key="LD_LIBRARY_PATH",
+                      value="/usr/local/lib:/.singularity.d/libs")
     sitecat.add_sites(site)
 
 
 def add_site(sitecat, sitename, cp, out_dir=None):
-    """Add site sitename to sitecatalog"""
+    """Add site sitename to site catalog"""
     # Allow local site scratch to be overriden for any site which uses it
     sec = 'pegasus_profile-{}'.format(sitename)
     opt = 'pycbc|site-scratch'

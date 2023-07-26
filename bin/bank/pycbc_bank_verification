@@ -21,13 +21,12 @@ Test that a template bank covers a provided parameter space using a provided
 metric approximation to the parameter space.
 """
 
-from __future__ import division
 
 import argparse
 import logging
 import numpy
 import h5py
-from ligo.lw import table, lsctables, utils as ligolw_utils
+from ligo.lw import lsctables, utils as ligolw_utils
 import pycbc
 import pycbc.version
 from pycbc import tmpltbank, psd, strain
@@ -160,7 +159,7 @@ if opts.vary_fupper==False:
 else:
     # determine upper frequency cutoffs corresponding to the min and max 
     # total masses
-    fs = numpy.array(metricParams.evals.keys(), dtype=float)
+    fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
     fs.sort()
     lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
                               opts.bank_fupper_formula, massRangeParams, fs)
@@ -196,8 +195,7 @@ logging.info("Reading template bank.")
 if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
     indoc = ligolw_utils.load_filename(opts.input_bank,
                                        contenthandler=LIGOLWContentHandler)
-    template_list = table.get_table(indoc,
-                                    lsctables.SnglInspiralTable.tableName)
+    template_list = lsctables.SnglInspiralTable.get_table(indoc)
 
     partitioned_bank_object.add_tmpltbank_from_xml_table\
         (template_list, vary_fupper=opts.vary_fupper)

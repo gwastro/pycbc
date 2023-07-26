@@ -33,15 +33,17 @@ from pycbc.frame import read_frame
 from pycbc.filter import highpass, resample_to_delta_t
 from astropy.utils.data import download_file
 from pycbc.inference import models
-from pycbc.distributions import Uniform, JointDistribution, SinAngle
+from pycbc.distributions import Uniform, JointDistribution, SinAngle, UniformAngle
 
 class TestModels(unittest.TestCase):
-    def setUp(self):
+
+    @classmethod
+    def setUpClass(cls):
         ###### Get data for references analysis of 170817
         m = Merger("GW170817")
         ifos = ['H1', 'V1', 'L1']
-        self.psds = {}
-        self.data = {}
+        cls.psds = {}
+        cls.data = {}
 
         for ifo in ifos:
             print("Processing {} data".format(ifo))
@@ -56,15 +58,15 @@ class TestModels(unittest.TestCase):
             ts = highpass(ts, 15.0)
             ts = resample_to_delta_t(ts, 1.0/2048)
             ts = ts.time_slice(m.time-112, m.time + 16)
-            self.data[ifo] = ts.to_frequencyseries()
+            cls.data[ifo] = ts.to_frequencyseries()
 
             psd = interpolate(ts.psd(4), ts.delta_f)
             psd = inverse_spectrum_truncation(psd, int(4 * psd.sample_rate),
                                               trunc_method='hann',
                                               low_frequency_cutoff=20.0)
-            self.psds[ifo] = psd
+            cls.psds[ifo] = psd
 
-        self.static = {'mass1':1.3757,
+        cls.static = {'mass1':1.3757,
                   'mass2':1.3757,
                   'f_lower':20.0,
                   'approximant':"TaylorF2",
@@ -73,24 +75,33 @@ class TestModels(unittest.TestCase):
                   'dec': -0.40808407,
                   'tc':  1187008882.42840,
                  }
-        self.variable = ('distance',
+
+        cls.variable = ['distance',
                     'inclination',
-                   )
-        self.flow = {'H1':25, 'L1':25, 'V1':25}
+                      ]
+        cls.flow = {'H1':25, 'L1':25, 'V1':25}
         inclination_prior = SinAngle(inclination=None)
         distance_prior = Uniform(distance=(10, 100))
         tc_prior = Uniform(tc=(m.time-0.1, m.time+0.1))
-        self.prior = JointDistribution(self.variable, inclination_prior,
+        pol = UniformAngle(polarization=None)
+        cls.prior = JointDistribution(cls.variable, inclination_prior,
                                        distance_prior)
+
+        # set up for marginalized polarization tests
+        cls.static2 = cls.static.copy()
+        cls.static2.pop('polarization')
+        cls.variable2 = cls.variable + ['polarization']
+        cls.prior2 = JointDistribution(cls.variable2, inclination_prior,
+                                       distance_prior, pol)
 
         ###### Expected answers
         # Answer taken from marginalized gaussian model
-        self.q1 = {'distance':42.0, 'inclination':2.5}
-        self.a1 = 541.8235746138382
+        cls.q1 = {'distance':42.0, 'inclination':2.5}
+        cls.a1 = 541.8235746138382
 
         # answer taken from brute marginize pol + phase
-        self.a2 = 542.581
-        self.pol_samples = 200
+        cls.a2 = 542.581
+        cls.pol_samples = 200
 
     def test_base_phase_marg(self):
         model = models.MarginalizedPhaseGaussianNoise(
@@ -128,22 +139,25 @@ class TestModels(unittest.TestCase):
 
     def test_single_pol_phase_marg(self):
         model = models.SingleTemplate(
-                        self.variable, copy.deepcopy(self.data),
+                        self.variable2, copy.deepcopy(self.data),
                         low_frequency_cutoff=self.flow,
                         psds = self.psds,
-                        static_params = self.static,
-                        prior = self.prior,
-                        polarization_samples=1000,
+                        static_params = self.static2,
+                        prior = self.prior2,
+                        marginalize_vector_samples = 1000,
+                        marginalize_vector_params = 'polarization',
                         )
         model.update(**self.q1)
         self.assertAlmostEqual(self.a2, model.loglr, delta=0.04)
 
     def test_brute_pol_phase_marg(self):
+        # Uses the old polarization syntax untill we decide to remove it.
+        # Untill then, this also tests that that interface stays working.
         model = models.BruteParallelGaussianMarginalize(
                         self.variable, data=copy.deepcopy(self.data),
                         low_frequency_cutoff=self.flow,
                         psds = self.psds,
-                        static_params = self.static,
+                        static_params = self.static2,
                         prior = self.prior,
                         marginalize_phase=400,
                         cores=1,

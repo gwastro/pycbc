@@ -105,6 +105,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
 
     workflow += node
 
@@ -118,7 +119,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     job.set_subworkflow_properties(map_file,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
-    job.add_into_workflow(workflow, parents=[node])
+    job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
@@ -205,6 +206,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
 
     workflow += node
 
@@ -221,7 +223,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     job.set_subworkflow_properties(map_file,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
-    job.add_into_workflow(workflow, parents=[node])
+    job.add_into_workflow(workflow)
     logging.info('Leaving minifollowups module')
 
 
@@ -295,6 +297,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
 
     workflow += node
 
@@ -308,7 +311,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     job.set_subworkflow_properties(map_file,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
-    job.add_into_workflow(workflow, parents=[node])
+    job.add_into_workflow(workflow)
 
     logging.info('Leaving injection minifollowups module')
 
@@ -399,6 +402,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     name = 'single_template_plot'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         for ifo in workflow.ifos:
@@ -482,6 +486,7 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
     name = 'single_template_plot'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, 'plot_waveform', ifos=ifos,
@@ -574,6 +579,7 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
     name = 'plot_trigger_timeseries'
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
     files = FileList([])
     for tag in secs:
         node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,

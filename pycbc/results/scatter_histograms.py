@@ -145,10 +145,35 @@ def get_scale_fac(fig, fiducial_width=8, fiducial_height=7):
 
 def construct_kde(samples_array, use_kombine=False, kdeargs=None):
     """Constructs a KDE from the given samples.
+
+    Parameters
+    ----------
+    samples_array : array
+        Array of values to construct the KDE for.
+    use_kombine : bool, optional
+        Use kombine's clustered KDE instead of scipy's. Default is False.
+    kdeargs : dict, optional
+        Additional arguments to pass to the KDE. Can be any argument recognized
+        by :py:func:`scipy.stats.gaussian_kde` or
+        :py:func:`kombine.clustered_kde.optimized_kde`. In either case, you can
+        also set ``max_kde_samples`` to limit the number of samples that are
+        used for KDE construction.
+
+    Returns
+    -------
+    kde :
+        The KDE.
     """
     # make sure samples are randomly sorted
     numpy.random.seed(0)
     numpy.random.shuffle(samples_array)
+    # if kde arg specifies a maximum number of samples, limit them
+    if kdeargs is None:
+        kdeargs = {}
+    else:
+        kdeargs = kdeargs.copy()
+    max_nsamples = kdeargs.pop('max_kde_samples', None)
+    samples_array = samples_array[:max_nsamples]
     if use_kombine:
         try:
             import kombine

@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-from __future__ import print_function
 
 __prog__ = 'pycbc_randr_by_snr'
 __author__ = 'Collin Capano <collin.capano@ligo.org>, Miriam Cabero Mueller <miriam.cabero@ligo.org>'
@@ -201,8 +200,7 @@ if opts.verbose:
     print("", file=sys.stdout)
     sys.stdout.flush()
 
-ligolw_utils.write_filename(xmldoc, opts.output_file,
-                            gz=opts.output_file.endswith('gz'))
+ligolw_utils.write_filename(xmldoc, opts.output_file, compress='auto')
 if opts.verbose:
     print("Finished!", file=sys.stdout)
 sys.exit(0)

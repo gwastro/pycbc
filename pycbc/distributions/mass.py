@@ -25,13 +25,13 @@ from pycbc.distributions import bounded
 
 
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
-    r""" A distribution for chirp mass from uniform component mass +
+    r"""A distribution for chirp mass from uniform component mass +
     constraints given by chirp mass. This is a special case for UniformPowerLaw
     with index 1. For more details see UniformPowerLaw.
 
-    The parameters (i.e. **params) are independent of each other. Instances
-    of this class can be called like a function. By default, logpdf will be
-    called, but this can be changed by setting the class's __call__ method
+    The parameters (i.e. `**params`) are independent of each other. Instances
+    of this class can be called like a function. By default, `logpdf` will be
+    called, but this can be changed by setting the class's `__call__` method
     to its pdf method.
 
     Derivation for the probability density function:
@@ -94,23 +94,6 @@ class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
-
-    Attributes
-    ----------
-    name : 'mchirp_from_uniform_mass1_mass2'
-        The name of this distribution.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
-
     """
 
     name = "mchirp_from_uniform_mass1_mass2"
@@ -123,13 +106,13 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
     r"""A distribution for mass ratio (i.e., q) from uniform component mass
     + constraints given by q.
 
-    The parameters (i.e. **params) are independent of each other. Instances
-    of this class can be called like a function. By default, logpdf will be
-    called, but this can be changed by setting the class's __call__ method
+    The parameters (i.e. `**params`) are independent of each other. Instances
+    of this class can be called like a function. By default, `logpdf` will be
+    called, but this can be changed by setting the class's `__call__` method
     to its pdf method.
 
     For mathematical derivation see the documentation above in the class
-    "MchirpfromUniformMass1Mass2".
+    `MchirpfromUniformMass1Mass2`.
 
     Parameters
     ----------
@@ -137,22 +120,6 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
         The keyword arguments should provide the names of parameters and their
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
-
-    Attributes
-    ----------
-    name : 'q_from_uniform_mass1_mass2'
-        The name of this distribution.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
 
     Examples
     --------
@@ -178,10 +145,12 @@ class QfromUniformMass1Mass2(bounded.BoundedDist):
 
     @property
     def norm(self):
+        """float: The normalization of the multi-dimensional pdf."""
         return self._norm
 
     @property
     def lognorm(self):
+        """float: The log of the normalization."""
         return self._lognorm
 
     def _pdf(self, **kwargs):

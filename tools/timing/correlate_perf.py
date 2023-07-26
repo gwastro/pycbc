@@ -12,8 +12,11 @@ for N in [2**10, 2**15, 2**18]:
     b = a * 0.5
     c = a * 1.5
 
-    xs = [a*1, a*2, a*3]
-    zs = [c*1, c*2, c*3]
+    xs = []
+    zs = []
+    for i in range(50):
+        xs.append(a*i)
+        zs.append(c*i)
     corr = BatchCorrelator(xs, zs, N)
     t1 = time()
     for i in range(niter):

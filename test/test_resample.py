@@ -82,7 +82,7 @@ class TestUtils(unittest.TestCase):
             test = test[len(c):]
 
             maxreldiff =  ((ref - test) / ref).max()
-
+            self.assertTrue(isinstance(test, TimeSeries))
             self.assertTrue(maxreldiff < 1e-7)
 
 suite = unittest.TestSuite()

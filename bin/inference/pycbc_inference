@@ -146,7 +146,7 @@ with ctx:
 
     # Run the sampler
     sampler.run()
-    
+
     if not pool.is_main_process():
         sys.exit(0)
 

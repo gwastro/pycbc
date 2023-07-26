@@ -1,6 +1,7 @@
+import matplotlib.pyplot as pp
 import pycbc.noise
 import pycbc.psd
-import pylab
+
 
 # The color of the noise matches a PSD which you provide
 flow = 30.0
@@ -12,9 +13,10 @@ psd = pycbc.psd.aLIGOZeroDetHighPower(flen, delta_f, flow)
 # the parameters of the PSD you give.
 fs = pycbc.noise.frequency_noise_from_psd(psd, seed=127)
 
-pylab.loglog(fs.sample_frequencies, abs(psd), label='Magnitude')
-pylab.loglog(fs.sample_frequencies, abs(fs**2.0), label='Magnitude')
-pylab.legend()
-pylab.ylabel('Strain^2 / Hz')
-pylab.xlabel('Frequency (Hz)')
-pylab.show()
+pp.loglog(fs.sample_frequencies, abs(fs**2.0), label='Magnitude')
+pp.loglog(fs.sample_frequencies, abs(psd), label='Magnitude')
+pp.xlim(flow, psd.sample_frequencies[-1])
+pp.legend()
+pp.ylabel('Strain^2 / Hz')
+pp.xlabel('Frequency (Hz)')
+pp.show()

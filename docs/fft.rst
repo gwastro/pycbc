@@ -13,8 +13,7 @@ for end users. To meet this requirement PyCBC provides two different APIs to
 do FFTs:
 
 * A function based API, which is easy to use, but not optimized.
-* A class-based API, which is a little more involved to use, but allows the use
-of optimized FFT routines.
+* A class-based API, which is a little more involved to use, but allows the use of optimized FFT routines.
 
 These APIs offer access to a number of FFT backends. PyCBC knows how to do FFTs
 using the FFTW, MKL and numpy backends, and will enable these if they are
@@ -25,9 +24,9 @@ override this and choose a specific backend if multiple are available.
 When running on GPUs, PyCBC knows how to do CUDA FFTs through the same
 interface. 
 
-=====================
+============================
 Using the function based API
-=====================
+============================
 
 The PyCBC function based API offers a simple way to Fourier transform an
 input array into an output array. This is done by::
@@ -99,9 +98,9 @@ or::
     >>> outarr = inarr.to_timeseries()
 
 
-=====================
+=========================
 Using the class-based API
-=====================
+=========================
 
 The PyCBC class-based API should be used if you care about performance. If you
 are performing FFTs many times, with inputs that are the same size each time,
@@ -139,9 +138,9 @@ would not work! Instead do::
     >>> fft_class.execute()
 
 
-====================
+===========================
 Choosing a specific backend
-====================
+===========================
 
 If you want to choose a specific backend, you can see what is available with::
 

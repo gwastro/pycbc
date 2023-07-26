@@ -35,7 +35,9 @@ from scipy import interpolate, integrate
 import astropy.cosmology
 from astropy import units
 from astropy.cosmology.core import CosmologyError
+from astropy.cosmology import parameters
 import pycbc.conversions
+
 
 DEFAULT_COSMOLOGY = 'Planck15'
 
@@ -96,7 +98,7 @@ def get_cosmology(cosmology=None, **kwargs):
     else:
         if cosmology is None:
             cosmology = DEFAULT_COSMOLOGY
-        if cosmology not in astropy.cosmology.parameters.available:
+        if cosmology not in parameters.available:
             raise ValueError("unrecognized cosmology {}".format(cosmology))
         cosmology = getattr(astropy.cosmology, cosmology)
     return cosmology
@@ -135,14 +137,28 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
     if fval.size == 1 and fval.ndim == 0:
         fval = fval.reshape(1)
     zs = numpy.zeros(fval.shape, dtype=float)  # the output array
+    if 'method' not in kwargs:
+        # workaround for https://github.com/astropy/astropy/issues/14249
+        # FIXME remove when fixed in astropy/scipy
+        kwargs['method'] = 'bounded'
     for (ii, val) in enumerate(fval):
         try:
             zs[ii] = astropy.cosmology.z_at_value(func, val*unit, zmax=zmax,
                                                   **kwargs)
         except CosmologyError:
-            # we'll get this if the z was larger than zmax; in that case we'll
-            # try bumping up zmax later to get a value
-            zs[ii] = numpy.inf
+            if ii == len(zs)-1:
+                # if zs[ii] is less than but very close to zmax, let's say
+                # zs[ii] is the last element in the [zmin, zmax],
+                # `z_at_value` will also returns "CosmologyError", please
+                # see (https://docs.astropy.org/en/stable/api/astropy.
+                # cosmology.z_at_value.html), in order to avoid bumping up
+                # zmax, just set zs equals to previous value, we assume
+                # the `func` is smooth
+                zs[ii] = zs[ii-1]
+            else:
+                # we'll get this if the z was larger than zmax; in that
+                # case we'll try bumping up zmax later to get a value
+                zs[ii] = numpy.inf
     # check if there were any zs > zmax
     replacemask = numpy.isinf(zs)
     # try bumping up zmax to get a result
@@ -283,7 +299,7 @@ class DistToZ(object):
 
 # set up D(z) interpolating classes for the standard cosmologies
 _d2zs = {_c: DistToZ(cosmology=_c)
-         for _c in astropy.cosmology.parameters.available}
+         for _c in parameters.available}
 
 
 def redshift(distance, **kwargs):
@@ -342,7 +358,7 @@ class ComovingVolInterpolator(object):
         The maximum z to interpolate up to before falling back to calling
         astropy directly. Default is 10.
     numpoints : int, optional
-        The number of points to use in the linear interpolation between 0 to 1
+    The number of points to use in the linear interpolation between 0 to 1
         and 1 to ``default_maxz``. Default is 1000.
     vol_func: function, optional
         Optionally set how the volume is calculated by providing a function
@@ -372,12 +388,14 @@ class ComovingVolInterpolator(object):
         minlogv = numpy.log(self.vol_func(minz).value)
         maxlogv = numpy.log(self.vol_func(maxz).value)
         logvs = numpy.linspace(minlogv, maxlogv, num=self.numpoints)
-        zs = z_at_value(self.vol_func, numpy.exp(logvs), self.vol_units)
+
+        zs = z_at_value(self.vol_func, numpy.exp(logvs), self.vol_units, maxz)
 
         if self.parameter != 'redshift':
             ys = cosmological_quantity_from_redshift(zs, self.parameter)
         else:
             ys = zs
+
         return interpolate.interp1d(logvs, ys, kind='linear',
                                     bounds_error=False)
 
@@ -435,10 +453,10 @@ class ComovingVolInterpolator(object):
 
 # set up D(z) interpolating classes for the standard cosmologies
 _v2ds = {_c: ComovingVolInterpolator('luminosity_distance', cosmology=_c)
-         for _c in astropy.cosmology.parameters.available}
+         for _c in parameters.available}
 
 _v2zs = {_c: ComovingVolInterpolator('redshift', cosmology=_c)
-         for _c in astropy.cosmology.parameters.available}
+         for _c in parameters.available}
 
 
 def redshift_from_comoving_volume(vc, interp=True, **kwargs):
@@ -517,73 +535,6 @@ def distance_from_comoving_volume(vc, interp=True, **kwargs):
     return dist
 
 
-def madau_dickinson_2014(z):
-    """ The madau-dickinson 2014 stellar-formation rate
-    """
-    # stellar-formation rate density from https://arxiv.org/pdf/1403.0007.pdf
-    # units are M⊙ year−1 Mpc−3
-    val = 0.015 * (1 + z) ** 2.7 / (1 + ((1 + z) / 2.9) ** 5.6)
-    return val * units.year ** -1 * units.Mpc**3 * units.solMass
-
-
-def rate_from_redshift(z, rate_density, **kwargs):
-    """Total rate of occurances out to some redshift
-
-    Parameters
-    ----------
-    z : float
-        The redshift.
-    rate_density : function
-        The rate density per unit volume as a function of redshift.
-    \**kwargs :
-        All other keyword args are passed to :py:func:`get_cosmology` to
-        select a cosmology. If none provided, will use
-        :py:attr:`DEFAULT_COSMOLOGY`.
-
-    Returns
-    -------
-    rate: float
-        The total rate of occurances out to some redshift
-    """
-    cosmology = get_cosmology(**kwargs)
-    def diff_rate(z):
-        dr = cosmology.differential_comoving_volume(z) / (1 + z)
-        return (dr * 4 * numpy.pi * rate_density(z)).value
-    return integrate.quad(diff_rate, 0, z)[0]
-
-
-def distance_from_rate(vc, rate_density, **kwargs):
-    r"""Returns the luminosity distance from the given total rate value
-
-    Parameters
-    ----------
-    vc : float
-        The total rate
-    \**kwargs :
-        All other keyword args are passed to :py:func:`get_cosmology` to
-        select a cosmology. If none provided, will use
-        :py:attr:`DEFAULT_COSMOLOGY`.
-
-    Returns
-    -------
-    float :
-        The luminosity distance at the given comoving volume.
-    """
-    cosmology = get_cosmology(**kwargs)
-    if not hasattr(rate_density, 'dist_interp'):
-        rate_density.dist_interp = {}
-
-    if cosmology.name not in rate_density.dist_interp:
-        def rate_func(z):
-            return rate_from_redshift(z, rate_density) * rate_density(0.5).unit
-
-        rate_density.dist_interp[cosmology.name] = ComovingVolInterpolator(
-                                        'luminosity_distance',
-                                        vol_func=rate_func,
-                                        cosmology=cosmology)
-    return rate_density.dist_interp[cosmology.name](vc)
-
-
 def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
                                         **kwargs):
     r"""Returns the value of a cosmological quantity (e.g., age) at a redshift.
@@ -616,7 +567,7 @@ def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
     return val
 
 
-__all__ = ['rate_from_redshift', 'redshift', 'redshift_from_comoving_volume',
-           'distance_from_comoving_volume', 'distance_from_rate',
+__all__ = ['redshift', 'redshift_from_comoving_volume',
+           'distance_from_comoving_volume',
            'cosmological_quantity_from_redshift',
            ]

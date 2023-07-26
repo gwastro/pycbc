@@ -29,44 +29,15 @@ provides additional abstraction and argument handling.
 import os
 import shutil
 import tempfile
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin, urlsplit
+import subprocess
+from packaging import version
+from urllib.request import pathname2url
+from urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
 
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
 
-GRID_START_TEMPLATE = '''#!/bin/bash
-
-if [ -f /tmp/x509up_u`id -u` ] ; then
-  unset X509_USER_PROXY
-else
-  if [ ! -z ${X509_USER_PROXY} ] ; then
-    if [ -f ${X509_USER_PROXY} ] ; then
-      cp -a ${X509_USER_PROXY} /tmp/x509up_u`id -u`
-    fi
-  fi
-  unset X509_USER_PROXY
-fi
-
-# Check that the proxy is valid
-grid-proxy-info -exists
-RESULT=${?}
-if [ ${RESULT} -eq 0 ] ; then
-  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
-  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
-    grid-proxy-info
-  else
-    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
-    rm -f /tmp/x509up_u`id -u`.orig
-    grid-proxy-info
-  fi
-else
-  echo "Error: Could not find a valid grid proxy to submit workflow."
-  exit 1
-fi
-'''
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -87,7 +58,7 @@ class ProfileShortcuts(object):
         self.add_profile('condor', 'request_cpus', number)
 
     def set_universe(self, universe):
-        if universe is 'standard':
+        if universe == 'standard':
             self.add_profile("pegasus", "gridstart", "none")
 
         self.add_profile("condor", "universe", universe)
@@ -388,9 +359,7 @@ class Workflow(object):
         """
         workflow.in_workflow = self
         self.sub_workflows += [workflow]
-
         self._adag.add_jobs(workflow._as_job)
-
         return self
 
     def add_explicit_dependancy(self, parent, child):
@@ -520,7 +489,6 @@ class Workflow(object):
                 if inp not in self._inputs:
                     self._inputs += [inp]
                     self._swinputs += [inp]
-
             else:
                 err_msg = ("I don't understand how to deal with an input file "
                            "here. Ian doesn't think this message should be "
@@ -541,9 +509,47 @@ class Workflow(object):
         else:
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
+    def traverse_workflow_io(self):
+        """ If input is needed from another workflow within a larger
+        hierarchical workflow, determine the path for the file to reach
+        the destination and add the file to workflows input / output as
+        needed.
+        """
+        def root_path(v):
+            path = [v]
+            while v.in_workflow:
+                path += [v.in_workflow]
+                v = v.in_workflow
+            return path
+
+        for inp in self._swinputs:
+            workflow_root = root_path(self)
+            input_root = root_path(inp.node.in_workflow)
+            for step in workflow_root:
+                if step in input_root:
+                    common = step
+                    break
+
+            # Set our needed file as output so that it gets staged upwards
+            # to a workflow that contains the job which needs it.
+            for idx in range(input_root.index(common)):
+                child_wflow = input_root[idx]
+                parent_wflow = input_root[idx+1]
+                if inp not in child_wflow._as_job.get_outputs():
+                    child_wflow._as_job.add_outputs(inp, stage_out=True)
+                    parent_wflow._outputs += [inp]
+
+            # Set out needed file so it gets staged downwards towards the
+            # job that needs it.
+            for wf in workflow_root[:workflow_root.index(common)]:
+                if inp not in wf._as_job.get_inputs():
+                    wf._as_job.add_inputs(inp)
+
+        for wf in self.sub_workflows:
+            wf.traverse_workflow_io()
 
     def save(self, filename=None, submit_now=False, plan_now=False,
-             output_map_path=None):
+             output_map_path=None, root=True):
         """ Write this workflow to DAX file
         """
         if filename is None:
@@ -552,23 +558,24 @@ class Workflow(object):
         if output_map_path is None:
             output_map_path = 'output.map'
 
+        # Handle setting up io for inter-workflow file use ahead of time
+        # so that when daxes are saved the metadata is complete
+        if root:
+            self.traverse_workflow_io()
+
         for sub in self.sub_workflows:
-            sub.save()
+            sub.save(root=False)
             # FIXME: If I'm now putting output_map here, all output_map stuff
             #        should move here.
-            sub.output_map_file.insert_into_dax(self._rc, self._tc)
+            sub.output_map_file.insert_into_dax(self._rc, self.sites)
             sub_workflow_file = File(sub.filename)
             pfn = os.path.join(os.getcwd(), sub.filename)
             sub_workflow_file.add_pfn(pfn, site='local')
-            sub_workflow_file.insert_into_dax(self._rc, self._tc)
+            sub_workflow_file.insert_into_dax(self._rc, self.sites)
 
         # add workflow input files pfns for local site to dax
         for fil in self._inputs:
-            fil.insert_into_dax(self._rc, self._tc)
-
-        # Is a sub-workflow, add the _swinputs as needed.
-        if self.in_workflow is not None:
-            self._as_job.add_inputs(*self._swinputs)
+            fil.insert_into_dax(self._rc, self.sites)
 
         self._adag.add_replica_catalog(self._rc)
 
@@ -583,6 +590,9 @@ class Workflow(object):
                     # There was no storage path
                     pass
 
+        # Pegasus requires that we write the DAX file into the local directory
+        olddir = os.getcwd()
+        os.chdir(self.out_dir)
         self._adag.write(filename)
         if not self.in_workflow:
             if submit_now or plan_now:
@@ -608,8 +618,9 @@ class Workflow(object):
                     f.write('--relative-dir work ')
                     # --dir is not being set here because it might be easier to
                     # set this in submit_dax still?
-                    f.write('-vvv ')
+                    f.write('-q ')
                     f.write('--dax {}'.format(filename))
+        os.chdir(olddir)
 
     def plan_and_submit(self, submit_now=True):
         """ Plan and submit the workflow now.
@@ -665,6 +676,10 @@ class Workflow(object):
         planner_args['cluster'] = ['label,horizontal']
         planner_args['relative_dir'] = 'work'
         planner_args['cleanup'] = 'inplace'
+        # This quietens the planner a bit. We cannot set the verbosity
+        # directly, which would be better. So be careful, if changing the
+        # pegasus.mode property, it will change the verbosity (a lot).
+        planner_args['quiet'] = 1
 
         # FIXME: The location of output.map is hardcoded in the properties
         #        file. This is overridden for subworkflows, but is not for
@@ -685,9 +700,6 @@ class Workflow(object):
             fp.write('pegasus-remove {}/work $@'.format(submitdir))
 
         with open('start', 'w') as fp:
-            if self.cp.has_option('pegasus_profile', 'pycbc|check_grid'):
-                fp.write(GRID_START_TEMPLATE)
-                fp.write('\n')
             fp.write('pegasus-run {}/work $@'.format(submitdir))
 
         os.chmod('status', 0o755)
@@ -721,19 +733,14 @@ class SubWorkflow(dax.SubWorkflow):
         super().__init__(*args, **kwargs)
         self.pycbc_planner_args = {}
 
-    def add_into_workflow(self, container_wflow, parents=None):
+    def add_into_workflow(self, container_wflow):
         """Add this Job into a container Workflow
         """
-        if parents is None:
-            parents = []
-        else:
-            # Get Pegasus objects from PyCBC objects for parent Nodes
-            parents = [n._dax_node for n in parents]
         self.add_planner_args(**self.pycbc_planner_args)
+
         # Set this to None so code will fail if more planner args are added
         self.pycbc_planner_args = None
         container_wflow._adag.add_jobs(self)
-        container_wflow._adag.add_dependency(self, parents=parents)
 
     def add_planner_arg(self, value, option):
         if self.pycbc_planner_args is None:
@@ -749,6 +756,15 @@ class SubWorkflow(dax.SubWorkflow):
 
         self.add_planner_arg('pegasus.dir.storage.mapper.replica.file',
                              os.path.basename(output_map_file.name))
+        # Ensure output_map_file has the for_planning flag set. There's no
+        # API way to set this after the File is initialized, so we have to
+        # change the attribute here.
+        # WORSE, we only want to set this if the pegasus *planner* is version
+        # 5.0.4 or larger
+        sproc_out = subprocess.check_output(['pegasus-version']).strip()
+        sproc_out = sproc_out.decode()
+        if version.parse(sproc_out) >= version.parse('5.0.4'):
+            output_map_file.for_planning=True
         self.add_inputs(output_map_file)
 
         # I think this is needed to deal with cases where the subworkflow file
@@ -760,17 +776,8 @@ class SubWorkflow(dax.SubWorkflow):
         self.add_planner_arg('cluster', ['label', 'horizontal'])
         self.add_planner_arg('verbose', 3)
 
-        # NOTE: The _reuse.cache file is produced during submit_dax and would
-        #       be sent to all sub-workflows. Currently we do not declare this
-        #       as a proper File, as this is a special case. While the use-case
-        #       is that this is always created during submit_dax then this is
-        #       the right thing to do. pegasus-plan must run on local site, and
-        #       this is guaranteed to be visible. However, we could consider
-        #       having this file created differently. Note that all other
-        #       inputs might be generated within the workflow, and then pegasus
-        #       data transfer is needed, so these must be File objects.
         if cache_file:
-            self.add_planner_arg('cache', cache_file)
+            self.add_planner_arg('cache', [cache_file])
 
         if staging_site:
             self.add_planner_arg('staging_sites', staging_site)
@@ -825,10 +832,10 @@ class File(dax.File):
         return (((url, site) in self.input_pfns)
                 or ((url, 'all') in self.input_pfns))
 
-    def insert_into_dax(self, rep_cat, site_cat):
+    def insert_into_dax(self, rep_cat, sites):
         for (url, site) in self.input_pfns:
             if site == 'all':
-                for curr_site in site_cat.sites:
+                for curr_site in sites:
                     rep_cat.add_replica(curr_site, self, url)
             else:
                 rep_cat.add_replica(site, self, url)

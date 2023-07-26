@@ -25,14 +25,12 @@
 inference samplers generate.
 """
 
-from __future__ import absolute_import
 
 import sys
 import logging
 from io import StringIO
 
 from abc import (ABCMeta, abstractmethod)
-from six import add_metaclass
 
 import numpy
 import h5py
@@ -76,8 +74,7 @@ def format_attr(val):
     return val
 
 
-@add_metaclass(ABCMeta)
-class BaseInferenceFile(h5py.File):
+class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
     """Base class for all inference hdf files.
 
     This is a subclass of the h5py.File object. It adds functions for
@@ -128,6 +125,36 @@ class BaseInferenceFile(h5py.File):
         property will get returned.
         """
         return self.attrs[attr]
+
+    def getattrs(self, group=None, create_missing=True):
+        """Convenience function for getting the `attrs` from the file or group.
+
+        Parameters
+        ----------
+        group : str, optional
+            Get the attrs of the specified group. If None or ``/``, will
+            retrieve the file's ``attrs``.
+        create_missing: bool, optional
+            If ``group`` is provided, but doesn't yet exist in the file, create
+            the group. Otherwise, a KeyError will be raised. Default is True.
+
+        Returns
+        -------
+        h5py.File.attrs
+            An attrs instance of the file or requested group.
+        """
+        if group is None or group == "/":
+            attrs = self.attrs
+        else:
+            try:
+                attrs = self[group].attrs
+            except KeyError as e:
+                if create_missing:
+                    self.create_group(group)
+                    attrs = self[group].attrs
+                else:
+                    raise e
+        return attrs
 
     @abstractmethod
     def write_samples(self, samples, **kwargs):
@@ -216,6 +243,8 @@ class BaseInferenceFile(h5py.File):
         addatrs = (list(self.static_params.items()) +
                    list(self[self.samples_group].attrs.items()))
         for (p, val) in addatrs:
+            if p in loadfields:
+                continue
             setattr(samples, format_attr(p), format_attr(val))
         return samples
 
@@ -425,6 +454,7 @@ class BaseInferenceFile(h5py.File):
             Specify the random state to write. If None, will use
             ``numpy.random.get_state()``.
         """
+        # Write out the default numpy random state
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
         if state is None:
@@ -454,6 +484,7 @@ class BaseInferenceFile(h5py.File):
         tuple
             A tuple with 5 elements that can be passed to numpy.set_state.
         """
+        # Read numpy randomstate
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
         arr = self[dataset_name][:]
@@ -461,7 +492,8 @@ class BaseInferenceFile(h5py.File):
         pos = self[dataset_name].attrs["pos"]
         has_gauss = self[dataset_name].attrs["has_gauss"]
         cached_gauss = self[dataset_name].attrs["cached_gauss"]
-        return s, arr, pos, has_gauss, cached_gauss
+        state = s, arr, pos, has_gauss, cached_gauss
+        return state
 
     def write_strain(self, strain_dict, group=None):
         """Writes strain for each IFO to file.
@@ -509,12 +541,16 @@ class BaseInferenceFile(h5py.File):
     def write_psd(self, psds, group=None):
         """Writes PSD for each IFO to file.
 
+        PSDs are written to ``[{group}/]data/{detector}/psds/0``, where {group}
+        is the optional keyword argument.
+
         Parameters
         -----------
-        psds : {dict, FrequencySeries}
-            A dict of FrequencySeries where the key is the IFO.
-        group : {None, str}
-            The group to write the psd to. Default is ``data_group``.
+        psds : dict
+            A dict of detector name -> FrequencySeries.
+        group : str, optional
+            Specify a top-level group to write the data to. If ``None`` (the
+            default), data will be written to the file's top level.
         """
         subgroup = self.data_group + "/{ifo}/psds/0"
         if group is None:
@@ -525,32 +561,54 @@ class BaseInferenceFile(h5py.File):
             self[group.format(ifo=ifo)] = psds[ifo]
             self[group.format(ifo=ifo)].attrs['delta_f'] = psds[ifo].delta_f
 
-    def write_injections(self, injection_file):
+    def write_injections(self, injection_file, group=None):
         """Writes injection parameters from the given injection file.
 
-        Everything in the injection file is copied to ``injections_group``.
+        Everything in the injection file is copied to
+        ``[{group}/]injections_group``, where ``{group}`` is the optional
+        keyword argument.
 
         Parameters
         ----------
         injection_file : str
             Path to HDF injection file.
+        group : str, optional
+            Specify a top-level group to write the injections group to. If
+            ``None`` (the default), injections group will be written to the
+            file's top level.
         """
         logging.info("Writing injection file to output")
+        if group is None or group == '/':
+            group = self.injections_group
+        else:
+            group = '/'.join([group, self.injections_group])
         try:
             with h5py.File(injection_file, "r") as fp:
-                super(BaseInferenceFile, self).copy(fp, self.injections_group)
+                super(BaseInferenceFile, self).copy(fp, group)
         except IOError:
             logging.warn("Could not read %s as an HDF file", injection_file)
 
-    def read_injections(self):
+    def read_injections(self, group=None):
         """Gets injection parameters.
+
+        Injections are retrieved from ``[{group}/]injections``.
+
+        Parameters
+        ----------
+        group : str, optional
+            Group that the injections group is in. Default (None) is to look
+            in the top-level.
 
         Returns
         -------
         FieldArray
             Array of the injection parameters.
         """
-        injset = InjectionSet(self.filename, hdf_group=self.injections_group)
+        if group is None or group == '/':
+            group = self.injections_group
+        else:
+            group = '/'.join([group, self.injections_group])
+        injset = InjectionSet(self.filename, hdf_group=group)
         injections = injset.table.view(FieldArray)
         # close the new open filehandler to self
         injset._injhandler.filehandler.close()
@@ -764,11 +822,11 @@ class BaseInferenceFile(h5py.File):
             if val is None:
                 val = str(None)
             if isinstance(val, dict):
-                attrs[arg] = list(val.keys())
+                attrs[str(arg)] = list(map(str, val.keys()))
                 # just call self again with the dict as kwargs
                 cls.write_kwargs_to_attrs(attrs, **val)
             else:
-                attrs[arg] = val
+                attrs[str(arg)] = val
 
     def write_data(self, name, data, path=None, append=False):
         """Convenience function to write data.
@@ -910,43 +968,63 @@ class BaseInferenceFile(h5py.File):
             return cp
         return cf
 
-    def read_data(self):
+    def read_data(self, group=None):
         """Loads the data stored in the file as a FrequencySeries.
 
         Only works for models that store data as a frequency series in
         ``data/DET/stilde``. A ``KeyError`` will be raised if the model used
         did not store data in that path.
 
+        Parameters
+        ----------
+        group : str, optional
+            Group that the data group is in. Default (None) is to look in the
+            top-level.
+
         Returns
         -------
         dict :
             Dictionary of detector name -> FrequencySeries.
         """
+        fmt = '{}/{}/stilde'
+        if group is None or group == '/':
+            path = self.data_group
+        else:
+            path = '/'.join([group, self.data_group])
         data = {}
-        fmt = 'data/{}/stilde'
-        for det in self['data'].keys():
-            group = self[fmt.format(det)]
+        for det in self[path].keys():
+            group = self[fmt.format(path, det)]
             data[det] = FrequencySeries(
                 group[()], delta_f=group.attrs['delta_f'],
                 epoch=group.attrs['epoch'])
         return data
 
-    def read_psds(self):
+    def read_psds(self, group=None):
         """Loads the PSDs stored in the file as a FrequencySeries.
 
         Only works for models that store PSDs in
         ``data/DET/psds/0``. A ``KeyError`` will be raised if the model used
         did not store PSDs in that path.
 
+        Parameters
+        ----------
+        group : str, optional
+            Group that the data group is in. Default (None) is to look in the
+            top-level.
+
         Returns
         -------
         dict :
             Dictionary of detector name -> FrequencySeries.
         """
+        fmt = '{}/{}/psds/0'
+        if group is None or group == '/':
+            path = self.data_group
+        else:
+            path = '/'.join([group, self.data_group])
         psds = {}
-        fmt = 'data/{}/psds/0'
-        for det in self['data'].keys():
-            group = self[fmt.format(det)]
+        for det in self[path].keys():
+            group = self[fmt.format(path, det)]
             psds[det] = FrequencySeries(
                 group[()], delta_f=group.attrs['delta_f'])
         return psds

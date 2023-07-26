@@ -1,8 +1,14 @@
+"""This example shows how to calculate the chi^2 discriminator described in
+https://arxiv.org/abs/gr-qc/0405045, also known as the "power chi^2" or "Allen
+chi^2" discriminator.
+"""
+
+import matplotlib.pyplot as pp
 import pycbc.noise
 import pycbc.psd
 import pycbc.waveform
 import pycbc.vetoes
-import pylab
+
 
 # Generate some noise with an advanced ligo psd
 flow = 30.0
@@ -16,8 +22,8 @@ tsamples = int(16 / delta_t)
 strain = pycbc.noise.noise_from_psd(tsamples, delta_t, psd, seed=127)
 stilde = strain.to_frequencyseries()
 
-# Calculate the power chisq (Bruce) chisq time series
-hp, hc = pycbc.waveform.get_fd_waveform(approximant="SEOBNRv2_ROM_DoubleSpin",
+# Calculate the power chisq time series
+hp, hc = pycbc.waveform.get_fd_waveform(approximant='IMRPhenomD',
                              mass1=25, mass2=25,
                              f_lower=flow, delta_f=stilde.delta_f)
 
@@ -29,7 +35,7 @@ chisq = pycbc.vetoes.power_chisq(hp, stilde, num_bins, psd,
 # convert to a reduced chisq
 chisq /= (num_bins * 2) - 2
 
-pylab.plot(chisq.sample_times, chisq)
-pylab.ylabel('$\chi^2_r$')
-pylab.xlabel('time (s)')
-pylab.show()
+pp.plot(chisq.sample_times, chisq)
+pp.ylabel('$\chi^2_r$')
+pp.xlabel('time (s)')
+pp.show()

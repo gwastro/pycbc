@@ -4,7 +4,7 @@ generated from the followup of candidates.
 """
 import h5py, numpy, argparse, logging, pycbc
 from pycbc.conversions import sec_to_year
-from pycbc.events.coinc import calculate_n_louder
+from pycbc.events import significance
 from shutil import copyfile
 
 parser = argparse.ArgumentParser()
@@ -17,6 +17,7 @@ parser.add_argument('--followup-file',
     help="File containing the candidate times which were analyzed")
 parser.add_argument('--statmap-file',
     help="The statmap file containing the candidates to rerank")
+significance.insert_significance_option_group(parser)
 parser.add_argument('--ranking-file',
     help="Provided only for injection sets, use this file to provide the "
          "background to rank candidate significance")
@@ -24,6 +25,8 @@ parser.add_argument('--output-file')
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
+
+significance.check_significance_options(args, parser)
 
 # Reconstruct the full set of statistic values for our candidates
 f = h5py.File(args.followup_file, 'r')
@@ -51,6 +54,11 @@ stats = stats[inv]
 copyfile(args.statmap_file, args.output_file)
 o = h5py.File(args.output_file)
 
+ifo_combo = o.attrs['ifos'].replace(' ','')
+
+significance_dict = significance.digest_significance_options([ifo_combo],
+                                                             args)
+
 # Update the statistic values
 for sec in sections:
     # New stats for this section
@@ -71,7 +79,11 @@ if args.ranking_file:
     backstat = f['background_exc/stat'][:]
     dec = f['background_exc/decimation_factor'][:]
 
-    bnum, fnum = calculate_n_louder(backstat, fstat, dec)
+    bnum, fnum = significance.get_n_louder(
+        backstat,
+        fstat,
+        dec,
+        **significance_dict[ifo_combo])
 
     ifar = background_time / (fnum + 1)
     fap = 1 - numpy.exp(- coinc_time / ifar)
@@ -89,8 +101,17 @@ else:
     dec_exc = o['background_exc/decimation_factor'][:]
     backstat_exc = o['background_exc/stat'][:]
 
-    bnum, fnum = calculate_n_louder(backstat, fstat, dec)
-    bnum_exc, fnum_exc = calculate_n_louder(backstat_exc, fstat, dec_exc)
+    bnum, fnum = significance.get_n_louder(
+        backstat,
+        fstat,
+        dec,
+        **significance_dict[ifo_combo])
+
+    bnum_exc, fnum_exc = significance.get_n_louder(
+        backstat_exc,
+        fstat,
+        dec_exc,
+        **significance_dict[ifo_combo])
 
     o['background/ifar'][...] = sec_to_year(background_time / (bnum + 1))
     o['background_exc/ifar'][...] = sec_to_year(background_time_exc / (bnum_exc + 1))

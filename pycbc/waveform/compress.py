@@ -23,7 +23,6 @@
 """ Utilities for handling frequency compressed an unequally spaced frequency
 domain waveforms.
 """
-from __future__ import absolute_import
 import lal, numpy, logging, h5py
 from pycbc import filter
 from scipy import interpolate
@@ -492,9 +491,6 @@ class CompressedWaveform(object):
 
     Attributes
     ----------
-    sample_points
-    amplitude
-    phase
     load_to_memory : bool
         Whether or not to load `sample_points`/`amplitude`/`phase` into memory
         the first time they are accessed, if they are hdf datasets. Can be

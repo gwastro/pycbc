@@ -1,13 +1,13 @@
-########################################
-Building Documentation for Git Hub Pages
-########################################
+#######################################
+Building Documentation for GitHub Pages
+#######################################
 
-===============================
-Creating a Git Hub project page
-===============================
+==============================
+Creating a GitHub project page
+==============================
 
-Git Hub pages are built from a branch of the repository called ``gh-pages``.
-If you have not already created a Git Hub project pages for PyCBC in your
+GitHub pages are built from a branch of the repository called ``gh-pages``.
+If you have not already created a GitHub project pages for PyCBC in your
 repository, make a ``gh-pages`` branch in your repository as follows:
 
 .. code-block:: bash
@@ -26,7 +26,7 @@ These commands create the branch and then remove all of the files from this bran
 
 .. note::
 
-    The main `ligo-cbc/pycbc <https://github.com/ligo-cbc/pycbc>`_ repository already has a `gh-pages` branch, so do not do this in the main repository.
+    The main `gwastro/pycbc <https://github.com/gwastro/pycbc>`_ repository already has a `gh-pages` branch, so do not do this in the main repository.
 
 ======================================
 Building and pushing the documentation
@@ -58,7 +58,7 @@ run the command
 
     python setup.py build_gh_pages
     
-This will build the documentation in the second repository that you created called ``_gh-pages`` under the directory ``latest/``. To push these changes up to Git Hub
+This will build the documentation in the second repository that you created called ``_gh-pages`` under the directory ``latest/``. To push these changes up to GitHub
 
 .. code-block:: bash
 
@@ -67,7 +67,7 @@ This will build the documentation in the second repository that you created call
     git commit -a -m "documentation update"
     git push origin gh-pages
 
-The documentation will then be available under your Git Hub pages at ``http://username.github.io/pycbc/latest/html/`` where you should replace ``username/`` with your Git Hub account name.
+The documentation will then be available under your GitHub pages at ``http://username.github.io/pycbc/latest/html/`` where you should replace ``username/`` with your GitHub account name.
 
 In this example, we checkout the master branch to build the documentation, but you can change the last command above to checkout any other branch that your are developing.
 

@@ -2,8 +2,10 @@ import copy
 import unittest
 import random
 import os
+import numpy
 from numpy import complex128, real, sqrt, sin, cos, angle, ceil, log
 from numpy import zeros, argmax, array
+from astropy.utils.data import download_file
 from pycbc import DYN_RANGE_FAC
 from pycbc.waveform import get_td_waveform, get_fd_waveform, td_approximants, fd_approximants
 from pycbc.pnutils import nearest_larger_binary_number
@@ -225,12 +227,6 @@ class TestChisq(unittest.TestCase):
     __test__ = False
     def setUp(self, *args):
         # Where are my data files?
-        if os.path.isfile('test/data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'test/data/'
-        elif os.path.isfile('data/ZERO_DET_high_P.txt'):
-            self.dataDir = 'data/'
-        else:
-            self.assertTrue(False, msg="Cannot find data files!")
         self.context = _context
         self.scheme = _scheme
         self.tolerance = 1e-6
@@ -281,6 +277,7 @@ class TestChisq(unittest.TestCase):
     def test_filtering(self):
         idx = self.idx
         jdx = self.jdx
+        # Uncomment these lines if needing to regenerate data files
         #w1 = self.wps_list[idx]
         #w2 = self.wps_list[jdx]
         #stilde = get_waveform(w1, self.low_freq_filter-1,
@@ -290,12 +287,21 @@ class TestChisq(unittest.TestCase):
         #    stilde.save('data/skymaxtest_stilde_%d.hdf' % idx)
         #except:
         #    pass
-        stilde = load_frequencyseries(self.dataDir + \
-                                      'skymaxtest_stilde_%d.hdf' % idx)
+        url = ('https://github.com/gwastro/pycbc-config/raw/master/'
+               'test_data_files/{}')
+        fname = f'skymaxtest_stilde_{idx}.hdf'
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+
+        stilde = load_frequencyseries(fname)
+        os.unlink(fname)
         s_norm = sigmasq(stilde, psd=self.psd,
                          low_frequency_cutoff=self.low_freq_filter)
         stilde /= sqrt(float(s_norm))
         stilde *= 100
+        # Uncomment these lines if needing to regenerate data files
         #hplus, hcross = get_waveform(w2, self.low_freq_filter-1,
         #                             self.sample_rate, self.filter_N,
         #                             self.sample_rate, sky_max_template=True)
@@ -304,10 +310,22 @@ class TestChisq(unittest.TestCase):
         #    hcross.save('data/skymaxtest_hcross_%d.hdf' % jdx)
         #except:
         #    pass
-        hplus = load_frequencyseries(self.dataDir + \
-                                     'skymaxtest_hplus_%d.hdf' % jdx)
-        hcross = load_frequencyseries(self.dataDir + \
-                                      'skymaxtest_hcross_%d.hdf' % jdx)
+        fname = f'skymaxtest_hplus_{jdx}.hdf'
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+        hplus = load_frequencyseries(fname)
+        os.unlink(fname)
+
+        fname = f'skymaxtest_hcross_{jdx}.hdf'
+        apy_fname = download_file(url.format(fname), cache=False)
+        # Astropy will not download with the .hdf extension, which we need,
+        # so symlink
+        os.symlink(apy_fname, fname)
+        hcross = load_frequencyseries(fname)
+        os.unlink(fname)
+
         hplus.f_lower = self.low_freq_filter
         hplus.params = random.randint(0,100000000000)
         hcross.f_lower = self.low_freq_filter
@@ -369,9 +387,10 @@ class TestChisq(unittest.TestCase):
         uvals_prec, _ = compute_u_val_for_sky_loc_stat\
             (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_prec],
              hpnorm=1., hcnorm=1.)
-        uvals_hom, _ = compute_u_val_for_sky_loc_stat_no_phase\
-            (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_hom],
-             hpnorm=1., hcnorm=1.)
+        with numpy.errstate(divide="ignore"):
+            uvals_hom, _ = compute_u_val_for_sky_loc_stat_no_phase\
+                (I_plus.data, I_cross.data, hpc_corr_R, indices=[idx_max_hom],
+                 hpnorm=1., hcnorm=1.)
 
         ht = hplus * uvals_hom[0] + hcross
         ht_norm = sigmasq(ht, psd=self.psd,
@@ -386,9 +405,10 @@ class TestChisq(unittest.TestCase):
         self.assertAlmostEqual(abs(real(I_t.data[idx_max_hom])), max_ds_hom)
         self.assertEqual(abs(real(I_t.data[idx_max_hom])),
                          max(abs(real(I_t.data))))
-        chisq, _ = self.power_chisq.values\
-            (corr_t, array([max_ds_hom]) / n_plus, n_t, self.psd,
-             array([idx_max_hom]), ht)
+        with numpy.errstate(invalid='ignore', divide='ignore'):
+            chisq, _ = self.power_chisq.values\
+                (corr_t, array([max_ds_hom]) / n_plus, n_t,
+                 self.psd, array([idx_max_hom]), ht)
 
         ht = hplus * uvals_prec[0] + hcross
         ht_norm = sigmasq(ht, psd=self.psd,
@@ -401,9 +421,10 @@ class TestChisq(unittest.TestCase):
              low_frequency_cutoff=self.low_freq_filter, h_norm=1.)
         I_t = I_t * n_t
 
-        chisq, _ = self.power_chisq.values\
-            (corr_t, array([max_ds_prec]) / n_plus, n_t, self.psd,
-             array([idx_max_prec]), ht)
+        with numpy.errstate(divide="ignore", invalid='ignore'):
+            chisq, _ = self.power_chisq.values\
+                (corr_t, array([max_ds_prec]) / n_plus, n_t, self.psd,
+                 array([idx_max_prec]), ht)
 
         self.assertAlmostEqual(abs(I_t.data[idx_max_prec]), max_ds_prec)
         self.assertEqual(idx_max_prec, abs(I_t.data).argmax())

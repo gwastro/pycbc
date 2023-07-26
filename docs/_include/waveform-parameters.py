@@ -23,7 +23,6 @@
 # `ParameterList.description_dict` when gwastro/pycbc#2125 is merged
 # and released
 
-from __future__ import (print_function, absolute_import)
 from pycbc import waveform
 from _dict_to_rst import rst_dict_table
 

@@ -20,14 +20,19 @@ allowing it to be specified in an OS-independent way and searched for preferenti
 according to the paths that pkg-config specifies.
 """
 
-from __future__ import print_function
+import importlib, inspect
 import os, fnmatch, ctypes, sys, subprocess
 from ctypes.util import find_library
 from collections import deque
-try:
-    from subprocess import getoutput
-except ImportError:
-    from commands import getoutput
+from subprocess import getoutput
+
+
+# Be careful setting the mode for opening libraries! Some libraries (e.g.
+# libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when
+# MKL is also present) require that os.RTLD_DEEPBIND is used. If seeing
+# segfaults around this code, play about this this!
+DEFAULT_RTLD_MODE = ctypes.DEFAULT_MODE
+
 
 def pkg_config(pkg_libraries):
     """Use pkg-config to query for the location of libraries, library directories,
@@ -149,7 +154,7 @@ def get_libpath_from_dirlist(libname, dirs):
     # If we get here, we didn't find it...
     return None
 
-def get_ctypes_library(libname, packages, mode=None):
+def get_ctypes_library(libname, packages, mode=DEFAULT_RTLD_MODE):
     """
     This function takes a library name, specified in architecture-independent fashion (i.e.
     omitting any prefix such as 'lib' or suffix such as 'so' or 'dylib' or version number) and
@@ -188,3 +193,44 @@ def get_ctypes_library(libname, packages, mode=None):
             return ctypes.CDLL(fullpath)
         else:
             return ctypes.CDLL(fullpath, mode=mode)
+
+def import_optional(library_name):
+    """ Try to import library but and return stub if not found
+
+    Parameters
+    ----------
+    library_name: str
+        The name of the python library to import
+
+    Returns
+    -------
+    library: library or stub
+        Either returns the library if importing is sucessful or it returns
+        a stub which raises an import error and message when accessed.
+    """
+    try:
+        return importlib.import_module(library_name)
+    except ImportError:
+        # module wasn't found so let's return a stub instead to inform
+        # the user what has happened when they try to use related functions
+        class no_module(object):
+            def __init__(self, library):
+                self.library = library
+
+            def __getattribute__(self, attr):
+                if attr == 'library':
+                    return super().__getattribute__(attr)
+
+                lib = self.library
+
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                fun = calframe[1][3]
+                msg =""" The function {} tried to access
+                         '{}' of library '{}', however,
+                        '{}' is not currently installed. To enable this
+                        functionality install '{}' (e.g. through pip
+                        / conda / system packages / source).
+                      """.format(fun, attr, lib, lib, lib)
+                raise ImportError(inspect.cleandoc(msg))
+        return no_module(library_name)

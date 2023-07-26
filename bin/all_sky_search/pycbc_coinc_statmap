@@ -9,7 +9,7 @@ the FANs of any other gravitational waves in the dataset.
 """
 import argparse, h5py, itertools
 import lal, logging, numpy
-from pycbc.events import veto, coinc
+from pycbc.events import veto, coinc, significance
 import pycbc.version, pycbc.pnutils, pycbc.io
 import sys
 import pycbc.conversions as conv
@@ -72,25 +72,27 @@ parser.add_argument('--additional-event-times', type=float, nargs="+",
                     help="Additional event times which will be removed from "
                          "both inclusive and exclusive background "
                           "(gps seconds)")
+significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
+significance.check_significance_options(args, parser)
 # Check that the user chose inclusive or exclusive background to perform
 # hierarchical removals of foreground triggers against.
 if args.max_hierarchical_removal == 0:
-    if args.hierarchical_removal_against is not 'none':
+    if args.hierarchical_removal_against != 'none':
         parser.error("User Error: 0 maximum hierarchical removals chosen but "
                      "option for --hierarchical-removal-against was given. "
                      "These are conflicting options. Use with --help for more "
                      "information.")
 else :
-    is_bkg_inc = (args.hierarchical_removal_against == 'inclusive')
-    is_bkg_exc = (args.hierarchical_removal_against == 'exclusive')
-    if not(is_bkg_inc or is_bkg_exc):
+    if args.hierarchical_removal_against == 'none':
         parser.error("--max-hierarchical-removal requires a choice of which "
                      "background to remove foreground triggers against, "
                      "inclusive or exclusive. Use with --help for more "
                      "information.")
+
+
 
 pycbc.init_logging(args.verbose)
 
@@ -103,6 +105,9 @@ if 'ifos' in all_trigs.attrs:
 else:
     ifos = args.ifos
     logging.info('using ifos from command line input')
+
+ifo_combo = ''.join(ifos)
+significance_dict = significance.digest_significance_options([ifo_combo], args)
 
 logging.info("We have %s triggers" % len(all_trigs.stat))
 
@@ -236,13 +241,19 @@ fore_stat = all_trigs.stat[fore_locs]
 
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
-back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat,
-                               all_trigs.decimation_factor[back_locs])
+back_cnum, fnlouder = significance.get_n_louder(
+    back_stat,
+    fore_stat,
+    all_trigs.decimation_factor[back_locs],
+    **significance_dict[ifo_combo])
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
-back_cnum_exc, fnlouder_exc = coinc.calculate_n_louder(
-        exc_zero_trigs.stat, fore_stat, exc_zero_trigs.decimation_factor)
+back_cnum_exc, fnlouder_exc = significance.get_n_louder(
+    exc_zero_trigs.stat,
+    fore_stat,
+    exc_zero_trigs.decimation_factor,
+    **significance_dict[ifo_combo])
 
 f['background/ifar'] = conv.sec_to_year(background_time / (back_cnum + 1))
 f['background_exc/ifar'] = conv.sec_to_year(background_time_exc /
@@ -289,7 +300,7 @@ orig_fore_stat = fore_stat
 # or exclusive background.
 if args.max_hierarchical_removal != 0:
     # If user wants to remove against inclusive background.
-    if is_bkg_inc:
+    if args.hierarchical_removal_against == 'inclusive':
         louder_foreground = fnlouder
     # Otherwise user wants to remove against exclusive background
     else :
@@ -397,20 +408,25 @@ while numpy.any(louder_foreground == 0):
     logging.info("Calculating FAN from background statistic values")
     back_stat = all_trigs.stat[back_locs]
     fore_stat = all_trigs.stat[fore_locs]
-    back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat,
-                                                   all_trigs.decimation_factor[back_locs])
+    back_cnum, fnlouder = significance.get_n_louder(
+        back_stat,
+        fore_stat,
+        all_trigs.decimation_factor[back_locs],
+        **significance_dict[ifo_combo])
 
     # Update the louder_foreground criteria depending on whether foreground
-    # triggers are being removed via inclusive or exclusive background.
-    if is_bkg_inc:
+    # triggers are being removed via inclusive or exclusive background.   
+    if args.hierarchical_removal_against == 'inclusive':
         louder_foreground = fnlouder
 
     # Exclusive background doesn't change when removing foreground triggers.
-    # So we don't have to take back_cnum_exc, jut repopulate fnlouder_exc
+    # So we don't have to take back_cnum_exc, just repopulate fnlouder_exc
     else :
-        _, fnlouder_exc = coinc.calculate_n_louder(exc_zero_trigs.stat,
-                                                   fore_stat,
-                                                   exc_zero_trigs.decimation_factor)
+        _, fnlouder_exc = significance.get_n_louder(
+            exc_zero_trigs.stat,
+            fore_stat,
+            exc_zero_trigs.decimation_factor,
+            **significance_dict[ifo_combo])
         louder_foreground = fnlouder_exc
     # louder_foreground has been updated and the code can continue.
 

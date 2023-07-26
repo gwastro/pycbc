@@ -57,9 +57,12 @@ for fi in files:
     ends = fi['segments/{}/end'.format(key)][:]
     indiv_segs[key] = pycbc.events.veto.start_end_to_segments(starts, ends)
 
-# Convert segmentlistdict to a list ('seglists') of segmentlists
-# then numpy.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
-foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
+if len(indiv_segs.values()) == 1:
+    foreground_segs = indiv_segs.values()[0]
+else:
+    # Convert segmentlistdict to a list ('seglists') of segmentlists
+    # then numpy.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
+    foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
 
 # Total zerolag analysis time
 f.attrs['foreground_time'] = abs(foreground_segs)

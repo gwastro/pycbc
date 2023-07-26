@@ -1,0 +1,108 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2021 Francesco Pannarale & Michael Patel
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Create GRB info table."""
+
+# =============================================================================
+# Preamble
+# =============================================================================
+import sys
+import argparse
+from datetime import datetime
+import numpy
+import lal
+import pycbc.version
+import pycbc.results
+from pycbc.detector import Detector
+from pycbc.results.pygrb_postprocessing_utils import get_antenna_dist_factor
+
+__author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__ = pycbc.version.date
+__program__ = "pycbc_pygrb_grb_info_table"
+
+# =============================================================================
+# Main script starts here
+# =============================================================================
+parser = argparse.ArgumentParser(description=__doc__, formatter_class=
+                                 argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument("--trigger-time", action="store",
+                    default=None, required=True,
+                    help="GPS time of the GRB.")
+parser.add_argument("--ra", action="store",
+                    default=None, required=True,
+                    help="Right ascention (degrees) of the GRB.")
+parser.add_argument("--dec", action="store",
+                    default=None, required=True,
+                    help="Declination (degrees) of the GRB.")
+parser.add_argument("--sky-error", action="store",
+                    default=0, required=False,
+                    help="Sky-localisation error (degrees) of the GRB.")
+parser.add_argument("--ifos", action="store", nargs='+',
+                    default=None, required=True,
+                    help="List containing the active IFOs.")
+parser.add_argument("--output-file", action="store",
+                    default=None, required=True,
+                    help="The output file to write tha table to.")
+
+opts = parser.parse_args()
+
+headers = []
+data = [[]]
+
+data[0].append(str(opts.trigger_time))
+headers.append('GPS Time')
+
+utc_time = datetime(*lal.GPSToUTC(int(opts.trigger_time))[0:6]).strftime("%B %d %Y, %H:%M:%S UTC")
+data[0].append(utc_time)
+headers.append('Coordinated Universal Time')
+
+data[0].append(str(opts.ra))
+headers.append('R.A.')
+
+data[0].append(str(opts.dec))
+headers.append('Dec')
+
+data[0].append(str(opts.sky_error))
+headers.append('Sky Error')
+
+data[0].append(''.join(opts.ifos))
+headers.append('IFOs')
+
+for ifo in opts.ifos:
+    antenna = Detector(ifo)
+    factor = get_antenna_dist_factor(antenna,
+                                     numpy.deg2rad(float(opts.ra)),
+                                     numpy.deg2rad(float(opts.dec)),
+                                     float(opts.trigger_time))
+    data[0].append('%.3f' % factor)
+    headers.append(ifo + ' Antenna Factor')
+
+html = pycbc.results.dq.redirect_javascript + \
+        str(pycbc.results.static_table(data, headers))
+
+title = 'GRB Summary Information'
+caption = 'Parameters of the GRB. The reported antenna factors are the '
+caption += 'dist / eff distance  as defined by (4.3) in '
+caption += 'https://arxiv.org/abs/0705.1514.'
+
+pycbc.results.save_fig_with_metadata(html, opts.output_file, {},
+                        cmd = ' '.join(sys.argv),
+                        title = title,
+                        caption = caption)

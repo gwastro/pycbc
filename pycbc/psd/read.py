@@ -17,6 +17,7 @@
 """Utilities to read PSDs from files.
 """
 
+import logging
 import numpy
 import scipy.interpolate
 from pycbc.types import FrequencySeries
@@ -60,12 +61,19 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     freq_data = freq_data[data_start:]
     noise_data = noise_data[data_start:]
 
+    if (length - 1) * delta_f > freq_data[-1]:
+        logging.warning('Requested number of samples exceeds the highest '
+                        'available frequency in the input data, '
+                        'will use max available frequency instead. '
+                        '(requested %f Hz, available %f Hz)',
+                        (length - 1) * delta_f, freq_data[-1])
+        length = int(freq_data[-1]/delta_f + 1)
+
     flog = numpy.log(freq_data)
     slog = numpy.log(noise_data)
 
-    psd_interp = scipy.interpolate.interp1d(flog, slog)
-
-    kmin = int(low_freq_cutoff / delta_f)
+    psd_interp = scipy.interpolate.interp1d(
+        flog, slog, fill_value=(slog[0], slog[-1]), bounds_error=False)
     psd = numpy.zeros(length, dtype=numpy.float64)
 
     vals = numpy.log(numpy.arange(kmin, length) * delta_f)

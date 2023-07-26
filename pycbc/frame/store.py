@@ -16,7 +16,6 @@
 """
 This modules contains functions for reading in data from hdf stores
 """
-from __future__ import division
 import h5py
 import numpy
 from pycbc.types import TimeSeries

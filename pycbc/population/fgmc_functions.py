@@ -17,23 +17,10 @@ import bisect
 from itertools import chain as it_chain, combinations as it_comb
 import numpy as np
 
-from matplotlib import use
-use('Agg')
-from matplotlib import rcParams
-from matplotlib import pyplot as plt
-
 from pycbc import conversions as conv
 from pycbc import events
 from pycbc.events.coinc import mean_if_greater_than_zero as coinc_meanigz
 from pycbc.events import triggers
-
-rcParams.update({'axes.labelsize': 12,
-                 'font.size': 12,
-                 'legend.fontsize': 12,
-                 'xtick.labelsize': 12,
-                 'ytick.labelsize': 12,
-                 'text.usetex': True,
-                })
 
 
 def filter_bin_lo_hi(values, lo, hi):
@@ -553,6 +540,7 @@ class BackgroundEventRate(EventRate):
                       self.bg_livetimes[(start, cty)]
 
     def plot_bg(self):
+        from matplotlib import pyplot as plt
         for chunk_type, hist in self.bg_hist.items():
             print('Plotting', chunk_type, 'background PDF ...')
             xplot = np.linspace(self.thr, self.args.plot_max_stat, 500)
@@ -663,6 +651,7 @@ class SignalEventRate(EventRate):
                 self.fg_bins[(ct, cty)] = self.make_bins(binmax, 'inj')
 
     def plot_inj(self):
+        from matplotlib import pyplot as plt
         for ct in self.allctimestring:
             for cty in self.coinc_types:
                 if not type_in_time(ct, cty):

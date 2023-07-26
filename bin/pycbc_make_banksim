@@ -2,7 +2,7 @@
 import logging
 import os
 import shutil
-from six.moves import configparser as ConfigParser
+import configparser as ConfigParser
 import subprocess
 import glob
 import tempfile
@@ -30,6 +30,8 @@ class BaseJob(CondorDAGJob, CondorJob):
 
         if accounting_group:
             self.add_condor_cmd('accounting_group', accounting_group)
+            
+        self.add_condor_cmd('request_disk', 1024)
 
 class BanksimNode(CondorDAGNode):
     def __init__(self, job, inj_file, tmplt_file, match_file, gpu=True,
@@ -92,15 +94,15 @@ def mkdir(dir_name):
         
 def mc_min_max_from_sorted_file(fname):
     from ligo.lw.utils import load_filename
-    from ligo.lw.table import get_table
+    from ligo.lw.table import Table
     from pycbc.pnutils import mass1_mass2_to_mchirp_eta
     from pycbc.io.ligolw import LIGOLWContentHandler
 
     doc = load_filename(fname, False, contenthandler=LIGOLWContentHandler)
     try:
-        t = get_table(doc, "sngl_inspiral")
+        t = Table.get_table(doc, "sngl_inspiral")
     except:
-        t = get_table(doc, "sim_inspiral")
+        t = Table.get_table(doc, "sim_inspiral")
     mc_max, et = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
     mc_min, et = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
     return mc_min, mc_max
@@ -227,8 +229,8 @@ for inj_num in range(num_injs):
     cnode = CombineNode(cjob, inj_num)
     for bank_num in range(num_banks):
         if mchirp_window is not None:
-            bank_part = "bank/bank" + str(bank_num) + ".xml"
-            sim_part =  "injection/injection" + str(inj_num) + ".xml"
+            bank_part = "bank/bank" + str(bank_num) + ".xml.gz"
+            sim_part =  "injection/injection" + str(inj_num) + ".xml.gz"
             if check_outside_mchirp(bank_part, sim_part, mchirp_window):
                 skip_count += 1
                 continue
@@ -236,8 +238,8 @@ for inj_num in range(num_injs):
                 do_count += 1
         part_num = str(bank_num)
         mfn = 'match-part/match' + num +'part' + part_num + '.dat'
-        sn = 'injection/injection' + num + '.xml'
-        bn = 'bank/bank' + part_num + '.xml'
+        sn = 'injection/injection' + num + '.xml.gz'
+        bn = 'bank/bank' + part_num + '.xml.gz'
         bsnode = BanksimNode(bsjob, sn, bn, mfn, gpu=gpu,
                              gpu_postscript="scripts/diff_match.sh",
                              inj_per_job=injections_per_job)

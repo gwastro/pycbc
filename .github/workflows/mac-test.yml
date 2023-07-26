@@ -2,23 +2,28 @@ name: macos basic tests
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 4
       matrix:
-        os: [macos-10.15]
-        python-version: [3.7, 3.8, 3.9]
+        os: [macos-latest]
+        python-version: [3.7, 3.8, 3.9, '3.10', '3.11']
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - run: |
-        brew install fftw
-        pip install --upgrade pip setuptools tox
+        brew install fftw openssl
+        pip install --upgrade pip setuptools "tox<4.0.0"
     - name: run basic pycbc test suite
       run: |
-        tox py-unittest
+        sudo chmod -R 777 /usr/local/miniconda/
+        tox -e py-unittest

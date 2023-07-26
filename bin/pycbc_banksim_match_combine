@@ -110,7 +110,7 @@ for idx, row in enumerate(res):
     if row['sim'] not in itables:
         indoc = utils.load_filename(row['sim'], False,
                                     contenthandler=LIGOLWContentHandler)
-        itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
+        itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral") 
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]

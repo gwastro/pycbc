@@ -27,7 +27,7 @@ pycbc.init_logging(args.verbose)
 
 logging.info('File: %s' % args.injection_file)
 indoc = ligolw_utils.load_filename(args.injection_file, False, contenthandler=LIGOLWContentHandler)
-sim_table = table.get_table(indoc, 'sim_inspiral')
+sim_table = table.Table.get_table(indoc, 'sim_inspiral')
 
 logging.info('%s Injections in file' % len(sim_table))
 

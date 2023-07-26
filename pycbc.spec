@@ -7,7 +7,7 @@ Group:          Development/Libraries
 Source:         %{name}-%{version}.tar.gz
 Url:            http://www.lsc-group.phys.uwm.edu/daswg/projects/pycbc.html
 BuildRoot:      %{_tmppath}/%{name}-%{version}-root
-Requires:       python python-decorator lal lal-python lalframe lalframe-python lalsimulation lalsimulation-python lalinspiral lalinspiral-python numpy scipy
+Requires:       python lal lal-python lalframe lalframe-python lalsimulation lalsimulation-python lalinspiral lalinspiral-python numpy scipy
 BuildRequires:  python-devel lal-devel lalmetaio-devel lalframe-devel lalsimulation-devel lalinspiral-devel numpy pkgconfig
 %description
 PyCBC is a python toolkit for analysis of data from gravitational-wave

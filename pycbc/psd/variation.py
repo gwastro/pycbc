@@ -111,8 +111,8 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
         fs_dtype = numpy.float64
 
     # Convert start and end times immediately to floats
-    start_time = numpy.float(strain.start_time)
-    end_time = numpy.float(strain.end_time)
+    start_time = float(strain.start_time)
+    end_time = float(strain.end_time)
 
     # Resample the data
     strain = resample_to_delta_t(strain, 1.0 / 2048)

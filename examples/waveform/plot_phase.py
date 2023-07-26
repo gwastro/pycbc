@@ -1,7 +1,8 @@
-import pylab
+import matplotlib.pyplot as pp
 from pycbc import waveform
 
-for apx in ['EOBNRv2', 'TaylorT4', 'IMRPhenomB']:
+
+for apx in ['SEOBNRv4', 'TaylorT4', 'IMRPhenomB']:
     hp, hc = waveform.get_td_waveform(approximant=apx,
                                  mass1=10,
                                  mass2=10,
@@ -12,9 +13,9 @@ for apx in ['EOBNRv2', 'TaylorT4', 'IMRPhenomB']:
     amp = waveform.utils.amplitude_from_polarizations(hp, hc)
     phase = waveform.utils.phase_from_polarizations(hp, hc)
 
-    pylab.plot(phase, amp, label=apx)
+    pp.plot(phase, amp, label=apx)
 
-pylab.ylabel('GW Strain Amplitude')
-pylab.xlabel('GW Phase (radians)')
-pylab.legend(loc='upper left')
-pylab.show()
+pp.ylabel('GW Strain Amplitude')
+pp.xlabel('GW Phase (radians)')
+pp.legend(loc='upper left')
+pp.show()

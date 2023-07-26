@@ -16,7 +16,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Make Alex Nielsen's fitting factor plots for a single banksim run.
 """
-from __future__ import division
 
 import sys
 import h5py

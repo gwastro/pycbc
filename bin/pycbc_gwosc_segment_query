@@ -1,0 +1,142 @@
+#!/usr/bin/env python
+
+import os
+import logging
+import json
+import argparse
+import shutil
+from urllib.request import urlopen
+import ligo.segments
+from pycbc.workflow import SegFile
+
+
+# Logging formatting from pycbc optimal snr
+log_fmt = '%(asctime)s %(message)s'
+log_date_fmt = '%Y-%m-%d %H:%M:%S'
+logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
+
+
+# Function to query json segment data from GWOSC
+def query_gwosc(ifo, segment_name, gps_start_time, duration):
+    """
+    Function that queries the O1 GWOSC data from json to xml
+
+    Parameters
+    ----------
+    ifo: string
+        The interferometer to query (H1, L1).
+    segment_name: string
+        The veto group or science group to query from GWOSC.
+    gps_start_time: int / string
+        The starting gps time to begin querying from the O1 GWOSC data set.
+    duration: int / string
+        The amount of time in seconds after the gps start time.
+
+    Returns
+    ---------
+    segment_list :  ligo.segments.segmentlist
+        The interval returned by GWOSC
+    segment_summary :  ligo.segments.segmentlist
+        The segments returned by GWOSC
+    """
+
+    response = urlopen(
+        f'https://www.gwosc.org/timeline/segments/json/O1/{ifo}_{segment_name}/{gps_start_time}/{duration}/'
+    )
+
+    logging.info(response.info())
+    json_segment_data = json.loads(response.read())
+
+    summary_segment = ligo.segments.segmentlist([ligo.segments.segment(
+                                                json_segment_data['start'],
+                                                json_segment_data['end'])])
+
+    segments = ligo.segments.segmentlist([ligo.segments.segment(
+                                         x[0],x[1]) for x in json_segment_data['segments']])
+
+    return summary_segment, segments
+
+def write_xml_file(ifo, summary_segment, segments, filename):
+    file_url = 'file://' + os.path.abspath(filename)
+    sf = SegFile.from_segment_list('GWOSC segments', segments, 'RESULT', ifo,
+                                   summary_segment, file_url=file_url)
+    sf.to_segment_xml()
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--gps-start-time', type=int, required=True)
+parser.add_argument('--gps-end-time', type=int, required=True)
+parser.add_argument('--include-segments', type=str, required=True)
+parser.add_argument('--output-file', type=str, required=True)
+parser.add_argument('--protract-hw-inj', type=int, default=0)
+args = parser.parse_args()
+
+gps_start_time = args.gps_start_time
+gps_end_time = args.gps_end_time
+duration = gps_end_time - gps_start_time
+
+logging.info("Reading in GWOSC files from %s to %s.",
+             gps_start_time, gps_end_time)
+detector = args.include_segments.split(':')[0]
+logging.info("Querying for %s", detector)
+
+file_list = []
+
+logging.info("Querying science segments")
+sci_summ, sci_segs = query_gwosc(detector, "DATA", gps_start_time, duration)
+sci_segs.coalesce()
+
+sci_file_name = "{}-SCIENCE_SEGMENTS.xml".format(detector)
+write_xml_file(detector, sci_summ, sci_segs, sci_file_name)
+file_list.append(sci_file_name)
+
+logging.info("Calculating CAT1 veto time")
+not_cat1_summ, not_cat1_segs = query_gwosc(detector, "CBC_CAT1",
+                                           gps_start_time, duration)
+not_cat1_segs.coalesce()
+
+cat1_segs = ~not_cat1_segs
+cat1_segs &= sci_segs
+
+cat1_file_name = "{}-VETOTIME_CAT1-{}-{}.xml".format(detector,
+                                                     gps_start_time, duration)
+write_xml_file(detector, not_cat1_summ, cat1_segs, cat1_file_name)
+file_list.append(cat1_file_name)
+
+logging.info("Calculating CAT2 veto time")
+not_cat2_summ, not_cat2_segs = query_gwosc(detector, "CBC_CAT2",
+                                           gps_start_time, duration)
+not_cat2_segs.coalesce()
+
+cat2_segs = ~not_cat2_segs
+cat2_segs &= sci_segs
+
+cat2_file_name = "{}-VETOTIME_CAT2-{}-{}.xml".format(detector,
+                                                     gps_start_time, duration)
+write_xml_file(detector, not_cat2_summ, cat2_segs, cat2_file_name)
+file_list.append(cat2_file_name)
+
+logging.info("Calculating HW injection veto time")
+not_hw_inj_summ, not_hw_inj_segs = query_gwosc(detector, "NO_CBC_HW_INJ",
+                                               gps_start_time, duration)
+not_hw_inj_segs.coalesce()
+
+hw_inj_segs = ~not_hw_inj_segs
+hw_inj_segs.protract(args.protract_hw_inj)
+hw_inj_segs.coalesce()
+hw_inj_segs &= sci_segs
+
+hw_inj_file_name = "{}-VETOTIME_CAT3-{}-{}.xml".format(detector,
+                                                       gps_start_time, duration)
+write_xml_file(detector, not_hw_inj_summ, hw_inj_segs, hw_inj_file_name)
+file_list.append(hw_inj_file_name)
+
+destination_path = os.path.dirname(os.path.abspath(args.output_file))
+
+for f in file_list:
+    d = os.path.join(destination_path,f)
+    logging.info("Copying %s to %s", f, d)
+    shutil.copy2(f, os.path.join(destination_path, f))
+    os.unlink(f)
+
+logging.info("Science and Veto files written. Done.")

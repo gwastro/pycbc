@@ -19,7 +19,6 @@
 import logging
 import shlex
 from abc import ABCMeta
-from six import add_metaclass
 import numpy
 
 from pycbc import filter as pyfilter
@@ -38,8 +37,7 @@ from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
 
 
-@add_metaclass(ABCMeta)
-class BaseGaussianNoise(BaseDataModel):
+class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
     r"""Model for analyzing GW data with assuming a wide-sense stationary
     Gaussian noise model.
 
@@ -94,23 +92,11 @@ class BaseGaussianNoise(BaseDataModel):
 
     Attributes
     ----------
-    data : dict
-        Dictionary of detectors -> frequency-domain data.
     ignore_failed_waveforms : bool
         If True, points in parameter space that cause waveform generation to
         fail (i.e., they raise a ``FailedWaveformError``) will be treated as
         points with zero likelihood. Otherwise, such points will cause the
         model to raise a ``FailedWaveformError``.
-    low_frequency_cutoff
-    high_frequency_cutoff
-    kmin
-    kmax
-    psds
-    psd_segments
-    weight
-    whitened_data
-    normalize
-    lognorm
     """
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
@@ -191,6 +177,9 @@ class BaseGaussianNoise(BaseDataModel):
         self.normalize = normalize
         # store the psds and whiten the data
         self.psds = psds
+
+        # attribute for storing the current waveforms
+        self._current_wfs = None
 
     @property
     def high_frequency_cutoff(self):
@@ -404,6 +393,12 @@ class BaseGaussianNoise(BaseDataModel):
         """
         return sum(self.det_lognl(det) for det in self._data)
 
+    def update(self, **params):
+        # update
+        super().update(**params)
+        # reset current waveforms
+        self._current_wfs = None
+
     def _loglikelihood(self):
         r"""Computes the log likelihood of the paramaters,
 
@@ -423,51 +418,64 @@ class BaseGaussianNoise(BaseDataModel):
         # back the noise term that canceled in the log likelihood ratio
         return self.loglr + self.lognl
 
-    def write_metadata(self, fp):
-        """Adds writing the psds and lognl, since it's a constant.
-
-        The lognl is written to the sample group's ``attrs``.
+    def write_metadata(self, fp, group=None):
+        """Adds writing the psds, analyzed detectors, and lognl.
 
         The analyzed detectors, their analysis segments, and the segments
-        used for psd estimation are written to the file's ``attrs``, as
+        used for psd estimation are written as
         ``analyzed_detectors``, ``{{detector}}_analysis_segment``, and
-        ``{{detector}}_psd_segment``, respectively.
+        ``{{detector}}_psd_segment``, respectively. These are either written
+        to the specified ``group``'s attrs, or to the top level attrs if
+        ``group`` is None.
+
+        The total and each detector's lognl is written to the sample group's
+        ``attrs``. If a group is specified, the group name will be prependend
+        to the lognl labels with ``{group}__``, with any ``/`` in the group
+        path replaced with ``__``. For example, if group is ``/a/b``, the
+        ``lognl`` will be written as ``a__b__lognl`` in the sample's group
+        attrs.
 
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
         """
-        super(BaseGaussianNoise, self).write_metadata(fp)
+        super().write_metadata(fp, group=group)
+        attrs = fp.getattrs(group=group)
         # write the analyzed detectors and times
-        fp.attrs['analyzed_detectors'] = self.detectors
+        attrs['analyzed_detectors'] = self.detectors
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
-            fp.attrs[key] = [float(data.start_time), float(data.end_time)]
+            attrs[key] = [float(data.start_time), float(data.end_time)]
         if self._psds is not None and not self.no_save_data:
-            fp.write_psd(self._psds)
+            fp.write_psd(self._psds, group=group)
         # write the times used for psd estimation (if they were provided)
         for det in self.psd_segments:
             key = '{}_psd_segment'.format(det)
-            fp.attrs[key] = list(map(float, self.psd_segments[det]))
-        try:
-            attrs = fp[fp.samples_group].attrs
-        except KeyError:
-            # group doesn't exist, create it
-            fp.create_group(fp.samples_group)
-            attrs = fp[fp.samples_group].attrs
-        attrs['lognl'] = self.lognl
+            attrs[key] = list(map(float, self.psd_segments[det]))
+        # save the frequency cutoffs
         for det in self.detectors:
-            # Save lognl for each IFO as attributes in the samples group
-            attrs['{}_lognl'.format(det)] = self.det_lognl(det)
-            # Save each IFO's low frequency cutoff used in the likelihood
-            # computation as an attribute
-            fp.attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
-            # Save the IFO's high frequency cutoff used in the likelihood
-            # computation as an attribute if one was provided the user
+            attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
             if self._f_upper[det] is not None:
-                fp.attrs['{}_likelihood_high_freq'.format(det)] = \
+                attrs['{}_likelihood_high_freq'.format(det)] = \
                     self._f_upper[det]
+        # write the lognl to the samples group attrs
+        sampattrs = fp.getattrs(group=fp.samples_group)
+        # if a group is specified, prepend the lognl names with it
+        if group is None or group == '/':
+            prefix = ''
+        else:
+            prefix = group.replace('/', '__')
+            if not prefix.endswith('__'):
+                prefix += '__'
+        sampattrs['{}lognl'.format(prefix)] = self.lognl
+        # also save the lognl in each detector
+        for det in self.detectors:
+            sampattrs['{}{}_lognl'.format(prefix, det)] = self.det_lognl(det)
 
     @staticmethod
     def _fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict):
@@ -853,6 +861,54 @@ class GaussianNoise(BaseGaussianNoise):
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
         return -numpy.inf
 
+    @property
+    def multi_signal_support(self):
+        """ The list of classes that this model supports in a multi-signal
+        likelihood
+        """
+        return [type(self)]
+
+    def multi_loglikelihood(self, models):
+        """ Calculate a multi-model (signal) likelihood
+        """
+        # Generate the waveforms for each submodel
+        wfs = []
+        for m in models + [self]:
+            wfs.append(m.get_waveforms())
+
+        # combine into a single waveform
+        combine = {}
+        for det in self.data:
+            mlen = max([len(x[det]) for x in wfs])
+            [x[det].resize(mlen) for x in wfs]
+            combine[det] = sum([x[det] for x in wfs])
+
+        self._current_wfs = combine
+        loglr = self._loglr()
+        self._current_wfs = None
+        return loglr + self.lognl
+
+    def get_waveforms(self):
+        """The waveforms generated using the current parameters.
+
+        If the waveforms haven't been generated yet, they will be generated.
+
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> FrequencySeries.
+        """
+        if self._current_wfs is None:
+            params = self.current_params
+            if self.all_ifodata_same_rate_length:
+                wfs = self.waveform_generator.generate(**params)
+            else:
+                wfs = {}
+                for det in self.data:
+                    wfs.update(self.waveform_generator[det].generate(**params))
+            self._current_wfs = wfs
+        return self._current_wfs
+
     def _loglr(self):
         r"""Computes the log likelihood ratio,
 
@@ -869,14 +925,8 @@ class GaussianNoise(BaseGaussianNoise):
         float
             The value of the log likelihood ratio.
         """
-        params = self.current_params
         try:
-            if self.all_ifodata_same_rate_length:
-                wfs = self.waveform_generator.generate(**params)
-            else:
-                wfs = {}
-                for det in self.data:
-                    wfs.update(self.waveform_generator[det].generate(**params))
+            wfs = self.get_waveforms()
         except NoWaveformError:
             return self._nowaveform_loglr()
         except FailedWaveformError as e:
@@ -884,6 +934,7 @@ class GaussianNoise(BaseGaussianNoise):
                 return self._nowaveform_loglr()
             else:
                 raise e
+
         lr = 0.
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
@@ -897,8 +948,9 @@ class GaussianNoise(BaseGaussianNoise):
                 slc = slice(self._kmin[det], kmax)
                 # whiten the waveform
                 h[self._kmin[det]:kmax] *= self._weight[det][slc]
+
                 # the inner products
-                cplx_hd = self._whitened_data[det][slc].inner(h[slc])  # <h, d>
+                cplx_hd = h[slc].inner(self._whitened_data[det][slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
             cplx_loglr = cplx_hd - 0.5 * hh
             # store
@@ -986,7 +1038,7 @@ def get_values_from_injection(cp, injection_file, update_cp=True):
 
     will cause ``mass1`` to be retrieved from the injection file, while:
 
-    .. code-black:: ini
+    .. code-block:: ini
 
        mass1 = FROM_INJECTION:'primary_mass(mass1, mass2)'
 

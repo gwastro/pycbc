@@ -16,7 +16,7 @@
 """ This module contains result page layout and numbering helper functions
 """
 import os.path
-from six.moves import zip_longest
+from itertools import zip_longest
 
 def two_column_layout(path, cols, unique='', **kwargs):
     """ Make a well layout in a two column format

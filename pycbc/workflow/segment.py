@@ -99,9 +99,11 @@ def get_segments_file(workflow, name, option_name, out_dir):
         server = cp.get("workflow-segments",
                                  "segments-database-url")
 
-    source = "any"
     if cp.has_option("workflow-segments", "segments-source"):
         source = cp.get("workflow-segments", "segments-source")
+    else:
+        source = "any"
+
     if source == "file":
         local_file_path = \
             resolve_url(cp.get("workflow-segments", option_name+"-file"))
@@ -113,9 +115,16 @@ def get_segments_file(workflow, name, option_name, out_dir):
     for ifo in workflow.ifos:
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
         key = ifo + ':' + name
-        segs[key] = query_str(ifo, flag_str, start, end,
-                              source=source, server=server,
-                              veto_definer=veto_definer)
+        
+        if flag_str.upper() == "OFF":
+            segs[key] = segments.segmentlist([])
+        elif flag_str.upper() == "ON":
+            all_seg = segments.segment([start, end])
+            segs[key] = segments.segmentlist([all_seg])
+        else:
+            segs[key] = query_str(ifo, flag_str, start, end,
+                                  source=source, server=server,
+                                  veto_definer=veto_definer)
         logging.info("%s: got %s flags", ifo, option_name)
 
     return SegFile.from_segment_list_dict(name, segs,
@@ -299,12 +308,11 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
             for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
             and abs(sciencesegs[ifo]) >= minduration})
-
     # Find highest number of IFOs that give an acceptable coherent segment
-    num_ifos = len(scisegs.keys())
+    num_ifos = len(scisegs)
     while num_ifos >= min_ifos:
         # Consider all combinations for a given number of IFOs
-        ifo_combos = itertools.combinations(scisegs.keys(), num_ifos)
+        ifo_combos = itertools.combinations(scisegs, num_ifos)
         onsource = {}
         offsource = {}
         for ifo_combo in ifo_combos:
@@ -347,7 +355,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                                       list(offsource[best_comb].values())[0])
 
             onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
-            segmentsUtils.tosegwizard(file(onsourceSegfile, "w"),
+            segmentsUtils.tosegwizard(open(onsourceSegfile, "w"),
                                       list(onsource[best_comb].values())[0])
 
             bufferleft = int(cp.get('workflow-exttrig_segments',
@@ -359,7 +367,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                     triggertime - onbefore - bufferleft * onlen,
                     triggertime + onafter + bufferright * onlen)
             bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
-            segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
+            segmentsUtils.tosegwizard(open(bufferSegfile, "w"),
                                       segments.segmentlist([bufferSegment]))
 
             return onsource[best_comb], offsource[best_comb]
@@ -371,3 +379,73 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
         return None, offsource[best_comb]
     except UnboundLocalError:
         return None, min_seg
+
+def get_flag_segments_file(workflow, name, option_name, out_dir):
+     """Get segments from option name syntax for each ifo for indivudal flags.
+
+     Use syntax of configparser string to define the resulting segment_file
+     e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2
+     Each ifo may have a different string and is stored separately in the file.
+     Each flag is stored separately in the file.
+     Flags which add time must precede flags which subtract time.
+
+     Parameters
+     ----------
+     workflow: pycbc.workflow.Workflow
+     name: string
+         Name of the segment list being created
+     option_name: str
+         Name of option in the associated config parser to get the flag list
+
+     returns
+     --------
+     seg_file: pycbc.workflow.SegFile
+         SegFile intance that points to the segment xml file on disk.
+     """
+     from pycbc.dq import query_str
+     make_analysis_dir(out_dir)
+     cp = workflow.cp
+     start = workflow.analysis_time[0]
+     end = workflow.analysis_time[1]
+
+     # Check for veto definer file
+     veto_definer = None
+     if cp.has_option("workflow-segments", "segments-veto-definer-url"):
+         veto_definer = save_veto_definer(workflow.cp, out_dir, [])
+
+     # Check for provided server
+     server = "https://segments.ligo.org"
+     if cp.has_option("workflow-segments", "segments-database-url"):
+         server = cp.get("workflow-segments", "segments-database-url")
+
+     source = "any"
+     if cp.has_option("workflow-segments", "segments-source"):
+         source = cp.get("workflow-segments", "segments-source")
+     if source == "file":
+         local_file_path = \
+             resolve_url(cp.get("workflow-segments", option_name+"-file"))
+         pfn = os.path.join(out_dir, os.path.basename(local_file_path))
+         shutil.move(local_file_path, pfn)
+         return SegFile.from_segment_xml(pfn)
+
+     segs = {}
+     for ifo in workflow.ifos:
+         if cp.has_option_tags("workflow-segments", option_name, [ifo]):
+              flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
+              flag_list = flag_str.split(',')
+              for flag in flag_list:
+                  flag_name = flag[1:]
+                  key = flag_name
+                  if len(key.split(':')) > 2:
+                      key = ':'.join(key.split(':')[:2])
+                  segs[key] = query_str(ifo, flag, start, end,
+                                        source=source, server=server,
+                                        veto_definer=veto_definer)
+                  logging.info("%s: got %s segments", ifo, flag_name)
+         else:
+             logging.info("%s: no segments requested", ifo)
+
+     return SegFile.from_segment_list_dict(name, segs,
+                                           extension='.xml',
+                                           valid_segment=workflow.analysis_time,
+                                           directory=out_dir)

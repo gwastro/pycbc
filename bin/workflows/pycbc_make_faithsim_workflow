@@ -1,0 +1,168 @@
+#! /usr/bin/env python
+
+"""
+Program for running a faithfulness comparisons workflow analysis between two approximants
+and generate files containing the match between them and plots.
+"""
+
+import os
+import pycbc
+import pycbc.workflow as wf
+import logging
+import configparser as ConfigParser
+import numpy as np
+import logging
+import argparse
+from pycbc.workflow.plotting import PlotExecutable
+from pycbc.workflow import setup_splittable_dax_generated
+
+__version__ = pycbc.version.git_verbose_msg
+
+
+def make_faithsim_plot(workflow, analysis_time, input_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    secs = workflow.cp.get_subsections("pycbc_faithsim_plots")
+    files = wf.FileList([])
+    for tag in secs:
+        node = PlotExecutable(
+            workflow.cp,
+            "pycbc_faithsim_plots",
+            ifos=["X1"],
+            out_dir=out_dir,
+            tags=[tag] + tags,
+        ).create_node()
+        node.add_input_opt("--input-file", input_file)
+        node.new_output_file_opt(analysis_time, ".png", "--output-plot")
+        workflow += node
+        files += node.output_files
+
+    return files
+
+
+class CreateInjectionExecutable(wf.Executable):
+    """Class for running create_inj_file"""
+
+    current_retention_level = wf.Executable.ALL_TRIGGERS
+
+    def create_node(self, analysis_time, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+
+        node = wf.Executable.create_node(self)
+
+        node.new_output_file_opt(
+            analysis_time, ".xml", "--output", tags=self.tags + extra_tags
+        )
+        return node
+
+
+class FaithsimExecutable(wf.Executable):
+    """Class for running pycbc_faithsim"""
+
+    current_retention_level = wf.Executable.ALL_TRIGGERS
+
+    def create_node(self, analysis_time, param_file, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+
+        node.add_input_opt("--param-file", param_file)
+
+        node.new_output_file_opt(
+            analysis_time, ".dat", "--match-file", tags=self.tags + extra_tags
+        )
+        return node
+
+
+class CollectResultsExecutable(wf.Executable):
+    """Class for collecting the results of the faithsim script"""
+
+    current_retention_level = wf.Executable.ALL_TRIGGERS
+
+    def create_node(self, analysis_time, match_list, bank_list, extra_tags=None):
+        if extra_tags is None:
+            extra_tags = []
+        node = wf.Executable.create_node(self)
+
+        for match in match_list:
+            node.add_input_opt("--match-inputs", match)
+        for bank in bank_list:
+            node.add_input_opt("--bank-inputs", bank)
+
+        node.new_output_file_opt(
+            analysis_time, ".dat", "--output", tags=self.tags + extra_tags
+        )
+
+        return node
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version", version=__version__)
+wf.add_workflow_command_line_group(parser)
+wf.add_workflow_settings_cli(parser)
+args = parser.parse_args()
+
+workflow = wf.Workflow(args)
+
+num_banks = workflow.cp.get("splitbank", "num_banks")
+
+injections_exe = CreateInjectionExecutable(
+    workflow.cp,
+    "lalapps_inspinj",
+    ifos=["X1"],
+    out_dir=workflow.output_dir + "injections",
+    tags=["inj"],
+)
+
+inj_node = injections_exe.create_node(workflow.analysis_time)
+workflow += inj_node
+
+inj = inj_node.output_files[0]
+
+split_exe = wf.PycbcSplitBankXmlExecutable(
+    workflow.cp, "pycbc_splitbank", num_banks=num_banks, out_dir=workflow.output_dir +"bank"
+)
+splitbank_node = split_exe.create_node(inj)
+
+workflow += spltbank_node
+
+faithsim_exe = FaithsimExecutable(
+    workflow.cp, "pycbc_faithsim", ifos=["X1"], out_dir=workflow.output_dir +"match"
+)
+
+collect_exe = CollectResultsExecutable(
+    workflow.cp,
+    "pycbc_faithsim_collect_results",
+    ifos=["X1"],
+    out_dir=workflow.output_dir +"collect_results",
+)
+
+faithsim_files = wf.FileList([])
+
+for i, bank in enumerate(splitbank_node.output_files):
+    faithsim_node = faithsim_exe.create_node(
+        workflow.analysis_time,
+        param_file=bank,
+        extra_tags=[f"match{i}"],
+    )
+    workflow += faithsim_node
+    faithsim_files.append(faithsim_node.output_file)
+
+collect_node = collect_exe.create_node(
+    workflow.analysis_time,
+    faithsim_files,
+    spltbank_node.output_files,
+    extra_tags=["result"],
+)
+workflow += collect_node
+collect_results = collect_node.output_files[0]
+
+make_faithsim_plot(
+    workflow,
+    workflow.analysis_time,
+    collect_results,
+    out_dir=workflow.output_dir +"plots",
+    tags=None,
+)
+
+workflow.save()

@@ -59,11 +59,13 @@ class Parameter(str):
         <prefix>``name`` : {``default``, ``dtype``}
         <prefix>   ``description`` Label: ``label``.
         """
-        outstr = "%s%s : {%s, %s}\n" %(prefix, self.name, str(self.default),
-            str(self.dtype).replace("<type '", '').replace("'>", '')) + \
-            "%s    %s" %(prefix, self.description)
+        dtype_str = str(self.dtype).replace("<type '", '').replace("'>", '')
+        dtype_str = dtype_str.replace("<class '", '')
+        outstr = "%s%s : {%s, %s}\n%s    %s" % (
+                prefix, self.name, str(self.default), dtype_str, prefix,
+                self.description)
         if include_label:
-            outstr += " Label: %s" %(self.label)
+            outstr += " Label: %s" % (self.label)
         return outstr
 
 
@@ -381,6 +383,11 @@ eccentricity_order = Parameter("eccentricity_order",
 numrel_data = Parameter("numrel_data",
                 dtype=str, default="", label=None,
                 description="Sets the NR flags; only needed for NR waveforms.")
+remnant_mass = Parameter("remnant_mass",
+                        dtype=float, label=r"$m_{\mathrm{rem}}$",
+                        description="Remnant mass of NS-BH merger. See "
+                        "conversions.remnant_mass_"
+                        "from_mass1_mass2_spin1x_spin1y_spin1z_eos")
 
 #
 #   General location parameters
@@ -416,13 +423,13 @@ delta_tc = Parameter("delta_tc", dtype=float,
                      label=r"$\Delta t_c~(\rm{s})$",
                      description="Coalesence time offset.")
 ra = Parameter("ra",
-                dtype=float, default=None, label=r"$\alpha$",
+                dtype=float, default=0., label=r"$\alpha$",
                 description="Right ascension (rad).")
 dec = Parameter("dec",
-                dtype=float, default=None, label=r"$\delta$",
+                dtype=float, default=0., label=r"$\delta$",
                 description="Declination (rad).")
 polarization = Parameter("polarization",
-                dtype=float, default=None, label=r"$\psi$",
+                dtype=float, default=0., label=r"$\psi$",
                 description="Polarization (rad).")
 redshift = Parameter("redshift",
                 dtype=float, default=None, label=r"$z$",
@@ -430,6 +437,12 @@ redshift = Parameter("redshift",
 comoving_volume = Parameter("comoving_volume", dtype=float,
                             label=r"$V_C~(\rm{Mpc}^3)$",
                             description="Comoving volume (in cubic Mpc).")
+eclipticlatitude = Parameter("eclipticlatitude",
+                dtype=float, default=0., label=r"$\beta$",
+                description="eclipticlatitude wrt SSB coords.")
+eclipticlongitude = Parameter("eclipticlongitude",
+                dtype=float, default=0., label=r"$\lambda$",
+                description="eclipticlongitude wrt SSB coords.")
 
 #
 #   Calibration parameters
@@ -545,7 +558,8 @@ dbeta3 = Parameter("dbeta3",
 # passed to the waveform generators in lalsimulation, but are instead applied
 # after a waveform is generated. Distance, however, is a parameter used by
 # the waveform generators.
-location_params = ParameterList([tc, ra, dec, polarization])
+location_params = ParameterList([tc, ra, dec, polarization,
+                                eclipticlatitude, eclipticlongitude])
 
 # parameters describing the orientation of a binary w.r.t. the radiation
 # frame. Note: we include distance here, as it is typically used for generating

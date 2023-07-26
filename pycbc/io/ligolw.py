@@ -15,23 +15,36 @@
 
 """Tools for dealing with LIGOLW XML files."""
 
+import os
+import sys
+import numpy
 from ligo.lw import lsctables
+from ligo.lw import ligolw
 from ligo.lw.ligolw import Param, LIGOLWContentHandler \
     as OrigLIGOLWContentHandler
 from ligo.lw.lsctables import TableByName
 from ligo.lw.table import Column, TableStream
-from ligo.lw.types import FormatFunc, FromPyType, IDTypes, ToPyType
+from ligo.lw.types import FormatFunc, FromPyType, ToPyType
+from ligo.lw.utils import process as ligolw_process
+from ligo.lw.param import Param as LIGOLWParam
+from ligo.lw.array import Array as LIGOLWArray
+import pycbc.version as pycbc_version
 
 
-__all__ = ('default_null_value',
-           'return_empty_sngl',
-           'return_search_summary',
-           'legacy_row_id_converter',
-           'LIGOLWContentHandler')
+__all__ = (
+    'default_null_value',
+    'return_empty_sngl',
+    'return_search_summary',
+    'create_process_table',
+    'legacy_row_id_converter',
+    'get_table_columns',
+    'LIGOLWContentHandler'
+)
 
 ROWID_PYTYPE = int
 ROWID_TYPE = FromPyType[ROWID_PYTYPE]
 ROWID_FORMATFUNC = FormatFunc[ROWID_TYPE]
+IDTypes = set([u"ilwd:char", u"ilwd:char_u"])
 
 
 def default_null_value(col_name, col_type):
@@ -120,6 +133,36 @@ def return_search_summary(start_time=0, end_time=0, nevents=0, ifos=None):
 
     return search_summary
 
+def create_process_table(document, program_name=None, detectors=None,
+                         comment=None, options=None):
+    """Create a LIGOLW process table with sane defaults, add it to a LIGOLW
+    document, and return it.
+    """
+
+    if program_name is None:
+        program_name = os.path.basename(sys.argv[0])
+    if options is None:
+        options = {}
+
+    # ligo.lw does not like `cvs_entry_time` being an empty string
+    cvs_entry_time = pycbc_version.date or None
+
+    opts = options.copy()
+    key_del = []
+    for key, value in opts.items():
+        if type(value) not in tuple(FromPyType.keys()):
+            key_del.append(key)
+    if len(key_del) != 0:
+        for key in key_del:
+            opts.pop(key)
+
+    process = ligolw_process.register_to_xmldoc(
+            document, program_name, opts, version=pycbc_version.version,
+            cvs_repository='pycbc/'+pycbc_version.git_branch,
+            cvs_entry_time=cvs_entry_time, instruments=detectors,
+            comment=comment)
+    return process
+
 def legacy_row_id_converter(ContentHandler):
     """Convert from old-style to new-style row IDs on the fly.
 
@@ -137,7 +180,8 @@ def legacy_row_id_converter(ContentHandler):
         """Convert values of <Param> elements from ilwdchar to int."""
         if isinstance(self.current, Param) and self.current.Type in IDTypes:
             old_type = ToPyType[self.current.Type]
-            new_value = ROWID_PYTYPE(old_type(self.current.pcdata))
+            old_val = str(old_type(self.current.pcdata))
+            new_value = ROWID_PYTYPE(old_val.split(":")[-1])
             self.current.Type = ROWID_TYPE
             self.current.pcdata = ROWID_FORMATFUNC(new_value)
         __orig_endElementNS(self, uri_localname, qname)
@@ -162,7 +206,7 @@ def legacy_row_id_converter(ContentHandler):
             old_type = ToPyType[result.Type]
 
             def converter(old_value):
-                return ROWID_PYTYPE(old_type(old_value))
+                return ROWID_PYTYPE(str(old_type(old_value)).split(":")[-1])
 
             remapped[(id(parent), result.Name)] = converter
             result.Type = ROWID_TYPE
@@ -208,6 +252,93 @@ def legacy_row_id_converter(ContentHandler):
     ContentHandler.startStream = startStream
 
     return ContentHandler
+
+def _build_series(series, dim_names, comment, delta_name, delta_unit):
+    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    elem = ligolw.LIGO_LW(
+            Attributes({'Name': str(series.__class__.__name__)}))
+    if comment is not None:
+        elem.appendChild(ligolw.Comment()).pcdata = comment
+    elem.appendChild(ligolw.Time.from_gps(series.epoch, 'epoch'))
+    elem.appendChild(LIGOLWParam.from_pyvalue('f0', series.f0, unit='s^-1'))
+    delta = getattr(series, delta_name)
+    if numpy.iscomplexobj(series.data.data):
+        data = numpy.row_stack((
+            numpy.arange(len(series.data.data)) * delta,
+            series.data.data.real,
+            series.data.data.imag
+        ))
+    else:
+        data = numpy.row_stack((
+            numpy.arange(len(series.data.data)) * delta,
+            series.data.data
+        ))
+    a = LIGOLWArray.build(series.name, data, dim_names=dim_names)
+    a.Unit = str(series.sampleUnits)
+    dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
+    dim0.Unit = delta_unit
+    dim0.Start = series.f0
+    dim0.Scale = delta
+    elem.appendChild(a)
+    return elem
+
+def make_psd_xmldoc(psddict, xmldoc=None):
+    """Add a set of PSDs to a LIGOLW XML document. If the document is not
+    given, a new one is created first.
+    """
+    xmldoc = ligolw.Document() if xmldoc is None else xmldoc.childNodes[0]
+
+    # the PSDs must be children of a LIGO_LW with name "psd"
+    root_name = 'psd'
+    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    lw = xmldoc.appendChild(
+        ligolw.LIGO_LW(Attributes({'Name': root_name})))
+
+    for instrument, psd in psddict.items():
+        xmlseries = _build_series(
+            psd,
+            ('Frequency,Real', 'Frequency'),
+            None,
+            'deltaF',
+            's^-1'
+        )
+        fs = lw.appendChild(xmlseries)
+        fs.appendChild(LIGOLWParam.from_pyvalue('instrument', instrument))
+    return xmldoc
+
+def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
+    """Save an SNR time series into an XML document, in a format compatible
+    with BAYESTAR.
+    """
+    snr_lal = snr_series.lal()
+    snr_lal.name = 'snr'
+    snr_lal.sampleUnits = ''
+    snr_xml = _build_series(
+        snr_lal,
+        ('Time', 'Time,Real,Imaginary'),
+        None,
+        'deltaT',
+        's'
+    )
+    snr_node = document.childNodes[-1].appendChild(snr_xml)
+    eid_param = LIGOLWParam.from_pyvalue('event_id', sngl_inspiral_id)
+    snr_node.appendChild(eid_param)
+
+def get_table_columns(table):
+    """Return a list of columns that are present in the given table, in a
+    format that can be passed to `lsctables.New()`.
+
+    The split on ":" is needed for columns like `process:process_id`, which
+    must be listed as `process:process_id` in `lsctables.New()`, but are
+    listed as just `process_id` in the `columnnames` attribute of the given
+    table.
+    """
+    columns = []
+    for col in table.validcolumns:
+        att = col.split(':')[-1]
+        if att in table.columnnames:
+            columns.append(col)
+    return columns
 
 
 @legacy_row_id_converter

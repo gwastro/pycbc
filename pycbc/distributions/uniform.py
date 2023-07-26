@@ -33,22 +33,6 @@ class Uniform(bounded.BoundedDist):
         corresponding bounds, as either tuples or a `boundaries.Bounds`
         instance.
 
-    Attributes
-    ----------
-    name : 'uniform'
-        The name of this distribution.
-
-    Attributes
-    ----------
-    params : list of strings
-        The list of parameter names.
-    bounds : dict
-        A dictionary of the parameter names and their bounds.
-    norm : float
-        The normalization of the multi-dimensional pdf.
-    lognorm : float
-        The log of the normalization.
-
     Examples
     --------
     Create a 2 dimensional uniform distribution:
@@ -96,18 +80,19 @@ class Uniform(bounded.BoundedDist):
         super(Uniform, self).__init__(**params)
         # compute the norm and save
         # temporarily suppress numpy divide by 0 warning
-        numpy.seterr(divide='ignore')
-        self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
-                                    for bnd in self._bounds.values()])
-        self._norm = numpy.exp(self._lognorm)
-        numpy.seterr(divide='warn')
+        with numpy.errstate(divide="ignore"):
+            self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
+                                  for bnd in self._bounds.values()])
+            self._norm = numpy.exp(self._lognorm)
 
     @property
     def norm(self):
+        """float: The normalization of the multi-dimensional pdf."""
         return self._norm
 
     @property
     def lognorm(self):
+        """float: The log of the normalization"""
         return self._lognorm
 
     def _cdfinv_param(self, param, value):

@@ -26,13 +26,10 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string
-from six.moves import configparser as ConfigParser
-from six.moves import urllib
-from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
-from six.moves import cPickle
-import copy
+import os, stat, subprocess, logging, math, string, urllib, pickle, copy
+import configparser as ConfigParser
+from urllib.request import pathname2url
+from urllib.parse import urljoin
 import numpy, random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
@@ -41,12 +38,11 @@ import lal.utils
 import Pegasus.api  # Try and move this into pegasus_workflow
 from glue import lal as gluelal
 from ligo import segments
-from ligo.lw import table, lsctables, ligolw
+from ligo.lw import lsctables, ligolw
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import segments as ligolw_segments
-from ligo.lw.utils import process as ligolw_process
 from pycbc import makedir
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
 from . import pegasus_workflow
 from .configuration import WorkflowConfigParser, resolve_url
 from .pegasus_sites import make_catalog
@@ -102,8 +98,7 @@ class Executable(pegasus_workflow.Executable):
     # Sub classes, or instances, should override this. If not overriden the
     # file will be retained, but a warning given
     current_retention_level = KEEP_BUT_RAISE_WARNING
-    def __init__(self, cp, name,
-                 universe=None, ifos=None, out_dir=None, tags=None,
+    def __init__(self, cp, name, ifos=None, out_dir=None, tags=None,
                  reuse_executable=True, set_submit_subdir=True):
         """
         Initialize the Executable class.
@@ -137,7 +132,6 @@ class Executable(pegasus_workflow.Executable):
         else:
             self.ifo_string = None
         self.cp = cp
-        self.universe=universe
         self.name = name
         self.container_cls = None
         self.container_type = None
@@ -187,9 +181,10 @@ class Executable(pegasus_workflow.Executable):
 
         if exe_url.scheme in ['', 'file']:
             # NOTE: There could be a case where the exe is available at a
-            #       remote site, but not on the submit host. We could work to
-            #       allow this if it ever becomes a viable use-case. Some other
-            #       places (e.g. versioning) would have to be edited as well.
+            #       remote site, but not on the submit host. Currently allowed
+            #       for the OSG site, versioning will not work as planned if
+            #       we can't see the executable (can we perhaps run versioning
+            #       including singularity??)
 
             # Check that executables at file urls
             #  on the local site exist
@@ -197,8 +192,12 @@ class Executable(pegasus_workflow.Executable):
                 raise TypeError("Failed to find %s executable "
                                 "at %s on site %s" % (name, exe_path,
                                 exe_site))
+        elif exe_url.scheme == 'singularity':
+            # Will use an executable within a singularity container. Don't
+            # need to do anything here, as I cannot easily check it exists.
+            exe_path = exe_url.path
         else:
-            # Could be http, gsiftp, etc. so it needs fetching if run now
+            # Could be http, https, etc. so it needs fetching if run now
             self.needs_fetching = True
             if self.needs_fetching and not self.installed:
                 err_msg = "Non-file path URLs cannot be used unless the "
@@ -217,14 +216,6 @@ class Executable(pegasus_workflow.Executable):
             self.exe_pfns[exe_site] = exe_path
         logging.info("Using %s executable "
                      "at %s on site %s" % (name, exe_url.path, exe_site))
-
-        # Determine the condor universe if we aren't given one
-        if self.universe is None:
-            self.universe = 'vanilla'
-
-        if self.universe != 'vanilla':
-            logging.info("%s executable will run as %s universe"
-                         % (name, self.universe))
 
         # FIXME: This hasn't yet been ported to pegasus5 and won't work.
         #        Pegasus describes two ways to work with containers, and I need
@@ -268,9 +259,6 @@ class Executable(pegasus_workflow.Executable):
             super(Executable, self).__init__(self.pegasus_name,
                                              installed=self.installed)
 
-        self._set_pegasus_profile_options()
-        self.set_universe(self.universe)
-
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
 
@@ -278,6 +266,10 @@ class Executable(pegasus_workflow.Executable):
         if set_submit_subdir:
             self.add_profile('pegasus', 'relative.submit.dir',
                              self.pegasus_name)
+
+        # Set configurations from the config file, these should override all
+        # other settings
+        self._set_pegasus_profile_options()
 
         self.execution_site = exe_site
         self.executable_url = exe_path
@@ -323,22 +315,30 @@ class Executable(pegasus_workflow.Executable):
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
 
-    def add_ini_opts(self, cp, sec):
+    def _add_ini_opts(self, cp, sec, ignore_existing=False):
         """Add job-specific options from configuration file.
 
         Parameters
         -----------
         cp : ConfigParser object
-            The ConfigParser object holding the workflow configuration settings
+            The ConfigParser object holding the workflow configuration
+            settings
         sec : string
             The section containing options for this job.
         """
         for opt in cp.options(sec):
+            if opt in self.all_added_options:
+                if ignore_existing:
+                    continue
+                else:
+                    raise ValueError("Option %s has already been added" % opt)
+            self.all_added_options.add(opt)
+
             value = cp.get(sec, opt).strip()
-            opt = '--%s' %(opt,)
+            opt = f'--{opt}'
             if opt in self.file_input_options:
                 # This now expects the option to be a file
-                # Check is we have a list of files
+                # Check if we have a list of files
                 values = [path for path in value.split(' ') if path]
 
                 self.common_raw_options.append(opt)
@@ -388,6 +388,7 @@ class Executable(pegasus_workflow.Executable):
                 # stuff later.
                 self.unresolved_td_options[opt] = value
             else:
+                # This option comes from the config file(s)
                 self.common_options += [opt, value]
 
     def add_opt(self, opt, value=None):
@@ -544,7 +545,6 @@ class Executable(pegasus_workflow.Executable):
             self.tagged_name = "{0}-{1}".format(self.tagged_name,
                                                 self.ifo_string)
 
-
         # Determine the sections from the ini file that will configure
         # this executable
         sections = [self.name]
@@ -570,17 +570,23 @@ class Executable(pegasus_workflow.Executable):
 
         # collect the options and profile information
         # from the ini file section(s)
+        self.all_added_options = set()
         self.common_options = []
         self.common_raw_options = []
         self.unresolved_td_options = {}
         self.common_input_files = []
         for sec in sections:
             if self.cp.has_section(sec):
-                self.add_ini_opts(self.cp, sec)
+                self._add_ini_opts(self.cp, sec)
             else:
                 warn_string = "warning: config file is missing section "
                 warn_string += "[{0}]".format(sec)
                 logging.warn(warn_string)
+
+        # get uppermost section
+        if self.cp.has_section(f'{self.name}-defaultvalues'):
+            self._add_ini_opts(self.cp, f'{self.name}-defaultvalues',
+                               ignore_existing=True)
 
     def update_output_directory(self, out_dir=None):
         """Update the default output directory for output files.
@@ -640,9 +646,14 @@ class Workflow(pegasus_workflow.Workflow):
         else:
             dax_file = None
 
+        if hasattr(args, 'dax_file_directory'):
+            output_dir = args.dax_file_directory or args.output_dir or None
+        else:
+            output_dir = args.output_dir or None
+
         super(Workflow, self).__init__(
             name=name if name is not None else args.workflow_name,
-            directory=args.output_dir,
+            directory=output_dir,
             cache_file=args.cache_file,
             dax_file_name=dax_file,
         )
@@ -664,6 +675,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         self.ifos = ifos
         self.ifos.sort(key=str.lower)
+        self.get_ifo_combinations()
         self.ifo_string = ''.join(self.ifos)
 
         # Set up input and output file lists for workflow
@@ -766,7 +778,7 @@ class Workflow(pegasus_workflow.Workflow):
             fil.add_pfn(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
 
-    def save(self, filename=None, output_map_path=None):
+    def save(self, filename=None, output_map_path=None, root=True):
         # FIXME: Too close to pegasus to live here and not in pegasus_workflow
 
         if output_map_path is None:
@@ -792,13 +804,13 @@ class Workflow(pegasus_workflow.Workflow):
             self.add_container(container)
 
         # save the configuration file
-        ini_file = os.path.abspath(self.name + '.ini')
+        ini_file = os.path.join(self.out_dir, self.name + '.ini')
 
         # This shouldn't already exist, but just in case
         if os.path.isfile(ini_file):
             err_msg = "Refusing to overwrite configuration file that "
             err_msg += "shouldn't be there: "
-            err_msg += os.path.join(self.out_dir, ini_file)
+            err_msg += ini_file
             raise ValueError(err_msg)
 
         with open(ini_file, 'w') as fp:
@@ -815,7 +827,8 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).save(filename=filename,
                                    output_map_path=output_map_path,
                                    submit_now=self.args.submit_now,
-                                   plan_now=self.args.plan_now)
+                                   plan_now=self.args.plan_now,
+                                   root=root)
 
     def save_config(self, fname, output_dir, cp=None):
         """ Writes configuration file to disk and returns a pycbc.workflow.File
@@ -846,6 +859,16 @@ class Workflow(pegasus_workflow.Workflow):
         # set the storage path to be the same
         ini_file.storage_path = ini_file_path
         return FileList([ini_file])
+
+    def get_ifo_combinations(self):
+        """
+        Get a list of strings for all possible combinations of IFOs
+        in the workflow
+        """
+        self.ifo_combinations = []
+        for n in range(len(self.ifos)):
+            self.ifo_combinations += [''.join(ifos).lower() for ifos in
+                                      combinations(self.ifos, n + 1)]
 
 
 class Node(pegasus_workflow.Node):
@@ -1604,14 +1627,14 @@ class FileList(list):
         Load a FileList from a pickle file
         """
         f = open(filename, 'r')
-        return cPickle.load(f)
+        return pickle.load(f)
 
     def dump(self, filename):
         """
         Output this FileList to a pickle file
         """
         f = open(filename, 'w')
-        cPickle.dump(self, f)
+        pickle.dump(self, f)
 
     def to_file_object(self, name, out_dir):
         """Dump to a pickle file and return an File object reference
@@ -1696,13 +1719,12 @@ class SegFile(File):
         """
         seglistdict = segments.segmentlistdict()
         seglistdict[ifo + ':' + name] = segmentlist
+        seg_summ_dict = None
         if seg_summ_list is not None:
             seg_summ_dict = segments.segmentlistdict()
             seg_summ_dict[ifo + ':' + name] = seg_summ_list
-        else:
-            seg_summ_dict = None
         return cls.from_segment_list_dict(description, seglistdict,
-                                          seg_summ_dict=None, **kwargs)
+                                          seg_summ_dict=seg_summ_dict, **kwargs)
 
     @classmethod
     def from_multi_segment_list(cls, description, segmentlists, names, ifos,
@@ -1814,11 +1836,9 @@ class SegFile(File):
         xmldoc = ligolw_utils.load_fileobj(
                 fp, compress='auto', contenthandler=LIGOLWContentHandler)
 
-        seg_def_table = table.get_table(xmldoc,
-                                        lsctables.SegmentDefTable.tableName)
-        seg_table = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
-        seg_sum_table = table.get_table(xmldoc,
-                                        lsctables.SegmentSumTable.tableName)
+        seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
+        seg_table = lsctables.SegmentTable.get_table(xmldoc)
+        seg_sum_table = lsctables.SegmentSumTable.get_table(xmldoc)
 
         segs = segments.segmentlistdict()
         seg_summ = segments.segmentlistdict()
@@ -1899,7 +1919,7 @@ class SegFile(File):
         # create XML doc and add process table
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
-        process = ligolw_process.register_to_xmldoc(outdoc, sys.argv[0], {})
+        process = create_process_table(outdoc)
 
         for key, seglist in self.segment_dict.items():
             ifo, name = self.parse_segdict_key(key)
@@ -2079,6 +2099,31 @@ def resolve_url_to_file(curr_pfn, attrs=None):
     return curr_file
 
 
+def configparser_value_to_file(cp, sec, opt, attrs=None):
+    """
+    Fetch a file given its url location via the section
+    and option in the workflow configuration parser.
+
+    Parameters
+    -----------
+    cp : ConfigParser object
+         The ConfigParser object holding the workflow configuration settings
+    sec : string
+         The section containing options for this job.
+    opt : string
+         Name of option (e.g. --output-file)
+    attrs : list to specify the 4 attributes of the file.
+
+    Returns
+    --------
+    fileobj_from_path : workflow.File object obtained from the path
+        specified by opt, within sec, in cp.
+    """
+    path = cp.get(sec, opt)
+    fileobj_from_path = resolve_url_to_file(path, attrs=attrs)
+    return fileobj_from_path
+
+
 def get_full_analysis_chunk(science_segs):
     """
     Function to find the first and last time point contained in the science segments
@@ -2174,8 +2219,8 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
     parser : argparse.ArgumentParser
         Argument parser to add the options to.
     include_subdax_opts : bool, optional
-        If True, will add output-map, transformation-catalog, and dax-file
-        options to the parser. These can be used for workflows that are
+        If True, will add output-map and dax-file-directory options
+        to the parser. These can be used for workflows that are
         generated as a subdax of another workflow. Default is False.
     """
     wfgrp = parser.add_argument_group("Options for setting workflow files")
@@ -2205,3 +2250,11 @@ def add_workflow_settings_cli(parser, include_subdax_opts=False):
     if include_subdax_opts:
         wfgrp.add_argument("--output-map", default=None,
                            help="Path to an output map file.")
+        wfgrp.add_argument("--dax-file-directory", default=None,
+                           help="Put dax files (including output map, "
+                                "sites.yml etc. in this directory. The use "
+                                "case for this is when running a sub-workflow "
+                                "under pegasus the outputs need to be copied "
+                                "back to the appropriate directory, and "
+                                "using this as --dax-file-directory . allows "
+                                "that to be done.")

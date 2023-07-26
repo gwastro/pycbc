@@ -29,7 +29,7 @@ def start_end_from_segments(segment_file):
     from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
-    segment_table  = table.get_table(indoc, lsctables.SegmentTable.tableName)
+    segment_table  = lsctables.SegmentTable.get_table(indoc)
     start = numpy.array(segment_table.getColumnByName('start_time'))
     start_ns = numpy.array(segment_table.getColumnByName('start_time_ns'))
     end = numpy.array(segment_table.getColumnByName('end_time'))
@@ -109,9 +109,9 @@ def select_segments_by_definer(segment_file, segment_name=None, ifo=None):
     from pycbc.io.ligolw import LIGOLWContentHandler as h
 
     indoc = ligolw_utils.load_filename(segment_file, False, contenthandler=h)
-    segment_table  = table.get_table(indoc, 'segment')
+    segment_table  = table.Table.get_table(indoc, 'segment')
 
-    seg_def_table = table.get_table(indoc, 'segment_definer')
+    seg_def_table = table.Table.get_table(indoc, 'segment_definer')
     def_ifos = seg_def_table.getColumnByName('ifos')
     def_names = seg_def_table.getColumnByName('name')
     def_ids = seg_def_table.getColumnByName('segment_def_id')
@@ -208,8 +208,7 @@ def get_segment_definer_comments(xml_file, include_version=True):
     xmldoc = ligolw_utils.load_fileobj(xml_file,
                                        compress='auto',
                                        contenthandler=h)
-    seg_def_table = table.get_table(xmldoc,
-                                    lsctables.SegmentDefTable.tableName)
+    seg_def_table = lsctables.SegmentDefTable.get_table(xmldoc)
 
     # put comment column into a dict
     comment_dict = {}

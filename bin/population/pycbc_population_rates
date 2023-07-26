@@ -18,7 +18,7 @@
 
 """
 This script estimates black hole merger rates for astro-physical models:
-1) Uniform in log of the compoment mass
+1) Uniform in log of the component mass
 2) Power-law distribution of the masses
 3) Binary Neutron Star with uniform in masses specified in a range.
 
@@ -43,15 +43,15 @@ from numpy import logaddexp, log, newaxis, expm1
 
 
 # Parse command line
-parser = argparse.ArgumentParser(description = "Estimate rates for flat in "
+parser = argparse.ArgumentParser(description="Estimate rates for flat in "
                                      "log and power-law mass distribution.")
 parser.add_argument('--sim-files', nargs='+', required=True, help="List of "
                         "simulation files to estimate the sensitive volume")
-parser.add_argument('--m_dist', nargs = '+', required=True, help="Specify "
+parser.add_argument('--m_dist', nargs='+', required=True, help="Specify "
                                 "the mass distribution for the simulations")
-parser.add_argument('--s_dist', nargs = '+',required=True, help="Specify "
+parser.add_argument('--s_dist', nargs='+',required=True, help="Specify "
                                 "the spin distribution for the simulations")
-parser.add_argument('--d_dist', nargs = '+', required=True, help="Specify "
+parser.add_argument('--d_dist', nargs='+', required=True, help="Specify "
                             "the distance distribution for the simulations")
 parser.add_argument('--bank-file', required=True, help="File containing "
                                         "template bank used in the search.")
@@ -61,26 +61,26 @@ parser.add_argument('--prior-samples', required=True, help="File storing "
  "samples of prior for the analysis - posterior from the previous analysis")
 parser.add_argument('--output-file', required=True, help="Name of the "
                                   "output file for saving rate posteriors.")
-parser.add_argument('--thr-var', required=False, default = 'stat',
+parser.add_argument('--thr-var', required=False, default='stat',
                                   help="Variable used to define threshold.")
-parser.add_argument('--thr-val', type = float, required=False, default = 8.0, 
+parser.add_argument('--thr-val', type=float, required=False, default=8.0,
                                                  help="Value of threshold.")
-parser.add_argument('--population-model', required = True,
+parser.add_argument('--population-model', required=True,
                        help = 'Population model defined in rates_functions')
-parser.add_argument('--min-mass', type = float, required=True,
+parser.add_argument('--min-mass', type=float, required=True,
                                  help="Minimum mass of the compact object.")
-parser.add_argument('--max-mass', type = float, required=True,
+parser.add_argument('--max-mass', type=float, required=True,
                                  help="Maximum mass of the compact object.")
-parser.add_argument('--max-mtotal', type = float, required=True,
+parser.add_argument('--max-mtotal', type=float, required=True,
                                    help="Maximum total mass of the binary.")
-parser.add_argument('--min-tmplt-mchirp', type = float, required=True,
+parser.add_argument('--min-tmplt-mchirp', type=float, required=True,
                      help="Minimum chirp mass of the template considered "
                                               "for trigger identification.")
-parser.add_argument('--max-tmplt-mchirp', type = float, required=True,
+parser.add_argument('--max-tmplt-mchirp', type=float, required=True,
                      help="Maximum chirp mass in the template considered "
                                               "for trigger identification.")
 parser.add_argument('--calibration-error', dest='cal_err', type=float,
-                 required=False, default = 3.0, help="Percentage calibration"
+                 required=False, default=3.0, help="Percentage calibration"
                                       " errors in measurement of distance.")
 
 opts = parser.parse_args()

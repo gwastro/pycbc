@@ -10,7 +10,7 @@ To start a Docker container with no graphics, type the commands::
     docker pull pycbc/pycbc-el8:latest
     docker run -it pycbc/pycbc-el8:latest
 
-This example downloads current version of the code from the `GitHub master branch. <https://github.com/ligo-cbc/pycbc>`_ Replace the string ``latest`` with one of the `PyCBC release tags <https://github.com/ligo-cbc/pycbc/releases>`_ (e.g. ``v1.7.0``) to install a container containing a released version of PyCBC. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite installed into the root filesystem. The command above starts a login shell as the pycbc user. To override this and log in as root, run the command::
+This example downloads current version of the code from the `GitHub master branch. <https://github.com/gwastro/pycbc>`_ Replace the string ``latest`` with one of the `PyCBC release tags <https://github.com/gwastro/pycbc/releases>`_ (e.g. ``v1.7.0``) to install a container containing a released version of PyCBC. The container includes all of the required software and dependencies to run PyCBC, including a compatible version of LALSuite installed into the root filesystem. The command above starts a login shell as the pycbc user. To override this and log in as root, run the command::
 
    docker run -it pycbc/pycbc-el8:latest /bin/bash -l
 

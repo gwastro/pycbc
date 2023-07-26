@@ -1,7 +1,8 @@
+import matplotlib.pyplot as pp
 from pycbc.filter import highpass_fir, lowpass_fir
 from pycbc.psd import welch, interpolate
 from pycbc.catalog import Merger
-import pylab
+
 
 for ifo in ['H1', 'L1']:
     # Read data and remove low frequency content
@@ -16,21 +17,19 @@ for ifo in ['H1', 'L1']:
 
     # remove some of the high and low
     smooth = highpass_fir(white_strain, 35, 8)
-    smooth = lowpass_fir(white_strain, 300, 8)
+    smooth = lowpass_fir(smooth, 300, 8)
 
     # time shift and flip L1
     if ifo == 'L1':
         smooth *= -1
         smooth.roll(int(.007 / smooth.delta_t))
 
-    pylab.plot(smooth.sample_times, smooth, label=ifo)
+    pp.plot(smooth.sample_times, smooth, label=ifo)
 
-pylab.legend()
-pylab.xlim(1126259462.21, 1126259462.45)
-pylab.ylim(-150, 150)
-pylab.ylabel('Smoothed-Whitened Strain')
-pylab.grid()
-pylab.xlabel('GPS Time (s)')
-pylab.show()
-
-
+pp.legend()
+pp.xlim(1126259462.21, 1126259462.45)
+pp.ylim(-150, 150)
+pp.ylabel('Smoothed-Whitened Strain')
+pp.grid()
+pp.xlabel('GPS Time (s)')
+pp.show()

@@ -19,7 +19,6 @@
 """Prints an RST table of available psd models.
 """
 
-from __future__ import (print_function, absolute_import)
 
 from pycbc import psd
 

@@ -30,14 +30,13 @@ import numpy as np
 import lal
 import copy
 import logging
-from six import add_metaclass
 from abc import ABCMeta, abstractmethod
-import lalsimulation as sim
 import h5py
-from pycbc import waveform
-from pycbc import frame
+from pycbc import waveform, frame, libutils
 from pycbc.opt import LimitedSizeDict
-from pycbc.waveform import get_td_waveform, utils as wfutils
+from pycbc.waveform import (get_td_waveform, fd_det,
+                            get_td_det_waveform_from_fd_det)
+from pycbc.waveform import utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
 from pycbc.types import float64, float32, TimeSeries, load_timeseries
 from pycbc.detector import Detector
@@ -45,14 +44,14 @@ from pycbc.conversions import tau0_from_mass1_mass2
 from pycbc.filter import resample_to_delta_t
 import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw import utils as ligolw_utils, ligolw, table, lsctables
+from ligo.lw import utils as ligolw_utils, ligolw, lsctables
 
+sim = libutils.import_optional('lalsimulation')
 
 injection_func_map = {
-    np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
-    np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
+    np.dtype(float32): lambda *args: sim.SimAddInjectionREAL4TimeSeries(*args),
+    np.dtype(float64): lambda *args: sim.SimAddInjectionREAL8TimeSeries(*args),
 }
-
 
 # Map parameter names used in pycbc to names used in the sim_inspiral
 # table, if they are different
@@ -72,6 +71,9 @@ def set_sim_data(inj, field, data):
     if sim_field == 'tc':
         inj.geocent_end_time = int(data)
         inj.geocent_end_time_ns = int(1e9*(data % 1))
+    # for spin1 and spin2 we need data to be an array
+    if sim_field in ['spin1', 'spin2']:
+        setattr(inj, sim_field, [0, 0, data])
     else:
         setattr(inj, sim_field, data)
 
@@ -153,7 +155,7 @@ class _XMLInjectionSet(object):
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
+        self.table = lsctables.SimInspiralTable.get_table(self.indoc)
         self.extra_args = kwds
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
@@ -326,15 +328,13 @@ class _XMLInjectionSet(object):
             for (field, value) in static_args.items():
                 set_sim_data(sim, field, value)
             simtable.append(sim)
-        ligolw_utils.write_filename(xmldoc, filename,
-                                    gz=filename.endswith('gz'))
+        ligolw_utils.write_filename(xmldoc, filename, compress='auto')
 
 
 # -----------------------------------------------------------------------------
 
 
-@add_metaclass(ABCMeta)
-class _HDFInjectionSet(object):
+class _HDFInjectionSet(metaclass=ABCMeta):
     """Manages sets of injections: reads injections from hdf files
     and injects them into time series.
 
@@ -356,6 +356,7 @@ class _HDFInjectionSet(object):
         Parameter names that must exist in the injection HDF file in order to
         create an injection of that type.
     """
+
     _tableclass = pycbc.io.FieldArray
     injtype = None
     required_params = ()
@@ -535,9 +536,13 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                     + str(strain.dtype))
 
         lalstrain = strain.lal()
-        earth_travel_time = lal.REARTH_SI / lal.C_SI
-        t0 = float(strain.start_time) - earth_travel_time
-        t1 = float(strain.end_time) + earth_travel_time
+        if self.table[0]['approximant'] in fd_det:
+            t0 = float(strain.start_time)
+            t1 = float(strain.end_time)
+        else:
+            earth_travel_time = lal.REARTH_SI / lal.C_SI
+            t0 = float(strain.start_time) - earth_travel_time
+            t1 = float(strain.end_time) + earth_travel_time
 
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
@@ -622,11 +627,18 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         else:
             f_l = f_lower
 
-        # compute the waveform time series
-        hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
-                                 **self.extra_args)
-        return projector(detector_name,
-                         inj, hp, hc, distance_scale=distance_scale)
+        if inj['approximant'] in fd_det:
+            strain = get_td_det_waveform_from_fd_det(
+                        inj, delta_t=delta_t, f_lower=f_l,
+                        ifos=detector_name, **self.extra_args)[detector_name]
+            strain /= distance_scale
+        else:
+            # compute the waveform time series
+            hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
+                                     **self.extra_args)
+            strain = projector(detector_name,
+                               inj, hp, hc, distance_scale=distance_scale)
+        return strain
 
     def end_times(self):
         """Return the end times of all injections"""
@@ -638,6 +650,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         for d in [waveform.waveform.td_wav, waveform.waveform.fd_wav]:
             for key in d:
                 all_apprxs.extend(d[key])
+        all_apprxs.extend(waveform.waveform.fd_det)
         return list(set(all_apprxs))
 
 
@@ -1182,8 +1195,7 @@ class SGBurstInjectionSet(object):
     def __init__(self, sim_file, **kwds):
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
-        self.table = table.get_table(
-            self.indoc, lsctables.SimBurstTable.tableName)
+        self.table = lsctables.SimBurstTable.get_table(self.indoc)
         self.extra_args = kwds
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1):

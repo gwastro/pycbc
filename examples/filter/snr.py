@@ -1,8 +1,9 @@
+import matplotlib.pyplot as pp
 import pycbc.noise
 import pycbc.psd
 import pycbc.filter
 import pycbc.waveform
-import pylab
+
 
 # Generate some noise with an advanced ligo psd
 flow = 30.0
@@ -17,7 +18,7 @@ strain = pycbc.noise.noise_from_psd(tsamples, delta_t, psd, seed=127)
 stilde = strain.to_frequencyseries()
 
 # Use a waveform as a matched filter
-hp, hc = pycbc.waveform.get_fd_waveform(approximant="SEOBNRv2_ROM_DoubleSpin",
+hp, hc = pycbc.waveform.get_fd_waveform(approximant='IMRPhenomD',
                              mass1=25, mass2=25,
                              f_lower=flow, delta_f=stilde.delta_f)
 
@@ -26,7 +27,7 @@ snr = pycbc.filter.matched_filter(hp, stilde, psd=psd,
                                       low_frequency_cutoff=flow)
 
 
-pylab.plot(snr.sample_times, abs(snr))
-pylab.ylabel('signal-to-noise ratio')
-pylab.xlabel('time (s)')
-pylab.show()
+pp.plot(snr.sample_times, abs(snr))
+pp.ylabel('signal-to-noise ratio')
+pp.xlabel('time (s)')
+pp.show()

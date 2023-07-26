@@ -23,10 +23,9 @@ import itertools
 import numpy as np
 from utils import parse_args_cpu_only, simple_exit
 from pycbc.types import TimeSeries, FrequencySeries
-from pycbc.io.live import SingleCoincForGraceDB
+from pycbc.io.live import CandidateForGraceDB
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw import lsctables
-from ligo.lw import table
 from ligo.lw import utils as ligolw_utils
 from lal import series as lalseries
 
@@ -55,16 +54,19 @@ class TestIOLive(unittest.TestCase):
 
         self.possible_ifos = 'H1 L1 V1 K1 I1'.split()
 
-    def do_test(self, n_ifos, n_ifos_followup):
+    def do_test(self, n_ifos, n_ifos_extra):
         # choose a random selection of interferometers
-        # n_ifos will be used to generate the simulated trigger
-        # n_ifos_followup will be used as followup-only
-        all_ifos = random.sample(self.possible_ifos, n_ifos + n_ifos_followup)
+        # n_ifos will be used to generate the simulated trigger including
+        # significance followup
+        # n_ifos_extra will be used for sky loc only
+        all_ifos = random.sample(self.possible_ifos, n_ifos + n_ifos_extra)
         trig_ifos = all_ifos[0:n_ifos]
+        # take 2 ifos to represent the initial coinc trigger
+        coinc_ifos = all_ifos[0:2]
 
         results = {'foreground/stat': np.random.uniform(4, 20),
                    'foreground/ifar': np.random.uniform(0.01, 1000)}
-        followup_data = {}
+        skyloc_data = {}
         for ifo in all_ifos:
             offset = 10000 + np.random.uniform(-0.02, 0.02)
             amplitude = np.random.uniform(4, 20)
@@ -88,18 +90,18 @@ class TestIOLive(unittest.TestCase):
                 results[base + 'end_time'] = t_peak + offset
                 results[base + 'snr'] = amplitude
                 results[base + 'sigmasq'] = np.random.uniform(1e6, 2e6)
-            followup_data[ifo] = {'snr_series': snr_series,
+            skyloc_data[ifo] = {'snr_series': snr_series,
                                   'psd': psd}
 
         for ifo, k in itertools.product(trig_ifos, self.template):
             results['foreground/' + ifo + '/' + k] = self.template[k]
 
         channel_names = {ifo: 'TEST' for ifo in all_ifos}
-        kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in all_ifos},
+        kwargs = {'psds': {ifo: skyloc_data[ifo]['psd'] for ifo in all_ifos},
                   'low_frequency_cutoff': 20.,
-                  'followup_data': followup_data,
+                  'skyloc_data': skyloc_data,
                   'channel_names': channel_names}
-        coinc = SingleCoincForGraceDB(trig_ifos, results, **kwargs)
+        coinc = CandidateForGraceDB(coinc_ifos, trig_ifos, results, **kwargs)
 
         tempdir = tempfile.mkdtemp()
 
@@ -119,11 +121,9 @@ class TestIOLive(unittest.TestCase):
         read_coinc = ligolw_utils.load_filename(
                 coinc_file_name, verbose=False,
                 contenthandler=LIGOLWContentHandler)
-        single_table = table.get_table(
-                read_coinc, lsctables.SnglInspiralTable.tableName)
+        single_table = lsctables.SnglInspiralTable.get_table(read_coinc)
         self.assertEqual(len(single_table), len(all_ifos))
-        coinc_table = table.get_table(
-                read_coinc, lsctables.CoincInspiralTable.tableName)
+        coinc_table = lsctables.CoincInspiralTable.get_table(read_coinc)
         self.assertEqual(len(coinc_table), 1)
 
         # make sure lalseries can read the PSDs

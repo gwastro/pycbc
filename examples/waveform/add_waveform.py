@@ -1,7 +1,10 @@
-def test_waveform(**args):
-    import numpy
-    from pycbc.types import TimeSeries
+import numpy
+import matplotlib.pyplot as pp
+import pycbc.waveform
+from pycbc.types import TimeSeries
 
+
+def test_waveform(**args):
     flow = args['f_lower'] # Required parameter
     dt = args['delta_t']   # Required parameter
     fpeak = args['fpeak']  # A new parameter for my model
@@ -22,8 +25,6 @@ def test_waveform(**args):
     wf = TimeSeries(wf, delta_t=dt, epoch=offset)
     return wf.real(), wf.imag()
 
-import pylab
-import pycbc.waveform
 
 # This tells pycbc about our new waveform so we can call it from standard
 # pycbc functions. If this were a frequency-domain model, select 'frequency'
@@ -34,14 +35,14 @@ pycbc.waveform.add_custom_waveform('test', test_waveform, 'time', force=True)
 hp, hc = pycbc.waveform.get_td_waveform(approximant="test",
                                         f_lower=20, fpeak=50,
                                         delta_t=1.0/4096)
-pylab.figure(0)
-pylab.plot(hp.sample_times, hp)
-pylab.xlabel('Time (s)')
+pp.figure(0)
+pp.plot(hp.sample_times, hp)
+pp.xlabel('Time (s)')
 
-pylab.figure(1)
+pp.figure(1)
 hf = hp.to_frequencyseries()
-pylab.plot(hf.sample_frequencies, hf.real())
-pylab.xlabel('Frequency (Hz)')
-pylab.xscale('log')
-pylab.xlim(20, 100)
-pylab.show()
+pp.plot(hf.sample_frequencies, hf.real())
+pp.xlabel('Frequency (Hz)')
+pp.xscale('log')
+pp.xlim(20, 100)
+pp.show()

@@ -554,17 +554,17 @@ def td_damped_sinusoid(f_0, tau, amp, phi, times,
         (:math:`\Delta \beta_{lmn}` in the above). Default is 0. If this and
         dphi are both 0, will have circularly polarized waves.
     harmonics : {'spherical', 'spheroidal', 'arbitrary'}, optional
-        Which harmonics to use. See :py:func:`spher_harms for details.
+        Which harmonics to use. See :py:func:`spher_harms` for details.
         Default is spherical.
     final_spin : float, optional
         The dimensionless spin of the black hole. Only needed if
         ``harmonics='spheroidal'``.
     pol : float, optional
         Angle to use for +m arbitrary harmonics. Only needed if
-        ``harmonics='arbitrary'``. See :py:func:`spher_harms for details.
+        ``harmonics='arbitrary'``. See :py:func:`spher_harms` for details.
     polnm : float, optional
         Angle to use for -m arbitrary harmonics. Only needed if
-        ``harmonics='arbitrary'``. See :py:func:`spher_harms for details.
+        ``harmonics='arbitrary'``. See :py:func:`spher_harms` for details.
 
     Returns
     -------
@@ -652,17 +652,17 @@ def fd_damped_sinusoid(f_0, tau, amp, phi, freqs, t_0=0.,
         The azimuthal angle (:math:`\varphi` in the above). Ignored if
         ``harmonics='arbitrary'``. Default is 0.
     harmonics : {'spherical', 'spheroidal', 'arbitrary'}, optional
-        Which harmonics to use. See :py:func:`spher_harms for details.
+        Which harmonics to use. See :py:func:`spher_harms` for details.
         Default is spherical.
     final_spin : float, optional
         The dimensionless spin of the black hole. Only needed if
         ``harmonics='spheroidal'``.
     pol : float, optional
         Angle to use for +m arbitrary harmonics. Only needed if
-        ``harmonics='arbitrary'``. See :py:func:`spher_harms for details.
+        ``harmonics='arbitrary'``. See :py:func:`spher_harms` for details.
     polnm : float, optional
         Angle to use for -m arbitrary harmonics. Only needed if
-        ``harmonics='arbitrary'``. See :py:func:`spher_harms for details.
+        ``harmonics='arbitrary'``. See :py:func:`spher_harms` for details.
 
     Returns
     -------
@@ -877,14 +877,14 @@ def get_td_from_final_mass_spin(template=None, **kwargs):
     pollmn : float, optional
         Angle to use for +m arbitrary harmonics of the lmn mode in radians
         (example: ``pol220 = 0.1``. Only needed if ``harmonics='arbitrary'``,
-        ignored otherwise. See :py:func:`spher_harms for details.
+        ignored otherwise. See :py:func:`spher_harms` for details.
     polnmlmn : float, optional
         Angle to use for -m arbitrary harmonics of the lmn mode in radians
         (example: ``polnm220 = 0.1``). Only needed if
-        ``harmonics='arbitrary'``, ignored otherwise. See :py:func:`spher_harms
+        ``harmonics='arbitrary'``, ignored otherwise. See :py:func:`spher_harms`
         for details.
     harmonics : {'spherical', 'spheroidal', 'arbitrary'}, optional
-        Which harmonics to use. See :py:func:`spher_harms for details.
+        Which harmonics to use. See :py:func:`spher_harms` for details.
         Default is spherical.
     delta_flmn: {None, float}, optional
         GR deviation for the frequency of the lmn mode. If given, the lmn
@@ -975,14 +975,14 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
     pollmn : float, optional
         Angle to use for +m arbitrary harmonics of the lmn mode in radians
         (example: ``pol220 = 0.1``. Only needed if ``harmonics='arbitrary'``,
-        ignored otherwise. See :py:func:`spher_harms for details.
+        ignored otherwise. See :py:func:`spher_harms` for details.
     polnmlmn : float, optional
         Angle to use for -m arbitrary harmonics of the lmn mode in radians
         (example: ``polnm220 = 0.1``). Only needed if
-        ``harmonics='arbitrary'``, ignored otherwise. See :py:func:`spher_harms
+        ``harmonics='arbitrary'``, ignored otherwise. See :py:func:`spher_harms`
         for details.
     harmonics : {'spherical', 'spheroidal', 'arbitrary'}, optional
-        Which harmonics to use. See :py:func:`spher_harms for details.
+        Which harmonics to use. See :py:func:`spher_harms` for details.
         Default is spherical.
     delta_flmn: {None, float}, optional
         GR deviation for the frequency of the lmn mode. If given, the lmn
@@ -1082,14 +1082,14 @@ def get_td_from_freqtau(template=None, **kwargs):
     pollmn : float, optional
         Angle to use for +m arbitrary harmonics of the lmn mode in radians
         (example: ``pol220 = 0.1``. Only needed if ``harmonics='arbitrary'``,
-        ignored otherwise. See :py:func:`spher_harms for details.
+        ignored otherwise. See :py:func:`spher_harms` for details.
     polnmlmn : float, optional
         Angle to use for -m arbitrary harmonics of the lmn mode in radians
         (example: ``polnm220 = 0.1``). Only needed if
-        ``harmonics='arbitrary'``, ignored otherwise. See :py:func:`spher_harms
+        ``harmonics='arbitrary'``, ignored otherwise. See :py:func:`spher_harms`
         for details.
     harmonics : {'spherical', 'spheroidal', 'arbitrary'}, optional
-        Which harmonics to use. See :py:func:`spher_harms for details.
+        Which harmonics to use. See :py:func:`spher_harms` for details.
         Default is spherical.
     final_spin : float, optional
         Dimensionless spin of the final black hole. This is required if
@@ -1186,14 +1186,14 @@ def get_fd_from_freqtau(template=None, **kwargs):
     pollmn : float, optional
         Angle to use for +m arbitrary harmonics of the lmn mode in radians
         (example: ``pol220 = 0.1``. Only needed if ``harmonics='arbitrary'``,
-        ignored otherwise. See :py:func:`spher_harms for details.
+        ignored otherwise. See :py:func:`spher_harms` for details.
     polnmlmn : float, optional
         Angle to use for -m arbitrary harmonics of the lmn mode in radians
         (example: ``polnm220 = 0.1``). Only needed if
-        ``harmonics='arbitrary'``, ignored otherwise. See :py:func:`spher_harms
+        ``harmonics='arbitrary'``, ignored otherwise. See :py:func:`spher_harms`
         for details.
     harmonics : {'spherical', 'spheroidal', 'arbitrary'}, optional
-        Which harmonics to use. See :py:func:`spher_harms for details.
+        Which harmonics to use. See :py:func:`spher_harms` for details.
         Default is spherical.
     final_spin : float, optional
         Dimensionless spin of the final black hole. This is required if
