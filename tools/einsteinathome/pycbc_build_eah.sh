@@ -1301,7 +1301,7 @@ cd test
 if $run_analysis; then
 echo -e "\\n\\n>> [`date`] running analysis" >&3
 
-echo -e "\\n\\n>> [`date`] downloading LOSC frame data" >&3
+echo -e "\\n\\n>> [`date`] downloading GWOSC frame data" >&3
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
 if check_md5 "$p" "$md5"; then
