@@ -145,8 +145,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         # set lower/upper frequency cutoff
         if high_frequency_cutoff is None:
             high_frequency_cutoff = {ifo: None for ifo in self.data}
-        self._f_upper = high_frequency_cutoff
-        self._f_lower = low_frequency_cutoff
+        self._f_upper = {ifo: None for ifo in self.data}
+        self._f_lower = {ifo: None for ifo in self.data}
 
         # Set the cutoff indices
         self._kmin = {}
