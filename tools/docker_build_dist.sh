@@ -97,7 +97,7 @@ elif [ -f /apps/compilers/intel/2019.3/compilers_and_libraries/linux/mkl/bin/mkl
 fi
 
 # Use the ROM data from CVMFS
-export LAL_DATA_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/e02dab8c/share/lalsimulation
+export LAL_DATA_PATH=/cvmfs/software.igwn.org/pycbc/lalsuite-extra/e02dab8c/share/lalsimulation
 EOF
 
   deactivate
