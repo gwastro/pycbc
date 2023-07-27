@@ -27,7 +27,6 @@ import os
 import logging
 import numpy
 import h5py
-import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import rc
 import pycbc.version
@@ -105,7 +104,7 @@ ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
 ax.set_ylabel(ylabel)#, fontsize=16)
 # TODO: Check this conversion + all other sky position units
-ax.plot(np.rad2deg(trig_data['network/ra']), np.rad2deg(trig_data['network/dec']),
+ax.plot(numpy.rad2deg(trig_data['network/ra']), numpy.rad2deg(trig_data['network/dec']),
         'ko', markerfacecolor='blue')
 # Wrap up
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
