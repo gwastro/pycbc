@@ -238,7 +238,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     if match_fltr_exe == 'pycbc_multi_inspiral':
         exe_class = select_matchedfilter_class(match_fltr_exe)
-        # Right ascension + declination provided in degrees, so convert to radians
+        # Right ascension + declination provided in degrees,
+        # so convert to radians
         cp.set('inspiral', 'ra',
                str(radians(float(cp.get('workflow', 'ra')))))
         cp.set('inspiral', 'dec',
