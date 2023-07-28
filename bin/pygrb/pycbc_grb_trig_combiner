@@ -279,6 +279,11 @@ def bin_events(inputfile, bins, outdir, filetag,
                             compression_opts=old.compression_opts,
                         )
                         bar.update()
+                    elif isinstance(old, h5py.Group):
+                        # If search group, copy it all over
+                        if "search" in old.name:
+                            h5in.copy(h5in[old.name], h5out, old.name)
+                            bar.update()
                 for ifo in ifos:
                     idx = numpy.in1d(h5in[ifo]["event_id"][()], ifo_index[ifo])
                     for old in h5in[ifo].values():
@@ -290,6 +295,10 @@ def bin_events(inputfile, bins, outdir, filetag,
                                 compression_opts=old.compression_opts,
                             )
                             bar.update()
+                        elif isinstance(old, h5py.Group):
+                            if "search" in old.name:
+                                h5in.copy(h5in[old.name], h5out, old.name)
+                                bar.update()
             bar.close()
             if verbose:
                 print("{} written to {}".format(bin_, outf))
