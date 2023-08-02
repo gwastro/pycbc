@@ -1,4 +1,5 @@
 # Copyright (C) 2022  Collin Capano
+#               2023  Alex Nitz & Shichao Wu
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -29,6 +30,7 @@ import logging
 from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
+from .relbin import RelativeTimeDom
 
 #
 # =============================================================================
@@ -592,6 +594,195 @@ class MultiSignalModel(HierarchicalModel):
         # Calculate the combined loglikelihood
         p = self.primary_model
         logl = self.submodels[p].multi_loglikelihood(self.other_models)
+
+        # store any extra stats from the submodels
+        for lbl, model in self.submodels.items():
+            mstats = model.current_stats
+            for stat in self.extra_stats_map[lbl]:
+                setattr(self._current_stats, stat, mstats[stat.subname])
+        return logl
+
+
+class MultibandRelativeTimeDom(RelativeTimeDom, HierarchicalModel):
+    """ Hierarchical heterodyne likelihood for coherent multiband
+    parameter estimation which combines data from space-borne and
+    ground-based GW detectors coherently. Currently, this only
+    supports LISA for space-borne GW detectors.
+
+    Sub models are treated as if the same signal (such as GW from
+    stellar-mass BBH) is observed in different frequency band by
+    space-borne and ground-based GW detectors, then transform all
+    the parameters into the same frame, use `HierarchicalModel` to get
+    the joint likelihood, and marginalize over all the extrinsic
+    parameters supported by `RelativeTimeDom`. Note that LISA submodel
+    only supports the `Relative` for now, for ground-based detectors,
+    please use `RelativeTimeDom`.
+    """
+    name = 'multiband_relative_time_dom'
+
+    def __init__(self, variable_params, submodels, **kwargs):
+        super().__init__(variable_params, submodels, **kwargs)
+
+        # We assume ground-based submodel as the primary model.
+        lbl_primary = self.submodels[0]
+        self.primary_model = self.submodels[lbl_primary]
+        if self.primary_model.still_needs_det_response:
+            lbl_primary = self.submodels[1]
+            self.primary_model = self.submodels[lbl_primary]
+        self.other_models = self.submodels.copy()
+        self.other_models.pop(self.primary_model)
+        self.other_models = list(self.other_models.values())
+
+    def write_metadata(self, fp, group=None):
+        """Adds metadata to the output files
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.BaseInferenceFile instance
+            The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
+        """
+        super().write_metadata(fp, group=group)
+        sampattrs = fp.getattrs(group=fp.samples_group)
+        # if a group is specified, prepend the lognl names with it
+        if group is None or group == '/':
+            prefix = ''
+        else:
+            prefix = group.replace('/', '__')
+            if not prefix.endswith('__'):
+                prefix += '__'
+        try:
+            model = self.submodels[self.primary_model]
+            sampattrs['{}lognl'.format(prefix)] = model.lognl
+        except AttributeError:
+            pass
+
+    def get_snr(self, wfs):
+        """ Return hp/hc maximized SNR time series.
+        Note that we also calculate sh/hh of each TDI channel
+        for space-borne detectors, but only return snrs from
+        ground-based detectors for the marginalization over
+        (tc, ra, dec), because we assume for SOBHB signal,
+        ground-based detectors dominant SNR and accuracy of
+        (tc, ra, dec).
+        """
+        snrs = {}
+        self.sh = {}
+        self.hh = {}
+
+        # calculate snrs, sh, and hh from ground-based detectors
+        model = self.primary_model
+        delta_t = 1.0 / model.sample_rate
+
+        for ifo in model.det:
+            sdat = model.sdat[ifo]
+            dtc = model.tstart[ifo] - model.end_time[ifo] - model.ta[ifo]
+
+            sh, hh = snr_predictor_dom(model.fedges[ifo],
+                                       dtc - delta_t * 2.0, delta_t,
+                                       model.num_samples[ifo] + 4,
+                                       wfs[ifo][0],
+                                       model.h00_sparse[ifo],
+                                       sdat['a0'], sdat['a1'],
+                                       sdat['b0'], sdat['b1'])
+            snr = TimeSeries(abs(sh[2:-2]) / hh ** 0.5,
+                             delta_t=delta_t,
+                             epoch=model.tstart[ifo])
+            snrs[ifo] = snr
+            self.sh[ifo] = TimeSeries(sh, delta_t=delta_t,
+                                      epoch=model.tstart[ifo] - delta_t * 2.0)
+            self.hh[ifo] = hh
+
+        # calculate sh and hh from space-borne detectors
+        model = self.other_models
+        lik = model.likelihood_function
+        for ifo in model.det:
+            freqs = model.fedges[ifo]
+            sdat = model.sdat[ifo]
+            h00 = model.h00_sparse[ifo]
+            end_time = model.end_time[ifo]
+            times = model.antenna_time[ifo]
+            channel = wfs[ifo].numpy()
+            sh, hh = lik(freqs, 0.0, channel, h00,
+                         sdat['a0'], sdat['a1'],
+                         sdat['b0'], sdat['b1'])
+            self.sh[ifo] = sh
+            self.hh[ifo] = hh
+
+        return snrs
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
+        wfs = {}
+        for model in [self.primary_model, self.other_models]:
+            p = model.current_params
+            p2 = p.copy()
+            p2.pop('inclination')
+            wfs += model.get_waveforms(p2)
+
+        sh_total = hh_total = 0
+        ic = numpy.cos(p['inclination'])
+        ip = 0.5 * (1.0 + ic * ic)
+        pol_phase = numpy.exp(-2.0j * p['polarization'])
+
+        # here we assume the SNR is dominant by ground-based detectors,
+        # only use snrs from ground-based detectors
+        snrs = self.get_snr(wfs)
+        self.snr_draw(snrs=snrs)
+
+        # calculate sh_total and hh_total of ground-based detectors
+        for ifo in self.primary_model.det:
+            if self.primary_model.precalc_antenna_factors:
+                fp, fc, dt = self.primary_model.get_precalc_antenna_factors(ifo)
+            else:
+                dt = self.primary_model.det[ifo].time_delay_from_earth_center(
+                            p['ra'], p['dec'], p['tc'])
+                fp, fc = self.primary_model.det[ifo].antenna_pattern(
+                            p['ra'], p['dec'], 0, p['tc'])
+            dts = p['tc'] + dt
+            f = (fp + 1.0j * fc) * pol_phase
+
+            # Note, this includes complex conjugation already
+            # as our stored inner products were hp* x data
+            htf = (f.real * ip + 1.0j * f.imag * ic)
+
+            sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
+            sh_total += sh * htf
+            hh_total += self.hh[ifo] * abs(htf) ** 2.0
+
+        for ifo in self.other_models.det:
+            sh_total += self.sh[ifo]
+            hh_total += self.hh[ifo]
+
+        loglr = self.marginalize_loglr(sh_total, hh_total)
+        return loglr
+
+    def _loglikelihood(self):
+        for lbl, model in self.submodels.items():
+            # Update the parameters of each
+            model.update(**{p.subname: self.current_params[p.fullname]
+                            for p in self.param_map[lbl]})
+
+        # # Calculate the combined loglikelihood
+        logl = self.loglr + self.primary_model.lognl + self.other_models.lognl
 
         # store any extra stats from the submodels
         for lbl, model in self.submodels.items():
