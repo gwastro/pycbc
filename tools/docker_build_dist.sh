@@ -47,7 +47,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum -y install python3-virtualenv
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static swig fftw-static gsl-static --skip-broken
 
-  CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/${ENV_OS}/virtualenv
+  CVMFS_PATH=/cvmfs/software.igwn.org/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
 
   VENV_PATH=${CVMFS_PATH}/pycbc-${SOURCE_TAG}
@@ -97,7 +97,7 @@ elif [ -f /apps/compilers/intel/2019.3/compilers_and_libraries/linux/mkl/bin/mkl
 fi
 
 # Use the ROM data from CVMFS
-export LAL_DATA_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/e02dab8c/share/lalsimulation
+export LAL_DATA_PATH=/cvmfs/software.igwn.org/pycbc/lalsuite-extra/e02dab8c/share/lalsimulation
 EOF
 
   deactivate

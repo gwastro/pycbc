@@ -181,7 +181,7 @@ You can plot the ASCII waveform files with an X11 connection. It's strongly reco
 
 where ``${OUTPUT_PATH}`` is the path to the output plot.
 
-If you are using ``ssh`` or ``gsissh`` to log into a cluster, you can provide the ``-Y`` option to open an X11 connection. For example ::
+If you are using ``ssh`` to log into a cluster, you can provide the ``-Y`` option to open an X11 connection. For example ::
 
   gsissh -Y ldas-pcdev1.ligo.caltech.edu
 

@@ -17,9 +17,7 @@ exec 2>&1
 
 LOCAL_PEGASUS_DIR=""
 PEGASUS_PROPERTIES=""
-NO_CREATE_PROXY=0
 NO_QUERY_DB=0
-NO_GRID=""
 SUBMIT_DAX="--submit"
 HTML_ENTITIES="{\"\'\": '&#39;', '(': '&#40;', ')': '&#41;', '+': '&#43;', '\"': '&quot;'}"
 
@@ -54,7 +52,6 @@ while true ; do
         "") shift 2 ;;
         *) echo $2 >> extra-properties.conf ; shift 2 ;;
       esac ;;
-    -K|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
     -Q|--no-query-db) NO_QUERY_DB=1 ; shift ;;
     -n|--no-submit) SUBMIT_DAX="" ; shift ;;
     -l|--local-dir)
@@ -62,7 +59,6 @@ while true ; do
         "") shift 2 ;;
         *) LOCAL_PEGASUS_DIR=$2 ; shift 2 ;;
       esac ;;
-    -G|--no-grid) NO_GRID="--forward nogrid" ; shift ;;
     -h|--help)
       echo "usage: pycbc_submit_dax [-h] [optional arguments]"
       echo
@@ -72,13 +68,9 @@ while true ; do
       echo "                               the pegasus properties file"
       echo "  -P, --append-pegasus-property STRING add the extra property"
       echo "                                          specified by the argument"
-      echo "  -K, --no-create-proxy   Do not run ligo-proxy-init and assume"
-      echo "                             that the user has a valid grid proxy"
       echo "  -n, --no-submit         Plan the DAX but do not submit it"
       echo "  -l, --local-dir         Directory to put condor files under"
       echo "  -Q, --no-query-db       Don't query the pegasus DB."
-      echo "  -G, --no-grid           Disable checks for grid proxy and"
-      echo "                             GLOBUS_LOCATION in pegasus-plan"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
       echo "path to the temporary workflow execute directory passed to pegasus-plan."
@@ -94,49 +86,6 @@ while true ; do
     *) echo "Internal error!" ; exit 1 ;;
   esac
 done
-
-if [ $NO_CREATE_PROXY == 0 ]; then
-  # Force the user to create a new grid proxy
-  LIGO_USER_NAME=""
-  while true; do
-    read -p "Enter your LIGO.ORG username in (e.g. albert.einstein): " LIGO_USER_NAME
-    echo
-    if [ ! -z $LIGO_USER_NAME ] ; then
-      break
-    fi
-  done
-  unset X509_USER_PROXY
-  ligo-proxy-init -p $LIGO_USER_NAME || exit 1
-else
-  if [ ! -z ${X509_USER_PROXY} ] ; then
-    if [ -f ${X509_USER_PROXY} ] ; then
-      cp -a ${X509_USER_PROXY} /tmp/x509up_u`id -u`
-    fi
-  unset X509_USER_PROXY
-  fi
-fi
-
-if [ -z "${NO_GRID}" ] ; then
-  #Check that the proxy is valid
-  set +e
-  ecp-cert-info -exists
-  RESULT=$?
-  set -e
-  if [ ${RESULT} -eq 0 ] ; then
-    PROXY_TYPE=`ecp-cert-info -type | tr -d ' '`
-    if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
-      ecp-cert-info
-    else
-      cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-      grid-proxy-init -hours 276 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
-      rm -f /tmp/x509up_u`id -u`.orig
-      ecp-cert-info
-    fi
-  else
-    echo "Error: Could not find a valid grid proxy to submit workflow."
-    exit 1
-  fi
-fi
 
 #Make a directory for the submit files
 SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
@@ -170,7 +119,7 @@ cat extra-properties.conf >> pegasus-properties.conf
 # it deserves!
 STORED_PLANNER_ARGS=`cat additional_planner_args.dat`
 
-pegasus-plan --conf ./pegasus-properties.conf --dir $SUBMIT_DIR $SUBMIT_DAX $NO_GRID ${STORED_PLANNER_ARGS}
+pegasus-plan --conf ./pegasus-properties.conf --dir $SUBMIT_DIR $SUBMIT_DAX ${STORED_PLANNER_ARGS}
 
 echo
 
@@ -185,42 +134,6 @@ chmod 755 debug
 
 echo "pegasus-remove $SUBMIT_DIR/work \$@" > stop
 chmod 755 stop
-
-if [ -z "${NO_GRID}" ] ; then
-  cat << EOF > start
-#!/bin/bash
-
-if [ -f /tmp/x509up_u\`id -u\` ] ; then
-  unset X509_USER_PROXY
-else
-  if [ ! -z \${X509_USER_PROXY} ] ; then
-    if [ -f \${X509_USER_PROXY} ] ; then
-      cp -a \${X509_USER_PROXY} /tmp/x509up_u\`id -u\`
-    fi
-  fi
-  unset X509_USER_PROXY
-fi
-
-# Check that the proxy is valid
-ecp-cert-info -exists
-RESULT=\${?}
-if [ \${RESULT} -eq 0 ] ; then
-  PROXY_TYPE=\`ecp-cert-info -type | tr -d ' '\`
-  if [ x\${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
-    ecp-cert-info
-  else
-    cp /tmp/x509up_u\`id -u\` /tmp/x509up_u\`id -u\`.orig
-    grid-proxy-init -hours 276 -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
-    rm -f /tmp/x509up_u\`id -u\`.orig
-    ecp-cert-info
-  fi
-else
-  echo "Error: Could not find a valid grid proxy to submit workflow."
-  exit 1
-fi
-
-EOF
-fi
 
 echo "pegasus-run $SUBMIT_DIR/work \$@" > start
 

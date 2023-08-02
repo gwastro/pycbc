@@ -34,8 +34,7 @@ import os, argparse, logging
 import configparser as ConfigParser
 from ligo import segments
 import numpy, lal, datetime, itertools
-from pycbc.results import create_versioning_page, static_table, layout
-from pycbc.results.versioning import save_fig_with_metadata
+from pycbc.results import static_table, layout, save_fig_with_metadata
 from pycbc.results.metadata import html_escape
 
 
@@ -610,7 +609,6 @@ for inj_file, tag in zip(inj_files, inj_tags):
         curr_out = wf.setup_interval_coinc_inj(
             workflow,
             hdfbank,
-            full_insps,
             inspcomb,
             statfiles,
             final_bg_files[ordered_ifo_list],
@@ -804,10 +802,12 @@ ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
                         file_url='file://' + ini_file_path)])
 layout.single_layout(base, ini_file)
 
-
 # Create versioning information
-create_versioning_page(rdir['workflow/version'], container.cp)
-
+wf.make_versioning_page(
+    workflow,
+    container.cp,
+    rdir['workflow/version'],
+)
 
 ############################ Finalization ####################################
 

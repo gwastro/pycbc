@@ -514,6 +514,9 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
         chi = lalsimulation.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
         time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
                                 m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, f_low)
+    elif approximant == 'IMRPhenomXAS':
+        time_length = lalsimulation.SimIMRPhenomXASDuration(
+                           m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
     elif approximant == "IMRPhenomD":
         time_length = lalsimulation.SimIMRPhenomDChirpTime(
                            m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
