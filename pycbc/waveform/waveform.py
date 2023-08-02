@@ -1030,6 +1030,11 @@ def seobnrv4_length_in_time(**kwds):
     """
     return get_imr_length("SEOBNRv4", **kwds)
 
+def seobnrv5_length_in_time(**kwds):
+    """Stub for holding the calculation of SEOBNRv5_ROM waveform duration.
+    """
+    return get_imr_length("SEOBNRv5_ROM", **kwds)
+
 def imrphenomd_length_in_time(**kwds):
     """Stub for holding the calculation of IMRPhenomD waveform duration.
     """
@@ -1091,6 +1096,7 @@ _filter_time_lengths["SEOBNRv4_ROM"] = seobnrv4_length_in_time
 _filter_time_lengths["SEOBNRv4HM_ROM"] = seobnrv4hm_length_in_time
 _filter_time_lengths["SEOBNRv4"] = seobnrv4_length_in_time
 _filter_time_lengths["SEOBNRv4P"] = seobnrv4_length_in_time
+_filter_time_lengths["SEOBNRv5_ROM"] = seobnrv5_length_in_time
 _filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
