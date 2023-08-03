@@ -27,10 +27,13 @@
 
 import shlex
 import logging
+import numpy
 from pycbc import transforms
+from pycbc.types import TimeSeries
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
 from .relbin import RelativeTimeDom
+from .relbin_cpu import snr_predictor_dom
 
 #
 # =============================================================================
@@ -703,8 +706,6 @@ class MultibandRelativeTimeDom(RelativeTimeDom, HierarchicalModel):
             freqs = model.fedges[ifo]
             sdat = model.sdat[ifo]
             h00 = model.h00_sparse[ifo]
-            end_time = model.end_time[ifo]
-            times = model.antenna_time[ifo]
             channel = wfs[ifo].numpy()
             sh, hh = lik(freqs, 0.0, channel, h00,
                          sdat['a0'], sdat['a1'],
@@ -751,7 +752,8 @@ class MultibandRelativeTimeDom(RelativeTimeDom, HierarchicalModel):
         # calculate sh_total and hh_total of ground-based detectors
         for ifo in self.primary_model.det:
             if self.primary_model.precalc_antenna_factors:
-                fp, fc, dt = self.primary_model.get_precalc_antenna_factors(ifo)
+                fp, fc, dt = \
+                    self.primary_model.get_precalc_antenna_factors(ifo)
             else:
                 dt = self.primary_model.det[ifo].time_delay_from_earth_center(
                             p['ra'], p['dec'], p['tc'])
