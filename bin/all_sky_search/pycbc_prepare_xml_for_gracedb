@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2015 Ian Harry
+# Copyright (C) 2015-2023 Ian Harry, Gareth Cabourn Davies
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -203,24 +203,19 @@ xmldoc.childNodes[-1].appendChild(coinc_event_map_table_curr)
 xmldoc.childNodes[-1].appendChild(sngl_inspiral_table_curr)
 lal.series.make_psd_xmldoc(lal_psddict, xmldoc.childNodes[-1])
 
-ifos_triggered = sorted([sngl.ifo for sngl in sngl_inspiral_table_curr])
-ifos_str = ''.join(ifos_triggered)
-id_str = args.id_string
-base_time = int(np.floor(time))
-filename_xml = "{}-PYCBC_{}-{:d}-1.xml".format(ifos_str, id_str, base_time)
-fullpath_xml = os.path.join(args.output_directory, filename_xml)
+ligolw_utils.write_filename(xmldoc, args.output_file)
+logging.info("Saved XML file %s", args.output_file)
 
-ligolw_utils.write_filename(xmldoc, fullpath_xml)
-logging.info("Saved XML file %s", filename_xml)
+generate_asd_plot(psddict, args.psd_plot)
+logging.info("Saved ASD plot %s", args.psd_plot)
 
-asd_png_filename = f'{ifos_str}-PYCBC_{id_str}_ASD-{base_time:d}-1.png'
-fullpath_asd = os.path.join(args.output_directory, asd_png_filename)
-generate_asd_plot(psddict, fullpath_asd)
-logging.info("Saved ASD plot %s", asd_png_filename)
-
-snr_png_filename = f'{ifos_str}-PYCBC_{id_str}_SNR-{base_time:d}-1.png'
-fullpath_snr = os.path.join(args.output_directory, snr_png_filename)
 triggers = {sngl.ifo: (sngl.end_time + sngl.end_time_ns * 1e-9, sngl.snr)
             for sngl in sngl_inspiral_table_curr}
-generate_snr_plot(snr_curr_event, fullpath_snr, triggers, base_time)
-logging.info("Saved SNR plot %s", snr_png_filename)
+base_time = int(np.floor(time))
+generate_snr_plot(
+    snr_curr_event,
+    args.snr_timeseries_plot,
+    triggers,
+    base_time
+)
+logging.info("Saved SNR plot %s", args.snr_timeseries_plot)

@@ -18,7 +18,6 @@ from pycbc.io.ligolw import (
     snr_series_to_xml
 )
 from pycbc.results import generate_asd_plot, generate_snr_plot
-from pycbc.results import ifo_color
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
 
@@ -444,7 +443,7 @@ class CandidateForGraceDB(object):
 
             triggers = {
                 ifo: (self.coinc_results[f'foreground/{ifo}/end_time']
-                          + self.time_offset,
+                      + self.time_offset,
                       self.coinc_results[f'foreground/{ifo}/snr'])
                 for ifo in self.et_ifos
                 }

@@ -481,14 +481,14 @@ fore_xmlall = wf.make_foreground_table(workflow, combined_bg_file,
                     extension='.xml', tags=["xmlall"])
 
 if workflow.cp.has_option_tags('workflow-minifollowups',
-                               'upload-prep-threshold', ''):
-    wf.makedir('upload_data')
+                               'prepare-uploads', ''):
+    # Need to get absolute path here
+    upload_path = os.path.join(workflow.out_dir, 'upload_data')
     wf.setup_upload_prep_minifollowups(workflow, combined_bg_file, fore_xmlall,
                                        full_insps, psd_files, hdfbank, insp_files_seg_file,
                                        data_analysed_name, trig_generated_name,
-                                       'daxes', 'upload_data',
+                                       'daxes', upload_path,
                                        tags=combined_bg_file.tags)
-    os.chmod('upload_data', 0o0700)
 
 fore_xmlloudest = wf.make_foreground_table(workflow, combined_bg_file,
                     hdfbank, rdir['open_box_result'], singles=insps,
@@ -509,7 +509,6 @@ layout.two_column_layout(rdir['background_triggers'], closed_page)
 # run minifollowups on the output of the loudest events
 mfup_dir_fg = rdir['open_box_result/loudest_events_followup']
 mfup_dir_bg = rdir['background_triggers/loudest_background_followup']
-
 wf.setup_foreground_minifollowups(workflow, combined_bg_file,
                                   full_insps, hdfbank, insp_files_seg_file,
                                   data_analysed_name, trig_generated_name,

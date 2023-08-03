@@ -1,5 +1,5 @@
 #!/bin/env python
-# Copyright (C) 2015 Alexander Harvey Nitz
+# Copyright (C) 2015-2023 Alexander Harvey Nitz, Gareth Cabourn Davies
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Followup foreground events
+""" Prepare files for upload to GraceDB for foreground events
 """
 import os, sys, argparse, logging, re, h5py, pycbc.workflow as wf
 from pycbc.results import layout

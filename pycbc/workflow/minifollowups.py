@@ -441,12 +441,12 @@ def make_single_template_files(workflow, segs, ifo, data_read_name,
                 node.add_opt('--u-val',
                              "%.6f" % params['u_vals_%s' % ifo])
 
-    # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
     if params[ifo + '_end_time'] > 0 and not use_mean_time:
-        str_trig_time = f"{params[ifo + '_end_time']:.6f}"
+        trig_time = params[ifo + '_end_time']
     else:
-        str_trig_time = f"{params['mean_time']:.6f}"
-    node.add_opt('--trigger-time', str_trig_time)
+        trig_time = params['mean_time']
+
+    node.add_opt('--trigger-time', f"{trig_time:.6f}")
     node.add_input_opt('--inspiral-segments', segs)
     if inj_file is not None:
         node.add_input_opt('--injection-file', inj_file)
@@ -971,19 +971,34 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
     xml_node.add_opt('--event-id', event_id)
     xml_node.add_input_list_opt('--psd-files', psd_files)
     xml_node.add_input_list_opt('--snr-timeseries', snr_timeseries)
-    snr_plot = xml_node.new_output_file_opt(workflow.analysis_time, '.png', '--snr-timeseries-plot', tags=tags+['snr'])
-    psd_plot = xml_node.new_output_file_opt(workflow.analysis_time, '.png', '--psd-plot', tags=tags+['psd'])
-    xml_indiv = xml_node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
+    xml_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.png',
+        '--snr-timeseries-plot',
+        tags=['snr']
+    )
+    xml_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.png',
+        '--psd-plot',
+        tags=['psd']
+    )
+    xml_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.xml',
+        '--output-file'
+    )
 
     workflow += xml_node
 
     return xml_node.output_files
 
 
-def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file, single_triggers,
-                                    psd_files,
+def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
+                                    single_triggers, psd_files,
                                     tmpltbank_file, insp_segs, insp_data_name,
-                                    insp_anal_name, dax_output, out_dir, tags=None):
+                                    insp_anal_name, dax_output, out_dir,
+                                    tags=None):
     """ Create plots that followup the Nth loudest coincident injection
     from a statmap produced HDF file.
 
@@ -999,7 +1014,7 @@ def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file, single_t
         A list containing the file objects associated with the merged
         psd files for each ifo.
     xml_all_file : workflow file object
-        
+        XML File containing all foreground events
     tmpltbank_file: pycbc.workflow.File
         The file object pointing to the HDF format template bank
     insp_segs: SegFile
@@ -1033,9 +1048,11 @@ def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file, single_t
 
     tags = [] if tags is None else tags
     makedir(dax_output)
+    makedir(out_dir)
 
     # turn the config file into a File class
-    config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'upload_prep_minifollowup.ini')
+    config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + \
+                                  'upload_prep_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = resolve_url_to_file(config_path)
