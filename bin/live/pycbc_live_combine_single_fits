@@ -86,10 +86,9 @@ for f in args.trfits_files:
     for ifo in args.ifos:
         if ifo not in fits_f:
             continue
-        else:
-            trig_times = fits_f[ifo]['triggers']['end_time'][:]
-            gps_last = max(gps_last, trig_times.max())
-            gps_first = min(gps_first, trig_times.min())
+        trig_times = fits_f[ifo]['triggers']['end_time'][:]
+        gps_last = max(gps_last, trig_times.max())
+        gps_first = min(gps_first, trig_times.min())
     trigger_file_starts.append(gps_first)
     trigger_file_ends.append(gps_last)
 
@@ -134,13 +133,11 @@ fout['bins_edges'] = list(bl) + [bu[-1]]
 fout['fits_dates'] = ad + start_time_n
 
 for ifo in args.ifos:
-    fout.create_group(ifo)
-    fout[ifo].attrs['live_time'] = sum(live_times[ifo])
-
-for ifo in args.ifos:
-    fout_ifo = fout[ifo]
     logging.info(ifo)
+    fout.create_group(ifo)
+    fout_ifo = fout[ifo]
     l_times = np.array(live_times[ifo])
+    fout_ifo.attrs['live_time'] = l_times.sum()
 
     fout_ifo[f'separate_fits/live_times'] = l_times[ad_order]
     fout_ifo[f'separate_fits/start_time'] = trigger_file_starts[ad_order]
@@ -179,8 +176,8 @@ for ifo in args.ifos:
     overall_meanalpha = counts_out[ifo].mean() / overall_invalphan.mean()
 
     # For the fixed version, we just set this to 1
-    fout_ifo['fixed/counts'] = [1 for c in counts_out[ifo]]
-    fout_ifo['fixed/fit_coeff'] = [0 for a in alphas_out[ifo]]
+    fout_ifo['fixed/counts'] = [1] * len(counts_out[ifo])
+    fout_ifo['fixed/fit_coeff'] = [0] * len(alphas_out[ifo])
 
     # Add some useful info to the output file
     fout_ifo.attrs['mean_alpha'] = overall_meanalpha
