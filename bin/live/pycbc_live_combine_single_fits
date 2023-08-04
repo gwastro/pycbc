@@ -137,16 +137,10 @@ for ifo in args.ifos:
     fout.create_group(ifo)
     fout[ifo].attrs['live_time'] = sum(live_times[ifo])
 
-save_allmeanalpha = {}
 for ifo in args.ifos:
     fout_ifo = fout[ifo]
     logging.info(ifo)
     l_times = np.array(live_times[ifo])
-    count_all = np.sum(counts_bin[ifo], axis=0) / l_times
-    invalphan = np.array(counts_bin[ifo]) / np.array(alphas_bin[ifo])
-    invalphan_all = np.mean(invalphan, axis=0)
-    alpha_all = np.mean(counts_bin[ifo], axis=0) / invalphan_all
-    meant = l_times.mean()
 
     fout_ifo[f'separate_fits/live_times'] = l_times[ad_order]
     fout_ifo[f'separate_fits/start_time'] = trigger_file_starts[ad_order]
@@ -183,15 +177,13 @@ for ifo in args.ifos:
     # Take some averages for plotting and summary values
     overall_invalphan = counts_out[ifo] / alphas_out[ifo]
     overall_meanalpha = counts_out[ifo].mean() / overall_invalphan.mean()
-    sum_counts_out = counts_out[ifo].sum() / sum(live_times[ifo])
-    save_allmeanalpha[ifo] = overall_meanalpha
 
     # For the fixed version, we just set this to 1
     fout_ifo['fixed/counts'] = [1 for c in counts_out[ifo]]
     fout_ifo['fixed/fit_coeff'] = [0 for a in alphas_out[ifo]]
 
     # Add some useful info to the output file
-    fout_ifo.attrs['mean_alpha'] = save_allmeanalpha[ifo]
+    fout_ifo.attrs['mean_alpha'] = overall_meanalpha
     fout_ifo.attrs['total_counts'] = counts_out[ifo].sum()
 
 fout.close()
