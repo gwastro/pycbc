@@ -19,6 +19,7 @@ import h5py, numpy as np, argparse
 import logging
 import pycbc
 
+
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
@@ -32,7 +33,7 @@ parser.add_argument("--output", required=True,
 parser.add_argument("--ifos", required=True, nargs="+",
                     help="list of ifos fo collect info for")
 
-args=parser.parse_args()
+args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
@@ -44,8 +45,8 @@ if args.conservative_percentile < 50 or \
                  "otherwise it is either not a percentile, or not "
                  "conservative.")
 
-counts_all = {ifo:[] for ifo in args.ifos}
-alphas_all = {ifo:[] for ifo in args.ifos}
+counts_all = {ifo: [] for ifo in args.ifos}
+alphas_all = {ifo: [] for ifo in args.ifos}
 analysis_dates = []
 
 with h5py.File(args.trfits_files[0], 'r') as fit_f0:
@@ -60,7 +61,7 @@ with h5py.File(args.trfits_files[0], 'r') as fit_f0:
     fit_thresh = fit_f0.attrs['fit_threshold']
     fit_func = fit_f0.attrs['fit_function']
 
-live_times = {ifo : [] for ifo in args.ifos}
+live_times = {ifo: [] for ifo in args.ifos}
 
 trigger_file_starts = []
 trigger_file_ends = []
@@ -69,7 +70,6 @@ n_files = len(args.trfits_files)
 logging.info("Checking through %d files", n_files)
 
 for f in args.trfits_files:
-
     fits_f = h5py.File(f, 'r')
     # Check that the file uses the same setup as file 0, to make sure
     # all coefficients are comparable
@@ -119,10 +119,10 @@ ad = trigger_file_ends[ad_order] - start_time_n
 counts_bin = {ifo: [c for c in zip(*counts_all[ifo])] for ifo in args.ifos}
 alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
 
-alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
-counts_out = {ifo : np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
-cons_alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
-cons_counts_out = {ifo : np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
+alphas_out = {ifo: np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
+counts_out = {ifo: np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
+cons_alphas_out = {ifo: np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
+cons_counts_out = {ifo: np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
 
 logging.info("Writing results")
 fout = h5py.File(args.output, 'w')
