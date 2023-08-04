@@ -102,7 +102,7 @@ for f in args.trfits_files:
             counts_all[ifo].append(fits_f[ifo + '/counts'][:])
             alphas_all[ifo].append(fits_f[ifo + '/fit_coeff'][:])
             if any(np.isnan(fits_f[ifo + '/fit_coeff'][:])):
-                logging.info("nan in " + f + ", " + ifo)
+                logging.info("nan in %s, %s", f, ifo)
                 logging.info(fits_f[ifo + '/fit_coeff'][:])
     fits_f.close()
 
@@ -184,3 +184,5 @@ for ifo in args.ifos:
     fout_ifo.attrs['total_counts'] = counts_out[ifo].sum()
 
 fout.close()
+
+logging.info('Done')
