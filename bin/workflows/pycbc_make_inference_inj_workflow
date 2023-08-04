@@ -31,13 +31,13 @@ from pycbc import results
 from pycbc.results import layout
 from pycbc.results import metadata
 from pycbc.results import versioning
-import pycbc.workflow as wf
 from pycbc.workflow import configuration
 from pycbc.workflow import core
 from pycbc.workflow.jobsetup import (PycbcCreateInjectionsExecutable,
                                      PycbcInferenceExecutable)
 from pycbc.workflow import inference_followups as inffu
 from pycbc.workflow import plotting
+from pycbc.workflow import versioning
 from pycbc.inject import InjectionSet
 from pycbc.io import FieldArray
 
@@ -357,7 +357,7 @@ if do_pp_test:
     workflow += pp_workflow
 
 # Create versioning information
-wf.make_versioning_page(
+versioning.make_versioning_page(
     workflow,
     workflow.cp,
     rdir['workflow/version'],
