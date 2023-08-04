@@ -165,7 +165,7 @@ for ifo in args.ifos:
         r = c / l_times[ad_order]
         cons_rate = np.percentile(r, args.conservative_percentile)
         cons_counts_out[ifo][counter] = cons_rate * l_times[ad_order].sum()
-        counts_out[ifo][counter] = np.average(r) * l_times[ad_order].sum()
+        counts_out[ifo][counter] = np.mean(r) * l_times[ad_order].sum()
 
         fout_ifo[f'separate_fits/bin_{counter:d}/fit_coeff'] = a
         fout_ifo[f'separate_fits/bin_{counter:d}/counts'] = c
