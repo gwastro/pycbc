@@ -31,6 +31,7 @@ from pycbc import results
 from pycbc.results import layout
 from pycbc.results import metadata
 from pycbc.results import versioning
+import pycbc.workflow as wf
 from pycbc.workflow import configuration
 from pycbc.workflow import core
 from pycbc.workflow.jobsetup import (PycbcCreateInjectionsExecutable,
