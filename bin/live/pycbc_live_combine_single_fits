@@ -12,12 +12,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
+"""Combine PyCBC Live single-detector trigger fitting parameters from several
+different files."""
+
 import h5py, numpy as np, argparse
 import logging
 import pycbc
 
-parser = argparse.ArgumentParser(usage="",
-    description="Combine fitting parameters from several different files")
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--trfits-files", nargs="+", required=True,
