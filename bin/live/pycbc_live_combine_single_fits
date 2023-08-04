@@ -161,9 +161,11 @@ for ifo in args.ifos:
         cons_alpha = np.percentile(a, 100 - args.conservative_percentile)
         cons_alphas_out[ifo][counter] = cons_alpha
         alphas_out[ifo][counter] = mean_alpha
-        cons_count = np.percentile(c, args.conservative_percentile)
-        cons_counts_out[ifo][counter] = cons_count * len(c)
-        counts_out[ifo][counter] = c.sum()
+        # To get the count values, we need to convert to rates and back again
+        r = c / l_times[ad_order]
+        cons_rate = np.percentile(r, args.conservative_percentile)
+        cons_counts_out[ifo][counter] = cons_rate * l_times[ad_order].sum()
+        counts_out[ifo][counter] = np.mean(r) * l_times[ad_order].sum()
 
         fout_ifo[f'separate_fits/bin_{counter:d}/fit_coeff'] = a
         fout_ifo[f'separate_fits/bin_{counter:d}/counts'] = c
