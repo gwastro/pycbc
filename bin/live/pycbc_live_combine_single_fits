@@ -134,8 +134,7 @@ fout['fits_dates'] = ad + start_time_n
 
 for ifo in args.ifos:
     logging.info(ifo)
-    fout.create_group(ifo)
-    fout_ifo = fout[ifo]
+    fout_ifo = fout.create_group(ifo)
     l_times = np.array(live_times[ifo])
     fout_ifo.attrs['live_time'] = l_times.sum()
 
