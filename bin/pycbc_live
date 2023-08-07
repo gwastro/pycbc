@@ -425,8 +425,8 @@ class LiveEventManager(object):
         gid: str
             GraceDB ID of the candidate
         """
-        with h5py.File(attribute_fname, 'a') as hdfp:
-            if gid is not None:
+        if gid is not None:
+            with h5py.File(attribute_fname, 'a') as hdfp:
                 hdfp['gid'] = gid
         log_fname = os.path.join(out_dir_path, 'optimize_snr.log')
 
