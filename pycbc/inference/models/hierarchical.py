@@ -606,27 +606,27 @@ class MultiSignalModel(HierarchicalModel):
         return logl
 
 
-class MultibandRelativeTimeDom(RelativeTimeDom, HierarchicalModel):
+class MultibandRelativeTimeDom(HierarchicalModel):
     """ Hierarchical heterodyne likelihood for coherent multiband
     parameter estimation which combines data from space-borne and
     ground-based GW detectors coherently. Currently, this only
-    supports LISA for space-borne GW detectors.
+    supports LISA for as the space-borne GW detector.
 
-    Sub models are treated as if the same signal (such as GW from
-    stellar-mass BBH) is observed in different frequency band by
+    Sub models are treated as if the same GW source (such as a GW
+    from stellar-mass BBH) is observed in different frequency band by
     space-borne and ground-based GW detectors, then transform all
-    the parameters into the same frame, use `HierarchicalModel` to get
-    the joint likelihood, and marginalize over all the extrinsic
-    parameters supported by `RelativeTimeDom`. Note that LISA submodel
-    only supports the `Relative` for now, for ground-based detectors,
-    please use `RelativeTimeDom`.
+    the parameters into the same frame in the sub model level, use
+    `HierarchicalModel` to get the joint likelihood, and marginalize
+    over all the extrinsic parameters supported by `RelativeTimeDom`.
+    Note that LISA submodel only supports the `Relative` for now,
+    for ground-based detectors, please use `RelativeTimeDom`.
     """
     name = 'multiband_relative_time_dom'
 
     def __init__(self, variable_params, submodels, **kwargs):
         super().__init__(variable_params, submodels, **kwargs)
 
-        # We assume ground-based submodel as the primary model.
+        # We assume the ground-based submodel as the primary model.
         lbl_primary = self.submodels[0]
         self.primary_model = self.submodels[lbl_primary]
         if self.primary_model.still_needs_det_response:
@@ -666,47 +666,33 @@ class MultibandRelativeTimeDom(RelativeTimeDom, HierarchicalModel):
     def get_snr(self, wfs):
         """ Return hp/hc maximized SNR time series.
         Note that we also calculate sh/hh of each TDI channel
-        for space-borne detectors, but only return snrs from
+        for space-borne detectors, but only return `snrs` from
         ground-based detectors for the marginalization over
-        (tc, ra, dec), because we assume for SOBHB signal,
+        (tc, ra, dec), because we assume for SOBHB signals,
         ground-based detectors dominant SNR and accuracy of
-        (tc, ra, dec).
+        (tc, ra, dec). The sh/hh of each TDI channel is inserted
+        into `marginalize_loglr` with that from ground-based detectors.
         """
-        snrs = {}
         self.sh = {}
         self.hh = {}
 
         # calculate snrs, sh, and hh from ground-based detectors
-        model = self.primary_model
-        delta_t = 1.0 / model.sample_rate
-
-        for ifo in model.det:
-            sdat = model.sdat[ifo]
-            dtc = model.tstart[ifo] - model.end_time[ifo] - model.ta[ifo]
-
-            sh, hh = snr_predictor_dom(model.fedges[ifo],
-                                       dtc - delta_t * 2.0, delta_t,
-                                       model.num_samples[ifo] + 4,
-                                       wfs[ifo][0],
-                                       model.h00_sparse[ifo],
-                                       sdat['a0'], sdat['a1'],
-                                       sdat['b0'], sdat['b1'])
-            snr = TimeSeries(abs(sh[2:-2]) / hh ** 0.5,
-                             delta_t=delta_t,
-                             epoch=model.tstart[ifo])
-            snrs[ifo] = snr
-            self.sh[ifo] = TimeSeries(sh, delta_t=delta_t,
-                                      epoch=model.tstart[ifo] - delta_t * 2.0)
-            self.hh[ifo] = hh
+        p = self.primary_model.current_params
+        p2 = p.copy()
+        p2.pop('inclination')
+        wfs_ground = self.primary_model.get_waveforms(p2)
+        snrs = self.primary_model.get_snr(wfs_ground)
+        self.sh.update(self.primary_model.sh)
+        self.hh.update(self.primary_model.hh)
 
         # calculate sh and hh from space-borne detectors
-        model = self.other_models
-        lik = model.likelihood_function
-        for ifo in model.det:
-            freqs = model.fedges[ifo]
-            sdat = model.sdat[ifo]
-            h00 = model.h00_sparse[ifo]
-            channel = wfs[ifo].numpy()
+        wfs_space = self.other_models.get_waveforms(p2)
+        lik = self.other_models.likelihood_function
+        for ifo in self.other_models.det:
+            freqs = self.other_models.fedges[ifo]
+            sdat = self.other_models.sdat[ifo]
+            h00 = self.other_models.h00_sparse[ifo]
+            channel = wfs_space[ifo].numpy()
             sh, hh = lik(freqs, 0.0, channel, h00,
                          sdat['a0'], sdat['a1'],
                          sdat['b0'], sdat['b1'])
@@ -732,13 +718,6 @@ class MultibandRelativeTimeDom(RelativeTimeDom, HierarchicalModel):
             The value of the log likelihood ratio.
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
-        wfs = {}
-        for model in [self.primary_model, self.other_models]:
-            p = model.current_params
-            p2 = p.copy()
-            p2.pop('inclination')
-            wfs += model.get_waveforms(p2)
-
         sh_total = hh_total = 0
         ic = numpy.cos(p['inclination'])
         ip = 0.5 * (1.0 + ic * ic)
@@ -746,8 +725,7 @@ class MultibandRelativeTimeDom(RelativeTimeDom, HierarchicalModel):
 
         # here we assume the SNR is dominant by ground-based detectors,
         # only use snrs from ground-based detectors
-        snrs = self.get_snr(wfs)
-        self.snr_draw(snrs=snrs)
+        self.primary_model.snr_draw(snrs=snrs)
 
         # calculate sh_total and hh_total of ground-based detectors
         for ifo in self.primary_model.det:
@@ -770,11 +748,12 @@ class MultibandRelativeTimeDom(RelativeTimeDom, HierarchicalModel):
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
+        # add likelihood contribution from space-borne detectors
         for ifo in self.other_models.det:
             sh_total += self.sh[ifo]
             hh_total += self.hh[ifo]
 
-        loglr = self.marginalize_loglr(sh_total, hh_total)
+        loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
         return loglr
 
     def _loglikelihood(self):
