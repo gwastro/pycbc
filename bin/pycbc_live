@@ -109,7 +109,7 @@ class LiveEventManager(object):
         # Keep track of which events have been uploaded
         self.last_few_coincs_uploaded = []
 
-        # Give this a nominal value, it is requried but not used
+        # Give this a nominal value, it is required but not used
         self.fu_cores = None
         if self.run_snr_optimization:
             # preestimate the number of CPU cores that we can afford giving
@@ -389,7 +389,9 @@ class LiveEventManager(object):
         if self.enable_gracedb_upload:
             cmd += '--enable-gracedb-upload '
 
-        cmd += '--cores {} '.format(self.fu_cores)
+        if self.fu_cores:
+            cmd += '--cores {} '.format(self.fu_cores)
+
         if args.processing_scheme:
             # we will use the cores for multiple workers of the
             # optimization routine, so we force the processing scheme
@@ -653,6 +655,11 @@ class LiveEventManager(object):
             # Save the event
             if not upload_checks:
                 event.save(fname)
+
+            if nearby_coincs:
+                # Don't save the snr optimization stuff for singles where
+                # there is already a coinc
+                continue
 
             # Save the event info/data and what _would_ be run for SNR optimizer,
             # even if not running it - do this before the thread so no
