@@ -662,7 +662,7 @@ class LiveEventManager(object):
             # even if not running it - do this before the thread so no
             # data buffers move on in a possible interim period
 
-            if nearby_coincs:
+            if any(nearby_coincs):
                 # Don't even save the snr optimization stuff for singles
                 # where there is already a coinc
                 continue
