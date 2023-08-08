@@ -1,5 +1,7 @@
 from pycbc.detector import Detector
 from pycbc.waveform import get_td_waveform
+from matplotlib import pyplot as plt
+import numpy as np
 
 # Time, orientation and location of the source in the sky
 ra = 1.7
@@ -31,4 +33,4 @@ ht = fp * hp + fc * hc
 # The projection process can also take into account the rotation of the
 # earth using the project wave function.
 hp.start_time = hc.start_time = time
-ht = d.project_wave(hp, hc, ra, dec, pol)
+ht2 = d.project_wave(hp, hc, ra, dec, pol)
