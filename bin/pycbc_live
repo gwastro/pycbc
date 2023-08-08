@@ -633,10 +633,12 @@ class LiveEventManager(object):
             comment = comment.format(ifo, ppdets(followup_ifos))
 
             # Has a coinc event at this time been uploaded recently?
-            # If so, skip upload
+            # If so, skip upload - Note that this means that we _always_
+            # prefer an uploaded coincident event over a single
             coinc_tdiffs = abs(event.merger_time -
                                numpy.array(self.last_few_coincs_uploaded))
             nearby_coincs = coinc_tdiffs < 0.1
+
             if any(nearby_coincs):
                 logging.info(
                     "Single-detector candidate at time %.3f was already "
@@ -656,14 +658,14 @@ class LiveEventManager(object):
             if not upload_checks:
                 event.save(fname)
 
-            if nearby_coincs:
-                # Don't save the snr optimization stuff for singles where
-                # there is already a coinc
-                continue
-
             # Save the event info/data and what _would_ be run for SNR optimizer,
             # even if not running it - do this before the thread so no
             # data buffers move on in a possible interim period
+
+            if nearby_coincs:
+                # Don't even save the snr optimization stuff for singles
+                # where there is already a coinc
+                continue
 
             # Which IFOs were active?
             live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
