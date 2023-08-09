@@ -28,8 +28,6 @@ library and application suite.
         :target: catalog.html
 
         Working with gravitational wave data
-        
-     .. figure:: 
 
     .. figure:: https://pycbc.org/pycbc/latest/html/_images/plot_detwaveform.png
         :height: 400px
