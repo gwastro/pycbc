@@ -309,7 +309,7 @@ with ctx:
     event_mgr = EventManagerCoherent(
         args, args.instruments, ifo_names,
         [ifo_out_types[n] for n in ifo_names], network_names,
-        [network_out_types[n] for n in network_names])
+        [network_out_types[n] for n in network_names], segments)
     logging.info("Read in template bank")
     bank = waveform.FilterBank(
         args.bank_file, flen, delta_f, complex64, low_frequency_cutoff=flow,
