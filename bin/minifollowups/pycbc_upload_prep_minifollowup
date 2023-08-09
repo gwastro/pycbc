@@ -44,6 +44,7 @@ def get_params(curr_idx, times, tids, bank_id, bank_data, fsdt):
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
     params['f_lower'] = bank_data['f_lower'][bank_id]
+    params['approximant'] = bank_data['approximant'][bank_id]
     # don't require precessing template info if not present
     try:
         params['spin1x'] = bank_data['spin1x'][bank_id]
@@ -158,6 +159,10 @@ bank_ids = f['foreground/template_id'][:][event_idx]
 
 for curr_idx in range(event_idx.size):
     params = get_params(curr_idx, times, tids, bank_ids[curr_idx], bank_data, fsdt)
+    # Extract approximant
+    appx = params['approximant']
+    del params['approximant']
+
     single_temp_files = []
     for ifo in ifo_list:
         if params['mean_time'] not in insp_analysed_seglists[ifo]:
@@ -183,6 +188,7 @@ for curr_idx in range(event_idx.size):
         single_temp_files,
         xml_all,
         curr_idx,
+        appx,
         args.output_dir,
         tags=args.tags+['upload', str(curr_idx)]
     )

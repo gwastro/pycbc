@@ -955,9 +955,9 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
 
 
 def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
-                      event_id, out_dir, tags=None):
+                      event_id, approximant, out_dir, tags=None):
     """
-    Make skymap fits for uploading to gracedb
+    Make files including coinc and skymap fits for uploading to gracedb
     """
     indiv_xml_exe = Executable(
         workflow.cp,
@@ -983,7 +983,7 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
         '--psd-plot',
         tags=['psd']
     )
-    xml_node.new_output_file_opt(
+    xml_out = xml_node.new_output_file_opt(
         workflow.analysis_time,
         '.xml',
         '--output-file'
@@ -991,7 +991,29 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
 
     workflow += xml_node
 
-    return xml_node.output_files
+    bayestar_exe = Executable(
+        workflow.cp,
+        'bayestar',
+        ifos=workflow.ifos,
+        out_dir=out_dir,
+        tags=tags
+    )
+
+    bayestar_node = bayestar_exe.create_node()
+    bayestar_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.fits',
+        '--output-file',
+    )
+
+    if approximant == b'SPAtmplt':
+        # Bayestar doesnt use the SPAtmplt approximant
+        approximant = b'TaylorF2'
+    bayestar_node.add_opt('--waveform', str(approximant))
+
+    bayestar_node.add_input_opt('', xml_out)
+
+    return xml_node.output_files + bayestar_node.output_files
 
 
 def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
