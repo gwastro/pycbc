@@ -1000,7 +1000,7 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
     )
 
     bayestar_node = bayestar_exe.create_node()
-    bayestar_node.new_output_file_opt(
+    fits_out = bayestar_node.new_output_file_opt(
         workflow.analysis_time,
         '.fits',
         '--output-file',
@@ -1013,7 +1013,28 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
 
     bayestar_node.add_input_opt('', xml_out)
 
-    return xml_node.output_files + bayestar_node.output_files
+    workflow += bayestar_node
+
+    skymap_plot_exe = Executable(
+        workflow.cp,
+        'skymap_plot',
+        ifos=workflow.ifos,
+        out_dir=out_dir,
+        tags=['skymap']
+    )
+
+    skymap_plot_node = skymap_plot_exe.create_node()
+    skymap_plot_node.add_input_opt('', fits_out)
+    skymap_plot_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.png',
+        '-o',
+    )
+    workflow += skymap_plot_node
+
+    all_output_files = xml_node.output_files + bayestar_node.output_files + \
+        skymap_plot_node.output_files
+    return all_output_files
 
 
 def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
@@ -1112,7 +1133,7 @@ def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
 
     # determine if a staging site has been specified
     job = SubWorkflow(fil.name, is_planned=False)
-    input_files = [tmpltbank_file, coinc_file, insp_segs] + \
+    input_files = [xml_all_file, tmpltbank_file, coinc_file, insp_segs] + \
         single_triggers + psd_files
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,

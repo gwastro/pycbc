@@ -98,8 +98,9 @@ parser.add_argument('--search-id-string', default='AllSky',
                          "Default: 'AllSky'")
 parser.add_argument('--upload-files', nargs='+',
                     help="Plots to be uploaded with the event. "
-                         "Filenames should contain the strings 'SNR', 'ASD' "
-                         "or be a '.fits' file to annotate correctly.")
+                         "Filenames should contain the strings 'SNR', "
+                         "'ASD', 'SKYMAP' or be a '.fits' file "
+                         "to annotate correctly.")
 
 args = parser.parse_args()
 
@@ -149,14 +150,14 @@ if args.upload_files:
             comment = "SNR timeseries plot upload"
             tag = "background"
             displayname='SNR timeseries'
+        elif "_SKYMAP_PLOT" in upload_filename and upload_filename.endswith('.png'):
+            logging.info("Found skymap plot %s", upload_filename)
+            comment = "Skymap plot upload"
+            tag = "sky_loc"
+            displayname=''
         elif upload_filename.endswith('.fits'):
             logging.info("Found fits file %s", upload_filename)
             comment = "sky localization complete"
-            tag = "sky_loc"
-            displayname=''
-        elif upload_filename.endswith('_skymap.png'):
-            logging.info("Found skymap plot %s", upload_filename)
-            comment = "Skymap plot upload"
             tag = "sky_loc"
             displayname=''
         elif upload_filename.endswith('_src_probs.json'):
