@@ -23,6 +23,20 @@ library and application suite.
     :show_shadows:
     :show_captions_below:
 
+    .. figure:: https://pycbc.org/pycbc/latest/html/_images/data.png
+        :height: 400px
+        :target: catalog.html
+
+        Working with gravitational wave data
+        
+     .. figure:: 
+
+    .. figure:: https://pycbc.org/pycbc/latest/html/_images/plot_detwaveform.png
+        :height: 400px
+        :target: waveform.html
+
+        Your interface to generating gravitational wave signals
+
     .. figure:: https://collincapano.com/wp-content/uploads/2020/02/posterior3d-gw150914_masses-e1581860222179.png
         :height: 400px
         :target: inference.html
@@ -35,19 +49,6 @@ library and application suite.
         
         Fast Parameter Estimation with Advanced Marginalizations
         
-    .. figure:: https://pycbc.org/pycbc/latest/html/_images/plot_detwaveform.png
-        :height: 400px
-        :target: waveform.html
-
-        Your interface to generating gravitational wave signals
-        
-    .. figure:: https://pycbc.org/pycbc/latest/html/_images/data.png
-        :height: 400px
-        :target: catalog.html
-
-        Working with gravitatoinal wave data
-        
-     .. figure:: 
 
 .. toctree::
    :hidden:

@@ -1,7 +1,5 @@
 from pycbc.detector import Detector
 from pycbc.waveform import get_td_waveform
-from matplotlib import pyplot as plt
-import numpy as np
 
 # Time, orientation and location of the source in the sky
 ra = 1.7
