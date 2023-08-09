@@ -701,9 +701,9 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     )
             else:
                 f[col] = network_events[col]
-        for seg in self.segments[0]:
-            f['search/segments/start_time'] = seg.start_time
-            f['search/segments/end_time'] = seg.end_time
+        for seg in self.segments[self.ifos[0]]:
+            f['search/segments/start_time'] = int(seg.start_time)
+            f['search/segments/end_time'] = int(seg.end_time)
         # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
             tid = self.events['template_id'][self.events['ifo'] == i]
