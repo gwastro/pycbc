@@ -16,6 +16,38 @@ gravitational-wave astronomy, please consider `contributing <https://github.com/
 providing feedback, examples, documentation or helping to improve the core
 library and application suite.
 
+.. carousel::
+    :show_controls:
+    :show_indicators:
+    :show_dark:
+    :show_shadows:
+    :show_captions_below:
+
+    .. figure:: https://pycbc.org/pycbc/latest/html/_images/data.png
+        :height: 400px
+        :target: catalog.html
+
+        Working with gravitational wave data
+
+    .. figure:: https://pycbc.org/pycbc/latest/html/_images/plot_detwaveform.png
+        :height: 400px
+        :target: waveform.html
+
+        Your interface to generating gravitational wave signals
+
+    .. figure:: https://collincapano.com/wp-content/uploads/2020/02/posterior3d-gw150914_masses-e1581860222179.png
+        :height: 400px
+        :target: inference.html
+
+        Flexible, easy-to-use, parameter estimation for GW Astronomy
+
+    .. figure:: https://pycbc.org/pycbc/latest/html/_images/demarg_150914.png
+        :height: 400px
+        :target: inference/examples/margtime.html
+        
+        Fast Parameter Estimation with Advanced Marginalizations
+        
+
 .. toctree::
    :hidden:
    :maxdepth: 1
