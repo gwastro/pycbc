@@ -147,12 +147,9 @@ def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     return node.output_files[0]
 
 def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
-    """ Convert injection file to hdf format if not already one
+    """ Convert injection file to hdf format, if it is already one,
+    this just makes a copy
     """
-    _, ext = os.path.splitext(inj_file.name)
-    if ext == '.hdf':
-        return inj_file
-
     if tags is None:
         tags = []
 
