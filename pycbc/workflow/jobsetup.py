@@ -251,6 +251,9 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             for pnum, parent in enumerate(sorted_parents):
                 if len(curr_parent) != 1:
                     tag = ["JOB%d" %(pnum,)]
+                    bank_tag = [t for t in parent.tags if 'bank' in t]
+                    # add splitbank tags into the current executable
+                    curr_exe_job.update_current_tags(bank_tag)
                 else:
                     tag = []
                 # To ensure output file uniqueness I add a tag
