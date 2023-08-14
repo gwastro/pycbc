@@ -246,7 +246,6 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             # make a single job. This catches the case of a split template bank
             # where I run a number of jobs to cover a single range of time.
 
-            # Sort parent jobs to ensure predictable order
             for parent in curr_parent:
                 if len(curr_parent) != 1:
                     bank_tag = [t for t in parent.tags if 'bank' in t.lower()]
