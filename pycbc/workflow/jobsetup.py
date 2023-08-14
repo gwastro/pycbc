@@ -250,7 +250,6 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
                 if len(curr_parent) != 1:
                     bank_tag = [t for t in parent.tags if 'bank' in t.lower()]
                     curr_exe_job.update_current_tags(bank_tag + exe_tags)
-                # To ensure output file uniqueness I add a tag
                 # We should generate unique names automatically, but it is a
                 # pain until we can set the output names for all Executables
                 node = curr_exe_job.create_node(job_data_seg, job_valid_seg,
