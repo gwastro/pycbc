@@ -174,7 +174,7 @@ if args.injection_file.endswith(('.xml', '.xml.gz', '.xmlgz')):
 else:
     # Assume a HDF file - check if new LVK format first
     inj_file = h5py.File(args.injection_file, 'r')
-    if 'file_format' in inj_file.attrs:
+    if 'file_format' in inj_file.attrs or b'file_format' in inj_file.attrs:
         # Assume LVK as PyCBC doesn't have this attribute
         injclass = LVKNewStyleInjectionSet(args.injection_file)
     inj_file.close()
