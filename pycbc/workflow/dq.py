@@ -38,7 +38,8 @@ class PyCBCCalculateDQExecutable(Executable):
         node.add_input_list_opt('--frame-files', frames)
         node.add_opt('--gps-start-time', start)
         node.add_opt('--gps-end-time', end)
-        node.new_output_file_opt(segment, '.hdf', '--output-file')
+        fil = node.new_output_file_opt(segment, '.hdf', '--output-file')
+        fil.add_metadata('data_seg', segment)
         return node
 
 class PyCBCRerankDQExecutable(Executable):
@@ -79,8 +80,9 @@ class PyCBCCalculateDQFlagExecutable(Executable):
         node.add_opt('--gps-start-time', start)
         node.add_opt('--gps-end-time', end)
         node.add_input_opt('--dq-segments', dq_file)
-        node.new_output_file_opt(workflow.analysis_time, '.hdf',
+        fil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                  '--output-file')
+        fil.add_metadata('data_seg', segment)
         return node
 
 def setup_dq_reranking(workflow, dq_label, insps, bank,
