@@ -79,7 +79,7 @@ class PyCBCCalculateDQFlagExecutable(Executable):
         node.add_opt('--gps-start-time', start)
         node.add_opt('--gps-end-time', end)
         node.add_input_opt('--dq-segments', dq_file)
-        node.new_output_file_opt(workflow.analysis_time, '.hdf',
+        node.new_output_file_opt(segment, '.hdf',
                                  '--output-file')
         return node
 
