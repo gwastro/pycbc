@@ -999,6 +999,7 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
         tags=tags
     )
 
+    bayestar_node.add_input_opt('--event-xml', xml_out)
     bayestar_node = bayestar_exe.create_node()
     fits_out = bayestar_node.new_output_file_opt(
         workflow.analysis_time,
@@ -1011,8 +1012,6 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
         approximant = b'TaylorF2'
     bayestar_node.add_opt('--waveform', str(approximant))
 
-    bayestar_node.add_input_opt('', xml_out)
-
     workflow += bayestar_node
 
     skymap_plot_exe = Executable(
@@ -1020,7 +1019,7 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
         'skymap_plot',
         ifos=workflow.ifos,
         out_dir=out_dir,
-        tags=['skymap']
+        tags=tags
     )
 
     skymap_plot_node = skymap_plot_exe.create_node()
