@@ -28,6 +28,7 @@ from .base import BaseModel
 import pycbc.psd
 
 from pycbc.waveform.early_warning_wform import PSDFirKernel, generate_early_warning_psds, generate_data_lisa_ew, generate_waveform_lisa_ew
+from .tools import marginalize_likelihood
 
 waveform_params1 = {'approximant': 'BBHX_PhenomD',
     'mass1': 1E6,
@@ -160,6 +161,8 @@ class LISAEarlyWarningModel(BaseModel):
         self.whitening_psds = {}
         self.whitening_psds['LISA_A'] = psds_outs[0][0]
         self.whitening_psds['LISA_E'] = psds_outs[1][0]
+        #self.whitening_psds['LISA_A'].save('LISA_A_psd_ew.txt')
+        #self.whitening_psds['LISA_E'].save('LISA_E_psd_ew.txt')
         self.kernel_length = 10000 # Hardcoded for now
         self.window_length = 10000 # Hardcoded also
 
@@ -174,6 +177,19 @@ class LISAEarlyWarningModel(BaseModel):
         # Want to remove this!
         cutoff_time = self.cutoff_time + (curr_params['t_obs_start'] - curr_params['tc'])
         self.lisa_a_strain, self.lisa_e_strain = generate_data_lisa_ew(curr_params, self.psds_for_datagen, self.whitening_psds, seed, self.window_length, cutoff_time)
+        self.lisa_a_strain_fd = pycbc.strain.strain.execute_cached_fft(
+            self.lisa_a_strain,
+            copy_output=True,
+            uid=3223965
+        )
+        self.lisa_e_strain_fd = pycbc.strain.strain.execute_cached_fft(
+            self.lisa_e_strain,
+            copy_output=True,
+            uid=3223967
+        )
+
+        #self.lisa_a_strain.save('LISA_A_strain.txt')
+        #self.lisa_e_strain.save('LISA_E_strain.txt')
 
 
     def _loglikelihood(self):
@@ -185,8 +201,32 @@ class LISAEarlyWarningModel(BaseModel):
 
         ws = generate_waveform_lisa_ew(cparams, self.whitening_psds, self.window_length, cutoff_time, self.kernel_length)
         wform_lisa_a = ws['LISA_A']
-        wform_lisa_e = ws['LISA_A']
-        snr_A = pycbc.filter.matched_filter(wform_lisa_a, self.lisa_a_strain)
-        snr_E = pycbc.filter.matched_filter(wform_lisa_e, self.lisa_e_strain)
+        wform_lisa_e = ws['LISA_E']
+        #wform_td_A = pycbc.strain.strain.execute_cached_ifft(
+        #    wform_lisa_a,
+        #    copy_output=False,
+        #    uid=12239
+        #)
+        #wform_td_E = pycbc.strain.strain.execute_cached_ifft(
+        #    wform_lisa_e,
+        #    copy_output=False,
+        #    uid=122391
+        #)
 
-        return ((snr_A[0].real)**2 + (snr_E[0].real)**2)
+        #wform_td_A.save('LISA_A_waveform.txt')
+        #wform_td_E.save('LISA_E_waveform.txt')
+        snr_A = pycbc.filter.overlap_cplx(wform_lisa_a, self.lisa_a_strain_fd,
+                                     normalized=False)
+        snr_E = pycbc.filter.overlap_cplx(wform_lisa_e, self.lisa_e_strain_fd,
+                                     normalized=False)
+        a_norm = pycbc.filter.sigmasq(wform_lisa_a)
+        e_norm = pycbc.filter.sigmasq(wform_lisa_e)
+
+        hs = snr_A + snr_E
+        hh = (a_norm + e_norm)
+
+        #print ((snr_A[0].real)**2 + (snr_E[0].real)**2)
+        #print(snr_A + snr_E, (a_norm + e_norm)/2., (a_norm_test + e_norm_test)/2., cparams['distance'])
+        #quit_here
+
+        return marginalize_likelihood(hs, hh, phase=True)

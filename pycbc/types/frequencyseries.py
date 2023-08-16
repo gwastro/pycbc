@@ -622,9 +622,9 @@ def load_frequencyseries(path, group=None):
         raise ValueError('Path must end with .npy, .hdf, or .txt')
 
     delta_f = (data[-1][0] - data[0][0]) / (len(data) - 1)
-    if data.ndim == 2:
+    if data.shape[1] == 2:
         return FrequencySeries(data[:,1], delta_f=delta_f, epoch=None)
-    elif data.ndim == 3:
+    elif data.shape[1] == 3:
         return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f,
                                epoch=None)
 

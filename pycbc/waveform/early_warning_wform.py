@@ -418,7 +418,6 @@ def generate_data_lisa_ew(waveform_params, psds_for_datagen, psds_for_whitening,
     outs = pycbc.waveform.get_fd_det_waveform(ifos=['LISA_A','LISA_E','LISA_T'], **waveform_params)
     tout_A = outs['LISA_A'].to_timeseries()
     tout_E = outs['LISA_E'].to_timeseries()
-    # REMOVE THE * 0!!
     strain_A = pycbc.noise.noise_from_psd(len(tout_A), tout_A.delta_t, psds_for_datagen['LISA_A'], seed=seed+137) * 0.
     strain_E = pycbc.noise.noise_from_psd(len(tout_E), tout_E.delta_t, psds_for_datagen['LISA_E'], seed=seed+13812476) * 0.
     strain_A[:] += tout_A[:]
@@ -441,6 +440,7 @@ def generate_data_lisa_ew(waveform_params, psds_for_datagen, psds_for_whitening,
         copy_output=False,
         uid=1237
     )
+    # FIXME: Might need this!
     strain_ww_A.data[-int(cutoff_time//5):] = 0
 
     strain_fout_E = pycbc.strain.strain.execute_cached_fft(
@@ -454,13 +454,18 @@ def generate_data_lisa_ew(waveform_params, psds_for_datagen, psds_for_whitening,
         copy_output=False,
         uid=1239
     )
+    # FIXME: Might need this!
     strain_ww_E.data[-int(cutoff_time//5):] = 0
 
     return strain_ww_A, strain_ww_E
 
 
+_WINDOW = None
 def generate_waveform_lisa_ew(waveform_params, psds_for_whitening, window_length, cutoff_time, kernel_length, extra_forward_zeroes=0):
-    window = signal.windows.hann(window_length * 2 + 1)[:window_length]
+    global _WINDOW
+    if _WINDOW is None or len(_WINDOW) != window_length:
+        _WINDOW = signal.windows.hann(window_length * 2 + 1)[:window_length]
+    window = _WINDOW
     
     outs = pycbc.waveform.get_fd_det_waveform(ifos=['LISA_A','LISA_E','LISA_T'], **waveform_params)
     tout_A = pycbc.strain.strain.execute_cached_ifft(
@@ -475,13 +480,13 @@ def generate_waveform_lisa_ew(waveform_params, psds_for_whitening, window_length
     )
     
     if extra_forward_zeroes:
-        tout_A[:int(extra_forward_zeroes//5)] = 0
-    tout_A[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+10000] *= window
+        tout_A.data[:int(extra_forward_zeroes//5)] = 0
+    tout_A.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+10000] *= window
     tout_A.data[-int(cutoff_time//5):] = 0
     
     if extra_forward_zeroes:
-        tout_E[:int(extra_forward_zeroes//5)] = 0
-    tout_E[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+10000] *= window
+        tout_E.data[:int(extra_forward_zeroes//5)] = 0
+    tout_E.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+10000] *= window
     tout_E.data[-int(cutoff_time//5):] = 0
 
     #print(len(tout))
@@ -493,7 +498,7 @@ def generate_waveform_lisa_ew(waveform_params, psds_for_whitening, window_length
         uid=1235
     )
     #print(1./fout.delta_f, 1./lisa_a_zero_phase_kern_pycbc_fd.delta_f)
-    fout_A = fout_A * (psds_for_whitening['LISA_A']).conj()
+    fout_A.data[:] = fout_A.data[:] * (psds_for_whitening['LISA_A'].data[:]).conj()
     
     fout_E = pycbc.strain.strain.execute_cached_fft(
         tout_E,
@@ -501,7 +506,35 @@ def generate_waveform_lisa_ew(waveform_params, psds_for_whitening, window_length
         uid=12350
     )
     #print(1./fout.delta_f, 1./lisa_a_zero_phase_kern_pycbc_fd.delta_f)
-    fout_E = fout_E * (psds_for_whitening['LISA_E']).conj()
+    fout_E.data[:] = fout_E.data[:] * (psds_for_whitening['LISA_E'].data[:]).conj()
+
+    fout_ww_A = pycbc.strain.strain.execute_cached_ifft(
+        fout_A,
+        copy_output=False,
+        uid=5237
+    )
+    # FIXME: Might need this!
+    fout_ww_A.data[-int(cutoff_time//5):] = 0
+
+    fout_A = pycbc.strain.strain.execute_cached_fft(
+        fout_ww_A,
+        copy_output=False,
+        uid=5238
+    )
+
+    fout_ww_E = pycbc.strain.strain.execute_cached_ifft(
+        fout_E,
+        copy_output=False,
+        uid=5247
+    )
+    # FIXME: Might need this!
+    fout_ww_E.data[-int(cutoff_time//5):] = 0
+
+    fout_E = pycbc.strain.strain.execute_cached_fft(
+        fout_ww_E,
+        copy_output=False,
+        uid=5248
+    )
 
     fouts = {}
     fouts['LISA_A'] = fout_A
