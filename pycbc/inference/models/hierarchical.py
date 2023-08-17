@@ -663,44 +663,6 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         except AttributeError:
             pass
 
-    def get_snr(self, wfs):
-        """ Return hp/hc maximized SNR time series.
-        Note that we also calculate sh/hh of each TDI channel
-        for space-borne detectors, but only return `snrs` from
-        ground-based detectors for the marginalization over
-        (tc, ra, dec), because we assume for SOBHB signals,
-        ground-based detectors dominant SNR and accuracy of
-        (tc, ra, dec). The sh/hh of each TDI channel is inserted
-        into `marginalize_loglr` with that from ground-based detectors.
-        """
-        self.sh = {}
-        self.hh = {}
-
-        # calculate snrs, sh, and hh from ground-based detectors
-        p = self.primary_model.current_params
-        p2 = p.copy()
-        p2.pop('inclination')
-        wfs_ground = self.primary_model.get_waveforms(p2)
-        snrs = self.primary_model.get_snr(wfs_ground)
-        self.sh.update(self.primary_model.sh)
-        self.hh.update(self.primary_model.hh)
-
-        # calculate sh and hh from space-borne detectors
-        wfs_space = self.other_models.get_waveforms(p2)
-        lik = self.other_models.likelihood_function
-        for ifo in self.other_models.det:
-            freqs = self.other_models.fedges[ifo]
-            sdat = self.other_models.sdat[ifo]
-            h00 = self.other_models.h00_sparse[ifo]
-            channel = wfs_space[ifo].numpy()
-            sh, hh = lik(freqs, 0.0, channel, h00,
-                         sdat['a0'], sdat['a1'],
-                         sdat['b0'], sdat['b1'])
-            self.sh[ifo] = sh
-            self.hh[ifo] = hh
-
-        return snrs
-
     def _loglr(self):
         r"""Computes the log likelihood ratio,
 
@@ -718,41 +680,23 @@ class MultibandRelativeTimeDom(HierarchicalModel):
             The value of the log likelihood ratio.
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
-        sh_total = hh_total = 0
-        ic = numpy.cos(p['inclination'])
-        ip = 0.5 * (1.0 + ic * ic)
-        pol_phase = numpy.exp(-2.0j * p['polarization'])
 
-        # here we assume the SNR is dominant by ground-based detectors,
-        # only use snrs from ground-based detectors
-        self.primary_model.snr_draw(snrs=snrs)
+        # note that for SOBHB signals, ground-based detectors dominant SNR
+        # and accuracy of (tc, ra, dec)
+        sh_ground, hh_ground = self.primary_model.loglr(just_sh_hh=True)
 
-        # calculate sh_total and hh_total of ground-based detectors
-        for ifo in self.primary_model.det:
-            if self.primary_model.precalc_antenna_factors:
-                fp, fc, dt = \
-                    self.primary_model.get_precalc_antenna_factors(ifo)
-            else:
-                dt = self.primary_model.det[ifo].time_delay_from_earth_center(
-                            p['ra'], p['dec'], p['tc'])
-                fp, fc = self.primary_model.det[ifo].antenna_pattern(
-                            p['ra'], p['dec'], 0, p['tc'])
-            dts = p['tc'] + dt
-            f = (fp + 1.0j * fc) * pol_phase
+        # add likelihood contribution from space-borne detectors, we
+        # calculate sh/hh for each extrinsic parameter
 
-            # Note, this includes complex conjugation already
-            # as our stored inner products were hp* x data
-            htf = (f.real * ip + 1.0j * f.imag * ic)
+        logging.info("Calculating sh/hh for other_models")
+        # self.primary_model.marginalize_vector_params
+        parameter_set = self.primary_model.current_params
+        for parameters in parameter_set:
+            self.other_models.update(**parameters)
+            sh_space, hh_space = self.other_models.loglr(just_sh_hh=True)
 
-            sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
-            sh_total += sh * htf
-            hh_total += self.hh[ifo] * abs(htf) ** 2.0
-
-        # add likelihood contribution from space-borne detectors
-        for ifo in self.other_models.det:
-            sh_total += self.sh[ifo]
-            hh_total += self.hh[ifo]
-
+        sh_total = sh_ground + sh_space
+        hh_total = hh_ground + hh_space
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
         return loglr
 
