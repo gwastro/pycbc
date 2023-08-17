@@ -505,8 +505,8 @@ class Relative(DistMarg, BaseGaussianNoise):
                 loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
-    def _loglr(self):
-        r"""Computes the log likelihood ratio,
+    def _loglr(self, just_sh_hh=False):
+        r"""Computes the log likelihood ratio, or just return sh/hh_total
 
         .. math::
 
@@ -518,8 +518,8 @@ class Relative(DistMarg, BaseGaussianNoise):
 
         Returns
         -------
-        float
-            The value of the log likelihood ratio.
+        float or tuple
+            The value of the log likelihood ratio, or sh/hh_total.
         """
         # get model params
         p = self.current_params
@@ -570,8 +570,11 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             filt += filter_i
             norm += norm_i
-        loglr = self.marginalize_loglr(filt, norm)
-        return loglr
+        if just_sh_hh:
+            return (filt, norm)
+        else:
+            loglr = self.marginalize_loglr(filt, norm)
+            return loglr
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
@@ -790,8 +793,8 @@ class RelativeTimeDom(RelativeTime):
 
         return snrs
 
-    def _loglr(self):
-        r"""Computes the log likelihood ratio,
+    def _loglr(self, just_sh_hh=False):
+        r"""Computes the log likelihood ratio, or just return sh/hh_total
 
         .. math::
 
@@ -803,8 +806,8 @@ class RelativeTimeDom(RelativeTime):
 
         Returns
         -------
-        float
-            The value of the log likelihood ratio.
+        float or tuple
+            The value of the log likelihood ratio, or sh/hh_total.
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params
@@ -841,5 +844,8 @@ class RelativeTimeDom(RelativeTime):
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        loglr = self.marginalize_loglr(sh_total, hh_total)
-        return loglr
+        if just_sh_hh:
+            return (sh_total, hh_total)
+        else:
+            loglr = self.marginalize_loglr(sh_total, hh_total)
+            return loglr
