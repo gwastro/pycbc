@@ -999,8 +999,9 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
         tags=tags
     )
 
-    bayestar_node.add_input_opt('--event-xml', xml_out)
+
     bayestar_node = bayestar_exe.create_node()
+    bayestar_node.add_input_opt('--event-xml', xml_out)
     fits_out = bayestar_node.new_output_file_opt(
         workflow.analysis_time,
         '.fits',
@@ -1010,7 +1011,7 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
     if approximant == b'SPAtmplt':
         # Bayestar doesnt use the SPAtmplt approximant
         approximant = b'TaylorF2'
-    bayestar_node.add_opt('--waveform', str(approximant))
+    bayestar_node.add_opt('--waveform', approximant.decode())
 
     workflow += bayestar_node
 

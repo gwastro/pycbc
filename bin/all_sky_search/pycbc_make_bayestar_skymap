@@ -12,6 +12,8 @@ import argparse
 import subprocess
 import shutil
 import logging
+import os
+import random
 import pycbc.version
 from pycbc import init_logging
 
@@ -36,26 +38,65 @@ parser.add_argument('--low-frequency-cutoff', type=float, default=20,
 parser.add_argument('--seed',
                     help="Seed to pass to bayestar-localize-coincs")
 parser.add_argument('--output-file', required=True,
-                    help="Filename to output the fits file to."
+                    help="Filename to output the fits file to.")
 args = parser.parse_args()
 
-init_logging(args.verbose)
+# Default logging is set higher than normal for this job
+logging_level = args.verbose + 1 if args.verbose else None
+init_logging(logging_level)
 logging.info("Starting")
-
 
 bayestar_exe = args.bayestar_executable if args.bayestar_executable \
     else 'bayestar-localize-coincs'
 
+# Use a seed to always make the temp directory the same
+# This is the same as the seed passed to bayestar
+if args.seed:
+    random.seed(args.seed)
+
+# Set up a temporary directory so that the fits file shouldnt clash
+# with any existing ones
+tmpdir_name = 'bayestar_tmp_output_%030x' % random.randrange(16**30)
+tmpdir = os.path.join(os.getcwd(), tmpdir_name)
+
+# Make the directory if it doesnt exist:
+# Don't delete the temporary directory if it already existed
+rmtmpdir = False
+try:
+    os.mkdir(tmpdir)
+    rmtmpdir = True
+except OSError:
+    logging.info("Directory %s already exists", tmpdir)
+
+# Set up the command to pass to bayestar
 cmd = [bayestar_exe,
        args.event_xml,
+       args.event_xml,
        '--waveform', args.waveform,
-       '--f_low', str(args.low_frequency_cutoff),
+       '--f-low', str(args.low_frequency_cutoff),
        '-o', tmpdir]
 
+if args.seed:
+    cmd += ['--seed', args.seed]
+
 logging.info("Running %s", ' '.join(cmd))
-subprocess.call(cmd)
+try:
+    subprocess.check_output(cmd)
+except subprocess.CalledProcessError as e:
+    logging.warn("Error in running bayestar")
+    logging.warn(e.output)
+    sys.exit(1)
+
+# Find the fits file in the temporary directory:
+# It would be nice to do this better! - maybe use the input xml
+# file to find the number which is going to be used?
+fits_filename = [os.path.join(tmpdir, f) for f in os.listdir(tmpdir)
+                 if f.endswith('fits')][0]
 
 logging.info("Moving output to %s", args.output_file)
-shutil.move(os.path.join(tmpdir, '0.fits'), args.output_file)
+shutil.move(fits_filename, args.output_file)
+
+if rmtmpdir:
+    os.rmdir(tmpdir)
 
 logging.info("Done")
