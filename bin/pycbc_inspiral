@@ -91,7 +91,7 @@ parser.add_argument("--cluster-function", choices=["findchirp", "symmetric"],
                     "'findchirp' uses a forward sliding window; 'symmetric' "
                     "will compare each window to the one before and after, keeping "
                     "only a local maximum.", default="findchirp")
-parser.add_argument("--cluster-window", type=float, default = -1,
+parser.add_argument("--cluster-window", type=float, default = 0,
                     help="Length of clustering window in seconds."
                     " Set to 0 to disable clustering.")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
