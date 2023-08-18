@@ -31,4 +31,4 @@ ht = fp * hp + fc * hc
 # The projection process can also take into account the rotation of the
 # earth using the project wave function.
 hp.start_time = hc.start_time = time
-ht = d.project_wave(hp, hc, ra, dec, pol)
+ht2 = d.project_wave(hp, hc, ra, dec, pol)

@@ -92,7 +92,6 @@ class CandidateForGraceDB(object):
             snr_ifos = sld.keys()  # Ifos with SNR time series calculated
             self.snr_series = {ifo: sld[ifo]['snr_series'] for ifo in snr_ifos}
             # Extra ifos have SNR time series but not sngl inspiral triggers
-            extra_ifos = list(set(snr_ifos) - set(self.et_ifos))
 
             for ifo in snr_ifos:
                 # Ifos used for sky loc must have a PSD
@@ -101,14 +100,11 @@ class CandidateForGraceDB(object):
         else:
             self.snr_series = None
             snr_ifos = self.et_ifos
-            extra_ifos = []
 
         # Set up the bare structure of the xml document
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        # FIXME is it safe (in terms of downstream operations) to let
-        # `program_name` default to the actual script name?
         proc_id = create_process_table(outdoc, program_name='pycbc',
                                        detectors=snr_ifos).process_id
 
@@ -190,16 +186,6 @@ class CandidateForGraceDB(object):
             numpy.mean([coinc_results[f'foreground/{ifo}/end_time'] for ifo in
                         self.et_ifos]) \
             + self.time_offset
-
-        # For extra detectors used only for sky loc, respect BAYESTAR's
-        # assumptions and checks
-        bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
-                                 'spin1y spin1z spin2x spin2y spin2z').split()
-        for sngl in sngl_inspiral_table:
-            if sngl.ifo in extra_ifos:
-                for bcf in bayestar_check_fields:
-                    setattr(sngl, bcf, getattr(sngl_populated, bcf))
-                sngl.end = lal.LIGOTimeGPS(self.merger_time)
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)

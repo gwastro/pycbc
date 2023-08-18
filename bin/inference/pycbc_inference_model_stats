@@ -51,7 +51,7 @@ parser.add_argument("--nprocesses", type=int, default=1,
 parser.add_argument("--config-file", nargs="+", type=str, default=None,
                     help="Override the config file stored in the input file "
                           "with the given file(s).")
-parser.add_argument("--verbose", action="store_true", default=False,
+parser.add_argument("--verbose", action="count", default=0,
                     help="Print logging messages.")
 parser.add_argument('--reconstruct-parameters', action="store_true",
                     help="Reconstruct marginalized parameters")

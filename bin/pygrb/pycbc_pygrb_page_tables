@@ -48,6 +48,38 @@ __program__ = "pycbc_pygrb_page_tables"
 # =============================================================================
 # Functions
 # =============================================================================
+# Function to load trigger data
+def load_data(input_file, vetoes, ifos, opts, injections=False):
+    """Load data from a trigger/injection file"""
+
+    # Initialize the dictionary
+    data = {}
+    data['trig_time'] = None
+    data['coherent'] = None
+    data['reweighted_snr'] = None
+
+    if input_file:
+        if injections:
+            logging.info("Loading injections...")
+            # This will eventually become ppu.load_injections()
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+        else:
+            logging.info("Loading triggers...")
+            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            
+        data['trig_time'] = trigs_or_injs['network/end_time_gc'][:]
+        num_trigs_or_injs = len(data['trig_time'])
+        data['coherent'] = trigs_or_injs['network/coherent_snr'][:]
+        data['reweighted_snr'] = trigs_or_injs['network/reweighted_snr'][:]
+
+        if injections:
+            logging.info("%d injections found.", num_trigs_or_injs)
+        else:
+            logging.info("%d triggers found.", num_trigs_or_injs)
+
+    return data
+
+
 def get_column(table, column_name):
     """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column
     method. Easier for h5py switch. Note: Must still replace
@@ -190,7 +222,6 @@ parser.add_argument("-F", "--offsource-file", action="store", required=True,
 # As opposed to offsource-file and trig-file, this only contains onsource
 parser.add_argument("--onsource-file", action="store", default=None,
                     help="Location of on-source trigger file.")
-ppu.pygrb_add_missed_injs_input_opt(parser)
 ppu.pygrb_add_injmc_opts(parser)
 ppu.pygrb_add_bestnr_opts(parser)
 parser.add_argument("--num-loudest-off-trigs", action="store",
@@ -200,6 +231,7 @@ parser.add_argument("--quiet-found-injs-output-file", default=None, #required=Tr
                     help="Quiet-found injections html output file.")
 parser.add_argument("--missed-found-injs-output-file", default=None, #required=True,
                     help="Missed-found injections html output file.")
+# TODO: group hdf5 files into a single one
 parser.add_argument("--quiet-found-injs-h5-output-file", default=None, #required=True,
                     help="Quiet-found injections h5 output file.")
 parser.add_argument("--loudest-offsource-trigs-output-file", default=None, #required=True,
@@ -241,9 +273,9 @@ if output_files.count(None) == len(output_files):
 if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
     opts.quiet_found_injs_h5_output_file:
     do_injections = True
-    if (opts.found_file is None) and (opts.missed_file is None):
-        err_msg = "Must provide both found and missed injections file "
-        err_msg += "locations if processing injections."
+    if opts.found_missed_file is None:
+        err_msg = "Must provide found-missed injections file "
+        err_msg += "location if processing injections."
         parser.error(err_msg)
 else:
     do_injections = False
@@ -260,8 +292,7 @@ if not opts.newsnr_threshold:
 # Store options used multiple times in local variables
 trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
-found_file = opts.found_file
-missed_file = opts.missed_file
+found_missed_file = opts.found_missed_file
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
 wf_err = opts.waveform_error
@@ -316,8 +347,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trigs = ppu.load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
-logging.info("%d triggers loaded.", len(trigs))
+trig_data = load_data(trig_file, vetoes, ifos, opts)
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
@@ -587,8 +617,8 @@ else:
 # =======================
 if do_injections:
 
-    found_trig_table = ppu.load_injections(found_file, vetoes)
-    found_inj_table = ppu.load_injections(found_file, vetoes, sim_table=True)
+    found_trig_table = ppu.load_injections(found_missed_file, vetoes)
+    found_inj_table = ppu.load_injections(found_missed_file, vetoes, sim_table=True)
 
     logging.info("Missed/found injections/triggers loaded.")
 
@@ -618,7 +648,7 @@ if do_injections:
     logging.info("%d found injections analysed.", len(found_injs['mchirp']))
 
     # Missed injections (ones not recovered at all)
-    missed_inj_table = ppu.load_injections(missed_file, vetoes, sim_table=True)
+    missed_inj_table = ppu.load_injections(found_missed_file, vetoes, sim_table=True)
     missed_injs = lsctable_to_dict(missed_inj_table, ifos, opts)
 
     # Avoids a problem with formatting in the non-static html output file

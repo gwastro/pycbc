@@ -745,28 +745,15 @@ def convert_cachelist_to_filelist(datafindcache_list):
 
             # Populate the PFNs for the File() we just created
             if frame.url.startswith('file://'):
-                currFile.add_pfn(frame.url, site='local')
-                if frame.url.startswith(
-                    'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'):
-                    # Datafind returned a URL valid on the osg as well
-                    # so add the additional PFNs to allow OSG access.
-                    currFile.add_pfn(frame.url, site='osg')
-                    currFile.add_pfn(frame.url.replace(
-                        'file:///cvmfs/oasis.opensciencegrid.org/',
-                        'root://xrootd-local.unl.edu/user/'), site='osg')
-                    currFile.add_pfn(frame.url.replace(
-                        'file:///cvmfs/oasis.opensciencegrid.org/',
-                        'gsiftp://red-gridftp.unl.edu/user/'), site='osg')
-                    currFile.add_pfn(frame.url.replace(
-                        'file:///cvmfs/oasis.opensciencegrid.org/',
-                        'gsiftp://ldas-grid.ligo.caltech.edu/hdfs/'), site='osg')
-                elif frame.url.startswith(
-                    'file:///cvmfs/gwosc.osgstorage.org/'):
-                    # Datafind returned a URL valid on the osg as well
-                    # so add the additional PFNs to allow OSG access.
-                    for s in ['osg', 'orangegrid', 'osgconnect']:
-                        currFile.add_pfn(frame.url, site=s)
-                        currFile.add_pfn(frame.url, site="{}-scratch".format(s))
+                if frame.url.startswith('file:///cvmfs/'):
+                    # Frame is on CVMFS, so let all sites read it directly.
+                    currFile.add_pfn(frame.url, site='all')
+                else:
+                    # Frame not on CVMFS, so may need transferring.
+                    # Be careful here! If all your frames files are on site
+                    # = local and you try to run on OSG, it will likely
+                    # overwhelm the condor file transfer process!
+                    currFile.add_pfn(frame.url, site='local')
             else:
                 currFile.add_pfn(frame.url, site='notlocal')
 

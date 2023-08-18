@@ -34,7 +34,6 @@ echo -e "\\n\\n>> [`date`] Running pycbc_multi_inspiral on GW170817 data"
 pycbc_multi_inspiral \
     --verbose \
     --projection left+right \
-    --processing-scheme mkl \
     --instruments H1 L1 V1 \
     --trigger-time ${EVENT} \
     --gps-start-time ${GPS_START} \
