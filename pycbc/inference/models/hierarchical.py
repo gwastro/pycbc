@@ -688,12 +688,16 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         # add likelihood contribution from space-borne detectors, we
         # calculate sh/hh for each extrinsic parameter
 
-        logging.info("Calculating sh/hh for other_models")
-        # self.primary_model.marginalize_vector_params
+        logging.info("Calculating sh/hh for space-borne detectors")
         parameter_set = self.primary_model.current_params
+        nums = self.primary_model.marginalize_vector_samples
+        sh_space = numpy.zeros(nums)
+        hh_space = numpy.zeros(nums)
         for parameters in parameter_set:
+            i = numpy.where(parameter_set==parameters)[0][0]
             self.other_models.update(**parameters)
-            sh_space, hh_space = self.other_models.loglr(just_sh_hh=True)
+            sh_space[i], hh_space[i] = self.other_models.loglr(
+                                            just_sh_hh=True)
 
         sh_total = sh_ground + sh_space
         hh_total = hh_ground + hh_space
@@ -701,13 +705,15 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         return loglr
 
     def _loglikelihood(self):
+        other_models_lognl = 0
         for lbl, model in self.submodels.items():
             # Update the parameters of each
             model.update(**{p.subname: self.current_params[p.fullname]
                             for p in self.param_map[lbl]})
+            other_models_lognl += model.lognl
 
-        # # Calculate the combined loglikelihood
-        logl = self.loglr + self.primary_model.lognl + self.other_models.lognl
+        # calculate the combined loglikelihood
+        logl = self.loglr + self.primary_model.lognl + other_models_lognl
 
         # store any extra stats from the submodels
         for lbl, model in self.submodels.items():
@@ -715,3 +721,99 @@ class MultibandRelativeTimeDom(HierarchicalModel):
             for stat in self.extra_stats_map[lbl]:
                 setattr(self._current_stats, stat, mstats[stat.subname])
         return logl
+
+    @classmethod
+    def from_config(cls, cp, **kwargs):
+        r"""Initializes an instance of this class from the given config file.
+        For more details, see `from_config` in `HierarchicalModel`.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser
+            Config file parser to read.
+        \**kwargs :
+            All additional keyword arguments are passed to the class. Any
+            provided keyword will override what is in the config file.
+        """
+        # we need the read from config function from the init; to prevent
+        # circular imports, we import it here
+        from pycbc.inference.models import read_from_config
+        # get the submodels
+        submodel_lbls = shlex.split(cp.get('model', 'submodels'))
+        # sort parameters by model
+        vparam_map = map_params(hpiter(cp.options('variable_params'),
+                                       submodel_lbls))
+        sparam_map = map_params(hpiter(cp.options('static_params'),
+                                       submodel_lbls))
+
+        # we'll need any waveform transforms for the initializing sub-models,
+        # as the underlying models will receive the output of those transforms
+        if any(cp.get_subsections('waveform_transforms')):
+            waveform_transforms = transforms.read_transforms_from_config(
+                cp, 'waveform_transforms')
+            wfoutputs = set.union(*[t.outputs
+                                    for t in waveform_transforms])
+            wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls))
+        else:
+            wfparam_map = {lbl: [] for lbl in submodel_lbls}
+        # initialize the models
+        submodels = {}
+        logging.info("Loading submodels")
+        for lbl in submodel_lbls:
+            logging.info("============= %s =============", lbl)
+            # create a config parser to pass to the model
+            subcp = WorkflowConfigParser()
+            # copy sections over that start with the model label (this should
+            # include the [model] section for that model)
+            copy_sections = [
+                HierarchicalParam(sec, submodel_lbls)
+                for sec in cp.sections() if lbl in
+                sec.split('-')[0].split(HierarchicalParam.delim, 1)[0]]
+            for sec in copy_sections:
+                # check that the user isn't trying to set variable or static
+                # params for the model (we won't worry about waveform or
+                # sampling transforms here, since that is checked for in the
+                # __init__)
+                if sec.subname in ['variable_params', 'static_params']:
+                    raise ValueError("Section {} found in the config file; "
+                                     "[variable_params] and [static_params] "
+                                     "sections should not include model "
+                                     "labels. To specify parameters unique to "
+                                     "one or more sub-models, prepend the "
+                                     "individual parameter names with the "
+                                     "model label. See HierarchicalParam for "
+                                     "details.".format(sec))
+                subcp.add_section(sec.subname)
+                for opt, val in cp.items(sec):
+                    subcp.set(sec.subname, opt, val)
+            # set the static params
+            subcp.add_section('static_params')
+            for param in sparam_map[lbl]:
+                subcp.set('static_params', param.subname,
+                          cp.get('static_params', param.fullname))
+
+            # set the variable params: different from the standard
+            # hierarchical model, in this multiband model, all sub-models
+            # has the same variable parameters, so we don't need to worry
+            # about the unique variable issue. Besides, the primary model
+            # needs to do marginalization, so we must set variable_params
+            # and prior section before initialize it.
+
+            subcp.add_section('variable_params')
+            for param in vparam_map[lbl]:
+                subcp.set('variable_params', param.subname,
+                          cp.get('variable_params', param.fullname))
+
+            for section in cp.sections():
+                if 'prior-' in section:
+                    prior_section_name = '%s' % section
+                    subcp[prior_section_name] = cp[prior_section_name]
+
+            # initialize
+            submodel = read_from_config(subcp)
+            submodels[lbl] = submodel
+            logging.info("")
+        # now load the model
+        logging.info("Loading multiband_relative_time_dom model")
+        return super(MultibandRelativeTimeDom, cls).from_config(
+            cp, submodels=submodels)
