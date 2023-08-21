@@ -517,11 +517,11 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
 
     Returns
     --------
-    plot_files : workflow.FileList
-        The list of workflow.Files created by single_template_plot jobs
+    hdf_files : workflow.FileList
+        The list of workflow.Files created by single_template jobs
         in this function.
     plot_files : workflow.FileList
-        The list of workflow.Files created by single_template jobs
+        The list of workflow.Files created by single_template_plot jobs
         in this function.
     """
     tags = [] if tags is None else tags
