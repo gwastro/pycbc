@@ -23,7 +23,6 @@ from pycbc.events import select_segments_by_definer, coinc
 from pycbc.io import get_all_subkeys
 import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file
-import numpy as np
 import pycbc.version
 
 def get_params(curr_idx, times, tids, bank_id, bank_data, fsdt):
