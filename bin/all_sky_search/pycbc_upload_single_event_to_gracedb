@@ -96,11 +96,20 @@ parser.add_argument('--search-id-string', default='AllSky',
                          "would give H1L1V1-PYCBC_AllSky-1234567890-1.xml. "
                          "See https://dcc.ligo.org/LIGO-T050017/public. "
                          "Default: 'AllSky'")
-parser.add_argument('--upload-files', nargs='+',
-                    help="Plots to be uploaded with the event. "
-                         "Filenames should contain the strings 'SNR', "
-                         "'ASD', 'SKYMAP' or be a '.fits' file "
-                         "to annotate correctly.")
+parser.add_argument('--snr-timeseries-plot',
+                    help="SNR timeseries plot to be uploaded with the event.")
+parser.add_argument('--asd-plot',
+                    help="ASD plot to be uploaded with the event.")
+parser.add_argument('--skymap-plot',
+                    help="Skymap plot to be uploaded with the event.")
+parser.add_argument('--skymap-fits-file',
+                    help="Skymap .fits file to be uploaded with the event.")
+parser.add_argument('--source-probabilities',
+                    help="Source probabilities file to be uploaded with the "
+                         "event.")
+parser.add_argument('--source-probabilities-plot',
+                    help="Source probabilities plot to be uploaded with the "
+                          "event.")
 
 args = parser.parse_args()
 
@@ -137,40 +146,10 @@ if args.log_message is not None:
         tag_name=['analyst_comments']
     )
 
-if args.upload_files:
-    for upload_filename in args.upload_files:
-        # Work out if this is an ASD, SNR timeseries, fits file or none:
-        if "_ASD-" in upload_filename and upload_filename.endswith('.png'):
-            logging.info("Found ASD plot %s", upload_filename)
-            comment = "PyCBC ASD estimate from the time of event"
-            tag = "psd"
-            displayname='ASDs'
-        elif "_SNR-" in upload_filename and upload_filename.endswith('.png'):
-            logging.info("Found SNR timeseries plot %s", upload_filename)
-            comment = "SNR timeseries plot upload"
-            tag = "background"
-            displayname='SNR timeseries'
-        elif "_SKYMAP_PLOT" in upload_filename and upload_filename.endswith('.png'):
-            logging.info("Found skymap plot %s", upload_filename)
-            comment = "Skymap plot upload"
-            tag = "sky_loc"
-            displayname=''
-        elif upload_filename.endswith('.fits'):
-            logging.info("Found fits file %s", upload_filename)
-            comment = "sky localization complete"
-            tag = "sky_loc"
-            displayname=''
-        elif upload_filename.endswith('_src_probs.json'):
-            logging.info("Found source probabilities file %s", upload_filename)
-            comment = "Source probabilities JSON file upload"
-            tag = "pe"
-            displayname=''
-        elif upload_filename.endswith('_src_probs.png'):
-            logging.info("Found source probabilities plot %s", upload_filename)
-            comment = "Source probabilities plot upload"
-            tag = "pe"
-            displayname=''
-
+def upload_file(upload_filename, displayname, comment, tag):
+    """
+    Helper function to upload files associated with the event.
+    """
     gracedb.write_log(
         r["graceid"],
         comment,
@@ -180,4 +159,47 @@ if args.upload_files:
     )
     logging.info("Uploaded file %s to event %s.", upload_filename,
                  r["graceid"])
+
+
+if args.asd_plot:
+    logging.info("Found ASD plot %s", upload_filename)
+    comment = "PyCBC ASD estimate from the time of event"
+    tag = "psd"
+    displayname='ASDs'
+    upload_file(upload_filename, displayname, comment, tag)
+
+if args.snr_timeseries_plot:
+    logging.info("Found SNR timeseries plot %s", upload_filename)
+    comment = "SNR timeseries plot upload"
+    tag = "background"
+    displayname='SNR timeseries'
+    upload_file(upload_filename, displayname, comment, tag)
+
+if args.skymap_plot:
+    logging.info("Found skymap plot %s", upload_filename)
+    comment = "Skymap plot upload"
+    tag = "sky_loc"
+    displayname=''
+    upload_file(upload_filename, displayname, comment, tag)
+
+if args.skymap_fits_file:
+    logging.info("Found fits file %s", upload_filename)
+    comment = "sky localization complete"
+    tag = "sky_loc"
+    displayname=''
+    upload_file(upload_filename, displayname, comment, tag)
+
+if args.source_probabilities:
+    logging.info("Found source probabilities file %s", upload_filename)
+    comment = "Source probabilities JSON file upload"
+    tag = "pe"
+    displayname=''
+    upload_file(upload_filename, displayname, comment, tag)
+
+if args.source_probabilities_plot:
+    logging.info("Found source probabilities plot %s", upload_filename)
+    comment = "Source probabilities plot upload"
+    tag = "pe"
+    displayname=''
+    upload_file(upload_filename, displayname, comment, tag)
 
