@@ -1080,7 +1080,7 @@ def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
     -------
     layout: list
         A list of tuples which specify the displayed file layout for the
-        minifollops plots.
+        minifollowups plots.
     """
     logging.info('Entering minifollowups module')
 
