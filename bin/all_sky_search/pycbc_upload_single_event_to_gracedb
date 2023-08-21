@@ -124,7 +124,7 @@ r = gracedb.create_event(
     'pycbc',
     args.xml_file_for_upload,
     filecontents=open(args.xml_file_for_upload, "rb").read(),
-    search=id_str,
+    search=args.search_id_string,
     offline=True
 ).json()
 
@@ -135,7 +135,7 @@ gracedb_tag_with_version(gracedb, r['graceid'])
 
 # document the absolute path to the input file
 input_file_str = 'Candidate uploaded from ' \
-    + os.path.abspath(args.input_file)
+    + os.path.abspath(args.xml_file_for_upload)
 gracedb.write_log(r['graceid'], input_file_str)
 
 # add the custom log message, if provided
@@ -162,44 +162,44 @@ def upload_file(upload_filename, displayname, comment, tag):
 
 
 if args.asd_plot:
-    logging.info("Found ASD plot %s", upload_filename)
+    logging.info("Found ASD plot %s", args.asd_plot)
     comment = "PyCBC ASD estimate from the time of event"
     tag = "psd"
     displayname='ASDs'
-    upload_file(upload_filename, displayname, comment, tag)
+    upload_file(args.asd_plot, displayname, comment, tag)
 
 if args.snr_timeseries_plot:
-    logging.info("Found SNR timeseries plot %s", upload_filename)
+    logging.info("Found SNR timeseries plot %s", args.snr_timeseries_plot)
     comment = "SNR timeseries plot upload"
     tag = "background"
     displayname='SNR timeseries'
-    upload_file(upload_filename, displayname, comment, tag)
+    upload_file(args.snr_timeseries_plot, displayname, comment, tag)
 
 if args.skymap_plot:
-    logging.info("Found skymap plot %s", upload_filename)
+    logging.info("Found skymap plot %s", args.skymap_plot)
     comment = "Skymap plot upload"
     tag = "sky_loc"
     displayname=''
-    upload_file(upload_filename, displayname, comment, tag)
+    upload_file(args.skymap_plot, displayname, comment, tag)
 
 if args.skymap_fits_file:
-    logging.info("Found fits file %s", upload_filename)
+    logging.info("Found fits file %s", args.skymap_fits_file)
     comment = "sky localization complete"
     tag = "sky_loc"
     displayname=''
-    upload_file(upload_filename, displayname, comment, tag)
+    upload_file(args.skymap_fits_file, displayname, comment, tag)
 
 if args.source_probabilities:
-    logging.info("Found source probabilities file %s", upload_filename)
+    logging.info("Found source probabilities file %s", args.source_probabilities)
     comment = "Source probabilities JSON file upload"
     tag = "pe"
     displayname=''
-    upload_file(upload_filename, displayname, comment, tag)
+    upload_file(args.source_probabilities, displayname, comment, tag)
 
 if args.source_probabilities_plot:
-    logging.info("Found source probabilities plot %s", upload_filename)
+    logging.info("Found source probabilities plot %s", args.source_probabilities_plot)
     comment = "Source probabilities plot upload"
     tag = "pe"
     displayname=''
-    upload_file(upload_filename, displayname, comment, tag)
+    upload_file(args.source_probabilities_plot, displayname, comment, tag)
 
