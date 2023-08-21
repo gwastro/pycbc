@@ -957,7 +957,33 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
 def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
                       event_id, approximant, out_dir, tags=None):
     """
-    Make files including coinc and skymap fits for uploading to gracedb
+    Make files including xml, skymap fits and plots for uploading to gracedb
+    for a given event
+    
+    Parameters
+    ----------
+    psd_files: FileList([])
+        PSD Files from MERGE_PSDs for the search as appropriate for the
+        event
+    snr_timeseries: FileList([]) 
+        SNR timeseries files, one from each IFO, to add to the XML and plot
+        output from pysbs_single_template
+    xml_all: File
+        XML file containing all events from the search
+    event_id: string
+        an integer to describe the event's position in the xml_all file 
+    approximant: byte string
+        The approximant used for the template of the event, to be passed
+        to bayestar for sky location
+    out_dir:
+        The directory where all the output files should go
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+
+    Returns
+    -------
+    all_output_files: FileList
+        List of all output files from this process
     """
     indiv_xml_exe = Executable(
         workflow.cp,
