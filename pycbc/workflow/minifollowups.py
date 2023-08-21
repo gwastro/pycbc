@@ -505,7 +505,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     data_segments : dictionary of segment lists
         Dictionary of segment lists keyed on the IFO. Used to decide if an
         IFO is plotted if there is valid data. If not given, will plot if
-        the IFO produced a trigger whihc contributed to the event
+        the IFO produced a trigger which contributed to the event
     tags : list (optional, default=None)
         Add this list of tags to all jobs.
     params_str : str (optional, default=None)
