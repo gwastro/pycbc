@@ -959,19 +959,19 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
     """
     Make files including xml, skymap fits and plots for uploading to gracedb
     for a given event
-    
+
     Parameters
     ----------
     psd_files: FileList([])
         PSD Files from MERGE_PSDs for the search as appropriate for the
         event
-    snr_timeseries: FileList([]) 
+    snr_timeseries: FileList([])
         SNR timeseries files, one from each IFO, to add to the XML and plot
         output from pysbs_single_template
     xml_all: File
         XML file containing all events from the search
     event_id: string
-        an integer to describe the event's position in the xml_all file 
+        an integer to describe the event's position in the xml_all file
     approximant: byte string
         The approximant used for the template of the event, to be passed
         to bayestar for sky location
