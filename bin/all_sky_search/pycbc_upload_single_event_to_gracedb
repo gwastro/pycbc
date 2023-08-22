@@ -21,6 +21,7 @@ Take a coinc xml file containing multiple events and upload to gracedb.
 """
 
 import os
+import sys
 import argparse
 import logging
 from ligo.gracedb.rest import GraceDb
@@ -137,6 +138,11 @@ gracedb_tag_with_version(gracedb, r['graceid'])
 input_file_str = 'Candidate uploaded from ' \
     + os.path.abspath(args.xml_file_for_upload)
 gracedb.write_log(r['graceid'], input_file_str)
+
+# document the command line used in the event log
+command_str = 'Upload command: ' \
+    + ' '.join(sys.argv)
+gracedb.write_log(r['graceid'], command_str)
 
 # add the custom log message, if provided
 if args.log_message is not None:
