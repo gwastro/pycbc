@@ -968,7 +968,7 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
     snr_timeseries: FileList([])
         SNR timeseries files, one from each IFO, to add to the XML and plot
         output from pysbs_single_template
-    xml_all: File
+    xml_all: pycbc.workflow.core.File instance
         XML file containing all events from the search
     event_id: string
         an integer to describe the event's position in the xml_all file
