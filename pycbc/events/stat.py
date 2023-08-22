@@ -2083,6 +2083,81 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         logr_n += self.find_dq_val(trigs)
         return logr_n
 
+class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
+    """
+    The ExpFitFgBgKDEStatistic with DQ-based reranking.
+
+    This is the same as the ExpFitFgBgKDEStatistic except the likelihood
+    ratio is corrected via estimating relative noise trigger rates based on
+    the DQ time series.
+    """
+
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+        """
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+        ifos: list of strs, not used here
+            The list of detector names
+        """
+        DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
+                                           ifos=ifos, **kwargs)
+        # The stat file attributes are hard-coded as 'signal-kde_file'
+        # and 'template-kde_file'
+        parsed_attrs = [f.split('-') for f in self.files.keys()]
+        self.kde_names = [at[0] for at in parsed_attrs if
+                       (len(at) == 2 and at[1] == 'kde_file')]
+        assert sorted(self.kde_names) == ['signal', 'template'], \
+            "Two stat files are required, they should have stat attr " \
+            "'signal-kde_file' and 'template-kde_file' respectively"
+
+        self.kde_by_tid = {}
+        for kname in self.kde_names:
+            self.assign_kdes(kname)
+        # This will hold the template ids of the events for the statistic
+        # calculation
+        self.curr_tnum = None
+
+    def assign_kdes(self, kname):
+        """
+        Extract values from KDE files
+
+        Parameters
+        -----------
+        kname: str
+            Used to label the kde files.
+        """
+        ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
+
+
+    def lognoiserate(self, trigs):
+        """
+        Calculate the log noise rate density over single-ifo ranking
+
+        Read in single trigger information, compute the ranking
+        and rescale by the fitted coefficients alpha and rate
+
+        Parameters
+        -----------
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
+
+        Returns
+        ---------
+        lognoisel: numpy.array
+            Array of log noise rate density for each input trigger.
+        """
+        logr_n = ExpFitFgBgKDEStatistic.lognoiserate(
+                    self, trigs)
+        logr_n += self.find_dq_val(trigs)
+        return logr_n
+
 
 statistic_dict = {
     'quadsum': QuadratureSumStatistic,
@@ -2096,6 +2171,7 @@ statistic_dict = {
     'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
     'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
     'phasetd_exp_fit_fgbg_kde': ExpFitFgBgKDEStatistic,
+    'dq_phasetd_exp_fit_fgbg_kde': DQExpFitFgBgKDEStatistic,
 }
 
 
