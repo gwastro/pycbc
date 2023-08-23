@@ -2102,17 +2102,8 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
-        Parameters
-        ----------
-        sngl_ranking: str
-            The name of the ranking to use for the single-detector triggers.
-        files: list of strs, needed here
-            A list containing the filenames of hdf format files used to help
-            construct the coincident statistics. The files must have a 'stat'
-            attribute which is used to associate them with the appropriate
-            statistic class.
-        ifos: list of strs, not used here
-            The list of detector names
+        Inherited from DQExpFitFgBgNormStatistic, see docstring there
+        but with find_kdes fucntion from ExpFitFgBgKDEStatistic added
         """
         DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                            ifos=ifos, **kwargs)
@@ -2121,27 +2112,19 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
 
     def logsignalrate(self, stats, shift, to_shift):
         """
-        Calculate the normalized log rate density of signals via lookup.
-
-        This calls back to the KDE class
-
-        Parameters
-        ----------
-        stats: list of dicts giving single-ifo quantities, ordered as
-            self.ifos
-        shift: numpy array of float, size of the time shift vector for each
-            coinc to be ranked
-        to_shift: list of int, multiple of the time shift to apply ordered
-            as self.ifos
-
-        Returns
-        -------
-        value: log of coinc signal rate density for the given single-ifo
-            triggers and time shifts
+        Inherited, see docstring for ExpFitFgBgKDEStatistic.logsignalrate
         """
         # Inherit the function from the KDE statistic, with no changes
         return ExpFitFgBgKDEStatistic.logsignalrate(self, stats, shift,
                                                     to_shift)
+
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
+        """
+        Inherited, see docstring for
+        ExpFitFgBgKDEStatistic.coinc_lim_for_thresh
+        """
+        return ExpFitFgBgKDEStatistic.coinc_lim_for_thresh(
+            self, s, thresh, limifo, **kwargs)
 
 
 statistic_dict = {
