@@ -278,7 +278,11 @@ for ifocomb in ifo_sets:
     else:
         ordered_ifo_list = ifocomb[0]
         coinctag= '1det'
-    if len(ifo_sets) > 1:
+
+    if len(ifo_sets) == 1:
+        # Just one event type - pass it through
+        final_bg_files[ordered_ifo_list] = no_fg_exc_files[ordered_ifo_list]
+    else:
         # Combining the statmap files, multiple possible event types
         other_ifo_keys = list(no_fg_exc_files.keys())
         other_ifo_keys.remove(ordered_ifo_list)
@@ -293,15 +297,15 @@ for ifocomb in ifo_sets:
             tags=ctagcomb
         )
 
+if len(ifo_sets) == 1:
+    combined_bg_file = no_fg_exc_files[ordered_ifo_list]
+else:
     combined_bg_file = wf.setup_combine_statmap(
-                                    workflow,
-                                    wf.FileList(final_bg_files.values()),
-                                    wf.FileList([]),
-                                    output_dir,
-                                    tags=['full_data'])
-    else:
-        final_bg_files[ordered_ifo_list] = no_fg_exc_files[ordered_ifo_list]
-        combined_bg_file = no_fg_exc_files[ordered_ifo_list]
+                                workflow,
+                                wf.FileList(final_bg_files.values()),
+                                wf.FileList([]),
+                                output_dir,
+                                tags=['full_data'])
 
 censored_veto_name = 'closed_box'
 censored_veto = wf.make_foreground_censored_veto(workflow,
@@ -462,6 +466,7 @@ ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
                                     rdir['open_box_result'],
                                     tags=combined_bg_file.tags + ['open_box'],
                                     executable='page_ifar_catalog')
+
 table = wf.make_foreground_table(workflow, combined_bg_file,
                                  hdfbank, rdir['open_box_result'],
                                  singles=insps, extension='.html',
@@ -528,9 +533,10 @@ for key in final_bg_files:
         closed_page = [(snrifar_cb, ifar_cb)]
     else:
         closed_page = [(snrifar_cb,)]
-    table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
-                                     singles=insps, extension='.html',
-                                     tags=bg_file.tags)
+    if len(ifo_sets) > 1:
+        table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
+                                         singles=insps, extension='.html',
+                                         tags=bg_file.tags)
 
     detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
     layout.two_column_layout(open_dir, detailed_page)
