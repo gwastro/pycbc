@@ -1486,9 +1486,11 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
         try:
-            self.curr_tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            # exists if accessed via coinc_findtrigs
+            self.curr_tnum = trigs.template_num
         except AttributeError:
-            self.curr_tnum = trigs['template_id']  # exists for SingleDetTriggers
+            # exists for SingleDetTriggers
+            self.curr_tnum = trigs['template_id']
             # Should only be one ifo fit file provided
             assert len(self.ifos) == 1
         # Store benchmark log volume as single-ifo information since the coinc
@@ -2091,8 +2093,19 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         """
         DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                            ifos=ifos, **kwargs)
+        self.find_kdes()
 
+    def find_kdes(self):
+        """
+        Inherited, see docstring for ExpFitFgBgKDEStatistic.find_kdes
+        """
         ExpFitFgBgKDEStatistic.find_kdes(self)
+
+    def assign_kdes(self, kname):
+        """
+        Inherited, see docstring for ExpFitFgBgKDEStatistic.assign_kdes
+        """
+        ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
 
     def logsignalrate(self, stats, shift, to_shift):
         """
