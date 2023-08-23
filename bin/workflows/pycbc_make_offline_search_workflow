@@ -278,25 +278,30 @@ for ifocomb in ifo_sets:
     else:
         ordered_ifo_list = ifocomb[0]
         coinctag= '1det'
-    other_ifo_keys = list(no_fg_exc_files.keys())
-    other_ifo_keys.remove(ordered_ifo_list)
-    ctagcomb = ['full_data', coinctag]
-    other_bg_files = {ctype: no_fg_exc_files[ctype]
-                      for ctype in other_ifo_keys}
-    final_bg_files[ordered_ifo_list] = wf.setup_exclude_zerolag(
-        workflow,
-        no_fg_exc_files[ordered_ifo_list],
-        wf.FileList(other_bg_files.values()),
-        output_dir, ordered_ifo_list,
-        tags=ctagcomb
-    )
+    if len(ifo_sets) > 1:
+        # Combining the statmap files, multiple possible event types
+        other_ifo_keys = list(no_fg_exc_files.keys())
+        other_ifo_keys.remove(ordered_ifo_list)
+        ctagcomb = ['full_data', coinctag]
+        other_bg_files = {ctype: no_fg_exc_files[ctype]
+                          for ctype in other_ifo_keys}
+        final_bg_files[ordered_ifo_list] = wf.setup_exclude_zerolag(
+            workflow,
+            no_fg_exc_files[ordered_ifo_list],
+            wf.FileList(other_bg_files.values()),
+            output_dir, ordered_ifo_list,
+            tags=ctagcomb
+        )
 
-combined_bg_file = wf.setup_combine_statmap(
-                                workflow,
-                                wf.FileList(final_bg_files.values()),
-                                wf.FileList([]),
-                                output_dir,
-                                tags=['full_data'])
+    combined_bg_file = wf.setup_combine_statmap(
+                                    workflow,
+                                    wf.FileList(final_bg_files.values()),
+                                    wf.FileList([]),
+                                    output_dir,
+                                    tags=['full_data'])
+    else:
+        final_bg_files[ordered_ifo_list] = no_fg_exc_files[ordered_ifo_list]
+        combined_bg_file = no_fg_exc_files[ordered_ifo_list]
 
 censored_veto_name = 'closed_box'
 censored_veto = wf.make_foreground_censored_veto(workflow,
