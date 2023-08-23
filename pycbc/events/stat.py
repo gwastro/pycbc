@@ -1406,6 +1406,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
                                        for ifo in ref_ifos], axis=0)
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
         self.single_increasing = False
+        # Initialize variable to hold event template id(s)
+        self.curr_tnum = None
 
     def assign_median_sigma(self, ifo):
         """
@@ -1484,14 +1486,14 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
         try:
-            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            self.curr_tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
         except AttributeError:
-            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            self.curr_tnum = trigs['template_id']  # exists for SingleDetTriggers
             # Should only be one ifo fit file provided
             assert len(self.ifos) == 1
         # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
-        singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
+        singles['benchmark_logvol'] = self.benchmark_logvol[self.curr_tnum]
         return numpy.array(singles, ndmin=1)
 
     def rank_stat_single(self, single_info,
@@ -1830,8 +1832,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
         self.find_kdes()
-        # Initialize variable to hold event template id(s)
-        self.curr_tnum = None
 
     def find_kdes(self):
         """
@@ -1861,29 +1861,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         with h5py.File(self.files[kname+'-kde_file'], 'r') as kde_file:
             self.kde_by_tid[kname+'_kdevals'] = kde_file['data_kde'][:]
-
-    def single(self, trigs):
-        """
-        Calculate the necessary single detector information including getting
-        template ids from single detector triggers.
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector values
-        """
-        try:
-            # template_num exists if accessed via coinc_findtrigs
-            self.curr_tnum = trigs.template_num
-        except AttributeError:
-            # exists for SingleDetTriggers
-            self.curr_tnum = trigs['template_id']
-        return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def logsignalrate(self, stats, shift, to_shift):
         """
