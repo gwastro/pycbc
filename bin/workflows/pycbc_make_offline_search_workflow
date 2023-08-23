@@ -534,6 +534,7 @@ for key in final_bg_files:
     else:
         closed_page = [(snrifar_cb,)]
     if len(ifo_sets) > 1:
+        # If there is only one ifo_set, then this table has already been made
         table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
                                          singles=insps, extension='.html',
                                          tags=bg_file.tags)
