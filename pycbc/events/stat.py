@@ -1829,6 +1829,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
+        # Initialize variable to hold event template id(s)
+        self.curr_tnum = None
         self.find_kdes()
         # Initialize variable to hold event template id(s)
         self.curr_tnum = None
@@ -2100,8 +2102,17 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
-        Inherited from DQExpFitFgBgNormStatistic, see docstring there
-        but with find_kdes fucntion from ExpFitFgBgKDEStatistic added
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+        ifos: list of strs, not used here
+            The list of detector names
         """
         DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                            ifos=ifos, **kwargs)
