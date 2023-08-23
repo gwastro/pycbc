@@ -2087,9 +2087,8 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
     """
     The ExpFitFgBgKDEStatistic with DQ-based reranking.
 
-    This is the same as the ExpFitFgBgKDEStatistic except the likelihood
-    ratio is corrected via estimating relative noise trigger rates based on
-    the DQ time series.
+    This is the same as the DQExpFitFgBgNormStatistic except the signal
+    rate is adjusted according to the KDE statistic files
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
@@ -2136,27 +2135,30 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
 
 
-    def lognoiserate(self, trigs):
+    def logsignalrate(self, stats, shift, to_shift):
         """
-        Calculate the log noise rate density over single-ifo ranking
+        Calculate the normalized log rate density of signals via lookup.
 
-        Read in single trigger information, compute the ranking
-        and rescale by the fitted coefficients alpha and rate
+        This calls back to the parent class and then applies the ratio_kde
+        weighting factor.
 
         Parameters
-        -----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information.
+        ----------
+        stats: list of dicts giving single-ifo quantities, ordered as
+            self.ifos
+        shift: numpy array of float, size of the time shift vector for each
+            coinc to be ranked
+        to_shift: list of int, multiple of the time shift to apply ordered
+            as self.ifos
 
         Returns
-        ---------
-        lognoisel: numpy.array
-            Array of log noise rate density for each input trigger.
+        -------
+        value: log of coinc signal rate density for the given single-ifo
+            triggers and time shifts
         """
-        logr_n = ExpFitFgBgKDEStatistic.lognoiserate(
-                    self, trigs)
-        logr_n += self.find_dq_val(trigs)
-        return logr_n
+        # Inherit the function from the KDE statistic, with no changes
+        return ExpFitFgBgKDEStatistic.logsignalrate(self, stats, shift,
+                                                    to_shift)
 
 
 statistic_dict = {
