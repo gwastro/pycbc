@@ -1025,7 +1025,6 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
         tags=tags
     )
 
-
     bayestar_node = bayestar_exe.create_node()
     bayestar_node.add_input_opt('--event-xml', xml_out)
     fits_out = bayestar_node.new_output_file_opt(
