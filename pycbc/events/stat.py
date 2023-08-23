@@ -1830,6 +1830,8 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
         self.find_kdes()
+        # Initialize variable to hold event template id(s)
+        self.curr_tnum = None
 
     def find_kdes(self):
         """
@@ -1847,10 +1849,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         self.kde_by_tid = {}
         for kname in self.kde_names:
             self.assign_kdes(kname)
-        # This will hold the template ids of the events for the statistic
-        # calculation
-        self.curr_tnum = None
-
 
     def assign_kdes(self, kname):
         """
