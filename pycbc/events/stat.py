@@ -1829,8 +1829,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
-        # Initialize variable to hold event template id(s)
-        self.curr_tnum = None
         self.find_kdes()
         # Initialize variable to hold event template id(s)
         self.curr_tnum = None
