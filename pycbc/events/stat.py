@@ -1623,6 +1623,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         allowed_names = ['ExpFitFgBgNormStatistic',
                          'ExpFitFgBgNormBBHStatistic',
                          'DQExpFitFgBgNormStatistic',
+                         'DQExpFitFgBgKDEStatistic',
                          'ExpFitFgBgKDEStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
@@ -1828,6 +1829,12 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
+        self.find_kdes()
+
+    def find_kdes(self):
+        """
+        Find which associated files are for the KDE reweighting
+        """
         # The stat file attributes are hard-coded as 'signal-kde_file'
         # and 'template-kde_file'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
@@ -1843,6 +1850,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         # This will hold the template ids of the events for the statistic
         # calculation
         self.curr_tnum = None
+
 
     def assign_kdes(self, kname):
         """
@@ -2083,6 +2091,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         logr_n += self.find_dq_val(trigs)
         return logr_n
 
+
 class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
     """
     The ExpFitFgBgKDEStatistic with DQ-based reranking.
@@ -2107,40 +2116,14 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         """
         DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                            ifos=ifos, **kwargs)
-        # The stat file attributes are hard-coded as 'signal-kde_file'
-        # and 'template-kde_file'
-        parsed_attrs = [f.split('-') for f in self.files.keys()]
-        self.kde_names = [at[0] for at in parsed_attrs if
-                       (len(at) == 2 and at[1] == 'kde_file')]
-        assert sorted(self.kde_names) == ['signal', 'template'], \
-            "Two stat files are required, they should have stat attr " \
-            "'signal-kde_file' and 'template-kde_file' respectively"
 
-        self.kde_by_tid = {}
-        for kname in self.kde_names:
-            self.assign_kdes(kname)
-        # This will hold the template ids of the events for the statistic
-        # calculation
-        self.curr_tnum = None
-
-    def assign_kdes(self, kname):
-        """
-        Extract values from KDE files
-
-        Parameters
-        -----------
-        kname: str
-            Used to label the kde files.
-        """
-        ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
-
+        ExpFitFgBgKDEStatistic.find_kdes(self)
 
     def logsignalrate(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup.
 
-        This calls back to the parent class and then applies the ratio_kde
-        weighting factor.
+        This calls back to the KDE class
 
         Parameters
         ----------
