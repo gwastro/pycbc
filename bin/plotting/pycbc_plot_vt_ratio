@@ -77,7 +77,7 @@ for ftop in args.vt_files_one:
         for k in keys:
             vt_top[k] += f['data'][k][idxs]
             # Variances add over files
-            vt_top_errsqhi[k] += f['errorhi'][k][idxs] ** 2.
+            vt_top_errsqhi[k] += f['errorhigh'][k][idxs] ** 2.
             vt_top_errsqlow[k] += f['errorlow'][k][idxs] ** 2.
 
 # Same for denominator
@@ -89,7 +89,7 @@ for fbot in args.vt_files_two:
                 '{keys} v {list(f["data"].keys())}')
         for k in keys:
             vt_bot[k] += f['data'][k][idxs]
-            vt_bot_errsqhi[k] += f['errorhi'][k][idxs] ** 2.
+            vt_bot_errsqhi[k] += f['errorhigh'][k][idxs] ** 2.
             vt_bot_errsqlow[k] += f['errorlow'][k][idxs] ** 2.
 
 # make the plot pretty
