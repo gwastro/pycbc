@@ -34,6 +34,7 @@ from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
 from .relbin import RelativeTimeDom
 from .relbin_cpu import snr_predictor_dom
+from .tools import DistMarg
 
 #
 # =============================================================================
@@ -606,18 +607,20 @@ class MultiSignalModel(HierarchicalModel):
         return logl
 
 
-class MultibandRelativeTimeDom(HierarchicalModel):
+class MultibandRelativeTimeDom(HierarchicalModel, DistMarg):
     """ Hierarchical heterodyne likelihood for coherent multiband
     parameter estimation which combines data from space-borne and
     ground-based GW detectors coherently. Currently, this only
-    supports LISA for as the space-borne GW detector.
+    supports LISA as the space-borne GW detector.
 
     Sub models are treated as if the same GW source (such as a GW
     from stellar-mass BBH) is observed in different frequency band by
     space-borne and ground-based GW detectors, then transform all
     the parameters into the same frame in the sub model level, use
     `HierarchicalModel` to get the joint likelihood, and marginalize
-    over all the extrinsic parameters supported by `RelativeTimeDom`.
+    over all the extrinsic parameters supported by `RelativeTimeDom`
+    on the multiband likelihood level.
+
     Note that LISA submodel only supports the `Relative` for now,
     for ground-based detectors, please use `RelativeTimeDom`.
     """
@@ -627,14 +630,22 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         super().__init__(variable_params, submodels, **kwargs)
 
         # We assume the ground-based submodel as the primary model.
-        lbl_primary = self.submodels[0]
+        lbl_list = list(self.submodels.keys())
+        lbl_primary = lbl_list[0]
         self.primary_model = self.submodels[lbl_primary]
         if self.primary_model.still_needs_det_response:
-            lbl_primary = self.submodels[1]
+            lbl_primary = lbl_list[1]
             self.primary_model = self.submodels[lbl_primary]
         self.other_models = self.submodels.copy()
-        self.other_models.pop(self.primary_model)
+        self.other_models.pop(lbl_primary)
         self.other_models = list(self.other_models.values())
+
+        # marginalize on multiband likelihood level
+        marginalize_phase = self.primary_model.marginalize_phase
+        variable_params, kwargs = self.setup_marginalization(
+                               variable_params,
+                               marginalize_phase=marginalize_phase,
+                               **kwargs)
 
     def write_metadata(self, fp, group=None):
         """Adds metadata to the output files
@@ -713,7 +724,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
             other_models_lognl += model.lognl
 
         # calculate the combined loglikelihood
-        logl = self.loglr + self.primary_model.lognl + other_models_lognl
+        logl = self._loglr() + self.primary_model.lognl + other_models_lognl
 
         # store any extra stats from the submodels
         for lbl, model in self.submodels.items():
@@ -810,10 +821,11 @@ class MultibandRelativeTimeDom(HierarchicalModel):
                     subcp[prior_section_name] = cp[prior_section_name]
 
             # initialize
-            submodel = read_from_config(subcp)
+            kwargs['not_marginalize_submodel'] = True
+            submodel = read_from_config(subcp, **kwargs)
             submodels[lbl] = submodel
             logging.info("")
         # now load the model
         logging.info("Loading multiband_relative_time_dom model")
-        return super(MultibandRelativeTimeDom, cls).from_config(
+        return super(HierarchicalModel, cls).from_config(
             cp, submodels=submodels)
