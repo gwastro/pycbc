@@ -2111,7 +2111,6 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         """
         Inherited, see docstring for ExpFitFgBgKDEStatistic.logsignalrate
         """
-        # Inherit the function from the KDE statistic, with no changes
         return ExpFitFgBgKDEStatistic.logsignalrate(self, stats, shift,
                                                     to_shift)
 
