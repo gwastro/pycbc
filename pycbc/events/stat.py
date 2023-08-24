@@ -1406,6 +1406,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
                                        for ifo in ref_ifos], axis=0)
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
         self.single_increasing = False
+        # Initialize variable to hold event template id(s)
+        self.curr_tnum = None
 
     def assign_median_sigma(self, ifo):
         """
@@ -1484,14 +1486,16 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
         try:
-            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            # exists if accessed via coinc_findtrigs
+            self.curr_tnum = trigs.template_num
         except AttributeError:
-            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            # exists for SingleDetTriggers
+            self.curr_tnum = trigs['template_id']
             # Should only be one ifo fit file provided
             assert len(self.ifos) == 1
         # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
-        singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
+        singles['benchmark_logvol'] = self.benchmark_logvol[self.curr_tnum]
         return numpy.array(singles, ndmin=1)
 
     def rank_stat_single(self, single_info,
@@ -1623,6 +1627,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         allowed_names = ['ExpFitFgBgNormStatistic',
                          'ExpFitFgBgNormBBHStatistic',
                          'DQExpFitFgBgNormStatistic',
+                         'DQExpFitFgBgKDEStatistic',
                          'ExpFitFgBgKDEStatistic']
         self._check_coinc_lim_subclass(allowed_names)
 
@@ -1828,6 +1833,16 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
+        self.kde_names = []
+        self.find_kdes()
+        self.kde_by_tid = {}
+        for kname in self.kde_names:
+            self.assign_kdes(kname)
+
+    def find_kdes(self):
+        """
+        Find which associated files are for the KDE reweighting
+        """
         # The stat file attributes are hard-coded as 'signal-kde_file'
         # and 'template-kde_file'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
@@ -1836,13 +1851,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         assert sorted(self.kde_names) == ['signal', 'template'], \
             "Two stat files are required, they should have stat attr " \
             "'signal-kde_file' and 'template-kde_file' respectively"
-
-        self.kde_by_tid = {}
-        for kname in self.kde_names:
-            self.assign_kdes(kname)
-        # This will hold the template ids of the events for the statistic
-        # calculation
-        self.curr_tnum = None
 
     def assign_kdes(self, kname):
         """
@@ -1855,29 +1863,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         with h5py.File(self.files[kname+'-kde_file'], 'r') as kde_file:
             self.kde_by_tid[kname+'_kdevals'] = kde_file['data_kde'][:]
-
-    def single(self, trigs):
-        """
-        Calculate the necessary single detector information including getting
-        template ids from single detector triggers.
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector values
-        """
-        try:
-            # template_num exists if accessed via coinc_findtrigs
-            self.curr_tnum = trigs.template_num
-        except AttributeError:
-            # exists for SingleDetTriggers
-            self.curr_tnum = trigs['template_id']
-        return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def logsignalrate(self, stats, shift, to_shift):
         """
@@ -2084,6 +2069,52 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         return logr_n
 
 
+class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
+    """
+    The ExpFitFgBgKDEStatistic with DQ-based reranking.
+
+    This is the same as the DQExpFitFgBgNormStatistic except the signal
+    rate is adjusted according to the KDE statistic files
+    """
+
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+        """
+        Parameters
+        ----------
+        sngl_ranking: str
+            The name of the ranking to use for the single-detector triggers.
+        files: list of strs, needed here
+            A list containing the filenames of hdf format files used to help
+            construct the coincident statistics. The files must have a 'stat'
+            attribute which is used to associate them with the appropriate
+            statistic class.
+        ifos: list of strs, not used here
+            The list of detector names
+        """
+        DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
+                                           ifos=ifos, **kwargs)
+        self.kde_names = []
+        ExpFitFgBgKDEStatistic.find_kdes(self)
+        self.kde_by_tid = {}
+        for kname in self.kde_names:
+            ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
+
+    def logsignalrate(self, stats, shift, to_shift):
+        """
+        Inherited, see docstring for ExpFitFgBgKDEStatistic.logsignalrate
+        """
+        return ExpFitFgBgKDEStatistic.logsignalrate(self, stats, shift,
+                                                    to_shift)
+
+    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
+        """
+        Inherited, see docstring for
+        ExpFitFgBgKDEStatistic.coinc_lim_for_thresh
+        """
+        return ExpFitFgBgKDEStatistic.coinc_lim_for_thresh(
+            self, s, thresh, limifo, **kwargs)
+
+
 statistic_dict = {
     'quadsum': QuadratureSumStatistic,
     'single_ranking_only': QuadratureSumStatistic,
@@ -2096,6 +2127,7 @@ statistic_dict = {
     'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
     'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
     'phasetd_exp_fit_fgbg_kde': ExpFitFgBgKDEStatistic,
+    'dq_phasetd_exp_fit_fgbg_kde': DQExpFitFgBgKDEStatistic,
 }
 
 
