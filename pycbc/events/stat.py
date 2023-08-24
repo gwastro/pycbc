@@ -1834,6 +1834,9 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
         self.find_kdes()
+        self.kde_by_tid = {}
+        for kname in self.kde_names:
+            self.assign_kdes(kname)
 
     def find_kdes(self):
         """
@@ -1847,10 +1850,6 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         assert sorted(self.kde_names) == ['signal', 'template'], \
             "Two stat files are required, they should have stat attr " \
             "'signal-kde_file' and 'template-kde_file' respectively"
-
-        self.kde_by_tid = {}
-        for kname in self.kde_names:
-            self.assign_kdes(kname)
 
     def assign_kdes(self, kname):
         """
@@ -2094,12 +2093,9 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                            ifos=ifos, **kwargs)
         ExpFitFgBgKDEStatistic.find_kdes(self)
-
-    def assign_kdes(self, kname):
-        """
-        Inherited, see docstring for ExpFitFgBgKDEStatistic.assign_kdes
-        """
-        ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
+        self.kde_by_tid = {}
+        for kname in self.kde_names:
+            ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
 
     def logsignalrate(self, stats, shift, to_shift):
         """
