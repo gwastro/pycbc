@@ -180,13 +180,15 @@ class Relative(DistMarg, BaseGaussianNoise):
         earth_rotation=False,
         earth_rotation_mode=2,
         marginalize_phase=True,
+        not_marginalize_submodel=False,
         **kwargs
     ):
 
-        variable_params, kwargs = self.setup_marginalization(
-                               variable_params,
-                               marginalize_phase=marginalize_phase,
-                               **kwargs)
+        if not not_marginalize_submodel:
+            variable_params, kwargs = self.setup_marginalization(
+                                variable_params,
+                                marginalize_phase=marginalize_phase,
+                                **kwargs)
 
         super(Relative, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs
@@ -660,8 +662,9 @@ class RelativeTime(Relative):
                  **kwargs):
         super(RelativeTime, self).__init__(*args, **kwargs)
         self.sample_rate = float(sample_rate)
-        self.setup_peak_lock(sample_rate=self.sample_rate, **kwargs)
-        self.draw_ifos(self.ref_snr, **kwargs)
+        if not kwargs['not_marginalize_submodel']:
+            self.setup_peak_lock(sample_rate=self.sample_rate, **kwargs)
+            self.draw_ifos(self.ref_snr, **kwargs)
 
     @property
     def ref_snr(self):
@@ -839,7 +842,7 @@ class RelativeTimeDom(RelativeTime):
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
-
+            print("dts, p['tc'], dt: ", (dts, p['tc'], dt))
             sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
