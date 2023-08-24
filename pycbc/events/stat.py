@@ -1833,6 +1833,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
+        self.kde_names = []
         self.find_kdes()
         self.kde_by_tid = {}
         for kname in self.kde_names:
@@ -2092,6 +2093,7 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         """
         DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                            ifos=ifos, **kwargs)
+        self.kde_names = []
         ExpFitFgBgKDEStatistic.find_kdes(self)
         self.kde_by_tid = {}
         for kname in self.kde_names:
