@@ -2093,12 +2093,6 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         """
         DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                            ifos=ifos, **kwargs)
-        self.find_kdes()
-
-    def find_kdes(self):
-        """
-        Inherited, see docstring for ExpFitFgBgKDEStatistic.find_kdes
-        """
         ExpFitFgBgKDEStatistic.find_kdes(self)
 
     def assign_kdes(self, kname):
