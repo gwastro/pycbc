@@ -14,25 +14,24 @@ args = parser.parse_args()
 init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
 
 
-temp_files = [h5py.File(file, 'r') for file in args.template_files]
-num_files = len(temp_files)
-if num_files < 2:
+input_kdes = [h5py.File(kfile, 'r') for kfile in args.kde_files]
+if len(input_kdes) < 2:
     raise ValueError("At least two input files are required.")
 
 
 # Creating output file and save datasets and attributes from input files
 f_dest = h5py.File(args.output_file, 'w')
-for name in temp_files[0]:
-    if isinstance(temp_files[0][name], h5py.Dataset):
+for name in input_kdes[0]:
+    if isinstance(input_kdes[0][name], h5py.Dataset):
         if name == 'data_kde':
-            data_combined = [temp_file['data_kde'][:] for temp_file in temp_files]
+            data_combined = [kfile['data_kde'][:] for kfile in input_kdes]
             template_kde = numpy.maximum.reduce(data_combined)
-        elif all(isinstance(temp_file[name], h5py.Dataset) for temp_file in temp_files):
-            dataset_values = [temp_file[name][:] for temp_file in temp_files]
+        elif all(isinstance(kfile[name], h5py.Dataset) for kfile in input_kdes):
+            dataset_values = [kfile[name][:] for kfile in input_kdes]
             f_dest.create_dataset(name, data=dataset_values[0])
 
-for attr_name in temp_files[0].attrs.keys():
-    attr_values = [temp_file.attrs.get(attr_name) for temp_file in temp_files]
+for attr_name in input_kdes[0].attrs.keys():
+    attr_values = [kfile.attrs.get(attr_name) for kfile in input_kdes]
     if all(numpy.array_equal(attr_values[0], attr_val) for attr_val in attr_values[1:]):
         f_dest.attrs[attr_name] = attr_values[0]
 
@@ -43,7 +42,7 @@ if args.min_ratio is not None:
     template_kde = numpy.maximum(template_kde, min_val)
 f_dest.create_dataset('data_kde', data=template_kde)
 
-for temp_file in temp_files:
-    temp_file.close()
+for kfile in input_kdes:
+    kfile.close()
 f_dest.close()
 logging.info('Done!')
