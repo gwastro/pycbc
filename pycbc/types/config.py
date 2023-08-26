@@ -96,7 +96,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             overrideTuples = []
         if deleteTuples is None:
             deleteTuples = []
-        super().__init__(defaults=os.environ)
+        env_vals = {('OS_ENV_VAL_' + k): v for k, v in os.environ.items()}
+        super().__init__(defaults=env_vals)
 
         # Enable case sensitive options
         self.optionxform = str
