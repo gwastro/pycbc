@@ -104,8 +104,12 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         # values are case sensitive. So if your ENV sets both $TMPDIR and
         # $tmpdir *one* of those (randomly) will be used here, so make sure
         # they are consistent if using something like this!
+        # We also cannot include environment variables containing characters
+        # that are special to ConfigParser. So any variable containing a % or a
+        # $ is ignored.
         env_vals = {
             ('OS_ENV_VAL_' + k.upper()): v for k, v in os.environ.items()
+            if '%' not in v and '$' not in v
         }
         super().__init__(defaults=env_vals)
 
