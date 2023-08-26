@@ -96,7 +96,17 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             overrideTuples = []
         if deleteTuples is None:
             deleteTuples = []
-        env_vals = {('OS_ENV_VAL_' + k): v for k, v in os.environ.items()}
+        # We allow access to environment variables by adding them into the
+        # defaults section of the config file, prepended by a OS_ENV_VAL string
+        # to avoid collision with potential section values.
+        # Based off of https://stackoverflow.com/questions/26586801
+        # PLEASE NOTE: ConfigParse values are case insensitive, whereas ENV
+        # values are case sensitive. So if your ENV sets both $TMPDIR and
+        # $tmpdir *one* of those (randomly) will be used here, so make sure
+        # they are consistent if using something like this!
+        env_vals = {
+            ('OS_ENV_VAL_' + k.upper()): v for k, v in os.environ.items()
+        }
         super().__init__(defaults=env_vals)
 
         # Enable case sensitive options
