@@ -26,6 +26,7 @@ This module provides a wrapper to the ConfigParser utilities for pycbc.
 This module is described in the page here:
 """
 import re
+import os
 import itertools
 import logging
 from io import StringIO
@@ -95,7 +96,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             overrideTuples = []
         if deleteTuples is None:
             deleteTuples = []
-        DeepCopyableConfigParser.__init__(self)
+        super().__init__(defaults=os.environ)
 
         # Enable case sensitive options
         self.optionxform = str
