@@ -262,6 +262,15 @@ If a particular code (let's say inspiral) wants to use an option supplied in the
   [inspiral-v1]
   channel-name = ${workflow|v1-channel}
 
+We also have access to anything specified in the environment when the workflow
+is generated. Environment variables can be accessed in the configuration file
+like::
+
+  [inspiral-h1]
+  channel-name = ${OS_ENV_VAL_H1_CHANNEL_NAME}
+ 
+which would take the value from `${H1_CHANNEL_NAME}` in the environment.
+
 Similar macros can be added as needed, but these should be limited to avoid namespace confusion. 
 
 ------------------------------------
