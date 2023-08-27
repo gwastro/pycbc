@@ -116,7 +116,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             key.upper(): value for key, value in os.environ.items()
             if '%' not in value and '$' not in value
         }
-        self.read_dict({'os_env_vals': env_vals))
+        self.read_dict({'os_env_vals': env_vals})
 
         self.read_ini_file(configFiles)
 
