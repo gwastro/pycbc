@@ -267,7 +267,7 @@ is generated. Environment variables can be accessed in the configuration file
 like::
 
   [inspiral-h1]
-  channel-name = ${os_env_vals:H1_CHANNEL_NAME}
+  channel-name = ${os_env_vals|H1_CHANNEL_NAME}
  
 which would take the value from `${H1_CHANNEL_NAME}` in the environment. These
 variables will also be written out in the config file produced when generating
