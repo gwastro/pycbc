@@ -267,9 +267,12 @@ is generated. Environment variables can be accessed in the configuration file
 like::
 
   [inspiral-h1]
-  channel-name = ${OS_ENV_VAL_H1_CHANNEL_NAME}
+  channel-name = ${os_env_vals:H1_CHANNEL_NAME}
  
-which would take the value from `${H1_CHANNEL_NAME}` in the environment.
+which would take the value from `${H1_CHANNEL_NAME}` in the environment. These
+variables will also be written out in the config file produced when generating
+a workflow, so that you can see what environment was set when the workflow was
+generated.
 
 Similar macros can be added as needed, but these should be limited to avoid namespace confusion. 
 
