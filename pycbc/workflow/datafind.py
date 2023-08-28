@@ -730,6 +730,9 @@ def convert_cachelist_to_filelist(datafindcache_list):
         for frame in cache:
             # Pegasus doesn't like "localhost" in URLs.
             frame.url = frame.url.replace('file://localhost','file://')
+            # Not sure why it happens in OSDF URLs!!
+            # May need to remove use of Cache objects
+            frame.url = frame.url.replace('osdf://localhost','osdf://')
 
             # Create one File() object for each unique frame file that we
             # get back in the cache.
@@ -744,17 +747,20 @@ def convert_cachelist_to_filelist(datafindcache_list):
                 prev_file = currFile
 
             # Populate the PFNs for the File() we just created
-            if frame.url.startswith('file://'):
-                if frame.url.startswith('file:///cvmfs/'):
-                    # Frame is on CVMFS, so let all sites read it directly.
-                    currFile.add_pfn(frame.url, site='all')
-                else:
-                    # Frame not on CVMFS, so may need transferring.
-                    # Be careful here! If all your frames files are on site
-                    # = local and you try to run on OSG, it will likely
-                    # overwhelm the condor file transfer process!
-                    currFile.add_pfn(frame.url, site='local')
+            cvmfs_urls = ('file:///cvmfs/', 'osdf://')
+            if frame.url.startswith(cvmfs_urls):
+                # Frame is on CVMFS/OSDF, so let all sites read it directly.
+                currFile.add_pfn(frame.url, site='all')
+            elif frame.url.startswith('file://'):
+                # Frame not on CVMFS, so may need transferring.
+                # Be careful here! If all your frames files are on site
+                # = local and you try to run on OSG, it will likely
+                # overwhelm the condor file transfer process!
+                currFile.add_pfn(frame.url, site='local')
             else:
+                # Frame is at some unknown URL. Pegasus will decide how to deal
+                # with this, but will likely transfer to local site first, and
+                # from there transfer to remote sites as needed.
                 currFile.add_pfn(frame.url, site='notlocal')
 
     return datafind_filelist
