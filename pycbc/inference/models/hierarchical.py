@@ -681,7 +681,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         # note that for SOBHB signals, ground-based detectors dominant SNR
         # and accuracy of (tc, ra, dec)
-        sh_primary, hh_primary = self.primary_model.loglr(just_sh_hh=True)
+        sh_primary, hh_primary = self.primary_model._loglr(just_sh_hh=True)
 
         nums = self.primary_model.vsamples
         margin_params = self.primary_model.marginalize_vector_params.copy()
@@ -690,7 +690,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         # add likelihood contribution from space-borne detectors, we
         # calculate sh/hh for each marginalized parameter
         logging.info("Calculating sh/hh for space-borne detector(s)")
-        sh_others = numpy.zeros(nums)
+        sh_others = numpy.full(nums, 0 + 0.0j)
         hh_others = numpy.zeros(nums)
 
         for label_i, other_model in enumerate(self.other_models):
@@ -705,11 +705,12 @@ class MultibandRelativeTimeDom(HierarchicalModel):
                 parameters.update(
                     {key: value[i] for key, value in margin_params.items()})
                 other_model.update(**parameters)
-                sh_others[i], hh_others[i] = other_model.loglr(
-                                                just_sh_hh=True)
+                sh_others[i], hh_others[i] = other_model._loglr(just_sh_hh=True)
 
-        sh_total = sh_primary + sh_others
-        hh_total = hh_primary + hh_others
+        # sh_total = sh_primary + sh_others
+        # hh_total = hh_primary + hh_others
+        sh_total = sh_others
+        hh_total = hh_others
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
         return loglr
 
