@@ -61,7 +61,7 @@ def save_veto_definer(cp, out_dir, tags=None):
     return veto_def_new_path
 
 
-def get_segments_file(workflow, name, option_name, out_dir):
+def get_segments_file(workflow, name, option_name, out_dir, tags=None):
     """Get cumulative segments from option name syntax for each ifo.
 
     Use syntax of configparser string to define the resulting segment_file
@@ -76,6 +76,9 @@ def get_segments_file(workflow, name, option_name, out_dir):
         Name of the segment list being created
     option_name: str
         Name of option in the associated config parser to get the flag list
+    tags : list of strings
+        Used to retrieve subsections of the ini file for
+        configuration options.
 
     returns
     --------
@@ -95,18 +98,19 @@ def get_segments_file(workflow, name, option_name, out_dir):
 
     # Check for provided server
     server = "https://segments.ligo.org"
-    if cp.has_option("workflow-segments", "segments-database-url"):
-        server = cp.get("workflow-segments",
-                                 "segments-database-url")
+    if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
+        server = cp.get_opt_tags("workflow-segments",
+                                 "segments-database-url", tags)
 
-    if cp.has_option("workflow-segments", "segments-source"):
-        source = cp.get("workflow-segments", "segments-source")
+    if cp.has_option_tags("workflow-segments", "segments-source", tags):
+        source = cp.get_opt_tags("workflow-segments", "segments-source", tags)
     else:
         source = "any"
 
     if source == "file":
         local_file_path = \
-            resolve_url(cp.get("workflow-segments", option_name+"-file"))
+            resolve_url(cp.get_opt_tag("workflow-segments",
+                                       option_name+"-file", tags))
         pfn = os.path.join(out_dir, os.path.basename(local_file_path))
         shutil.move(local_file_path, pfn)
         return SegFile.from_segment_xml(pfn)
@@ -380,7 +384,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
     except UnboundLocalError:
         return None, min_seg
 
-def get_flag_segments_file(workflow, name, option_name, out_dir):
+def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
      """Get segments from option name syntax for each ifo for indivudal flags.
 
      Use syntax of configparser string to define the resulting segment_file
@@ -415,15 +419,17 @@ def get_flag_segments_file(workflow, name, option_name, out_dir):
 
      # Check for provided server
      server = "https://segments.ligo.org"
-     if cp.has_option("workflow-segments", "segments-database-url"):
-         server = cp.get("workflow-segments", "segments-database-url")
+     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
+         server = cp.get_opt_tags("workflow-segments",
+                                  "segments-database-url", tags)
 
      source = "any"
-     if cp.has_option("workflow-segments", "segments-source"):
-         source = cp.get("workflow-segments", "segments-source")
+     if cp.has_option_tags("workflow-segments", "segments-source", tags):
+         source = cp.get_opt_tags("workflow-segments", "segments-source", tags)
      if source == "file":
          local_file_path = \
-             resolve_url(cp.get("workflow-segments", option_name+"-file"))
+             resolve_url(cp.get_opt_tags("workflow-segments",
+                                         option_name+"-file", tags))
          pfn = os.path.join(out_dir, os.path.basename(local_file_path))
          shutil.move(local_file_path, pfn)
          return SegFile.from_segment_xml(pfn)
