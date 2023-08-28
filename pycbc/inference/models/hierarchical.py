@@ -707,10 +707,8 @@ class MultibandRelativeTimeDom(HierarchicalModel):
                 other_model.update(**parameters)
                 sh_others[i], hh_others[i] = other_model._loglr(just_sh_hh=True)
 
-        # sh_total = sh_primary + sh_others
-        # hh_total = hh_primary + hh_others
-        sh_total = sh_others
-        hh_total = hh_others
+        sh_total = sh_primary + sh_others
+        hh_total = hh_primary + hh_others
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
         return loglr
 
