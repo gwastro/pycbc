@@ -1076,7 +1076,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             Array of coincident ranking statistic values
         """
         # scale by 1/sqrt(number of ifos) to resemble network SNR
-        return sum(sngl[1] for sngl in s) / len(s)**0.5
+        return sum(sngl[1] for sngl in s) / (len(s) ** 0.5)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
@@ -1730,7 +1730,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
                     shift,
                     to_shift
                     )
-        logr_s += numpy.log((self.curr_mchirp / 20.) ** (11./3.))
+        logr_s += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return logr_s
 
     def single(self, trigs):
@@ -1786,7 +1786,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         """
         loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
                     self, s, thresh, limifo, **kwargs)
-        loglr += numpy.log((self.curr_mchirp / 20.) ** (11./3.))
+        loglr += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return loglr
 
 
