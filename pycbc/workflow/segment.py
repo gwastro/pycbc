@@ -434,7 +434,7 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
 
     source = "any"
     if cp.has_option_tags("workflow-segments", "segments-source", tags):
-         source = cp.get_opt_tags("workflow-segments", "segments-source", tags)
+        source = cp.get_opt_tags("workflow-segments", "segments-source", tags)
     if source == "file":
         local_file_path = \
             resolve_url(cp.get_opt_tags("workflow-segments",
