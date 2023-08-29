@@ -404,6 +404,9 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
          Name of the segment list being created
      option_name: str
          Name of option in the associated config parser to get the flag list
+     tags : list of strings
+        Used to retrieve subsections of the ini file for
+        configuration options.
 
      returns
      --------
