@@ -388,79 +388,79 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
         return None, min_seg
 
 def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
-     """Get segments from option name syntax for each ifo for indivudal flags.
+    """Get segments from option name syntax for each ifo for indivudal flags.
 
-     Use syntax of configparser string to define the resulting segment_file
-     e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2
-     Each ifo may have a different string and is stored separately in the file.
-     Each flag is stored separately in the file.
-     Flags which add time must precede flags which subtract time.
+    Use syntax of configparser string to define the resulting segment_file
+    e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2
+    Each ifo may have a different string and is stored separately in the file.
+    Each flag is stored separately in the file.
+    Flags which add time must precede flags which subtract time.
 
-     Parameters
-     ----------
-     workflow: pycbc.workflow.Workflow
-     name: string
-         Name of the segment list being created
-     option_name: str
-         Name of option in the associated config parser to get the flag list
-     tags : list of strings
-        Used to retrieve subsections of the ini file for
-        configuration options.
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+    name: string
+        Name of the segment list being created
+    option_name: str
+        Name of option in the associated config parser to get the flag list
+    tags : list of strings
+       Used to retrieve subsections of the ini file for
+       configuration options.
 
-     returns
-     --------
-     seg_file: pycbc.workflow.SegFile
-         SegFile intance that points to the segment xml file on disk.
-     """
-     from pycbc.dq import query_str
-     make_analysis_dir(out_dir)
-     cp = workflow.cp
-     start = workflow.analysis_time[0]
-     end = workflow.analysis_time[1]
+    returns
+    --------
+    seg_file: pycbc.workflow.SegFile
+        SegFile intance that points to the segment xml file on disk.
+    """
+    from pycbc.dq import query_str
+    make_analysis_dir(out_dir)
+    cp = workflow.cp
+    start = workflow.analysis_time[0]
+    end = workflow.analysis_time[1]
 
-     if tags is None:
+    if tags is None:
         tags = []
 
-     # Check for veto definer file
-     veto_definer = None
-     if cp.has_option("workflow-segments", "segments-veto-definer-url"):
-         veto_definer = save_veto_definer(workflow.cp, out_dir)
+    # Check for veto definer file
+    veto_definer = None
+    if cp.has_option("workflow-segments", "segments-veto-definer-url"):
+        veto_definer = save_veto_definer(workflow.cp, out_dir)
 
-     # Check for provided server
-     server = "https://segments.ligo.org"
-     if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
-         server = cp.get_opt_tags("workflow-segments",
-                                  "segments-database-url", tags)
+    # Check for provided server
+    server = "https://segments.ligo.org"
+    if cp.has_option_tags("workflow-segments", "segments-database-url", tags):
+        server = cp.get_opt_tags("workflow-segments",
+                                 "segments-database-url", tags)
 
-     source = "any"
-     if cp.has_option_tags("workflow-segments", "segments-source", tags):
+    source = "any"
+    if cp.has_option_tags("workflow-segments", "segments-source", tags):
          source = cp.get_opt_tags("workflow-segments", "segments-source", tags)
-     if source == "file":
-         local_file_path = \
-             resolve_url(cp.get_opt_tags("workflow-segments",
-                                         option_name+"-file", tags))
-         pfn = os.path.join(out_dir, os.path.basename(local_file_path))
-         shutil.move(local_file_path, pfn)
-         return SegFile.from_segment_xml(pfn)
+    if source == "file":
+        local_file_path = \
+            resolve_url(cp.get_opt_tags("workflow-segments",
+                                        option_name+"-file", tags))
+        pfn = os.path.join(out_dir, os.path.basename(local_file_path))
+        shutil.move(local_file_path, pfn)
+        return SegFile.from_segment_xml(pfn)
 
-     segs = {}
-     for ifo in workflow.ifos:
-         if cp.has_option_tags("workflow-segments", option_name, [ifo]):
-              flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
-              flag_list = flag_str.split(',')
-              for flag in flag_list:
-                  flag_name = flag[1:]
-                  key = flag_name
-                  if len(key.split(':')) > 2:
-                      key = ':'.join(key.split(':')[:2])
-                  segs[key] = query_str(ifo, flag, start, end,
-                                        source=source, server=server,
-                                        veto_definer=veto_definer)
-                  logging.info("%s: got %s segments", ifo, flag_name)
-         else:
-             logging.info("%s: no segments requested", ifo)
+    segs = {}
+    for ifo in workflow.ifos:
+        if cp.has_option_tags("workflow-segments", option_name, [ifo]):
+            flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
+            flag_list = flag_str.split(',')
+            for flag in flag_list:
+                flag_name = flag[1:]
+                if len(flag_name.split(':')) > 1:
+                    flag_name = name.split(':')[1]
+                key = ifo + ':' + flag_name
+                segs[key] = query_str(ifo, flag, start, end,
+                                      source=source, server=server,
+                                      veto_definer=veto_definer)
+                logging.info("%s: got %s segments", ifo, flag_name)
+        else:
+            logging.info("%s: no segments requested", ifo)
 
-     return SegFile.from_segment_list_dict(name, segs,
-                                           extension='.xml',
-                                           valid_segment=workflow.analysis_time,
-                                           directory=out_dir)
+    return SegFile.from_segment_list_dict(name, segs,
+                                          extension='.xml',
+                                          valid_segment=workflow.analysis_time,
+                                          directory=out_dir)
