@@ -416,12 +416,12 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
      start = workflow.analysis_time[0]
      end = workflow.analysis_time[1]
 
-    if tags is None:
+     if tags is None:
         tags = []
 
      # Check for veto definer file
      veto_definer = None
-    if cp.has_option_tags("workflow-segments",
+     if cp.has_option_tags("workflow-segments",
                           "segments-veto-definer-url", veto_tags):
         veto_definer = save_veto_definer(workflow.cp, out_dir, tags=['veto'])
 
