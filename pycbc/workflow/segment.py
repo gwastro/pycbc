@@ -93,8 +93,11 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
 
     # Check for veto definer file
     veto_definer = None
-    if cp.has_option("workflow-segments", "segments-veto-definer-url"):
-        veto_definer = save_veto_definer(workflow.cp, out_dir, [])
+    veto_tags = []
+    if 'veto' in workflow.cp.get_subsections('workflow-segments'):
+        veto_tags = ['veto']
+    if cp.has_option_tags("workflow-segments", "segments-veto-definer-url", veto_tags):
+        veto_definer = save_veto_definer(workflow.cp, out_dir, veto_tags)
 
     # Check for provided server
     server = "https://segments.ligo.org"
