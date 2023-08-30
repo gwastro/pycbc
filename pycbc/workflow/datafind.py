@@ -38,6 +38,14 @@ from gwdatafind import find_urls as find_frame_urls
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.io.ligolw import LIGOLWContentHandler
 
+# NOTE urllib is weird. For some reason it only allows known schemes and will
+# give *wrong* results, rather then failing, if you use something like gsiftp
+# We can add schemes explicitly, as below, but be careful with this!
+# (urllib is used indirectly through lal.Cache objects)
+import urllib.parse
+urllib.parse.uses_relative.append('osdf')
+urllib.parse.uses_netloc.append('osdf')
+
 
 def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
                             tags=None):
@@ -729,10 +737,10 @@ def convert_cachelist_to_filelist(datafindcache_list):
         curr_ifo = cache.ifo
         for frame in cache:
             # Pegasus doesn't like "localhost" in URLs.
-            frame.url = frame.url.replace('file://localhost','file://')
+            frame.url = frame.url.replace('file://localhost', 'file://')
             # Not sure why it happens in OSDF URLs!!
             # May need to remove use of Cache objects
-            frame.url = frame.url.replace('osdf://localhost','osdf://')
+            frame.url = frame.url.replace('osdf://localhost/', 'osdf:///')
 
             # Create one File() object for each unique frame file that we
             # get back in the cache.
