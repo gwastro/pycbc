@@ -270,6 +270,26 @@ Example complete workflow .ini file
 
 Please see individual workflow documentation pages for some examples of complete .ini files and example workflows.
 
+===========================
+Other special sections
+===========================
+
+------------------------------
+[environment] section
+------------------------------
+
+We have access to environment variables present when generating the workflow (with the exception of any variable containing a `$` or a `%` as these are special characters). These are automatically accessed and stored in the `[environment]` section of the config file when creating a PyCBC ConfigParser object.
+
+Values in this section can be accessed in the configuration file like this::
+
+  [inspiral-h1]
+  channel-name = ${environment|H1_CHANNEL_NAME}
+
+which would take the value from `${H1_CHANNEL_NAME}` in the environment.
+
+These values will also be written out for later reference in the config file produced when generating a workflow.
+
+
 ========================
 [sharedoptions] section
 ========================
