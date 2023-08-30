@@ -32,6 +32,7 @@ import stat
 import shutil
 import subprocess
 from shutil import which
+import urllib.parse
 from urllib.parse import urlparse
 
 import pycbc.libutils
@@ -42,7 +43,6 @@ ciecplib = pycbc.libutils.import_optional('ciecplib')
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
 # We can add schemes explicitly, as below, but be careful with this!
-import urllib.parse
 urllib.parse.uses_relative.append('osdf')
 urllib.parse.uses_netloc.append('osdf')
 

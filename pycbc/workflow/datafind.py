@@ -31,6 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 
 import os, copy
 import logging
+import urllib.parse
 from ligo import segments
 from ligo.lw import utils, table
 from glue import lal
@@ -42,7 +43,6 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 # give *wrong* results, rather then failing, if you use something like gsiftp
 # We can add schemes explicitly, as below, but be careful with this!
 # (urllib is used indirectly through lal.Cache objects)
-import urllib.parse
 urllib.parse.uses_relative.append('osdf')
 urllib.parse.uses_netloc.append('osdf')
 
