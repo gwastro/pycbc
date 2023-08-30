@@ -127,7 +127,8 @@ save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 # Get segments and find the data locations
 sci_seg_name = 'science'
 science_seg_file = wf.get_segments_file(workflow, sci_seg_name, 'segments-science',
-                                        rdir['analysis_time/segment_data'])
+                                        rdir['analysis_time/segment_data'],
+                                        tags=['science'])
 
 ssegs = {}
 for ifo in workflow.ifos:
@@ -145,13 +146,15 @@ datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
 final_veto_name = 'vetoes'
 final_veto_file = wf.get_segments_file(workflow, final_veto_name,
                                        'segments-vetoes',
-                                       rdir['analysis_time/segment_data'])
+                                       rdir['analysis_time/segment_data'],
+                                       tags=['veto'])
 
 # Get dq segments from veto definer and calculate data quality timeseries
 dq_flag_name = 'dq_flag'
 dq_segment_file = wf.get_flag_segments_file(workflow, dq_flag_name,
                                       'segments-dq',
-                                      rdir['analysis_time/segment_data'])
+                                      rdir['analysis_time/segment_data'],
+                                      tags=['dq'])
 
 # Template bank stuff
 hdfbank = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
