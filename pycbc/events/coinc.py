@@ -109,6 +109,11 @@ def background_bin_from_string(background_bins, data):
                                    data['mass1'][:], data['mass2'][:],
                                    data['spin1z'][:], data['spin2z'][:],
                                    data['f_lower'][:], approximant='SEOBNRv4')
+            elif bin_type == 'SEOBNRv5duration':
+                vals = pycbc.pnutils.get_imr_duration(
+                                   data['mass1'][:], data['mass2'][:],
+                                   data['spin1z'][:], data['spin2z'][:],
+                                   data['f_lower'][:], approximant='SEOBNRv5')
             else:
                 raise ValueError('Invalid bin type %s' % bin_type)
 
