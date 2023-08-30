@@ -30,6 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 import os
 import stat
 import shutil
+import subprocess
 from shutil import which
 from urllib.parse import urlparse
 
@@ -104,7 +105,16 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
             u.path,
             filename,
         ]
-        subprocess.run(cmd, check=True, capture_output=True)
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError as err:
+            # Print information about the failure
+            print(err.cmd, "failed with")
+            print(err.stderr.decode())
+            print(err.stdout.decode())
+            raise
+
         return filename
 
     else:
