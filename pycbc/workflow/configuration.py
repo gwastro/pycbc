@@ -38,6 +38,13 @@ from pycbc.types.config import InterpolatingConfigParser
 
 ciecplib = pycbc.libutils.import_optional('ciecplib')
 
+# NOTE urllib is weird. For some reason it only allows known schemes and will
+# give *wrong* results, rather then failing, if you use something like gsiftp
+# We can add schemes explicitly, as below, but be careful with this!
+import urllib.parse
+urllib.parse.uses_relative.append('osdf')
+urllib.parse.uses_netloc.append('osdf')
+
 
 def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
     """Resolves a URL to a local file, and returns the path to that file.
@@ -90,9 +97,14 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         output_fp.close()
 
     elif u.scheme == "osdf":
-        # FIXME: Need to know how to copy a file from OSDF from within python.
-        #        Could use subprocess to run stashcp, but would be nice if
-        #        can be done within python??
+        # OSDF will require a scitoken to be present and stashcp to be
+        # available. Thanks Dunky for the code here!
+        cmd = [
+            which("stashcp") or "stashcp",
+            u.path,
+            filename,
+        ]
+        subprocess.run(cmd, check=True, capture_output=True)
         return filename
 
     else:
