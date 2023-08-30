@@ -103,8 +103,9 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         self.optionxform = str
 
         # Add in environment
-        # We allow access to environment variables by adding them into the
-        # os_env_vals section of the config file.
+        # We allow access to environment variables by loading them into a
+        # special configparser section ([environment]) which can then
+        # be referenced by other sections.
         # We cannot include environment variables containing characters
         # that are special to ConfigParser. So any variable containing a % or a
         # $ is ignored.
@@ -112,7 +113,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             key: value for key, value in os.environ.items()
             if '%' not in value and '$' not in value
         }
-        self.read_dict({'os_env_vals': env_vals})
+        self.read_dict({'environment': env_vals})
 
         self.read_ini_file(configFiles)
 
