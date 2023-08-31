@@ -180,15 +180,13 @@ class Relative(DistMarg, BaseGaussianNoise):
         earth_rotation=False,
         earth_rotation_mode=2,
         marginalize_phase=True,
-        not_marginalize_submodel=False,
         **kwargs
     ):
 
-        if not not_marginalize_submodel:
-            variable_params, kwargs = self.setup_marginalization(
-                                variable_params,
-                                marginalize_phase=marginalize_phase,
-                                **kwargs)
+        variable_params, kwargs = self.setup_marginalization(
+                               variable_params,
+                               marginalize_phase=marginalize_phase,
+                               **kwargs)
 
         super(Relative, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs
@@ -507,21 +505,13 @@ class Relative(DistMarg, BaseGaussianNoise):
                 loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
-    def _loglr(self, just_sh_hh=False):
-        r"""Computes the log likelihood ratio, or just return sh/hh_total
-
-        .. math::
-
-            \log \mathcal{L}(\Theta) = \sum_i
-                \left<h_i(\Theta)|d_i\right> -
-                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
+    def get_sh_hh(self):
+        r"""Computes the <s|h> and <h|h>
 
         Returns
         -------
-        float or tuple
-            The value of the log likelihood ratio, or sh/hh_total.
+        tuple
+            (sh, hh).
         """
         # get model params
         p = self.current_params
@@ -572,11 +562,29 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             filt += filter_i
             norm += norm_i
-        if just_sh_hh:
-            return (filt, norm)
-        else:
-            loglr = self.marginalize_loglr(filt, norm)
-            return loglr
+
+        return (filt, norm)
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float or tuple
+            The value of the log likelihood ratio.
+        """
+        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
+        total_sh, total_hh = self.get_sh_hh()
+        loglr = self.marginalize_loglr(total_sh, total_hh)
+        return loglr
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
@@ -662,9 +670,8 @@ class RelativeTime(Relative):
                  **kwargs):
         super(RelativeTime, self).__init__(*args, **kwargs)
         self.sample_rate = float(sample_rate)
-        if not kwargs['not_marginalize_submodel']:
-            self.setup_peak_lock(sample_rate=self.sample_rate, **kwargs)
-            self.draw_ifos(self.ref_snr, **kwargs)
+        self.setup_peak_lock(sample_rate=self.sample_rate, **kwargs)
+        self.draw_ifos(self.ref_snr, **kwargs)
 
     @property
     def ref_snr(self):
@@ -791,28 +798,20 @@ class RelativeTimeDom(RelativeTime):
                              epoch=self.tstart[ifo])
             self.sh[ifo] = TimeSeries(sh, delta_t=delta_t,
                                       epoch=self.tstart[ifo] - delta_t * 2.0)
+            print("self.sh[ifo].epoch: ", self.tstart[ifo] - delta_t * 2.0)
             self.hh[ifo] = hh
             snrs[ifo] = snr
 
         return snrs
 
-    def _loglr(self, just_sh_hh=False):
-        r"""Computes the log likelihood ratio, or just return sh/hh_total
-
-        .. math::
-
-            \log \mathcal{L}(\Theta) = \sum_i
-                \left<h_i(\Theta)|d_i\right> -
-                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
+    def get_sh_hh(self):
+        r"""Computes the <s|h> and <h|h>
 
         Returns
         -------
-        float or tuple
-            The value of the log likelihood ratio, or sh/hh_total.
+        tuple
+            (sh, hh).
         """
-        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params
 
         p2 = p.copy()
@@ -842,13 +841,34 @@ class RelativeTimeDom(RelativeTime):
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
-            print("dts, p['tc'], dt: ", (dts, p['tc'], dt))
+            print("p: ", p)
+            print("p['tc'], dt: ", (p['tc'], dt))
+            print("dts: ", dts)
+            print("self.sh[ifo].start_time: ", self.sh[ifo].start_time)
+            print("self.sh[ifo].end_time: ", self.sh[ifo].end_time)
             sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        if just_sh_hh:
-            return (sh_total, hh_total)
-        else:
-            loglr = self.marginalize_loglr(sh_total, hh_total)
-            return loglr
+        return (sh_total, hh_total)
+
+    def _loglr(self):
+        r"""Computes the log likelihood ratio
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float or tuple
+            The value of the log likelihood ratio.
+        """
+        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
+        total_sh, total_hh = self.get_sh_hh()
+        loglr = self.marginalize_loglr(total_sh, total_hh)
+        return loglr
