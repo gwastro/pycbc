@@ -20,21 +20,20 @@ parser.add_argument("--stat-threshold", type=float,
                     help="Only consider triggers with statistic value "
                     "above this threshold")
 parser.add_argument("--f-low", type=float, default=15.,
-                    help='Used to enforce a uniform low frequency cutoff'
-                    ' for all templates')
+                    help='Enforce a uniform low frequency cutoff to '
+                         'calculate template duration over the bank')
 parser.add_argument("--dq-file", required=True, nargs='+')
 parser.add_argument("--dq-channel", required=False, type=str,
-                    help='name of channel to read in from '
-                         'provided dq file. Required if '
-                         'provided file is .hdf5 format')
+                    help='name of channel to read in from the provided '
+                         'dq file. Required if file is .hdf5 format')
 parser.add_argument('--bank-file', help='hdf format template bank file',
                     required=True)
 parser.add_argument('--background-bins', nargs='+',
                     help='list of background bin format strings')
 parser.add_argument("--output-file", required=True)
 parser.add_argument("--prune-number", type=int, default=0,
-                    help="Number of loudest events to remove from each split "
-                         "histogram, default 0")
+                    help="Number of loudest events to remove from each "
+                         "split histogram, default 0")
 parser.add_argument("--prune-window", type=float, default=0.1,
                     help="Time (s) to remove all triggers around a trigger "
                          "which is loudest in each split, default 0.1s")
@@ -47,9 +46,13 @@ pycbc.init_logging(args.verbose)
 with h5.File(args.bank_file, 'r') as bank:
     if args.background_bins:
         logging.info('Sorting bank into bins...')
-        data = {'mass1': bank['mass1'][:], 'mass2': bank['mass2'][:],
-                'spin1z': bank['spin1z'][:], 'spin2z': bank['spin2z'][:]}
-        data['f_lower'] = np.ones_like(data['mass1']) * args.f_low
+        data = {
+            'mass1': bank['mass1'][:],
+            'mass2': bank['mass2'][:],
+            'spin1z': bank['spin1z'][:],
+            'spin2z': bank['spin2z'][:],
+            'f_lower': np.ones_like(bank['mass1'][:]) * args.f_low
+            }
         locs_dict = pycbc.events.background_bin_from_string(
                                                    args.background_bins, data)
         del data
