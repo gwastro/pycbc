@@ -2078,7 +2078,8 @@ def resolve_url_to_file(curr_pfn, attrs=None):
     """
     cvmfsstr1 = 'file:///cvmfs/'
     cvmfsstr2 = 'file://localhost/cvmfs/'
-    cvmfsstrs = (cvmfsstr1, cvmfsstr2)
+    osdfstr1 = 'osdf:///'  # Technically this isn't CVMFS, but same handling!
+    cvmfsstrs = (cvmfsstr1, cvmfsstr2, osdfstr1)
 
     # Get LFN
     urlp = urllib.parse.urlparse(curr_pfn)
