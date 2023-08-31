@@ -19,6 +19,9 @@ parser.add_argument("--trig-file", required=True)
 parser.add_argument("--stat-threshold", type=float,
                     help="Only consider triggers with statistic value "
                     "above this threshold")
+parser.add_argument("--f-low", type=float, default=15.,
+                    help='Used to enforce a uniform low frequency cutoff'
+                    ' for all templates')
 parser.add_argument("--dq-file", required=True, nargs='+')
 parser.add_argument("--dq-channel", required=False, type=str,
                     help='name of channel to read in from '
@@ -46,8 +49,7 @@ with h5.File(args.bank_file, 'r') as bank:
         logging.info('Sorting bank into bins...')
         data = {'mass1': bank['mass1'][:], 'mass2': bank['mass2'][:],
                 'spin1z': bank['spin1z'][:], 'spin2z': bank['spin2z'][:]}
-        # hardcoding low frequency cutoff to 15 Hz for uniformity
-        data['f_lower'] = np.ones_like(data['mass1']) * 15.
+        data['f_lower'] = np.ones_like(data['mass1']) * args.f_low
         locs_dict = pycbc.events.background_bin_from_string(
                                                    args.background_bins, data)
         del data
