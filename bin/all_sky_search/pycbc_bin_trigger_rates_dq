@@ -100,15 +100,13 @@ bin_times = np.zeros(n_bins)
 dq_percentiles = np.percentile(dq_logl, percentiles)[1:]
 
 # seconds bin tells what bin each second ends up
-seconds_bin = np.array([
-    n_bins - len(dq_percentiles[dq_percentiles >= dq_ll])
-    for dq_ll in dq_logl
-    ]).astype('int')
+seconds_bin = np.array([n_bins - np.sum(dq_percentiles >= dq_ll)
+                        for dq_ll in dq_logl]).astype('int')
 del dq_percentiles
 
 # bin times tells how much time ends up in each bin
-bin_times = np.array([len(seconds_bin[seconds_bin == i])
-                     for i in range(n_bins)]).astype('float')
+bin_times = np.array([np.sum(seconds_bin == i)
+                      for i in range(n_bins)]).astype('float')
 full_time = float(len(seconds_bin))
 times_nz = (bin_times > 0)
 del dq_logl
@@ -150,7 +148,7 @@ with h5.File(args.output_file, 'w') as f:
 
         (counts, bins) = np.histogram(trig_percentile, bins=(percentiles)/100)
         counts = counts.astype('float')
-        rates = np.zeros(len(bin_times))
+        rates = np.zeros_like(bin_times)
         rates[times_nz] = counts[times_nz]/bin_times[times_nz]
         mean_rate = len(trig_percentile) / full_time
         if mean_rate > 0.:
