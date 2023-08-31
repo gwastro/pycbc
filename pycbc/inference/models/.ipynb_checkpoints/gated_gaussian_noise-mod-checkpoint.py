@@ -24,6 +24,7 @@ import numpy
 import scipy
 from scipy import special
 
+from pycbc.waveform import (NoWaveformError, FailedWaveformError)
 from pycbc.types import FrequencySeries
 from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
@@ -32,8 +33,7 @@ from pycbc import types
 from pycbc.waveform.utils import time_from_frequencyseries
 from pycbc.waveform import generator
 from pycbc.filter import highpass
-from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator,
-                             catch_waveform_error)
+from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
 
@@ -49,6 +49,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
                  static_params=None, highpass_waveforms=False, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
+        # cache the current projection for debugging
+        self.current_proj = {}
+        self.current_nproj = {}
         # cache the overwhitened data
         self._overwhitened_data = {}
         # cache the current gated data
@@ -139,8 +142,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
 
     def logdet_fit(self, cov, p):
         """Construct a linear regression from a sample of truncated covariance matrices.
-        
-        Returns the sample points used for linear fit generation as well as the linear fit parameters.
         """
         # initialize lists for matrix sizes and determinants
         sample_sizes = []
@@ -175,18 +176,20 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         # get time series start and delta_t
         ts = self._Rss[det]
-        start_time_gc = float(self.td_data[det].start_time) # need float for conversion input
+        start_time = self.td_data[det].start_time
         delta_t = ts.delta_t
         # get gate start and length from get_gate_times
         gate_start, gate_length = self.get_gate_times()[det]
         # convert to indices
-        lindex = float(gate_start - start_time_gc) // delta_t
-        rindex = lindex + (gate_length // delta_t)
+        lindex = int(float(gate_start - start_time)/delta_t)
+        rindex = lindex + int(gate_length / delta_t)
         lindex = lindex if lindex >= 0 else 0
         rindex = rindex if rindex <= len(ts) else len(ts)
         return lindex, rindex
     
-    def det_lognorm(self, det, start_index=None, end_index=None):
+    ### trying out exact calculations for static gate sizes ###
+    
+    def det_lognorm_linext(self, det, start_index=None, end_index=None):
         """Calculate the normalization term from the truncated covariance matrix.
         Determinant is estimated using a linear fit to logdet vs truncated matrix size
         """
@@ -210,6 +213,32 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # cache the result
             self._lognorm[(det, start_index, end_index)] = lognorm
         return lognorm
+    
+    def det_lognorm(self, det, start_index=None, end_index=None):
+        """Calculate the normalization term from the truncated covariance matrix.
+        Determinant is calculated exactly using LU factorization
+        """
+        if not self.normalize:
+            return 0
+        # call the cached value if possible
+        cov = self._cov[det]
+        try:
+            full = cov.shape[0]
+            if start_index == None or end_index == None:
+                trunc_size = full
+            else:
+                trunc_size = full - (end_index - start_index)
+            lognorm = self._lognorm[(det, trunc_size)]
+        # if not, do the full calculation
+        except KeyError:
+            start, end = self.gate_indices(det)
+            # truncate the matrix and calculate the norm term
+            trunc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
+            ld = numpy.linalg.slogdet(trunc)[1]
+            lognorm = -0.5*(numpy.log(2*numpy.pi)*trunc_size + ld) # full normalization term
+            # cache the result
+            self._lognorm[(det, trunc_size)] = lognorm
+        return lognorm
 
     @property
     def normalize(self):
@@ -232,7 +261,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 # self._cov_samples[det] = samples
                 # self._cov_regressions[det] = fit
 
-    def _nowaveform_handler(self):
+    @staticmethod
+    def _nowaveform_logl():
         """Convenience function to set logl values if no waveform generated.
         """
         return -numpy.inf
@@ -328,7 +358,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             Dictionary of detector names -> FrequencySeries.
         """
         wfs = self.get_waveforms()
-        
         out = {}
         for det, h in wfs.items():
             d = self.data[det]
@@ -417,22 +446,30 @@ class BaseGatedGaussian(BaseGaussianNoise):
             thisdet = Detector(det)
             # account for the time delay between the waveforms of the
             # different detectors
-            gatestartdelay = gatestart + thisdet.time_delay_from_earth_center(ra, dec, gatestart)
-            gateenddelay = gateend + thisdet.time_delay_from_earth_center(ra, dec, gateend)
+            gatestartdelay = gatestart + thisdet.time_delay_from_earth_center(
+                ra, dec, gatestart)
+            gateenddelay = gateend + thisdet.time_delay_from_earth_center(
+                ra, dec, gateend)
             dgatedelay = gateenddelay - gatestartdelay
             gatetimes[det] = (gatestartdelay, dgatedelay)
         return gatetimes
 
     def get_gate_times_hmeco(self):
         """Gets the time to apply a gate based on the current sky position.
-
         Returns
         -------
         dict :
             Dictionary of detector names -> (gate start, gate width)
         """
         # generate the template waveform
-        wfs = self.get_waveforms()
+        try:
+            wfs = self.get_waveforms()
+        except NoWaveformError:
+            return self._nowaveform_logl()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_logl()
+            raise e
         # get waveform parameters
         params = self.current_params
         spin1 = params['spin1z']
@@ -440,7 +477,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # gate input for ringdown analysis which consideres a start time
         # and an end time
         dgate = params['gate_window']
-        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'], spin1, spin2)
+        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'],
+                                       spin1, spin2)
         # figure out the gate times
         gatetimes = {}
         for det, h in wfs.items():
@@ -469,9 +507,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._det_lognls.clear()
         # get the times of the gates
         gate_times = self.get_gate_times()
+        self.current_nproj.clear()
         for det, invpsd in self._invpsds.items():
             start_index, end_index = self.gate_indices(det)
-            norm = self.det_lognorm(det, start_index, end_index) # linear estimation
+            norm = self.det_lognorm_linext(det, start_index, end_index) # linear estimation
+            #norm = self.det_lognorm(det, start_index, end_index) # exact calculation
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -481,6 +521,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gated_dt = data.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
+            self.current_nproj[det] = (gated_dt.proj, gated_dt.projslc)
             # convert to the frequency series
             gated_d = gated_dt.to_frequencyseries()
             # overwhiten
@@ -608,7 +649,8 @@ class GatedGaussianNoise(BaseGatedGaussian):
         """No extra stats are stored."""
         return []
 
-    @catch_waveform_error
+    ### This needs to be called after running model.update() for changes to take effect ###
+    
     def _loglikelihood(self):
         r"""Computes the log likelihood after removing the power within the
         given time window,
@@ -625,14 +667,23 @@ class GatedGaussianNoise(BaseGatedGaussian):
             The value of the log likelihood.
         """
         # generate the template waveform
-        wfs = self.get_waveforms()
+        try:
+            wfs = self.get_waveforms()
+        except NoWaveformError:
+            return self._nowaveform_logl()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_logl()
+            raise e
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
+        self.current_proj.clear()
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             start_index, end_index = self.gate_indices(det)
-            norm = self.det_lognorm(det, start_index, end_index)
+            #norm = self.det_lognorm(det, start_index, end_index)
+            norm = self.det_lognorm_linext(det, start_index, end_index)
             gatestartdelay, dgatedelay = gate_times[det]
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
@@ -645,101 +696,18 @@ class GatedGaussianNoise(BaseGatedGaussian):
             gated_res = res.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
+            self.current_proj[det] = (gated_res.proj, gated_res.projslc)
             gated_rtilde = gated_res.to_frequencyseries()
             # overwhiten
             gated_rtilde *= invpsd
             rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
             logl += norm - 0.5*rr
         return float(logl)
-    
-    @property
-    def multi_signal_support(self):
-        """ The list of classes that this model supports in a multi-signal
-        likelihood
-        """
-        return [type(self)]
-    
-    def multi_loglikelihood(self, models):
-        """ Calculate a multi-model (signal) likelihood
-        """
-        # Generate the waveforms for each submodel
-        wfs = []
-        for m in models + [self]:
-            # temp fix for wfs in combined run
-            # set static params 'zero_before_gate' or 'zero_after_gate' to specify portion of wf to zero out
-            wf = m.get_waveforms()
-            # if params don't exist, set them to False
-            # if they do exist, their value doesn't matter; strings always return True
-            try:
-                m.current_params['zero_before_gate']
-            except KeyError:
-                m.current_params['zero_before_gate'] = False
-            try:
-                m.current_params['zero_after_gate']
-            except KeyError:
-                m.current_params['zero_after_gate'] = False
-                
-            if m.current_params['zero_before_gate'] or m.current_params['zero_after_gate']:
-                gate_times = m.get_gate_times()
-                for d in wf:
-                    ts = wf[d]
-                    start = gate_times[d][0]
-                    gpsidx = (float(start) - float(ts.start_time))//ts.delta_t
-                    ts = ts.to_timeseries()
-                    # zero out inspiral wf after gate
-                    if m.current_params['zero_after_gate']:
-                        ts[int(gpsidx):] *= 0
-                    # zero out ringdown wf before gate
-                    if m.current_params['zero_before_gate']:
-                        ts[:int(gpsidx)] *= 0
-                    ts = ts.to_frequencyseries()
-                    wf[d] = ts
-            wfs.append(wf)
-
-        # combine into a single waveform
-        combine = {}
-        for det in self.data:
-            # get max waveform length
-            mlen = max([len(x[det]) for x in wfs])
-            [x[det].resize(mlen) for x in wfs]
-            combine[det] = sum([x[det] for x in wfs])
-
-        self._current_wfs = combine
-        return self._loglikelihood()
 
     def get_gated_waveforms(self):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
-        
-        # temp fix for hierarchical runs
-        # zeroes out pre-merger for ringdown, post-merger for inspiral
-        # will need a more elegant solution later; for now copy code from multi_loglikelihood
-        try:
-            self.current_params['zero_before_gate']
-        except KeyError:
-            self.current_params['zero_before_gate'] = False
-        try:
-            self.current_params['zero_after_gate']
-        except KeyError:
-            self.current_params['zero_after_gate'] = False
-                
-        if self.current_params['zero_before_gate'] or self.current_params['zero_after_gate']:
-            for d in wfs:
-                ts = wfs[d]
-                start = gate_times[d][0]
-                gpsidx = (float(start) - float(ts.start_time))//ts.delta_t
-                ts = ts.to_timeseries()
-                # zero out inspiral wf after gate
-                if self.current_params['zero_after_gate']:
-                    ts[int(gpsidx):] *= 0
-                # zero out ringdown wf before gate
-                if self.current_params['zero_before_gate']:
-                    ts[:int(gpsidx)] *= 0
-                ts = ts.to_frequencyseries()
-                wfs[d] = ts
-        
-        # apply the gate
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
@@ -834,111 +802,26 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
-        
-        # temp fix for hierarchical runs
-        # zero out pre-merger for ringdown, post-merger for inspiral
-        # need a more elegant solution later; for now just copy code from multi_loglikelihood
-        try:
-            self.current_params['zero_before_gate']
-        except KeyError:
-            self.current_params['zero_before_gate'] = False
-        try:
-            self.current_params['zero_after_gate']
-        except KeyError:
-            self.current_params['zero_after_gate'] = False
-                
-        if self.current_params['zero_before_gate'] or self.current_params['zero_after_gate']:
-            for d in wfs:
-                tsp, tsc = wfs[d]
-                start = gate_times[d][0]
-                # plus and cross pols probably have the same gpsidx, but get both just to be safe
-                gpsidxp = (float(start) - float(tsp.start_time))//tsp.delta_t
-                gpsidxc = (float(start) - float(tsc.start_time))//tsc.delta_t
-                tsp = tsp.to_timeseries()
-                tsc = tsc.to_timeseries()
-                # zero out inspiral wf after gate
-                if self.current_params['zero_after_gate']:
-                    tsp[int(gpsidxp):] *= 0
-                    tsc[int(gpsidxc):] *= 0
-                # zero out ringdown wf before gate
-                if self.current_params['zero_before_gate']:
-                    tsp[:int(gpsidxp)] *= 0
-                    tsc[:int(gpsidxc)] *= 0
-                tsp = tsp.to_frequencyseries()
-                tsc = tsc.to_frequencyseries()
-                wfs[d] = (tsp, tsc)
-        
         for det in wfs:
             invpsd = self._invpsds[det]
             gatestartdelay, dgatedelay = gate_times[det]
             # the waveforms are a dictionary of (hp, hc)
             pols = []
             for h in wfs[det]:
-                ht = h.to_timeseries() 
-                try:
-                    ht = ht.gate(gatestartdelay + dgatedelay/2,
+                ht = h.to_timeseries()
+                ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
                              invpsd=invpsd, method='paint')
-                    h = ht.to_frequencyseries()
-                except ValueError as e:
-                    numpy.save('fail_params.out', self.current_params, allow_pickle=True)
-                    ht.save('fail_wf.hdf')
-                    raise e
+                h = ht.to_frequencyseries()
                 pols.append(h)
             out[det] = tuple(pols)
         return out
-    
-    def get_gate_times_hmeco(self):
-        """Gets the time to apply a gate based on the current sky position.
-        Returns
-        -------
-        dict :
-            Dictionary of detector names -> (gate start, gate width)
-        """
-        # generate the template waveform
-        try:
-            wfs = self.get_waveforms()
-        except NoWaveformError:
-            return self._nowaveform_logl()
-        except FailedWaveformError as e:
-            if self.ignore_failed_waveforms:
-                return self._nowaveform_logl()
-            raise e
-        # get waveform parameters
-        params = self.current_params
-        spin1 = params['spin1z']
-        spin2 = params['spin2z']
-        # gate input for ringdown analysis which consideres a start time
-        # and an end time
-        dgate = params['gate_window']
-        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'], spin1, spin2)
-        # figure out the gate times
-        gatetimes = {}
-        # for now only calculating time from plus polarization; should be all that's necessary
-        for det, (hp, hc) in wfs.items():
-            invpsd = self._invpsds[det]
-            hp.resize(len(invpsd))
-            ht = hp.to_timeseries()
-            f_low = int((self._f_lower[det]+1)/hp.delta_f)
-            sample_freqs = hp.sample_frequencies[f_low:].numpy()
-            f_idx = numpy.where(sample_freqs <= meco_f)[0][-1]
-            # find time corresponding to meco frequency
-            t_from_freq = time_from_frequencyseries(
-                hp[f_low:], sample_frequencies=sample_freqs)
-            if t_from_freq[f_idx] > 0:
-                gatestartdelay = t_from_freq[f_idx] + float(t_from_freq.epoch)
-            else:
-                gatestartdelay = t_from_freq[f_idx] + ht.sample_times[-1]
-            gatestartdelay = min(gatestartdelay, params['t_gate_start'])
-            gatetimes[det] = (gatestartdelay, dgate)
-        return gatetimes
 
     @property
     def _extra_stats(self):
         """Adds the maxL polarization and corresponding likelihood."""
         return ['maxl_polarization', 'maxl_logl']
 
-    @catch_waveform_error
     def _loglikelihood(self):
         r"""Computes the log likelihood after removing the power within the
         given time window,
@@ -955,7 +838,14 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             The value of the log likelihood.
         """
         # generate the template waveform
-        wfs = self.get_waveforms()
+        try:
+            wfs = self.get_waveforms()
+        except NoWaveformError:
+            return self._nowaveform_logl()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_logl()
+            raise e
         # get the gated waveforms and data
         gated_wfs = self.get_gated_waveforms()
         gated_data = self.get_gated_data()
@@ -971,7 +861,8 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                                                     self.pol,
                                                     self.current_params['tc'])
             start_index, end_index = self.gate_indices(det)
-            norm = self.det_lognorm(det, start_index, end_index)
+            # norm = self.det_lognorm(det, start_index, end_index)
+            norm = self.det_lognorm_linext(det, start_index, end_index)
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
@@ -982,9 +873,13 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # inner products
             d = self._overwhitened_data[det]
             # overwhiten the hp and hc
+            # we'll do this in place for computational efficiency, but as a
+            # result we'll clear the current waveforms cache so a repeated call
+            # to get_waveforms does not return the overwhitened versions
+            self._current_wfs = None
             invpsd = self._invpsds[det]
-            hp = hp*invpsd
-            hc = hc*invpsd
+            hp *= invpsd
+            hc *= invpsd
             # get the various gated inner products
             hpd = hp[slc].inner(gated_d[slc]).real  # <hp, d>
             hcd = hc[slc].inner(gated_d[slc]).real  # <hc, d>
@@ -1014,69 +909,3 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # compute the marginalized log likelihood
         marglogl = special.logsumexp(loglr) + lognl - numpy.log(len(self.pol))
         return float(marglogl)
-    
-    @property
-    def multi_signal_support(self):
-        """ The list of classes that this model supports in a multi-signal
-        likelihood
-        """
-        return [type(self)]
-    
-    def multi_loglikelihood(self, models):
-        """ Calculate a multi-model (signal) likelihood
-        """
-        # Generate the waveforms for each submodel
-        wfs = []
-        for m in models + [self]:
-            # temp fix for wfs in combined run
-            # set static params 'zero_before_gate' or 'zero_after_gate' to specify portion of wf to zero out
-            wf = m.get_waveforms()
-            # if params don't exist, set them to False
-            # if they do exist, their value doesn't matter; strings always return True
-            try:
-                m.current_params['zero_before_gate']
-            except KeyError:
-                m.current_params['zero_before_gate'] = False
-            try:
-                m.current_params['zero_after_gate']
-            except KeyError:
-                m.current_params['zero_after_gate'] = False
-                
-            if m.current_params['zero_before_gate'] or m.current_params['zero_after_gate']:
-                gate_times = m.get_gate_times()
-                for d in wf:
-                    tsp, tsc = wf[d]
-                    start = gate_times[d][0]
-                    # plus and cross pols probably have the same gpsidx, but get both just to be safe
-                    gpsidxp = (float(start) - float(tsp.start_time))//tsp.delta_t
-                    gpsidxc = (float(start) - float(tsc.start_time))//tsc.delta_t
-                    tsp = tsp.to_timeseries()
-                    tsc = tsc.to_timeseries()
-                    # zero out inspiral wf after gate
-                    if m.current_params['zero_after_gate']:
-                        tsp[int(gpsidxp):] *= 0
-                        tsc[int(gpsidxc):] *= 0
-                    # zero out ringdown wf before gate
-                    if m.current_params['zero_before_gate']:
-                        tsp[:int(gpsidxp)] *= 0
-                        tsc[:int(gpsidxc)] *= 0
-                    tsp = tsp.to_frequencyseries()
-                    tsc = tsc.to_frequencyseries()
-                    wf[d] = (tsp, tsc)
-            wfs.append(wf)
-
-        # combine into a single waveform
-        combine = {}
-        for det in self.data:
-            # get max waveform length
-            mlenp = max([len(x[det][0]) for x in wfs])
-            mlenc = max([len(x[det][1]) for x in wfs])
-            mlen = max([mlenp, mlenc])
-            # resize plus and cross
-            [x[det][0].resize(mlen) for x in wfs]
-            [x[det][1].resize(mlen) for x in wfs]
-            # combine waveforms
-            combine[det] = (sum([x[det][0] for x in wfs]), sum([x[det][1] for x in wfs]))
-
-        self._current_wfs = combine
-        return self._loglikelihood()
