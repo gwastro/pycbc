@@ -35,10 +35,7 @@ from shutil import which
 import urllib.parse
 from urllib.parse import urlparse
 
-import pycbc.libutils
 from pycbc.types.config import InterpolatingConfigParser
-
-ciecplib = pycbc.libutils.import_optional('ciecplib')
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
@@ -86,6 +83,10 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
                 shutil.copy(u.path, filename)
 
     elif u.scheme == "http" or u.scheme == "https":
+        # Would like to move ciecplib import to top using import_optional, but
+        # it needs to be available when documentation runs in the CI, and I
+        # can't get it to install in the GitHub CI
+        import ciecplib
         with ciecplib.Session() as s:
             if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
                 # authenticate with git.ligo.org using callback
