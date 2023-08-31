@@ -99,11 +99,11 @@ percentiles = np.linspace(0, 100, n_bins+1)
 bin_times = np.zeros(n_bins)
 dq_percentiles = np.percentile(dq_logl, percentiles)[1:]
 
-
 # seconds bin tells what bin each second ends up
-seconds_bin = np.array([n_bins -
-                        len(dq_percentiles[dq_percentiles >= dq_ll])
-                        for dq_ll in dq_logl]).astype('int')
+seconds_bin = np.array([
+    n_bins - len(dq_percentiles[dq_percentiles >= dq_ll])
+    for dq_ll in dq_logl
+    ]).astype('int')
 del dq_percentiles
 
 # bin times tells how much time ends up in each bin
