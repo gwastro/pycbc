@@ -47,7 +47,7 @@ with h5.File(args.bank_file, 'r') as bank:
         data = {'mass1': bank['mass1'][:], 'mass2': bank['mass2'][:],
                 'spin1z': bank['spin1z'][:], 'spin2z': bank['spin2z'][:]}
         # hardcoding low frequency cutoff to 15 Hz for uniformity
-        data['f_lower'] = np.ones(len(data['mass1'])) * 15.
+        data['f_lower'] = np.ones_like(data['mass1']) * 15.
         locs_dict = pycbc.events.background_bin_from_string(
                                                    args.background_bins, data)
         del data
