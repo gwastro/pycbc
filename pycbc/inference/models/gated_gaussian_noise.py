@@ -889,14 +889,64 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # the waveforms are a dictionary of (hp, hc)
             pols = []
             for h in wfs[det]:
-                ht = h.to_timeseries()
-                ht = ht.gate(gatestartdelay + dgatedelay/2,
+                ht = h.to_timeseries() 
+                try:
+                    ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
                              invpsd=invpsd, method='paint')
-                h = ht.to_frequencyseries()
+                    h = ht.to_frequencyseries()
+                except ValueError as e:
+                    numpy.save('fail_params.out', self.current_params, allow_pickle=True)
+                    ht.save('fail_wf.hdf')
+                    raise e
                 pols.append(h)
             out[det] = tuple(pols)
         return out
+    
+    def get_gate_times_hmeco(self):
+        """Gets the time to apply a gate based on the current sky position.
+        Returns
+        -------
+        dict :
+            Dictionary of detector names -> (gate start, gate width)
+        """
+        # generate the template waveform
+        try:
+            wfs = self.get_waveforms()
+        except NoWaveformError:
+            return self._nowaveform_logl()
+        except FailedWaveformError as e:
+            if self.ignore_failed_waveforms:
+                return self._nowaveform_logl()
+            raise e
+        # get waveform parameters
+        params = self.current_params
+        spin1 = params['spin1z']
+        spin2 = params['spin2z']
+        # gate input for ringdown analysis which consideres a start time
+        # and an end time
+        dgate = params['gate_window']
+        meco_f = hybrid_meco_frequency(params['mass1'], params['mass2'], spin1, spin2)
+        # figure out the gate times
+        gatetimes = {}
+        # for now only calculating time from plus polarization; should be all that's necessary
+        for det, (hp, hc) in wfs.items():
+            invpsd = self._invpsds[det]
+            hp.resize(len(invpsd))
+            ht = hp.to_timeseries()
+            f_low = int((self._f_lower[det]+1)/hp.delta_f)
+            sample_freqs = hp.sample_frequencies[f_low:].numpy()
+            f_idx = numpy.where(sample_freqs <= meco_f)[0][-1]
+            # find time corresponding to meco frequency
+            t_from_freq = time_from_frequencyseries(
+                hp[f_low:], sample_frequencies=sample_freqs)
+            if t_from_freq[f_idx] > 0:
+                gatestartdelay = t_from_freq[f_idx] + float(t_from_freq.epoch)
+            else:
+                gatestartdelay = t_from_freq[f_idx] + ht.sample_times[-1]
+            gatestartdelay = min(gatestartdelay, params['t_gate_start'])
+            gatetimes[det] = (gatestartdelay, dgate)
+        return gatetimes
 
     @property
     def _extra_stats(self):
