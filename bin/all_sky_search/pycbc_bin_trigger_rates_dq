@@ -96,7 +96,7 @@ for filename in args.dq_file:
 
 
 n_bins = args.n_time_bins
-percentiles = np.linspace(0,100,n_bins+1)
+percentiles = np.linspace(0, 100, n_bins+1)
 bin_times = np.zeros(n_bins)
 dq_percentiles = np.percentile(dq_logl, percentiles)[1:]
 
@@ -113,7 +113,7 @@ times_nz = (bin_times > 0)
 del dq_logl
 
 # create a dict to look up dq percentile at any time
-dq_percentiles_time = dict(zip(dq_times, seconds_bin*percent_bin/100))
+dq_percentiles_time = dict(zip(dq_times, seconds_bin/n_bins))
 del dq_times
 
 if args.prune_number > 0:
