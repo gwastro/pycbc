@@ -14,16 +14,18 @@ from pycbc.version import git_verbose_msg as version
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--verbose', action="store_true")
-parser.add_argument("--ifo", type=str,required=True)
+parser.add_argument("--ifo", type=str, required=True)
 parser.add_argument("--trig-file", required=True)
 parser.add_argument("--stat-threshold", type=float,
                     help="Only consider triggers with statistic value "
                     "above this threshold")
-parser.add_argument("--dq-file", required=True,nargs='+')
-parser.add_argument("--dq-channel", required=False,type=str,
-                    help='name of channel to read in from '
-                         'provided dq file. Required if '
-                         'provided file is .hdf5 format')
+parser.add_argument("--f-low", type=float, default=15.,
+                    help='Enforce a uniform low frequency cutoff to '
+                         'calculate template duration over the bank')
+parser.add_argument("--dq-file", required=True, nargs='+')
+parser.add_argument("--dq-channel", required=False, type=str,
+                    help='name of channel to read in from the provided '
+                         'dq file. Required if file is .hdf5 format')
 parser.add_argument('--bank-file', help='hdf format template bank file',
                     required=True)
 parser.add_argument('--background-bins', nargs='+',
@@ -32,23 +34,27 @@ parser.add_argument('--n-time-bins', type=int, default=200,
                     help='Number of time bins to use')
 parser.add_argument("--output-file", required=True)
 parser.add_argument("--prune-number", type=int, default=0,
-                    help="Number of loudest events to remove from each split "
-                         "histogram, default 0")
+                    help="Number of loudest events to remove from each "
+                         "split histogram, default 0")
 parser.add_argument("--prune-window", type=float, default=0.1,
                     help="Time (s) to remove all triggers around a trigger "
                          "which is loudest in each split, default 0.1s")
 
 pystat.insert_statistic_option_group(parser,
-    default_ranking_statistic='single_ranking_only')
+        default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 with h5.File(args.bank_file, 'r') as bank:
     if args.background_bins:
         logging.info('Sorting bank into bins...')
-        data = {'mass1': bank['mass1'][:], 'mass2': bank['mass2'][:],
-                'spin1z': bank['spin1z'][:], 'spin2z': bank['spin2z'][:],
-                'f_lower': bank['f_lower']}
+        data = {
+            'mass1': bank['mass1'][:],
+            'mass2': bank['mass2'][:],
+            'spin1z': bank['spin1z'][:],
+            'spin2z': bank['spin2z'][:],
+            'f_lower': np.ones_like(bank['mass1'][:]) * args.f_low
+            }
         locs_dict = pycbc.events.background_bin_from_string(
                                                    args.background_bins, data)
         del data
@@ -59,11 +65,11 @@ with h5.File(args.bank_file, 'r') as bank:
 
 logging.info('Reading trigger file...')
 ifo = args.ifo
-with h5.File(args.trig_file,'r') as trig_file:
+with h5.File(args.trig_file, 'r') as trig_file:
     trig_times = trig_file[ifo+'/end_time'][:]
     trig_ids = trig_file[ifo+'/template_id'][:]
 
-    if args.stat_threshold or args.prune_number>0:
+    if args.stat_threshold or args.prune_number > 0:
         logging.info('Calculating stat and filtering...')
         rank_method = pystat.get_statistic_from_opts(args, [ifo])
         stat = rank_method.get_sngl_ranking(trig_file[ifo])
@@ -73,7 +79,7 @@ with h5.File(args.trig_file,'r') as trig_file:
             trig_times = trig_times[abovethresh]
             stat = stat[abovethresh]
             del abovethresh
-        if args.prune_number<1:
+        if args.prune_number < 1:
             del stat
 
 trig_times_int = trig_times.astype('int')
@@ -84,25 +90,24 @@ dq_logl = np.array([])
 for filename in args.dq_file:
     logging.info('Reading DQ file %s...', filename)
     dq_data = load_timeseries(filename, group=args.dq_channel)
-    dq_logl = np.concatenate((dq_logl,dq_data[:]))
-    dq_times = np.concatenate((dq_times,dq_data.sample_times))
+    dq_logl = np.concatenate((dq_logl, dq_data[:]))
+    dq_times = np.concatenate((dq_times, dq_data.sample_times))
     del dq_data
+
 
 n_bins = args.n_time_bins
 percentiles = np.linspace(0,100,n_bins+1)
 bin_times = np.zeros(n_bins)
-dq_percentiles = np.percentile(dq_logl,percentiles)[1:]
-
+dq_percentiles = np.percentile(dq_logl, percentiles)[1:]
 
 # seconds bin tells what bin each second ends up
-seconds_bin = np.array([n_bins - \
-                        len(dq_percentiles[dq_percentiles >= dq_ll]) \
+seconds_bin = np.array([n_bins - np.sum(dq_percentiles >= dq_ll)
                         for dq_ll in dq_logl]).astype('int')
 del dq_percentiles
 
 # bin times tells how much time ends up in each bin
-bin_times = np.array([len(seconds_bin[seconds_bin==(i)]) \
-                     for i in range(n_bins)]).astype('float')
+bin_times = np.array([np.sum(seconds_bin == i)
+                      for i in range(n_bins)]).astype('float')
 full_time = float(len(seconds_bin))
 times_nz = (bin_times > 0)
 del dq_logl
@@ -111,7 +116,7 @@ del dq_logl
 dq_percentiles_time = dict(zip(dq_times, seconds_bin*percent_bin/100))
 del dq_times
 
-if args.prune_number>0:
+if args.prune_number > 0:
     for bin_name in locs_names:
         logging.info('Processing bin %s...', bin_name)
         bin_locs = locs_dict[bin_name]
@@ -121,9 +126,9 @@ if args.prune_number>0:
         for j in range(args.prune_number):
             max_stat_arg = np.argmax(trig_stats_bin)
             remove = np.nonzero(abs(trig_times_bin[max_stat_arg] - trig_times)
-                               < args.prune_window)[0]
-            remove_inbin = np.nonzero(abs(trig_times_bin[max_stat_arg] \
-                               - trig_times_bin) < args.prune_window)[0]
+                                < args.prune_window)[0]
+            remove_inbin = np.nonzero(abs(trig_times_bin[max_stat_arg]
+                                      - trig_times_bin) < args.prune_window)[0]
             stat[remove] = 0
             trig_stats_bin[remove_inbin] = 0
     keep = np.nonzero(stat)[0]
@@ -134,27 +139,27 @@ if args.prune_number>0:
 
 del trig_times
 
-with h5.File(args.output_file,'w') as f:
+with h5.File(args.output_file, 'w') as f:
     for bin_name in locs_names:
         bin_locs = locs_dict[bin_name]
         trig_times_bin = trig_times_int[np.isin(trig_ids, bin_locs)]
-        trig_percentile = np.array([dq_percentiles_time[t] \
+        trig_percentile = np.array([dq_percentiles_time[t]
                                     for t in trig_times_bin])
         logging.info('Processing %d triggers...', len(trig_percentile))
-    
-        (counts, bins) = np.histogram(trig_percentile, bins = (percentiles)/100)
+
+        (counts, bins) = np.histogram(trig_percentile, bins=(percentiles)/100)
         counts = counts.astype('float')
-        rates = np.zeros(len(bin_times))
+        rates = np.zeros_like(bin_times)
         rates[times_nz] = counts[times_nz]/bin_times[times_nz]
         mean_rate = len(trig_percentile) / full_time
         if mean_rate > 0.:
             rates = rates / mean_rate
-    
+
         logging.info('Writing rates to output file %s...', args.output_file)
         grp = f.create_group(bin_name)
-        grp['rates']=rates
-        grp['locs']=locs_dict[bin_name]
-    
+        grp['rates'] = rates
+        grp['locs'] = locs_dict[bin_name]
+
     f.attrs['names'] = locs_names
 
 logging.info('Done!')
