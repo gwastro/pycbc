@@ -334,7 +334,7 @@ if args.make_injection_kde:
     else:
         modified_kde = injection_kde
     f_dest.create_dataset("data_kde", data=modified_kde)
-    f_dest.attrs['stat'] = "injection-kde_file"
+    f_dest.attrs['stat'] = "signal-kde_file"
 
 f_dest.attrs['alpha'] = optalpha
 f_dest.attrs['bandwidth'] = optbw
