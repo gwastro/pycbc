@@ -35,6 +35,13 @@ from .eventmgr_cython import timecoincidence_getslideint
 from .eventmgr_cython import timecoincidence_findidxlen
 from .eventmgr_cython import timecluster_cython
 
+# Mapping used in background_bin_from_string to select approximant for
+# duration function, if duration-based binning is used.
+_APPROXIMANT_DURATION_MAP = {
+    'SEOBNRv2duration': 'SEOBNRv2',
+    'SEOBNRv4duration': 'SEOBNRv4',
+    'SEOBNRv5duration': 'SEOBNRv5_ROM'
+}
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
@@ -105,19 +112,14 @@ def background_bin_from_string(background_bins, data):
                     data['spin2z']
                 )
                 cached_values[bin_type] = vals
-            elif bin_type in ['SEOBNRv2duration', 'SEOBNRv4duration', 'SEOBNRv5duration']:
-                approx_map = {
-                    'SEOBNRv2duration': 'SEOBNRv2',
-                    'SEOBNRv4duration': 'SEOBNRv4',
-                    'SEOBNRv5duration': 'SEOBNRv5_ROM'
-                }
+            elif bin_type in _APPROXIMANT_DURATION_MAP:
                 vals = pycbc.pnutils.get_imr_duration(
                     data['mass1'],
                     data['mass2'],
                     data['spin1z'],
                     data['spin2z'],
                     data['f_lower'],
-                    approximant=approx_map[bin_type]
+                    approximant=_APPROXIMANT_DURATION_MAP[bin_type]
                 )
                 cached_values[bin_type] = vals
             else:
