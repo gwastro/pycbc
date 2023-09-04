@@ -74,7 +74,9 @@ def background_bin_from_string(background_bins, data):
                 raise RuntimeError("Can't parse boundary condition! Must begin "
                                    "with 'lt' or 'gt'")
 
-            if bin_type == 'component' and boundary[0:2] == 'lt':
+            if bin_type in cached_values:
+                vals = cached_values[bin_type]
+            elif bin_type == 'component' and boundary[0:2] == 'lt':
                 # maximum component mass is less than boundary value
                 vals = numpy.maximum(data['mass1'], data['mass2'])
             elif bin_type == 'component' and boundary[0:2] == 'gt':
@@ -95,17 +97,14 @@ def background_bin_from_string(background_bins, data):
                 vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
                                                  data['spin1z'], data['spin2z'])
             elif bin_type in ['SEOBNRv2Peak', 'SEOBNRv4Peak']:
-                if bin_type in cached_values:
-                    vals = cached_values[bin_type]
-                else:
-                    vals = pycbc.pnutils.get_freq(
-                        'f' + bin_type,
-                        data['mass1'],
-                        data['mass2'],
-                        data['spin1z'],
-                        data['spin2z']
-                    )
-                    cached_values[bin_type] = vals
+                vals = pycbc.pnutils.get_freq(
+                    'f' + bin_type,
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z']
+                )
+                cached_values[bin_type] = vals
             elif bin_type in ['SEOBNRv2duration', 'SEOBNRv4duration', 'SEOBNRv5duration']:
                 approx_map = {
                     'SEOBNRv2duration': 'SEOBNRv2',
@@ -120,11 +119,11 @@ def background_bin_from_string(background_bins, data):
                     data['f_lower'],
                     approximant=approx_map[bin_type]
                 )
+                cached_values[bin_type] = vals
             else:
                 raise ValueError('Invalid bin type %s' % bin_type)
 
             sub_locs = member_func(vals)
-            del vals
             sub_locs = numpy.where(sub_locs)[0]
             if locs is not None:
                 # find intersection of boundary conditions
