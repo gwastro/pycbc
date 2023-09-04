@@ -55,6 +55,9 @@ def background_bin_from_string(background_bins, data):
     """
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
+    # Some duration/peak frequency functions are expensive.
+    # Do not want to recompute many times, if using lots of bins.
+    cached_values = {}
     for mbin in background_bins:
         locs = None
         name, bin_type_list, boundary_list = tuple(mbin.split(':'))
@@ -91,29 +94,32 @@ def background_bin_from_string(background_bins, data):
             elif bin_type == 'chi_eff':
                 vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
                                                  data['spin1z'], data['spin2z'])
-            elif bin_type == 'SEOBNRv2Peak':
-                vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
-                                              data['mass1'], data['mass2'],
-                                              data['spin1z'], data['spin2z'])
-            elif bin_type == 'SEOBNRv4Peak':
-                vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
-                                              data['mass2'], data['spin1z'],
-                                              data['spin2z'])
-            elif bin_type == 'SEOBNRv2duration':
+            elif bin_type in ['SEOBNRv2Peak', 'SEOBNRv4Peak']:
+                if bin_type in cached_values:
+                    vals = cached_values[bin_type]
+                else:
+                    vals = pycbc.pnutils.get_freq(
+                        'f' + bin_type,
+                        data['mass1'],
+                        data['mass2'],
+                        data['spin1z'],
+                        data['spin2z']
+                    )
+                    cached_values[bin_type] = vals
+            elif bin_type in ['SEOBNRv2duration', 'SEOBNRv4duration', 'SEOBNRv5duration']:
+                approx_map = {
+                    'SEOBNRv2duration': 'SEOBNRv2',
+                    'SEOBNRv4duration': 'SEOBNRv4',
+                    'SEOBNRv5duration': 'SEOBNRv5_ROM'
+                }
                 vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'], data['mass2'],
-                                   data['spin1z'], data['spin2z'],
-                                   data['f_lower'], approximant='SEOBNRv2')
-            elif bin_type == 'SEOBNRv4duration':
-                vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'][:], data['mass2'][:],
-                                   data['spin1z'][:], data['spin2z'][:],
-                                   data['f_lower'][:], approximant='SEOBNRv4')
-            elif bin_type == 'SEOBNRv5duration':
-                vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'][:], data['mass2'][:],
-                                   data['spin1z'][:], data['spin2z'][:],
-                                   data['f_lower'][:], approximant='SEOBNRv5_ROM')
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z'],
+                    data['f_lower'],
+                    approximant=approx_map[bin_type]
+                )
             else:
                 raise ValueError('Invalid bin type %s' % bin_type)
 
