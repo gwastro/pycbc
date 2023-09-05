@@ -29,6 +29,7 @@ import math
 import gzip
 import numpy
 from astropy.utils.data import download_file
+from astropy.utils.data import conf
 import pycbc.tmpltbank
 # Old LigoLW output functions are not imported at tmpltbank level
 import pycbc.tmpltbank.bank_output_utils as llw_output
@@ -52,6 +53,8 @@ import argparse
 parser = argparse.ArgumentParser()
 
 DATA_FILE_URL = 'https://github.com/gwastro/pycbc-config/raw/master/test_data_files/{}'
+# Allow astropy more time before downloads timeout
+conf.remote_timeout = 100
 
 def update_mass_parameters(tmpltbank_class):
     """
