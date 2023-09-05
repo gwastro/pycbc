@@ -43,6 +43,7 @@ _APPROXIMANT_DURATION_MAP = {
     'SEOBNRv5duration': 'SEOBNRv5_ROM'
 }
 
+
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
 
