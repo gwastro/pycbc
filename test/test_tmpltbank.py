@@ -432,7 +432,7 @@ class TmpltbankTestClass(unittest.TestCase):
         arrz = pycbc.tmpltbank.generate_anstar_3d_lattice(0, 10, 0, 10, 0, \
                                                           10, 0.03)
         arrz = numpy.array(arrz)
-        fname = 'stockAnstar3D.dat'
+        fname = 'stockAnstar3D.dat.gz'
         apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
         stockGrid = numpy.loadtxt(apy_fname)
         # Uncomment this line to regenerate the data file
