@@ -199,8 +199,42 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     """
     gating_info = {}
 
-    injector = InjectionSet.from_cli(opt)
 
+    injector = InjectionSet.from_cli(opt)
+    ## Read injections from frame file
+    if opt.injection_frame_cache or opt.injection_frame_files or opt.injection_frame_type or opt.injection_hdf_store:
+        if opt.injection_frame_cache:
+            frame_source = opt.injection_frame_cache
+        if opt.injection_frame_files:
+            frame_source = opt.injection_frame_files
+
+        logging.info("Reading Frames containing injections")
+
+        if hasattr(opt, 'frame_sieve') and opt.injection_frame_sieve:
+            sieve = opt.injection_frame_sieve
+        else:
+            sieve = None
+
+        if opt.injection_frame_type:
+            injection_strain = pycbc.frame.query_and_read_frame(
+                    opt.frame_type, opt.injection_channel_name,
+                    start_time=opt.gps_start_time-opt.pad_data,
+                    end_time=opt.gps_end_time+opt.pad_data,
+                    sieve=sieve)
+        elif opt.injection_frame_files or opt.frame_cache:
+            injection_strain = pycbc.frame.read_frame(
+                    frame_source, opt.injection_channel_name,
+                    start_time=opt.gps_start_time-opt.pad_data,
+                    end_time=opt.gps_end_time+opt.pad_data,
+                    sieve=sieve)
+        elif opt.injection_injection_hdf_store:
+            injection_strain = pycbc.frame.read_store(opt.injection_hdf_store, opt.injection_channel_name,
+                                            opt.gps_start_time - opt.pad_data,
+                                            opt.gps_end_time + opt.pad_data)
+    else:
+        injection_strain = None
+
+    ## Read strain data
     if opt.frame_cache or opt.frame_files or opt.frame_type or opt.hdf_store:
         if opt.frame_cache:
             frame_source = opt.frame_cache
@@ -284,12 +318,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if opt.zpk_z and opt.zpk_p and opt.zpk_k:
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
+        injection_strain = highpass(injection_strain, frequency=opt.strain_high_pass) if injection_strain else None
 
         logging.info("Applying zpk filter")
         z = numpy.array(opt.zpk_z)
         p = numpy.array(opt.zpk_p)
         k = float(opt.zpk_k)
         strain = filter_zpk(strain.astype(numpy.float64), z, p, k)
+        injection_strain = filter_zpk(injection_strain.astype(numpy.float64), z, p, k) if injection_strain else None
 
     if opt.normalize_strain:
         logging.info("Dividing strain by constant")
@@ -299,14 +335,22 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if opt.strain_high_pass:
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
+        injection_strain = highpass(injection_strain, frequency=opt.strain_high_pass) if injection_strain else None
 
     if opt.sample_rate:
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain,
                                      1. / opt.sample_rate,
                                      method='ldas')
+        injection_strain = resample_to_delta_t(injection_strain,
+                                     1. / opt.sample_rate,
+                                     method='ldas') if injection_strain else None
 
     if injector is not None:
+        # FIXME: Should we allow this double injections? Maybe a useful feature
+        if injection_strain is not None:
+            logging.warn("Injection file and frames containing injection both "
+                    "are given. There will be 2 sets of injections!")
         logging.info("Applying injections")
         injections = \
             injector.apply(strain, opt.channel_name.split(':')[0],
@@ -315,10 +359,20 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                            inj_filter_rejector=inj_filter_rejector)
 
     if opt.sgburst_injection_file:
+        # FIXME: Should we allow this double injections? Maybe a useful feature
+        if injection_strain is not None:
+            logging.warn("Burst injection file and frames containing injection"
+                    " both are given. There will be at least 2 sets of injections!")
         logging.info("Applying sine-Gaussian burst injections")
         injector = SGBurstInjectionSet(opt.sgburst_injection_file)
         injector.apply(strain, opt.channel_name.split(':')[0],
                          distance_scale=opt.injection_scale_factor)
+
+    ## Add injection strain to the strain data
+    if injection_strain:
+        logging.info("Adding injections from the frame file")
+        strain = strain + injection_strain
+        del injection_strain ## now we don't need this
 
     if precision == 'single':
         logging.info("Converting to float32")
@@ -511,6 +565,33 @@ def insert_strain_option_group(parser, gps_times=True):
                             type=str,
                             help="(optional), Only use frame files where the "
                                  "URL matches the regular expression given.")
+
+    ## Read frame containing premade O4 injections
+    # Read from cache file
+    data_reading_group.add_argument("--injection-channel-name", type=str,
+                   help="The channel containing the gravitational strain data")
+    data_reading_group.add_argument("--injection-frame-cache", type=str, nargs="+",
+                            help="Cache file containing the frame locations.")
+    # Read from frame files
+    data_reading_group.add_argument("--injection-frame-files",
+                            type=str, nargs="+",
+                            help="list of frame files")
+    # # Read from hdf store file
+    # ## Maybe some day in future
+    # data_reading_group.add_argument("--hdf-store",
+    #                         type=str,
+    #                         help="Store of time series data in hdf format")
+    # Use datafind to get frame files
+    data_reading_group.add_argument("--injection-frame-type",
+                            type=str,
+                            help="(optional), replaces frame-files. Use datafind "
+                                 "to get the needed frame file(s) of this type.")
+    # Filter frame files by URL
+    data_reading_group.add_argument("--injection-frame-sieve",
+                            type=str,
+                            help="(optional), Only use frame files where the "
+                                 "URL matches the regular expression given.")
+    ####
 
     # Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
