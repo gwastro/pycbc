@@ -26,6 +26,7 @@ These are the unittests for the pycbc.tmpltbank module
 """
 
 import math
+import gzip
 import numpy
 from astropy.utils.data import download_file
 import pycbc.tmpltbank
@@ -132,16 +133,17 @@ class TmpltbankTestClass(unittest.TestCase):
         self.psdSize = int(self.segLen * self.sampleRate / 2.) + 1
 
         apy_fname = download_file(
-            DATA_FILE_URL.format('ZERO_DET_high_P.txt'),
+            DATA_FILE_URL.format('ZERO_DET_high_P.txt.gz'),
             cache=True
         )
-
-        self.psd = pycbc.psd.from_txt(apy_fname, self.psdSize, self.deltaF,
-                                      self.f_low, is_asd_file=True)
         match_psd_size = int(256 * self.sampleRate / 2.) + 1
-        self.psd_for_match = pycbc.psd.from_txt(apy_fname, match_psd_size,
-                                                1./256., self.f_low,
-                                                is_asd_file=True)
+        with gzip.open(apy_fname) as apy_fp:
+            self.psd = pycbc.psd.from_txt(apy_fp, self.psdSize, self.deltaF,
+                                          self.f_low, is_asd_file=True)
+            apy_fp.seek(0)  # Reset file-pointer to start of file
+            self.psd_for_match = pycbc.psd.from_txt(apy_fp, match_psd_size,
+                                                    1./256., self.f_low,
+                                                    is_asd_file=True)
 
         metricParams = pycbc.tmpltbank.metricParameters(self.pnOrder,\
                          self.f_low, self.f_upper, self.deltaF, self.f0)
@@ -195,13 +197,15 @@ class TmpltbankTestClass(unittest.TestCase):
         self.xis = vals
 
     def test_eigen_directions(self):
-        fname='stockEvals.dat'
+        fname='stockEvals.dat.gz'
         apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
-        evalsStock = Array(numpy.loadtxt(apy_fname))
+        with gzip.open(apy_fname) as apy_fp:
+            evalsStock = Array(numpy.loadtxt(apy_fp))
 
-        fname='stockEvecs.dat'
+        fname='stockEvecs.dat.gz'
         apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
-        evecsStock = Array(numpy.loadtxt(apy_fname))
+        with gzip.open(apy_fname) as apy_fp:
+            evecsStock = Array(numpy.loadtxt(apy_fp))
 
         maxEval = max(evalsStock)
         evalsCurr = Array(self.metricParams.evals[self.f_upper])
@@ -411,9 +415,10 @@ class TmpltbankTestClass(unittest.TestCase):
     def test_chirp_params(self):
         chirps=pycbc.tmpltbank.get_chirp_params(2.2, 1.8, 0.2, 0.3,
                               self.metricParams.f0, self.metricParams.pnOrder)
-        fname = 'stockChirps.dat'
+        fname = 'stockChirps.dat.gz'
         apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
-        stockChirps = numpy.loadtxt(apy_fname)
+        with gzip.open(apy_fname) as apy_fp:
+            stockChirps = numpy.loadtxt(apy_fp)
         diff = (chirps - stockChirps) / stockChirps
         errMsg = "Calculated chirp params differ from that expected."
         self.assertTrue( not (abs(diff) > 1E-4).any(), msg=errMsg)
@@ -421,9 +426,10 @@ class TmpltbankTestClass(unittest.TestCase):
     def test_hexagonal_placement(self):
         arrz = pycbc.tmpltbank.generate_hexagonal_lattice(10, 0, 10, 0, 0.03)
         arrz = numpy.array(arrz)
-        fname = 'stockHexagonal.dat'
+        fname = 'stockHexagonal.dat.gz'
         apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
-        stockGrid = numpy.loadtxt(apy_fname)
+        with gzip.open(apy_fname) as apy_fp:
+            stockGrid = numpy.loadtxt(apy_fp)
         diff = arrz - stockGrid
         errMsg = "Calculated lattice differs from that expected."
         self.assertTrue( not (diff > 1E-4).any(), msg=errMsg)
@@ -434,7 +440,8 @@ class TmpltbankTestClass(unittest.TestCase):
         arrz = numpy.array(arrz)
         fname = 'stockAnstar3D.dat.gz'
         apy_fname = download_file(DATA_FILE_URL.format(fname), cache=False)
-        stockGrid = numpy.loadtxt(apy_fname)
+        with gzip.open(apy_fname) as apy_fp:
+            stockGrid = numpy.loadtxt(apy_fp)
         # Uncomment this line to regenerate the data file
         #numpy.savetxt("new_example.dat", arrz)
         errMsg = "Calculated lattice differs from that expected."
