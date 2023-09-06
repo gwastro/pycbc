@@ -199,16 +199,16 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     """
     gating_info = {}
 
-
     injector = InjectionSet.from_cli(opt)
-    ## Read injections from frame file
-    if opt.injection_frame_cache or opt.injection_frame_files or opt.injection_frame_type or opt.injection_hdf_store:
+    # Read noiseless injections from frame file
+    if opt.injection_frame_cache or opt.injection_frame_files or \
+            opt.injection_frame_type or opt.injection_hdf_store:
         if opt.injection_frame_cache:
             frame_source = opt.injection_frame_cache
         if opt.injection_frame_files:
             frame_source = opt.injection_frame_files
 
-        logging.info("Reading Frames containing injections")
+        logging.info("Reading Frames containing noiseless injections")
 
         if hasattr(opt, 'frame_sieve') and opt.injection_frame_sieve:
             sieve = opt.injection_frame_sieve
@@ -347,19 +347,18 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                      method='ldas') if injection_strain else None
 
     if injector is not None:
-        # FIXME: Should we allow this double injections? Maybe a useful feature
-        if injection_strain is not None:
-            logging.warn("Injection file and frames containing injection both "
-                    "are given. There will be 2 sets of injections!")
+        # check if we actually need to generate injections else just add the inj
+        # and parameters to inj_filter_rejector
+        gen_inj = False if (injection_strain is not None and
+                inj_filter_rejector.match_threshold is None) else True
         logging.info("Applying injections")
         injections = \
             injector.apply(strain, opt.channel_name.split(':')[0],
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
-                           inj_filter_rejector=inj_filter_rejector)
+                           inj_filter_rejector=inj_filter_rejector, generate_injections=gen_inj)
 
     if opt.sgburst_injection_file:
-        # FIXME: Should we allow this double injections? Maybe a useful feature
         if injection_strain is not None:
             logging.warn("Burst injection file and frames containing injection"
                     " both are given. There will be at least 2 sets of injections!")
@@ -566,26 +565,28 @@ def insert_strain_option_group(parser, gps_times=True):
                             help="(optional), Only use frame files where the "
                                  "URL matches the regular expression given.")
 
-    ## Read frame containing premade O4 injections
+    ## Read frame containing premade noiseless injections
     # Read from cache file
     data_reading_group.add_argument("--injection-channel-name", type=str,
-                   help="The channel containing the gravitational strain data")
+                   help="The channel containing the noiseless injections")
     data_reading_group.add_argument("--injection-frame-cache", type=str, nargs="+",
-                            help="Cache file containing the frame locations.")
+                            help="Cache file containing the frame locations for noiseless injections.")
     # Read from frame files
     data_reading_group.add_argument("--injection-frame-files",
                             type=str, nargs="+",
-                            help="list of frame files")
+                            help="list of frame files containing noiseless injections")
     # # Read from hdf store file
     # ## Maybe some day in future
-    # data_reading_group.add_argument("--hdf-store",
-    #                         type=str,
-    #                         help="Store of time series data in hdf format")
+    data_reading_group.add_argument("--hdf-store",
+                            type=str,
+                            help="Store of time series noiseless injections in hdf format")
     # Use datafind to get frame files
     data_reading_group.add_argument("--injection-frame-type",
                             type=str,
                             help="(optional), replaces frame-files. Use datafind "
-                                 "to get the needed frame file(s) of this type.")
+                                 "to get the needed frame file(s) of given premade "
+                                 "noiseless injection type. This option is useless "
+                                 "untils such a files are made data-findable")
     # Filter frame files by URL
     data_reading_group.add_argument("--injection-frame-sieve",
                             type=str,
@@ -620,7 +621,9 @@ def insert_strain_option_group(parser, gps_times=True):
     # Injection options
     data_reading_group.add_argument("--injection-file", type=str,
                       help="(optional) Injection file containing parameters"
-                           " of CBC signals to be added to the strain")
+                           " of CBC signals to be added to the strain. "
+                           "If frames containig premade noiseless injections "
+                           "are provided, this is used only for inj_filter_rejector")
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file containing parameters"
                       "of sine-Gaussian burst signals to add to the strain")
