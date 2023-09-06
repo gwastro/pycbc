@@ -43,7 +43,6 @@ from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries, TimeSeries
 from pycbc.types import MultiDetOptionAction
 from pycbc.results import generate_asd_plot, generate_snr_plot
-from gwpy.time import to_gps
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action='count',

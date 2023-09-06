@@ -44,7 +44,6 @@ from pycbc.io.ligolw import (
 from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries, TimeSeries
 from pycbc.results import generate_asd_plot, generate_snr_plot
-from gwpy.time import to_gps
 
 def check_gracedb_for_event(gdb_handle, query, far):
     """
