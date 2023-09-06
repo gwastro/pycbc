@@ -122,6 +122,13 @@ else:
     gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
 
 labels = [l.upper() for l in args.labels]
+allowed_labels = gracedb.allowed_labels
+
+if not all([l in allowed_labels for l in labels]):
+    err_msg = "One or more supplied labels is not available on the server. "
+    err_msg += f"Supplied {','.join(labels)}, allowed "
+    err_msg += f"{','.join(allowed_labels)}."
+    raise RuntimeError(err_msg)
 
 group_tag = 'Test' if args.testing else 'CBC'
 r = gracedb.create_event(
