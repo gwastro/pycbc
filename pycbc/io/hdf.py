@@ -963,7 +963,7 @@ class ForegroundTriggers(object):
                     if name == 'end_time':
                         sngl.end = LIGOTimeGPS(val)
                     elif name == 'chisq':
-                        # Use reduced chisuared to be consistent with Live
+                        # Use reduced chisquared to be consistent with Live
                         dof = 2. * sngl_col_vals['chisq_dof'][ifo][0][idx] - 2.
                         sngl.chisq = val / dof
                     else:
