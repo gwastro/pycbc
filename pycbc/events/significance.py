@@ -63,7 +63,8 @@ def count_n_louder(bstat, fstat, dec, skip_background=False,
     # calculate cumulative number of triggers louder than the trigger in
     # a given index. We need to subtract the decimation factor, as the cumsum
     # includes itself in the first sum (it is inclusive of the first value)
-    n_louder = dec[::-1].cumsum()[::-1] - dec
+    # Want to add one on here, so it includes itself in the count
+    n_louder = dec[::-1].cumsum()[::-1] - dec + 1
 
     # Determine how many values are louder than the foreground ones
     # We need to subtract one from the index, to be consistent with definition

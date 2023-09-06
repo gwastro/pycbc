@@ -85,7 +85,7 @@ if args.ranking_file:
         dec,
         **significance_dict[ifo_combo])
 
-    ifar = background_time / (fnum + 1)
+    ifar = background_time / fnum
     fap = 1 - numpy.exp(- coinc_time / ifar)
     o['foreground/ifar'][...] = sec_to_year(ifar)
     o['foreground/fap'][...] = fap
@@ -113,15 +113,15 @@ else:
         dec_exc,
         **significance_dict[ifo_combo])
 
-    o['background/ifar'][...] = sec_to_year(background_time / (bnum + 1))
-    o['background_exc/ifar'][...] = sec_to_year(background_time_exc / (bnum_exc + 1))
+    o['background/ifar'][...] = sec_to_year(background_time / bnum)
+    o['background_exc/ifar'][...] = sec_to_year(background_time_exc / bnum_exc)
 
-    ifar = background_time / (fnum + 1)
+    ifar = background_time / fnum
     fap = 1 - numpy.exp(- coinc_time / ifar)
     o['foreground/ifar'][...] = sec_to_year(ifar)
     o['foreground/fap'][...] = fap
 
-    ifar_exc = background_time_exc / (fnum_exc + 1)
+    ifar_exc = background_time_exc / fnum_exc
     fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
     o['foreground/ifar_exc'][...] = sec_to_year(ifar_exc)
     o['foreground/fap_exc'][...] = fap_exc

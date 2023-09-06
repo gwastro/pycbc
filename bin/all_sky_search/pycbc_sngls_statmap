@@ -166,10 +166,10 @@ back_cnum_exc, fnlouder_exc = significance.get_n_louder(
     bkg_exc_dec_facs,
     **significance_dict[ifo])
 
-bg_ifar = fg_time / (back_cnum + 1)
-fg_ifar = fg_time_exc / (fnlouder + 1)
-bg_ifar_exc = fg_time / (back_cnum_exc + 1)
-fg_ifar_exc = fg_time_exc / (fnlouder_exc + 1)
+bg_ifar = fg_time / back_cnum
+fg_ifar = fg_time_exc / fnlouder
+bg_ifar_exc = fg_time / back_cnum_exc
+fg_ifar_exc = fg_time_exc / fnlouder_exc
 
 f['background/ifar'] = conv.sec_to_year(bg_ifar)
 f['background_exc/ifar'] = conv.sec_to_year(bg_ifar_exc)
@@ -306,8 +306,8 @@ while numpy.any(ifar_louder >= fg_time):
         numpy.ones_like(back_stat),
         **significance_dict[ifo])
 
-    bg_ifar = fg_time / (back_cnum + 1)
-    fg_ifar = fg_time / (fnlouder + 1)
+    bg_ifar = fg_time / back_cnum
+    fg_ifar = fg_time / fnlouder
 
     # Update the ifar_louder criteria depending on whether foreground
     # triggers are being removed via inclusive or exclusive background.
@@ -323,7 +323,7 @@ while numpy.any(ifar_louder >= fg_time):
             numpy.ones_like(back_stat_exc),
             **significance_dict[ifo])
 
-        fg_ifar_exc = fg_time / (fnlouder_exc + 1)
+        fg_ifar_exc = fg_time / fnlouder_exc
 
         ifar_louder = fg_ifar_exc
 

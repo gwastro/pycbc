@@ -255,9 +255,9 @@ back_cnum_exc, fnlouder_exc = significance.get_n_louder(
     exc_zero_trigs.decimation_factor,
     **significance_dict[ifo_combo])
 
-f['background/ifar'] = conv.sec_to_year(background_time / (back_cnum + 1))
+f['background/ifar'] = conv.sec_to_year(background_time / back_cnum)
 f['background_exc/ifar'] = conv.sec_to_year(background_time_exc /
-                                            (back_cnum_exc + 1))
+                                            back_cnum_exc)
 f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 f.attrs['background_time_exc'] = background_time_exc
@@ -266,11 +266,11 @@ f.attrs['foreground_time_exc'] = coinc_time_exc
 logging.info("calculating ifar/fap values")
 
 if fore_locs.sum() > 0:
-    ifar = background_time / (fnlouder + 1)
+    ifar = background_time / fnlouder
     fap = 1 - numpy.exp(- coinc_time / ifar)
     f['foreground/ifar'] = conv.sec_to_year(ifar)
     f['foreground/fap'] = fap
-    ifar_exc = background_time_exc / (fnlouder_exc + 1)
+    ifar_exc = background_time_exc / fnlouder_exc
     fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
@@ -326,7 +326,7 @@ while numpy.any(louder_foreground == 0):
     # downstream codes.
     if h_iterations == 0:
         f['background_h%s/stat' % h_iterations] = back_stat
-        f['background_h%s/ifar' % h_iterations] = conv.sec_to_year(background_time / (back_cnum + 1))
+        f['background_h%s/ifar' % h_iterations] = conv.sec_to_year(background_time / back_cnum)
         f['background_h%s/timeslide_id' % h_iterations] = all_trigs.data['timeslide_id'][back_locs]
         f['foreground_h%s/stat' % h_iterations] = fore_stat
         f['foreground_h%s/ifar' % h_iterations] = conv.sec_to_year(ifar)
@@ -431,7 +431,7 @@ while numpy.any(louder_foreground == 0):
     # louder_foreground has been updated and the code can continue.
 
     logging.info("Calculating ifar/fap values")
-    f['background_h%s/ifar' % h_iterations] = conv.sec_to_year(background_time / (back_cnum + 1))
+    f['background_h%s/ifar' % h_iterations] = conv.sec_to_year(background_time / back_cnum)
     f.attrs['background_time_h%s' % h_iterations] = background_time
     f.attrs['foreground_time_h%s' % h_iterations] = coinc_time
 
@@ -439,7 +439,7 @@ while numpy.any(louder_foreground == 0):
         # Write ranking statistic to file just for downstream plotting code
         f['foreground_h%s/stat' % h_iterations] = fore_stat
 
-        ifar = background_time / (fnlouder + 1)
+        ifar = background_time / fnlouder
         fap = 1 - numpy.exp(- coinc_time / ifar)
         f['foreground_h%s/ifar' % h_iterations] = conv.sec_to_year(ifar)
         f['foreground_h%s/fap' % h_iterations] = fap

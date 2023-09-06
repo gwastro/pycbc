@@ -116,8 +116,8 @@ back_cnum_exc, fnlouder_exc = significance.get_n_louder(
     bkg_exc_dec_facs,
     **significance_dict[ifo])
 
-fg_ifar_exc = fg_time_exc / (fnlouder_exc + 1)
-bg_ifar_exc = fg_time_exc / (back_cnum_exc + 1)
+fg_ifar_exc = fg_time_exc / fnlouder_exc
+bg_ifar_exc = fg_time_exc / back_cnum_exc
 
 f['background_exc/ifar'] = conv.sec_to_year(bg_ifar_exc)
 f.attrs['background_time_exc'] = fg_time_exc

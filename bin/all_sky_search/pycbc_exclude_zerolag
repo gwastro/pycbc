@@ -94,7 +94,6 @@ for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
 
 logging.info('Recalculating IFARs')
-bnlouder, fnlouder = significance.get_n_louder(
     filtered_trigs.data['stat'],
     f_in['foreground/stat'][:],
     filtered_trigs.data['decimation_factor'],
@@ -103,8 +102,8 @@ bnlouder, fnlouder = significance.get_n_louder(
 # However we expect exclude zerolag to be a (very) small correction
 fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
 bg_time_exc = conv.sec_to_year(f_in.attrs['background_time_exc'])
-fg_ifar_exc = bg_time_exc / (fnlouder + 1)
-bg_ifar_exc = bg_time_exc / (bnlouder + 1)
+fg_ifar_exc = bg_time_exc / fnlouder
+bg_ifar_exc = bg_time_exc / bnlouder
 
 logging.info('Writing updated ifars to file')
 f_out['foreground/ifar_exc'][:] = fg_ifar_exc

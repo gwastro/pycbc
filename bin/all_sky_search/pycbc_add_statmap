@@ -317,14 +317,14 @@ if injection_style:
                 bg_f['background/decimation_factor'][:],
                 **significance_dict[ifo_combo_key])
 
-        far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / bg_f.attrs['background_time']
+        far[ifo_combo_key] = fnlouder[ifo_combo_key] / bg_f.attrs['background_time']
         _, fnlouder_exc[ifo_combo_key] = \
             significance.get_n_louder(
                 bg_f['background_exc/stat'][:],
                 f['foreground/stat'][:],
                 bg_f['background_exc/decimation_factor'][:],
                 **significance_dict[ifo_combo_key])
-        far_exc[ifo_combo_key] = (fnlouder_exc[ifo_combo_key] + 1) / bg_f.attrs['background_time_exc']
+        far_exc[ifo_combo_key] = fnlouder_exc[ifo_combo_key] / bg_f.attrs['background_time_exc']
 else:
     # if not injection style input files, then the input files will have the
     # background included
@@ -336,14 +336,14 @@ else:
                 f['foreground/stat'][:],
                 f_in['background/decimation_factor'][:],
                 **significance_dict[ifo_combo_key])
-        far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / f_in.attrs['background_time']
+        far[ifo_combo_key] = fnlouder[ifo_combo_key] / f_in.attrs['background_time']
         _, fnlouder_exc[ifo_combo_key] = \
             significance.get_n_louder(
                 f_in['background_exc/stat'][:],
                 f['foreground/stat'][:],
                 f_in['background_exc/decimation_factor'][:],
                 **significance_dict[ifo_combo_key])
-        far_exc[ifo_combo_key] = (fnlouder_exc[ifo_combo_key] + 1) / f_in.attrs['background_time_exc']
+        far_exc[ifo_combo_key] = fnlouder_exc[ifo_combo_key] / f_in.attrs['background_time_exc']
 
 logging.info('Combining false alarm rates from all available backgrounds')
 
@@ -597,8 +597,8 @@ while True:
         fg_time_ct[key] -= args.cluster_window
         bg_t_y = conv.sec_to_year(bg_time_ct[key])
         fg_t_y = conv.sec_to_year(fg_time_ct[key])
-        sep_bg_data[key].data['ifar'] = bg_t_y / (bnlouder + 1)
-        sep_fg_data[key].data['ifar'] = bg_t_y / (fnlouder + 1)
+        sep_bg_data[key].data['ifar'] = bg_t_y / bnlouder
+        sep_fg_data[key].data['ifar'] = bg_t_y / fnlouder
         sep_fg_data[key].data['fap'] = 1 - \
             np.exp(-fg_t_y / sep_fg_data[key].data['ifar'])
 
@@ -609,7 +609,7 @@ while True:
             combined_fg_data.data['stat'],
             sep_bg_data[key].data['decimation_factor'],
             **significance_dict[ifo_combo_key])
-        far[key] = (fnlouder + 1) / bg_time_ct[key]
+        far[key] = fnlouder / bg_time_ct[key]
         # Set up variable for whether each coincidence is available in each coincidence time
         is_in_combo_time[key] = np.zeros(n_triggers)
         end_times = np.array(f['segments/%s/end' % key][:])
