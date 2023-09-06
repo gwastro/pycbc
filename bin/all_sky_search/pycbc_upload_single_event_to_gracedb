@@ -111,6 +111,8 @@ parser.add_argument('--source-probabilities',
 parser.add_argument('--source-probabilities-plot',
                     help="Source probabilities plot to be uploaded with the "
                           "event.")
+parser.add_argument('--labels', nargs='+',
+                    help="Labels to add to the event in GraceDB")
 
 args = parser.parse_args()
 
@@ -119,6 +121,8 @@ if args.production_server:
 else:
     gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
 
+labels = [l.upper() for l in args.labels]
+
 group_tag = 'Test' if args.testing else 'CBC'
 r = gracedb.create_event(
     group_tag,
@@ -126,7 +130,8 @@ r = gracedb.create_event(
     args.xml_file_for_upload,
     filecontents=open(args.xml_file_for_upload, "rb").read(),
     search=args.search_id_string,
-    offline=True
+    offline=True,
+    labels=labels
 ).json()
 
 logging.info("Uploaded event %s.", r["graceid"])
