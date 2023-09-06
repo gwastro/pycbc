@@ -41,6 +41,7 @@ from pycbc.io.ligolw import (
 )
 from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries, TimeSeries
+from pycbc.types import MultiDetOptionAction
 from pycbc.results import generate_asd_plot, generate_snr_plot
 from gwpy.time import to_gps
 
@@ -60,6 +61,7 @@ parser.add_argument('--output-file', default=os.getcwd(),
                          "files. Default: current directory")
 parser.add_argument('--snr-timeseries-plot')
 parser.add_argument('--psd-plot')
+parser.add_argument('--channel-name', action=MultiDetOptionAction)
 
 args = parser.parse_args()
 
@@ -181,6 +183,7 @@ for sngl in sngl_inspiral_table:
     if sngl.event_id not in sngl_ids:
         continue
     sngl_inspiral_table_curr.append(sngl)
+    sngl.channel = args.channel_name[sngl.ifo]
 
     # Two versions of the PSD dictionary have useful info here
     psd = psds_curr_event[ifo]

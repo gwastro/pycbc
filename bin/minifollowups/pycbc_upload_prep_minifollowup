@@ -22,7 +22,9 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.io import get_all_subkeys
 import pycbc.workflow.minifollowups as mini
-from pycbc.workflow.core import resolve_url_to_file
+from pycbc.workflow.core import resolve_url_to_file, resolve_td_option
+from ligo import segments
+
 import numpy as np
 import pycbc.version
 
@@ -97,6 +99,13 @@ workflow = wf.Workflow(args)
 
 wf.makedir(args.output_dir)
 
+channel_opts = {}
+for ifo in workflow.ifos:
+    channel_opts[ifo] = workflow.cp.get_opt_tags(
+        "workflow",
+        "%s-channel-name" % ifo.lower(),
+        "")
+
 # create a FileList that will contain all output files
 layouts = []
 
@@ -163,6 +172,14 @@ for curr_idx in range(event_idx.size):
     appx = params['approximant']
     del params['approximant']
 
+    channel_name = ""
+    for ifo in ifo_list:
+        ifo_chname = resolve_td_option(
+            channel_opts[ifo],
+            segments.segment(params['mean_time'], params['mean_time'])
+        )
+        channel_name += ifo_chname + " "
+
     single_temp_files = []
     for ifo in ifo_list:
         if params['mean_time'] not in insp_analysed_seglists[ifo]:
@@ -190,6 +207,7 @@ for curr_idx in range(event_idx.size):
         curr_idx,
         appx,
         args.output_dir,
+        channel_name,
         tags=args.tags+['upload', str(curr_idx)]
     )
 

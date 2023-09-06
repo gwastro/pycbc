@@ -955,7 +955,8 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
 
 
 def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
-                      event_id, approximant, out_dir, tags=None):
+                      event_id, approximant, out_dir, channel_name,
+                      tags=None):
     """
     Make files including xml, skymap fits and plots for uploading to gracedb
     for a given event
@@ -977,6 +978,8 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
         to bayestar for sky location
     out_dir:
         The directory where all the output files should go
+    channel_name: string
+        Channel name to be added to the XML file to be uploaded
     tags: {None, optional}
         Tags to add to the minifollowups executables
 
@@ -997,6 +1000,7 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
     xml_node.add_opt('--event-id', event_id)
     xml_node.add_input_list_opt('--psd-files', psd_files)
     xml_node.add_input_list_opt('--snr-timeseries', snr_timeseries)
+    xml_node.add_opt('--channel-name', channel_name)
     xml_node.new_output_file_opt(
         workflow.analysis_time,
         '.png',
