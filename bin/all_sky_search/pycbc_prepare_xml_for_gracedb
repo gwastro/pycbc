@@ -58,9 +58,16 @@ parser.add_argument('--event-id', type=int,
 parser.add_argument('--output-file', default=os.getcwd(),
                     help="Output directory for locally stored XML and PSD "
                          "files. Default: current directory")
-parser.add_argument('--snr-timeseries-plot')
-parser.add_argument('--psd-plot')
-parser.add_argument('--channel-name', action=MultiDetOptionAction)
+parser.add_argument('--snr-timeseries-plot', required=True,
+                    help="Output filename for the plot of SNR timeseries. "
+                         "Must be a plot filetype as used by matplotlib.")
+parser.add_argument('--psd-plot', required=True,
+                    help="Output filename for the plot of the PSD. "
+                         "Must be a plot filetype as used by matplotlib.")
+parser.add_argument('--channel-name', action=MultiDetOptionAction,
+                    required=True,
+                    help="Channel name for adding to the uploaded single "
+                         "inspiral table.")
 
 args = parser.parse_args()
 
