@@ -26,47 +26,10 @@ import argparse
 import logging
 from ligo.gracedb.rest import GraceDb
 import numpy as np
-import h5py
-import matplotlib
-matplotlib.use('agg')
 
 import pycbc
 import lal
-import lal.series
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
-from ligo.segments import segment, segmentlist
 from pycbc.io.live import gracedb_tag_with_version
-from pycbc.io.ligolw import (
-    LIGOLWContentHandler,
-    snr_series_to_xml,
-)
-from pycbc.psd import interpolate
-from pycbc.types import FrequencySeries, TimeSeries
-from pycbc.results import generate_asd_plot, generate_snr_plot
-
-def check_gracedb_for_event(gdb_handle, query, far):
-    """
-    Check if there is an event in gracedb with the queried string
-    which matches the FAR given
-    """
-    gdb_events_match_query = list(gdb_handle.events(query=query))
-    ifar = 1. / lal.YRJUL_SI / far
-    for gdb_event in gdb_events_match_query:
-        # Test each gracedb event to see if the FAR matches this event
-        if np.abs(gdb_event['far'] - far) < 1e-16:
-            # If an event has been found which matches the FAR
-            logging.info('Event already exists in GraceDb server with '
-                         'time %.3f and IFAR %.3e: %s',
-                         gdb_event['gpstime'], ifar,
-                         gdb_event['graceid'])
-            return True
-
-    # If no event has been found, log this, and return False
-    logging.info('No event found in GraceDb with IFAR %.3e when using '
-                 'query: "%s"', ifar, query)
-    return False
-
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
