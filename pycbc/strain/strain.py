@@ -346,17 +346,26 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                      1. / opt.sample_rate,
                                      method='ldas') if injection_strain else None
 
-    if injector is not None:
-        # check if we actually need to generate injections else just add the inj
-        # and parameters to inj_filter_rejector
-        gen_inj = False if (injection_strain is not None and
-                inj_filter_rejector.match_threshold is None) else True
+    # Check if we need to use provided injection file
+    # FIXME: Shoud this be done at the begining even before creating injector
+    # instance using parser options?
+    if (injector and not injection_strain):
         logging.info("Applying injections")
         injections = \
             injector.apply(strain, opt.channel_name.split(':')[0],
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
-                           inj_filter_rejector=inj_filter_rejector, generate_injections=gen_inj)
+                           inj_filter_rejector=inj_filter_rejector, generate_injections=True)
+
+    elif (injector and injection_strain and inj_filter_rejector):
+        # check if we actually need to generate injections else just add the inj
+        # and parameters to inj_filter_rejector
+        logging.info("Using injection file for inj_filter_rejector")
+        injections = \
+            injector.apply(strain, opt.channel_name.split(':')[0],
+                           distance_scale=opt.injection_scale_factor,
+                           injection_sample_rate=opt.injection_sample_rate,
+                           inj_filter_rejector=inj_filter_rejector, generate_injections=False)
 
     if opt.sgburst_injection_file:
         if injection_strain is not None:

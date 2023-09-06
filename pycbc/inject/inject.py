@@ -556,7 +556,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             t0 = float(strain.start_time) - earth_travel_time
             t1 = float(strain.end_time) + earth_travel_time
 
-        if generate_injections:
+        if (generate_injections or
+                inj_filter_rejector.match_threshold):
             if strain.dtype not in (float32, float64):
                 raise TypeError("Strain dtype must be float32 or float64, not " \
                         + str(strain.dtype))
@@ -585,7 +586,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             start_time = inj.tc - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
-            if generate_injections:
+            if (generate_injections or
+                    inj_filter_rejector.match_threshold):
                 signal = self.make_strain_from_inj_object(inj, delta_t,
                         detector_name, f_lower=f_l,
                         distance_scale=distance_scale)
@@ -594,6 +596,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                     continue
 
                 signal = signal.astype(strain.dtype)
+
+            if generate_injections:
                 signal_lal = signal.lal()
                 add_injection(lalstrain, signal_lal, None)
 
