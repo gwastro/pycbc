@@ -220,7 +220,7 @@ def get_far(back_stat, fore_stat, dec_facs,
     if method == 'n_louder':
         back_cnum += 1
         fnlouder += 1
-    
+
     # Turn n_louder into a FAR by dividing by background time
     back_far = back_cnum / background_time
     fg_far = fnlouder / background_time
