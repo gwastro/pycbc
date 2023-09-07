@@ -63,8 +63,7 @@ def count_n_louder(bstat, fstat, dec, skip_background=False,
     # calculate cumulative number of triggers louder than the trigger in
     # a given index. We need to subtract the decimation factor, as the cumsum
     # includes itself in the first sum (it is inclusive of the first value)
-    # Want to add one on here, so it includes itself in the count
-    n_louder = dec[::-1].cumsum()[::-1] - dec + 1
+    n_louder = dec[::-1].cumsum()[::-1] - dec
 
     # Determine how many values are louder than the foreground ones
     # We need to subtract one from the index, to be consistent with definition
@@ -91,7 +90,7 @@ def count_n_louder(bstat, fstat, dec, skip_background=False,
     return fore_n_louder
 
 
-def n_louder_from_fit(back_stat, fore_stat, dec_facs,
+def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
                       fit_function='exponential', fit_threshold=0):
     """
     Use a fit to events in back_stat in order to estimate the
@@ -116,7 +115,8 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     -------
     back_cnum: numpy.ndarray
         The estimated number of background events louder than each
-        background event
+        background event. Does not return this argument if
+        skip_background == True
     fn_louder: numpy.ndarray
         The estimated number of background events louder than each
         foreground event
@@ -165,6 +165,9 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     back_cnum[bg_below] += n_above
     fnlouder[fg_below] += n_above
 
+    if skip_background:
+        return fnlouder
+
     return back_cnum, fnlouder
 
 
@@ -191,6 +194,41 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
         fore_stat,
         dec_facs,
         **kwargs)
+
+
+def get_far(back_stat, fore_stat, dec_facs,
+            background_time,
+            method=_default_opt_dict['method'],
+            return_counts=False,
+            **kwargs):  # pylint:disable=unused-argument
+    """
+    Return the appropriate FAR given the significance caluclation method
+    """
+    # Get n_louder in background and foreground according to the chosen
+    # method
+    back_cnum, fnlouder = get_n_louder(
+        back_stat,
+        fore_stat,
+        dec_facs,
+        method=method,
+        **kwargs
+    )
+
+    # If we are counting the number of louder events in the background,
+    # we add one. This is part of the p-value calculation in Usman 2015.
+    # If we are doing trigger fit extrapolation, this is not needed
+    if method == 'n_louder':
+        back_cnum += 1
+        fnlouder += 1
+    
+    # Turn n_louder into a FAR by dividing by background time
+    back_far = back_cnum / background_time
+    fg_far = fnlouder / background_time
+
+    if not return_counts:
+        return back_far, fg_far
+
+    return back_far, fg_far, fnlouder
 
 
 def insert_significance_option_group(parser):

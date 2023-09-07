@@ -94,21 +94,22 @@ for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
 
 logging.info('Recalculating IFARs')
-bnlouder, fnlouder = significance.get_n_louder(
+bg_far, fg_far = significance.get_far(
     filtered_trigs.data['stat'],
     f_in['foreground/stat'][:],
     filtered_trigs.data['decimation_factor'],
+    conv.sec_to_year(f_in.attrs['background_time_exc']),
     **significance_dict[all_ifo_key])
 # In principle exc background time should be recalculated
 # However we expect exclude zerolag to be a (very) small correction
-fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
-bg_time_exc = conv.sec_to_year(f_in.attrs['background_time_exc'])
-fg_ifar_exc = bg_time_exc / fnlouder
-bg_ifar_exc = bg_time_exc / bnlouder
+fg_ifar_exc = 1. / fg_far
+bg_ifar_exc = 1. / bg_far
 
 logging.info('Writing updated ifars to file')
 f_out['foreground/ifar_exc'][:] = fg_ifar_exc
-f_out['foreground/fap_exc'][:] = 1 - np.exp(-fg_time_exc / fg_ifar_exc)
 f_out['background_exc/ifar'][:] = bg_ifar_exc
+
+fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
+f_out['foreground/fap_exc'][:] = 1 - np.exp(-fg_time_exc / fg_ifar_exc)
 
 logging.info("Done!")
