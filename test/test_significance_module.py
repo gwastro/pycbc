@@ -154,42 +154,42 @@ for method in significance._significance_meth_dict:
         method_dict['fit_threshold'] = None if not function else 0
 
         def meth_test(self, md=method_dict):
-            back_cnum, fnlouder = significance.get_n_louder(
+            bg_n_louder, fg_n_louder = significance.get_n_louder(
                 self.test_bg_stat,
                 self.test_fg_stat,
                 self.dec_facs,
                 **method_dict)
 
             back_stat_sort = np.argsort(self.test_bg_stat)
-            back_far_sort = np.argsort(back_cnum)
+            back_far_sort = np.argsort(bg_n_louder)
 
             fore_stat_sort = np.argsort(self.test_fg_stat)
-            fore_far_sort = np.argsort(fnlouder)
+            fore_far_sort = np.argsort(fg_n_louder)
 
             # Basic sanity check - there should be one n_louder value
             # per stat value
-            self.assertEqual(len(back_cnum), len(self.test_bg_stat))
-            self.assertEqual(len(fnlouder), len(self.test_fg_stat))
+            self.assertEqual(len(bg_n_louder), len(self.test_bg_stat))
+            self.assertEqual(len(fg_n_louder), len(self.test_fg_stat))
 
             # None of the output should be NaN or infinite
-            self.assertTrue(np.isfinite(back_cnum).all())
-            self.assertTrue(np.isfinite(fnlouder).all())
+            self.assertTrue(np.isfinite(bg_n_louder).all())
+            self.assertTrue(np.isfinite(fg_n_louder).all())
 
             # The background stat value order should be the reverse of the
             # n_louder order
             back_stat_sort = np.argsort(self.test_bg_stat)
-            back_far_sort = np.argsort(back_cnum)
+            back_far_sort = np.argsort(bg_n_louder)
             self.assertTrue(np.array_equal(back_stat_sort,
                                            back_far_sort[::-1]))
 
             fore_stat_sort = np.argsort(self.test_fg_stat)
-            fore_far_sort = np.argsort(fnlouder)
+            fore_far_sort = np.argsort(fg_n_louder)
             # As fg events could have an equal number of louder bg events,
             # argsort be the opposite way round for the far sort and stat
             # sort. So we need to use the recovered n_louder as the equal
             # equality test array
-            self.assertTrue(np.array_equal(fnlouder[fore_stat_sort],
-                                           fnlouder[fore_far_sort][::-1]))
+            self.assertTrue(np.array_equal(fg_n_louder[fore_stat_sort],
+                                           fg_n_louder[fore_far_sort][::-1]))
 
         setattr(SignificanceMethodTest,
                 'test_%s_%s' % (method, function),
