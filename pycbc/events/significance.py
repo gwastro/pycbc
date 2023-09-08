@@ -110,6 +110,8 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
     fit_threshold: float
         Threshold above which triggers use the fitted value, below this
         the counted number of louder events will be used
+    skip_background: boolean
+        Return the background values or not
 
     Returns
     -------
@@ -202,7 +204,23 @@ def get_far(back_stat, fore_stat, dec_facs,
             return_counts=False,
             **kwargs):  # pylint:disable=unused-argument
     """
-    Return the appropriate FAR given the significance caluclation method
+    Return the appropriate FAR given the significance calculation method
+
+    If the n_louder method is used, find the IFAR according to Eq.17-18
+    of Usman et al., arXiv:1508.02357. The p-value of a candidate in a
+    search of duration T, with n_bg louder time shifted events over a
+    total background time T_bg is
+        p = 1 - exp(-T * (n_bg + 1) / T_bg)
+    corresponding to an effective false alarm rate of (n_bg + 1) / T_bg.
+
+    If the trigger_fit method is used, we are extrapolating the background
+    for the specific aim of FAR not being limited to 1 / T_bg, and so we
+    do not add 1 to n_bg
+
+    Parameters
+    ----------
+    See description in get_n_louder
+
     """
     # Get n_louder in background and foreground according to the chosen
     # method
