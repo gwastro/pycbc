@@ -142,13 +142,13 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
 
     # Ue the fit above the threshold
     bg_n_louder[bg_above] = n_above * trstats.cum_fit(fit_function,
-                                                    back_stat[bg_above],
-                                                    alpha,
-                                                    fit_threshold)
+                                                      back_stat[bg_above],
+                                                      alpha,
+                                                      fit_threshold)
     fg_n_louder[fg_above] = n_above * trstats.cum_fit(fit_function,
-                                                   fore_stat[fg_above],
-                                                   alpha,
-                                                   fit_threshold)
+                                                      fore_stat[fg_above],
+                                                      alpha,
+                                                      fit_threshold)
 
     # Below the fit threshold, we expect there to be sufficient events
     # to use the count_n_louder method, and the distribution may deviate
