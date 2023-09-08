@@ -115,7 +115,7 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
 
     Returns
     -------
-    back_cnum: numpy.ndarray
+    bg_n_louder: numpy.ndarray
         The estimated number of background events louder than each
         background event. Does not return this argument if
         skip_background == True
@@ -137,15 +137,15 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
 
     # These will be overwritten, but just to silence a warning
     # in the case where trstats.cum_fit returns zero
-    back_cnum = np.zeros_like(back_stat)
-    fnlouder = np.zeros_like(fore_stat)
+    bg_n_louder = np.zeros_like(back_stat)
+    fg_n_louder = np.zeros_like(fore_stat)
 
     # Ue the fit above the threshold
-    back_cnum[bg_above] = n_above * trstats.cum_fit(fit_function,
+    bg_n_louder[bg_above] = n_above * trstats.cum_fit(fit_function,
                                                     back_stat[bg_above],
                                                     alpha,
                                                     fit_threshold)
-    fnlouder[fg_above] = n_above * trstats.cum_fit(fit_function,
+    fg_n_louder[fg_above] = n_above * trstats.cum_fit(fit_function,
                                                    fore_stat[fg_above],
                                                    alpha,
                                                    fit_threshold)
@@ -158,19 +158,19 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
 
     # Count the number of below-threshold background events louder than the
     # bg and foreground
-    back_cnum[bg_below], fnlouder[fg_below] = \
+    bg_n_louder[bg_below], fg_n_louder[fg_below] = \
         count_n_louder(back_stat[bg_below], fore_stat[fg_below], dec_facs)
 
     # As we have only counted the louder below-threshold events, need to
     # add the above threshold events, which by definition are louder than
     # all the below-threshold events
-    back_cnum[bg_below] += n_above
-    fnlouder[fg_below] += n_above
+    bg_n_louder[bg_below] += n_above
+    fg_n_louder[fg_below] += n_above
 
     if skip_background:
-        return fnlouder
+        return fg_n_louder
 
-    return back_cnum, fnlouder
+    return bg_n_louder, fg_n_louder
 
 
 _significance_meth_dict = {
@@ -224,7 +224,7 @@ def get_far(back_stat, fore_stat, dec_facs,
     """
     # Get n_louder in background and foreground according to the chosen
     # method
-    back_cnum, fnlouder = get_n_louder(
+    bg_n_louder, fg_n_louder = get_n_louder(
         back_stat,
         fore_stat,
         dec_facs,
@@ -236,17 +236,17 @@ def get_far(back_stat, fore_stat, dec_facs,
     # we add one. This is part of the p-value calculation in Usman 2015.
     # If we are doing trigger fit extrapolation, this is not needed
     if method == 'n_louder':
-        back_cnum += 1
-        fnlouder += 1
+        bg_n_louder += 1
+        fg_n_louder += 1
 
     # Turn n_louder into a FAR by dividing by background time
-    back_far = back_cnum / background_time
-    fg_far = fnlouder / background_time
+    back_far = bg_n_louder / background_time
+    fg_far = fg_n_louder / background_time
 
     if not return_counts:
         return back_far, fg_far
 
-    return back_far, fg_far, fnlouder
+    return back_far, fg_far, fg_n_louder
 
 
 def insert_significance_option_group(parser):
