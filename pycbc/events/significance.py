@@ -239,14 +239,13 @@ def get_far(back_stat, fore_stat, dec_facs,
         bg_n_louder += 1
         fg_n_louder += 1
 
-    # Turn n_louder into a FAR by dividing by background time
-    back_far = bg_n_louder / background_time
+    bg_far = bg_n_louder / background_time
     fg_far = fg_n_louder / background_time
 
     if not return_counts:
-        return back_far, fg_far
+        return bg_far, fg_far
 
-    return back_far, fg_far, fg_n_louder
+    return bg_far, fg_far, fg_n_louder
 
 
 def insert_significance_option_group(parser):
