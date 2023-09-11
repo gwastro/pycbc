@@ -238,8 +238,8 @@ def get_far(back_stat, fore_stat, dec_facs,
         bg_n_louder += 1
         fg_n_louder += 1
 
-    bg_far = min(bg_n_louder / background_time, far_limit)
-    fg_far = min(fg_n_louder / background_time, far_limit)
+    bg_far = np.maximum(bg_n_louder / background_time, far_limit)
+    fg_far = np.maximum(fg_n_louder / background_time, far_limit)
 
     return bg_far, fg_far
 
