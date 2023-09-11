@@ -222,8 +222,6 @@ def get_far(back_stat, fore_stat, dec_facs,
     See description in get_n_louder
 
     """
-    # Get n_louder in background and foreground according to the chosen
-    # method
     bg_n_louder, fg_n_louder = get_n_louder(
         back_stat,
         fore_stat,
