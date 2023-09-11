@@ -69,11 +69,6 @@ parser.add_argument('--hierarchical-removal-against', type=str,
                          'triggers that are louder than either the "inclusive"'
                          ' (little-dogs-in) background, or the "exclusive" '
                          '(little-dogs-out) background. [default="none"]')
-parser.add_argument('--hierarchical-removal-ifar-thresh', type=float,
-                    default=100,
-                    help="Minimum IFAR for a foreground event to be "
-                         "hierarchically removed from background of quieter "
-                         "events (years) [default=100yr]")
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -117,7 +112,6 @@ back_locs = numpy.flatnonzero(all_trigs.timeslide_id == 0)
 fg_time = float(all_trigs.attrs['foreground_time'])
 exc_veto_time = (len(back_locs) - len(back_locs)) * args.veto_window
 fg_time_exc = fg_time - exc_veto_time
-
 
 logging.info("Dumping foreground triggers")
 f = fw(args.output_file)

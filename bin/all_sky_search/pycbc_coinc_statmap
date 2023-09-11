@@ -72,6 +72,7 @@ parser.add_argument('--additional-event-times', type=float, nargs="+",
                     help="Additional event times which will be removed from "
                          "both inclusive and exclusive background "
                           "(gps seconds)")
+
 significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()

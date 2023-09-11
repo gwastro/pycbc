@@ -201,7 +201,7 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
 def get_far(back_stat, fore_stat, dec_facs,
             background_time,
             method=_default_opt_dict['method'],
-            return_counts=False,
+            far_limit=0,
             **kwargs):  # pylint:disable=unused-argument
     """
     Return the appropriate FAR given the significance calculation method
@@ -237,13 +237,10 @@ def get_far(back_stat, fore_stat, dec_facs,
         bg_n_louder += 1
         fg_n_louder += 1
 
-    bg_far = bg_n_louder / background_time
-    fg_far = fg_n_louder / background_time
+    bg_far = min(bg_n_louder / background_time, far_limit)
+    fg_far = min(fg_n_louder / background_time, far_limit)
 
-    if not return_counts:
-        return bg_far, fg_far
-
-    return bg_far, fg_far, fg_n_louder
+    return bg_far, fg_far
 
 
 def insert_significance_option_group(parser):
@@ -273,6 +270,11 @@ def insert_significance_option_group(parser):
                              "Options: ["
                              + ",".join(trstats.fitalpha_dict.keys()) + "]. "
                              "Default = exponential for all")
+    parser.add_argument('--limit-ifar', type=float, default=0,
+                        help="Value to limit the IFAR value (years). Set to "
+                             "0 to allow unlimited IFARs (default), though "
+                             "this may cause numerical under/overflow "
+                             "errors for loud signals, e.g. injections.")
 
 
 def check_significance_options(args, parser):
@@ -356,7 +358,7 @@ def digest_significance_options(combo_keys, args):
     -------
     significance_dict: dictionary
         Dictionary containing method, threshold and function for trigger fits
-        as appropriate
+        as appropriate, and any limit on FAR (Hz)
     """
 
     lists_to_unpack = [('method', args.far_calculation_method, str),
@@ -380,5 +382,9 @@ def digest_significance_options(combo_keys, args):
                                 combo, combo_keys)
                 significance_dict[combo] = copy.deepcopy(_default_opt_dict)
             significance_dict[combo][argument_key] = conv_func(value)
+
+    # Read in possible limits on the IFAR
+    significance_dict['far_limit'] = \
+        1. / (lal.YRJUL_SI * args.limit_ifar) if args.limit_ifar else 0
 
     return significance_dict

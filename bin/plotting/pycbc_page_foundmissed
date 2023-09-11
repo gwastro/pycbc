@@ -202,7 +202,8 @@ points = plot.scatter(fvals, fdval, c=color, linewidth=0, s=16, norm=norm,
                       cmap=args.colormap)
 if args.gradient_far:
     try:
-        c = plot.colorbar()
+        ext = 'min' if args.limit_ifar else 'neither'
+        c = plot.colorbar(extend=ext)
         c.set_label('False Alarm Rate $(yr^{-1})$, %s' % far_title)
 
         # Set up tick labels - there will be 5 if possible
