@@ -2,16 +2,21 @@
 This modules provides class for using the nessai sampler package for parameter
 estimation.
 """
+import ast
+import logging
 import os
 
 import nessai.flowsampler
 import nessai.model
 import nessai.livepoint
+import nessai.utils.multiprocessing
+import nessai.utils.settings
 import numpy.lib.recfunctions as rfn
 
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
 from ..io import NessaiFile
+from ...pool import choose_pool
 
 
 class NessaiSampler(BaseSampler):
@@ -20,14 +25,27 @@ class NessaiSampler(BaseSampler):
     name = "nessai"
     _io = NessaiFile
 
-    def __init__(self, model, nlive, loglikelihood_function, **kwargs):
+    def __init__(
+        self,
+        model,
+        loglikelihood_function,
+        nlive=1000,
+        nprocesses=1,
+        use_mpi=False,
+        run_kwds=None,
+        extra_kwds=None,
+    ):
         super().__init__(model)
 
-        # TODO: add other options
         self.nlive = nlive
         self.model_call = NessaiModel(self.model, loglikelihood_function)
 
-        #TODO: handle multiprocessing
+        self.extra_kwds = extra_kwds if extra_kwds is not None else {}
+        self.run_kwds = run_kwds if run_kwds is not None else {}
+
+        nessai.utils.multiprocessing.initialise_pool_variables(self.model_call)
+        self.pool = choose_pool(mpi=use_mpi, processes=nprocesses) 
+        self.nprocesses = nprocesses
 
         self._sampler = None
         self._nested_samples = None
@@ -46,7 +64,7 @@ class NessaiSampler(BaseSampler):
             "loglikelihood": self._sampler.posterior_samples["logL"],
             "logprior": self._sampler.posterior_samples["logP"],
         }
-    
+
     @property
     def samples(self):
         return nessai.livepoint.live_points_to_dict(
@@ -54,16 +72,21 @@ class NessaiSampler(BaseSampler):
             self.model.sampling_params,
         )
 
-    def run(self, resume=False):
+    def run(self, resume=True):
         out_dir = os.path.dirname(os.path.abspath(self.checkpoint_file))
+        print(self.checkpoint_file)
         if self._sampler is None:
             self._sampler = nessai.flowsampler.FlowSampler(
                 self.model_call,
                 output=out_dir,
-                nlive=self.nlive,
                 resume=resume,
+                pool=self.pool,
+                n_pool=self.nprocesses,
+                close_pool=False,
+                signal_handling=False,
+                **self.extra_kwds,
             )
-        self._sampler.run()
+        self._sampler.run(**self.run_kwds)
 
     @classmethod
     def from_config(cls, cp, model, output_file=None, nprocesses=1,
@@ -76,15 +99,64 @@ class NessaiSampler(BaseSampler):
         assert cp.get(section, "name") == cls.name, (
             "name in section [sampler] must match mine")
         # get the number of live points to use
-        # TODO: add other options
-        nlive = int(cp.get(section, "nlive"))
+        if cp.has_option(section, "importance_nested_sampler"):
+            importance_nested_sampler = cp.get(
+                section, "importance_nested_sampler",
+            )
+        else:
+            importance_nested_sampler = False
+
+        # Determine all possible keyword arguments that are not hardcoded
+        default_kwds, default_run_kwds = nessai.utils.settings.get_all_kwargs(
+            importance_nested_sampler=importance_nested_sampler,
+            split_kwargs=True,
+        )
+
+        # Keyword arguments the user cannot configure via the config
+        remove_kwds = [
+            "resume", "pool", "n_pool", "close_pool", "signal_handling"
+        ]
+
+        for kwd in remove_kwds:
+            default_kwds.pop(kwd, None)
+            default_run_kwds.pop(kwd, None)
+
+        kwds = {}
+        run_kwds = {}
+
+        for d_out, d_defaults in zip(
+            [kwds, run_kwds], [default_kwds, default_run_kwds]
+        ):
+            for k in d_defaults.keys():
+                if cp.has_option(section, k):
+                    d_out[k] = ast.literal_eval(cp.get(section, k))
+
+        # Specified kwds
+        ignore_kwds = {"nlive", "name"}
+        invalid_kwds = (
+            cp[section].keys()
+            - set().union(kwds.keys(), run_kwds.keys())
+            - ignore_kwds
+        )
+
+        if invalid_kwds:
+            raise RuntimeError(
+                f"Config contains unknown options: {invalid_kwds}"
+            )
+
+        logging.warning(f"nessai keyword arguments: {kwds}")
+        logging.warning(f"nessai run keyword arguments: {run_kwds}")
 
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
+
         obj = cls(
             model,
-            nlive=nlive,
             loglikelihood_function=loglikelihood_function,
+            nprocesses=nprocesses,
+            use_mpi=use_mpi,
+            run_kwds=run_kwds,
+            extra_kwds=kwds,
         )
 
         setup_output(obj, output_file, check_nsamples=False)
@@ -92,8 +164,11 @@ class NessaiSampler(BaseSampler):
             obj.resume_from_checkpoint()
         return obj
 
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
+    def set_initial_conditions(
+        self,
+        initial_distribution=None,
+        samples_file=None,
+    ):
         """Sets up the starting point for the sampler.
 
         Should also set the sampler's random state.
@@ -104,7 +179,6 @@ class NessaiSampler(BaseSampler):
         self._sampler.ns.checkpoint()
 
     def resume_from_checkpoint(self):
-        # TODO: check this works
         self.run(resume=True)
 
     def finalize(self):
@@ -129,7 +203,7 @@ class NessaiSampler(BaseSampler):
 
 class NessaiModel(nessai.model.Model):
     """Wrapper for PyCBC Inference model class for use with nessai.
-    
+
     Parameters
     ----------
     model : inference.BaseModel instance
@@ -149,16 +223,20 @@ class NessaiModel(nessai.model.Model):
         # Configure the priors bounds
         bounds = {}
         for dist in model.prior_distribution.distributions:
-            bounds.update(**{k: [v.min, v.max] for k, v in dist.bounds.items()})
+            bounds.update(
+                **{k: [v.min, v.max] for k, v in dist.bounds.items()}
+            )
         self.bounds = bounds
 
         # Prior and likelihood are not vectorised
         self.vectorised_likelihood = False
         self.vectorised_prior = False
+        # Use the pool for computing the prior
+        self.parallelise_prior = True
 
     def to_dict(self, x):
         return {n: x[n].item() for n in self.names}
-    
+
     def to_live_points(self, x):
         """Convert to the structured arrays used by nessai"""
         # TODO: could this be improved?
