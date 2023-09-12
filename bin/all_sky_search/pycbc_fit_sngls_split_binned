@@ -91,6 +91,9 @@ parser.add_argument("--prune-number", type=int, default=0,
 parser.add_argument("--prune-window", type=float, default=0.1,
                     help="Time (s) to remove all triggers around a trigger "
                          "which is loudest in each split, default 0.1s")
+parser.add_argument("--f-lower", type=float, default=20.,
+                    help="Frequency (Hz) to use as lower limit for any template "
+                         "duration calcultions. Default=20Hz")
 
 pystat.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
@@ -118,17 +121,10 @@ extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
              if par in usedparams]
 
 for ex_p in extparams:
-    if ex_p == 'template_duration':
-        logging.info('Reading duration from trigger file')
-        # List comprehension loops over templates; if a template has no triggers, accessing
-        # the 0th entry of its region reference will return zero due to a quirk of h5py.
-        params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]
-                                 for ref in trigf[args.ifo + '/template_duration_template'][:]])
-    else:
-        logging.info("Calculating " + ex_p + " from template parameters")
-        params[ex_p] = trigs.get_param(ex_p, args, params['mass1'],
-                                       params['mass2'], params['spin1z'],
-                                       params['spin2z'])
+    logging.info("Calculating " + ex_p + " from template parameters")
+    params[ex_p] = trigs.get_param(ex_p, args, params['mass1'],
+                                   params['mass2'], params['spin1z'],
+                                   params['spin2z'])
 
 # string formats for labels, logging etc.
 formats = {
