@@ -308,10 +308,8 @@ if args.max_hierarchical_removal != 0:
         ifar_foreground = ifar_exc
 else :
     # It doesn't matter if you choose ifar_foreground = ifar
-    # or ifar_exc, the while loop below will break if
-    # ifar_foreground has no value above the live time, or at the comparison
-    # h_iterations == args.max_hierarchical_removal. But this avoids
-    # a NameError
+    # or ifar_exc, the while loop below will break
+    # straight away. But this avoids a NameError
     ifar_foreground = ifar
 
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
