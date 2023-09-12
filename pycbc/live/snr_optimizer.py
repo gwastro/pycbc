@@ -128,7 +128,7 @@ def compute_network_snr_core(v, data, coinc_times, ifos, flen, approximant,
             raise
         # Assume a failure in the waveform approximant
         # due to the choice of parameters and carry on
-            return -numpy.inf, {}
+        return -numpy.inf, {}
 
     if not hasattr(htilde, 'params'):
         htilde.params = dict(mass1=mass1, mass2=mass2,
