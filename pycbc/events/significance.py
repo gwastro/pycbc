@@ -200,9 +200,8 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
 
 
 def get_far(back_stat, fore_stat, dec_facs,
-            background_time,
+            background_time, far_limit=0,
             method=_default_opt_dict['method'],
-            far_limit=0,
             **kwargs):  # pylint:disable=unused-argument
     """
     Return the appropriate FAR given the significance calculation method
@@ -211,7 +210,7 @@ def get_far(back_stat, fore_stat, dec_facs,
     of Usman et al., arXiv:1508.02357. The p-value of a candidate in a
     search of duration T, with n_bg louder time shifted events over a
     total background time T_bg is
-        p = 1 - exp(-T * (n_bg + 1) / T_bg)
+    `p = 1 - exp(-T * (n_bg + 1) / T_bg)`
     corresponding to an effective false alarm rate of (n_bg + 1) / T_bg.
 
     If the trigger_fit method is used, we are extrapolating the background
@@ -220,7 +219,14 @@ def get_far(back_stat, fore_stat, dec_facs,
 
     Parameters
     ----------
-    See description in get_n_louder
+    See description in get_n_louder for most parameters
+
+    background_time: float
+       The amount of time to convert the number of louder events into
+       a FAR
+    far_limit: float
+       Lower limit (in units of 1 / whatever units the background time is in)
+       to false alarm rate
 
     """
     bg_n_louder, fg_n_louder = get_n_louder(
