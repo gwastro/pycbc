@@ -258,7 +258,7 @@ bg_far_exc, fg_far_exc = significance.get_far(
     **significance_dict[ifo_combo])
 
 f['background/ifar'] = conv.sec_to_year(1. / bg_far)
-f['background_exc/ifar'] = conv.sec_to_year(1. / bg_far_exc,)
+f['background_exc/ifar'] = conv.sec_to_year(1. / bg_far_exc)
 f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 f.attrs['background_time_exc'] = background_time_exc
