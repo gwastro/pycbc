@@ -24,7 +24,7 @@ import numpy as np
 import h5py
 import pycbc
 from pycbc.bin_utils import IrregularBins
-from pycbc.events import cuts, triggers, trigger_fits as trstats
+from pycbc.events import cuts, trigger_fits as trstats
 from pycbc.io import DictArray
 from pycbc.events import ranking
 from pycbc.events.coinc import cluster_over_time
@@ -384,19 +384,19 @@ for ifo in events:
 logging.info("Writing results")
 with h5py.File(args.output, 'w') as fout:
     for ifo in events:
-        fout.create_group(ifo)
+        fout_ifo = fout.create_group(ifo)
         # Save the triggers we have used for the fits
-        fout[ifo].create_group('triggers')
+        fout_ifo_trigs.create_group('triggers')
         for key in events[ifo].data:
-            fout[ifo]['triggers'][key] = events[ifo].data[key]
+            fout_ifo_trigs[key] = events[ifo].data[key]
         if ifo in pruned_trigger_times:
-            fout[ifo]['pruned_trigger_times'] = pruned_trigger_times[ifo]
+            fout_ifo['pruned_trigger_times'] = pruned_trigger_times[ifo]
 
-        fout[ifo]['fit_coeff'] = alphas[ifo]
-        fout[ifo]['counts'] = counts[ifo]
-        fout[ifo].attrs['live_time'] = live_time[ifo]
-        fout[ifo].attrs['pruned_times'] = times_to_prune[ifo]
-        fout[ifo].attrs['n_pruned'] = n_pruned[ifo]
+        fout_ifo['fit_coeff'] = alphas[ifo]
+        fout_ifo['counts'] = counts[ifo]
+        fout_ifo.attrs['live_time'] = live_time[ifo]
+        fout_ifo.attrs['pruned_times'] = times_to_prune[ifo]
+        fout_ifo.attrs['n_pruned'] = n_pruned[ifo]
 
     fout['bins_upper'] = tbins.upper()
     fout['bins_lower'] = tbins.lower()
