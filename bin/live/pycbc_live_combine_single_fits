@@ -50,8 +50,7 @@ alphas_all = {ifo: [] for ifo in args.ifos}
 analysis_dates = []
 
 with h5py.File(args.trfits_files[0], 'r') as fit_f0:
-    # Store some attributes so we can check that all files are
-    # comparable
+    # Store some attributes so we can check that all files are comparable
 
     # Keep the upper and lower bins
     bl = fit_f0['bins_lower'][:]
@@ -66,8 +65,7 @@ live_times = {ifo: [] for ifo in args.ifos}
 trigger_file_starts = []
 trigger_file_ends = []
 
-n_files = len(args.trfits_files)
-logging.info("Checking through %d files", n_files)
+logging.info("Checking through %d files", len(args.trfits_files))
 
 for f in args.trfits_files:
     fits_f = h5py.File(f, 'r')
