@@ -139,22 +139,21 @@ if any(prune_options) and not all(prune_options):
                  "--prune-window and --prune-stat-threshold")
 
 # Check the bin options
-if args.duration_bin_edges and (args.duration_bin_start or
-                                args.duration_bin_end or
-                                args.duration_from_bank or
-                                args.num_duration_bins):
-    # duration bin edges specified as well as linear/logarithmic
-    parser.error("Cannot use --duration-bin-edges with "
-                 "--duration-bin-start, --duration-bin-end, "
-                 "--duration-from-bank or --num-duration-bins.")
-
-if not args.duration_bin_edges and not (args.duration_bin_start and
-                                        args.duration_bin_end and
-                                        args.num_duration_bins):
-    parser.error("--duration-bin-start, --duration-bin-end and "
-                 "--num-duration-bins must be set if not using "
+if args.duration_bin_edges:
+    if (args.duration_bin_start or args.duration_bin_end or
+        args.duration_from_bank or args.num_duration_bins):
+        parser.error("Cannot use --duration-bin-edges with "
+                     "--duration-bin-start, --duration-bin-end, "
+                     "--duration-from-bank or --num-duration-bins.")
+else:
+    if not args.num_duration_bins:
+        parser.error("--num-duration-bins must be set if not using "
+                     "--duration-bin-edges.")
+    if not ((args.duration_bin_start and args.duration_bin_end) or
+            args.duration_from_bank):
+    parser.error("--duration-bin-start & --duration-bin-end or "
+                 "--duration-from-bank must be set if not using "
                  "--duration-bin-edges.")
-
 if args.duration_bin_end and \
         args.duration_bin_end <= args.duration_bin_start:
     parser.error("--duration-bin-end must be greater than "
