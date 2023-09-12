@@ -60,6 +60,13 @@ tests_which_sysexit.append((['--far-calculation-method',
                              'H1L1:spanish_inquisition'],
                             'function_doesnt_exist'))
 
+# Try to set an IFAR limit which is negative
+tests_which_sysexit.append((['--limit-ifar',
+                            '-1865'],
+                           'ifar_negative'))
+
+# Note - don't need to test ifar-limit not a number, as that fails automatically
+
 # Dynamically add sysexit tests into the class
 for test_sysexit in tests_which_sysexit:
     parser, args = parse_args(test_sysexit[0])
@@ -92,6 +99,7 @@ extra_combo_dict['H1G1'] = {}
 extra_combo_dict['H1G1']['method'] = 'trigger_fit'
 extra_combo_dict['H1G1']['fit_function'] = None
 extra_combo_dict['H1G1']['fit_threshold'] = 6.
+extra_combo_dict['H1G1']['far_limit'] = 0.
 tests_which_pass.append((['--far-calculation-method',
                           'H1G1:trigger_fit',
                           '--fit-threshold', 'H1G1:6'],

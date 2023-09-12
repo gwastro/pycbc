@@ -182,7 +182,8 @@ _significance_meth_dict = {
 _default_opt_dict = {
     'method': 'n_louder',
     'fit_threshold': None,
-    'fit_function': None}
+    'fit_function': None,
+    'far_limit': 0.}
 
 
 def get_n_louder(back_stat, fore_stat, dec_facs,
@@ -200,7 +201,8 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
 
 
 def get_far(back_stat, fore_stat, dec_facs,
-            background_time, far_limit=0,
+            background_time,
+            far_limit=_default_opt_dict['far_limit'],
             method=_default_opt_dict['method'],
             **kwargs):  # pylint:disable=unused-argument
     """
@@ -277,7 +279,7 @@ def insert_significance_option_group(parser):
                              "Options: ["
                              + ",".join(trstats.fitalpha_dict.keys()) + "]. "
                              "Default = exponential for all")
-    parser.add_argument('--limit-ifar', type=float, default=0,
+    parser.add_argument('--limit-ifar', type=float, default=0.,
                         help="Value to limit the IFAR value (years). Set to "
                              "0 to allow unlimited IFARs (default), though "
                              "this may cause numerical under/overflow "
@@ -346,6 +348,9 @@ def check_significance_options(args, parser):
             # Threshold not given for trigger_fit combo
             parser.error("Threshold required for combo " + combo)
 
+    if args.limit_ifar < 0:
+        parser.error("--limit-ifar must be 0 or positive")
+
 
 def digest_significance_options(combo_keys, args):
     """
@@ -376,6 +381,10 @@ def digest_significance_options(combo_keys, args):
     # Set everything as a default to start with:
     for combo in combo_keys:
         significance_dict[combo] = copy.deepcopy(_default_opt_dict)
+        # Read in possible limits on the IFAR
+        significance_dict[combo]['far_limit'] = \
+            1. / (lal.YRJUL_SI * args.limit_ifar) if args.limit_ifar else 0.
+
 
     # Unpack everything from the arguments into the dictionary
     for argument_key, arg_to_unpack, conv_func in lists_to_unpack:
@@ -389,9 +398,5 @@ def digest_significance_options(combo_keys, args):
                                 combo, combo_keys)
                 significance_dict[combo] = copy.deepcopy(_default_opt_dict)
             significance_dict[combo][argument_key] = conv_func(value)
-
-    # Read in possible limits on the IFAR
-    significance_dict['far_limit'] = \
-        1. / (lal.YRJUL_SI * args.limit_ifar) if args.limit_ifar else 0
 
     return significance_dict
