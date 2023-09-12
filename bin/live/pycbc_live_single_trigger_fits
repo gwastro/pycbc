@@ -12,17 +12,25 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
+"""Fit a background model to single-detector triggers from PyCBC Live.
+
+See https://arxiv.org/abs/2008.07494 for a description of the method."""
+
+import os
+import sys
+import argparse
+import logging
 import numpy as np
+import h5py
 import pycbc
-from pycbc import bin_utils
+from pycbc.bin_utils import IrregularBins
 from pycbc.events import cuts, triggers, trigger_fits as trstats
 from pycbc.io import DictArray
 from pycbc.events import ranking
 from pycbc.events.coinc import cluster_over_time
-import argparse, logging, os, sys, h5py
 
-parser = argparse.ArgumentParser(usage="",
-    description="Plot histograms of triggers split over various parameters")
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--ifos", nargs="+", required=True,
@@ -82,7 +90,6 @@ parser.add_argument("--output", required=True,
 parser.add_argument("--sngl-ranking", default="newsnr",
                     choices=ranking.sngls_ranking_function_dict.keys(),
                     help="The single-detector trigger ranking to use.")
-#parser.add_argument("--", default="", help="")
 
 cuts.insert_cuts_option_group(parser)
 
@@ -95,8 +102,8 @@ prune_options = [args.prune_loudest, args.prune_window,
                  args.prune_stat_threshold]
 
 if any(prune_options) and not all(prune_options):
-        parser.error("Require all or none of --prune-loudest, "
-                     "--prune-window and --prune-stat-threshold")
+    parser.error("Require all or none of --prune-loudest, "
+                 "--prune-window and --prune-stat-threshold")
 
 # Check the bin options
 if args.duration_bin_edges and (args.duration_bin_start or
@@ -139,7 +146,7 @@ logging.info("Finding files")
 files = [f for f in os.listdir(os.path.join(args.top_directory, args.analysis_date))
          if args.file_identifier in f]
 
-logging.info("{} files found".format(len(files)))
+logging.info("%s files found", len(files))
 
 # Add template duration cuts according to the bin inputs
 args.template_cuts = args.template_cuts or []
@@ -158,7 +165,7 @@ logging.info("Setting up the cut dictionaries")
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 logging.info("Setting up duration bins")
-tbins = bin_utils.IrregularBins(duration_bin_edges)
+tbins = IrregularBins(duration_bin_edges)
 
 # Also calculate live time so that this fitting can be used in rate estimation
 # Live time is not immediately obvious - get an approximation with 8 second
@@ -184,7 +191,7 @@ counter = 0
 for filename in files:
     counter += 1
     if counter % 1000 == 0:
-        logging.info("Processed %d files" % counter)
+        logging.info("Processed %d files", counter)
         for ifo in args.ifos:
             if ifo not in events:
                 # In case of no triggers for an extended period
@@ -198,7 +205,7 @@ for filename in files:
     try:
         h5py.File(f, 'r')
     except IOError:
-        logging.info('IOError with file ' + f)
+        logging.warn('IOError with file ' + f)
         continue
 
     # Triggers for this file
@@ -292,7 +299,7 @@ counts = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 event_bins = {}
 times_to_prune = {ifo: [] for ifo in args.ifos}
 
-for ifo in events.keys():
+for ifo in events:
     # Sort the events into their bins
     event_bins[ifo] = np.array([tbins[d]
                                for d in events[ifo].data['template_duration']])
@@ -330,7 +337,7 @@ if args.prune_loudest:
                  "triggers in each bin if %s > %.2f", args.prune_window,
                  args.prune_loudest, args.sngl_ranking,
                  args.prune_stat_threshold)
-    for ifo in events.keys():
+    for ifo in events:
         times = events[ifo].data['end_time'][:]
         outwith_window = np.ones_like(times, dtype=bool)
         for t in times_to_prune[ifo]:
@@ -356,7 +363,7 @@ if args.prune_loudest:
                          n_pruned_thisbin, ifo, bin_num)
 
 # Do the fitting for each bin
-for ifo in events.keys():
+for ifo in events:
     for bin_num in range(n_bins):
 
         inbin = event_bins[ifo] == bin_num
@@ -369,13 +376,14 @@ for ifo in events.keys():
 
         counts[ifo][bin_num] = np.count_nonzero(inbin)
         alphas[ifo][bin_num], _ = trstats.fit_above_thresh(
-                args.fit_function,
-                events[ifo].data[args.sngl_ranking][inbin],
-                args.fit_threshold)
+            args.fit_function,
+            events[ifo].data[args.sngl_ranking][inbin],
+            args.fit_threshold
+        )
 
 logging.info("Writing results")
 with h5py.File(args.output, 'w') as fout:
-    for ifo in events.keys():
+    for ifo in events:
         fout.create_group(ifo)
         # Save the triggers we have used for the fits
         fout[ifo].create_group('triggers')
