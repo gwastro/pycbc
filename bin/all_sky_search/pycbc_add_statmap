@@ -226,7 +226,7 @@ for f_in in files:
                 bg_exc_trig_ids[ifo] = np.concatenate([bg_exc_trig_ids[ifo],
                     -1 * np.ones_like(f_in['background_exc/stat'][:],
                     dtype=int)])
-n_triggers = f['foreground/ifar'].size
+n_triggers = f['foreground/stat'].size
 logging.info('{} foreground events before clustering'.format(n_triggers))
 
 for ifo in all_ifos:
@@ -271,10 +271,7 @@ for key in f['foreground'].keys():
         for k in f['foreground/%s' % key].keys():
             filter_dataset(f, 'foreground/{}/{}'.format(key, k), cidx)
 
-fg_ifar_init = f['foreground/ifar'][:]
-fg_ifar_exc_init = f['foreground/ifar_exc'][:]
-
-n_triggers = fg_ifar_init.size
+n_triggers = f['foreground/stat'].size
 
 logging.info('Calculating event times to determine which types of coinc '
              'are available')
@@ -381,8 +378,6 @@ if not injection_style:
     # Only output non-exclusive ifar/fap if it is _not_ an injection case
     f['foreground/ifar'][:] = fg_ifar
     f['foreground/fap'] = 1 - np.exp(-conv.sec_to_year(fg_time) / fg_ifar)
-else:
-    del f['foreground/ifar']
 
 del test_times
 
