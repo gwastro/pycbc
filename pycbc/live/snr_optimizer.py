@@ -27,11 +27,10 @@ command line arguments required and options group for the SNR optimization.
 This module is primarily used in the pycbc_optimize_snr program.
 """
 
-import argparse
-import numpy
 import time
 import logging
 import types
+import numpy
 from scipy.optimize import differential_evolution, shgo
 from pycbc import (
     DYN_RANGE_FAC, waveform
@@ -127,9 +126,8 @@ def compute_network_snr_core(v, data, coinc_times, ifos, flen, approximant,
     except RuntimeError:
         if raise_err:
             raise
-        # assume a failure in the waveform approximant
-        # due to the choice of parameters
-        else:
+        # Assume a failure in the waveform approximant
+        # due to the choice of parameters and carry on
             return -numpy.inf, {}
 
     if not hasattr(htilde, 'params'):
@@ -191,7 +189,6 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
         bounds['spin2z']
     ])
 
-
     # Currently only implemented for random seed initial array
     rng = numpy.random.mtrand._rand
     population_shape = (int(cli_args.snr_opt_di_popsize), 4)
@@ -237,7 +234,6 @@ def optimize_shgo(bounds, cli_args, extra_args, initial_point): # pylint: disabl
 
 def normalize_population(population, min_bounds, max_bounds):
     norm_pop = min_bounds + population * (max_bounds - min_bounds)
-
     return norm_pop
 
 
@@ -391,6 +387,7 @@ def check_snr_optimizer_options(args, parser):
         if not getattr(args, key_name):
             setattr(args, key_name, value[1])
 
+
 def args_to_string(args):
     """
     Convert the supplied arguments for SNR optimization config into
@@ -405,4 +402,5 @@ def args_to_string(args):
         key_name = f'snr_opt_{optimizer_name}_{opt}'
         option_value = getattr(args, key_name)
         argstr += f'{option_fullname} {option_value} '
+
     return argstr
