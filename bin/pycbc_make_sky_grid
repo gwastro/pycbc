@@ -34,8 +34,8 @@ def cart_to_spher(sky_points):
     return spher
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--ra', type=float, help="Right ascension (in rad) of the center of the GRB error box")
-parser.add_argument('--dec', type=float, help="Declination (in rad) of the center of the GRB error box")
+parser.add_argument('--ra', type=float, help="Right ascension (in rad) of the center of the external trigger error box")
+parser.add_argument('--dec', type=float, help="Declination (in rad) of the center of the external trigger error box")
 parser.add_argument('--instruments', nargs="+", type=str, required=True, help="List of instruments to analyze.")
 parser.add_argument('--sky-error', type=float, required=True, help="3-sigma confidence radius (in rad) of the external trigger error box")
 parser.add_argument('--trigger-time', type=int, required=True, help="Time (in s) of the external trigger")
