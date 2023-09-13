@@ -52,7 +52,7 @@ detectors = args.instruments
 detectors = [Detector(d) for d in detectors]
 detector_pairs = list(itertools.combinations(detectors, 2))
 
-# Select the detector pair for which the GRB target location has smallest relative arrival time difference
+# Select the detector pair for which the target location has smallest relative arrival time difference
 tds = [detector_pairs[i][0].time_delay_from_detector(detector_pairs[i][1], args.ra, args.dec, args.trigger_time) for i in range(len(detector_pairs))]
 smallest_td = np.argmin(tds)
 
@@ -91,7 +91,7 @@ ort /= norm
 n = -np.arccos(np.dot(grb_cart, north_pole))
 u = ort*n
 
-# Rotate the sky grid to the center of the GRB error box
+# Rotate the sky grid to the center of the external trigger error box
 r = R.from_rotvec(u)
 rota = r.apply(cart)
 
