@@ -160,14 +160,15 @@ if not injection_style:
         if k not in all_ifos:
             pycbc.io.combine_and_copy(f, files, 'background_exc/' + k)
 
+# create dataset of ifo combination strings
+fg_coinc_type = np.array([])
+for f_in in files:
+    key = get_ifo_string(f_in).replace(' ','')
+    combo_repeat = np.array(np.repeat(key.encode('utf8'),
+                            f_in['foreground/stat'].size))
+    fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat])
+
 if args.output_coinc_types:
-    # create dataset of ifo combination strings
-    fg_coinc_type = np.array([])
-    for f_in in files:
-        key = get_ifo_string(f_in).replace(' ','')
-        combo_repeat = np.array(np.repeat(key.encode('utf8'),
-                                f_in['foreground/fap'].size))
-        fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat])
     f['foreground/ifo_combination'] = fg_coinc_type
 
 logging.info('Collating triggers into single structure')
@@ -271,6 +272,7 @@ for key in f['foreground'].keys():
         for k in f['foreground/%s' % key].keys():
             filter_dataset(f, 'foreground/{}/{}'.format(key, k), cidx)
 
+fg_coinc_type = fg_coinc_type[cidx]
 n_triggers = f['foreground/stat'].size
 
 logging.info('Calculating event times to determine which types of coinc '
@@ -354,9 +356,16 @@ isincombo_mask = np.array([list(is_in_combo_time[ct]) for ct in all_ifo_combos])
 fg_fars = np.array([list(far[ct]) for ct in all_ifo_combos])
 fg_fars_exc = np.array([list(far_exc[ct]) for ct in all_ifo_combos])
 
+fg_fars_out = np.sum(isincombo_mask * fg_fars, axis=0)
+fg_fars_exc_out = np.sum(isincombo_mask * fg_fars_exc, axis=0)
+
+# Apply any limits as appropriate
+fg_fars_out = significance.apply_far_limit(fg_fars_out, significance_dict, combo=fg_coinc_type)
+fg_fars_exc_out = significance.apply_far_limit(fg_fars_exc_out, significance_dict, combo=fg_coinc_type)
+
 # Combine the FARs with the mask to obtain the new ifars
-fg_ifar = conv.sec_to_year(1. / np.sum(isincombo_mask * fg_fars, axis=0))
-fg_ifar_exc = conv.sec_to_year(1. / np.sum(isincombo_mask * fg_fars_exc, axis=0))
+fg_ifar = conv.sec_to_year(1. / fg_fars_out)
+fg_ifar_exc = conv.sec_to_year(1. / fg_fars_exc_out)
 fg_time = f.attrs['foreground_time']
 del isincombo_mask, fg_fars, fg_fars_exc, _
 
@@ -413,7 +422,7 @@ bg_coinc_type = np.array([])
 for f_in in files:
     key = get_ifo_string(f_in).replace(' ','')
     combo_repeat_fg = np.array(np.repeat(key.encode('utf8'),
-                               f_in['foreground/fap'].size))
+                               f_in['foreground/stat'].size))
     fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat_fg])
     combo_repeat_bg = np.array(np.repeat(key.encode('utf8'),
                                f_in['background/stat'].size))

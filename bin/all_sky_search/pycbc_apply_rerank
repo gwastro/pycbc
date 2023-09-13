@@ -79,7 +79,7 @@ if args.ranking_file:
     backstat = f['background_exc/stat'][:]
     dec = f['background_exc/decimation_factor'][:]
 
-    bg_far, fg_far = significance.get_far(
+    _, fg_far = significance.get_far(
         backstat,
         fstat,
         dec,
@@ -88,6 +88,7 @@ if args.ranking_file:
 
     ifar = 1. / fg_far
     fap = 1 - numpy.exp(- coinc_time / ifar)
+    fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
     o['foreground/ifar'][...] = sec_to_year(ifar)
     o['foreground/fap'][...] = fap
 
@@ -115,6 +116,11 @@ else:
         dec_exc,
         background_time_exc
         **significance_dict[ifo_combo])
+
+    fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
+    bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=ifo_combo)
+    fg_far_exc = significance.apply_far_limit(fg_far_exc, significance_dict, combo=ifo_combo)
+    bg_far_exc = significance.apply_far_limit(bg_far_exc, significance_dict, combo=ifo_combo)
 
     o['background/ifar'][...] = sec_to_year(1. / bg_far)
     o['background_exc/ifar'][...] = sec_to_year(1. / bg_far_exc)

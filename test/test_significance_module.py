@@ -4,6 +4,7 @@ import unittest
 import argparse
 import itertools
 import copy
+import lal
 import numpy as np
 from utils import simple_exit
 from pycbc.events import significance
@@ -52,7 +53,6 @@ tests_which_sysexit.append((['--fit-threshold',
                              'H1L1:not_a_number'],
                             'threshold_not_a_number'))
 
-
 # Try to set a fit function which isn't expected
 tests_which_sysexit.append((['--far-calculation-method',
                              'H1L1:trigger_fit',
@@ -62,10 +62,13 @@ tests_which_sysexit.append((['--far-calculation-method',
 
 # Try to set an IFAR limit which is negative
 tests_which_sysexit.append((['--limit-ifar',
-                            '-1865'],
+                             'H1:-1865'],
                            'ifar_negative'))
 
-# Note - don't need to test ifar-limit not a number, as that fails automatically
+# Try to set an IFAR limit which is not a number
+tests_which_sysexit.append((['--limit-ifar',
+                             'H1L1:not_a_number'],
+                            'ifar_not_a_number'))
 
 # Dynamically add sysexit tests into the class
 for test_sysexit in tests_which_sysexit:
@@ -118,13 +121,17 @@ test_dict['L1']['fit_function'] = 'exponential'
 test_dict['H1L1']['fit_threshold'] = 6
 test_dict['H1']['fit_threshold'] = 5.5
 test_dict['L1']['fit_threshold'] = 5
+test_dict['H1']['far_limit'] = 1. / lal.YRJUL_SI
+test_dict['L1']['far_limit'] = 0
 
 calc_methods = ['H1L1:trigger_fit', 'H1:trigger_fit', 'L1:trigger_fit']
 functions = ['H1L1:power', 'H1:rayleigh', 'L1:exponential']
 thresholds = ['H1L1:6', 'H1:5.5', 'L1:5']
+ifar_limits = ['H1:1']
 tests_which_pass.append((['--far-calculation-method'] + calc_methods +
                          ['--fit-function'] + functions + 
-                         ['--fit-threshold'] + thresholds,
+                         ['--fit-threshold'] + thresholds +
+                         ['--limit-ifar'] + ifar_limits,
                          test_dict,
                          'different_combos'))
 

@@ -92,7 +92,7 @@ def count_n_louder(bstat, fstat, dec, skip_background=False,
 
 
 def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
-                      fit_function='exponential', fit_threshold=0):
+                      fit_function='exponential', fit_threshold=0, **kwargs):  # pylint:disable=unused-argument
     """
     Use a fit to events in back_stat in order to estimate the
     distribution for use in recovering the estimate count of louder
@@ -202,7 +202,6 @@ def get_n_louder(back_stat, fore_stat, dec_facs,
 
 def get_far(back_stat, fore_stat, dec_facs,
             background_time,
-            far_limit=_default_opt_dict['far_limit'],
             method=_default_opt_dict['method'],
             **kwargs):  # pylint:disable=unused-argument
     """
@@ -226,9 +225,6 @@ def get_far(back_stat, fore_stat, dec_facs,
     background_time: float
        The amount of time to convert the number of louder events into
        a FAR
-    far_limit: float
-       Lower limit (in units of 1 / whatever units the background time is in)
-       to false alarm rate
 
     """
     bg_n_louder, fg_n_louder = get_n_louder(
@@ -246,8 +242,8 @@ def get_far(back_stat, fore_stat, dec_facs,
         bg_n_louder += 1
         fg_n_louder += 1
 
-    bg_far = np.maximum(bg_n_louder / background_time, far_limit)
-    fg_far = np.maximum(fg_n_louder / background_time, far_limit)
+    bg_far = bg_n_louder / background_time
+    fg_far = fg_n_louder / background_time
 
     return bg_far, fg_far
 
@@ -279,11 +275,25 @@ def insert_significance_option_group(parser):
                              "Options: ["
                              + ",".join(trstats.fitalpha_dict.keys()) + "]. "
                              "Default = exponential for all")
-    parser.add_argument('--limit-ifar', type=float, default=0.,
-                        help="Value to limit the IFAR value (years). Set to "
-                             "0 to allow unlimited IFARs (default), though "
+    parser.add_argument('--limit-ifar', nargs='+', default=[],
+                        help="Value to limit the IFAR value (years). "
+                             "Given as combination:function pairs, i.e. "
+                             "H1:10000 L1:1000. Set to 0 to allow "
+                             "unlimited IFARs (default), though "
                              "this may cause numerical under/overflow "
                              "errors for loud signals, e.g. injections.")
+
+
+def positive_float(inp):
+    """
+    Wrapper around float conversion which ensures that the float must be positive
+    or zero
+    """
+    f = float(inp)
+    if f < 0:
+        logging.warning("Value provided to positive_float is less than zero, this is not allowed")
+        raise ValueError
+    return f
 
 
 def check_significance_options(args, parser):
@@ -296,8 +306,8 @@ def check_significance_options(args, parser):
                        _significance_meth_dict.keys()),
                       (args.fit_function, str,
                        trstats.fitalpha_dict.keys()),
-                      (args.fit_threshold, float,
-                       None)]
+                      (args.fit_threshold, float, None),
+                      (args.limit_ifar, positive_float, None)]
 
     for list_to_check, type_to_convert, allowed_values in lists_to_check:
         combo_list = []
@@ -348,9 +358,27 @@ def check_significance_options(args, parser):
             # Threshold not given for trigger_fit combo
             parser.error("Threshold required for combo " + combo)
 
-    if args.limit_ifar < 0:
-        parser.error("--limit-ifar must be 0 or positive")
 
+def ifar_opt_to_far_limit(ifar_str):
+    """
+    Convert the string of an IFAR limit in years into a
+    float FAR limit in Hz.
+
+    Parameters
+    ----------
+    ifar_str: string
+        Upper limit on IFAR in years. Zero indicates no upper limit
+
+    """
+    ifar_float = positive_float(ifar_str)
+
+    try:
+        far_hz = 1. / (lal.YRJUL_SI * ifar_float)
+    except ZeroDivisionError:
+        # IFAR limit of zero is used to indicate no limit
+        far_hz = 0.
+
+    return far_hz
 
 def digest_significance_options(combo_keys, args):
     """
@@ -375,16 +403,13 @@ def digest_significance_options(combo_keys, args):
 
     lists_to_unpack = [('method', args.far_calculation_method, str),
                        ('fit_function', args.fit_function, str),
-                       ('fit_threshold', args.fit_threshold, float)]
+                       ('fit_threshold', args.fit_threshold, float),
+                       ('far_limit', args.limit_ifar, ifar_opt_to_far_limit)]
 
     significance_dict = {}
     # Set everything as a default to start with:
     for combo in combo_keys:
         significance_dict[combo] = copy.deepcopy(_default_opt_dict)
-        # Read in possible limits on the IFAR
-        significance_dict[combo]['far_limit'] = \
-            1. / (lal.YRJUL_SI * args.limit_ifar) if args.limit_ifar else 0.
-
 
     # Unpack everything from the arguments into the dictionary
     for argument_key, arg_to_unpack, conv_func in lists_to_unpack:
@@ -400,3 +425,42 @@ def digest_significance_options(combo_keys, args):
             significance_dict[combo][argument_key] = conv_func(value)
 
     return significance_dict
+
+def apply_far_limit(far, significance_dict, combo=None):
+    """
+    Apply a FAR limit to events according to command line options.
+
+    If far_limit in significance_dict is zero, no limit is applied.
+
+    Parameters
+    ----------
+    far: numpy array
+    significance_dict: dictionary
+        Dictionary containing any limit on FAR (Hz), made by
+        digest_significance_options
+    active_combination: numpy.array or string
+        Array of IFO combinations given as utf-8 encoded strings, or a string
+        which defines the IFO combination for all events
+
+    Returns
+    -------
+    far_out: numpy array
+        FARs with far limit applied as appropriate
+
+    """
+    far_out = copy.deepcopy(far)
+    if type(combo) == str:
+        logging.info(f"Applying FAR limit of {significance_dict[combo]['far_limit']:.3e} to {combo} events")
+        far_out = np.maximum(far, significance_dict[combo]['far_limit'])
+    else:
+        for ifo_combo in significance_dict:
+            if significance_dict[ifo_combo]['far_limit'] == 0:
+                continue
+            logging.info(f"Applying FAR limit of {significance_dict[ifo_combo]['far_limit']:.3e} to {ifo_combo} events")
+            this_combo_idx = combo == ifo_combo.encode('utf-8')
+            far_out[this_combo_idx] = np.maximum(
+                far[this_combo_idx],
+                significance_dict[ifo_combo]['far_limit']
+            )
+    return far_out
+

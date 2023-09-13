@@ -90,6 +90,8 @@ if len(zdata) > 0:
         background_time,
         **significance_dict[ifo_key])
 
+    fg_far_exc = significance.apply_far_limit(fg_far_exc, significance_dict, combo=ifo_key)
+
     ifar_exc = 1. / fg_far_exc
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
