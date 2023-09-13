@@ -551,23 +551,33 @@ for key in final_bg_files:
 #################### Plotting of data quality results #########################
 
 # DQ log likelihood plots
-for dqf,dql in zip(dqfiles,dqfile_labels):
-    outdir = rdir[f'data_quality/{dqf.ifo}_trigger_rates_{dql}']
-    wf.make_dq_trigger_rate_plot(workflow, [dqf], outdir, tags=[dql,'full_data'])
-
-    outdir = rdir[f'data_quality/{dqf.ifo}_percentiles_{dql}']
-    wf.make_dq_percentile_plot(workflow, [dqf], outdir, tags=[dql,'full_data'])
+for dqf, dql in zip(dqfiles, dqfile_labels):
+    dq_type = workflow.cp.get_opt_tags('workflow-data_quality', 'dq-type', tags=[dql])
+    tags = [dql, 'full_data']
+    if dq_type == 'timeseries':
+        # plot rates as function of time
+        outdir = rdir[f'data_quality/{dqf.ifo}_{dql}_trigger_rates']
+        wf.make_dq_timeseries_trigger_rate_plot(workflow, [dqf], outdir,
+                                                tags=tags)
+        # plot rates as function of dq percentile
+        outdir = rdir[f'data_quality/{dqf.ifo}_{dql}_percentiles']
+        wf.make_dq_percentile_plot(workflow, [dqf], outdir, tags=tags)
+    elif dq_type == 'flag':
+        # plot rates when flag was on
+        outdir = rdir[f'data_quality/{dqf.ifo}_{dql}_trigger_rates']
+        wf.make_dq_flag_trigger_rate_plot(workflow, [dqf], outdir, tags=[dql])
 
 # DQ background binning plot
-if workflow.cp.has_option_tags('workflow-data_quality', 'background-bins',
-                                tags=None):
+if workflow.cp.has_option_tags('bin_trigger_rates_dq', 'background-bins',
+                               tags=None):
     background_bins = workflow.cp.get_opt_tags('bin_trigger_rates_dq',
-                                               'background-bins',tags=None)
+                                               'background-bins', tags=None)
     bank_tags = workflow.cp.get_subsections('plot_bank')
-    if len(bank_tags) == 0: bank_tags=['bank']
+    if len(bank_tags) == 0:
+        bank_tags = ['bank']
     for b_tag in bank_tags:
         wf.make_template_plot(workflow, hdfbank, rdir['data_quality'],
-                              bins=background_bins, tags=['dq_bins',b_tag])
+                              bins=background_bins, tags=['dq_bins', b_tag])
 
 ############################## Setup the injection runs #######################
 
