@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-"""For a given GRB, generate a sky grid covering its error box. This sky grid will be used by pycbc_multi_inspiral to find multi-detector gravitational wave
-trigger and calculate the coherent SNRs and related statistics. 
+"""For a given external trigger (GRB, FRB, neutrino, etc...), generate a sky grid covering its localization error region.
+
+This sky grid will be used by `pycbc_multi_inspiral` to find multi-detector gravitational wave triggers and calculate the
+coherent SNRs and related statistics. 
 
 The grid is constructed following the method described in Section V of https://arxiv.org/abs/1410.6042"""
 
@@ -31,14 +33,14 @@ def cart_to_spher(sky_points):
     spher[:,1] = np.arcsin(sky_points[:,2])
     return spher
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--ra', type=float, help="Right ascension (in rad) of the center of the GRB error box")
 parser.add_argument('--dec', type=float, help="Declination (in rad) of the center of the GRB error box")
 parser.add_argument('--instruments', nargs="+", type=str, required=True, help="List of instruments to analyze.")
-parser.add_argument('--sky-error', type=float, help="3-sigma confidence radius (in rad) of the GRB error box")
-parser.add_argument('--trigger-time', type=int, help="Time (in s) of the GRB")
+parser.add_argument('--sky-error', type=float, required=True, help="3-sigma confidence radius (in rad) of the external trigger error box")
+parser.add_argument('--trigger-time', type=int, required=True, help="Time (in s) of the external trigger")
 parser.add_argument('--timing-uncertainty', type=float, default=0.0001, help="Timing uncertainty (in s) we are willing to accept")
-parser.add_argument('--output', type=str, help="Name of the sky grid")
+parser.add_argument('--output', type=str, required=True, help="Name of the sky grid")
 
 args = parser.parse_args()
 
@@ -96,7 +98,6 @@ rota = r.apply(cart)
 # Convert cartesian coordinates back to spherical coordinates
 spher = cart_to_spher(rota)
 
-hf = h5py.File(args.output + '.hdf', 'w')
-hf.create_dataset('ra', data=spher[:,0])
-hf.create_dataset('dec', data=spher[:,1])
-hf.close()
+with h5py.File(args.output + '.hdf', 'w') as hf:
+    hf['ra'] = spher[:,0]
+    hf['dec'] = spher[:,1]
