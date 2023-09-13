@@ -86,7 +86,7 @@ grb_cart = spher_to_cart(grb)
 north_pole = [0, 0, 1]
 
 ort = np.cross(grb_cart, north_pole)
-norm = np.sqrt(ort[0][0]**2 + ort[0][1]**2 + ort[0][2]**2)
+norm = np.linalg.norm(ort)
 ort /= norm
 n = -np.arccos(np.dot(grb_cart, north_pole))
 u = ort*n
@@ -98,6 +98,6 @@ rota = r.apply(cart)
 # Convert cartesian coordinates back to spherical coordinates
 spher = cart_to_spher(rota)
 
-with h5py.File(args.output + '.hdf', 'w') as hf:
+with h5py.File(args.output, 'w') as hf:
     hf['ra'] = spher[:,0]
     hf['dec'] = spher[:,1]
