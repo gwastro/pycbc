@@ -151,9 +151,9 @@ else:
                      "--duration-bin-edges.")
     if not ((args.duration_bin_start and args.duration_bin_end) or
             args.duration_from_bank):
-    parser.error("--duration-bin-start & --duration-bin-end or "
-                 "--duration-from-bank must be set if not using "
-                 "--duration-bin-edges.")
+        parser.error("--duration-bin-start & --duration-bin-end or "
+                     "--duration-from-bank must be set if not using "
+                     "--duration-bin-edges.")
 if args.duration_bin_end and \
         args.duration_bin_end <= args.duration_bin_start:
     parser.error("--duration-bin-end must be greater than "
