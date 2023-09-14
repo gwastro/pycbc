@@ -96,6 +96,10 @@ rota = r.apply(cart)
 # Convert cartesian coordinates back to spherical coordinates
 spher = cart_to_spher(rota)
 
+# Calculate the time delay corresponding to each sky point
+time_delays = [detector_pairs[smallest_td][0].time_delay_from_detector(
+               detector_pairs[smallest_td][1], spher[i][0], spher[i][0], args.trigger_time) for i in range(len(spher))]
+
 with h5py.File(args.output, 'w') as hf:
     hf['ra'] = spher[:,0]
     hf['dec'] = spher[:,1]
@@ -105,3 +109,4 @@ with h5py.File(args.output, 'w') as hf:
     hf['trigger_time'] = [args.trigger_time]
     hf['timing_uncertainty'] = [args.timing_uncertainty]
     hf['instruments'] = [d for d in args.instruments]
+    hf['time_delays'] = time_delays
