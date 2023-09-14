@@ -33,8 +33,7 @@ import numpy as np
 from pycbc.events import trigger_fits as trstats
 
 
-def count_n_louder(bstat, fstat, dec, skip_background=False,
-                   **kwargs):  # pylint:disable=unused-argument
+def count_n_louder(bstat, fstat, dec, **kwargs):  # pylint:disable=unused-argument
     """ Calculate for each foreground event the number of background events
     that are louder than it.
 
@@ -46,14 +45,11 @@ def count_n_louder(bstat, fstat, dec, skip_background=False,
         Array of the foreground statistic values or single value
     dec: numpy.ndarray
         Array of the decimation factors for the background statistics
-    skip_background: optional, {boolean, False}
-        Skip calculating cumulative numbers for background triggers
 
     Returns
     -------
     cum_back_num: numpy.ndarray
-        The cumulative array of background triggers. Does not return this
-        argument if skip_background == True
+        The cumulative array of background triggers.
     fore_n_louder: numpy.ndarray
         The number of background triggers above each foreground trigger
     """
@@ -83,15 +79,12 @@ def count_n_louder(bstat, fstat, dec, skip_background=False,
 
     fore_n_louder = n_louder[idx]
 
-    if not skip_background:
-        unsort = sort.argsort()
-        back_cum_num = n_louder[unsort]
-        return back_cum_num, fore_n_louder
-
-    return fore_n_louder
+    unsort = sort.argsort()
+    back_cum_num = n_louder[unsort]
+    return back_cum_num, fore_n_louder
 
 
-def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
+def n_louder_from_fit(back_stat, fore_stat, dec_facs,
                       fit_function='exponential', fit_threshold=0, **kwargs):  # pylint:disable=unused-argument
     """
     Use a fit to events in back_stat in order to estimate the
@@ -111,16 +104,13 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
     fit_threshold: float
         Threshold above which triggers use the fitted value, below this
         the counted number of louder events will be used
-    skip_background: boolean
-        Return the background values or not
 
     Returns
     -------
     bg_n_louder: numpy.ndarray
         The estimated number of background events louder than each
-        background event. Does not return this argument if
-        skip_background == True
-    fn_louder: numpy.ndarray
+        background event.
+    fn_louder: numpy.ndarry
         The estimated number of background events louder than each
         foreground event
     """
@@ -167,9 +157,6 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs, skip_background=False,
     # all the below-threshold events
     bg_n_louder[bg_below] += n_above
     fg_n_louder[fg_below] += n_above
-
-    if skip_background:
-        return fg_n_louder
 
     return bg_n_louder, fg_n_louder
 
@@ -286,14 +273,15 @@ def insert_significance_option_group(parser):
 
 def positive_float(inp):
     """
-    Wrapper around float conversion which ensures that the float must be positive
-    or zero
+    Wrapper around float conversion which ensures that the float must be
+    positive or zero
     """
-    f = float(inp)
-    if f < 0:
-        logging.warning("Value provided to positive_float is less than zero, this is not allowed")
+    fl_in = float(inp)
+    if fl_in < 0:
+        logging.warning("Value provided to positive_float is less than zero, "
+                        "this is not allowed")
         raise ValueError
-    return f
+    return fl_in
 
 
 def check_significance_options(args, parser):
@@ -380,6 +368,7 @@ def ifar_opt_to_far_limit(ifar_str):
 
     return far_hz
 
+
 def digest_significance_options(combo_keys, args):
     """
     Read in information from the significance option group and ensure
@@ -426,6 +415,7 @@ def digest_significance_options(combo_keys, args):
 
     return significance_dict
 
+
 def apply_far_limit(far, significance_dict, combo=None):
     """
     Apply a FAR limit to events according to command line options.
@@ -449,18 +439,21 @@ def apply_far_limit(far, significance_dict, combo=None):
 
     """
     far_out = copy.deepcopy(far)
-    if type(combo) == str:
-        logging.info(f"Applying FAR limit of {significance_dict[combo]['far_limit']:.3e} to {combo} events")
+    if isinstance(combo, str):
+        far_limit_str = f"{significance_dict[combo]['far_limit']:.3e}"
+        logging.info("Applying FAR limit of %s to %s events",
+                     far_limit_str, combo)
         far_out = np.maximum(far, significance_dict[combo]['far_limit'])
     else:
         for ifo_combo in significance_dict:
             if significance_dict[ifo_combo]['far_limit'] == 0:
                 continue
-            logging.info(f"Applying FAR limit of {significance_dict[ifo_combo]['far_limit']:.3e} to {ifo_combo} events")
+            far_limit_str = f"{significance_dict[ifo_combo]['far_limit']:.3e}"
+            logging.info("Applying FAR limit of %s to %s events",
+                         far_limit_str, ifo_combo)
             this_combo_idx = combo == ifo_combo.encode('utf-8')
             far_out[this_combo_idx] = np.maximum(
                 far[this_combo_idx],
                 significance_dict[ifo_combo]['far_limit']
             )
     return far_out
-
