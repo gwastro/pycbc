@@ -111,8 +111,8 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     -------
     bg_n_louder: numpy.ndarray
         The estimated number of background events louder than each
-        background event.
-    fn_louder: numpy.ndarry
+        background event
+    fg_n_louder: numpy.ndarray
         The estimated number of background events louder than each
         foreground event
     """
@@ -442,11 +442,15 @@ def apply_far_limit(far, significance_dict, combo=None):
     """
     far_out = copy.deepcopy(far)
     if isinstance(combo, str):
+        # Single IFO combo used
         far_limit_str = f"{significance_dict[combo]['far_limit']:.3e}"
         logging.info("Applying FAR limit of %s to %s events",
                      far_limit_str, combo)
         far_out = np.maximum(far, significance_dict[combo]['far_limit'])
     else:
+        # IFO combo supplied as an array, by e.g. pycbc_add_statmap
+        # Need to check which events are in which IFO combo in order to
+        # apply the right limit to each
         for ifo_combo in significance_dict:
             if significance_dict[ifo_combo]['far_limit'] == 0:
                 continue

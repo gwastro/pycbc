@@ -356,6 +356,7 @@ isincombo_mask = np.array([list(is_in_combo_time[ct]) for ct in all_ifo_combos])
 fg_fars = np.array([list(far[ct]) for ct in all_ifo_combos])
 fg_fars_exc = np.array([list(far_exc[ct]) for ct in all_ifo_combos])
 
+# Combine the FARs with the mask to obtain the new ifars
 fg_fars_out = np.sum(isincombo_mask * fg_fars, axis=0)
 fg_fars_exc_out = np.sum(isincombo_mask * fg_fars_exc, axis=0)
 
@@ -363,7 +364,6 @@ fg_fars_exc_out = np.sum(isincombo_mask * fg_fars_exc, axis=0)
 fg_fars_out = significance.apply_far_limit(fg_fars_out, significance_dict, combo=fg_coinc_type)
 fg_fars_exc_out = significance.apply_far_limit(fg_fars_exc_out, significance_dict, combo=fg_coinc_type)
 
-# Combine the FARs with the mask to obtain the new ifars
 fg_ifar = conv.sec_to_year(1. / fg_fars_out)
 fg_ifar_exc = conv.sec_to_year(1. / fg_fars_exc_out)
 fg_time = f.attrs['foreground_time']

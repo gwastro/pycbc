@@ -121,6 +121,7 @@ test_dict['L1']['fit_function'] = 'exponential'
 test_dict['H1L1']['fit_threshold'] = 6
 test_dict['H1']['fit_threshold'] = 5.5
 test_dict['L1']['fit_threshold'] = 5
+test_dict['H1L1']['far_limit'] = 0
 test_dict['H1']['far_limit'] = 1. / lal.YRJUL_SI
 test_dict['L1']['far_limit'] = 0
 
