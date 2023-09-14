@@ -79,16 +79,14 @@ if args.ranking_file:
     backstat = f['background_exc/stat'][:]
     dec = f['background_exc/decimation_factor'][:]
 
-    _, fg_far = significance.get_far(
+    bnum, fnum = significance.get_n_louder(
         backstat,
         fstat,
         dec,
-        background_time
         **significance_dict[ifo_combo])
 
-    ifar = 1. / fg_far
+    ifar = background_time / (fnum + 1)
     fap = 1 - numpy.exp(- coinc_time / ifar)
-    fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
     o['foreground/ifar'][...] = sec_to_year(ifar)
     o['foreground/fap'][...] = fap
 
@@ -103,34 +101,27 @@ else:
     dec_exc = o['background_exc/decimation_factor'][:]
     backstat_exc = o['background_exc/stat'][:]
 
-    bg_far, fg_far = significance.get_far(
+    bnum, fnum = significance.get_n_louder(
         backstat,
         fstat,
         dec,
-        background_time,
         **significance_dict[ifo_combo])
 
-    bg_far_exc, fg_far_exc = significance.get_far(
+    bnum_exc, fnum_exc = significance.get_n_louder(
         backstat_exc,
         fstat,
         dec_exc,
-        background_time_exc
         **significance_dict[ifo_combo])
 
-    fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
-    bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=ifo_combo)
-    fg_far_exc = significance.apply_far_limit(fg_far_exc, significance_dict, combo=ifo_combo)
-    bg_far_exc = significance.apply_far_limit(bg_far_exc, significance_dict, combo=ifo_combo)
+    o['background/ifar'][...] = sec_to_year(background_time / (bnum + 1))
+    o['background_exc/ifar'][...] = sec_to_year(background_time_exc / (bnum_exc + 1))
 
-    o['background/ifar'][...] = sec_to_year(1. / bg_far)
-    o['background_exc/ifar'][...] = sec_to_year(1. / bg_far_exc)
-
-    ifar = 1. /  fg_far
+    ifar = background_time / (fnum + 1)
     fap = 1 - numpy.exp(- coinc_time / ifar)
     o['foreground/ifar'][...] = sec_to_year(ifar)
     o['foreground/fap'][...] = fap
 
-    ifar_exc = 1. / fg_far_exc
+    ifar_exc = background_time_exc / (fnum_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
     o['foreground/ifar_exc'][...] = sec_to_year(ifar_exc)
     o['foreground/fap_exc'][...] = fap_exc
