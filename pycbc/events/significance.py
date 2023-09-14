@@ -33,7 +33,8 @@ import numpy as np
 from pycbc.events import trigger_fits as trstats
 
 
-def count_n_louder(bstat, fstat, dec, **kwargs):  # pylint:disable=unused-argument
+def count_n_louder(bstat, fstat, dec,
+                   **kwargs):  # pylint:disable=unused-argument
     """ Calculate for each foreground event the number of background events
     that are louder than it.
 
@@ -85,7 +86,8 @@ def count_n_louder(bstat, fstat, dec, **kwargs):  # pylint:disable=unused-argume
 
 
 def n_louder_from_fit(back_stat, fore_stat, dec_facs,
-                      fit_function='exponential', fit_threshold=0, **kwargs):  # pylint:disable=unused-argument
+                      fit_function='exponential', fit_threshold=0,
+                      **kwargs):  # pylint:disable=unused-argument
     """
     Use a fit to events in back_stat in order to estimate the
     distribution for use in recovering the estimate count of louder
