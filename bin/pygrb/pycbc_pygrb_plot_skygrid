@@ -91,8 +91,8 @@ trig_data = load_data(trig_file, vetoes)
 # Generate sky grid plot
 #
 
-xlabel = "RA (Degrees)"
-ylabel = "Dec (Degrees)"
+xlabel = "RA (deg)"
+ylabel = "Dec (deg)"
 
 if opts.verbose:
     sys.stdout.write("\nPlotting...\n")
