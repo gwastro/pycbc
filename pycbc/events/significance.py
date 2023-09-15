@@ -265,12 +265,12 @@ def insert_significance_option_group(parser):
                              + ",".join(trstats.fitalpha_dict.keys()) + "]. "
                              "Default = exponential for all")
     parser.add_argument('--limit-ifar', nargs='+', default=[],
-                        help="Value to limit the IFAR value (years). "
-                             "Given as combination:function pairs, i.e. "
-                             "H1:10000 L1:1000. Set to 0 to allow "
-                             "unlimited IFARs (default), though "
-                             "this may cause numerical under/overflow "
-                             "errors for loud signals, e.g. injections.")
+                        help="Impose upper limits on IFAR values (years)"
+                             ". Given as combination:value pairs, eg "
+                             "H1L1:10000 L1:1000. Used to avoid under/"
+                             "overflows for loud signals and injections "
+                             "using the fit extrapolation method. A value"
+                             " 0 or no value means unlimited IFAR")
 
 
 def positive_float(inp):
