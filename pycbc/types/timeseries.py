@@ -604,7 +604,7 @@ class TimeSeries(Array):
             rindex = int((time + window - self.start_time) / self.delta_t)
             lindex = lindex if lindex >= 0 else 0
             rindex = rindex if rindex <= len(self) else len(self)
-            rindex_time = data.sample_times[rindex]
+            rindex_time = float(self.start_time + rindex * self.delta_t)
             offset = rindex_time - (time + window)
             if offset == 0:
                 return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
