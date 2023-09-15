@@ -53,10 +53,10 @@ detector_pairs = list(itertools.combinations(detectors, 2))
 # Calculate the time delay for each detector pair
 tds = [detector_pairs[i][0].time_delay_from_detector(detector_pairs[i][1], args.ra, args.dec, args.trigger_time) for i in range(len(detector_pairs))]
 
-# Calculate the light travel time between the detector parirs
+# Calculate the light travel time between the detector pairs
 light_travel_times = [detector_pairs[i][0].light_travel_time_to_detector(detector_pairs[i][1]) for i in range(len(detector_pairs))]
 
-# Calculate the required angular spacing of the sky points
+# Calculate the required angular spacing between the sky points
 ang_spacings = [(2*args.timing_uncertainty) / np.sqrt(light_travel_times[i]**2 - tds[i]**2) for i in range(len(detector_pairs))]
 angular_spacing = min(ang_spacings)
 
