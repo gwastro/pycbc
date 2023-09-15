@@ -619,9 +619,6 @@ class TimeSeries(Array):
                 fdata = data.to_frequencyseries()
                 fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
                 tdata = fdata.to_timeseries()
-                # fill in projslc information
-                tdata.projslc = data.projslc
-                tdata.proj = data.proj
                 return tdata
         elif method == 'hard':
             tslice = data.time_slice(time - window, time + window)

@@ -179,6 +179,4 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     proj = linalg.solve_toeplitz(tdfilter[:(rindex - lindex)],
                                  owhgated_data[lindex:rindex])
     data[lindex:rindex] -= proj
-    data.projslc = (lindex, rindex)
-    data.proj = proj
     return data
