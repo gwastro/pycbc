@@ -72,7 +72,7 @@ for ifo in args.single_trigger_files.keys():
     logging.info("Keeping %d triggers in the window", sum(keep))
 
 
-    data_dict = {k: data[ifo][k][keep] for k in data[ifo].keys()
+    data_dict = {k: data[ifo][k][keep] for k in data[ifo]
                  if isinstance(data[ifo][k], h5py.Dataset)
                  and data[ifo][k].size == keep.size}
 
