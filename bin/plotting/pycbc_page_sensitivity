@@ -210,14 +210,14 @@ elif args.sig_type == 'ifar':
     xlabel = 'Inverse False Alarm Rate (years)'
     if args.sig_bins:
         x_values = [float(v) for v in args.sig_bins]
-    else:
-        x_values = 10. ** (numpy.arange(0, 4, .05))
+    else:  # From approx 2 per day to 1 per 10,000yr
+        x_values = 10. ** (numpy.arange(-3, 4, .1))
 elif args.sig_type == 'fap':
     xlabel = 'False Alarm Probability'
     if args.sig_bins:
         x_values = [float(v) for v in args.sig_bins]
-    else:
-        x_values = 10. ** -numpy.arange(1, 7)
+    else:  # From ~0.3 down to 1e-6
+        x_values = 10. ** numpy.arange(-0.5, -6, -0.5)
 
 if args.hdf_out:
     plotdict = {}
