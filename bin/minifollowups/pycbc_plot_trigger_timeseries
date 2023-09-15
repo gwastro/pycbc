@@ -120,9 +120,11 @@ pylab.xlim(xmin=-args.window, xmax=args.window)
 pylab.legend()
 pylab.grid()
 
+logging.info("Saving figure")
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
             cmd = ' '.join(sys.argv),
             title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
             caption = 'Time series showing the single detector triggers'
                       ' centered around the time of the trigger of interest.',
          )
+logging.info("Done!")
