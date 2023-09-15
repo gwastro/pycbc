@@ -408,7 +408,7 @@ with h5py.File(args.output, 'w') as fout:
     for ifo in events:
         fout_ifo = fout.create_group(ifo)
         # Save the triggers we have used for the fits
-        fout_ifo_trigs.create_group('triggers')
+        fout_ifo_trigs = fout_ifo.create_group('triggers')
         for key in events[ifo].data:
             fout_ifo_trigs[key] = events[ifo].data[key]
         if ifo in pruned_trigger_times:
