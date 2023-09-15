@@ -42,7 +42,7 @@ parser.add_argument('--special-trigger-ids', nargs='+', type=int,
     help="The set of special trigger ids to plot a star at")
 parser.add_argument('--plot-type',
     choices=ranking.sngls_ranking_function_dict, default='snr',
-    help="Which plot to make; an 'snr' or a newsnr' plot.")
+    help="Which single-detector ranking statistic to plot.")
 parser.add_argument('--output-file')
 parser.add_argument('--log-y-axis', action='store_true')
 
