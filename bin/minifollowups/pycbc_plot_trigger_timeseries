@@ -74,7 +74,7 @@ for ifo in args.single_trigger_files.keys():
 
     data_dict = {k: data[ifo][k][keep] for k in data[ifo].keys()
                  if isinstance(data[ifo][k], h5py.Dataset)
-                 and data[ifo][k].size == keep.size} 
+                 and data[ifo][k].size == keep.size}
 
     logging.info("Getting %s", args.plot_type)
     rank = ranking.get_sngls_ranking_from_trigs(data_dict, args.plot_type)

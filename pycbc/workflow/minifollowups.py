@@ -691,7 +691,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
 
 def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
                           veto_file=None, time_window=10, data_segments=None,
-                          injection_file=None, tags=None):
+                          tags=None):
     """ Generate a singles_timefreq node and add it to workflow.
 
     This function generates a single node of the singles_timefreq executable
@@ -726,9 +726,6 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
         trig_time is not within a valid segment, or if it is not possible to
         find 2*time_window (plus the padding) of continuous data around the
         trigger. This **must** be coalesced.
-    injection_file: pycbc.workflow.File (optional, default=None)
-        If given, add the injections in the file to strain before making the
-        plot.
     tags: list (optional, default=None)
         List of tags to add to the created nodes, which determine file naming.
     """
@@ -798,9 +795,6 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
     node.add_opt('--gps-start-time', int(start))
     node.add_opt('--gps-end-time', int(end))
     node.add_opt('--center-time', trig_time)
-
-    if injection_file is not None:
-        node.add_input_opt('--injection-file', injection_file)
 
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
