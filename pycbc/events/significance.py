@@ -439,6 +439,8 @@ def apply_far_limit(far, significance_dict, combo=None):
     far_out = copy.deepcopy(far)
     if isinstance(combo, str):
         # Single IFO combo used
+        if significance_dict[combo]['far_limit'] == 0:
+            return far_out
         far_limit_str = f"{significance_dict[combo]['far_limit']:.3e}"
         logging.info("Applying FAR limit of %s to %s events",
                      far_limit_str, combo)
