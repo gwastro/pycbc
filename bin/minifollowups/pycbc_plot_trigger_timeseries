@@ -64,8 +64,11 @@ for ifo in args.single_trigger_files.keys():
     keep = abs(data[ifo + '/end_time'][:] - t) < args.window
     if not any(keep):
         # No triggers in this window, add to the legend and continue
-        pylab.scatter(0, 0, color=pycbc.results.ifo_color(ifo), marker='x',
-                  label=ifo)
+        # Make sure it isnt on the plot
+        pylab.scatter(-2 * args.window, 0,
+                      color=pycbc.results.ifo_color(ifo),
+                      marker='x',
+                      label=ifo)
         continue
 
     any_data = True
@@ -82,8 +85,10 @@ for ifo in args.single_trigger_files.keys():
     if all(rank == 1):
         # This is the default value to say "downranked beyond consideration"
         # so skip these events
-        pylab.scatter(0, 0, color=pycbc.results.ifo_color(ifo), marker='x',
-                  label=ifo)
+        pylab.scatter(-2 * args.window, 0,
+                      color=pycbc.results.ifo_color(ifo),
+                      marker='x',
+                      label=ifo)
         continue
 
     pylab.scatter(data_dict['end_time'] - t, rank,
