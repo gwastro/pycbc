@@ -362,11 +362,7 @@ def ifar_opt_to_far_limit(ifar_str):
     """
     ifar_float = positive_float(ifar_str)
 
-    try:
-        far_hz = 1. / (lal.YRJUL_SI * ifar_float)
-    except ZeroDivisionError:
-        # IFAR limit of zero is used to indicate no limit
-        far_hz = 0.
+    far_hz = 0. if (ifar_float == 0.) else 1. / (lal.YRJUL_SI * ifar_float)
 
     return far_hz
 
