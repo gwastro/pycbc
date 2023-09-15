@@ -40,7 +40,7 @@ parser.add_argument('--special-trigger-ids', nargs='+', type=int,
     action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
     help="The set of special trigger ids to plot a star at")
 parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr',
-    help="Which single-detector ranking statistic to plot.")
+    help="Which plot to make; an 'snr' or a newsnr' plot.")
 parser.add_argument('--output-file')
 parser.add_argument('--log-y-axis', action='store_true')
 
