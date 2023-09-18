@@ -427,6 +427,7 @@ for f_in in files:
     combo_repeat_bg = np.array(np.repeat(key.encode('utf8'),
                                f_in['background/stat'].size))
     bg_coinc_type = np.concatenate([bg_coinc_type, combo_repeat_bg])
+
 # Apply previously used clustering
 fg_coinc_type = fg_coinc_type[cidx]
 
@@ -436,9 +437,9 @@ sep_fg_data = {}
 sep_bg_data = {}
 final_fg_data = {}
 for combo in all_ifo_combos:
-    idx_fg_ct = np.nonzero(fg_coinc_type == combo.encode('utf8'))
+    idx_fg_ct = np.flatnonzero(fg_coinc_type == combo.encode('utf8'))
     sep_fg_data[combo] = combined_fg_data.select(idx_fg_ct)
-    idx_bg_ct = np.nonzero(bg_coinc_type == combo.encode('utf8'))
+    idx_bg_ct = np.flatnonzero(bg_coinc_type == combo.encode('utf8'))
     sep_bg_data[combo] = combined_bg_data.select(idx_bg_ct)
     final_fg_data[combo] = pycbc.io.DictArray(
         data={k: np.array([], sep_fg_data[combo].data[k].dtype)
