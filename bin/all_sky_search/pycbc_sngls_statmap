@@ -190,6 +190,14 @@ while any(bg_ifar_exc > fg_time):
 
     bg_ifar_exc = 1. / bg_far_exc
     fg_ifar_exc = 1. / fg_far_exc
+    fg_far_exc = significance.apply_far_limit(
+        fg_far_exc,
+        significance_dict,
+        combo=ifo)
+    bg_far_exc = significance.apply_far_limit(
+        bg_far_exc,
+        significance_dict,
+        combo=ifo)
     # Remove a small amount of time from the exclusive fore/background
     # time to account for this removal
     fg_time_exc -= n_removed * args.veto_window
