@@ -93,7 +93,9 @@ for f in args.trfits_files:
             )
             continue
 
-        # Get the time of the first/last triggers in the trigger_fits file
+        # We now determine the (approximate) start/end times of the
+        # trigger_fits file via the time of the first/last triggers in it.
+        # Ideally this would be recorded exactly in the file.
         gps_last = 0
         gps_first = np.inf
         for ifo in args.ifos:
