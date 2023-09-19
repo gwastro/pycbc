@@ -418,10 +418,9 @@ def _get_final_freq(approx, m1, m2, s1z, s2z):
 _vec_get_final_freq = numpy.vectorize(_get_final_freq)
 
 def get_final_freq(approx, m1, m2, s1z, s2z):
-    """
-    Returns the LALSimulation function which evaluates the final
-    (highest) frequency for a given approximant using given template
-    parameters.
+    """Returns the final (highest) frequency for a given approximant using
+    given template parameters.
+
     NOTE: TaylorTx and TaylorFx are currently all given an ISCO cutoff !!
 
     Parameters
@@ -442,6 +441,13 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
     f : float or numpy.array
         Frequency in Hz
     """
+    # Unfortunately we need a few special cases (quite hacky in the case of
+    # IMRPhenomXAS) because some useful approximants are not understood by
+    # GetApproximantFromString().
+    if approx in ['IMRPhenomD', 'IMRPhemomXAS']:
+        return frequency_cutoff_from_name('IMRPhenomDPeak', m1, m2, s1z, s2z)
+    if approx == 'SEOBNRv5':
+        return frequency_cutoff_from_name('SEOBNRv5RD', m1, m2, s1z, s2z)
     lalsim_approx = lalsim.GetApproximantFromString(approx)
     return _vec_get_final_freq(lalsim_approx, m1, m2, s1z, s2z)
 
@@ -486,9 +492,11 @@ named_frequency_cutoffs = {
                                      p["spin1z"], p["spin2z"]),
     "SEOBNRv4Peak": lambda p: get_freq("fSEOBNRv4Peak", p["mass1"], p["mass2"],
                                        p["spin1z"], p["spin2z"]),
+    "SEOBNRv5RD": lambda p: get_freq("fSEOBNRv5RD", p["mass1"], p["mass2"],
+                                     p["spin1z"], p["spin2z"]),
     "SEOBNRv5Peak": lambda p: get_freq("fSEOBNRv5Peak", p["mass1"], p["mass2"],
                                        p["spin1z"], p["spin2z"])
-    }
+}
 
 def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     """
