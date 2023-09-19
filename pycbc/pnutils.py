@@ -377,7 +377,7 @@ def get_freq(freqfunc, m1, m2, s1z, s2z):
     f : float or numpy.array
         Frequency in Hz
     """
-    lalsim_ffunc = getattr(lalsimulation, freqfunc)
+    lalsim_ffunc = getattr(lalsim, freqfunc)
     return _vec_get_freq(lalsim_ffunc, m1, m2, s1z, s2z)
 
 def _get_final_freq(approx, m1, m2, s1z, s2z):
