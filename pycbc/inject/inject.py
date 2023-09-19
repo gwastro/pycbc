@@ -537,7 +537,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         #     injections = self.table
         #     injected = copy.copy(self)
         #     if simulation_ids:
-        #         injected.table = injections[np.array(injected_ids).astype(int)]
+                # injected.table = \
+                #         injections[np.array(injected_ids).astype(int)]
         #     if hasattr(inj_filter_rejector, 'injected'):
         #         prev_p = inj_filter_rejector.injection_params
         #         prev_id = inj_filter_rejector.injection_ids
@@ -559,8 +560,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         if (generate_injections or
                 inj_filter_rejector.match_threshold):
             if strain.dtype not in (float32, float64):
-                raise TypeError("Strain dtype must be float32 or float64, not " \
-                        + str(strain.dtype))
+                raise TypeError("Strain dtype must be float32 or float64, " \
+                        "not "+ str(strain.dtype))
 
             lalstrain = strain.lal()
             # pick lalsimulation injection function
@@ -591,7 +592,8 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                 signal = self.make_strain_from_inj_object(inj, delta_t,
                         detector_name, f_lower=f_l,
                         distance_scale=distance_scale)
-                signal = resample_to_delta_t(signal, strain.delta_t, method='ldas')
+                signal = resample_to_delta_t(signal, strain.delta_t,
+                        method='ldas')
                 if float(signal.start_time) > t1:
                     continue
 
@@ -963,7 +965,8 @@ class IncoherentFromFileHDFInjectionSet(_HDFInjectionSet):
         return ts
 
     def apply(self, strain, detector_name, distance_scale=1,
-              injection_sample_rate=None, inj_filter_rejector=None, generate_injections=True):
+              injection_sample_rate=None, inj_filter_rejector=None,
+              generate_injections=True):
         if inj_filter_rejector is not None:
             raise NotImplementedError("IncoherentFromFile injections do not "
                                       "support inj_filter_rejector")

@@ -228,9 +228,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                     end_time=opt.gps_end_time+opt.pad_data,
                     sieve=sieve)
         elif opt.injection_injection_hdf_store:
-            injection_strain = pycbc.frame.read_store(opt.injection_hdf_store, opt.injection_channel_name,
-                                            opt.gps_start_time - opt.pad_data,
-                                            opt.gps_end_time + opt.pad_data)
+            injection_strain = pycbc.frame.read_store(opt.injection_hdf_store,
+                    opt.injection_channel_name,
+                    opt.gps_start_time - opt.pad_data,
+                    opt.gps_end_time + opt.pad_data)
     else:
         injection_strain = None
 
@@ -318,14 +319,16 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if opt.zpk_z and opt.zpk_p and opt.zpk_k:
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
-        injection_strain = highpass(injection_strain, frequency=opt.strain_high_pass) if injection_strain else None
+        injection_strain = highpass(injection_strain,
+                frequency=opt.strain_high_pass) if injection_strain else None
 
         logging.info("Applying zpk filter")
         z = numpy.array(opt.zpk_z)
         p = numpy.array(opt.zpk_p)
         k = float(opt.zpk_k)
         strain = filter_zpk(strain.astype(numpy.float64), z, p, k)
-        injection_strain = filter_zpk(injection_strain.astype(numpy.float64), z, p, k) if injection_strain else None
+        injection_strain = filter_zpk(injection_strain.astype(numpy.float64),
+                z, p, k) if injection_strain else None
 
     if opt.normalize_strain:
         logging.info("Dividing strain by constant")
@@ -335,7 +338,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if opt.strain_high_pass:
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
-        injection_strain = highpass(injection_strain, frequency=opt.strain_high_pass) if injection_strain else None
+        injection_strain = highpass(injection_strain,
+                frequency=opt.strain_high_pass) if injection_strain else None
 
     if opt.sample_rate:
         logging.info("Resampling data")
@@ -343,8 +347,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                      1. / opt.sample_rate,
                                      method='ldas')
         injection_strain = resample_to_delta_t(injection_strain,
-                                     1. / opt.sample_rate,
-                                     method='ldas') if injection_strain else None
+                                     1. / opt.sample_rate, method='ldas') \
+                                             if injection_strain else None
 
     # Check if we need to use provided injection file
     # FIXME: Shoud this be done at the begining even before creating injector
@@ -355,22 +359,25 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector.apply(strain, opt.channel_name.split(':')[0],
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
-                           inj_filter_rejector=inj_filter_rejector, generate_injections=True)
+                           inj_filter_rejector=inj_filter_rejector,
+                           generate_injections=True)
 
     elif (injector and injection_strain and inj_filter_rejector):
-        # check if we actually need to generate injections else just add the inj
-        # and parameters to inj_filter_rejector
+        # check if we actually need to generate injections else just add
+        # the inj and parameters to inj_filter_rejector
         logging.info("Using injection file for inj_filter_rejector")
         injections = \
             injector.apply(strain, opt.channel_name.split(':')[0],
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
-                           inj_filter_rejector=inj_filter_rejector, generate_injections=False)
+                           inj_filter_rejector=inj_filter_rejector,
+                           generate_injections=False)
 
     if opt.sgburst_injection_file:
         if injection_strain is not None:
             logging.warn("Burst injection file and frames containing injection"
-                    " both are given. There will be at least 2 sets of injections!")
+                    " both are given. There will be at least 2 sets of "
+                    "injections!")
         logging.info("Applying sine-Gaussian burst injections")
         injector = SGBurstInjectionSet(opt.sgburst_injection_file)
         injector.apply(strain, opt.channel_name.split(':')[0],
@@ -566,8 +573,9 @@ def insert_strain_option_group(parser, gps_times=True):
     # Use datafind to get frame files
     data_reading_group.add_argument("--frame-type",
                             type=str,
-                            help="(optional), replaces frame-files. Use datafind "
-                                 "to get the needed frame file(s) of this type.")
+                            help="(optional), replaces frame-files. "
+                            "Use datafind to get the needed frame file(s) "
+                            "of this type.")
     # Filter frame files by URL
     data_reading_group.add_argument("--frame-sieve",
                             type=str,
@@ -577,25 +585,24 @@ def insert_strain_option_group(parser, gps_times=True):
     ## Read frame containing premade noiseless injections
     # Read from cache file
     data_reading_group.add_argument("--injection-channel-name", type=str,
-                   help="The channel containing the noiseless injections")
-    data_reading_group.add_argument("--injection-frame-cache", type=str, nargs="+",
-                            help="Cache file containing the frame locations for noiseless injections.")
+            help="The channel containing the noiseless injections")
+    data_reading_group.add_argument("--injection-frame-cache", type=str,
+            nargs="+", help="Cache file containing the frame locations for "
+                            "noiseless injections.")
     # Read from frame files
-    data_reading_group.add_argument("--injection-frame-files",
-                            type=str, nargs="+",
-                            help="list of frame files containing noiseless injections")
+    data_reading_group.add_argument("--injection-frame-files", type=str,
+            nargs="+",
+            help="list of frame files containing noiseless injections")
     # # Read from hdf store file
     # ## Maybe some day in future
-    data_reading_group.add_argument("--hdf-store",
-                            type=str,
-                            help="Store of time series noiseless injections in hdf format")
+    data_reading_group.add_argument("--hdf-store", type=str,
+            help="Store of time series noiseless injections in hdf format")
     # Use datafind to get frame files
-    data_reading_group.add_argument("--injection-frame-type",
-                            type=str,
-                            help="(optional), replaces frame-files. Use datafind "
-                                 "to get the needed frame file(s) of given premade "
-                                 "noiseless injection type. This option is useless "
-                                 "untils such a files are made data-findable")
+    data_reading_group.add_argument("--injection-frame-type", type=str,
+            help="(optional), replaces frame-files. Use datafind "
+                 "to get the needed frame file(s) of given premade "
+                 "noiseless injection type. This option is useless "
+                 "untils such a files are made data-findable")
     # Filter frame files by URL
     data_reading_group.add_argument("--injection-frame-sieve",
                             type=str,
@@ -632,7 +639,8 @@ def insert_strain_option_group(parser, gps_times=True):
                       help="(optional) Injection file containing parameters"
                            " of CBC signals to be added to the strain. "
                            "If frames containig premade noiseless injections "
-                           "are provided, this is used only for inj_filter_rejector")
+                           "are provided, this is used only for "
+                           "inj_filter_rejector")
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file containing parameters"
                       "of sine-Gaussian burst signals to add to the strain")
@@ -732,8 +740,8 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
         is True.
     """
 
-    data_reading_group_multi = parser.add_argument_group("Options for obtaining"
-                  " h(t)",
+    data_reading_group_multi = \
+            parser.add_argument_group("Options for obtaining h(t)",
                   "These options are used for generating h(t) either by "
                   "reading from a file or by generating it. This is only "
                   "needed if the PSD is to be estimated from the data, ie. "
@@ -887,10 +895,9 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                       help='If given, find and gate glitches producing a '
                            'deviation larger than SIGMA in the whitened strain'
                            ' time series')
-    data_reading_group_multi.add_argument('--autogating-max-iterations', type=int,
-                                    metavar='SIGMA', default=1,
-                                    help='If given, iteratively apply '
-                                         'autogating')
+    data_reading_group_multi.add_argument('--autogating-max-iterations',
+            type=int, metavar='SIGMA', default=1,
+            help='If given, iteratively apply autogating')
     data_reading_group_multi.add_argument('--autogating-cluster', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=5.,
