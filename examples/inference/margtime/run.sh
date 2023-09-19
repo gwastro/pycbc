@@ -11,7 +11,7 @@ OMP_NUM_THREADS=1 pycbc_inference \
 OMP_NUM_THREADS=1 pycbc_inference_model_stats \
 --input-file marg_150914.hdf \
 --output-file demarg_150914.hdf \
---nprocesses 2 \
+--nprocesses 1 \
 --reconstruct-parameters \
 --force \
 --verbose

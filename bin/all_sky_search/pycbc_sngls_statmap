@@ -69,11 +69,6 @@ parser.add_argument('--hierarchical-removal-against', type=str,
                          'triggers that are louder than either the "inclusive"'
                          ' (little-dogs-in) background, or the "exclusive" '
                          '(little-dogs-out) background. [default="none"]')
-parser.add_argument('--hierarchical-removal-ifar-thresh', type=float,
-                    default=100,
-                    help="Minimum IFAR for a foreground event to be "
-                         "hierarchically removed from background of quieter "
-                         "events (years) [default=100yr]")
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -118,7 +113,6 @@ fg_time = float(all_trigs.attrs['foreground_time'])
 exc_veto_time = (len(back_locs) - len(back_locs)) * args.veto_window
 fg_time_exc = fg_time - exc_veto_time
 
-
 logging.info("Dumping foreground triggers")
 f = fw(args.output_file)
 f.attrs['num_of_ifos'] = 1
@@ -152,24 +146,31 @@ significance_dict = significance.digest_significance_options([ifo], args)
 
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
-back_cnum, fnlouder = significance.get_n_louder(
+bg_far, fg_far = significance.get_far(
     back_stat,
     fore_stat,
     bkg_dec_facs,
+    fg_time,
     **significance_dict[ifo])
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
-back_cnum_exc, fnlouder_exc = significance.get_n_louder(
+bg_far_exc, fg_far_exc = significance.get_far(
     back_stat_exc,
     fore_stat,
     bkg_exc_dec_facs,
+    fg_time_exc,
     **significance_dict[ifo])
 
-bg_ifar = fg_time / (back_cnum + 1)
-fg_ifar = fg_time_exc / (fnlouder + 1)
-bg_ifar_exc = fg_time / (back_cnum_exc + 1)
-fg_ifar_exc = fg_time_exc / (fnlouder_exc + 1)
+fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo)
+bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=ifo)
+fg_far_exc = significance.apply_far_limit(fg_far_exc, significance_dict, combo=ifo)
+bg_far_exc = significance.apply_far_limit(bg_far_exc, significance_dict, combo=ifo)
+
+bg_ifar = 1. / bg_far
+fg_ifar = 1. / fg_far
+bg_ifar_exc = 1. / bg_far_exc
+fg_ifar_exc = 1. / fg_far_exc
 
 f['background/ifar'] = conv.sec_to_year(bg_ifar)
 f['background_exc/ifar'] = conv.sec_to_year(bg_ifar_exc)
@@ -222,7 +223,8 @@ else :
     ifar_louder = fg_ifar
 
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
-#          will happen when fnlouder has no elements that equal 0.
+#          will happen when ifar_louder has no elements that are
+#          less than 1 per live time, or a set maximum.
 
 while numpy.any(ifar_louder >= fg_time):
     # If the user wants to stop doing hierarchical removals after a set
@@ -300,14 +302,15 @@ while numpy.any(ifar_louder >= fg_time):
     back_stat = all_trigs.stat[back_locs]
     fore_stat = all_trigs.stat[fore_locs]
 
-    back_cnum, fnlouder = significance.get_n_louder(
+    bg_far, fg_far = significance.get_far(
         back_stat,
         fore_stat,
         numpy.ones_like(back_stat),
+        fg_time,
         **significance_dict[ifo])
 
-    bg_ifar = fg_time / (back_cnum + 1)
-    fg_ifar = fg_time / (fnlouder + 1)
+    bg_ifar = 1. / bg_far
+    fg_ifar = 1. / fg_far
 
     # Update the ifar_louder criteria depending on whether foreground
     # triggers are being removed via inclusive or exclusive background.
@@ -315,15 +318,16 @@ while numpy.any(ifar_louder >= fg_time):
         ifar_louder = fg_ifar
 
     # Exclusive background doesn't change when removing foreground triggers.
-    # So we don't have to take back_cnum_exc, just repopulate fg_ifar_exc
+    # So we don't have to take bg_far_exc, just repopulate fg_ifar_exc
     else:
-        _, fnlouder_exc = significance.get_n_louder(
+        _, fg_far_exc = significance.get_far(
             back_stat_exc,
             fore_stat,
             numpy.ones_like(back_stat_exc),
+            fg_time_exc,
             **significance_dict[ifo])
 
-        fg_ifar_exc = fg_time / (fnlouder_exc + 1)
+        fg_ifar_exc = 1. / fg_far_exc
 
         ifar_louder = fg_ifar_exc
 

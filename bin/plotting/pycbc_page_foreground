@@ -9,7 +9,7 @@ from pycbc.io import hdf
 import h5py, logging
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 import pycbc.results, pycbc.results.followup
-from pycbc.results.versioning import save_fig_with_metadata
+from pycbc.results import save_fig_with_metadata
 import pycbc.version
 import sys
 

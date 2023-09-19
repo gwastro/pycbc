@@ -272,7 +272,7 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
         attempt is made to use a local datafind server.
     url_type : string
         Returns only frame URLs with a particular scheme or head such
-        as "file" or "gsiftp". Default is "file", which queries locally
+        as "file" or "https". Default is "file", which queries locally
         stored frames. Option can be disabled if set to None.
     Returns
     -------

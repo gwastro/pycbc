@@ -4,7 +4,7 @@ for f in cpnest_stub.ini emcee_stub.ini emcee_pt_stub.ini dynesty_stub.ini ultra
 	pycbc_inference \
         --config-files `dirname $0`/simp.ini `dirname $0`/$f \
         --output-file $f.hdf \
-        --nprocesses 2 \
+        --nprocesses 1 \
         --seed 10 \
         --force
 done
