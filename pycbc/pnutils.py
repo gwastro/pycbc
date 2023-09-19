@@ -601,7 +601,7 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
             solar_mass_to_kg(mass1),
             solar_mass_to_kg(mass2),
             float(spin1),
-            float(spin2)
+            float(spin2),
             f
         )
     else:
