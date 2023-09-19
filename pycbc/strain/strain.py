@@ -595,7 +595,7 @@ def insert_strain_option_group(parser, gps_times=True):
             help="list of frame files containing noiseless injections")
     # # Read from hdf store file
     # ## Maybe some day in future
-    data_reading_group.add_argument("--hdf-store", type=str,
+    data_reading_group.add_argument("--injection-hdf-store", type=str,
             help="Store of time series noiseless injections in hdf format")
     # Use datafind to get frame files
     data_reading_group.add_argument("--injection-frame-type", type=str,
