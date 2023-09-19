@@ -85,7 +85,7 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
     second component mass. Similar to mchirp_mass1_to_mass2 this requires
     finding the roots of a quadratic equation. Basically:
 
-    eta m2^2 + (2 eta - 1)m1 m2 + \eta m1^2 = 0
+    eta m2^2 + (2 eta - 1)m1 m2 + eta m1^2 = 0
 
     This has two solutions which correspond to mass1 being the heavier mass
     or it being the lighter mass. By default the value corresponding to
@@ -568,32 +568,47 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
 
         # FIXME spins are not taken into account
         f_high = f_SchwarzISCO(mass1 + mass2)
-        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
-                                 n_points)
-        track_t = numpy.array([findchirp_chirptime(float(mass1), float(mass2),
-                                        float(f), pn_2order) for f in track_f])
-    elif approximant in ['SEOBNRv2', 'SEOBNRv2_ROM_DoubleSpin',
-                         'SEOBNRv2_ROM_DoubleSpin_HI']:
-        f_high = get_final_freq('SEOBNRv2', mass1, mass2, spin1, spin2)
-        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
-                                 n_points)
-        # use HI function as it has wider freq range validity
-        track_t = numpy.array([
-                lalsimulation.SimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency(f,
-                    solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
-                    float(spin1), float(spin2)) for f in track_f])
-    elif approximant in ['SEOBNRv4', 'SEOBNRv4_ROM']:
-        f_high = get_final_freq('SEOBNRv4', mass1, mass2, spin1, spin2)
-        # use frequency below final freq in case of rounding error
-        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(0.999*f_high),
-                                 n_points)
-        track_t = numpy.array([
-                lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
-                        f, solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
-                        float(spin1), float(spin2)) for f in track_f])
+        tof_func = lambda f: findchirp_chirptime(
+            float(mass1),
+            float(mass2),
+            float(f),
+            pn_2order
+        )
+    elif approximant.startswith('SEOBNRv'):
+        approximant_prefix = approximant[:len('SEOBNRv*')]
+        f_high = get_final_freq(approximant_prefix, mass1, mass2, spin1, spin2)
+        f_high *= 0.999  # avoid errors due to rounding
+        tof_func_map = {
+            # use HI function for v2 as it has wider freq range validity
+            'SEOBNRv2': lalsimulation.SimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency,
+            'SEOBNRv4': lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency,
+            'SEOBNRv5': lalsimulation.SimIMRSEOBNRv5ROMTimeOfFrequency
+        }
+        tof_func = lambda f: tof_func_map[approximant_prefix](
+            f,
+            solar_mass_to_kg(mass1),
+            solar_mass_to_kg(mass2),
+            float(spin1),
+            float(spin2)
+        )
+    elif approximant in ['IMRPhenomD', 'IMRPhenomXAS']:
+        f_high = get_final_freq(approximant, mass1, mass2, spin1, spin2)
+        tof_func_map = {
+            'IMRPhenomD': lalsimulation.SimIMRPhenomDChirpTime,
+            'IMRPhenomXAS': lalsimulation.SimIMRPhenomXASDuration
+        }
+        tof_func = lambda f: tof_func_map[approximant](
+            solar_mass_to_kg(mass1),
+            solar_mass_to_kg(mass2),
+            float(spin1),
+            float(spin2)
+            f
+        )
     else:
-        raise ValueError('Approximant ' + approximant + ' not supported')
-    return (tc - track_t, track_f)
+        raise ValueError(f'Approximant {approximant} not supported')
+    track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high), n_points)
+    track_t = tc - numpy.array(map(tof_func, track_f))
+    return (track_t, track_f)
 
 
 ##############################This code was taken from Andy ###########
