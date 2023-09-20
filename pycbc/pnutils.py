@@ -444,7 +444,7 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
     # Unfortunately we need a few special cases (quite hacky in the case of
     # IMRPhenomXAS) because some useful approximants are not understood by
     # GetApproximantFromString().
-    if approx in ['IMRPhenomD', 'IMRPhemomXAS']:
+    if approx in ['IMRPhenomD', 'IMRPhenomXAS']:
         return frequency_cutoff_from_name('IMRPhenomDPeak', m1, m2, s1z, s2z)
     if approx == 'SEOBNRv5':
         return frequency_cutoff_from_name('SEOBNRv5RD', m1, m2, s1z, s2z)
@@ -628,7 +628,8 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
     else:
         raise ValueError(f'Approximant {approximant} not supported')
     track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high), n_points)
-    track_t = tc - numpy.array(map(tof_func, track_f))
+    tof_func_vec = numpy.vectorize(tof_func)
+    track_t = tc - tof_func_vec(track_f)
     return (track_t, track_f)
 
 
