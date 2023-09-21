@@ -171,7 +171,7 @@ bkg_exc_dec_facs = copy.deepcopy(bkg_dec_facs)
 # Record indices into all_trigs for the exclusive background
 back_exc_locs = numpy.arange(len(all_trigs.stat))
 
-# Find which fg events should be removed from exc background
+# Remove trigs from 'exclusive' background if their IFAR is > livetime
 to_keep = bg_ifar_exc <= fg_time_exc
 
 n_removed = bg_ifar_exc.size - sum(to_keep)
