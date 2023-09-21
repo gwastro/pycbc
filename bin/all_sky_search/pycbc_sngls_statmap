@@ -105,7 +105,6 @@ logging.info("Clustering triggers")
 all_trigs = all_trigs.cluster(args.cluster_window)
 
 fg_time = float(all_trigs.attrs['foreground_time'])
-fg_time_exc = copy.deepcopy(fg_time)
 
 logging.info("Dumping foreground triggers")
 f = fw(args.output_file)
@@ -128,12 +127,7 @@ for k in all_trigs.data:
 logging.info("Estimating FAN from background statistic values")
 # Ranking statistic of foreground and background
 fore_stat = back_stat = all_trigs.stat
-# Need to make a copy as this will have items removed from it, and dont want
-# to overwrite the original
-back_stat_exc = copy.deepcopy(back_stat)
-
 bkg_dec_facs = all_trigs.decimation_factor
-bkg_exc_dec_facs = all_trigs.decimation_factor
 
 significance_dict = significance.digest_significance_options([ifo], args)
 
@@ -160,8 +154,14 @@ f.attrs['foreground_time'] = fg_time
 # Find foreground triggers with IFAR > 1 per livetime and remove from
 # the exclusive background (not equal, as that could give an infinite
 # loop if using count_n_louder)
+
+# Need to make copies for use as exclusive triggers as these will have
+# items removed from them, and don't want to overwrite the original
+fg_time_exc = copy.deepcopy(fg_time)
 fg_ifar_exc = copy.deepcopy(fg_ifar)
 bg_ifar_exc = copy.deepcopy(bg_ifar)
+back_stat_exc = copy.deepcopy(back_stat)
+bkg_exc_dec_facs = copy.deepcopy(bkg_dec_facs)
 
 # Record indices into all_trigs for the exclusive background
 back_exc_locs = numpy.arange(len(all_trigs.stat))
