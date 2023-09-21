@@ -49,7 +49,7 @@ parser.add_argument('--veto-window', type=float, default=.1,
                     help='Time around each zerolag trigger to window out '
                          '[default=.1s]')
 significance.insert_significance_option_group(parser)
-parser.add_argument('--censor-ifar-threshold', type=float, default=0.5,
+-parser.add_argument('--censor-ifar-threshold', type=float, default=0.5,
                     help="Threshold to remove foreground triggers with "
                          "IFAR (years) above this value from the exclusive "
                          "background, and for hierarchical removal "
@@ -170,40 +170,42 @@ bkg_exc_dec_facs = copy.deepcopy(bkg_dec_facs)
 # Record indices into all_trigs for the exclusive background
 back_exc_locs = numpy.arange(len(all_trigs.stat))
 
-while any(conv.sec_to_year(bg_ifar_exc) > args.censor_ifar_threshold):
-    # Find which fg events should be removed from exc background
-    to_keep = bg_ifar_exc <= fg_time_exc
+# Find which fg events should be removed from exc background
+to_keep = bg_ifar_exc <= fg_time_exc
 
-    n_removed = bg_ifar_exc.size - sum(to_keep)
-    logging.info("Removing %s event(s) from exclusive background",
-                 n_removed)
+n_removed = bg_ifar_exc.size - sum(to_keep)
+logging.info("Removing %s event(s) from exclusive background",
+             n_removed)
 
-    back_stat_exc = back_stat_exc[to_keep]
-    bkg_exc_dec_facs = bkg_exc_dec_facs[to_keep]
-    back_exc_locs = back_exc_locs[to_keep]
+back_stat_exc = back_stat_exc[to_keep]
+bkg_exc_dec_facs = bkg_exc_dec_facs[to_keep]
+back_exc_locs = back_exc_locs[to_keep]
 
-    # Cumulative array of exclusive background triggers and the number
-    # of exclusive background triggers louder than each foreground trigger
-    0bg_far_exc, fg_far_exc = significance.get_far(
-        back_stat_exc,
-        fore_stat,
-        bkg_exc_dec_facs,
-        fg_time_exc,
-        **significance_dict[ifo])
+# Cumulative array of exclusive background triggers and the number
+# of exclusive background triggers louder than each foreground trigger
+bg_far_exc, fg_far_exc = significance.get_far(
+    back_stat_exc,
+    fore_stat,
+    bkg_exc_dec_facs,
+    fg_time_exc,
+    **significance_dict[ifo])
 
-    bg_ifar_exc = 1. / bg_far_exc
-    fg_ifar_exc = 1. / fg_far_exc
-    fg_far_exc = significance.apply_far_limit(
-        fg_far_exc,
-        significance_dict,
-        combo=ifo)
-    bg_far_exc = significance.apply_far_limit(
-        bg_far_exc,
-        significance_dict,
-        combo=ifo)
-    # Remove a small amount of time from the exclusive fore/background
-    # time to account for this removal
-    fg_time_exc -= n_removed * args.veto_window
+fg_far_exc = significance.apply_far_limit(
+    fg_far_exc,
+    significance_dict,
+    combo=ifo)
+
+bg_far_exc = significance.apply_far_limit(
+    bg_far_exc,
+    significance_dict,
+    combo=ifo)
+
+bg_ifar_exc = 1. / bg_far_exc
+fg_ifar_exc = 1. / fg_far_exc
+
+# Remove a small amount of time from the exclusive fore/background
+# time to account for this removal
+fg_time_exc -= n_removed * args.veto_window
 
 for k in all_trigs.data:
     f['background_exc/' + k] = all_trigs.data[k][back_exc_locs]
