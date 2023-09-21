@@ -1873,7 +1873,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         with h5py.File(self.files[kname + '-kde_file'], 'r') as kde_file:
             self.kde_by_tid[kname + '_kdevals'] = kde_file['data_kde'][:]
 
-    def kde_logsignalrate(self):
+    def kde_ratio(self):
         """
         Calculate the weighting factor according to the ratio of the
         signal and template KDE lookup tables
@@ -1906,7 +1906,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, shift,
                                                        to_shift)
-        logr_s += self.kde_logsignalrate()
+        logr_s += self.kde_ratio()
 
         return logr_s
 
@@ -1930,7 +1930,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             self,
             single_info,
             **kwargs)
-        rank_sngl += self.kde_logsignalrate()
+        rank_sngl += self.kde_ratio()
         return rank_sngl
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
@@ -2140,11 +2140,11 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         for kname in self.kde_names:
             ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
 
-    def kde_logsignalrate(self):
+    def kde_ratio(self):
         """
         Inherited, see docstring for ExpFitFgBgKDEStatistic.kde_signalrate
         """
-        return ExpFitFgBgKDEStatistic.kde_logsignalrate(self)
+        return ExpFitFgBgKDEStatistic.kde_ratio(self)
 
     def logsignalrate(self, stats, shift, to_shift):
         """
