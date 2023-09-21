@@ -246,23 +246,23 @@ orig_fore_stat = fore_stat
 if args.max_hierarchical_removal != 0:
     # If user wants to remove against inclusive background.
     if is_bkg_inc:
-        ifar_louder_yrs = conv.sec_to_year(fg_ifar)
+        ifar_louder_yr = conv.sec_to_year(fg_ifar)
     # Otherwise user wants to remove against exclusive background
     else :
-        ifar_louder_yrs = conv.sec_to_year(fg_ifar_exc)
+        ifar_louder_yr = conv.sec_to_year(fg_ifar_exc)
 else :
     # It doesn't matter if you choose inclusive or exclusive,
     # the while loop below will break if none are louder than
-    # ifar_louder_yrs, or at the comparison
+    # ifar_louder_yr, or at the comparison
     # h_iterations == args.max_hierarchical_removal. But this avoids
     # a NameError
-    ifar_louder_yrs = conv.sec_to_year(fg_ifar)
+    ifar_louder_yr = conv.sec_to_year(fg_ifar)
 
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
-#          will happen when ifar_louder_yrs has no elements that are
+#          will happen when ifar_louder_yr has no elements that are
 #          above the set threshold, or a set maximum.
 
-while numpy.any(ifar_louder_yrs > args.hierarchical_removal_ifar_threshold):
+while numpy.any(ifar_louder_yr > args.hierarchical_removal_ifar_threshold):
     # If the user wants to stop doing hierarchical removals after a set
     # number of iterations then break when that happens.
     if (h_iterations == args.max_hierarchical_removal):
@@ -286,7 +286,7 @@ while numpy.any(ifar_louder_yrs > args.hierarchical_removal_ifar_threshold):
 
     # Among foreground triggers, find the one with the largest ifar
     # and mark it for removal.
-    max_stat_idx = ifar_louder_yrs.argmax()
+    max_stat_idx = ifar_louder_yr.argmax()
 
     # Step 3: Remove that trigger from the list of zerolag triggers
 
@@ -341,10 +341,10 @@ while numpy.any(ifar_louder_yrs > args.hierarchical_removal_ifar_threshold):
     bg_ifar = 1. / bg_far
     fg_ifar = 1. / fg_far
 
-    # Update the ifar_louder_yrs criteria depending on whether foreground
+    # Update the ifar_louder_yr criteria depending on whether foreground
     # triggers are being removed via inclusive or exclusive background.
     if is_bkg_inc:
-        ifar_louder_yrs = conv.sec_to_year(fg_ifar)
+        ifar_louder_yr = conv.sec_to_year(fg_ifar)
 
     # Exclusive background doesn't change when removing foreground triggers.
     # So we don't have to take bg_far_exc, just repopulate fg_ifar_exc
@@ -358,7 +358,7 @@ while numpy.any(ifar_louder_yrs > args.hierarchical_removal_ifar_threshold):
 
         fg_ifar_exc = 1. / fg_far_exc
 
-        ifar_louder_yrs = conv.sec_to_year(fg_ifar_exc)
+        ifar_louder_yr = conv.sec_to_year(fg_ifar_exc)
 
     # louder_foreground has been updated and the code can continue.
 
