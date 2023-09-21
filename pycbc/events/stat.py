@@ -1752,11 +1752,12 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(self, single_info,
-                         **kwargs)
+        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
+            self,
+            single_info,
+            **kwargs)
         rank_sngl += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return rank_sngl
-
 
     def single(self, trigs):
         """
@@ -1925,8 +1926,10 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(self, single_info,
-                         **kwargs)
+        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
+            self,
+            single_info,
+            **kwargs)
         rank_sngl += self.kde_logsignalrate()
         return rank_sngl
 
@@ -2155,8 +2158,10 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         """
         Inherited, see docstring for ExpFitFgBgKDEStatistic.rank_stat_single
         """
-        return ExpFitFgBgKDEStatistic.rank_stat_single(self, single_info,
-                         **kwargs)
+        return ExpFitFgBgKDEStatistic.rank_stat_single(
+            self,
+            single_info,
+            **kwargs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
         """
