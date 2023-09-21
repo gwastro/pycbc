@@ -1733,6 +1733,31 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         logr_s += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return logr_s
 
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the statistic for a single detector candidate
+
+        This calls back to the Parent class and then applies the chirp mass
+        weighting factor.
+
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the single detector triggers.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(self, single_info,
+                         **kwargs)
+        rank_sngl += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
+        return rank_sngl
+
+
     def single(self, trigs):
         """
         Calculate the necessary single detector information
