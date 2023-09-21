@@ -49,6 +49,11 @@ parser.add_argument('--veto-window', type=float, default=.1,
                     help='Time around each zerolag trigger to window out '
                          '[default=.1s]')
 significance.insert_significance_option_group(parser)
+parser.add_argument('--censor-ifar-threshold', type=float, default=0.5,
+                    help="Threshold to remove foreground triggers with "
+                         "IFAR (years) above this value from the exclusive "
+                         "background, and for hierarchical removal "
+                         "[default=0.5yr]")
 parser.add_argument('--hierarchical-removal-window', type=float, default=1.0,
                     help='Time around each trigger to window out for a very '
                          'louder trigger in the hierarchical removal '
@@ -151,9 +156,8 @@ f['background/ifar'] = conv.sec_to_year(bg_ifar)
 f.attrs['background_time'] = fg_time
 f.attrs['foreground_time'] = fg_time
 
-# Find foreground triggers with IFAR > 1 per livetime and remove from
-# the exclusive background (not equal, as that could give an infinite
-# loop if using count_n_louder)
+# Find foreground triggers with IFAR > the set limit and remove from
+# the exclusive background
 
 # Need to make copies for use as exclusive triggers as these will have
 # items removed from them, and don't want to overwrite the original
@@ -166,7 +170,7 @@ bkg_exc_dec_facs = copy.deepcopy(bkg_dec_facs)
 # Record indices into all_trigs for the exclusive background
 back_exc_locs = numpy.arange(len(all_trigs.stat))
 
-while any(bg_ifar_exc > fg_time):
+while any(conv.sec_to_year(bg_ifar_exc) > args.censor_ifar_threshold):
     # Find which fg events should be removed from exc background
     to_keep = bg_ifar_exc <= fg_time_exc
 
@@ -180,7 +184,7 @@ while any(bg_ifar_exc > fg_time):
 
     # Cumulative array of exclusive background triggers and the number
     # of exclusive background triggers louder than each foreground trigger
-    bg_far_exc, fg_far_exc = significance.get_far(
+    0bg_far_exc, fg_far_exc = significance.get_far(
         back_stat_exc,
         fore_stat,
         bkg_exc_dec_facs,
@@ -253,9 +257,9 @@ else :
 
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
 #          will happen when ifar_louder has no elements that are
-#          less than 1 per live time, or a set maximum.
+#          above the set threshold, or a set maximum.
 
-while numpy.any(ifar_louder >= fg_time):
+while numpy.any(conv.sec_to_year(ifar_louder) > args.censor_ifar_threshold):
     # If the user wants to stop doing hierarchical removals after a set
     # number of iterations then break when that happens.
     if (h_iterations == args.max_hierarchical_removal):
