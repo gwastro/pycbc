@@ -2152,6 +2152,9 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
 
     def rank_stat_single(self, single_info,
                          **kwargs): # pylint:disable=unused-argument
+        """
+        Inherited, see docstring for ExpFitFgBgKDEStatistic.rank_stat_single
+        """
         return ExpFitFgBgKDEStatistic.rank_stat_single(self, single_info,
                          **kwargs)
 
