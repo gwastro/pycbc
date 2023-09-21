@@ -163,8 +163,7 @@ f.attrs['foreground_time'] = fg_time
 fg_ifar_exc = copy.deepcopy(fg_ifar)
 bg_ifar_exc = copy.deepcopy(bg_ifar)
 
-# Variable to tell us which events to select from all_trigs for the
-# exclusive background
+# Record indices into all_trigs for the exclusive background
 back_exc_locs = numpy.arange(len(all_trigs.stat))
 
 while any(bg_ifar_exc > fg_time):
