@@ -51,9 +51,8 @@ parser.add_argument('--veto-window', type=float, default=.1,
 significance.insert_significance_option_group(parser)
 parser.add_argument('--hierarchical-removal-ifar-threshold',
                     type=float, default=0.5,
-                    help="Threshold to remove foreground triggers with "
-                         "IFAR (years) above this value from the exclusive "
-                         "background, and for hierarchical removal "
+                    help="Threshold to hierarchically remove foreground "
+                         "triggers with IFAR (years) above this value "
                          "[default=0.5yr]")
 parser.add_argument('--hierarchical-removal-window', type=float, default=1.0,
                     help='Time around each trigger to window out for a very '
