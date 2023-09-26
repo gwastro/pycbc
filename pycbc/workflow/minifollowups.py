@@ -527,7 +527,7 @@ def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
 
 def make_coinc_info(workflow, singles, bank, coinc, out_dir,
                     n_loudest=None, trig_id=None, file_substring=None,
-                    sort_order=None, sort_var=None, tags=None):
+                    sort_order=None, sort_var=None, title=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
@@ -545,6 +545,8 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
         node.add_opt('--n-loudest', str(n_loudest))
     if trig_id is not None:
         node.add_opt('--trigger-id', str(trig_id))
+    if title is not None:
+        node.add_opt('--title', str(title))
     if file_substring is not None:
         node.add_opt('--statmap-file-subspace-name', file_substring)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
@@ -553,7 +555,7 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     return files
 
 def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
-                  tags=None):
+                  title=None, tags=None):
     """Setup a job to create sngl detector sngl ifo html summary snippet.
     """
     tags = [] if tags is None else tags
@@ -566,6 +568,8 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--trigger-id', str(trigger_id))
     node.add_opt('--instrument', ifo)
+    if title is not None:
+        node.add_opt('--title', str(title))
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     files += node.output_files

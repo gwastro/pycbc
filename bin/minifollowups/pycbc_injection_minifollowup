@@ -140,6 +140,13 @@ except KeyError:
     dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
     sorting = dec_chirp_dist.argsort()  # ascending order of dec chirp distance
 
+# Get the trigger event times
+trigger_times = {}
+for trig in single_triggers:
+    ifo = trig.ifo
+    with h5py.File(trig.lfn, 'r') as trig_f:
+        trigger_times[ifo] = trig_f[ifo]['end_time'][:]
+
 if len(missed) < num_events:
     num_events = len(missed)
 
@@ -178,7 +185,16 @@ for num_event in range(num_events):
                      (workflow, single_triggers, tmpltbank_file,
                       injection_file, args.output_dir, trig_id=trig_id,
                       file_substring='found_after_vetoes',
+                      title="Details of closest event",
                       tags=args.tags + [str(num_event)])[0],)]
+    for sngl in single_triggers:
+        ifo = sngl.ifo
+        closest_trigger_id = numpy.argmin(abs(time - trigger_times[ifo]))
+        sngl_info = mini.make_sngl_ifo(workflow, sngl, tmpltbank_file,
+            closest_trigger_id, args.output_dir, ifo,
+            title=f"Parameters of {ifo} trigger closest in time",
+            tags=args.tags + [str(num_event)])[0]
+        layouts += [(sngl_info,)]
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
