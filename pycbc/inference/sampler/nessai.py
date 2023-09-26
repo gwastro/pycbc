@@ -224,7 +224,7 @@ class NessaiModel(nessai.model.Model):
         bounds = {}
         for dist in model.prior_distribution.distributions:
             bounds.update(
-                **{k: [v.min, v.max] for k, v in dist.bounds.items()}
+                **{k: [v.min, v.max] for k, v in dist.bounds.items() if k in self.names}
             )
         self.bounds = bounds
 
