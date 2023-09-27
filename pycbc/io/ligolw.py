@@ -157,10 +157,15 @@ def create_process_table(document, program_name=None, detectors=None,
             opts.pop(key)
 
     process = ligolw_process.register_to_xmldoc(
-            document, program_name, opts, version=pycbc_version.version,
-            cvs_repository='pycbc/'+pycbc_version.git_branch,
-            cvs_entry_time=cvs_entry_time, instruments=detectors,
-            comment=comment)
+        document,
+        program_name,
+        opts,
+        version=pycbc_version.version,
+        cvs_repository='pycbc/'+pycbc_version.git_branch,
+        cvs_entry_time=cvs_entry_time,
+        instruments=detectors,
+        comment=comment
+    )
     return process
 
 def legacy_row_id_converter(ContentHandler):
