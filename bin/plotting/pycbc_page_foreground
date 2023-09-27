@@ -1,28 +1,31 @@
 #!/usr/bin/env python
-"""
-Make table of the foreground events. Also includes ability to
-write FARs and p-values for intermediary hierarchical removal steps.
-"""
-import argparse
-import h5py, logging, numpy
-from pycbc.io import hdf
-import h5py, logging
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta
-import pycbc.results, pycbc.results.followup
-from pycbc.results import save_fig_with_metadata
-import pycbc.version
-import sys
 
-parser = argparse.ArgumentParser()
-# General required options
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
-parser.add_argument('--trigger-file')
-parser.add_argument('--bank-file')
-parser.add_argument('--single-detector-triggers', nargs='+', default=None)
+"""Make table of the foreground events. Also includes ability to write FARs and
+p-values for intermediary hierarchical removal steps.
+"""
+
+import sys
+import argparse
+import logging
+import numpy
+import h5py
+import pycbc
+import pycbc.results
+import pycbc.version
+from pycbc.io import hdf
+from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--trigger-file', required=True)
+parser.add_argument('--bank-file', required=True)
+parser.add_argument('--single-detector-triggers', nargs='+')
 parser.add_argument('--verbose', action='count')
-parser.add_argument('--output-file')
+parser.add_argument('--output-file', required=True)
 parser.add_argument('--num-to-write', type=int)
-parser.add_argument('--use-hierarchical-level', type=int, default=None,
+parser.add_argument('--use-hierarchical-level', type=int,
                     help='Indicate which FARs to write to the table '
                          'based on the number of hierarchical removals done. '
                          'Choosing None defaults to giving the FARs after '
@@ -35,15 +38,16 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
                          'of hierarchical removals done. [default=None]')
 args = parser.parse_args()
 
-f = h5py.File(args.trigger_file, 'r')
+pycbc.init_logging(args.verbose)
+
+with h5py.File(args.trigger_file, 'r') as f:
+    try:
+        h_iterations = f.attrs['hierarchical_removal_iterations']
+    except KeyError:
+        h_iterations = None
 
 # Parse which inclusive background to use for the plotting
 h_num_rm = args.use_hierarchical_level
-
-try:
-    h_iterations = f.attrs['hierarchical_removal_iterations']
-except KeyError:
-    h_iterations = None
 
 if h_num_rm is not None and (h_iterations is None or h_num_rm > h_iterations):
     col_one = numpy.array([h_num_rm])
@@ -57,12 +61,12 @@ if h_num_rm is not None and (h_iterations is None or h_num_rm > h_iterations):
     kwds = { 'title' :
         'No more events louder than all background at this removal level.',
         'cmd' :' '.join(sys.argv), }
-    save_fig_with_metadata(str(html_table), args.output_file, **kwds)
+    pycbc.results.save_fig_with_metadata(
+        str(html_table),
+        args.output_file,
+        **kwds
+    )
     sys.exit(0)
-
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 if args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
     if args.single_detector_triggers is None:
@@ -177,7 +181,11 @@ if args.output_file.endswith('.html'):
 
     kwds = { 'title' : 'Loudest Event Table',
         'cmd' :' '.join(sys.argv), }
-    save_fig_with_metadata(str(html_table), args.output_file, **kwds)
+    pycbc.results.save_fig_with_metadata(
+        str(html_table),
+        args.output_file,
+        **kwds
+    )
 
 elif args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
     fortrigs.to_coinc_xml_object(args.output_file)
