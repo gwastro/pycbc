@@ -505,13 +505,21 @@ class Relative(DistMarg, BaseGaussianNoise):
                 loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
-    def get_sh_hh(self):
-        r"""Computes the <s|h> and <h|h>
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
 
         Returns
         -------
-        tuple
-            (sh, hh).
+        float
+            The value of the log likelihood ratio.
         """
         # get model params
         p = self.current_params
@@ -562,28 +570,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             filt += filter_i
             norm += norm_i
-
-        return (filt, norm)
-
-    def _loglr(self):
-        r"""Computes the log likelihood ratio
-
-        .. math::
-
-            \log \mathcal{L}(\Theta) = \sum_i
-                \left<h_i(\Theta)|d_i\right> -
-                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
-
-        Returns
-        -------
-        float or tuple
-            The value of the log likelihood ratio.
-        """
-        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
-        total_sh, total_hh = self.get_sh_hh()
-        loglr = self.marginalize_loglr(total_sh, total_hh)
+        loglr = self.marginalize_loglr(filt, norm)
         return loglr
 
     def write_metadata(self, fp, group=None):
@@ -798,20 +785,28 @@ class RelativeTimeDom(RelativeTime):
                              epoch=self.tstart[ifo])
             self.sh[ifo] = TimeSeries(sh, delta_t=delta_t,
                                       epoch=self.tstart[ifo] - delta_t * 2.0)
-            print("self.sh[ifo].epoch: ", self.tstart[ifo] - delta_t * 2.0)
             self.hh[ifo] = hh
             snrs[ifo] = snr
 
         return snrs
 
-    def get_sh_hh(self):
-        r"""Computes the <s|h> and <h|h>
+    def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
 
         Returns
         -------
-        tuple
-            (sh, hh).
+        float
+            The value of the log likelihood ratio.
         """
+        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params
 
         p2 = p.copy()
@@ -841,34 +836,10 @@ class RelativeTimeDom(RelativeTime):
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
-            print("p: ", p)
-            print("p['tc'], dt: ", (p['tc'], dt))
-            print("dts: ", dts)
-            print("self.sh[ifo].start_time: ", self.sh[ifo].start_time)
-            print("self.sh[ifo].end_time: ", self.sh[ifo].end_time)
+
             sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        return (sh_total, hh_total)
-
-    def _loglr(self):
-        r"""Computes the log likelihood ratio
-
-        .. math::
-
-            \log \mathcal{L}(\Theta) = \sum_i
-                \left<h_i(\Theta)|d_i\right> -
-                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
-
-        Returns
-        -------
-        float or tuple
-            The value of the log likelihood ratio.
-        """
-        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
-        total_sh, total_hh = self.get_sh_hh()
-        loglr = self.marginalize_loglr(total_sh, total_hh)
+        loglr = self.marginalize_loglr(sh_total, hh_total)
         return loglr
