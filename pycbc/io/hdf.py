@@ -857,11 +857,13 @@ class ForegroundTriggers(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        ifos = list(self.sngl_files.keys())
-        proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                     {}, instruments=ifos, comment='', version=pycbc_version.git_hash,
-                     cvs_repository='pycbc/'+pycbc_version.git_branch,
-                     cvs_entry_time=pycbc_version.date).process_id
+        ifos = sorted(self.sngl_files)
+        proc_table = create_process_table(
+            outdoc,
+            program_name='pycbc',
+            detectors=ifos
+        )
+        proc_id = proc_table.process_id
 
         search_summ_table = lsctables.New(lsctables.SearchSummaryTable)
         coinc_h5file = self.coinc_file.h5file
