@@ -15,14 +15,16 @@ from lal import LIGOTimeGPS, YRJUL_SI
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 
 from pycbc import version as pycbc_version
-from pycbc.io.ligolw import return_search_summary, return_empty_sngl
+from pycbc.io.ligolw import (
+    return_search_summary,
+    return_empty_sngl,
+    create_process_table
+)
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
 
 class HFile(h5py.File):
@@ -1051,7 +1053,7 @@ class ForegroundTriggers(object):
 
         mass1 = self.get_bankfile_array('mass1')
         mass2 = self.get_bankfile_array('mass2')
-        ofd['chirp_mass'], _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
+        ofd['chirp_mass'], _ = pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)
 
         logging.info("Outputting single-trigger information")
         logging.info("reduced chisquared")
