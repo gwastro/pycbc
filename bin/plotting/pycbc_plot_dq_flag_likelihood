@@ -28,7 +28,10 @@ dq_name = f.attrs['stat'].split('-')[1]
 logrates_grp = f[ifo + '/dq_percentiles']
 bin_names = logrates_grp.keys()
 
-# when using a flag, times when the flag was on go to the last dq bin
+# when using a flag, should have exactly 2 dq bins (off and on)
+# times when the flag was on go to the last dq bin
+for b in bin_names:
+    assert len(logrates_grp[b])==2, 'Flag should have exactly 2 dq bins'
 logrates = [logrates_grp[b][-1] for b in bin_names]
 x = numpy.arange(len(logrates))
 
