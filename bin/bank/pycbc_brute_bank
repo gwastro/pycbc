@@ -301,7 +301,6 @@ class GenUniformWaveform(object):
                 if 'fratio' in kwds:
                     hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
         else:
-            logging.info("failed at 2")
             dt = 1.0 / args.sample_rate
             hp = pycbc.waveform.get_waveform_filter(
                         pycbc.types.zeros(self.flen, dtype=numpy.complex64),
