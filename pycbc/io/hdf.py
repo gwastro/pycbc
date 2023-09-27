@@ -16,7 +16,6 @@ from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 
-from pycbc import version as pycbc_version
 from pycbc.io.ligolw import (
     return_search_summary,
     return_empty_sngl,
