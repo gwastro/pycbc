@@ -216,4 +216,4 @@ html += str(pycbc.results.static_table(data, headers))
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd=' '.join(sys.argv),
                         title=args.title if args.title else title,
-                        caption=capt
+                        caption=caption)
