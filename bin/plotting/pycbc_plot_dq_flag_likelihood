@@ -44,7 +44,7 @@ ax = fig.add_subplot(111)
 ax2 = ax.twinx()
 
 ax2.bar(x, height=logrates, label=ifo, color=color)
-ax2.set_ylabel('DQ Log Likelihood')
+ax2.set_ylabel('DQ Log Likelihood Penalty')
 ax2.legend(loc='upper left', markerscale=5)
 ax2.set_ylim(0, ymax)
 ax2.grid()
