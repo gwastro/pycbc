@@ -28,7 +28,11 @@ dq_name = f.attrs['stat'].split('-')[1]
 logrates_grp = f[ifo + '/dq_percentiles']
 bin_names = logrates_grp.keys()
 
-# when using a flag, times when the flag was on go to the last dq bin
+# when using a flag, should have exactly 2 dq bins (off and on)
+# times when the flag was on go to the last dq bin
+for b in bin_names:
+    num_bins = len(logrates_grp[b])
+    assert num_bins == 2, f'Flag should have exactly 2 dq bins, found {num_bins}'
 logrates = [logrates_grp[b][-1] for b in bin_names]
 x = numpy.arange(len(logrates))
 
@@ -37,24 +41,24 @@ color = pycbc.results.ifo_color(ifo)
 
 fig = pyplot.figure(0)
 ax = fig.add_subplot(111)
-ax.bar(x, height=logrates, label=f'{ifo} DQ Flag Trigger Rates',
-       color=color)
-ax.set_xlabel('Template Bin Number')
-ax.set_ylabel('Data Quality Log Likelihood')
-ax.set_xticks(x)
-ax.legend(loc='upper left', markerscale=5)
-ax.set_ylim(0, ymax)
-ax.grid()
+ax2 = ax.twinx()
+
+ax2.bar(x, height=logrates, label=ifo, color=color)
+ax2.set_ylabel('DQ Log Likelihood Penalty')
+ax2.legend(loc='upper left', markerscale=5)
+ax2.set_ylim(0, ymax)
+ax2.grid()
 
 yticks = ax.get_yticks()
 
-ax2 = ax.twinx()
-ax2_ymax = numpy.exp(ymax)
-ax2.set_ylim(1, ax2_ymax)
-new_ticks = range(0, int(numpy.ceil(numpy.log10(ax2_ymax))))
-ax2.set_yticks([10**t for t in new_ticks])
-ax2.set_ylabel('Relative Trigger Rate')
-ax2.set_yscale('log')
+ax_ymax = numpy.exp(ymax)
+ax.set_ylim(1, ax_ymax)
+new_ticks = range(0, int(numpy.ceil(numpy.log10(ax_ymax))))
+ax.set_yticks([10**t for t in new_ticks])
+ax.set_ylabel('(Rate during DQ Flag)/(Mean Rate) [Min 1]')
+ax.set_yscale('log')
+ax.set_xlabel('Template Bin Number')
+ax.set_xticks(x)
 
 # add meta data and save figure
 plot_title = f'{ifo}: {dq_name} flag log likelihood'
