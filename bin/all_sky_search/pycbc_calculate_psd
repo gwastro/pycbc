@@ -51,8 +51,8 @@ def get_psd(input_tuple, rerun_count=None):
     tmp_segment = segment([argstmp.gps_start_time, argstmp.gps_end_time])
     # There may be cases where channel name or frame type change within an
     # analysis (noting that this could be an issue with significance
-    # computation). If so, resolve them for each PSD block. The channel or
-    # frame type *cannot* change during a lock stretch.
+    # computation). If so, resolve them for each PSD block. This still
+    # assumes that the channel and frame type are constant during a lock stretch.
     if args.channel_name:
         # Option may not have been given at all
         argstmp.channel_name = resolve_td_option(args.channel_name, tmp_segment)
