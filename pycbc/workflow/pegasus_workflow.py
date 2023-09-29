@@ -670,7 +670,7 @@ class Workflow(object):
         except FileNotFoundError:
             pass
         os.symlink(submitdir, 'submitdir')
-        planner_args['dir'] = submitdir
+        planner_args['dir'] = os.path.abspath(submitdir)
 
         # Other options
         planner_args['cluster'] = ['label,horizontal']

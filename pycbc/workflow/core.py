@@ -1259,7 +1259,7 @@ class File(pegasus_workflow.File):
                                    duration, extension)
 
     @classmethod
-    def from_path(cls, path, attrs=None, **kwargs):
+    def from_path(cls, path, attrs=None, set_pfn=False, **kwargs):
         """
         Create an output File object from path, with optional attributes.
         """
@@ -1283,6 +1283,12 @@ class File(pegasus_workflow.File):
             tags = []
 
         curr_file = cls(ifos, exe_name, segs, path, tags=tags, **kwargs)
+
+        # assume the given path is also a valid pfn
+        if set_pfn:
+            site = 'local' if set_pfn == True else set_pfn
+            curr_file.add_pfn(os.path.abspath(path), site)
+
         return curr_file
 
 class FileList(list):
