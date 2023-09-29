@@ -67,19 +67,24 @@ class NessaiSampler(BaseSampler):
 
     @property
     def samples(self):
-        return nessai.livepoint.live_points_to_dict(
-            self._sampler.posterior_samples,
+        """The raw nested samples including the corresponding weights"""
+        samples = nessai.livepoint.live_points_to_dict(
+            self._sampler.nested_samples,
             self.model.sampling_params,
         )
+        samples["logwt"] = self._sampler.ns.state.log_posterior_weights
+        samples["loglikelihood"] = self._sampler.nested_samples["loglikelihood"]
+        return samples
 
-    def run(self, resume=True):
-        out_dir = os.path.dirname(os.path.abspath(self.checkpoint_file))
-        print(self.checkpoint_file)
+    def run(self):
+        out_dir = os.path.join(
+            os.path.dirname(os.path.abspath(self.checkpoint_file)),
+            "nessai",
+        )
         if self._sampler is None:
             self._sampler = nessai.flowsampler.FlowSampler(
                 self.model_call,
                 output=out_dir,
-                resume=resume,
                 pool=self.pool,
                 n_pool=self.nprocesses,
                 close_pool=False,
@@ -89,8 +94,9 @@ class NessaiSampler(BaseSampler):
         self._sampler.run(**self.run_kwds)
 
     @classmethod
-    def from_config(cls, cp, model, output_file=None, nprocesses=1,
-                    use_mpi=False):
+    def from_config(
+        cls, cp, model, output_file=None, nprocesses=1, use_mpi=False
+    ):
         """
         Loads the sampler from the given config file.
         """
@@ -98,7 +104,7 @@ class NessaiSampler(BaseSampler):
         # check name
         assert cp.get(section, "name") == cls.name, (
             "name in section [sampler] must match mine")
-        # get the number of live points to use
+
         if cp.has_option(section, "importance_nested_sampler"):
             importance_nested_sampler = cp.get(
                 section, "importance_nested_sampler",
@@ -114,7 +120,7 @@ class NessaiSampler(BaseSampler):
 
         # Keyword arguments the user cannot configure via the config
         remove_kwds = [
-            "resume", "pool", "n_pool", "close_pool", "signal_handling"
+            "pool", "n_pool", "close_pool", "signal_handling"
         ]
 
         for kwd in remove_kwds:
@@ -143,9 +149,8 @@ class NessaiSampler(BaseSampler):
             raise RuntimeError(
                 f"Config contains unknown options: {invalid_kwds}"
             )
-
-        logging.warning(f"nessai keyword arguments: {kwds}")
-        logging.warning(f"nessai run keyword arguments: {run_kwds}")
+        logging.info(f"nessai keyword arguments: {kwds}")
+        logging.info(f"nessai run keyword arguments: {run_kwds}")
 
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
@@ -159,9 +164,7 @@ class NessaiSampler(BaseSampler):
             extra_kwds=kwds,
         )
 
-        setup_output(obj, output_file, check_nsamples=False)
-        if not obj.new_checkpoint:
-            obj.resume_from_checkpoint()
+        setup_output(obj, output_file, check_nsamples=False, validate=False)
         return obj
 
     def set_initial_conditions(
@@ -177,9 +180,11 @@ class NessaiSampler(BaseSampler):
 
     def checkpoint(self):
         self._sampler.ns.checkpoint()
+        for fn in [self.checkpoint_file, self.backup_file]:
+            self.write_results(fn)
 
     def resume_from_checkpoint(self):
-        self.run(resume=True)
+        pass
 
     def finalize(self):
         logz = self._sampler.log_evidence
@@ -227,7 +232,6 @@ class NessaiModel(nessai.model.Model):
                 **{k: [v.min, v.max] for k, v in dist.bounds.items() if k in self.names}
             )
         self.bounds = bounds
-
         # Prior and likelihood are not vectorised
         self.vectorised_likelihood = False
         self.vectorised_prior = False
