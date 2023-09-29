@@ -45,6 +45,10 @@ parser.add_argument('--approximant',  required=True,
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
+parser.add_argument('--cut-wavelength', type=bool, 
+                    help="When enabled, the program will adjust the wavelength to fit the specified length in max-signal-length ")
+parser.add_argument('--max-signal-length', type= float, 
+                    help="maximum length of the waveform model")
 parser.add_argument('--sample-rate', default=2048, type=float,
     help='sample rate in seconds')
 parser.add_argument('--low-frequency-cutoff', default=20.0, type=float)
@@ -92,8 +96,7 @@ if args.input_config is not None:
 
 fdict = {}
 if args.fixed_params:
-    for p, v in zip(args.fixed_params, args.fixed_values):
-        fdict[p] = v
+    fdict = {p: v for (p, v) in zip(args.fixed_params, args.fixed_values)}
 
 class Shrinker(object):
     def __init__(self, data):
@@ -270,15 +273,39 @@ class GenUniformWaveform(object):
         self.md = q._data[-100:]
         self.md2 = q._data[0:100]
 
-    def generate(self, **kwds):
+    def generate(self, **kwds):  
         kwds.update(fdict)
-        if kwds['approximant'] in pycbc.waveform.fd_approximants():
-            ws = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
+        import numpy
+        from pycbc.waveform.spa_tmplt import spa_length_in_time
+        flow = numpy.arange(self.f_lower, 100, .1)[::-1]
+        maxlen = args.max_signal_length
+        length = spa_length_in_time(mass1=kwds['mass1'], mass2=kwds['mass2'], f_lower=flow, phase_order=-1)
+
+        x = numpy.searchsorted(length, maxlen) - 1
+        l = length[x]
+        f = flow[x]
+        if kwds['approximant'] in pycbc.waveform.fd_approximants():   
+            if args.cut_wavelength:
+                #logging.info("cut wavelength is specified")
+                hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f, 
+                                                f_lower=f, f_ref=10.0, **kwds)
+                kwds['f_lower'] = f
+                
+                if 'fratio' in kwds:
+                    hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
+                    
+            else:
+                #import numpy
+                #logging.info("cut wavelength not specified")
+                ws = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
                                                 f_lower=self.f_lower, **kwds)
-            hp = ws[0]
-            hc = ws[1]
-            if 'fratio' in kwds:
-                hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
+                hp = ws[0]
+                hc = ws[1]
+                
+                kwds['f_lower'] = self.f_lower
+                
+                if 'fratio' in kwds:
+                    hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
         else:
             dt = 1.0 / args.sample_rate
             hp = pycbc.waveform.get_waveform_filter(
@@ -321,18 +348,16 @@ if args.input_file:
 
 
 def draw(rtype):
-    params = {}
 
     if rtype == 'uniform':
         if args.input_config is None:
-            for name, pmin, pmax in zip(args.params, args.min, args.max):
-                params[name] = numpy.random.uniform(pmin, pmax, size=size)
+            params = {name: numpy.random.uniform(pmin, pmax, size=size)
+                      for name, pmin, pmax in zip(args.params, args.min, args.max)}
         else:
             # `draw_samples_from_config` has its own fixed seed, so must overwrite it.
             random_seed = numpy.random.randint(low=0, high=2**32-1)
             samples = draw_samples_from_config(args.input_config, size, random_seed)
-            for name in samples.fieldnames:
-                params[name] = samples[name]
+            params = {name: samples[name] for name in samples.fieldnames}
             # Add `static_args` back.
             if static_args is not None:
                 for k in static_args.keys():
@@ -351,8 +376,7 @@ def draw(rtype):
 
         kde = gaussian_kde(bdata)
         points = kde.resample(size=size)
-        for k, v in zip(p, points):
-            params[k] = v
+        params = {k: v for k, v in zip(p, points)}
 
         # Add `static_args` back, some transformations may need them.
         if args.input_config is not None and static_args is not None:
@@ -392,8 +416,7 @@ def draw(rtype):
     else:
         l = dists_joint.contains(params)
 
-    for k in params:
-        params[k] = params[k][l]
+    params = {k: params[k][l] for k in params}
 
     return params
 
@@ -405,22 +428,19 @@ def cdraw(rtype, ts, te):
         t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
                                   args.tau0_cutoff_frequency)
         l = (t < te) & (t > ts)
-        for k in p:
-            p[k] = p[k][l]
+        p = {k: p[k][l] for k in p}
 
     i = 0
     while len(p[list(p.keys())[0]]) < size:
 
         tp = draw(rtype)
-        for k in p:
-            p[k] = numpy.concatenate([p[k], tp[k]])
+        p = {k: numpy.concatenate([p[k], tp[k]]) for k in p}
 
         if  len(p[list(p.keys())[0]]) > 0:
             t = tau0_from_mass1_mass2(p['mass1'], p['mass2'],
                                       args.tau0_cutoff_frequency)
             l = (t < te) & (t > ts)
-            for k in p:
-                p[k] = p[k][l]
+            p = {k: p[k][l] for k in p}
 
         i += 1
         if i > 1000:
@@ -433,6 +453,8 @@ def cdraw(rtype, ts, te):
 
 tau0s = args.tau0_start
 tau0e = tau0s + args.tau0_crawl
+# total_it =  args.tau0_crawl/(args.tau0_end - tau0s) 
+# completed_iterations = 0
 go = True
 
 region = 0
@@ -455,6 +477,7 @@ while tau0s < args.tau0_end:
         if r > 10:
             conv = uconv
         kloop = 0
+        
         while ((kloop == 0) or (kconv / okconv) > .5) and len(bank) > 10:
             r += 1
             kloop += 1
@@ -463,9 +486,13 @@ while tau0s < args.tau0_end:
             bank, kconv = bank.check_params(gen, params, args.minimal_match)
             logging.info("%s: Round (K) (%s): %s Size: %s conv: %s added: %s",
                          region, kloop, r, len(bank), kconv, len(bank) - blen)
+            
+#             completed_iterations += 1
+#             progress_percentage = completed_iterations / total_it
+            
             if uconv:
                 logging.info('Ratio of convergences: %2.3f' % (kconv / (uconv)))
-                logging.info('Progress: {:.0%} completed'.format(tau0s/args.tau0_end))
+                logging.info('Progress: {:.0%} completed'.format(tau0e/args.tau0_end))
 
             if kloop == 1:
                 okconv = kconv
@@ -486,4 +513,3 @@ for k in bank.keys():
     if val.dtype.char == 'U':
         val = val.astype('bytes')
     o[k] = val
-o['f_lower'] =  numpy.ones(len(val)) * args.low_frequency_cutoff
