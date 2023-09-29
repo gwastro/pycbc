@@ -1262,6 +1262,17 @@ class File(pegasus_workflow.File):
     def from_path(cls, path, attrs=None, set_pfn=False, **kwargs):
         """
         Create an output File object from path, with optional attributes.
+
+        Parameters
+        ----------
+        path: str
+            The path to the file.
+        attrs: dict
+            Set of attributes to associate with the file
+        set_pfn: bool or string, default=False
+            Assume the path is also a currently valid physical path to the
+            file. If True, the PFN is set for the 'local' site. Otherwise,
+            a string may be provided to indicate the site.
         """
         if attrs is None:
             attrs = {}
