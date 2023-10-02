@@ -417,7 +417,7 @@ class EventManager(object):
     def write_to_hdf(self, outname):
         class fw(object):
             def __init__(self, name, prefix):
-                self.f_name = name
+                self.f = h5py.File(name, 'w')
                 self.prefix = prefix
 
             def __setitem__(self, name, data):
