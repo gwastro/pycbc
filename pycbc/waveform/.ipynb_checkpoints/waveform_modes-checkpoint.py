@@ -99,7 +99,7 @@ def default_modes(approximant):
         ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]
         
     elif approximant.startswith('NRHybSur3dq8'):
-        # according to arXiv:1905.09300
+        # according to arXiv:1812.07865
         ma = [(2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (3, 3), (4, 2), (4, 3), (4, 4), (5, 5)]
     else:
         raise ValueError("I don't know what the default modes are for "
@@ -183,7 +183,7 @@ def get_nrsur_modes(**params):
     return hlms
 
 def get_nrhybsur_modes(**params):
-    """Generates NRSurrogate waveform mode-by-mode.
+    """Generates NRHybSur3dq8 waveform mode-by-mode.
 
     All waveform parameters should be provided as keyword arguments.
     Recognized parameters are listed below. Unrecognized arguments are ignored.
@@ -194,7 +194,7 @@ def get_nrhybsur_modes(**params):
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
     approximant : str
-        The approximant to generate. Must be one of the ``NRSur*`` models.
+        The approximant to generate. Must be one of the ``NRHyb*`` models.
     {delta_t}
     {mass1}
     {mass2}
