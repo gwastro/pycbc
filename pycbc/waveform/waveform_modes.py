@@ -96,11 +96,11 @@ def default_modes(approximant):
         ma += [(l, -m) for l, m in ma]
     elif approximant.startswith('NRSur7dq4'):
         # according to arXiv:1905.09300
-        ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]
-        
+        ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]        
     elif approximant.startswith('NRHybSur3dq8'):
         # according to arXiv:1812.07865
-        ma = [(2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (3, 3), (4, 2), (4, 3), (4, 4), (5, 5)]
+        ma = [(2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), 
+                (3, 3), (4, 2), (4, 3), (4, 4), (5, 5)]
     else:
         raise ValueError("I don't know what the default modes are for "
                          "approximant {}, sorry!".format(approximant))
@@ -182,6 +182,7 @@ def get_nrsur_modes(**params):
         ret = ret.next
     return hlms
 
+
 def get_nrhybsur_modes(**params):
     """Generates NRHybSur3dq8 waveform mode-by-mode.
 
@@ -211,7 +212,7 @@ def get_nrhybsur_modes(**params):
         Dictionary of ``(l, m)`` -> ``(h_+, -h_x)`` ``TimeSeries``.
     """
     laldict = _check_lal_pars(params)
-    ret = lalsimulation.SimIMRNRHybSur3dq8Modes(
+    ret_ = lalsimulation.SimIMRNRHybSur3dq8Modes(
         params['delta_t'],
         params['mass1']*lal.MSUN_SI,
         params['mass2']*lal.MSUN_SI,
@@ -221,11 +222,11 @@ def get_nrhybsur_modes(**params):
         params['distance']*1e6*lal.PC_SI, laldict
     )
     hlms = {}
-    while ret:
-        hlm = TimeSeries(ret.mode.data.data, delta_t=ret.mode.deltaT,
-                         epoch=ret.mode.epoch)
-        hlms[ret.l, ret.m] = (hlm.real(), hlm.imag())
-        ret = ret.next
+    while ret_:
+        hlm = TimeSeries(ret_.mode.data.data, delta_t=ret_.mode.deltaT,
+                         epoch=ret_.mode.epoch)
+        hlms[ret_.l, ret_.m] = (hlm.real(), hlm.imag())
+        ret_ = ret_.next
     return hlms
 
 
@@ -269,12 +270,16 @@ def get_imrphenomxh_modes(**params):
     return hlms
 
 
-_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes, 'NRHybSur3dq8': get_nrhybsur_modes
+_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes, 
+                     'NRHybSur3dq8': get_nrhybsur_modes
                      }
 _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
                      }
+
+
 # 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented
 # LAL function do not split strain mode by mode
+
 
 def fd_waveform_mode_approximants():
     """Frequency domain approximants that will return separate modes."""
