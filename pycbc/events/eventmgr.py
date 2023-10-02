@@ -417,7 +417,7 @@ class EventManager(object):
     def write_to_hdf(self, outname):
         class fw(object):
             def __init__(self, name, prefix):
-                self.f = h5py.File(name, 'w')
+                self.f_name = name
                 self.prefix = prefix
 
             def __setitem__(self, name, data):
@@ -550,6 +550,8 @@ class EventManager(object):
                             numpy.array([g[1] for g in gating_info[gate_type]])
                     f['gating/' + gate_type + '/pad'] = \
                             numpy.array([g[2] for g in gating_info[gate_type]])
+
+        f.f.close()
 
 
 class EventManagerMultiDetBase(EventManager):
