@@ -1733,6 +1733,32 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         logr_s += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return logr_s
 
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the statistic for a single detector candidate
+
+        This calls back to the Parent class and then applies the chirp mass
+        weighting factor.
+
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the single detector triggers.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
+            self,
+            single_info,
+            **kwargs)
+        rank_sngl += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
+        return rank_sngl
+
     def single(self, trigs):
         """
         Calculate the necessary single detector information
@@ -1847,6 +1873,16 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         with h5py.File(self.files[kname + '-kde_file'], 'r') as kde_file:
             self.kde_by_tid[kname + '_kdevals'] = kde_file['data_kde'][:]
 
+    def kde_ratio(self):
+        """
+        Calculate the weighting factor according to the ratio of the
+        signal and template KDE lookup tables
+        """
+        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
+        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
+
+        return numpy.log(signal_kde / template_kde)
+
     def logsignalrate(self, stats, shift, to_shift):
         """
         Calculate the normalized log rate density of signals via lookup.
@@ -1870,10 +1906,32 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, shift,
                                                        to_shift)
-        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
-        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
-        logr_s += numpy.log(signal_kde / template_kde)
+        logr_s += self.kde_ratio()
+
         return logr_s
+
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the statistic for a single detector candidate
+
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the single detector triggers.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
+            self,
+            single_info,
+            **kwargs)
+        rank_sngl += self.kde_ratio()
+        return rank_sngl
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
         """
@@ -2082,12 +2140,28 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         for kname in self.kde_names:
             ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
 
+    def kde_ratio(self):
+        """
+        Inherited, see docstring for ExpFitFgBgKDEStatistic.kde_signalrate
+        """
+        return ExpFitFgBgKDEStatistic.kde_ratio(self)
+
     def logsignalrate(self, stats, shift, to_shift):
         """
         Inherited, see docstring for ExpFitFgBgKDEStatistic.logsignalrate
         """
         return ExpFitFgBgKDEStatistic.logsignalrate(self, stats, shift,
                                                     to_shift)
+
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
+        """
+        Inherited, see docstring for ExpFitFgBgKDEStatistic.rank_stat_single
+        """
+        return ExpFitFgBgKDEStatistic.rank_stat_single(
+            self,
+            single_info,
+            **kwargs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
         """
