@@ -546,7 +546,7 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     if trig_id is not None:
         node.add_opt('--trigger-id', str(trig_id))
     if title is not None:
-        node.add_opt('--title', str(title))
+        node.add_opt('--title', f'"{str(title)}"')
     if file_substring is not None:
         node.add_opt('--statmap-file-subspace-name', file_substring)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
@@ -569,7 +569,7 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
     node.add_opt('--trigger-id', str(trigger_id))
     node.add_opt('--instrument', ifo)
     if title is not None:
-        node.add_opt('--title', str(title))
+        node.add_opt('--title', f'"{str(title)}"')
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     files += node.output_files
