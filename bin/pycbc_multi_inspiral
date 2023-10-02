@@ -19,6 +19,10 @@
 """
 Find multi-detector gravitational wave triggers and calculate the
 coherent SNRs and related statistics.
+
+To see an example on how to analyze the GW170817 event using this executable,
+take a look at:
+https://github.com/gwastro/pycbc/blob/master/examples/multi_inspiral/run.sh
 """
 
 import logging
@@ -36,6 +40,10 @@ from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
 from pycbc.vetoes import sgchisq
+
+
+# The following block of lines sets up the command-line interface (CLI) for the
+# pycbc_multi_inspiral executable.
 time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("-V", "--verbose", action="store_true",
@@ -74,7 +82,7 @@ parser.add_argument("--bank-veto-bank-file", type=str, help="Path to the "
                     "bank file used to compute the the bank chi-square veto.")
 parser.add_argument("--chisq-bins", default=0)
 # Commenting out options which are not yet implemented
-# parser.add_argument("--chisq-threshold", type=float, default=0) 
+# parser.add_argument("--chisq-threshold", type=float, default=0)
 # parser.add_argument("--chisq-delta", type=float, default=0)
 parser.add_argument("--autochi-number-points", type=int, default=0)
 parser.add_argument("--autochi-stride", type=int, default=0)
@@ -120,7 +128,7 @@ parser.add_argument("--trigger-time", type=int,
                     help="Time of the GRB, used to set the antenna patterns.")
 parser.add_argument("--projection", default="standard",
                     choices=["standard", "left", "right", "left+right"],
-                    help="Choice of projection matrix. 'left' and 'right' " 
+                    help="Choice of projection matrix. 'left' and 'right' "
                          "correspond to face-away and face-on")
 parser.add_argument("--num-slides", type=int, default=0,
                     help="Number of time slides to perform.")
@@ -136,20 +144,78 @@ opt.insert_optimization_option_group(parser)
 inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 sgchisq.SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
-init_logging(args.verbose)
+init_logging(args.verbose) # takes the --verbose option -> (bool)
 # Set GRB time variable for convenience
-t_gps = args.trigger_time
+t_gps = args.trigger_time # takes the --trigger-time option -> (float)
+# Put the ifos in alphabetical order so they are always called in
+# the same order. Takes the --instruments option -> (list of str)
 # Put the ifos in alphabetical order so they are always called in
 # the same order.
 args.instruments.sort()
-strain.verify_strain_options_multi_ifo(args, parser, args.instruments)
+# The following class verification methods are used to check whether input CLI
+# options provided by parser to pycbc.strain, pycbc.strain.StrainSegments,
+# pycbc.psd, pycbc.scheme & pycbc.fft modules are sane.
+# pycbc.strain CLI verifier:
+#    the class methods "verify_strain_options_multi_ifo" &
+#                      "verify_segment_options_multi_ifo"
+#    both rely on pycbc.types "required_opts_multi_ifo" to check the CLI options
+# Both methods take the --instruments option -> (list of str)
+strain.verify_strain_options_multi_ifo(
+                                      args, parser, args.instruments)
 strain.StrainSegments.verify_segment_options_multi_ifo(
-        args, parser, args.instruments)
-psd.verify_psd_options_multi_ifo(args, parser, args.instruments)
+                                      args, parser, args.instruments)
+# The pycbc.psd CLI verifier:
+#       relies on:
+#	   ensure_one_opt_multi_ifo -> ensures only options for one
+#                                      detector are defined at a time.
+#          required_opts_multi_ifo  -> used only if psd_estimation is turned on.
+#                                      Checks that CLI options are sane.
+# The following method takes the --instruments option -> (list of str)
+psd.verify_psd_options_multi_ifo(
+                                args, parser, args.instruments)
+# The pycbc.scheme CLI verifier:
+#       these options are used below by the context manager "ctx"
+#       to properly manage resources without memory leaks
+# This method takes as input the option
+# --processing-scheme as name:N -> (str:int)
+# where name can be either mkl, cpu.
+# N is the number of threads(mkl) or CPUs(cpu)
+# NOTE:--processing-scheme can also be set as cuda for GPU usage.
+# However, the cuda scheme breaks the interaction with lalframe.
 scheme.verify_processing_options(args, parser)
+# The pycbc.fft CLI verifier takes the following options:
+# --fft-measure-level -> (int [0,1,2,3])
+# --fftw-import-system_wisdom -> (flag)
+# --fftw-input-float-wisdom-file -> (str)
+# --fftw-input-double-wisdom-file -> (str)
+# --fftw-threads-backend -> (str ['openmp','pthreads', 'unthreaded'])
 fft.verify_fft_options(args, parser)
+# inj_filter_rejector is a Dictionary of "InjFilterRejector" objects
+# it avoids processing an injection with a template that is
+# known to differ significantly from it in terms of chirp time
+# to see if the filter is being used, use for example:
+#       print(inj_filter_rejector['H1'].enabled)
+# This functionality is not used in the GW170817 example, to configure it, see:
+# https://pycbc.org/pycbc/latest/html/_modules/pycbc/inject
+# /injfilterrejector.html#InjFilterRejector
 inj_filter_rejector = inject.InjFilterRejector.from_cli_multi_ifos(
     args, args.instruments)
+# strain_dict is a Dictionary containing "timeseries" objects. each of them
+# corresponds to the strain each detectors.
+# strain data is taken from args.gps_start_time to args.gps_end_time
+# using the sampling rate args.sample_rate
+# relevant inputs for segment computation:
+#  --trig-end-time
+#  --trig-start-time
+#  --segment-length
+#  --segment-start-pad
+#  --segment-end-pad
+# NOTE: currently setting the option --segment-length 128 breaks the example in:
+# https://github.com/gwastro/pycbc/blob/master/examples/multi_inspiral/run.sh
+# Moreover, its been noticed that certain combinations of --segment-start-pad,
+# --segment-end-pad & --segment-length cause the segment_width computed in:
+# master/pycbc/strain/strain.py to have values <=0.
+# assert statements needed. seg_pad should not exceed the seg_len.
 strain_dict = strain.from_cli_multi_ifos(
     args, args.instruments, inj_filter_rejector, dyn_range_fac=DYN_RANGE_FAC)
 strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
@@ -160,6 +226,9 @@ with ctx:
     # Set some often used variables for easy access
     flow = args.low_frequency_cutoff
     flow_dict = defaultdict(lambda : flow)
+    # The following for loop is used to check whether
+    # the sampling rate, flen and tlen agree for all detectors
+    # taking the zeroth detector in the list as a reference.
     for count, ifo in enumerate(args.instruments):
         if count == 0:
             sample_rate = strain_dict[ifo].sample_rate
@@ -180,12 +249,17 @@ with ctx:
                 err_msg = "Sample rate, frequency length and time length "
                 err_msg += "must all be consistent across ifos."
                 raise ValueError(err_msg)
+    # segments is a dictionary of "frequency domain" objects, each
+    # of which is the Fourier transform of the segments in strain_segments_dict
     logging.info("Making frequency-domain data segments")
     segments = {
         ifo: strain_segments_dict[ifo].fourier_segments()
         for ifo in args.instruments
         }
+    # The timedomain segments dictionary is deleted to save memory.
     del strain_segments_dict
+    # The follwowing pycbc.psd method
+    # associates PSDs to segments for all ifos when using the multi-detector CLI
     psd.associate_psds_to_multi_ifo_segments(
         args, segments, strain_dict, flen, delta_f, flow, args.instruments,
         dyn_range_factor=DYN_RANGE_FAC, precision='single')
@@ -194,11 +268,11 @@ with ctx:
     # change if needed. Segments is only used to get tlen etc. which is
     # same for all ifos, so just send the first ifo
     template_mem = zeros(tlen, dtype=complex64)
-    
+
     #Read the sky grid or the single sky position
     if args.sky_grid is not None and args.ra is not None and args.dec is not None:
         parser.error('Give either a sky grid or a sky position, not both')
-    
+
     if args.sky_grid is not None:
         sky_grid = h5py.File(args.sky_grid, 'r')
         ra = np.array(sky_grid['ra'])
@@ -206,16 +280,21 @@ with ctx:
     if args.ra is not None and args.dec is not None:
         ra = np.array([args.ra])
         dec = np.array([args.dec])
-    
+
     sky_positions = np.array([ra, dec])
     num_sky_positions = sky_positions.shape[1]
     positions_array = np.arange(num_sky_positions)
 
-    # Calculate time delays to each detector for each sky position and apply time slide shifts
+    # Calculate time delays to each detector and store time slide shifts
+    # in a dedicated dictionary
     slide_ids = np.arange(1 + args.num_slides)
     time_slides = {
         ifo: args.slide_shift * slide_ids * n_ifo
         for n_ifo, ifo in enumerate(args.instruments)}
+    # Given the time delays in time_slides, the following dictionary returns the
+    # time delay indices evaluated wrt the geocenter:
+    # (time delay from geocenter + timeslide)*sampling_rate
+    # BOTTLENECK WHEN EVALUATING THE FOLLOWING EXPRESSIONS***
     time_delay_idx = {
             slide: {
                 position_index: {
@@ -229,10 +308,10 @@ with ctx:
                 } for position_index in positions_array
             } for slide in slide_ids
         }
-    
+
     # Matched filter each ifo. Don't cluster here for a coherent search.
     # Clustering happens at the end of the template loop.
-    # FIXME: The single detector SNR threshold should not necessarily be
+    # NOTE: The single detector SNR threshold should not necessarily be
     #        applied to every IFO (usually only 2 most sensitive in
     #        network)
     matched_filter = {
@@ -243,6 +322,9 @@ with ctx:
             upsample_threshold=args.upsample_threshold,
             upsample_method=args.upsample_method, cluster_function='symmetric')
         for ifo in args.instruments}
+    # Vetoes
+    # The existing SingleDetPowerChisq can calculate the single detector
+    # chisq for multiple ifos, so just use that directly.
     logging.info("Initializing signal-based vetoes.")
     # The existing SingleDetPowerChisq can calculate the single detector
     # chisq for multiple ifos, so just use that directly.
@@ -256,10 +338,13 @@ with ctx:
     autochisq = vetoes.SingleDetAutoChisq(
         args.autochi_stride, args.autochi_number_points,
         onesided=args.autochi_onesided)
+    # Here we take all frequency-domain segments and whiten them
+    # dividing by the psd estimate
     logging.info("Overwhitening frequency-domain data segments")
     for ifo in args.instruments:
         for seg in segments[ifo]:
             seg /= seg.psd
+    # The following dicts are used to initialize and feed the event manager
     ifo_out_types = {
         'time_index': int,
         'ifo': int, # IFO is stored as an int internally!
@@ -301,7 +386,7 @@ with ctx:
         'coherent_snr': None,
         'null_snr': None,
         'nifo': None,
-        'my_network_chisq': None, 
+        'my_network_chisq': None,
         'reweighted_snr': None,
         'slide_id': int
         }
@@ -310,6 +395,7 @@ with ctx:
         args, args.instruments, ifo_names,
         [ifo_out_types[n] for n in ifo_names], network_names,
         [network_out_types[n] for n in network_names])
+    # Template bank: filtering and thinning
     logging.info("Read in template bank")
     bank = waveform.FilterBank(
         args.bank_file, flen, delta_f, complex64, low_frequency_cutoff=flow,
@@ -317,6 +403,7 @@ with ctx:
         approximant=args.approximant, out=template_mem)
     # Use injfilterrejector to reduce the bank to only those templates that
     # might actually find something
+    # if inj_filter_rejector[args.instruments[0]].enabled ****
     n_bank = len(bank)
     nfilters = 0
     logging.info("Full template bank size: %d", n_bank)
@@ -325,7 +412,7 @@ with ctx:
     if not len(bank) == n_bank:
         n_bank = len(bank)
         logging.info("Template bank size after thinning: %d", n_bank)
-   
+
     # Antenna patterns
     antenna_patterns = [[[0 for i in range(2)] for position_index in positions_array] for i in range(len(args.instruments))]
     for i, ifo in enumerate(args.instruments):
@@ -342,7 +429,7 @@ with ctx:
         for s_num,stilde in enumerate(segments[args.instruments[0]]):
             stilde = {ifo : segments[ifo][s_num] for ifo in args.instruments}
             # Filter check checks the 'inj_filter_rejector' options to
-            # determine whether to filter this template/segment 
+            # determine whether to filter this template/segment
             # if injections are present.
             analyse_segment = True
             for ifo in args.instruments:
@@ -359,13 +446,15 @@ with ctx:
                 ifo : template.sigmasq(segments[ifo][s_num].psd)
                 for ifo in args.instruments}
             sigma = {ifo : np.sqrt(sigmasq[ifo]) for ifo in args.instruments}
-            # Every time s_num is zero or we skip the segment, we run new 
+            # Every time s_num is zero or we skip the segment, we run new
             # template to increment the template index
             if s_num==0:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
             if not analyse_segment: continue
             logging.info(
                 "Analyzing segment %d/%d", s_num + 1, len(segments[ifo]))
+            # The following dicts are created to store copies of the
+            # matched filtering results computed below
             snr_dict = dict.fromkeys(args.instruments)
             norm_dict = dict.fromkeys(args.instruments)
             corr_dict = dict.fromkeys(args.instruments)
@@ -382,22 +471,32 @@ with ctx:
                     "Filtering template %d/%d, ifo %s", t_num + 1, n_bank, ifo)
                 # No clustering in the coherent search until the end.
                 # The correlation vector is the FFT of the snr (so inverse
-                # FFT it to get the snr). 
+                # FFT it to get the snr).
+              	# The following lines Unpack & store copies of the matched
+              	# filtering results for the current segment and template.
                 snr_ts, norm, corr, ind, snrv = \
                      matched_filter[ifo].matched_filter_and_cluster(
                          s_num, template.sigmasq(stilde[ifo].psd), window=0)
+                # snr time series for each ifo
                 snr_dict[ifo] = (
                         snr_ts[matched_filter[ifo].segments[s_num].analyze]
                         * norm)
                 norm_dict[ifo] = norm
+                # The correlation vector for each ifo. it is the  FFT of the snr
+                # (so inverse FFT it to get the snr).
                 corr_dict[ifo] = corr.copy()
+                # Trigger indices list for each ifo
                 idx[ifo] = ind.copy()
+                # Trigger snr list for each ifo
                 snrv_dict[ifo] = snrv.copy()
+		        # Normalized trigger snr list for each ifo
                 snr[ifo] = snrv * norm
-            
-            # FIXME: wrong comment?
+
+            # NOTE: instead, check the lenght of either snrv_dict[ifo] or idx[ifo]
+            # for all ifos, not only the 0th one.
             # Move onto next segment if there are no triggers.
             if len(ifo_list)==0: continue
+            # Short timeslides start here !
             # Loop through slides, staring with the zero-lag
             for slide in range(args.num_slides + 1):
                 logging.info(
@@ -409,8 +508,8 @@ with ctx:
                     # Even if we have none, need to keep an empty dictionary.
                     # Only do this if idx doesn't get time shifted out of the
                     # time we are looking at, i.e., require
-                    # idx[ifo] - time_delay_idx[slide][position_index][ifo] to be in
-                    # (0, len(snr_dict[ifo]))
+                    # idx[ifo] - time_delay_idx[slide][position_index][ifo]
+                    # to be in  (0, len(snr_dict[ifo]))
                     idx_dict = {
                     ifo: idx[ifo][
                         np.logical_and(
@@ -420,7 +519,7 @@ with ctx:
                         ]
                     for ifo in args.instruments
                     }
-                    
+
                     # Find triggers that are coincident (in geocent time) in
                     # multiple ifos. If a single ifo analysis then just use the
                     # indexes from that ifo.
