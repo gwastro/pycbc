@@ -53,6 +53,10 @@ parser.add_argument('--ifar-threshold', type=float, default=None,
 parser.add_argument('--maximum-decisive-snr', type=float, default=None,
                     help="If given, only followup injections where the "
                          "decisive SNR is smaller than this value.")
+parser.add_argument('--closest-trigger-maximum', type=float, default=2.,
+                    help="Maximum time difference between the missed "
+                         "injection and the closest trigger to display, "
+                         "seconds. Default=2.")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -159,8 +163,8 @@ def nearby_missedinj(endtime):
     boolean array
     True for incidces which are close to any missed injection
     """
-    left = numpy.searchsorted(missed_inj_times - 1, endtime)
-    right = numpy.searchsorted(missed_inj_times + 1, endtime)
+    left = numpy.searchsorted(missed_inj_times - args.closest_trigger_maximum, endtime)
+    right = numpy.searchsorted(missed_inj_times + args.closest_trigger_maximum, endtime)
     return numpy.logical_not(left == right)
 
 trigger_times = {}
@@ -216,9 +220,11 @@ for num_event in range(num_events):
     for sngl in single_triggers:
         ifo = sngl.ifo
         red_idx = numpy.argmin(abs(time - trigger_times[ifo]))
+        if trigger_times[ifo][red_idx] - time > args.closest_trigger_maximum:
+            # If there are no triggers in the defined maximum window,
+            # do not mention them
+            continue
         closest_trigger_id = trigger_time_idx[ifo][red_idx]
-        print(closest_trigger_id)
-        print(trigger_times[ifo][red_idx] - time)
         sngl_info = mini.make_sngl_ifo(workflow, sngl, tmpltbank_file,
             closest_trigger_id, args.output_dir, ifo,
             title=f"Parameters of {ifo} trigger closest in time",
