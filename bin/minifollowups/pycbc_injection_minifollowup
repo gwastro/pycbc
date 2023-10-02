@@ -19,13 +19,13 @@
 import os, argparse, numpy, logging, h5py, copy
 import pycbc.workflow as wf
 from pycbc.types import MultiDetOptionAction
-from pycbc.events import select_segments_by_definer, coinc
+from pycbc.events import select_segments_by_definer, coinc, start_end_to_segments
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file
 import pycbc.version, pycbc.pnutils
-from pycbc.io.hdf import SingleDetTriggers
+from pycbc.io.hdf import SingleDetTriggers, HFile
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -141,11 +141,37 @@ except KeyError:
     sorting = dec_chirp_dist.argsort()  # ascending order of dec chirp distance
 
 # Get the trigger event times
+# But only ones which are within a few second of the missed injections
+missed_inj_times = numpy.sort(f['injections/tc'][:][missed])
+
+def nearby_missedinj(endtime):
+    """
+    Convenience function to check if trigger times are within a small
+    window of the injections
+
+    Parameters
+    ----------
+    endtime: numpy array
+    Trigger times to be chacked against the missed injection times
+
+    Returns
+    -------
+    boolean array
+    True for incidces which are close to any missed injection
+    """
+    left = numpy.searchsorted(missed_inj_times - 1, endtime)
+    right = numpy.searchsorted(missed_inj_times + 1, endtime)
+    return numpy.logical_not(left == right)
+
 trigger_times = {}
+trigger_time_idx = {}
 for trig in single_triggers:
     ifo = trig.ifo
-    with h5py.File(trig.lfn, 'r') as trig_f:
-        trigger_times[ifo] = trig_f[ifo]['end_time'][:]
+    with HFile(trig.lfn, 'r') as trig_f:
+        trigger_time_idx[ifo], trigger_times[ifo] = trig_f.select(
+                nearby_missedinj,
+                f'{ifo}/end_time',
+                return_indices=True)
 
 if len(missed) < num_events:
     num_events = len(missed)
@@ -189,7 +215,10 @@ for num_event in range(num_events):
                       tags=args.tags + [str(num_event)])[0],)]
     for sngl in single_triggers:
         ifo = sngl.ifo
-        closest_trigger_id = numpy.argmin(abs(time - trigger_times[ifo]))
+        red_idx = numpy.argmin(abs(time - trigger_times[ifo]))
+        closest_trigger_id = trigger_time_idx[ifo][red_idx]
+        print(closest_trigger_id)
+        print(trigger_times[ifo][red_idx] - time)
         sngl_info = mini.make_sngl_ifo(workflow, sngl, tmpltbank_file,
             closest_trigger_id, args.output_dir, ifo,
             title=f"Parameters of {ifo} trigger closest in time",
