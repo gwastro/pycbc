@@ -99,7 +99,7 @@ def default_modes(approximant):
         ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]        
     elif approximant.startswith('NRHybSur3dq8'):
         # according to arXiv:1812.07865
-        ma = [(2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), 
+        ma = [(2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2),\
                 (3, 3), (4, 2), (4, 3), (4, 4), (5, 5)]
     else:
         raise ValueError("I don't know what the default modes are for "
