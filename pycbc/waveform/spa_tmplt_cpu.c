@@ -9222,7 +9222,7 @@ static PyObject* __Pyx_PyFunction_FastCallNoKw(PyCodeObject *co, PyObject **args
     Py_ssize_t i;
     PyObject *result;
     assert(globals != NULL);
-    /* XXX Perhaps we should create a specialized
+    /* Perhaps we should create a specialized
        PyFrame_New() that doesn't take locals, but does
        take builtins without sanity checking them.
        */
