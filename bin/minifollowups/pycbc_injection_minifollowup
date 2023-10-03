@@ -227,8 +227,10 @@ for num_event in range(num_events):
                       file_substring='found_after_vetoes',
                       title="Details of closest event",
                       tags=args.tags + [str(num_event)])[0],)]
+
     for sngl in single_triggers:
         # Find the triggers close to this injection at this IFO
+        ifo = sngl.ifo
         trig_tdiff = abs(inj_params[ifo + '_end_time'] - trigger_times[ifo])
         nearby = trig_tdiff < args.nearby_triggers_window
         if not any(nearby):
