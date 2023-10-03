@@ -53,10 +53,10 @@ parser.add_argument('--ifar-threshold', type=float, default=None,
 parser.add_argument('--maximum-decisive-snr', type=float, default=None,
                     help="If given, only followup injections where the "
                          "decisive SNR is smaller than this value.")
-parser.add_argument('--closest-trigger-maximum', type=float, default=2.,
+parser.add_argument('--nearby-triggers-window', type=float, default=0.05,
                     help="Maximum time difference between the missed "
-                         "injection and the closest trigger to display, "
-                         "seconds. Default=2.")
+                         "injection and the loudest SNR nearby trigger to "
+                         "display, seconds. Default=0.05")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -144,11 +144,15 @@ except KeyError:
     dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
     sorting = dec_chirp_dist.argsort()  # ascending order of dec chirp distance
 
-# Get the trigger event times
-# But only ones which are within a few second of the missed injections
+# Get the trigger SNRs and times
+# But only ones which are within a small window of the missed injection
 missed_inj_times = numpy.sort(f['injections/tc'][:][missed])
 
-def nearby_missedinj(endtime):
+# Note: Adding 2 * Earth diameter in light seconds to the window here
+# to allow for different IFO's arrival times of the injection
+safe_window = args.nearby_triggers_window + 0.085
+
+def nearby_missedinj(endtime, snr):
     """
     Convenience function to check if trigger times are within a small
     window of the injections
@@ -156,25 +160,31 @@ def nearby_missedinj(endtime):
     Parameters
     ----------
     endtime: numpy array
-    Trigger times to be chacked against the missed injection times
+    Trigger times to be checked against the missed injection times
+
+    snr: numpy array
+    (Unused, but to prevent a TypeError) SNR of the triggers
 
     Returns
     -------
     boolean array
-    True for incidces which are close to any missed injection
+    True for triggers which are close to any missed injection
     """
-    left = numpy.searchsorted(missed_inj_times - args.closest_trigger_maximum, endtime)
-    right = numpy.searchsorted(missed_inj_times + args.closest_trigger_maximum, endtime)
-    return numpy.logical_not(left == right)
+    left = numpy.searchsorted(missed_inj_times - safe_window, endtime)
+    right = numpy.searchsorted(missed_inj_times + safe_window, endtime)
+    return left != right
 
+trigger_idx = {}
+trigger_snrs = {}
 trigger_times = {}
-trigger_time_idx = {}
 for trig in single_triggers:
     ifo = trig.ifo
     with HFile(trig.lfn, 'r') as trig_f:
-        trigger_time_idx[ifo], trigger_times[ifo] = trig_f.select(
+        trigger_idx[ifo], trigger_times[ifo], trigger_snrs[ifo] = \
+            trig_f.select(
                 nearby_missedinj,
                 f'{ifo}/end_time',
+                f'{ifo}/snr',
                 return_indices=True)
 
 if len(missed) < num_events:
@@ -218,18 +228,24 @@ for num_event in range(num_events):
                       title="Details of closest event",
                       tags=args.tags + [str(num_event)])[0],)]
     for sngl in single_triggers:
-        ifo = sngl.ifo
-        red_idx = numpy.argmin(abs(time - trigger_times[ifo]))
-        if trigger_times[ifo][red_idx] - time > args.closest_trigger_maximum:
-            # If there are no triggers in the defined maximum window,
-            # do not mention them
+        # Find the triggers close to this injection at this IFO
+        trig_tdiff = abs(inj_params[ifo + '_end_time'] - trigger_times[ifo])
+        nearby = trig_tdiff < args.nearby_triggers_window
+        if not any(nearby):
+            # If there are no triggers in the defined window,
+            # do not print any info
             continue
-        closest_trigger_id = trigger_time_idx[ifo][red_idx]
+        # Find the loudest SNR in this window
+        loudest = numpy.argmax(trigger_snrs[ifo][nearby])
+        # Convert to the indexin the trigger file
+        nearby_trigger_idx = trigger_idx[ifo][nearby][loudest]
+        # Make the info snippet
         sngl_info = mini.make_sngl_ifo(workflow, sngl, tmpltbank_file,
-            closest_trigger_id, args.output_dir, ifo,
-            title=f"Parameters of {ifo} trigger closest in time",
+            nearby_trigger_idx, args.output_dir, ifo,
+            title=f"Parameters of loudest SNR nearby trigger in {ifo}",
             tags=args.tags + [str(num_event)])[0]
         layouts += [(sngl_info,)]
+
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
