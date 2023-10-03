@@ -1662,6 +1662,10 @@ class LiveBatchMatchedFilter(object):
             veto_info = [tmp[i] for i in sort]
 
         result = self._process_vetoes(result, veto_info)
+        # TODO: process_vetoes contains 'signal based vetoes'
+        #       this should probably also include psdvar vetoes??
+        #       maybe a bit of a change for process vetoes to contain
+        #       process signal based + process psd var
         return result
 
     def _process_vetoes(self, results, veto_info):
@@ -1670,6 +1674,8 @@ class LiveBatchMatchedFilter(object):
         dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
         sg_chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32,
                                ndmin=1)
+        psd_var_val = numpy.array(numpy.zeros(len(veto_info)), numpy.float32,
+                                  ndmin=1)
         results['chisq'] = chisq
         results['chisq_dof'] = dof
         results['sg_chisq'] = sg_chisq
