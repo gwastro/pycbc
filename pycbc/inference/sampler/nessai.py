@@ -77,6 +77,7 @@ class NessaiSampler(BaseSampler):
         return samples
 
     def run(self):
+        """Run the sampler"""
         out_dir = os.path.join(
             os.path.dirname(os.path.abspath(self.checkpoint_file)),
             "outdir_nessai",
@@ -111,6 +112,11 @@ class NessaiSampler(BaseSampler):
             )
         else:
             importance_nested_sampler = False
+
+        if importance_nested_sampler is True:
+            raise NotImplementedError(
+                "Importance nested sampler is not currently supported"
+            )
 
         # Determine all possible keyword arguments that are not hardcoded
         default_kwds, default_run_kwds = nessai.utils.settings.get_all_kwargs(
@@ -174,29 +180,32 @@ class NessaiSampler(BaseSampler):
     ):
         """Sets up the starting point for the sampler.
 
-        Should also set the sampler's random state.
+        This is not used for nessai.
         """
         pass
 
     def checkpoint(self):
+        """Checkpoint the sampler"""
         self._sampler.ns.checkpoint()
         for fn in [self.checkpoint_file, self.backup_file]:
             self.write_results(fn)
 
     def resume_from_checkpoint(self):
+        # nessai will from its own checkpoint file
         pass
 
     def finalize(self):
+        """Finalize sampling"""
         logz = self._sampler.log_evidence
         dlogz = self._sampler.log_evidence_error
 
-        for fn in [self.checkpoint_file]:
-            with self.io(fn, "a") as fp:
-                fp.write_logevidence(logz, dlogz)
+        logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
+
         for fn in [self.checkpoint_file, self.backup_file]:
             self.write_results(fn)
 
     def write_results(self, filename):
+        """Write the results to a given file"""
         with self.io(filename, "a") as fp:
             fp.write_samples(self.samples, self.model.sampling_params)
             fp.write_samples(self.model_stats)
@@ -266,3 +275,13 @@ class NessaiModel(nessai.model.Model):
         """Compute the log-likelihood"""
         self.model.update(**self.to_dict(x))
         return getattr(self.model, self.loglikelihood_function)
+
+    def from_unit_hypercube(self, x):
+        """Map from the unit-hypercube to the prior."""
+        # Needs to be implemented for importance nested sampler
+        raise NotImplementedError
+
+    def to_unit_hypercube(self, x):
+        """Map to the unit-hypercube to the prior."""
+        # Needs to be implemented for importance nested sampler
+        raise NotImplementedError
