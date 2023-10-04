@@ -44,7 +44,7 @@ class NessaiSampler(BaseSampler):
         self.run_kwds = run_kwds if run_kwds is not None else {}
 
         nessai.utils.multiprocessing.initialise_pool_variables(self.model_call)
-        self.pool = choose_pool(mpi=use_mpi, processes=nprocesses) 
+        self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         self.nprocesses = nprocesses
 
         self._sampler = None
@@ -73,13 +73,13 @@ class NessaiSampler(BaseSampler):
             self.model.sampling_params,
         )
         samples["logwt"] = self._sampler.ns.state.log_posterior_weights
-        samples["loglikelihood"] = self._sampler.nested_samples["loglikelihood"]
+        samples["loglikelihood"] = self._sampler.nested_samples["logL"]
         return samples
 
     def run(self):
         out_dir = os.path.join(
             os.path.dirname(os.path.abspath(self.checkpoint_file)),
-            "nessai",
+            "outdir_nessai",
         )
         if self._sampler is None:
             self._sampler = nessai.flowsampler.FlowSampler(
