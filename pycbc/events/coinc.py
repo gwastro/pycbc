@@ -27,6 +27,7 @@ coincident triggers.
 
 import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
 from pycbc.detector import Detector, ppdets
+from pycbc.conversions import mchirp_from_mass1_mass2
 from .eventmgr_cython import coincbuffer_expireelements
 from .eventmgr_cython import coincbuffer_numgreater
 from .eventmgr_cython import timecoincidence_constructidxs
@@ -877,6 +878,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
+        self.coinc_threshold = coinc_threshold
 
         self.ifos = ifos
         if len(self.ifos) != 2:
@@ -971,6 +973,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                    ifar_limit=args.background_ifar_limit,
                    timeslide_interval=args.timeslide_interval,
                    ifos=ifos,
+                   coinc_threshold=args.coinc_threshold,
                    **kwargs)
 
     @staticmethod
@@ -1097,9 +1100,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
             if len(trigs['snr'] > 0):
                 trigsc = copy.copy(trigs)
+                trigsc['ifo'] = ifo
                 trigsc['chisq'] = trigs['chisq'] * trigs['chisq_dof']
                 trigsc['chisq_dof'] = (trigs['chisq_dof'] + 2) / 2
                 single_stat = self.stat_calculator.single(trigsc)
+                del trigsc['ifo']
             else:
                 single_stat = numpy.array([], ndmin=1,
                               dtype=self.stat_calculator.single_dtype)
@@ -1170,6 +1175,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 trig_stat = trigs['stat'][i]
                 trig_time = trigs['end_time'][i]
                 template = trigs['template_id'][i]
+                mass1 = trigs['mass1'][i]
+                mass2 = trigs['mass2'][i]
+                mchirp = mchirp_from_mass1_mass2(mass1, mass2)
 
                 # Get current shift_ifo triggers in the same template
                 times = self.singles[shift_ifo].data(template)['end_time']
@@ -1206,12 +1214,18 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 # ranking statistic values.
                 sngls_list = [[fixed_ifo, self.trig_stat_memory[:len(i1)]],
                               [shift_ifo, stats[i1]]]
-                c = self.stat_calculator.rank_stat_coinc(
-                    sngls_list,
-                    slide,
-                    self.timeslide_interval,
-                    shift_vec
-                )
+
+                if len(i1):
+                    c = self.stat_calculator.rank_stat_coinc(
+                        sngls_list,
+                        slide,
+                        self.timeslide_interval,
+                        shift_vec,
+                        time_addition=self.coinc_threshold,
+                        mchirp=mchirp
+                    )
+                else:
+                    c = numpy.array([])
 
                 # Store data about new triggers: slide index, stat value and
                 # times.
