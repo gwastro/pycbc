@@ -97,10 +97,10 @@ def default_modes(approximant):
     elif approximant.startswith('NRSur7dq4'):
         # according to arXiv:1905.09300
         ma = [(l, m) for l in [2, 3, 4] for m in range(-l, l+1)]
-        
     elif approximant.startswith('NRHybSur3dq8'):
         # according to arXiv:1812.07865
-        ma = [(2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2), (3, 3), (4, 2), (4, 3), (4, 4), (5, 5)]
+        ma = [(2, 0), (2, 1), (2, 2), (3, 0), (3, 1), (3, 2),
+              (3, 3), (4, 2), (4, 3), (4, 4), (5, 5)]
     else:
         raise ValueError("I don't know what the default modes are for "
                          "approximant {}, sorry!".format(approximant))
@@ -269,7 +269,8 @@ def get_imrphenomxh_modes(**params):
     return hlms
 
 
-_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes, 'NRHybSur3dq8': get_nrhybsur_modes
+_mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
+                     'NRHybSur3dq8': get_nrhybsur_modes,
                      }
 _mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
                      }
