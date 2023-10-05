@@ -28,6 +28,7 @@ provides additional abstraction and argument handling.
 """
 import os
 import shutil
+import logging
 import tempfile
 import subprocess
 from packaging import version
@@ -38,6 +39,8 @@ import Pegasus.api as dax
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
 
+# Get the logger associated with the Pegasus workflow import
+pegasus_logger = logging.getLogger('Pegasus')
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -315,6 +318,9 @@ class Workflow(object):
     """
     def __init__(self, name='my_workflow', directory=None, cache_file=None,
                  dax_file_name=None):
+        # Pegasus logging is fairly verbose, quieten it down a bit
+        # This sets the logger to one level less verbose than the root (pycbc) logger
+        pegasus_logger.setLevel(logging.root.level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
@@ -340,7 +346,7 @@ class Workflow(object):
             self.filename = dax_file_name
         self._adag = dax.Workflow(self.filename)
 
-        # A pegasus job version of this workflow for use if it isncluded
+        # A pegasus job version of this workflow for use if it is included
         # within a larger workflow
         self._as_job = SubWorkflow(self.filename, is_planned=False,
                                    _id=self.name)

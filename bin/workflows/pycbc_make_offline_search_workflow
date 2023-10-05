@@ -57,16 +57,15 @@ def ifo_combos(ifos):
         for ifocomb in combinations:
             yield ifocomb
 
-
-# Log to the screen until we know where the output file is
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-    level=logging.INFO)
-
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument('--verbose', action='count',
+    help="Incrementally add more verbosity")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose + 1)
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, args.workflow_name + '-main')
