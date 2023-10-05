@@ -319,7 +319,8 @@ class Workflow(object):
     def __init__(self, name='my_workflow', directory=None, cache_file=None,
                  dax_file_name=None):
         # Pegasus logging is fairly verbose, quieten it down a bit
-        # This sets the logger to one level less verbose than the root (pycbc) logger
+        # This sets the logger to one level less verbose than the root
+        # (pycbc) logger
         pegasus_logger.setLevel(logging.root.level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
