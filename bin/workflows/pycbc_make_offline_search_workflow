@@ -65,6 +65,7 @@ wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
+# By default, we do logging.info, each --verbose adds a level of verbosity
 pycbc.init_logging(args.verbose + 1)
 
 container = wf.Workflow(args, args.workflow_name)
