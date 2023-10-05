@@ -91,7 +91,7 @@ parser.add_argument("--cluster-function", choices=["findchirp", "symmetric"],
                     "'findchirp' uses a forward sliding window; 'symmetric' "
                     "will compare each window to the one before and after, keeping "
                     "only a local maximum.", default="findchirp")
-parser.add_argument("--cluster-window", type=float, default = -1,
+parser.add_argument("--cluster-window", type=float, default=0,
                     help="Length of clustering window in seconds."
                     " Set to 0 to disable clustering.")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
@@ -301,19 +301,21 @@ def template_triggers(t_num):
     return out_vals_all, tparam
 
 with ctx:
-    # The following FFTW specific options needed to wait until
-    # we were inside the scheme context.
+    if opt.fft_backends == 'fftw':
 
-    # Import system wisdom.
-    if opt.fftw_import_system_wisdom:
-        fft.fftw.import_sys_wisdom()
+        # The following FFTW specific options needed to wait until
+        # we were inside the scheme context.
 
-    # Read specified user-provided wisdom files
-    if opt.fftw_input_float_wisdom_file is not None:
-        fft.fftw.import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
+        # Import system wisdom.
+        if opt.fftw_import_system_wisdom:
+            fft.fftw.import_sys_wisdom()
 
-    if opt.fftw_input_double_wisdom_file is not None:
-        fft.fftw.import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)
+        # Read specified user-provided wisdom files
+        if opt.fftw_input_float_wisdom_file is not None:
+            fft.fftw.import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
+
+        if opt.fftw_input_double_wisdom_file is not None:
+            fft.fftw.import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)
 
     flow = opt.low_frequency_cutoff
     flen = strain_segments.freq_len
@@ -499,10 +501,11 @@ event_mgr.save_performance(ncores, len(segments), len(bank), run_time, tsetup)
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
-if opt.fftw_output_float_wisdom_file:
-    fft.fftw.export_single_wisdom_to_filename(opt.fftw_output_float_wisdom_file)
+if opt.fft_backends == 'fftw':
+    if opt.fftw_output_float_wisdom_file:
+        fft.fftw.export_single_wisdom_to_filename(opt.fftw_output_float_wisdom_file)
 
-if opt.fftw_output_double_wisdom_file:
-    fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
+    if opt.fftw_output_double_wisdom_file:
+        fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 
 logging.info("Finished")

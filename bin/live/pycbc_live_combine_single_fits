@@ -12,12 +12,17 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-import h5py, numpy as np, argparse
+"""Combine PyCBC Live single-detector trigger fitting parameters from several
+different files."""
+
+import argparse
 import logging
+import numpy as np
+import h5py
 import pycbc
 
-parser = argparse.ArgumentParser(usage="",
-    description="Combine fitting parameters from several different files")
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--trfits-files", nargs="+", required=True,
@@ -30,7 +35,7 @@ parser.add_argument("--output", required=True,
 parser.add_argument("--ifos", required=True, nargs="+",
                     help="list of ifos fo collect info for")
 
-args=parser.parse_args()
+args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
@@ -42,68 +47,80 @@ if args.conservative_percentile < 50 or \
                  "otherwise it is either not a percentile, or not "
                  "conservative.")
 
-counts_all = {ifo:[] for ifo in args.ifos}
-alphas_all = {ifo:[] for ifo in args.ifos}
-analysis_dates = []
+logging.info("%d input files", len(args.trfits_files))
 
-with h5py.File(args.trfits_files[0], 'r') as fit_f0:
-    # Store some attributes so we can check that all files are
-    # comparable
+# We only want to combine fit results if they were done with the same
+# configuration.  So start by finding the most recent fit file and reading its
+# configuration parameters.
 
-    # Keep the upper and lower bins
-    bl = fit_f0['bins_lower'][:]
-    bu = fit_f0['bins_upper'][:]
+logging.info("Determining the most recent configuration parameters")
 
-    sngl_rank = fit_f0.attrs['sngl_ranking']
-    fit_thresh = fit_f0.attrs['fit_threshold']
-    fit_func = fit_f0.attrs['fit_function']
+latest_date = None
+for f in args.trfits_files:
+    with h5py.File(f, 'r') as fit_f:
+        if latest_date is None or fit_f.attrs['analysis_date'] > latest_date:
+            latest_date = fit_f.attrs['analysis_date']
+            bl = fit_f['bins_lower'][:]
+            bu = fit_f['bins_upper'][:]
+            sngl_rank = fit_f.attrs['sngl_ranking']
+            fit_thresh = fit_f.attrs['fit_threshold']
+            fit_func = fit_f.attrs['fit_function']
 
-live_times = {ifo : [] for ifo in args.ifos}
+# Now go back through the fit files and read the actual information.  Skip the
+# files that have fit parameters inconsistent with what we found earlier.
 
+logging.info("Reading individual fit results")
+
+live_times = {ifo: [] for ifo in args.ifos}
 trigger_file_starts = []
 trigger_file_ends = []
-
-n_files = len(args.trfits_files)
-logging.info("Checking through %d files", n_files)
+counts_all = {ifo: [] for ifo in args.ifos}
+alphas_all = {ifo: [] for ifo in args.ifos}
 
 for f in args.trfits_files:
-
-    fits_f = h5py.File(f, 'r')
-    # Check that the file uses the same setup as file 0, to make sure
-    # all coefficients are comparable
-
-    assert fits_f.attrs['sngl_ranking'] == sngl_rank
-    assert fits_f.attrs['fit_threshold'] == fit_thresh
-    assert fits_f.attrs['fit_function'] == fit_func
-    assert all(fits_f['bins_lower'][:] == bl)
-    assert all(fits_f['bins_upper'][:] == bu)
-
-    # Get the time of the first/last triggers in the trigger_fits file
-    gps_last = 0
-    gps_first = np.inf
-    for ifo in args.ifos:
-        if ifo not in fits_f:
+    with h5py.File(f, 'r') as fits_f:
+        # Check that the file uses the same setup as file 0, to make sure
+        # all coefficients are comparable
+        same_conf = (fits_f.attrs['sngl_ranking'] == sngl_rank
+                     and fits_f.attrs['fit_threshold'] == fit_thresh
+                     and fits_f.attrs['fit_function'] == fit_func
+                     and all(fits_f['bins_lower'][:] == bl)
+                     and all(fits_f['bins_upper'][:] == bu))
+        if not same_conf:
+            logging.warn(
+                "Found a change in the fit configuration, skipping %s",
+                f
+            )
             continue
-        else:
+
+        # We now determine the (approximate) start/end times of the
+        # trigger_fits file via the time of the first/last triggers in it.
+        # Ideally this would be recorded exactly in the file.
+        gps_last = 0
+        gps_first = np.inf
+        for ifo in args.ifos:
+            if ifo not in fits_f:
+                continue
             trig_times = fits_f[ifo]['triggers']['end_time'][:]
             gps_last = max(gps_last, trig_times.max())
             gps_first = min(gps_first, trig_times.min())
-    trigger_file_starts.append(gps_first)
-    trigger_file_ends.append(gps_last)
+        trigger_file_starts.append(gps_first)
+        trigger_file_ends.append(gps_last)
 
-    for ifo in args.ifos:
-        if ifo not in fits_f:
-            live_times[ifo].append(0)
-            counts_all[ifo].append(-1 * np.ones_like(bl))
-            alphas_all[ifo].append(-1 * np.ones_like(bl))
-        else:
-            live_times[ifo].append(fits_f[ifo].attrs['live_time'])
-            counts_all[ifo].append(fits_f[ifo + '/counts'][:])
-            alphas_all[ifo].append(fits_f[ifo + '/fit_coeff'][:])
-            if any(np.isnan(fits_f[ifo + '/fit_coeff'][:])):
-                logging.info("nan in " + f + ", " + ifo)
-                logging.info(fits_f[ifo + '/fit_coeff'][:])
-    fits_f.close()
+        # Read the fitting parameters
+        for ifo in args.ifos:
+            if ifo not in fits_f:
+                live_times[ifo].append(0)
+                counts_all[ifo].append(-1 * np.ones_like(bl))
+                alphas_all[ifo].append(-1 * np.ones_like(bl))
+            else:
+                ffi = fits_f[ifo]
+                live_times[ifo].append(ffi.attrs['live_time'])
+                counts_all[ifo].append(ffi['counts'][:])
+                alphas_all[ifo].append(ffi['fit_coeff'][:])
+                if any(np.isnan(ffi['fit_coeff'][:])):
+                    logging.warn("nan in %s, %s", f, ifo)
+                    logging.warn(ffi['fit_coeff'][:])
 
 # Set up the date array, this is stored as an offset from the first trigger time of
 # the first file to the last trigger of the file
@@ -114,16 +131,17 @@ ad_order = np.argsort(trigger_file_starts)
 start_time_n = trigger_file_starts[ad_order[0]]
 ad = trigger_file_ends[ad_order] - start_time_n
 
-# Get the counts and alphas
+# Swap the time and bin dimensions for counts and alphas
 counts_bin = {ifo: [c for c in zip(*counts_all[ifo])] for ifo in args.ifos}
 alphas_bin = {ifo: [a for a in zip(*alphas_all[ifo])] for ifo in args.ifos}
 
-alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
-counts_out = {ifo : np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
-cons_alphas_out = {ifo : np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
-cons_counts_out = {ifo : np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
+alphas_out = {ifo: np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
+counts_out = {ifo: np.inf * np.ones(len(counts_bin[ifo])) for ifo in args.ifos}
+cons_alphas_out = {ifo: np.zeros(len(alphas_bin[ifo])) for ifo in args.ifos}
+cons_counts_out = {ifo: np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.ifos}
 
 logging.info("Writing results")
+
 fout = h5py.File(args.output, 'w')
 fout.attrs['fit_threshold'] = fit_thresh
 fout.attrs['conservative_percentile'] = args.conservative_percentile
@@ -132,23 +150,14 @@ fout['bins_edges'] = list(bl) + [bu[-1]]
 fout['fits_dates'] = ad + start_time_n
 
 for ifo in args.ifos:
-    fout.create_group(ifo)
-    fout[ifo].attrs['live_time'] = sum(live_times[ifo])
-
-save_allmeanalpha = {}
-for ifo in args.ifos:
-    fout_ifo = fout[ifo]
     logging.info(ifo)
+    fout_ifo = fout.create_group(ifo)
     l_times = np.array(live_times[ifo])
-    count_all = np.sum(counts_bin[ifo], axis=0) / l_times
-    invalphan = np.array(counts_bin[ifo]) / np.array(alphas_bin[ifo])
-    invalphan_all = np.mean(invalphan, axis=0)
-    alpha_all = np.mean(counts_bin[ifo], axis=0) / invalphan_all
-    meant = l_times.mean()
+    fout_ifo.attrs['live_time'] = l_times.sum()
 
-    fout_ifo[f'separate_fits/live_times'] = l_times[ad_order]
-    fout_ifo[f'separate_fits/start_time'] = trigger_file_starts[ad_order]
-    fout_ifo[f'separate_fits/end_time'] = trigger_file_ends[ad_order]
+    fout_ifo['separate_fits/live_times'] = l_times[ad_order]
+    fout_ifo['separate_fits/start_time'] = trigger_file_starts[ad_order]
+    fout_ifo['separate_fits/end_time'] = trigger_file_ends[ad_order]
 
     for counter, a_c_u_l in enumerate(zip(alphas_bin[ifo],
                                           counts_bin[ifo], bu, bl)):
@@ -161,9 +170,11 @@ for ifo in args.ifos:
         cons_alpha = np.percentile(a, 100 - args.conservative_percentile)
         cons_alphas_out[ifo][counter] = cons_alpha
         alphas_out[ifo][counter] = mean_alpha
-        cons_count = np.percentile(c, args.conservative_percentile)
-        cons_counts_out[ifo][counter] = cons_count * len(c)
-        counts_out[ifo][counter] = c.sum()
+        # To get the count values, we need to convert to rates and back again
+        r = c / l_times[ad_order]
+        cons_rate = np.percentile(r, args.conservative_percentile)
+        cons_counts_out[ifo][counter] = cons_rate * l_times[ad_order].sum()
+        counts_out[ifo][counter] = np.mean(r) * l_times[ad_order].sum()
 
         fout_ifo[f'separate_fits/bin_{counter:d}/fit_coeff'] = a
         fout_ifo[f'separate_fits/bin_{counter:d}/counts'] = c
@@ -179,15 +190,15 @@ for ifo in args.ifos:
     # Take some averages for plotting and summary values
     overall_invalphan = counts_out[ifo] / alphas_out[ifo]
     overall_meanalpha = counts_out[ifo].mean() / overall_invalphan.mean()
-    sum_counts_out = counts_out[ifo].sum() / sum(live_times[ifo])
-    save_allmeanalpha[ifo] = overall_meanalpha
 
     # For the fixed version, we just set this to 1
-    fout_ifo['fixed/counts'] = [1 for c in counts_out[ifo]]
-    fout_ifo['fixed/fit_coeff'] = [0 for a in alphas_out[ifo]]
+    fout_ifo['fixed/counts'] = [1] * len(counts_out[ifo])
+    fout_ifo['fixed/fit_coeff'] = [0] * len(alphas_out[ifo])
 
     # Add some useful info to the output file
-    fout_ifo.attrs['mean_alpha'] = save_allmeanalpha[ifo]
+    fout_ifo.attrs['mean_alpha'] = overall_meanalpha
     fout_ifo.attrs['total_counts'] = counts_out[ifo].sum()
 
 fout.close()
+
+logging.info('Done')

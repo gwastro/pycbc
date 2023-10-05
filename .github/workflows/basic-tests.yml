@@ -13,8 +13,8 @@ jobs:
       max-parallel: 60
       matrix:
         os: [ubuntu-20.04]
-        python-version: [3.7, 3.8, 3.9, '3.10', '3.11']
-        test-type: [help, unittest, search, inference, docs]
+        python-version: [3.8, 3.9, '3.10', '3.11']
+        test-type: [unittest, search, docs]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -39,6 +39,16 @@ jobs:
       run: |
         export LAL_DATA_PATH=$PWD
         tox -e py-${{matrix.test-type}}
+    - name: check help messages work
+      if: matrix.test-type == 'unittest'
+      run: |
+        export LAL_DATA_PATH=$PWD
+        tox -e py-help
+    - name: run inference tests
+      if: matrix.test-type == 'search'
+      run: |
+        export LAL_DATA_PATH=$PWD
+        tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
       uses: actions/upload-artifact@v2

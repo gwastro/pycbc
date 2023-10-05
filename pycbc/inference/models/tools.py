@@ -735,7 +735,7 @@ class DistMarg():
             return self.loglr
 
         if self.marginalize_vector_params:
-            logging.info('Reconstruct vector')
+            logging.debug('Reconstruct vector')
             self.reconstruct_vector = True
             self.reset_vector_params()
             loglr = get_loglr()
@@ -745,7 +745,7 @@ class DistMarg():
             self.reconstruct_vector = False
 
         if self.distance_marginalization:
-            logging.info('Reconstruct distance')
+            logging.debug('Reconstruct distance')
             # call likelihood to get vector output
             self.reconstruct_distance = True
             _, weights = self.distance_marginalization
@@ -755,7 +755,7 @@ class DistMarg():
             self.reconstruct_distance = False
 
         if self.marginalize_phase:
-            logging.info('Reconstruct phase')
+            logging.debug('Reconstruct phase')
             self.reconstruct_phase = True
             s, h = get_loglr()
             phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))

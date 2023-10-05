@@ -271,7 +271,6 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
 def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     """ Creates a node in the workflow for plotting science, and veto segments.
     """
-
     seg_files = list(seg_files)
     if tags is None: tags = []
     makedir(out_dir)
@@ -506,7 +505,7 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
             files += node.output_files
     return files
 
-def make_dq_trigger_rate_plot(workflow, dq_files, out_dir, tags=None):
+def make_dq_timeseries_trigger_rate_plot(workflow, dq_files, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     files = FileList([])
@@ -558,4 +557,19 @@ def make_dq_percentile_plot(workflow, dq_files, out_dir, tags=None):
             node.new_output_file_opt(dq_file.segment, '.png', '--output-file')
             workflow += node
             files += node.output_files
+    return files
+
+def make_dq_flag_trigger_rate_plot(workflow, dq_files, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    files = FileList([])
+    for dq_file in dq_files:
+        node = PlotExecutable(workflow.cp, 'plot_dq_flag_likelihood',
+                              ifos=dq_file.ifo, out_dir=out_dir,
+                              tags=tags).create_node()
+        node.add_input_opt('--dq-file', dq_file)
+        node.add_opt('--ifo', dq_file.ifo)
+        node.new_output_file_opt(dq_file.segment, '.png', '--output-file')
+        workflow += node
+        files += node.output_files
     return files
