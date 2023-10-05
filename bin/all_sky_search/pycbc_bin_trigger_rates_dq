@@ -50,7 +50,7 @@ logging.info('Start')
 
 with h5.File(args.bank_file, 'r') as bank:
     if args.background_bins:
-        logging.info('Sorting bank into bins...')
+        logging.info('Sorting bank into bins')
         data = {
             'mass1': bank['mass1'][:],
             'mass2': bank['mass2'][:],
@@ -66,22 +66,24 @@ with h5.File(args.bank_file, 'r') as bank:
         locs_dict = {'all_bin': np.arange(0, len(bank['mass1'][:]), 1)}
         locs_names = ['all_bin']
 
-logging.info('Generating trigger mask')
 
 ifo = args.ifo
 # Setup a data mask based on SNR - the SNR will always be greater than
 # or equal to sngl-ranking by definition
 with HFile(args.trig_file, 'r') as trig_file:
+    n_triggers_orig = trig_file[f'{ifo}/snr'].size
+    logging.info("Trigger file has %d triggers", n_triggers_orig)
+    logging.info('Generating trigger mask')
     idx, _ = trig_file.select(
         lambda snr: snr > args.stat_threshold,
         f'{ifo}/snr',
         return_indices=True
     )
-    data_mask = np.zeros(trig_file[f'{ifo}/snr'].size, dtype=bool)
+    data_mask = np.zeros(n_triggers_orig, dtype=bool)
     data_mask[idx] = True
 
-logging.info("Getting triggers from file with pre-cut SNR > %.3f",
-             args.stat_threshold)
+logging.info("Getting %s triggers from file with pre-cut SNR > %.3f",
+             idx.size, args.stat_threshold)
 
 trigs = SingleDetTriggers(
     args.trig_file,
@@ -108,7 +110,7 @@ keep = stat > args.stat_threshold
 tmplt_ids = tmplt_ids[keep]
 trig_times = trig_times[keep]
 trig_times_int = trig_times_int[keep]
-logging.info("Removed %d triggersi, %d remain",
+logging.info("Removed %d triggers, %d remain",
              n_triggers - tmplt_ids.size, tmplt_ids.size)
 
 dq_logl = np.array([])
@@ -163,6 +165,7 @@ if args.prune_number > 0:
             stat[remove] = 0
             trig_stats_bin[remove_inbin] = 0
     keep = np.nonzero(stat)[0]
+    logging.info("%d triggers removed through pruning", sum(keep))
     trig_times_int = trig_times_int[keep]
     tmplt_ids = tmplt_ids[keep]
     del stat
@@ -175,7 +178,8 @@ with h5.File(args.output_file, 'w') as f:
         trig_times_bin = trig_times_int[bin_triggers[bin_name]]
         trig_percentile = np.array([dq_percentiles_time[t]
                                     for t in trig_times_bin])
-        logging.info('Processing %d triggers', len(trig_percentile))
+        logging.info('Processing %d triggers in bin %s',
+                     len(trig_percentile), bin_name)
 
         (counts, bins) = np.histogram(trig_percentile, bins=(percentiles)/100)
         counts = counts.astype('float')
