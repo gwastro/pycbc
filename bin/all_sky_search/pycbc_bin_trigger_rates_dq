@@ -9,6 +9,7 @@ from pycbc.events import stat as pystat
 from pycbc.types.timeseries import load_timeseries
 import numpy as np
 import h5py as h5
+from pycbc.io.hdf import HFile, SingleDetTriggers
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -45,6 +46,8 @@ pystat.insert_statistic_option_group(parser,
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
+logging.info('Start')
+
 with h5.File(args.bank_file, 'r') as bank:
     if args.background_bins:
         logging.info('Sorting bank into bins...')
@@ -63,37 +66,46 @@ with h5.File(args.bank_file, 'r') as bank:
         locs_dict = {'all_bin': np.arange(0, len(bank['mass1'][:]), 1)}
         locs_names = ['all_bin']
 
-logging.info('Reading trigger file...')
+logging.info('Generating trigger mask')
+
 ifo = args.ifo
-with h5.File(args.trig_file, 'r') as trig_file:
-    trig_times = trig_file[ifo+'/end_time'][:]
-    trig_ids = trig_file[ifo+'/template_id'][:]
+# Setup a data mask based on SNR - the SNR will always be greater than
+# or equal to the statistic by definition
+filter_func = (lambda snr: snr > args.stat_threshold) if args.stat_threshold else None
+with HFile(args.trig_file, 'r') as trig_file:
+    idx, _ = trig_file.select(
+        filter_func,
+        f'{ifo}/snr',
+        return_indices=True
+    )
+    data_mask = np.zeros(trig_file[f'{ifo}/snr'].size, dtype=bool)
+    data_mask[idx] = True
 
-    if args.stat_threshold or args.prune_number > 0:
-        logging.info('Calculating stat and filtering...')
-        rank_method = pystat.get_statistic_from_opts(args, [ifo])
-        stat = rank_method.get_sngl_ranking(trig_file[ifo])
-        if args.stat_threshold:
-            abovethresh = stat >= args.stat_threshold
-            trig_ids = trig_ids[abovethresh]
-            trig_times = trig_times[abovethresh]
-            stat = stat[abovethresh]
-            del abovethresh
-        if args.prune_number < 1:
-            del stat
+logging.info("Getting triggers from file")
 
+trigs = SingleDetTriggers(
+    args.trig_file,
+    None,
+    None,
+    None,
+    None,
+    ifo,
+    premask=data_mask
+)
+
+tmplt_ids = trigs.template_id
+trig_times = trigs.end_time
 trig_times_int = trig_times.astype('int')
 
-dq_times = np.array([])
 dq_logl = np.array([])
+dq_times = np.array([])
 
 for filename in args.dq_file:
-    logging.info('Reading DQ file %s...', filename)
+    logging.info('Reading DQ file %s', filename)
     dq_data = load_timeseries(filename, group=args.dq_channel)
     dq_logl = np.concatenate((dq_logl, dq_data[:]))
     dq_times = np.concatenate((dq_times, dq_data.sample_times))
     del dq_data
-
 
 n_bins = args.n_time_bins
 percentiles = np.linspace(0, 100, n_bins+1)
@@ -116,12 +128,17 @@ del dq_logl
 dq_percentiles_time = dict(zip(dq_times, seconds_bin/n_bins))
 del dq_times
 
+logging.info("Placing triggers into bins")
+bin_triggers = {}
+for bin_name in locs_names:
+    bin_locs = locs_dict[bin_name]
+    bin_triggers[bin_name] = np.isin(tmplt_ids, bin_locs)
+
 if args.prune_number > 0:
     for bin_name in locs_names:
-        logging.info('Processing bin %s...', bin_name)
-        bin_locs = locs_dict[bin_name]
-        trig_times_bin = trig_times[np.isin(trig_ids, bin_locs)]
-        trig_stats_bin = stat[np.isin(trig_ids, bin_locs)]
+        logging.info('Pruning bin %s', bin_name)
+        trig_times_bin = trig_times[bin_triggers[bin_name]]
+        trig_stats_bin = stat[bin_triggers[bin_name]]
 
         for j in range(args.prune_number):
             max_stat_arg = np.argmax(trig_stats_bin)
@@ -133,7 +150,7 @@ if args.prune_number > 0:
             trig_stats_bin[remove_inbin] = 0
     keep = np.nonzero(stat)[0]
     trig_times_int = trig_times_int[keep]
-    trig_ids = trig_ids[keep]
+    tmplt_ids = tmplt_ids[keep]
     del stat
     del keep
 
@@ -141,11 +158,10 @@ del trig_times
 
 with h5.File(args.output_file, 'w') as f:
     for bin_name in locs_names:
-        bin_locs = locs_dict[bin_name]
-        trig_times_bin = trig_times_int[np.isin(trig_ids, bin_locs)]
+        trig_times_bin = trig_times_int[bin_triggers[bin_name]]
         trig_percentile = np.array([dq_percentiles_time[t]
                                     for t in trig_times_bin])
-        logging.info('Processing %d triggers...', len(trig_percentile))
+        logging.info('Processing %d triggers', len(trig_percentile))
 
         (counts, bins) = np.histogram(trig_percentile, bins=(percentiles)/100)
         counts = counts.astype('float')
@@ -155,7 +171,7 @@ with h5.File(args.output_file, 'w') as f:
         if mean_rate > 0.:
             rates = rates / mean_rate
 
-        logging.info('Writing rates to output file %s...', args.output_file)
+        logging.info('Writing rates to output file %s', args.output_file)
         grp = f.create_group(bin_name)
         grp['rates'] = rates
         grp['locs'] = locs_dict[bin_name]
