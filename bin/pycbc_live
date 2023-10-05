@@ -572,12 +572,13 @@ class LiveEventManager(object):
             coinc_results['p_terr'] = event.p_terr
 
         # Do the optimizer setup
-        cmd, out_dir_path = self.setup_optimize_snr(
-            coinc_results,
-            live_ifos,
-            coinc_ifos,
-            fname,
-        )
+        if self.run_snr_optimization:
+            cmd, out_dir_path = self.setup_optimize_snr(
+                coinc_results,
+                live_ifos,
+                coinc_ifos,
+                fname,
+            )
 
         # Now start the thread to run the SNR optimizer
         if upload_checks or optimize_snr_checks:
