@@ -67,6 +67,7 @@ class HFile(h5py.File):
             data[arg] = []
 
         return_indices = kwds.get('return_indices', False)
+        indices_only = kwds.get('indices_only', False)
         indices = np.array([], dtype=np.uint64)
 
         # To conserve memory read the array in chunks
@@ -80,7 +81,7 @@ class HFile(h5py.File):
             # Read each chunk's worth of data and find where it passes the function
             partial = [refs[arg][i:r] for arg in args]
             keep = fcn(*partial)
-            if return_indices:
+            if return_indices or indices_only:
                 indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
             # Store only the results that pass the function
@@ -89,6 +90,8 @@ class HFile(h5py.File):
 
             i += chunksize
 
+        if indices_only:
+            return indices.astype(np.uint64)
         # Combine the partial results into full arrays
         if len(args) == 1:
             res = np.concatenate(data[args[0]])

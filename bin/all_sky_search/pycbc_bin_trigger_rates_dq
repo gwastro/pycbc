@@ -48,25 +48,6 @@ pycbc.init_logging(args.verbose)
 
 logging.info('Start')
 
-with h5.File(args.bank_file, 'r') as bank:
-    if args.background_bins:
-        logging.info('Sorting bank into bins')
-        data = {
-            'mass1': bank['mass1'][:],
-            'mass2': bank['mass2'][:],
-            'spin1z': bank['spin1z'][:],
-            'spin2z': bank['spin2z'][:],
-            'f_lower': np.ones_like(bank['mass1'][:]) * args.f_lower
-            }
-        locs_dict = pycbc.events.background_bin_from_string(
-                                                   args.background_bins, data)
-        del data
-        locs_names = [b.split(':')[0] for b in args.background_bins]
-    else:
-        locs_dict = {'all_bin': np.arange(0, len(bank['mass1'][:]), 1)}
-        locs_names = ['all_bin']
-
-
 ifo = args.ifo
 # Setup a data mask based on SNR - the SNR will always be greater than
 # or equal to sngl-ranking by definition
@@ -74,10 +55,10 @@ with HFile(args.trig_file, 'r') as trig_file:
     n_triggers_orig = trig_file[f'{ifo}/snr'].size
     logging.info("Trigger file has %d triggers", n_triggers_orig)
     logging.info('Generating trigger mask')
-    idx, _ = trig_file.select(
+    idx = trig_file.select(
         lambda snr: snr > args.stat_threshold,
         f'{ifo}/snr',
-        return_indices=True
+        indices_only=True
     )
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
     data_mask[idx] = True
@@ -100,7 +81,7 @@ trig_times = trigs.end_time
 trig_times_int = trig_times.astype('int')
 
 n_triggers = tmplt_ids.size
-logging.info("%d triggers are have been loaded after pre-cuts", n_triggers)
+logging.info("%d triggers have been loaded after pre-cuts", n_triggers)
 
 logging.info("Applying %s > %.3f cut", args.sngl_ranking,
              args.stat_threshold)
@@ -143,6 +124,24 @@ del dq_logl
 # create a dict to look up dq percentile at any time
 dq_percentiles_time = dict(zip(dq_times, seconds_bin/n_bins))
 del dq_times
+
+with h5.File(args.bank_file, 'r') as bank:
+    if args.background_bins:
+        logging.info('Sorting bank into bins')
+        data = {
+            'mass1': bank['mass1'][:],
+            'mass2': bank['mass2'][:],
+            'spin1z': bank['spin1z'][:],
+            'spin2z': bank['spin2z'][:],
+            'f_lower': np.ones_like(bank['mass1'][:]) * args.f_lower
+            }
+        locs_dict = pycbc.events.background_bin_from_string(
+                                                   args.background_bins, data)
+        del data
+        locs_names = [b.split(':')[0] for b in args.background_bins]
+    else:
+        locs_dict = {'all_bin': np.arange(0, len(bank['mass1'][:]), 1)}
+        locs_names = ['all_bin']
 
 logging.info("Placing triggers into bins")
 bin_triggers = {}
