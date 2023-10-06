@@ -24,6 +24,7 @@ from pycbc.pool import BroadcastPool as Pool
 from scipy.special import logsumexp
 
 from .gaussian_noise import BaseGaussianNoise
+from .base import BaseModel
 from .tools import draw_sample
 
 _model = None
@@ -38,6 +39,20 @@ class likelihood_wrapper(object):
         loglr = _model.loglr
         return loglr, _model.current_stats
 
+
+_model = None
+class likelihood_wrapper2(object):
+    def __init__(self, model):
+        global _model
+        _model = model
+
+    def __call__(self, params):
+        global _model
+        _model.update(**params)
+        loglr = _model._loglikelihood()
+        return loglr, _model.current_stats
+
+
 class BruteParallelGaussianMarginalize(BaseGaussianNoise):
     name = "brute_parallel_gaussian_marginalize"
 
@@ -51,6 +66,8 @@ class BruteParallelGaussianMarginalize(BaseGaussianNoise):
         from pycbc.inference.models import models
         self.model = models[base_model](variable_params, **kwds)
 
+        # EW CODE SWAP
+        # self.call = likelihood_wrapper2(self.model)
         self.call = likelihood_wrapper(self.model)
 
         # size of pool for each likelihood call
@@ -95,7 +112,8 @@ class BruteParallelGaussianMarginalize(BaseGaussianNoise):
             # calculate the marginal loglr and return
             return logsumexp(loglr) - numpy.log(len(self.phase))
 
-
+# EW CODE SWAP
+#class BruteLISASkyModesMarginalize(BaseModel):
 class BruteLISASkyModesMarginalize(BaseGaussianNoise):
     name = "brute_lisa_sky_modes_marginalize"
 
@@ -140,6 +158,8 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
         stats = self.model._extra_stats
         return stats
 
+    # EW CODE SWAP
+    # def _loglikelihood(self):
     def _loglr(self):
         params = []
         for sym_num in range(self.num_sky_modes):
