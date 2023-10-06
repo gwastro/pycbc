@@ -126,6 +126,24 @@ waveform_params5 = {'approximant': 'BBHX_PhenomD',
     'mode_array':[(2,2)],
     'run_phenomd':False}
 
+# As per https://stackoverflow.com/questions/715417 this is
+# distutils.util.strtobool, but it's being removed in python3.12 so recommend
+# to copy source code as we've done here.
+def strtobool(val):
+    """Convert a string representation of truth to true (1) or false (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return 1
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return 0
+    else:
+        raise ValueError("invalid truth value %r" % (val,))
+
+
 
 class LISAEarlyWarningModel(BaseModel):
     r"""Ian is messing around
@@ -142,6 +160,27 @@ class LISAEarlyWarningModel(BaseModel):
     name = "lisa_ew"
 
     def __init__(self, variable_params, static_params=None, **kwargs):
+        # Pop relevant values from kwargs
+        cutoff_time = int(kwargs.pop('cutoff_time'))
+        seed = int(kwargs.pop('seed'))
+        kernel_length = int(kwargs.pop('kernel_length'))
+        window_length = int(kwargs.pop('window_length'))
+        tlen = kwargs.pop('tlen')
+        inj_keys = [item for item in kwargs.keys() if item.startswith('injparam')]
+        inj_params = {}
+        for key in inj_keys:
+            value = kwargs.pop(key)
+            # Type conversion needed ... Ugly!!
+            if key in ['injparam_run_phenomd']:
+                value = strtobool(value)
+            elif key in ['injparam_approximant']:
+                pass  # Convert to string, so do nothing
+            elif key in ['injparam_t_obs_start']:
+                value = int(value)
+            else:
+                value = float(value)
+            inj_params[key.replace('injparam_', '')] = value
+
         # set up base likelihood parameters
         super().__init__(variable_params, **kwargs)
         self.static_params = static_params
@@ -163,16 +202,12 @@ class LISAEarlyWarningModel(BaseModel):
         self.whitening_psds['LISA_E'] = psds_outs[1][0]
         #self.whitening_psds['LISA_A'].save('LISA_A_psd_ew.txt')
         #self.whitening_psds['LISA_E'].save('LISA_E_psd_ew.txt')
-        self.kernel_length = 10000 # Hardcoded for now
-        self.window_length = 10000 # Hardcoded also
 
-        # Get data for doing likelihoods.
-        curr_params = waveform_params1
-        seed = 218398
-        self.kernel_length = 10000 # Hardcoded
-        self.window_length = 10000
-
-        self.cutoff_time = 86400
+        # Store data for doing likelihoods.
+        curr_params = inj_params
+        self.kernel_length = kernel_length
+        self.window_length = window_length
+        self.cutoff_time = cutoff_time
 
         # Want to remove this!
         cutoff_time = self.cutoff_time + (curr_params['t_obs_start'] - curr_params['tc'])
