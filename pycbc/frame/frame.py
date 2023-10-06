@@ -349,7 +349,7 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     # Figure out the site by assuming that the channel name starts with it.
     # In case of a list of channels, assume the first channel starts with
     # the right site.
-    if instance(channels, list):
+    if isinstance(channels, list):
         site = channels[0][0]
     else:
         site = channels[0]
