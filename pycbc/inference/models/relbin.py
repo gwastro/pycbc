@@ -483,7 +483,8 @@ class Relative(DistMarg, BaseGaussianNoise):
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
-        models = [self] + models
+        # models = [self] + models
+        # print(models)
         loglr = 0
         # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
         for m in models:
@@ -498,8 +499,6 @@ class Relative(DistMarg, BaseGaussianNoise):
                 for det in self.data:
                     a0, a1, fedge = self.hihj[(m1, m2)][det]
 
-                    # TODO Need to edit line 564 code chunk to return
-                    # appropriate wf parts
                     dtc, channel, h00 = m1._current_wf_parts[det]
                     dtc2, channel2, h002 = m2._current_wf_parts[det]
 
@@ -522,7 +521,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                                     fp2, fc2, dtc2, hp2, hc2, h002,
                                     a0, a1)
                     loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
-        return loglr + self.lognl
+        return loglr #+ self.lognl
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
@@ -560,11 +559,15 @@ class Relative(DistMarg, BaseGaussianNoise):
             # with detector response. Otherwise, skip detector response.
 
             if self.still_needs_det_response:
+
+                #TODO: Check that p['tc'] is the appropriate variable here
+                # for the return.
+
                 channel = wfs[ifo].numpy()
                 filter_i, norm_i = lik(freqs, 0.0, channel, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
-                self._current_wf_parts[ifo] = (dtc, channel, h00)
+                self._current_wf_parts[ifo] = (p['tc'], channel, h00)
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]

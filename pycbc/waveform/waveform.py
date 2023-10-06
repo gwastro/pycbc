@@ -65,6 +65,8 @@ default_args = \
     (parameters.fd_waveform_params.default_dict() +
      parameters.td_waveform_params).default_dict()
 
+# default_det_args = parameters.fd_det_waveform_params.default_dict()
+
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
 sgburst_required_args = ['q','frequency','hrss']
 
@@ -435,6 +437,20 @@ def props(obj, **kwargs):
     input_params = parse_mode_array(input_params)
     return input_params
 
+# def props_det(obj, **kwargs):
+#     """ Return a dictionary built from the combination of defaults, kwargs,
+#     and the attributes of the given object.
+#     """
+#     pr = get_obj_attrs(obj)
+#     pr.update(kwargs)
+#     # Get the parameters to generate the waveform
+#     # Note that keyword arguments override values in the template object
+#     input_params = default_det_args.copy()
+#     input_params.update(pr)
+#     # if mode array present and is a string, convert to a list of tuples
+#     input_params = parse_mode_array(input_params)
+#     return input_params
+
 def check_args(args, required_args):
     """ check that required args are given """
     missing = []
@@ -546,6 +562,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
         domain evaluated at the frequency points. Keys are requested data
         channels, values are FrequencySeries.
     """
+    # input_params = props_det(template, **kwds)
     input_params = props(template, **kwds)
     input_params['delta_f'] = -1
     input_params['f_lower'] = -1
@@ -556,6 +573,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     if hasattr(wav_gen, 'required'):
         required = wav_gen.required
     else:
+        # required = parameters.fd_det_required
         required = parameters.fd_required
     check_args(input_params, required)
     return wav_gen(**input_params)
@@ -733,6 +751,7 @@ def get_fd_det_waveform(template=None, **kwargs):
         The detector-frame waveform (with detector response) in frequency
         domain. Keys are requested data channels, values are FrequencySeries.
     """
+    # input_params = props_det(template, **kwargs)
     input_params = props(template, **kwargs)
     if 'f_lower' not in input_params:
         input_params['f_lower'] = -1
@@ -743,6 +762,7 @@ def get_fd_det_waveform(template=None, **kwargs):
     if hasattr(wav_gen, 'required'):
         required = wav_gen.required
     else:
+        # required = parameters.fd_det_required
         required = parameters.fd_required
     check_args(input_params, required)
     return wav_gen(**input_params)
