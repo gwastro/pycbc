@@ -49,50 +49,53 @@ pycbc.init_logging(args.verbose)
 logging.info('Start')
 
 ifo = args.ifo
-# Setup a data mask based on SNR - the SNR will always be greater than
-# or equal to sngl-ranking by definition
+
+# Setup a data mask to remove any triggers with sngl_ranking below threshold
+
+# These are the datasets we may need to calculate sngl_ranking
+trig_stats = ['snr', 'chisq', 'chisq_dof', 'sg_chisq', 'psd_var_val']
+
+def sngl_ranking_above_threshold(*trig_vals):
+    """
+    Allow sngl_ranking to be compared to the triggers in the select function
+    """
+    # Convert the triggers into a dictionary so it can be passed straight to
+    # the ranking calculation
+    trig_dict = {k: v for k, v in zip(trig_stats, trig_vals)}
+    sngl = ranking.get_sngls_ranking_from_trigs(trig_dict, args.sngl_ranking)
+    return sngl > args.stat_threshold
+
 with HFile(args.trig_file, 'r') as trig_file:
     n_triggers_orig = trig_file[f'{ifo}/snr'].size
     logging.info("Trigger file has %d triggers", n_triggers_orig)
     logging.info('Generating trigger mask')
     idx = trig_file.select(
-        lambda snr: snr > args.stat_threshold,
-        f'{ifo}/snr',
+        sngl_ranking_above_threshold,
+        *[f'{ifo}/{trig_s}' for trig_s in trig_stats],
         indices_only=True
     )
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
     data_mask[idx] = True
 
-logging.info("Getting %s triggers from file with pre-cut SNR > %.3f",
-             idx.size, args.stat_threshold)
+logging.info("Getting %s triggers from file with %s > %.3f",
+             idx.size, args.sngl_ranking, args.stat_threshold)
 
-trigs = SingleDetTriggers(
-    args.trig_file,
-    None,
-    None,
-    None,
-    None,
-    ifo,
-    premask=data_mask
-)
-
-tmplt_ids = trigs.template_id
-trig_times = trigs.end_time
+with SingleDetTriggers(
+        args.trig_file,
+        None,
+        None,
+        None,
+        None,
+        ifo,
+        premask=data_mask
+    ) as trigs:
+    # Extract the data we actually need from the data structure:
+    tmplt_ids = trigs.template_id
+    trig_times = trigs.end_time
+    stat = trigs.get_ranking(args.sngl_ranking)
 trig_times_int = trig_times.astype('int')
 
 n_triggers = tmplt_ids.size
-logging.info("%d triggers have been loaded after pre-cuts", n_triggers)
-
-logging.info("Applying %s > %.3f cut", args.sngl_ranking,
-             args.stat_threshold)
-# Calculate the sngl-ranking and apply mask based on that
-stat = ranking.get_sngls_ranking_from_trigs(trigs, args.sngl_ranking)
-keep = stat > args.stat_threshold
-tmplt_ids = tmplt_ids[keep]
-trig_times = trig_times[keep]
-trig_times_int = trig_times_int[keep]
-logging.info("Removed %d triggers, %d remain",
-             n_triggers - tmplt_ids.size, tmplt_ids.size)
 
 dq_logl = np.array([])
 dq_times = np.array([])

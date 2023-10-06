@@ -84,9 +84,10 @@ class HFile(h5py.File):
             if return_indices or indices_only:
                 indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
-            # Store only the results that pass the function
-            for arg, part in zip(args, partial):
-                data[arg].append(part[keep])
+            if not indices_only:
+                # Store only the results that pass the function
+                for arg, part in zip(args, partial):
+                    data[arg].append(part[keep])
 
             i += chunksize
 
