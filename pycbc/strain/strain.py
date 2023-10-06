@@ -1975,9 +1975,12 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             idq_state_channel = ':'.join([ifo, args.idq_state_channel[ifo]])
 
         if args.frame_type:
-            frame_src = pycbc.frame.frame_paths(args.frame_type[ifo],
-                                                args.start_time,
-                                                args.end_time)
+            frame_src = pycbc.frame.frame_paths(
+                args.frame_type[ifo],
+                args.start_time,
+                args.end_time,
+                site=ifo[0]
+            )
         else:
             frame_src = [args.frame_src[ifo]]
         strain_channel = ':'.join([ifo, args.channel_name[ifo]])

@@ -17,14 +17,17 @@
 This modules contains functions for reading in data from frame files or caches
 """
 
-import lalframe, logging
-import lal
-import numpy
+import logging
+import os.path
+import glob
+import time
 import math
-import os.path, glob, time
+from urllib.parse import urlparse
+import numpy
+import lalframe
+import lal
 from gwdatafind import find_urls as find_frame_urls
 import pycbc
-from urllib.parse import urlparse
 from pycbc.types import TimeSeries, zeros
 
 
@@ -256,13 +259,13 @@ def read_frame(location, channels, start_time=None,
     else:
         return _read_channel(channels, stream, start_time, duration)
 
-def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
-    """Return the paths to a span of frame files
+def frame_paths(frame_type, start_time, end_time, server=None, url_type='file', site=None):
+    """Return the paths to a span of frame files.
 
     Parameters
     ----------
     frame_type : string
-        The string representation of the frame type (ex. 'H1_ER_C00_L1')
+        The string representation of the frame type (ex. 'H1_ER_C00_L1').
     start_time : int
         The start time that we need the frames to span.
     end_time : int
@@ -274,6 +277,11 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
         Returns only frame URLs with a particular scheme or head such
         as "file" or "https". Default is "file", which queries locally
         stored frames. Option can be disabled if set to None.
+    site : string, optional
+        One-letter string specifying which site you want data from (H, L, V,
+        etc).  If not given, the site is assumed to be the first letter of
+        `frame_type`, which is usually (but not always) a safe assumption.
+
     Returns
     -------
     paths : list of paths
@@ -283,7 +291,8 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     --------
     >>> paths = frame_paths('H1_LDAS_C02_L2', 968995968, 968995968+2048)
     """
-    site = frame_type[0]
+    if site is None:
+        site = frame_type[0]
     cache = find_frame_urls(site, frame_type, start_time, end_time,
                             urltype=url_type, host=server)
     return [urlparse(entry).path for entry in cache]
@@ -337,17 +346,31 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
         from pycbc.frame.gwosc import read_frame_gwosc
         return read_frame_gwosc(channels, start_time, end_time)
 
-    logging.info('querying datafind server')
-    paths = frame_paths(frame_type, int(start_time), int(numpy.ceil(end_time)))
-    logging.info('found files: %s' % (' '.join(paths)))
-    return read_frame(paths, channels,
-                      start_time=start_time,
-                      end_time=end_time,
-                      sieve=sieve,
-                      check_integrity=check_integrity)
+    # Figure out the site by assuming that the channel name starts with it.
+    # In case of a list of channels, assume the first channel starts with
+    # the right site.
+    if instance(channels, list):
+        site = channels[0][0]
+    else:
+        site = channels[0]
 
-__all__ = ['read_frame', 'frame_paths',
-           'query_and_read_frame']
+    logging.info('Querying datafind server')
+    paths = frame_paths(
+        frame_type,
+        int(start_time),
+        int(numpy.ceil(end_time)),
+        site=site
+    )
+    logging.info('Found frame file paths: %s', ' '.join(paths))
+    return read_frame(
+        paths,
+        channels,
+        start_time=start_time,
+        end_time=end_time,
+        sieve=sieve,
+        check_integrity=check_integrity
+    )
+
 
 def write_frame(location, channels, timeseries):
     """Write a list of time series to a single frame file.
@@ -887,3 +910,15 @@ class iDQBuffer(object):
         """
         self.idq.null_advance(blocksize)
         self.idq_state.null_advance(blocksize)
+
+
+__all__ = [
+    'locations_to_cache',
+    'read_frame',
+    'query_and_read_frame',
+    'frame_paths',
+    'write_frame',
+    'DataBuffer',
+    'StatusBuffer',
+    'iDQBuffer'
+]
