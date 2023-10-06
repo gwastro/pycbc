@@ -1,6 +1,8 @@
 """
 This modules provides class for using the nessai sampler package for parameter
 estimation.
+
+Documentation for nessai: https://nessai.readthedocs.io/en/latest/
 """
 import ast
 import logging
@@ -15,7 +17,7 @@ import numpy.lib.recfunctions as rfn
 
 from .base import BaseSampler, setup_output
 from .base_mcmc import get_optional_arg_from_config
-from ..io import NessaiFile
+from ..io import NessaiFile, loadfile
 from ...pool import choose_pool
 
 
@@ -53,6 +55,7 @@ class NessaiSampler(BaseSampler):
         self._logz = None
         self._dlogz = None
         self.checkpoint_file = None
+        self.resume_data = None
 
     @property
     def io(self):
@@ -60,10 +63,7 @@ class NessaiSampler(BaseSampler):
 
     @property
     def model_stats(self):
-        return {
-            "loglikelihood": self._sampler.posterior_samples["logL"],
-            "logprior": self._sampler.posterior_samples["logP"],
-        }
+        pass
 
     @property
     def samples(self):
@@ -74,15 +74,36 @@ class NessaiSampler(BaseSampler):
         )
         samples["logwt"] = self._sampler.ns.state.log_posterior_weights
         samples["loglikelihood"] = self._sampler.nested_samples["logL"]
+        samples["logprior"] = self._sampler.nested_samples["logP"]
+        samples["it"] = self._sampler.nested_samples["it"]
         return samples
 
-    def run(self):
+    def run(self, **kwargs):
         """Run the sampler"""
         out_dir = os.path.join(
             os.path.dirname(os.path.abspath(self.checkpoint_file)),
             "outdir_nessai",
         )
+        default_kwds, default_run_kwds = self.get_default_kwds(
+            importance_nested_sampler=self.extra_kwds.get(
+                "importance_nested_sampler", False
+            )
+        )
+
+        extra_kwds = self.extra_kwds.copy()
+        run_kwds = self.run_kwds.copy()
+
+        if kwargs is not None:
+            logging.info(f"Updating keyword arguments with {kwargs}")
+            extra_kwds.update(
+                {k: v for k, v in kwargs.items() if k in default_kwds}
+            )
+            run_kwds.update(
+                {k: v for k, v in kwargs.items() if k in default_run_kwds}
+            )
+
         if self._sampler is None:
+            logging.info("Initialising nessai FlowSampler")
             self._sampler = nessai.flowsampler.FlowSampler(
                 self.model_call,
                 output=out_dir,
@@ -90,9 +111,19 @@ class NessaiSampler(BaseSampler):
                 n_pool=self.nprocesses,
                 close_pool=False,
                 signal_handling=False,
-                **self.extra_kwds,
+                resume_data=self.resume_data,
+                **extra_kwds,
             )
-        self._sampler.run(**self.run_kwds)
+        logging.info("Starting sampling with nessai")
+        self._sampler.run(**run_kwds)
+
+    @staticmethod
+    def get_default_kwds(importance_nested_sampler=False):
+        # Determine all possible keyword arguments that are not hardcoded
+        return nessai.utils.settings.get_all_kwargs(
+            importance_nested_sampler=importance_nested_sampler,
+            split_kwargs=True,
+        )
 
     @classmethod
     def from_config(
@@ -103,31 +134,28 @@ class NessaiSampler(BaseSampler):
         """
         section = "sampler"
         # check name
-        assert cp.get(section, "name") == cls.name, (
-            "name in section [sampler] must match mine")
+        assert (
+            cp.get(section, "name") == cls.name
+        ), "name in section [sampler] must match mine"
 
         if cp.has_option(section, "importance_nested_sampler"):
             importance_nested_sampler = cp.get(
-                section, "importance_nested_sampler",
+                section,
+                "importance_nested_sampler",
             )
         else:
             importance_nested_sampler = False
-
         if importance_nested_sampler is True:
             raise NotImplementedError(
                 "Importance nested sampler is not currently supported"
             )
 
-        # Determine all possible keyword arguments that are not hardcoded
-        default_kwds, default_run_kwds = nessai.utils.settings.get_all_kwargs(
-            importance_nested_sampler=importance_nested_sampler,
-            split_kwargs=True,
+        default_kwds, default_run_kwds = cls.get_default_kwds(
+            importance_nested_sampler
         )
 
         # Keyword arguments the user cannot configure via the config
-        remove_kwds = [
-            "pool", "n_pool", "close_pool", "signal_handling"
-        ]
+        remove_kwds = ["pool", "n_pool", "close_pool", "signal_handling"]
 
         for kwd in remove_kwds:
             default_kwds.pop(kwd, None)
@@ -158,8 +186,9 @@ class NessaiSampler(BaseSampler):
         logging.info(f"nessai keyword arguments: {kwds}")
         logging.info(f"nessai run keyword arguments: {run_kwds}")
 
-        loglikelihood_function = \
-            get_optional_arg_from_config(cp, section, 'loglikelihood-function')
+        loglikelihood_function = get_optional_arg_from_config(
+            cp, section, "loglikelihood-function"
+        )
 
         obj = cls(
             model,
@@ -170,7 +199,9 @@ class NessaiSampler(BaseSampler):
             extra_kwds=kwds,
         )
 
-        setup_output(obj, output_file, check_nsamples=False, validate=False)
+        setup_output(obj, output_file, check_nsamples=False)
+        if not obj.new_checkpoint:
+            obj.resume_from_checkpoint()
         return obj
 
     def set_initial_conditions(
@@ -186,13 +217,21 @@ class NessaiSampler(BaseSampler):
 
     def checkpoint(self):
         """Checkpoint the sampler"""
-        self._sampler.ns.checkpoint()
         for fn in [self.checkpoint_file, self.backup_file]:
+            with self.io(fn, "a") as fp:
+                fp.write_pickled_data_into_checkpoint_file(self._sampler.ns)
             self.write_results(fn)
 
     def resume_from_checkpoint(self):
-        # nessai will from its own checkpoint file
-        pass
+        """Reads the resume data from the checkpoint file."""
+        try:
+            with loadfile(self.checkpoint_file, "r") as fp:
+                self.resume_data = fp.read_pickled_data_from_checkpoint_file()
+            logging.info(
+                f"Found valid checkpoint file: {self.checkpoint_file}"
+            )
+        except Exception as e:
+            logging.info("Failed to load checkpoint file with error: {e}")
 
     def finalize(self):
         """Finalize sampling"""
@@ -201,14 +240,15 @@ class NessaiSampler(BaseSampler):
 
         logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
 
+        self.checkpoint()
+
         for fn in [self.checkpoint_file, self.backup_file]:
             self.write_results(fn)
 
     def write_results(self, filename):
         """Write the results to a given file"""
         with self.io(filename, "a") as fp:
-            fp.write_samples(self.samples, self.model.sampling_params)
-            fp.write_samples(self.model_stats)
+            fp.write_raw_samples(self.samples)
             fp.write_logevidence(
                 self._sampler.log_evidence,
                 self._sampler.log_evidence_error,
@@ -225,20 +265,25 @@ class NessaiModel(nessai.model.Model):
     loglikelihood_function : str
         Name of the log-likelihood method to call.
     """
+
     def __init__(self, model, loglikelihood_function=None):
         self.model = model
         self.names = list(model.sampling_params)
 
         # Configure the log-likelihood function
         if loglikelihood_function is None:
-            loglikelihood_function = 'loglikelihood'
+            loglikelihood_function = "loglikelihood"
         self.loglikelihood_function = loglikelihood_function
 
         # Configure the priors bounds
         bounds = {}
         for dist in model.prior_distribution.distributions:
             bounds.update(
-                **{k: [v.min, v.max] for k, v in dist.bounds.items() if k in self.names}
+                **{
+                    k: [v.min, v.max]
+                    for k, v in dist.bounds.items()
+                    if k in self.names
+                }
             )
         self.bounds = bounds
         # Prior and likelihood are not vectorised
