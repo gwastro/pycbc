@@ -160,15 +160,16 @@ def nearby_missedinj(endtime, snr):
     Parameters
     ----------
     endtime: numpy array
-    Trigger times to be checked against the missed injection times
+        Trigger times to be checked against the missed injection times
 
     snr: numpy array
-    (Unused, but to prevent a TypeError) SNR of the triggers
+        Required by design of the HFile.select method but not used,
+        SNR of the triggers
 
     Returns
     -------
     boolean array
-    True for triggers which are close to any missed injection
+        True for triggers which are close to any missed injection
     """
     left = numpy.searchsorted(missed_inj_times - safe_window, endtime)
     right = numpy.searchsorted(missed_inj_times + safe_window, endtime)
