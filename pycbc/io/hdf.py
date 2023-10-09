@@ -67,7 +67,6 @@ class HFile(h5py.File):
             data[arg] = []
 
         return_indices = kwds.get('return_indices', False)
-        indices_only = kwds.get('indices_only', False)
         indices = np.array([], dtype=np.uint64)
 
         # To conserve memory read the array in chunks
@@ -81,18 +80,15 @@ class HFile(h5py.File):
             # Read each chunk's worth of data and find where it passes the function
             partial = [refs[arg][i:r] for arg in args]
             keep = fcn(*partial)
-            if return_indices or indices_only:
+            if return_indices:
                 indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
-            if not indices_only:
-                # Store only the results that pass the function
-                for arg, part in zip(args, partial):
-                    data[arg].append(part[keep])
+            # Store only the results that pass the function
+            for arg, part in zip(args, partial):
+                data[arg].append(part[keep])
 
             i += chunksize
 
-        if indices_only:
-            return indices.astype(np.uint64)
         # Combine the partial results into full arrays
         if len(args) == 1:
             res = np.concatenate(data[args[0]])
@@ -418,7 +414,7 @@ class SingleDetTriggers(object):
             logging.info('Loading bank')
             self.bank = HFile(bank_file, 'r')
         else:
-            logging.info('No bank file given to SingleDetTriggers')
+            logging.info('No bank file given')
             # empty dict in place of non-existent hdf file
             self.bank = {}
 

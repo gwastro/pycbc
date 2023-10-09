@@ -5,7 +5,7 @@ import logging
 import argparse
 import pycbc
 import pycbc.events
-from pycbc.events import ranking, stat as pystat
+from pycbc.events import stat as pystat
 from pycbc.types.timeseries import load_timeseries
 import numpy as np
 import h5py as h5
@@ -50,50 +50,50 @@ logging.info('Start')
 
 ifo = args.ifo
 
-# Setup a data mask to remove any triggers with sngl_ranking below threshold
-
-# These are the datasets we may need to calculate sngl_ranking
-trig_stats = ['snr', 'chisq', 'chisq_dof', 'sg_chisq', 'psd_var_val']
-
-def sngl_ranking_above_threshold(*trig_vals):
-    """
-    Allow sngl_ranking to be compared to the triggers in the select function
-    """
-    # Convert the triggers into a dictionary so it can be passed straight to
-    # the ranking calculation
-    trig_dict = {k: v for k, v in zip(trig_stats, trig_vals)}
-    sngl = ranking.get_sngls_ranking_from_trigs(trig_dict, args.sngl_ranking)
-    return sngl > args.stat_threshold
+# Setup a data mask to remove any triggers with SNR below threshold
+# This works as a pre-filter as SNR is always greater than or equal
+# to sngl_ranking
 
 with HFile(args.trig_file, 'r') as trig_file:
     n_triggers_orig = trig_file[f'{ifo}/snr'].size
     logging.info("Trigger file has %d triggers", n_triggers_orig)
     logging.info('Generating trigger mask')
-    idx = trig_file.select(
-        sngl_ranking_above_threshold,
+    idx, _ = trig_file.select(
+        lambda snr: snr > args.stat_threshold if args,
         *[f'{ifo}/{trig_s}' for trig_s in trig_stats],
-        indices_only=True
+        return_indices=True,
     )
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
     data_mask[idx] = True
 
-logging.info("Getting %s triggers from file with %s > %.3f",
-             idx.size, args.sngl_ranking, args.stat_threshold)
+logging.info("Getting %s triggers from file with SNR > %.3f",
+             idx.size, args.stat_threshold)
 
-with SingleDetTriggers(
-        args.trig_file,
-        None,
-        None,
-        None,
-        None,
-        ifo,
-        premask=data_mask
-    ) as trigs:
-    # Extract the data we actually need from the data structure:
-    tmplt_ids = trigs.template_id
-    trig_times = trigs.end_time
-    stat = trigs.get_ranking(args.sngl_ranking)
+trigs = SingleDetTriggers(
+    args.trig_file,
+    None,
+    None,
+    None,
+    None,
+    ifo,
+    premask=data_mask
+)
+
+# Extract the data we actually need from the data structure:
+tmplt_ids = trigs.template_id
+trig_times = trigs.end_time
+stat = trigs.get_ranking(args.sngl_ranking)
 trig_times_int = trig_times.astype('int')
+
+del trigs
+
+logging.info("Cutting triggers with --sngl-ranking below threshold")
+if not args.sngl_ranking == 'snr':
+    keep = stat > args.stat_threshold
+    tmplt_ids = tmplt_ids[keep]
+    trig_times = trig_times[keep]
+    stat = stat[keep]
+    trig_times_int = trig_times_int[keep]
 
 n_triggers = tmplt_ids.size
 
@@ -146,28 +146,25 @@ with h5.File(args.bank_file, 'r') as bank:
         locs_dict = {'all_bin': np.arange(0, len(bank['mass1'][:]), 1)}
         locs_names = ['all_bin']
 
-logging.info("Placing triggers into bins")
-bin_triggers = {}
-for bin_name in locs_names:
-    bin_locs = locs_dict[bin_name]
-    bin_triggers[bin_name] = np.isin(tmplt_ids, bin_locs)
-
 if args.prune_number > 0:
     for bin_name in locs_names:
         logging.info('Pruning bin %s', bin_name)
-        trig_times_bin = trig_times[bin_triggers[bin_name]]
-        trig_stats_bin = stat[bin_triggers[bin_name]]
+        bin_locs = locs_dict[bin_name]
+        inbin = np.isin(tmplt_ids, bin_locs)
+        trig_times_bin = trig_times[inbin]
+        trig_stats_bin = stat[inbin]
 
         for j in range(args.prune_number):
             max_stat_arg = np.argmax(trig_stats_bin)
-            remove = np.nonzero(abs(trig_times_bin[max_stat_arg] - trig_times)
-                                < args.prune_window)[0]
-            remove_inbin = np.nonzero(abs(trig_times_bin[max_stat_arg]
-                                      - trig_times_bin) < args.prune_window)[0]
+            remove = abs(trig_times_bin[max_stat_arg] - trig_times) \
+                         < args.prune_window
+            logging.info("Prune %d: pruning %d triggers", j, sum(remove))
+            remove_inbin = abs(trig_times_bin[max_stat_arg]
+                               - trig_times_bin) < args.prune_window
             stat[remove] = 0
             trig_stats_bin[remove_inbin] = 0
-    keep = np.nonzero(stat)[0]
-    logging.info("%d triggers removed through pruning", sum(keep))
+    keep = np.flatnonzero(stat)
+    logging.info("%d triggers removed through pruning", len(keep))
     trig_times_int = trig_times_int[keep]
     tmplt_ids = tmplt_ids[keep]
     del stat
@@ -177,7 +174,9 @@ del trig_times
 
 with h5.File(args.output_file, 'w') as f:
     for bin_name in locs_names:
-        trig_times_bin = trig_times_int[bin_triggers[bin_name]]
+        bin_locs = locs_dict[bin_name]
+        inbin = np.isin(tmplt_ids, bin_locs)
+        trig_times_bin = trig_times_int[inbin]
         trig_percentile = np.array([dq_percentiles_time[t]
                                     for t in trig_times_bin])
         logging.info('Processing %d triggers in bin %s',
