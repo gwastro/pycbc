@@ -39,9 +39,6 @@ import Pegasus.api as dax
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
 
-# Get the logger associated with the Pegasus workflow import
-pegasus_logger = logging.getLogger('Pegasus')
-
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -322,6 +319,9 @@ class Workflow(object):
         # Pegasus logging is fairly verbose, quieten it down a bit
         # This sets the logger to one level less verbose than the root
         # (pycbc) logger
+
+        # Get the logger associated with the Pegasus workflow import
+        pegasus_logger = logging.getLogger('Pegasus')
         pegasus_logger.setLevel(logging.root.level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
@@ -851,10 +851,10 @@ class File(dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
-        logging.warning("The from_path method in pegasus_workflow is "
-                        "deprecated. Please use File.from_path (for output "
-                        "files) in core.py or resolve_url_to_file in core.py "
-                        "(for input files) instead.")
+        DeprecationWarning("The from_path method in pegasus_workflow is "
+                           "deprecated. Please use File.from_path (for "
+                           "output files) in core.py or resolve_url_to_file "
+                           "in core.py (for input files) instead.")
         urlparts = urlsplit(path)
         site = 'nonlocal'
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
