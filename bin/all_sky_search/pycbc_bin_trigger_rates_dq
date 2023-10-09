@@ -59,14 +59,14 @@ with HFile(args.trig_file, 'r') as trig_file:
     logging.info("Trigger file has %d triggers", n_triggers_orig)
     logging.info('Generating trigger mask')
     idx, _ = trig_file.select(
-        lambda snr: snr > args.stat_threshold if args,
+        lambda snr: snr > args.stat_threshold,
         f'{ifo}/snr',
         return_indices=True
     )
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
     data_mask[idx] = True
 
-logging.info("Getting %s triggers from file with SNR > %.3f",
+logging.info("Getting %s triggers from file with pre-cut SNR > %.3f",
              idx.size, args.stat_threshold)
 
 trigs = SingleDetTriggers(
@@ -90,9 +90,7 @@ del trigs
 n_triggers = tmplt_ids.size
 
 logging.info("Applying %s > %.3f cut", args.sngl_ranking,
-        args.stat_threshold)
-# Calculate the sngl-ranking and apply mask based on that
-stat = ranking.get_sngls_ranking_from_trigs(trigs, args.sngl_ranking)
+             args.stat_threshold)
 keep = stat > args.stat_threshold
 tmplt_ids = tmplt_ids[keep]
 trig_times = trig_times[keep]
@@ -167,7 +165,7 @@ if args.prune_number > 0:
             stat[remove] = 0
             trig_stats_bin[remove_inbin] = 0
     keep = np.flatnonzero(stat)
-    logging.info("%d triggers removed through pruning", len(keep))
+    logging.info("%d triggers removed through pruning", keep.size)
     trig_times_int = trig_times_int[keep]
     tmplt_ids = tmplt_ids[keep]
     del stat
