@@ -31,6 +31,7 @@ import shutil
 import logging
 import tempfile
 import subprocess
+import warnings
 from packaging import version
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlsplit
@@ -851,10 +852,11 @@ class File(dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
-        DeprecationWarning("The from_path method in pegasus_workflow is "
-                           "deprecated. Please use File.from_path (for "
-                           "output files) in core.py or resolve_url_to_file "
-                           "in core.py (for input files) instead.")
+        warnings.warn("The from_path method in pegasus_workflow is "
+                      "deprecated. Please use File.from_path (for "
+                      "output files) in core.py or resolve_url_to_file "
+                      "in core.py (for input files) instead.",
+                      DeprecationWarning)
         urlparts = urlsplit(path)
         site = 'nonlocal'
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
