@@ -148,9 +148,9 @@ except KeyError:
 # But only ones which are within a small window of the missed injection
 missed_inj_times = numpy.sort(f['injections/tc'][:][missed])
 
-# Note: Adding 2 * Earth diameter in light seconds to the window here
+# Note: Adding Earth diameter in light seconds to the window here
 # to allow for different IFO's arrival times of the injection
-safe_window = args.nearby_triggers_window + 0.085
+safe_window = args.nearby_triggers_window + 0.0425
 
 def nearby_missedinj(endtime, snr):
     """
