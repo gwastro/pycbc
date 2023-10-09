@@ -224,8 +224,12 @@ class Executable(pegasus_workflow.Executable):
             # being directly accessible on the execution site.
             # CVMFS is perfect for this! As is singularity.
             self.exe_pfns[exe_site] = exe_path
-        logging.debug("Using %s executable "
-                      "at %s on site %s" % (name, exe_url.path, exe_site))
+        logging.debug(
+            "Using %s executable at %s on site %s",
+            name,
+            exe_url.path,
+            exe_site
+        )
 
         # FIXME: This hasn't yet been ported to pegasus5 and won't work.
         #        Pegasus describes two ways to work with containers, and I need
