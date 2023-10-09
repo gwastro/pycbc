@@ -60,8 +60,8 @@ with HFile(args.trig_file, 'r') as trig_file:
     logging.info('Generating trigger mask')
     idx, _ = trig_file.select(
         lambda snr: snr > args.stat_threshold if args,
-        *[f'{ifo}/{trig_s}' for trig_s in trig_stats],
-        return_indices=True,
+        f'{ifo}/snr',
+        return_indices=True
     )
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
     data_mask[idx] = True
@@ -87,15 +87,18 @@ trig_times_int = trig_times.astype('int')
 
 del trigs
 
-logging.info("Cutting triggers with --sngl-ranking below threshold")
-if not args.sngl_ranking == 'snr':
-    keep = stat > args.stat_threshold
-    tmplt_ids = tmplt_ids[keep]
-    trig_times = trig_times[keep]
-    stat = stat[keep]
-    trig_times_int = trig_times_int[keep]
-
 n_triggers = tmplt_ids.size
+
+logging.info("Applying %s > %.3f cut", args.sngl_ranking,
+        args.stat_threshold)
+# Calculate the sngl-ranking and apply mask based on that
+stat = ranking.get_sngls_ranking_from_trigs(trigs, args.sngl_ranking)
+keep = stat > args.stat_threshold
+tmplt_ids = tmplt_ids[keep]
+trig_times = trig_times[keep]
+trig_times_int = trig_times_int[keep]
+logging.info("Removed %d triggers, %d remain",
+             n_triggers - tmplt_ids.size, tmplt_ids.size)
 
 dq_logl = np.array([])
 dq_times = np.array([])
