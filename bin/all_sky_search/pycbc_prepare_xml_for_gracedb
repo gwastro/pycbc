@@ -161,12 +161,7 @@ for ts_key in snr_timeseries_time_match:
 psds_curr_event = {}
 psddict = {}
 for ifo in ifos:
-    try:
-        psd = psds[ifo]
-    except KeyError:
-        parser.error(
-            "--psd-files {0}: no PSDs found for detector {1}".format(
-            " ".join(args.psd_files), ifo))
+    psd = psds[ifo]
 
     try:
         psd = psd[psd.find(time)].psd
@@ -192,7 +187,7 @@ for sngl in sngl_inspiral_table:
     sngl.channel = args.channel_name[sngl.ifo]
 
     # Two versions of the PSD dictionary have useful info here
-    psd = psds_curr_event[ifo]
+    psd = psds_curr_event[sngl.ifo]
     psd_fs = psddict[sngl.ifo]
 
     flow = psd.file.attrs['low_frequency_cutoff']
