@@ -276,31 +276,23 @@ class GenUniformWaveform(object):
         kwds.update(fdict)
         flow = numpy.arange(self.f_lower, 100, .1)[::-1]
         length = spa_length_in_time(mass1=kwds['mass1'], mass2=kwds['mass2'], f_lower=flow, phase_order=-1)
-        
-        if kwds['approximant'] in pycbc.waveform.fd_approximants():   
-            if args.max_signal_length is None:
-                ws = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
-                                                f_lower=self.f_lower, **kwds)
-                hp = ws[0]
-                hc = ws[1]
-                
-                kwds['f_lower'] = self.f_lower
-                
-                if 'fratio' in kwds:
-                    hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
-                    
-            else:
+        if args.max_signal_length is not None:
                 maxlen = args.max_signal_length
                 x = numpy.searchsorted(length, maxlen) - 1
                 l = length[x]
                 f = flow[x]
+        else:
+                f = self.f_lower
+            
+        if kwds['approximant'] in pycbc.waveform.fd_approximants():  
                 
-                hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f, 
+            hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f, 
                                                 f_lower=f, f_ref=10.0, **kwds)
-                kwds['f_lower'] = f
-     
-                if 'fratio' in kwds:
-                    hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
+            kwds['f_lower'] = f
+            
+            if 'fratio' in kwds:
+                hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
+                    
         else:
             dt = 1.0 / args.sample_rate
             hp = pycbc.waveform.get_waveform_filter(
@@ -445,9 +437,10 @@ def cdraw(rtype, ts, te):
         return None
 
     return p
-
+    
 tau0s = args.tau0_start
 tau0e = tau0s + args.tau0_crawl
+
 go = True
 
 region = 0
@@ -479,6 +472,8 @@ while tau0s < args.tau0_end:
             bank, kconv = bank.check_params(gen, params, args.minimal_match)
             logging.info("%s: Round (K) (%s): %s Size: %s conv: %s added: %s",
                          region, kloop, r, len(bank), kconv, len(bank) - blen)
+            
+            
             if uconv:
                 logging.info('Ratio of convergences: %2.3f' % (kconv / (uconv)))
                 logging.info('Progress: {:.0%} completed'.format(tau0e/args.tau0_end))
