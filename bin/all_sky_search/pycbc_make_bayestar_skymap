@@ -46,12 +46,11 @@ logging_level = args.verbose + 1 if args.verbose else None
 init_logging(logging_level)
 logging.info("Starting")
 
-bayestar_exe = args.bayestar_executable if args.bayestar_executable \
-    else 'bayestar-localize-coincs'
+bayestar_exe = args.bayestar_executable or 'bayestar-localize-coincs'
 
 # Use a seed to always make the temp directory the same
 # This is the same as the seed passed to bayestar
-if args.seed:
+if args.seed is not None:
     random.seed(args.seed)
 
 # Set up a temporary directory so that the fits file shouldnt clash
@@ -68,7 +67,8 @@ try:
 except OSError:
     logging.info("Directory %s already exists", tmpdir)
 
-# Set up the command to pass to bayestar
+# Set up the command to pass to bayestar.
+# The XML file path being passed twice is a legacy requirement, not a mistake.
 cmd = [bayestar_exe,
        args.event_xml,
        args.event_xml,
@@ -90,8 +90,9 @@ except subprocess.CalledProcessError as e:
 # Find the fits file in the temporary directory:
 # It would be nice to do this better! - maybe use the input xml
 # file to find the number which is going to be used?
-fits_filename = [os.path.join(tmpdir, f) for f in os.listdir(tmpdir)
-                 if f.endswith('fits')][0]
+fits_filenames = glob.glob(os.path.join(tmpdir, '*.fits*'))
+if len(fits_filenames) != 1:
+    raise ValueError(f'argh, got {len(fits_filenames)} FITS files after running BAYESTAR, I want one!')
 
 logging.info("Moving output to %s", args.output_file)
 shutil.move(fits_filename, args.output_file)
