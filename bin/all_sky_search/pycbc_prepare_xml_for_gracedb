@@ -210,17 +210,19 @@ ligolw_utils.write_filename(xmldoc, args.output_file)
 logging.info("Saved XML file %s", args.output_file)
 
 if args.psd_plot:
+    logging.info("Saving ASD plot %s", args.psd_plot)
     generate_asd_plot(psddict, args.psd_plot)
-    logging.info("Saved ASD plot %s", args.psd_plot)
 
 triggers = {sngl.ifo: (sngl.end_time + sngl.end_time_ns * 1e-9, sngl.snr)
             for sngl in sngl_inspiral_table_curr}
 base_time = int(np.floor(time))
 if args.snr_timeseries_plot:
+    logging.info("Saving SNR plot %s", args.snr_timeseries_plot)
     generate_snr_plot(
         snr_ts,
         args.snr_timeseries_plot,
         triggers,
         base_time
     )
-    logging.info("Saved SNR plot %s", args.snr_timeseries_plot)
+
+logging.info('Done!')
