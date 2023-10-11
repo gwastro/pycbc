@@ -7,7 +7,7 @@ specific compact binary merger event.
 Uses an XML containing SNR timeseries and PSD and calls BAYESTAR to produce a
 sky localization.
 
-The wrapper needs to exists as they XML format doesnt allow us to indicate
+The wrapper needs to exist as the XML format doesnt allow us to indicate
 the low frequency cutoff or waveform used. We also want to be able to control
 the output filename which is not possible in bayestar-localize-coincs
 
@@ -19,6 +19,7 @@ import subprocess
 import shutil
 import logging
 import os
+import glob
 import sys
 import random
 import tempfile
@@ -69,12 +70,7 @@ cmd = [bayestar_exe,
 cmd += unknown
 
 logging.info("Running %s", ' '.join(cmd))
-try:
-    subprocess.check_output(cmd)
-except subprocess.CalledProcessError as e:
-    logging.warning("Error in running bayestar")
-    logging.warning(e.output)
-    sys.exit(1)
+subprocess.check_output(cmd)
 
 # Find the fits file in the temporary directory:
 # It would be nice to do this better! - maybe use the input xml
@@ -84,9 +80,6 @@ if len(fits_filenames) != 1:
     raise ValueError(f'argh, got {len(fits_filenames)} FITS files after running BAYESTAR, I want one!')
 
 logging.info("Moving output to %s", args.output_file)
-shutil.move(fits_filename, args.output_file)
-
-if rmtmpdir:
-    os.rmdir(tmpdir)
+shutil.move(fits_filenames[0], args.output_file)
 
 logging.info("Done")

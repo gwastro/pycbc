@@ -17,11 +17,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Take a coinc xml file containing multiple events and prepare
+Take a coinc xml file containing multiple events and prepare one of them
 for upload to gracedb.
 """
 
-import os
 import argparse
 import logging
 import numpy as np
@@ -40,7 +39,7 @@ from pycbc.io.ligolw import (
     snr_series_to_xml,
 )
 from pycbc.psd import interpolate
-from pycbc.types import FrequencySeries, TimeSeries
+from pycbc.types import FrequencySeries, TimeSeries, load_timeseries
 from pycbc.types import MultiDetOptionAction
 from pycbc.results import generate_asd_plot, generate_snr_plot
 
@@ -53,21 +52,24 @@ parser.add_argument("--snr-timeseries", nargs='+', required=True,
                     help='HDF file(s) containing the SNR timeseries to upload')
 parser.add_argument('--input-file', required=True, type=str,
                     help='Input LIGOLW XML file of coincidences.')
-parser.add_argument('--event-id', type=int,
-                    help='Only make XML file for this event')
-parser.add_argument('--output-file', default=os.getcwd(),
-                    help="Output directory for locally stored XML and PSD "
-                         "files. Default: current directory")
-parser.add_argument('--snr-timeseries-plot', required=True,
+parser.add_argument('--event-id', type=int, required=True,
+                    help='ID for the event being prepared.')
+parser.add_argument('--output-file',
+                    help="Output filename for the locally stored XML. "
+                         "Default: current directory")
+parser.add_argument('--snr-timeseries-plot',
                     help="Output filename for the plot of SNR timeseries. "
                          "Must be a plot filetype as used by matplotlib.")
-parser.add_argument('--psd-plot', required=True,
+parser.add_argument('--psd-plot',
                     help="Output filename for the plot of the PSD. "
                          "Must be a plot filetype as used by matplotlib.")
 parser.add_argument('--channel-name', action=MultiDetOptionAction,
                     required=True,
                     help="Channel name for adding to the uploaded single "
                          "inspiral table.")
+parser.add_argument('--delta-f', type=float, default=0.25,
+                    help="Frequency spacing of the PSD to be uploaded, Hz. "
+                         "Default 0.25")
 
 args = parser.parse_args()
 
@@ -86,6 +88,7 @@ class psd_segment(segment):
     def __init__(self, psd, *args):
         self.psd = psd
 
+logging.info("Reading PSDs")
 psds = {}
 for psd_file in args.psd_files:
     (ifo, group), = h5py.File(psd_file, "r").items()
@@ -94,16 +97,13 @@ for psd_file in args.psd_files:
         psd, group["start_time"], group["end_time"]))
 
 # Get information from the single_template snr timeseries files:
+logging.info("Reading SNR timeseries")
 snr_timeseries = {}
-snr_epoch = {}
-snr_delta_t = {}
 for snr_filename in args.snr_timeseries:
     with h5py.File(snr_filename, 'r') as snr_f:
         ifo = snr_f.attrs['ifo']
         time = snr_f.attrs['event_time']
-        snr_timeseries[(ifo, time)] = snr_f['snr'][:]
-        snr_epoch[time] = snr_f['snr'].attrs['start_time']
-        snr_delta_t[time] = snr_f['snr'].attrs['delta_t']
+        snr_timeseries[(ifo, time)] = load_timeseries(snr_filename, 'snr')
 
 coinc_table = lsctables.CoincTable.get_table(xmldoc)
 coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
@@ -118,7 +118,7 @@ xmldoc.childNodes[-1].removeChild(coinc_table)
 for event in coinc_table:
     coinc_event_id = event.coinc_event_id
     if args.event_id == coinc_event_id:
-        # This is the event we want:
+        # This is the event we want
         break
 
 coinc_event_table_curr = lsctables.New(lsctables.CoincTable)
@@ -146,16 +146,10 @@ snr_timeseries_time_match = [snr_key for snr_key in snr_timeseries.keys()
                              if abs(snr_key[1] - time) < 0.1]
 ifos = list(zip(*snr_timeseries_time_match))[0]
 time_key = list(zip(*snr_timeseries_time_match))[1][0]
-# These are the SNR timeseries for this event only:
-
+# Change to be keyed on IFO:
 snr_curr_event = {}
 for ts_key in snr_timeseries_time_match:
-    snr_curr_event[ts_key[0]] = TimeSeries(
-        snr_timeseries[ts_key],
-        delta_t=snr_delta_t[ts_key[1]],
-        epoch=snr_epoch[ts_key[1]],
-        dtype=np.csingle,
-    )
+    snr_curr_event[ts_key[0]] =  snr_timeseries[ts_key]
 
 # IFOs from SNR timeseries:
 psds_curr_event = {}
@@ -163,16 +157,11 @@ psddict = {}
 for ifo in ifos:
     psd = psds[ifo]
 
-    try:
-        psd = psd[psd.find(time)].psd
-    except ValueError:
-        logging.warning("SNR timeseries but no PSD exists for event at %.3f",
-            time)
-    # resample the psd to 0.25Hz spacing
-    df = 0.25
+    psd = psd[psd.find(time)].psd
+    # resample the psd to new spacing
     psd_fs = FrequencySeries(psd, delta_f=psd.attrs["delta_f"],
                              dtype=np.float64)
-    psd_fs = interpolate(psd_fs, df)
+    psd_fs = interpolate(psd_fs, args.delta_f)
 
     psds_curr_event[ifo] = psd
     psddict[ifo] = psd_fs
@@ -191,11 +180,15 @@ for sngl in sngl_inspiral_table:
     psd_fs = psddict[sngl.ifo]
 
     flow = psd.file.attrs['low_frequency_cutoff']
-    kmin = int(flow / df)
+    kmin = int(flow / args.delta_f)
 
     fseries = lal.CreateREAL8FrequencySeries(
-        "psd", lal.LIGOTimeGPS(int(psd.attrs["epoch"])), kmin * df, df,
-        lal.StrainUnit**2 / lal.HertzUnit, len(psd_fs) - kmin)
+        "psd",
+        lal.LIGOTimeGPS(int(psd.attrs["epoch"])),
+        kmin * args.delta_f,
+        args.delta_f,
+        lal.StrainUnit**2 / lal.HertzUnit,
+        len(psd_fs) - kmin)
     fseries.data.data = psd_fs[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
     lal_psddict[sngl.ifo] = fseries
 
@@ -210,16 +203,18 @@ lal.series.make_psd_xmldoc(lal_psddict, xmldoc.childNodes[-1])
 ligolw_utils.write_filename(xmldoc, args.output_file)
 logging.info("Saved XML file %s", args.output_file)
 
-generate_asd_plot(psddict, args.psd_plot)
-logging.info("Saved ASD plot %s", args.psd_plot)
+if args.psd_plot:
+    generate_asd_plot(psddict, args.psd_plot)
+    logging.info("Saved ASD plot %s", args.psd_plot)
 
 triggers = {sngl.ifo: (sngl.end_time + sngl.end_time_ns * 1e-9, sngl.snr)
             for sngl in sngl_inspiral_table_curr}
 base_time = int(np.floor(time))
-generate_snr_plot(
-    snr_curr_event,
-    args.snr_timeseries_plot,
-    triggers,
-    base_time
-)
-logging.info("Saved SNR plot %s", args.snr_timeseries_plot)
+if args.snr_timeseries_plot:
+    generate_snr_plot(
+        snr_curr_event,
+        args.snr_timeseries_plot,
+        triggers,
+        base_time
+    )
+    logging.info("Saved SNR plot %s", args.snr_timeseries_plot)
