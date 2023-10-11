@@ -52,15 +52,16 @@ ifo = args.ifo
 
 # Setup a data mask to remove any triggers with SNR below threshold
 # This works as a pre-filter as SNR is always greater than or equal
-# to sngl_ranking
+# to sngl_ranking, except in the psdvar case, where it could increase.
 
 with HFile(args.trig_file, 'r') as trig_file:
     n_triggers_orig = trig_file[f'{ifo}/snr'].size
     logging.info("Trigger file has %d triggers", n_triggers_orig)
     logging.info('Generating trigger mask')
-    idx, _ = trig_file.select(
-        lambda snr: snr >= args.stat_threshold,
+    idx, _, _ = trig_file.select(
+        lambda snr, psd_var_val: (snr / psd_var_val ** 0.5) >= args.stat_threshold,
         f'{ifo}/snr',
+        f'{ifo}psd_var_val',
         return_indices=True
     )
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
