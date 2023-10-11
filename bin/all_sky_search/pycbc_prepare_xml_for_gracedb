@@ -116,15 +116,12 @@ xmldoc.childNodes[-1].removeChild(coinc_inspiral_table)
 xmldoc.childNodes[-1].removeChild(coinc_table)
 
 # Find the coinc_table entry corresponding to the desired event ID
-event = None
-
-for evnt in coinc_table:
-    coinc_event_id = evnt.coinc_event_id
+for event in coinc_table:
+    coinc_event_id = event.coinc_event_id
     if args.event_id == coinc_event_id:
         # This is the event we want
-        event = evnt
         break
-if event is None:
+else:
     raise ValueError(f"event {args.event_id} not found in coinc table")
 
 coinc_event_table_curr = lsctables.New(lsctables.CoincTable)
@@ -148,14 +145,22 @@ for coinc_map in coinc_event_map_table:
 
 # Get the SNR timeseries and PSDs at the time of this event
 # these may not have contributed a trigger
-# Convert the SNR dict to be keyed on IFO-only:
-snr_curr_event = {snr_key[0]: snr_v
-                  for snr_key, snr_v in snr_timeseries.items()}
+
+# Check that the SNR timeseries correspond to the event
+# - allow 0.5s either side of the time
+snr_ts = {}
+for ifo, t in snr_timeseries.keys():
+    if not abs(t - time) < 0.5:
+        raise ValueError("SNR timeseries for IFO %s does not look like it "
+            "corresponds to this event, event time %.3f, SNR timeseries is "
+            "around time %.3f" % (ifo, time, t))
+    # Convert the SNR dict to be keyed on IFO-only:
+    snr_ts[ifo] = snr_timeseries[(ifo, t)]
 
 # IFOs from SNR timeseries:
-psds_curr_event = {}
+psds_event = {}
 psddict = {}
-for ifo in snr_curr_event.keys():
+for ifo in snr_ts.keys():
     psd = psds[ifo]
 
     psd = psd[psd.find(time)].psd
@@ -164,7 +169,7 @@ for ifo in snr_curr_event.keys():
                              dtype=np.float64)
     psd_fs = interpolate(psd_fs, args.delta_f)
 
-    psds_curr_event[ifo] = psd
+    psds_event[ifo] = psd
     psddict[ifo] = psd_fs
 
 lal_psddict = {}
@@ -177,7 +182,7 @@ for sngl in sngl_inspiral_table:
     sngl.channel = args.channel_name[sngl.ifo]
 
     # Two versions of the PSD dictionary have useful info here
-    psd = psds_curr_event[sngl.ifo]
+    psd = psds_event[sngl.ifo]
     psd_fs = psddict[sngl.ifo]
 
     flow = psd.file.attrs['low_frequency_cutoff']
@@ -193,7 +198,7 @@ for sngl in sngl_inspiral_table:
     fseries.data.data = psd_fs[kmin:] / np.square(pycbc.DYN_RANGE_FAC)
     lal_psddict[sngl.ifo] = fseries
 
-    snr_series_to_xml(snr_curr_event[sngl.ifo], xmldoc, sngl.event_id)
+    snr_series_to_xml(snr_ts[sngl.ifo], xmldoc, sngl.event_id)
 
 xmldoc.childNodes[-1].appendChild(coinc_event_table_curr)
 xmldoc.childNodes[-1].appendChild(coinc_inspiral_table_curr)
@@ -213,7 +218,7 @@ triggers = {sngl.ifo: (sngl.end_time + sngl.end_time_ns * 1e-9, sngl.snr)
 base_time = int(np.floor(time))
 if args.snr_timeseries_plot:
     generate_snr_plot(
-        snr_curr_event,
+        snr_ts,
         args.snr_timeseries_plot,
         triggers,
         base_time
