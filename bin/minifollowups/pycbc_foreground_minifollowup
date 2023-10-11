@@ -25,7 +25,6 @@ import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file
 import pycbc.version
 
-
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file',
@@ -111,7 +110,7 @@ if args.sort_variable not in f[file_val]:
 
 # In case we are doing background minifollowup with repeated events,
 # we must include the ordering / template / trigger / time info for
-# _many_ more events to make wure we get enough
+# _many_ more events to make sure we get enough
 events_to_read = num_events * 100
 
 # Hold your horses! - we've asked for more events than there are!
