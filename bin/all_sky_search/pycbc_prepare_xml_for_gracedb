@@ -142,14 +142,10 @@ for coinc_map in coinc_event_map_table:
 
 # Get the SNR timeseries and PSDs at the time of this event
 # these may not have contributed a trigger
-snr_timeseries_time_match = [snr_key for snr_key in snr_timeseries.keys()
-                             if abs(snr_key[1] - time) < 0.1]
-ifos = list(zip(*snr_timeseries_time_match))[0]
-time_key = list(zip(*snr_timeseries_time_match))[1][0]
-# Change to be keyed on IFO:
-snr_curr_event = {}
-for ts_key in snr_timeseries_time_match:
-    snr_curr_event[ts_key[0]] =  snr_timeseries[ts_key]
+# Convert the SNR dict to be keyed on IFO-only:
+snr_curr_event = {snr_key[0]: snr_v
+                  for snr_key, snr_v in snr_timeseries.items()
+                  if abs(snr_key[1] - time) < 0.1}
 
 # IFOs from SNR timeseries:
 psds_curr_event = {}
