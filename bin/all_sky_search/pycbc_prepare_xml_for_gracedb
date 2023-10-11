@@ -115,11 +115,15 @@ xmldoc.childNodes[-1].removeChild(coinc_event_map_table)
 xmldoc.childNodes[-1].removeChild(coinc_inspiral_table)
 xmldoc.childNodes[-1].removeChild(coinc_table)
 
+# Find the coinc_table entry corresponding to the desired event ID
+event = None
 for event in coinc_table:
     coinc_event_id = event.coinc_event_id
     if args.event_id == coinc_event_id:
         # This is the event we want
         break
+if event is None:
+    raise ValueError(f"event {args.event_id} not found in coinc table")
 
 coinc_event_table_curr = lsctables.New(lsctables.CoincTable)
 coinc_event_table_curr.append(event)
