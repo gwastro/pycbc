@@ -103,7 +103,7 @@ for snr_filename in args.snr_timeseries:
     with h5py.File(snr_filename, 'r') as snr_f:
         ifo = snr_f.attrs['ifo']
         time = snr_f.attrs['event_time']
-        snr_timeseries[(ifo, time)] = load_timeseries(snr_filename, 'snr')
+    snr_timeseries[(ifo, time)] = load_timeseries(snr_filename, 'snr')
 
 coinc_table = lsctables.CoincTable.get_table(xmldoc)
 coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
