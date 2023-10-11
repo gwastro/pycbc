@@ -59,7 +59,7 @@ with HFile(args.trig_file, 'r') as trig_file:
     logging.info("Trigger file has %d triggers", n_triggers_orig)
     logging.info('Generating trigger mask')
     idx, _ = trig_file.select(
-        lambda snr: snr > args.stat_threshold,
+        lambda snr: snr >= args.stat_threshold,
         f'{ifo}/snr',
         return_indices=True
     )
@@ -91,7 +91,7 @@ n_triggers = tmplt_ids.size
 
 logging.info("Applying %s > %.3f cut", args.sngl_ranking,
              args.stat_threshold)
-keep = stat > args.stat_threshold
+keep = stat >= args.stat_threshold
 tmplt_ids = tmplt_ids[keep]
 trig_times = trig_times[keep]
 trig_times_int = trig_times_int[keep]
