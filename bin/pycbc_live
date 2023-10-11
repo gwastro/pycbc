@@ -134,6 +134,8 @@ class LiveEventManager(object):
                 self.fu_cores = 1
             # Convert SNR optimizer options into a string
             self.snr_opt_options = snr_optimizer.args_to_string(args)
+        else:
+            self.snr_opt_options = None
 
         if args.enable_embright_has_massgap:
             if args.embright_massgap_max < self.mc_area_args['mass_bdary']['ns_max']:
@@ -327,7 +329,8 @@ class LiveEventManager(object):
         cmd += exepath + ' '
 
         # Add SNR optimization options to the command
-        cmd += self.snr_opt_options
+        if self.snr_opt_options is not None:
+            cmd += self.snr_opt_options
 
         # Add data files according to the event we are optimizing
         data_fils_str = '--data-files '
