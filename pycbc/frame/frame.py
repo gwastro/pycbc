@@ -301,7 +301,7 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
                          sieve=None, check_integrity=False):
     """Read time series from frame data.
 
-    Query for the locatin of physical frames matching the frame type. Return
+    Query for the location of physical frames matching the frame type. Return
     a time series containing the channel between the given start and end times.
 
     Parameters
