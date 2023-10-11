@@ -11,7 +11,7 @@ The wrapper needs to exist as the XML format doesnt allow us to indicate
 the low frequency cutoff or waveform used. We also want to be able to control
 the output filename which is not possible in bayestar-localize-coincs
 
-Unrecognised options will be passed straight to the subprocess
+Unrecognised options will be passed straight to the bayestar subprocess
 """
 
 import argparse
