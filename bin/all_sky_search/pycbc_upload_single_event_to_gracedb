@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Take a coinc xml file containing multiple events and upload to gracedb.
+Take a coinc xml file containing a single event and upload to gracedb.
 """
 
 import os
@@ -130,6 +130,8 @@ def upload_file(upload_filename, displayname, comment, tag):
     """
     Helper function to upload files associated with the event.
     """
+    logging.info("Uploading file %s to event %s.", upload_filename,
+                 r["graceid"])
     gracedb.write_log(
         r["graceid"],
         comment,
@@ -137,8 +139,6 @@ def upload_file(upload_filename, displayname, comment, tag):
         tag_name=[tag],
         displayName=[displayname]
     )
-    logging.info("Uploaded file %s to event %s.", upload_filename,
-                 r["graceid"])
 
 
 if args.asd_plot:
