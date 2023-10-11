@@ -83,7 +83,7 @@ trigs = SingleDetTriggers(
 tmplt_ids = trigs.template_id
 trig_times = trigs.end_time
 stat = trigs.get_ranking(args.sngl_ranking)
-trig_times_int = trig_times.astype('int')
+trig_times_int = trig_times.astype(np.int64)
 
 del trigs
 
@@ -115,12 +115,12 @@ dq_percentiles = np.percentile(dq_logl, percentiles)[1:]
 
 # seconds bin tells what bin each second ends up
 seconds_bin = np.array([n_bins - np.sum(dq_percentiles >= dq_ll)
-                        for dq_ll in dq_logl]).astype('int')
+                        for dq_ll in dq_logl]).astype(np.int64)
 del dq_percentiles
 
 # bin times tells how much time ends up in each bin
 bin_times = np.array([np.sum(seconds_bin == i)
-                      for i in range(n_bins)]).astype('float')
+                      for i in range(n_bins)]).astype(np.float64)
 full_time = float(len(seconds_bin))
 times_nz = (bin_times > 0)
 del dq_logl
@@ -184,7 +184,7 @@ with h5.File(args.output_file, 'w') as f:
                      len(trig_percentile), bin_name)
 
         (counts, bins) = np.histogram(trig_percentile, bins=(percentiles)/100)
-        counts = counts.astype('float')
+        counts = counts.astype(np.float64)
         rates = np.zeros_like(bin_times)
         rates[times_nz] = counts[times_nz]/bin_times[times_nz]
         mean_rate = len(trig_percentile) / full_time
