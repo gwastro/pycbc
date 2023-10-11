@@ -54,22 +54,13 @@ ifo = args.ifo
 # This works as a pre-filter as SNR is always greater than or equal
 # to sngl_ranking, except in the psdvar case, where it could increase.
 
-def check_snr_psdvar(snr, psd_var_val):
-    """
-    Convenience function to calculate the maximum possible ranking statistic
-    value given SNR and psd variation statistic
-    """
-    rw_snr = snr / psd_var_val ** 0.5
-    rw_snr[psd_var_val == 0] = 0
-    return rw_snr >= args.stat_threshold
-
 with HFile(args.trig_file, 'r') as trig_file:
     n_triggers_orig = trig_file[f'{ifo}/snr'].size
     logging.info("Trigger file has %d triggers", n_triggers_orig)
     logging.info('Generating trigger mask')
     if f'{ifo}/psd_var_val' in trig_file:
         idx, _, _ = trig_file.select(
-            check_snr_psdvar,
+            lambda snr, psdvar: snr / psdvar ** 0.5 >= args.stat_threshold,
             f'{ifo}/snr',
             f'{ifo}/psd_var_val',
             return_indices=True
