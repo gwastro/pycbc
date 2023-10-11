@@ -16,6 +16,7 @@
 
 import logging, os.path
 from ligo import segments
+from pycbc.events import coinc
 from pycbc.workflow.core import Executable, FileList
 from pycbc.workflow.core import makedir, resolve_url_to_file
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
@@ -342,6 +343,63 @@ class PlotQScanExecutable(PlotExecutable):
     PlotExecutable.
     """
     time_dependent_options = ['--channel-name', '--frame-type']
+
+
+def get_single_template_params(curr_idx, times, bank_data, bank_id, fsdt, tids):
+    """
+    A function to get the parameters needed for the make_single_template_files
+    function.
+
+    Parameters
+    ----------
+    curr_idx : int
+        The index of the event in the file
+    times : dictionary keyed on IFO of numpy arrays, dtype float
+        The array of trigger times for each detector
+    bank_data : dictionary or h5py file
+        Structure containing the bank information
+    bank_id : int
+        The template index within the bank
+    fsdt : dictionary of h5py files, keyed on IFO
+        The single-detector TRIGGER_MERGE files, keyed by IFO
+    tids : dictionary keyed on IFO of numpy arrays, dtype int
+        The trigger indexes in fsdt for each IFO
+
+    Returns
+    -------
+    params : dictionary
+        A dictionary containing the parameters needed for the event used
+
+    """
+    params = {}
+    for ifo in times:
+        params['%s_end_time' % ifo] = times[ifo][curr_idx]
+        try:
+            # Only present for precessing, so may not exist
+            params['u_vals_%s'%ifo] = \
+                                 fsdt[ifo][ifo]['u_vals'][tids[ifo][curr_idx]]
+        except:
+            pass
+
+    params['mean_time'] = coinc.mean_if_greater_than_zero([times[ifo][curr_idx]
+                                                    for ifo in times])[0]
+
+    params['mass1'] = bank_data['mass1'][bank_id]
+    params['mass2'] = bank_data['mass2'][bank_id]
+    params['spin1z'] = bank_data['spin1z'][bank_id]
+    params['spin2z'] = bank_data['spin2z'][bank_id]
+    params['f_lower'] = bank_data['f_lower'][bank_id]
+    params['approximant'] = bank_data['approximant'][bank_id]
+    # don't require precessing template info if not present
+    try:
+        params['spin1x'] = bank_data['spin1x'][bank_id]
+        params['spin1y'] = bank_data['spin1y'][bank_id]
+        params['spin2x'] = bank_data['spin2x'][bank_id]
+        params['spin2y'] = bank_data['spin2y'][bank_id]
+        params['inclination'] = bank_data['inclination'][bank_id]
+    except KeyError:
+        pass
+    return params
 
 
 def make_single_template_files(workflow, segs, ifo, data_read_name,

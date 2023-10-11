@@ -25,34 +25,6 @@ import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file
 import pycbc.version
 
-def get_params(curr_idx, times, tids, bank_id, bank_data, fsdt):
-    params = {}
-    for ifo in times:
-        params['%s_end_time' % ifo] = times[ifo][curr_idx]
-        try:
-            # Only present for precessing case
-            params['u_vals_%s'%ifo] = \
-                                 fsdt[ifo][ifo]['u_vals'][tids[ifo][curr_idx]]
-        except:
-            pass
-    params['mean_time'] = coinc.mean_if_greater_than_zero([times[ifo][curr_idx]
-                                                    for ifo in times])[0]
-
-    params['mass1'] = bank_data['mass1'][bank_id]
-    params['mass2'] = bank_data['mass2'][bank_id]
-    params['spin1z'] = bank_data['spin1z'][bank_id]
-    params['spin2z'] = bank_data['spin2z'][bank_id]
-    params['f_lower'] = bank_data['f_lower'][bank_id]
-    # don't require precessing template info if not present
-    try:
-        params['spin1x'] = bank_data['spin1x'][bank_id]
-        params['spin1y'] = bank_data['spin1y'][bank_id]
-        params['spin2x'] = bank_data['spin2x'][bank_id]
-        params['spin2y'] = bank_data['spin2y'][bank_id]
-        params['inclination'] = bank_data['inclination'][bank_id]
-    except KeyError:
-        pass
-    return params
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -223,7 +195,14 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                              ifo_times, args.output_dir, special_tids=ifo_tids,
                              tags=args.tags + [str(event_count)])
 
-    params = get_params(curr_idx, times, tids, bank_id, bank_data, fsdt)
+    params = mini.get_single_template_params(
+        curr_idx,
+        times,
+        bank_data,
+        bank_ids[curr_idx],
+        fsdt,
+        tids
+    )
 
     sngl_tmplt_files, sngl_tmplt_plots = mini.make_single_template_plots(
         workflow,
