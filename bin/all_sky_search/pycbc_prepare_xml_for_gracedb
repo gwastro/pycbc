@@ -55,8 +55,7 @@ parser.add_argument('--input-file', required=True, type=str,
 parser.add_argument('--event-id', type=int, required=True,
                     help='ID for the event being prepared.')
 parser.add_argument('--output-file',
-                    help="Output filename for the locally stored XML. "
-                         "Default: current directory")
+                    help="Output filename for the locally stored XML. ")
 parser.add_argument('--snr-timeseries-plot',
                     help="Output filename for the plot of SNR timeseries. "
                          "Must be a plot filetype as used by matplotlib.")
