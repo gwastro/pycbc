@@ -46,9 +46,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
                  static_params=None, highpass_waveforms=False, **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
-        # cache the current projection for debugging
-        self.current_proj = {}
-        self.current_nproj = {}
         # cache the overwhitened data
         self._overwhitened_data = {}
         # cache the current gated data
@@ -383,7 +380,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._det_lognls.clear()
         # get the times of the gates
         gate_times = self.get_gate_times()
-        self.current_nproj.clear()
         for det, invpsd in self._invpsds.items():
             norm = self.det_lognorm(det)
             gatestartdelay, dgatedelay = gate_times[det]
@@ -395,7 +391,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
             gated_dt = data.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
-            self.current_nproj[det] = (gated_dt.proj, gated_dt.projslc)
             # convert to the frequency series
             gated_d = gated_dt.to_frequencyseries()
             # overwhiten
@@ -546,7 +541,6 @@ class GatedGaussianNoise(BaseGatedGaussian):
         # get the times of the gates
         gate_times = self.get_gate_times()
         logl = 0.
-        self.current_proj.clear()
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
             norm = self.det_lognorm(det)
@@ -562,7 +556,6 @@ class GatedGaussianNoise(BaseGatedGaussian):
             gated_res = res.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
                                  invpsd=invpsd, method='paint')
-            self.current_proj[det] = (gated_res.proj, gated_res.projslc)
             gated_rtilde = gated_res.to_frequencyseries()
             # overwhiten
             gated_rtilde *= invpsd

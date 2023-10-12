@@ -26,6 +26,7 @@ This module provides a wrapper to the ConfigParser utilities for pycbc.
 This module is described in the page here:
 """
 import re
+import os
 import itertools
 import logging
 from io import StringIO
@@ -95,10 +96,24 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             overrideTuples = []
         if deleteTuples is None:
             deleteTuples = []
-        DeepCopyableConfigParser.__init__(self)
+
+        super().__init__()
 
         # Enable case sensitive options
         self.optionxform = str
+
+        # Add in environment
+        # We allow access to environment variables by loading them into a
+        # special configparser section ([environment]) which can then
+        # be referenced by other sections.
+        # We cannot include environment variables containing characters
+        # that are special to ConfigParser. So any variable containing a % or a
+        # $ is ignored.
+        env_vals = {
+            key: value for key, value in os.environ.items()
+            if '%' not in value and '$' not in value
+        }
+        self.read_dict({'environment': env_vals})
 
         self.read_ini_file(configFiles)
 

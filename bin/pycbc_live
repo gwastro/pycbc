@@ -42,6 +42,7 @@ from pycbc import mchirp_area
 from pycbc.detector import ppdets
 from pycbc.filter import resample
 from pycbc.psd import estimate
+from pycbc.live import snr_optimizer
 
 # Use cached class-based FFTs in the resample and estimate module
 resample.USE_CACHING_FOR_LFILTER = True
@@ -119,6 +120,7 @@ class LiveEventManager(object):
             if platform.system() != 'Darwin':
                 available_cores = len(os.sched_getaffinity(0))
                 self.fu_cores = available_cores - analysis_cores
+                self.optimizer = args.snr_opt_method
                 if self.fu_cores <= 0:
                     logging.warning(
                         'Insufficient number of CPU cores (%d) to '
@@ -130,6 +132,10 @@ class LiveEventManager(object):
             else:
                 # To enable mac testing, this is just set to 1
                 self.fu_cores = 1
+            # Convert SNR optimizer options into a string
+            self.snr_opt_options = snr_optimizer.args_to_string(args)
+        else:
+            self.snr_opt_options = None
 
         if args.enable_embright_has_massgap:
             if args.embright_massgap_max < self.mc_area_args['mass_bdary']['ns_max']:
@@ -321,6 +327,12 @@ class LiveEventManager(object):
         cmd = 'timeout {} '.format(args.snr_opt_timeout)
         exepath = which('pycbc_optimize_snr')
         cmd += exepath + ' '
+
+        # Add SNR optimization options to the command
+        if self.snr_opt_options is not None:
+            cmd += self.snr_opt_options
+
+        # Add data files according to the event we are optimizing
         data_fils_str = '--data-files '
         psd_fils_str = '--psd-files '
         for ifo in live_ifos:
@@ -968,14 +980,12 @@ parser.add_argument('--size-override', type=int, metavar='N',
 parser.add_argument('--fftw-planning-limit', type=float,
                     help="Time in seconds to allow for a plan to be created")
 parser.add_argument('--run-snr-optimization', action='store_true',
-                    default=False,
                     help='Run spawned followup processes to maximize SNR for '
                          'any trigger uploaded to GraceDB')
 parser.add_argument('--snr-opt-timeout', type=int, default=400, metavar='SECONDS',
                     help='Maximum allowed duration of followup process to maximize SNR')
-parser.add_argument('--snr-opt-label', type=str, default='SNR_OPTIMIZED',
+parser.add_argument('--snr-opt-label', default='SNR_OPTIMIZED',
                     help='Label to apply to snr-optimized GraceDB uploads')
-
 
 parser.add_argument('--enable-embright-has-massgap', action='store_true', default=False,
                     help='Estimate HasMassGap probability for EMBright info. Lower limit '
@@ -994,6 +1004,7 @@ Coincer.insert_args(parser)
 SingleDetSGChisq.insert_option_group(parser)
 mchirp_area.insert_args(parser)
 livepau.insert_live_pastro_option_group(parser)
+snr_optimizer.insert_snr_optimizer_options(parser)
 
 args = parser.parse_args()
 
