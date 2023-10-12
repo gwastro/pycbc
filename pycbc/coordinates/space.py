@@ -536,7 +536,8 @@ def earth_position_ssb(t_geo):
     return (p, alpha)
 
 
-def t_geo_from_ssb(t_ssb, longitude_ssb, latitude_ssb, use_astropy, frame):
+def t_geo_from_ssb(t_ssb, longitude_ssb, latitude_ssb,
+                   use_astropy=True, frame=None):
     """ Calculating the time when a GW signal arrives at the barycenter
     of the Earth, by using the time and sky localization in SSB frame.
 
@@ -692,7 +693,7 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
                                     new_frame=geo_sky)
         else:
             t_geo[i] = t_geo_from_ssb(t_ssb[i], longitude_ssb[i],
-                                      latitude_ssb[i], use_astropy, None)
+                                      latitude_ssb[i], use_astropy)
             rotation_matrix_geo = rotation_matrix_ssb_to_geo()
             k_ssb = localization_to_propagation_vector(
                         longitude_ssb[i], latitude_ssb[i],
@@ -809,8 +810,7 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
                                     new_frame=ssb_sky)
         else:
             t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
-                                        latitude_ssb[i], use_astropy, 
-                                        None)
+                                        latitude_ssb[i], use_astropy)
             rotation_matrix_geo = rotation_matrix_ssb_to_geo()
             k_geo = localization_to_propagation_vector(
                         longitude_geo[i], latitude_geo[i], use_astropy)
