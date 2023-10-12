@@ -170,7 +170,7 @@ def propagation_vector_to_localization(k, use_astropy=True, frame=None):
         try:
             longitude = frame.lon.rad
             latitude = frame.lat.rad
-        except Exception:
+        except AttributeError:
             longitude = frame.ra.rad
             latitude = frame.dec.rad
     else:
@@ -682,13 +682,17 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
             k_ssb = localization_to_propagation_vector(
                         None, None, use_astropy, bme_coord)
             rotation_matrix_geo = \
-                ecliptic_transforms._mean_ecliptic_rotation_matrix(
-                    BarycentricMeanEcliptic(equinox='J2000').equinox)
+                ecliptic_transforms.baryecliptic_to_icrs(
+                    from_coo=BarycentricMeanEcliptic(equinox='J2000'),
+                    to_frame=None)
             polarization_geo[i] = polarization_newframe(
                                     polarization_ssb[i], k_ssb,
                                     rotation_matrix_geo, use_astropy,
-                                    old_frame=bme_coord, new_frame=geo_sky)
+                                    old_frame=bme_coord,
+                                    new_frame=geo_sky)
         else:
+            t_geo[i] = t_geo_from_ssb(t_ssb[i], longitude_ssb[i],
+                                      latitude_ssb[i], use_astropy, None)
             rotation_matrix_geo = rotation_matrix_ssb_to_geo()
             k_ssb = localization_to_propagation_vector(
                         longitude_ssb[i], latitude_ssb[i],
@@ -791,8 +795,9 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
             k_geo = localization_to_propagation_vector(
                 None, None, use_astropy, geo_coord)
             rotation_matrix_geo = \
-                ecliptic_transforms._mean_ecliptic_rotation_matrix(
-                    BarycentricMeanEcliptic(equinox='J2000').equinox)
+                ecliptic_transforms.baryecliptic_to_icrs(
+                    from_coo=BarycentricMeanEcliptic(equinox='J2000'),
+                    to_frame=None)
             t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
                                         latitude_ssb[i], use_astropy,
                                         ssb_sky)
@@ -800,16 +805,18 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
                                     polarization_geo[i], k_geo,
                                     rotation_matrix_geo.T,
                                     use_astropy,
-                                    old_frame=geo_coord, new_frame=ssb_sky)
+                                    old_frame=geo_coord,
+                                    new_frame=ssb_sky)
         else:
+            t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
+                                        latitude_ssb[i], use_astropy, 
+                                        None)
             rotation_matrix_geo = rotation_matrix_ssb_to_geo()
             k_geo = localization_to_propagation_vector(
                         longitude_geo[i], latitude_geo[i], use_astropy)
             k_ssb = rotation_matrix_geo @ k_geo
             longitude_ssb[i], latitude_ssb[i] = \
                 propagation_vector_to_localization(k_ssb, use_astropy)
-            t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
-                                        latitude_ssb[i], use_astropy)
             polarization_ssb[i] = polarization_newframe(
                                     polarization_geo[i], k_geo,
                                     rotation_matrix_geo.T, use_astropy)
