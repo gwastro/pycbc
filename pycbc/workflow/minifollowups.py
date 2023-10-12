@@ -345,7 +345,8 @@ class PlotQScanExecutable(PlotExecutable):
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
-def get_single_template_params(curr_idx, times, bank_data, bank_id, fsdt, tids):
+def get_single_template_params(curr_idx, times, bank_data,
+                               bank_id, fsdt, tids):
     """
     A function to get the parameters needed for the make_single_template_files
     function.
@@ -376,13 +377,14 @@ def get_single_template_params(curr_idx, times, bank_data, bank_id, fsdt, tids):
         params['%s_end_time' % ifo] = times[ifo][curr_idx]
         try:
             # Only present for precessing, so may not exist
-            params['u_vals_%s'%ifo] = \
+            params['u_vals_%s' % ifo] = \
                                  fsdt[ifo][ifo]['u_vals'][tids[ifo][curr_idx]]
         except:
             pass
 
-    params['mean_time'] = coinc.mean_if_greater_than_zero([times[ifo][curr_idx]
-                                                    for ifo in times])[0]
+    params['mean_time'] = coinc.mean_if_greater_than_zero(
+        [times[ifo][curr_idx] for ifo in times]
+    )[0]
 
     params['mass1'] = bank_data['mass1'][bank_id]
     params['mass2'] = bank_data['mass2'][bank_id]
@@ -689,7 +691,7 @@ def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
     files += node.output_files
     return files
 
-def make_coinc_info(workflow, singles, bank, coinc, out_dir,
+def make_coinc_info(workflow, singles, bank, coinc_file, out_dir,
                     n_loudest=None, trig_id=None, file_substring=None,
                     sort_order=None, sort_var=None, title=None, tags=None):
     tags = [] if tags is None else tags
@@ -699,7 +701,7 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
                               out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--single-trigger-files', singles)
-    node.add_input_opt('--statmap-file', coinc)
+    node.add_input_opt('--statmap-file', coinc_file)
     node.add_input_opt('--bank-file', bank)
     if sort_order:
         node.add_opt('--sort-order', sort_order)
