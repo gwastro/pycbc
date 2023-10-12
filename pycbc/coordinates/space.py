@@ -685,9 +685,9 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
             k_ssb = localization_to_propagation_vector(
                         None, None, use_astropy, bme_coord)
             rotation_matrix_geo = \
-                ecliptic_transforms.baryecliptic_to_icrs(
-                    from_coo=BarycentricMeanEcliptic(equinox='J2000'),
-                    to_frame=None)
+                ecliptic_transforms.icrs_to_baryecliptic(
+                    from_coo=None,
+                    to_frame=BarycentricMeanEcliptic(equinox='J2000'))
             polarization_geo[i] = polarization_newframe(
                                     polarization_ssb[i], k_ssb,
                                     rotation_matrix_geo, use_astropy,
@@ -800,9 +800,9 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
             k_geo = localization_to_propagation_vector(
                 None, None, use_astropy, geo_coord)
             rotation_matrix_geo = \
-                ecliptic_transforms.baryecliptic_to_icrs(
-                    from_coo=BarycentricMeanEcliptic(equinox='J2000'),
-                    to_frame=None)
+                ecliptic_transforms.icrs_to_baryecliptic(
+                    from_coo=None,
+                    to_frame=BarycentricMeanEcliptic(equinox='J2000'))
             t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
                                         latitude_ssb[i], use_astropy,
                                         ssb_sky)
