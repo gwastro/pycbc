@@ -653,8 +653,10 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
     if not isinstance(polarization_ssb, np.ndarray):
         polarization_ssb = np.array([polarization_ssb])
     num = len(t_ssb)
-    t_geo, longitude_geo = np.zeros(num), np.zeros(num)
-    latitude_geo, polarization_geo = np.zeros(num), np.zeros(num)
+    t_geo = np.full(num, np.nan)
+    longitude_geo = np.full(num, np.nan)
+    latitude_geo = np.full(num, np.nan)
+    polarization_geo = np.full(num, np.nan)
 
     for i in range(num):
         if longitude_ssb[i] < 0 or longitude_ssb[i] >= 2*np.pi:
@@ -767,8 +769,10 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
     if not isinstance(polarization_geo, np.ndarray):
         polarization_geo = np.array([polarization_geo])
     num = len(t_geo)
-    t_ssb, longitude_ssb = np.zeros(num), np.zeros(num)
-    latitude_ssb, polarization_ssb = np.zeros(num), np.zeros(num)
+    t_ssb = np.full(num, np.nan)
+    longitude_ssb = np.full(num, np.nan)
+    latitude_ssb = np.full(num, np.nan)
+    polarization_ssb = np.full(num, np.nan)
 
     for i in range(num):
         if longitude_geo[i] < 0 or longitude_geo[i] >= 2*np.pi:
@@ -809,14 +813,14 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
                                     old_frame=geo_coord,
                                     new_frame=ssb_sky)
         else:
-            t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
-                                        latitude_ssb[i], use_astropy)
             rotation_matrix_geo = rotation_matrix_ssb_to_geo()
             k_geo = localization_to_propagation_vector(
                         longitude_geo[i], latitude_geo[i], use_astropy)
             k_ssb = rotation_matrix_geo @ k_geo
             longitude_ssb[i], latitude_ssb[i] = \
                 propagation_vector_to_localization(k_ssb, use_astropy)
+            t_ssb[i] = t_ssb_from_t_geo(t_geo[i], longitude_ssb[i],
+                                        latitude_ssb[i], use_astropy)
             polarization_ssb[i] = polarization_newframe(
                                     polarization_geo[i], k_geo,
                                     rotation_matrix_geo.T, use_astropy)
