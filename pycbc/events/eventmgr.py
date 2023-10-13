@@ -551,6 +551,8 @@ class EventManager(object):
                     f['gating/' + gate_type + '/pad'] = \
                             numpy.array([g[2] for g in gating_info[gate_type]])
 
+        f.f.close()
+
 
 class EventManagerMultiDetBase(EventManager):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):

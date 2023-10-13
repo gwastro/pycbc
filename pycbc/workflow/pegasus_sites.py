@@ -202,7 +202,9 @@ def add_osg_site(sitecat, cp):
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
-                      value="ON_EXIT_OR_EVICT")
+                      value="ON_SUCCESS")
+    site.add_profiles(Namespace.CONDOR, key="success_exit_code",
+                      value="0")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="getenv",
@@ -210,8 +212,6 @@ def add_osg_site(sitecat, cp):
     site.add_profiles(Namespace.CONDOR, key="+InitializeModulesEnv",
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="+SingularityCleanEnv",
-                      value="True")
-    site.add_profiles(Namespace.CONDOR, key="use_x509userproxy",
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
@@ -224,7 +224,7 @@ def add_osg_site(sitecat, cp):
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
-                      value="/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation")
+                      value="/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation")
     # Add MKL location to LD_LIBRARY_PATH for OSG
     site.add_profiles(Namespace.ENV, key="LD_LIBRARY_PATH",
                       value="/usr/local/lib:/.singularity.d/libs")

@@ -37,6 +37,7 @@ from pycbc.workflow.jobsetup import (PycbcCreateInjectionsExecutable,
                                      PycbcInferenceExecutable)
 from pycbc.workflow import inference_followups as inffu
 from pycbc.workflow import plotting
+from pycbc.workflow import versioning
 from pycbc.inject import InjectionSet
 from pycbc.io import FieldArray
 
@@ -355,8 +356,12 @@ if do_pp_test:
     # add to the main workflow
     workflow += pp_workflow
 
-# create versioning HTML pages
-results.create_versioning_page(rdir["workflow/version"], workflow.cp)
+# Create versioning information
+versioning.make_versioning_page(
+    workflow,
+    workflow.cp,
+    rdir['workflow/version'],
+)
 
 # create node for making HTML pages
 plotting.make_results_web_page(finalize_workflow,

@@ -61,6 +61,7 @@ file_input_from_config_dict = {}
 
 class Executable(pegasus_workflow.Executable):
     # These are the file retention levels
+    DO_NOT_KEEP = 0
     INTERMEDIATE_PRODUCT = 1
     ALL_TRIGGERS = 2
     MERGED_TRIGGERS = 3
@@ -147,6 +148,15 @@ class Executable(pegasus_workflow.Executable):
         self.update_output_directory(out_dir=out_dir)
 
         # Determine the level at which output files should be kept
+        if cp.has_option_tags('pegasus_profile-%s' % name,
+                              'pycbc|retention_level', tags):
+            # Get the retention_level from the config file
+            # This method allows us to use the retention levels
+            # defined above
+            cfg_ret_level = cp.get_opt_tags('pegasus_profile-%s' % name,
+                    'pycbc|retention_level', tags)
+            self.current_retention_level = getattr(self, cfg_ret_level)
+
         self.update_current_retention_level(self.current_retention_level)
 
         # Should I reuse this executable?
@@ -197,7 +207,7 @@ class Executable(pegasus_workflow.Executable):
             # need to do anything here, as I cannot easily check it exists.
             exe_path = exe_url.path
         else:
-            # Could be http, gsiftp, etc. so it needs fetching if run now
+            # Could be http, https, etc. so it needs fetching if run now
             self.needs_fetching = True
             if self.needs_fetching and not self.installed:
                 err_msg = "Non-file path URLs cannot be used unless the "
@@ -214,8 +224,12 @@ class Executable(pegasus_workflow.Executable):
             # being directly accessible on the execution site.
             # CVMFS is perfect for this! As is singularity.
             self.exe_pfns[exe_site] = exe_path
-        logging.info("Using %s executable "
-                     "at %s on site %s" % (name, exe_url.path, exe_site))
+        logging.debug(
+            "Using %s executable at %s on site %s",
+            name,
+            exe_url.path,
+            exe_site
+        )
 
         # FIXME: This hasn't yet been ported to pegasus5 and won't work.
         #        Pegasus describes two ways to work with containers, and I need
@@ -2068,7 +2082,8 @@ def resolve_url_to_file(curr_pfn, attrs=None):
     """
     cvmfsstr1 = 'file:///cvmfs/'
     cvmfsstr2 = 'file://localhost/cvmfs/'
-    cvmfsstrs = (cvmfsstr1, cvmfsstr2)
+    osdfstr1 = 'osdf:///'  # Technically this isn't CVMFS, but same handling!
+    cvmfsstrs = (cvmfsstr1, cvmfsstr2, osdfstr1)
 
     # Get LFN
     urlp = urllib.parse.urlparse(curr_pfn)

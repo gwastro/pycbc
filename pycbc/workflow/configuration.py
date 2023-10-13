@@ -28,12 +28,21 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 """
 
 import os
+import logging
 import stat
 import shutil
+import subprocess
 from shutil import which
+import urllib.parse
 from urllib.parse import urlparse
 
 from pycbc.types.config import InterpolatingConfigParser
+
+# NOTE urllib is weird. For some reason it only allows known schemes and will
+# give *wrong* results, rather then failing, if you use something like gsiftp
+# We can add schemes explicitly, as below, but be careful with this!
+urllib.parse.uses_relative.append('osdf')
+urllib.parse.uses_netloc.append('osdf')
 
 
 def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
@@ -75,9 +84,13 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
                 shutil.copy(u.path, filename)
 
     elif u.scheme == "http" or u.scheme == "https":
-        # FIXME: Move to top and make optional once 4001 functionality is
-        #        merged
+        # Would like to move ciecplib import to top using import_optional, but
+        # it needs to be available when documentation runs in the CI, and I
+        # can't get it to install in the GitHub CI
         import ciecplib
+        # Make the scitokens logger a little quieter
+        # (it is called through ciecpclib)
+        logging.getLogger('scitokens').setLevel(logging.root.level + 10)
         with ciecplib.Session() as s:
             if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
                 # authenticate with git.ligo.org using callback
@@ -89,9 +102,28 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         output_fp.write(r.content)
         output_fp.close()
 
+    elif u.scheme == "osdf":
+        # OSDF will require a scitoken to be present and stashcp to be
+        # available. Thanks Dunky for the code here!
+        cmd = [
+            which("stashcp") or "stashcp",
+            u.path,
+            filename,
+        ]
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError as err:
+            # Print information about the failure
+            print(err.cmd, "failed with")
+            print(err.stderr.decode())
+            print(err.stdout.decode())
+            raise
+
+        return filename
+
     else:
-        # TODO: We could support other schemes such as gsiftp by
-        # calling out to globus-url-copy
+        # TODO: We could support other schemes as needed
         errmsg = "Unknown URL scheme: %s\n" % (u.scheme)
         errmsg += "Currently supported are: file, http, and https."
         raise ValueError(errmsg)
