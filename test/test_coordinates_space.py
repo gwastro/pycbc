@@ -158,7 +158,7 @@ class TestParams(unittest.TestCase):
         from pycbc.types.frequencyseries import FrequencySeries
         from pycbc.detector import (Detector, load_detector_config,
                                     add_detector_on_earth,
-                                    _custom_ground_detectors)
+                                    _ground_detectors)
         from pycbc.waveform import get_td_waveform, get_fd_waveform
         import importlib
 
