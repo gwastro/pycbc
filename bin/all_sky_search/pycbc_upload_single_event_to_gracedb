@@ -31,9 +31,6 @@ import pycbc
 import lal
 from pycbc.io.live import gracedb_tag_with_version
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    level=logging.INFO)
-
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--xml-file-for-upload', required=True, type=str,
                     help='LIGOLW XML file containing the event.')
@@ -78,6 +75,11 @@ parser.add_argument('--labels', nargs='+',
 
 args = parser.parse_args()
 
+pycbc.init_logging(logging.INFO)
+# Make the scitokens logger a little quieter
+# (it is called through GraceDB)
+logging.getLogger('scitokens').setLevel(logging.root.level + 10)
+
 if args.production_server:
     gracedb = GraceDb()
 else:
@@ -86,7 +88,7 @@ else:
 labels = [l.upper() for l in args.labels]
 allowed_labels = gracedb.allowed_labels
 
-if not all([l in allowed_labels for l in labels]):
+if set(labels) - set(allowed_labels):
     err_msg = "One or more supplied labels is not available on the server. "
     err_msg += f"Supplied {','.join(labels)}, allowed "
     err_msg += f"{','.join(allowed_labels)}."
@@ -126,12 +128,13 @@ if args.log_message is not None:
         tag_name=['analyst_comments']
     )
 
+
 def upload_file(upload_filename, displayname, comment, tag):
     """
     Helper function to upload files associated with the event.
     """
-    logging.info("Uploading file %s to event %s.", upload_filename,
-                 r["graceid"])
+    logging.info("Uploading %s file %s to event %s.",
+                 displayname, upload_filename, r["graceid"])
     gracedb.write_log(
         r["graceid"],
         comment,
@@ -142,44 +145,51 @@ def upload_file(upload_filename, displayname, comment, tag):
 
 
 if args.asd_plot:
-    logging.info("Found ASD plot %s", args.asd_plot)
-    comment = "PyCBC ASD estimate from the time of event"
-    tag = "psd"
-    displayname='ASDs'
-    upload_file(args.asd_plot, displayname, comment, tag)
+    upload_file(
+        args.asd_plot,
+        "ASDs",
+        "PyCBC ASD estimate from the time of event",
+        "psd"
+    )
 
 if args.snr_timeseries_plot:
-    logging.info("Found SNR timeseries plot %s", args.snr_timeseries_plot)
-    comment = "SNR timeseries plot upload"
-    tag = "background"
-    displayname='SNR timeseries'
-    upload_file(args.snr_timeseries_plot, displayname, comment, tag)
+    upload_file(
+        args.snr_timeseries_plot,
+        "SNR timeseries",
+        "SNR timeseries plot upload",
+        "background"
+    )
 
 if args.skymap_plot:
-    logging.info("Found skymap plot %s", args.skymap_plot)
-    comment = "Skymap plot upload"
-    tag = "sky_loc"
-    displayname=''
-    upload_file(args.skymap_plot, displayname, comment, tag)
+    upload_file(
+        args.skymap_plot,
+        "",
+        "Skymap plot upload",
+        "sky_loc"
+    )
 
 if args.skymap_fits_file:
-    logging.info("Found fits file %s", args.skymap_fits_file)
-    comment = "sky localization complete"
-    tag = "sky_loc"
-    displayname=''
-    upload_file(args.skymap_fits_file, displayname, comment, tag)
+    upload_file(
+        args.skymap_fits_file,
+        "",
+        "sky localization complete",
+        "sky_loc"
+    )
 
 if args.source_probabilities:
-    logging.info("Found source probabilities file %s", args.source_probabilities)
-    comment = "Source probabilities JSON file upload"
-    tag = "pe"
-    displayname=''
-    upload_file(args.source_probabilities, displayname, comment, tag)
+    upload_file(
+        args.source_probabilities,
+        "",
+        "Source probabilities JSON file upload",
+        "pe"
+    )
 
 if args.source_probabilities_plot:
-    logging.info("Found source probabilities plot %s", args.source_probabilities_plot)
-    comment = "Source probabilities plot upload"
-    tag = "pe"
-    displayname=''
-    upload_file(args.source_probabilities_plot, displayname, comment, tag)
+    upload_file(
+        args.source_probabilities_plot,
+        "",
+        "Source probabilities plot upload",
+        "pe"
+    )
 
+logging.info('Done!')

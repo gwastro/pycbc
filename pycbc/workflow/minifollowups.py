@@ -1104,7 +1104,7 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
 
     workflow += bayestar_node
 
-    skymap_plot_exe = Executable(
+    skymap_plot_exe = PlotExecutable(
         workflow.cp,
         'skymap_plot',
         ifos=workflow.ifos,
