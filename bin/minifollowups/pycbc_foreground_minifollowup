@@ -130,10 +130,12 @@ stat = stat[event_idx]
 times = {}
 tids = {}
 ifo_list = f.attrs['ifos'].split(' ')
+f_cat = f[file_val]
 for ifo in ifo_list:
-    times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
-    tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
-bank_ids = f['{}/template_id'.format(file_val)][:][event_idx]
+    times[ifo] = f_cat['{}/time'.format(ifo)][:][event_idx]
+    tids[ifo] = f_cat['{}/trigger_id'.format(ifo)][:][event_idx]
+bank_ids = f_cat['template_id'][:][event_idx]
+f.close()
 
 bank_data = h5py.File(args.bank_file, 'r')
 
@@ -203,7 +205,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
         tids
     )
 
-    sngl_tmplt_files, sngl_tmplt_plots = mini.make_single_template_plots(
+    _, sngl_tmplt_plots = mini.make_single_template_plots(
         workflow,
         insp_segs,
         args.inspiral_data_read_name,
