@@ -573,22 +573,23 @@ class LiveEventManager(object):
             coinc_results['p_terr'] = event.p_terr
 
         # Do the optimizer setup
-        cmd, out_dir_path = self.setup_optimize_snr(
-            coinc_results,
-            live_ifos,
-            coinc_ifos,
-            fname,
-        )
-
-        # Now start the thread to run the SNR optimizer
-        if upload_checks or optimize_snr_checks:
-            thread_args = (
-                event, fname, comment, cmd, out_dir_path,
-                upload_checks, optimize_snr_checks
+        if args.run_snr_optimization:
+            cmd, out_dir_path = self.setup_optimize_snr(
+                coinc_results,
+                live_ifos,
+                coinc_ifos,
+                fname,
             )
-            gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
-                                                 args=thread_args)
-            gdb_upload_thread.start()
+
+            # Now start the thread to run the SNR optimizer
+            if upload_checks or optimize_snr_checks:
+                thread_args = (
+                    event, fname, comment, cmd, out_dir_path,
+                    upload_checks, optimize_snr_checks
+                )
+                gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
+                                                    args=thread_args)
+                gdb_upload_thread.start()
 
     def check_singles(self, results, psds):
         active = [k for k in results if results[k] is not None]
@@ -1266,14 +1267,15 @@ with ctx:
                                                             args.psd_segment_length,
                                                             int(args.sample_rate))
 
-                    psd_var_val = variation.calc_filt_psd_variation_live(data_reader[ifo].strain,
-                                                                         filt[ifo],
-                                                                         args.psd_segment_length)
+                    psd_var_ts = variation.calc_psd_variation(data_reader[ifo].strain,
+                                                               filt[ifo],
+                                                               args.increment)
 
-                    idx = (data_reader[ifo].start_time - results[ifo]['end_time']) * args.sample_rate
-                    psd_var = numpy.zeros(len(results[ifo]['end_time']), dtype=numpy.float32) + psd_var_val
-                    results[ifo]['psd_var_val'] = psd_var
-                    print(ifo, results[ifo]['psd_var_val'][0])
+                    psd_var_vals = variation.find_var_value(results[ifo],
+                                                            psd_var_ts)
+
+                    results[ifo]['psd_var_val'] = psd_var_vals
+
                     if psd_recalculated[ifo] is False:
                         logging.info(f'Setting {ifo} filter to none')
                         filt[ifo] = None

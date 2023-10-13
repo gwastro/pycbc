@@ -3,6 +3,7 @@
 import numpy
 from numpy.fft import rfft, irfft
 import scipy.signal as sig
+import scipy.interpolate
 
 
 import pycbc.psd
@@ -290,16 +291,14 @@ def create_filter(psd_estimated,
     return full_filt
 
 
-def calc_filt_psd_variation_live(strain,
-                                 full_filt,
-                                 psd_duration):
+def calc_psd_variation(strain,
+                       full_filt,
+                       increment,
+                       short_stride=0.25):
     """
     Calculate the psd variation statistic in the live search by convolving
     a filter with the data and taking the mean squared value of the psd
-    variation measurements each second.
-
-    This will be run every second and so only the last second of psd variation
-    is taken.
+    variation measurements each increment.
 
     Parameters
     ----------
@@ -307,8 +306,8 @@ def calc_filt_psd_variation_live(strain,
         The data currently being search over in pycbc live
     full_filt : some sort of array, scipy so i guess numpy?
         The filter created by `create_filter` to approximate the detector response
-    psd_duration : float
-        The length of the psds used in the live search
+    increment : float
+        The increment of data used in the live search
 
     Returns
     -------
@@ -318,53 +317,19 @@ def calc_filt_psd_variation_live(strain,
     """
     sample_rate = int(strain.sample_rate)
 
+    data_trim = 2.0
+
     # Grab the last psds worth of data
-    astrain = strain.time_slice(strain.end_time - psd_duration,
+    astrain = strain.time_slice(strain.end_time - increment - (data_trim*3),
                                 strain.end_time)
 
     # Convolve the filter with long segment of data
     wstrain = sig.fftconvolve(astrain, full_filt, mode='same')
-    wstrain = wstrain[int(0.25 * sample_rate):-int(0.25 * sample_rate)]
-
-    # compute the mean square of the chunk of data
-    variation = mean_square_live(data=wstrain,
-                                 sample_rate=sample_rate,
-                                 short_stride=0.25)
-
-    return variation
-
-def mean_square_live(data, sample_rate, short_stride):
-    """
-    Calculate the mean square of the convolution between the strain data and
-    the filter used to calculate the psd variation. To remove the influence
-    of short duration non-Gaussian glitches we calculate the mean square once
-    per short_stride and replace outliers which are greater than double the
-    average of the surrouding two strides with an average of those surrounding
-    two strides.
-
-    Finally the mean of the 4 short strides in the last second of the data are
-    taken as the psd variation value for the most recent second of strain data
-    and are used in the ranking of triggers.
-
-    Parameters
-    ----------
-    data : numpy array?
-        The array containing the result of the convolution between the full
-        filter and the strain data.
-    sample_rate : int
-        The sample rate of the strain data.
-    short_stride : float (default = 0.25)
-        The stride to remove the effect of glitches in the data.
-
-    Returns
-    -------
-    m_s : float
-        The mean variation of the most recent second of the strain data.
-    """
+    wstrain = wstrain[int(data_trim * sample_rate):-int(data_trim * sample_rate)]
 
     # Calculate mean square of data once per short stride and replace
     # outliers
-    short_ms = numpy.mean(data.reshape(-1, int(sample_rate * short_stride)) ** 2,
+    short_ms = numpy.mean(wstrain.reshape(-1, int(sample_rate * short_stride)) ** 2,
                           axis=1)
 
     # Define an array of averages that is used to substitute outliers
@@ -372,8 +337,33 @@ def mean_square_live(data, sample_rate, short_stride):
     outliers = short_ms[1:-1] > (2. * ave)
     short_ms[1:-1][outliers] = ave[outliers]
 
-
     # Calculate mean square of data every step within a window equal to
     # stride seconds
-    m_s = numpy.mean(short_ms)
-    return m_s
+    m_s = []
+    for idx in range(int(len(short_ms)/(1/short_stride))):
+        m_s.append(numpy.mean(short_ms[int((1/short_stride) * idx) : int((1/short_stride) * (idx + 1))]))
+
+    # Turn m_s into a numpy array
+    m_s = numpy.array(m_s, dtype=wstrain.dtype)
+
+    # Convert to a short duration timeseries to extract psd variation values
+    # from for each trigger
+    psd_var = TimeSeries(m_s, delta_t=1.0,
+                         epoch=strain.end_time - increment - (data_trim * 3) + data_trim)
+
+    return psd_var
+
+
+def find_var_value(triggers,
+                   psd_var_timeseries):
+
+    # Find gps time of the trigger
+    trigger_times = triggers['end_time']
+
+    # Interpolate between values
+    interpolator = scipy.interpolate.interp1d(psd_var_timeseries.sample_times.numpy(),
+                                              psd_var_timeseries.numpy(),
+                                              fill_value=1.0, bounds_error=False)
+    psd_var_vals = interpolator(trigger_times)
+
+    return psd_var_vals
