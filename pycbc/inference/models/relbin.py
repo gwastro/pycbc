@@ -362,7 +362,6 @@ class Relative(DistMarg, BaseGaussianNoise):
         else:
             atimes = self.fid_params["tc"]
             if self.still_needs_det_response:
-                print('setting cython likelihoods')
                 self.lik = likelihood_parts_det
                 self.mlik = likelihood_parts_det_multi
             else:
@@ -484,7 +483,7 @@ class Relative(DistMarg, BaseGaussianNoise):
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
-        # models = [self] + models
+        models = [self] + models
         loglr = 0
         # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
         for m in models:
@@ -521,7 +520,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                                     fp2, fc2, dtc2, hp2, hc2, h002,
                                     a0, a1)
                     loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
-        return loglr # + self.lognl
+        return loglr + self.lognl
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
@@ -542,9 +541,7 @@ class Relative(DistMarg, BaseGaussianNoise):
         # get model params
         p = self.current_params
         wfs = self.get_waveforms(p)
-        # think I need to change self.likelihood_function -> self.lik
         lik = self.likelihood_function
-        # lik = self.lik
         norm = 0.0
         filt = 0j
         self._current_wf_parts = {}
