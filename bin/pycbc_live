@@ -573,23 +573,22 @@ class LiveEventManager(object):
             coinc_results['p_terr'] = event.p_terr
 
         # Do the optimizer setup
-        if args.run_snr_optimization:
-            cmd, out_dir_path = self.setup_optimize_snr(
-                coinc_results,
-                live_ifos,
-                coinc_ifos,
-                fname,
-            )
+        cmd, out_dir_path = self.setup_optimize_snr(
+            coinc_results,
+            live_ifos,
+            coinc_ifos,
+            fname,
+        )
 
-            # Now start the thread to run the SNR optimizer
-            if upload_checks or optimize_snr_checks:
-                thread_args = (
-                    event, fname, comment, cmd, out_dir_path,
-                    upload_checks, optimize_snr_checks
-                )
-                gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
-                                                    args=thread_args)
-                gdb_upload_thread.start()
+        # Now start the thread to run the SNR optimizer
+        if upload_checks or optimize_snr_checks:
+            thread_args = (
+                event, fname, comment, cmd, out_dir_path,
+                upload_checks, optimize_snr_checks
+            )
+            gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
+                                                args=thread_args)
+            gdb_upload_thread.start()
 
     def check_singles(self, results, psds):
         active = [k for k in results if results[k] is not None]
