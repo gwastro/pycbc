@@ -1566,8 +1566,8 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         try:
             self.curr_mchirp = kwargs['mchirp']
-        except KeyError:
-            logging.info("Kwargs doesn't contain mchirp")
+        except KeyError as e:
+            print(e)
 
         logr_s = self.logsignalrate(stat, slide * step, to_shift)
 
@@ -1800,8 +1800,8 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
             try:
                 self.curr_mchirp = mchirp_from_mass1_mass2(trigs['mass1'],
                                                            trigs['mass2'])
-            except KeyError:
-                logging.info("Triggers not of the correct format.")
+            except KeyError as e:
+                print(e)
 
         if self.mcm is not None:
             # Careful - input might be a str, so cast to float
