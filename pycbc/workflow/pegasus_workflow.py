@@ -28,8 +28,10 @@ provides additional abstraction and argument handling.
 """
 import os
 import shutil
+import logging
 import tempfile
 import subprocess
+import warnings
 from packaging import version
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlsplit
@@ -315,6 +317,13 @@ class Workflow(object):
     """
     def __init__(self, name='my_workflow', directory=None, cache_file=None,
                  dax_file_name=None):
+        # Pegasus logging is fairly verbose, quieten it down a bit
+        # This sets the logger to one level less verbose than the root
+        # (pycbc) logger
+
+        # Get the logger associated with the Pegasus workflow import
+        pegasus_logger = logging.getLogger('Pegasus')
+        pegasus_logger.setLevel(logging.root.level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
@@ -340,7 +349,7 @@ class Workflow(object):
             self.filename = dax_file_name
         self._adag = dax.Workflow(self.filename)
 
-        # A pegasus job version of this workflow for use if it isncluded
+        # A pegasus job version of this workflow for use if it is included
         # within a larger workflow
         self._as_job = SubWorkflow(self.filename, is_planned=False,
                                    _id=self.name)
@@ -843,10 +852,11 @@ class File(dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
-        logging.warn("The from_path method in pegasus_workflow is deprecated. "
-                     "Please use File.from_path (for output files) in core.py "
-                     "or resolve_url_to_file in core.py (for input files) "
-                     "instead.")
+        warnings.warn("The from_path method in pegasus_workflow is "
+                      "deprecated. Please use File.from_path (for "
+                      "output files) in core.py or resolve_url_to_file "
+                      "in core.py (for input files) instead.",
+                      DeprecationWarning)
         urlparts = urlsplit(path)
         site = 'nonlocal'
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
