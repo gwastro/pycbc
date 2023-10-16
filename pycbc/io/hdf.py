@@ -414,7 +414,7 @@ class SingleDetTriggers(object):
             logging.info('Loading bank')
             self.bank = HFile(bank_file, 'r')
         else:
-            logging.info('No bank file given')
+            logging.info('No bank file given to SingleDetTriggers')
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
