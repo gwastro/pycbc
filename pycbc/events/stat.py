@@ -1478,12 +1478,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         except AttributeError:
             # exists for SingleDetTriggers
             self.curr_tnum = trigs['template_id']
-            # Should only be one ifo fit file provided
-
-            # Arthur Comment: I can understand the need for the assertion
-            #                 but it breaks Live.
-            # Should only be one ifo fit file provided
-            # assert len(self.ifos) == 1
 
         # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
