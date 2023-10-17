@@ -483,11 +483,11 @@ class Relative(DistMarg, BaseGaussianNoise):
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
-        models = [self] + models
+        # models = [self] + models
         loglr = 0
         # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
-        for m in models:
-            loglr += m.loglr
+        # for m in models:
+        #    loglr += m.loglr
 
         if not hasattr(self, 'hihj'):
             self.calculate_hihjs(models)
@@ -498,7 +498,6 @@ class Relative(DistMarg, BaseGaussianNoise):
                 print(f"Combination: {m1.current_params['modes']}, {m2.current_params['modes']}")
                 for det in self.data:
                     a0, a1, fedge = self.hihj[(m1, m2)][det]
-
                     dtc, channel, h00 = m1._current_wf_parts[det]
                     dtc2, channel2, h002 = m2._current_wf_parts[det]
                     c1c2 = self.mlik(fedge,
@@ -520,7 +519,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                                     fp2, fc2, dtc2, hp2, hc2, h002,
                                     a0, a1)
                     loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
-        return loglr + self.lognl
+        return loglr # + self.lognl
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
