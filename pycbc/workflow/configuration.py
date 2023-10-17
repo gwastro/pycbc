@@ -28,6 +28,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 """
 
 import os
+import logging
 import stat
 import shutil
 import subprocess
@@ -87,6 +88,9 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         # it needs to be available when documentation runs in the CI, and I
         # can't get it to install in the GitHub CI
         import ciecplib
+        # Make the scitokens logger a little quieter
+        # (it is called through ciecpclib)
+        logging.getLogger('scitokens').setLevel(logging.root.level + 10)
         with ciecplib.Session() as s:
             if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
                 # authenticate with git.ligo.org using callback
