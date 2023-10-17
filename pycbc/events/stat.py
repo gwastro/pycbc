@@ -1476,7 +1476,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             # exists if accessed via coinc_findtrigs
             self.curr_tnum = trigs.template_num
         except AttributeError:
-            # exists for SingleDetTriggers
+            # exists for SingleDetTriggers & pycbc_live get_coinc
             self.curr_tnum = trigs['template_id']
 
         # Store benchmark log volume as single-ifo information since the coinc
