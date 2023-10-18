@@ -1258,23 +1258,24 @@ with ctx:
             # TODO: PEP8
             if args.psd_variation:
 
-                logging.info('Setting filters to none')
+                logging.info('Setting all ifo filters to none')
                 filt = {ifo: None for ifo in ifos}
 
                 for ifo in results:
                     logging.info(f"Calculating PSD Variation Statistic for {ifo}")
 
                     if filt[ifo] is None:
-                        filt[ifo] = variation.create_filter(data_reader[ifo].psd,
-                                                            args.psd_segment_length,
-                                                            int(args.sample_rate))
+                        logging.info(f"Creating {ifo} filter for PSD Variation.")
+                        filt[ifo] = variation.live_create_filter(data_reader[ifo].psd,
+                                                                 args.psd_segment_length,
+                                                                 int(args.sample_rate))
 
-                    psd_var_ts = variation.calc_psd_variation(data_reader[ifo].strain,
-                                                               filt[ifo],
-                                                               args.increment)
+                    psd_var_ts = variation.live_calc_psd_variation(data_reader[ifo].strain,
+                                                                   filt[ifo],
+                                                                   args.increment)
 
-                    psd_var_vals = variation.find_var_value(results[ifo],
-                                                            psd_var_ts)
+                    psd_var_vals = variation.live_find_var_value(results[ifo],
+                                                                 psd_var_ts)
 
                     results[ifo]['psd_var_val'] = psd_var_vals
 

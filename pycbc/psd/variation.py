@@ -222,11 +222,11 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
 
 ########## FOR PYCBC LIVE ###########
 
-def create_filter(psd_estimated,
-                  psd_duration,
-                  sample_rate,
-                  low_freq=20,
-                  high_freq=480):
+def live_create_filter(psd_estimated,
+                       psd_duration,
+                       sample_rate,
+                       low_freq=20,
+                       high_freq=480):
     """
     Create a filter to be used in the calculation of the psd variation for the
     PyCBC Live search. This filter combines a bandpass between a lower and
@@ -252,12 +252,11 @@ def create_filter(psd_estimated,
 
     Returns
     -------
-    full_filt : some sort of scipy (so probably a numpy) array
+    full_filt : numpy.ndarray
         The complete filter to be convolved with the strain data to
         find the psd variation value.
 
     """
-    logging.info("Making a filter")
 
     # Create a bandpass filter between low_freq and high_freq once
     filt = sig.firwin(4 * sample_rate,
@@ -268,14 +267,14 @@ def create_filter(psd_estimated,
     filt.resize(int(psd_duration * sample_rate), refcheck=False)
 
     # Fourier transform the filter and take the absolute value to get
-    # rid of the phase.
+    #  rid of the phase.
     filt = abs(rfft(filt))
 
-    # Extract the frequencies in the psd to create a representative filter.
+    # Extract the psd frequencies to create a representative filter.
     freqs = numpy.array(psd_estimated.sample_frequencies, dtype=numpy.float32)
     plong = psd_estimated.numpy()
 
-    # Make the weighting filter - bandpass, which weight by f^-7/6,
+    # Create the filter - bandpass, which weight by f^-7/6,
     # and whiten. The normalization is chosen so that the variance
     # will be one if this filter is applied to white noise which
     # already has a variance of one.
@@ -291,71 +290,105 @@ def create_filter(psd_estimated,
     return full_filt
 
 
-def calc_psd_variation(strain,
-                       full_filt,
-                       increment,
-                       short_stride=0.25):
+def live_calc_psd_variation(strain,
+                            full_filt,
+                            increment,
+                            data_trim=2.0,
+                            short_stride=0.25):
     """
-    Calculate the psd variation statistic in the live search by convolving
-    a filter with the data and taking the mean squared value of the psd
-    variation measurements each increment.
+    Calculate the psd variation in the PyCBC Live search.
+
+    The Live strain data is convolved with the filter to produce a timeseries
+    containing the PSD variation values for each sample. This mean square of
+    the timeseries is then taken over the short_stride to remove the effects of
+    short duration glitches and further outliers from the mean are replaced
+    within the array. This array is then further averaged every second to
+    produce a timeseries that will contain a number of value equal to the
+    increment.
 
     Parameters
     ----------
     strain : pycbc.timeseries
-        The data currently being search over in pycbc live
+        Live data being searched through by the PyCBC Live search.
     full_filt : some sort of array, scipy so i guess numpy?
-        The filter created by `create_filter` to approximate the detector response
+        A filter created by `live_create_filter`.
     increment : float
-        The increment of data used in the live search
+        The number of seconds in each increment in the PyCBC Live search.
+    data_trim : float
+        The number of seconds to be trimmed from either end of the convolved
+        timeseries to prevent artefacts.
+    short_stride : float
+        The number of seconds to average the PSD variation timeseries over to
+        remove the effects of short duration glitches.
 
     Returns
     -------
-    variation : float
-        the psd variation value
+    psd_var : pycbc.timeseries
+        A timeseries containing the PSD variation values for each second
+        an increments number of seconds prior to the end of the input strain
+        data.
 
     """
     sample_rate = int(strain.sample_rate)
 
-    data_trim = 2.0
-
-    # Grab the last psds worth of data
+    # Grab the last increments worth of data with extra to account for the need
+    #  to trim the data to remove edge effects.
     astrain = strain.time_slice(strain.end_time - increment - (data_trim*3),
                                 strain.end_time)
 
-    # Convolve the filter with long segment of data
+    # Convole the data and the filter to produce the PSD variation timeseries,
+    #  then trim the beginning and end of the data to prevent edge effects.
     wstrain = sig.fftconvolve(astrain, full_filt, mode='same')
     wstrain = wstrain[int(data_trim * sample_rate):-int(data_trim * sample_rate)]
 
-    # Calculate mean square of data once per short stride and replace
-    # outliers
+    # Create a PSD variation array by taking the mean square of the PSD
+    #  variation timeseries every short_stride
     short_ms = numpy.mean(wstrain.reshape(-1, int(sample_rate * short_stride)) ** 2,
                           axis=1)
 
-    # Define an array of averages that is used to substitute outliers
+    # Create an array of averages to substitute out outliers in the PSD
+    #  variation array
     ave = 0.5 * (short_ms[2:] + short_ms[:-2])
     outliers = short_ms[1:-1] > (2. * ave)
     short_ms[1:-1][outliers] = ave[outliers]
 
-    # Calculate mean square of data every step within a window equal to
-    # stride seconds
+    # Calculate the average of the PSD variation array for every second
     m_s = []
     for idx in range(int(len(short_ms)/(1/short_stride))):
         m_s.append(numpy.mean(short_ms[int((1/short_stride) * idx) : int((1/short_stride) * (idx + 1))]))
 
-    # Turn m_s into a numpy array
+    # Convert m_s to a numpy array
     m_s = numpy.array(m_s, dtype=wstrain.dtype)
 
-    # Convert to a short duration timeseries to extract psd variation values
-    # from for each trigger
+    # Convert the m_s numpy array to a pycbc timeseries which now contains the
+    #  psd variation value every second.
     psd_var = TimeSeries(m_s, delta_t=1.0,
                          epoch=strain.end_time - increment - (data_trim * 3) + data_trim)
 
     return psd_var
 
 
-def find_var_value(triggers,
-                   psd_var_timeseries):
+def live_find_var_value(triggers,
+                        psd_var_timeseries):
+    """
+    Interpolate between PSD variation values to find the PSD variation value
+    associated with a specific trigger.
+
+    Parameters
+    ----------
+    triggers : dict
+        A dictionary containing the trigger values to find the PSD variation
+        of.
+    psd_var_timeseries : pycbc.timeseries
+        A timeseries containing the PSD variation value for each second of the
+        latest increment in PyCBC Live. Created by live_calc_psd_variation.
+
+    Returns
+    -------
+    psd_var_vals : numpy.ndarray
+        A numpy array containing the PSD variation values associated with the
+        triggers.
+    """
 
     # Find gps time of the trigger
     trigger_times = triggers['end_time']
