@@ -9,7 +9,6 @@ import scipy.interpolate
 import pycbc.psd
 from pycbc.types import TimeSeries
 from pycbc.filter import resample_to_delta_t
-import logging
 
 
 def mean_square(data, delta_t, srate, short_stride, stride):
