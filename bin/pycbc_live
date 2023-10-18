@@ -997,9 +997,11 @@ parser.add_argument('--embright-massgap-max', type=float, default=5.0, metavar='
                          'HasMassGap probability.')
 parser.add_argument('--skymap-only-ifos', nargs='+',
                     help="Detectors that only contribute in sky localization")
-# TODO: Remove temp argument
-# TODO: Figure out how to get this through from single_stat instead
-parser.add_argument('--psd-variation', action='store_true')
+parser.add_argument('--psd-variation', action='store_true',
+                    help="Run the psd variation code to produce psd variation "
+                         "values for each single detector triggers found by "
+                         "the search. Required when using a single detector "
+                         "ranking statistic that includes psd variation.")
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
@@ -1173,9 +1175,9 @@ with ctx:
         results = {}
         evnt.live_detectors = set()
 
-        # PSD Var Objects
-        # TODO: Only do if psd_var is selected
-        psd_recalculated = {ifo: False for ifo in ifos}
+        # Create objects to track whether the psd has been recalculated
+        if args.psd_variation:
+            psd_recalculated = {ifo: False for ifo in ifos}
 
         for ifo in ifos:
             results[ifo] = False
@@ -1184,8 +1186,10 @@ with ctx:
                 timeout=args.frame_read_timeout
             )
             if status and psd_count[ifo] == 0:
-                # TODO: Only do if psd_var is selected
-                psd_recalculated[ifo] = False
+                # If the psd has been recalculated then we need a new
+                #  filter for psd variation calculation
+                if args.psd_variation:
+                    psd_recalculated[ifo] = False
                 status = data_reader[ifo].recalculate_psd()
                 psd_count[ifo] = args.psd_recompute_length - 1
             elif not status:
@@ -1252,12 +1256,8 @@ with ctx:
                         if len(results[ifo][key]):
                             results[ifo][key] = results[ifo][key][idx]
 
-            # Add in the psd_var to the results
-            # TODO: Perform this step depending on whether the stat includes
-            #       psd_var within the argument.
-            # TODO: PEP8
+            # Calculate and add the psd variation for the results
             if args.psd_variation:
-
                 logging.info('Setting all ifo filters to none')
                 filt = {ifo: None for ifo in ifos}
 
@@ -1279,6 +1279,9 @@ with ctx:
 
                     results[ifo]['psd_var_val'] = psd_var_vals
 
+                    # psd_recalculated is set to False when the psd of an ifo
+                    #  is recalculated due to changing. Need to create a new
+                    #  filter from this new psd.
                     if psd_recalculated[ifo] is False:
                         logging.info(f'Setting {ifo} filter to none')
                         filt[ifo] = None
