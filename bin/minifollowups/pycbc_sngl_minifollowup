@@ -137,11 +137,15 @@ n_triggers = f['{}/snr'.format(args.instrument)].size
 logging.info("%i triggers in file", n_triggers)
 if args.min_snr:
     logging.info('Calculating Prefilter')
-    idx, _ = f.select(lambda snr: snr > args.min_snr,
-                      '{}/snr'.format(args.instrument),
-                      return_indices=True)
-    mask = numpy.zeros(n_triggers, dtype=bool)
-    mask[idx] = True
+    f = hdf.HFile(args.single_detector_file, 'r')
+    idx = f.select(
+        lambda snr: snr > args.min_snr,
+        '{}/snr'.format(args.instrument),
+        indices_only=True
+    )
+    snr_mask = numpy.zeros(len(f['{}/snr'.format(args.instrument)]),
+                           dtype=bool)
+    snr_mask[idx] = True
     if len(idx) < num_events:
         logging.info("Fewer triggers exist after the --min-snr cut (%d) "
                      "than requested for the minifollowup (%d)",
@@ -149,12 +153,11 @@ if args.min_snr:
 
 trigs = hdf.SingleDetTriggers(
     args.single_detector_file,
-    args.bank_file,
-    args.foreground_censor_file,
-    args.foreground_segment_name,
-    None,
     args.instrument,
-    premask=mask
+    bank_file=args.bank_file,
+    veto_file=args.foreground_censor_file,
+    segment_name=args.foreground_segment_name,
+    premask=snr_mask
 )
 
 # Include gating vetoes

@@ -61,8 +61,11 @@ for ifo in args.single_trigger_files.keys():
 
     # Identify trigger idxs within window of trigger time
     with HFile(args.single_trigger_files[ifo], 'r') as data:
-        idx, _ = data.select(lambda endtime: abs(endtime - t) < args.window,
-                             f'{ifo}/end_time', return_indices=True)
+        idx = data.select(
+            lambda endtime: abs(endtime - t) < args.window,
+            f'{ifo}/end_time',
+            indices_only=True
+        )
         data_mask = numpy.zeros(len(data[f'{ifo}/snr']), dtype=bool)
         data_mask[idx] = True
 
@@ -75,13 +78,8 @@ for ifo in args.single_trigger_files.keys():
                       label=ifo)
         continue
 
-    # Not using bank file, or veto file, so lots of "None"s here.
     trigs = SingleDetTriggers(
         args.single_trigger_files[ifo],
-        None,
-        None,
-        None,
-        None,
         ifo,
         premask=data_mask
     )

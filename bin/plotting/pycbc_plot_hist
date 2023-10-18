@@ -47,9 +47,13 @@ f = h5py.File(args.trigger_file, 'r')
 ifo = tuple(f.keys())[0]
 
 # read single-detector triggers
-trigs = pycbc.io.SingleDetTriggers(args.trigger_file, args.bank_file,
-                                   args.veto_file, args.segment_name,
-                                   None, ifo)
+trigs = pycbc.io.SingleDetTriggers(
+    args.trigger_file,
+    ifo,
+    bank_file=args.bank_file,
+    veto_file=args.veto_file,
+    segment_name=args.segment_name,
+)
 
 # get x values and find the maximum x value
 val = getattr(trigs, args.x_var)

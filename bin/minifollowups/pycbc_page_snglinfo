@@ -71,26 +71,29 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # Get the single-ifo triggers
-sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
-                args.veto_file, args.veto_segment_name, None, args.instrument)
+sngl_file = hdf.SingleDetTriggers(
+    args.instrument
+    bank_file=args.bank_file,
+    veto_file=args.veto_file,
+    veto_segment_name=args.veto_segment_name,
+)
 
-rank_method = stat.get_statistic_from_opts(args, [args.instrument])
 if args.trigger_id is not None:
-    sngl_file.mask = [args.trigger_id]
-    trig_id = args.trigger_id
-    sngl_file.mask_to_n_loudest_clustered_events(rank_method, n_loudest=1)
-    stat = sngl_file.stat[0]
+    # Apply a mask which is just the trigger of interest
+    sngl_file.apply_mask(np.array([args.trigger_id]))
 elif args.n_loudest is not None:
     # Cluster by a ranking statistic and retain only the loudest n clustered
     # triggers
-    sngl_file.mask_to_n_loudest_clustered_events(rank_method,
-                                                 n_loudest=args.n_loudest+1)
+    sngl_file.mask_to_n_loudest_clustered_events(
+        args.sngl_ranking,
+        n_loudest=args.n_loudest+1
+    )
     # Restrict to only the nth loudest, instead of all triggers up to nth
     # loudest
     stat = sngl_file.stat
     l = stat.argsort()
     stat = stat[l[0]]
-    sngl_file.mask = sngl_file.mask[l[0]]
+    sngl_file.apply_mask(l[0])
 else:
     raise ValueError("Must give --n-loudest or --trigger-id.")
 

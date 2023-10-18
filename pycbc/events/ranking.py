@@ -299,6 +299,21 @@ sngls_ranking_function_dict = {
     'newsnr_sgveto_psdvar_scaled_threshold': get_newsnr_sgveto_psdvar_scaled_threshold,
 }
 
+# Dictionary of lists of datasets required in the trigs object for each function
+required_datasets = {}
+required_datasets['snr'] = ['snr']
+required_datasets['newsnr'] = required_datasets['snr'] + ['chisq', 'chisq_dof']
+required_datasets['new_snr'] = required_datasets['newsnr']
+required_datasets['newsnr_sgveto'] = required_datasets['newsnr'] + ['sg_chisq']
+required_datasets['newsnr_sgveto_psdvar'] = \
+    required_datasets['newsnr_sgveto'] + ['psd_var_val']
+required_datasets['newsnr_sgveto_psdvar_threshold'] = \
+    required_datasets['newsnr_sgveto_psdvar']
+required_datasets['newsnr_sgveto_psdvar_scaled'] = \
+    required_datasets['newsnr_sgveto_psdvar']
+required_datasets['newsnr_sgveto_psdvar_scaled_threshold'] = \
+    required_datasets['newsnr_sgveto_psdvar']
+
 
 def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
     """

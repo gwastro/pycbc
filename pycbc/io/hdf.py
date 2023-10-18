@@ -48,6 +48,18 @@ class HFile(h5py.File):
         return_indices : bool, optional
             If True, also return the indices of elements passing the function.
 
+        indices_only : bool, optional
+            If True, only return the indices of elements passing the function.
+
+        premask : array of boolean values, optional
+            The pre-mask to apply to the triggers at read-in.
+
+        group : string, optional
+            The group within the h5py file containing the datasets, e.g. in
+            standard offline merged trigger files, this would be the IFO. This
+            can be included in the args manually, but is required in the case
+            of derived functions, e.g. newsnr.
+
         Returns
         -------
         values : np.ndarrays
@@ -56,52 +68,88 @@ class HFile(h5py.File):
             element is an array of indices of elements passing the function.
 
         >>> f = HFile(filename)
-        >>> snr = f.select(lambda snr: snr > 6, 'H1/snr')
+        >>> snr = f.select(lambda snr: snr > 6, 'snr', group='H1')
         """
 
+        grp = kwds.get('group', None)
         # get references to each array
+        data_grp = self[grp]
         refs = {}
         data = {}
+
+        # Required datasets are either the arguments requested, we also add
+        # required datasets if the value requested is a known ranking
+        # (or a combination)
+        req_dsets = [a for a in args if a in data_grp]
+        for a in args:
+            if a in req_dsets:
+                continue
+            elif a in ranking.required_datasets:
+                # Get the required datasets from the defined list
+                req_dsets += ranking.required_datasets[a]
+            else:
+                raise ValueError(f"Cannot work out required datasets for {a}")
+
+        # remove any duplicates from req_dsets
+        req_dsets = list(set(req_dsets))
+
+        # Get the pointers to the h5py Datasets:
+        for ds in req_dsets:
+            refs[ds] = data_grp[ds]
+
+        # This will be the outputs:
         for arg in args:
-            refs[arg] = self[arg]
             data[arg] = []
 
         return_indices = kwds.get('return_indices', False)
+        indices_only = kwds.get('indices_only', False)
         indices = np.array([], dtype=np.uint64)
 
         # To conserve memory read the array in chunks
         chunksize = kwds.get('chunksize', int(1e6))
-        size = len(refs[arg])
+        size = len(refs[ds])
+
+        mask = kwds.get('premask', np.ones(size, dtype=bool))
+        if not mask.dtype == bool:
+            # mask is an array of indices rather than booleans,
+            # make it a bool array
+            new_mask = np.zeros(size, dtype=bool)
+            new_mask[mask] = True
+            mask = new_mask
 
         i = 0
         while i < size:
             r = i + chunksize if i + chunksize < size else size
 
-            # Read each chunk's worth of data and find where it passes the function
-            partial = [refs[arg][i:r] for arg in args]
+            # Read each chunk's worth of data and find where it passes
+            # the function
+            partial_data = {arg: refs[arg][i:r][mask[i:r]]
+                            for arg in req_dsets}
+            partial = [partial_data[a] if a in partial_data
+                       else ranking.get_sngls_ranking_from_trigs(partial_data, a)
+                       for a in args]
             keep = fcn(*partial)
-            if return_indices:
+            if return_indices or indices_only:
                 indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
             # Store only the results that pass the function
             for arg, part in zip(args, partial):
-                data[arg].append(part[keep])
+                if not indices_only:
+                    data[arg].append(part[keep])
 
             i += chunksize
 
+        return_tuple = tuple()
         # Combine the partial results into full arrays
-        if len(args) == 1:
-            res = np.concatenate(data[args[0]])
-            if return_indices:
-                return indices.astype(np.uint64), res
-            else:
-                return res
+        if indices_only or return_indices:
+            return_tuple += (indices.astype(np.uint64),)
+        if not indices_only:
+            return_tuple += tuple(np.concatenate(data[arg]) for arg in args)
+
+        if len(return_tuple) == 1:
+            return return_tuple[0]
         else:
-            res = tuple(np.concatenate(data[arg]) for arg in args)
-            if return_indices:
-                return (indices.astype(np.uint64),) + res
-            else:
-                return res
+            return return_tuple
 
 
 class DictArray(object):
@@ -401,15 +449,51 @@ class DataFromFiles(object):
 class SingleDetTriggers(object):
     """
     Provides easy access to the parameters of single-detector CBC triggers.
+
+    Uses a defined cut on sngl-ranking if desired. For more complicated cuts,
+    one can use HFile.select directly and apply a mask from that.
     """
-    # FIXME: Some of these are optional and should be kwargs.
-    def __init__(self, trig_file, bank_file, veto_file,
-                 segment_name, filter_func, detector, premask=None):
+    def __init__(self, trig_file, detector, bank_file=None, veto_file=None,
+                 segment_name=None, filter_ranking=None, filter_threshold=0,
+                 premask=None):
+        """
+        Create a SingleDetTriggers instance
+
+        Parameters
+        ----------
+        trig_file : string or os.pathtype, required
+            HDF file containing trigger information
+
+        detector : string, required
+            The detectior being used, this is used to access the
+            triggers in trig_file
+
+        bank_file: string or os.pathtype, optional
+            hdf file containing template bank information
+
+        veto_file: string or os.pathtype, optional
+            File used to define vetoes
+
+        segment_name : string, optional
+            Segment name being used in the veto_file
+
+        filter_ranking : string, optional
+            The ranking to use when applying the pre-filter. Must
+            be in ranking.py options
+
+        filter_threshold : float, optional
+            The threshold being used to cut on filter_ranking
+
+        premask : array of indices or boolean
+           Array of used triggers
+        """
         logging.info('Loading triggers')
         self.trigs_f = HFile(trig_file, 'r')
-        self.trigs = self.trigs_f[detector]
         self.ifo = detector  # convenience attributes
         self.detector = detector
+        self.trigs = self.trigs_f[self.detector]
+        # Number of triggers in the file
+        self.ntriggers = self.trigs['end_time'].size
         if bank_file:
             logging.info('Loading bank')
             self.bank = HFile(bank_file, 'r')
@@ -418,49 +502,46 @@ class SingleDetTriggers(object):
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
-        if premask is not None:
+        if premask is not None and premask.dtype == bool:
             self.mask = premask
+        elif premask is not None:
+            # This is an array of indices, need to convert into
+            # a boolean array
+            self.mask = np.zeros(self.ntriggers, dtype=bool)
+            self.mask[premask] = True
         else:
-            self.mask = np.ones(len(self.trigs['end_time']), dtype=bool)
+            # No premask - use a transparent mask to start with
+            self.mask = np.ones(self.ntriggers, dtype=bool)
+
+        # Apply filter function to the mask if given.
+        if filter_ranking and filter_threshold:
+            logging.info("Applying cut on %s above threshold %.3f",
+                         filter_ranking, filter_threshold)
+            logging.info("%d triggers before cuts", self.mask_size)
+            idx = self.trigs_f.select(
+                lambda filter_ranking: filter_ranking > filter_threshold,
+                filter_ranking,
+                indices_only=True,
+                premask=self.mask,
+                group=detector,
+            )
+            # Update the mask accordingly
+            self.update_mask(idx)
+            logging.info("%d triggers remain", self.mask_size)
 
         if veto_file:
             logging.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
             # giving the surviving triggers
-            logging.info('%i triggers before vetoes', self.mask.sum())
+            logging.info('%i triggers before vetoes', self.mask_size)
             self.veto_mask, _ = events.veto.indices_outside_segments(
                 self.end_time, [veto_file],
                 ifo=detector, segment_name=segment_name)
 
-            idx = np.flatnonzero(self.mask)[self.veto_mask]
-            self.mask[:] = False
-            self.mask[idx] = True
+            # Update mask accordingly
+            self.apply_mask(idx)
             logging.info('%i triggers remain after vetoes',
-                          len(self.veto_mask))
-
-        # FIXME this should use the hfile select interface to avoid
-        # memory and processing limitations.
-        if filter_func:
-            # get required columns into the namespace with dummy attribute
-            # names to avoid confusion with other class properties
-            logging.info('Setting up filter function')
-            for c in self.trigs.keys():
-                if c in filter_func:
-                    setattr(self, '_'+c, self.trigs[c][:])
-            for c in self.bank.keys():
-                if c in filter_func:
-                    # get template parameters corresponding to triggers
-                    setattr(self, '_'+c,
-                          np.array(self.bank[c])[self.trigs['template_id'][:]])
-
-            self.filter_mask = eval(filter_func.replace('self.', 'self._'))
-            # remove the dummy attributes
-            for c in chain(self.trigs.keys(), self.bank.keys()):
-                if c in filter_func: delattr(self, '_'+c)
-
-            self.mask = self.mask & self.filter_mask
-            logging.info('%i triggers remain after cut on %s',
-                         sum(self.mask), filter_func)
+                         self.mask_size)
 
     def __getitem__(self, key):
         # Is key in the TRIGGER_MERGE file?
@@ -487,10 +568,7 @@ class SingleDetTriggers(object):
         mtrigs = {}
         for k in self.trigs:
             if len(self.trigs[k]) == len(self.trigs['end_time']):
-                if self.mask is not None:
-                    mtrigs[k] = self.trigs[k][self.mask]
-                else:
-                    mtrigs[k] = self.trigs[k][:]
+                mtrigs[k] = self.trigs[k][self.mask]
         return mtrigs
 
     @classmethod
@@ -499,55 +577,88 @@ class SingleDetTriggers(object):
         return [m[0] for m in inspect.getmembers(cls) \
             if type(m[1]) == property]
 
-    def apply_mask(self, logic_mask):
-        """Apply a boolean array to the set of triggers"""
-        if hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
-            orig_indices = self.mask.nonzero()[0][logic_mask]
-            self.mask[:] = False
-            self.mask[orig_indices] = True
-        else:
-            self.mask = list(np.array(self.mask)[logic_mask])
+    def update_mask(self, idx):
+        """Update the mask according to the indices given.
 
-    def mask_to_n_loudest_clustered_events(self, rank_method,
+        This overwrites the mask"""
+
+        self.mask[:] = False
+        self.mask[idx] = True
+
+    def apply_mask(self, logic_mask):
+        """Apply a mask on top of any existing mask.
+
+        Applied mask can be a single index, an array of indices,
+        or boolean."""
+        orig_indices = np.flatnonzero(self.mask)
+        new_indices = orig_indices[logic_mask]
+        self.update_mask(new_indices)
+
+    def mask_to_n_loudest_clustered_events(self, sngl_ranking,
+                                           ranking_threshold=6,
                                            n_loudest=10,
-                                           cluster_window=10):
+                                           cluster_window=10,
+                                           **kwargs):
         """Edits the mask property of the class to point to the N loudest
-        single detector events as ranked by ranking statistic. Events are
-        clustered so that no more than 1 event within +/- cluster-window will
-        be considered."""
+        single detector events as ranked by ranking statistic.
+
+        Events are clustered so that no more than 1 event within +/-
+        cluster_window will be considered. Can apply a threshold on the
+        ranking using ranking_threshold, and pass arguments to get_ranking
+        through kwargs."""
 
         # If this becomes memory intensive we can optimize
         sds = rank_method.single(self.trig_dict())
         stat = rank_method.rank_stat_single((self.ifo, sds))
         if len(stat) == 0:
-            # No triggers, so just return here
-            self.stat = np.array([])
+            # No triggers at all, so just return here
+            self.apply_mask(np.array([], dtype=np.uint64))
             return
 
         times = self.end_time
+        if ranking_threshold:
+            # Threshold on sngl_ranking
+            # Note that we can provide None or zero to do no thresholding
+            # but the default is to do some
+            keep = stat >= ranking_threshold
+            stat = stat[keep]
+            times = times[keep]
+            self.apply_mask(keep)
+
+            if len(stat) == 0:
+                logging.warning("No triggers after thresholding")
+                return
+            else:
+                logging.info("%d triggers after thresholding", len(stat))
+
+
         index = stat.argsort()[::-1]
         new_times = []
         new_index = []
+        # Loop through triggers - loudest first
         for curr_idx in index:
             curr_time = times[curr_idx]
             for time in new_times:
+                # Have we already got a louder trigger within the window?
                 if abs(curr_time - time) < cluster_window:
                     break
             else:
-                # Only get here if no other triggers within cluster window
+                # Store if no other triggers within cluster window
                 new_index.append(curr_idx)
                 new_times.append(curr_time)
             if len(new_index) >= n_loudest:
+                # We have as many triggers as we want now
                 break
 
+        # For indexing, indices need to be a numpy array, in order
         index = np.array(new_index)
         index.sort()
-        self.stat = stat[index]
-        if hasattr(self.mask, 'dtype') and self.mask.dtype == 'bool':
-            orig_indices = np.flatnonzero(self.mask)[index]
-            self.mask = list(orig_indices)
-        elif isinstance(self.mask, list):
-            self.mask = list(np.array(self.mask)[index])
+        # Apply to the existing mask
+        self.apply_mask(index)
+
+    @property
+    def mask_size(self):
+        return sum(self.mask)
 
     @property
     def template_id(self):
@@ -690,22 +801,22 @@ class SingleDetTriggers(object):
         return ranking.get_sngls_ranking_from_trigs(self, rank_name, **kwargs)
 
     def get_column(self, cname):
+        """
+        Read columns while applying the mask
+        """
         # Fiducial value that seems to work, not extensively tuned.
         MFRAC = 0.3
 
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if self.mask is not None and (isinstance(self.mask, list) or \
-                (len(self.mask.nonzero()[0]) < (len(self.mask) * MFRAC))):
+        if len(self.mask.nonzero()[0]) < (len(self.mask) * MFRAC):
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire
         # array before masking.
-        elif self.mask is not None:
-            return self.trigs[cname][:][self.mask]
         else:
-            return self.trigs[cname][:]
+            return self.trigs[cname][:][self.mask]
 
 
 class ForegroundTriggers(object):
