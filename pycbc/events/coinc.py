@@ -40,7 +40,10 @@ from .eventmgr_cython import timecluster_cython
 _APPROXIMANT_DURATION_MAP = {
     'SEOBNRv2duration': 'SEOBNRv2',
     'SEOBNRv4duration': 'SEOBNRv4',
-    'SEOBNRv5duration': 'SEOBNRv5_ROM'
+    'SEOBNRv5duration': 'SEOBNRv5_ROM',
+    'IMRPhenomXASduration': 'IMRPhenomXAS',
+    'TaylorF2duration': 'TaylorF2',
+    'SPAtmpltduration': 'SPAtmplt',
 }
 
 
