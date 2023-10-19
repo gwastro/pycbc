@@ -562,7 +562,7 @@ def remnant_mass_from_mass1_mass2_spherical_spin_eos(
     # If a maximum NS mass is not provided, accept all values and
     # let the EOS handle this (in ns.initialize_eos)
     if ns_bh_mass_boundary is None:
-        mask = numpy.ones(ensurearray(mass2).size[0], dtype=bool)
+        mask = numpy.ones(ensurearray(mass2)[0].size, dtype=bool)
     # Otherwise perform the calculation only for small enough NS masses...
     else:
         mask = mass2 <= ns_bh_mass_boundary
