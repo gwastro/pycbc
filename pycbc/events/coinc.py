@@ -40,7 +40,7 @@ def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
 
     Parameters
-    ----------
+    ----------g
     bins: list of strings
         List of strings which define how a background bin is taken from the
         list of templates.
@@ -106,7 +106,7 @@ def background_bin_from_string(background_bins, data):
                 )
                 cached_values[bin_type] = vals
             elif bin_type.endswith('duration'):
-                vals = pycbc.pnutils.get_duration(
+                vals = pycbc.pnutils.get_imr_duration(
                     data['mass1'],
                     data['mass2'],
                     data['spin1z'],
