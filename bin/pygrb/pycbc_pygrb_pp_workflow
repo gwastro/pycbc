@@ -387,8 +387,8 @@ ini_file = _workflow.FileList([_workflow.File(wflow.ifos, '',
 layout.single_layout(base, ini_file)
 
 # Create versioning information
-wf.make_versioning_page(
-    _workflow,
+_workflow.make_versioning_page(
+    wflow,
     wflow.cp,
     rdir['workflow/version'],
 )
