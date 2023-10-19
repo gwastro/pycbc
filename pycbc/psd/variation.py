@@ -211,7 +211,6 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
     # Extract the PSD variation at trigger time through linear
     # interpolation
     if not hasattr(psd_var, 'cached_psd_var_interpolant'):
-        from scipy import interpolate
         psd_var.cached_psd_var_interpolant = \
             interpolate.interp1d(psd_var.sample_times.numpy(), psd_var.numpy(),
                                  fill_value=1.0, bounds_error=False)
@@ -219,7 +218,8 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
 
     return vals
 
-########## FOR PYCBC LIVE ###########
+# FOR PYCBC LIVE
+
 
 def live_create_filter(psd_estimated,
                        psd_duration,
@@ -354,14 +354,15 @@ def live_calc_psd_variation(strain,
     # Calculate the average of the PSD variation array for every second
     m_s = []
     for idx in range(int(len(short_ms)/(1/short_stride))):
-        m_s.append(numpy.mean(short_ms[int((1/short_stride) * idx) : int((1/short_stride) * (idx + 1))]))
+        m_s.append(numpy.mean(short_ms[int((1/short_stride) * idx):int((1/short_stride) * (idx + 1))]))
 
     # Convert m_s to a numpy array
     m_s = numpy.array(m_s, dtype=wstrain.dtype)
 
     # Convert the m_s numpy array to a pycbc timeseries which now contains the
     #  psd variation value every second.
-    psd_var = TimeSeries(m_s, delta_t=1.0,
+    psd_var = TimeSeries(m_s,
+                         delta_t=1.0,
                          epoch=strain.end_time - increment - (data_trim * 3) + data_trim)
 
     return psd_var
@@ -395,7 +396,8 @@ def live_find_var_value(triggers,
     # Interpolate between values
     interpolator = scipy.interpolate.interp1d(psd_var_timeseries.sample_times.numpy(),
                                               psd_var_timeseries.numpy(),
-                                              fill_value=1.0, bounds_error=False)
+                                              fill_value=1.0,
+                                              bounds_error=False)
     psd_var_vals = interpolator(trigger_times)
 
     return psd_var_vals
