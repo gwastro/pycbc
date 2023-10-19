@@ -538,11 +538,11 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
     elif approximant == "IMRPhenomD":
         time_length = lalsim.SimIMRPhenomDChirpTime(
                            m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
-    elif approximant.startswith("SEOBNRv4"):  # allow for v4_ROM also
-        # NB for no clear reason this function has f_low as first argument
+    elif approximant in ["SEOBNRv4", "SEOBNRv4_ROM"]:
+        # NB the LALSim function has f_low as first argument
         time_length = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
-    elif approximant.startwith("SEOBNRv5"):  # allow for v5_ROM also
+    elif approximant in ["SEOBNRv5", "SEOBNRv5_ROM"]:
         time_length = lalsim.SimIMRSEOBNRv5ROMTimeOfFrequency(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
     elif approximant in ["SPAtmplt", "TaylorF2"]:
