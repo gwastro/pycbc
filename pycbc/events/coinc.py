@@ -40,7 +40,7 @@ def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
 
     Parameters
-    ----------g
+    ----------
     bins: list of strings
         List of strings which define how a background bin is taken from the
         list of templates.
