@@ -590,7 +590,7 @@ class LiveEventManager(object):
                 upload_checks, optimize_snr_checks
             )
             gdb_upload_thread = threading.Thread(target=self.upload_in_thread,
-                                                args=thread_args)
+                                                 args=thread_args)
             gdb_upload_thread.start()
 
     def check_singles(self, results, psds):
@@ -1176,8 +1176,7 @@ with ctx:
         evnt.live_detectors = set()
 
         # Create objects to track whether the psd has been recalculated
-        if args.psd_variation:
-            psd_recalculated = {ifo: False for ifo in ifos}
+        psd_recalculated = {ifo: False for ifo in ifos}
 
         for ifo in ifos:
             results[ifo] = False
@@ -1188,8 +1187,7 @@ with ctx:
             if status and psd_count[ifo] == 0:
                 # If the psd has been recalculated then we need a new
                 #  filter for psd variation calculation
-                if args.psd_variation:
-                    psd_recalculated[ifo] = False
+                psd_recalculated[ifo] = False
                 status = data_reader[ifo].recalculate_psd()
                 psd_count[ifo] = args.psd_recompute_length - 1
             elif not status:
@@ -1258,14 +1256,12 @@ with ctx:
 
             # Calculate and add the psd variation for the results
             if args.psd_variation:
-                logging.info('Setting all ifo filters to none')
                 filt = {ifo: None for ifo in ifos}
 
                 for ifo in results:
                     logging.info(f"Calculating PSD Variation Statistic for {ifo}")
 
                     if filt[ifo] is None:
-                        logging.info(f"Creating {ifo} filter for PSD Variation.")
                         filt[ifo] = variation.live_create_filter(data_reader[ifo].psd,
                                                                  args.psd_segment_length,
                                                                  int(args.sample_rate))
@@ -1283,7 +1279,6 @@ with ctx:
                     #  is recalculated due to changing. Need to create a new
                     #  filter from this new psd.
                     if psd_recalculated[ifo] is False:
-                        logging.info(f'Setting {ifo} filter to none')
                         filt[ifo] = None
                         psd_recalculated[ifo] = True
 

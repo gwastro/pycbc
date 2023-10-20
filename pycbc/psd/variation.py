@@ -218,8 +218,6 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
 
     return vals
 
-# FOR PYCBC LIVE
-
 
 def live_create_filter(psd_estimated,
                        psd_duration,
