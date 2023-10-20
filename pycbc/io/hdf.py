@@ -15,14 +15,15 @@ from lal import LIGOTimeGPS, YRJUL_SI
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 
-from pycbc import version as pycbc_version
-from pycbc.io.ligolw import return_search_summary, return_empty_sngl
+from pycbc.io.ligolw import (
+    return_search_summary,
+    return_empty_sngl,
+    create_process_table
+)
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
 
 class HFile(h5py.File):
@@ -413,7 +414,7 @@ class SingleDetTriggers(object):
             logging.info('Loading bank')
             self.bank = HFile(bank_file, 'r')
         else:
-            logging.info('No bank file given')
+            logging.info('No bank file given to SingleDetTriggers')
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
@@ -857,11 +858,13 @@ class ForegroundTriggers(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        ifos = list(self.sngl_files.keys())
-        proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                     {}, instruments=ifos, comment='', version=pycbc_version.git_hash,
-                     cvs_repository='pycbc/'+pycbc_version.git_branch,
-                     cvs_entry_time=pycbc_version.date).process_id
+        ifos = sorted(self.sngl_files)
+        proc_table = create_process_table(
+            outdoc,
+            program_name='pycbc',
+            detectors=ifos
+        )
+        proc_id = proc_table.process_id
 
         search_summ_table = lsctables.New(lsctables.SearchSummaryTable)
         coinc_h5file = self.coinc_file.h5file
@@ -1049,7 +1052,7 @@ class ForegroundTriggers(object):
 
         mass1 = self.get_bankfile_array('mass1')
         mass2 = self.get_bankfile_array('mass2')
-        ofd['chirp_mass'], _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
+        ofd['chirp_mass'], _ = pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)
 
         logging.info("Outputting single-trigger information")
         logging.info("reduced chisquared")

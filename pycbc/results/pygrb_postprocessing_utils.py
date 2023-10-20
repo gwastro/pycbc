@@ -617,19 +617,18 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
 # =============================================================================
 # Function to load timeslides
 # =============================================================================
-def load_time_slides(xml_file):
+def load_time_slides(hdf_file_path):
     """Loads timeslides from PyGRB output file as a dictionary"""
+    hdf_file = h5py.File(hdf_file_path, 'r')
+    ifos = extract_ifos(hdf_file_path)
+    ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
+    time_slide_dict = {
+        slide_id: {
+            ifo: hdf_file[f'{ifo}/search/time_slides'][slide_id]
+            for ifo in ifos}
+        for slide_id in ids}
 
-    # Get all timeslides: these are number_of_ifos * number_of_timeslides
-    time_slide = load_xml_table(xml_file, glsctables.TimeSlideTable.tableName)
-    # Get a list of unique timeslide dictionaries
-    time_slide_list = [dict(i) for i in time_slide.as_dict().values()]
-    # Turn it into a dictionary indexed by the timeslide ID
-    time_slide_dict = {int(time_slide.get_time_slide_id(ov)): ov
-                       for ov in time_slide_list}
     # Check time_slide_ids are ordered correctly.
-    ids = _get_id_numbers(time_slide,
-                          "time_slide_id")[::len(time_slide_dict[0].keys())]
     if not (numpy.all(ids[1:] == numpy.array(ids[:-1])+1) and ids[0] == 0):
         err_msg = "time_slide_ids list should start at zero and increase by "
         err_msg += "one for every element"

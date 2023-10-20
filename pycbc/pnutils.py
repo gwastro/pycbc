@@ -31,7 +31,7 @@ import numpy
 from scipy.optimize import bisect, brentq, minimize
 from pycbc import conversions, libutils
 
-lalsimulation = libutils.import_optional('lalsimulation')
+lalsim = libutils.import_optional('lalsimulation')
 
 def nearest_larger_binary_number(input_len):
     """ Return the nearest binary number larger than input_len.
@@ -85,7 +85,7 @@ def eta_mass1_to_mass2(eta, mass1, return_mass_heavier=False, force_real=True):
     second component mass. Similar to mchirp_mass1_to_mass2 this requires
     finding the roots of a quadratic equation. Basically:
 
-    eta m2^2 + (2 eta - 1)m1 m2 + \eta m1^2 = 0
+    eta m2^2 + (2 eta - 1)m1 m2 + eta m1^2 = 0
 
     This has two solutions which correspond to mass1 being the heavier mass
     or it being the lighter mass. By default the value corresponding to
@@ -318,8 +318,7 @@ def f_LRD(m1, m2):
     return 1.2 * f_FRD(m1, m2)
 
 def _get_freq(freqfunc, m1, m2, s1z, s2z):
-    """
-    Wrapper of the LALSimulation function returning the frequency
+    """Wrapper of the LALSimulation function returning the frequency
     for a given frequency function and template parameters.
 
     Parameters
@@ -340,11 +339,17 @@ def _get_freq(freqfunc, m1, m2, s1z, s2z):
     f : float
         Frequency in Hz
     """
-    # Convert to SI units for lalsimulation
-    m1kg = float(m1) * lal.MSUN_SI
-    m2kg = float(m2) * lal.MSUN_SI
-    return lalsimulation.SimInspiralGetFrequency(
-        m1kg, m2kg, 0, 0, float(s1z), 0, 0, float(s2z), int(freqfunc))
+    return lalsim.SimInspiralGetFrequency(
+        solar_mass_to_kg(m1),
+        solar_mass_to_kg(m2),
+        0,
+        0,
+        float(s1z),
+        0,
+        0,
+        float(s2z),
+        int(freqfunc)
+    )
 
 # vectorize to enable calls with numpy arrays
 _vec_get_freq = numpy.vectorize(_get_freq)
@@ -372,12 +377,11 @@ def get_freq(freqfunc, m1, m2, s1z, s2z):
     f : float or numpy.array
         Frequency in Hz
     """
-    lalsim_ffunc = getattr(lalsimulation, freqfunc)
+    lalsim_ffunc = getattr(lalsim, freqfunc)
     return _vec_get_freq(lalsim_ffunc, m1, m2, s1z, s2z)
 
 def _get_final_freq(approx, m1, m2, s1z, s2z):
-    """
-    Wrapper of the LALSimulation function returning the final (highest)
+    """Wrapper of the LALSimulation function returning the final (highest)
     frequency for a given approximant an template parameters
 
     Parameters
@@ -398,20 +402,25 @@ def _get_final_freq(approx, m1, m2, s1z, s2z):
     f : float
         Frequency in Hz
     """
-    # Convert to SI units for lalsimulation
-    m1kg = float(m1) * lal.MSUN_SI
-    m2kg = float(m2) * lal.MSUN_SI
-    return lalsimulation.SimInspiralGetFinalFreq(
-        m1kg, m2kg, 0, 0, float(s1z), 0, 0, float(s2z), int(approx))
+    return lalsim.SimInspiralGetFinalFreq(
+        solar_mass_to_kg(m1),
+        solar_mass_to_kg(m2),
+        0,
+        0,
+        float(s1z),
+        0,
+        0,
+        float(s2z),
+        int(approx)
+    )
 
 # vectorize to enable calls with numpy arrays
 _vec_get_final_freq = numpy.vectorize(_get_final_freq)
 
 def get_final_freq(approx, m1, m2, s1z, s2z):
-    """
-    Returns the LALSimulation function which evaluates the final
-    (highest) frequency for a given approximant using given template
-    parameters.
+    """Returns the final (highest) frequency for a given approximant using
+    given template parameters.
+
     NOTE: TaylorTx and TaylorFx are currently all given an ISCO cutoff !!
 
     Parameters
@@ -432,7 +441,14 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
     f : float or numpy.array
         Frequency in Hz
     """
-    lalsim_approx = lalsimulation.GetApproximantFromString(approx)
+    # Unfortunately we need a few special cases (quite hacky in the case of
+    # IMRPhenomXAS) because some useful approximants are not understood by
+    # GetApproximantFromString().
+    if approx in ['IMRPhenomD', 'IMRPhenomXAS']:
+        return frequency_cutoff_from_name('IMRPhenomDPeak', m1, m2, s1z, s2z)
+    if approx == 'SEOBNRv5':
+        return frequency_cutoff_from_name('SEOBNRv5RD', m1, m2, s1z, s2z)
+    lalsim_approx = lalsim.GetApproximantFromString(approx)
     return _vec_get_final_freq(lalsim_approx, m1, m2, s1z, s2z)
 
 # Dictionary of functions with uniform API taking a
@@ -476,9 +492,11 @@ named_frequency_cutoffs = {
                                      p["spin1z"], p["spin2z"]),
     "SEOBNRv4Peak": lambda p: get_freq("fSEOBNRv4Peak", p["mass1"], p["mass2"],
                                        p["spin1z"], p["spin2z"]),
+    "SEOBNRv5RD": lambda p: get_freq("fSEOBNRv5RD", p["mass1"], p["mass2"],
+                                     p["spin1z"], p["spin2z"]),
     "SEOBNRv5Peak": lambda p: get_freq("fSEOBNRv5Peak", p["mass1"], p["mass2"],
                                        p["spin1z"], p["spin2z"])
-    }
+}
 
 def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     """
@@ -503,7 +521,7 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     f : float or numpy.array
         Frequency in Hz
     """
-    params = {"mass1":m1, "mass2":m2, "spin1z":s1z, "spin2z":s2z}
+    params = {"mass1": m1, "mass2": m2, "spin1z": s1z, "spin2z": s2z}
     return named_frequency_cutoffs[name](params)
 
 def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
@@ -511,27 +529,27 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
     m1, m2, s1z, s2z, f_low = float(m1), float(m2), float(s1z), float(s2z),\
                               float(f_low)
     if approximant == "SEOBNRv2":
-        chi = lalsimulation.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
-        time_length = lalsimulation.SimIMRSEOBNRv2ChirpTimeSingleSpin(
+        chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
+        time_length = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
                                 m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, f_low)
-    elif approximant == 'IMRPhenomXAS':
-        time_length = lalsimulation.SimIMRPhenomXASDuration(
+    elif approximant == "IMRPhenomXAS":
+        time_length = lalsim.SimIMRPhenomXASDuration(
                            m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
     elif approximant == "IMRPhenomD":
-        time_length = lalsimulation.SimIMRPhenomDChirpTime(
+        time_length = lalsim.SimIMRPhenomDChirpTime(
                            m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
-    elif approximant == "SEOBNRv4":
-        # NB for no clear reason this function has f_low as first argument
-        time_length = lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
+    elif approximant in ["SEOBNRv4", "SEOBNRv4_ROM"]:
+        # NB the LALSim function has f_low as first argument
+        time_length = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
-    elif approximant == 'SEOBNRv5_ROM':
-        time_length = lalsimulation.SimIMRSEOBNRv5ROMTimeOfFrequency(
+    elif approximant in ["SEOBNRv5", "SEOBNRv5_ROM"]:
+        time_length = lalsim.SimIMRSEOBNRv5ROMTimeOfFrequency(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
-    elif approximant == 'SPAtmplt' or approximant == 'TaylorF2':
-        chi = lalsimulation.SimInspiralTaylorF2ReducedSpinComputeChi(
+    elif approximant in ["SPAtmplt", "TaylorF2"]:
+        chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(
             m1, m2, s1z, s2z
         )
-        time_length = lalsimulation.SimInspiralTaylorF2ReducedSpinChirpTime(
+        time_length = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(
             f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, -1
         )
     else:
@@ -568,32 +586,51 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
 
         # FIXME spins are not taken into account
         f_high = f_SchwarzISCO(mass1 + mass2)
-        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
-                                 n_points)
-        track_t = numpy.array([findchirp_chirptime(float(mass1), float(mass2),
-                                        float(f), pn_2order) for f in track_f])
-    elif approximant in ['SEOBNRv2', 'SEOBNRv2_ROM_DoubleSpin',
-                         'SEOBNRv2_ROM_DoubleSpin_HI']:
-        f_high = get_final_freq('SEOBNRv2', mass1, mass2, spin1, spin2)
-        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
-                                 n_points)
-        # use HI function as it has wider freq range validity
-        track_t = numpy.array([
-                lalsimulation.SimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency(f,
-                    solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
-                    float(spin1), float(spin2)) for f in track_f])
-    elif approximant in ['SEOBNRv4', 'SEOBNRv4_ROM']:
-        f_high = get_final_freq('SEOBNRv4', mass1, mass2, spin1, spin2)
-        # use frequency below final freq in case of rounding error
-        track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(0.999*f_high),
-                                 n_points)
-        track_t = numpy.array([
-                lalsimulation.SimIMRSEOBNRv4ROMTimeOfFrequency(
-                        f, solar_mass_to_kg(mass1), solar_mass_to_kg(mass2),
-                        float(spin1), float(spin2)) for f in track_f])
+        def tof_func(f):
+            return findchirp_chirptime(
+                float(mass1),
+                float(mass2),
+                float(f),
+                pn_2order
+            )
+    elif approximant.startswith('SEOBNRv'):
+        approximant_prefix = approximant[:len('SEOBNRv*')]
+        f_high = get_final_freq(approximant_prefix, mass1, mass2, spin1, spin2)
+        f_high *= 0.999  # avoid errors due to rounding
+        tof_func_map = {
+            # use HI function for v2 as it has wider freq range validity
+            'SEOBNRv2': lalsim.SimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency,
+            'SEOBNRv4': lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency,
+            'SEOBNRv5': lalsim.SimIMRSEOBNRv5ROMTimeOfFrequency
+        }
+        def tof_func(f):
+            return tof_func_map[approximant_prefix](
+                f,
+                solar_mass_to_kg(mass1),
+                solar_mass_to_kg(mass2),
+                float(spin1),
+                float(spin2)
+            )
+    elif approximant in ['IMRPhenomD', 'IMRPhenomXAS']:
+        f_high = get_final_freq(approximant, mass1, mass2, spin1, spin2)
+        tof_func_map = {
+            'IMRPhenomD': lalsim.SimIMRPhenomDChirpTime,
+            'IMRPhenomXAS': lalsim.SimIMRPhenomXASDuration
+        }
+        def tof_func(f):
+            return tof_func_map[approximant](
+                solar_mass_to_kg(mass1),
+                solar_mass_to_kg(mass2),
+                float(spin1),
+                float(spin2),
+                f
+            )
     else:
-        raise ValueError('Approximant ' + approximant + ' not supported')
-    return (tc - track_t, track_f)
+        raise ValueError(f'Approximant {approximant} not supported')
+    track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high), n_points)
+    tof_func_vec = numpy.vectorize(tof_func)
+    track_t = tc - tof_func_vec(track_f)
+    return (track_t, track_f)
 
 
 ##############################This code was taken from Andy ###########
@@ -1028,7 +1065,7 @@ def jframe_to_l0frame(mass1, mass2, f_ref, phiref=0., thetajn=0., phijl=0.,
             dimensionless spin.
     """
     inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = \
-        lalsimulation.SimInspiralTransformPrecessingNewInitialConditions(
+        lalsim.SimInspiralTransformPrecessingNewInitialConditions(
             thetajn, phijl, spin1_polar, spin2_polar, spin12_deltaphi,
             spin1_a, spin2_a, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, f_ref,
             phiref)
@@ -1105,7 +1142,7 @@ def l0frame_to_jframe(mass1, mass2, f_ref, phiref=0., inclination=0.,
     # Note: unlike other LALSimulation functions, this one takes masses in
     # solar masses
     thetajn, phijl, s1pol, s2pol, s12_deltaphi, spin1_a, spin2_a = \
-        lalsimulation.SimInspiralTransformPrecessingWvf2PE(
+        lalsim.SimInspiralTransformPrecessingWvf2PE(
             inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
             mass1, mass2, f_ref, phiref)
     out = {'thetajn': thetajn,

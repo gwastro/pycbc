@@ -595,15 +595,31 @@ class TimeSeries(Array):
             # Uses the hole-filling method of
             # https://arxiv.org/pdf/1908.05644.pdf
             from pycbc.strain.gate import gate_and_paint
+            from pycbc.waveform.utils import apply_fd_time_shift
             if invpsd is None:
                 # These are some bare minimum settings, normally you
                 # should probably provide a psd
                 invpsd = 1. / self.filter_psd(self.duration/32, self.delta_f, 0)
             lindex = int((time - window - self.start_time) / self.delta_t)
-            rindex = lindex + int(2 * window / self.delta_t)
+            rindex = int((time + window - self.start_time) / self.delta_t)
             lindex = lindex if lindex >= 0 else 0
             rindex = rindex if rindex <= len(self) else len(self)
-            return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+            rindex_time = float(self.start_time + rindex * self.delta_t)
+            offset = rindex_time - (time + window)
+            if offset == 0:
+                return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+            else:
+                # time shift such that gate end time lands on a specific data sample
+                fdata = data.to_frequencyseries()
+                fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=False)
+                # gate and paint in time domain
+                data = fdata.to_timeseries()
+                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                # shift back to the original time
+                fdata = data.to_frequencyseries()
+                fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
+                tdata = fdata.to_timeseries()
+                return tdata
         elif method == 'hard':
             tslice = data.time_slice(time - window, time + window)
             tslice[:] = 0

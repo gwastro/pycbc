@@ -79,7 +79,7 @@ class PyCBCCalculateDQFlagExecutable(Executable):
         node.add_opt('--gps-start-time', start)
         node.add_opt('--gps-end-time', end)
         node.add_input_opt('--dq-segments', dq_file)
-        node.new_output_file_opt(workflow.analysis_time, '.hdf',
+        node.new_output_file_opt(segment, '.hdf',
                                  '--output-file')
         return node
 
@@ -165,6 +165,7 @@ def setup_dq_reranking(workflow, dq_label, insps, bank,
         ifo_insp = ifo_insp[0]
         flag_name = flag_str
         logging.info("Creating job for flag %s", flag_name)
+        dq_files = FileList()
         for seg in segs[ifo]:
             raw_exe = PyCBCCalculateDQFlagExecutable(workflow.cp,
                                                  'calculate_dqflag', ifos=ifo,
@@ -173,7 +174,7 @@ def setup_dq_reranking(workflow, dq_label, insps, bank,
             raw_node = raw_exe.create_node(workflow, seg, dq_file,
                                            flag_name)
             workflow += raw_node
-            dq_files = raw_node.output_files
+            dq_files += raw_node.output_files
         intermediate_exe = PyCBCBinTriggerRatesDQExecutable(workflow.cp,
                                                'bin_trigger_rates_dq',
                                                ifos=ifo,

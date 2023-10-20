@@ -46,7 +46,10 @@ _numpy_function_lib = {_x: _y for _x,_y in numpy.__dict__.items()
 # =============================================================================
 #
 # add ligolw_types to numpy sctypeDict
-numpy.sctypeDict.update(ligolw_types.ToNumPyType)
+# but don't include bindings that numpy already defines
+numpy.sctypeDict.update({_k: _val
+                         for (_k, _val) in ligolw_types.ToNumPyType.items()
+                         if _k not in numpy.sctypeDict})
 
 # Annoyingly, numpy has no way to store NaNs in an integer field to indicate
 # the equivalent of None. This can be problematic for fields that store ids:

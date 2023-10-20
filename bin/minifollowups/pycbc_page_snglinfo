@@ -51,6 +51,9 @@ trig_args.add_argument("--n-loudest", type=int, default=None,
 trig_args.add_argument("--trigger-id", type=int, default=None,
     help="Use the trigger with this ID in the HDF file. Must supply either "
          "this option or --n-loudest.")
+parser.add_argument('--title',
+    help="Title for the produced snippet. If not given, will default to "
+         "pre-sets according to the options given")
 parser.add_argument('--include-summary-page-link', action='store_true',
     help="If given, will include a link to the DQ summary page")
 parser.add_argument('--include-gracedb-link', action='store_true',
@@ -194,6 +197,7 @@ html = pycbc.results.dq.redirect_javascript + \
         str(pycbc.results.static_table(data, headers))
 ###############################################################################
 
+# Set up default titles and the captions for the file
 if args.n_loudest:
     title = 'Parameters of single-detector event ranked %s' \
         % (args.n_loudest + 1)
@@ -204,5 +208,5 @@ else:
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
-                        title = title,
+                        title = args.title if args.title else title,
                         caption = caption)

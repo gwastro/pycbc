@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+""" Plot the log likelihood percentiles for a DQ bin
+"""
+import sys
+import argparse
+import numpy
+import pycbc
+import h5py
+from matplotlib import use; use('Agg')
+from matplotlib import pyplot
+from pycbc.version import git_verbose_msg as version
+import pycbc.results
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="store_true")
+parser.add_argument("--dq-file", required=True)
+parser.add_argument("--ifo", type=str, required=True)
+parser.add_argument("--output-file", required=True)
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+ifo = args.ifo
+
+f = h5py.File(args.dq_file, 'r')
+dq_name = f.attrs['stat'].split('-')[1]
+logrates_grp = f[ifo + '/dq_percentiles']
+bin_names = logrates_grp.keys()
+
+# when using a flag, should have exactly 2 dq bins (off and on)
+# times when the flag was on go to the last dq bin
+for b in bin_names:
+    num_bins = len(logrates_grp[b])
+    assert num_bins == 2, f'Flag should have exactly 2 dq bins, found {num_bins}'
+logrates = [logrates_grp[b][-1] for b in bin_names]
+x = numpy.arange(len(logrates))
+
+ymax = 1.2 * max(logrates)
+color = pycbc.results.ifo_color(ifo)
+
+fig = pyplot.figure(0)
+ax = fig.add_subplot(111)
+ax2 = ax.twinx()
+
+ax2.bar(x, height=logrates, label=ifo, color=color)
+ax2.set_ylabel('DQ Log Likelihood Penalty')
+ax2.legend(loc='upper left', markerscale=5)
+ax2.set_ylim(0, ymax)
+ax2.grid()
+
+yticks = ax.get_yticks()
+
+ax_ymax = numpy.exp(ymax)
+ax.set_ylim(1, ax_ymax)
+new_ticks = range(0, int(numpy.ceil(numpy.log10(ax_ymax))))
+ax.set_yticks([10**t for t in new_ticks])
+ax.set_ylabel('(Rate during DQ Flag)/(Mean Rate) [Min 1]')
+ax.set_yscale('log')
+ax.set_xlabel('Template Bin Number')
+ax.set_xticks(x)
+
+# add meta data and save figure
+plot_title = f'{ifo}: {dq_name} flag log likelihood'
+plot_caption = f'The log likelihood correction during during times flagged \
+                by the {dq_name} flag'
+pycbc.results.save_fig_with_metadata(fig, args.output_file, title=plot_title,
+                                     caption=plot_caption, cmd=' '.join(sys.argv))

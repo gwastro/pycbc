@@ -55,6 +55,9 @@ def background_bin_from_string(background_bins, data):
     """
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
+    # Some duration/peak frequency functions are expensive.
+    # Do not want to recompute many times, if using lots of bins.
+    cached_values = {}
     for mbin in background_bins:
         locs = None
         name, bin_type_list, boundary_list = tuple(mbin.split(':'))
@@ -71,7 +74,9 @@ def background_bin_from_string(background_bins, data):
                 raise RuntimeError("Can't parse boundary condition! Must begin "
                                    "with 'lt' or 'gt'")
 
-            if bin_type == 'component' and boundary[0:2] == 'lt':
+            if bin_type in cached_values:
+                vals = cached_values[bin_type]
+            elif bin_type == 'component' and boundary[0:2] == 'lt':
                 # maximum component mass is less than boundary value
                 vals = numpy.maximum(data['mass1'], data['mass2'])
             elif bin_type == 'component' and boundary[0:2] == 'gt':
@@ -91,29 +96,29 @@ def background_bin_from_string(background_bins, data):
             elif bin_type == 'chi_eff':
                 vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
                                                  data['spin1z'], data['spin2z'])
-            elif bin_type == 'SEOBNRv2Peak':
-                vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
-                                              data['mass1'], data['mass2'],
-                                              data['spin1z'], data['spin2z'])
-            elif bin_type == 'SEOBNRv4Peak':
-                vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
-                                              data['mass2'], data['spin1z'],
-                                              data['spin2z'])
-            elif bin_type == 'SEOBNRv2duration':
+            elif bin_type.endswith('Peak'):
+                vals = pycbc.pnutils.get_freq(
+                    'f' + bin_type,
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z']
+                )
+                cached_values[bin_type] = vals
+            elif bin_type.endswith('duration'):
                 vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'], data['mass2'],
-                                   data['spin1z'], data['spin2z'],
-                                   data['f_lower'], approximant='SEOBNRv2')
-            elif bin_type == 'SEOBNRv4duration':
-                vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'][:], data['mass2'][:],
-                                   data['spin1z'][:], data['spin2z'][:],
-                                   data['f_lower'][:], approximant='SEOBNRv4')
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z'],
+                    data['f_lower'],
+                    approximant=bin_type.replace('duration', '')
+                )
+                cached_values[bin_type] = vals
             else:
                 raise ValueError('Invalid bin type %s' % bin_type)
 
             sub_locs = member_func(vals)
-            del vals
             sub_locs = numpy.where(sub_locs)[0]
             if locs is not None:
                 # find intersection of boundary conditions
