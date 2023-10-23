@@ -1168,15 +1168,17 @@ with ctx:
     last_bg_dump_time = int(data_end())
     psd_count = {ifo:0 for ifo in ifos}
 
+    # Create dicts to track whether the psd has been recalculated and to hold
+    #  psd variation filters
+    psd_recalculated = {ifo: True for ifo in ifos}
+    psd_var_filts = {ifo: None for ifo in ifos}
+
     while data_end() < args.end_time:
         t1 = pycbc.gps_now()
         logging.info('Analyzing from %s', data_end())
 
         results = {}
         evnt.live_detectors = set()
-
-        # Create a dictionary to track whether the psd has been recalculated
-        psd_recalculated = {ifo: False for ifo in ifos}
 
         for ifo in ifos:
             results[ifo] = False
@@ -1185,10 +1187,10 @@ with ctx:
                 timeout=args.frame_read_timeout
             )
             if status and psd_count[ifo] == 0:
+                status = data_reader[ifo].recalculate_psd()
                 # If the psd has been recalculated then we need a new
                 #  filter for psd variation calculation
-                psd_recalculated[ifo] = False
-                status = data_reader[ifo].recalculate_psd()
+                psd_recalculated[ifo] = True
                 psd_count[ifo] = args.psd_recompute_length - 1
             elif not status:
                 psd_count[ifo] = 0
@@ -1256,31 +1258,25 @@ with ctx:
 
             # Calculate and add the psd variation for the results
             if args.psd_variation:
-                filt = {ifo: None for ifo in ifos}
 
                 for ifo in results:
                     logging.info(f"Calculating PSD Variation Statistic for {ifo}")
 
-                    if filt[ifo] is None:
-                        filt[ifo] = variation.live_create_filter(data_reader[ifo].psd,
-                                                                 args.psd_segment_length,
-                                                                 int(args.sample_rate))
+                    # A new filter is needed if the PSD has been recalculated
+                    if psd_recalculated[ifo] is True:
+                        psd_var_filts[ifo] = variation.live_create_filter(data_reader[ifo].psd,
+                                                                          args.psd_segment_length,
+                                                                          int(args.sample_rate))
+                        psd_recalculated[ifo] = False
 
                     psd_var_ts = variation.live_calc_psd_variation(data_reader[ifo].strain,
-                                                                   filt[ifo],
+                                                                   psd_var_filts[ifo],
                                                                    args.increment)
 
                     psd_var_vals = variation.live_find_var_value(results[ifo],
                                                                  psd_var_ts)
 
                     results[ifo]['psd_var_val'] = psd_var_vals
-
-                    # psd_recalculated is set to False when the psd of an ifo
-                    #  is recalculated due to changing. Need to create a new
-                    #  filter from this new psd.
-                    if psd_recalculated[ifo] is False:
-                        filt[ifo] = None
-                        psd_recalculated[ifo] = True
 
             # Look for coincident triggers and do background estimation
             if args.enable_background_estimation:
