@@ -61,7 +61,7 @@ def mean_square(data, delta_t, srate, short_stride, stride):
 
 def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
                             psd_duration, psd_stride, psd_avg_method, low_freq,
-                            high_freq):
+                            high_freq, srate):
     """ Calculates time series of PSD variability
 
     This function first splits the segment up into 512 second chunks. It
@@ -115,8 +115,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     end_time = float(strain.end_time)
 
     # Resample the data
-    strain = resample_to_delta_t(strain, 1.0 / 2048)
-    srate = int(strain.sample_rate)
+    strain = resample_to_delta_t(strain, 1. / srate)
 
     # Fix the step for the PSD estimation and the time to remove at the
     # edge of the time series.
