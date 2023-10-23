@@ -301,8 +301,7 @@ def live_calc_psd_variation(strain,
     the timeseries is calculated over the short_stride to find outliers caused
     by short duration glitches. Outliers are replaced with the average of
     adjacent elements in the array. This array is then further averaged every
-    second to produce a timeseries that will contain a number of value equal
-    to the increment.
+    second to produce the PSD variation timeseries.
 
     Parameters
     ----------
@@ -322,9 +321,7 @@ def live_calc_psd_variation(strain,
     Returns
     -------
     psd_var : pycbc.timeseries
-        A timeseries containing the PSD variation values for each second
-        an increments number of seconds prior to the end of the input strain
-        data.
+        A timeseries containing the PSD variation values.
 
     """
     sample_rate = int(strain.sample_rate)
@@ -349,11 +346,8 @@ def live_calc_psd_variation(strain,
     outliers = short_ms[1:-1] > (2. * ave)
     short_ms[1:-1][outliers] = ave[outliers]
 
-    # Calculate the average of the PSD variation array for every second
-    #  short_ms contains the mean square of the PSD variation timeseries every
-    #  short_stride. To calculate the average of these values every second we
-    #  calculate the number of samples_per_second and iterate through short_ms
-    #  until all seconds have been calculated.
+    # Calculate the PSD variation every second by averaging over short_ms every
+    #  samples_per_second.
     m_s = []
     samples_per_second = 1 / short_stride
     for idx in range(int(len(short_ms) / samples_per_second)):
