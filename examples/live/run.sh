@@ -204,8 +204,8 @@ python -m mpi4py `which pycbc_live` \
 --single-duration-threshold 7 \
 --single-reduced-chisq-threshold 2 \
 --single-fit-file single_trigger_fits.hdf \
---verbose \
---psd-variation
+--psd-variation \
+--verbose
 
 # If you would like to use the pso optimizer, change --optimizer to pso
 #  and include these arguments while removing other optimizer args.
