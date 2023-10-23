@@ -1175,7 +1175,7 @@ with ctx:
         results = {}
         evnt.live_detectors = set()
 
-        # Create objects to track whether the psd has been recalculated
+        # Create a dictionary to track whether the psd has been recalculated
         psd_recalculated = {ifo: False for ifo in ifos}
 
         for ifo in ifos:
