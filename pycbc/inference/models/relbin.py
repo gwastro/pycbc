@@ -238,10 +238,10 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             if self.still_needs_det_response:
                 wave = get_fd_det_waveform_sequence(ifos=ifo,
-                                                    sample_points=fpoints,
-                                                    **self.fid_params)
+                                                sample_points=fpoints,
+                                                **self.fid_params)
                 curr_wav = wave[ifo]
-                self.ta[ifo] = 0
+                self.ta[ifo] = self.fid_params['tc'] + self.end_time[ifo]
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
@@ -483,11 +483,11 @@ class Relative(DistMarg, BaseGaussianNoise):
     def multi_loglikelihood(self, models):
         """ Calculate a multi-model (signal) likelihood
         """
-        # models = [self] + models
+        models = [self] + models
         loglr = 0
         # handle sum[<d|h_i> - 0.5 <h_i|h_i>]
-        # for m in models:
-        #    loglr += m.loglr
+        for m in models:
+            loglr += m.loglr
 
         if not hasattr(self, 'hihj'):
             self.calculate_hihjs(models)
@@ -495,7 +495,6 @@ class Relative(DistMarg, BaseGaussianNoise):
         if self.still_needs_det_response:
             # finally add in the lognl term from this model
             for m1, m2 in itertools.combinations(models, 2):
-                print(f"Combination: {m1.current_params['modes']}, {m2.current_params['modes']}")
                 for det in self.data:
                     a0, a1, fedge = self.hihj[(m1, m2)][det]
                     dtc, channel, h00 = m1._current_wf_parts[det]
