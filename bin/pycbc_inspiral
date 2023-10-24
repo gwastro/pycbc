@@ -360,8 +360,8 @@ with ctx:
         psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
                 opt.psdvar_short_segment, opt.psdvar_long_segment,
                 opt.psdvar_psd_duration, opt.psdvar_psd_stride,
-                opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq,
-                opt.sample_rate)
+                opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
+
 
     if opt.enable_q_transform:
         logging.info("Performing q-transform on analysis segments")
