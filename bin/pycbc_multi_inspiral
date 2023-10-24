@@ -152,6 +152,7 @@ t_gps = args.trigger_time # takes the --trigger-time option -> (float)
 # Put the ifos in alphabetical order so they are always called in
 # the same order.
 args.instruments.sort()
+ifo_list = args.instruments[:]
 # The following class verification methods are used to check whether input CLI
 # options provided by parser to pycbc.strain, pycbc.strain.StrainSegments,
 # pycbc.psd, pycbc.scheme & pycbc.fft modules are sane.
@@ -294,7 +295,6 @@ with ctx:
     # Given the time delays in time_slides, the following dictionary returns the
     # time delay indices evaluated wrt the geocenter:
     # (time delay from geocenter + timeslide)*sampling_rate
-    # BOTTLENECK WHEN EVALUATING THE FOLLOWING EXPRESSIONS***
     time_delay_idx = {
             slide: {
                 position_index: {
@@ -461,10 +461,6 @@ with ctx:
             idx = dict.fromkeys(args.instruments)
             snrv_dict = dict.fromkeys(args.instruments)
             snr = dict.fromkeys(args.instruments)
-            # FIXME: 2 lines that can be moved outside the loops
-            #        We do not really use ifo_list, and we reassign
-            #        nifo identically a few lines below
-            ifo_list = args.instruments[:]
             nifo = len(ifo_list)
             for ifo in args.instruments:
                 logging.info(
@@ -492,7 +488,7 @@ with ctx:
 		        # Normalized trigger snr list for each ifo
                 snr[ifo] = snrv * norm
 
-            # NOTE: instead, check the lenght of either snrv_dict[ifo] or idx[ifo]
+            # NOTE: instead, check the length of either snrv_dict[ifo] or idx[ifo]
             # for all ifos, not only the 0th one.
             # Move onto next segment if there are no triggers.
             if len(ifo_list)==0: continue
