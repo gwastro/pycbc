@@ -274,9 +274,9 @@ class GenUniformWaveform(object):
 
     def generate(self, **kwds):  
         kwds.update(fdict)
-        flow = numpy.arange(self.f_lower, 100, .1)[::-1]
-        length = spa_length_in_time(mass1=kwds['mass1'], mass2=kwds['mass2'], f_lower=flow, phase_order=-1)
         if args.max_signal_length is not None:
+                flow = numpy.arange(self.f_lower, 100, .1)[::-1]
+                length = spa_length_in_time(mass1=kwds['mass1'], mass2=kwds['mass2'], f_lower=flow, phase_order=-1)
                 maxlen = args.max_signal_length
                 x = numpy.searchsorted(length, maxlen) - 1
                 l = length[x]
