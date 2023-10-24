@@ -19,7 +19,7 @@
 from string import Formatter
 import lal
 
-from pycbc import libutils
+from pycbc import libutils, pnutils
 from pycbc.types import (TimeSeries, FrequencySeries)
 from .waveform import (props, _check_lal_pars, check_args)
 from . import parameters
@@ -182,16 +182,8 @@ def get_nrsur_modes(**params):
 get_nrsur_modes.__doc__ = _formatdocstr(get_nrsur_modes.__doc__)
 
 
-def _get_imrphenomx_modes(return_posneg=False, **params):
-    """Generates ``IMRPhenomX[P]HM`` waveforms mode-by-mode.
-
-    Currently does not work; just raises a ``NotImplementedError``.
-    """
-    # FIXME: raising not implemented error because this currently does not
-    # work. The issue is the OneMode function adds the +/- m modes together
-    # automatically. Remove once this is fixed in lalsimulation, and/or I
-    # figure out a reliable way to separate the +/-m modes.
-    raise NotImplementedError("Currently not implemented")
+def get_imrphenomxh_modes(**params):
+    """Generates ``IMRPhenomXHM`` waveforms mode-by-mode. """
     approx = params['approximant']
     if not approx.startswith('IMRPhenomX'):
         raise ValueError("unsupported approximant")
@@ -205,39 +197,33 @@ def _get_imrphenomx_modes(return_posneg=False, **params):
     for (l, m) in mode_array:
         params['mode_array'] = [(l, m)]
         laldict = _check_lal_pars(params)
-        hpos, hneg = lalsimulation.SimIMRPhenomXPHMOneMode(
-            l, m,
-            params['mass1']*lal.MSUN_SI,
-            params['mass2']*lal.MSUN_SI,
-            params['spin1x'], params['spin1y'], params['spin1z'],
-            params['spin2x'], params['spin2y'], params['spin2z'],
-            params['distance']*1e6*lal.PC_SI, params['coa_phase'],
-            params['delta_f'], params['f_lower'], params['f_final'],
-            params['f_ref'],
+        hlm = lalsimulation.SimIMRPhenomXHMGenerateFDOneMode(
+            float(pnutils.solar_mass_to_kg(params['mass1'])),
+            float(pnutils.solar_mass_to_kg(params['mass2'])),
+            float(params['spin1z']),
+            float(params['spin2z']), l, m,
+            pnutils.megaparsecs_to_meters(float(params['distance'])),
+            params['f_lower'], params['f_final'], params['delta_f'],
+            params['coa_phase'], params['f_ref'],
             laldict)
-        hpos = FrequencySeries(hpos.data.data, delta_f=hpos.deltaF,
-                               epoch=hpos.epoch)
-        hneg = FrequencySeries(hneg.data.data, delta_f=hneg.deltaF,
-                               epoch=hneg.epoch)
-        if return_posneg:
-            hlms[l, m] = (hpos, hneg)
-        else:
-            # convert to ulm, vlm
-            ulm = 0.5 * (hpos + hneg.conj())
-            vlm = 0.5j * (hneg.conj() - hpos)
-            hlms[l, m] = (ulm, vlm)
+        hlm = FrequencySeries(hlm.data.data, delta_f=hlm.deltaF,
+                              epoch=hlm.epoch)
+        # Plus, cross strains without Y_lm.
+        # (-1)**(l) factor ALREADY included in FDOneMode
+        hplm = 0.5 * hlm  # Plus strain
+        hclm = 0.5j * hlm  # Cross strain
+        if m > 0:
+            hclm *= -1
+        hlms[l, m] = (hplm, hclm)
     return hlms
 
 
 _mode_waveform_td = {'NRSur7dq4': get_nrsur_modes,
                      }
-
-
-# Remove commented out once IMRPhenomX one mode is fixed
-_mode_waveform_fd = {#'IMRPhenomXHM': get_imrphenomhm_modes,
-                     #'IMRPhenomXPHM' : get_imrphenomhm_modes,
-                    }
-
+_mode_waveform_fd = {'IMRPhenomXHM': get_imrphenomxh_modes,
+                     }
+# 'IMRPhenomXPHM':get_imrphenomhm_modes needs to be implemented
+# LAL function do not split strain mode by mode
 
 def fd_waveform_mode_approximants():
     """Frequency domain approximants that will return separate modes."""

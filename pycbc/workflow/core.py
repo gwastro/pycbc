@@ -61,6 +61,7 @@ file_input_from_config_dict = {}
 
 class Executable(pegasus_workflow.Executable):
     # These are the file retention levels
+    DO_NOT_KEEP = 0
     INTERMEDIATE_PRODUCT = 1
     ALL_TRIGGERS = 2
     MERGED_TRIGGERS = 3
@@ -147,6 +148,15 @@ class Executable(pegasus_workflow.Executable):
         self.update_output_directory(out_dir=out_dir)
 
         # Determine the level at which output files should be kept
+        if cp.has_option_tags('pegasus_profile-%s' % name,
+                              'pycbc|retention_level', tags):
+            # Get the retention_level from the config file
+            # This method allows us to use the retention levels
+            # defined above
+            cfg_ret_level = cp.get_opt_tags('pegasus_profile-%s' % name,
+                    'pycbc|retention_level', tags)
+            self.current_retention_level = getattr(self, cfg_ret_level)
+
         self.update_current_retention_level(self.current_retention_level)
 
         # Should I reuse this executable?
@@ -197,7 +207,7 @@ class Executable(pegasus_workflow.Executable):
             # need to do anything here, as I cannot easily check it exists.
             exe_path = exe_url.path
         else:
-            # Could be http, gsiftp, etc. so it needs fetching if run now
+            # Could be http, https, etc. so it needs fetching if run now
             self.needs_fetching = True
             if self.needs_fetching and not self.installed:
                 err_msg = "Non-file path URLs cannot be used unless the "
@@ -214,8 +224,12 @@ class Executable(pegasus_workflow.Executable):
             # being directly accessible on the execution site.
             # CVMFS is perfect for this! As is singularity.
             self.exe_pfns[exe_site] = exe_path
-        logging.info("Using %s executable "
-                     "at %s on site %s" % (name, exe_url.path, exe_site))
+        logging.debug(
+            "Using %s executable at %s on site %s",
+            name,
+            exe_url.path,
+            exe_site
+        )
 
         # FIXME: This hasn't yet been ported to pegasus5 and won't work.
         #        Pegasus describes two ways to work with containers, and I need
@@ -315,22 +329,30 @@ class Executable(pegasus_workflow.Executable):
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value)
 
-    def add_ini_opts(self, cp, sec):
+    def _add_ini_opts(self, cp, sec, ignore_existing=False):
         """Add job-specific options from configuration file.
 
         Parameters
         -----------
         cp : ConfigParser object
-            The ConfigParser object holding the workflow configuration settings
+            The ConfigParser object holding the workflow configuration
+            settings
         sec : string
             The section containing options for this job.
         """
         for opt in cp.options(sec):
+            if opt in self.all_added_options:
+                if ignore_existing:
+                    continue
+                else:
+                    raise ValueError("Option %s has already been added" % opt)
+            self.all_added_options.add(opt)
+
             value = cp.get(sec, opt).strip()
-            opt = '--%s' %(opt,)
+            opt = f'--{opt}'
             if opt in self.file_input_options:
                 # This now expects the option to be a file
-                # Check is we have a list of files
+                # Check if we have a list of files
                 values = [path for path in value.split(' ') if path]
 
                 self.common_raw_options.append(opt)
@@ -380,6 +402,7 @@ class Executable(pegasus_workflow.Executable):
                 # stuff later.
                 self.unresolved_td_options[opt] = value
             else:
+                # This option comes from the config file(s)
                 self.common_options += [opt, value]
 
     def add_opt(self, opt, value=None):
@@ -536,7 +559,6 @@ class Executable(pegasus_workflow.Executable):
             self.tagged_name = "{0}-{1}".format(self.tagged_name,
                                                 self.ifo_string)
 
-
         # Determine the sections from the ini file that will configure
         # this executable
         sections = [self.name]
@@ -562,17 +584,23 @@ class Executable(pegasus_workflow.Executable):
 
         # collect the options and profile information
         # from the ini file section(s)
+        self.all_added_options = set()
         self.common_options = []
         self.common_raw_options = []
         self.unresolved_td_options = {}
         self.common_input_files = []
         for sec in sections:
             if self.cp.has_section(sec):
-                self.add_ini_opts(self.cp, sec)
+                self._add_ini_opts(self.cp, sec)
             else:
                 warn_string = "warning: config file is missing section "
                 warn_string += "[{0}]".format(sec)
                 logging.warn(warn_string)
+
+        # get uppermost section
+        if self.cp.has_section(f'{self.name}-defaultvalues'):
+            self._add_ini_opts(self.cp, f'{self.name}-defaultvalues',
+                               ignore_existing=True)
 
     def update_output_directory(self, out_dir=None):
         """Update the default output directory for output files.
@@ -661,6 +689,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         self.ifos = ifos
         self.ifos.sort(key=str.lower)
+        self.get_ifo_combinations()
         self.ifo_string = ''.join(self.ifos)
 
         # Set up input and output file lists for workflow
@@ -844,6 +873,16 @@ class Workflow(pegasus_workflow.Workflow):
         # set the storage path to be the same
         ini_file.storage_path = ini_file_path
         return FileList([ini_file])
+
+    def get_ifo_combinations(self):
+        """
+        Get a list of strings for all possible combinations of IFOs
+        in the workflow
+        """
+        self.ifo_combinations = []
+        for n in range(len(self.ifos)):
+            self.ifo_combinations += [''.join(ifos).lower() for ifos in
+                                      combinations(self.ifos, n + 1)]
 
 
 class Node(pegasus_workflow.Node):
@@ -2043,7 +2082,8 @@ def resolve_url_to_file(curr_pfn, attrs=None):
     """
     cvmfsstr1 = 'file:///cvmfs/'
     cvmfsstr2 = 'file://localhost/cvmfs/'
-    cvmfsstrs = (cvmfsstr1, cvmfsstr2)
+    osdfstr1 = 'osdf:///'  # Technically this isn't CVMFS, but same handling!
+    cvmfsstrs = (cvmfsstr1, cvmfsstr2, osdfstr1)
 
     # Get LFN
     urlp = urllib.parse.urlparse(curr_pfn)
@@ -2072,6 +2112,31 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         tuple_val = (local_file_path, curr_file, curr_pfn)
         file_input_from_config_dict[curr_lfn] = tuple_val
     return curr_file
+
+
+def configparser_value_to_file(cp, sec, opt, attrs=None):
+    """
+    Fetch a file given its url location via the section
+    and option in the workflow configuration parser.
+
+    Parameters
+    -----------
+    cp : ConfigParser object
+         The ConfigParser object holding the workflow configuration settings
+    sec : string
+         The section containing options for this job.
+    opt : string
+         Name of option (e.g. --output-file)
+    attrs : list to specify the 4 attributes of the file.
+
+    Returns
+    --------
+    fileobj_from_path : workflow.File object obtained from the path
+        specified by opt, within sec, in cp.
+    """
+    path = cp.get(sec, opt)
+    fileobj_from_path = resolve_url_to_file(path, attrs=attrs)
+    return fileobj_from_path
 
 
 def get_full_analysis_chunk(science_segs):

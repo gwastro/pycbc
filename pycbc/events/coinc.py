@@ -55,6 +55,9 @@ def background_bin_from_string(background_bins, data):
     """
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
+    # Some duration/peak frequency functions are expensive.
+    # Do not want to recompute many times, if using lots of bins.
+    cached_values = {}
     for mbin in background_bins:
         locs = None
         name, bin_type_list, boundary_list = tuple(mbin.split(':'))
@@ -71,7 +74,9 @@ def background_bin_from_string(background_bins, data):
                 raise RuntimeError("Can't parse boundary condition! Must begin "
                                    "with 'lt' or 'gt'")
 
-            if bin_type == 'component' and boundary[0:2] == 'lt':
+            if bin_type in cached_values:
+                vals = cached_values[bin_type]
+            elif bin_type == 'component' and boundary[0:2] == 'lt':
                 # maximum component mass is less than boundary value
                 vals = numpy.maximum(data['mass1'], data['mass2'])
             elif bin_type == 'component' and boundary[0:2] == 'gt':
@@ -91,29 +96,29 @@ def background_bin_from_string(background_bins, data):
             elif bin_type == 'chi_eff':
                 vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
                                                  data['spin1z'], data['spin2z'])
-            elif bin_type == 'SEOBNRv2Peak':
-                vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
-                                              data['mass1'], data['mass2'],
-                                              data['spin1z'], data['spin2z'])
-            elif bin_type == 'SEOBNRv4Peak':
-                vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
-                                              data['mass2'], data['spin1z'],
-                                              data['spin2z'])
-            elif bin_type == 'SEOBNRv2duration':
+            elif bin_type.endswith('Peak'):
+                vals = pycbc.pnutils.get_freq(
+                    'f' + bin_type,
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z']
+                )
+                cached_values[bin_type] = vals
+            elif bin_type.endswith('duration'):
                 vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'], data['mass2'],
-                                   data['spin1z'], data['spin2z'],
-                                   data['f_lower'], approximant='SEOBNRv2')
-            elif bin_type == 'SEOBNRv4duration':
-                vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'][:], data['mass2'][:],
-                                   data['spin1z'][:], data['spin2z'][:],
-                                   data['f_lower'][:], approximant='SEOBNRv4')
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z'],
+                    data['f_lower'],
+                    approximant=bin_type.replace('duration', '')
+                )
+                cached_values[bin_type] = vals
             else:
                 raise ValueError('Invalid bin type %s' % bin_type)
 
             sub_locs = member_func(vals)
-            del vals
             sub_locs = numpy.where(sub_locs)[0]
             if locs is not None:
                 # find intersection of boundary conditions
@@ -369,12 +374,14 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
     else:
         time = 0.5 * (time2 + time1)
 
-    tslide = timeslide_id.astype(numpy.float128)
-    time = time.astype(numpy.float128)
+    tslide = timeslide_id.astype(numpy.longdouble)
+    time = time.astype(numpy.longdouble)
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
+    logging.info('Clustering events over %s s window', window)
     cidx = cluster_over_time(stat, time, window, **kwargs)
+    logging.info('%d triggers remaining', len(cidx))
     return cidx
 
 
@@ -422,12 +429,14 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
         nifos_minusone = (num_ifos - numpy.ones_like(num_ifos))
         time_avg = time_avg + (nifos_minusone * timeslide_id * slide)/num_ifos
 
-    tslide = timeslide_id.astype(numpy.float128)
-    time_avg = time_avg.astype(numpy.float128)
+    tslide = timeslide_id.astype(numpy.longdouble)
+    time_avg = time_avg.astype(numpy.longdouble)
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
+    logging.info('Clustering events over %s s window', window)
     cidx = cluster_over_time(stat, time_avg, window, **kwargs)
+    logging.info('%d triggers remaining', len(cidx))
 
     return cidx
 
@@ -479,7 +488,6 @@ def cluster_over_time(stat, time, window, method='python',
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
-    logging.info('Clustering events over %s s window', window)
 
     indices = []
     time_sorting = time.argsort()
@@ -489,6 +497,8 @@ def cluster_over_time(stat, time, window, method='python',
     left = time.searchsorted(time - window)
     right = time.searchsorted(time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
+
+    logging.debug('%d triggers before clustering', len(time))
 
     if method == 'cython':
         j = timecluster_cython(indices, left, right, stat, len(left))
@@ -528,7 +538,7 @@ def cluster_over_time(stat, time, window, method='python',
 
     indices = indices[:j]
 
-    logging.info('%d triggers remaining', len(indices))
+    logging.debug('%d triggers remaining', len(indices))
     return time_sorting[indices]
 
 
@@ -992,10 +1002,25 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return pickle.load(filename)
 
     def ifar(self, coinc_stat):
-        """Return the far that would be associated with the coincident given.
+        """Map a given value of the coincident ranking statistic to an inverse
+        false-alarm rate (IFAR) using the interally stored background sample.
+
+        Parameters
+        ----------
+        coinc_stat: float
+            Value of the coincident ranking statistic to be converted.
+
+        Returns
+        -------
+        ifar: float
+            Inverse false-alarm rate in unit of years.
+        ifar_saturated: bool
+            True if `coinc_stat` is larger than all the available background,
+            in which case `ifar` is to be considered an upper limit.
         """
         n = self.coincs.num_greater(coinc_stat)
-        return self.background_time / lal.YRJUL_SI / (n + 1)
+        ifar = self.background_time / lal.YRJUL_SI / (n + 1)
+        return ifar, n == 0
 
     def set_singles_buffer(self, results):
         """Create the singles buffer
@@ -1229,7 +1254,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             logging.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                   self.timeslide_interval,
-                                  self.analysis_block,
+                                  self.analysis_block + 2*self.time_window,
                                   method='cython')
             offsets = offsets[cidx]
             zerolag_idx = (offsets == 0)
@@ -1249,21 +1274,22 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         coinc_results = {}
         # Save information about zerolag triggers
         if num_zerolag > 0:
-            zerolag_results = {}
             idx = cidx[zerolag_idx][0]
             zerolag_cstat = cstat[cidx][zerolag_idx]
-            zerolag_results['foreground/ifar'] = self.ifar(zerolag_cstat)
-            zerolag_results['foreground/stat'] = zerolag_cstat
+            ifar, ifar_sat = self.ifar(zerolag_cstat)
+            zerolag_results = {
+                'foreground/ifar': ifar,
+                'foreground/ifar_saturated': ifar_sat,
+                'foreground/stat': zerolag_cstat,
+                'foreground/type': '-'.join(self.ifos)
+            }
             template = template_ids[idx]
             for ifo in self.ifos:
                 trig_id = trigger_ids[ifo][idx]
                 single_data = self.singles[ifo].data(template)[trig_id]
                 for key in single_data.dtype.names:
-                    path = 'foreground/%s/%s' % (ifo, key)
+                    path = f'foreground/{ifo}/{key}'
                     zerolag_results[path] = single_data[key]
-
-            zerolag_results['foreground/type'] = '-'.join(self.ifos)
-
             coinc_results.update(zerolag_results)
 
         # Save some summary statistics about the background

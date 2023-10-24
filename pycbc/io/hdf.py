@@ -1,6 +1,6 @@
-# Convenience classes for accessing hdf5 trigger files
-# The 'get_column()' method is implemented parallel to
-# legacy pylal.SnglInspiralUtils functions
+"""
+Convenience classes for accessing hdf5 trigger files
+"""
 
 import h5py
 import numpy as np
@@ -15,14 +15,15 @@ from lal import LIGOTimeGPS, YRJUL_SI
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 
-from pycbc import version as pycbc_version
-from pycbc.io.ligolw import return_search_summary, return_empty_sngl
+from pycbc.io.ligolw import (
+    return_search_summary,
+    return_empty_sngl,
+    create_process_table
+)
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero
-from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
 
 class HFile(h5py.File):
@@ -127,6 +128,10 @@ class DictArray(object):
         if data and files:
             raise RuntimeError('DictArray can only have data or files as '
                                'input, not both.')
+        if data is None and files is None:
+            raise RuntimeError('DictArray needs either data or files at'
+                               'initialization. To set up an empty instance'
+                               'use DictArray(data={})')
         if files and not groups:
             raise RuntimeError('If files are given then need groups.')
 
@@ -158,6 +163,11 @@ class DictArray(object):
         return len(self.data[tuple(self.data.keys())[0]])
 
     def __add__(self, other):
+        if self.data == {}:
+            logging.debug('Adding data to a DictArray instance which'
+                          ' was initialized with an empty dict')
+            return self._return(data=other)
+
         data = {}
         for k in self.data:
             try:
@@ -171,7 +181,8 @@ class DictArray(object):
         """
         data = {}
         for k in self.data:
-            data[k] = self.data[k][idx]
+            # Make sure each entry is an array (not a scalar)
+            data[k] = np.array(self.data[k][idx])
         return self._return(data=data)
 
     def remove(self, idx):
@@ -273,7 +284,6 @@ class MultiifoStatmapData(StatmapData):
 
 
 class FileData(object):
-
     def __init__(self, fname, group=None, columnlist=None, filter_func=None):
         """
         Parameters
@@ -287,6 +297,7 @@ class FileData(object):
             of the class instance derived from columns: ex. 'self.snr < 6.5'
         """
         if not fname: raise RuntimeError("Didn't get a file!")
+
         self.fname = fname
         self.h5file = HFile(fname, "r")
         if group is None:
@@ -328,6 +339,9 @@ class FileData(object):
 
     def get_column(self, col):
         """
+        Method designed to be analogous to legacy pylal.SnglInspiralUtils
+        functionality
+
         Parameters
         ----------
         col : string
@@ -400,7 +414,7 @@ class SingleDetTriggers(object):
             logging.info('Loading bank')
             self.bank = HFile(bank_file, 'r')
         else:
-            logging.info('No bank file given')
+            logging.info('No bank file given to SingleDetTriggers')
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
@@ -844,11 +858,13 @@ class ForegroundTriggers(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        ifos = list(self.sngl_files.keys())
-        proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
-                     {}, instruments=ifos, comment='', version=pycbc_version.git_hash,
-                     cvs_repository='pycbc/'+pycbc_version.git_branch,
-                     cvs_entry_time=pycbc_version.date).process_id
+        ifos = sorted(self.sngl_files)
+        proc_table = create_process_table(
+            outdoc,
+            program_name='pycbc',
+            detectors=ifos
+        )
+        proc_id = proc_table.process_id
 
         search_summ_table = lsctables.New(lsctables.SearchSummaryTable)
         coinc_h5file = self.coinc_file.h5file
@@ -956,8 +972,7 @@ class ForegroundTriggers(object):
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
                         sngl.mass1, sngl.mass2)
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
-                # If exact match is not used, then take mean
-                # masses from the single triggers
+                # If exact match is not used, get masses from single triggers
                 sngl_mchirps += [sngl.mchirp]
                 sngl_mtots += [sngl.mtotal]
 
@@ -970,6 +985,7 @@ class ForegroundTriggers(object):
                 coinc_map_row.event_id = event_id
                 coinc_event_map_table.append(coinc_map_row)
 
+            # Take the mean if exact match is not used
             sngl_combined_mchirp = np.mean(sngl_mchirps)
             sngl_combined_mtot = np.mean(sngl_mtots)
 
@@ -978,8 +994,8 @@ class ForegroundTriggers(object):
             coinc_inspiral_row = lsctables.CoincInspiral()
             coinc_event_row.coinc_def_id = coinc_def_id
             coinc_event_row.nevents = len(triggered_ifos)
-            # Note that simply `coinc_event_row.instruments = triggered_ifos`
-            # does not lead to a correct result with ligo.lw 1.7.1
+            # NB, `coinc_event_row.instruments = triggered_ifos does not give a
+            # correct result with ligo.lw 1.7.1
             coinc_event_row.instruments = ','.join(sorted(triggered_ifos))
             coinc_inspiral_row.instruments = triggered_ifos
             coinc_event_row.time_slide_id = time_slide_id
@@ -1015,41 +1031,28 @@ class ForegroundTriggers(object):
         # Some fields are special cases
         logging.info("Outputting search results")
         time = self.get_end_time()
-        ofd.create_dataset('time', data=time, dtype=np.float32)
+        # time will be used later to determine active ifos
+        ofd['time'] = time
 
         if self._inclusive:
-            ifar = self.get_coincfile_array('ifar')
-            ofd.create_dataset('ifar', data=ifar, dtype=np.float32)
+            ofd['ifar'] = self.get_coincfile_array('ifar')
+            ofd['p_value'] = self.get_coincfile_array('fap')
 
-        ifar_exc = self.get_coincfile_array('ifar_exc')
-        ofd.create_dataset('ifar_exclusive', data=ifar_exc,
-                           dtype=np.float32)
-
-        if self._inclusive:
-            fap = self.get_coincfile_array('fap')
-            ofd.create_dataset('p_value', data=fap,
-                               dtype=np.float32)
-
-        fap_exc = self.get_coincfile_array('fap_exc')
-        ofd.create_dataset('p_value_exclusive', data=fap_exc,
-                           dtype=np.float32)
+        ofd['ifar_exclusive'] = self.get_coincfile_array('ifar_exc')
+        ofd['p_value_exclusive'] = self.get_coincfile_array('fap_exc')
 
         # Coinc fields
         for field in ['stat']:
-            vals = self.get_coincfile_array(field)
-            ofd.create_dataset(field, data=vals, dtype=np.float32)
+            ofd[field] = self.get_coincfile_array(field)
 
         logging.info("Outputting template information")
         # Bank fields
         for field in ['mass1','mass2','spin1z','spin2z']:
-            vals = self.get_bankfile_array(field)
-            ofd.create_dataset(field, data=vals, dtype=np.float32)
+            ofd[field] = self.get_bankfile_array(field)
 
         mass1 = self.get_bankfile_array('mass1')
         mass2 = self.get_bankfile_array('mass2')
-        mchirp, _ = mass1_mass2_to_mchirp_eta(mass1, mass2)
-
-        ofd.create_dataset('chirp_mass', data=mchirp, dtype=np.float32)
+        ofd['chirp_mass'], _ = pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)
 
         logging.info("Outputting single-trigger information")
         logging.info("reduced chisquared")
@@ -1061,8 +1064,7 @@ class ForegroundTriggers(object):
             chisq_dof_vals = chisq_dof_vals_valid[ifo][0]
             rchisq = chisq_vals / (2. * chisq_dof_vals - 2.)
             rchisq[np.logical_not(chisq_valid)] = -1.
-            ofd.create_dataset(ifo + '_chisq', data=rchisq,
-                               dtype=np.float64)
+            ofd[ifo + '_chisq'] = rchisq
 
         # Single-detector fields
         for field in ['sg_chisq', 'end_time', 'sigmasq',
@@ -1073,12 +1075,15 @@ class ForegroundTriggers(object):
             except KeyError:
                 logging.info(field + " is not present in the "
                              "single-detector files")
+
             for ifo in self.ifos:
+                # Some of the values will not be valid for all IFOs,
+                # the `valid` parameter out of get_snglfile_array_dict
+                # tells us this, and we set the values to -1
                 vals = vals_valid[ifo][0]
                 valid = vals_valid[ifo][1]
                 vals[np.logical_not(valid)] = -1.
-                ofd.create_dataset(ifo + '_'+field, data=vals,
-                                   dtype=np.float32)
+                ofd[f'{ifo}_{field}'] = vals
 
         snr_vals_valid = self.get_snglfile_array_dict('snr')
         network_snr_sq = np.zeros_like(snr_vals_valid[self.ifos[0]][0])
@@ -1086,31 +1091,29 @@ class ForegroundTriggers(object):
             vals = snr_vals_valid[ifo][0]
             valid = snr_vals_valid[ifo][1]
             vals[np.logical_not(valid)] = -1.
-            ofd.create_dataset(ifo + '_snr', data=vals,
-                               dtype=np.float32)
+            ofd[ifo + '_snr'] = vals
             network_snr_sq[valid] += vals[valid] ** 2.0
-        network_snr = np.sqrt(network_snr_sq)
-        ofd.create_dataset('network_snr', data=network_snr, dtype=np.float32)
+        ofd['network_snr'] = np.sqrt(network_snr_sq)
 
         logging.info("Triggered detectors")
-        # This creates a n_ifos by n_events matrix, with the ifo letter
-        # if the event contains a trigger from the ifo, empty string if not
+        # Create a n_ifos by n_events matrix, with the ifo letter if the
+        # event contains a trigger from the ifo, empty string if not
         triggered_matrix = [[ifo[0] if v else ''
                              for v in snr_vals_valid[ifo][1]]
                             for ifo in self.ifos]
-        # This combines the ifo letters to make a single string per event
+        # Combine the ifo letters to make a single string per event
         triggered_detectors = [''.join(triggered).encode('ascii')
                                for triggered in zip(*triggered_matrix)]
         ofd.create_dataset('trig', data=triggered_detectors,
                            dtype='<S3')
 
         logging.info("active detectors")
-        # This creates a n_ifos by n_events matrix, with the ifo letter
-        # if the ifo was active at the event time, empty string if not
+        # Create a n_ifos by n_events matrix, with the ifo letter if the
+        # ifo was active at the event time, empty string if not
         active_matrix = [[ifo[0] if t in self.active_segments[ifo]
                           else '' for t in time]
                          for ifo in self.ifos]
-        # This combines the ifo letters to make a single string per event
+        # Combine the ifo letters to make a single string per event
         active_detectors = [''.join(active_at_time).encode('ascii')
                             for active_at_time in zip(*active_matrix)]
         ofd.create_dataset('obs', data=active_detectors,
@@ -1120,7 +1123,7 @@ class ForegroundTriggers(object):
 
 
 class ReadByTemplate(object):
-    # default assignment to {} is OK for a variable used only in __init__
+    # Default assignment to {} is OK for a variable used only in __init__
     def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
                  gating_veto_windows={}):
         self.filename = filename
@@ -1150,10 +1153,17 @@ class ReadByTemplate(object):
                 raise ValueError("Gating veto window values must be negative "
                                  "before gates and positive after gates.")
             if not (gveto_before == 0 and gveto_after == 0):
-                gate_times = np.unique(
-                    self.file[self.ifo + '/gating/auto/time'][:])
-                gating_veto_segs = veto.start_end_to_segments(gate_times + gveto_before,
-                                                              gate_times + gveto_after).coalesce()
+                autogate_times = np.unique(
+                        self.file[self.ifo + '/gating/auto/time'][:])
+                if self.ifo + '/gating/file' in self.file:
+                    detgate_times = self.file[self.ifo + '/gating/file/time'][:]
+                else:
+                    detgate_times = []
+                gate_times = np.concatenate((autogate_times, detgate_times))
+                gating_veto_segs = veto.start_end_to_segments(
+                        gate_times + gveto_before,
+                        gate_times + gveto_after
+                ).coalesce()
                 self.segs = (self.segs - gating_veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
 

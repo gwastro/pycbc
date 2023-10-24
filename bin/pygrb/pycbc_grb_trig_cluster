@@ -72,7 +72,8 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
             ) for ifo in ifos
         }
 
-        nsets = sum(isinstance(item, h5py.Dataset) for
+        nsets = sum(isinstance(item, h5py.Dataset)
+                    or isinstance(item, h5py.Group) for
                     group in h5in.values() for
                     item in group.values())
         msg = "Slicing {} network events into new file".format(nevents)
@@ -88,6 +89,10 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
                         compression_opts=old.compression_opts,
                     )
                     bar.update()
+                elif isinstance(old, h5py.Group):
+                    if "search" in old.name:
+                        h5in.copy(h5in[old.name], h5out, old.name)
+                        bar.update()
             for ifo in ifos:
                 idx = numpy.in1d(h5in[ifo]["event_id"][()], ifo_index[ifo])
                 for old in h5in[ifo].values():
@@ -99,6 +104,10 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
                             compression_opts=old.compression_opts,
                         )
                         bar.update()
+                    elif isinstance(old, h5py.Group):
+                        if "search" in old.name:
+                            h5in.copy(h5in[old.name], h5out, old.name)
+                            bar.update()
         bar.close()
         if verbose:
             print("Slice written to {}".format(outfile))

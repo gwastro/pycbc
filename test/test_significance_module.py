@@ -4,6 +4,7 @@ import unittest
 import argparse
 import itertools
 import copy
+import lal
 import numpy as np
 from utils import simple_exit
 from pycbc.events import significance
@@ -52,13 +53,22 @@ tests_which_sysexit.append((['--fit-threshold',
                              'H1L1:not_a_number'],
                             'threshold_not_a_number'))
 
-
 # Try to set a fit function which isn't expected
 tests_which_sysexit.append((['--far-calculation-method',
                              'H1L1:trigger_fit',
                              '--fit-function',
                              'H1L1:spanish_inquisition'],
                             'function_doesnt_exist'))
+
+# Try to set an IFAR limit which is negative
+tests_which_sysexit.append((['--limit-ifar',
+                             'H1:-1865'],
+                           'ifar_negative'))
+
+# Try to set an IFAR limit which is not a number
+tests_which_sysexit.append((['--limit-ifar',
+                             'H1L1:not_a_number'],
+                            'ifar_not_a_number'))
 
 # Dynamically add sysexit tests into the class
 for test_sysexit in tests_which_sysexit:
@@ -92,6 +102,7 @@ extra_combo_dict['H1G1'] = {}
 extra_combo_dict['H1G1']['method'] = 'trigger_fit'
 extra_combo_dict['H1G1']['fit_function'] = None
 extra_combo_dict['H1G1']['fit_threshold'] = 6.
+extra_combo_dict['H1G1']['far_limit'] = 0.
 tests_which_pass.append((['--far-calculation-method',
                           'H1G1:trigger_fit',
                           '--fit-threshold', 'H1G1:6'],
@@ -110,13 +121,18 @@ test_dict['L1']['fit_function'] = 'exponential'
 test_dict['H1L1']['fit_threshold'] = 6
 test_dict['H1']['fit_threshold'] = 5.5
 test_dict['L1']['fit_threshold'] = 5
+test_dict['H1L1']['far_limit'] = 0
+test_dict['H1']['far_limit'] = 1. / lal.YRJUL_SI
+test_dict['L1']['far_limit'] = 0
 
 calc_methods = ['H1L1:trigger_fit', 'H1:trigger_fit', 'L1:trigger_fit']
 functions = ['H1L1:power', 'H1:rayleigh', 'L1:exponential']
 thresholds = ['H1L1:6', 'H1:5.5', 'L1:5']
+ifar_limits = ['H1:1']
 tests_which_pass.append((['--far-calculation-method'] + calc_methods +
                          ['--fit-function'] + functions + 
-                         ['--fit-threshold'] + thresholds,
+                         ['--fit-threshold'] + thresholds +
+                         ['--limit-ifar'] + ifar_limits,
                          test_dict,
                          'different_combos'))
 
@@ -154,42 +170,42 @@ for method in significance._significance_meth_dict:
         method_dict['fit_threshold'] = None if not function else 0
 
         def meth_test(self, md=method_dict):
-            back_cnum, fnlouder = significance.get_n_louder(
+            bg_n_louder, fg_n_louder = significance.get_n_louder(
                 self.test_bg_stat,
                 self.test_fg_stat,
                 self.dec_facs,
                 **method_dict)
 
             back_stat_sort = np.argsort(self.test_bg_stat)
-            back_far_sort = np.argsort(back_cnum)
+            back_far_sort = np.argsort(bg_n_louder)
 
             fore_stat_sort = np.argsort(self.test_fg_stat)
-            fore_far_sort = np.argsort(fnlouder)
+            fore_far_sort = np.argsort(fg_n_louder)
 
             # Basic sanity check - there should be one n_louder value
             # per stat value
-            self.assertEqual(len(back_cnum), len(self.test_bg_stat))
-            self.assertEqual(len(fnlouder), len(self.test_fg_stat))
+            self.assertEqual(len(bg_n_louder), len(self.test_bg_stat))
+            self.assertEqual(len(fg_n_louder), len(self.test_fg_stat))
 
             # None of the output should be NaN or infinite
-            self.assertTrue(np.isfinite(back_cnum).all())
-            self.assertTrue(np.isfinite(fnlouder).all())
+            self.assertTrue(np.isfinite(bg_n_louder).all())
+            self.assertTrue(np.isfinite(fg_n_louder).all())
 
             # The background stat value order should be the reverse of the
             # n_louder order
             back_stat_sort = np.argsort(self.test_bg_stat)
-            back_far_sort = np.argsort(back_cnum)
+            back_far_sort = np.argsort(bg_n_louder)
             self.assertTrue(np.array_equal(back_stat_sort,
                                            back_far_sort[::-1]))
 
             fore_stat_sort = np.argsort(self.test_fg_stat)
-            fore_far_sort = np.argsort(fnlouder)
+            fore_far_sort = np.argsort(fg_n_louder)
             # As fg events could have an equal number of louder bg events,
             # argsort be the opposite way round for the far sort and stat
             # sort. So we need to use the recovered n_louder as the equal
             # equality test array
-            self.assertTrue(np.array_equal(fnlouder[fore_stat_sort],
-                                           fnlouder[fore_far_sort][::-1]))
+            self.assertTrue(np.array_equal(fg_n_louder[fore_stat_sort],
+                                           fg_n_louder[fore_far_sort][::-1]))
 
         setattr(SignificanceMethodTest,
                 'test_%s_%s' % (method, function),

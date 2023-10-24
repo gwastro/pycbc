@@ -36,6 +36,7 @@ from pycbc.fft import fft
 from pycbc import pnutils, libutils
 from pycbc.waveform import utils as wfutils
 from pycbc.waveform import parameters
+from pycbc.conversions import get_final_from_initial, tau_from_final_mass_spin
 from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
 from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
@@ -468,6 +469,7 @@ def props_sgburst(obj, **kwargs):
 # Waveform generation ########################################################
 fd_sequence = {}
 fd_det_sequence = {}
+fd_det = {}
 
 def _lalsim_fd_sequence(**p):
     """ Shim to interface to lalsimulation SimInspiralChooseFDWaveformSequence
@@ -542,7 +544,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     dict
         The detector-frame waveform (with detector response) in frequency
         domain evaluated at the frequency points. Keys are requested data
-        channels.
+        channels, values are FrequencySeries.
     """
     input_params = props(template, **kwds)
     input_params['delta_f'] = -1
@@ -714,7 +716,122 @@ def get_fd_waveform_from_td(**params):
     hc = hc.to_frequencyseries().cyclic_time_shift(hc.start_time)
     return hp, hc
 
-def get_td_waveform_from_fd(rwrap=0.2, **params):
+def get_fd_det_waveform(template=None, **kwargs):
+    """Return a frequency domain gravitational waveform.
+    The waveform generator includes detector response.
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. An example would be a row in an xml table.
+    {params}
+
+    Returns
+    -------
+    dict
+        The detector-frame waveform (with detector response) in frequency
+        domain. Keys are requested data channels, values are FrequencySeries.
+    """
+    input_params = props(template, **kwargs)
+    if 'f_lower' not in input_params:
+        input_params['f_lower'] = -1
+    if input_params['approximant'] not in fd_det:
+        raise ValueError("Approximant %s not available" %
+                            (input_params['approximant']))
+    wav_gen = fd_det[input_params['approximant']]
+    if hasattr(wav_gen, 'required'):
+        required = wav_gen.required
+    else:
+        required = parameters.fd_required
+    check_args(input_params, required)
+    return wav_gen(**input_params)
+
+get_fd_det_waveform.__doc__ = get_fd_det_waveform.__doc__.format(
+    params=parameters.fd_waveform_params.docstr(prefix="    ",
+           include_label=False).lstrip(' '))
+
+def _base_get_td_waveform_from_fd(template=None, rwrap=None, **params):
+    """ The base function to calculate time domain version of fourier
+    domain approximant which not include or includes detector response.
+    Called by `get_td_waveform_from_fd` and `get_td_det_waveform_from_fd_det`.
+    """
+    kwds = props(template, **params)
+    nparams = kwds.copy()
+
+    if rwrap is None:
+        # In the `pycbc.waveform.parameters` module, spin1z and
+        # spin2z have the default value 0. Users must have input
+        # masses, so no else is needed.
+        mass_spin_params = set(['mass1', 'mass2', 'spin1z', 'spin2z'])
+        if mass_spin_params.issubset(set(nparams.keys())):
+            m_final, spin_final = get_final_from_initial(
+                mass1=nparams['mass1'], mass2=nparams['mass2'],
+                spin1z=nparams['spin1z'], spin2z=nparams['spin2z'])
+            rwrap = tau_from_final_mass_spin(m_final, spin_final) * 10
+            if rwrap < 5:
+                # Long enough for very massive BBHs in XG detectors,
+                # up to (3000, 3000) solar mass, while still not a
+                # computational burden for 2G cases.
+                rwrap = 5
+
+    if nparams['approximant'] not in _filter_time_lengths:
+        raise ValueError("Approximant %s _filter_time_lengths function \
+                         not available" % (nparams['approximant']))
+    # determine the duration to use
+    full_duration = duration = get_waveform_filter_length_in_time(**nparams)
+
+    while full_duration < duration * 1.5:
+        full_duration = get_waveform_filter_length_in_time(**nparams)
+        nparams['f_lower'] *= 0.99
+        if 't_obs_start' in nparams and \
+           full_duration >= nparams['t_obs_start']:
+            break
+
+    if 'f_ref' not in nparams:
+        nparams['f_ref'] = params['f_lower']
+
+    # factor to ensure the vectors are all large enough. We don't need to
+    # completely trust our duration estimator in this case, at a small
+    # increase in computational cost
+    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
+    fsamples = int(fudge_duration / nparams['delta_t'])
+    N = pnutils.nearest_larger_binary_number(fsamples)
+    fudge_duration = N * nparams['delta_t']
+
+    nparams['delta_f'] = 1.0 / fudge_duration
+    tsize = int(1.0 / nparams['delta_t'] /  nparams['delta_f'])
+    fsize = tsize // 2 + 1
+
+    if nparams['approximant'] not in fd_det:
+        hp, hc = get_fd_waveform(**nparams)
+        # Resize to the right sample rate
+        hp.resize(fsize)
+        hc.resize(fsize)
+
+        # avoid wraparound
+        hp = hp.cyclic_time_shift(-rwrap)
+        hc = hc.cyclic_time_shift(-rwrap)
+
+        hp = wfutils.fd_to_td(hp, delta_t=params['delta_t'],
+                              left_window=(nparams['f_lower'],
+                                           params['f_lower']))
+        hc = wfutils.fd_to_td(hc, delta_t=params['delta_t'],
+                              left_window=(nparams['f_lower'],
+                                           params['f_lower']))
+        return hp, hc
+    else:
+        wfs = get_fd_det_waveform(**nparams)
+        for ifo in wfs.keys():
+            wfs[ifo].resize(fsize)
+            # avoid wraparound
+            wfs[ifo] = wfs[ifo].cyclic_time_shift(-rwrap)
+            wfs[ifo] = wfutils.fd_to_td(wfs[ifo], delta_t=kwds['delta_t'],
+                                        left_window=(nparams['f_lower'],
+                                        kwds['f_lower']))
+        return wfs
+
+def get_td_waveform_from_fd(rwrap=None, **params):
     """ Return time domain version of fourier domain approximant.
 
     This returns a time domain version of a fourier domain approximant, with
@@ -737,43 +854,35 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     hc: pycbc.types.TimeSeries
         Cross polarization time series
     """
-    # determine the duration to use
-    full_duration = duration = get_waveform_filter_length_in_time(**params)
-    nparams = params.copy()
+    return _base_get_td_waveform_from_fd(None, rwrap, **params)
 
-    while full_duration < duration * 1.5:
-        full_duration = get_waveform_filter_length_in_time(**nparams)
-        nparams['f_lower'] *= 0.99
+def get_td_det_waveform_from_fd_det(template=None, rwrap=None, **params):
+    """ Return time domain version of fourier domain approximant which
+    includes detector response, with padding and tapering at the start
+    of the waveform.
 
-    if 'f_ref' not in nparams:
-        nparams['f_ref'] = params['f_lower']
+    Parameters
+    ----------
+    rwrap: float
+        Cyclic time shift parameter in seconds. A fudge factor to ensure
+        that the entire time series is contiguous in the array and not
+        wrapped around the end.
+    params: dict
+        The parameters defining the waveform to generator.
+        See `get_fd_det_waveform`.
 
-    # factor to ensure the vectors are all large enough. We don't need to
-    # completely trust our duration estimator in this case, at a small
-    # increase in computational cost
-    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
-    fsamples = int(fudge_duration / params['delta_t'])
-    N = pnutils.nearest_larger_binary_number(fsamples)
-    fudge_duration = N * params['delta_t']
+    Returns
+    -------
+    dict
+        The detector-frame waveform (with detector response) in time
+        domain. Keys are requested data channels.
+    """
+    return _base_get_td_waveform_from_fd(template, rwrap, **params)
 
-    nparams['delta_f'] = 1.0 / fudge_duration
-    hp, hc = get_fd_waveform(**nparams)
-
-    # Resize to the right sample rate
-    tsize = int(1.0 / params['delta_t'] /  nparams['delta_f'])
-    fsize = tsize // 2 + 1
-    hp.resize(fsize)
-    hc.resize(fsize)
-
-    # avoid wraparound
-    hp = hp.cyclic_time_shift(-rwrap)
-    hc = hc.cyclic_time_shift(-rwrap)
-
-    hp = wfutils.fd_to_td(hp, left_window=(nparams['f_lower'],
-                                           params['f_lower']))
-    hc = wfutils.fd_to_td(hc, left_window=(nparams['f_lower'],
-                                           params['f_lower']))
-    return hp, hc
+get_td_det_waveform_from_fd_det.__doc__ = \
+    get_td_det_waveform_from_fd_det.__doc__.format(
+        params=parameters.td_waveform_params.docstr(prefix="    ",
+            include_label=False).lstrip(' '))
 
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):
@@ -921,6 +1030,11 @@ def seobnrv4_length_in_time(**kwds):
     """
     return get_imr_length("SEOBNRv4", **kwds)
 
+def seobnrv5_length_in_time(**kwds):
+    """Stub for holding the calculation of SEOBNRv5_ROM waveform duration.
+    """
+    return get_imr_length("SEOBNRv5_ROM", **kwds)
+
 def imrphenomd_length_in_time(**kwds):
     """Stub for holding the calculation of IMRPhenomD waveform duration.
     """
@@ -982,6 +1096,7 @@ _filter_time_lengths["SEOBNRv4_ROM"] = seobnrv4_length_in_time
 _filter_time_lengths["SEOBNRv4HM_ROM"] = seobnrv4hm_length_in_time
 _filter_time_lengths["SEOBNRv4"] = seobnrv4_length_in_time
 _filter_time_lengths["SEOBNRv4P"] = seobnrv4_length_in_time
+_filter_time_lengths["SEOBNRv5_ROM"] = seobnrv5_length_in_time
 _filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
@@ -1279,8 +1394,10 @@ def get_waveform_filter_length_in_time(approximant, template=None, **kwargs):
     else:
         return None
 
-__all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
-           "get_fd_det_waveform_sequence", "get_fd_waveform_from_td",
+__all__ = ["get_td_waveform", "get_td_det_waveform_from_fd_det",
+           "get_fd_waveform", "get_fd_waveform_sequence",
+           "get_fd_det_waveform", "get_fd_det_waveform_sequence",
+           "get_fd_waveform_from_td",
            "print_td_approximants", "print_fd_approximants",
            "td_approximants", "fd_approximants",
            "get_waveform_filter", "filter_approximants",
@@ -1290,5 +1407,5 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
            "NoWaveformError", "FailedWaveformError", "get_td_waveform_from_fd",
-           'cpu_fd', 'cpu_td', 'fd_sequence', 'fd_det_sequence',
+           'cpu_fd', 'cpu_td', 'fd_sequence', 'fd_det_sequence', 'fd_det',
            '_filter_time_lengths']

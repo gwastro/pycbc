@@ -240,7 +240,8 @@ class TimeSeries(Array):
     sample_times = property(get_sample_times,
                             doc="Array containing the sample times.")
 
-    def at_time(self, time, nearest_sample=False, interpolate=None):
+    def at_time(self, time, nearest_sample=False,
+                interpolate=None, extrapolate=None):
         """ Return the value at the specified gps time
 
         Parameters
@@ -251,51 +252,64 @@ class TimeSeries(Array):
         interpolate: str, None
             Return the interpolated value of the time series. Choices
             are simple linear or quadratic interpolation.
+        extrapolate: str or float, None
+            Value to return if time is outsidde the range of the vector or
+            method of extrapolating the value.
         """
+        if nearest_sample:
+            time = time + self.delta_t / 2.0
+        vtime = _numpy.array(time, ndmin=1)
+
+        fill_value = None
+        keep_idx = None
+        size = len(vtime)
+        if extrapolate is not None:
+            if _numpy.isscalar(extrapolate) and _numpy.isreal(extrapolate):
+                fill_value = extrapolate
+                facl = facr = 0
+                if interpolate == 'quadratic':
+                    facl = facr = 1.1
+                elif interpolate == 'linear':
+                    facl, facr = 0.1, 1.1
+
+                left = (vtime >= self.start_time + self.delta_t * facl)
+                right = (vtime < self.end_time - self.delta_t * facr)
+                keep_idx = _numpy.where(left & right)[0]
+                vtime = vtime[keep_idx]
+            else:
+                raise ValueError("Unsuported extrapolate: %s" % extrapolate)
+
+        fi = (vtime - float(self.start_time))*self.sample_rate
+        i = _numpy.asarray(_numpy.floor(fi)).astype(int)
+        di = fi - i
+
         if interpolate == 'linear':
-            i = (time - float(self.start_time))*self.sample_rate
-            di = i - int(i)
-            i = int(i)
             a = self[i]
             b = self[i+1]
-            return a + (b - a) * di
+            ans = a + (b - a) * di
         elif interpolate == 'quadratic':
-            ir = (time - float(self.start_time))*self.sample_rate
-            i = _numpy.floor(_numpy.asarray(ir)).astype(int)
-            di = ir - i
             c = self.data[i]
             xr = self.data[i + 1] - c
             xl = self.data[i - 1] - c
             a = 0.5 * (xr + xl)
             b = 0.5 * (xr - xl)
             ans = a * di**2.0 + b * di + c
+        else:
+            ans = self[i]
+
+        ans = _numpy.array(ans, ndmin=1)
+        if fill_value is not None:
+            old = ans
+            ans = _numpy.zeros(size) + fill_value
+            ans[keep_idx] = old
+            ans = _numpy.array(ans, ndmin=1)
+
+        if _numpy.isscalar(time):
+            return ans[0]
+        else:
             return ans
 
-        if nearest_sample:
-            time += self.delta_t / 2.0
-        return self[int((time-self.start_time)*self.sample_rate)]
-
-    def at_times(self, times, nearest_sample = False):
-        """ Return an array of values at the specified gps times
-
-        Parameters
-        ----------
-        times: array of floats
-            The times whose values are needed
-        nearest_sample: bool
-            Return the samples at the times nearest to the chosen times rather
-            than rounded down.
-
-        Returns
-        -------
-        values: array of floats
-            The values of the timeseries at the given times
-        """
-
-        if nearest_sample:
-            times += self.delta_t / 2.0
-        elapsed_times = times - self.start_time
-        return self[(elapsed_times * self.sample_rate).astype('int')]
+    at_times = at_time
 
     def __eq__(self,other):
         """
@@ -581,15 +595,31 @@ class TimeSeries(Array):
             # Uses the hole-filling method of
             # https://arxiv.org/pdf/1908.05644.pdf
             from pycbc.strain.gate import gate_and_paint
+            from pycbc.waveform.utils import apply_fd_time_shift
             if invpsd is None:
                 # These are some bare minimum settings, normally you
                 # should probably provide a psd
                 invpsd = 1. / self.filter_psd(self.duration/32, self.delta_f, 0)
             lindex = int((time - window - self.start_time) / self.delta_t)
-            rindex = lindex + int(2 * window / self.delta_t)
+            rindex = int((time + window - self.start_time) / self.delta_t)
             lindex = lindex if lindex >= 0 else 0
             rindex = rindex if rindex <= len(self) else len(self)
-            return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+            rindex_time = float(self.start_time + rindex * self.delta_t)
+            offset = rindex_time - (time + window)
+            if offset == 0:
+                return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+            else:
+                # time shift such that gate end time lands on a specific data sample
+                fdata = data.to_frequencyseries()
+                fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=False)
+                # gate and paint in time domain
+                data = fdata.to_timeseries()
+                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                # shift back to the original time
+                fdata = data.to_frequencyseries()
+                fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
+                tdata = fdata.to_timeseries()
+                return tdata
         elif method == 'hard':
             tslice = data.time_slice(time - window, time + window)
             tslice[:] = 0

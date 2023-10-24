@@ -46,7 +46,10 @@ _numpy_function_lib = {_x: _y for _x,_y in numpy.__dict__.items()
 # =============================================================================
 #
 # add ligolw_types to numpy sctypeDict
-numpy.sctypeDict.update(ligolw_types.ToNumPyType)
+# but don't include bindings that numpy already defines
+numpy.sctypeDict.update({_k: _val
+                         for (_k, _val) in ligolw_types.ToNumPyType.items()
+                         if _k not in numpy.sctypeDict})
 
 # Annoyingly, numpy has no way to store NaNs in an integer field to indicate
 # the equivalent of None. This can be problematic for fields that store ids:
@@ -1917,8 +1920,10 @@ class WaveformArray(_FieldArrayWithDefaults):
     def remnant_mass(self):
         """Returns the remnant mass for an NS-BH binary."""
         return conversions.remnant_mass_from_mass1_mass2_cartesian_spin_eos(
-                                     self.mass1, self.mass2, self.spin1x,
-                                     self.spin1y, self.spin1z)
+                                     self.mass1, self.mass2,
+                                     spin1x=self.spin1x,
+                                     spin1y=self.spin1y,
+                                     spin1z=self.spin1z)
 
 
 __all__ = ['FieldArray', 'WaveformArray']

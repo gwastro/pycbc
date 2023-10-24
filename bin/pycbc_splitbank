@@ -32,22 +32,19 @@ from numpy import random, ceil
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 from pycbc import version
-from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.pnutils import frequency_cutoff_from_name
 
 
 __author__  = "Alex Nitz <alex.nitz@ligo.org>"
-__version__ = version.git_verbose_msg
-__date__    = version.date
 __program__ = "pycbc_splitbank"
 
 
 # Command line parsing
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument('--version', action='version', version=version.git_verbose_msg)
 
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('--templates-per-bank', metavar='SAMPLES',
@@ -149,10 +146,11 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
     outdoc = ligolw.Document()
     outdoc.appendChild(ligolw.LIGO_LW())
 
-    process = ligolw_process.register_to_xmldoc(outdoc,
-                    __program__, args.__dict__, instruments=["G1"],
-                    version=version.version, cvs_repository=version.git_branch,
-                    cvs_entry_time=version.date)
+    process = create_process_table(
+        outdoc,
+        program_name=__program__,
+        options=args.__dict__
+    )
 
     sngl_inspiral_table = lsctables.New(tabletype, columns=used_columns)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)
