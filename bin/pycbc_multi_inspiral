@@ -484,13 +484,15 @@ with ctx:
                 idx[ifo] = ind.copy()
                 # Trigger snr list for each ifo
                 snrv_dict[ifo] = snrv.copy()
-		        # Normalized trigger snr list for each ifo
+		# Normalized trigger snr list for each ifo
                 snr[ifo] = snrv * norm
 
             # NOTE: instead, check the length of either snrv_dict[ifo] or idx[ifo]
             # for all ifos, not only the 0th one.
             # Move onto next segment if there are no triggers.
-            if len(ifo_list)==0: continue
+	    n_trigs=[len(snrv_dict[ifo]) for ifo in args.instruments]
+	    if np.all(n_trigs==np.zeros_like(args.instruments[:]), axis=0):
+		continue
             # Short timeslides start here !
             # Loop through slides, staring with the zero-lag
             for slide in range(args.num_slides + 1):
