@@ -487,10 +487,8 @@ with ctx:
 		# Normalized trigger snr list for each ifo
                 snr[ifo] = snrv * norm
 
-            # NOTE: instead, check the length of either snrv_dict[ifo] or idx[ifo]
-            # for all ifos, not only the 0th one.
             # Move onto next segment if there are no triggers.
-	    n_trigs=[len(snrv_dict[ifo]) for ifo in args.instruments]
+	    n_trigs = [len(snrv_dict[ifo]) for ifo in args.instruments]
 	    if np.all(n_trigs==np.zeros_like(args.instruments[:]), axis=0):
 		continue
             # Short timeslides start here !
