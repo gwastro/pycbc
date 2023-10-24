@@ -1558,10 +1558,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         # First get signal PDF logr_s
         stat = {ifo: st for ifo, st in s}
 
-        try:
-            self.curr_mchirp = kwargs['mchirp']
-        except KeyError as e:
-            print(e)
+        self.curr_mchirp = kwargs['mchirp']
 
         logr_s = self.logsignalrate(stat, slide * step, to_shift)
 
@@ -1788,14 +1785,12 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         """
         from pycbc.conversions import mchirp_from_mass1_mass2
         try:
-            self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
-                                                       trigs.param['mass2'])
+            mass1 = trigs.param['mass1']
+            mass2 = trigs.param['mass2']
         except AttributeError:
-            try:
-                self.curr_mchirp = mchirp_from_mass1_mass2(trigs['mass1'],
-                                                           trigs['mass2'])
-            except KeyError as e:
-                print(e)
+            mass1 = trigs['mass1']
+            mass2 = trigs['mass2']
+        self.curr_mchirp = mchirp_from_mass1_mass2(mass1, mass2)
 
         if self.mcm is not None:
             # Careful - input might be a str, so cast to float

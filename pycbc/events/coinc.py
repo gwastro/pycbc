@@ -1170,14 +1170,16 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 continue
             # Find newly added triggers in fixed_ifo
             trigs = results[fixed_ifo]
+            # Calculate mchirp as a vectorized operation
+            mass1s = trigs['mass1']
+            mass2s = trigs['mass2']
+            mchirps = mchirp_from_mass1_mass2(mass1s, mass2s)
             # Loop over them one trigger at a time
             for i in range(len(trigs['end_time'])):
                 trig_stat = trigs['stat'][i]
                 trig_time = trigs['end_time'][i]
                 template = trigs['template_id'][i]
-                mass1 = trigs['mass1'][i]
-                mass2 = trigs['mass2'][i]
-                mchirp = mchirp_from_mass1_mass2(mass1, mass2)
+                mchirp = mchirps[i]
 
                 # Get current shift_ifo triggers in the same template
                 times = self.singles[shift_ifo].data(template)['end_time']
