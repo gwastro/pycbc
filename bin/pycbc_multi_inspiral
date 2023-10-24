@@ -152,7 +152,7 @@ t_gps = args.trigger_time # takes the --trigger-time option -> (float)
 # Put the ifos in alphabetical order so they are always called in
 # the same order.
 args.instruments.sort()
-ifo_list = args.instruments[:]
+n_ifo = len(args.instruments[:])
 # The following class verification methods are used to check whether input CLI
 # options provided by parser to pycbc.strain, pycbc.strain.StrainSegments,
 # pycbc.psd, pycbc.scheme & pycbc.fft modules are sane.
