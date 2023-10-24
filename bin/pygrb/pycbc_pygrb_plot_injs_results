@@ -18,7 +18,7 @@
 
 
 """
-Plot found/missed injection properties for the triggered search (PyGRB).'
+Plot found/missed injection properties for the triggered search (PyGRB).
 """
 
 import h5py, logging, os.path, argparse, sys

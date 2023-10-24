@@ -97,16 +97,16 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         sigma_tot = numpy.zeros(num_trigs)
 
         # Get parameters necessary for antenna responses
-        longitude = numpy.degrees(trigs['network/longitude'])
-        latitude = numpy.degrees(trigs['network/latitude'])
+        ra = trigs['network/ra'][:]
+        dec = trigs['network/dec'][:]
         time = trigs['network/end_time_gc'][:]
 
         # Get antenna response based parameters
         for ifo in ifos:
             antenna = Detector(ifo)
             ifo_f_resp = \
-                ppu.get_antenna_responses(antenna, longitude,
-                                          latitude, time)
+                ppu.get_antenna_responses(antenna, ra,
+                                          dec, time)
 
             # Get the average for f_resp_mean and calculate sigma_tot
             data['f_resp_mean'][ifo] = ifo_f_resp.mean()
