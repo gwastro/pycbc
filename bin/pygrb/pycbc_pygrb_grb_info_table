@@ -74,10 +74,10 @@ data[0].append(utc_time)
 headers.append('Coordinated Universal Time')
 
 data[0].append(str(opts.ra))
-headers.append('R.A.')
+headers.append('R.A. (deg)')
 
 data[0].append(str(opts.dec))
-headers.append('Dec')
+headers.append('Dec (deg)')
 
 data[0].append(str(opts.sky_error))
 headers.append('Sky Error')

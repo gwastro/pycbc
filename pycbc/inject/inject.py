@@ -34,7 +34,9 @@ from abc import ABCMeta, abstractmethod
 import h5py
 from pycbc import waveform, frame, libutils
 from pycbc.opt import LimitedSizeDict
-from pycbc.waveform import get_td_waveform, utils as wfutils
+from pycbc.waveform import (get_td_waveform, fd_det,
+                            get_td_det_waveform_from_fd_det)
+from pycbc.waveform import utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
 from pycbc.types import float64, float32, TimeSeries, load_timeseries
 from pycbc.detector import Detector
@@ -534,9 +536,13 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
                     + str(strain.dtype))
 
         lalstrain = strain.lal()
-        earth_travel_time = lal.REARTH_SI / lal.C_SI
-        t0 = float(strain.start_time) - earth_travel_time
-        t1 = float(strain.end_time) + earth_travel_time
+        if self.table[0]['approximant'] in fd_det:
+            t0 = float(strain.start_time)
+            t1 = float(strain.end_time)
+        else:
+            earth_travel_time = lal.REARTH_SI / lal.C_SI
+            t0 = float(strain.start_time) - earth_travel_time
+            t1 = float(strain.end_time) + earth_travel_time
 
         # pick lalsimulation injection function
         add_injection = injection_func_map[strain.dtype]
@@ -621,11 +627,18 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         else:
             f_l = f_lower
 
-        # compute the waveform time series
-        hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
-                                 **self.extra_args)
-        return projector(detector_name,
-                         inj, hp, hc, distance_scale=distance_scale)
+        if inj['approximant'] in fd_det:
+            strain = get_td_det_waveform_from_fd_det(
+                        inj, delta_t=delta_t, f_lower=f_l,
+                        ifos=detector_name, **self.extra_args)[detector_name]
+            strain /= distance_scale
+        else:
+            # compute the waveform time series
+            hp, hc = get_td_waveform(inj, delta_t=delta_t, f_lower=f_l,
+                                     **self.extra_args)
+            strain = projector(detector_name,
+                               inj, hp, hc, distance_scale=distance_scale)
+        return strain
 
     def end_times(self):
         """Return the end times of all injections"""
@@ -637,6 +650,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         for d in [waveform.waveform.td_wav, waveform.waveform.fd_wav]:
             for key in d:
                 all_apprxs.extend(d[key])
+        all_apprxs.extend(waveform.waveform.fd_det)
         return list(set(all_apprxs))
 
 

@@ -27,7 +27,7 @@ import pycbc
 import pycbc.version
 from pycbc import tmpltbank
 # Old ligolw output functions no longer imported at package level
-import pycbc.tmpltbank.bank_output_utils as llw_output
+import pycbc.tmpltbank.bank_output_utils as bank_output
 from pycbc.types import positive_float
 import pycbc.psd
 import pycbc.strain
@@ -181,13 +181,13 @@ if opts.vary_fupper==False:
         refFreq = metricParams.fUpper
     else:
         # use the maximum frequency for which the moments were calculated
-        fs = numpy.array(metricParams.evals.keys(), dtype=float)
+        fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
         fs.sort()
         refFreq = fs.max()
 else:
     # determine upper frequency cutoffs corresponding to the min and max
     # total masses
-    fs = numpy.array(metricParams.evals.keys(), dtype=float)
+    fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
     fs.sort()
     lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
                               opts.bank_fupper_formula, massRangeParams, fs)
@@ -297,11 +297,9 @@ mass1, mass2, spin1z, spin2z = partitioned_bank_object.output_all_points()
 tempBank = zip(mass1, mass2, spin1z, spin2z)
 
 # Output to file
-llw_output.output_sngl_inspiral_table(
+bank_output.output_bank_to_file(
     opts.output_file,
     tempBank,
-    metricParams,
-    ethincaParams,
     programName=__program__,
     optDict=opts.__dict__
 )

@@ -10,18 +10,14 @@ PyCBC inference documentation (``pycbc.inference``)
 .. MarginalizedPhaseGaussianNoise:
 .. |MarginalizedPhaseGaussianNoise| replace:: :py:class:`MarginalizedPhaseGaussianNoise <pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise>`
 
-===================
+--------------------
 Introduction
-===================
+--------------------
 
 This page gives details on how to use the various parameter estimation
 executables and modules available in PyCBC. The ``pycbc.inference`` subpackage
 contains classes and functions for evaluating probability distributions,
 likelihoods, and running Bayesian samplers.
-
-==================================================
-Sampling the parameter space (``pycbc_inference``)
-==================================================
 
 --------
 Overview
@@ -74,9 +70,11 @@ When providing multiple configuration files, sections in other files may be
 referenced, since in the multiple files are combined into a single file in
 memory when the files are loaded.
 
+
 ^^^^^^^^^^^^^^^^^^^^^
 Configuring the model
 ^^^^^^^^^^^^^^^^^^^^^
+See :ref:`explanation of common likelihood models<models_detailed>`
 
 The ``[model]`` section sets up what model to use for the analysis. At minimum,
 a ``name`` argument must be provided, specifying which model to use. For
@@ -109,6 +107,7 @@ analytic distribution for more details.
 ^^^^^^^^^^^^^^^^^^^^^^^
 Configuring the sampler
 ^^^^^^^^^^^^^^^^^^^^^^^
+See :ref:`example of trying different samplers<inference_example_samplers>`
 
 The ``[sampler]`` section sets up what sampler to use for the analysis. As
 with the ``[model]`` section, a ``name`` must be provided to specify which
@@ -119,7 +118,6 @@ sampler to use. The currently available samplers are:
 
     .. include:: _include/samplers-table.rst
 
-See :ref:`example of trying different samplers<inference_example_samplers>`
 
 Configuration options for the sampler should also be specified in the
 ``[sampler]`` section. For example:
@@ -155,62 +153,59 @@ max_postrior`` would instead consider the sampler to be burned in when either
 the ``nacl`` *or* ``max_posterior`` tests were satisfied. For more information
 on what tests are available, see the :py:mod:`pycbc.inference.burn_in` module.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Thinning samples (MCMC only)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. dropdown:: Thinning samples (MCMC only)
 
-The default behavior for the MCMC samplers (``emcee``, ``emcee_pt``) is to save
-every iteration of the Markov chains to the output file. This can quickly lead
-to very large files. For example, a BBH analysis (~15 parameters) with 200
-walkers, 20 temperatures may take ~50 000 iterations to acquire ~5000
-independent samples. This will lead to a file that is ~ 50 000 iterations x 200
-walkers x 20 temperatures x 15 parameters x 8 bytes ~ 20GB.  Quieter signals
-can take an order of magnitude more iterations to converge, leading to O(100GB)
-files. Clearly, since we only obtain 5000 independent samples from such a run,
-the vast majority of these samples are of little interest.
+    The default behavior for the MCMC samplers (``emcee``, ``emcee_pt``) is to save
+    every iteration of the Markov chains to the output file. This can quickly lead
+    to very large files. For example, a BBH analysis (~15 parameters) with 200
+    walkers, 20 temperatures may take ~50 000 iterations to acquire ~5000
+    independent samples. This will lead to a file that is ~ 50 000 iterations x 200
+    walkers x 20 temperatures x 15 parameters x 8 bytes ~ 20GB.  Quieter signals
+    can take an order of magnitude more iterations to converge, leading to O(100GB)
+    files. Clearly, since we only obtain 5000 independent samples from such a run,
+    the vast majority of these samples are of little interest.
 
-To prevent large file size growth, samples may be thinned before they are
-written to disk. Two thinning options are available, both of which are set in
-the ``[sampler]`` section of the configuration file. They are:
+    To prevent large file size growth, samples may be thinned before they are
+    written to disk. Two thinning options are available, both of which are set in
+    the ``[sampler]`` section of the configuration file. They are:
 
- * ``thin-interval``: This will thin the samples by the given integer before
-   writing the samples to disk. File sizes can still grow unbounded, but at
-   a slower rate. The interval must be less than the checkpoint interval.
- * ``max-samples-per-chain``: This will cap the maximum number of samples per
-   walker and per temperature to the given integer. This ensures that file
-   sizes never exceed ~ ``max-samples-per-chain`` x ``nwalkers`` x ``ntemps``
-   x ``nparameters`` x 8 bytes. Once the limit is reached,
-   samples will be thinned on disk, and new samples will be thinned to match.
-   The thinning interval will grow with longer runs as a result. To ensure
-   that enough samples exist to determine burn in and to measure an
-   autocorrelation length, ``max-samples-per-chain`` must be greater than
-   or equal to 100.
+     * ``thin-interval``: This will thin the samples by the given integer before
+       writing the samples to disk. File sizes can still grow unbounded, but at
+       a slower rate. The interval must be less than the checkpoint interval.
+     * ``max-samples-per-chain``: This will cap the maximum number of samples per
+       walker and per temperature to the given integer. This ensures that file
+       sizes never exceed ~ ``max-samples-per-chain`` x ``nwalkers`` x ``ntemps``
+       x ``nparameters`` x 8 bytes. Once the limit is reached,
+       samples will be thinned on disk, and new samples will be thinned to match.
+       The thinning interval will grow with longer runs as a result. To ensure
+       that enough samples exist to determine burn in and to measure an
+       autocorrelation length, ``max-samples-per-chain`` must be greater than
+       or equal to 100.
 
-The thinned interval that was used for thinning samples is saved to the output
-file's ``thinned_by`` attribute (stored in the HDF file's ``.attrs``).  Note
-that this is not the autocorrelation length (ACL), which is the amount that the
-samples need to be further thinned to obtain independent samples.
+    The thinned interval that was used for thinning samples is saved to the output
+    file's ``thinned_by`` attribute (stored in the HDF file's ``.attrs``).  Note
+    that this is not the autocorrelation length (ACL), which is the amount that the
+    samples need to be further thinned to obtain independent samples.
 
 
-.. note::
+    .. note::
 
-    In the output file creates by the MCMC samplers, we adopt the convention
-    that "iteration" means iteration of the sampler, not index of the samples.
-    For example, if a burn in test is used, ``burn_in_iteration`` will be
-    stored to the ``sampler_info`` group in the output file. This gives the
-    iteration of the sampler at which burn in occurred, not the sample on disk.
-    To determine  which samples an iteration corresponds to in the file, divide
-    iteration by ``thinned_by``.
+        In the output file creates by the MCMC samplers, we adopt the convention
+        that "iteration" means iteration of the sampler, not index of the samples.
+        For example, if a burn in test is used, ``burn_in_iteration`` will be
+        stored to the ``sampler_info`` group in the output file. This gives the
+        iteration of the sampler at which burn in occurred, not the sample on disk.
+        To determine  which samples an iteration corresponds to in the file, divide
+        iteration by ``thinned_by``.
 
-    Likewise, we adopt the convention that autocorrelation **length** (ACL) is
-    the autocorrelation length of the thinned samples (the number of samples on
-    disk that you need to skip to get independent samples) whereas
-    autocorrelation **time** (ACT) is the autocorrelation length in terms of
-    iteration (it is the number of **iterations** that you need to skip to get
-    independent samples); i.e., ``ACT = thinned_by x ACL``. The ACT is (up to
-    measurement resolution) independent of the thinning used, and thus is
-    useful for comparing the performance of the sampler.
-
+        Likewise, we adopt the convention that autocorrelation **length** (ACL) is
+        the autocorrelation length of the thinned samples (the number of samples on
+        disk that you need to skip to get independent samples) whereas
+        autocorrelation **time** (ACT) is the autocorrelation length in terms of
+        iteration (it is the number of **iterations** that you need to skip to get
+        independent samples); i.e., ``ACT = thinned_by x ACL``. The ACT is (up to
+        measurement resolution) independent of the thinning used, and thus is
+        useful for comparing the performance of the sampler.
 
 
 ^^^^^^^^^^^^^^^^^^^^^
@@ -301,41 +296,39 @@ Advanced configuration settings
 The following are additional settings that may be provided in the configuration
 file, in order to do more sophisticated analyses.
 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Sampling transforms (for MCMC samplers)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. dropdown:: Sampling transform (for MCMC samplers)
 
-One or more of the ``variable_params`` may be transformed to a different
-parameter space for purposes of sampling. This is done by specifying a
-``[sampling_params]`` section. This section specifies which
-``variable_params`` to replace with which parameters for sampling. This must be
-followed by one or more ``[sampling_transforms-{sampling_params}]`` sections
-that provide the transform class to use. For example, the following would cause
-the sampler to sample in chirp mass (``mchirp``) and mass ratio (``q``) instead
-of ``mass1`` and ``mass2``:
+    One or more of the ``variable_params`` may be transformed to a different
+    parameter space for purposes of sampling. This is done by specifying a
+    ``[sampling_params]`` section. This section specifies which
+    ``variable_params`` to replace with which parameters for sampling. This must be
+    followed by one or more ``[sampling_transforms-{sampling_params}]`` sections
+    that provide the transform class to use. For example, the following would cause
+    the sampler to sample in chirp mass (``mchirp``) and mass ratio (``q``) instead
+    of ``mass1`` and ``mass2``:
 
-.. code-block:: ini
+    .. code-block:: ini
 
-   [sampling_params]
-   mass1, mass2: mchirp, q
+       [sampling_params]
+       mass1, mass2: mchirp, q
 
-   [sampling_transforms-mchirp+q]
-   name = mass1_mass2_to_mchirp_q
+       [sampling_transforms-mchirp+q]
+       name = mass1_mass2_to_mchirp_q
 
-Transforms are provided by the :py:mod:`pycbc.transforms` module. The currently
-available transforms are:
+    Transforms are provided by the :py:mod:`pycbc.transforms` module. The currently
+    available transforms are:
 
-.. dropdown:: List of Sampling Transformations
-    :animate: fade-in-slide-down
+    .. dropdown:: List of Sampling Transformations
+        :animate: fade-in-slide-down
 
-    .. include:: _include/transforms-table.rst
+        .. include:: _include/transforms-table.rst
 
 
-.. note::
-   Both a ``jacobian`` and ``inverse_jacobian`` must be defined in order to use
-   a transform class for a sampling transform. Not all transform classes in
-   :py:mod:`pycbc.transforms` have these defined. Check the class
-   documentation to see if a Jacobian is defined.
+    .. note::
+       Both a ``jacobian`` and ``inverse_jacobian`` must be defined in order to use
+       a transform class for a sampling transform. Not all transform classes in
+       :py:mod:`pycbc.transforms` have these defined. Check the class
+       documentation to see if a Jacobian is defined.
 
 ^^^^^^^^^^^^^^^^^^^
 Waveform transforms
@@ -498,14 +491,13 @@ Each sampler has it's own sampler IO class that adds different convenience
 functions, depending on the sampler that was used. For more details on these
 classes, see the :py:mod:`pycbc.inference.io` module.
 
-===============================================
+----------------------
 Examples
-===============================================
+----------------------
 
 .. toctree::
     :maxdepth: 1
 
-    inference/examples/sampler_platter.rst
     inference/examples/analytic.rst
     inference/examples/bbh.rst
     inference/examples/gw150914.rst
@@ -513,20 +505,23 @@ Examples
     inference/examples/single.rst
     inference/examples/relative.rst
     inference/examples/hierarchical.rst
-    /inference/examples/lisa_smbhb.rst
+    inference/examples/lisa_smbhb_ldc_pe.rst
+    inference/examples/lisa_smbhb_inj_pe.rst
+    inference/examples/sampler_platter.rst
+    inference/models.rst
 
-===============================================
+----------------------------
 Visualizing the Posteriors
-===============================================
+----------------------------
 
 .. toctree::
    :maxdepth: 1
 
    inference/viz.rst
 
-===============================================
+--------------
 Workflows
-===============================================
+--------------
 
 .. toctree::
    :maxdepth: 1
@@ -534,9 +529,9 @@ Workflows
    workflow/pycbc_make_inference_workflow
    workflow/pycbc_make_inference_inj_workflow
 
-===============================================
+----------------
 For Developers
-===============================================
+----------------
 
 .. toctree::
     :maxdepth: 1

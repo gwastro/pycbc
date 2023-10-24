@@ -203,7 +203,7 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     time = time[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
-#now include gating veto
+# Include gating vetoes
 if args.gating_veto_windows:
     gating_veto = args.gating_veto_windows[args.ifo].split(',')
     gveto_before = float(gating_veto[0])
@@ -212,7 +212,12 @@ if args.gating_veto_windows:
         raise ValueError("Gating veto window values must be negative before "
                          "gates and positive after gates.")
     if not (gveto_before == 0 and gveto_after == 0):
-        gate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
+        autogate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
+        if args.ifo + '/gating/file' in trigf:
+            detgate_times = trigf[args.ifo + '/gating/file/time'][:]
+        else:
+            detgate_times = []
+        gate_times = np.concatenate((autogate_times, detgate_times))
         gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
                                                        gate_times + gveto_after).coalesce()
         all_segments -= gveto_segs
@@ -363,7 +368,7 @@ if args.save_trig_param:
     outfile.create_dataset("template_param", data=tpars)
 outfile.create_dataset("count_in_template", data=counts_total)
 outfile.create_dataset("median_sigma", data=median_sigma)
-# add some metadata
+# Add some metadata
 outfile.attrs.create("ifo", data=args.ifo.encode())
 outfile.attrs.create("fit_function", data=args.fit_function.encode())
 outfile.attrs.create("sngl_stat", data=args.sngl_ranking)

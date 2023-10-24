@@ -24,6 +24,7 @@ from pycbc.types import TimeSeries, zeros
 from pycbc.types import Array, FrequencySeries
 from pycbc.types import MultiDetOptionAppendAction, MultiDetOptionAction
 from pycbc.types import MultiDetOptionActionSpecial
+from pycbc.types import DictOptionAction, MultiDetDictOptionAction
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo, complex_same_precision_as
@@ -237,6 +238,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         pdf = 1.0 / opt.fake_strain_filter_duration
         fake_flow = opt.fake_strain_flow
         fake_rate = opt.fake_strain_sample_rate
+        fake_extra_args = opt.fake_strain_extra_args
         plen = round(opt.sample_rate / pdf) // 2 + 1
         if opt.fake_strain_from_file:
             logging.info("Reading ASD from file")
@@ -247,7 +249,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         elif opt.fake_strain != 'zeroNoise':
             logging.info("Making PSD for strain")
             strain_psd = pycbc.psd.from_string(opt.fake_strain, plen, pdf,
-                                               fake_flow)
+                                               fake_flow, **fake_extra_args)
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
@@ -262,7 +264,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                    opt.gps_end_time + opt.pad_data,
                                    seed=opt.fake_strain_seed,
                                    sample_rate=fake_rate,
-                                   low_frequency_cutoff=fake_flow)
+                                   low_frequency_cutoff=fake_flow,
+                                   filter_duration=1.0/pdf)
 
         if not strain.sample_rate_close(fake_rate):
             err_msg = "Actual sample rate of generated data does not match "
@@ -306,7 +309,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if injector is not None:
         logging.info("Applying injections")
         injections = \
-            injector.apply(strain, opt.channel_name[0:2],
+            injector.apply(strain, opt.channel_name.split(':')[0],
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
                            inj_filter_rejector=inj_filter_rejector)
@@ -314,7 +317,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     if opt.sgburst_injection_file:
         logging.info("Applying sine-Gaussian burst injections")
         injector = SGBurstInjectionSet(opt.sgburst_injection_file)
-        injector.apply(strain, opt.channel_name[0:2],
+        injector.apply(strain, opt.channel_name.split(':')[0],
                          distance_scale=opt.injection_scale_factor)
 
     if precision == 'single':
@@ -512,7 +515,12 @@ def insert_strain_option_group(parser, gps_times=True):
     # Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise.",
-                choices=pycbc.psd.get_lalsim_psd_list() + ['zeroNoise'])
+                choices=pycbc.psd.get_psd_model_list() + ['zeroNoise'])
+    data_reading_group.add_argument("--fake-strain-extra-args",
+                nargs='+', action=DictOptionAction,
+                metavar='PARAM:VALUE', default={}, type=float,
+                help="(optional) Extra arguments passed to "
+                "the PSD models.")
     data_reading_group.add_argument("--fake-strain-seed", type=int, default=0,
                 help="Seed value for the generation of fake colored"
                      " gaussian noise")
@@ -713,6 +721,11 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             help="Name of model PSD for generating fake "
                             "gaussian noise. Choose from %s or zeroNoise" \
                             %((', ').join(pycbc.psd.get_lalsim_psd_list()),) )
+    data_reading_group_multi.add_argument("--fake-strain-extra-args",
+                            nargs='+', action=MultiDetDictOptionAction,
+                            metavar='DETECTOR:PARAM:VALUE', default={},
+                            type=float, help="(optional) Extra arguments "
+                            "passed to the PSD models.")
     data_reading_group_multi.add_argument("--fake-strain-seed", type=int,
                             default=0, nargs="+", action=MultiDetOptionAction,
                             metavar='IFO:SEED',
@@ -1420,6 +1433,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  autogating_pad=None,
                  autogating_width=None,
                  autogating_taper=None,
+                 autogating_duration=None,
+                 autogating_psd_segment_length=None,
+                 autogating_psd_stride=None,
                  state_channel=None,
                  data_quality_channel=None,
                  idq_channel=None,
@@ -1477,6 +1493,12 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Half-duration of the zeroed-out portion of autogates.
         autogating_taper: float, Optional
             Duration of taper on either side of the gating window in seconds.
+        autogating_duration: float, Optional
+            Amount of data in seconds to apply autogating on.
+        autogating_psd_segment_length: float, Optional
+            The length in seconds of each segment used to estimate the PSD with Welch's method.
+        autogating_psd_stride: float, Optional
+            The overlap in seconds between each segment used to estimate the PSD with Welch's method.
         state_channel: {str, None}, Optional
             Channel to use for state information about the strain
         data_quality_channel: {str, None}, Optional
@@ -1552,8 +1574,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             else:
                 sb_kwargs['valid_mask'] = pycbc.frame.flag_names_to_bitmask(
                         self.data_quality_flags)
-                logging.info('DQ channel %s interpreted as bitmask %s = good',
-                             data_quality_channel, bin(valid_mask))
+                logging.info(
+                    'DQ channel %s interpreted as bitmask %s = good',
+                    data_quality_channel,
+                    bin(sb_kwargs['valid_mask'])
+                )
             self.dq = pycbc.frame.StatusBuffer(frame_src, data_quality_channel,
                                                start_time, **sb_kwargs)
 
@@ -1582,6 +1607,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.autogating_pad = autogating_pad
         self.autogating_width = autogating_width
         self.autogating_taper = autogating_taper
+        self.autogating_duration = autogating_duration
+        self.autogating_psd_segment_length = autogating_psd_segment_length
+        self.autogating_psd_stride = autogating_psd_stride
         self.gate_params = []
 
         self.sample_rate = sample_rate
@@ -1682,6 +1710,27 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.psds = {}
         logging.info("Recalculating %s PSD, %s", self.detector, psd.dist)
         return True
+
+    def check_psd_dist(self, min_dist, max_dist):
+        """Check that the horizon distance of a detector is within a required
+        range. If so, return True, otherwise log a warning and return False.
+        """
+        if self.psd is None:
+            # ignore check
+            return True
+        # Note that the distance can in principle be inf or nan, e.g. if h(t)
+        # is identically zero. The check must fail in those cases.  Be careful
+        # with how the logic works out when comparing inf's or nan's!
+        good = self.psd.dist >= min_dist and self.psd.dist <= max_dist
+        if not good:
+            logging.info(
+                "%s PSD dist %s outside acceptable range [%s, %s]",
+                self.detector,
+                self.psd.dist,
+                min_dist,
+                max_dist
+            )
+        return good
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
@@ -1878,9 +1927,11 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # apply gating if needed
         if self.autogating_threshold is not None:
+            autogating_duration_length = self.autogating_duration * self.sample_rate
+            autogating_start_sample = int(len(self.strain) - autogating_duration_length)
             glitch_times = detect_loud_glitches(
-                    strain[:-self.corruption],
-                    psd_duration=2., psd_stride=1.,
+                    self.strain[autogating_start_sample:-self.corruption],
+                    psd_duration=self.autogating_psd_segment_length, psd_stride=self.autogating_psd_stride,
                     threshold=self.autogating_threshold,
                     cluster_window=self.autogating_cluster,
                     low_freq_cutoff=self.highpass_frequency,
@@ -1952,6 +2003,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                    autogating_pad=args.autogating_pad,
                    autogating_width=args.autogating_width,
                    autogating_taper=args.autogating_taper,
+                   autogating_duration=args.autogating_duration,
+                   autogating_psd_segment_length=args.autogating_psd_segment_length,
+                   autogating_psd_stride=args.autogating_psd_stride,
                    psd_abort_difference=args.psd_abort_difference,
                    psd_recalculate_difference=args.psd_recalculate_difference,
                    force_update_cache=args.force_update_cache,

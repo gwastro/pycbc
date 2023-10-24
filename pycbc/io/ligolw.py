@@ -35,6 +35,7 @@ __all__ = (
     'default_null_value',
     'return_empty_sngl',
     'return_search_summary',
+    'create_process_table',
     'legacy_row_id_converter',
     'get_table_columns',
     'LIGOLWContentHandler'
@@ -137,6 +138,7 @@ def create_process_table(document, program_name=None, detectors=None,
     """Create a LIGOLW process table with sane defaults, add it to a LIGOLW
     document, and return it.
     """
+
     if program_name is None:
         program_name = os.path.basename(sys.argv[0])
     if options is None:
@@ -145,11 +147,25 @@ def create_process_table(document, program_name=None, detectors=None,
     # ligo.lw does not like `cvs_entry_time` being an empty string
     cvs_entry_time = pycbc_version.date or None
 
+    opts = options.copy()
+    key_del = []
+    for key, value in opts.items():
+        if type(value) not in tuple(FromPyType.keys()):
+            key_del.append(key)
+    if len(key_del) != 0:
+        for key in key_del:
+            opts.pop(key)
+
     process = ligolw_process.register_to_xmldoc(
-            document, program_name, options, version=pycbc_version.version,
-            cvs_repository='pycbc/'+pycbc_version.git_branch,
-            cvs_entry_time=cvs_entry_time, instruments=detectors,
-            comment=comment)
+        document,
+        program_name,
+        opts,
+        version=pycbc_version.version,
+        cvs_repository='pycbc/'+pycbc_version.git_branch,
+        cvs_entry_time=cvs_entry_time,
+        instruments=detectors,
+        comment=comment
+    )
     return process
 
 def legacy_row_id_converter(ContentHandler):

@@ -191,7 +191,6 @@ fig = pylab.figure(1)
 
 # get a unique list of timeslide_ids and loop over them
 interval = fp.attrs['timeslide_interval']
-pifo, fifo = fp.attrs['pivot'], fp.attrs['fixed']
 ifo_joined = fp.attrs['ifos'].replace(' ','')
 p_starts = fp['segments'][ifo_joined]['start'][:]
 p_ends = fp['segments'][ifo_joined]['end'][:]

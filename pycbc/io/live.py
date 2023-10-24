@@ -12,7 +12,10 @@ from ligo.lw import utils as ligolw_utils
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.io.ligolw import (
-    return_empty_sngl, create_process_table, make_psd_xmldoc, snr_series_to_xml
+    return_empty_sngl,
+    create_process_table,
+    make_psd_xmldoc,
+    snr_series_to_xml
 )
 from pycbc.results import generate_asd_plot
 from pycbc.results import ifo_color
@@ -89,7 +92,6 @@ class CandidateForGraceDB(object):
             snr_ifos = sld.keys()  # Ifos with SNR time series calculated
             self.snr_series = {ifo: sld[ifo]['snr_series'] for ifo in snr_ifos}
             # Extra ifos have SNR time series but not sngl inspiral triggers
-            extra_ifos = list(set(snr_ifos) - set(self.et_ifos))
 
             for ifo in snr_ifos:
                 # Ifos used for sky loc must have a PSD
@@ -98,14 +100,11 @@ class CandidateForGraceDB(object):
         else:
             self.snr_series = None
             snr_ifos = self.et_ifos
-            extra_ifos = []
 
         # Set up the bare structure of the xml document
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        # FIXME is it safe (in terms of downstream operations) to let
-        # `program_name` default to the actual script name?
         proc_id = create_process_table(outdoc, program_name='pycbc',
                                        detectors=snr_ifos).process_id
 
@@ -188,16 +187,6 @@ class CandidateForGraceDB(object):
                         self.et_ifos]) \
             + self.time_offset
 
-        # For extra detectors used only for sky loc, respect BAYESTAR's
-        # assumptions and checks
-        bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
-                                 'spin1y spin1z spin2x spin2y spin2z').split()
-        for sngl in sngl_inspiral_table:
-            if sngl.ifo in extra_ifos:
-                for bcf in bayestar_check_fields:
-                    setattr(sngl, bcf, getattr(sngl_populated, bcf))
-                sngl.end = lal.LIGOTimeGPS(self.merger_time)
-
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
         outdoc.childNodes[0].appendChild(sngl_inspiral_table)
 
@@ -258,24 +247,24 @@ class CandidateForGraceDB(object):
             self.p_astro, self.p_terr = None, None
 
         # Source probabilities and hasmassgap estimation
+        self.probabilities = None
+        self.hasmassgap = None
         if 'mc_area_args' in kwargs:
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
             self.probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
                                                     coinc_inspiral_row.snr,
                                                     min(eff_distances),
                                                     kwargs['mc_area_args'])
-            kwargs['hasmassgap_args'] = copy.deepcopy(kwargs['mc_area_args'])
-            kwargs['hasmassgap_args']['mass_gap'] = True
-            kwargs['hasmassgap_args']['mass_bdary']['ns_max'] = 3.0
-            kwargs['hasmassgap_args']['mass_bdary']['gap_max'] = 5.0
-            self.hasmassgap = calc_probabilities(
-                                  coinc_inspiral_row.mchirp,
-                                  coinc_inspiral_row.snr,
-                                  min(eff_distances),
-                                  kwargs['hasmassgap_args'])['Mass Gap']
-        else:
-            self.probabilities = None
-            self.hasmassgap = None
+            if 'embright_mg_max' in kwargs['mc_area_args']:
+                hasmg_args = copy.deepcopy(kwargs['mc_area_args'])
+                hasmg_args['mass_gap'] = True
+                hasmg_args['mass_bdary']['gap_max'] = \
+                    kwargs['mc_area_args']['embright_mg_max']
+                self.hasmassgap = calc_probabilities(
+                                      coinc_inspiral_row.mchirp,
+                                      coinc_inspiral_row.snr,
+                                      min(eff_distances),
+                                      hasmg_args)['Mass Gap']
 
         # Combine p astro and source probs
         if self.p_astro is not None and self.probabilities is not None:
@@ -318,8 +307,6 @@ class CandidateForGraceDB(object):
             with open(self.multipa_file, 'w') as multipaf:
                 json.dump(self.astro_probs, multipaf)
             logging.info('Multi p_astro file saved as %s', self.multipa_file)
-            # Don't save any other files!
-            return
 
         # Save source probabilities in a json file
         if self.probabilities is not None:
@@ -327,6 +314,8 @@ class CandidateForGraceDB(object):
             with open(self.prob_file, 'w') as probf:
                 json.dump(self.probabilities, probf)
             logging.info('Source probabilities file saved as %s', self.prob_file)
+            # Don't save any other files!
+            return
 
         # Save p astro / p terr as json
         if self.p_astro is not None:
@@ -335,10 +324,9 @@ class CandidateForGraceDB(object):
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
             logging.info('P_astro file saved as %s', self.pastro_file)
-        return
 
     def upload(self, fname, gracedb_server=None, testing=True,
-               extra_strings=None, search='AllSky'):
+               extra_strings=None, search='AllSky', labels=None):
         """Upload this candidate to GraceDB, and annotate it with a few useful
         plots and comments.
 
@@ -354,6 +342,8 @@ class CandidateForGraceDB(object):
             test trigger (True) or a production trigger (False).
         search: str
             String going into the "search" field of the GraceDB event.
+        labels: list
+            Optional list of labels to tag the new event with.
         """
         import matplotlib
         matplotlib.use('Agg')
@@ -371,34 +361,84 @@ class CandidateForGraceDB(object):
         # as GraceDB operations can fail later
         self.save(fname)
 
+        # hardware injections need to be maked with the INJ tag
+        if self.is_hardware_injection:
+            labels = (labels or []) + ['INJ']
+
+        # connect to GraceDB if we are not reusing a connection
+        if not hasattr(self, 'gracedb'):
+            logging.info('Connecting to GraceDB')
+            gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
+            if gracedb_server:
+                gdbargs['service_url'] = gracedb_server
+            try:
+                from ligo.gracedb.rest import GraceDb
+                self.gracedb = GraceDb(**gdbargs)
+            except Exception as exc:
+                logging.error('Failed to create GraceDB client')
+                logging.error(exc)
+
+        # create GraceDB event
+        logging.info('Uploading %s to GraceDB', fname)
+        group = 'Test' if testing else 'CBC'
         gid = None
         try:
-            if not hasattr(self, 'gracedb'):
-                from ligo.gracedb.rest import GraceDb
-                gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
-                self.gracedb = GraceDb(gracedb_server, **gdbargs) \
-                    if gracedb_server else GraceDb(**gdbargs)
-            # create GraceDB event
-            group = 'Test' if testing else 'CBC'
-            r = self.gracedb.create_event(group, "pycbc", fname, search).json()
-            gid = r["graceid"]
+            response = self.gracedb.create_event(
+                group,
+                "pycbc",
+                fname,
+                search=search,
+                labels=labels
+            )
+            gid = response.json()["graceid"]
             logging.info("Uploaded event %s", gid)
-
-            if self.is_hardware_injection:
-                self.gracedb.write_label(gid, 'INJ')
-                logging.info("Tagging event %s as an injection", gid)
-
-            # add info for tracking code version
-            gracedb_tag_with_version(self.gracedb, gid)
-
-            extra_strings = [] if extra_strings is None else extra_strings
-            for text in extra_strings:
-                self.gracedb.write_log(gid, text, tag_name=['analyst_comments'])
         except Exception as exc:
-            logging.error('Something failed during the upload/annotation of '
-                          'event %s on GraceDB. The event may not have been '
-                          'uploaded!', fname)
+            logging.error('Failed to create GraceDB event')
             logging.error(str(exc))
+
+        # Upload em_bright properties JSON
+        if self.hasmassgap is not None and gid is not None:
+            try:
+                self.gracedb.write_log(
+                    gid, 'EM Bright properties JSON file upload',
+                    filename=self.embright_file,
+                    tag_name=['em_bright']
+                )
+                logging.info('Uploaded em_bright properties for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload em_bright properties file '
+                              'for %s', gid)
+                logging.error(str(exc))
+
+        # Upload multi-cpt p_astro JSON
+        if self.astro_probs is not None and gid is not None:
+            try:
+                self.gracedb.write_log(
+                    gid, 'Multi-component p_astro JSON file upload',
+                    filename=self.multipa_file,
+                    tag_name=['p_astro'],
+                    label='PASTRO_READY'
+                )
+                logging.info('Uploaded multi p_astro for %s', gid)
+            except Exception as exc:
+                logging.error(
+                    'Failed to upload multi p_astro file for %s',
+                    gid
+                )
+                logging.error(str(exc))
+
+        # If there is p_astro but no probabilities, upload p_astro JSON
+        if hasattr(self, 'pastro_file') and gid is not None:
+            try:
+                self.gracedb.write_log(
+                    gid, '2-component p_astro JSON file upload',
+                    filename=self.pastro_file,
+                    tag_name=['sig_info']
+                )
+                logging.info('Uploaded p_astro for %s', gid)
+            except Exception as exc:
+                logging.error('Failed to upload p_astro file for %s', gid)
+                logging.error(str(exc))
 
         # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
@@ -435,27 +475,8 @@ class CandidateForGraceDB(object):
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
 
-        # Only make the pie plot if no multi cpt p_astro
-        if self.probabilities is not None and self.astro_probs is None:
-            self.prob_plotf = self.prob_file.replace('.json', '.png')
-            # Don't try to plot zero probabilities
-            prob_plot = {k: v for (k, v) in self.probabilities.items()
-                         if v != 0.0}
-            labels, sizes = zip(*prob_plot.items())
-            colors = [source_color(label) for label in labels]
-            fig, ax = pl.subplots()
-            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
-                   textprops={'fontsize': 15})
-            ax.axis('equal')
-            fig.savefig(self.prob_plotf)
-            pl.close()
-
-        if gid is None:
-            # Don't try to do anything else!
-            return gid
-
         # Upload SNR series in HDF format and plots
-        if self.snr_series is not None:
+        if self.snr_series is not None and gid is not None:
             try:
                 self.gracedb.write_log(
                     gid, 'SNR timeseries HDF file upload',
@@ -474,72 +495,64 @@ class CandidateForGraceDB(object):
                 )
             except Exception as exc:
                 logging.error('Failed to upload SNR timeseries and ASD for %s',
-                               gid)
+                              gid)
                 logging.error(str(exc))
 
-        # Upload em_bright properties JSON
-        if self.hasmassgap is not None:
+        # If 'self.prob_file' exists, make pie plot and do uploads.
+        # The pie plot only shows relative astrophysical source
+        # probabilities, not p_astro vs p_terrestrial
+        if hasattr(self, 'prob_file'):
+            self.prob_plotf = self.prob_file.replace('.json', '.png')
+            # Don't try to plot zero probabilities
+            prob_plot = {k: v for (k, v) in self.probabilities.items()
+                         if v != 0.0}
+            labels, sizes = zip(*prob_plot.items())
+            colors = [source_color(label) for label in labels]
+            fig, ax = pl.subplots()
+            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
+                   textprops={'fontsize': 15})
+            ax.axis('equal')
+            fig.savefig(self.prob_plotf)
+            pl.close()
+            if gid is not None:
+                try:
+                    self.gracedb.write_log(
+                        gid,
+                        'Source probabilities JSON file upload',
+                        filename=self.prob_file,
+                        tag_name=['pe']
+                    )
+                    logging.info('Uploaded source probabilities for %s', gid)
+                    self.gracedb.write_log(
+                        gid,
+                        'Source probabilities plot upload',
+                        filename=self.prob_plotf,
+                        tag_name=['pe']
+                    )
+                    logging.info(
+                        'Uploaded source probabilities pie chart for %s',
+                        gid
+                    )
+                except Exception as exc:
+                    logging.error(
+                        'Failed to upload source probability results for %s',
+                        gid
+                    )
+                    logging.error(str(exc))
+
+        if gid is not None:
             try:
-                self.gracedb.write_log(
-                    gid, 'EM Bright properties JSON file upload',
-                    filename=self.embright_file,
-                    tag_name=['em_bright']
-                )
-                logging.info('Uploaded em_bright properties for %s', gid)
+                # Add code version info
+                gracedb_tag_with_version(self.gracedb, gid)
+                # Add any annotations to the event log
+                for text in (extra_strings or []):
+                    self.gracedb.write_log(
+                        gid, text, tag_name=['analyst_comments'])
             except Exception as exc:
-                logging.error('Failed to upload em_bright properties file '
-                              'for %s', gid)
+                logging.error('Something failed during annotation of analyst'
+                              ' comments for event %s on GraceDB.', fname)
                 logging.error(str(exc))
 
-        # Upload multi-cpt p_astro JSON
-        if self.astro_probs is not None:
-            try:
-                self.gracedb.write_log(
-                    gid, 'Multi-component p_astro JSON file upload',
-                    filename=self.multipa_file,
-                    tag_name=['p_astro']
-                )
-                logging.info('Uploaded multi p_astro for %s', gid)
-            except Exception as exc:
-                logging.error('Failed to upload multi p_astro file for %s', gid)
-                logging.error(str(exc))
-            # Don't do anything else!
-            return gid
-
-        # If there is no multi p_astro, upload source probabilities in JSON
-        # format and plot
-        if self.probabilities is not None:
-            try:
-                self.gracedb.write_log(
-                    gid, 'Source probabilities JSON file upload',
-                    filename=self.prob_file,
-                    tag_name=['pe']
-                )
-                logging.info('Uploaded source probabilities for %s', gid)
-                self.gracedb.write_log(
-                    gid, 'Source probabilities plot upload',
-                    filename=self.prob_plotf,
-                    tag_name=['pe']
-                )
-                logging.info('Uploaded source probabilities pie chart for %s',
-                             gid)
-            except Exception as exc:
-                logging.error(
-                    'Failed to upload source probability results for %s', gid)
-                logging.error(str(exc))
-
-        # If there is p_astro but no probabilities, upload p_astro JSON
-        if self.p_astro is not None:
-            try:
-                self.gracedb.write_log(
-                    gid, '2-component p_astro JSON file upload',
-                    filename=self.pastro_file,
-                    tag_name=['sig_info']
-                )
-                logging.info('Uploaded p_astro for %s', gid)
-            except Exception as exc:
-                logging.error('Failed to upload p_astro file for %s', gid)
-                logging.error(str(exc))
         return gid
 
 

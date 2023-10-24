@@ -103,7 +103,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                       tags=tags)
     else:
         errMsg = "Matched filter method not recognized. Must be one of "
-        errMsg += "WORKFLOW_INDEPENDENT_IFOS (currently only one option)."
+        errMsg += "WORKFLOW_INDEPENDENT_IFOS or WORKFLOW_MULTIPLE_IFOS."
         raise ValueError(errMsg)
 
     logging.info("Leaving matched-filtering setup module.")
@@ -187,11 +187,9 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     '''
     Setup matched-filter jobs that are generated as part of the workflow in
     which a single job reads in and generates triggers over multiple ifos.
-    This
-    module can support any matched-filter code that is similar in principle to
-    pycbc_multi_inspiral or lalapps_coh_PTF_inspiral, but for new codes some
-    additions are needed to define Executable and Job sub-classes
-    (see jobutils.py).
+    This module can support any matched-filter code that is similar in
+    principle to pycbc_multi_inspiral, but for new codes some additions are
+    needed to define Executable and Job sub-classes (see jobutils.py).
 
     Parameters
     -----------
@@ -240,6 +238,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     if match_fltr_exe == 'pycbc_multi_inspiral':
         exe_class = select_matchedfilter_class(match_fltr_exe)
+        # Right ascension + declination provided in degrees,
+        # so convert to radians
         cp.set('inspiral', 'ra',
                str(radians(float(cp.get('workflow', 'ra')))))
         cp.set('inspiral', 'dec',

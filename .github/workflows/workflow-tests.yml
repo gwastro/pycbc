@@ -2,6 +2,10 @@ name: run generic example workflow tests
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -13,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v4
       with:
         python-version: 3.8
     - name: install condor
@@ -21,17 +25,17 @@ jobs:
         wget -qO - https://research.cs.wisc.edu/htcondor/ubuntu/HTCondor-Release.gpg.key | sudo apt-key add -
         echo "deb http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
         echo "deb-src http://research.cs.wisc.edu/htcondor/ubuntu/8.9/focal focal contrib" | sudo tee -a /etc/apt/sources.list
-        sudo apt-get update
-        sudo apt-get install minihtcondor
+        sudo apt-get -o Acquire::Retries=3 update
+        sudo apt-get -o Acquire::Retries=3 install minihtcondor
         sudo systemctl start condor
         sudo systemctl enable condor
     - name: install pegasus
       run: |
         wget -qO - https://download.pegasus.isi.edu/pegasus/gpg.txt | sudo apt-key add -
         echo "deb https://download.pegasus.isi.edu/pegasus/ubuntu bionic main" | sudo tee -a /etc/apt/sources.list
-        sudo apt-get update
-        sudo apt-get install pegasus
-    - run: sudo apt-get install *fftw3* intel-mkl*
+        sudo apt-get -o Acquire::Retries=3 update
+        sudo apt-get -o Acquire::Retries=3 install pegasus
+    - run: sudo apt-get -o Acquire::Retries=3 install *fftw3* intel-mkl*
     - name: Install pycbc
       run: |
         python -m pip install --upgrade 'pip<22.0' setuptools

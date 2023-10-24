@@ -28,7 +28,11 @@ provides additional abstraction and argument handling.
 """
 import os
 import shutil
+import logging
 import tempfile
+import subprocess
+import warnings
+from packaging import version
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlsplit
 import Pegasus.api as dax
@@ -36,37 +40,6 @@ import Pegasus.api as dax
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
 
-GRID_START_TEMPLATE = '''#!/bin/bash
-
-if [ -f /tmp/x509up_u`id -u` ] ; then
-  unset X509_USER_PROXY
-else
-  if [ ! -z ${X509_USER_PROXY} ] ; then
-    if [ -f ${X509_USER_PROXY} ] ; then
-      cp -a ${X509_USER_PROXY} /tmp/x509up_u`id -u`
-    fi
-  fi
-  unset X509_USER_PROXY
-fi
-
-# Check that the proxy is valid
-grid-proxy-info -exists
-RESULT=${?}
-if [ ${RESULT} -eq 0 ] ; then
-  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
-  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
-    grid-proxy-info
-  else
-    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
-    rm -f /tmp/x509up_u`id -u`.orig
-    grid-proxy-info
-  fi
-else
-  echo "Error: Could not find a valid grid proxy to submit workflow."
-  exit 1
-fi
-'''
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -344,6 +317,13 @@ class Workflow(object):
     """
     def __init__(self, name='my_workflow', directory=None, cache_file=None,
                  dax_file_name=None):
+        # Pegasus logging is fairly verbose, quieten it down a bit
+        # This sets the logger to one level less verbose than the root
+        # (pycbc) logger
+
+        # Get the logger associated with the Pegasus workflow import
+        pegasus_logger = logging.getLogger('Pegasus')
+        pegasus_logger.setLevel(logging.root.level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
@@ -369,7 +349,7 @@ class Workflow(object):
             self.filename = dax_file_name
         self._adag = dax.Workflow(self.filename)
 
-        # A pegasus job version of this workflow for use if it isncluded
+        # A pegasus job version of this workflow for use if it is included
         # within a larger workflow
         self._as_job = SubWorkflow(self.filename, is_planned=False,
                                    _id=self.name)
@@ -729,9 +709,6 @@ class Workflow(object):
             fp.write('pegasus-remove {}/work $@'.format(submitdir))
 
         with open('start', 'w') as fp:
-            if self.cp.has_option('pegasus_profile', 'pycbc|check_grid'):
-                fp.write(GRID_START_TEMPLATE)
-                fp.write('\n')
             fp.write('pegasus-run {}/work $@'.format(submitdir))
 
         os.chmod('status', 0o755)
@@ -788,6 +765,15 @@ class SubWorkflow(dax.SubWorkflow):
 
         self.add_planner_arg('pegasus.dir.storage.mapper.replica.file',
                              os.path.basename(output_map_file.name))
+        # Ensure output_map_file has the for_planning flag set. There's no
+        # API way to set this after the File is initialized, so we have to
+        # change the attribute here.
+        # WORSE, we only want to set this if the pegasus *planner* is version
+        # 5.0.4 or larger
+        sproc_out = subprocess.check_output(['pegasus-version']).strip()
+        sproc_out = sproc_out.decode()
+        if version.parse(sproc_out) >= version.parse('5.0.4'):
+            output_map_file.for_planning=True
         self.add_inputs(output_map_file)
 
         # I think this is needed to deal with cases where the subworkflow file
@@ -866,10 +852,11 @@ class File(dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
-        logging.warn("The from_path method in pegasus_workflow is deprecated. "
-                     "Please use File.from_path (for output files) in core.py "
-                     "or resolve_url_to_file in core.py (for input files) "
-                     "instead.")
+        warnings.warn("The from_path method in pegasus_workflow is "
+                      "deprecated. Please use File.from_path (for "
+                      "output files) in core.py or resolve_url_to_file "
+                      "in core.py (for input files) instead.",
+                      DeprecationWarning)
         urlparts = urlsplit(path)
         site = 'nonlocal'
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):

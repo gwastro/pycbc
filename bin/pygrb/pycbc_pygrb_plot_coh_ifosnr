@@ -69,11 +69,11 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
     if input_file:
         if injections:
             logging.info("Loading injections...")
-            # This will eventually become load_injections
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            # TODO: This will eventually become load_injections
+            trigs = ppu.load_triggers(input_file, vetoes)
         else:
             logging.info("Loading triggers...")
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            trigs = ppu.load_triggers(input_file, vetoes)
 
         num_trigs = len(trigs['network/end_time_gc'][:])
 
@@ -82,7 +82,10 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
 
         # Get single ifo SNR data
         for ifo in ifos:
-            att = ifo[0].lower()
+            att = ifo.lower()
+            # TODO: do we want pycbc_grb_inj_finder or other executables upstream to handle this?
+            if 'h' not in att:
+                att = att[0]
             data['single'][ifo] = trigs['%s/snr_%s' % (ifo, att)][:]
 
         # Get sigma for each ifo
@@ -94,16 +97,16 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         sigma_tot = numpy.zeros(num_trigs)
 
         # Get parameters necessary for antenna responses
-        longitude = numpy.degrees(trigs['network/longitude'])
-        latitude = numpy.degrees(trigs['network/latitude'])
+        ra = trigs['network/ra'][:]
+        dec = trigs['network/dec'][:]
         time = trigs['network/end_time_gc'][:]
 
         # Get antenna response based parameters
         for ifo in ifos:
             antenna = Detector(ifo)
             ifo_f_resp = \
-                ppu.get_antenna_responses(antenna, longitude,
-                                          latitude, time)
+                ppu.get_antenna_responses(antenna, ra,
+                                          dec, time)
 
             # Get the average for f_resp_mean and calculate sigma_tot
             data['f_resp_mean'][ifo] = ifo_f_resp.mean()
@@ -152,6 +155,8 @@ parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")
+parser.add_argument("--found-missed-file",
+                    help="The hdf injection results file", required=False)
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
 opts = parser.parse_args()
@@ -160,7 +165,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_file = os.path.abspath(opts.found_file) if opts.found_file else None
+found_file = os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
 zoom_in = opts.zoom_in
 ifo = opts.ifo
 if ifo is None:
