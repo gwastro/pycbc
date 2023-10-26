@@ -28,14 +28,13 @@ import logging
 import argparse
 import copy
 
-import ligo.segments
 import numpy
 import h5py
 from scipy import stats
 from pycbc.detector import Detector
+from ligo import segments
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
-    from ligo import segments
     from ligo.lw import utils, lsctables
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
@@ -652,7 +651,7 @@ def load_segment_dict(hdf_file_path):
     {slide_id: segmentlist(segments analyzed)}
     """
 
-    # TODO: Long time slides will require mapping between slides and segments
+    # Long time slides will require mapping between slides and segments
     hdf_file = h5py.File(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
     # Get slide IDs
@@ -661,12 +660,12 @@ def load_segment_dict(hdf_file_path):
     seg_starts = hdf_file['network/search/segments/start_time'][:]
     seg_ends = hdf_file['network/search/segments/end_time'][:]
     # Write list of segments
-    segments = ligo.segments.segmentlist()
+    seg_list = segments.segmentlist()
     for i in range(len(seg_starts)):
-        segments.append(ligo.segments.segment(seg_starts[i], seg_ends[i]))
+        seg_list.append(segments.segment(seg_starts[i], seg_ends[i]))
 
     # Write segment_dict in proper format
-    segment_dict = {slide: segments.coalesce() for slide in slide_ids}
+    segment_dict = {slide: seg_list.coalesce() for slide in slide_ids}
 
     return segment_dict
 
