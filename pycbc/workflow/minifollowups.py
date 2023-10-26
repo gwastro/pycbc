@@ -125,7 +125,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                                    insp_segs, insp_data_name, insp_anal_name,
                                    dax_output, out_dir, veto_file=None,
-                                   veto_segment_name=None, statfiles=None,
+                                   veto_segment_name=None, fg_file=None,
+                                   fg_name=None, statfiles=None,
                                    tags=None):
     """ Create plots that followup the Nth loudest clustered single detector
     triggers from a merged single detector trigger HDF file.
@@ -192,6 +193,10 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
         node.add_opt('--veto-segment-name', veto_segment_name)
+    if fg_file is not None:
+        assert(fg_name is not None)
+        node.add_input_opt('--foreground-censor-file', fg_file)
+        node.add_opt('--foreground-segment-name', fg_name)
     if statfiles:
         statfiles = statfiles.find_output_with_ifo(curr_ifo)
         node.add_input_list_opt('--statistic-files', statfiles)
