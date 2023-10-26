@@ -29,11 +29,8 @@ import shlex
 import logging
 import numpy
 from pycbc import transforms
-from pycbc.types import TimeSeries
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
-from .relbin import RelativeTimeDom
-from .relbin_cpu import snr_predictor_dom
 
 #
 # =============================================================================
@@ -118,17 +115,18 @@ class HierarchicalModel(BaseModel):
             self.__extra_stats += self.extra_stats_map[lbl]
             # also make sure the model's sampling transforms and waveform
             # transforms are not set, as these are handled by the hierarchical
-            # model
-            if model.sampling_transforms is not None:
-                raise ValueError("Model {} has sampling transforms set; "
-                                 "in a hierarchical analysis, these are "
-                                 "handled by the hiearchical model"
-                                 .format(lbl))
-            if model.waveform_transforms is not None:
-                raise ValueError("Model {} has waveform transforms set; "
-                                 "in a hierarchical analysis, these are "
-                                 "handled by the hiearchical model"
-                                 .format(lbl))
+            # model, except for `multiband_relative_time_dom` model
+            if self.name != "multiband_relative_time_dom":
+                if model.sampling_transforms is not None:
+                    raise ValueError("Model {} has sampling transforms set; "
+                                    "in a hierarchical analysis, these are "
+                                    "handled by the hiearchical model"
+                                    .format(lbl))
+                if model.waveform_transforms is not None:
+                    raise ValueError("Model {} has waveform transforms set; "
+                                    "in a hierarchical analysis, these are "
+                                    "handled by the hiearchical model"
+                                    .format(lbl))
 
     @property
     def hvariable_params(self):
@@ -613,7 +611,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
     supports LISA as the space-borne GW detector.
 
     Sub models are treated as if the same GW source (such as a GW
-    from stellar-mass BBH) is observed in different frequency band by
+    from stellar-mass BBH) is observed in different frequency bands by
     space-borne and ground-based GW detectors, then transform all
     the parameters into the same frame in the sub model level, use
     `HierarchicalModel` to get the joint likelihood, and marginalize
@@ -679,50 +677,40 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         # note that for SOBHB signals, ground-based detectors dominant SNR
         # and accuracy of (tc, ra, dec)
-        # sh_primary, hh_primary = self.primary_model.get_sh_hh()
-        # print("sh_primary: ", sh_primary)
-        # print("len(sh_primary): ", len(sh_primary))
+        sh_primary, hh_primary = self.primary_model.get_sh_hh()
+        print("sh_primary: ", sh_primary)
+        print("len(sh_primary): ", len(sh_primary))
 
         nums = self.primary_model.vsamples
         margin_params = self.primary_model.marginalize_vector_params.copy()
+        margin_params.pop('logw_partial')
+        print("current_params_primary: ", self.primary_model.current_params)
         print("margin_params: ", margin_params)
-        # margin_params.pop('logw_partial')
 
         # add likelihood contribution from space-borne detectors, we
-        # calculate sh/hh for each marginalized parameter
+        # calculate sh/hh for each marginalized parameter point
         sh_others = numpy.full(nums, 0 + 0.0j)
         hh_others = numpy.zeros(nums)
 
-        for label_i, other_model in enumerate(self.other_models):
+        for _, other_model in enumerate(self.other_models):
             current_params_other = other_model.current_params.copy()
-            # there are still some values in margin_params
-            for p in margin_params:
-                if p == 'logw_partial':
-                    continue
-                current_params_other.pop(p)
-            print("current_params: ", current_params_other)
-            # print("self.waveform_transforms: ", self.waveform_transforms)
+            print("current_params_other: ", current_params_other)
+            print("other_model.waveform_transforms: ", other_model.waveform_transforms)
             for i in range(nums):
-                parameters = current_params_other.copy()
-                parameters.update(
+                current_params_other.update(
                     {key: value[i] for key, value in margin_params.items()})
-                print("parameters: ", parameters)
-                other_model.update(**parameters)
+                print("current_params_other (updated): ", current_params_other)
+                # apply sub-model's transform
+                if other_model.waveform_transforms is not None:
+                    current_params_other = transforms.apply_transforms(
+                        current_params_other, other_model.waveform_transforms)
+                print("current_params_other (transformed): ", current_params_other)
+                other_model.update(**current_params_other)
                 sh_others[i], hh_others[i] = other_model.get_sh_hh()
 
-        # # just a demo to show can't do transform itself
-        # for label_i, other_model in enumerate(self.other_models):
-        #     current_params_primary = self.primary_model.current_params.copy()
-        #     print("current_params: ", current_params_primary)
-        #     for i in range(nums):
-        #         parameters = current_params_primary
-        #         other_model.update(**parameters)
-        #         sh_others[i], hh_others[i] = other_model.get_sh_hh()
+        sh_total = sh_primary + sh_others
+        hh_total = hh_primary + hh_others
 
-        # sh_total = sh_primary + sh_others
-        # hh_total = hh_primary + hh_others
-        sh_total = sh_others
-        hh_total = hh_others
         # calculate marginalize_vector_weights
         self.primary_model.marginalize_vector_weights = \
             - numpy.log(self.primary_model.vsamples)
@@ -775,6 +763,10 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         # we'll need any waveform transforms for the initializing sub-models,
         # as the underlying models will receive the output of those transforms
+
+        # if `waveform_transforms` section doesn't have the prefix of
+        # sub-model's name, then add this `waveform_transforms` section
+        # into top level, if not, add it into sub-models' config
         if any(cp.get_subsections('waveform_transforms')):
             waveform_transforms = transforms.read_transforms_from_config(
                 cp, 'waveform_transforms')
@@ -824,22 +816,58 @@ class MultibandRelativeTimeDom(HierarchicalModel):
             # has the same variable parameters, so we don't need to worry
             # about the unique variable issue. Besides, the primary model
             # needs to do marginalization, so we must set variable_params
-            # and prior section before initialize it.
+            # and prior section before initializing it.
 
             subcp.add_section('variable_params')
             for param in vparam_map[lbl]:
-                subcp.set('variable_params', param.subname,
-                          cp.get('variable_params', param.fullname))
+                if lbl in kwargs['primary_lbl']:
+                    subcp.set('variable_params', param.subname,
+                              cp.get('variable_params', param.fullname))
+                else:
+                    subcp.set('static_params', param.subname, 'REPLACE')
 
             for section in cp.sections():
-                if 'prior-' in section:
-                    prior_section_name = '%s' % section
-                    subcp[prior_section_name] = cp[prior_section_name]
+                # the primary model needs prior of marginlized parameters
+                if 'prior-' in section and lbl in kwargs['primary_lbl']:
+                    prior_section = '%s' % section
+                    subcp[prior_section] = cp[prior_section]
+                # if `waveform_transforms` has a prefix,
+                # add it into sub-models' config
+                elif '%s_waveform_transforms' % lbl in section:
+                    transforms_section = '%s' % section
+                    subcp[transforms_section] = cp[transforms_section]
+                else: pass
+
+            # similar to the standard hierarchical model,
+            # add the outputs from the waveform transforms if sub-model
+            # doesn't need marginalization
+            if lbl not in kwargs['primary_lbl']:
+                for param in wfparam_map[lbl]:
+                    subcp.set('static_params', param.subname, 'REPLACE')
+
+            # save the vitual config file to disk for later check 
+            with open('%s.ini' % lbl, 'w', encoding='utf-8') as file:
+                subcp.write(file)
 
             # initialize
             submodel = read_from_config(subcp)
+
+            if lbl not in kwargs['primary_lbl']:
+                # similar to the standard hierarchical model,
+                # move the static params back to variable if sub-model
+                # doesn't need marginalization
+                for p in vparam_map[lbl]:
+                    submodel.static_params.pop(p.subname)
+                submodel.variable_params = tuple(p.subname
+                                                 for p in vparam_map[lbl])
+                # similar to the standard hierarchical model,
+                # remove the waveform transform parameters if sub-model
+                # doesn't need marginalization
+                for p in wfparam_map[lbl]:
+                    submodel.static_params.pop(p.subname)
             submodels[lbl] = submodel
             logging.info("")
+
         # now load the model
         logging.info("Loading multiband_relative_time_dom model")
         return super(HierarchicalModel, cls).from_config(
