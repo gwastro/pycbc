@@ -118,15 +118,15 @@ class HierarchicalModel(BaseModel):
             # model, except for `multiband_relative_time_dom` model
             if self.name != "multiband_relative_time_dom":
                 if model.sampling_transforms is not None:
-                    raise ValueError("Model {} has sampling transforms set; "
-                                    "in a hierarchical analysis, these are "
-                                    "handled by the hiearchical model"
-                                    .format(lbl))
+                    raise ValueError("Model {} has sampling transforms "
+                                     "set; in a hierarchical analysis, "
+                                     "these are handled by the "
+                                     "hiearchical model".format(lbl))
                 if model.waveform_transforms is not None:
-                    raise ValueError("Model {} has waveform transforms set; "
-                                    "in a hierarchical analysis, these are "
-                                    "handled by the hiearchical model"
-                                    .format(lbl))
+                    raise ValueError("Model {} has waveform transforms "
+                                     "set; in a hierarchical analysis, "
+                                     "these are handled by the "
+                                     "hiearchical model".format(lbl))
 
     @property
     def hvariable_params(self):
@@ -677,7 +677,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         # note that for SOBHB signals, ground-based detectors dominant SNR
         # and accuracy of (tc, ra, dec)
-        sh_primary, hh_primary = self.primary_model.get_sh_hh()
+        sh_primary, hh_primary = self.primary_model.loglr(return_sh_hh=True)
         print("sh_primary: ", sh_primary)
         print("len(sh_primary): ", len(sh_primary))
 
@@ -706,11 +706,13 @@ class MultibandRelativeTimeDom(HierarchicalModel):
                         current_params_other, other_model.waveform_transforms)
                 print("current_params_other (transformed): ", current_params_other)
                 other_model.update(**current_params_other)
-                sh_others[i], hh_others[i] = other_model.get_sh_hh()
+                sh_others[i], hh_others[i] = other_model.loglr(return_sh_hh=True)
+                raise ValueError
 
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
-
+        # sh_total = sh_others
+        # hh_total = hh_others
         # calculate marginalize_vector_weights
         self.primary_model.marginalize_vector_weights = \
             - numpy.log(self.primary_model.vsamples)
