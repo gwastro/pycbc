@@ -58,6 +58,20 @@ param0 = param_arrays[0]
 param1 = param_arrays[1] if len(param_arrays) > 1 else None
 kde_values = kde_values[idx]
 
+kde_arrays = {
+    'signal_kde': signal_kde,
+    'template_kde': template_kde,
+    'ratio_kde': signal_kde / template_kde,
+}
+kde_values = kde_arrays[args.which_kde]
+
+if args.sort_type == 'sorted':
+    idx = numpy.argsort(kde_values)
+    param0 = param0[idx]
+    if len(args.param) > 1:
+        param1 = param1[idx]
+    kde_values = kde_values[idx]
+
 if args.plot_type == 'kde_vs_param':
     fig, ax = plt.subplots(1, figsize=(12,7), constrained_layout=True)
     im = ax.scatter(kde_values, param0, marker=".", c="r", s=5)
