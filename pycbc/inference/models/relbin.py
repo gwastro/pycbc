@@ -505,13 +505,25 @@ class Relative(DistMarg, BaseGaussianNoise):
                 loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
-    def get_sh_hh(self):
-        r"""Computes the <s|h> and <h|h>
+    def _loglr(self, return_sh_hh=False):
+        r"""Computes the log likelihood ratio,
+        or inner product <s|h> and <h|h> if `return_sh_hh` is True.
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
 
         Returns
         -------
+        float
+            The value of the log likelihood ratio.
+        or
         tuple
-            (sh, hh).
+            The inner product (<s|h>, <h|h>).
         """
         # get model params
         p = self.current_params
@@ -562,29 +574,12 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             filt += filter_i
             norm += norm_i
-
-        return (filt, norm)
-
-    def _loglr(self):
-        r"""Computes the log likelihood ratio
-
-        .. math::
-
-            \log \mathcal{L}(\Theta) = \sum_i
-                \left<h_i(\Theta)|d_i\right> -
-                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
-
-        Returns
-        -------
-        float or tuple
-            The value of the log likelihood ratio.
-        """
-        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
-        total_sh, total_hh = self.get_sh_hh()
-        loglr = self.marginalize_loglr(total_sh, total_hh)
-        return loglr
+        loglr = self.marginalize_loglr(filt, norm)
+        if return_sh_hh == True:
+            results = (filt, norm)
+        else:
+            results = loglr
+        return results
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
@@ -803,14 +798,27 @@ class RelativeTimeDom(RelativeTime):
 
         return snrs
 
-    def get_sh_hh(self):
-        r"""Computes the <s|h> and <h|h>
+    def _loglr(self, return_sh_hh=False):
+        r"""Computes the log likelihood ratio,
+        or inner product <s|h> and <h|h> if `return_sh_hh` is True.
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
 
         Returns
         -------
+        float
+            The value of the log likelihood ratio.
+        or
         tuple
-            (sh, hh).
+            The inner product (<s|h>, <h|h>).
         """
+        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params
 
         p2 = p.copy()
@@ -845,25 +853,9 @@ class RelativeTimeDom(RelativeTime):
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
-        return (sh_total, hh_total)
-
-    def _loglr(self):
-        r"""Computes the log likelihood ratio
-
-        .. math::
-
-            \log \mathcal{L}(\Theta) = \sum_i
-                \left<h_i(\Theta)|d_i\right> -
-                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
-
-        Returns
-        -------
-        float or tuple
-            The value of the log likelihood ratio.
-        """
-        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
-        total_sh, total_hh = self.get_sh_hh()
-        loglr = self.marginalize_loglr(total_sh, total_hh)
-        return loglr
+        loglr = self.marginalize_loglr(sh_total, hh_total)
+        if return_sh_hh == True:
+            results = (sh_total, hh_total)
+        else:
+            results = loglr
+        return results
