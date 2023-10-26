@@ -51,6 +51,7 @@ elif args.sort_type == 'decreasing':
     idx = numpy.argsort(kde_values)[::-1]
 else:
     idx = numpy.arange(len(kde_values))
+# Sort each of the parameter arrays
 param_arrays = [param[idx] for param in param_arrays]
 param0 = param_arrays[0]
 param1 = param_arrays[1] if len(param_arrays) > 1 else None
