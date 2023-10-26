@@ -65,12 +65,16 @@ kde_arrays = {
 }
 kde_values = kde_arrays[args.which_kde]
 
-if args.sort_type == 'sorted':
+if args.sort_type == 'increasing':
     idx = numpy.argsort(kde_values)
-    param0 = param0[idx]
-    if len(args.param) > 1:
-        param1 = param1[idx]
-    kde_values = kde_values[idx]
+elif args.sort_type == 'decreasing':
+    idx = numpy.argsort(kde_values)[::-1]
+else:
+    idx = numpy.arange(len(kde_values))
+param_arrays = [param[idx] for param in param_arrays]
+param0 = param_arrays[0]
+param1 = param_arrays[1] if len(param_arrays) > 1 else None
+kde_values = kde_values[idx]
 
 if args.plot_type == 'kde_vs_param':
     fig, ax = plt.subplots(1, figsize=(12,7), constrained_layout=True)
