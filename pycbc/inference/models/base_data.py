@@ -115,6 +115,14 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
         """
         return self._trytoget('loglr', self._loglr, apply_transforms=True)
 
+    @loglr.setter
+    def loglr(self, return_sh_hh=False):
+        """The log likelihood ratio at the current parameters,
+        or the inner product <s|h> and <h|h> if `return_sh_hh`
+        is True."""
+        self._trytoget('loglr', self._loglr, apply_transforms=True,
+                       return_sh_hh=return_sh_hh)
+
     @abstractmethod
     def _loglr(self):
         """Low-level function that calculates the loglr."""
