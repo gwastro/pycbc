@@ -211,6 +211,9 @@ class Relative(DistMarg, BaseGaussianNoise):
         self.fid_params = self.static_params.copy()
         self.fid_params.update(fiducial_params)
 
+        # the flag used in `_loglr`
+        self.return_sh_hh = False
+
         for k in self.static_params:
             if self.fid_params[k] == 'REPLACE':
                self.fid_params.pop(k)
@@ -505,9 +508,9 @@ class Relative(DistMarg, BaseGaussianNoise):
                 loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
-    def _loglr(self, return_sh_hh=False):
+    def _loglr(self):
         r"""Computes the log likelihood ratio,
-        or inner product <s|h> and <h|h> if `return_sh_hh` is True.
+        or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
 
         .. math::
 
@@ -575,7 +578,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
-        if return_sh_hh == True:
+        if self.return_sh_hh == True:
             results = (filt, norm)
         else:
             results = loglr
@@ -798,9 +801,9 @@ class RelativeTimeDom(RelativeTime):
 
         return snrs
 
-    def _loglr(self, return_sh_hh=False):
+    def _loglr(self):
         r"""Computes the log likelihood ratio,
-        or inner product <s|h> and <h|h> if `return_sh_hh` is True.
+        or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
 
         .. math::
 
@@ -844,17 +847,18 @@ class RelativeTimeDom(RelativeTime):
                                                        0, p['tc'])
             dts = p['tc'] + dt
             f = (fp + 1.0j * fc) * pol_phase
-
+            print("self.return_sh_hh: ", self.return_sh_hh)
+            print("p2: ", p2)
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
-
+            print()
             sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
-        if return_sh_hh == True:
+        if self.return_sh_hh == True:
             results = (sh_total, hh_total)
         else:
             results = loglr
