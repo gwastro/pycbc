@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Followup foreground events
+"""
+Followup single-detector triggers which do not contribute to foreground events
 """
 import os, argparse, logging
 import numpy
@@ -103,14 +104,6 @@ sngl_file = resolve_url_to_file(
     attrs={'ifos': args.instrument}
 )
 
-if args.foreground_censor_file is not None:
-    fg_censor_file = resolve_url_to_file(
-        os.path.abspath(args.foreground_censor_file),
-        attrs={'ifos': args.instrument}
-    )
-else:
-    fg_censor_file = None
-
 if args.veto_file is not None:
     veto_file = resolve_url_to_file(
         os.path.abspath(args.veto_file),
@@ -150,7 +143,6 @@ trigs = hdf.SingleDetTriggers(
     args.instrument,
     premask=mask
 )
-
 
 # Include gating vetoes
 if args.gating_veto_windows:
@@ -197,16 +189,18 @@ else:
 # Work out indices we are going to keep / remove
 vetoed_idx = numpy.unique(numpy.concatenate((veto_file_idx, gveto_idx)))
 # Needs to be in ascending order
-vetoed_idx = numpy.sort(vetoed_idx)
+vetoed_idx = numpy.sort(vetoed_idx).astype(numpy.uint64)
 
-if args.vetoed_time_only:
+if args.vetoed_time_only and vetoed_idx.size > 0:
     logging.info("Applying mask to keep only triggers within vetoed time")
     trigs.apply_mask(vetoed_idx)
-else:
+elif vetoed_idx.size > 0:
     logging.info("Applying mask to keep only triggers outwith vetoed time")
     veto_mask = numpy.ones(trigs.end_time.size, dtype=bool)
     veto_mask[vetoed_idx] = False
     trigs.apply_mask(veto_mask)
+elif args.vetoed_time_only and vetoed_idx.size == 0:
+    logging.warning("No triggers exist inside vetoed times")
 
 if args.non_coinc_time_only:
     from pycbc.io.ligolw import LIGOLWContentHandler as h
@@ -297,7 +291,6 @@ for rank, num_event in enumerate(order):
     files += mini.make_plot_waveform_plot(workflow, curr_params,
                                         args.output_dir, [args.instrument],
                                         tags=args.tags + [str(rank)])
-
 
     files += mini.make_singles_timefreq(workflow, sngl_file, tmpltbank_file,
                             time, args.output_dir,
