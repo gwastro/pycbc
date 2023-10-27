@@ -147,10 +147,9 @@ args = parser.parse_args()
 init_logging(args.verbose) # takes the --verbose option -> (bool)
 # Set GRB time variable for convenience
 t_gps = args.trigger_time # takes the --trigger-time option -> (float)
-# Put the ifos in alphabetical order so they are always called in
-# the same order. Takes the --instruments option -> (list of str)
-# Put the ifos in alphabetical order so they are always called in
-# the same order.
+# The following line aranges the ifos in alphabetical order so they are 
+# always called in the same order.
+# takes the --instruments option -> (list of str)
 args.instruments.sort()
 nifo = len(args.instruments[:])
 # The following class verification methods are used to check whether input CLI
@@ -292,7 +291,7 @@ with ctx:
     time_slides = {
         ifo: args.slide_shift * slide_ids * n_ifo
         for n_ifo, ifo in enumerate(args.instruments)}
-    # Given the time delays in time_slides, the following dictionary returns the
+    # Given the time delays in time_slides, the following dictionary keeps the
     # time delay indices evaluated wrt the geocenter:
     # (time delay from geocenter + timeslide)*sampling_rate
     time_delay_idx = {
@@ -338,8 +337,8 @@ with ctx:
     autochisq = vetoes.SingleDetAutoChisq(
         args.autochi_stride, args.autochi_number_points,
         onesided=args.autochi_onesided)
-    # Here we take all frequency-domain segments and whiten them
-    # dividing by the psd estimate
+    # Here we take all frequency-domain segments and over-whiten them
+    # dividing by the PSD estimate
     logging.info("Overwhitening frequency-domain data segments")
     for ifo in args.instruments:
         for seg in segments[ifo]:
@@ -404,7 +403,6 @@ with ctx:
         approximant=args.approximant, out=template_mem)
     # Use injfilterrejector to reduce the bank to only those templates that
     # might actually find something
-    # if inj_filter_rejector[args.instruments[0]].enabled ****
     n_bank = len(bank)
     nfilters = 0
     logging.info("Full template bank size: %d", n_bank)
@@ -489,9 +487,9 @@ with ctx:
                 snr[ifo] = snrv * norm
 
             # Move onto next segment if there are no triggers.
-	    n_trigs = [len(snrv_dict[ifo]) for ifo in args.instruments]
-	    if np.all(n_trigs==np.zeros_like(args.instruments[:]), axis=0):
-		continue
+            n_trigs = [len(snrv_dict[ifo]) for ifo in args.instruments]
+            if np.all(n_trigs==np.zeros_like(args.instruments[:]), axis=0):
+                continue
             # Short timeslides start here !
             # Loop through slides, staring with the zero-lag
             for slide in range(args.num_slides + 1):
