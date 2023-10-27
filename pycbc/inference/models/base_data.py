@@ -107,21 +107,15 @@ class BaseDataModel(BaseModel, metaclass=ABCMeta):
 
     @property
     def loglr(self):
-        """The log likelihood ratio at the current parameters.
+        """The log likelihood ratio at the current parameters,
+        or the inner product <s|h> and <h|h> if set the flag
+        `self.return_sh_hh` to be True.
 
         This will initially try to return the ``current_stats.loglr``.
         If that raises an ``AttributeError``, will call `_loglr`` to
         calculate it and store it to ``current_stats``.
         """
         return self._trytoget('loglr', self._loglr, apply_transforms=True)
-
-    @loglr.setter
-    def loglr(self, return_sh_hh=False):
-        """The log likelihood ratio at the current parameters,
-        or the inner product <s|h> and <h|h> if `return_sh_hh`
-        is True."""
-        self._trytoget('loglr', self._loglr, apply_transforms=True,
-                       return_sh_hh=return_sh_hh)
 
     @abstractmethod
     def _loglr(self):
