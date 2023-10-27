@@ -299,7 +299,7 @@ sngls_ranking_function_dict = {
     'newsnr_sgveto_psdvar_scaled_threshold': get_newsnr_sgveto_psdvar_scaled_threshold,
 }
 
-# Dictionary of lists of datasets required in the trigs object for each function
+# Lists of datasets required in the trigs object for each function
 required_datasets = {}
 required_datasets['snr'] = ['snr']
 required_datasets['newsnr'] = required_datasets['snr'] + ['chisq', 'chisq_dof']

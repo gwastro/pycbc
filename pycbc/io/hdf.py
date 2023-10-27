@@ -8,7 +8,6 @@ import logging
 import inspect
 import pickle
 
-from itertools import chain
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
 
@@ -80,10 +79,10 @@ class HFile(h5py.File):
         # Required datasets are either the arguments requested, we also add
         # required datasets if the value requested is a known ranking
         # (or a combination)
-        req_dsets = [a for a in args if a in data_grp]
+        req_dsets = []
         for a in args:
-            if a in req_dsets:
-                continue
+            if a in data_grp:
+                req_dsets.append(a)
             elif a in ranking.required_datasets:
                 # Get the required datasets from the defined list
                 req_dsets += ranking.required_datasets[a]
@@ -126,7 +125,8 @@ class HFile(h5py.File):
             partial_data = {arg: refs[arg][i:r][mask[i:r]]
                             for arg in req_dsets}
             partial = [partial_data[a] if a in partial_data
-                       else ranking.get_sngls_ranking_from_trigs(partial_data, a)
+                       else ranking.get_sngls_ranking_from_trigs(
+                           partial_data, a)
                        for a in args]
             keep = fcn(*partial)
             if return_indices or indices_only:
@@ -630,7 +630,6 @@ class SingleDetTriggers(object):
                 return
             else:
                 logging.info("%d triggers after thresholding", len(stat))
-
 
         index = stat.argsort()[::-1]
         new_times = []
