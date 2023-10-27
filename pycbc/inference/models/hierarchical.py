@@ -677,7 +677,9 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         # note that for SOBHB signals, ground-based detectors dominant SNR
         # and accuracy of (tc, ra, dec)
-        sh_primary, hh_primary = self.primary_model.loglr(return_sh_hh=True)
+        self.primary_model.return_sh_hh = True
+        sh_primary, hh_primary = self.primary_model.loglr
+        self.primary_model.return_sh_hh = False
         print("sh_primary: ", sh_primary)
         print("len(sh_primary): ", len(sh_primary))
 
@@ -706,7 +708,9 @@ class MultibandRelativeTimeDom(HierarchicalModel):
                         current_params_other, other_model.waveform_transforms)
                 print("current_params_other (transformed): ", current_params_other)
                 other_model.update(**current_params_other)
-                sh_others[i], hh_others[i] = other_model.loglr(return_sh_hh=True)
+                other_model.return_sh_hh = True
+                sh_others[i], hh_others[i] = other_model.loglr
+                other_model.return_sh_hh = False
                 raise ValueError
 
         sh_total = sh_primary + sh_others
