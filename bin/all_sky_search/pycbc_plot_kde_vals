@@ -62,8 +62,7 @@ kde_arrays = {
     'signal_kde': signal_kde,
     'template_kde': template_kde,
     'ratio_kde': signal_kde / template_kde,
-}
-kde_values = kde_arrays[args.which_kde]
+}[args.which_kde]
 
 if args.sort_type == 'increasing':
     idx = numpy.argsort(kde_values)
