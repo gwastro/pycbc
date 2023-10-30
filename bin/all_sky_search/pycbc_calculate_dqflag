@@ -26,7 +26,7 @@ parser.add_argument('--flag', type=str, required=True,
                     help="name of the data quality flag")
 parser.add_argument('--ifo', type=str, required=True,
                     help="interferometer to analyze")
-parser.add_argument('--sample-frequency',
+parser.add_argument('--sample-frequency', required=True,
                     help="timeseries sampling frequency in Hz")
 parser.add_argument("--output-file", required=True,
                     help="name of output file")
