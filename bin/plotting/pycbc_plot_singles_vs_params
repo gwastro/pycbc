@@ -50,6 +50,8 @@ parser.add_argument('--veto-file', type=str,
                     help='Optional path to file containing veto segments')
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
+parser.add_argument('--filter-string', default=None, type=str,
+                    help='Optional, boolean expression for filtering triggers')
 parser.add_argument('--min-snr', default=0., type=float,
                     help='Only plot triggers above the given SNR')
 parser.add_argument('--output-file', type=str, required=True,
@@ -82,30 +84,54 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
+def filter_func(x, y, snr):
+    """
+    A convenience function to allow us to set up all prefilters
+    at once.
+    """
+    mask = np.ones(len(x), dtype=bool)
+    if opts.min_snr:
+        mask = np.logical_and(mask, snr >= opts.min_snr)
+    if opts.min_x is not None:
+        mask = np.logical_and(mask, x >= opts.min_x)
+    if opts.max_x is not None:
+        mask = np.logical_and(mask, x <= opts.max_x)
+    if opts.min_y is not None:
+        mask = np.logical_and(mask, y >= opts.min_y)
+    if opts.max_y is not None:
+        mask = np.logical_and(mask, y <= opts.max_y)
+    return mask
+
+with pycbc.io.HFile(opts.single_trig_file) as hf:
+    idx = hf.select(
+        filter_func,
+        opts.x_var,
+        opts.y_var,
+        'snr',
+        group=opts.detector
+    )
+
+if opts.z_var == 'density' or opts.min_z is None:
+    filter_func = None
+    filter_thresh = None
+else:
+    # We can apply another filter on the z value
+    filter_func = ranking.sngls_ranking_function_dict[opts.z_var]
+    filter_thresh = opts.min_z
+
 trigs = pycbc.io.SingleDetTriggers(
     opts.single_trig_file,
-    opts.detector,
+    opts.detector
     bank_file=opts.bank_file,
     veto_file=opts.veto_file,
     segment_name=opts.segment_name,
-    filter_ranking='snr' if opts.min_snr else None,
-    filter_threshold=opts.min_snr if opts.min_snr else None,
+    premask=idx,
+    filter_func=filter_func,
+    filter_threshold=filter_thresh
 )
 
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
-
-mask = np.ones(len(x), dtype=bool)
-if opts.min_x is not None:
-    mask = np.logical_and(mask, x >= opts.min_x)
-if opts.max_x is not None:
-    mask = np.logical_and(mask, x <= opts.max_x)
-if opts.min_y is not None:
-    mask = np.logical_and(mask, y >= opts.min_y)
-if opts.max_y is not None:
-    mask = np.logical_and(mask, y <= opts.max_y)
-x = x[mask]
-y = y[mask]
 
 hexbin_style = {
     'gridsize': opts.grid_size,

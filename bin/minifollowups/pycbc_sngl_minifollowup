@@ -130,34 +130,14 @@ insp_data_seglists.coalesce()
 num_events = int(workflow.cp.get_opt_tags('workflow-sngl_minifollowups',
                  'num-sngl-events', ''))
 
-# This helps speed up the processing to ignore a large fraction of triggers
-mask = None
-f = hdf.HFile(args.single_detector_file, 'r')
-n_triggers = f['{}/snr'.format(args.instrument)].size
-logging.info("%i triggers in file", n_triggers)
-if args.min_snr:
-    logging.info('Calculating Prefilter')
-    f = hdf.HFile(args.single_detector_file, 'r')
-    idx = f.select(
-        lambda snr: snr > args.min_snr,
-        '{}/snr'.format(args.instrument),
-        indices_only=True
-    )
-    snr_mask = numpy.zeros(len(f['{}/snr'.format(args.instrument)]),
-                           dtype=bool)
-    snr_mask[idx] = True
-    if len(idx) < num_events:
-        logging.info("Fewer triggers exist after the --min-snr cut (%d) "
-                     "than requested for the minifollowup (%d)",
-                     len(idx), num_events)
-
 trigs = hdf.SingleDetTriggers(
     args.single_detector_file,
     args.instrument,
     bank_file=args.bank_file,
     veto_file=args.foreground_censor_file,
     segment_name=args.foreground_segment_name,
-    premask=snr_mask
+    filter_ranking='snr',
+    filter_threshold=args.min_snr
 )
 
 # Include gating vetoes

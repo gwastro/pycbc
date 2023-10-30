@@ -63,11 +63,10 @@ for ifo in args.single_trigger_files.keys():
     with HFile(args.single_trigger_files[ifo], 'r') as data:
         idx = data.select(
             lambda endtime: abs(endtime - t) < args.window,
-            f'{ifo}/end_time',
+            'end_time',
+            group=ifo,
             indices_only=True
         )
-        data_mask = numpy.zeros(len(data[f'{ifo}/snr']), dtype=bool)
-        data_mask[idx] = True
 
     if not len(idx):
         # No triggers in this window, add to the legend and continue
@@ -81,7 +80,7 @@ for ifo in args.single_trigger_files.keys():
     trigs = SingleDetTriggers(
         args.single_trigger_files[ifo],
         ifo,
-        premask=data_mask
+        premask=idx
     )
 
     any_data = True

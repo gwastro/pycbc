@@ -44,6 +44,17 @@ class HFile(h5py.File):
         chunksize : {1e6, int}, optional
             Number of elements to read and process at a time.
 
+        derived : dictionary
+            Dictionary keyed on function, values are the list of required
+            datasets. If giving dataset outputs, these will be added at the
+            end. The function must take in a dictionary keyed on dataset names.
+
+        group : string, optional
+            The group within the h5py file containing the datasets, e.g. in
+            standard offline merged trigger files, this would be the IFO. This
+            can be included in the args manually, but is required in the case
+            of derived functions, e.g. newsnr.
+
         return_indices : bool, optional
             If True, also return the indices of elements passing the function.
 
@@ -53,12 +64,6 @@ class HFile(h5py.File):
         premask : array of boolean values, optional
             The pre-mask to apply to the triggers at read-in.
 
-        group : string, optional
-            The group within the h5py file containing the datasets, e.g. in
-            standard offline merged trigger files, this would be the IFO. This
-            can be included in the args manually, but is required in the case
-            of derived functions, e.g. newsnr.
-
         Returns
         -------
         values : np.ndarrays
@@ -67,46 +72,34 @@ class HFile(h5py.File):
             element is an array of indices of elements passing the function.
 
         >>> f = HFile(filename)
-        >>> snr = f.select(lambda snr: snr > 6, 'snr', group='H1')
+        >>> snr = f.select(lambda snr: snr > 6, 'H1/snr')
         """
 
-        grp = kwds.get('group', None)
-        # get references to each array
-        data_grp = self[grp]
-        refs = {}
-        data = {}
-
-        # Required datasets are either the arguments requested, we also add
-        # required datasets if the value requested is a known ranking
-        # (or a combination)
-        req_dsets = []
-        for a in args:
-            if a in data_grp:
-                req_dsets.append(a)
-            elif a in ranking.required_datasets:
-                # Get the required datasets from the defined list
-                req_dsets += ranking.required_datasets[a]
-            else:
-                raise ValueError(f"Cannot work out required datasets for {a}")
+        # Required datasets are the arguments requested and datasets given
+        # for any derived functions
+        derived = kwds.get('derived', {})
+        dsets = list(args)
+        for rqd_list in derived.values():
+            dsets += rqd_list
 
         # remove any duplicates from req_dsets
-        req_dsets = list(set(req_dsets))
+        dsets = list(set(dsets))
 
-        # Get the pointers to the h5py Datasets:
-        for ds in req_dsets:
-            refs[ds] = data_grp[ds]
-
-        # This will be the outputs:
-        for arg in args:
-            data[arg] = []
-
-        return_indices = kwds.get('return_indices', False)
-        indices_only = kwds.get('indices_only', False)
-        indices = np.array([], dtype=np.uint64)
+        # Get the pointers to the h5py Datasets,
+        # check they can all be used together
+        refs = {}
+        size = None
+        group = kwds.get('group', '')
+        for ds in dsets:
+            refs[ds] = self[group][ds]
+            if (size is not None) and (refs[ds].size != size):
+                raise RuntimeError(f"Dataset {ds} is {self[ds].size} "
+                                   "entries long, which does not match "
+                                   f"previous input datasets ({size}).")
+            size = refs[ds].size
 
         # To conserve memory read the array in chunks
         chunksize = kwds.get('chunksize', int(1e6))
-        size = len(refs[ds])
 
         mask = kwds.get('premask', np.ones(size, dtype=bool))
         if not mask.dtype == bool:
@@ -116,24 +109,44 @@ class HFile(h5py.File):
             new_mask[mask] = True
             mask = new_mask
 
+        if not mask.size == size:
+            raise RuntimeError(f"Using premask of size {mask.size} which "
+                               f"does not match the input datasets ({size}).")
+
+        # This will be the outputs:
+        return_indices = kwds.get('return_indices', False)
+        indices_only = kwds.get('indices_only', False)
+
+        # Arguments being returned:
+        # The name doesn't matter, so key on the function of
+        # derived datasets
+        ret_args = args + tuple(derived.keys())
+        data = {}
+        indices = np.array([], dtype=np.uint64)
+        for arg in ret_args:
+            data[arg] = []
+
         i = 0
         while i < size:
             r = i + chunksize if i + chunksize < size else size
 
-            # Read each chunk's worth of data and find where it passes
-            # the function
+            if not any(mask[i:r]):
+                # Nothing allowed through the mask in this chunk
+                i += chunksize
+                continue
+
+            # Read each chunk's worth of data
             partial_data = {arg: refs[arg][i:r][mask[i:r]]
-                            for arg in req_dsets}
-            partial = [partial_data[a] if a in partial_data
-                       else ranking.get_sngls_ranking_from_trigs(
-                           partial_data, a)
-                       for a in args]
+                            for arg in dsets}
+            partial = [partial_data[a] for a in args]
+            partial += [func(partial_data) for func in derived.keys()]
+            # Find where it passes the function
             keep = fcn(*partial)
             if return_indices or indices_only:
                 indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
             # Store only the results that pass the function
-            for arg, part in zip(args, partial):
+            for arg, part in zip(ret_args, partial):
                 if not indices_only:
                     data[arg].append(part[keep])
 
@@ -144,7 +157,7 @@ class HFile(h5py.File):
         if indices_only or return_indices:
             return_tuple += (indices.astype(np.uint64),)
         if not indices_only:
-            return_tuple += tuple(np.concatenate(data[arg]) for arg in args)
+            return_tuple += tuple(np.concatenate(data[arg]) for arg in ret_args)
 
         if len(return_tuple) == 1:
             return return_tuple[0]
@@ -449,13 +462,10 @@ class DataFromFiles(object):
 class SingleDetTriggers(object):
     """
     Provides easy access to the parameters of single-detector CBC triggers.
-
-    Uses a defined cut on sngl-ranking if desired. For more complicated cuts,
-    one can use HFile.select directly and apply a mask from that.
     """
     def __init__(self, trig_file, detector, bank_file=None, veto_file=None,
-                 segment_name=None, filter_ranking=None, filter_threshold=0,
-                 premask=None):
+                 segment_name=None, premask=None, filter_ranking=None,
+                 filter_threshold=None):
         """
         Create a SingleDetTriggers instance
 
@@ -477,57 +487,30 @@ class SingleDetTriggers(object):
         segment_name : string, optional
             Segment name being used in the veto_file
 
-        filter_ranking : string, optional
-            The ranking to use when applying the pre-filter. Must
-            be in ranking.py options
-
-        filter_threshold : float, optional
-            The threshold being used to cut on filter_ranking
-
-        premask : array of indices or boolean
+        premask : array of indices or boolean, optional
            Array of used triggers
+
+        filter_ranking : string, optional
+            The ranking, as defined by ranking.py to compare to
+            filter_threshold
+
+        filter_threshold: float, required if filter_rank is used
+            Threshold to filter the ranking values
         """
         logging.info('Loading triggers')
         self.trigs_f = HFile(trig_file, 'r')
+        self.trigs = self.trigs_f[detector]
+        self.ntriggers = self.trigs['end_time'].size
         self.ifo = detector  # convenience attributes
         self.detector = detector
-        self.trigs = self.trigs_f[self.detector]
-        # Number of triggers in the file
-        self.ntriggers = self.trigs['end_time'].size
         if bank_file:
             logging.info('Loading bank')
             self.bank = HFile(bank_file, 'r')
         else:
-            logging.info('No bank file given to SingleDetTriggers')
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
-        if premask is not None and premask.dtype == bool:
-            self.mask = premask
-        elif premask is not None:
-            # This is an array of indices, need to convert into
-            # a boolean array
-            self.mask = np.zeros(self.ntriggers, dtype=bool)
-            self.mask[premask] = True
-        else:
-            # No premask - use a transparent mask to start with
-            self.mask = np.ones(self.ntriggers, dtype=bool)
-
-        # Apply filter function to the mask if given.
-        if filter_ranking and filter_threshold:
-            logging.info("Applying cut on %s above threshold %.3f",
-                         filter_ranking, filter_threshold)
-            logging.info("%d triggers before cuts", self.mask_size)
-            idx = self.trigs_f.select(
-                lambda filter_ranking: filter_ranking > filter_threshold,
-                filter_ranking,
-                indices_only=True,
-                premask=self.mask,
-                group=detector,
-            )
-            # Update the mask accordingly
-            self.update_mask(idx)
-            logging.info("%d triggers remain", self.mask_size)
+        self.update_mask(premask)
 
         if veto_file:
             logging.info('Applying veto segments')
@@ -542,6 +525,17 @@ class SingleDetTriggers(object):
             self.apply_mask(idx)
             logging.info('%i triggers remain after vetoes',
                          self.mask_size)
+
+        if filter_rank:
+            assert filter_threshold is not None
+            idx = self.trigs_f.select(
+                 lambda rank: rank > filter_threshold,
+                 derived={sngls_ranking_function_dict[filter_rank]:
+                          required_datasets[filter_rank]},
+                 indices_only=True,
+                 premask=self.mask,
+                 group=detector,
+            )
 
     def __getitem__(self, key):
         # Is key in the TRIGGER_MERGE file?
@@ -577,21 +571,48 @@ class SingleDetTriggers(object):
         return [m[0] for m in inspect.getmembers(cls) \
             if type(m[1]) == property]
 
-    def update_mask(self, idx):
-        """Update the mask according to the indices given.
+    def update_mask(self, new_mask):
+        """Update the mask.
 
         This overwrites the mask"""
+        if new_mask is None:
+            # This is used when the premask option isn't given,
+            # set up a new mask
+            self.mask = np.ones(self.ntriggers, dtype=bool)
+            return
 
-        self.mask[:] = False
-        self.mask[idx] = True
+        if not isinstance(new_mask, np.ndarray):
+            # This isn't a numpy array - this is a list, so convert it
+            new_mask = np.array(new_mask, dtype=np.uint64)
+
+        if new_mask.dtype == bool:
+            # boolean array - would this be better as indices?
+            if sum(new_mask) < (self.ntriggers / 64 / 1.5):
+                # uint64 indices would be smaller than boolean array:
+                self.mask = np.flatnonzero(new_mask).astype(np.uint64)
+            else:
+                self.mask = new_mask
+                
+        else:
+            # indices array - would this be better as boolean?
+            if new_mask.size < (self.ntriggers / 64 / 1.5):
+                # uint64 indices would be smaller than boolean array:
+                self.mask = new_mask.astype(np.uint64)
+            else:
+                self.mask[:] = np.zeros(self.ntriggers, dtype=bool)
+                self.mask[idx] = True
+
+    def mask_as_indices(self):
+        if self.mask.dtype == np.uint64:
+            return self.mask
+        return np.flatnonzero(self.mask).astype(np.uint64)
 
     def apply_mask(self, logic_mask):
         """Apply a mask on top of any existing mask.
 
         Applied mask can be a single index, an array of indices,
         or boolean."""
-        orig_indices = np.flatnonzero(self.mask)
-        new_indices = orig_indices[logic_mask]
+        new_indices = self.mask_as_indices[logic_mask]
         self.update_mask(new_indices)
 
     def mask_to_n_loudest_clustered_events(self, sngl_ranking,
@@ -657,7 +678,9 @@ class SingleDetTriggers(object):
 
     @property
     def mask_size(self):
-        return sum(self.mask)
+        if self.mask.dtype == bool:
+            return sum(self.mask)
+        return self.mask.size
 
     @property
     def template_id(self):
@@ -809,7 +832,8 @@ class SingleDetTriggers(object):
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if len(self.mask.nonzero()[0]) < (len(self.mask) * MFRAC):
+        if self.mask is not None and (self.mask.dtype == np.uint64 or \
+                (self.mask_size < (self.ntriggers * MFRAC))):
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire
