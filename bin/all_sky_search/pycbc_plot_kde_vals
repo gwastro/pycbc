@@ -15,8 +15,10 @@ parser.add_argument('--log-axis', nargs='+', choices=['True', 'False'], required
                     help='For each parameter, specify True for a log axis and False '
                          'for a linear axis')
 parser.add_argument('--plot-type', choices=['kde_vs_param', 'param_vs_param'])
-parser.add_argument('--sort-type', choices=['file', 'increasing', 'decreasing'], default='file',
-                    help='Choose how to sort the values: "file" or "increasing" or "decreasing"')
+parser.add_argument('--plot-order', choices=['file', 'increasing', 'decreasing'],
+                    default='file',
+                    help='Choose the order to plot KDE values in: "file", "increasing" or
+                          "decreasing"')
 parser.add_argument('--which-kde', choices=['signal_kde', 'template_kde', 'ratio_kde'])
 parser.add_argument('--plot-dir', required=True)
 parser.add_argument('--verbose', action='count')
@@ -44,13 +46,13 @@ kde_values = {
     'ratio_kde': signal_kde / template_kde,
 }[args.which_kde]
 
-if args.sort_type == 'increasing':
+# Sort each of the parameter arrays
+if args.plot_order == 'increasing':
     idx = numpy.argsort(kde_values)
-elif args.sort_type == 'decreasing':
+elif args.plot_order == 'decreasing':
     idx = numpy.argsort(kde_values)[::-1]
 else:
     idx = numpy.arange(len(kde_values))
-# Sort each of the parameter arrays
 param_arrays = [param[idx] for param in param_arrays]
 param0 = param_arrays[0]
 param1 = param_arrays[1] if len(param_arrays) > 1 else None
