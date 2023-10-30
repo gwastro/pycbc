@@ -17,8 +17,8 @@ parser.add_argument('--log-axis', nargs='+', choices=['True', 'False'], required
 parser.add_argument('--plot-type', choices=['kde_vs_param', 'param_vs_param'])
 parser.add_argument('--plot-order', choices=['file', 'increasing', 'decreasing'],
                     default='file',
-                    help='Choose the order to plot KDE values in: "file", "increasing" or
-                          "decreasing"')
+                    help='Choose the order to plot KDE values in: "file", "increasing"'
+                         ' or "decreasing"')
 parser.add_argument('--which-kde', choices=['signal_kde', 'template_kde', 'ratio_kde'])
 parser.add_argument('--plot-dir', required=True)
 parser.add_argument('--verbose', action='count')
