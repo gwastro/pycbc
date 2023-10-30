@@ -91,7 +91,7 @@ elif args.plot_type == 'param_vs_param':
         ax.set_yscale('linear')
     cbar.ax.set_ylabel(args.which_kde, rotation=270, fontsize=15, labelpad=15)
     cbar.ax.tick_params(labelsize=15)
-    plot_loc = f'{args.plot_dir}/{args.which_kde}_{args.sort_type}_{args.param[0]}_vs_{args.param[1]}.png'
+    plot_loc = f'{args.plot_dir}/{args.which_kde}_{args.plot_order}_{args.param[0]}_vs_{args.param[1]}.png'
     plt.savefig(plot_loc)
 
 else:
