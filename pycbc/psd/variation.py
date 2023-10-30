@@ -7,7 +7,6 @@ import scipy.signal as sig
 
 import pycbc.psd
 from pycbc.types import TimeSeries
-from pycbc.filter import resample_to_delta_t
 
 
 def mean_square(data, delta_t, srate, short_stride, stride):
@@ -113,9 +112,6 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     # Convert start and end times immediately to floats
     start_time = float(strain.start_time)
     end_time = float(strain.end_time)
-
-    # Resample the data
-    strain = resample_to_delta_t(strain, 1.0 / 2048)
     srate = int(strain.sample_rate)
 
     # Fix the step for the PSD estimation and the time to remove at the
