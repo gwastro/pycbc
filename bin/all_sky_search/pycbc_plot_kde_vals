@@ -38,12 +38,11 @@ template_data = h5py.File(args.template_file, 'r')
 template_kde = template_data['data_kde'][:]
 param_arrays = [template_data[param][:] for param in args.param]
 
-kde_arrays = {
+kde_values = {
     'signal_kde': signal_kde,
     'template_kde': template_kde,
     'ratio_kde': signal_kde / template_kde,
-}
-kde_values = kde_arrays[args.which_kde]
+}[args.which_kde]
 
 if args.sort_type == 'increasing':
     idx = numpy.argsort(kde_values)
