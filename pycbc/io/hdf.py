@@ -615,7 +615,7 @@ class SingleDetTriggers(object):
         new_indices = self.mask_as_indices[logic_mask]
         self.update_mask(new_indices)
 
-    def mask_to_n_loudest_clustered_events(self, sngl_ranking,
+    def mask_to_n_loudest_clustered_events(self, rank_method,
                                            ranking_threshold=6,
                                            n_loudest=10,
                                            cluster_window=10,
@@ -625,10 +625,9 @@ class SingleDetTriggers(object):
 
         Events are clustered so that no more than 1 event within +/-
         cluster_window will be considered. Can apply a threshold on the
-        ranking using ranking_threshold, and pass arguments to get_ranking
-        through kwargs."""
+        ranking using ranking_threshold
+        """
 
-        # If this becomes memory intensive we can optimize
         sds = rank_method.single(self.trig_dict())
         stat = rank_method.rank_stat_single((self.ifo, sds))
         if len(stat) == 0:

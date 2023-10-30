@@ -84,8 +84,9 @@ if args.trigger_id is not None:
 elif args.n_loudest is not None:
     # Cluster by a ranking statistic and retain only the loudest n clustered
     # triggers
+    rank_method = stat.get_statistic_from_opts(args, [args.instrument])
     sngl_file.mask_to_n_loudest_clustered_events(
-        args.sngl_ranking,
+        rank_method,
         n_loudest=args.n_loudest+1
     )
     # Restrict to only the nth loudest, instead of all triggers up to nth
