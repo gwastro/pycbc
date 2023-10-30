@@ -341,7 +341,6 @@ def live_calc_psd_variation(strain,
         wstrain.reshape(-1, int(sample_rate * short_stride)) ** 2, axis=1)
 
     # Define an array of averages that is used to substitute outliers
-    #  variation array
     ave = 0.5 * (short_ms[2:] + short_ms[:-2])
     outliers = short_ms[1:-1] > (2. * ave)
     short_ms[1:-1][outliers] = ave[outliers]
@@ -355,9 +354,7 @@ def live_calc_psd_variation(strain,
         end = int(samples_per_second * (idx + 1))
         m_s.append(numpy.mean(short_ms[start:end]))
 
-
     m_s = numpy.array(m_s, dtype=wstrain.dtype)
-
     psd_var = TimeSeries(m_s,
                          delta_t=1.0,
                          epoch=strain.end_time - increment - (data_trim * 2))
@@ -376,13 +373,12 @@ def live_find_var_value(triggers,
         Dictionary containing input trigger times.
     psd_var_timeseries : pycbc.timeseries
         A timeseries containing the PSD variation value for each second of the
-        latest increment in PyCBC Live. Created by live_calc_psd_variation.
+        latest increment in PyCBC Live.
 
     Returns
     -------
     psd_var_vals : numpy.ndarray
-        A numpy array containing the PSD variation values associated with the
-        triggers.
+        Array of interpolated PSD variation values at trigger times.
     """
 
     # Create the interpolator
