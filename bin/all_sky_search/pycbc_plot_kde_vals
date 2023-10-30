@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import numpy, h5py, argparse, logging
+import numpy, h5py, argparse
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
@@ -15,6 +15,10 @@ parser.add_argument('--log-axis', nargs='+', choices=['True', 'False'], required
                     help='For each parameter, specify True for a log axis and False '
                          'for a linear axis')
 parser.add_argument('--plot-type', choices=['kde_vs_param', 'param_vs_param'])
+parser.add_argument('--plot-order', choices=['file', 'increasing', 'decreasing'],
+                    default='file',
+                    help='Choose the order to plot KDE values in: "file", "increasing"'
+                         ' or "decreasing"')
 parser.add_argument('--which-kde', choices=['signal_kde', 'template_kde', 'ratio_kde'])
 parser.add_argument('--plot-dir', required=True)
 parser.add_argument('--verbose', action='count')
@@ -34,20 +38,29 @@ if args.signal_file:
     signal_kde = signal_data['data_kde'][:]
 template_data = h5py.File(args.template_file, 'r')
 template_kde = template_data['data_kde'][:]
-param0 = template_data[args.param[0]][:]
-if len(args.param) > 1:
-    param1 = template_data[args.param[1]][:]
+param_arrays = [template_data[param][:] for param in args.param]
+
+kde_values = {
+    'signal_kde': signal_kde,
+    'template_kde': template_kde,
+    'ratio_kde': signal_kde / template_kde,
+}[args.which_kde]
+
+# Sort each of the parameter arrays
+if args.plot_order == 'increasing':
+    idx = numpy.argsort(kde_values)
+elif args.plot_order == 'decreasing':
+    idx = numpy.argsort(kde_values)[::-1]
+else:
+    idx = numpy.arange(len(kde_values))
+param_arrays = [param[idx] for param in param_arrays]
+param0 = param_arrays[0]
+param1 = param_arrays[1] if len(param_arrays) > 1 else None
+kde_values = kde_values[idx]
 
 if args.plot_type == 'kde_vs_param':
     fig, ax = plt.subplots(1, figsize=(12,7), constrained_layout=True)
-    if args.which_kde == 'signal_kde':
-        im = ax.scatter(signal_kde, param0, marker=".", c="r", s=5)
-    elif args.which_kde == 'template_kde':
-        im = ax.scatter(template_kde, param0, marker=".", c="r", s=5)
-    elif args.which_kde == 'ratio_kde':
-        im = ax.scatter(signal_kde / template_kde, param0, marker=".", c="r", s=5)
-    else:
-        raise RuntimeError('Unknown value of which_kde', args.which_kde)
+    im = ax.scatter(kde_values, param0, marker=".", c="r", s=5)
     ax.set_xticklabels(args.which_kde, fontsize=13)
     ax.set_yticklabels(args.param[0], fontsize=13)
     ax.set_xlabel(args.which_kde, fontsize=15)
@@ -62,18 +75,8 @@ if args.plot_type == 'kde_vs_param':
 
 elif args.plot_type == 'param_vs_param':
     fig, ax = plt.subplots(1, figsize=(12,7), constrained_layout=True)
-    if args.which_kde == 'signal_kde':
-        im = ax.scatter(param0, param1, marker=".", c=signal_kde, cmap='plasma',
-                        s=5, norm=LogNorm())
-    elif args.which_kde == 'template_kde':
-        im = ax.scatter(param0, param1, marker=".", c=template_kde, cmap='plasma',
-                        s=5, norm=LogNorm())
-    elif args.which_kde == 'ratio_kde':
-        im = ax.scatter(param0, param1, marker=".", c=signal_kde / template_kde,
-                        cmap='RdBu_r', s=5, norm=LogNorm())
-    else:
-        raise RuntimeError('Unknown value of which_kde', args.which_kde)
-    cbar = fig.colorbar(im, ax=ax)
+    im = ax.scatter(param0, param1, marker=".", c=kde_values, cmap='turbo', s=5, norm=LogNorm())
+    cbar = fig.colorbar(im, ax=ax, pad=0.01)
     ax.set_xticklabels(args.param[0], fontsize=13)
     ax.set_yticklabels(args.param[1], fontsize=13)
     ax.set_xlabel(args.param[0], fontsize=15)
@@ -86,8 +89,9 @@ elif args.plot_type == 'param_vs_param':
         ax.set_yscale('log')
     else:
         ax.set_yscale('linear')
-    cbar.ax.set_ylabel(args.which_kde, rotation=270, fontsize=15)
-    plot_loc = args.plot_dir + args.which_kde + '_' + args.param[0] + '_vs_' + args.param[1] + '.png'
+    cbar.ax.set_ylabel(args.which_kde, rotation=270, fontsize=15, labelpad=15)
+    cbar.ax.tick_params(labelsize=15)
+    plot_loc = f'{args.plot_dir}/{args.which_kde}_{args.plot_order}_{args.param[0]}_vs_{args.param[1]}.png'
     plt.savefig(plot_loc)
 
 else:
