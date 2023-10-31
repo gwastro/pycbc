@@ -121,7 +121,7 @@ else:
 
 trigs = pycbc.io.SingleDetTriggers(
     opts.single_trig_file,
-    opts.detector
+    opts.detector,
     bank_file=opts.bank_file,
     veto_file=opts.veto_file,
     segment_name=opts.segment_name,

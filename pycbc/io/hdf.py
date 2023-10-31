@@ -511,8 +511,7 @@ class SingleDetTriggers(object):
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
-        self.mask = None
-        self.update_mask(premask)
+        self.mask = premask
 
         if filter_rank:
             assert filter_threshold is not None
@@ -577,49 +576,19 @@ class SingleDetTriggers(object):
         return [m[0] for m in inspect.getmembers(cls) \
             if type(m[1]) == property]
 
-    def update_mask(self, new_mask):
-        """Overwrite the current mask.
-
-        Mask may be converted to either a boolean array or a list of uint64,
-        depending which is smaller.
-        """
-        if new_mask is None:
-            # This is used when the premask option isn't given,
-            # set up a new, transparent mask
-            self.mask = np.ones(self.ntriggers, dtype=bool)
-            return
-
-        if isinstance(new_mask, np.ndarray) and new_mask.dtype == bool:
-            # boolean array - would this be better as indices?
-            if sum(new_mask) < (self.ntriggers / 64):
-                # uint64 indices would be smaller than boolean array:
-                self.mask = list(np.flatnonzero(new_mask).astype(np.uint64))
-            else:
-                self.mask = new_mask
-        elif isinstance(new_mask, np.ndarray):
-            # indices numpy array - would this be better as boolean?
-            if new_mask.size < (self.ntriggers / 64):
-                # uint64 indices would be smaller than boolean array:
-                self.mask = list(new_mask.astype(np.uint64))
-            else:
-                self.mask[:] = np.zeros(self.ntriggers, dtype=bool)
-                self.mask[new_mask] = True
-        else:
-            # This is not a numpy array, but just in case it isn't a list:
-            self.mask = list(new_mask)
-
-    def mask_as_indices(self):
-        if isinstance(self.mask, list):
-            return self.mask
-        return list(np.flatnonzero(self.mask).astype(np.uint64))
-
     def apply_mask(self, logic_mask):
         """Apply a mask on top of any existing mask.
 
         Applied mask can be a single index, an array of indices,
         or boolean."""
-        new_indices = self.mask_as_indices(logic_mask)
-        self.update_mask(new_indices)
+        if isinstance(self.mask, list):
+            old_mask_idx = np.array(self.mask)
+        elif isinstance(self.mask, np.ndarray) and self.mask.dtype == bool:
+            old_mask_idx = np.flatnonzero(self.mask)
+        else:
+            old_mask_idx = self.mask
+        new_indices = np.array(old_mask_idx)[logic_mask]
+        self.mask = list(new_indices)
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
                                            ranking_threshold=6,
@@ -836,22 +805,13 @@ class SingleDetTriggers(object):
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if self.mask is not None and (isinstance(self.mask, list) or \
-                (self.mask_size < (self.ntriggers * MFRAC))):
-            print(f"Loading {self.mask_size:d} out of {self.ntriggers:d} triggers")
-            print(self.mask.dtype)
-            print(type(self.mask))
-            print(self.mask)
+        if isinstance(self.mask, list) or \
+                self.mask_size < (self.ntriggers * MFRAC):
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire
         # array before masking.
         else:
-            print("Loading all triggers")
-            print(self.mask.dtype)
-            print(type(self.mask))
-            print(self.mask)
-            exit()
             return self.trigs[cname][:][self.mask]
 
 
