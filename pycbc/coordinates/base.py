@@ -14,7 +14,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Coordinate transformations.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+"""
+Base coordinate transformations, this module provides transformations between
+cartesian and spherical coordinates.
 """
 import numpy
 
@@ -59,6 +70,7 @@ def cartesian_to_spherical_azimuthal(x, y):
     y = float(y) if isinstance(y, int) else y
     phi = numpy.arctan2(y, x)
     return phi % (2 * numpy.pi)
+
 
 def cartesian_to_spherical_polar(x, y, z):
     """ Calculates the polar angle in spherical coordinates from Cartesian
@@ -141,7 +153,8 @@ def spherical_to_cartesian(rho, phi, theta):
     z = rho * numpy.cos(theta)
     return x, y, z
 
+
 __all__ = ['cartesian_to_spherical_rho', 'cartesian_to_spherical_azimuthal',
            'cartesian_to_spherical_polar', 'cartesian_to_spherical',
            'spherical_to_cartesian',
-          ]
+           ]
