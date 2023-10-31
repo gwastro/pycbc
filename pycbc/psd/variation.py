@@ -9,12 +9,13 @@ import pycbc.psd
 from pycbc.types import TimeSeries
 from pycbc.filter import resample_to_delta_t
 
+
 def create_full_filt(srate, low_freq, high_freq, psd_duration):
     """
     Create a filter for Power Spectral Density (PSD) variation calculations.
 
-    This function generates a bandpass filter that can be used for calculating PSD
-    variation within a specified frequency range.
+    This function generates a bandpass filter that can be used for calculating
+    PSD variation within a specified frequency range.
 
     Parameters
     ----------
