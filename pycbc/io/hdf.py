@@ -511,7 +511,22 @@ class SingleDetTriggers(object):
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
+        self.mask = None
         self.update_mask(premask)
+
+        if filter_rank:
+            assert filter_threshold is not None
+            logging.info("Applying threshold of %.3f on %s",
+                         filter_threshold, filter_rank)
+            idx = self.trigs_f.select(
+                 lambda rank: rank > filter_threshold,
+                 derived={ranking.sngls_ranking_function_dict[filter_rank]:
+                          ranking.required_datasets[filter_rank]},
+                 indices_only=True,
+                 premask=self.mask,
+                 group=detector,
+            )
+            self.apply_mask(idx)
 
         if veto_file:
             logging.info('Applying veto segments')
@@ -527,16 +542,6 @@ class SingleDetTriggers(object):
             logging.info('%i triggers remain after vetoes',
                          self.mask_size)
 
-        if filter_rank:
-            assert filter_threshold is not None
-            idx = self.trigs_f.select(
-                 lambda rank: rank > filter_threshold,
-                 derived={ranking.sngls_ranking_function_dict[filter_rank]:
-                          ranking.required_datasets[filter_rank]},
-                 indices_only=True,
-                 premask=self.mask,
-                 group=detector,
-            )
 
     def __getitem__(self, key):
         # Is key in the TRIGGER_MERGE file?
@@ -573,39 +578,40 @@ class SingleDetTriggers(object):
             if type(m[1]) == property]
 
     def update_mask(self, new_mask):
-        """Update the mask.
+        """Overwrite the current mask.
 
-        This overwrites the mask"""
+        Mask may be converted to either a boolean array or a list of uint64,
+        depending which is smaller.
+        """
         if new_mask is None:
             # This is used when the premask option isn't given,
-            # set up a new mask
+            # set up a new, transparent mask
             self.mask = np.ones(self.ntriggers, dtype=bool)
             return
 
-        if not isinstance(new_mask, np.ndarray):
-            # This isn't a numpy array - this is a list, so convert it
-            new_mask = np.array(new_mask, dtype=np.uint64)
-
-        if new_mask.dtype == bool:
+        if isinstance(new_mask, np.ndarray) and new_mask.dtype == bool:
             # boolean array - would this be better as indices?
-            if sum(new_mask) < (self.ntriggers / 64 / 1.5):
+            if sum(new_mask) < (self.ntriggers / 64):
                 # uint64 indices would be smaller than boolean array:
-                self.mask = np.flatnonzero(new_mask).astype(np.uint64)
+                self.mask = list(np.flatnonzero(new_mask).astype(np.uint64))
             else:
                 self.mask = new_mask
-        else:
-            # indices array - would this be better as boolean?
-            if new_mask.size < (self.ntriggers / 64 / 1.5):
+        elif isinstance(new_mask, np.ndarray):
+            # indices numpy array - would this be better as boolean?
+            if new_mask.size < (self.ntriggers / 64):
                 # uint64 indices would be smaller than boolean array:
-                self.mask = new_mask.astype(np.uint64)
+                self.mask = list(new_mask.astype(np.uint64))
             else:
                 self.mask[:] = np.zeros(self.ntriggers, dtype=bool)
-                self.mask[idx] = True
+                self.mask[new_mask] = True
+        else:
+            # This is not a numpy array, but just in case it isn't a list:
+            self.mask = list(new_mask)
 
     def mask_as_indices(self):
-        if self.mask.dtype == np.uint64:
+        if isinstance(self.mask, list):
             return self.mask
-        return np.flatnonzero(self.mask).astype(np.uint64)
+        return list(np.flatnonzero(self.mask).astype(np.uint64))
 
     def apply_mask(self, logic_mask):
         """Apply a mask on top of any existing mask.
@@ -676,9 +682,9 @@ class SingleDetTriggers(object):
 
     @property
     def mask_size(self):
-        if self.mask.dtype == bool:
-            return sum(self.mask)
-        return self.mask.size
+        if isinstance(self.mask, list):
+            return len(self.mask)
+        return np.count_nonzero(self.mask)
 
     @property
     def template_id(self):
@@ -830,13 +836,22 @@ class SingleDetTriggers(object):
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if self.mask is not None and (self.mask.dtype == np.uint64 or \
+        if self.mask is not None and (isinstance(self.mask, list) or \
                 (self.mask_size < (self.ntriggers * MFRAC))):
+            print(f"Loading {self.mask_size:d} out of {self.ntriggers:d} triggers")
+            print(self.mask.dtype)
+            print(type(self.mask))
+            print(self.mask)
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire
         # array before masking.
         else:
+            print("Loading all triggers")
+            print(self.mask.dtype)
+            print(type(self.mask))
+            print(self.mask)
+            exit()
             return self.trigs[cname][:][self.mask]
 
 
