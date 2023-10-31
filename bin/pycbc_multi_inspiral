@@ -337,7 +337,9 @@ with ctx:
         'nifo': int,
         'my_network_chisq': float32,
         'reweighted_snr': float32,
-        'slide_id': int
+        'slide_id': int,
+        'mass1': float32,
+        'mass2': float32
         }
     network_out_vals = {
         'dec': None,
@@ -348,7 +350,9 @@ with ctx:
         'nifo': None,
         'my_network_chisq': None,
         'reweighted_snr': None,
-        'slide_id': None
+        'slide_id': None,
+        'mass1': None,
+        'mass2': None
         }
     network_names = sorted(network_out_vals.keys())
     event_mgr = EventManagerCoherent(
@@ -684,6 +688,8 @@ with ctx:
                         network_out_vals['dec'] = [sky_positions[1][position_index]] * num_events
                         network_out_vals['ra'] = [sky_positions[0][position_index]] * num_events
                         network_out_vals['slide_id'] = [slide] * num_events
+                        network_out_vals['mass1'] = [template.params['mass1']] * num_events
+                        network_out_vals['mass2'] = [template.params['mass2']] * num_events
                         event_mgr.add_template_events_to_network(
                             network_names,
                             [network_out_vals[n] for n in network_names])
