@@ -237,8 +237,8 @@ def live_create_filter(psd_estimated,
     Parameters
     ----------
     psd_estimated : pycbc.frequencyseries
-        The estimated psd currently being used by the PyCBC Live search for
-        which we want to measure the psd variation of.
+        The current PyCBC Live PSD: variations are measured relative to this
+        estimate.
     psd_duration : float
         The duration of the estimation of the psd, in seconds.
     sample_rate : int
@@ -345,8 +345,8 @@ def live_calc_psd_variation(strain,
     outliers = short_ms[1:-1] > (2. * ave)
     short_ms[1:-1][outliers] = ave[outliers]
 
-    # Calculate the PSD variation every second by averaging over short_ms every
-    #  samples_per_second.
+    # Calculate the PSD variation every second by a moving window average
+    # containing (1/short_stride) short_ms samples.
     m_s = []
     samples_per_second = 1 / short_stride
     for idx in range(int(len(short_ms) / samples_per_second)):
