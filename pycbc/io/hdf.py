@@ -511,7 +511,10 @@ class SingleDetTriggers(object):
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
-        self.mask = premask
+        if premask is not None:
+            self.mask = premask
+        else:
+            self.mask = np.ones(self.ntriggers, dtype=bool)
 
         if filter_rank:
             assert filter_threshold is not None
