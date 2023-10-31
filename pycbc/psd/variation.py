@@ -10,43 +10,6 @@ from pycbc.types import TimeSeries
 from pycbc.filter import resample_to_delta_t
 
 
-def create_full_filt(srate, low_freq, high_freq, psd_duration):
-    """
-    Create a filter for Power Spectral Density (PSD) variation calculations.
-
-    This function generates a bandpass filter that can be used for calculating
-    PSD variation within a specified frequency range.
-
-    Parameters
-    ----------
-    srate : float
-        The sampling rate of the data.
-    low_freq : float
-        The lower bound of the desired frequency range (in Hz).
-    high_freq : float
-        The upper bound of the desired frequency range (in Hz).
-    psd_duration : float
-        The duration (in seconds) of the estimated PSD.
-
-    Returns:
-    filt : numpy.ndarray
-        The filter for PSD variation analysis.
-
-    """
-    # Create a bandpass filter between low_freq and high_freq
-    filt = sig.firwin(4 * srate,
-                      [low_freq, high_freq],
-                      pass_zero=False,
-                      window='hann',
-                      nyq=srate / 2)
-    filt.resize(int(psd_duration * srate))
-    # Fourier transform the filter and take the absolute value to get
-    # rid of the phase.
-    filt = abs(rfft(filt))
-
-    return filt
-
-
 def mean_square(data, delta_t, srate, short_stride, stride):
     """ Calculate mean square of given time series once per stride
 
@@ -165,7 +128,13 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
                               psd_long_segment - 2 * strain_crop
                               - segment + step)
 
-    filt = create_full_filt(srate, low_freq, high_freq, psd_duration)
+    # Create a bandpass filter between low_freq and high_freq
+    filt = sig.firwin(4 * srate, [low_freq, high_freq], pass_zero=False,
+                      window='hann', nyq=srate / 2)
+    filt.resize(int(psd_duration * srate))
+    # Fourier transform the filter and take the absolute value to get
+    # rid of the phase.
+    filt = abs(rfft(filt))
 
     psd_var_list = []
     for tlong in times_long:
@@ -288,10 +257,16 @@ def live_create_filter(psd_estimated,
     """
 
     # Create a bandpass filter between low_freq and high_freq once
-    filt = create_full_filt(sample_rate,
-                            low_freq,
-                            high_freq,
-                            psd_duration)
+    filt = sig.firwin(4 * sample_rate,
+                      [low_freq, high_freq],
+                      pass_zero=False,
+                      window='hann',
+                      nyq=sample_rate / 2)
+    filt.resize(int(psd_duration * sample_rate))
+
+    # Fourier transform the filter and take the absolute value to get
+    #  rid of the phase.
+    filt = abs(rfft(filt))
 
     # Extract the psd frequencies to create a representative filter.
     freqs = numpy.array(psd_estimated.sample_frequencies, dtype=numpy.float32)
