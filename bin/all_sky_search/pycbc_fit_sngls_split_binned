@@ -260,10 +260,9 @@ sorted_boundary_list = np.sort(boundaries)
 
 # In the two blocks of code that follows we are trying to figure out the index
 # ranges in the masked trigger lists corresponding to the "boundaries".
-# We do this by some manipulation of the boundaries and the mask
-# array of the single detector triggers, and basically walk over the
-# boundaries, in the order they're stored in the file, adding in the number
-# of triggers not removed by the mask every time.
+# We will do this by walking over the boundaries in the order they're
+# stored in the file, adding in the number of triggers not removed by the
+# mask every time.
 
 # First step is to loop over the "boundaries" which gives the start position
 # of each block of triggers (corresponding to one template) in the full trigger
