@@ -133,6 +133,10 @@ if args.min_snr:
                       return_indices=True)
     mask = numpy.zeros(n_triggers, dtype=bool)
     mask[idx] = True
+    if len(idx) < num_events:
+        logging.info("Fewer triggers exist after the --min-snr cut (%d) "
+                     "than requested for the minifollowup (%d)",
+                     len(idx), num_events)
 
 trigs = hdf.SingleDetTriggers(
     args.single_detector_file,
