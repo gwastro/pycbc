@@ -26,6 +26,8 @@ parser.add_argument('--flag', type=str, required=True,
                     help="name of the data quality flag")
 parser.add_argument('--ifo', type=str, required=True,
                     help="interferometer to analyze")
+parser.add_argument('--sample-frequency', required=True, type=int,
+                    help="timeseries sampling frequency in Hz")
 parser.add_argument("--output-file", required=True,
                     help="name of output file")
 parser.add_argument("--output-channel", required=False,
@@ -35,13 +37,14 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 
-def make_dq_ts(dq_segs, start, end, ifo, flag):
+def make_dq_ts(dq_segs, start, end, ifo, flag, freq):
     """ Create a data quality timeseries
     """
     logging.info('Creating data quality timeseries for flag %s', 
                  flag)
     # Keep just times which belong to science_segments
-    dq_times = numpy.arange(start, end)
+    dur = end - start
+    dq_times = numpy.linspace(start, end, int(freq*dur), endpoint=False)
     dq = numpy.zeros(len(dq_times))
     # Identify times within segments for the chosen flag
     indexes, _ = veto.indices_within_segments(dq_times, [dq_segs], ifo=ifo,
@@ -51,7 +54,7 @@ def make_dq_ts(dq_segs, start, end, ifo, flag):
     else:
         logging.warning('Veto definer segment list is empty for flag %s-%s',
                         ifo, flag)
-    return TimeSeries(dq, epoch=start, delta_t=1.)
+    return TimeSeries(dq, epoch=start, delta_t=1.0/freq)
 
 
 ifo = args.ifo
@@ -63,7 +66,7 @@ if len(flag_list)>1:
 
 # Create data quality time series
 dq = make_dq_ts(args.dq_segments, args.gps_start_time, args.gps_end_time, 
-                ifo, flag)
+                ifo, flag, args.sample_frequency)
 
 dq.save(args.output_file, group=args.output_channel)
 
