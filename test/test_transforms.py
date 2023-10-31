@@ -44,6 +44,12 @@ RANGES = {
     "xi1" : (0.0, 1.0),
     "xi2" : (0.0, 1.0),
     "chirp_distance" : (2.0, 10.0),
+    "tc" : (1126259462.43, 1526259462.43),
+    "ra" : (0.0, 2 * numpy.pi),
+    "dec" : (-numpy.pi / 2, numpy.pi / 2),
+    "eclipticlongitude" : (0.0, 2 * numpy.pi),
+    "eclipticlatitude" : (-numpy.pi / 2, numpy.pi / 2),
+    "polarization" : (0.0, 2 * numpy.pi),
 }
 
 # tests only need to happen on the CPU
@@ -96,4 +102,3 @@ suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestTransforms))
 if __name__ == "__main__":
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)
-
