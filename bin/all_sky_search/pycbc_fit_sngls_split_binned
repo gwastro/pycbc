@@ -85,8 +85,8 @@ parser.add_argument("--stat-fit-threshold", type=float, required=True,
                          "threshold. Required")
 parser.add_argument("--plot-lower-stat-limit", type=float, required=True,
                     help="Plot triggers down to this value. Setting this too"
-                         "low will lead to huge memory usage. Perhaps stick"
-                         "with 5.5 or larger.")
+                         "low will incur huge memory usage in a full search."
+                         "To avoid this, choose 5.5 or larger.")
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
@@ -100,6 +100,8 @@ parser.add_argument("--prune-window", type=float, default=0.1,
 pystat.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
+
+assert(args.stat_fit_threshold >= args.plot_lower_stat_limit)
 
 pycbc.init_logging(args.verbose)
 
@@ -256,17 +258,18 @@ logging.info('Processing template boundaries')
 max_boundary_id = np.argmax(boundaries)
 sorted_boundary_list = np.sort(boundaries)
 
-# We need to figure out the corresponding start, and stop indexes
-# in the list of "stat" and "time". However, many triggers have
-# been cut from these. We therefore need to map from the start/end
-# indexes in the full file to the start/end indexes in the masked
-# arrays. We do this by some manipulation of the boundaries and the mask
+# In the two blocks of code that follows we are trying to figure out the index
+# ranges in the masked trigger lists corresponding to the "boundaries".
+# We do this by some manipulation of the boundaries and the mask
 # array of the single detector triggers, and basically walk over the
 # boundaries, in the order they're stored in the file, adding in the number
 # of triggers not removed by the mask every time.
-mask_start_idx = np.zeros_like(boundaries)
+
+# First step is to loop over the "boundaries" which gives the start position
+# of each block of triggers (corresponding to one template) in the full trigger
+# merge file.
+# Here we identify the end_idx for the triggers corresponding to each template.
 where_idx_end = np.zeros_like(boundaries)
-mask_end_idx = np.zeros_like(boundaries)
 for idx, idx_start in enumerate(boundaries):
     if idx == max_boundary_id:
         where_idx_end[idx] = trigf[args.ifo + '/end_time'].size
@@ -274,6 +277,10 @@ for idx, idx_start in enumerate(boundaries):
         where_idx_end[idx] = sorted_boundary_list[
             np.argmax(sorted_boundary_list == idx_start) + 1]
 
+# Next we need to map these start/stop indices in the full file, to the start
+# stop indices in the masked list of triggers. We do this by figuring out
+# how many triggers are in the masked list for each template in the order they
+# are stored in the trigger merge file, and keep a running sum.
 curr_count = 0
 mask_start_idx = np.zeros_like(boundaries)
 mask_end_idx = np.zeros_like(boundaries)
