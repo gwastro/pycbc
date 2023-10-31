@@ -38,11 +38,6 @@ try:
     from ligo.lw import utils, lsctables
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
-    # Handle MultiInspiral xml-tables with glue,
-    # as ligo.lw no longer supports them
-    from glue.ligolw import lsctables as glsctables
-    # from glue.ligolw.ilwd import ilwdchar as gilwdchar
-    from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
 
@@ -461,36 +456,36 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     sorted_trigs = {}
 
     # Begin by sorting the triggers into each slide
-    # New seems pretty slow, so run it once and then use deepcopy
-    tmp_table = glsctables.New(glsctables.MultiInspiralTable)
     for slide_id in slide_dict:
-        sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
-    for trig in trigs:
-        sorted_trigs[int(trig.time_slide_id)].append(trig)
+        sorted_trigs[slide_id] = []
+        for i in range(trigs['network/event_id'].len()):
+            slide_id = trigs['network/slide_id'][i]
+            sorted_trigs[slide_id].append(i)
 
     for slide_id in slide_dict:
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
         # Check the triggers are all in the analysed segment lists
-        for trig in sorted_trigs[slide_id]:
-            if trig.end_time not in curr_seg_list:
+        for idx in sorted_trigs[slide_id]:
+            end_time = trigs['network/end_time_gc'][idx]
+            if end_time not in curr_seg_list:
                 # This can be raised if the trigger is on the segment boundary,
                 # so check if the trigger is within 1/100 of a second within
                 # the list
-                if trig.get_end() + 0.01 in curr_seg_list:
+                if end_time + 0.01 in curr_seg_list:
                     continue
-                if trig.get_end() - 0.01 in curr_seg_list:
+                if end_time - 0.01 in curr_seg_list:
                     continue
                 err_msg = "Triggers found in input files not in the list of "
                 err_msg += "analysed segments. This should not happen."
                 raise RuntimeError(err_msg)
         # END OF CHECK #
 
-        # The below line works like the inverse of .veto and only returns trigs
-        # that are within the segment specified by trial_dict[slide_id]
-        sorted_trigs[slide_id] = \
-            sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
+        # Keep triggers that are in trial_dict
+        sorted_trigs[slide_id] = [idx for idx in sorted_trigs[slide_id]
+                                  if trigs['network/end_time_gc'][idx]
+                                  in trial_dict[slide_id]]
 
     return sorted_trigs
 
