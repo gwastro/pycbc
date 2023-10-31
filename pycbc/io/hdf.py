@@ -157,7 +157,8 @@ class HFile(h5py.File):
         if indices_only or return_indices:
             return_tuple += (indices.astype(np.uint64),)
         if not indices_only:
-            return_tuple += tuple(np.concatenate(data[arg]) for arg in ret_args)
+            return_tuple += tuple(np.concatenate(data[arg])
+                                  for arg in ret_args)
 
         if len(return_tuple) == 1:
             return return_tuple[0]
@@ -464,7 +465,7 @@ class SingleDetTriggers(object):
     Provides easy access to the parameters of single-detector CBC triggers.
     """
     def __init__(self, trig_file, detector, bank_file=None, veto_file=None,
-                 segment_name=None, premask=None, filter_ranking=None,
+                 segment_name=None, premask=None, filter_rank=None,
                  filter_threshold=None):
         """
         Create a SingleDetTriggers instance
@@ -490,7 +491,7 @@ class SingleDetTriggers(object):
         premask : array of indices or boolean, optional
            Array of used triggers
 
-        filter_ranking : string, optional
+        filter_rank : string, optional
             The ranking, as defined by ranking.py to compare to
             filter_threshold
 
@@ -517,12 +518,12 @@ class SingleDetTriggers(object):
             # veto_mask is an array of indices into the trigger arrays
             # giving the surviving triggers
             logging.info('%i triggers before vetoes', self.mask_size)
-            self.veto_mask, _ = events.veto.indices_outside_segments(
+            veto_mask, _ = events.veto.indices_outside_segments(
                 self.end_time, [veto_file],
                 ifo=detector, segment_name=segment_name)
 
             # Update mask accordingly
-            self.apply_mask(idx)
+            self.apply_mask(veto_mask)
             logging.info('%i triggers remain after vetoes',
                          self.mask_size)
 
@@ -530,8 +531,8 @@ class SingleDetTriggers(object):
             assert filter_threshold is not None
             idx = self.trigs_f.select(
                  lambda rank: rank > filter_threshold,
-                 derived={sngls_ranking_function_dict[filter_rank]:
-                          required_datasets[filter_rank]},
+                 derived={ranking.sngls_ranking_function_dict[filter_rank]:
+                          ranking.required_datasets[filter_rank]},
                  indices_only=True,
                  premask=self.mask,
                  group=detector,
@@ -592,7 +593,6 @@ class SingleDetTriggers(object):
                 self.mask = np.flatnonzero(new_mask).astype(np.uint64)
             else:
                 self.mask = new_mask
-                
         else:
             # indices array - would this be better as boolean?
             if new_mask.size < (self.ntriggers / 64 / 1.5):
@@ -612,14 +612,13 @@ class SingleDetTriggers(object):
 
         Applied mask can be a single index, an array of indices,
         or boolean."""
-        new_indices = self.mask_as_indices[logic_mask]
+        new_indices = self.mask_as_indices(logic_mask)
         self.update_mask(new_indices)
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
                                            ranking_threshold=6,
                                            n_loudest=10,
-                                           cluster_window=10,
-                                           **kwargs):
+                                           cluster_window=10):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic.
 
