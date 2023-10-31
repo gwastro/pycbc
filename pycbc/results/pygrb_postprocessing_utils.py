@@ -519,21 +519,12 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
     for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
         if slide_trigs:
-            trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).\
-                                  astype(float)
-            trig_snr[slide_id] = numpy.asarray(slide_trigs.get_column('snr'))
+            trig_time[slide_id] = trigs['network/end_time_gc'][slide_trigs]
+            trig_snr[slide_id] = trigs['network/coherent_snr'][slide_trigs]
         else:
             trig_time[slide_id] = numpy.asarray([])
             trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = get_bestnrs(slide_trigs,
-                                            q=chisq_index,
-                                            n=chisq_nhigh,
-                                            null_thresh=null_thresh,
-                                            snr_threshold=snr_thresh,
-                                            sngl_snr_threshold=sngl_snr_thresh,
-                                            chisq_threshold=new_snr_thresh,
-                                            null_grad_thresh=null_grad_thresh,
-                                            null_grad_val=null_grad_val)
+        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][slide_trigs]
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
