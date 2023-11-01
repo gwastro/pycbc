@@ -84,38 +84,22 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-def filter_func(x, y, snr):
-    """
-    A convenience function to allow us to set up all prefilters
-    at once.
-    """
-    mask = np.ones(len(x), dtype=bool)
-    if opts.min_snr:
-        mask = np.logical_and(mask, snr >= opts.min_snr)
-    if opts.min_x is not None:
-        mask = np.logical_and(mask, x >= opts.min_x)
-    if opts.max_x is not None:
-        mask = np.logical_and(mask, x <= opts.max_x)
-    if opts.min_y is not None:
-        mask = np.logical_and(mask, y >= opts.min_y)
-    if opts.max_y is not None:
-        mask = np.logical_and(mask, y <= opts.max_y)
-    return mask
-
-with pycbc.io.HFile(opts.single_trig_file) as hf:
-    idx = hf.select(
-        filter_func,
-        opts.x_var,
-        opts.y_var,
-        'snr',
-        group=opts.detector
-    )
+if opts.min_snr:
+    # Apply filter on minimum SNR straight away
+    with pycbc.io.HFile(opts.single_trig_file) as hf:
+        idx = hf.select(
+            lambda snr: snr >= opts.min_snr,
+            'snr',
+            group=opts.detector
+        )
+else:
+    idx = None
 
 if opts.z_var == 'density' or opts.min_z is None:
     filter_func = None
     filter_thresh = None
 else:
-    # We can apply another filter on the z value
+    # We can apply a/another filter on the z value
     filter_func = ranking.sngls_ranking_function_dict[opts.z_var]
     filter_thresh = opts.min_z
 
@@ -132,6 +116,18 @@ trigs = pycbc.io.SingleDetTriggers(
 
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
+
+mask = np.ones(len(x), dtype=bool)		
+if opts.min_x is not None:		
+    mask = np.logical_and(mask, x >= opts.min_x)		
+if opts.max_x is not None:		
+    mask = np.logical_and(mask, x <= opts.max_x)		
+if opts.min_y is not None:		
+    mask = np.logical_and(mask, y >= opts.min_y)		
+if opts.max_y is not None:		
+    mask = np.logical_and(mask, y <= opts.max_y)		
+x = x[mask]		
+y = y[mask]
 
 hexbin_style = {
     'gridsize': opts.grid_size,

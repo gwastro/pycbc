@@ -544,7 +544,6 @@ class SingleDetTriggers(object):
             logging.info('%i triggers remain after vetoes',
                          self.mask_size)
 
-
     def __getitem__(self, key):
         # Is key in the TRIGGER_MERGE file?
         try:
