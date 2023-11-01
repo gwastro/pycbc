@@ -49,7 +49,7 @@ ifo, flag_name = args.flag_name.split(':')
 trigs = SingleDetTriggers(
     args.trig_file,
     ifo,
-    filter_ranking=args.sngl_ranking,
+    filter_rank=args.sngl_ranking,
     filter_threshold=args.stat_threshold,
 )
 
