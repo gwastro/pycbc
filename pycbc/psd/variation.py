@@ -9,6 +9,43 @@ import pycbc.psd
 from pycbc.types import TimeSeries
 from pycbc.filter import resample_to_delta_t
 
+def create_full_filt(freqs, filt, plong, srate, psd_duration):
+        """Create a filter to convolve with strain data to find PSD variation.
+
+        Parameters
+        ----------
+        freqs : numpy.ndarray
+            Array of sample frequencies of the PSD.
+        filt : numpy.ndarray
+            A bandpass filter.
+        plong : numpy.ndarray
+            The estimated PSD.
+        srate : float
+            The sample rate of the data.
+        psd_duration : float
+            The duration of the estimated PSD.
+
+        Returns
+        -------
+        full_filt : numpy.ndarray
+            The full filter used to calculate PSD variation.
+        """
+
+        # Make the weighting filter - bandpass, which weight by f^-7/6,
+        # and whiten. The normalization is chosen so that the variance
+        # will be one if this filter is applied to white noise which
+        # already has a variance of one.
+        fweight = freqs ** (-7./6.) * filt / numpy.sqrt(plong)
+        fweight[0] = 0.
+        norm = (sum(abs(fweight) ** 2) / (len(fweight) - 1.)) ** -0.5
+        fweight = norm * fweight
+        fwhiten = numpy.sqrt(2. / srate) / numpy.sqrt(plong)
+        fwhiten[0] = 0.
+        full_filt = sig.hann(int(psd_duration * srate)) * numpy.roll(
+            irfft(fwhiten * fweight), int(psd_duration / 2) * srate)
+
+        return full_filt
+
 
 def mean_square(data, delta_t, srate, short_stride, stride):
     """ Calculate mean square of given time series once per stride
@@ -158,18 +195,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
         freqs = numpy.array(plong.sample_frequencies, dtype=fs_dtype)
         plong = plong.numpy()
 
-        # Make the weighting filter - bandpass, which weight by f^-7/6,
-        # and whiten. The normalization is chosen so that the variance
-        # will be one if this filter is applied to white noise which
-        # already has a variance of one.
-        fweight = freqs ** (-7./6.) * filt / numpy.sqrt(plong)
-        fweight[0] = 0.
-        norm = (sum(abs(fweight) ** 2) / (len(fweight) - 1.)) ** -0.5
-        fweight = norm * fweight
-        fwhiten = numpy.sqrt(2. / srate) / numpy.sqrt(plong)
-        fwhiten[0] = 0.
-        full_filt = sig.hann(int(psd_duration * srate)) * numpy.roll(
-            irfft(fwhiten * fweight), int(psd_duration / 2) * srate)
+        full_filt = create_full_filt(freqs, filt, plong, srate, psd_duration)
         # Convolve the filter with long segment of data
         wstrain = sig.fftconvolve(astrain, full_filt, mode='same')
         wstrain = wstrain[int(strain_crop * srate):-int(strain_crop * srate)]
@@ -271,19 +297,7 @@ def live_create_filter(psd_estimated,
     # Extract the psd frequencies to create a representative filter.
     freqs = numpy.array(psd_estimated.sample_frequencies, dtype=numpy.float32)
     plong = psd_estimated.numpy()
-
-    # Create the filter - bandpass, which weight by f^-7/6,
-    # and whiten. The normalization is chosen so that the variance
-    # will be one if this filter is applied to white noise which
-    # already has a variance of one.
-    fweight = freqs ** (-7./6.) * filt / numpy.sqrt(plong)
-    fweight[0] = 0.
-    norm = (sum(abs(fweight) ** 2) / (len(fweight) - 1.)) ** -0.5
-    fweight *= norm
-    fwhiten = numpy.sqrt(2. / sample_rate) / numpy.sqrt(plong)
-    fwhiten[0] = 0.
-    full_filt = sig.hann(int(psd_duration * sample_rate)) * numpy.roll(
-        irfft(fwhiten * fweight), int(psd_duration / 2) * sample_rate)
+    full_filt = create_full_filt(freqs, filt, plong, sample_rate, psd_duration)
 
     return full_filt
 
