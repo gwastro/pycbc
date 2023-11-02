@@ -698,6 +698,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
             current_params_other = other_model.current_params.copy()
             print("current_params_other: ", current_params_other)
             print("other_model.waveform_transforms: ", other_model.waveform_transforms)
+            # TODO: run this for-loop in parallel
             for i in range(nums):
                 current_params_other.update(
                     {key: value[i] for key, value in margin_params.items()})
@@ -726,9 +727,15 @@ class MultibandRelativeTimeDom(HierarchicalModel):
     def _loglikelihood(self):
         others_lognl = 0
         for lbl, model in self.submodels.items():
-            # Update the parameters of each
+            print("self.current_params: ", self.current_params)
+            self.primary_model.update()
+            print("self.primary_model.current_params: ", self.primary_model.current_params)
+            # only update the parameters of other models
+            # print("self.primary_model.label: ", self.primary_model.label)
             model.update(**{p.subname: self.current_params[p.fullname]
                             for p in self.param_map[lbl]})
+            print("model.current_params: ", model.current_params)
+            print("self.primary_model.current_params: ", self.primary_model.current_params)
             others_lognl += model.lognl
 
         # calculate the combined loglikelihood
@@ -874,6 +881,24 @@ class MultibandRelativeTimeDom(HierarchicalModel):
             submodels[lbl] = submodel
             logging.info("")
 
+        # remove all marginalized parameters from the top-level model's
+        # `variable_params` and `prior` sections
+        primary_model = '%s__model' % kwargs['primary_lbl'][0]
+        marginalized_params = cp.get(primary_model,
+                                     'marginalize_vector_params').split(', ')
+        if cp[primary_model]['marginalize_phase'] == 'True':
+            marginalized_params.append('phase')
+        if cp[primary_model]['marginalize_distance'] == 'True':
+            marginalized_params.append(cp.get(primary_model,
+                                       'marginalize_distance_param'))
+        for section in cp.sections():
+            if 'prior-' in section:
+                p = section.split('-')[-1]
+                if p in marginalized_params:
+                    
+                    cp['variable_params'].pop(p)
+                    cp.pop(section)
+ 
         # now load the model
         logging.info("Loading multiband_relative_time_dom model")
         return super(HierarchicalModel, cls).from_config(
