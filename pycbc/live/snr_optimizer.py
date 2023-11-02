@@ -209,7 +209,6 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
         recombination=0.7,
         callback=callback_func,
         args=extra_args,
-        init=population
     )
     return results.x
 
