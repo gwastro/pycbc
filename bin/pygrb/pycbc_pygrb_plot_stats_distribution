@@ -34,10 +34,6 @@ import pycbc.version
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
-try:
-    from glue.ligolw import lsctables
-except ImportError:
-    pass
 
 plt.switch_backend('Agg')
 rc("image", cmap="cividis_r")
@@ -86,8 +82,8 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trigs = ppu.load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
-logging.info("%d triggers loaded.", len(trigs))
+trigs = ppu.load_triggers(trig_file, vetoes)
+logging.info("%d triggers loaded.", trigs['network/event_id'].len())
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
