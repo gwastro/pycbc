@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 """ Plot the single detector trigger timeseries """
 import argparse, logging, pycbc.version, pycbc.results, sys
 from pycbc.types import MultiDetOptionAction
@@ -109,7 +110,9 @@ for ifo in args.single_trigger_files.keys():
 
     if args.special_trigger_ids:
         special_idx = args.special_trigger_ids[ifo]
-        if special_idx not in idx:
+        if special_idx == None:  # No special trigger for this ifo
+            continue
+        elif special_idx not in idx:
             logging.info("IDX %d not in kept list",
                          args.special_trigger_ids[ifo])
             continue
