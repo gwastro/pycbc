@@ -47,7 +47,7 @@ from pycbc.vetoes import sgchisq
 time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("-V", "--verbose", action="store_true",
-                    help="print extra debugging information",
+                    help="prints extra debugging information during runtime",
                     default=False)
 parser.add_argument("--output", type=str)
 parser.add_argument("--instruments", nargs="+", type=str, required=True,
@@ -144,9 +144,9 @@ opt.insert_optimization_option_group(parser)
 inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 sgchisq.SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
-init_logging(args.verbose) # takes the --verbose option -> (bool)
+init_logging(args.verbose)
 # Set GRB time variable for convenience
-t_gps = args.trigger_time # takes the --trigger-time option -> (float)
+t_gps = args.trigger_time
 # The following line aranges the ifos in alphabetical order so they are 
 # always called in the same order.
 # takes the --instruments option -> (list of str)
@@ -156,68 +156,30 @@ nifo = len(args.instruments[:])
 # options provided by parser to pycbc.strain, pycbc.strain.StrainSegments,
 # pycbc.psd, pycbc.scheme & pycbc.fft modules are sane.
 # pycbc.strain CLI verifier:
-#    the class methods "verify_strain_options_multi_ifo" &
-#                      "verify_segment_options_multi_ifo"
-#    both rely on pycbc.types "required_opts_multi_ifo" to check the CLI options
-# Both methods take the --instruments option -> (list of str)
 strain.verify_strain_options_multi_ifo(
                                       args, parser, args.instruments)
 strain.StrainSegments.verify_segment_options_multi_ifo(
                                       args, parser, args.instruments)
 # The pycbc.psd CLI verifier:
-#       relies on:
-#	   ensure_one_opt_multi_ifo -> ensures only options for one
-#                                      detector are defined at a time.
-#          required_opts_multi_ifo  -> used only if psd_estimation is turned on.
-#                                      Checks that CLI options are sane.
-# The following method takes the --instruments option -> (list of str)
 psd.verify_psd_options_multi_ifo(
                                 args, parser, args.instruments)
 # The pycbc.scheme CLI verifier:
-#       these options are used below by the context manager "ctx"
-#       to properly manage resources without memory leaks
-# This method takes as input the option
-# --processing-scheme as name:N -> (str:int)
-# where name can be either mkl, cpu.
-# N is the number of threads(mkl) or CPUs(cpu)
-# NOTE:--processing-scheme can also be set as cuda for GPU usage.
-# However, the cuda scheme breaks the interaction with lalframe.
 scheme.verify_processing_options(args, parser)
-# The pycbc.fft CLI verifier takes the following options:
-# --fft-measure-level -> (int [0,1,2,3])
-# --fftw-import-system_wisdom -> (flag)
-# --fftw-input-float-wisdom-file -> (str)
-# --fftw-input-double-wisdom-file -> (str)
-# --fftw-threads-backend -> (str ['openmp','pthreads', 'unthreaded'])
+# The pycbc.fft CLI verifier:
 fft.verify_fft_options(args, parser)
-# inj_filter_rejector is a Dictionary of "InjFilterRejector" objects
-# it avoids processing an injection with a template that is
-# known to differ significantly from it in terms of chirp time
-# to see if the filter is being used, use for example:
-#       print(inj_filter_rejector['H1'].enabled)
-# This functionality is not used in the GW170817 example, to configure it, see:
-# https://pycbc.org/pycbc/latest/html/_modules/pycbc/inject
-# /injfilterrejector.html#InjFilterRejector
+# The following stores a Dictionary of "InjFilterRejector" objects
+# which is used to avoid using computing power on injections corresponding 
+# to templates with significantly different chirp mass.
 inj_filter_rejector = inject.InjFilterRejector.from_cli_multi_ifos(
     args, args.instruments)
-# strain_dict is a Dictionary containing "timeseries" objects. each of them
+# The following stores a dictionary of "timeseries" objects. Each of them
 # corresponds to the strain each detectors.
 # strain data is taken from args.gps_start_time to args.gps_end_time
 # using the sampling rate args.sample_rate
-# relevant inputs for segment computation:
-#  --trig-end-time
-#  --trig-start-time
-#  --segment-length
-#  --segment-start-pad
-#  --segment-end-pad
-# NOTE: currently setting the option --segment-length 128 breaks the example in:
-# https://github.com/gwastro/pycbc/blob/master/examples/multi_inspiral/run.sh
-# Moreover, its been noticed that certain combinations of --segment-start-pad,
-# --segment-end-pad & --segment-length cause the segment_width computed in:
-# master/pycbc/strain/strain.py to have values <=0.
-# assert statements needed. seg_pad should not exceed the seg_len.
 strain_dict = strain.from_cli_multi_ifos(
     args, args.instruments, inj_filter_rejector, dyn_range_fac=DYN_RANGE_FAC)
+# The following stores a dictionary of python slice objects, that indicate
+# where the segments begin and end,for each detector's timeseries.
 strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
     args, strain_dict, args.instruments)
 ctx = scheme.from_cli(args)
