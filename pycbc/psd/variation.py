@@ -10,41 +10,41 @@ from pycbc.types import TimeSeries
 from pycbc.filter import resample_to_delta_t
 
 def create_full_filt(freqs, filt, plong, srate, psd_duration):
-        """Create a filter to convolve with strain data to find PSD variation.
+    """Create a filter to convolve with strain data to find PSD variation.
 
-        Parameters
-        ----------
-        freqs : numpy.ndarray
-            Array of sample frequencies of the PSD.
-        filt : numpy.ndarray
-            A bandpass filter.
-        plong : numpy.ndarray
-            The estimated PSD.
-        srate : float
-            The sample rate of the data.
-        psd_duration : float
-            The duration of the estimated PSD.
+    Parameters
+    ----------
+    freqs : numpy.ndarray
+        Array of sample frequencies of the PSD.
+    filt : numpy.ndarray
+        A bandpass filter.
+    plong : numpy.ndarray
+        The estimated PSD.
+    srate : float
+        The sample rate of the data.
+    psd_duration : float
+        The duration of the estimated PSD.
 
-        Returns
-        -------
-        full_filt : numpy.ndarray
-            The full filter used to calculate PSD variation.
-        """
+    Returns
+    -------
+    full_filt : numpy.ndarray
+        The full filter used to calculate PSD variation.
+    """
 
-        # Make the weighting filter - bandpass, which weight by f^-7/6,
-        # and whiten. The normalization is chosen so that the variance
-        # will be one if this filter is applied to white noise which
-        # already has a variance of one.
-        fweight = freqs ** (-7./6.) * filt / numpy.sqrt(plong)
-        fweight[0] = 0.
-        norm = (sum(abs(fweight) ** 2) / (len(fweight) - 1.)) ** -0.5
-        fweight = norm * fweight
-        fwhiten = numpy.sqrt(2. / srate) / numpy.sqrt(plong)
-        fwhiten[0] = 0.
-        full_filt = sig.hann(int(psd_duration * srate)) * numpy.roll(
-            irfft(fwhiten * fweight), int(psd_duration / 2) * srate)
+    # Make the weighting filter - bandpass, which weight by f^-7/6,
+    # and whiten. The normalization is chosen so that the variance
+    # will be one if this filter is applied to white noise which
+    # already has a variance of one.
+    fweight = freqs ** (-7./6.) * filt / numpy.sqrt(plong)
+    fweight[0] = 0.
+    norm = (sum(abs(fweight) ** 2) / (len(fweight) - 1.)) ** -0.5
+    fweight = norm * fweight
+    fwhiten = numpy.sqrt(2. / srate) / numpy.sqrt(plong)
+    fwhiten[0] = 0.
+    full_filt = sig.hann(int(psd_duration * srate)) * numpy.roll(
+        irfft(fwhiten * fweight), int(psd_duration / 2) * srate)
 
-        return full_filt
+    return full_filt
 
 
 def mean_square(data, delta_t, srate, short_stride, stride):
