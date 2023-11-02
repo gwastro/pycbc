@@ -9,6 +9,7 @@ import pycbc.psd
 from pycbc.types import TimeSeries
 from pycbc.filter import resample_to_delta_t
 
+
 def create_full_filt(freqs, filt, plong, srate, psd_duration):
     """Create a filter to convolve with strain data to find PSD variation.
 
