@@ -149,7 +149,6 @@ init_logging(args.verbose)
 t_gps = args.trigger_time
 # The following line aranges the ifos in alphabetical order so they are 
 # always called in the same order.
-# takes the --instruments option -> (list of str)
 args.instruments.sort()
 nifo = len(args.instruments[:])
 # The following class verification methods are used to check whether input CLI
