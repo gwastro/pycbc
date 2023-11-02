@@ -992,13 +992,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     @staticmethod
     def verify_args(args, parser):
-        """Verify the arguments are consistent."""
-        if (hasattr(args, 'psd_variation')
-            and not args.psd_variation
-            and ('psdvar' in args.sngl_ranking)):
-
+        """Verify that psd-var-related options are consistent"""
+        if (hasattr(args, 'psd_variation') and not args.psd_variation) \
+               and ('psdvar' in args.sngl_ranking):
             parser.error(f"The single ifo ranking stat {args.sngl_ranking} "
-                        "requires --psd-variation.")
+                         "requires --psd-variation.")
 
     @property
     def background_time(self):
