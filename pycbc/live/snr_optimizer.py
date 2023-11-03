@@ -181,6 +181,23 @@ def normalize_initial_point(initial_point, bounds):
     return (initial_point - bounds[:,0]) / (bounds[:,1] - bounds[:,0])
 
 
+def init_population_array(init, parameter_count):
+    # Make sure you're using a float array
+    popn = numpy.asarray(init, dtype=numpy.float64)
+
+    if (numpy.size(popn, 0) < 5 or
+            popn.shape[1] != parameter_count or
+            len(popn.shape) != 2):
+        raise ValueError("The population supplied needs to have shape (S, len(x)), where S > 4.")
+
+    # Scale values to be between 0 and 1
+    population = (popn - popn.min(axis=0)) / (popn.max(axis=0) - popn.min(axis=0))
+    num_population_members = numpy.size(population, 0)
+    population_shape = (num_population_members, parameter_count)
+
+    return population, num_population_members, population_shape
+
+
 def optimize_di(bounds, cli_args, extra_args, initial_point):
     bounds = numpy.array([
         bounds['mchirp'],
@@ -190,9 +207,9 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
     ])
 
     # Currently only implemented for random seed initial array
-    rng = numpy.random.mtrand._rand
-    population_shape = (int(cli_args.snr_opt_di_popsize), 4)
-    population = rng.uniform(size=population_shape)
+    init = numpy.random.rand(cli_args.snr_opt_di_popsize, 4)
+    population, num_population_members, population_shape = init_population_array(init, 4)
+
     if cli_args.snr_opt_include_candidate:
         # Re-normalize the initial point into the correct range
         point_init = normalize_initial_point(initial_point, bounds)
