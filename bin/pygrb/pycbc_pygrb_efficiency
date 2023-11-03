@@ -34,10 +34,8 @@ from pycbc.detector import Detector
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
-try:
-    from glue.ligolw import lsctables
-except ImportError:
-    pass
+from pycbc.conversions import mchirp_from_mass1_mass2
+
 
 plt.switch_backend('Agg')
 rc("image")
@@ -98,6 +96,9 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
                     "exclusion efficiencies this value is multiplied " +
                     "to the offsource around the injection trigger to " +
                     "determine if it is just a loud glitch.")
+parser.add_argument("--found-missed-file", action="store", type=str,
+                    default=None, help="Location of found/missed "
+                    "injections and trigger file")
 parser.add_argument("--injection-set-name", action="store", type=str,
                     default="", help="Name of the injection set to be " +
                     "used in the plot title.")
@@ -165,8 +166,8 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trigs = ppu.load_xml_table(trig_file, lsctables.MultiInspiralTable.tableName)
-logging.info("%d triggers loaded.", len(trigs))
+trigs = ppu.load_triggers(trig_file, vetoes)
+logging.info("%d triggers loaded.", trigs['network/event_id'].len())
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
@@ -226,11 +227,12 @@ max_bestnr, _, full_time_veto_max_bestnr =\
 if onsource_file:
 
     # Get trigs
-    on_trigs = ppu.load_xml_table(onsource_file, "multi_inspiral")
-    logging.info("%d onsource triggers loaded.", len(on_trigs))
+    on_trigs = ppu.load_triggers(onsource_file, vetoes)
+    logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
 
     # Separate off chirp mass column
-    on_mchirp = on_trigs.get_column('mchirp')
+    on_mchirp = mchirp_from_mass1_mass2(on_trigs['network/mass1'][:],
+                                        on_trigs['network/mass2'][:])
 
     # Set loudest event arrays
     #loud_on_bestnr_trigs = None
@@ -239,18 +241,20 @@ if onsource_file:
 
     # Calculate BestNRs and record loudest trig by BestNR
     if on_trigs:
-        on_trigs_bestnrs = ppu.get_bestnrs(on_trigs,
-                                           q=chisq_index, n=chisq_nhigh,
-                                           null_thresh=null_thresh,
-                                           snr_threshold=snr_thresh,
-                                           sngl_snr_threshold=sngl_snr_thresh,
-                                           chisq_threshold=new_snr_thresh,
-                                           null_grad_thresh=null_grad_thresh,
-                                           null_grad_val=null_grad_val)
+        on_trigs_bestnrs = on_trigs['network/reweighted_snr'][:]
+        # on_trigs_bestnrs = ppu.get_bestnrs(on_trigs,
+        #                                    q=chisq_index, n=chisq_nhigh,
+        #                                    null_thresh=null_thresh,
+        #                                    snr_threshold=snr_thresh,
+        #                                    sngl_snr_threshold=sngl_snr_thresh,
+        #                                    chisq_threshold=new_snr_thresh,
+        #                                    null_grad_thresh=null_grad_thresh,
+        #                                    null_grad_val=null_grad_val)
         loud_on_bestnr_trigs, loud_on_bestnr = \
             np.asarray([[x, y] for y, x in sorted(zip(on_trigs_bestnrs, on_trigs),
                                                   key=lambda elem: elem[0],
                                                   reverse=True)])[0]
+    loud_on_bestnr = float(loud_on_bestnr)
 
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
@@ -264,9 +268,9 @@ if onsource_file:
         num_trials_louder = 0
         tot_off_snr = np.array([])
         for slide_id in slide_dict:
-            num_trials_louder += sum(time_veto_max_bestnr[slide_id] > \
+            num_trials_louder += sum(time_veto_max_bestnr[slide_id] >
                                      loud_on_bestnr)
-            tot_off_snr = np.concatenate([tot_off_snr,\
+            tot_off_snr = np.concatenate([tot_off_snr,
                                           time_veto_max_bestnr[slide_id]])
         #fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
         loud_on_fap = num_trials_louder/total_trials
@@ -274,7 +278,7 @@ if onsource_file:
 else:
     tot_off_snr = np.array([])
     for slide_id in slide_dict:
-        tot_off_snr = np.concatenate([tot_off_snr,\
+        tot_off_snr = np.concatenate([tot_off_snr,
                                       time_veto_max_bestnr[slide_id]])
     med_snr = np.median(tot_off_snr)
     #loud_on_fap = sum(tot_off_snr > med_snr)/total_trials
@@ -287,35 +291,34 @@ if do_injections:
     sites = [ifo[0] for ifo in ifos]
 
     # Triggers and injections recovered in some form: discard ones at vetoed times
-    found_trigs = ppu.load_injections(found_file, vetoes)
-    found_injs = ppu.load_injections(found_file, vetoes, sim_table=True)
+    inj_file = ppu.load_triggers(found_missed_file, vetoes)
 
     logging.info("Missed/found injections/triggers loaded.")
 
     # Extract columns of found injections
     found_inj = {}
-    found_inj['ra'] = np.asarray(found_injs.get_column('longitude'))
-    found_inj['dec'] = np.asarray(found_injs.get_column('latitude'))
-    found_inj['time'] = np.asarray(found_injs.get_column('geocent_end_time')) +\
-                        np.asarray(found_injs.get_column('geocent_end_time_ns')*\
-                                   10**-9)
-    found_inj['dist'] = np.asarray(found_injs.get_column('distance'))
+    found_inj['ra'] = inj_file['found/ra'][:]
+    found_inj['dec'] = inj_file['found/dec'][:]
+    found_inj['time'] = inj_file['found/tc'][:]
+    found_inj['dist'] = inj_file['found/distance'][:]
 
     # Extract columns of triggers
     found_trig = {}
-    found_trig['mchirp'] = np.asarray(found_trigs.get_column('mchirp'))
-    found_trig['bestnr'] = ppu.get_bestnrs(found_trigs, q=chisq_index,
-                                           n=chisq_nhigh,
-                                           null_thresh=null_thresh,
-                                           snr_threshold=snr_thresh,
-                                           sngl_snr_threshold=sngl_snr_thresh,
-                                           chisq_threshold=new_snr_thresh,
-                                           null_grad_thresh=null_grad_thresh,
-                                           null_grad_val=null_grad_val)
+    found_trig['mchirp'] = mchirp_from_mass1_mass2(
+        inj_file['network/mass1'][:], inj_file['network/mass2'][:])
+    found_trig['bestnr'] = inj_file['network/reweighted_snr'][:]
+    # found_trig['bestnr'] = ppu.get_bestnrs(found_trigs, q=chisq_index,
+    #                                        n=chisq_nhigh,
+    #                                        null_thresh=null_thresh,
+    #                                        snr_threshold=snr_thresh,
+    #                                        sngl_snr_threshold=sngl_snr_thresh,
+    #                                        chisq_threshold=new_snr_thresh,
+    #                                        null_grad_thresh=null_grad_thresh,
+    #                                        null_grad_val=null_grad_val)
 
     # Construct conditions for injection:
     # 1) found louder than background,
-    zero_fap = np.zeros(len(found_injs)).astype(bool)
+    zero_fap = np.zeros(len(found_inj['time'])).astype(bool)
     zero_fap_cut = found_trig['bestnr'] > max_bestnr
     zero_fap = zero_fap | (zero_fap_cut)
 
@@ -335,7 +338,9 @@ if do_injections:
     g_ifar['stat'] = g_ifar['stat'] / total_trials
 
     # Set the sigma values
-    inj_sigma = found_trigs.get_sigmasqs()
+    inj_sigma = {ifo: inj_file[f'{ifo}/sigmasq'][:] for ifo in ifos}
+    for ifo in ifos:
+        inj_sigma[ifo] = inj_file[f'{ifo}/sigmasq'][:]
     # If the sigmasqs are not populated, we can still do calibration errors,
     # but only in the 1-detector case
     for ifo in ifos:
@@ -357,7 +362,7 @@ if do_injections:
                                                 found_inj['ra'], found_inj['dec'],
                                                 found_inj['time'])
 
-    inj_sigma_mult = (np.asarray(list(inj_sigma.values())) *\
+    inj_sigma_mult = (np.asarray(list(inj_sigma.values())) *
                       np.asarray(list(f_resp.values())))
 
     inj_sigma_tot = inj_sigma_mult[0, :]
@@ -368,19 +373,16 @@ if do_injections:
     for ifo in ifos:
         inj_sigma_mean[ifo] = ((inj_sigma[ifo]*f_resp[ifo])/inj_sigma_tot).mean()
 
-    logging.info("%d found injections analysed.", len(found_injs))
-
-    # Missed injections (ones not recovered at all)
-    missed_injs = ppu.load_injections(found_missed_file, vetoes, sim_table=True)
+    logging.info("%d found injections analysed.", len(found_inj['time']))
 
     # Process missed injections 'missed_inj'
     missed_inj = {}
-    missed_inj['dist'] = np.asarray(missed_injs.get_column('distance'))
+    missed_inj['dist'] = inj_file['missed/distance'][:]
 
-    logging.info("%d missed injections analysed.", len(missed_injs))
+    logging.info("%d missed injections analysed.", len(missed_inj['dist']))
 
     # Create new set of injections for efficiency calculations
-    total_injs = len(found_injs) + len(missed_injs)
+    total_injs = len(found_inj['dist']) + len(missed_inj['dist'])
     long_inj = {}
     long_inj['dist'] = stats.uniform.rvs(size=total_injs) * (upper_dist-lower_dist) +\
                        upper_dist
@@ -388,10 +390,10 @@ if do_injections:
     logging.info("%d long distance injections created.", total_injs)
 
     # Set distance bins and data arrays
-    dist_bins = zip(np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
-                             (upper_dist-lower_dist)/num_bins),\
-                    np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
-                             (upper_dist-lower_dist)/num_bins) +\
+    dist_bins = zip(np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),
+                             (upper_dist-lower_dist)/num_bins),
+                    np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),
+                             (upper_dist-lower_dist)/num_bins) +
                              (upper_dist-lower_dist)/num_bins)
     dist_bins = list(dist_bins)
 
@@ -405,7 +407,7 @@ if do_injections:
         found_on_bestnr[key] = np.zeros(num_dist_bins_plus_one)
 
     # Construct FAP list for all found injections
-    inj_fap = np.zeros(len(found_injs))
+    inj_fap = np.zeros(len(found_inj['dist']))
     inj_fap[nonzero_fap] = g_ifar['stat']
 
     # Calculate the amplitude error
@@ -439,7 +441,7 @@ if do_injections:
                  num_mc_injs)
 
     # Check injections against on source
-    more_sig_than_onsource = np.ndarray(len(found_injs))
+    more_sig_than_onsource = np.ndarray(len(found_inj['dist']))
     if onsource_file:
         more_sig_than_onsource = (inj_fap <= loud_on_fap)
     else:
