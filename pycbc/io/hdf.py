@@ -101,7 +101,11 @@ class HFile(h5py.File):
         # To conserve memory read the array in chunks
         chunksize = kwds.get('chunksize', int(1e6))
 
-        mask = kwds.get('premask', np.ones(size, dtype=bool))
+        if 'premask' not in kwds or kwds.get('premask') is None:
+            mask = np.ones(size, dtype=bool)
+        else:
+            mask = kwds['premask']
+
         if not mask.dtype == bool:
             # mask is an array of indices rather than booleans,
             # make it a bool array
@@ -466,7 +470,7 @@ class SingleDetTriggers(object):
     """
     def __init__(self, trig_file, detector, bank_file=None, veto_file=None,
                  segment_name=None, premask=None, filter_rank=None,
-                 filter_threshold=None):
+                 filter_threshold=None, chunksize=int(1e6)):
         """
         Create a SingleDetTriggers instance
 
@@ -497,6 +501,9 @@ class SingleDetTriggers(object):
 
         filter_threshold: float, required if filter_rank is used
             Threshold to filter the ranking values
+
+        chunksize : int , default 1e6
+            Size of chunks to read in for the filter_rank / threshold.
         """
         logging.info('Loading triggers')
         self.trigs_f = HFile(trig_file, 'r')
@@ -511,10 +518,7 @@ class SingleDetTriggers(object):
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
-        if premask is not None:
-            self.mask = premask
-        else:
-            self.mask = np.ones(self.ntriggers, dtype=bool)
+        self.mask = premask
 
         if filter_rank:
             assert filter_threshold is not None
@@ -527,7 +531,9 @@ class SingleDetTriggers(object):
                  indices_only=True,
                  premask=self.mask,
                  group=detector,
+                 chunksize=chunksize,
             )
+            logging.info("%d triggers remain", idx.size)
             self.apply_mask(idx)
 
         if veto_file:
@@ -578,19 +584,19 @@ class SingleDetTriggers(object):
         return [m[0] for m in inspect.getmembers(cls) \
             if type(m[1]) == property]
 
-    def apply_mask(self, logic_mask):
-        """Apply a mask on top of any existing mask.
 
-        Applied mask can be a single index, an array of indices,
-        or boolean."""
-        if isinstance(self.mask, list):
-            old_mask_idx = np.array(self.mask)
-        elif isinstance(self.mask, np.ndarray) and self.mask.dtype == bool:
-            old_mask_idx = np.flatnonzero(self.mask)
+    def apply_mask(self, logic_mask):
+        """Apply a mask over the top of the current mask"""
+        if self.mask is None:
+            self.mask = np.zeros(self.ntriggers, dtype=bool)
+            self.mask[logic_mask] = True
+        elif hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
+            orig_indices = self.mask.nonzero()[0][logic_mask]
+            self.mask[:] = False
+            self.mask[orig_indices] = True
         else:
-            old_mask_idx = self.mask
-        new_indices = np.array(old_mask_idx)[logic_mask]
-        self.mask = list(new_indices)
+            self.mask = list(np.array(self.mask)[logic_mask])
+
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
                                            ranking_threshold=6,
