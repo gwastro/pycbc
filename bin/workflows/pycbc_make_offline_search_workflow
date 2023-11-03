@@ -188,7 +188,7 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                            tags=['full_data'])
 
 # setup sngl trigger distribution fitting jobs
-# 'statfiles' is list of files used in calculating coinc statistic
+# 'statfiles' is list of files used in calculating statistic
 # 'dqfiles' is the subset of files containing data quality information
 statfiles = []
 dqfiles = []
@@ -458,6 +458,7 @@ for insp_file in full_insps:
         wf.setup_single_det_minifollowups\
             (workflow, insp_file, hdfbank, insp_files_seg_file,
              data_analysed_name, trig_generated_name, 'daxes', currdir,
+             statfiles=wf.FileList(statfiles),
              fg_file=censored_veto, fg_name='closed_box',
              tags=insp_file.tags + [subsec])
 

@@ -198,7 +198,6 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         node.add_input_opt('--foreground-censor-file', fg_file)
         node.add_opt('--foreground-segment-name', fg_name)
     if statfiles:
-        statfiles = statfiles.find_output_with_ifo(curr_ifo)
         node.add_input_list_opt('--statistic-files', statfiles)
     if tags:
         node.add_list_opt('--tags', tags)

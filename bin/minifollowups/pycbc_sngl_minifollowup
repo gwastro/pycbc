@@ -29,7 +29,7 @@ import pycbc.version
 import pycbc.workflow as wf
 import pycbc.events
 from pycbc.workflow.core import resolve_url_to_file
-from pycbc.events import stat, veto
+from pycbc.events import stat, veto, coinc
 from pycbc.io import hdf
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -80,6 +80,9 @@ parser.add_argument('--minimum-duration', default=None, type=float,
 parser.add_argument('--maximum-duration', default=None, type=float,
                     help="If given only consider single-detector triggers "
                          "with template duration smaller than this.")
+parser.add_argument('--cluster-window', type=float, default=10,
+                    help="Window (seconds) over which to cluster triggers "
+                         "when finding the loudest-ranked. Default=10")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 stat.insert_statistic_option_group(parser,
@@ -150,6 +153,7 @@ trigs = hdf.SingleDetTriggers(
 
 # Include gating vetoes
 if args.gating_veto_windows:
+    logging.info("Getting gating vetoes")
     gating_veto = args.gating_veto_windows[args.instrument].split(',')
     gveto_before = float(gating_veto[0])
     gveto_after = float(gating_veto[1])
@@ -169,15 +173,14 @@ if args.gating_veto_windows:
             gate_times + gveto_before,
             gate_times + gveto_after
         )
-        logging.info('%i triggers in gate vetoes', gveto_idx.size)
+        logging.info('%i triggers in gating vetoes', gveto_idx.size)
 else:
     gveto_idx = numpy.array([], dtype=numpy.uint64)
 
 if args.veto_file:
-    logging.info('Applying veto segments')
+    logging.info('Getting file vetoes')
     # veto_mask is an array of indices into the trigger arrays
     # giving the surviving triggers
-    logging.info('%i triggers before vetoes', self.mask.sum())
     veto_file_idx, _ = events.veto.indices_within_segments(
         trigs.end_time,
         [args.veto_file],
@@ -237,18 +240,41 @@ if args.maximum_duration is not None:
     trigs.apply_mask(lgc_mask)
     logging.info('remaining triggers: %s', trigs.mask.sum())
 
-logging.info('finding loudest clustered events')
+logging.info('Finding loudest clustered events')
 rank_method = stat.get_statistic_from_opts(args, [args.instrument])
-trigs.mask_to_n_loudest_clustered_events(rank_method, n_loudest=num_events)
 
-if len(trigs.stat) < num_events:
+extra_kwargs = {}
+for inputstr in args.statistic_keywords:
+    try:
+        key, value = inputstr.split(':')
+        extra_kwargs[key] = value
+    except ValueError:
+        err_txt = "--statistic-keywords must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                  "Received {}".format(args.statistic_keywords)
+        raise ValueError(err_txt)
+
+logging.info("Calculating statistic for %d triggers", len(trigs.snr))
+sds = rank_method.single(trigs)
+stat = rank_method.rank_stat_single((args.instrument, sds), **extra_kwargs)
+logging.info("Clustering events over %.3fs window", args.cluster_window)
+cid = coinc.cluster_over_time(stat, trigs.end_time,
+                              args.cluster_window)
+trigs.apply_mask(cid)
+stat = stat[cid]
+if len(trigs.snr) < num_events:
     num_events = len(trigs.stat)
+
+logging.info("Finding the loudest triggers")
+loudest_idx = sorted(numpy.argsort(stat)[::-1][:num_events])
+trigs.apply_mask(loudest_idx)
+stat = stat[loudest_idx]
 
 times = trigs.end_time
 tids = trigs.template_id
 
 # loop over number of loudest events to be followed up
-order = trigs.stat.argsort()[::-1]
+order = stat.argsort()[::-1]
 for rank, num_event in enumerate(order):
     logging.info('Processing event: %s', num_event)
 
