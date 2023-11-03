@@ -584,7 +584,6 @@ class SingleDetTriggers(object):
         return [m[0] for m in inspect.getmembers(cls) \
             if type(m[1]) == property]
 
-
     def apply_mask(self, logic_mask):
         """Apply a mask over the top of the current mask"""
         if self.mask is None:
@@ -596,7 +595,6 @@ class SingleDetTriggers(object):
             self.mask[orig_indices] = True
         else:
             self.mask = list(np.array(self.mask)[logic_mask])
-
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
                                            ranking_threshold=6,
