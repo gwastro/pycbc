@@ -38,6 +38,11 @@ try:
     from ligo.lw import utils, lsctables
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
+    # Handle MultiInspiral xml-tables with glue,
+    # as ligo.lw no longer supports them
+    from glue.ligolw import lsctables as glsctables
+    # from glue.ligolw.ilwd import ilwdchar as gilwdchar
+    from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
 
