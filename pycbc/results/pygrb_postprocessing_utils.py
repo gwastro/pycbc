@@ -665,6 +665,7 @@ def load_segment_dict(hdf_file_path):
         seg_list.append(segments.segment(seg_starts[i], seg_ends[i]))
 
     # Write segment_dict in proper format
+    # At the moment of this comment, there is only one segment
     segment_dict = {slide: seg_list.coalesce() for slide in slide_ids}
 
     return segment_dict
