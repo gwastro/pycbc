@@ -132,9 +132,10 @@ tids = {}
 ifo_list = f.attrs['ifos'].split(' ')
 f_cat = f[file_val]
 for ifo in ifo_list:
-    times[ifo] = f[f'{file_val}/{ifo}/time'][:][event_idx]
-    tids[ifo] = f[f'{file_val}/{ifo}/trigger_id'][:][event_idx]
+    times[ifo] = f_cat[f'/{ifo}/time'][:][event_idx]
+    tids[ifo] = f_cat[f'{ifo}/trigger_id'][:][event_idx]
 bank_ids = f_cat['template_id'][:][event_idx]
+f.close()
 
 bank_data = h5py.File(args.bank_file, 'r')
 
