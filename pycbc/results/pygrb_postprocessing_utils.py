@@ -507,16 +507,6 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
     logging.info("Triggers sorted.")
 
-    # Local copies of variables entering the BestNR definition
-    chisq_index = opts.chisq_index
-    chisq_nhigh = opts.chisq_nhigh
-    null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
-    snr_thresh = opts.snr_threshold
-    sngl_snr_thresh = opts.sngl_snr_threshold
-    new_snr_thresh = opts.newsnr_threshold
-    null_grad_thresh = opts.null_grad_thresh
-    null_grad_val = opts.null_grad_val
-
     # Build the 3 dictionaries
     trig_time = {}
     trig_snr = {}
