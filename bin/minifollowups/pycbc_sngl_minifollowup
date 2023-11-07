@@ -281,7 +281,10 @@ for rank, num_event in enumerate(order):
     files = wf.FileList([])
     time = times[num_event]
     ifo_time = '%s:%s' %(args.instrument, str(time))
-    tid = trigs.mask[num_event]
+    if isinstance(trigs.mask, numpy.ndarray) and trigs.mask.dtype == bool:
+        tid = numpy.flatnonzero(trigs.mask)[num_event]
+    else:
+        tid = trigs.mask[num_event]
     ifo_tid = '%s:%s' %(args.instrument, str(tid))
 
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
