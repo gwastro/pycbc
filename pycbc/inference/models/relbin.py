@@ -222,7 +222,6 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.f[ifo] = numpy.array(d0.sample_frequencies)
             self.df[ifo] = d0.delta_f
             self.end_time[ifo] = float(d0.end_time)
-            # self.det[ifo] = Detector(ifo)
 
             # generate fiducial waveform
             f_lo = self.kmin[ifo] * self.df[ifo]
@@ -241,7 +240,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                                                 sample_points=fpoints,
                                                 **self.fid_params)
                 curr_wav = wave[ifo]
-                self.ta[ifo] = self.fid_params['tc'] + self.end_time[ifo]
+                self.ta[ifo] = 0.
             else:
                 fid_hp, fid_hc = get_fd_waveform_sequence(sample_points=fpoints,
                                                           **self.fid_params)
@@ -518,7 +517,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                                     fp2, fc2, dtc2, hp2, hc2, h002,
                                     a0, a1)
                     loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
-        return loglr # + self.lognl
+        return loglr + self.lognl
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
@@ -561,10 +560,10 @@ class Relative(DistMarg, BaseGaussianNoise):
                 # for the return.
 
                 channel = wfs[ifo].numpy()
-                filter_i, norm_i = lik(freqs, 0.0, channel, h00,
+                filter_i, norm_i = lik(freqs, 0., channel, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
-                self._current_wf_parts[ifo] = (p['tc'], channel, h00)
+                self._current_wf_parts[ifo] = (0., channel, h00)
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
