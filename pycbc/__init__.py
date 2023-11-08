@@ -78,8 +78,7 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
         What level to set the verbosity level to. Accepts either a boolean
         or an integer representing the level to set. If True/False will set to
         ``logging.INFO``/``logging.WARN``. For higher logging levels, pass
-        an integer representing the level to set (see the ``logging`` module
-        for details). Default is ``False`` (``logging.WARN``).
+        an integer representing the level to set. (1 = INFO, 2 = DEBUG).
     format : str, optional
         The format to use for logging messages.
     """
@@ -96,12 +95,9 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
 
     signal.signal(signal.SIGUSR1, sig_handler)
 
-    if not verbose:
-        initial_level = logging.WARN
-    elif int(verbose) == 1:
-        initial_level = logging.INFO
-    else:
-        initial_level = int(verbose)
+    initial_level = logging.WARN
+    if verbose:
+        initial_level -= int(verbose) * 10
 
     logger = logging.getLogger()
     logger.setLevel(initial_level)
