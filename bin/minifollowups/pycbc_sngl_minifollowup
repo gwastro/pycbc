@@ -107,6 +107,12 @@ sngl_file = resolve_url_to_file(
     attrs={'ifos': args.instrument}
 )
 
+# Flatten the statistic_files option:
+statfiles = []
+for f in sum(args.statistic_files, []):
+    statfiles.append(resolve_url_to_file(os.path.abspath(f)))
+statfiles = wf.FileList(statfiles) if statfiles is not [] else None
+
 if args.veto_file is not None:
     veto_file = resolve_url_to_file(
         os.path.abspath(args.veto_file),
@@ -289,6 +295,7 @@ for rank, num_event in enumerate(order):
 
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
                                    tid, args.output_dir, args.instrument,
+                                   statfiles=statfiles,
                                    tags=args.tags + [str(rank)]),)
     files += mini.make_trigger_timeseries(workflow, [sngl_file],
                               ifo_time, args.output_dir, special_tids=ifo_tid,
