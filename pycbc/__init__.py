@@ -95,7 +95,7 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
 
     signal.signal(signal.SIGUSR1, sig_handler)
 
-    initial_level = logging.WARN
+    initial_level = logging.WARNING
     if verbose:
         initial_level -= int(verbose) * 10
 
