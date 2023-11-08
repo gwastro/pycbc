@@ -94,6 +94,9 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
         logger.setLevel(log_level)
 
     signal.signal(signal.SIGUSR1, sig_handler)
+
+    # See https://docs.python.org/3/library/logging.html#levels
+    # for log level definitions
     initial_level = logging.WARNING - int(verbose) * 10
     logger = logging.getLogger()
     logger.setLevel(initial_level)
