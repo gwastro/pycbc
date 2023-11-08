@@ -710,8 +710,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         for seg in self.segments[self.ifos[0]]:
             starts.append(seg.start_time.gpsSeconds)
             ends.append(seg.end_time.gpsSeconds)
-        f['search/segments/start_time'] = starts
-        f['search/segments/end_time'] = ends
+        f['search/segments/start_times'] = starts
+        f['search/segments/end_times'] = ends
         # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
             tid = self.events['template_id'][self.events['ifo'] == i]
