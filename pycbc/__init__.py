@@ -94,11 +94,7 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
         logger.setLevel(log_level)
 
     signal.signal(signal.SIGUSR1, sig_handler)
-
-    initial_level = logging.WARNING
-    if verbose:
-        initial_level -= int(verbose) * 10
-
+    initial_level = logging.WARNING - int(verbose) * 10
     logger = logging.getLogger()
     logger.setLevel(initial_level)
     sh = logging.StreamHandler()
