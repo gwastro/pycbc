@@ -60,7 +60,6 @@ trigs = pycbc.io.SingleDetTriggers(
     segment_name=args.segment_name,
     filter_rank=xv,
     filter_threshold=xt,
-    premask=idx
 )
 
 # get x values and find the maximum x value
