@@ -817,8 +817,10 @@ class SingleDetTriggers(object):
 
         # We have a lot of elements to read so we resort to readin the entire
         # array before masking.
-        else:
+        elif self.mask is not None:
             return self.trigs[cname][:][self.mask]
+        else:
+            return self.trigs[cname][:]
 
 
 class ForegroundTriggers(object):
