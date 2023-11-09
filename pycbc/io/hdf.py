@@ -571,7 +571,7 @@ class SingleDetTriggers(object):
                                                                        % param)
 
     def trig_dict(self):
-        """Returns dict of the masked trigger valuse """
+        """Returns dict of the masked trigger values"""
         mtrigs = {}
         for k in self.trigs:
             if len(self.trigs[k]) == len(self.trigs['end_time']):
