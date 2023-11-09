@@ -269,7 +269,7 @@ cid = coinc.cluster_over_time(stat, trigs.end_time,
 trigs.apply_mask(cid)
 stat = stat[cid]
 if len(trigs.snr) < num_events:
-    num_events = len(trigs.stat)
+    num_events = len(trigs.snr)
 
 logging.info("Finding the loudest triggers")
 loudest_idx = sorted(numpy.argsort(stat)[::-1][:num_events])
