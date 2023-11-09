@@ -660,6 +660,8 @@ class SingleDetTriggers(object):
 
     @property
     def mask_size(self):
+        if self.mask is None:
+            return self.ntriggers
         if isinstance(self.mask, list):
             return len(self.mask)
         return np.count_nonzero(self.mask)
