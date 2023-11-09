@@ -575,7 +575,10 @@ class SingleDetTriggers(object):
         mtrigs = {}
         for k in self.trigs:
             if len(self.trigs[k]) == len(self.trigs['end_time']):
-                mtrigs[k] = self.trigs[k][self.mask]
+                if self.mask is not None:
+                    mtrigs[k] = self.trigs[k][self.mask]
+                else:
+                    mtrigs[k] = self.trigs[k][:]
         return mtrigs
 
     @classmethod
