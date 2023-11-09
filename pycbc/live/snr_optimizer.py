@@ -179,22 +179,24 @@ def compute_minus_network_snr_pso(v, *argv, **kwargs):
 
 
 def optimize_di(bounds, cli_args, extra_args, initial_point):
+    # Convert from dict to array with parameters in a given order
     bounds = numpy.array([
         bounds['mchirp'],
         bounds['eta'],
         bounds['spin1z'],
         bounds['spin2z']
     ])
-
     # Initialize the population with random values within specified bounds
-    population = numpy.random.uniform(bounds[:, 0], bounds[:, 1],
-        size=(int(cli_args.snr_opt_di_popsize), len(bounds)))
- 
+    population = numpy.random.uniform(
+        bounds[:, 0],
+        bounds[:, 1],
+        size=(int(cli_args.snr_opt_di_popsize), len(bounds))
+    )
     if cli_args.snr_opt_include_candidate:
         # add the initial point to the population
         population = numpy.concatenate((population[:-1],
                                         initial_point))
-    logging.info('population: %s', population)
+    logging.debug('Initial population: %s', population)
 
     results = differential_evolution(
         compute_minus_network_snr,
@@ -249,14 +251,17 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
     ])
 
     # Initialize the population with random values within specified bounds
-    population = numpy.random.uniform(min_bounds, max_bounds,
-        size=(int(cli_args.snr_opt_di_popsize), len(bounds)))
+    population = numpy.random.uniform(
+        min_bounds,
+        max_bounds,
+        size=(int(cli_args.snr_opt_pso_particles), len(bounds))
+    )
 
     if cli_args.snr_opt_include_candidate:
         # add the initial point to the population
         population = numpy.concatenate((population[:-1],
                                         initial_point))
-    logging.info('population: %s', population)
+    logging.debug('Initial population: %s', population)
 
     optimizer = ps.single.GlobalBestPSO(
         n_particles=int(cli_args.snr_opt_pso_particles),
