@@ -395,7 +395,8 @@ def get_single_template_params(curr_idx, times, bank_data,
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
     params['f_lower'] = bank_data['f_lower'][bank_id]
-    params['approximant'] = bank_data['approximant'][bank_id]
+    if 'approximant' in bank_data:
+        params['approximant'] = bank_data['approximant'][bank_id]
     # don't require precessing template info if not present
     try:
         params['spin1x'] = bank_data['spin1x'][bank_id]
@@ -1104,9 +1105,10 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
     )
 
     if approximant == b'SPAtmplt':
-        # Bayestar doesnt use the SPAtmplt approximant
+        # Bayestar doesn't use the SPAtmplt approximant
         approximant = b'TaylorF2'
-    bayestar_node.add_opt('--waveform', approximant.decode())
+    if approximant is not None:
+        bayestar_node.add_opt('--waveform', approximant.decode())
 
     workflow += bayestar_node
 

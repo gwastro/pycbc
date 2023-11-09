@@ -146,9 +146,11 @@ for curr_idx in range(event_idx.size):
         tids
     )
     # Extract approximant
-    appx = params['approximant']
-    del params['approximant']
-
+    if 'approximant' in params:
+        appx = params['approximant']
+        del params['approximant']
+    else:
+        appx = None
     channel_name = ""
     for ifo in ifo_list:
         ifo_chname = resolve_td_option(
