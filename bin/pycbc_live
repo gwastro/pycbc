@@ -42,6 +42,7 @@ from pycbc import mchirp_area
 from pycbc.detector import ppdets
 from pycbc.filter import resample
 from pycbc.psd import estimate
+from pycbc.psd import variation
 from pycbc.live import snr_optimizer
 
 # Use cached class-based FFTs in the resample and estimate module
@@ -996,6 +997,11 @@ parser.add_argument('--embright-massgap-max', type=float, default=5.0, metavar='
                          'HasMassGap probability.')
 parser.add_argument('--skymap-only-ifos', nargs='+',
                     help="Detectors that only contribute in sky localization")
+parser.add_argument('--psd-variation', action='store_true',
+                    help="Run the psd variation code to produce psd variation "
+                         "values for each single detector triggers found by "
+                         "the search. Required when using a single detector "
+                         "ranking statistic that includes psd variation.")
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
@@ -1010,6 +1016,7 @@ args = parser.parse_args()
 
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
+Coincer.verify_args(args, parser)
 ifos = set(args.channel_name.keys())
 analyze_singles = LiveSingle.verify_args(args, parser, ifos)
 
@@ -1162,6 +1169,11 @@ with ctx:
     last_bg_dump_time = int(data_end())
     psd_count = {ifo:0 for ifo in ifos}
 
+    # Create dicts to track whether the psd has been recalculated and to hold
+    #  psd variation filters
+    psd_recalculated = {ifo: True for ifo in ifos}
+    psd_var_filts = {ifo: None for ifo in ifos}
+
     while data_end() < args.end_time:
         t1 = pycbc.gps_now()
         logging.info('Analyzing from %s', data_end())
@@ -1177,6 +1189,9 @@ with ctx:
             )
             if status and psd_count[ifo] == 0:
                 status = data_reader[ifo].recalculate_psd()
+                # If the psd has been recalculated then we need a new
+                #  filter for psd variation calculation
+                psd_recalculated[ifo] = True
                 psd_count[ifo] = args.psd_recompute_length - 1
             elif not status:
                 psd_count[ifo] = 0
@@ -1241,6 +1256,28 @@ with ctx:
                     for key in results[ifo]:
                         if len(results[ifo][key]):
                             results[ifo][key] = results[ifo][key][idx]
+
+            # Calculate and add the psd variation for the results
+            if args.psd_variation:
+
+                for ifo in results:
+                    logging.info(f"Calculating PSD Variation Statistic for {ifo}")
+
+                    # A new filter is needed if the PSD has been recalculated
+                    if psd_recalculated[ifo] is True:
+                        psd_var_filts[ifo] = variation.live_create_filter(data_reader[ifo].psd,
+                                                                          args.psd_segment_length,
+                                                                          int(args.sample_rate))
+                        psd_recalculated[ifo] = False
+
+                    psd_var_ts = variation.live_calc_psd_variation(data_reader[ifo].strain,
+                                                                   psd_var_filts[ifo],
+                                                                   args.increment)
+
+                    psd_var_vals = variation.live_find_var_value(results[ifo],
+                                                                 psd_var_ts)
+
+                    results[ifo]['psd_var_val'] = psd_var_vals
 
             # Look for coincident triggers and do background estimation
             if args.enable_background_estimation:
