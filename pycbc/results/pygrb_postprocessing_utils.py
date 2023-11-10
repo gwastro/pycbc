@@ -27,13 +27,14 @@ import os
 import logging
 import argparse
 import copy
+
 import numpy
 import h5py
 from scipy import stats
 from pycbc.detector import Detector
 # All/most of these final imports will become obsolete with hdf5 switch
+import ligo.segments as segments
 try:
-    from ligo import segments
     from ligo.lw import utils, lsctables
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
@@ -93,7 +94,6 @@ def pygrb_initialize_plot_parser(description=None, version=None):
                         "caption")
 
     return parser
-
 
 def pygrb_add_injmc_opts(parser):
     """Add to parser object the arguments used for Monte-Carlo on distance."""
@@ -371,6 +371,20 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 
     return numpy.sqrt(fp ** 2 * (1 + numpy.cos(inc)) ** 2 / 4 + fc ** 2)
 
+# =============================================================================
+# Function to calculate new snr from trigs
+# =============================================================================
+def get_new_snr(trigs, index=4.0, nhigh = 3.0, column='chisq'):
+		column = column.lower()
+		if column == "bank_chisq":
+			rchisq = self.get_reduced_bank_chisq()
+		elif column == "cont_chisq":
+			rchisq = self.get_reduced_cont_chisq()
+		if rchisq > 1.:
+			return self.snr /\
+                               ((1+rchisq**(index/nhigh))/2)**(1./index)
+		else:
+			return self.snr
 
 # =============================================================================
 # Function to calculate the detection statistic of a list of triggers
@@ -393,12 +407,12 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
         return numpy.array([])
 
     # Grab sky position and timing
-    ra = trigs.get_column('ra')
-    dec = trigs.get_column('dec')
-    time = trigs.get_end()
+    ra = trigs['ra']
+    dec = trigs['dec']
+    time = trigs['end_time']
 
     # Initialize BestNRs
-    snr = trigs.get_column('snr')
+    snr = trigs['coherent_snr']
     bestnr = numpy.ones(len(snr))
 
     # Coherent SNR cut
@@ -409,11 +423,11 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
         chisq_threshold = snr_threshold
     for chisq in ['bank_chisq', 'cont_chisq']:
         bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
-                                               column=chisq))
+                                               column=chisq)) ## lal?
                < chisq_threshold] = 0
 
     # Define IFOs for sngl cut
-    ifos = list(map(str, trigs[0].get_ifos()))
+    ifos = list(map(str, trigs[0].get_ifos())) # need to pass ifos
 
     # Single detector SNR cut
     sens = {}
@@ -450,47 +464,49 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
 
     return bestnr
 
+# =============================================================================
+# Veto triger
+# ============================================================================= 
+
+def veto_trig(trigs, trial_dict):
+    """Remove trigs that are not in trial dict"""
+    mask = []
+    for time in trigs['end_time']:
+        mask.append(any([time in trial for trial in trial_dict]))
+    return {key: trigs[key][mask] for key in trigs.keys()}
 
 # =============================================================================
 # Construct sorted triggers from trials
 # =============================================================================
 def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     """Constructs sorted triggers from a trials dictionary"""
-
     sorted_trigs = {}
-
-    # Begin by sorting the triggers into each slide
-    # New seems pretty slow, so run it once and then use deepcopy
-    tmp_table = glsctables.New(glsctables.MultiInspiralTable)
-    for slide_id in slide_dict:
-        sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
-    for trig in trigs:
-        sorted_trigs[int(trig.time_slide_id)].append(trig)
+    trigs_keys = list(trigs.keys())
+    trigs_keys.remove('time_slide_id')        
 
     for slide_id in slide_dict:
-        # These can only *reduce* the analysis time
+        # Sort the trigs for each timeslide
+        sorted_trigs[slide_id] = \
+            {key: trigs[key][trigs['time_slide_id'].astype(int) == slide_id] 
+             for key in trigs_keys}
         curr_seg_list = seg_dict[slide_id]
-
         # Check the triggers are all in the analysed segment lists
-        for trig in sorted_trigs[slide_id]:
-            if trig.end_time not in curr_seg_list:
+        for time in sorted_trigs[slide_id]['end_time']:
+            if time not in curr_seg_list:
                 # This can be raised if the trigger is on the segment boundary,
                 # so check if the trigger is within 1/100 of a second within
                 # the list
-                if trig.get_end() + 0.01 in curr_seg_list:
+                if time + 0.01 in curr_seg_list:
                     continue
-                if trig.get_end() - 0.01 in curr_seg_list:
+                if time - 0.01 in curr_seg_list:
                     continue
                 err_msg = "Triggers found in input files not in the list of "
                 err_msg += "analysed segments. This should not happen."
                 raise RuntimeError(err_msg)
         # END OF CHECK #
-
-        # The below line works like the inverse of .veto and only returns trigs
-        # that are within the segment specified by trial_dict[slide_id]
+        
         sorted_trigs[slide_id] = \
-            sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
-
+            veto_trig(sorted_trigs[slide_id], trial_dict[slide_id])
     return sorted_trigs
 
 
@@ -521,15 +537,10 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
     trig_snr = {}
     trig_bestnr = {}
     for slide_id in slide_dict:
-        slide_trigs = sorted_trigs[slide_id]
-        if slide_trigs:
-            trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).\
-                                  astype(float)
-            trig_snr[slide_id] = numpy.asarray(slide_trigs.get_column('snr'))
-        else:
-            trig_time[slide_id] = numpy.asarray([])
-            trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = get_bestnrs(slide_trigs,
+        trig_time[slide_id] = sorted_trigs[slide_id]['end_time']
+        trig_snr[slide_id] = sorted_trigs[slide_id]['coherent_snr']
+
+        trig_bestnr[slide_id] = get_bestnrs(sorted_trigs[slide_id],
                                             q=chisq_index,
                                             n=chisq_nhigh,
                                             null_thresh=null_thresh,
@@ -644,29 +655,27 @@ def load_time_slides(hdf_file_path):
 # =============================================================================
 # Function to load the segment dicitonary
 # =============================================================================
-def load_segment_dict(xml_file):
-    """Loads the segment dictionary """
+def load_segment_dict(hdf_file_path):
+    """
+    Loads the segment dictionary with the format
+    {slide_id: segmentlist(segments analyzed)}
+    """
 
-    # Get the mapping table
-    time_slide_map_table = \
-        load_xml_table(xml_file, glsctables.TimeSlideSegmentMapTable.tableName)
-    # Perhaps unnecessary as segment_def_id and time_slide_id seem to always
-    # be identical identical
-    segment_map = {
-        int(entry.segment_def_id): int(entry.time_slide_id)
-        for entry in time_slide_map_table
-    }
-    # Extract the segment table
-    segment_table = load_xml_table(
-        xml_file, glsctables.SegmentTable.tableName)
-    segment_dict = {}
-    for entry in segment_table:
-        curr_slid_id = segment_map[int(entry.segment_def_id)]
-        curr_seg = entry.get()
-        if curr_slid_id not in segment_dict:
-            segment_dict[curr_slid_id] = segments.segmentlist()
-        segment_dict[curr_slid_id].append(curr_seg)
-        segment_dict[curr_slid_id].coalesce()
+    # Long time slides will require mapping between slides and segments
+    hdf_file = h5py.File(hdf_file_path, 'r')
+    ifos = extract_ifos(hdf_file_path)
+    # Get slide IDs
+    slide_ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
+    # Get segment start/end times
+    seg_starts = hdf_file['network/search/segments/start_time'][:]
+    seg_ends = hdf_file['network/search/segments/end_time'][:]
+    # Write list of segments
+    seg_list = segments.segmentlist()
+    for i in range(len(seg_starts)):
+        seg_list.append(segments.segment(seg_starts[i], seg_ends[i]))
+
+    # Write segment_dict in proper format
+    segment_dict = {slide: seg_list.coalesce() for slide in slide_ids}
 
     return segment_dict
 
