@@ -982,6 +982,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         group.add_argument('--ifar-remove-threshold', type=float,
             help="NOT YET IMPLEMENTED", default=100.0)
 
+    @staticmethod
+    def verify_args(args, parser):
+        """Verify that psd-var-related options are consistent"""
+        if ((hasattr(args, 'psd_variation') and not args.psd_variation)
+                and 'psdvar' in args.sngl_ranking):
+            parser.error(f"The single ifo ranking stat {args.sngl_ranking} "
+                         "requires --psd-variation.")
+
     @property
     def background_time(self):
         """Return the amount of background time that the buffers contain"""
