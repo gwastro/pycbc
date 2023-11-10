@@ -166,7 +166,7 @@ def compute_minus_network_snr(v, *argv):
     if len(argv) == 1:
         argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
-    logging.info('snr: %s', nsnr)
+    logging.debug('snr: %s', nsnr)
     return -nsnr
 
 
