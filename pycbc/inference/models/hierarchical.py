@@ -31,6 +31,7 @@ import numpy
 from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
+from tqdm import tqdm
 
 #
 # =============================================================================
@@ -100,8 +101,6 @@ class HierarchicalModel(BaseModel):
             for lbl, pset in derived_params.items():
                 self.param_map[lbl].update(pset)
         # make sure the static parameters of all submodels are set correctly
-        print("self.static_params", self.static_params)
-        print("self.hstatic_params: ", self.hstatic_params)
         self.static_param_map = map_params(self.hstatic_params.keys())
         # also create a map of model label -> extra stats created by each model
         # stats are prepended with the model label. We'll include the
@@ -109,14 +108,8 @@ class HierarchicalModel(BaseModel):
         self.extra_stats_map = {}
         self.__extra_stats = []
         for lbl, model in self.submodels.items():
-            if lbl == 'ce':
-                print("[(1)HierarchicalModel __init__]model.static_params: ", model.static_params)
-                print("[HierarchicalModel __init__]self.static_param_map: ", self.static_param_map)
-                print("[HierarchicalModel __init__]self.static_params: ", self.static_params)
             model.static_params = {p.subname: self.static_params[p.fullname]
                                    for p in self.static_param_map[lbl]}
-            if lbl == 'ce':
-                print("[(2)HierarchicalModel __init__]model.static_params: ", model.static_params)
             self.extra_stats_map.update(map_params([
                 HierarchicalParam.from_subname(lbl, p)
                 for p in model._extra_stats+['loglikelihood']]))
@@ -634,7 +627,6 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         # assume the ground-based submodel as the primary model
         self.primary_model = self.submodels[kwargs['primary_lbl'][0]]
-        print("[__init__]self.primary_model.static_params: ", self.primary_model.static_params)
         self.other_models = self.submodels.copy()
         self.other_models.pop(kwargs['primary_lbl'][0])
         self.other_models = list(self.other_models.values())
@@ -661,8 +653,9 @@ class MultibandRelativeTimeDom(HierarchicalModel):
             if not prefix.endswith('__'):
                 prefix += '__'
         try:
-            model = self.submodels[self.primary_model]
-            sampattrs['{}lognl'.format(prefix)] = model.lognl
+            for lbl, model in self.submodels.items():
+                sampattrs['{}lognl'.format(prefix + '%s__' % lbl)
+                          ] = model.lognl
         except AttributeError:
             pass
 
@@ -693,7 +686,6 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         nums = self.primary_model.vsamples
         margin_params = self.primary_model.marginalize_vector_params.copy()
         margin_params.pop('logw_partial')
-        print("margin_params: ", margin_params)
 
         # add likelihood contribution from space-borne detectors, we
         # calculate sh/hh for each marginalized parameter point
@@ -702,22 +694,22 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         for _, other_model in enumerate(self.other_models):
             current_params_other = other_model.current_params.copy()
-            print("current_params_other: ", current_params_other)
             # TODO: run this for-loop in parallel
+            # for i in tqdm(range(nums)):
             for i in range(nums):
                 current_params_other.update(
                     {key: value[i] for key, value in margin_params.items()})
-                if 'distance' in self.primary_model.static_params:
-                    current_params_other['distance'] = \
-                        self.primary_model.static_params['distance']
-                print("current_params_other (updated): ", current_params_other)
+                for p in self.primary_model.static_params.keys():
+                    # don't pass primary model's 'f_lower' to LISA
+                    if p not in current_params_other and p != 'f_lower':
+                        current_params_other[p] = \
+                            self.primary_model.static_params[p]
+
                 # sub-model's transform will be done in loglr
                 other_model.update(**current_params_other)
                 other_model.return_sh_hh = True
                 sh_others[i], hh_others[i] = other_model.loglr
                 other_model.return_sh_hh = False
-                print("current_params_other (transformed): ", other_model.current_params)
-                # raise ValueError
 
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
@@ -733,8 +725,6 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         for lbl, model in self.submodels.items():
             model.update(**{p.subname: self.current_params[p.fullname]
                             for p in self.param_map[lbl]})
-            # print("[_loglikelihood] model.current_params: ", (lbl, model.current_params))
-            # print("[_loglikelihood] self.primary_model.current_params: ", self.primary_model.current_params)
             others_lognl += model.lognl
 
         # calculate the combined loglikelihood
@@ -882,18 +872,20 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         # remove all marginalized parameters from the top-level model's
         # `variable_params` and `prior` sections
-        primary_model = '%s__model' % kwargs['primary_lbl'][0]
-        marginalized_params = cp.get(primary_model,
-                                     'marginalize_vector_params').split(', ')
-        if cp[primary_model]['marginalize_phase'] == 'True':
-            marginalized_params.append('phase')
-        if cp[primary_model]['marginalize_distance'] == 'True':
-            dist_name = cp.get(primary_model, 'marginalize_distance_param')
-            marginalized_params.append(dist_name)
-            # add `distance` as a static parameter on the top-level
-            primary_dist = '%s__%s' % (kwargs['primary_lbl'][0], 'distance')
-            cp['static_params'][primary_dist] = "%s" % \
-                submodels[kwargs['primary_lbl'][0]].static_params['distance']
+        # here we ignore `coa_phase`, because if it's been marginalized,
+        # it will not be listed in `variable_params` and `prior` sections
+        primary_model = submodels[kwargs['primary_lbl'][0]]
+        marginalized_params = primary_model.marginalize_vector_params.copy()
+        marginalized_params.pop('logw_partial')
+        marginalized_params = list(marginalized_params.keys())
+        # this may also include 'f_ref', 'f_lower', 'approximant',
+        # but doesn't matter
+        marginalized_params += list(primary_model.static_params.keys())
+        for p in primary_model.static_params.keys():
+            p_full = '%s__%s' % (kwargs['primary_lbl'][0], p)
+            if p_full not in cp['static_params']:
+                cp['static_params'][p_full] = "%s" % \
+                    primary_model.static_params[p]
 
         for section in cp.sections():
             if 'prior-' in section:
@@ -906,5 +898,3 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         logging.info("Loading multiband_relative_time_dom model")
         return super(HierarchicalModel, cls).from_config(
                 cp, submodels=submodels, **kwargs)
-        # return BaseModel.from_config(cp, submodels=submodels, **kwargs)
-        # return cls(cp, submodels=submodels, **kwargs)
