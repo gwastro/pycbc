@@ -103,10 +103,10 @@ file_val = args.analysis_category
 stat = f['{}/stat'.format(file_val)][:]
 
 if args.sort_variable not in f[file_val]:
-    all_datasets = [re.sub(file_val, '', ds).strip('/') for ds in get_all_subkeys(f, file_val)]
-    raise KeyError('Sort variable {0} not in {1}: sort choices in '
-                   '{1} are {2}'.format(args.sort_variable, file_val,
-                                        ', '.join(all_datasets)))
+    all_datasets = [re.sub(file_val, '', ds).strip('/')
+                    for ds in get_all_subkeys(f, file_val)]
+    raise KeyError(f'Sort variable {args.sort_variable} not in {file_val}: sort'
+                   f'choices in {file_val} are ' + ', '.join(all_datasets))
 
 events_to_read = num_events * 100
 
@@ -126,8 +126,8 @@ tids = {}
 # Version used for multi-ifo coinc code
 ifo_list = f.attrs['ifos'].split(' ')
 for ifo in ifo_list:
-    times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
-    tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
+    times[ifo] = f[f'{file_val}/{ifo}/time'][:][event_idx]
+    tids[ifo] = f[f'{file_val}/{ifo}/trigger_id'][:][event_idx]
 
 bank_data = h5py.File(args.bank_file, 'r')
 
@@ -139,21 +139,30 @@ curr_idx = -1
 while event_count < num_events and curr_idx < (events_to_read - 1):
     curr_idx += 1
     files = wf.FileList([])
+    duplicate = False
 
+    # Times and trig ids for trigger timeseries plot
     ifo_times_strings = []
     ifo_tids_strings = []
-    duplicate = False
-    for ifo in times:
-        ifo_times_string = '%s:%s' % (ifo, times[ifo][curr_idx])
-        ifo_tids_string = '%s:%s' % (ifo, tids[ifo][curr_idx])
-        ifo_times_strings += [ifo_times_string]
-        ifo_tids_strings += [ifo_tids_string]
 
-        # For background do not want to follow up 10 background coincs with
-        # the same event in ifo 1 and different events in ifo 2
+    # Mean time to use as reference for zerolag
+    mtime = coinc.mean_if_greater_than_zero(
+        [times[ifo][curr_idx] for ifo in times])[0]
+
+    for ifo in times:
+        plottime = times[ifo][curr_idx]
+        if plottime == -1:  # Ifo is not in coinc
+            # Use mean time instead and don't plot special trigger
+            plottime = mtime
+        else:  # Do plot special trigger
+            ifo_tids_strings += ['%s:%s' % (ifo, tids[ifo][curr_idx])]
+        ifo_times_strings += ['%s:%s' % (ifo, plottime)]
+
+        # For background do not want to follow up 10 background coincs with the
+        # same event in ifo 1 and different events in ifo 2, so record times
         if ifo not in event_times:
             event_times[ifo] = []
-        # Don't skip coincs in zerolag or due to the sentinel time -1
+        # Only do this for background coincident triggers & not sentinel time -1
         if 'background' in args.analysis_category and \
                 times[ifo][curr_idx] != -1 and \
                 int(times[ifo][curr_idx]) in event_times[ifo]:
@@ -175,10 +184,10 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                         workflow,
                         skipped_data,
                         args.output_dir,
-                        tags=['SKIP_{}'.format(event_count)]),)
+                        tags=[f'SKIP_{event_count}']),)
         skipped_data = []
 
-    bank_id = f['{}/template_id'.format(file_val)][:][sorting][curr_idx]
+    bank_id = f[f'{file_val}/template_id'][:][sorting][curr_idx]
 
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, args.output_dir, n_loudest=curr_idx,
@@ -193,7 +202,7 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
         params['%s_end_time' % ifo] = times[ifo][curr_idx]
         try:
             # Only present for precessing case
-            params['u_vals_%s'%ifo] = \
+            params['u_vals_%s' % ifo] = \
                                  fsdt[ifo][ifo]['u_vals'][tids[ifo][curr_idx]]
         except:
             pass
@@ -236,8 +245,8 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                      tags=args.tags + [str(event_count)])
                 break
         else:
-            logging.info('Trigger time {} is not valid in {}, ' \
-                         'skipping singles plots'.format(time, single.ifo))
+            logging.info(f'Trigger time {time} is not valid in '
+                         f'{single.ifo}, skipping singles plots')
 
     layouts += list(layout.grouper(files, 2))
 
