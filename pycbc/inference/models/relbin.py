@@ -578,7 +578,7 @@ class Relative(DistMarg, BaseGaussianNoise):
             filt += filter_i
             norm += norm_i
         loglr = self.marginalize_loglr(filt, norm)
-        if self.return_sh_hh == True:
+        if self.return_sh_hh:
             results = (filt, norm)
         else:
             results = loglr
@@ -855,7 +855,7 @@ class RelativeTimeDom(RelativeTime):
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
-        if self.return_sh_hh == True:
+        if self.return_sh_hh:
             results = (sh_total, hh_total)
         else:
             results = loglr
