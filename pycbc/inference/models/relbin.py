@@ -847,8 +847,6 @@ class RelativeTimeDom(RelativeTime):
                                                        0, p['tc'])
             dts = p['tc'] + dt
             f = (fp + 1.0j * fc) * pol_phase
-            print("self.return_sh_hh: ", self.return_sh_hh)
-            print("p2: ", p2)
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
