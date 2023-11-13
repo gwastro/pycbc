@@ -31,7 +31,6 @@ import numpy
 from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
-from tqdm import tqdm
 
 #
 # =============================================================================
@@ -695,7 +694,6 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         for _, other_model in enumerate(self.other_models):
             current_params_other = other_model.current_params.copy()
             # TODO: run this for-loop in parallel
-            # for i in tqdm(range(nums)):
             for i in range(nums):
                 current_params_other.update(
                     {key: value[i] for key, value in margin_params.items()})
@@ -838,7 +836,8 @@ class MultibandRelativeTimeDom(HierarchicalModel):
                 elif '%s_waveform_transforms' % lbl in section:
                     transforms_section = '%s' % section
                     subcp[transforms_section] = cp[transforms_section]
-                else: pass
+                else:
+                    pass
 
             # similar to the standard hierarchical model,
             # add the outputs from the waveform transforms if sub-model
@@ -847,7 +846,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
                 for param in wfparam_map[lbl]:
                     subcp.set('static_params', param.subname, 'REPLACE')
 
-            # save the vitual config file to disk for later check 
+            # save the vitual config file to disk for later check
             with open('%s.ini' % lbl, 'w', encoding='utf-8') as file:
                 subcp.write(file)
 
