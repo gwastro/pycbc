@@ -166,6 +166,7 @@ def compute_minus_network_snr(v, *argv):
     if len(argv) == 1:
         argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
+    logging.debug('snr: %s', nsnr)
     return -nsnr
 
 
@@ -177,27 +178,25 @@ def compute_minus_network_snr_pso(v, *argv, **kwargs):
     return -nsnr_array
 
 
-def normalize_initial_point(initial_point, bounds):
-    return (initial_point - bounds[:,0]) / (bounds[:,1] - bounds[:,0])
-
-
 def optimize_di(bounds, cli_args, extra_args, initial_point):
+    # Convert from dict to array with parameters in a given order
     bounds = numpy.array([
         bounds['mchirp'],
         bounds['eta'],
         bounds['spin1z'],
         bounds['spin2z']
     ])
-
-    # Currently only implemented for random seed initial array
-    rng = numpy.random.mtrand._rand
-    population_shape = (int(cli_args.snr_opt_di_popsize), 4)
-    population = rng.uniform(size=population_shape)
+    # Initialize the population with random values within specified bounds
+    population = numpy.random.uniform(
+        bounds[:, 0],
+        bounds[:, 1],
+        size=(int(cli_args.snr_opt_di_popsize), len(bounds))
+    )
     if cli_args.snr_opt_include_candidate:
-        # Re-normalize the initial point into the correct range
-        point_init = normalize_initial_point(initial_point, bounds)
         # add the initial point to the population
-        population = numpy.concatenate((population[:-1], point_init))
+        population = numpy.concatenate((population[:-1],
+                                        initial_point))
+    logging.debug('Initial population: %s', population)
 
     results = differential_evolution(
         compute_minus_network_snr,
@@ -232,11 +231,6 @@ def optimize_shgo(bounds, cli_args, extra_args, initial_point): # pylint: disabl
     return results.x
 
 
-def normalize_population(population, min_bounds, max_bounds):
-    norm_pop = min_bounds + population * (max_bounds - min_bounds)
-    return norm_pop
-
-
 def optimize_pso(bounds, cli_args, extra_args, initial_point):
     options = {
         'c1': cli_args.snr_opt_pso_c1,
@@ -256,17 +250,18 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
         bounds['spin2z'][1]
     ])
 
-    # Manually generate the initial points, this is the same as the default
-    # method, but allows us to make some modifications
+    # Initialize the population with random values within specified bounds
     population = numpy.random.uniform(
-        low=0.0, high=1.0, size=(int(cli_args.snr_opt_pso_particles), 4)
+        min_bounds,
+        max_bounds,
+        size=(int(cli_args.snr_opt_pso_particles), len(bounds))
     )
-    population = normalize_population(population, min_bounds, max_bounds)
 
     if cli_args.snr_opt_include_candidate:
         # add the initial point to the population
         population = numpy.concatenate((population[:-1],
                                         initial_point))
+    logging.debug('Initial population: %s', population)
 
     optimizer = ps.single.GlobalBestPSO(
         n_particles=int(cli_args.snr_opt_pso_particles),
