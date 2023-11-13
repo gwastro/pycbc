@@ -36,7 +36,7 @@ from .brute_marg import BruteLISASkyModesMarginalize
 from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol)
 from .single_template import SingleTemplate
 from .relbin import Relative, RelativeTime, RelativeTimeDom
-from .hierarchical import (HierarchicalModel, MultiSignalModel, 
+from .hierarchical import (HierarchicalModel, MultiSignalModel,
                            MultibandRelativeTimeDom)
 
 
