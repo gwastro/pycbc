@@ -84,12 +84,32 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-snr_filter = '(self.snr>%f)' % (opts.min_snr) if opts.min_snr > 0. else None 
-filts = [f for f in [snr_filter, opts.filter_string] if f is not None]
+data_mask = None
+if opts.min_snr > 0:
+    with pycbc.io.HFile(opts.single_trig_file, 'r') as trig_file:
+        n_triggers_orig = trig_file[f'{opts.detector}/snr'].size
+        logging.info("Trigger file has %d triggers", n_triggers_orig)
+        logging.info('Generating trigger mask (on SNR)')
+        idx, _ = trig_file.select(
+            lambda snr: snr >= opts.min_snr,
+            f'{opts.detector}/snr',
+            return_indices=True
+        )
+        data_mask = np.zeros(n_triggers_orig, dtype=bool)
+        data_mask[idx] = True
+
+filts = [f for f in [opts.filter_string] if f is not None]
 filter_func = ' & '.join(filts) if filts else None
 
-trigs = pycbc.io.SingleDetTriggers(opts.single_trig_file, opts.bank_file,
-                  opts.veto_file, opts.segment_name, filter_func, opts.detector)
+trigs = pycbc.io.SingleDetTriggers(
+    opts.single_trig_file,
+    opts.bank_file,
+    opts.veto_file,
+    opts.segment_name,
+    filter_func,
+    opts.detector,
+    premask=data_mask
+)
 
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
@@ -109,7 +129,8 @@ y = y[mask]
 hexbin_style = {
     'gridsize': opts.grid_size,
     # hexbin shows bins with *less* than mincnt as blank
-    'mincnt': 0,
+    # (in earlier mpl versions this was less than *or equal to* mincnt)
+    'mincnt': 1 if matplotlib.__version__ >= '3.8.1' else 0,
     'linewidths': 0.03
 }
 if opts.log_x:
