@@ -98,15 +98,12 @@ if opts.min_snr > 0:
         data_mask = np.zeros(n_triggers_orig, dtype=bool)
         data_mask[idx] = True
 
-filts = [f for f in [opts.filter_string] if f is not None]
-filter_func = ' & '.join(filts) if filts else None
-
 trigs = pycbc.io.SingleDetTriggers(
     opts.single_trig_file,
     opts.bank_file,
     opts.veto_file,
     opts.segment_name,
-    filter_func,
+    opts.filter_string,
     opts.detector,
     premask=data_mask
 )
