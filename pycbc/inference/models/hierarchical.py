@@ -31,6 +31,7 @@ import numpy
 from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
+from tqdm import tqdm
 
 #
 # =============================================================================
@@ -694,7 +695,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         for _, other_model in enumerate(self.other_models):
             current_params_other = other_model.current_params.copy()
             # TODO: run this for-loop in parallel
-            for i in range(nums):
+            for i in tqdm(range(nums)):
                 current_params_other.update(
                     {key: value[i] for key, value in margin_params.items()})
                 for p in self.primary_model.static_params.keys():
