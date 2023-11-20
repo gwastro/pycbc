@@ -38,6 +38,8 @@ from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
 
 
+import os, psutil
+
 class BaseGatedGaussian(BaseGaussianNoise):
     r"""Base model for gated gaussian.
 
@@ -55,7 +57,6 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._gated_data = {}
         # cache covariance matrix and normalization terms
         self._Rss = {}
-        self._cov = {}
         self._lognorm = {}
         # cache samples and linear regression for determinant extrapolation
         self._cov_samples = {}
@@ -113,7 +114,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._invpsds.clear()
         self._gated_data.clear()
         # store the psds
+        print("In BaseGatedGaussianNoise.psds: ")
+        process = psutil.Process()
         for det, d in self._data.items():
+            print("CHECK p1-{}:".format(det), process.memory_info().rss/1e6, "MB")
             if psds is None:
                 # No psd means assume white PSD
                 p = FrequencySeries(numpy.ones(int(self._N/2+1)),
@@ -126,15 +130,19 @@ class BaseGatedGaussian(BaseGaussianNoise):
             invp = 1./p
             self._invpsds[det] = invp
             # store the autocorrelation function and covariance matrix for each detector
+            print("CHECK p2-{}:".format(det), process.memory_info().rss/1e6, "MB")
             Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()
-            cov = scipy.linalg.toeplitz(Rss/2) # full covariance matrix
             self._Rss[det] = Rss
-            self._cov[det] = cov
             # calculate and store the linear regressions to extrapolate determinant values
             if self.normalize:
+                print("CHECK p3-{}:".format(det), process.memory_info().rss/1e6, "MB")
+                cov = scipy.linalg.toeplitz(Rss/2) # full covariance matrix
+                print("CHECK p5-{}:".format(det), process.memory_info().rss/1e6, "MB")
                 samples, fit = self.logdet_fit(cov, p)
+                print("CHECK p6-{}:".format(det), process.memory_info().rss/1e6, "MB")
                 self._cov_samples[det] = samples
                 self._cov_regressions[det] = fit
+                print("CHECK p7-{}:".format(det), process.memory_info().rss/1e6, "MB")
         self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
 
     def logdet_fit(self, cov, p):
@@ -152,8 +160,11 @@ class BaseGatedGaussian(BaseGaussianNoise):
             sample_sizes = [s, max_size, max_size//2, max_size//4]
         else:
             sample_sizes = [s, s//2, s//4, s//8]
+        print("In BaseGatedGaussianNoise.logdet_fit: ")
+        process = psutil.Process()
         for i in sample_sizes:
             # calculate logdet of the full matrix using circulant eigenvalue approximation
+            print("CHECK ld1-{}:".format(i), process.memory_info().rss/1e6, "MB")
             if i == s:
                 ld = 2*numpy.log(p/(2*p.delta_t)).sum()
                 sample_dets.append(ld)
@@ -165,9 +176,13 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 tc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
                 ld = numpy.linalg.slogdet(tc)[1]
                 sample_dets.append(ld)
+            print("CHECK ld2-{}:".format(i), process.memory_info().rss/1e6, "MB")
         # generate a linear regression using the four points (size, logdet)
+        print("CHECK ld3",  process.memory_info().rss/1e6, "MB")
         x = numpy.vstack([sample_sizes, numpy.ones(len(sample_sizes))]).T
+        print("CHECK ld4",  process.memory_info().rss/1e6, "MB")
         m, b = numpy.linalg.lstsq(x, sample_dets, rcond=None)[0]
+        print("CHECK ld5",  process.memory_info().rss/1e6, "MB")
         return (sample_sizes, sample_dets), (m, b)
             
     def gate_indices(self, det):
@@ -199,8 +214,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # if not, extrapolate the normalization term
             start_index, end_index = self.gate_indices(det)
             # get the size of the matrix
-            cov = self._cov[det]
-            n = cov.shape[0]
+            n = len(self._Rss[det])
             trunc_size = n - (end_index - start_index)
             # call the linear regression
             m, b = self._cov_regressions[det]
@@ -217,20 +231,13 @@ class BaseGatedGaussian(BaseGaussianNoise):
         """
         return self._normalize
 
-    ### This is called before psds, so doing direct calls to self._cov, self._psds, etc. throws an error for now ###
+    ### This is called before psds, so doing direct calls to self._psds, etc. throws an error for now ###
     
     @normalize.setter
     def normalize(self, normalize):
         """Clears the current stats if the normalization state is changed.
         """
         self._normalize = normalize
-        # set covariance det linear regression iff normalize is set to true and the respective dicts are empty
-        # if self.normalize and self._cov_samples == {} and self._cov_regressions == {}:
-            # for det, d in self._data.items():
-                # cov = self._cov[det]
-                # samples, fit = self.logdet_fit(cov, p)
-                # self._cov_samples[det] = samples
-                # self._cov_regressions[det] = fit
 
     def _nowaveform_handler(self):
         """Convenience function to set logl values if no waveform generated.
@@ -856,10 +863,10 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             gate_times = self.get_gate_times()
             for d in wfs:
                 tsp, tsc = wfs[d]
-                start = gate_times[d][0] + gate_times[d][1]/2
+                gt = gate_times[d][0] + gate_times[d][1]/2
                 # plus and cross pols probably have the same gpsidx, but get both just to be safe
-                gpsidxp = (float(start) - float(tsp.start_time))//tsp.delta_t
-                gpsidxc = (float(start) - float(tsc.start_time))//tsc.delta_t
+                gpsidxp = (float(gt) - float(tsp.start_time))//tsp.delta_t
+                gpsidxc = (float(gt) - float(tsc.start_time))//tsc.delta_t
                 tsp = tsp.to_timeseries()
                 tsc = tsc.to_timeseries()
                 # zero out inspiral wf after gate
