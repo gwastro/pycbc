@@ -46,14 +46,17 @@ class BaseGatedGaussian(BaseGaussianNoise):
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, highpass_waveforms=False, **kwargs):
+                 static_params=None, highpass_waveforms=False,
+                 zero_before_gate=False, zero_after_gate=False,
+                 **kwargs):
         # we'll want the time-domain data, so store that
         self._td_data = {}
         # cache the overwhitened data
         self._overwhitened_data = {}
         # cache the current gated data
         self._gated_data = {}
-        # cache covariance matrix and normalization terms
+        # cache terms related to normalization and gating 
+        self._invasds = {}
         self._Rss = {}
         self._lognorm = {}
         # cache samples and linear regression for determinant extrapolation
@@ -64,6 +67,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
         if self.highpass_waveforms:
             logging.info("Will highpass waveforms at %f Hz",
                          highpass_waveforms)
+        self.zero_before_gate = zero_before_gate
+        self.zero_after_gate = zero_after_gate
         # set up the boiler-plate attributes
         super().__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
@@ -73,8 +78,20 @@ class BaseGatedGaussian(BaseGaussianNoise):
     @classmethod
     def from_config(cls, cp, data_section='data', data=None, psds=None,
                     **kwargs):
-        """Adds highpass filtering to keyword arguments based on config file.
+        """Adds addiotional keyword arguments based on config file.
+        
+        Additional keyword arguments are:
+
+           * ``highpass_waveforms`` : waveforms will be highpassed.
+           * ``zero_before_gate``: data/waveforms will be zeroed out at all
+             times before the gate.
+           * ``zero_after_gate``: data/waveforms will zeroed out at all times
+             after the gate.
         """
+        if cp.has_option('model', 'zero-before-gate'):
+            kwargs['zero_before_gate'] = True
+        if cp.has_option('model', 'zero-after-gate'):
+            kwargs['zero_after_gate'] = True
         if cp.has_option(data_section, 'strain-high-pass') and \
             'highpass_waveforms' not in kwargs:
             kwargs['highpass_waveforms'] = float(cp.get(data_section,
@@ -110,6 +127,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         # make sure the relevant caches are cleared
         self._psds.clear()
         self._invpsds.clear()
+        self._invasds.clear()
         self._gated_data.clear()
         # store the psds
         for det, d in self._data.items():
@@ -124,6 +142,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             # we'll store the weight to apply to the inner product
             invp = 1./p
             self._invpsds[det] = invp
+            self._invasds[det] = invp**0.5
             # store the autocorrelation function and covariance matrix for each detector
             Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()
             self._Rss[det] = Rss
@@ -370,7 +389,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 cache.clear()
                 d = d.gate(gatestartdelay + dgatedelay/2,
                            window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint')
+                           invpsd=invpsd, method='paint',
+                           zero_before_gate=self.zero_before_gate,
+                           zero_after_gate=self.zero_after_gate)
                 dtilde = d.to_frequencyseries()
                 # save for next time
                 cache[gatestartdelay, dgatedelay] = dtilde
@@ -478,7 +499,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
             data = self.td_data[det]
             gated_dt = data.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint')
+                                 invpsd=invpsd, method='paint',
+                                 zero_before_gate=self.zero_before_gate,
+                                 zero_after_gate=self.zero_after_gate)
             # convert to the frequency series
             gated_d = gated_dt.to_frequencyseries()
             # overwhiten
@@ -642,7 +665,9 @@ class GatedGaussianNoise(BaseGatedGaussian):
             rtilde = res.to_frequencyseries()
             gated_res = res.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint')
+                                 invpsd=invpsd, method='paint',
+                                 zero_before_gate=self.zero_before_gate,
+                                 zero_after_gate=self.zero_after_gate)
             gated_rtilde = gated_res.to_frequencyseries()
             # overwhiten
             gated_rtilde *= invpsd
@@ -663,35 +688,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         # Generate the waveforms for each submodel
         wfs = []
         for m in models + [self]:
-            # temp fix for wfs in combined run
-            # set static params 'zero_before_gate' or 'zero_after_gate' to specify portion of wf to zero out
             wf = m.get_waveforms()
-            # if params don't exist, set them to False
-            # if they do exist, their value doesn't matter; strings always return True
-            try:
-                m.current_params['zero_before_gate']
-            except KeyError:
-                m.current_params['zero_before_gate'] = False
-            try:
-                m.current_params['zero_after_gate']
-            except KeyError:
-                m.current_params['zero_after_gate'] = False
-                
-            if m.current_params['zero_before_gate'] or m.current_params['zero_after_gate']:
-                gate_times = m.get_gate_times()
-                for d in wf:
-                    ts = wf[d]
-                    start = gate_times[d][0]
-                    gpsidx = (float(start) - float(ts.start_time))//ts.delta_t
-                    ts = ts.to_timeseries()
-                    # zero out inspiral wf after gate
-                    if m.current_params['zero_after_gate']:
-                        ts[int(gpsidx):] *= 0
-                    # zero out ringdown wf before gate
-                    if m.current_params['zero_before_gate']:
-                        ts[:int(gpsidx)] *= 0
-                    ts = ts.to_frequencyseries()
-                    wf[d] = ts
             wfs.append(wf)
 
         # combine into a single waveform
@@ -709,34 +706,6 @@ class GatedGaussianNoise(BaseGatedGaussian):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
-        
-        # temp fix for hierarchical runs
-        # zeroes out pre-merger for ringdown, post-merger for inspiral
-        # will need a more elegant solution later; for now copy code from multi_loglikelihood
-        try:
-            self.current_params['zero_before_gate']
-        except KeyError:
-            self.current_params['zero_before_gate'] = False
-        try:
-            self.current_params['zero_after_gate']
-        except KeyError:
-            self.current_params['zero_after_gate'] = False
-                
-        if self.current_params['zero_before_gate'] or self.current_params['zero_after_gate']:
-            for d in wfs:
-                ts = wfs[d]
-                start = gate_times[d][0]
-                gpsidx = (float(start) - float(ts.start_time))//ts.delta_t
-                ts = ts.to_timeseries()
-                # zero out inspiral wf after gate
-                if self.current_params['zero_after_gate']:
-                    ts[int(gpsidx):] *= 0
-                # zero out ringdown wf before gate
-                if self.current_params['zero_before_gate']:
-                    ts[:int(gpsidx)] *= 0
-                ts = ts.to_frequencyseries()
-                wfs[d] = ts
-        
         # apply the gate
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
@@ -748,7 +717,9 @@ class GatedGaussianNoise(BaseGatedGaussian):
             ht = h.to_timeseries()
             ht = ht.gate(gatestartdelay + dgatedelay/2,
                          window=dgatedelay/2, copy=False,
-                         invpsd=pfilter, method='paint')
+                         invpsd=pfilter, method='paint',
+                         zero_before_gate=self.zero_before_gate,
+                         zero_after_gate=self.zero_after_gate)
             h = ht.to_frequencyseries()
             out[det] = h
         return out
@@ -773,7 +744,9 @@ class GatedGaussianNoise(BaseGatedGaussian):
             res = data - ht
             res = res.gate(gatestartdelay + dgatedelay/2,
                            window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint')
+                           invpsd=invpsd, method='paint',
+                           zero_before_gate=self.zero_before_gate,
+                           zero_after_gate=self.zero_after_gate)
             res = res.to_frequencyseries()
             out[det] = res
         return out
@@ -830,40 +803,6 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                     hc.to_timeseries(),
                     frequency=self.highpass_waveforms).to_frequencyseries()
             wfs[det] = (hp, hc)
-        # temp fix for hierarchical runs
-        # zero out pre-merger for ringdown, post-merger for inspiral
-        # need a more elegant solution later; for now just copy code from multi_loglikelihood
-        try:
-            self.current_params['zero_before_gate']
-        except KeyError:
-            self.current_params['zero_before_gate'] = False
-        try:
-            self.current_params['zero_after_gate']
-        except KeyError:
-            self.current_params['zero_after_gate'] = False
-                
-        if self.current_params['zero_before_gate'] or self.current_params['zero_after_gate']:
-            gate_times = self.get_gate_times()
-            for d in wfs:
-                tsp, tsc = wfs[d]
-                gt = gate_times[d][0] + gate_times[d][1]/2
-                # plus and cross pols probably have the same gpsidx, but get both just to be safe
-                gpsidxp = (float(gt) - float(tsp.start_time))//tsp.delta_t
-                gpsidxc = (float(gt) - float(tsc.start_time))//tsc.delta_t
-                tsp = tsp.to_timeseries()
-                tsc = tsc.to_timeseries()
-                # zero out inspiral wf after gate
-                if self.current_params['zero_after_gate']:
-                    tsp[int(gpsidxp):] *= 0
-                    tsc[int(gpsidxc):] *= 0
-                # zero out ringdown wf before gate
-                if self.current_params['zero_before_gate']:
-                    tsp[:int(gpsidxp)] *= 0
-                    tsc[:int(gpsidxc)] *= 0
-                tsp = tsp.to_frequencyseries()
-                tsc = tsc.to_frequencyseries()
-                wfs[d] = (tsp, tsc)
-    
         self._current_wfs = wfs
         return self._current_wfs
 
@@ -885,7 +824,9 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 try:
                     ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
-                             invpsd=pfilter, method='paint')
+                             invpsd=pfilter, method='paint',
+                             zero_before_gate=self.zero_before_gate,
+                             zero_after_gate=self.zero_after_gate)
                     h = ht.to_frequencyseries()
                 except ValueError as e:
                     numpy.save('fail_params.out', self.current_params, allow_pickle=True)
@@ -1035,41 +976,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         # Generate the waveforms for each submodel
         wfs = []
         for m in models + [self]:
-            # temp fix for wfs in combined run
-            # set static params 'zero_before_gate' or 'zero_after_gate' to specify portion of wf to zero out
             wf = m.get_waveforms()
-            # if params don't exist, set them to False
-            # if they do exist, their value doesn't matter; strings always return True
-            try:
-                m.current_params['zero_before_gate']
-            except KeyError:
-                m.current_params['zero_before_gate'] = False
-            try:
-                m.current_params['zero_after_gate']
-            except KeyError:
-                m.current_params['zero_after_gate'] = False
-                
-            if m.current_params['zero_before_gate'] or m.current_params['zero_after_gate']:
-                gate_times = m.get_gate_times()
-                for d in wf:
-                    tsp, tsc = wf[d]
-                    start = gate_times[d][0]
-                    # plus and cross pols probably have the same gpsidx, but get both just to be safe
-                    gpsidxp = (float(start) - float(tsp.start_time))//tsp.delta_t
-                    gpsidxc = (float(start) - float(tsc.start_time))//tsc.delta_t
-                    tsp = tsp.to_timeseries()
-                    tsc = tsc.to_timeseries()
-                    # zero out inspiral wf after gate
-                    if m.current_params['zero_after_gate']:
-                        tsp[int(gpsidxp):] *= 0
-                        tsc[int(gpsidxc):] *= 0
-                    # zero out ringdown wf before gate
-                    if m.current_params['zero_before_gate']:
-                        tsp[:int(gpsidxp)] *= 0
-                        tsc[:int(gpsidxc)] *= 0
-                    tsp = tsp.to_frequencyseries()
-                    tsc = tsc.to_frequencyseries()
-                    wf[d] = (tsp, tsc)
             wfs.append(wf)
 
         # combine into a single waveform
