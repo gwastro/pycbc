@@ -38,8 +38,6 @@ from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
 
 
-import os, psutil
-
 class BaseGatedGaussian(BaseGaussianNoise):
     r"""Base model for gated gaussian.
 
@@ -114,10 +112,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._invpsds.clear()
         self._gated_data.clear()
         # store the psds
-        print("In BaseGatedGaussianNoise.psds: ")
-        process = psutil.Process()
         for det, d in self._data.items():
-            print("CHECK p1-{}:".format(det), process.memory_info().rss/1e6, "MB")
             if psds is None:
                 # No psd means assume white PSD
                 p = FrequencySeries(numpy.ones(int(self._N/2+1)),
@@ -130,19 +125,14 @@ class BaseGatedGaussian(BaseGaussianNoise):
             invp = 1./p
             self._invpsds[det] = invp
             # store the autocorrelation function and covariance matrix for each detector
-            print("CHECK p2-{}:".format(det), process.memory_info().rss/1e6, "MB")
             Rss = p.astype(types.complex_same_precision_as(p)).to_timeseries()
             self._Rss[det] = Rss
             # calculate and store the linear regressions to extrapolate determinant values
             if self.normalize:
-                print("CHECK p3-{}:".format(det), process.memory_info().rss/1e6, "MB")
                 cov = scipy.linalg.toeplitz(Rss/2) # full covariance matrix
-                print("CHECK p5-{}:".format(det), process.memory_info().rss/1e6, "MB")
                 samples, fit = self.logdet_fit(cov, p)
-                print("CHECK p6-{}:".format(det), process.memory_info().rss/1e6, "MB")
                 self._cov_samples[det] = samples
                 self._cov_regressions[det] = fit
-                print("CHECK p7-{}:".format(det), process.memory_info().rss/1e6, "MB")
         self._overwhitened_data = self.whiten(self.data, 2, inplace=False)
 
     def logdet_fit(self, cov, p):
@@ -160,11 +150,8 @@ class BaseGatedGaussian(BaseGaussianNoise):
             sample_sizes = [s, max_size, max_size//2, max_size//4]
         else:
             sample_sizes = [s, s//2, s//4, s//8]
-        print("In BaseGatedGaussianNoise.logdet_fit: ")
-        process = psutil.Process()
         for i in sample_sizes:
             # calculate logdet of the full matrix using circulant eigenvalue approximation
-            print("CHECK ld1-{}:".format(i), process.memory_info().rss/1e6, "MB")
             if i == s:
                 ld = 2*numpy.log(p/(2*p.delta_t)).sum()
                 sample_dets.append(ld)
@@ -176,13 +163,9 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 tc = numpy.delete(numpy.delete(cov, slice(start, end), 0), slice(start, end), 1)
                 ld = numpy.linalg.slogdet(tc)[1]
                 sample_dets.append(ld)
-            print("CHECK ld2-{}:".format(i), process.memory_info().rss/1e6, "MB")
         # generate a linear regression using the four points (size, logdet)
-        print("CHECK ld3",  process.memory_info().rss/1e6, "MB")
         x = numpy.vstack([sample_sizes, numpy.ones(len(sample_sizes))]).T
-        print("CHECK ld4",  process.memory_info().rss/1e6, "MB")
         m, b = numpy.linalg.lstsq(x, sample_dets, rcond=None)[0]
-        print("CHECK ld5",  process.memory_info().rss/1e6, "MB")
         return (sample_sizes, sample_dets), (m, b)
             
     def gate_indices(self, det):
