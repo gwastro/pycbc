@@ -37,6 +37,8 @@ from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
 
 
+import os, psutil
+
 class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
     r"""Model for analyzing GW data with assuming a wide-sense stationary
     Gaussian noise model.
@@ -105,10 +107,14 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
                  no_save_data=False,
                  **kwargs):
         # set up the boiler-plate attributes
+        print("In BaseGaussianNoise init: ")
+        process = psutil.Process()
+        print("CHECK 1:", process.memory_info().rss/1e6, "MB")
         super(BaseGaussianNoise, self).__init__(variable_params, data,
                                                 static_params=static_params,
                                                 no_save_data=no_save_data,
                                                 **kwargs)
+        print("CHECK 2:", process.memory_info().rss/1e6, "MB")
         self.ignore_failed_waveforms = ignore_failed_waveforms
         self.no_save_data = no_save_data
         # check if low frequency cutoff has been provided for every IFO with
@@ -176,7 +182,9 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         self._normalize = False
         self.normalize = normalize
         # store the psds and whiten the data
+        print("CHECK 3:", process.memory_info().rss/1e6, "MB")
         self.psds = psds
+        print("CHECK 4:", process.memory_info().rss/1e6, "MB")
 
         # attribute for storing the current waveforms
         self._current_wfs = None
@@ -242,7 +250,10 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         self._lognorm.clear()
         self._det_lognls.clear()
         self._whitened_data.clear()
+        print("In BaseGaussianNoise.psds: ")
+        process = psutil.Process()
         for det, d in self._data.items():
+            print("CHECK p1-{}:".format(det), process.memory_info().rss/1e6, "MB")
             if psds is None:
                 # No psd means assume white PSD
                 p = FrequencySeries(numpy.ones(int(self._N[det]/2+1)),
@@ -261,6 +272,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             self._weight[det] = numpy.sqrt(4 * invp.delta_f * invp)
             self._whitened_data[det] = d.copy()
             self._whitened_data[det] *= self._weight[det]
+            print("CHECK p2-{}:".format(det), process.memory_info().rss/1e6, "MB")
         # set the lognl and lognorm; we'll get this by just calling lognl
         _ = self.lognl
 
