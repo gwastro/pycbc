@@ -660,7 +660,8 @@ def load_segment_dict(hdf_file_path):
     seg_starts = hdf_file['network/search/segments/start_times'][:]
     seg_ends = hdf_file['network/search/segments/end_times'][:]
     # Write list of segments
-    seg_list = segments.segmentlist([segments.segment(seg_start, seg_ends[i]) for i, seg_start in enumerate(seg_starts)])
+    seg_list = segments.segmentlist([segments.segment(seg_start, seg_ends[i])
+                                     for i, seg_start in enumerate(seg_starts)])
 
     # Write segment_dict in proper format
     # At the moment of this comment, there is only one segment
