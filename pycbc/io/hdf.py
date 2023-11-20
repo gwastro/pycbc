@@ -470,7 +470,7 @@ class SingleDetTriggers(object):
     """
     def __init__(self, trig_file, detector, bank_file=None, veto_file=None,
                  segment_name=None, premask=None, filter_rank=None,
-                 filter_threshold=None, chunksize=int(1e6)):
+                 filter_threshold=None, chunksize=int(1e6), filter_func=None):
         """
         Create a SingleDetTriggers instance
 
@@ -518,6 +518,8 @@ class SingleDetTriggers(object):
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
+        # Apply some masks to start off with - here we should try and apply
+        # them in the order which cuts our the most things earliest.
         self.mask = premask
 
         if filter_rank:
@@ -535,6 +537,32 @@ class SingleDetTriggers(object):
             )
             logging.info("%d triggers remain", idx.size)
             self.apply_mask(idx)
+
+        if filter_func:
+            # Apply a filter on the triggers which is _not_ a ranking statistic
+            for rank_str in ranking.sngls_ranking_function_dict.keys():
+                if f'self.{rank_str}' in filter_func:
+                    logging.warning(f'Supplying the ranking ({rank_str}) in '
+                                    'filter_func is inefficient, suggest to '
+                                    'use filter_rank instead.')
+            logging.info('Setting up filter function')
+            for c in self.trigs.keys():
+                if c in filter_func:
+                    setattr(self, '_'+c, self.trigs[c][:])
+            for c in self.bank.keys():
+                if c in filter_func:
+                    # get template parameters corresponding to triggers
+                    setattr(self, '_'+c,
+                        np.array(self.bank[c])[self.trigs['template_id'][:]])
+
+            filter_mask = eval(filter_func.replace('self.', 'self._'))
+            # remove the dummy attributes
+            for c in chain(self.trigs.keys(), self.bank.keys()):
+                if c in filter_func: delattr(self, '_'+c)
+
+            self.apply_mask(filter_mask)
+            logging.info('%i triggers remain after cut on %s',
+                         sum(self.mask), filter_func)
 
         if veto_file:
             logging.info('Applying veto segments')

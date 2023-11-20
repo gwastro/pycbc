@@ -86,21 +86,27 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 if opts.min_snr:
     # Apply filter on minimum SNR straight away
-    with pycbc.io.HFile(opts.single_trig_file) as hf:
-        idx = hf.select(
+    with pycbc.io.HFile(opts.single_trig_file) as trig_file:
+        n_triggers_orig = trig_file[f'{opts.detector}/snr'].size
+        logging.info("Trigger file has %d triggers", n_triggers_orig)
+        logging.info('Generating trigger mask (on SNR)')
+        idx = trig_file.select(
             lambda snr: snr >= opts.min_snr,
             'snr',
             group=opts.detector
         )
+    logging.info('%d triggers after snr mask', idx.size)
+    data_mask = np.zeros(n_triggers_orig, dtype=bool)
+    data_mask[idx] = True
 else:
     idx = None
 
 if opts.z_var == 'density' or opts.min_z is None:
-    filter_func = None
+    filter_rank = None
     filter_thresh = None
 else:
     # We can apply a/another filter on the z value
-    filter_func = ranking.sngls_ranking_function_dict[opts.z_var]
+    filter_rank = ranking.sngls_ranking_function_dict[opts.z_var]
     filter_thresh = opts.min_z
 
 trigs = pycbc.io.SingleDetTriggers(
@@ -109,11 +115,14 @@ trigs = pycbc.io.SingleDetTriggers(
     bank_file=opts.bank_file,
     veto_file=opts.veto_file,
     segment_name=opts.segment_name,
-    premask=idx,
-    filter_func=filter_func,
+    premask=data_mask,
+    filter_func=opt.filter_string,
+    filter_rank=filter_rank,
     filter_threshold=filter_thresh
 )
 
+# Can this be folded into the SingleDetTriggers call? Maybe, but we can
+# do this later if needed
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
 
