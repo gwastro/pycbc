@@ -97,9 +97,9 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
 
     # See https://docs.python.org/3/library/logging.html#levels
     # for log level definitions
-    initial_level = logging.WARNING - int(verbose) * 10
     logger = logging.getLogger()
-    logger.setLevel(initial_level)
+    verbose_int = 0 if verbose is None else int(verbose)
+    logger.setLevel(logging.WARNING - verbose_int * 10)  # Initial setting
     sh = logging.StreamHandler()
     logger.addHandler(sh)
     sh.setFormatter(LogFormatter(fmt=format))
