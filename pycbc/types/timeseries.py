@@ -628,7 +628,9 @@ class TimeSeries(Array):
                 fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=False)
                 # gate and paint in time domain
                 data = fdata.to_timeseries()
-                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False,
+                                      zero_before_gate=zero_before_gate,
+                                      zero_after_gate=zero_after_gate)
                 # shift back to the original time
                 fdata = data.to_frequencyseries()
                 fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
