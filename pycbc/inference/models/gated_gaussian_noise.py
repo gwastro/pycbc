@@ -309,8 +309,16 @@ class BaseGatedGaussian(BaseGaussianNoise):
         return self._current_wfs
 
     @abstractmethod
-    def get_gated_waveforms(self):
+    def get_gated_waveforms(self, white=False):
         """Generates and gates waveforms using the current parameters.
+
+        Parameters
+        ----------
+        white : bool, optional
+            Gate and in-paint the waveforms using the inverse ASD instead of
+            the inverse PSD. This will cause the whitened waveform to be
+            identically zero in the gated region rather than the overwhitened
+            waveform. Default is False.
 
         Returns
         -------
@@ -543,7 +551,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
         """
-        BaseDataModel.write_metadata(self, fp)
+        BaseDataModel.write_metadata(self, fp, group=group)
         attrs = fp.getattrs(group=group)
         # write the analyzed detectors and times
         attrs['analyzed_detectors'] = self.detectors # store fitting values here
@@ -707,7 +715,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         self._current_wfs = combine
         return self._loglikelihood()
 
-    def get_gated_waveforms(self):
+    def get_gated_waveforms(self, white=False):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
@@ -742,11 +750,15 @@ class GatedGaussianNoise(BaseGatedGaussian):
         # apply the gate
         for det, h in wfs.items():
             invpsd = self._invpsds[det]
+            if white:
+                pfilter = invpsd**0.5
+            else:
+                pfilter = invpsd
             gatestartdelay, dgatedelay = gate_times[det]
             ht = h.to_timeseries()
             ht = ht.gate(gatestartdelay + dgatedelay/2,
                          window=dgatedelay/2, copy=False,
-                         invpsd=invpsd, method='paint')
+                         invpsd=pfilter, method='paint')
             h = ht.to_frequencyseries()
             out[det] = h
         return out
@@ -811,30 +823,23 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             **self.static_params)
 
     def get_waveforms(self):
-        if self._current_wfs is None:
-            params = self.current_params
-            wfs = self.waveform_generator.generate(**params)
-            for det, (hp, hc) in wfs.items():
-                # make the same length as the data
-                hp.resize(len(self.data[det]))
-                hc.resize(len(self.data[det]))
-                # apply high pass
-                if self.highpass_waveforms:
-                    hp = highpass(
-                        hp.to_timeseries(),
-                        frequency=self.highpass_waveforms).to_frequencyseries()
-                    hc = highpass(
-                        hc.to_timeseries(),
-                        frequency=self.highpass_waveforms).to_frequencyseries()
-                wfs[det] = (hp, hc)
-            self._current_wfs = wfs
-        return self._current_wfs
-
-    def get_gated_waveforms(self):
-        wfs = self.get_waveforms()
-        gate_times = self.get_gate_times()
-        out = {}
-        
+        if self._current_wfs is not None:
+            return self._current_wfs
+        params = self.current_params
+        wfs = self.waveform_generator.generate(**params)
+        for det, (hp, hc) in wfs.items():
+            # make the same length as the data
+            hp.resize(len(self.data[det]))
+            hc.resize(len(self.data[det]))
+            # apply high pass
+            if self.highpass_waveforms:
+                hp = highpass(
+                    hp.to_timeseries(),
+                    frequency=self.highpass_waveforms).to_frequencyseries()
+                hc = highpass(
+                    hc.to_timeseries(),
+                    frequency=self.highpass_waveforms).to_frequencyseries()
+            wfs[det] = (hp, hc)
         # temp fix for hierarchical runs
         # zero out pre-merger for ringdown, post-merger for inspiral
         # need a more elegant solution later; for now just copy code from multi_loglikelihood
@@ -848,9 +853,10 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             self.current_params['zero_after_gate'] = False
                 
         if self.current_params['zero_before_gate'] or self.current_params['zero_after_gate']:
+            gate_times = self.get_gate_times()
             for d in wfs:
                 tsp, tsc = wfs[d]
-                start = gate_times[d][0]
+                start = gate_times[d][0] + gate_times[d][1]/2
                 # plus and cross pols probably have the same gpsidx, but get both just to be safe
                 gpsidxp = (float(start) - float(tsp.start_time))//tsp.delta_t
                 gpsidxc = (float(start) - float(tsc.start_time))//tsc.delta_t
@@ -867,9 +873,20 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 tsp = tsp.to_frequencyseries()
                 tsc = tsc.to_frequencyseries()
                 wfs[d] = (tsp, tsc)
-        
+    
+        self._current_wfs = wfs
+        return self._current_wfs
+
+    def get_gated_waveforms(self, white=False):
+        wfs = self.get_waveforms()
+        gate_times = self.get_gate_times()
+        out = {}
         for det in wfs:
             invpsd = self._invpsds[det]
+            if white:
+                pfilter = invpsd**0.5
+            else:
+                pfilter = invpsd
             gatestartdelay, dgatedelay = gate_times[det]
             # the waveforms are a dictionary of (hp, hc)
             pols = []
@@ -878,7 +895,7 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 try:
                     ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
-                             invpsd=invpsd, method='paint')
+                             invpsd=pfilter, method='paint')
                     h = ht.to_frequencyseries()
                 except ValueError as e:
                     numpy.save('fail_params.out', self.current_params, allow_pickle=True)
