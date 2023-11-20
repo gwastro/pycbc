@@ -281,11 +281,10 @@ class BaseGatedGaussian(BaseGaussianNoise):
             data = {det: d.copy() for det, d in data.items()}
         if whiten:
             for det, dtilde in data.items():
-                invpsd = self._invpsds[det]
                 if whiten == 1:
-                    dtilde *= invpsd**0.5
+                    dtilde *= self._invasds[det]
                 elif whiten == 2:
-                    dtilde *= invpsd
+                    dtilde *= self._invpsds[det]
                 else:
                     raise ValueError("whiten must be either 0, 1, or 2")
         return data
@@ -381,7 +380,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 cache = self._gated_data[det]
             except KeyError:
                 cache = self._gated_data[det] = {}
-            invpsd = self._invpsds[det]
+            invasd = self._invasds[det]
             gatestartdelay, dgatedelay = gate_times[det]
             try:
                 dtilde = cache[gatestartdelay, dgatedelay]
@@ -390,7 +389,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
                 cache.clear()
                 d = d.gate(gatestartdelay + dgatedelay/2,
                            window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint',
+                           kernel=invasd, method='paint',
                            zero_before_gate=self.zero_before_gate,
                            zero_after_gate=self.zero_after_gate)
                 dtilde = d.to_frequencyseries()
@@ -433,7 +432,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         ra = self.current_params['ra']
         dec = self.current_params['dec']
         gatetimes = {}
-        for det in self._invpsds:
+        for det in self.data:
             thisdet = Detector(det)
             # account for the time delay between the waveforms of the
             # different detectors
@@ -495,7 +494,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
         self._det_lognls.clear()
         # get the times of the gates
         gate_times = self.get_gate_times()
-        for det, invpsd in self._invpsds.items():
+        for det, invasd in self._invasds.items():
             start_index, end_index = self.gate_indices(det)
             norm = self.det_lognorm(det, start_index, end_index) # linear estimation
             gatestartdelay, dgatedelay = gate_times[det]
@@ -506,20 +505,19 @@ class BaseGatedGaussian(BaseGaussianNoise):
             data = self.td_data[det]
             gated_dt = data.gate(gatestartdelay + dgatedelay/2,
                                  window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint',
+                                 kernel=invasd, method='paint',
                                  zero_before_gate=self.zero_before_gate,
                                  zero_after_gate=self.zero_after_gate)
             # convert to the frequency series
             gated_d = gated_dt.to_frequencyseries()
-            # overwhiten
-            gated_d *= invpsd
-            d = self.data[det]
+            # whiten
+            gated_d *= invasd
             # inner product
-            ip = 4 * invpsd.delta_f * d[slc].inner(gated_d[slc]).real  # <d, d>
+            ip = 4 * invasd.delta_f * gated_d[slc].inner(gated_d[slc]).real
             dd = norm - 0.5*ip
             # store
             self._det_lognls[det] = dd
-            lognl += dd
+            lognl += d
         return float(lognl)
 
     def det_lognl(self, det):
@@ -666,7 +664,7 @@ class GatedGaussianNoise(BaseGatedGaussian):
         gate_times = self.get_gate_times()
         logl = 0.
         for det, h in wfs.items():
-            invpsd = self._invpsds[det]
+            invasd = self._invasds[det]
             start_index, end_index = self.gate_indices(det)
             norm = self.det_lognorm(det, start_index, end_index)
             gatestartdelay, dgatedelay = gate_times[det]
@@ -674,19 +672,17 @@ class GatedGaussianNoise(BaseGatedGaussian):
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
             # calculate the residual
-            data = self.td_data[det]
-            ht = h.to_timeseries()
-            res = data - ht
+            data = self.data[det]
+            res = (data - h).to_timeseries()
+            res = res.gate(gatestartdelay + dgatedelay/2,
+                           window=dgatedelay/2, copy=False,
+                           invasd=invasd, method='paint',
+                           zero_before_gate=self.zero_before_gate,
+                           zero_after_gate=self.zero_after_gate)
             rtilde = res.to_frequencyseries()
-            gated_res = res.gate(gatestartdelay + dgatedelay/2,
-                                 window=dgatedelay/2, copy=True,
-                                 invpsd=invpsd, method='paint',
-                                 zero_before_gate=self.zero_before_gate,
-                                 zero_after_gate=self.zero_after_gate)
-            gated_rtilde = gated_res.to_frequencyseries()
-            # overwhiten
-            gated_rtilde *= invpsd
-            rr = 4 * invpsd.delta_f * rtilde[slc].inner(gated_rtilde[slc]).real
+            # whiten
+            rtilde *= invasd
+            rr = 4 * invasd.delta_f * rtilde[slc].inner(rtilde[slc]).real
             logl += norm - 0.5*rr
         return float(logl)
     
@@ -705,7 +701,6 @@ class GatedGaussianNoise(BaseGatedGaussian):
         for m in models + [self]:
             wf = m.get_waveforms()
             wfs.append(wf)
-
         # combine into a single waveform
         combine = {}
         for det in self.data:
@@ -713,26 +708,21 @@ class GatedGaussianNoise(BaseGatedGaussian):
             mlen = max([len(x[det]) for x in wfs])
             [x[det].resize(mlen) for x in wfs]
             combine[det] = sum([x[det] for x in wfs])
-
         self._current_wfs = combine
         return self._loglikelihood()
 
-    def get_gated_waveforms(self, white=False):
+    def get_gated_waveforms(self):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
         # apply the gate
         for det, h in wfs.items():
-            invpsd = self._invpsds[det]
-            if white:
-                pfilter = invpsd**0.5
-            else:
-                pfilter = invpsd
+            invasd = self._invasds[det]
             gatestartdelay, dgatedelay = gate_times[det]
             ht = h.to_timeseries()
             ht = ht.gate(gatestartdelay + dgatedelay/2,
                          window=dgatedelay/2, copy=False,
-                         invpsd=pfilter, method='paint',
+                         kernel=invasd, method='paint',
                          zero_before_gate=self.zero_before_gate,
                          zero_after_gate=self.zero_after_gate)
             h = ht.to_frequencyseries()
@@ -752,18 +742,17 @@ class GatedGaussianNoise(BaseGatedGaussian):
         gate_times = self.get_gate_times()
         out = {}
         for det, h in wfs.items():
-            invpsd = self._invpsds[det]
+            invasd = self._invasds[det]
             gatestartdelay, dgatedelay = gate_times[det]
-            data = self.td_data[det]
-            ht = h.to_timeseries()
-            res = data - ht
+            data = self.data[det]
+            res = (data - h).to_timeseries()
             res = res.gate(gatestartdelay + dgatedelay/2,
-                           window=dgatedelay/2, copy=True,
-                           invpsd=invpsd, method='paint',
+                           window=dgatedelay/2, copy=False,
+                           invasd=invasd, method='paint',
                            zero_before_gate=self.zero_before_gate,
                            zero_after_gate=self.zero_after_gate)
-            res = res.to_frequencyseries()
-            out[det] = res
+            rtilde = res.to_frequencyseries()
+            out[det] = rtilde
         return out
 
 
@@ -821,16 +810,12 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         self._current_wfs = wfs
         return self._current_wfs
 
-    def get_gated_waveforms(self, white=False):
+    def get_gated_waveforms(self):
         wfs = self.get_waveforms()
         gate_times = self.get_gate_times()
         out = {}
         for det in wfs:
-            invpsd = self._invpsds[det]
-            if white:
-                pfilter = invpsd**0.5
-            else:
-                pfilter = invpsd
+            invasd = self._invasds[det]
             gatestartdelay, dgatedelay = gate_times[det]
             # the waveforms are a dictionary of (hp, hc)
             pols = []
@@ -839,12 +824,13 @@ class GatedGaussianMargPol(BaseGatedGaussian):
                 try:
                     ht = ht.gate(gatestartdelay + dgatedelay/2,
                              window=dgatedelay/2, copy=False,
-                             invpsd=pfilter, method='paint',
+                             kernel=invasd, method='paint',
                              zero_before_gate=self.zero_before_gate,
                              zero_after_gate=self.zero_after_gate)
                     h = ht.to_frequencyseries()
                 except ValueError as e:
-                    numpy.save('fail_params.out', self.current_params, allow_pickle=True)
+                    numpy.save('fail_params.out', self.current_params,
+                               allow_pickle=True)
                     ht.save('fail_wf.hdf')
                     raise e
                 pols.append(h)
@@ -916,18 +902,17 @@ class GatedGaussianMargPol(BaseGatedGaussian):
         float
             The value of the log likelihood.
         """
-        # generate the template waveform
+        # get the gated waveforms
         try:
-            wfs = self.get_waveforms()
+            wfs = self.get_gated_waveforms()
         except NoWaveformError:
             return self._nowaveform_logl()
         except FailedWaveformError as e:
             if self.ignore_failed_waveforms:
                 return self._nowaveform_logl()
             raise e
-        # get the gated waveforms and data
-        gated_wfs = self.get_gated_waveforms()
-        gated_data = self.get_gated_data()
+        # get the gated data
+        data = self.get_gated_data()
         # cycle over
         loglr = 0.
         lognl = 0.
@@ -944,26 +929,21 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             # we always filter the entire segment starting from kmin, since the
             # gated series may have high frequency components
             slc = slice(self._kmin[det], self._kmax[det])
-            # get the gated values
-            gated_hp, gated_hc = gated_wfs[det]
-            gated_d = gated_data[det]
-            # we'll overwhiten the ungated data and waveforms for computing
-            # inner products
-            d = self._overwhitened_data[det]
-            # overwhiten the hp and hc
-            invpsd = self._invpsds[det]
-            hp = hp*invpsd
-            hc = hc*invpsd
+            # whiten the data and waveforms
+            invasd = self._invasds[det]
+            hp = hp[slc] * invasd[slc]
+            hc = hc[slc] * invasd[slc]
+            d = data[det][slc] * invasd[slc]
             # get the various gated inner products
-            hpd = hp[slc].inner(gated_d[slc]).real  # <hp, d>
-            hcd = hc[slc].inner(gated_d[slc]).real  # <hc, d>
-            dhp = d[slc].inner(gated_hp[slc]).real  # <d, hp>
-            dhc = d[slc].inner(gated_hc[slc]).real  # <d, hc>
-            hphp = hp[slc].inner(gated_hp[slc]).real  # <hp, hp>
-            hchc = hc[slc].inner(gated_hc[slc]).real  # <hc, hc>
-            hphc = hp[slc].inner(gated_hc[slc]).real  # <hp, hc>
-            hchp = hc[slc].inner(gated_hp[slc]).real  # <hc, hp>
-            dd = d[slc].inner(gated_d[slc]).real  # <d, d>
+            hpd = hp.inner(d).real  # <hp, d>
+            hcd = hc.inner(d).real  # <hc, d>
+            dhp = d.inner(hp).real  # <d, hp>
+            dhc = d.inner(hc).real  # <d, hc>
+            hphp = hp.inner(hp).real  # <hp, hp>
+            hchc = hc.inner(hc).real  # <hc, hc>
+            hphc = hp.inner(hc).real  # <hp, hc>
+            hchp = hc.inner(hp).real  # <hc, hp>
+            dd = d.inner(d).real  # <d, d>
             # since the antenna patterns are real,
             # <h, d>/2 + <d, h>/2 = fp*(<hp, d>/2 + <d, hp>/2)
             #                     + fc*(<hc, d>/2 + <d, hc>/2)
@@ -974,8 +954,8 @@ class GatedGaussianMargPol(BaseGatedGaussian):
             hh = fp*fp*hphp + fc*fc*hchc + fp*fc*(hphc + hchp)
             # sum up; note that the factor is 2df instead of 4df to account
             # for the factor of 1/2
-            loglr += norm + 2*invpsd.delta_f*(hd - hh)
-            lognl += -2 * invpsd.delta_f * dd
+            loglr += norm + 2*invasd.delta_f*(hd - hh)
+            lognl += -2 * invasd.delta_f * dd
         # store the maxl polarization
         idx = loglr.argmax()
         setattr(self._current_stats, 'maxl_polarization', self.pol[idx])

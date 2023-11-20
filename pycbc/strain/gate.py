@@ -141,7 +141,7 @@ def add_gate_option_group(parser):
     return gate_group
 
 
-def gate_and_paint(data, lindex, rindex, invpsd, copy=True,
+def gate_and_paint(data, lindex, rindex, kernel, copy=True,
                    zero_after_gate=False, zero_before_gate=False):
     """Gates and in-paints data.
 
@@ -153,8 +153,11 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True,
         The start index of the gate.
     rindex : int
         The end index of the gate.
-    invpsd : FrequencySeries
-        The inverse of the PSD.
+    kernel : FrequencySeries
+        The kernel to use for in-painting. Should be either the
+        inverse PSD or the inverse ASD. If the former (latter), the time
+        series will in-painted such that the over-whitened (whitened) data
+        will be zero in the gated region.
     copy : bool, optional
         Copy the data before applying the gate. Otherwise, the gate will
         be applied in-place. Default is True.
@@ -187,12 +190,12 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True,
     if zero_after_gate:
         # also zero everything after
         data[rindex:] = 0
-    # get the over-whitened gated data
-    tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
-    owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
+    # get the filtered gated data
+    tdfilter = kernel.astype('complex').to_timeseries() * kernel.delta_t
+    filtered_data = (data.to_frequencyseries() * kernel).to_timeseries()
 
     # remove the projection into the null space
     proj = linalg.solve_toeplitz(tdfilter[:(rindex - lindex)],
-                                 owhgated_data[lindex:rindex])
+                                 filtered_data[lindex:rindex])
     data[lindex:rindex] -= proj
     return data
