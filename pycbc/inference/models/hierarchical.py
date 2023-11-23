@@ -31,7 +31,7 @@ import numpy
 from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
-from tqdm import tqdm
+from .tools import draw_sample
 
 #
 # =============================================================================
@@ -694,8 +694,7 @@ class MultibandRelativeTimeDom(HierarchicalModel):
 
         for _, other_model in enumerate(self.other_models):
             current_params_other = other_model.current_params.copy()
-            # TODO: run this for-loop in parallel
-            for i in tqdm(range(nums)):
+            for i in range(nums):
                 current_params_other.update(
                     {key: value[i] for key, value in margin_params.items()})
                 for p in self.primary_model.static_params.keys():
@@ -898,3 +897,62 @@ class MultibandRelativeTimeDom(HierarchicalModel):
         logging.info("Loading multiband_relative_time_dom model")
         return super(HierarchicalModel, cls).from_config(
                 cp, submodels=submodels, **kwargs)
+
+    def reconstruct(self, rec=None, seed=None):
+        """ Reconstruct the distance or vectored marginalized parameter
+        of this class.
+        """
+        if seed:
+            numpy.random.seed(seed)
+
+        if rec is None:
+            rec = {}
+
+        def get_total_loglr():
+            for lbl, model in self.submodels.items():
+                params = {p.subname: self.current_params[p.fullname]
+                          for p in self.param_map[lbl]}
+                params.update(rec)
+                model.update(**params)
+            return self.total_loglr()
+
+        if self.primary_model.marginalize_vector_params:
+            logging.debug('Reconstruct vector')
+            self.primary_model.reconstruct_vector = True
+            self.primary_model.reset_vector_params()
+            loglr = get_total_loglr()
+            xl = draw_sample(
+                loglr + self.primary_model.marginalize_vector_weights)
+            for k in self.primary_model.marginalize_vector_params:
+                rec[k] = self.primary_model.marginalize_vector_params[k][xl]
+            self.primary_model.reconstruct_vector = False
+
+        if self.primary_model.distance_marginalization:
+            logging.debug('Reconstruct distance')
+            # call likelihood to get vector output
+            self.primary_model.reconstruct_distance = True
+            _, weights = self.primary_model.distance_marginalization
+            loglr = get_total_loglr()
+            xl = draw_sample(loglr + numpy.log(weights))
+            rec['distance'] = self.primary_model.dist_locs[xl]
+            self.primary_model.reconstruct_distance = False
+
+        if self.primary_model.marginalize_phase:
+            logging.debug('Reconstruct phase')
+            self.primary_model.reconstruct_phase = True
+            s, h = get_total_loglr()
+            phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
+            # This assumes that the template was conjugated in inner products
+            loglr = (numpy.exp(-2.0j * phasev) * s).real + h
+            xl = draw_sample(loglr)
+            rec['coa_phase'] = phasev[xl]
+            self.primary_model.reconstruct_phase = False
+
+        rec['loglr'] = loglr[xl]
+        others_lognl = 0
+        for _, model in self.submodels.items():
+            others_lognl += model.lognl
+        # calculate the combined loglikelihood
+        rec['loglikelihood'] = rec['loglr'] + others_lognl + \
+                                self.primary_model.lognl
+        return rec
