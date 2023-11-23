@@ -328,7 +328,7 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id):
 #
 
 # =============================================================================
-# Function to load triggers
+# Functions to load triggers
 # =============================================================================
 def load_triggers(input_file, vetoes):
     """Loads triggers from PyGRB output file"""
@@ -341,6 +341,38 @@ def load_triggers(input_file, vetoes):
 
     return trigs
 
+def load_trig_data(input_file, ifos, vetoes):
+    """Loads triggers data and ifo triggers data into a dictionary from
+    a PyGRB bank file"""
+    trigs = load_triggers(input_file, vetoes)
+    # Load network data into dictionaty
+    data = {
+        "end_time": trigs["/network/end_time_gc"][...],
+        "ra": trigs["/network/ra"][...],
+        "dec": trigs["/network/dec"][...],
+        "coherent_snr": trigs["/network/coherent_snr"][...],
+        "null_snr": trigs["/network/null_snr"][...],
+        "reweighted_snr": trigs["/network/reweighted_snr"][...],
+        "chisq": trigs["/network/network_chisq"][...],
+        "bank_chisq": trigs["/network/network_bank_chisq"][...],
+        "cont_chisq": trigs["/network/network_cont_chisq"][...],
+        "time_slide_id": trigs["/network/slide_id"][...],
+        "mass1": trigs["/network/mass1"][...],
+        "mass2": trigs["/network/mass2"][...],
+        "mchirp": trigs["/network/mchirp"][...],
+        "nifos": trigs["/network/nifo"][...].astype(int)
+    }
+    # Load ifos data into dictionary
+    for ifo in ifos:
+        ifo_keys = list(trigs[ifo].keys())
+        if "search" in ifo_keys:
+            ifo_keys.remove("search")
+        for key in ifo_keys:
+            if 'snr' in key:
+                data[key.split('_')[0] + '_' + ifo] = trigs[ifo][key][...]
+            else:
+                data[key + '_' + ifo] = trigs[ifo][key][...]
+    return data
 
 # =============================================================================
 # Detector utils:
@@ -372,25 +404,44 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
     return numpy.sqrt(fp ** 2 * (1 + numpy.cos(inc)) ** 2 / 4 + fc ** 2)
 
 # =============================================================================
-# Function to calculate new snr from trigs
+# Function to calculate the reweighted SNR from the chisq, ported from
+# glue.ligolw.lsctables.MultiInspiralTable
 # =============================================================================
-def get_new_snr(trigs, index=4.0, nhigh = 3.0, column='chisq'):
-		column = column.lower()
-		if column == "bank_chisq":
-			rchisq = self.get_reduced_bank_chisq()
-		elif column == "cont_chisq":
-			rchisq = self.get_reduced_cont_chisq()
-		if rchisq > 1.:
-			return self.snr /\
-                               ((1+rchisq**(index/nhigh))/2)**(1./index)
-		else:
-			return self.snr
+def get_new_snr(chisq, snr, index=4.0, nhigh = 3.0):
+    """Returns the SNR reweighted by the chisquare"""
+    if chisq > 1:
+        return snr / ((1 + chisq ** ( index / nhigh ) / 2 )) ** ( 1. / index )
+    else:
+        return snr
+
+
+# =============================================================================
+# Porting of the `get_bestnr` method in 
+# glue.ligolw.lsctables.MultiInspiralTable
+# =============================================================================
+def get_bestnr_trig(trig, index=4.0, nhigh=3.0, null_snr_threshold=4.25,
+                    null_grad_thresh=20., null_grad_val=1./5.):
+    """Returns the BestNR statistic for the trigger"""
+    # weight SNR by chisq
+    bestnr = get_new_snr(trig['chisq'], trig['snr'], index=index,
+                        nhigh=nhigh)
+    if trig['nifos'] < 3:
+        return bestnr
+    # recontour null SNR threshold for higher SNRs 
+    if trig['snr'] > null_grad_thresh: 
+        null_snr_threshold += (trig['snr'] - null_grad_thresh) * null_grad_val 
+    # weight SNR by null SNR 
+    if trig['null_snr'] > null_snr_threshold: 
+        bestnr /= 1 + trig['null_snr'] - null_snr_threshold 
+    return bestnr 
+        
+
 
 # =============================================================================
 # Function to calculate the detection statistic of a list of triggers
 # =============================================================================
-def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
-                sngl_snr_threshold=4., chisq_threshold=None,
+def get_bestnrs(trigs, ifos, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
+                sngl_snr_threshold=4., new_snr_threshold=None,
                 null_grad_thresh=20., null_grad_val=0.2):
     """Calculate BestNR (coh_PTF detection statistic) of triggers through
     signal based vetoes.  The (default) signal based vetoes are:
@@ -413,53 +464,62 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
 
     # Initialize BestNRs
     snr = trigs['coherent_snr']
+    reweighted_snr = trigs['reweighted_snr']
     bestnr = numpy.ones(len(snr))
 
     # Coherent SNR cut
-    bestnr[numpy.asarray(snr) < snr_threshold] = 0
+    snr_threshold = 1
+    bestnr[snr < snr_threshold] = 0
 
     # Bank and auto chi-squared cuts
-    if not chisq_threshold:
-        chisq_threshold = snr_threshold
-    for chisq in ['bank_chisq', 'cont_chisq']:
-        bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
-                                               column=chisq)) ## lal?
-               < chisq_threshold] = 0
-
-    # Define IFOs for sngl cut
-    ifos = list(map(str, trigs[0].get_ifos())) # need to pass ifos
+    if not new_snr_threshold:
+        new_snr_threshold = snr_threshold
+    # To be revised. Originally this was using bank and cont chisq,
+    # now we use the reweighted snr calculated from the power chisq
+    # of the multi inspiral bank
+    bestnr[reweighted_snr < new_snr_threshold] = 0
 
     # Single detector SNR cut
     sens = {}
-    sigmasqs = trigs.get_sigmasqs()
-    ifo_snr = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
+    ifo_snr = {}
     for ifo in ifos:
         antenna = Detector(ifo)
-        sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra,
+        sens[ifo] = trigs['sigmasq_%s' % ifo] * get_antenna_responses(antenna, ra,
                                                           dec, time)
+        ifo_snr[ifo] = trigs['snr_%s' % ifo]
     # Apply this cut only if there is more than 1 IFO
     if len(ifos) > 1:
-        for i_trig, _ in enumerate(trigs):
+        for i_trig in range(len(snr)):
             # Apply only to triggers that were not already cut previously
             if bestnr[i_trig] != 0:
                 ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
                 if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold or
                         ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
                     bestnr[i_trig] = 0
-    for i_trig, trig in enumerate(trigs):
+    bestnr[:] = 1
+    for i_trig in range(len(bestnr)):
         # Get chisq reduced (new) SNR for triggers that were not cut so far
-        # NOTE: .get_bestnr is in glue.ligolw.lsctables.MultiInspiralTable
+        # Ideally we should not have any of them right now
+        # NOTE: it may be redundant without the implementation of bank and 
+        # cont chisq
         if bestnr[i_trig] != 0:
-            bestnr[i_trig] = trig.get_bestnr(index=q, nhigh=n,
+            # Define the input trig as a dictionary
+            trig = { 
+                'snr': trigs['coherent_snr'][i_trig],
+                'null_snr': trigs['null_snr'][i_trig],
+                'chisq': trigs['chisq'][i_trig],
+                'nifos': trigs['nifos'][i_trig],
+                    }
+            bestnr[i_trig] = get_bestnr_trig(trig, index=q, nhigh=n,
                                              null_snr_threshold=null_thresh[0],
                                              null_grad_thresh=null_grad_thresh,
                                              null_grad_val=null_grad_val)
             # If we got this far and the bestNR is non-zero, verify that chisq
             # was actually calculated for the trigger, otherwise raise an
             # error with info useful to figure out why this happened.
-            if bestnr[i_trig] != 0 and trig.chisq == 0:
+            if bestnr[i_trig] != 0 and trig['chisq'] == 0:
                 err_msg = "Chisq not calculated for trigger with end time "
-                err_msg += f"{trig.get_end()} and SNR {trig.snr}."
+                err_msg += f"{time[i_trig]} and SNR {trig['snr']}."
                 raise RuntimeError(err_msg)
 
     return bestnr
@@ -481,11 +541,10 @@ def veto_trig(trigs, trial_dict):
 def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     """Constructs sorted triggers from a trials dictionary"""
     sorted_trigs = {}
-    trigs_keys = list(trigs.keys())
-    trigs_keys.remove('time_slide_id')        
+    trigs_keys = list(trigs.keys())       
 
     for slide_id in slide_dict:
-        # Sort the trigs for each timeslide
+        # Sort the network trigs for each timeslide
         sorted_trigs[slide_id] = \
             {key: trigs[key][trigs['time_slide_id'].astype(int) == slide_id] 
              for key in trigs_keys}
@@ -514,7 +573,7 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
 # Extract basic trigger properties and store them as dictionaries
 # =============================================================================
 def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
-                                  opts):
+                                  ifos, opts):
     """Extract and store as dictionaries time, SNR, and BestNR of
     time-slid triggers"""
 
@@ -541,12 +600,13 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
         trig_snr[slide_id] = sorted_trigs[slide_id]['coherent_snr']
 
         trig_bestnr[slide_id] = get_bestnrs(sorted_trigs[slide_id],
+                                            ifos,
                                             q=chisq_index,
                                             n=chisq_nhigh,
                                             null_thresh=null_thresh,
                                             snr_threshold=snr_thresh,
                                             sngl_snr_threshold=sngl_snr_thresh,
-                                            chisq_threshold=new_snr_thresh,
+                                            new_snr_threshold=new_snr_thresh,
                                             null_grad_thresh=null_grad_thresh,
                                             null_grad_val=null_grad_val)
     logging.info("Time, SNR, and BestNR of triggers extracted.")
@@ -756,13 +816,11 @@ def max_median_stat(slide_dict, time_veto_max_stat, trig_stat, total_trials):
                    else 0 for slide_id in slide_dict])
 
     full_time_veto_max_stat = sort_stat(time_veto_max_stat)
-
     if total_trials % 2:
         median_stat = full_time_veto_max_stat[(total_trials - 1) // 2]
     else:
         median_stat = numpy.mean((full_time_veto_max_stat)
                                  [total_trials//2 - 1: total_trials//2 + 1])
-
     return max_stat, median_stat, full_time_veto_max_stat
 
 
