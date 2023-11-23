@@ -519,7 +519,7 @@ class SingleDetTriggers(object):
             self.bank = {}
 
         # Apply some masks to start off with - here we should try and apply
-        # them in the order which cuts our the most things earliest.
+        # them in the order which cuts most things earliest.
         self.mask = premask
 
         if filter_rank:

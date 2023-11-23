@@ -72,6 +72,7 @@ pycbc.init_logging(args.verbose)
 
 # Get the single-ifo triggers
 sngl_file = hdf.SingleDetTriggers(
+    args.single_trigger_file,
     args.instrument,
     bank_file=args.bank_file,
     veto_file=args.veto_file,

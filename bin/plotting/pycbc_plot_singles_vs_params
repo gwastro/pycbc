@@ -93,13 +93,14 @@ if opts.min_snr:
         idx = trig_file.select(
             lambda snr: snr >= opts.min_snr,
             'snr',
-            group=opts.detector
+            group=opts.detector,
+            indices_only=True,
         )
     logging.info('%d triggers after snr mask', idx.size)
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
     data_mask[idx] = True
 else:
-    idx = None
+    data_mask = None
 
 if opts.z_var == 'density' or opts.min_z is None:
     filter_rank = None
@@ -116,7 +117,7 @@ trigs = pycbc.io.SingleDetTriggers(
     veto_file=opts.veto_file,
     segment_name=opts.segment_name,
     premask=data_mask,
-    filter_func=opt.filter_string,
+    filter_func=opts.filter_string,
     filter_rank=filter_rank,
     filter_threshold=filter_thresh
 )
@@ -126,16 +127,16 @@ trigs = pycbc.io.SingleDetTriggers(
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
 
-mask = np.ones(len(x), dtype=bool)		
-if opts.min_x is not None:		
-    mask = np.logical_and(mask, x >= opts.min_x)		
-if opts.max_x is not None:		
-    mask = np.logical_and(mask, x <= opts.max_x)		
-if opts.min_y is not None:		
-    mask = np.logical_and(mask, y >= opts.min_y)		
-if opts.max_y is not None:		
-    mask = np.logical_and(mask, y <= opts.max_y)		
-x = x[mask]		
+mask = np.ones(len(x), dtype=bool)
+if opts.min_x is not None:
+    mask = np.logical_and(mask, x >= opts.min_x)
+if opts.max_x is not None:
+    mask = np.logical_and(mask, x <= opts.max_x)
+if opts.min_y is not None:
+    mask = np.logical_and(mask, y >= opts.min_y)
+if opts.max_y is not None:
+    mask = np.logical_and(mask, y <= opts.max_y)
+x = x[mask]
 y = y[mask]
 
 hexbin_style = {

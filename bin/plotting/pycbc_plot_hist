@@ -46,7 +46,7 @@ pycbc.init_logging(args.verbose)
 f = h5py.File(args.trigger_file, 'r')
 ifo = tuple(f.keys())[0]
 
-# Apply presort if we can, if we cant, load everything but it may be
+# Apply presort if we can; if we can't, load everything but it may be
 # inefficient
 xv = args.x_var if args.x_var in ranking.required_datasets else None
 xt = args.x_min if args.x_var in ranking.required_datasets else None
