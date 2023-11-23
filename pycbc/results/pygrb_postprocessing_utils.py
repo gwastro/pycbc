@@ -496,7 +496,7 @@ def get_bestnrs(trigs, ifos, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=
                 if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold or
                         ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
                     bestnr[i_trig] = 0
-    bestnr[:] = 1
+
     for i_trig in range(len(bestnr)):
         # Get chisq reduced (new) SNR for triggers that were not cut so far
         # Ideally we should not have any of them right now
