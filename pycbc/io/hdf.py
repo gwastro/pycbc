@@ -517,7 +517,8 @@ class SingleDetTriggers(object):
         be considered."""
 
         # If this becomes memory intensive we can optimize
-        stat = rank_method.rank_stat_single((self.ifo, self.trig_dict()))
+        sds = rank_method.single(self.trig_dict())
+        stat = rank_method.rank_stat_single((self.ifo, sds))
         if len(stat) == 0:
             # No triggers, so just return here
             self.stat = np.array([])
