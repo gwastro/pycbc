@@ -954,5 +954,5 @@ class MultibandRelativeTimeDom(HierarchicalModel):
             others_lognl += model.lognl
         # calculate the combined loglikelihood
         rec['loglikelihood'] = rec['loglr'] + others_lognl + \
-                               self.primary_model.lognl
+            self.primary_model.lognl
         return rec
