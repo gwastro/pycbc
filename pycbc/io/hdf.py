@@ -8,6 +8,7 @@ import logging
 import inspect
 import pickle
 
+from itertools import chain
 from io import BytesIO
 from lal import LIGOTimeGPS, YRJUL_SI
 
@@ -542,9 +543,9 @@ class SingleDetTriggers(object):
             # Apply a filter on the triggers which is _not_ a ranking statistic
             for rank_str in ranking.sngls_ranking_function_dict.keys():
                 if f'self.{rank_str}' in filter_func:
-                    logging.warning(f'Supplying the ranking ({rank_str}) in '
+                    logging.warning('Supplying the ranking (%s) in '
                                     'filter_func is inefficient, suggest to '
-                                    'use filter_rank instead.')
+                                    'use filter_rank instead.', rank_str)
             logging.info('Setting up filter function')
             for c in self.trigs.keys():
                 if c in filter_func:
