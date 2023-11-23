@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/marco.cusinato/.conda/envs/pycbc_segment/bin/python
 
 # Copyright (C) 2014 Alex Nitz
 #
@@ -36,6 +36,7 @@ from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
 from pycbc.vetoes import sgchisq
+from pycbc.conversions import mchirp_from_mass1_mass2
 time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("-V", "--verbose", action="store_true",
@@ -290,9 +291,14 @@ with ctx:
         'coherent_snr': float32,
         'null_snr': float32,
         'nifo': int,
-        'my_network_chisq': float32,
+        'network_chisq': float32,
+        'network_bank_chisq': float32,
+        'network_cont_chisq': float32,
         'reweighted_snr': float32,
-        'slide_id': int
+        'slide_id': int,
+        'mass1': float32,
+        'mass2': float,
+        'mchirp': float
         }
     network_out_vals = {
         'dec': None,
@@ -301,15 +307,23 @@ with ctx:
         'coherent_snr': None,
         'null_snr': None,
         'nifo': None,
-        'my_network_chisq': None, 
+        'network_chisq': None,
+        'network_bank_chisq': None,
+        'network_cont_chisq': None,
         'reweighted_snr': None,
-        'slide_id': None
+        'slide_id': None,
+        'mass1': None,
+        'mass2': None,
+        'mchirp': None
         }
+    
     network_names = sorted(network_out_vals.keys())
     event_mgr = EventManagerCoherent(
         args, args.instruments, ifo_names,
         [ifo_out_types[n] for n in ifo_names], network_names,
-        [network_out_types[n] for n in network_names], time_slides=time_slides)
+        [network_out_types[n] for n in network_names],
+        segments=segments, time_slides=time_slides)
+
     logging.info("Read in template bank")
     bank = waveform.FilterBank(
         args.bank_file, flen, delta_f, complex64, low_frequency_cutoff=flow,
@@ -335,10 +349,12 @@ with ctx:
     ap = {}
     for i, ifo in enumerate(args.instruments):
         ap[ifo] = antenna_patterns[i]
-
     # Loop over templates
     for t_num, template in enumerate(bank):
         # Loop over segments
+        m1 = bank.table['mass1'][t_num]
+        m2 = bank.table['mass2'][t_num]
+        mchirp = mchirp_from_mass1_mass2(m1, m2)
         for s_num,stilde in enumerate(segments[args.instruments[0]]):
             stilde = {ifo : segments[ifo][s_num] for ifo in args.instruments}
             # Filter check checks the 'inj_filter_rejector' options to
@@ -542,9 +558,20 @@ with ctx:
                             # Calculate the power and autochi2 values for the coinc
                         # indexes (this uses the snr timeseries before the time
                         # delay, so we need to undo it. Same for normalisation)
+                        # Need all out vals to be the same length. This means
+                        # the entries that are single values need to be
+                        # repeated once per event. 
+                        num_events = None
+                        # Disctionaries for the degrees of freedom and chisqs
+                        # these are used to compute the network chisqs
                         chisq = {}
                         chisq_dof = {}
+                        chisq_bank = {}
+                        chisq_bank_dof = {}
+                        chisq_cont = {}
+                        chisq_cont_dof = {}
                         for ifo in args.instruments:
+                            # Chisqs
                             chisq[ifo], chisq_dof[ifo] = power_chisq.values(
                                 corr_dict[ifo],
                                 coherent_ifo_trigs[ifo] / norm_dict[ifo],
@@ -552,49 +579,31 @@ with ctx:
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
                                 template)
-                        # Calculate network chisq value
-                        network_chisq_dict = coh.network_chisq(
-                            chisq, chisq_dof, coherent_ifo_trigs)
-                        # Calculate chisq reweighted SNR
-                        if nifo > 2:
-                            reweighted_snr = ranking.newsnr(
-                                rho_coh, network_chisq_dict)
-                            # Calculate null reweighted SNR
-                            reweighted_snr = coh.reweight_snr_by_null(
-                                reweighted_snr, null, rho_coh)
-                        elif nifo == 2:
-                            reweighted_snr = ranking.newsnr(
-                                rho_coinc, network_chisq_dict)
-                        else:
-                            rho_sngl = abs(
-                                snr[args.instruments[0]][
-                                    coinc_idx_det_frame[args.instruments[0]]
-                                    ]
-                                )
-                            reweighted_snr = ranking.newsnr(
-                                rho_sngl, network_chisq_dict)
-                        # Need all out vals to be the same length. This means
-                        # the entries that are single values need to be
-                        # repeated once per event.
-                        num_events = len(reweighted_snr)
-                        # the output will only be possible if
-                        # len(networkchi2) == num_events
-                        for ifo in args.instruments:
-                            (ifo_out_vals['bank_chisq'],
-                                    ifo_out_vals['bank_chisq_dof']) =\
+                            chisq_bank[ifo], chisq_bank_dof[ifo] = \
                                 bank_chisq.values(
                                     template, stilde[ifo].psd, stilde[ifo],
                                     coherent_ifo_trigs[ifo] / norm_dict[ifo],
                                     norm_dict[ifo],
                                     coinc_idx_det_frame[ifo]
                                     + stilde[ifo].analyze.start)
-                            ifo_out_vals['cont_chisq'] = autochisq.values(
+                            chisq_cont[ifo] = autochisq.values(
                                 snr_dict[ifo] / norm_dict[ifo],
                                 coinc_idx_det_frame[ifo], template,
                                 stilde[ifo].psd, norm_dict[ifo],
                                 stilde=stilde[ifo], low_frequency_cutoff=flow)
-                            ifo_out_vals['chisq'] = chisq[ifo]
-                            ifo_out_vals['chisq_dof'] = chisq_dof[ifo]
+                            #chisq_cont_dof[ifo] = getattr(autochisq, 'dof')
+                            # Number of events
+                            if num_events is None:
+                                num_events = len(chisq[ifo])
+                            # Assign out_vals
+                            (ifo_out_vals['chisq'],
+                                ifo_out_vals['chisq_dof']) = \
+                                    (chisq[ifo], chisq_dof[ifo])
+                            (ifo_out_vals['bank_chisq'],
+                                ifo_out_vals['bank_chisq_dof']) = \
+                                    (chisq_bank[ifo], chisq_bank_dof[ifo])
+                            ifo_out_vals['cont_chisq'] = chisq_cont[ifo]
+                            print(ifo_out_vals['cont_chisq'])
                             ifo_out_vals['time_index'] = (
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].cumulative_index
@@ -609,22 +618,54 @@ with ctx:
                             event_mgr.add_template_events_to_ifo(
                                 ifo, ifo_names,
                                 [ifo_out_vals[n] for n in ifo_names])
-                        if nifo>2:
+                        # Calculate network, network bank and network cont chisq values
+                        network_chisq_dict = coh.network_chisq(
+                            chisq, chisq_dof, coherent_ifo_trigs)
+                        #network_chisq_bank_dict = coh.network_chisq(
+                        #    chisq_bank, chisq_bank_dof, coherent_ifo_trigs)
+                        #network_chisq_cont_dict = coh.network_chisq(
+                        #    chisq_cont, chisq_cont_dof, coherent_ifo_trigs)
+                        # Calculate chisq reweighted SNR
+                        if nifo > 2:
+                            reweighted_snr = ranking.newsnr(
+                                rho_coh, network_chisq_dict)
+                            # Calculate null reweighted SNR
+                            reweighted_snr = coh.reweight_snr_by_null(
+                                reweighted_snr, null, rho_coh)
                             network_out_vals['coherent_snr'] = rho_coh
                             network_out_vals['null_snr'] = null
-                        elif nifo==2:
+                        elif nifo == 2:
+                            reweighted_snr = ranking.newsnr(
+                                rho_coinc, network_chisq_dict)
                             network_out_vals['coherent_snr'] = rho_coinc
                         else:
+                            rho_sngl = abs(
+                                snr[args.instruments[0]][
+                                    coinc_idx_det_frame[args.instruments[0]]
+                                    ]
+                                )
+                            reweighted_snr = ranking.newsnr(
+                                rho_sngl, network_chisq_dict)
                             network_out_vals['coherent_snr'] = (
                                 abs(snr[args.instruments[0]][
                                     coinc_idx_det_frame[args.instruments[0]]
                                     ])
                                 )
+                        # Assign network values
                         network_out_vals['reweighted_snr'] = reweighted_snr
-                        network_out_vals['my_network_chisq'] = (
+                        network_out_vals['network_chisq'] = (
                             np.real(network_chisq_dict))
+                        #network_out_vals['network_bank_chisq'] = (
+                        #    np.real(network_chisq_bank_dict)
+                        #)
+                        #network_out_vals['network_cont_chisq'] = (
+                        #    np.real(network_chisq_cont_dict)
+                        #)
                         network_out_vals['time_index'] = (
                             coinc_idx + stilde[ifo].cumulative_index)
+                        network_out_vals['mass1'] = [m1] * num_events
+                        network_out_vals['mass2'] = [m2] * num_events
+                        network_out_vals['mchirp'] = [mchirp] * num_events
                         network_out_vals['nifo'] = [nifo] * num_events
                         network_out_vals['dec'] = [sky_positions[1][position_index]] * num_events
                         network_out_vals['ra'] = [sky_positions[0][position_index]] * num_events
