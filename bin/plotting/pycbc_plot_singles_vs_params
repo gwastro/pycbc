@@ -107,7 +107,7 @@ if opts.z_var == 'density' or opts.min_z is None:
     filter_thresh = None
 else:
     # We can apply a/another filter on the z value
-    filter_rank = ranking.sngls_ranking_function_dict[opts.z_var]
+    filter_rank = opts.z_var
     filter_thresh = opts.min_z
 
 trigs = pycbc.io.SingleDetTriggers(

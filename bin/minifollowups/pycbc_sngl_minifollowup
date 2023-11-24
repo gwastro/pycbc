@@ -65,8 +65,9 @@ parser.add_argument('--inspiral-data-read-name',
 parser.add_argument('--inspiral-data-analyzed-name',
                     help="Name of inspiral segmentlist containing data "
                          "analyzed by each analysis job.")
-parser.add_argument('--min-snr', type=float, default=6.5,
-                    help="Minimum SNR to consider for loudest triggers")
+parser.add_argument('--min-sngl-ranking', type=float, default=6.5,
+                    help="Minimum sngl-ranking to consider for loudest "
+                         "triggers. Default=6.5.")
 parser.add_argument('--non-coinc-time-only', action='store_true',
                     help="If given remove (veto) single-detector triggers "
                          "that occur during a time when at least one other "
@@ -136,8 +137,8 @@ trigs = hdf.SingleDetTriggers(
     bank_file=args.bank_file,
     veto_file=args.foreground_censor_file,
     segment_name=args.foreground_segment_name,
-    filter_ranking='snr',
-    filter_threshold=args.min_snr
+    filter_rank=args.sngl_ranking,
+    filter_threshold=args.min_sngl_ranking
 )
 
 # Include gating vetoes

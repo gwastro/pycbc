@@ -67,7 +67,7 @@ for ifo in args.single_trigger_files.keys():
             group=ifo,
             indices_only=True
         )
-        data_mask = np.zeros(data[ifo]['snr'].size, dtype=bool)
+        data_mask = numpy.zeros(data[ifo]['snr'].size, dtype=bool)
         data_mask[idx] = True
 
     if not len(idx):

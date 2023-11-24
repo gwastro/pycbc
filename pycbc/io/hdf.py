@@ -537,7 +537,8 @@ class SingleDetTriggers(object):
                  chunksize=chunksize,
             )
             logging.info("%d triggers remain", idx.size)
-            self.apply_mask(idx)
+            # If self.mask already has values, need to take these into account:
+            self.and_masks(idx)
 
         if filter_func:
             # Apply a filter on the triggers which is _not_ a ranking statistic
@@ -617,7 +618,12 @@ class SingleDetTriggers(object):
             if type(m[1]) == property]
 
     def apply_mask(self, logic_mask):
-        """Apply a mask over the top of the current mask"""
+        """Apply a mask over the top of the current mask
+
+        Parameters
+        ----------
+        logic_mask : boolean array or numpy array of indices
+        """
         if self.mask is None:
             self.mask = np.zeros(self.ntriggers, dtype=bool)
             self.mask[logic_mask] = True
@@ -627,6 +633,32 @@ class SingleDetTriggers(object):
             self.mask[orig_indices] = True
         else:
             self.mask = list(np.array(self.mask)[logic_mask])
+
+    def and_masks(self, logic_mask):
+        """Apply a mask to be combined as a logical and with the current mask.
+
+        Parameters
+        ----------
+        logic_mask : boolean array or numpy array of indices
+        """
+        if self.mask is None:
+            # No mask exists, just update to use the given mask
+            self.apply_mask(logic_mask)
+            return
+
+        # Use intersection of the indices of True values in the masks
+        if hasattr(logic_mask, 'dtype') and (logic_mask.dtype == 'bool'):
+            new_indices = self.mask.nonzero()[0][logic_mask]
+        else:
+            new_indices = np.array(logic_mask)
+
+        if hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
+            orig_indices = self.mask.nonzero()[0][logic_mask]
+        else:
+            orig_indices = np.array(self.mask)
+
+        self.mask[:] = False
+        self.mask[np.intersect1d(new_indices, orig_indices)] = True
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
                                            ranking_threshold=6,
