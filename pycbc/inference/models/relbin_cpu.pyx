@@ -96,12 +96,13 @@ cpdef likelihood_parts_det_multi(double [::1] freqs,
                      ) :
     cdef size_t i
     cdef double complex hd=0, r0, r0n, r1
+    cdef int N
 
     N = freqs.shape[0]
     for i in range(N):
-        r0n = (exp(-2.0j * 3.141592653 * dtc * freqs[i])
-               * (hp[i])) / h00[i]
-        r0n *= conj((exp(-2.0j * 3.141592653 * dtc2 * freqs[i])
+        r0n = conj((exp(-2.0j * 3.141592653 * dtc * freqs[i])
+               * (hp[i])) / h00[i])
+        r0n *= ((exp(-2.0j * 3.141592653 * dtc2 * freqs[i])
                * (hp2[i])) / h002[i])
         r1 = r0n - r0
         if i > 0:
@@ -156,7 +157,7 @@ cpdef likelihood_parts_det(double [::1] freqs,
                      double [::1] b1,
                      ) :
     cdef size_t i
-    cdef double complex hd=0, r0, r0n, r1, x0, x1, x0n;
+    cdef double complex hd=0, r0, r0n, r1, x0=0, x1, x0n;
     cdef double hh=0
     cdef int N
 

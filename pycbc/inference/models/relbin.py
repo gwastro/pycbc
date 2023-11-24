@@ -559,11 +559,13 @@ class Relative(DistMarg, BaseGaussianNoise):
                 # TODO: Check that p['tc'] is the appropriate variable here
                 # for the return.
 
+                dtc = 0.
+
                 channel = wfs[ifo].numpy()
-                filter_i, norm_i = lik(freqs, 0., channel, h00,
+                filter_i, norm_i = lik(freqs, dtc, channel, h00,
                                        sdat['a0'], sdat['a1'],
                                        sdat['b0'], sdat['b1'])
-                self._current_wf_parts[ifo] = (0., channel, h00)
+                self._current_wf_parts[ifo] = (dtc, channel, h00)
             else:
                 hp, hc = wfs[ifo]
                 det = self.det[ifo]
