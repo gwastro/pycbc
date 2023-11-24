@@ -1,5 +1,3 @@
-#!/home/marco.cusinato/.conda/envs/pycbc_23_11/bin/python
-
 # Copyright (C) 2021 Francesco Pannarale & Cameron Mills
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -55,137 +53,6 @@ def get_trig_dictionary(trig):
     for i_trig in range(len(trig[list(trig_keys)[0]])):
         trigs.append({key:trig[key][i_trig] for key in trig_keys})
     return trigs
-def get_column(table, column_name):
-    """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column
-    method. Easier for h5py switch. Note: Must still replace
-    .get_sigmasqs() and .get_snglsnr() methods throughout the scripts.
-
-    Parameters
-    ----------
-    table: glue.ligolw.lsctables.MultiInspiralTable
-    column_name: str
-
-    Returns
-    -------
-    column: numpy.array
-    """
-
-    # Annoyingly only first letter of ifo for eff_dist in tables.
-    if column_name.startswith("eff_dist_") and column_name.endswith(("1", "2")):
-        column_name = column_name[:-1]
-    elif column_name == "null_snr":
-        return table.get_null_snr()
-
-    return table.get_column(column_name)
-
-
-def dict_to_ndarray(dict_to_convert):
-    """Turn single level dict into 2d numpy.ndarray."""
-
-    return np.asarray(list(dict_to_convert.values()))
-
-
-def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=None):
-    """Extract parameters from injections in lsctables. If found extract
-    trigger info.
-
-    Parameters
-    ----------
-    inj_table: ligo.lw.lsctables.SimInspiralTable
-    ifos: list
-    trig_table: glue.ligolw.lsctables.MultiInspiralTable, optional
-    background_bestnrs: numpy.array, optional
-        Used to compute FAP of quiet injections.
-
-    Returns
-    -------
-    inj_data: dict of parameter numpy.array pairs
-        Found or missed injection parameter dictionary.
-    """
-
-    inj_data = {}
-
-    # Local copies of variables entering the BestNR definition
-    chisq_index = opts.chisq_index
-    chisq_nhigh = opts.chisq_nhigh
-    null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
-    snr_thresh = opts.snr_threshold
-    sngl_snr_thresh = opts.sngl_snr_threshold
-    new_snr_thresh = opts.newsnr_threshold
-    null_grad_thresh = opts.null_grad_thresh
-    null_grad_val = opts.null_grad_val
-
-    # Get inj params
-    inj_params = ['mchirp', 'mass1', 'mass2', 'distance', 'inclination',
-                  'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z']
-    for param in inj_params:
-        inj_data[param] = get_column(inj_table, param)
-    inj_data['ra'] = get_column(inj_table, 'longitude')
-    inj_data['dec'] = get_column(inj_table, 'latitude')
-    inj_data['time'] = get_column(inj_table, 'geocent_end_time') \
-                + 1e-9 * get_column(inj_table, 'geocent_end_time_ns')
-    for ifo in ifos:
-        site = ifo.lower()
-        inj_data['eff_dist_{}'.format(site)] = get_column(
-            inj_table, 'eff_dist_{}'.format(site))
-    inj_data['eff_dist'] = np.asarray([
-        1.0 / sum(1.0 / inj_data['eff_dist_{}'.format(site)] for ifo in ifos)])
-
-    if trig_table:
-        # Get recovered parameters and statistic values
-        rec_params = ['mchirp', 'mass1', 'mass2', 'ra', 'dec']
-        filter_stats = ['snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr']
-        for param in rec_params:
-            inj_data["rec_" + param] = get_column(trig_table, param)
-        for stat in filter_stats:
-            inj_data[stat] = get_column(trig_table, stat)
-        for ifo in ifos:
-            site = ifo.lower()
-            inj_data['snr_{}'.format(site)] = trig_table.get_sngl_snr(site)
-        inj_data['bestnr'] = ppu.get_bestnrs(trig_table,
-                                             q=chisq_index,
-                                             n=chisq_nhigh,
-                                             null_thresh=null_thresh,
-                                             snr_threshold=snr_thresh,
-                                             sngl_snr_threshold=sngl_snr_thresh,
-                                             chisq_threshold=new_snr_thresh,
-                                             null_grad_thresh=null_grad_thresh,
-                                             null_grad_val=null_grad_val)
-        if background_bestnrs is not None:
-            inj_data['fap'] = np.array(
-                [sum(background_bestnrs > bestnr) for bestnr in inj_data['bestnr']],
-                dtype=float) / len(background_bestnrs)
-
-        # Antenna responses
-        f_resp = {}
-        # Calibration errors:
-        # Get the relative detector sensitivities averaged over the
-        # parameters. This is used to marginalize over calibration errors.
-        inj_sigma = trig_table.get_sigmasqs()
-        # If the sigmasqs are not populated, we can only do calibration
-        # errors in the 1-detector case.
-        for ifo in ifos:
-            if sum(inj_sigma[ifo] == 0):
-                logging.info("%s: sigmasq not set for at least one trigger.", ifo)
-            if sum(inj_sigma[ifo] != 0) == 0:
-                logging.info("%s: sigmasq not set for any trigger.", ifo)
-                if len(ifos) == 1:
-                    msg = "This is a single ifo analysis. "
-                    msg += "Setting sigmasq to unity for all triggers."
-                    logging.info(msg)
-                    inj_sigma[ifo][:] = 1.0
-            antenna = Detector(ifo)
-            f_resp[ifo] = ppu.get_antenna_responses(antenna, inj_data['ra'],
-                                                    inj_data['dec'],
-                                                    inj_data['time'])
-        inj_sigma_mult = dict_to_ndarray(inj_sigma) * dict_to_ndarray(f_resp)
-        inj_sigma_tot = np.sum(inj_sigma_mult, axis=0)
-        for ifo in ifos:
-            inj_data['inj_sigma_mean_%s' % ifo.lower()] = np.mean(
-                inj_sigma[ifo] * f_resp[ifo] / inj_sigma_tot)
-
-    return inj_data
-
 
 # =============================================================================
 # Main script starts here
@@ -202,6 +69,8 @@ ppu.pygrb_add_bestnr_opts(parser)
 parser.add_argument("--num-loudest-off-trigs", action="store",
                     type=int, default=30, help="Number of loudest " +
                     "offsouce triggers to output details about.")
+parser.add_argument("--found-missed-file", default=None, #required=True
+                    help="Missed found injection file to output details about.")
 parser.add_argument("--quiet-found-injs-output-file", default=None, #required=True,
                     help="Quiet-found injections html output file.")
 parser.add_argument("--missed-found-injs-output-file", default=None, #required=True,
@@ -578,17 +447,9 @@ else:
 # Post-process injections
 # =======================
 if do_injections:
-
-    found_trig_table = ppu.load_injections(found_missed_file, vetoes)
-    found_inj_table = ppu.load_injections(found_missed_file, vetoes, sim_table=True)
-
+    found_injs, missed_injs = ppu.load_missed_found_injections(found_missed_file, ifos, opts,
+                                                background_bestnrs=full_time_veto_max_bestnr)
     logging.info("Missed/found injections/triggers loaded.")
-
-    # Extract columns of found injections and triggers
-    found_injs = lsctable_to_dict(
-        found_inj_table, ifos, opts, trig_table=found_trig_table,
-        background_bestnrs=full_time_veto_max_bestnr
-        )
 
     # Construct conditions for injection:
     # 1) found louder than background,
@@ -608,10 +469,6 @@ if do_injections:
     # 3) missed because of vetoes 'g_missed2'--> now accessed by indices: vetoed_trigs
 
     logging.info("%d found injections analysed.", len(found_injs['mchirp']))
-
-    # Missed injections (ones not recovered at all)
-    missed_inj_table = ppu.load_injections(found_missed_file, vetoes, sim_table=True)
-    missed_injs = lsctable_to_dict(missed_inj_table, ifos, opts)
 
     # Avoids a problem with formatting in the non-static html output file
     missed_na = [-0] * len(missed_injs['mchirp'])
@@ -648,7 +505,7 @@ if do_injections:
     # Begin by calculating the components from each detector
     cal_error = 0
     for ifo in ifos:
-        cal_error += cal_errs[ifo]**2 * found_injs['inj_sigma_mean_%s' % ifo.lower()]**2
+        cal_error += cal_errs[ifo]**2 * found_injs['inj_sigma_mean_%s' % ifo]**2
     cal_error = cal_error**0.5
 
     max_dc_cal_error = max(cal_dc_errs.values())
@@ -771,17 +628,17 @@ if do_injections:
     format_strings.extend(['##.##',
                            '##.##', '##.##', '##.##', '##.##', '##.##',
                            '##.##'])
-    sngl_snr_keys = ['snr_{}'.format(ifo.lower()) for ifo in ifos]
+    sngl_snr_keys = ['snr_%s' % ifo for ifo in ifos]
     keys = ['distance']
-    keys += ['eff_dist_{}'.format(ifo.lower()) for ifo in ifos]
+    keys += ['eff_dist_%s' % ifo for ifo in ifos]
     keys += ['time', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
              'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra', 'rec_dec',
-             'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr']
+             'coherent_snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr']
     keys += sngl_snr_keys
     keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z']
     # The following parameters are available only for recovered injections
     na_keys = ['rec_mass1', 'rec_mass2', 'rec_mchirp', 'rec_ra', 'rec_dec',
-               'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr', 'bestnr']
+               'coherent_snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr', 'bestnr']
     na_keys += sngl_snr_keys
     td = []
     for key in keys:
