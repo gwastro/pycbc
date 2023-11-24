@@ -891,7 +891,8 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
         seg_buffer.coalesce()
 
         # Construct the ifo-indexed dictionary of slid veteoes
-        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id)
+        if vetoes is not None:
+            slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id)
 
         # Construct trial list and check against buffer
         trial_dict[slide_id] = segments.segmentlist()
@@ -904,9 +905,13 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
                 curr_trial = segments.segment(trial_end - trial_time,
                                               trial_end)
                 if not seg_buffer.intersects_segment(curr_trial):
-                    intersect = numpy.any([slid_vetoes[ifo].
+                    if vetoes is not None:
+                        intersect = numpy.any([slid_vetoes[ifo].
                                            intersects_segment(curr_trial)
                                            for ifo in ifos])
+                    else:
+                        intersect = False
+                    
                     if not intersect:
                         trial_dict[slide_id].append(curr_trial)
 
