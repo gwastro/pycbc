@@ -1128,7 +1128,12 @@ class File(pegasus_workflow.File):
             self.ifo_list = [ifos]
         else:
             self.ifo_list = ifos
-        self.ifo_string = ''.join(self.ifo_list)
+            
+        if self.ifo_list is not None:
+            self.ifo_string = ''.join(self.ifo_list)
+        else:
+            self.ifo_string = 'file'
+            
         self.description = exe_name
 
         if isinstance(segs, segments.segment):

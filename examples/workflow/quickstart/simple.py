@@ -36,7 +36,7 @@ workflow = wf.Workflow(args, 'cont')
 # of the configuration file, and any options provided in section named 
 # [exe1] as in the example here will automatically be passed to all uses
 # of this executable.
-exe1 = wf.Executable(workflow.cp, 'argument_exe', ifos=workflow.ifos)
+exe1 = wf.Executable(workflow.cp, 'argument_exe')
 
 # The executable has a basic node creation method. The 'node' is a specific
 # job you want to run using this executable. It may have options unique to the
@@ -61,7 +61,7 @@ workflow += node1
 # This works the same as above, but we'll use different methods to add
 # the options. We can also demonstrate the ability to automatically generate
 # the file names for executable outputs.
-exe2 = wf.Executable(workflow.cp, 'option_exe', ifos=workflow.ifos)
+exe2 = wf.Executable(workflow.cp, 'option_exe')
 for i in range(2):
     node2 = exe2.create_node()
     
