@@ -76,7 +76,7 @@ for i in range(2):
     # and any tags (set of strings) associated with the node or file.
     # We can set some which will be incorporated into the filename to make
     # sure it is unique. 
-    node2.new_output_file_opt(workflow.analysis_time, '.hdf',
+    node2.new_output_file_opt(workflow.analysis_time, '.txt',
                               "--output-file", tags=[str(i)])
     
     # Once we are finished setting up the node, we must add it to the workflow
