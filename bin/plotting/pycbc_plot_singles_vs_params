@@ -139,6 +139,29 @@ if opts.max_y is not None:
 x = x[mask]
 y = y[mask]
 
+title = '%s of %s triggers over %s and %s' % (opts.z_var.title(),
+                         opts.detector, opts.x_var.title(), opts.y_var.title())
+fig_caption = ("This plot shows the %s of single detector triggers for the %s "
+               "detector. %s is shown on the colorbar axis against %s and %s "
+               "on the x- and y-axes." % (opts.z_var, opts.detector,
+                                   opts.z_var.title(), opts.x_var, opts.y_var))
+
+if not any(mask):
+    # All triggers removed - make a blank plot which says so:
+    fig = pl.figure()
+    ax = fig.gca()
+    pl.text(0.5, 0.5, 'no triggers in the range')
+
+    pycbc.results.save_fig_with_metadata(
+        fig,
+        opts.output_file,
+        title=title,
+        caption=fig_caption,
+        cmd=' '.join(sys.argv),
+        fig_kwds={'dpi': 200}
+    )
+    sys.exit()
+
 hexbin_style = {
     'gridsize': opts.grid_size,
     'linewidths': 0.03
@@ -161,7 +184,6 @@ logging.info('Plotting')
 fig = pl.figure()
 ax = fig.gca()
 
-
 if opts.z_var == 'density':
     hb = ax.hexbin(x, y, **hexbin_style)
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
@@ -182,12 +204,6 @@ else:
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
 ax.set_title(opts.z_var.title() + ' of %s triggers ' % (opts.detector))
-title = '%s of %s triggers over %s and %s' % (opts.z_var.title(),
-                         opts.detector, opts.x_var.title(), opts.y_var.title())
-fig_caption = ("This plot shows the %s of single detector triggers for the %s "
-               "detector. %s is shown on the colorbar axis against %s and %s "
-               "on the x- and y-axes." % (opts.z_var, opts.detector,
-                                   opts.z_var.title(), opts.x_var, opts.y_var))
 pycbc.results.save_fig_with_metadata(fig, opts.output_file, title=title,
                                      caption=fig_caption, cmd=' '.join(sys.argv),
                                      fig_kwds={'dpi': 200})
