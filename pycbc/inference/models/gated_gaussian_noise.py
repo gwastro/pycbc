@@ -517,7 +517,7 @@ class BaseGatedGaussian(BaseGaussianNoise):
             dd = norm - 0.5*ip
             # store
             self._det_lognls[det] = dd
-            lognl += d
+            lognl += dd
         return float(lognl)
 
     def det_lognl(self, det):
