@@ -244,6 +244,7 @@ def nearby_missedinj(endtime, snr):
 trigger_idx = {}
 trigger_snrs = {}
 trigger_times = {}
+# This finds the triggers near to _any_ missed injection
 for trig in single_triggers:
     ifo = trig.ifo
     with HFile(trig.lfn, 'r') as trig_f:
@@ -305,7 +306,7 @@ for num_event in range(num_events):
                       tags=args.tags + [str(num_event)])[0],)]
 
     for sngl in single_triggers:
-        # Find the triggers close to this injection at this IFO
+        # Find the triggers close to _this_ injection at this IFO
         ifo = sngl.ifo
         trig_tdiff = abs(inj_params[ifo + '_end_time'] - trigger_times[ifo])
         nearby = trig_tdiff < args.nearby_triggers_window
@@ -315,7 +316,7 @@ for num_event in range(num_events):
             continue
         # Find the loudest SNR in this window
         loudest = numpy.argmax(trigger_snrs[ifo][nearby])
-        # Convert to the indexin the trigger file
+        # Convert to the index in the trigger file
         nearby_trigger_idx = trigger_idx[ifo][nearby][loudest]
         # Make the info snippet
         sngl_info = mini.make_sngl_ifo(workflow, sngl, tmpltbank_file,
@@ -386,7 +387,7 @@ for num_event in range(num_events):
         single_fname = args.single_detector_triggers[curr_ifo]
         idx = HFile(single_fname).select(
             lambda t: abs(t - inj_params['tc']) < args.inj_window,
-            f'{ifo}/end_time',
+            f'{curr_ifo}/end_time',
             indices_only=True,
         )
 
@@ -403,7 +404,7 @@ for num_event in range(num_events):
         # Next, find the loudest within this set of triggers
         # Use SNR here or NewSNR, or other??
         loudest_idx = hd_sngl.snr.argmax()
-        hd_sngl.apply_mask(loudest_idx)
+        hd_sngl.apply_mask([loudest_idx])
 
         # What are the parameters of this trigger?
         curr_params = copy.deepcopy(inj_params)

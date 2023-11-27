@@ -76,12 +76,12 @@ sngl_file = hdf.SingleDetTriggers(
     args.instrument,
     bank_file=args.bank_file,
     veto_file=args.veto_file,
-    veto_segment_name=args.veto_segment_name,
+    segment_name=args.veto_segment_name,
 )
 
 if args.trigger_id is not None:
     # Apply a mask which is just the trigger of interest
-    sngl_file.apply_mask(np.array([args.trigger_id]))
+    sngl_file.apply_mask(numpy.array([args.trigger_id]))
 elif args.n_loudest is not None:
     # Cluster by a ranking statistic and retain only the loudest n clustered
     # triggers

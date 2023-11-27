@@ -207,7 +207,7 @@ trigs = SingleDetTriggers(
     args.trigger_file,
     args.ifo,
     filter_rank=args.sngl_ranking,
-    filter_threshold=args.args.plot_lower_stat_limit,
+    filter_threshold=args.plot_lower_stat_limit,
 )
 # This is the direct pointer to the HDF file, used later on
 trigf = trigs.trigs_f

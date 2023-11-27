@@ -92,7 +92,7 @@ class HFile(h5py.File):
         size = None
         group = kwds.get('group', '')
         for ds in dsets:
-            refs[ds] = self[group][ds]
+            refs[ds] = self[group + '/' + ds]
             if (size is not None) and (refs[ds].size != size):
                 raise RuntimeError(f"Dataset {ds} is {self[ds].size} "
                                    "entries long, which does not match "
@@ -648,17 +648,18 @@ class SingleDetTriggers(object):
 
         # Use intersection of the indices of True values in the masks
         if hasattr(logic_mask, 'dtype') and (logic_mask.dtype == 'bool'):
-            new_indices = self.mask.nonzero()[0][logic_mask]
+            new_indices = logic_mask.nonzero()[0]
         else:
             new_indices = np.array(logic_mask)
 
         if hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
-            orig_indices = self.mask.nonzero()[0][logic_mask]
+            orig_indices = self.mask.nonzero()[0]
         else:
             orig_indices = np.array(self.mask)
 
         self.mask[:] = False
-        self.mask[np.intersect1d(new_indices, orig_indices)] = True
+        and_indices = np.intersect1d(new_indices, orig_indices)
+        self.mask[and_indices.astype(np.uint64)] = True
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
                                            ranking_threshold=6,
