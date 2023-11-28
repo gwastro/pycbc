@@ -639,7 +639,7 @@ class SingleDetTriggers(object):
 
         Parameters
         ----------
-        logic_mask : boolean array or numpy array of indices
+        logic_mask : boolean array or numpy array/list of indices
         """
         if self.mask is None:
             # No mask exists, just update to use the given mask
