@@ -99,7 +99,7 @@ class NessaiSampler(BaseSampler):
         run_kwds = self.run_kwds.copy()
 
         if kwargs is not None:
-            logging.info(f"Updating keyword arguments with {kwargs}")
+            logging.info("Updating keyword arguments with %s" % kwargs)
             extra_kwds.update(
                 {k: v for k, v in kwargs.items() if k in default_kwds}
             )
@@ -125,7 +125,15 @@ class NessaiSampler(BaseSampler):
 
     @staticmethod
     def get_default_kwds(importance_nested_sampler=False):
-        # Determine all possible keyword arguments that are not hardcoded
+        """Return lists of all allowed keyword arguments for nessai.
+        
+        Returns
+        -------
+        default_kwds : list
+            List of keyword arguments that can be passed to FlowSampler
+        run_kwds: list
+            List of keyword arguments that can be passed to FlowSampler.run
+        """
         return nessai.utils.settings.get_all_kwargs(
             importance_nested_sampler=importance_nested_sampler,
             split_kwargs=True,
@@ -195,8 +203,8 @@ class NessaiSampler(BaseSampler):
             raise RuntimeError(
                 f"Config contains unknown options: {invalid_kwds}"
             )
-        logging.info(f"nessai keyword arguments: {kwds}")
-        logging.info(f"nessai run keyword arguments: {run_kwds}")
+        logging.info("nessai keyword arguments: %s" % kwds)
+        logging.info("nessai run keyword arguments: %s" % run_kwds)
 
         loglikelihood_function = get_optional_arg_from_config(
             cp, section, "loglikelihood-function"
@@ -247,16 +255,16 @@ class NessaiSampler(BaseSampler):
             with loadfile(self.checkpoint_file, "r") as fp:
                 self.resume_data = fp.read_pickled_data_from_checkpoint_file()
             logging.info(
-                f"Found valid checkpoint file: {self.checkpoint_file}"
+                "Found valid checkpoint file: %s" % self.checkpoint_file
             )
         except Exception as e:
-            logging.info("Failed to load checkpoint file with error: {e}")
+            logging.info("Failed to load checkpoint file with error: %s" % e)
 
     def finalize(self):
         """Finalize sampling"""
         logz = self._sampler.ns.log_evidence
         dlogz = self._sampler.ns.log_evidence_error
-        logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
+        logging.info("log Z, dlog Z: %s, %s" % (logz, dlogz))
         self.checkpoint()
 
     def write_results(self, filename):
@@ -310,6 +318,7 @@ class NessaiModel(nessai.model.Model):
         self.parallelise_prior = True
 
     def to_dict(self, x):
+        """Convert nessai a live point array to a dictionary."""
         return {n: x[n].item() for n in self.names}
 
     def to_live_points(self, x):

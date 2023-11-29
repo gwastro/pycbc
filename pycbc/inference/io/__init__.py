@@ -50,7 +50,7 @@ filetypes = {
     DynestyFile.name: DynestyFile,
     PosteriorFile.name: PosteriorFile,
     UltranestFile.name: UltranestFile,
-    NessaiFile.name : NessaiFile,
+    NessaiFile.name: NessaiFile,
 }
 
 try:
