@@ -31,8 +31,8 @@ import copy
 import numpy
 import h5py
 from scipy import stats
-from pycbc.detector import Detector
 from ligo import segments
+from pycbc.detector import Detector
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo.lw import utils, lsctables
@@ -661,7 +661,7 @@ def load_segment_dict(hdf_file_path):
     seg_ends = hdf_file['network/search/segments/end_times'][:]
     # Write list of segments
     seg_list = segments.segmentlist([segments.segment(seg_start, seg_ends[i])
-                                     for i, seg_start in enumerate(seg_starts)])
+                                    for i, seg_start in enumerate(seg_starts)])
 
     # Write segment_dict in proper format
     # At the moment of this comment, there is only one segment
