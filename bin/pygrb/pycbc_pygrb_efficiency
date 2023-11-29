@@ -239,7 +239,7 @@ if onsource_file:
     loud_on_bestnr = 0
     #loud_on_fap = 1
 
-    # Calculate BestNRs and record loudest trig by BestNR
+    # Retrieve BestNRs and record loudest trig by BestNR
     if on_trigs:
         on_trigs_bestnrs = on_trigs['network/reweighted_snr'][:]
         loud_on_bestnr_trigs, loud_on_bestnr = \
