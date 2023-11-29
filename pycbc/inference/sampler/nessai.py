@@ -159,6 +159,8 @@ class NessaiSampler(BaseSampler):
             )
         else:
             importance_nested_sampler = False
+        
+        # Requires additional development work, see the model class below
         if importance_nested_sampler is True:
             raise NotImplementedError(
                 "Importance nested sampler is not currently supported"
@@ -184,6 +186,9 @@ class NessaiSampler(BaseSampler):
         kwds = {}
         run_kwds = {}
 
+        # ast.literal_eval is used here since specifying a dictionary with all
+        # various types would be difficult. However, one may wish to revisit
+        # this in future, e.g. if evaluating code is a concern.
         for d_out, d_defaults in zip(
             [kwds, run_kwds], [default_kwds, default_run_kwds]
         ):
@@ -219,6 +224,7 @@ class NessaiSampler(BaseSampler):
             extra_kwds=kwds,
         )
 
+        # Do not need to check number of samples for a nested sampler
         setup_output(obj, output_file, check_nsamples=False)
         if not obj.new_checkpoint:
             obj.resume_from_checkpoint()
@@ -318,12 +324,12 @@ class NessaiModel(nessai.model.Model):
         self.parallelise_prior = True
 
     def to_dict(self, x):
-        """Convert nessai a live point array to a dictionary."""
+        """Convert a nessai live point array to a dictionary"""
         return {n: x[n].item() for n in self.names}
 
     def to_live_points(self, x):
         """Convert to the structured arrays used by nessai"""
-        # TODO: could this be improved?
+        # It is possible this could be made faster
         return nessai.livepoint.numpy_array_to_live_points(
             rfn.structured_to_unstructured(x),
             self.names,
@@ -350,6 +356,7 @@ class NessaiModel(nessai.model.Model):
     def from_unit_hypercube(self, x):
         """Map from the unit-hypercube to the prior."""
         # Needs to be implemented for importance nested sampler
+        # This method is already available in pycbc but the inverse is not
         raise NotImplementedError
 
     def to_unit_hypercube(self, x):
