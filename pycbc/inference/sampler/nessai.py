@@ -13,6 +13,7 @@ import nessai.model
 import nessai.livepoint
 import nessai.utils.multiprocessing
 import nessai.utils.settings
+import numpy
 import numpy.lib.recfunctions as rfn
 
 from .base import BaseSampler, setup_output
@@ -68,14 +69,18 @@ class NessaiSampler(BaseSampler):
     @property
     def samples(self):
         """The raw nested samples including the corresponding weights"""
-        samples = nessai.livepoint.live_points_to_dict(
-            self._sampler.nested_samples,
-            self.model.sampling_params,
-        )
-        samples["logwt"] = self._sampler.ns.state.log_posterior_weights
-        samples["loglikelihood"] = self._sampler.nested_samples["logL"]
-        samples["logprior"] = self._sampler.nested_samples["logP"]
-        samples["it"] = self._sampler.nested_samples["it"]
+        if self._sampler.ns.nested_samples:
+            ns = numpy.array(self._sampler.ns.nested_samples)
+            samples = nessai.livepoint.live_points_to_dict(
+                ns,
+                self.model.sampling_params,
+            )
+            samples["logwt"] = self._sampler.ns.state.log_posterior_weights
+            samples["loglikelihood"] = ns["logL"]
+            samples["logprior"] = ns["logP"]
+            samples["it"] = ns["it"]
+        else:
+            samples = {}
         return samples
 
     def run(self, **kwargs):
@@ -112,6 +117,7 @@ class NessaiSampler(BaseSampler):
                 close_pool=False,
                 signal_handling=False,
                 resume_data=self.resume_data,
+                checkpoint_callback=self.checkpoint_callback,
                 **extra_kwds,
             )
         logging.info("Starting sampling with nessai")
@@ -155,7 +161,13 @@ class NessaiSampler(BaseSampler):
         )
 
         # Keyword arguments the user cannot configure via the config
-        remove_kwds = ["pool", "n_pool", "close_pool", "signal_handling"]
+        remove_kwds = [
+            "pool",
+            "n_pool",
+            "close_pool",
+            "signal_handling",
+            "checkpoint_callback",
+        ]
 
         for kwd in remove_kwds:
             default_kwds.pop(kwd, None)
@@ -215,12 +227,19 @@ class NessaiSampler(BaseSampler):
         """
         pass
 
-    def checkpoint(self):
-        """Checkpoint the sampler"""
+    def checkpoint_callback(self, state):
+        """Callback for checkpointing.
+        
+        This will be called periodically by nessai.
+        """
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:
-                fp.write_pickled_data_into_checkpoint_file(self._sampler.ns)
+                fp.write_pickled_data_into_checkpoint_file(state)
             self.write_results(fn)
+
+    def checkpoint(self):
+        """Checkpoint the sampler"""
+        self.checkpoint_callback(self._sampler.ns)
 
     def resume_from_checkpoint(self):
         """Reads the resume data from the checkpoint file."""
@@ -235,23 +254,21 @@ class NessaiSampler(BaseSampler):
 
     def finalize(self):
         """Finalize sampling"""
-        logz = self._sampler.log_evidence
-        dlogz = self._sampler.log_evidence_error
-
+        logz = self._sampler.ns.log_evidence
+        dlogz = self._sampler.ns.log_evidence_error
         logging.info(f"log Z, dlog Z: {logz}, {dlogz}")
-
         self.checkpoint()
 
-        for fn in [self.checkpoint_file, self.backup_file]:
-            self.write_results(fn)
-
     def write_results(self, filename):
-        """Write the results to a given file"""
+        """Write the results to a given file.
+        
+        Writes the nested samples, log-evidence and log-evidence error.
+        """
         with self.io(filename, "a") as fp:
             fp.write_raw_samples(self.samples)
             fp.write_logevidence(
-                self._sampler.log_evidence,
-                self._sampler.log_evidence_error,
+                self._sampler.ns.log_evidence,
+                self._sampler.ns.log_evidence_error,
             )
 
 
