@@ -498,8 +498,7 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
 # =============================================================================
 # Extract basic trigger properties and store them as dictionaries
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
-                                  opts):
+def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
     """Extract and store as dictionaries time, SNR, and BestNR of
     time-slid triggers"""
 
