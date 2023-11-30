@@ -610,6 +610,12 @@ while True:
             significance_dict,
             combo=key,
         )
+        bg_far = significance.apply_far_limit(
+            bg_far,
+            significance_dict,
+            combo=key,
+        )
+
         sep_bg_data[key].data['ifar'] = 1. / bg_far
         sep_fg_data[key].data['ifar'] = 1. / fg_far
         sep_fg_data[key].data['fap'] = 1 - \

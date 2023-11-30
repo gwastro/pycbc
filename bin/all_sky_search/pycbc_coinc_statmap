@@ -421,8 +421,16 @@ while numpy.any(ifar_foreground >= background_time):
         return_counts=True,
         **significance_dict[ifo_combo])
 
-    fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo_combo)
-    bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=ifo_combo)
+    fg_far = significance.apply_far_limit(
+        fg_far,
+        significance_dict,
+        combo=ifo_combo
+    )
+    bg_far = significance.apply_far_limit(
+        bg_far,
+        significance_dict,
+        combo=ifo_combo,
+    )
 
     # Update the ifar_foreground criteria depending on whether foreground
     # triggers are being removed via inclusive or exclusive background.   
@@ -438,6 +446,11 @@ while numpy.any(ifar_foreground >= background_time):
             exc_zero_trigs.decimation_factor,
             background_time_exc,
             **significance_dict[ifo_combo])
+        fg_far_exc = significance.apply_far_limit(
+            fg_far_exc,
+            significance_dict,
+            combo=ifo_combo
+        )
         ifar_foreground = 1. / fg_far_exc
     # ifar_foreground has been updated and the code can continue.
 
