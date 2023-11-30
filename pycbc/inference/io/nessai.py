@@ -41,7 +41,7 @@ class NessaiFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             # Rejection sample
             rng = numpy.random.default_rng(seed)
             logwt -= logwt.max()
-            logu = numpy.log(rng.rand(n))
+            logu = numpy.log(rng.random(n))
             keep = logwt > logu
             post = {'loglikelihood': loglikelihood[keep]}
             for param in fields:
