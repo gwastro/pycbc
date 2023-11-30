@@ -470,7 +470,6 @@ def get_bestnrs(trigs, ifos, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=
     bestnr = numpy.ones(len(snr))
 
     # Coherent SNR cut
-    snr_threshold = 1
     bestnr[snr < snr_threshold] = 0
 
     # Bank and auto chi-squared cuts
@@ -712,10 +711,8 @@ def load_missed_found_injections(hdf_file, ifos, opts,
     # Recovered parameters
     rec_params = ['mchirp', 'mass1', 'mass2', 'ra', 'dec']
     for param in rec_params:
-        try:
-            found_data['rec_%s' % param] = inj_data['/network/%s' % param][...]
-        except:
-            found_data['rec_%s' % param] = numpy.zeros(len(found_data['eff_dist']))
+        found_data['rec_%s' % param] = inj_data['/network/%s' % param][...]
+
     found_data['end_time'] = \
         inj_data['/network/end_time_gc'][...] #needed to use bestNR
 
