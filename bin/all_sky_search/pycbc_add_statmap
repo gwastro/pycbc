@@ -361,8 +361,14 @@ fg_fars_out = np.sum(isincombo_mask * fg_fars, axis=0)
 fg_fars_exc_out = np.sum(isincombo_mask * fg_fars_exc, axis=0)
 
 # Apply any limits as appropriate
-fg_fars_out = significance.apply_far_limit(fg_fars_out, significance_dict, combo=fg_coinc_type)
-fg_fars_exc_out = significance.apply_far_limit(fg_fars_exc_out, significance_dict, combo=fg_coinc_type)
+fg_fars_out = significance.apply_far_limit(
+    fg_fars_out,
+    significance_dict,
+    combo=fg_coinc_type)
+fg_fars_exc_out = significance.apply_far_limit(
+    fg_fars_exc_out,
+    significance_dict,
+    combo=fg_coinc_type)
 
 fg_ifar = conv.sec_to_year(1. / fg_fars_out)
 fg_ifar_exc = conv.sec_to_year(1. / fg_fars_exc_out)
