@@ -139,10 +139,10 @@ for tnum in template_ids:
     trigger_keep_ids = cuts.apply_trigger_cuts(trigs, trigger_cut_dict,
                                                statistic=rank_method)
     tids_full = tids_uncut[trigger_keep_ids]
-    logging.info('%s:%s', tnum, len(tids_uncut))
+    logging.debug('%s:%s', tnum, len(tids_uncut))
     if len(tids_full) < len(tids_uncut):
-        logging.info("%s triggers cut",
-                     len(tids_uncut) - len(tids_full))
+        logging.debug("%s triggers cut",
+                      len(tids_uncut) - len(tids_full))
 
     n_tot_trigs = tids_full.size
     if not n_tot_trigs: continue
