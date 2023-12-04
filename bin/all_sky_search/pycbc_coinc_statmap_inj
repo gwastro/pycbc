@@ -37,12 +37,21 @@ if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
-ifo_key = ''.join(args.ifos)
-significance_dict = significance.digest_significance_options([ifo_key], args)
 
 window = args.cluster_window
 logging.info("Loading coinc zerolag triggers")
 zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos=args.ifos)
+
+if 'ifos' in zdata.attrs:
+    ifos = zdata.attrs['ifos'].split(' ')
+    logging.info('using ifos from file {}'.format(args.zero_lag_coincs[0]))
+else:
+    ifos = args.ifos
+    logging.info('using ifos from command line input')
+
+ifo_key = ''.join(ifos)
+significance_dict = significance.digest_significance_options([ifo_key], args)
+
 zdata = zdata.cluster(window)
 
 f = h5py.File(args.output_file, "w")
@@ -51,7 +60,7 @@ f.attrs['num_of_ifos'] = zdata.attrs['num_of_ifos']
 f.attrs['pivot'] = zdata.attrs['pivot']
 f.attrs['fixed'] = zdata.attrs['fixed']
 f.attrs['timeslide_interval'] = zdata.attrs['timeslide_interval']
-f.attrs['ifos'] = ' '.join(sorted(args.ifos))
+f.attrs['ifos'] = ' '.join(sorted(ifos))
 
 # Copy over the segment for coincs and singles
 for key in zdata.seg.keys():
