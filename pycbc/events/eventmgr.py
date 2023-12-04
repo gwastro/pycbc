@@ -378,7 +378,7 @@ class EventManager(object):
 
         if opt.injection_window and hasattr(gwstrain, 'injections'):
             logger.info("Keeping triggers within %s seconds of injection",
-                         opt.injection_window)
+                        opt.injection_window)
             self.keep_near_injection(opt.injection_window,
                                      gwstrain.injections)
             logger.info("%d remaining triggers", len(self.events))
