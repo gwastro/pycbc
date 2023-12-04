@@ -19,5 +19,6 @@ cpnest_stub.ini.hdf:cpnest \
 nessai_stub.ini.hdf:nessai \
 --output-file sample.png \
 --plot-contours \
+--plot-marginal \
 --no-contour-labels \
 --no-marginal-titles
