@@ -79,8 +79,7 @@ args = parser.parse_args()
 if args.regression_method == 'nn' and args.num_neighbors < 1:
     raise RuntimeError("Need to give a positive number of nearest neighbors!")
 
-logging_level = 1 if args.verbose is None else args.verbose + 1
-init_logging(logging.level)
+init_logging(args.verbose)
 
 fits = h5py.File(args.template_fit_file, 'r')
 

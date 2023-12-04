@@ -124,8 +124,7 @@ statsmod.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 
-logging_level = 1 if args.verbose is None else args.verbose + 1
-init_logging(logging.level)
+init_logging(args.verbose)
 
 args.veto_segment_name = sum(args.veto_segment_name, [])
 args.veto_file = sum(args.veto_file, [])
