@@ -18,7 +18,7 @@ import argparse, logging
 
 import copy, numpy as np
 
-from pycbc import io, events
+from pycbc import io, events, init_logging
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import stat as statsmod
 from pycbc.types.optparse import MultiDetOptionAction
@@ -124,6 +124,9 @@ statsmod.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 
+logging_level = 1 if args.verbose is None else args.verbose + 1
+init_logging(logging.level)
+
 args.veto_segment_name = sum(args.veto_segment_name, [])
 args.veto_file = sum(args.veto_file, [])
 
@@ -134,12 +137,6 @@ if (args.prune_param or args.prune_bins or args.prune_number) and not \
    (args.prune_param and args.prune_bins and args.prune_number):
     raise RuntimeError("To prune, need to specify param, number of bins and "
                        "nonzero number to prune in each bin!")
-
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 logging.info('Fitting above threshold %f' % args.stat_threshold)
 

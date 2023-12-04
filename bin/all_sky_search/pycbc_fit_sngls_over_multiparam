@@ -250,7 +250,8 @@ for inputstr in smooth_kwargs:
 
 assert len(args.log_param) == len(args.fit_param) == len(args.smoothing_width)
 
-pycbc.init_logging(args.verbose)
+logging_level = 1 if args.verbose is None else args.verbose + 1
+init_logging(logging.level)
 
 fits = h5py.File(args.template_fit_file, 'r')
 

@@ -6,6 +6,7 @@ from matplotlib import use
 use('Agg')
 from matplotlib import pyplot as plt
 from pycbc.events import triggers
+from pycbc import init_logging
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--verbose', action='count')
@@ -29,9 +30,7 @@ parser.add_argument('--min-ifar', type=float,
                     help='only plot injections above given ifar value')
 args = parser.parse_args()
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+init_logging(args.verbose)
 
 # should be same number of inj and trig files
 # and either 0 or 1 bank files or 1 per inj file

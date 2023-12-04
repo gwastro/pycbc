@@ -18,6 +18,7 @@ import argparse, logging
 
 import numpy as np
 
+from pycbc import init_logging
 from pycbc.events import triggers
 import pycbc.version
 
@@ -78,11 +79,8 @@ args = parser.parse_args()
 if args.regression_method == 'nn' and args.num_neighbors < 1:
     raise RuntimeError("Need to give a positive number of nearest neighbors!")
 
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+logging_level = 1 if args.verbose is None else args.verbose + 1
+init_logging(logging.level)
 
 fits = h5py.File(args.template_fit_file, 'r')
 
