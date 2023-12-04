@@ -66,7 +66,8 @@ class LogFormatter(logging.Formatter):
         return s
 
 
-def init_logging(verbose=False, format='%(asctime)s %(levelname)s : %(message)s'):
+def init_logging(verbose=False,
+                 format='%(asctime)s %(levelname)s : %(message)s'):
     """Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
