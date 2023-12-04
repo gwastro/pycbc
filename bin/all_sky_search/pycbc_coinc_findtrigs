@@ -89,10 +89,6 @@ def parse_template_range(num_templates, rangestr):
 
 logging.info('Starting...')
 
-logging.info("A code-level logging info statement")
-logging.debug("A code-level logging debug statement")
-trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
-logging.getLogger('pycbc.events.cuts').setLevel(logging.INFO)
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 num_templates = len(h5py.File(args.template_bank, "r")['template_hash'])

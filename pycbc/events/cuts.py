@@ -170,8 +170,6 @@ def ingest_cuts_option_group(args):
     """
     Return dictionaries for trigger and template cuts.
     """
-    logger.info("A module-level logging info statement")
-    logger.debug("A module-level logging debug statement")
     # Deal with the case where no cuts are supplied:
     if not args.trigger_cuts and not args.template_cuts:
         return {}, {}
