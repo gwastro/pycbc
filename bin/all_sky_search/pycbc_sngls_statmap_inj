@@ -117,8 +117,14 @@ bg_far_exc, fg_far_exc = significance.get_far(
     fg_time_exc,
     **significance_dict[ifo])
 
-fg_far_exc = significance.apply_far_limit(fg_far_exc, significance_dict, combo=ifo)
-bg_far_exc = significance.apply_far_limit(bg_far_exc, significance_dict, combo=ifo)
+fg_far_exc = significance.apply_far_limit(
+    fg_far_exc,
+    significance_dict,
+    combo=ifo)
+bg_far_exc = significance.apply_far_limit(
+    bg_far_exc,
+    significance_dict,
+    combo=ifo)
 
 fg_ifar_exc = 1. / fg_far_exc
 bg_ifar_exc = 1. / bg_far_exc
