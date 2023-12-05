@@ -1310,18 +1310,26 @@ with ctx:
                     for key in results[ifo]:
                         if len(results[ifo][key]):
                             results[ifo][key] = results[ifo][key][idx]
-                if data_reader[ifo].idq is not None:
-                    logging.info("Checking %s's iDQ information", ifo)
+                if data_reader[ifo].idq:
+                    logging.info("Reading %s's iDQ information", ifo)
                     start = data_reader[ifo].start_time
                     times = results[ifo]['end_time']
-                    idx = data_reader[ifo].idq.indices_of_flag(
+                    unflagged_idx = data_reader[ifo].idq.indices_of_flag(
                             start, valid_pad, times,
                             padding=data_reader[ifo].dq_padding)
-                    logging.info('Keeping %d/%d %s triggers after iDQ',
-                                 len(idx), len(times), ifo)
-                    for key in results[ifo]:
-                        if len(results[ifo][key]):
-                            results[ifo][key] = results[ifo][key][idx]
+
+                    if args.idq_reweighting:
+                        trig_flagged = numpy.ones_like(times, dtype=int)
+                        trig_flagged[unflagged_idx] = 0
+                        results[ifo]['dq_flag'] = trig_flagged
+                    else:
+                        # use idq as a veto
+                        logging.info('Keeping %d/%d %s triggers after iDQ',
+                                     len(unflagged_idx), len(times), ifo)
+                        for key in results[ifo]:
+                            if len(results[ifo][key]):
+                                results[ifo][key] = \
+                                    results[ifo][key][unflagged_idx]
 
             # Calculate and add the psd variation for the results
             if args.psd_variation:
