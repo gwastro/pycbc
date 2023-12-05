@@ -16,7 +16,7 @@
 import sys, h5py, argparse, logging, pycbc.version, numpy
 from scipy.stats import norm
 from pycbc.events import triggers
-
+from pycbc import init_logging
 
 def dist(i1, i2, parvals, smoothing_width):
     """
