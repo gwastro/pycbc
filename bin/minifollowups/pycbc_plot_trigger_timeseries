@@ -128,7 +128,10 @@ logging.info("Saving figure")
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
             cmd = ' '.join(sys.argv),
             title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
-            caption = 'Time series showing the single detector triggers'
-                      ' centered around the time of the trigger of interest.',
+            caption = 'Time series showing the single-detector triggers '
+                      'centered around the time of the trigger of interest. '
+                      'Triggers with ranking 1 have been downweighted beyond '
+                      'consideration, but may still form insignificant '
+                      'events.',
          )
 logging.info("Done!")
