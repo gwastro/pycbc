@@ -27,6 +27,7 @@ from pycbc.events import triggers as trigs
 from pycbc.events import trigger_fits as trstats
 from pycbc.events import stat as pystat
 from pycbc.types.optparse import MultiDetOptionAction
+from pycbc.tmpltbank import bank_conversions
 import pycbc.version
 
 parser = argparse.ArgumentParser(usage="",
@@ -121,7 +122,7 @@ bank.close()
 
 # Only calculate params if needed
 usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
-extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
+extparams = [par for par in bank_conversions.conversion_options
              if par in usedparams]
 
 for ex_p in extparams:
@@ -137,17 +138,8 @@ for ex_p in extparams:
         )
     else:
         logging.info("Calculating " + ex_p + " from template parameters")
-        params[ex_p] = trigs.get_param(ex_p, args, params['mass1'],
-                                       params['mass2'], params['spin1z'],
-                                       params['spin2z'])
-
-# string formats for labels, logging etc.
-formats = {
-        "mchirp": '{:.2f}',
-        "eta": '{:.3f}',
-        "chi_eff": '{:.3f}',
-        'template_duration': '{:.0f}'
-}
+        params[ex_p] = bank_conversions.get_bank_property(
+            ex_p, params, np.arange(params['mass1'].size))
 
 logging.info('setting up {}'.format(usedparams))
 sp_one_bin_input = (params[args.split_param_one].min(),
@@ -155,9 +147,11 @@ sp_one_bin_input = (params[args.split_param_one].min(),
 sp_two_bin_input = (params[args.split_param_two].min(),
                     params[args.split_param_two].max(), args.split_two_nbins)
 if args.max_bin_param:
-    logging.info(('setting maximum {} value: '
-                  + formats[args.bin_param]).format(args.bin_param,
-                                                    args.max_bin_param))
+    logging.info(
+        'setting maximum %s value: %.3f',
+        args.bin_param,
+        args.max_bin_param
+    )
     pbin_upper_lim = float(args.max_bin_param)
 else:
     pbin_upper_lim = params[args.bin_param].max()
@@ -414,7 +408,8 @@ fig, axes = plt.subplots(args.split_one_nbins, args.split_two_nbins,
 lines = []
 labels = []
 for i, lower, upper in zip(range(args.num_bins), pbins.lower(), pbins.upper()):
-    binlabel = r"%.3g - %.3g" % (lower, upper)
+    print(lower, upper)
+    binlabel = f"{lower:#.3g} - {upper:#.3g}"
     line, = axes[0,0].plot([0,0], [0,0], linewidth=2,
                      color=histcolors[i], alpha=0.6)
     lines.append(line)
@@ -480,7 +475,7 @@ for x in range(args.split_one_nbins):
             ax.semilogy(edges[:-1], cum_counts, linewidth=2,
                      color=histcolors[i], alpha=0.6)
             ax.semilogy(fitrange, fitted_cum_counts, "--", color=histcolors[i],
-                     label=r"$\alpha = $%.2f" % alpha)
+                    label=f"$\\alpha = ${alpha:#.3f}" % alpha)
             lgd_sub = ax.legend(fontsize='small', framealpha=0.5)
 
             del vals_inbin, vals_above_thresh
@@ -499,21 +494,17 @@ for j in range(args.split_two_nbins):
     axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_ranking, size="large")
     if args.split_two_nbins == 1:
         break
-    axes[0, j].set_xlabel(args.split_param_two + ': ' +
-                          (formats[args.split_param_two] + ' to ' +
-                           formats[args.split_param_two]).format(sp_two_bounds.lower()[j],
-                                     sp_two_bounds.upper()[j]), size="large")
+    xrange_string = f'{sp_two_bounds.lower()[j]:#.3g} to {sp_two_bounds.upper()[j]:#.3g}'
+    axes[0, j].set_xlabel(f'{args.split_param_two}: {xrange_string}', size="large")
     axes[0, j].xaxis.set_label_position("top")
 
 for i in range(args.split_one_nbins):
     if args.split_one_nbins == 1:
         axes[0, 0].set_ylabel('Cumulative number', size='large')
         break
-    axes[i, 0].set_ylabel(args.split_param_one + ': ' +
-                          (formats[args.split_param_one] + ' to ' +
-                           formats[args.split_param_one]).format(sp_one_bounds.lower()[i],
-                                      sp_one_bounds.upper()[i]) + '\ncumulative number',
-                                      size="large")
+    yrange_string = f'{sp_one_bounds.lower()[i]:#.3g} to {sp_one_bounds.upper()[i]:#.3g}'
+    axes[i, 0].set_ylabel(f'{args.split_param_one}: {yrange_string}\ncumulative number',
+        size="large")
 
 fig.tight_layout(rect=(1./(args.split_two_nbins+1), 0, 1, 1))
 
