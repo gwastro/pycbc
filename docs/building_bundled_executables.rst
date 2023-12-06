@@ -96,7 +96,7 @@ The script executes ``pycbc_inspiral`` as part of the build process. This may
 require LAL data at build time. The LAL data can be given with the command
 line argument::
     
-    --with-lal-data-path=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation
+    --with-lal-data-path=/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation
 
 The default command line arguments clone PyCBC from the standard GitHub
 repository.  If you would like to build a bundle using code from your own
@@ -130,6 +130,6 @@ Building Releases for CVMFS
 To build a release of ``pycbc_inspiral`` for installation in CVMFS, run the
 script with the arguments::
 
-    pycbc_build_eah.sh --lalsuite-commit=a3a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4 --with-extra-libs=file:///home/pycbc/build/composer_xe_2015.0.090.tar.gz --with-lal-data-path=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation
+    pycbc_build_eah.sh --lalsuite-commit=a3a5a476d33f169b8749e2840c306a48df63c936 --pycbc-commit=b68832784969a47fe2658abffb3888ee06cd1be4 --with-extra-libs=file:///home/pycbc/build/composer_xe_2015.0.090.tar.gz --with-lal-data-path=/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation
 
 changing the ``--lalsuite-commit``, ``--pycbc-commit``, and ``--with-lal-data-path`` options to the values for the release.
