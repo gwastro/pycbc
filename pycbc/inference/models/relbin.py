@@ -492,7 +492,6 @@ class Relative(DistMarg, BaseGaussianNoise):
             self.calculate_hihjs(models)
 
         if self.still_needs_det_response:
-            # finally add in the lognl term from this model
             for m1, m2 in itertools.combinations(models, 2):
                 for det in self.data:
                     a0, a1, fedge = self.hihj[(m1, m2)][det]
