@@ -70,12 +70,12 @@ available in a 'IGWN Conda' environment.  To see what environments are available
 
 This should yield ``igwn-py37`` as one choice.  The output of this command will also
 tell you the location of the environment in the file system.  Then, the location of the
-python3.7 executable is for instance ``/cvmfs/oasis.opensciencegrid.org/ligo/sw/conda/envs/igwn-py37/bin/python``
+python3.7 executable is for instance ``/cvmfs/software.igwn.org/conda/envs/igwn-py37/bin/python``
 and you will create the virtualenv via the command
 
 .. code-block:: bash
 
-    virtualenv -p /cvmfs/oasis.opensciencegrid.org/ligo/sw/conda/envs/igwn-py37/bin/python env
+    virtualenv -p /cvmfs/software.igwn.org/conda/envs/igwn-py37/bin/python env
 
 Once the virtualenv has been created you can install PyCBC from PyPI or a local
 copy with the `[igwn]` extra specifier to install the optional extra requirements
