@@ -4,6 +4,11 @@ import argparse, shutil
 parser = argparse.ArgumentParser()
 parser.add_argument('--input-file')
 parser.add_argument('--output-file')
+parser.add_argument('--append-text', help='append this text to output file')
 args = parser.parse_args()
 
 shutil.copyfile(args.input_file, args.output_file)
+
+if args.append_text:
+    with open(args.output_file, 'a') as f:
+        f.write(args.append_text)

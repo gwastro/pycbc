@@ -618,8 +618,13 @@ class Executable(pegasus_workflow.Executable):
             self.out_dir = self.name
         else:
             self.out_dir = self.tagged_name
+
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir)
+            
+        # Make output directory if not there
+        if not os.path.isdir(self.out_dir):
+            make_analysis_dir(self.out_dir)
 
     def _set_pegasus_profile_options(self):
         """Set the pegasus-profile settings for this Executable.
