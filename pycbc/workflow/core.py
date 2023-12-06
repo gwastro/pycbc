@@ -615,9 +615,9 @@ class Executable(pegasus_workflow.Executable):
         if out_dir is not None:
             self.out_dir = out_dir
         elif len(self.tags) == 0:
-            self.out_dir = self.name
+            self.out_dir = self.name + "_output"
         else:
-            self.out_dir = self.tagged_name
+            self.out_dir = self.tagged_name + "_output"
 
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir)
