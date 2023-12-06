@@ -146,7 +146,7 @@ run the command
 
 .. code-block:: bash
 
-    echo 'export LAL_DATA_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation' >> $VIRTUAL_ENV/bin/activate
+    echo 'export LAL_DATA_PATH=/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation' >> $VIRTUAL_ENV/bin/activate
 
 to add the appropriate path to your virtual environment's ``activate`` script.
 Then deactivate and activate your virtual environment.

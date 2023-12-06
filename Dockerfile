@@ -37,7 +37,7 @@ ENV PATH "/usr/local/bin:/usr/bin:/bin:/lib64/openmpi/bin/bin"
 # Set the default LAL_DATA_PATH to point at CVMFS first, then the container.
 # Users wanting it to point elsewhere should start docker using:
 #   docker <cmd> -e LAL_DATA_PATH="/my/new/path"
-ENV LAL_DATA_PATH "/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation:/opt/pycbc/pycbc-software/share/lal-data"
+ENV LAL_DATA_PATH "/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation:/opt/pycbc/pycbc-software/share/lal-data"
 
 # When the container is started with
 #   docker run -it pycbc/pycbc-el8:latest
