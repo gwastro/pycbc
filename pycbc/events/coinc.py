@@ -36,14 +36,6 @@ from .eventmgr_cython import timecoincidence_getslideint
 from .eventmgr_cython import timecoincidence_findidxlen
 from .eventmgr_cython import timecluster_cython
 
-# Mapping used in background_bin_from_string to select approximant for
-# duration function, if duration-based binning is used.
-_APPROXIMANT_DURATION_MAP = {
-    'SEOBNRv2duration': 'SEOBNRv2',
-    'SEOBNRv4duration': 'SEOBNRv4',
-    'SEOBNRv5duration': 'SEOBNRv5_ROM'
-}
-
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
@@ -105,7 +97,7 @@ def background_bin_from_string(background_bins, data):
             elif bin_type == 'chi_eff':
                 vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
                                                  data['spin1z'], data['spin2z'])
-            elif bin_type in ['SEOBNRv2Peak', 'SEOBNRv4Peak']:
+            elif bin_type.endswith('Peak'):
                 vals = pycbc.pnutils.get_freq(
                     'f' + bin_type,
                     data['mass1'],
@@ -114,14 +106,14 @@ def background_bin_from_string(background_bins, data):
                     data['spin2z']
                 )
                 cached_values[bin_type] = vals
-            elif bin_type in _APPROXIMANT_DURATION_MAP:
+            elif bin_type.endswith('duration'):
                 vals = pycbc.pnutils.get_imr_duration(
                     data['mass1'],
                     data['mass2'],
                     data['spin1z'],
                     data['spin2z'],
                     data['f_lower'],
-                    approximant=_APPROXIMANT_DURATION_MAP[bin_type]
+                    approximant=bin_type.replace('duration', '')
                 )
                 cached_values[bin_type] = vals
             else:
@@ -992,6 +984,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             help="The interval between timeslides in seconds", default=0.1)
         group.add_argument('--ifar-remove-threshold', type=float,
             help="NOT YET IMPLEMENTED", default=100.0)
+
+    @staticmethod
+    def verify_args(args, parser):
+        """Verify that psd-var-related options are consistent"""
+        if ((hasattr(args, 'psd_variation') and not args.psd_variation)
+                and 'psdvar' in args.sngl_ranking):
+            parser.error(f"The single ifo ranking stat {args.sngl_ranking} "
+                         "requires --psd-variation.")
 
     @property
     def background_time(self):

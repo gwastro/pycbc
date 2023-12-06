@@ -91,8 +91,8 @@ trig_data = load_data(trig_file, vetoes)
 # Generate sky grid plot
 #
 
-xlabel = "Longitude (Degrees)"
-ylabel = "Latitude (Degrees)"
+xlabel = "RA (deg)"
+ylabel = "Dec (deg)"
 
 if opts.verbose:
     sys.stdout.write("\nPlotting...\n")
@@ -103,7 +103,8 @@ fig = plt.figure()
 ax = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
 ax.set_ylabel(ylabel)#, fontsize=16)
-ax.plot(trig_data['network/longitude'][:], trig_data['network/latitude'][:],
+# Trigger RA/Dec data is stored in radians, so convert to degrees
+ax.plot(numpy.rad2deg(trig_data['network/ra']), numpy.rad2deg(trig_data['network/dec']),
         'ko', markerfacecolor='blue')
 # Wrap up
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),

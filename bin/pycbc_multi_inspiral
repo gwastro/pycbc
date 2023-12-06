@@ -280,7 +280,7 @@ with ctx:
         'bank_chisq': None,
         'bank_chisq_dof': None,
         'cont_chisq': None,
-        'slide_id': int
+        'slide_id': None
         }
     ifo_names = sorted(ifo_out_vals.keys())
     network_out_types = {
@@ -303,13 +303,13 @@ with ctx:
         'nifo': None,
         'my_network_chisq': None, 
         'reweighted_snr': None,
-        'slide_id': int
+        'slide_id': None
         }
     network_names = sorted(network_out_vals.keys())
     event_mgr = EventManagerCoherent(
         args, args.instruments, ifo_names,
         [ifo_out_types[n] for n in ifo_names], network_names,
-        [network_out_types[n] for n in network_names])
+        [network_out_types[n] for n in network_names], time_slides=time_slides)
     logging.info("Read in template bank")
     bank = waveform.FilterBank(
         args.bank_file, flen, delta_f, complex64, low_frequency_cutoff=flow,
@@ -473,10 +473,10 @@ with ctx:
                     # If we have triggers above coinc threshold and more than 2
                     # ifos, then calculate the coherent statistics
                     if len(coinc_idx) != 0 and nifo > 2:
+                        # Plus and cross polarization
+                        fp = {ifo: ap[ifo][position_index][0] for ifo in args.instruments}
+                        fc = {ifo: ap[ifo][position_index][1] for ifo in args.instruments}
                         if args.projection=='left+right':
-                            #Plus and cross polarization
-                            fp = {ifo: ap[ifo][position_index][0] for ifo in args.instruments}
-                            fc = {ifo: ap[ifo][position_index][1] for ifo in args.instruments}
                             # Left polarized coherent SNR
                             project_l = coh.get_projection_matrix(
                                 fp, fc, sigma, projection='left')
