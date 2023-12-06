@@ -621,7 +621,7 @@ class Executable(pegasus_workflow.Executable):
 
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir)
-            
+
         # Make output directory if not there
         if not os.path.isdir(self.out_dir):
             make_analysis_dir(self.out_dir)
@@ -1133,12 +1133,12 @@ class File(pegasus_workflow.File):
             self.ifo_list = [ifos]
         else:
             self.ifo_list = ifos
-            
+
         if self.ifo_list is not None:
             self.ifo_string = ''.join(self.ifo_list)
         else:
             self.ifo_string = 'file'
-            
+
         self.description = exe_name
 
         if isinstance(segs, segments.segment):
