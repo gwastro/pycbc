@@ -9,7 +9,7 @@ import pycbc.workflow as wf
 # override parameters, or to choose if to plan or directly submit
 # the workflow
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--verbose')
+parser.add_argument('--verbose', action='count')
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
@@ -48,7 +48,8 @@ node1.add_input_arg(input_file)
 
 # Create a file handle for the future *output* of this job. Every file in
 # a workflow must have a unique name. This also demonstrates making
-# explicit file names.
+# explicit file names and an explicit output folder. Typically,
+# you may want to let the workflow decide these locations / names
 out1 = wf.File.from_path(os.path.abspath("test_output.txt"))
 
 # add the output file as the second argument of the executable
@@ -70,6 +71,9 @@ for i in range(2):
     # job in the workflow. This will automatically have the previous job
     # run first and then pass the file it creates along to the later job.
     node2.add_input_opt('--input-file', out1)
+    
+    # add an option with value
+    node2.add_opt('--append-count', str(i))
 
     # add the output file as the second argument of the executable
     # The filename must be unique and is built from the executable name
