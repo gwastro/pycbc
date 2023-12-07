@@ -41,6 +41,7 @@ parser.add_argument('--output-file', required=True,
                     help="Output image file. Required")
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--bin-param', default='template_duration',
+                    choices=bank_conversions.conversion_options,
                     help="Parameter for binning within plots, default "
                          "'template_duration'")
 parser.add_argument('--bin-spacing', choices=['linear', 'log'], default='log',
@@ -51,9 +52,11 @@ parser.add_argument('--num-bins', type=int, default=6,
 parser.add_argument('--max-bin-param', type=float, default=None,
                     help="Maximum allowed value of bin-param")
 parser.add_argument('--split-param-one', default='eta',
+                    choices=bank_conversions.conversion_options,
                     help="Parameter for splitting plot grid in y-direction, "
                          "default 'eta'")
 parser.add_argument('--split-param-two', default='chi_eff',
+                    choices=bank_conversions.conversion_options,
                     help="Parameter for splitting plot grid in x-direction, "
                          "default 'chi_eff'")
 parser.add_argument('--split-one-nbins', default=3, type=int,
@@ -118,7 +121,7 @@ usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
 
 params = {}
 for par in usedparams:
-    if par == 'template_duration':
+    if par in ['template_duration', 'duration']:
         logging.info('Reading duration from trigger file')
         # Loop over template regions, return the first duration value from each region.
         dur = []
