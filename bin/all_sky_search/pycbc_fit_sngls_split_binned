@@ -127,8 +127,7 @@ extparams = [par for par in usedparams if not par in params]
 for ex_p in extparams:
     if ex_p == 'template_duration':
         logging.info('Reading duration from trigger file')
-        # List comprehension loops over templates and returns the first
-        # duration value from that region.
+        # Loop over template regions, return the first duration value from each region.
         dur = []
         for ref in trigf[args.ifo + '/template_duration_template'][:]:
             dur.append(trigf[args.ifo + '/template_duration'][ref][0])
