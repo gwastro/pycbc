@@ -137,11 +137,11 @@ for ex_p in extparams:
             ]
         )
     else:
-        logging.info("Calculating " + ex_p + " from template parameters")
+        logging.info("Calculating %s from template parameters", ex_p)
         params[ex_p] = bank_conversions.get_bank_property(
             ex_p, params, np.arange(params['mass1'].size))
 
-logging.info('setting up {}'.format(usedparams))
+logging.info('setting up %s', ' '.join(usedparams))
 sp_one_bin_input = (params[args.split_param_one].min(),
                     params[args.split_param_one].max(), args.split_one_nbins)
 sp_two_bin_input = (params[args.split_param_two].min(),
@@ -166,7 +166,7 @@ else:
 
 bb_input = (pbin_lower_lim, pbin_upper_lim, args.num_bins)
 
-logging.info('splitting {} into bins'.format(args.bin_param))
+logging.info('splitting %s into bins', args.bin_param)
 if args.bin_spacing == 'log':
     assert pbin_lower_lim > 0
     pbins = bin_utils.LogarithmicBins(*bb_input)
@@ -357,8 +357,11 @@ for x in range(args.split_one_nbins):
         time_inbin = np.array(time_inbin)
 
         count_pruned = 0
-        logging.info('Pruning in split {}-{:#.3g} {}-{:#.3g}'.format(
-                     args.split_param_one, x, args.split_param_two, y))
+        logging.info(
+            'Pruning in split %s-%i %s-%i',
+            args.split_param_one, x,
+            args.split_param_two, y
+        )
         logging.info('Currently have %d triggers', len(vals_inbin))
         while count_pruned < args.prune_number:
             # Getting loudest statistic value in split
@@ -432,13 +435,16 @@ for x in range(args.split_one_nbins):
     for y in range(args.split_two_nbins):
         id_bin2 = id_in_bin2[y]
         id_in_both = np.intersect1d(id_bin1, id_bin2)
-        logging.info('split {}: {}, {}: {}'.format(args.split_param_one, x,
-                                                   args.split_param_two, y))
+        logging.info(
+            'Split %s-%i %s-%i',
+            args.split_param_one, x,
+            args.split_param_two, y,
+        )
         ax = axes[x,y]
         for i, lower, upper in zip(range(args.num_bins), pbins.lower(),
                                    pbins.upper()):
             indices_all_conditions = np.intersect1d(pidx[i], id_in_both)
-            logging.info('{} split {:#.3g}-{:#.3g}'.format(args.bin_param, lower, upper))
+            logging.info('%s split %#.3g-%#.3g', args.bin_param, lower, upper)
             if len(indices_all_conditions) == 0: continue
             vals_inbin = []
             for idx in indices_all_conditions:
@@ -450,8 +456,8 @@ for x in range(args.split_one_nbins):
                 logging.info('No triggers above threshold')
                 continue
             else:
-                logging.info('{} triggers out of {} above threshold'.format(
-                             len(vals_above_thresh), len(vals_inbin)))
+                logging.info('%d triggers out of %d above threshold',
+                             len(vals_above_thresh), len(vals_inbin))
             alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function,
                                  vals_above_thresh, args.stat_fit_threshold)
             fitted_cum_counts = len(vals_above_thresh) * \
@@ -507,7 +513,7 @@ for i in range(args.split_one_nbins):
 
 fig.tight_layout(rect=(1./(args.split_two_nbins+1), 0, 1, 1))
 
-logging.info('Saving to file ' + args.output_file)
+logging.info('Saving to file %s', args.output_file)
 results.save_fig_with_metadata(
     fig, args.output_file,
     title="{}: {} histogram of single detector triggers split by"
