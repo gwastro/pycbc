@@ -230,7 +230,7 @@ if onsource_file:
     on_trigs = ppu.load_triggers(onsource_file, vetoes)
     logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
 
-    # Separate off chirp mass column
+    # Calculate chirp mass values
     on_mchirp = mchirp_from_mass1_mass2(on_trigs['network/mass1'][:],
                                         on_trigs['network/mass2'][:])
 
