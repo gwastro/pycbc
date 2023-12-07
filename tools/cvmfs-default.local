@@ -1,5 +1,5 @@
 CVMFS_USER=cvmfs
-CVMFS_REPOSITORIES=config-osg.opensciencegrid.org,oasis.opensciencegrid.org,gwosc.osgstorage.org
+CVMFS_REPOSITORIES=config-osg.opensciencegrid.org,software.igwn.org,gwosc.osgstorage.org
 CVMFS_QUOTA_LIMIT=5000
 CVMFS_HTTP_PROXY=DIRECT
 CVMFS_MAX_RETRIES=10
