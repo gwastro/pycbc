@@ -117,8 +117,8 @@ logging.info('Getting template bank parameters')
 usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
 
 params = {}
-for ex_p in usedparams:
-    if ex_p == 'template_duration':
+for par in usedparams:
+    if par == 'template_duration':
         logging.info('Reading duration from trigger file')
         # Loop over template regions, return the first duration value from each region.
         dur = []
@@ -126,9 +126,9 @@ for ex_p in usedparams:
             dur.append(trigf[args.ifo + '/template_duration'][ref][0])
         params['template_duration'] = np.array(dur)
     else:
-        logging.info("Calculating %s from template parameters", ex_p)
-        params[ex_p] = bank_conversions.get_bank_property(
-            ex_p, bank, np.arange(bank['mass1'].size))
+        logging.info("Calculating %s from template parameters", par)
+        params[par] = bank_conversions.get_bank_property(
+            par, bank, np.arange(bank['mass1'].size))
 
 bank.close()
 
