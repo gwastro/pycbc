@@ -122,20 +122,17 @@ bank.close()
 
 # Only calculate params if needed
 usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
-extparams = [par for par in bank_conversions.conversion_options
-             if par in usedparams]
+extparams = [par for par in usedparams if not par in params]
 
 for ex_p in extparams:
     if ex_p == 'template_duration':
         logging.info('Reading duration from trigger file')
-        # List comprehension loops over templates; if a template has no triggers, accessing
-        # the 0th entry of its region reference will return zero due to a quirk of h5py.
-        params[ex_p] = np.array(
-            [
-                trigf[args.ifo + '/template_duration'][ref][0]
-                for ref in trigf[args.ifo + '/template_duration_template'][:]
-            ]
-        )
+        # List comprehension loops over templates and returns the first
+        # duration value from that region.
+        dur = []
+        for ref in trigf[args.ifo + '/template_duration_template'][:]:
+            dur.append(trigf[args.ifo + '/template_duration'][ref][0])
+        params['template_duration'] = np.array(dur)
     else:
         logging.info("Calculating %s from template parameters", ex_p)
         params[ex_p] = bank_conversions.get_bank_property(
@@ -158,6 +155,8 @@ else:
 
 # For templates with no triggers, the duration will be read as zero
 if args.bin_param == 'template_duration' and params[args.bin_param].min() == 0:
+    # Accessing the 0th entry of an empty region reference will return
+    # zero due to a quirk of h5py.
     logging.warn('WARNING: Some templates do not contain triggers')
     # Use the lowest nonzero template duration as lower limit for bins
     pbin_lower_lim = params[args.bin_param][params[args.bin_param] > 0].min()
