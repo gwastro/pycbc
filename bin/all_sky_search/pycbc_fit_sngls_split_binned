@@ -111,20 +111,13 @@ trigf = h5py.File(args.trigger_file, 'r')
 
 logging.info('Opening template file: %s' % args.bank_file)
 bank = h5py.File(args.bank_file, 'r')
-logging.info('setting up template bank parameters')
-params = {
-        "mass1" : bank['mass1'][:],
-        "mass2" : bank['mass2'][:],
-        "spin1z": bank['spin1z'][:],
-        "spin2z": bank['spin2z'][:]
-}
-bank.close()
+logging.info('Getting template bank parameters')
 
-# Only calculate params if needed
+# Calculate params needed
 usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
-extparams = [par for par in usedparams if not par in params]
 
-for ex_p in extparams:
+params = {}
+for ex_p in usedparams:
     if ex_p == 'template_duration':
         logging.info('Reading duration from trigger file')
         # Loop over template regions, return the first duration value from each region.
@@ -135,9 +128,11 @@ for ex_p in extparams:
     else:
         logging.info("Calculating %s from template parameters", ex_p)
         params[ex_p] = bank_conversions.get_bank_property(
-            ex_p, params, np.arange(params['mass1'].size))
+            ex_p, bank, np.arange(bank['mass1'].size))
 
-logging.info('setting up %s', ' '.join(usedparams))
+bank.close()
+
+logging.info('setting up %s bins', ', '.join(usedparams))
 sp_one_bin_input = (params[args.split_param_one].min(),
                     params[args.split_param_one].max(), args.split_one_nbins)
 sp_two_bin_input = (params[args.split_param_two].min(),
