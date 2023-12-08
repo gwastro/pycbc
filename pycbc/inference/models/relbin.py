@@ -237,8 +237,8 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             if self.still_needs_det_response:
                 wave = get_fd_det_waveform_sequence(ifos=ifo,
-                                                sample_points=fpoints,
-                                                **self.fid_params)
+                                                    sample_points=fpoints,
+                                                    **self.fid_params)
                 curr_wav = wave[ifo]
                 self.ta[ifo] = 0.
             else:
