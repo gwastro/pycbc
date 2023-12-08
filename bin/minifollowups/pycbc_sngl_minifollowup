@@ -14,28 +14,23 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Followup foreground events
+"""
+Followup single-detector triggers which do not contribute to foreground events
 """
 import os, argparse, logging
 import numpy
 from ligo.lw import table
 from ligo.lw import utils as ligolw_utils
 from pycbc.results import layout
+from pycbc.types.optparse import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer
 import pycbc.workflow.minifollowups as mini
 import pycbc.version
 import pycbc.workflow as wf
 import pycbc.events
 from pycbc.workflow.core import resolve_url_to_file
-from pycbc.events import stat
+from pycbc.events import stat, veto, coinc
 from pycbc.io import hdf
-
-def add_wiki_row(outfile, cols):
-    """
-    Adds a wiki-formatted row to an output file from a list or a numpy array.
-    """
-    with open(outfile, 'a') as f:
-        f.write('||%s||\n' % '||'.join(map(str,cols)))
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -44,11 +39,23 @@ parser.add_argument('--bank-file',
 parser.add_argument('--single-detector-file',
                     help="HDF format merged single detector trigger files")
 parser.add_argument('--instrument', help="Name of interferometer e.g. H1")
+parser.add_argument('--foreground-censor-file',
+                    help="The censor file to be used if vetoing triggers "
+                         "in the foreground of the search (optional).")
+parser.add_argument('--foreground-segment-name',
+                    help="If using foreground censor file must also provide "
+                         "the name of the segment to use as a veto.")
 parser.add_argument('--veto-file',
-    help="The veto file to be used if vetoing triggers (optional).")
+                    help="The veto file to be used if vetoing triggers "
+                         "(optional).")
 parser.add_argument('--veto-segment-name',
-    help="If using veto file must also provide the name of the segment to use "
-         "as a veto.")
+                    help="If using veto file must also provide the name of "
+                         "the segment to use as a veto.")
+parser.add_argument("--gating-veto-windows", nargs='+',
+                    action=MultiDetOptionAction,
+                    help="Seconds to be vetoed before and after the central time "
+                         "of each gate. Given as detector-values pairs, e.g. "
+                         "H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument('--inspiral-segments',
                     help="xml segment file containing the inspiral analysis "
                          "times")
@@ -60,17 +67,22 @@ parser.add_argument('--inspiral-data-analyzed-name',
                          "analyzed by each analysis job.")
 parser.add_argument('--min-snr', type=float, default=6.5,
                     help="Minimum SNR to consider for loudest triggers")
-parser.add_argument('--non-coinc-time-only', default=False,
-                    action='store_true',
+parser.add_argument('--non-coinc-time-only', action='store_true',
                     help="If given remove (veto) single-detector triggers "
                          "that occur during a time when at least one other "
                          "instrument is taking science data.")
+parser.add_argument('--vetoed-time-only', action='store_true',
+                    help="If given, only report on single-detector triggers "
+                         "that occur during vetoed times.")
 parser.add_argument('--minimum-duration', default=None, type=float,
                     help="If given only consider single-detector triggers "
                          "with template duration larger than this.")
 parser.add_argument('--maximum-duration', default=None, type=float,
                     help="If given only consider single-detector triggers "
                          "with template duration smaller than this.")
+parser.add_argument('--cluster-window', type=float, default=10,
+                    help="Window (seconds) over which to cluster triggers "
+                         "when finding the loudest-ranked. Default=10")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 stat.insert_statistic_option_group(parser,
@@ -95,6 +107,12 @@ sngl_file = resolve_url_to_file(
     attrs={'ifos': args.instrument}
 )
 
+# Flatten the statistic_files option:
+statfiles = []
+for f in sum(args.statistic_files, []):
+    statfiles.append(resolve_url_to_file(os.path.abspath(f)))
+statfiles = wf.FileList(statfiles) if statfiles is not [] else None
+
 if args.veto_file is not None:
     veto_file = resolve_url_to_file(
         os.path.abspath(args.veto_file),
@@ -102,6 +120,7 @@ if args.veto_file is not None:
     )
 else:
     veto_file = None
+
 insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 insp_data_seglists = select_segments_by_definer\
         (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
@@ -112,20 +131,89 @@ num_events = int(workflow.cp.get_opt_tags('workflow-sngl_minifollowups',
                  'num-sngl-events', ''))
 
 # This helps speed up the processing to ignore a large fraction of triggers
-snr_mask = None
+mask = None
+f = hdf.HFile(args.single_detector_file, 'r')
+n_triggers = f['{}/snr'.format(args.instrument)].size
+logging.info("%i triggers in file", n_triggers)
 if args.min_snr:
     logging.info('Calculating Prefilter')
-    f = hdf.HFile(args.single_detector_file, 'r')
     idx, _ = f.select(lambda snr: snr > args.min_snr,
                       '{}/snr'.format(args.instrument),
                       return_indices=True)
-    snr_mask = numpy.zeros(len(f['{}/snr'.format(args.instrument)]),
-                           dtype=bool)
-    snr_mask[idx] = True
+    mask = numpy.zeros(n_triggers, dtype=bool)
+    mask[idx] = True
+    if len(idx) < num_events:
+        logging.info("Fewer triggers exist after the --min-snr cut (%d) "
+                     "than requested for the minifollowup (%d)",
+                     len(idx), num_events)
 
-trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
-                              args.veto_file, args.veto_segment_name,
-                              None, args.instrument, premask=snr_mask)
+trigs = hdf.SingleDetTriggers(
+    args.single_detector_file,
+    args.bank_file,
+    args.foreground_censor_file,
+    args.foreground_segment_name,
+    None,
+    args.instrument,
+    premask=mask
+)
+
+# Include gating vetoes
+if args.gating_veto_windows:
+    logging.info("Getting gating vetoes")
+    gating_veto = args.gating_veto_windows[args.instrument].split(',')
+    gveto_before = float(gating_veto[0])
+    gveto_after = float(gating_veto[1])
+    if gveto_before > 0 or gveto_after < 0:
+        raise ValueError("Gating veto window values must be negative before "
+                         "gates and positive after gates.")
+    if not (gveto_before == 0 and gveto_after == 0):
+        gate_group = f[args.instrument + '/gating/']
+        autogate_times = numpy.unique(gate_group['auto/time'][:])
+        if 'file' in gate_group:
+            detgate_times = gate_group['file/time'][:]
+        else:
+            detgate_times = []
+        gate_times = numpy.concatenate((autogate_times, detgate_times))
+        gveto_idx = veto.indices_within_times(
+            trigs.end_time,
+            gate_times + gveto_before,
+            gate_times + gveto_after
+        )
+        logging.info('%i triggers in gating vetoes', gveto_idx.size)
+else:
+    gveto_idx = numpy.array([], dtype=numpy.uint64)
+
+if args.veto_file:
+    logging.info('Getting file vetoes')
+    # veto_mask is an array of indices into the trigger arrays
+    # giving the surviving triggers
+    veto_file_idx, _ = events.veto.indices_within_segments(
+        trigs.end_time,
+        [args.veto_file],
+        ifo=args.instrument,
+        segment_name=args.veto_segment_name
+    )
+
+    logging.info('%i triggers in file-vetoed segments',
+                 veto_file_idx.size)
+else:
+    veto_file_idx = numpy.array([], dtype=numpy.uint64)
+
+# Work out indices we are going to keep / remove
+vetoed_idx = numpy.unique(numpy.concatenate((veto_file_idx, gveto_idx)))
+# Needs to be in ascending order
+vetoed_idx = numpy.sort(vetoed_idx).astype(numpy.uint64)
+
+if args.vetoed_time_only and vetoed_idx.size > 0:
+    logging.info("Applying mask to keep only triggers within vetoed time")
+    trigs.apply_mask(vetoed_idx)
+elif vetoed_idx.size > 0:
+    logging.info("Applying mask to keep only triggers outwith vetoed time")
+    veto_mask = numpy.ones(trigs.end_time.size, dtype=bool)
+    veto_mask[vetoed_idx] = False
+    trigs.apply_mask(veto_mask)
+elif args.vetoed_time_only and vetoed_idx.size == 0:
+    logging.warning("No triggers exist inside vetoed times")
 
 if args.non_coinc_time_only:
     from pycbc.io.ligolw import LIGOLWContentHandler as h
@@ -158,29 +246,56 @@ if args.maximum_duration is not None:
     trigs.apply_mask(lgc_mask)
     logging.info('remaining triggers: %s', trigs.mask.sum())
 
-logging.info('finding loudest clustered events')
+logging.info('Finding loudest clustered events')
 rank_method = stat.get_statistic_from_opts(args, [args.instrument])
-trigs.mask_to_n_loudest_clustered_events(rank_method, n_loudest=num_events)
 
-if len(trigs.stat) < num_events:
-    num_events = len(trigs.stat)
+extra_kwargs = {}
+for inputstr in args.statistic_keywords:
+    try:
+        key, value = inputstr.split(':')
+        extra_kwargs[key] = value
+    except ValueError:
+        err_txt = "--statistic-keywords must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                  "Received {}".format(args.statistic_keywords)
+        raise ValueError(err_txt)
+
+logging.info("Calculating statistic for %d triggers", len(trigs.snr))
+sds = rank_method.single(trigs)
+stat = rank_method.rank_stat_single((args.instrument, sds), **extra_kwargs)
+logging.info("Clustering events over %.3fs window", args.cluster_window)
+cid = coinc.cluster_over_time(stat, trigs.end_time,
+                              args.cluster_window)
+trigs.apply_mask(cid)
+stat = stat[cid]
+if len(trigs.snr) < num_events:
+    num_events = len(trigs.snr)
+
+logging.info("Finding the loudest triggers")
+loudest_idx = sorted(numpy.argsort(stat)[::-1][:num_events])
+trigs.apply_mask(loudest_idx)
+stat = stat[loudest_idx]
 
 times = trigs.end_time
 tids = trigs.template_id
 
 # loop over number of loudest events to be followed up
-order = trigs.stat.argsort()[::-1]
+order = stat.argsort()[::-1]
 for rank, num_event in enumerate(order):
     logging.info('Processing event: %s', num_event)
 
     files = wf.FileList([])
     time = times[num_event]
     ifo_time = '%s:%s' %(args.instrument, str(time))
-    tid = trigs.mask[num_event]
+    if isinstance(trigs.mask, numpy.ndarray) and trigs.mask.dtype == bool:
+        tid = numpy.flatnonzero(trigs.mask)[num_event]
+    else:
+        tid = trigs.mask[num_event]
     ifo_tid = '%s:%s' %(args.instrument, str(tid))
 
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
                                    tid, args.output_dir, args.instrument,
+                                   statfiles=statfiles,
                                    tags=args.tags + [str(rank)]),)
     files += mini.make_trigger_timeseries(workflow, [sngl_file],
                               ifo_time, args.output_dir, special_tids=ifo_tid,
@@ -216,7 +331,6 @@ for rank, num_event in enumerate(order):
     files += mini.make_plot_waveform_plot(workflow, curr_params,
                                         args.output_dir, [args.instrument],
                                         tags=args.tags + [str(rank)])
-
 
     files += mini.make_singles_timefreq(workflow, sngl_file, tmpltbank_file,
                             time, args.output_dir,

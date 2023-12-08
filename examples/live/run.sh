@@ -177,7 +177,7 @@ python -m mpi4py `which pycbc_live` \
 --max-batch-size 16777216 \
 --output-path output \
 --day-hour-output-prefix \
---sngl-ranking newsnr_sgveto \
+--sngl-ranking newsnr_sgveto_psdvar_threshold \
 --ranking-statistic phasetd \
 --statistic-files statHL.hdf statHV.hdf statLV.hdf \
 --sgchisq-snr-threshold 4 \
@@ -204,6 +204,7 @@ python -m mpi4py `which pycbc_live` \
 --single-duration-threshold 7 \
 --single-reduced-chisq-threshold 2 \
 --single-fit-file single_trigger_fits.hdf \
+--psd-variation \
 --verbose
 
 # If you would like to use the pso optimizer, change --optimizer to pso

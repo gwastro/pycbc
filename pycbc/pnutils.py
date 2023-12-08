@@ -521,7 +521,7 @@ def frequency_cutoff_from_name(name, m1, m2, s1z, s2z):
     f : float or numpy.array
         Frequency in Hz
     """
-    params = {"mass1":m1, "mass2":m2, "spin1z":s1z, "spin2z":s2z}
+    params = {"mass1": m1, "mass2": m2, "spin1z": s1z, "spin2z": s2z}
     return named_frequency_cutoffs[name](params)
 
 def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
@@ -532,20 +532,20 @@ def _get_imr_duration(m1, m2, s1z, s2z, f_low, approximant="SEOBNRv4"):
         chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, s1z, s2z)
         time_length = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
                                 m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, chi, f_low)
-    elif approximant == 'IMRPhenomXAS':
+    elif approximant == "IMRPhenomXAS":
         time_length = lalsim.SimIMRPhenomXASDuration(
                            m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
     elif approximant == "IMRPhenomD":
         time_length = lalsim.SimIMRPhenomDChirpTime(
                            m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z, f_low)
-    elif approximant == "SEOBNRv4":
-        # NB for no clear reason this function has f_low as first argument
+    elif approximant in ["SEOBNRv4", "SEOBNRv4_ROM"]:
+        # NB the LALSim function has f_low as first argument
         time_length = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
-    elif approximant == 'SEOBNRv5_ROM':
+    elif approximant in ["SEOBNRv5", "SEOBNRv5_ROM"]:
         time_length = lalsim.SimIMRSEOBNRv5ROMTimeOfFrequency(
                            f_low, m1 * lal.MSUN_SI, m2 * lal.MSUN_SI, s1z, s2z)
-    elif approximant == 'SPAtmplt' or approximant == 'TaylorF2':
+    elif approximant in ["SPAtmplt", "TaylorF2"]:
         chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(
             m1, m2, s1z, s2z
         )

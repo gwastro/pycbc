@@ -31,6 +31,7 @@ To create a new PyCBC release:
     old production release series.
 
 Creating the release will trigger a Travis build that updates CVMFS, Docker, and PyPI with the release.
+Please ensure that you check the outputs of these builds and urgently report any errors to other maintainers, you will be emailed if the builds fails.
 
 ------------------------------------------------
 Backporting Bug Fixes to Previous Release Series

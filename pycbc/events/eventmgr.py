@@ -596,7 +596,8 @@ class EventManagerMultiDetBase(EventManager):
 
 class EventManagerCoherent(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, network_column,
-                 network_column_types, psd=None, **kwargs):
+                 network_column_types, segments, time_slides,
+                 psd=None, **kwargs):
         super(EventManagerCoherent, self).__init__(
             opt, ifos, column, column_types, psd=None, **kwargs)
         self.network_event_dtype = \
@@ -612,6 +613,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.event_index['network'] = 0
         self.template_event_dict['network'] = numpy.array(
             [], dtype=self.network_event_dtype)
+        self.segments = segments
+        self.time_slides = time_slides
 
     def cluster_template_network_events(self, tcolumn, column, window_size,
                                         slide=0):
@@ -702,6 +705,13 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     )
             else:
                 f[col] = network_events[col]
+        starts = []
+        ends = []
+        for seg in self.segments[self.ifos[0]]:
+            starts.append(seg.start_time.gpsSeconds)
+            ends.append(seg.end_time.gpsSeconds)
+        f['search/segments/start_times'] = starts
+        f['search/segments/end_times'] = ends
         # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
             tid = self.events['template_id'][self.events['ifo'] == i]
@@ -727,6 +737,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                         float(self.opt.sample_rate[ifo_str]) + \
                         self.opt.gps_start_time[ifo_str]
                 f['time_index'] = ifo_events['time_index']
+                f['slide_id'] = ifo_events['slide_id']
                 try:
                     # Precessing
                     template_sigmasq_plus = numpy.array(
@@ -772,7 +783,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     f['chisq_dof'] = numpy.zeros(len(ifo_events))
 
                 f['template_hash'] = th[tid]
-
+            f['search/time_slides'] = numpy.array(self.time_slides[ifo])
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([
                              self.opt.trig_start_time[ifo]], dtype=numpy.int32)
