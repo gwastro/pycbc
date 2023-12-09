@@ -64,6 +64,10 @@ mkl_domain = {'real': {'complex': DFTI_REAL},
                          }
              }
 
+mkl_descriptor = {'single': lib.DftiCreateDescriptor_d_1d,
+                  'double': lib.DftiCreateDescriptor_s_1d,
+                  }
+
 def check_status(status):
     """ Check the status of a mkl functions and raise a python exeption if
     there is an error.
@@ -78,13 +82,14 @@ def create_descriptor(size, idtype, odtype, inplace):
     outvec = zeros(1, dtype=odtype)
 
     desc = ctypes.c_void_p(1)
-    f = lib.DftiCreateDescriptor
-    f.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int]
 
     prec = mkl_prec[invec.precision]
     domain = mkl_domain[str(invec.kind)][str(outvec.kind)]
-
-    status = f(ctypes.byref(desc), prec, domain, 1, size)
+    f = mkl_descriptor[invec.precision]
+    f.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_int, ctypes.c_long]
+    
+    status = f(ctypes.byref(desc), domain, size)
+    
     if inplace:
         lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_INPLACE)
     else:
