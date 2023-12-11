@@ -329,8 +329,8 @@ if do_injections:
     for ifo in ifos:
         antenna = Detector(ifo)
         f_resp[ifo] = ppu.get_antenna_responses(antenna,
-                                                found_inj['ra'], found_inj['dec'],
-                                                found_inj['time'])
+                                                injs['found/ra'], injs['found/dec'],
+                                                injs['found/tc'])
 
     inj_sigma_mult = (np.asarray(list(inj_sigma.values())) *
                       np.asarray(list(f_resp.values())))
@@ -343,16 +343,16 @@ if do_injections:
     for ifo in ifos:
         inj_sigma_mean[ifo] = ((inj_sigma[ifo]*f_resp[ifo])/inj_sigma_tot).mean()
 
-    logging.info("%d found injections analysed.", len(found_inj['time']))
+    logging.info("%d found injections analysed.", len(injs['found/tc']))
 
     # Process missed injections 'missed_inj'
     missed_inj = {}
-    missed_inj['dist'] = inj_file['missed/distance'][:]
+    missed_inj['dist'] = injs['missed/distance'][:]
 
     logging.info("%d missed injections analysed.", len(missed_inj['dist']))
 
     # Create new set of injections for efficiency calculations
-    total_injs = len(found_inj['dist']) + len(missed_inj['dist'])
+    total_injs = len(injs['found/distance']) + len(injs['missed/distance'])
     long_inj = {}
     long_inj['dist'] = stats.uniform.rvs(size=total_injs) * (upper_dist-lower_dist) +\
                        upper_dist
@@ -377,7 +377,7 @@ if do_injections:
         found_on_bestnr[key] = np.zeros(num_dist_bins_plus_one)
 
     # Construct FAP list for all found injections
-    inj_fap = np.zeros(len(found_inj['dist']))
+    inj_fap = np.zeros(len(injs['found/distance']))
     inj_fap[nonzero_fap] = g_ifar['stat']
 
     # Calculate the amplitude error
@@ -407,11 +407,11 @@ if do_injections:
     long_inj['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
                                              cal_error, wav_err, max_dc_cal_error)
 
-    logging.info("MC injection set distributed with %d iterations.",\
+    logging.info("MC injection set distributed with %d iterations.",
                  num_mc_injs)
 
     # Check injections against on source
-    more_sig_than_onsource = np.ndarray(len(found_inj['dist']))
+    more_sig_than_onsource = np.ndarray(len(injs['found/distance']))
     if onsource_file:
         more_sig_than_onsource = (inj_fap <= loud_on_fap)
     else:
