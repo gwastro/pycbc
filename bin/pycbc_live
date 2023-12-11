@@ -848,6 +848,8 @@ parser.add_argument('--idq-state-channel', action=MultiDetMultiColonOptionAction
 parser.add_argument('--idq-threshold', type=float,
                     help='Threshold used to veto triggers at times of '
                     'low iDQ False Alarm Probability')
+parser.add_argument('--idq-reweighting', action='store_true',default=False,
+                    help='Reweight triggers based on iDQ False Alarm Probability')
 parser.add_argument('--data-quality-channel',
                     action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
