@@ -99,7 +99,7 @@ class NessaiSampler(BaseSampler):
         run_kwds = self.run_kwds.copy()
 
         if kwargs is not None:
-            logging.info("Updating keyword arguments with %s" % kwargs)
+            logging.info("Updating keyword arguments with %s", kwargs)
             extra_kwds.update(
                 {k: v for k, v in kwargs.items() if k in default_kwds}
             )
@@ -208,8 +208,8 @@ class NessaiSampler(BaseSampler):
             raise RuntimeError(
                 f"Config contains unknown options: {invalid_kwds}"
             )
-        logging.info("nessai keyword arguments: %s" % kwds)
-        logging.info("nessai run keyword arguments: %s" % run_kwds)
+        logging.info("nessai keyword arguments: %s", kwds)
+        logging.info("nessai run keyword arguments: %s", run_kwds)
 
         loglikelihood_function = get_optional_arg_from_config(
             cp, section, "loglikelihood-function"
@@ -261,16 +261,16 @@ class NessaiSampler(BaseSampler):
             with loadfile(self.checkpoint_file, "r") as fp:
                 self.resume_data = fp.read_pickled_data_from_checkpoint_file()
             logging.info(
-                "Found valid checkpoint file: %s" % self.checkpoint_file
+                "Found valid checkpoint file: %s", self.checkpoint_file
             )
         except Exception as e:
-            logging.info("Failed to load checkpoint file with error: %s" % e)
+            logging.info("Failed to load checkpoint file with error: %s", e)
 
     def finalize(self):
         """Finalize sampling"""
         logz = self._sampler.ns.log_evidence
         dlogz = self._sampler.ns.log_evidence_error
-        logging.info("log Z, dlog Z: %s, %s" % (logz, dlogz))
+        logging.info("log Z, dlog Z: %s, %s", logz, dlogz)
         self.checkpoint()
 
     def write_results(self, filename):
