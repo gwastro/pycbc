@@ -283,56 +283,34 @@ if do_injections:
     sites = [ifo[0] for ifo in ifos]
 
     # Triggers and injections recovered in some form: discard ones at vetoed times
-    inj_file = ppu.load_triggers(found_missed_file, vetoes)
+    # This injs object contains the information about found/missed injections AND triggers
+    injs = ppu.load_triggers(found_missed_file, vetoes)
 
     logging.info("Missed/found injections/triggers loaded.")
 
-    # Extract columns of found injections
-    found_inj = {}
-    found_inj['ra'] = inj_file['found/ra'][:]
-    found_inj['dec'] = inj_file['found/dec'][:]
-    found_inj['time'] = inj_file['found/tc'][:]
-    found_inj['dist'] = inj_file['found/distance'][:]
-
-    # Extract columns of triggers
-    found_trig = {}
-    found_trig['mchirp'] = mchirp_from_mass1_mass2(
-        inj_file['network/mass1'][:], inj_file['network/mass2'][:])
-    found_trig['bestnr'] = inj_file['network/reweighted_snr'][:]
-    # found_trig['bestnr'] = ppu.get_bestnrs(found_trigs, q=chisq_index,
-    #                                        n=chisq_nhigh,
-    #                                        null_thresh=null_thresh,
-    #                                        snr_threshold=snr_thresh,
-    #                                        sngl_snr_threshold=sngl_snr_thresh,
-    #                                        chisq_threshold=new_snr_thresh,
-    #                                        null_grad_thresh=null_grad_thresh,
-    #                                        null_grad_val=null_grad_val)
-
     # Construct conditions for injection:
     # 1) found louder than background,
-    zero_fap = np.zeros(len(found_inj['time'])).astype(bool)
-    zero_fap_cut = found_trig['bestnr'] > max_bestnr
+    zero_fap = np.zeros(len(injs['network/tc'])).astype(bool)
+    zero_fap_cut = injs['network/reweighted_snr'] > max_bestnr
     zero_fap = zero_fap | (zero_fap_cut)
 
     # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
-    nonzero_fap = ~zero_fap & (found_trig['bestnr'] != 0)
+    nonzero_fap = ~zero_fap & (injs['network/reweighted_snr'] != 0)
 
     # 3) missed after being recovered (i.e., vetoed) are not used here
     # missed = (~zero_fap) & (~nonzero_fap)
 
     # Non-zero FAP triggers (g_ifar)
     g_ifar = {}
-    g_ifar['bestnr'] = found_trig['bestnr'][nonzero_fap]
+    g_ifar['bestnr'] = injs['network/reweighted_snr'][nonzero_fap]
     g_ifar['stat'] = np.zeros([len(g_ifar['bestnr'])])
     for ix, (mc, bestnr) in \
-                enumerate(zip(found_trig['mchirp'][nonzero_fap], g_ifar['bestnr'])):
+                enumerate(zip(injs['network/mchirp'][nonzero_fap], g_ifar['bestnr'])):
         g_ifar['stat'][ix] = (full_time_veto_max_bestnr > bestnr).sum()
     g_ifar['stat'] = g_ifar['stat'] / total_trials
 
     # Set the sigma values
-    inj_sigma = {ifo: inj_file[f'{ifo}/sigmasq'][:] for ifo in ifos}
-    for ifo in ifos:
-        inj_sigma[ifo] = inj_file[f'{ifo}/sigmasq'][:]
+    inj_sigma = {ifo: injs[f'{ifo}/sigmasq'][:] for ifo in ifos}
     # If the sigmasqs are not populated, we can still do calibration errors,
     # but only in the 1-detector case
     for ifo in ifos:
