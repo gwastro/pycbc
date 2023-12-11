@@ -435,6 +435,7 @@ def props(obj, **kwargs):
     input_params = parse_mode_array(input_params)
     return input_params
 
+
 def check_args(args, required_args):
     """ check that required args are given """
     missing = []
@@ -548,7 +549,7 @@ def get_fd_det_waveform_sequence(template=None, **kwds):
     """
     input_params = props(template, **kwds)
     if input_params['f_lower'] is None:
-        input_params['f_lower'] = -1
+        raise Exception("Please set 'f_lower' in parameters.")
     if input_params['approximant'] not in fd_det_sequence:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
