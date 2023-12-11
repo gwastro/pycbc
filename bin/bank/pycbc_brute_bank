@@ -56,7 +56,7 @@ parser.add_argument('--tau0-threshold', type=float)
 parser.add_argument('--permissive', action='store_true',
     help='Allow waveform generator to fail.')
 parser.add_argument('--placement-iterations', default=1000, type=int, 
-    help='Specify the number of attempts the bank should make when placing points. Use this option if the bank fails to place any points.'')
+    help='Specify the number of attempts the bank should make when placing points. Use this option if the bank fails to place any points.')
 parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--tolerance', type=float)
 parser.add_argument('--max-mtotal', type=float)
