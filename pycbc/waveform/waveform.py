@@ -735,8 +735,6 @@ def get_fd_det_waveform(template=None, **kwargs):
         domain. Keys are requested data channels, values are FrequencySeries.
     """
     input_params = props(template, **kwargs)
-    if 'f_lower' not in input_params:
-        raise Exception("Must set f_lower in parameters")
     if input_params['approximant'] not in fd_det:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
