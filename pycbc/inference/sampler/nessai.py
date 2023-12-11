@@ -126,7 +126,7 @@ class NessaiSampler(BaseSampler):
     @staticmethod
     def get_default_kwds(importance_nested_sampler=False):
         """Return lists of all allowed keyword arguments for nessai.
-        
+
         Returns
         -------
         default_kwds : list
@@ -159,7 +159,7 @@ class NessaiSampler(BaseSampler):
             )
         else:
             importance_nested_sampler = False
-        
+
         # Requires additional development work, see the model class below
         if importance_nested_sampler is True:
             raise NotImplementedError(
@@ -243,7 +243,7 @@ class NessaiSampler(BaseSampler):
 
     def checkpoint_callback(self, state):
         """Callback for checkpointing.
-        
+
         This will be called periodically by nessai.
         """
         for fn in [self.checkpoint_file, self.backup_file]:
@@ -275,7 +275,7 @@ class NessaiSampler(BaseSampler):
 
     def write_results(self, filename):
         """Write the results to a given file.
-        
+
         Writes the nested samples, log-evidence and log-evidence error.
         """
         with self.io(filename, "a") as fp:
