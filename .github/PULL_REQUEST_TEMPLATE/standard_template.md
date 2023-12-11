@@ -20,6 +20,12 @@ This is a:
 - [ ] Other (please describe)
    - <description>
 
+This change:
+ - [ ] Updates documentation
+ - [ ] Has appropriate unit tests
+ - [ ] Follows style guidelines (See e.g. [PEP8](https://peps.python.org/pep-0008/))
+ - [ ] Has been proposed using the [contribution guidelines](https://github.com/gwastro/pycbc/blob/master/CONTRIBUTING.md)
+
 This change will:
 - [ ] break current functionality
 - [ ] require additional dependencies
