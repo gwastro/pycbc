@@ -12,6 +12,8 @@ or discuss in the gwastro slack.
 - Please add labels as appropriate
 -->
 
+- [ ] The author of this pull request will adhere to the [code of conduct](https://github.com/gwastro/pycbc/blob/master/CODE_OF_CONDUCT.md)
+
 <!--- Some basic info about the change --->
 This is a:
 - [ ] Bug fix
