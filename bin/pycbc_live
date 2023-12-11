@@ -1321,6 +1321,8 @@ with ctx:
                             padding=data_reader[ifo].dq_padding)
 
                     if args.idq_reweighting:
+                        logging.info('iDQ flagged %d/%d %s triggers',
+                                     numpy.sum(flag_active), len(times), ifo)
                         results[ifo]['dq_state'] = flag_active.astype(int)
                     else:
                         # use idq as a veto
