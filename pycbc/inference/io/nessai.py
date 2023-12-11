@@ -37,33 +37,14 @@ class NessaiFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
         loglikelihood = read_raw_samples_from_file(
             self, ['loglikelihood'])['loglikelihood']
         if not raw_samples:
-            n = len(logwt)
+            n_samples = len(logwt)
             # Rejection sample
             rng = numpy.random.default_rng(seed)
             logwt -= logwt.max()
-            logu = numpy.log(rng.random(n))
+            logu = numpy.log(rng.random(n_samples))
             keep = logwt > logu
             post = {'loglikelihood': loglikelihood[keep]}
             for param in fields:
                 post[param] = samples[param][keep]
             return post
-        else:
-            return samples
-
-    def write_pickled_data_into_checkpoint_file(self, data):
-        """Write the pickled data into a checkpoint file"""
-        if "sampler_info/saved_state" not in self:
-            self.create_group("sampler_info/saved_state")
-        dump_state(data, self, path="sampler_info/saved_state")
-
-    def read_pickled_data_from_checkpoint_file(self):
-        """Read the pickled data from a checkpoint file"""
-        return load_state(self, path="sampler_info/saved_state")
-
-    def write_raw_samples(self, data, parameters=None):
-        """Write the nested samples to the file"""
-        if "samples" not in self:
-            self.create_group("samples")
-        write_samples_to_file(
-            self, data, parameters=parameters, group="samples"
-        )
+        return samples
