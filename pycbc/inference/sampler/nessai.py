@@ -239,7 +239,6 @@ class NessaiSampler(BaseSampler):
 
         This is not used for nessai.
         """
-        pass
 
     def checkpoint_callback(self, state):
         """Callback for checkpointing.

@@ -3,8 +3,7 @@ import numpy
 
 from .base_nested_sampler import BaseNestedSamplerFile
 
-from ...io.hdf import dump_state, load_state
-from .posterior import read_raw_samples_from_file, write_samples_to_file
+from .posterior import read_raw_samples_from_file
 from .dynesty import CommonNestedMetadataIO
 
 
