@@ -64,8 +64,8 @@ mkl_domain = {'real': {'complex': DFTI_REAL},
                          }
              }
 
-mkl_descriptor = {'single': lib.DftiCreateDescriptor_d_1d,
-                  'double': lib.DftiCreateDescriptor_s_1d,
+mkl_descriptor = {'single': lib.DftiCreateDescriptor_s_1d,
+                  'double': lib.DftiCreateDescriptor_d_1d,
                   }
 
 def check_status(status):
