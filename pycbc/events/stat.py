@@ -28,6 +28,7 @@ values.
 import logging
 import numpy
 import h5py
+import copy
 from . import ranking
 from . import coinc_rate
 from .eventmgr_cython import logsignalrateinternals_computepsignalbins
@@ -2006,7 +2007,6 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
-        self.single_dtype.append(('dq_state', numpy.uint8))
         self.dq_rates_by_state = {}
         self.dq_bin_by_tid = {}
         self.dq_state_segments = None
@@ -2109,9 +2109,8 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
                 assert not self.dq_state_segments
                 self.low_latency = True
 
-    def find_dq_noise_rate(self, trigs):
+    def find_dq_noise_rate(self, trigs, dq_state):
         """Get dq values for a specific ifo and dq states"""
-        dq_state = trigs['dq_state'].astype(int)
         try:
             tnum = trigs.template_num
             ifo = trigs.ifo
@@ -2161,15 +2160,17 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             # Should be exactly one ifo provided
             ifo = unq[0]
 
-        singles = ExpFitFgBgNormStatistic.single(self, trigs)
-
         if self.low_latency:
             # trigs should already have a dq state assigned
-            singles['dq_state'] = trigs['dq_state'][:]
+            dq_state = trigs['dq_state'][:]
         else:
-            singles['dq_state'] = self.find_dq_state_by_time(
+            dq_state = self.find_dq_state_by_time(
                 ifo, trigs['end_time'][:]
             )
+
+        trigsc = copy.copy(trigs)
+        trigsc['dq_rate'] = self.find_dq_noise_rate(trigsc, dq_state)
+        singles = ExpFitFgBgNormStatistic.single(self, trigsc)
         return singles
 
     def lognoiserate(self, trigs):
@@ -2191,7 +2192,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
                     self, trigs)
-        logr_n += numpy.log(self.find_dq_noise_rate(trigs))
+        logr_n += numpy.log(trigs['dq_rate'][:])
         return logr_n
 
 
