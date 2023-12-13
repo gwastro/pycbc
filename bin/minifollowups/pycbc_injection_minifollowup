@@ -248,12 +248,13 @@ trigger_times = {}
 for trig in single_triggers:
     ifo = trig.ifo
     with HFile(trig.lfn, 'r') as trig_f:
-        trigger_idx[ifo], trigger_times[ifo], trigger_snrs[ifo] = \
+        trigger_idx[ifo], data_tuple = \
             trig_f.select(
                 nearby_missedinj,
                 f'{ifo}/end_time',
                 f'{ifo}/snr',
-                return_indices=True)
+            )
+    trigger_times[ifo], trigger_snrs[ifo] = data_tuple
 
 # figure out how many injections to follow up
 num_events = int(workflow.cp.get_opt_tags(
@@ -385,10 +386,10 @@ for num_event in range(num_events):
         # Finding loudest template in this detector near to the injection:
         # First, find triggers close to the missed injection
         single_fname = args.single_detector_triggers[curr_ifo]
-        idx = HFile(single_fname).select(
+        idx, _ = HFile(single_fname).select(
             lambda t: abs(t - inj_params['tc']) < args.inj_window,
             f'{curr_ifo}/end_time',
-            indices_only=True,
+            return_data=False,
         )
 
         if len(idx) == 0:

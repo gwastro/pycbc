@@ -90,11 +90,11 @@ if opts.min_snr:
         n_triggers_orig = trig_file[f'{opts.detector}/snr'].size
         logging.info("Trigger file has %d triggers", n_triggers_orig)
         logging.info('Generating trigger mask (on SNR)')
-        idx = trig_file.select(
+        idx, _ = trig_file.select(
             lambda snr: snr >= opts.min_snr,
             'snr',
             group=opts.detector,
-            indices_only=True,
+            return_data=False,
         )
     logging.info('%d triggers after snr mask', idx.size)
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
@@ -139,12 +139,12 @@ if opts.max_y is not None:
 x = x[mask]
 y = y[mask]
 
-title = '%s of %s triggers over %s and %s' % (opts.z_var.title(),
-                         opts.detector, opts.x_var.title(), opts.y_var.title())
-fig_caption = ("This plot shows the %s of single detector triggers for the %s "
-               "detector. %s is shown on the colorbar axis against %s and %s "
-               "on the x- and y-axes." % (opts.z_var, opts.detector,
-                                   opts.z_var.title(), opts.x_var, opts.y_var))
+title = f'{opts.z_var.title()} of {opts.detector} triggers ' + \
+        f'over {opts.x_var.title()} and {opts.y_var.title()}'
+fig_caption = f"This plot shows the {opts.z_var} of single detector " + \
+              f"triggers for the {opts.detector} detector. " + \
+              f"{opts.z_var.title()} is shown on the colorbar axis " + \
+              f"against {opts.x_var} and {opts.y_var} on the x- and y-axes."
 
 if not any(mask):
     # All triggers removed - make a blank plot which says so:

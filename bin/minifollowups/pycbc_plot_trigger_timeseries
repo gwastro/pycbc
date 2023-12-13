@@ -61,11 +61,11 @@ for ifo in args.single_trigger_files.keys():
 
     # Identify trigger idxs within window of trigger time
     with HFile(args.single_trigger_files[ifo], 'r') as data:
-        idx = data.select(
+        idx, _ = data.select(
             lambda endtime: abs(endtime - t) < args.window,
             'end_time',
             group=ifo,
-            indices_only=True
+            return_data=False,
         )
         data_mask = numpy.zeros(data[ifo]['snr'].size, dtype=bool)
         data_mask[idx] = True

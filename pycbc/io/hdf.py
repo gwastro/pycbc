@@ -29,7 +29,8 @@ from pycbc.events import mean_if_greater_than_zero
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
-    def select(self, fcn, *args, **kwds):
+    def select(self, fcn, *args, chunksize=10**6, derived=None, group='',
+               return_data=True, premask=None):
         """ Return arrays from an hdf5 file that satisfy the given function
 
         Parameters
@@ -42,13 +43,14 @@ class HFile(h5py.File):
             A variable number of strings that are keys into the hdf5. These must
             refer to arrays of equal length.
 
-        chunksize : {1e6, int}, optional
+        chunksize : {10**6, int}, optional
             Number of elements to read and process at a time.
 
         derived : dictionary
-            Dictionary keyed on function, values are the list of required
-            datasets. If giving dataset outputs, these will be added at the
-            end. The function must take in a dictionary keyed on dataset names.
+            Dictionary keyed on argument name (must be given in args), values
+            are a tuple of: the function to be computed, and the required
+            datasets. The function must take in a dictionary keyed on those
+            dataset names.
 
         group : string, optional
             The group within the h5py file containing the datasets, e.g. in
@@ -56,21 +58,23 @@ class HFile(h5py.File):
             can be included in the args manually, but is required in the case
             of derived functions, e.g. newsnr.
 
-        return_indices : bool, optional
-            If True, also return the indices of elements passing the function.
-
-        indices_only : bool, optional
-            If True, only return the indices of elements passing the function.
+        return_data : bool, optional, default True
+            If True, return the data for elements passing the function.
 
         premask : array of boolean values, optional
             The pre-mask to apply to the triggers at read-in.
 
         Returns
         -------
-        values : np.ndarrays
-            A variable number of arrays depending on the number of keys into
-            the hdf5 file that are given. If return_indices is True, the first
-            element is an array of indices of elements passing the function.
+        indices: np.ndarray
+            An array of indices of elements passing the function.
+
+        return_tuple : tuple of np.ndarrays
+            A variable number of arrays depending on the number of
+            args provided,
+            If return_data is True, arrays are the values of each
+            arg.
+            If return_data is False, this is None.
 
         >>> f = HFile(filename)
         >>> snr = f.select(lambda snr: snr > 6, 'H1/snr')
@@ -78,9 +82,9 @@ class HFile(h5py.File):
 
         # Required datasets are the arguments requested and datasets given
         # for any derived functions
-        derived = kwds.get('derived', {})
-        dsets = list(args)
-        for rqd_list in derived.values():
+        derived = derived if derived is not None else {}
+        dsets = [a for a in list(args) if a not in derived]
+        for _, rqd_list in derived.values():
             dsets += rqd_list
 
         # remove any duplicates from req_dsets
@@ -90,7 +94,6 @@ class HFile(h5py.File):
         # check they can all be used together
         refs = {}
         size = None
-        group = kwds.get('group', '')
         for ds in dsets:
             refs[ds] = self[group + '/' + ds]
             if (size is not None) and (refs[ds].size != size):
@@ -99,13 +102,11 @@ class HFile(h5py.File):
                                    f"previous input datasets ({size}).")
             size = refs[ds].size
 
-        # To conserve memory read the array in chunks
-        chunksize = kwds.get('chunksize', int(1e6))
-
-        if 'premask' not in kwds or kwds.get('premask') is None:
+        # Apply any pre-masks
+        if premask is None:
             mask = np.ones(size, dtype=bool)
         else:
-            mask = kwds['premask']
+            mask = premask
 
         if not mask.dtype == bool:
             # mask is an array of indices rather than booleans,
@@ -118,19 +119,13 @@ class HFile(h5py.File):
             raise RuntimeError(f"Using premask of size {mask.size} which "
                                f"does not match the input datasets ({size}).")
 
-        # This will be the outputs:
-        return_indices = kwds.get('return_indices', False)
-        indices_only = kwds.get('indices_only', False)
-
-        # Arguments being returned:
-        # The name doesn't matter, so key on the function of
-        # derived datasets
-        ret_args = args + tuple(derived.keys())
+        # datasets being returned (possibly)
         data = {}
         indices = np.array([], dtype=np.uint64)
-        for arg in ret_args:
+        for arg in args:
             data[arg] = []
 
+        # Loop through the chunks:
         i = 0
         while i < size:
             r = i + chunksize if i + chunksize < size else size
@@ -143,32 +138,36 @@ class HFile(h5py.File):
             # Read each chunk's worth of data
             partial_data = {arg: refs[arg][i:r][mask[i:r]]
                             for arg in dsets}
-            partial = [partial_data[a] for a in args]
-            partial += [func(partial_data) for func in derived.keys()]
+            partial = []
+            for a in args:
+                if a in derived.keys():
+                    # If this is a derived dataset, calculate it
+                    derived_fcn = derived[a][0]
+                    partial += [derived_fcn(partial_data)]
+                else:
+                    # otherwise, just read from the file
+                    partial += [partial_data[a]]
+
             # Find where it passes the function
             keep = fcn(*partial)
-            if return_indices or indices_only:
-                indices = np.concatenate([indices, np.flatnonzero(keep) + i])
 
-            # Store only the results that pass the function
-            for arg, part in zip(ret_args, partial):
-                if not indices_only:
+            # Keep the indices which pass the function:
+            indices = np.concatenate([indices, np.flatnonzero(keep) + i])
+
+            if return_data:
+                # Store the dataset results that pass the function
+                for arg, part in zip(args, partial):
                     data[arg].append(part[keep])
 
             i += chunksize
 
-        return_tuple = tuple()
-        # Combine the partial results into full arrays
-        if indices_only or return_indices:
-            return_tuple += (indices.astype(np.uint64),)
-        if not indices_only:
-            return_tuple += tuple(np.concatenate(data[arg])
-                                  for arg in ret_args)
-
-        if len(return_tuple) == 1:
-            return return_tuple[0]
+        if return_data:
+            return_tuple = tuple(np.concatenate(data[arg])
+                                 for arg in args)
         else:
-            return return_tuple
+            return_tuple = None
+
+        return indices.astype(np.uint64), return_tuple
 
 
 class DictArray(object):
@@ -471,7 +470,7 @@ class SingleDetTriggers(object):
     """
     def __init__(self, trig_file, detector, bank_file=None, veto_file=None,
                  segment_name=None, premask=None, filter_rank=None,
-                 filter_threshold=None, chunksize=int(1e6), filter_func=None):
+                 filter_threshold=None, chunksize=10**6, filter_func=None):
         """
         Create a SingleDetTriggers instance
 
@@ -503,7 +502,7 @@ class SingleDetTriggers(object):
         filter_threshold: float, required if filter_rank is used
             Threshold to filter the ranking values
 
-        chunksize : int , default 1e6
+        chunksize : int , default 10**6
             Size of chunks to read in for the filter_rank / threshold.
         """
         logging.info('Loading triggers')
@@ -527,11 +526,13 @@ class SingleDetTriggers(object):
             assert filter_threshold is not None
             logging.info("Applying threshold of %.3f on %s",
                          filter_threshold, filter_rank)
-            idx = self.trigs_f.select(
+            fcn_dsets = (ranking.sngls_ranking_function_dict[filter_rank],
+                         ranking.required_datasets[filter_rank])
+            idx, _ = self.trigs_f.select(
                  lambda rank: rank > filter_threshold,
-                 derived={ranking.sngls_ranking_function_dict[filter_rank]:
-                          ranking.required_datasets[filter_rank]},
-                 indices_only=True,
+                 filter_rank,
+                 derived={filter_rank: fcn_dsets},
+                 return_data=False,
                  premask=self.mask,
                  group=detector,
                  chunksize=chunksize,
