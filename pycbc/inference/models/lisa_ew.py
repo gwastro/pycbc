@@ -20,6 +20,7 @@ log likelihood.
 
 import copy
 import logging
+import os
 import numpy
 import numpy.random
 
@@ -28,6 +29,7 @@ from .base import BaseModel
 import pycbc.psd
 
 from pycbc.waveform.early_warning_wform import PSDFirKernel, generate_early_warning_psds, generate_data_lisa_ew, generate_waveform_lisa_ew
+from pycbc.waveform.waveform import parse_mode_array, props
 from .tools import marginalize_likelihood
 
 waveform_params1 = {'approximant': 'BBHX_PhenomD',
@@ -159,7 +161,14 @@ class LISAEarlyWarningModel(BaseModel):
     """
     name = "lisa_ew"
 
-    def __init__(self, variable_params, static_params=None, **kwargs):
+    def __init__(
+            self,
+            variable_params,
+            static_params=None,
+            phase_marginalization=True,
+            psd_path=None,
+            **kwargs
+        ):
         # Pop relevant values from kwargs
         cutoff_time = int(kwargs.pop('cutoff_time'))
         seed = int(kwargs.pop('seed'))
@@ -177,22 +186,46 @@ class LISAEarlyWarningModel(BaseModel):
                 pass  # Convert to string, so do nothing
             elif key in ['injparam_t_obs_start']:
                 value = int(value)
+            elif key in ['injparam_mode_array']:
+                # If value is
+                if "(" in value:
+                    raise NotImplementedError
+                elif "[" in value:
+                    raise NotImplementedError
+                else:
+                    # e.g '22 33 44'
+                    pass
             else:
                 value = float(value)
             inj_params[key.replace('injparam_', '')] = value
 
+        inj_params = parse_mode_array(inj_params)
+        
+        if isinstance(phase_marginalization, str):
+            phase_marginalization = strtobool(phase_marginalization)
+        self.phase_marginalization = phase_marginalization
+
         # set up base likelihood parameters
         super().__init__(variable_params, **kwargs)
-        self.static_params = static_params
-        self.static_params['mode_array'] = [(2,2)]
+        if "mode_array" not in static_params:
+            static_params["mode_array"] = [(2,2)]
+
+        run_phenomd = static_params.get("run_phenomd", "False")
+        if isinstance(run_phenomd, str):
+            run_phenomd = strtobool(run_phenomd)
+        static_params["run_phenomd"] = run_phenomd
+        self.static_params = parse_mode_array(static_params)
 
         tlen = 3140000
         sample_rate = 0.2
         length = int(tlen * sample_rate)
         flen = length // 2 + 1
 
-        LISA_A_PSD = pycbc.psd.from_txt('A_psd_4_smooth.txt', flen, 1./tlen, 1./tlen, is_asd_file=False)
-        LISA_E_PSD = pycbc.psd.from_txt('E_psd_4_smooth.txt', flen, 1./tlen, 1./tlen, is_asd_file=False)
+        if psd_path is None:
+            psd_path = os.getcwd()
+
+        LISA_A_PSD = pycbc.psd.from_txt(os.path.join(psd_path, 'A_psd_4_smooth.txt'), flen, 1./tlen, 1./tlen, is_asd_file=False)
+        LISA_E_PSD = pycbc.psd.from_txt(os.path.join(psd_path, 'E_psd_4_smooth.txt'), flen, 1./tlen, 1./tlen, is_asd_file=False)
         self.psds_for_datagen = {}
         self.psds_for_datagen['LISA_A'] = LISA_A_PSD
         self.psds_for_datagen['LISA_E'] = LISA_E_PSD
@@ -264,4 +297,4 @@ class LISAEarlyWarningModel(BaseModel):
         #print(snr_A + snr_E, (a_norm + e_norm)/2., (a_norm_test + e_norm_test)/2., cparams['distance'])
         #quit_here
 
-        return marginalize_likelihood(hs, hh, phase=True)
+        return marginalize_likelihood(hs, hh, phase=self.phase_marginalization)
