@@ -27,13 +27,14 @@ import os
 import logging
 import argparse
 import copy
+
 import numpy
 import h5py
 from scipy import stats
+from ligo import segments
 from pycbc.detector import Detector
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
-    from ligo import segments
     from ligo.lw import utils, lsctables
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
@@ -644,29 +645,27 @@ def load_time_slides(hdf_file_path):
 # =============================================================================
 # Function to load the segment dicitonary
 # =============================================================================
-def load_segment_dict(xml_file):
-    """Loads the segment dictionary """
+def load_segment_dict(hdf_file_path):
+    """
+    Loads the segment dictionary with the format
+    {slide_id: segmentlist(segments analyzed)}
+    """
 
-    # Get the mapping table
-    time_slide_map_table = \
-        load_xml_table(xml_file, glsctables.TimeSlideSegmentMapTable.tableName)
-    # Perhaps unnecessary as segment_def_id and time_slide_id seem to always
-    # be identical identical
-    segment_map = {
-        int(entry.segment_def_id): int(entry.time_slide_id)
-        for entry in time_slide_map_table
-    }
-    # Extract the segment table
-    segment_table = load_xml_table(
-        xml_file, glsctables.SegmentTable.tableName)
-    segment_dict = {}
-    for entry in segment_table:
-        curr_slid_id = segment_map[int(entry.segment_def_id)]
-        curr_seg = entry.get()
-        if curr_slid_id not in segment_dict:
-            segment_dict[curr_slid_id] = segments.segmentlist()
-        segment_dict[curr_slid_id].append(curr_seg)
-        segment_dict[curr_slid_id].coalesce()
+    # Long time slides will require mapping between slides and segments
+    hdf_file = h5py.File(hdf_file_path, 'r')
+    ifos = extract_ifos(hdf_file_path)
+    # Get slide IDs
+    slide_ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
+    # Get segment start/end times
+    seg_starts = hdf_file['network/search/segments/start_times'][:]
+    seg_ends = hdf_file['network/search/segments/end_times'][:]
+    # Write list of segments
+    seg_list = segments.segmentlist([segments.segment(seg_start, seg_ends[i])
+                                    for i, seg_start in enumerate(seg_starts)])
+
+    # Write segment_dict in proper format
+    # At the moment of this comment, there is only one segment
+    segment_dict = {slide: seg_list.coalesce() for slide in slide_ids}
 
     return segment_dict
 

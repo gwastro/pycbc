@@ -615,11 +615,16 @@ class Executable(pegasus_workflow.Executable):
         if out_dir is not None:
             self.out_dir = out_dir
         elif len(self.tags) == 0:
-            self.out_dir = self.name
+            self.out_dir = self.name + "_output"
         else:
-            self.out_dir = self.tagged_name
+            self.out_dir = self.tagged_name + "_output"
+
         if not os.path.isabs(self.out_dir):
             self.out_dir = os.path.join(os.getcwd(), self.out_dir)
+
+        # Make output directory if not there
+        if not os.path.isdir(self.out_dir):
+            make_analysis_dir(self.out_dir)
 
     def _set_pegasus_profile_options(self):
         """Set the pegasus-profile settings for this Executable.
@@ -1128,7 +1133,12 @@ class File(pegasus_workflow.File):
             self.ifo_list = [ifos]
         else:
             self.ifo_list = ifos
-        self.ifo_string = ''.join(self.ifo_list)
+
+        if self.ifo_list is not None:
+            self.ifo_string = ''.join(self.ifo_list)
+        else:
+            self.ifo_string = 'file'
+
         self.description = exe_name
 
         if isinstance(segs, segments.segment):

@@ -138,8 +138,11 @@ else:
 
 if args.ranking_statistic in ["quadsum", "single_ranking_only"]:
     stat_name = sngl_stat_name
+    stat_name_long = sngl_stat_name
 else:
-    stat_name = '_with_'.join(ranking_statistic, sngl_ranking)
+    # Name would be too long - just call it ranking statistic
+    stat_name = 'Ranking Statistic'
+    stat_name_long = ' with '.join([args.ranking_statistic, args.sngl_ranking])
 
 headers.append(stat_name)
 
@@ -201,7 +204,7 @@ html = pycbc.results.dq.redirect_javascript + \
 if args.n_loudest:
     title = 'Parameters of single-detector event ranked %s' \
         % (args.n_loudest + 1)
-    caption = 'Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, stat_name)
+    caption = 'Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, stat_name_long)
 else:
     title = 'Parameters of single-detector event'
     caption = 'Parameters of the single-detector event. The figures below show the mini-followup data for this event.'

@@ -361,8 +361,14 @@ fg_fars_out = np.sum(isincombo_mask * fg_fars, axis=0)
 fg_fars_exc_out = np.sum(isincombo_mask * fg_fars_exc, axis=0)
 
 # Apply any limits as appropriate
-fg_fars_out = significance.apply_far_limit(fg_fars_out, significance_dict, combo=fg_coinc_type)
-fg_fars_exc_out = significance.apply_far_limit(fg_fars_exc_out, significance_dict, combo=fg_coinc_type)
+fg_fars_out = significance.apply_far_limit(
+    fg_fars_out,
+    significance_dict,
+    combo=fg_coinc_type)
+fg_fars_exc_out = significance.apply_far_limit(
+    fg_fars_exc_out,
+    significance_dict,
+    combo=fg_coinc_type)
 
 fg_ifar = conv.sec_to_year(1. / fg_fars_out)
 fg_ifar_exc = conv.sec_to_year(1. / fg_fars_exc_out)
@@ -562,6 +568,7 @@ while True:
     final_combined_fg = final_combined_fg + \
                             combined_fg_data.select(where_combined)
     combined_fg_data = combined_fg_data.remove(where_combined)
+    fg_coinc_type = np.delete(fg_coinc_type, where_combined)
     n_triggers -= 1
 
     logging.info('Removing background triggers at time {} within window '
@@ -605,6 +612,17 @@ while True:
             sep_bg_data[key].data['decimation_factor'],
             bg_t_y,
             **significance_dict[ifo_combo_key])
+        fg_far = significance.apply_far_limit(
+            fg_far,
+            significance_dict,
+            combo=key,
+        )
+        bg_far = significance.apply_far_limit(
+            bg_far,
+            significance_dict,
+            combo=key,
+        )
+
         sep_bg_data[key].data['ifar'] = 1. / bg_far
         sep_fg_data[key].data['ifar'] = 1. / fg_far
         sep_fg_data[key].data['fap'] = 1 - \
@@ -631,9 +649,15 @@ while True:
     isincombo_mask = np.array([list(is_in_combo_time[ct])
                                for ct in all_ifo_combos])
     fg_fars = np.array([list(far[ct]) for ct in all_ifo_combos])
+    fg_fars_out = np.sum(isincombo_mask * fg_fars, axis=0)
+    fg_fars_out = significance.apply_far_limit(
+        fg_fars_out,
+        significance_dict,
+        combo=fg_coinc_type,
+    )
     # Combine the FARs with the mask to obtain the new ifars
     combined_fg_data.data['ifar'] = conv.sec_to_year(
-        1. / np.sum(isincombo_mask * fg_fars, axis=0))
+        1. / fg_fars_out)
     fg_time -= args.cluster_window
     combined_fg_data.data['fap'] = 1 - \
         np.exp(-conv.sec_to_year(fg_time) / combined_fg_data.data['ifar'])
