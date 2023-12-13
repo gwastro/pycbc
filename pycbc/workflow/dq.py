@@ -90,6 +90,8 @@ def setup_dq_reranking(workflow, insps, bank,
     ifos = numpy.unique(dq_ifos)
 
     for ifo in ifos:
+        # FIXME : make this able to take multiple dq files per ifo
+
         # get the dq labels and types for this ifo
         ifo_dq_info = [(dq_label, dq_type) for dq_label, dq_type, dq_ifo
                        in zip(dq_labels, dq_types, dq_ifos) if dq_ifo == ifo]
