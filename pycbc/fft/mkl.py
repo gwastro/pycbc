@@ -54,10 +54,6 @@ DFTI_PACK_FORMAT = 55
 DFTI_PERM_FORMAT = 56
 DFTI_CCE_FORMAT = 57
 
-mkl_prec = {'single': DFTI_SINGLE,
-            'double': DFTI_DOUBLE,
-           }
-
 mkl_domain = {'real': {'complex': DFTI_REAL},
               'complex': {'real': DFTI_REAL,
                           'complex':DFTI_COMPLEX,
@@ -80,10 +76,8 @@ def check_status(status):
 def create_descriptor(size, idtype, odtype, inplace):
     invec = zeros(1, dtype=idtype)
     outvec = zeros(1, dtype=odtype)
-
     desc = ctypes.c_void_p(1)
 
-    prec = mkl_prec[invec.precision]
     domain = mkl_domain[str(invec.kind)][str(outvec.kind)]
     f = mkl_descriptor[invec.precision]
     f.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_int, ctypes.c_long]
@@ -125,15 +119,14 @@ def ifft(invec, outvec, prec, itype, otype):
 
 # Class based API
 
-_create_descr = lib.DftiCreateDescriptor
-_create_descr.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int]
-
 def _get_desc(fftobj):
     desc = ctypes.c_void_p(1)
-    prec = mkl_prec[fftobj.invec.precision]
     domain = mkl_domain[str(fftobj.invec.kind)][str(fftobj.outvec.kind)]
-    status = _create_descr(ctypes.byref(desc), prec, domain,
-                           1, int(fftobj.size))
+
+    f = mkl_descriptor[fftobj.invec.precision]
+    f.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_int, ctypes.c_long]
+    status = f(ctypes.byref(desc), domain, size)
+
     check_status(status)
     # Now we set various things depending on exactly what kind of transform we're
     # performing.
