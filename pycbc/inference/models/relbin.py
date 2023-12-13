@@ -556,10 +556,6 @@ class Relative(DistMarg, BaseGaussianNoise):
             # with detector response. Otherwise, skip detector response.
 
             if self.still_needs_det_response:
-
-                # TODO: Check that p['tc'] is the appropriate variable here
-                # for the return.
-
                 dtc = 0.
 
                 channel = wfs[ifo].numpy()
