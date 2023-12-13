@@ -87,9 +87,9 @@ def create_descriptor(size, idtype, odtype, inplace):
     domain = mkl_domain[str(invec.kind)][str(outvec.kind)]
     f = mkl_descriptor[invec.precision]
     f.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_int, ctypes.c_long]
-    
+
     status = f(ctypes.byref(desc), domain, size)
-    
+
     if inplace:
         lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_INPLACE)
     else:
