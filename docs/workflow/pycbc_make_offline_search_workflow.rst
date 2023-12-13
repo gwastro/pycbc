@@ -987,8 +987,8 @@ locations in CVMFS.
 You will also need to specify where the code should get the data needed to generate reduced
 order model waveforms. To do this add the following additional arguments to ``pycbc_submit_dax``::
 
-    --append-site-profile 'local:env|LAL_DATA_PATH:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation' \
-    --append-site-profile 'osg:env|LAL_DATA_PATH:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation' \
+    --append-site-profile 'local:env|LAL_DATA_PATH:/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation' \
+    --append-site-profile 'osg:env|LAL_DATA_PATH:/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation' \
 
 Here, ``current`` is a symbolic link to the latest version of the data and can be replaced with a
 specific release (e.g. ``e02dab8c``) if required.
