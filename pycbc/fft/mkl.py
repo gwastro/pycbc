@@ -125,7 +125,7 @@ def _get_desc(fftobj):
 
     f = mkl_descriptor[fftobj.invec.precision]
     f.argtypes = [ctypes.POINTER(ctypes.c_void_p), ctypes.c_int, ctypes.c_long]
-    status = f(ctypes.byref(desc), domain, size)
+    status = f(ctypes.byref(desc), domain, int(fftobj.size))
 
     check_status(status)
     # Now we set various things depending on exactly what kind of transform we're
