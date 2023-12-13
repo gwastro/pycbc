@@ -103,7 +103,7 @@ class Stat(object):
             **self.sngl_ranking_kwargs
         )
 
-    def single(self, trigs): # pylint:disable=unused-argument
+    def single(self, trigs):  # pylint:disable=unused-argument
         """
         Calculate the necessary single detector information
 
@@ -122,7 +122,7 @@ class Stat(object):
         raise NotImplementedError(err_msg)
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -142,7 +142,7 @@ class Stat(object):
         raise NotImplementedError(err_msg)
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
@@ -172,7 +172,7 @@ class Stat(object):
             raise NotImplementedError(err_msg)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -207,7 +207,7 @@ class QuadratureSumStatistic(Stat):
         return self.get_sngl_ranking(trigs)
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -228,7 +228,7 @@ class QuadratureSumStatistic(Stat):
         return single_info[1]
 
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
 
@@ -254,7 +254,7 @@ class QuadratureSumStatistic(Stat):
         return cstat
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -662,7 +662,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         return numpy.array(singles, ndmin=1)
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -749,7 +749,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.bg_ifos = [at[0] for at in parsed_attrs if
-                       (len(at) == 2 and at[1] == 'fit_coeffs')]
+                        (len(at) == 2 and at[1] == 'fit_coeffs')]
         if not len(self.bg_ifos):
             raise RuntimeError("None of the statistic files has the required "
                                "attribute called {ifo}-fit_coeffs !")
@@ -843,13 +843,16 @@ class ExpFitStatistic(QuadratureSumStatistic):
             The thresh fit value(s)
         """
         try:
-            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            tnum = trigs.template_num
+        except AttributeError:
+            tnum = trigs['template_id']
+
+        try:
             ifo = trigs.ifo
         except AttributeError:
-            tnum = trigs['template_id']  # exists for SingleDetTriggers
-            assert len(self.ifos) == 1
-            # Should be exactly one ifo provided
-            ifo = self.ifos[0]
+            ifo = trigs['ifo']
+            assert ifo in self.ifos
+
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
         alphai = self.fits_by_tid[ifo]['smoothed_fit_coeff'][tnum]
@@ -882,7 +885,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         # ratei is rate of trigs in given template compared to average
         # thresh is stat threshold used in given ifo
         lognoisel = - alphai * (sngl_stat - thresh) + numpy.log(alphai) + \
-                      numpy.log(ratei)
+            numpy.log(ratei)
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
@@ -905,7 +908,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         return self.lognoiserate(trigs)
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -924,7 +927,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         raise NotImplementedError(err_msg)
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
@@ -932,7 +935,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         raise NotImplementedError(err_msg)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
         """
@@ -940,7 +943,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         raise NotImplementedError(err_msg)
 
     # Keeping this here to help write the new coinc method.
-    def coinc_OLD(self, s0, s1, slide, step): # pylint:disable=unused-argument
+    def coinc_OLD(self, s0, s1, slide, step):  # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
 
         # Approximate log likelihood ratio by summing single-ifo negative
@@ -1040,7 +1043,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for single detector candidates
 
@@ -1062,7 +1065,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         return sngl_multiifo
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
 
@@ -1085,7 +1088,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         return sum(sngl[1] for sngl in s) / (len(s) ** 0.5)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -1169,7 +1172,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         return numpy.array(singles, ndmin=1)
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -1188,7 +1191,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         raise NotImplementedError(err_msg)
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
@@ -1196,7 +1199,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         raise NotImplementedError(err_msg)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
         Calculate the required single detector statistic to exceed
@@ -1290,7 +1293,7 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
             self.fits_by_tid[ifo]['fit_by_rate_in_template'] /= analysis_time
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
 
@@ -1441,9 +1444,9 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         # below threshold use specified alphabelow
         bt = newsnr < thresh
         lognoisel = - alphai * (newsnr - thresh) + numpy.log(alphai) + \
-                        numpy.log(ratei)
+            numpy.log(ratei)
         lognoiselbt = - alphabelow * (newsnr - thresh) + \
-                           numpy.log(alphabelow) + numpy.log(ratei)
+            numpy.log(alphabelow) + numpy.log(ratei)
         lognoisel[bt] = lognoiselbt[bt]
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
@@ -1479,17 +1482,16 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             # exists if accessed via coinc_findtrigs
             self.curr_tnum = trigs.template_num
         except AttributeError:
-            # exists for SingleDetTriggers
+            # exists for SingleDetTriggers & pycbc_live get_coinc
             self.curr_tnum = trigs['template_id']
-            # Should only be one ifo fit file provided
-            assert len(self.ifos) == 1
+
         # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
         singles['benchmark_logvol'] = self.benchmark_logvol[self.curr_tnum]
         return numpy.array(singles, ndmin=1)
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for single detector candidates
 
@@ -1519,7 +1521,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         return loglr
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
 
@@ -1561,6 +1563,9 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         # First get signal PDF logr_s
         stat = {ifo: st for ifo, st in s}
+
+        self.curr_mchirp = kwargs['mchirp']
+
         logr_s = self.logsignalrate(stat, slide * step, to_shift)
 
         # Find total volume of phase-time-amplitude space occupied by noise
@@ -1589,7 +1594,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         return loglr
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -1740,7 +1745,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         return logr_s
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -1785,15 +1790,21 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
             The array of single detector values
         """
         from pycbc.conversions import mchirp_from_mass1_mass2
-        self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
-                                                   trigs.param['mass2'])
+        try:
+            mass1 = trigs.param['mass1']
+            mass2 = trigs.param['mass2']
+        except AttributeError:
+            mass1 = trigs['mass1']
+            mass2 = trigs['mass2']
+        self.curr_mchirp = mchirp_from_mass1_mass2(mass1, mass2)
+
         if self.mcm is not None:
             # Careful - input might be a str, so cast to float
             self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
         return ExpFitFgBgNormStatistic.single(self, trigs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
 
@@ -1862,7 +1873,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         # and 'template-kde_file'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.kde_names = [at[0] for at in parsed_attrs if
-                       (len(at) == 2 and at[1] == 'kde_file')]
+                          (len(at) == 2 and at[1] == 'kde_file')]
         assert sorted(self.kde_names) == ['signal', 'template'], \
             "Two stat files are required, they should have stat attr " \
             "'signal-kde_file' and 'template-kde_file' respectively"
@@ -1917,7 +1928,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         return logr_s
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -1979,8 +1990,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
     the DQ time series.
     """
 
-    def __init__(self, sngl_ranking, files=None, ifos=None,
-                 **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
         Parameters
         ----------
@@ -1996,24 +2006,25 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
-        self.dq_val_by_time = {}
-        self.dq_bin_by_id = {}
-        for k in self.files.keys():
-            parsed_attrs = k.split('-')
-            if len(parsed_attrs) < 3:
-                continue
-            if parsed_attrs[2] == 'dq_ts_reference':
-                ifo = parsed_attrs[0]
-                dq_type = parsed_attrs[1]
-                dq_vals = self.assign_dq_val(k)
-                dq_bins = self.assign_bin_id(k)
-                if ifo not in self.dq_val_by_time:
-                    self.dq_val_by_time[ifo] = {}
-                    self.dq_bin_by_id[ifo] = {}
-                self.dq_val_by_time[ifo][dq_type] = dq_vals
-                self.dq_bin_by_id[ifo][dq_type] = dq_bins
+        self.single_dtype.append(('dq_state', numpy.uint8))
+        self.dq_rates_by_state = {}
+        self.dq_bin_by_tid = {}
+        self.dq_state_segments = None
+        self.low_latency = False
 
-    def assign_bin_id(self, key):
+        for ifo in self.ifos:
+            key = f'{ifo}-dq_stat_info'
+            if key in self.files.keys():
+                dq_rates = self.assign_dq_rates(key)
+                dq_bins = self.assign_template_bins(key)
+                if ifo not in self.dq_rates_by_state:
+                    self.dq_rates_by_state[ifo] = {}
+                    self.dq_bin_by_tid[ifo] = {}
+                self.setup_segments(key)
+                self.dq_rates_by_state[ifo] = dq_rates
+                self.dq_bin_by_tid[ifo] = dq_bins
+
+    def assign_template_bins(self, key):
         """
         Assign bin ID values
         Assign each template id to a bin name based on a
@@ -2031,18 +2042,18 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
-            bin_names = dq_file.attrs['names'][:]
-            locs = []
-            names = []
-            for bin_name in bin_names:
-                bin_locs = dq_file[ifo + '/locs/' + bin_name][:]
-                locs = list(locs) + list(bin_locs.astype(int))
-                names = list(names) + list([bin_name] * len(bin_locs))
+            tids = []
+            bin_nums = []
+            bin_grp = dq_file[f'{ifo}/bins']
+            for bin_name in bin_grp.keys():
+                bin_tids = bin_grp[f'{bin_name}/tids'][:]
+                tids = list(tids) + list(bin_tids.astype(int))
+                bin_nums = list(bin_nums) + list([bin_name] * len(bin_tids))
 
-        bin_dict = dict(zip(locs, names))
+        bin_dict = dict(zip(tids, bin_nums))
         return bin_dict
 
-    def assign_dq_val(self, key):
+    def assign_dq_rates(self, key):
         """
         Assign dq values to each time for every bin based on a
         referenced statistic file.
@@ -2061,37 +2072,105 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
-            times = dq_file[ifo + '/times'][:]
-            bin_names = dq_file.attrs['names'][:]
+            bin_grp = dq_file[f'{ifo}/bins']
             dq_dict = {}
-            for bin_name in bin_names:
-                dq_vals = dq_file[ifo + '/dq_vals/' + bin_name][:]
-                dq_dict[bin_name] = dict(zip(times, dq_vals))
+            for bin_name in bin_grp.keys():
+                dq_dict[bin_name] = bin_grp[f'{bin_name}/dq_rates'][:]
 
         return dq_dict
 
-    def find_dq_val(self, trigs):
-        """Get dq values for a specific ifo and times"""
-        time = trigs['end_time'].astype(int)
+    def setup_segments(self, key):
+        """
+        Check if segments definitions are in stat file
+        If they are, we are running offline and need to store them
+        If they aren't, we are running online
+        """
+        ifo = key.split('-')[0]
+        with h5py.File(self.files[key], 'r') as dq_file:
+            ifo_grp = dq_file[ifo]
+            if 'dqsegs' in ifo_grp.keys():
+                # if segs are in stat file, we are not in LL
+                assert not self.low_latency
+                dq_state_segs_dict = {}
+                for k in ifo_grp['dqsegs'].keys():
+                    seg_dict = {}
+                    seg_dict['start'] = ifo_grp[f'dq_segments/{k}/segment_starts'][:]
+                    seg_dict['end'] = ifo_grp[f'dq_segments/{k}/segment_ends'][:]
+                    dq_state_segs_dict[k] = seg_dict
+
+                if self.dq_state_segments is None:
+                    self.dq_state_segments = {}
+                if ifo not in self.dq_state_segments:
+                    self.dq_state_segments[ifo] = {}
+
+                self.dq_state_segments[ifo] = dq_state_segs_dict
+            else:
+                # we must be in LL, shouldn't have segments
+                assert not self.dq_state_segments
+                self.low_latency = True
+
+    def find_dq_noise_rate(self, trigs):
+        """Get dq values for a specific ifo and dq states"""
+        dq_state = trigs['dq_state'].astype(int)
         try:
             tnum = trigs.template_num
             ifo = trigs.ifo
         except AttributeError:
             tnum = trigs['template_id']
-            assert len(self.ifos) == 1
+            ifo = trigs['ifo']
+            unq = numpy.unique(ifo)
+            assert len(unq) == 1
             # Should be exactly one ifo provided
-            ifo = self.ifos[0]
-        dq_val = numpy.zeros(len(time))
-        if ifo in self.dq_val_by_time:
-            for (i, t) in enumerate(time):
-                for k in self.dq_val_by_time[ifo].keys():
-                    if isinstance(tnum, numpy.ndarray):
-                        bin_name = self.dq_bin_by_id[ifo][k][tnum[i]]
-                    else:
-                        bin_name = self.dq_bin_by_id[ifo][k][tnum]
-                    val = self.dq_val_by_time[ifo][k][bin_name][int(t)]
-                    dq_val[i] = max(dq_val[i], val)
+            ifo = unq[0]
+
+        dq_val = numpy.zeros(len(dq_state))
+
+        if ifo in self.dq_rates_by_state:
+            for (i, st) in enumerate(dq_state):
+                if isinstance(tnum, numpy.ndarray):
+                    bin_name = self.dq_bin_by_tid[ifo][tnum[i]]
+                else:
+                    bin_name = self.dq_bin_by_tid[ifo][tnum]
+                dq_val[i] = self.dq_rates_by_state[ifo][bin_name][st]
         return dq_val
+
+    def find_dq_state_by_time(self, ifo, times):
+        """Get the dq state for an ifo at times"""
+        dq_state = numpy.zeros(len(times), dtype=numpy.uint8)
+        if ifo in self.dq_state_segments:
+            from pycbc.events.veto import indices_within_times
+            for k in self.dq_state_segments[ifo]:
+                starts = self.dq_state_segments[ifo][k]['start']
+                ends = self.dq_state_segments[ifo][k]['end']
+                inds = indices_within_times(times, starts, ends)
+                # states are named in file as 'stateN'
+                dq_state[inds] = int(k[5:])
+        return dq_state
+
+    def single(self, trigs):
+        # make sure every trig has a dq state
+
+        try:
+            # works in offline
+            ifo = trigs.ifo
+        except AttributeError:
+            # works in low-latency
+            ifo = trigs['ifo']
+            unq = numpy.unique(ifo)
+            assert len(unq) == 1
+            # Should be exactly one ifo provided
+            ifo = unq[0]
+
+        singles = ExpFitFgBgNormStatistic.single(self, trigs)
+
+        if self.low_latency:
+            # trigs should already have a dq state assigned
+            singles['dq_state'] = trigs['dq_state'][:]
+        else:
+            singles['dq_state'] = self.find_dq_state_by_time(
+                ifo, trigs['end_time'][:]
+            )
+        return singles
 
     def lognoiserate(self, trigs):
         """
@@ -2112,7 +2191,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
                     self, trigs)
-        logr_n += self.find_dq_val(trigs)
+        logr_n += numpy.log(self.find_dq_noise_rate(trigs))
         return logr_n
 
 
@@ -2160,7 +2239,7 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
                                                     to_shift)
 
     def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+                         **kwargs):  # pylint:disable=unused-argument
         """
         Inherited, see docstring for ExpFitFgBgKDEStatistic.rank_stat_single
         """

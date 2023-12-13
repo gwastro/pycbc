@@ -191,18 +191,14 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
 # 'statfiles' is list of files used in calculating statistic
 # 'dqfiles' is the subset of files containing data quality information
 statfiles = []
-dqfiles = []
-dqfile_labels = []
-dq_labels = workflow.cp.get_subsections('workflow-data_quality')
-for dq_label in dq_labels:
-    dq_label_files = wf.setup_dq_reranking(workflow, dq_label, insps, hdfbank,
-                                       analyzable_segs, analyzable_file,
-                                       dq_segment_file,
-                                       output_dir='dq',
-                                       tags=['full_data'])
-    statfiles += dq_label_files
-    dqfiles += dq_label_files
-    dqfile_labels += len(dq_label_files) * [dq_label]
+
+dqfiles, dqfile_labels = wf.setup_dq_reranking(workflow, insps,
+                                               hdfbank, analyzable_segs,
+                                               analyzable_file,
+                                               dq_segment_file,
+                                               output_dir='dq',
+                                               tags=['full_data'])
+statfiles += dqfiles
 
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name,
