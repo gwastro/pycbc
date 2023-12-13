@@ -142,9 +142,9 @@ for i in range(len(args.trigger_files)):
 
     # We don't have that many triggers, see if we can skip some templates
     if len(reader.file[ifo]['template_id']) < 2**27:
-        uniq = numpy.unique(reader.file[ifo]['template_id'][:])
+        uniq = numpy.unique(reader.file[ifo]['template_id'][:]).astype(numpy.int64)
         if tids_with_trigs is None:
-            tids_with_trigs = numpy.arange(0, num_templates)
+            tids_with_trigs = numpy.arange(0, num_templates, dtype=numpy.int64)
         tids_with_trigs = numpy.intersect1d(tids_with_trigs, uniq)
 
     # time shift is subtracted from pivot ifo time
