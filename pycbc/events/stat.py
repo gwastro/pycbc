@@ -2090,7 +2090,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             ifo_grp = dq_file[ifo]
             if 'dqsegs' in ifo_grp.keys():
                 # if segs are in stat file, we are not in LL
-                assert not self.low_latency
+                assert not self.low_latency, 'Should not have segments in LL'
                 dq_state_segs_dict = {}
                 for k in ifo_grp['dqsegs'].keys():
                     seg_dict = {}
@@ -2106,7 +2106,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
                 self.dq_state_segments[ifo] = dq_state_segs_dict
             else:
                 # we must be in LL, shouldn't have segments
-                assert not self.dq_state_segments
+                assert not self.dq_state_segments, 'Should not have segments in LL'
                 self.low_latency = True
 
     def find_dq_noise_rate(self, trigs, dq_state):
