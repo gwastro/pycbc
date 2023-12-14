@@ -626,6 +626,9 @@ td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
 # behaviour
 td_required = ParameterList([f_lower, delta_t, approximant])
 fd_required = ParameterList([f_lower, delta_f, approximant])
+# The following is required for the FD sequence waveforms with detector
+# response already applied
+fd_det_sequence_required = ParameterList([f_lower, approximant])
 
 ####
 cbc_td_required = ParameterList([mass1, mass2, f_lower, delta_t, approximant])
