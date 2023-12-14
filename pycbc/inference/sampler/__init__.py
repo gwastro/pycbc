@@ -66,6 +66,13 @@ try:
 except ImportError:
     pass
 
+try:
+    from .nessai import NessaiSampler
+    samplers[NessaiSampler.name] = NessaiSampler
+except ImportError:
+    pass
+
+
 def load_from_config(cp, model, **kwargs):
     """Loads a sampler from the given config file.
 
