@@ -336,6 +336,13 @@ def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
         err_msg = 'Single-detector ranking {} not recognized'.format(statname)
         raise ValueError(err_msg) from exc
 
+    if not all([rd in trigs for rd in required_datasets[statname]]):
+        trigs_dsets = ', '.join(trigs.keys())
+        reqd_dsets = ', '.join(required_datasets[statname])
+        err_msg = "trigs object does not contain all required datasets. " + \
+                  f"Contains {trigs_dsets}, requires {reqd_dsets}"
+        raise ValueError(err_msg)
+
     # NOTE: In the sngl_funcs all the kwargs are explicitly stated, so any
     #       kwargs sent here must be known to the function.
     return sngl_func(trigs, **kwargs)
