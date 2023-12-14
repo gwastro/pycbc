@@ -90,6 +90,44 @@ class CommonNestedMetadataIO(object):
                      "extracted instead.")
         return parser, actions
 
+    def write_pickled_data_into_checkpoint_file(self, state):
+        """Dump the sampler state into checkpoint file
+        """
+        if 'sampler_info/saved_state' not in self:
+            self.create_group('sampler_info/saved_state')
+        dump_state(state, self, path='sampler_info/saved_state')
+
+    def read_pickled_data_from_checkpoint_file(self):
+        """Load the sampler state (pickled) from checkpoint file
+        """
+        return load_state(self, path='sampler_info/saved_state')
+
+    def write_raw_samples(self, data, parameters=None):
+        """Write the nested samples to the file
+        """
+        if 'samples' not in self:
+            self.create_group('samples')
+        write_samples_to_file(self, data, parameters=parameters,
+                              group='samples')
+    def validate(self):
+        """Runs a validation test.
+        This checks that a samples group exist, and that pickeled data can
+        be loaded.
+
+        Returns
+        -------
+        bool :
+            Whether or not the file is valid as a checkpoint file.
+        """
+        try:
+            if 'sampler_info/saved_state' in self:
+                load_state(self, path='sampler_info/saved_state')
+            checkpoint_valid = True
+        except KeyError:
+            checkpoint_valid = False
+        return checkpoint_valid
+
+
 class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
     """Class to handle file IO for the ``dynesty`` sampler."""
 
@@ -148,41 +186,3 @@ class DynestyFile(CommonNestedMetadataIO, BaseNestedSamplerFile):
             return post
         else:
             return samples
-
-    def write_pickled_data_into_checkpoint_file(self, state):
-        """Dump the sampler state into checkpoint file
-        """
-        if 'sampler_info/saved_state' not in self:
-            self.create_group('sampler_info/saved_state')
-        dump_state(state, self, path='sampler_info/saved_state')
-
-    def read_pickled_data_from_checkpoint_file(self):
-        """Load the sampler state (pickled) from checkpoint file
-        """
-        return load_state(self, path='sampler_info/saved_state')
-
-    def write_raw_samples(self, data, parameters=None):
-        """Write the nested samples to the file
-        """
-        if 'samples' not in self:
-            self.create_group('samples')
-        write_samples_to_file(self, data, parameters=parameters,
-                              group='samples')
-
-    def validate(self):
-        """Runs a validation test.
-        This checks that a samples group exist, and that pickeled data can
-        be loaded.
-
-        Returns
-        -------
-        bool :
-            Whether or not the file is valid as a checkpoint file.
-        """
-        try:
-            if 'sampler_info/saved_state' in self:
-                load_state(self, path='sampler_info/saved_state')
-            checkpoint_valid = True
-        except KeyError:
-            checkpoint_valid = False
-        return checkpoint_valid
