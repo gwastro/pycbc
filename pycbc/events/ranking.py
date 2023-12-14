@@ -324,7 +324,7 @@ def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
 
     Parameters
     -----------
-    trigs: dict of numpy.ndarrays
+    trigs: dict of numpy.ndarrays or SingleDetTriggers
         Dictionary holding single detector trigger information.
     statname:
         The statistic to use.
@@ -336,11 +336,14 @@ def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
         err_msg = 'Single-detector ranking {} not recognized'.format(statname)
         raise ValueError(err_msg) from exc
 
-    if not all([rd in trigs for rd in required_datasets[statname]]):
-        trigs_dsets = ', '.join(trigs.keys())
-        reqd_dsets = ', '.join(required_datasets[statname])
+    trigs_dsets = trigs.keys() if isinstance(trigs, dict) \
+        else trigs.trigs.keys()
+    missing = [rd for rd in required_datasets[statname] \
+               if rd not in trigs_dsets]
+    if missing:
+        trigs_dsets = ', '.join(missing)
         err_msg = "trigs object does not contain all required datasets. " + \
-                  f"Contains {trigs_dsets}, requires {reqd_dsets}"
+                  f"Missing {trigs_dsets}."
         raise ValueError(err_msg)
 
     # NOTE: In the sngl_funcs all the kwargs are explicitly stated, so any

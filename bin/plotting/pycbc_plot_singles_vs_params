@@ -52,8 +52,6 @@ parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
 parser.add_argument('--filter-string', default=None, type=str,
                     help='Optional, boolean expression for filtering triggers')
-parser.add_argument('--min-snr', default=0., type=float,
-                    help='Only plot triggers above the given SNR')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Destination path for plot')
 parser.add_argument('--x-var', required=True,
@@ -84,24 +82,6 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-if opts.min_snr:
-    # Apply filter on minimum SNR straight away
-    with pycbc.io.HFile(opts.single_trig_file) as trig_file:
-        n_triggers_orig = trig_file[f'{opts.detector}/snr'].size
-        logging.info("Trigger file has %d triggers", n_triggers_orig)
-        logging.info('Generating trigger mask (on SNR)')
-        idx, _ = trig_file.select(
-            lambda snr: snr >= opts.min_snr,
-            'snr',
-            group=opts.detector,
-            return_data=False,
-        )
-    logging.info('%d triggers after snr mask', idx.size)
-    data_mask = np.zeros(n_triggers_orig, dtype=bool)
-    data_mask[idx] = True
-else:
-    data_mask = None
-
 if opts.z_var == 'density' or opts.min_z is None:
     filter_rank = None
     filter_thresh = None
@@ -116,7 +96,6 @@ trigs = pycbc.io.SingleDetTriggers(
     bank_file=opts.bank_file,
     veto_file=opts.veto_file,
     segment_name=opts.segment_name,
-    premask=data_mask,
     filter_func=opts.filter_string,
     filter_rank=filter_rank,
     filter_threshold=filter_thresh
