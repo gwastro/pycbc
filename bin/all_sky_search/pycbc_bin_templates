@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+""" Bin templates by their duration
+"""
 import logging
 import argparse
 import h5py as h5
