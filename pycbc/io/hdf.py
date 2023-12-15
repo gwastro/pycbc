@@ -641,7 +641,7 @@ class SingleDetTriggers(object):
             self.mask = np.zeros(self.ntriggers, dtype=bool)
             self.mask[logic_mask] = True
         elif hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
-            orig_indices = self.mask.nonzero()[0][logic_mask]
+            orig_indices = np.flatnonzero(self.mask)[logic_mask]
             self.mask[:] = False
             self.mask[orig_indices] = True
         else:
@@ -661,12 +661,12 @@ class SingleDetTriggers(object):
 
         # Use intersection of the indices of True values in the masks
         if hasattr(logic_mask, 'dtype') and (logic_mask.dtype == 'bool'):
-            new_indices = logic_mask.nonzero()[0]
+            new_indices = np.flatnonzero(logic_mask)
         else:
             new_indices = np.array(logic_mask)
 
         if hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
-            orig_indices = self.mask.nonzero()[0]
+            orig_indices = np.flatnonzero(self.mask)
         else:
             orig_indices = np.array(self.mask)
 
