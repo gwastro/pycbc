@@ -1564,7 +1564,9 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         # First get signal PDF logr_s
         stat = {ifo: st for ifo, st in s}
 
-        self.curr_mchirp = kwargs['mchirp']
+        try:
+            self.curr_mchirp = kwargs['mchirp']
+        except KeyError:
 
         logr_s = self.logsignalrate(stat, slide * step, to_shift)
 
