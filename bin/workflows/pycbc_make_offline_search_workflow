@@ -194,7 +194,6 @@ statfiles = []
 
 dqfiles, dqfile_labels = wf.setup_dq_reranking(workflow, insps,
                                                hdfbank, analyzable_segs,
-                                               analyzable_file,
                                                dq_segment_file,
                                                output_dir='dq',
                                                tags=['full_data'])
