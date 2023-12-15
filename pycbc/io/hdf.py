@@ -135,6 +135,12 @@ class HFile(h5py.File):
                 i += chunksize
                 continue
 
+            if all(mask[i:r]):
+                # Everything allowed through the mask in this chunk
+                submask = np.arange(r - i)
+            else:
+                submask = np.flatnonzero(mask[i:r])
+
             # Read each chunk's worth of data
             partial_data = {arg: refs[arg][i:r][mask[i:r]]
                             for arg in dsets}
@@ -152,7 +158,7 @@ class HFile(h5py.File):
             keep = fcn(*partial)
 
             # Keep the indices which pass the function:
-            indices = np.concatenate([indices, np.flatnonzero(keep) + i])
+            indices = np.concatenate([indices, submask[keep] + i])
 
             if return_data:
                 # Store the dataset results that pass the function
@@ -520,7 +526,13 @@ class SingleDetTriggers(object):
 
         # Apply some masks to start off with - here we should try and apply
         # them in the order which cuts most things earliest.
-        self.mask = premask
+
+        # Apply any pre-masks
+        if premask is None:
+            self.mask = np.ones(self.ntriggers, dtype=bool)
+        else:
+            self.mask = None
+            self.apply_mask(premask)
 
         if filter_rank:
             assert filter_threshold is not None
@@ -642,7 +654,7 @@ class SingleDetTriggers(object):
         ----------
         logic_mask : boolean array or numpy array/list of indices
         """
-        if self.mask is None:
+        if self.mask_size == self.ntriggers:
             # No mask exists, just update to use the given mask
             self.apply_mask(logic_mask)
             return
