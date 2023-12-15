@@ -142,11 +142,11 @@ if args.gating_windows:
                 gate_times + gate_after
         ).coalesce()
 
+# make segments into mutually exclusive dq states
 analysis_segs = args.analysis_segments
 gating_segs = gating_segs & analysis_segs
 flag_segs = flag_segs & analysis_segs
 
-# make segments into mutually exclusive dq states
 dq_state_segs_dict = {}
 dq_state_segs_dict[2] = gating_segs
 dq_state_segs_dict[1] = flag_segs - gating_segs
