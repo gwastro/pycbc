@@ -147,10 +147,11 @@ def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
     return node.output_files[0]
 
 def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
-    """ Convert injection file to hdf format.
-
-    If the file has a PyCBC HDF format, supply requires-format-conversion = FALSE in either [injections] or
-[workflow-injections] sections for injection_method = PREGENERATED. 
+    """ 
+    Convert injection file to hdf format.
+    If the file has a PyCBC HDF format, 
+    supply requires-format-conversion = FALSE in either [injections] or
+    [work
     """
     if tags is None:
         tags = []
@@ -233,9 +234,8 @@ def setup_injection_workflow(workflow, output_dir=None,
                 workflow.execute_node(node)
             else:
                 workflow.add_node(node)
-
             inj_file = node.output_files[0]
-            inj_file_hdf= inj_to_hdf(workflow, inj_file, output_dir, curr_tags)
+            inj_file_hdf = inj_to_hdf(workflow, inj_file, output_dir, curr_tags)
             inj_files.append(inj_file_hdf)
             
         elif injection_method == "PREGENERATED":
@@ -262,7 +262,7 @@ def setup_injection_workflow(workflow, output_dir=None,
                 inj_files.append(curr_file)
                 
         else:
-            err = "Injection method must be one of IN_WORKFLOW, "
+            err = "Injection method must be one of IN_WORKFLOW."
             err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)
             raise ValueError(err)
         inj_tags.append(inj_tag)
