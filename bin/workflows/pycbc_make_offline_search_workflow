@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/kkacanja/miniconda3/envs/astro/bin/python3.8
 
 # Copyright (C) 2013-2023, Ian W. Harry, Alex Nitz, Marton Tapai,
 #     Gareth Cabourn Davies
@@ -66,7 +66,7 @@ wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
 # By default, we do logging.info, each --verbose adds a level of verbosity
-logging_level = args.verbose + 1 if args.verbose else 1
+logging_level = args.verbose + 1 if args.verbose else logging.INFO
 pycbc.init_logging(logging_level)
 
 container = wf.Workflow(args, args.workflow_name)
@@ -188,7 +188,7 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                            tags=['full_data'])
 
 # setup sngl trigger distribution fitting jobs
-# 'statfiles' is list of files used in calculating statistic
+# 'statfiles' is list of files used in calculating coinc statistic
 # 'dqfiles' is the subset of files containing data quality information
 statfiles = []
 dqfiles = []
@@ -458,8 +458,7 @@ for insp_file in full_insps:
         wf.setup_single_det_minifollowups\
             (workflow, insp_file, hdfbank, insp_files_seg_file,
              data_analysed_name, trig_generated_name, 'daxes', currdir,
-             statfiles=wf.FileList(statfiles),
-             fg_file=censored_veto, fg_name='closed_box',
+             veto_file=censored_veto, veto_segment_name='closed_box',
              tags=insp_file.tags + [subsec])
 
 ##################### COINC FULL_DATA plots ###################################
@@ -591,13 +590,13 @@ splitbank_files_inj = wf.setup_splittable_workflow(workflow, [hdfbank],
 inj_files_base, inj_tags = wf.setup_injection_workflow(workflow,
                                                   output_dir="inj_files")
 
-inj_files = []
-for inj_file, tag in zip(inj_files_base, inj_tags):
-    inj_files.append(wf.inj_to_hdf(workflow, inj_file, 'inj_files', [tag]))
+
+inj_files = inj_files_base
 
 inj_coincs = wf.FileList()
 
 found_inj_dict ={}
+
 insps_dict = {}
 
 files_for_combined_injfind = []

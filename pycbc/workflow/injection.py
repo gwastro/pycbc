@@ -149,7 +149,8 @@ def cut_distant_injections(workflow, inj_file, out_dir, tags=None):
 def inj_to_hdf(workflow, inj_file, out_dir, tags=None):
     """ Convert injection file to hdf format.
 
-    If the file is already PyCBC HDF format, this will just make a copy.
+    If the file is already PyCBC HDF format, supply requires-format-conversion = FALSE in either [injections] or
+[workflow-injections] sections for injection_method = PREGENERATED.
     """
     if tags is None:
         tags = []
@@ -232,8 +233,11 @@ def setup_injection_workflow(workflow, output_dir=None,
                 workflow.execute_node(node)
             else:
                 workflow.add_node(node)
+
             inj_file = node.output_files[0]
-            inj_files.append(inj_file)
+            inj_file_hdf= inj_to_hdf(workflow, inj_file, output_dir, curr_tags)
+            inj_files.append(inj_file_hdf)
+            
         elif injection_method == "PREGENERATED":
             file_attrs = {
                 'ifos': ['HL'],
@@ -245,14 +249,23 @@ def setup_injection_workflow(workflow, output_dir=None,
                 "injections-pregenerated-file",
                 curr_tags
             )
+            requires_conversion = workflow.cp.get_opt_tags(
+                "workflow-injections",
+                "requires-format-conversion",
+                curr_tags
+            )
             curr_file = resolve_url_to_file(injection_path, attrs=file_attrs)
-            inj_files.append(curr_file)
+            if requires_conversion == "TRUE":
+                logging.info(' Injection file conversion initiated')
+                inj_file_hdf = inj_to_hdf(workflow, curr_file, output_dir, curr_tags)
+            else:
+                inj_files.append(curr_file)
+                
         else:
             err = "Injection method must be one of IN_WORKFLOW, "
             err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)
             raise ValueError(err)
-
         inj_tags.append(inj_tag)
-
+        
     logging.info("Leaving injection module.")
     return inj_files, inj_tags
