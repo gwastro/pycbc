@@ -173,7 +173,7 @@ metricParams = tmpltbank.determine_eigen_directions(
     vary_fmax=(opts.vary_fupper or ethincaParams.doEthinca),
     vary_density=freqStep)
 
-logging.info("Identify limits of frequency.")
+logging.info("Identifying limits of frequency")
 
 # Choose the frequency values to use for metric calculation
 if opts.vary_fupper==False:
@@ -189,8 +189,11 @@ else:
     # total masses
     fs = numpy.array(list(metricParams.evals.keys()), dtype=float)
     fs.sort()
-    lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
-                              opts.bank_fupper_formula, massRangeParams, fs)
+    lowEve, highEve = tmpltbank.find_max_and_min_frequencies(
+        opts.bank_fupper_formula,
+        massRangeParams,
+        fs
+    )
     refFreq = lowEve
     fs = fs[fs >= lowEve]
     fs = fs[fs <= highEve]
@@ -205,12 +208,15 @@ evecsCVdict = {}
 evecsCVdict[refFreq] = evecsCV
 metricParams.evecsCV = evecsCVdict
 
-# Initialize the class for generating the partitioned bank
 logging.info("Initialize the PartitionedTmpltbank class")
 
-partitioned_bank_object = tmpltbank.PartitionedTmpltbank(massRangeParams,
-                               metricParams, refFreq, (opts.max_mismatch)**0.5,
-                               bin_range_check=1)
+partitioned_bank_object = tmpltbank.PartitionedTmpltbank(
+    massRangeParams,
+    metricParams,
+    refFreq,
+    opts.max_mismatch ** 0.5,
+    bin_range_check=1
+)
 
 # Initialise counters
 N = 0
@@ -231,11 +237,12 @@ while True:
         rMass1, rMass2, rSpin1z, rSpin2z = \
             tmpltbank.get_random_mass(100000, massRangeParams)
         if opts.vary_fupper:
-            mass_dict = {}
-            mass_dict['m1'] = rMass1
-            mass_dict['m2'] = rMass2
-            mass_dict['s1z'] = rSpin1z
-            mass_dict['s2z'] = rSpin2z
+            mass_dict = {
+                'mass1': rMass1,
+                'mass2': rMass2,
+                'spin1z': rSpin1z,
+                'spin2z': rSpin2z
+            }
             refEve = tmpltbank.return_nearest_cutoff(
                 opts.bank_fupper_formula, mass_dict, fs)
             lambdas = tmpltbank.get_chirp_params(rMass1, rMass2, rSpin1z,

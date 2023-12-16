@@ -200,7 +200,7 @@ class BruteLISASkyModesMarginalize(BaseGaussianNoise):
     def from_config(cls, cp, **kwargs):
         kwargs['config_object'] = cp
         return super(BruteLISASkyModesMarginalize, cls).from_config(
-            cp, 
+            cp,
             **kwargs
         )
 

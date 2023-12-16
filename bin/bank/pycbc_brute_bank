@@ -479,7 +479,7 @@ while tau0s < args.tau0_end:
             
             if uconv:
                 logging.info('Ratio of convergences: %2.3f' % (kconv / (uconv)))
-                logging.info('Progress: {:.0%} completed'.format(tau0s/args.tau0_end))
+                logging.info('Progress: {:.0%} completed'.format(tau0e/args.tau0_end))
 
             if kloop == 1:
                 okconv = kconv

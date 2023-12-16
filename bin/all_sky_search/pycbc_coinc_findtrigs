@@ -142,9 +142,9 @@ for i in range(len(args.trigger_files)):
 
     # We don't have that many triggers, see if we can skip some templates
     if len(reader.file[ifo]['template_id']) < 2**27:
-        uniq = numpy.unique(reader.file[ifo]['template_id'][:])
+        uniq = numpy.unique(reader.file[ifo]['template_id'][:]).astype(numpy.int64)
         if tids_with_trigs is None:
-            tids_with_trigs = numpy.arange(0, num_templates)
+            tids_with_trigs = numpy.arange(0, num_templates, dtype=numpy.int64)
         tids_with_trigs = numpy.intersect1d(tids_with_trigs, uniq)
 
     # time shift is subtracted from pivot ifo time
@@ -181,7 +181,7 @@ if args.randomize_template_order:
     shuffle(template_ids)
     template_ids = template_ids[tmin:tmax]
 else:
-    template_ids = np.array([range(tmin, tmax)])
+    template_ids = numpy.array([range(tmin, tmax)])
 
 original_bank_len = len(template_ids)
 
