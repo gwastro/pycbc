@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from pycbc import events, bin_utils, results
-from pycbc.io import HFile, SingleDetTriggers
+from pycbc.io import SingleDetTriggers
 from pycbc.events import triggers as trigs
 from pycbc.events import trigger_fits as trstats
 from pycbc.events import stat as pystat

@@ -15,7 +15,7 @@ from pycbc.events.veto import (select_segments_by_definer,
                                start_end_to_segments,
                                segments_to_start_end)
 from pycbc.types.optparse import MultiDetOptionAction
-from pycbc.io.hdf import HFile, SingleDetTriggers
+from pycbc.io.hdf import SingleDetTriggers
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
