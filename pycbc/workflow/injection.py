@@ -235,8 +235,8 @@ def setup_injection_workflow(workflow, output_dir=None,
             else:
                 workflow.add_node(node)
             inj_file = node.output_files[0]
-            inj_file_hdf = inj_to_hdf(workflow, inj_file, output_dir, curr_tags)
-            inj_files.append(inj_file_hdf)
+            injfile_hdf = inj_to_hdf(workflow, inj_file, output_dir, curr_tags)
+            inj_files.append(injfile_hdf)
 
         elif injection_method == "PREGENERATED":
             file_attrs = {
@@ -257,7 +257,7 @@ def setup_injection_workflow(workflow, output_dir=None,
             curr_file = resolve_url_to_file(injection_path, attrs=file_attrs)
             if requires_conversion == "TRUE":
                 logging.info(' Injection file conversion initiated')
-                inj_file_hdf = inj_to_hdf(workflow, curr_file, output_dir, curr_tags)
+                injfile_hdf = inj_to_hdf(workflow, curr_file, output_dir, curr_tags)
             else:
                 inj_files.append(curr_file)
 
