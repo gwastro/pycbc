@@ -187,7 +187,7 @@ if args.veto_file:
     logging.info('Getting file vetoes')
     # veto_mask is an array of indices into the trigger arrays
     # giving the surviving triggers
-    veto_file_idx, _ = events.veto.indices_within_segments(
+    veto_file_idx, _ = pycbc.events.veto.indices_within_segments(
         trigs.end_time,
         [args.veto_file],
         ifo=args.instrument,

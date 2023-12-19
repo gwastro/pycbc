@@ -1,4 +1,4 @@
-#!/home/kkacanja/miniconda3/envs/astro/bin/python3.8
+#!/usr/bin/env python
 
 # Copyright (C) 2013-2023, Ian W. Harry, Alex Nitz, Marton Tapai,
 #     Gareth Cabourn Davies
