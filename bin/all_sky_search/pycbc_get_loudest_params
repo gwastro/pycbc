@@ -16,7 +16,7 @@ from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--verbose', action='count')
+pycbc.common_options(parser)
 parser.add_argument('--single-ifo-trigs', type=str, required=True,
         help='HDF file containing single IFO CBC triggers')
 parser.add_argument('--tmpltbank-file', type=str, required=True,

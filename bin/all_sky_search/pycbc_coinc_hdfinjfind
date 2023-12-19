@@ -55,7 +55,7 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
                                         dtype=numpy.float32))
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--verbose', action='count')
+pycbc.common_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+', required=True)

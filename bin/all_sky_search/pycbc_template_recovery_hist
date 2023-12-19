@@ -9,7 +9,7 @@ from pycbc.events import triggers
 from pycbc import init_logging
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--verbose', action='count')
+pycbc.common_options(parser)
 parser.add_argument('--output', required=True)
 parser.add_argument('--found-injection-files', dest='found', nargs='+',
                     help='hdf file(s) with found injections')

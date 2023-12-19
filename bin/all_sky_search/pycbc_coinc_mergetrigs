@@ -30,6 +30,7 @@ def region(f, key, boundaries, ids):
                      dtype=h5py.special_dtype(ref=h5py.RegionReference))
 
 parser = argparse.ArgumentParser()
+pycbc.common_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+')
@@ -38,7 +39,6 @@ parser.add_argument('--bank-file', required=True)
 parser.add_argument('--compression-level', type=int, default=6,
                     help='Set HDF compression level in the output file '
                          '(default 6)')
-parser.add_argument('--verbose', '-v', action='count')
 args = parser.parse_args()
 
 init_logging(args.verbose)

@@ -12,7 +12,7 @@ from pycbc.types.optparse import MultiDetOptionAction
 from pycbc import init_logging
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", action='count')
+pycbc.common_options(parser)
 parser.add_argument("--version", action='version',
                     version=pycbc.version.git_verbose_msg)
 # Basic file input options

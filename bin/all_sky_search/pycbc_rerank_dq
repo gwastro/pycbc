@@ -8,8 +8,8 @@ from os import path
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.common_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true",default=False)
 parser.add_argument('--no-low-dq-cutoff', action="store_true",
                     help="Allow dq values less than 0. "
                          "Otherwise values less than 0 are set to 0")
