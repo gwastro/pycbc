@@ -66,6 +66,26 @@ class LogFormatter(logging.Formatter):
         return s
 
 
+def common_options(parser):
+    """
+    Common utility to add standard options to each PyCBC executable.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        The argument parser to which the options will be added
+    """
+    group = parser.add_argument_group(
+        title="PyCBC common options",
+        description="Common options for PyCBC executables.",
+    )
+    group.add_argument('-V','--verbose', action='count',
+                       help='Add verbosity to logging. Adding the option '
+                            'multiple times makes logging progressively '
+                            'more verbose, e.g. --verbose or -V provides '
+                            'logging at the info level, but -VV or '
+                            '--verbose --verbose provides debug logging.')
+
 def init_logging(verbose=False,
                  format='%(asctime)s %(levelname)s : %(message)s'):
     """Common utility for setting up logging in PyCBC.

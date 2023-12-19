@@ -25,9 +25,9 @@ def get_ifo_string(fi):
     return istring
 
 parser = argparse.ArgumentParser()
+pycbc.common_options(parser)
 parser.add_argument('--version', action="version",
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-files', nargs='+',
     help="List of coinc files to be combined")
 parser.add_argument('--background-files', nargs='+', default=None,
