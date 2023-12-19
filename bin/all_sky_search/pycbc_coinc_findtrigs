@@ -10,7 +10,7 @@ from pycbc.io.hdf import ReadByTemplate
 from pycbc.types.optparse import MultiDetOptionAction
 
 parser = argparse.ArgumentParser()
-pycbc.common_options(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     help="Optional veto file. Triggers within veto segments "

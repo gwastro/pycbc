@@ -13,7 +13,7 @@ from pycbc.io.hdf import HFile, SingleDetTriggers
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
-pycbc.common_options(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument("--ifo", type=str, required=True)
 parser.add_argument("--trig-file", required=True)

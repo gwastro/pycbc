@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(usage="",
                 "parameter, to suppress random noise in the resulting "
                 "background model.")
 
-pycbc.common_options(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("--template-fit-file",
                     help="Input hdf5 file containing fit coefficients for each"

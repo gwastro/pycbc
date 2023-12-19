@@ -31,7 +31,7 @@ import pycbc.version
 
 parser = argparse.ArgumentParser(usage="",
     description="Plot histograms of triggers split over various parameters")
-pycbc.common_options(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file", required=True,
                     help="Input hdf5 file containing single triggers. "
                          "Required")

@@ -20,7 +20,7 @@ from copy import deepcopy
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-pycbc.common_options(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--ifos', nargs='+',
                     help="The ifos to generate a histogram for")
 parser.add_argument('--sample-size', type=int, required=True,

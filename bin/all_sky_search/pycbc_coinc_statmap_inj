@@ -12,7 +12,7 @@ from pycbc import init_logging
 
 parser = argparse.ArgumentParser()
 # General required options
-pycbc.common_options(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--cluster-window', type=float, default=10,

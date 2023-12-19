@@ -12,7 +12,7 @@ def remove(l, i):
         l.remove(r)
 
 parser = argparse.ArgumentParser()
-pycbc.common_options(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file')
 parser.add_argument('--veto-file', 

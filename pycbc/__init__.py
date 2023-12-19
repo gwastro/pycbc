@@ -66,7 +66,7 @@ class LogFormatter(logging.Formatter):
         return s
 
 
-def common_options(parser):
+def add_common_pycbc_options(parser):
     """
     Common utility to add standard options to each PyCBC executable.
 

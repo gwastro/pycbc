@@ -13,7 +13,7 @@
 # Public License for more details.
 
 import numpy, h5py, operator, argparse, logging
-from pycbc import init_logging, common_options
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.conversions as convert
 from pycbc import libutils
 from pycbc.events import triggers
@@ -21,7 +21,7 @@ akde = libutils.import_optional('awkde')
 kf = libutils.import_optional('sklearn.model_selection')
 
 parser = argparse.ArgumentParser(description=__doc__)
-common_options(parser)
+add_common_pycbc_options(parser)
 parser.add_argument('--signal-file', help='File with parameters of GW signals '
                     'for KDE calculation')
 parser.add_argument('--template-file', required=True, help='Hdf5 file with '

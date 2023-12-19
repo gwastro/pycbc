@@ -14,7 +14,7 @@ from pycbc.types.timeseries import TimeSeries
 from ligo.segments import segment
 
 parser = argparse.ArgumentParser(description=__doc__)
-pycbc.common_options(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument("--dq-sample-rate", default=1, type=int,
                     help="Sample rate to calculate dq timeseries, "
