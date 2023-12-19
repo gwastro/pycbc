@@ -254,18 +254,18 @@ def setup_injection_workflow(workflow, output_dir=None,
                 "requires-format-conversion",
                 curr_tags
             )
-            curr_file = resolve_url_to_file(injection_path, attrs=file_attrs)
+            file = resolve_url_to_file(injection_path, attrs=file_attrs)
             if requires_conversion == "TRUE":
                 logging.info(' Injection file conversion initiated')
-                injfile_hdf = inj_to_hdf(workflow, curr_file, output_dir, curr_tags)
+                injfile_hdf = inj_to_hdf(workflow, file, output_dir, curr_tags)
             else:
-                inj_files.append(curr_file)
+                inj_files.append(file)
 
         else:
             err = "Injection method must be one of IN_WORKFLOW."
             err += "AT_RUNTIME or PREGENERATED. Got %s." % (injection_method)
             raise ValueError(err)
         inj_tags.append(inj_tag)
-        
+
     logging.info("Leaving injection module.")
     return inj_files, inj_tags
