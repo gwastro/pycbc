@@ -79,7 +79,7 @@ def common_options(parser):
         title="PyCBC common options",
         description="Common options for PyCBC executables.",
     )
-    group.add_argument('-V','--verbose', action='count', default=0,
+    group.add_argument('-V', '--verbose', action='count', default=0,
                        help='Add verbosity to logging. Adding the option '
                             'multiple times makes logging progressively '
                             'more verbose, e.g. --verbose or -V provides '
