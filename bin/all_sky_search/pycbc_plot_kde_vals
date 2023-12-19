@@ -3,11 +3,11 @@
 import numpy, h5py, argparse
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from pycbc import init_logging
+from pycbc import init_logging, common_options
 import logging
 
 parser = argparse.ArgumentParser(description=__doc__)
-pycbc.common_options(parser)
+common_options(parser)
 parser.add_argument('--signal-file')
 parser.add_argument('--template-file', required=True)
 parser.add_argument('--param', nargs='+', required=True,

@@ -6,10 +6,10 @@ from matplotlib import use
 use('Agg')
 from matplotlib import pyplot as plt
 from pycbc.events import triggers
-from pycbc import init_logging
+from pycbc import init_logging, common_options
 
 parser = argparse.ArgumentParser(description=__doc__)
-pycbc.common_options(parser)
+common_options(parser)
 parser.add_argument('--output', required=True)
 parser.add_argument('--found-injection-files', dest='found', nargs='+',
                     help='hdf file(s) with found injections')
