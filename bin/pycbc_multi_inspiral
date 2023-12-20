@@ -449,7 +449,7 @@ with ctx:
 
             # Move onto next segment if there are no triggers.
             n_trigs = [len(snrv_dict[ifo]) for ifo in args.instruments]
-            if np.all(n_trigs==np.zeros_like(args.instruments[:]), axis=0):
+            if not any(n_trigs):
                 continue
             # Short timeslides start here !
             # Loop through slides, staring with the zero-lag
