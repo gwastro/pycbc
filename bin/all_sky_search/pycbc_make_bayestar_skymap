@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Simple wraper around bayestar-localize-coincs to get sky localization for a
+Simple wrapper around bayestar-localize-coincs to get sky localization for a
 specific compact binary merger event.
 
 Uses an XML containing SNR timeseries and PSD and calls BAYESTAR to produce a
