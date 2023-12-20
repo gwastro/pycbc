@@ -355,7 +355,7 @@ with ctx:
         args, args.instruments, ifo_names,
         [ifo_out_types[n] for n in ifo_names], network_names,
         [network_out_types[n] for n in network_names], 
-         segments=segments, time_slides=time_slides)
+        segments=segments, time_slides=time_slides)
 
     # Template bank: filtering and thinning
     logging.info("Read in template bank")
