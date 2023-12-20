@@ -253,7 +253,7 @@ with ctx:
         ifo: args.slide_shift * slide_ids * n_ifo
         for n_ifo, ifo in enumerate(args.instruments)}
     # Given the time delays in time_slides, the following dictionary keeps the
-    # time delay indices evaluated wrt the geocenter:
+    # time delay indices evaluated wrt the geocenter, in units of samples, i.e.
     # (time delay from geocenter + timeslide)*sampling_rate
     time_delay_idx = {
             slide: {
