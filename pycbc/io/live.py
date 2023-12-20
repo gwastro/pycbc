@@ -455,6 +455,10 @@ class CandidateForGraceDB(object):
 
             generate_asd_plot(self.psds, asd_series_plot_fname)
 
+            for ifo in sorted(self.snr_series):
+                curr_snrs = self.snr_series[ifo]
+                curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
+
             # Additionally save the PSDs into the snr_series file
             for ifo in sorted(self.psds):
                 # Undo dynamic range factor
