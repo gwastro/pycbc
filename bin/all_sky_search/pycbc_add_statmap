@@ -345,6 +345,8 @@ else:
                 f_in.attrs['background_time_exc'],
                 **significance_dict[ifo_combo_key])
 
+del ifo_combo_key
+
 logging.info('Combining false alarm rates from all available backgrounds')
 
 # Convert dictionary of whether the ifo combination is available at trigger
