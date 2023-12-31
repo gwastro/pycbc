@@ -31,7 +31,6 @@ import numpy
 from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
-from .tools import draw_sample
 
 #
 # =============================================================================
