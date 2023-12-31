@@ -46,7 +46,7 @@ class HierarchicalModel(BaseModel):
     r"""Model that is a combination of other models.
 
     Sub-models are treated as being independent of each other, although
-    they can share parameters. In other words, the hiearchical likelihood is:
+    they can share parameters. In other words, the hierarchical likelihood is:
 
     .. math::
 
@@ -116,18 +116,18 @@ class HierarchicalModel(BaseModel):
             self.__extra_stats += self.extra_stats_map[lbl]
             # also make sure the model's sampling transforms and waveform
             # transforms are not set, as these are handled by the hierarchical
-            # model, except for `multiband_relative_time_dom` model
-            if self.name != "multiband_relative_time_dom":
+            # model, except for `joint_primary_marginalized` model
+            if self.name != "joint_primary_marginalized":
                 if model.sampling_transforms is not None:
                     raise ValueError("Model {} has sampling transforms "
                                      "set; in a hierarchical analysis, "
                                      "these are handled by the "
-                                     "hiearchical model".format(lbl))
+                                     "hierarchical model".format(lbl))
                 if model.waveform_transforms is not None:
                     raise ValueError("Model {} has waveform transforms "
                                      "set; in a hierarchical analysis, "
                                      "these are handled by the "
-                                     "hiearchical model".format(lbl))
+                                     "hierarchical model".format(lbl))
 
     @property
     def hvariable_params(self):
@@ -242,7 +242,7 @@ class HierarchicalModel(BaseModel):
         .. code-block:: ini
 
             [model]
-            name = hiearchical
+            name = hierarchical
             submodels = event1 event2
 
             [event1__model]
@@ -605,7 +605,7 @@ class MultiSignalModel(HierarchicalModel):
         return logl
 
 
-class MultibandRelativeTimeDom(HierarchicalModel):
+class JointPrimaryMarginalizedModel(HierarchicalModel):
     """ Hierarchical heterodyne likelihood for coherent multiband
     parameter estimation which combines data from space-borne and
     ground-based GW detectors coherently. Currently, this only
@@ -619,8 +619,13 @@ class MultibandRelativeTimeDom(HierarchicalModel):
     over all the extrinsic parameters supported by `RelativeTimeDom`.
     Note that LISA submodel only supports the `Relative` for now,
     for ground-based detectors, please use `RelativeTimeDom`.
+
+    Although this likelihood model is used for multiband parameter
+    estimation, users can still use it for other purposes, such as
+    GW + EM parameter estimation, in this case, please use `RelativeTimeDom`
+    for the GW data, for the likelihood of EM data, there is no restrictions.
     """
-    name = 'multiband_relative_time_dom'
+    name = 'joint_primary_marginalized'
 
     def __init__(self, variable_params, submodels, **kwargs):
         super().__init__(variable_params, submodels, **kwargs)
@@ -894,65 +899,6 @@ class MultibandRelativeTimeDom(HierarchicalModel):
                     cp.pop(section)
 
         # now load the model
-        logging.info("Loading multiband_relative_time_dom model")
+        logging.info("Loading joint_primary_marginalized model")
         return super(HierarchicalModel, cls).from_config(
                 cp, submodels=submodels, **kwargs)
-
-    def reconstruct(self, rec=None, seed=None):
-        """ Reconstruct the distance or vectored marginalized parameter
-        of this class.
-        """
-        if seed:
-            numpy.random.seed(seed)
-
-        if rec is None:
-            rec = {}
-
-        def get_total_loglr():
-            for lbl, model in self.submodels.items():
-                params = {p.subname: self.current_params[p.fullname]
-                          for p in self.param_map[lbl]}
-                params.update(rec)
-                model.update(**params)
-            return self.total_loglr()
-
-        if self.primary_model.marginalize_vector_params:
-            logging.debug('Reconstruct vector')
-            self.primary_model.reconstruct_vector = True
-            self.primary_model.reset_vector_params()
-            loglr = get_total_loglr()
-            xl = draw_sample(
-                loglr + self.primary_model.marginalize_vector_weights)
-            for k in self.primary_model.marginalize_vector_params:
-                rec[k] = self.primary_model.marginalize_vector_params[k][xl]
-            self.primary_model.reconstruct_vector = False
-
-        if self.primary_model.distance_marginalization:
-            logging.debug('Reconstruct distance')
-            # call likelihood to get vector output
-            self.primary_model.reconstruct_distance = True
-            _, weights = self.primary_model.distance_marginalization
-            loglr = get_total_loglr()
-            xl = draw_sample(loglr + numpy.log(weights))
-            rec['distance'] = self.primary_model.dist_locs[xl]
-            self.primary_model.reconstruct_distance = False
-
-        if self.primary_model.marginalize_phase:
-            logging.debug('Reconstruct phase')
-            self.primary_model.reconstruct_phase = True
-            s, h = get_total_loglr()
-            phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
-            # This assumes that the template was conjugated in inner products
-            loglr = (numpy.exp(-2.0j * phasev) * s).real + h
-            xl = draw_sample(loglr)
-            rec['coa_phase'] = phasev[xl]
-            self.primary_model.reconstruct_phase = False
-
-        rec['loglr'] = loglr[xl]
-        others_lognl = 0
-        for _, model in self.submodels.items():
-            others_lognl += model.lognl
-        # calculate the combined loglikelihood
-        rec['loglikelihood'] = rec['loglr'] + others_lognl + \
-            self.primary_model.lognl
-        return rec

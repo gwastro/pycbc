@@ -728,45 +728,67 @@ class DistMarg():
         if rec is None:
             rec = {}
 
+        if hasattr(self, 'primary_model'):
+            marginalized_model = self.primary_model
+        else:
+            marginalized_model = self
+
         def get_loglr():
-            p = self.current_params.copy()
-            p.update(rec)
-            self.update(**p)
+            if hasattr(self, 'primary_model'):
+                # used for `joint_primary_marginalized` model
+                for lbl, model in self.submodels.items():
+                    params = {p.subname: self.current_params[p.fullname]
+                              for p in self.param_map[lbl]}
+                    params.update(rec)
+                    model.update(**params)
+            else:
+                p = self.current_params.copy()
+                p.update(rec)
+                self.update(**p)
             return self.loglr
 
-        if self.marginalize_vector_params:
+        if marginalized_model.marginalize_vector_params:
             logging.debug('Reconstruct vector')
-            self.reconstruct_vector = True
-            self.reset_vector_params()
+            marginalized_model.reconstruct_vector = True
+            marginalized_model.reset_vector_params()
             loglr = get_loglr()
-            xl = draw_sample(loglr + self.marginalize_vector_weights)
-            for k in self.marginalize_vector_params:
-                rec[k] = self.marginalize_vector_params[k][xl]
-            self.reconstruct_vector = False
+            xl = draw_sample(loglr + 
+                             marginalized_model.marginalize_vector_weights)
+            for k in marginalized_model.marginalize_vector_params:
+                rec[k] = marginalized_model.marginalize_vector_params[k][xl]
+            marginalized_model.reconstruct_vector = False
 
-        if self.distance_marginalization:
+        if marginalized_model.distance_marginalization:
             logging.debug('Reconstruct distance')
             # call likelihood to get vector output
-            self.reconstruct_distance = True
-            _, weights = self.distance_marginalization
+            marginalized_model.reconstruct_distance = True
+            _, weights = marginalized_model.distance_marginalization
             loglr = get_loglr()
             xl = draw_sample(loglr + numpy.log(weights))
-            rec['distance'] = self.dist_locs[xl]
-            self.reconstruct_distance = False
+            rec['distance'] = marginalized_model.dist_locs[xl]
+            marginalized_model.reconstruct_distance = False
 
-        if self.marginalize_phase:
+        if marginalized_model.marginalize_phase:
             logging.debug('Reconstruct phase')
-            self.reconstruct_phase = True
+            marginalized_model.reconstruct_phase = True
             s, h = get_loglr()
             phasev = numpy.linspace(0, numpy.pi*2.0, int(1e4))
             # This assumes that the template was conjugated in inner products
             loglr = (numpy.exp(-2.0j * phasev) * s).real + h
             xl = draw_sample(loglr)
             rec['coa_phase'] = phasev[xl]
-            self.reconstruct_phase = False
+            marginalized_model.reconstruct_phase = False
 
         rec['loglr'] = loglr[xl]
-        rec['loglikelihood'] = self.lognl + rec['loglr']
+        if hasattr(self, 'primary_model'):
+            others_lognl = 0
+            for _, model in self.other_models.items():
+                others_lognl += model.lognl
+            # calculate the combined loglikelihood
+            rec['loglikelihood'] = rec['loglr'] + others_lognl + \
+                self.primary_model.lognl
+        else:
+            rec['loglikelihood'] = self.lognl + rec['loglr']
         return rec
 
 

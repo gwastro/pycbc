@@ -37,7 +37,7 @@ from .gated_gaussian_noise import (GatedGaussianNoise, GatedGaussianMargPol)
 from .single_template import SingleTemplate
 from .relbin import Relative, RelativeTime, RelativeTimeDom
 from .hierarchical import (HierarchicalModel, MultiSignalModel,
-                           MultibandRelativeTimeDom)
+                           JointPrimaryMarginalizedModel)
 
 
 # Used to manage a model instance across multiple cores or MPI
@@ -208,7 +208,7 @@ _models = {_cls.name: _cls for _cls in (
     HierarchicalModel,
     MultiSignalModel,
     RelativeTimeDom,
-    MultibandRelativeTimeDom,
+    JointPrimaryMarginalizedModel,
 )}
 
 
