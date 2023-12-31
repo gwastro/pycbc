@@ -752,7 +752,7 @@ class DistMarg():
             marginalized_model.reconstruct_vector = True
             marginalized_model.reset_vector_params()
             loglr = get_loglr()
-            xl = draw_sample(loglr + 
+            xl = draw_sample(loglr +
                              marginalized_model.marginalize_vector_weights)
             for k in marginalized_model.marginalize_vector_params:
                 rec[k] = marginalized_model.marginalize_vector_params[k][xl]
