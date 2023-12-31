@@ -345,8 +345,6 @@ class CandidateForGraceDB(object):
         labels: list
             Optional list of labels to tag the new event with.
         """
-        import matplotlib
-        matplotlib.use('Agg')
         import pylab as pl
 
         if fname.endswith('.xml.gz'):

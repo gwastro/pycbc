@@ -11,6 +11,12 @@ import logging
 import subprocess
 import tempfile
 import shutil
+
+# we will make plots on a likely headless machine, so make sure matplotlib's
+# backend is set appropriately
+from matplotlib import use as mpl_use_backend
+mpl_use_backend('agg')
+
 import numpy as np
 import h5py
 import pycbc

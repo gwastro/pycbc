@@ -3,19 +3,28 @@
 """Followup utility to optimize the SNR of a PyCBC Live trigger."""
 
 import os
-import argparse, numpy, h5py
+import argparse
 import logging
+
+# we will make plots on a likely headless machine, so make sure matplotlib's
+# backend is set appropriately
+from matplotlib import use as mpl_use_backend
+mpl_use_backend('agg')
+
+import numpy
+import h5py
 import pycbc
 from pycbc import (
     fft, scheme, version
 )
 from pycbc.types import MultiDetOptionAction, load_frequencyseries
 import pycbc.conversions as cv
-from pycbc.io import live
+from pycbc.io.live import CandidateForGraceDB
 from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
 from pycbc.live import snr_optimizer
+
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
@@ -325,7 +334,7 @@ if 'p_terr' in fp:
     kwargs['p_terr'] = fp['p_terr'][()]
 
 # Treat all ifos as having triggers
-doc = live.CandidateForGraceDB(
+doc = CandidateForGraceDB(
     ifos,
     ifos,
     coinc_results,
