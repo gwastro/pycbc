@@ -288,6 +288,11 @@ if do_injections:
 
     logging.info("Missed/found injections/triggers loaded.")
 
+    # Calculate quantities not included in trigger files, such as chirp mass
+    found_trig_mchirp = mchirp_from_mass1_mass2(injs['found/mass1'],
+                                                injs['found/mass2'])
+
+
     # Construct conditions for injection:
     # 1) found louder than background,
     zero_fap = np.zeros(len(injs['network/tc'])).astype(bool)
@@ -400,9 +405,9 @@ if do_injections:
     # NOTE: the loop on num_mc_injs would fill up the *_inj['dist_mc']'s at the
     # same time, so filling them up sequentially will vary the numbers a little
     # (this is an MC, order of operations matters!)
-    found_inj['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs, found_inj['dist'],
+    found_inj_dist_mc = ppu.mc_cal_wf_errs(num_mc_injs, injs['found/distance'],
                                               cal_error, wav_err, max_dc_cal_error)
-    missed_inj['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs, missed_inj['dist'],
+    missed_inj_dist_mc = ppu.mc_cal_wf_errs(num_mc_injs, injs['missed/distance'],
                                                cal_error, wav_err, max_dc_cal_error)
     long_inj['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
                                              cal_error, wav_err, max_dc_cal_error)
@@ -419,10 +424,10 @@ if do_injections:
 
     distance_count = np.zeros(len(dist_bins))
 
-    found_trig['max_bestnr'] = np.empty(len(found_trig['mchirp']))
-    found_trig['max_bestnr'].fill(max_bestnr)
+    found_trig_max_bestnr = np.empty(len(injs['network/event_id']))
+    found_trig_max_bestnr.fill(max_bestnr)
 
-    max_bestnr_cut = (found_trig['bestnr'] > found_trig['max_bestnr'])
+    max_bestnr_cut = (injs['network/reweighted_snr'] > found_trig_max_bestnr)
 
     # Check louder than on source
     found_trig['loud_on_bestnr'] = np.empty(len(found_trig['mchirp']))
