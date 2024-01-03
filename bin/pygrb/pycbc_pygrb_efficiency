@@ -430,23 +430,23 @@ if do_injections:
     max_bestnr_cut = (injs['network/reweighted_snr'] > found_trig_max_bestnr)
 
     # Check louder than on source
-    found_trig['loud_on_bestnr'] = np.empty(len(found_trig['mchirp']))
+    found_trig_loud_on_bestnr = np.empty(len(injs['network/event_id']))
     if onsource_file:
-        found_trig['loud_on_bestnr'].fill(loud_on_bestnr)
+        found_trig_loud_on_bestnr.fill(loud_on_bestnr)
     else:
-        found_trig['loud_on_bestnr'].fill(med_snr)
-    on_bestnr_cut = found_trig['bestnr'] > found_trig['loud_on_bestnr']
+        found_trig_loud_on_bestnr.fill(med_snr)
+    on_bestnr_cut = injs['network/reweighted_snr'] > found_trig_loud_on_bestnr
 
     # Check whether injection is found for the purposes of exclusion
     # distance calculation.
     # Found: if louder than all on source
     # Missed: if not louder than loudest on source
     found_excl = on_bestnr_cut & (more_sig_than_onsource) & \
-                (found_trig['bestnr'] != 0)
+                (injs['network/reweighted_snr'] != 0)
     # If not missed, double check bestnr against nearby triggers
     near_test = np.zeros((found_excl).sum()).astype(bool)
-    for j, (t, bestnr) in enumerate(zip(found_inj['time'][found_excl],\
-                                        found_trig['bestnr'][found_excl])):
+    for j, (t, bestnr) in enumerate(zip(injs['found/tc'][found_excl],
+                                        injs['network/reweighted_snr'][found_excl])):
         # 0 is the zero-lag timeslide
         near_bestnr = trig_bestnr[0]\
                       [np.abs(trig_time[0]-t) < cluster_window]
@@ -463,9 +463,9 @@ if do_injections:
         # Loop over the distance bins
         for j, dist_bin in enumerate(dist_bins):
             # Construct distance cut
-            found_dist_cut = (dist_bin[0] <= found_inj['dist_mc'][k, :]) &\
-                             (found_inj['dist_mc'][k, :] < dist_bin[1])
-            missed_dist_cut = (dist_bin[0] <= missed_inj['dist_mc'][k, :]) &\
+            found_dist_cut = (dist_bin[0] <= found_inj_dist_mc[k, :]) &\
+                             (found_inj_dist_mc[k, :] < dist_bin[1])
+            missed_dist_cut = (dist_bin[0] <= missed_inj_dist_mc[k, :]) &\
                               (missed_inj['dist_mc'][k, :] < dist_bin[1])
             long_dist_cut = (dist_bin[0] <= long_inj['dist_mc'][k, :]) &\
                             (long_inj['dist_mc'][k, :] < dist_bin[1])
@@ -507,7 +507,7 @@ if do_injections:
 
     # Calculate error bars for efficiency/distance plots and datafiles
     # using max BestNR of background
-    yerr_low_mc, yerr_high_mc, fraction_mc = efficiency_with_errs(\
+    yerr_low_mc, yerr_high_mc, fraction_mc = efficiency_with_errs(
          found_max_bestnr['mc'], num_injections['mc'], num_mc_injs=num_mc_injs)
     yerr_low_no_mc, yerr_high_no_mc, fraction_no_mc = efficiency_with_errs(\
                                found_max_bestnr['no_mc'], num_injections['no_mc'])
