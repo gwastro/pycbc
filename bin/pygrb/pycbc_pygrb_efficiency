@@ -350,11 +350,9 @@ if do_injections:
 
     logging.info("%d found injections analysed.", len(injs['found/tc']))
 
-    # Process missed injections 'missed_inj'
-    missed_inj = {}
-    missed_inj['dist'] = injs['missed/distance'][:]
+    # Process missed injections (injs['missed']
 
-    logging.info("%d missed injections analysed.", len(missed_inj['dist']))
+    logging.info("%d missed injections analysed.", len(injs['missed/tc']))
 
     # Create new set of injections for efficiency calculations
     total_injs = len(injs['found/distance']) + len(injs['missed/distance'])
@@ -466,7 +464,7 @@ if do_injections:
             found_dist_cut = (dist_bin[0] <= found_inj_dist_mc[k, :]) &\
                              (found_inj_dist_mc[k, :] < dist_bin[1])
             missed_dist_cut = (dist_bin[0] <= missed_inj_dist_mc[k, :]) &\
-                              (missed_inj['dist_mc'][k, :] < dist_bin[1])
+                              (missed_inj_dist_mc[k, :] < dist_bin[1])
             long_dist_cut = (dist_bin[0] <= long_inj['dist_mc'][k, :]) &\
                             (long_inj['dist_mc'][k, :] < dist_bin[1])
 
