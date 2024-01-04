@@ -165,7 +165,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     # Create a bandpass filter between low_freq and high_freq
     filt = sig.firwin(4 * srate, [low_freq, high_freq], pass_zero=False,
                       window='hann', fs=srate)
-    filt.resize(int(psd_duration * srate))
+    filt.resize(int(psd_duration * srate), refcheck=False)
     # Fourier transform the filter and take the absolute value to get
     # rid of the phase.
     filt = abs(rfft(filt))
