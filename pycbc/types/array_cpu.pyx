@@ -105,6 +105,158 @@ ctypedef fused COMPLEXTYPE:
     float complex
     double complex
 
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def tha_orthogonalize_vecs(
+        double complex [:] h1,
+        double complex [:] h2,
+        float df,
+        int flen
+):
+    cdef double complex overlap
+    cdef double norm_fac
+    cdef int ii
+    overlap = 0
+    for ii in range(flen):
+        overlap += h1[ii].conjugate() * h2[ii] * 4. * df
+
+    norm_fac = (1 - (overlap * overlap.conjugate()).real)**0.5
+    for ii in range(flen):
+        h2[ii] = (h2[ii] - overlap * h1[ii]) / norm_fac
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def whiten_and_normalize_one(
+        double complex [:] h1,
+        float [:] ASD,
+        int flen,
+        float df,
+        int kmin,
+        int kmax
+):
+    cdef unsigned int ii
+    cdef double sigmasq1
+
+    for ii in range(kmin, flen):
+        h1[ii] = h1[ii] / ASD[ii]
+
+    for ii in range(kmin):
+        h1[ii] = 0
+
+    for ii in range(kmax, flen):
+        h1[ii] = 0
+
+    #_np.sum(self.data.conj() * other, dtype=complex128)
+    sigmasq1 = 0
+    for ii in range(flen):
+        sigmasq1 += (h1[ii].conjugate() * h1[ii]).real * 4. * df
+    #sigmasq1 = inner_real(h1, h1) * 4. * df
+
+    sigmasq1 = sigmasq1**0.5
+
+    for ii in range(flen):
+        h1[ii] = h1[ii] / sigmasq1
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def whiten_and_normalize_two(
+        double complex [:] h1,
+        double complex [:] h2,
+        float [:] ASD,
+        int flen,
+        float df,
+        int kmin,
+        int kmax
+):
+    cdef unsigned int ii
+    cdef double sigmasq1, sigmasq2
+
+    for ii in range(kmin, flen):
+        h1[ii] = h1[ii] / ASD[ii]
+        h2[ii] = h2[ii] / ASD[ii]
+
+    for ii in range(kmin):
+        h1[ii] = 0
+        h2[ii] = 0
+
+    for ii in range(kmax, flen):
+        h1[ii] = 0
+        h2[ii] = 0
+
+    #_np.sum(self.data.conj() * other, dtype=complex128)
+    sigmasq1 = 0
+    sigmasq2 = 0
+    for ii in range(flen):
+        sigmasq1 += (h1[ii].conjugate() * h1[ii]).real * 4. * df
+        sigmasq2 += (h2[ii].conjugate() * h2[ii]).real * 4. * df
+    #sigmasq1 = inner_real(h1, h1) * 4. * df
+    #sigmasq2 = inner_real(h2, h2) * 4. * df
+
+    sigmasq1 = sigmasq1**0.5
+    sigmasq2 = sigmasq2**0.5
+
+    for ii in range(flen):
+        h1[ii] = h1[ii] / sigmasq1
+        h2[ii] = h2[ii] / sigmasq2
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def whiten_and_normalize_three(
+        double complex [:] h1,
+        double complex [:] h2,
+        double complex [:] h3,
+        float [:] ASD,
+        int flen,
+        float df,
+        int kmin,
+        int kmax
+):
+    cdef unsigned int ii
+    cdef double sigmasq1, sigmasq2, sigmasq3
+
+    for ii in range(kmin, flen):
+        h1[ii] = h1[ii] / ASD[ii]
+        h2[ii] = h2[ii] / ASD[ii]
+        h3[ii] = h3[ii] / ASD[ii]
+
+    for ii in range(kmin):
+        h1[ii] = 0
+        h2[ii] = 0
+        h3[ii] = 0
+
+    for ii in range(kmax, flen):
+        h1[ii] = 0
+        h2[ii] = 0
+        h3[ii] = 0
+    
+    #_np.sum(self.data.conj() * other, dtype=complex128)
+    sigmasq1 = 0
+    sigmasq2 = 0
+    sigmasq3 = 0
+    for ii in range(flen):
+        sigmasq1 += (h1[ii].conjugate() * h1[ii]).real * 4. * df
+        sigmasq2 += (h2[ii].conjugate() * h2[ii]).real * 4. * df
+        sigmasq3 += (h3[ii].conjugate() * h3[ii]).real * 4. * df
+    #sigmasq1 = inner_real(h1, h1) * 4. * df
+    #sigmasq2 = inner_real(h2, h2) * 4. * df
+    #sigmasq3 = inner_real(h3, h3) * 4. * df
+
+    sigmasq1 = sigmasq1**0.5
+    sigmasq2 = sigmasq2**0.5
+    sigmasq3 = sigmasq3**0.5
+
+    for ii in range(flen):
+        h1[ii] = h1[ii] / sigmasq1
+        h2[ii] = h2[ii] / sigmasq2
+        h3[ii] = h3[ii] / sigmasq3
+
+
 def abs_arg_max_complex(numpy.ndarray [COMPLEXTYPE, ndim=1] a):
     cdef unsigned int xmax = a.shape[0]
     cdef double mag
