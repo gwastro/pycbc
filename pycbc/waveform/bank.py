@@ -1438,6 +1438,32 @@ class _PhenomTemplate():
 
         return h1, h2, h3, h4, h5
 
+    def wn_cython(self, hs, ASD, flen, df, kmin, kmax):
+        from pycbc.types.array_cpu import whiten_and_normalize_three
+        from pycbc.types.array_cpu import whiten_and_normalize_two
+        from pycbc.types.array_cpu import whiten_and_normalize_one
+        if len(hs) == 3:
+            whiten_and_normalize_three(hs[0].data, hs[1].data, hs[2].data,
+                                       ASD.data, flen, df, kmin, kmax)
+        elif len(hs) == 2:
+            whiten_and_normalize_two(hs[0].data, hs[1].data,
+                                     ASD.data, flen, df, kmin, kmax)
+        elif len(hs) == 1:
+            whiten_and_normalize_one(hs[0].data, ASD.data, flen, df, kmin, kmax)
+
+
+    def whiten_and_normalize(self, hs, ASD, flen, df, kmin, kmax):
+        if len(hs) in [3,2,1]:
+            self.wn_cython(hs, ASD, flen, df, kmin, kmax)
+            return
+        raise NotImplementedError()
+
+    def orthogonalize(self, hs, df):
+        from pycbc.types.array_cpu import tha_orthogonalize_vecs
+        for i in range(len(hs)):
+            for j in range(i + 1, len(hs)):
+                tha_orthogonalize_vecs(hs[i].data, hs[j].data, df, len(hs[i]))
+
     def get_whitened_normalized_comps(self, df, psd, num_comps=5):
         """
         Return a FrequencySeries of h+ and hx, whitened by the
@@ -1445,7 +1471,6 @@ class _PhenomTemplate():
         match the length of the ASD, so its normalization depends on
         its own length.
         """
-
         # Generate a new wf
         if not self.has_comps:
             h1, h2, h3, h4, h5 = self.compute_waveform_five_comps(df, self.f_final, num_comps=num_comps)
@@ -1483,22 +1508,13 @@ class _PhenomTemplate():
         orthogonal = []
 
         # Whiten and Normalize
-        for i in range(len(hs)):
-            hs[i] /= ASD.data[:flen]
-            hs[i][:kmin] = 0.
-            hs[i][kmax:] = 0.
-            sigmasq = hs[i].inner(hs[i]).real * 4. * df
-            hs[i] /= sigmasq ** 0.5
+        self.whiten_and_normalize(hs, ASD, flen, df, kmin, kmax)
 
         # Orthogonalize
+        self.orthogonalize(hs, df)
+
         for i in range(len(hs)):
             orthogonal += [hs[i]]
-            for j in range(i + 1, len(hs)):
-                overlap = hs[i].inner(hs[j]) * 4. * df
-                hs[j] = (
-                    (hs[j] - overlap * hs[i])
-                    / (1 - overlap * overlap.conj()) ** 0.5
-                )
 
         orthogonal += [None] * (5 - len(hs))
 
