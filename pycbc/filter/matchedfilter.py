@@ -1081,6 +1081,9 @@ class MatchedFilterTHAControl(object):
             self.iffts.append(IFFT(self.corr_mem_comps[i],
                                   self.snr_mem_comps[i]))
 
+    def run_correlators(self, segnum, i):
+        self.correlators[segnum][i].correlate()
+
     def tha_matched_filter_and_cluster(self, segnum, template_norm, window, epoch=None, num_comps=5):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
@@ -1112,24 +1115,21 @@ class MatchedFilterTHAControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
+        from pycbc.types.array_cpu import squared_norm
         logging.info("Using %d comps" % num_comps)
         norm = (4.0 * self.delta_f)
         for i in range(num_comps):
-            self.correlators[segnum][i].correlate()
+            self.run_correlators(segnum, i)
             self.iffts[i].execute()
             if i == 0:
-                self.snr_mem[:] = abs(self.snr_mem_comps[i])**2
-                curr_lgc = self.snr_mem.data[:] > -1
+                self.snr_mem.data[:] = squared_norm(self.snr_mem_comps[i])
             else:
-                self.snr_mem[:] += abs(self.snr_mem_comps[i])**2
-                # This test was checking if comp1 was the loudest and rejecting
-                # if not. I think it is not wanted though!
-                # curr_lgc = curr_lgc & (abs(self.snr_mem_comps[0].data)**2 > abs(self.snr_mem_comps[i].data)**2)
-        self.snr_mem[:] = self.snr_mem[:]**0.5
-        self.snr_mem.data[~curr_lgc] = 0
+                self.snr_mem.data[:] += squared_norm(self.snr_mem_comps[i])
 
         thresh = self.snr_threshold[num_comps - 1]
-        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(thresh / norm, window)
+        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster((thresh / norm)**2, window)
+        self.snr_mem.data[idx] = self.snr_mem.data[idx]**0.5
+
 
         if len(idx) == 0:
             return [], [], [], [], [], []
