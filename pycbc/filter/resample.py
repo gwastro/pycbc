@@ -416,6 +416,7 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
     interpolated series : FrequencySeries
         A new FrequencySeries that has been interpolated.
     """
+    from pycbc.strain.strain import execute_cached_fft
     new_n = int( (len(series)-1) * series.delta_f / delta_f + 1)
     old_N = int( (len(series)-1) * 2 )
     new_N = int( (new_n - 1) * 2 )
@@ -432,9 +433,8 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
     elif side == 'right':
         time_series.roll(zeros_offset)
 
-    out_series = FrequencySeries(zeros(new_n), epoch=series.epoch,
-                           delta_f=delta_f, dtype=series.dtype)
-    fft(time_series, out_series)
+    out_series = execute_cached_fft(time_series, copy_output=True, uid=995845)
+    out_series._epoch = series.epoch
 
     return out_series
 
