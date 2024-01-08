@@ -1126,9 +1126,11 @@ class MatchedFilterTHAControl(object):
             else:
                 self.snr_mem.data[:] += squared_norm(self.snr_mem_comps[i])
 
+        self.snr_mem[:] = self.snr_mem[:]**0.5
         thresh = self.snr_threshold[num_comps - 1]
-        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster((thresh / norm)**2, window)
-        self.snr_mem.data[idx] = self.snr_mem.data[idx]**0.5
+        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster((thresh / norm), window)
+        #shifted_idxs = self.segments[segnum].analyze.start + idx
+        #self.snr_mem.data[shifted_idxs] = self.snr_mem.data[shifted_idxs]**0.5
 
 
         if len(idx) == 0:
