@@ -504,8 +504,10 @@ def insert_strain_option_group(parser, gps_times=True):
     # Use datafind to get frame files
     data_reading_group.add_argument("--frame-type",
                             type=str,
+                            metavar="S:TYPE",
                             help="(optional), replaces frame-files. Use datafind "
-                                 "to get the needed frame file(s) of this type.")
+                                 "to get the needed frame file(s) of this type "
+                                 "from site S.")
     # Filter frame files by URL
     data_reading_group.add_argument("--frame-sieve",
                             type=str,
@@ -704,7 +706,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             help="Store of time series data in hdf format")
     # Use datafind to get frame files
     data_reading_group_multi.add_argument("--frame-type", type=str, nargs="+",
-                                    action=MultiDetOptionAction,
+                                    action=MultiDetOptionActionSpecial,
                                     metavar='IFO:FRAME_TYPE',
                                     help="(optional) Replaces frame-files. "
                                          "Use datafind to get the needed frame "

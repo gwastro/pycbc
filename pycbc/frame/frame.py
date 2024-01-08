@@ -22,6 +22,7 @@ import os.path
 import glob
 import time
 import math
+import re
 from urllib.parse import urlparse
 import numpy
 import lalframe
@@ -259,7 +260,9 @@ def read_frame(location, channels, start_time=None,
     else:
         return _read_channel(channels, stream, start_time, duration)
 
-def frame_paths(frame_type, start_time, end_time, server=None, url_type='file', site=None):
+def frame_paths(
+    frame_type, start_time, end_time, server=None, url_type='file', site=None
+):
     """Return the paths to a span of frame files.
 
     Parameters
@@ -296,6 +299,30 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file', 
     cache = find_frame_urls(site, frame_type, start_time, end_time,
                             urltype=url_type, host=server)
     return [urlparse(entry).path for entry in cache]
+
+
+def get_site_from_type_and_channel(frame_type, channels):
+    """Determine the site to query based on substrings of the frame type and
+    channel(s). If the type begins with S: or SN:, take S to be the site.
+    Otherwise, do the same with the channel (or the first channel if more
+    than one are given). If that also fails, raise a ValueError.
+    """
+    site_re = '^([^:])[^:]?:'
+    m = re.match(site_re, frame_type)
+    if m:
+        return m.groups(1)
+    chan = channels
+    if isinstance(chan, list):
+        chan = channels[0]
+    m = re.match(site_re, chan)
+    if m:
+        return m.groups(1)
+    raise ValueError(
+        'Cannot determine the site to query from frame type'
+        f' {frame_type} and channel(s) {channels}.'
+        'Try prepending S: to the frame type.'
+    )
+
 
 def query_and_read_frame(frame_type, channels, start_time, end_time,
                          sieve=None, check_integrity=False):
@@ -346,13 +373,7 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
         from pycbc.frame.gwosc import read_frame_gwosc
         return read_frame_gwosc(channels, start_time, end_time)
 
-    # Figure out the site by assuming that the channel name starts with it.
-    # In case of a list of channels, assume the first channel starts with
-    # the right site.
-    if isinstance(channels, list):
-        site = channels[0][0]
-    else:
-        site = channels[0]
+    site = get_site_from_type_and_channel(frame_type, channels)
 
     logging.info('Querying datafind server')
     paths = frame_paths(
