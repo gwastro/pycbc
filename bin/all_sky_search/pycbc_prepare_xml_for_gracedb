@@ -87,22 +87,33 @@ class psd_segment(segment):
     def __init__(self, psd, *args):
         self.psd = psd
 
-logging.info("Reading PSDs")
-psds = {}
-for psd_file in args.psd_files:
-    (ifo, group), = h5py.File(psd_file, "r").items()
-    psd = [group["psds"][str(i)] for i in range(len(group["psds"].keys()))]
-    psds[ifo] = segmentlist(psd_segment(*segargs) for segargs in zip(
-        psd, group["start_time"], group["end_time"]))
+def read_psds(psd_files):
+    logging.info("Reading PSDs")
+    psds = {}
 
-# Get information from the single_template snr timeseries files:
-logging.info("Reading SNR timeseries")
-snr_timeseries = {}
-for snr_filename in args.snr_timeseries:
-    with h5py.File(snr_filename, 'r') as snr_f:
-        ifo = snr_f.attrs['ifo']
-        time = snr_f.attrs['event_time']
-    snr_timeseries[(ifo, time)] = load_timeseries(snr_filename, 'snr')
+    for psd_file in psd_files:
+        (ifo, group), = h5py.File(psd_file, "r").items()
+        psd = [group["psds"][str(i)] for i in range(len(group["psds"].keys()))]
+        psds[ifo] = segmentlist(psd_segment(*segargs) for segargs in zip(
+            psd, group["start_time"], group["end_time"]))
+        return psds
+
+psds = read_psds(args.psd_files)
+
+def read_snr_timeseries(snr_timeseries_files):
+    """
+    Get information from the single_template snr timeseries files
+    """
+    logging.info("Reading SNR timeseries")
+    snr_timeseries = {}
+    for snr_filename in snr_timeseries_files:
+        with h5py.File(snr_filename, 'r') as snr_f:
+            ifo = snr_f.attrs['ifo']
+            time = snr_f.attrs['event_time']
+        snr_timeseries[(ifo, time)] = load_timeseries(snr_filename, 'snr')
+    return snr_timeseries
+
+snr_timeseries = read_snr_timeseries(args.snr_timeseries)
 
 coinc_table = lsctables.CoincTable.get_table(xmldoc)
 coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
@@ -212,10 +223,10 @@ if args.psd_plot:
     logging.info("Saving ASD plot %s", args.psd_plot)
     generate_asd_plot(psddict, args.psd_plot)
 
-triggers = {sngl.ifo: (sngl.end_time + sngl.end_time_ns * 1e-9, sngl.snr)
-            for sngl in sngl_inspiral_table_curr}
-base_time = int(np.floor(time))
 if args.snr_timeseries_plot:
+    triggers = {sngl.ifo: (sngl.end_time + sngl.end_time_ns * 1e-9, sngl.snr)
+                for sngl in sngl_inspiral_table_curr}
+    base_time = int(np.floor(time))
     logging.info("Saving SNR plot %s", args.snr_timeseries_plot)
     generate_snr_plot(
         snr_ts,

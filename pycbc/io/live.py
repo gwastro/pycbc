@@ -499,8 +499,6 @@ class CandidateForGraceDB(object):
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             colors = [source_color(label) for label in labels]
-            import matplotlib
-            matplotlib.use('Agg')
             import pylab as pl
 
             fig, ax = pl.subplots()
