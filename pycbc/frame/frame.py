@@ -295,33 +295,58 @@ def frame_paths(
     >>> paths = frame_paths('H1_LDAS_C02_L2', 968995968, 968995968+2048)
     """
     if site is None:
+        # this case is tolerated for backward compatibility
         site = frame_type[0]
+        logging.warn(
+            'Guessing the site from the frame type: %s -> %s',
+            frame_type,
+            site
+        )
     cache = find_frame_urls(site, frame_type, start_time, end_time,
                             urltype=url_type, host=server)
     return [urlparse(entry).path for entry in cache]
 
 
-def get_site_from_type_and_channel(frame_type, channels):
-    """Determine the site to query based on substrings of the frame type and
-    channel(s). If the type begins with S: or SN:, take S to be the site.
-    Otherwise, do the same with the channel (or the first channel if more
-    than one are given). If that also fails, raise a ValueError.
+def get_site_from_type_or_channel(frame_type, channels):
+    """Determine the site for querying gwdatafind (H, L, V, etc) based on
+    substrings of the frame type and channel(s).
+
+    The type should begin with S: or SN:, in which case S is taken as the
+    site.  Otherwise, the same is done with the channel (with the first
+    channel if more than one are given). If that also fails, the site is
+    taken to be the first letter of the frame type, which is usually
+    (but not always) a correct assumption.
+
+    Parameters
+    ----------
+    frame_type : string
+        The frame type, ideally prefixed by the site indicator.
+    channels : string or list of strings
+        The channel name or names.
+
+    Returns
+    -------
+    site : string
+        The site letter.
+    frame_type : string
+        The frame type with the site prefix (if any) removed.
     """
     site_re = '^([^:])[^:]?:'
     m = re.match(site_re, frame_type)
     if m:
-        return m.groups(1)
+        return m.groups(1)[0], frame_type[m.end():]
     chan = channels
     if isinstance(chan, list):
         chan = channels[0]
     m = re.match(site_re, chan)
     if m:
-        return m.groups(1)
-    raise ValueError(
-        'Cannot determine the site to query from frame type'
-        f' {frame_type} and channel(s) {channels}.'
-        'Try prepending S: to the frame type.'
+        return m.groups(1)[0], frame_type
+    logging.warn(
+        'Guessing the site from the frame type: %s -> %s',
+        frame_type,
+        frame_type[0]
     )
+    return frame_type[0], frame_type
 
 
 def query_and_read_frame(frame_type, channels, start_time, end_time,
@@ -334,7 +359,10 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     Parameters
     ----------
     frame_type : string
-        The type of frame file that we are looking for.
+        The type of frame file that we are looking for. The string should begin
+        with S: or SN:, in which case S is taken as the site to query. If this
+        is not the case, the site will be guessed from the channel name or from
+        the type in a different way, which may not work.
     channels : string or list of strings
         Either a string that contains the channel name or a list of channel
         name strings.
@@ -360,6 +388,8 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     >>> ts = query_and_read_frame('H1_LDAS_C02_L2', 'H1:LDAS-STRAIN',
     >>>                               968995968, 968995968+2048)
     """
+    site, frame_type = get_site_from_type_or_channel(frame_type, channels)
+
     # Allows compatibility with our standard tools
     # We may want to place this into a higher level frame getting tool
     if frame_type in ['LOSC_STRAIN', 'GWOSC_STRAIN']:
@@ -372,8 +402,6 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     if frame_type in ['LOSC', 'GWOSC']:
         from pycbc.frame.gwosc import read_frame_gwosc
         return read_frame_gwosc(channels, start_time, end_time)
-
-    site = get_site_from_type_and_channel(frame_type, channels)
 
     logging.info('Querying datafind server')
     paths = frame_paths(
