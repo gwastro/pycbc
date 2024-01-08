@@ -18,6 +18,7 @@ This modules contains functions for reading in data from frame files or caches
 """
 
 import logging
+import warnings
 import os.path
 import glob
 import time
@@ -297,10 +298,9 @@ def frame_paths(
     if site is None:
         # this case is tolerated for backward compatibility
         site = frame_type[0]
-        logging.warn(
-            'Guessing the site from the frame type: %s -> %s',
-            frame_type,
-            site
+        warnings.warn(
+            f'Guessing site {site} from frame type {frame_type}',
+            DeprecationWarning
         )
     cache = find_frame_urls(site, frame_type, start_time, end_time,
                             urltype=url_type, host=server)
@@ -341,10 +341,9 @@ def get_site_from_type_or_channel(frame_type, channels):
     m = re.match(site_re, chan)
     if m:
         return m.groups(1)[0], frame_type
-    logging.warn(
-        'Guessing the site from the frame type: %s -> %s',
-        frame_type,
-        frame_type[0]
+    warnings.warn(
+        f'Guessing site {frame_type[0]} from frame type {frame_type}',
+        DeprecationWarning
     )
     return frame_type[0], frame_type
 
