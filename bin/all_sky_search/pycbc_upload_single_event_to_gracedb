@@ -41,21 +41,8 @@ parser.add_argument('--testing', action="store_true", default=False,
 parser.add_argument('--production-server', action="store_true", default=False,
                     help="Upload event to production graceDB. If not given "
                          "events will be uploaded to playground server.")
-parser.add_argument('--force-overwrite', action='store_true', default=False,
-                    help="GraceDb instance will be checked for if an event "
-                         "with the same event time and FAR already exist. "
-                         "If so, event will not be uploaded")
-parser.add_argument('--query-string', default='pycbc',
-                    help="If not using --force-overwrite, add a string to "
-                         "gracedb query to further filter events. "
-                         "Default='pycbc'")
-parser.add_argument('--search-id-string', default='AllSky',
-                    help="Using T050017-v1 naming convention for "
-                         "output XML filename. This is a string for "
-                         "search identifier in filename, e.g. 'AllSky' "
-                         "would give H1L1V1-PYCBC_AllSky-1234567890-1.xml. "
-                         "See https://dcc.ligo.org/LIGO-T050017/public. "
-                         "Default: 'AllSky'")
+parser.add_argument('--search-tag', default='AllSky',
+                    help="Specify the search tag. Default: AllSky")
 parser.add_argument('--snr-timeseries-plot',
                     help="SNR timeseries plot to be uploaded with the event.")
 parser.add_argument('--asd-plot',
@@ -100,7 +87,7 @@ r = gracedb.create_event(
     'pycbc',
     args.xml_file_for_upload,
     filecontents=open(args.xml_file_for_upload, "rb").read(),
-    search=args.search_id_string,
+    search=args.search_tag,
     offline=True,
     labels=labels
 ).json()
@@ -116,17 +103,17 @@ input_file_str = 'Candidate uploaded from ' \
 gracedb.write_log(r['graceid'], input_file_str)
 
 # document the command line used in the event log
-command_str = 'Upload command: ' \
-    + ' '.join(sys.argv)
-gracedb.write_log(r['graceid'], command_str)
+log_str = 'Upload command: ' + ' '.join(sys.argv)
 
 # add the custom log message, if provided
 if args.log_message is not None:
-    gracedb.write_log(
-        r['graceid'],
-        args.log_message,
-        tag_name=['analyst_comments']
-    )
+    log_str += '. ' + args.log_message
+
+gracedb.write_log(
+    r['graceid'],
+    log_str
+    tag_name=['analyst_comments']
+)
 
 
 def upload_file(upload_filename, displayname, comment, tag):
