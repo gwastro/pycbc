@@ -117,7 +117,7 @@ for ifo in all_ifos:
                         right=False)
         ax.text(
             0.5, 0.5,
-            "No triggers in this detector",
+            "No triggers above threshold in this detector",
             horizontalalignment='center',
             verticalalignment='center',
         )
