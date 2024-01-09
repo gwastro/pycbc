@@ -92,21 +92,11 @@ for ifo in args.single_trigger_files.keys():
     logging.info("Getting %s", args.plot_type)
     rank = ranking.get_sngls_ranking_from_trigs(trigs, args.plot_type)
 
-    if all(rank == 1):
-        # This is the default value to say "downranked beyond consideration"
-        # so skip these events
-        pylab.scatter(-2 * args.window, 0,
-                      color=pycbc.results.ifo_color(ifo),
-                      marker='x',
-                      label=ifo)
-        continue
-
     pylab.scatter(trigs['end_time'] - t, rank,
                   color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
 
-    # Minimum rank which hasn't been set to the default of 1
-    min_rank = min(min_rank, rank[rank > 1].min())
+    min_rank = min(min_rank, rank.min())
 
     if args.special_trigger_ids:
         special_idx = args.special_trigger_ids[ifo]
@@ -138,7 +128,10 @@ logging.info("Saving figure")
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
             cmd = ' '.join(sys.argv),
             title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
-            caption = 'Time series showing the single detector triggers'
-                      ' centered around the time of the trigger of interest.',
+            caption = 'Time series showing the single-detector triggers '
+                      'centered around the time of the trigger of interest. '
+                      'Triggers with ranking 1 have been downweighted beyond '
+                      'consideration, but may still form insignificant '
+                      'events.',
          )
 logging.info("Done!")

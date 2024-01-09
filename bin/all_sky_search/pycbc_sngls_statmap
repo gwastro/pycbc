@@ -146,8 +146,16 @@ bg_far, fg_far = significance.get_far(
     fg_time,
     **significance_dict[ifo])
 
-fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=ifo)
-bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=ifo)
+fg_far = significance.apply_far_limit(
+    fg_far,
+    significance_dict,
+    combo=ifo,
+)
+bg_far = significance.apply_far_limit(
+    bg_far,
+    significance_dict,
+    combo=ifo,
+)
 
 bg_ifar = 1. / bg_far
 fg_ifar = 1. / fg_far
@@ -341,6 +349,18 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
         fg_time,
         **significance_dict[ifo])
 
+    fg_far = significance.apply_far_limit(
+        fg_far,
+        significance_dict,
+        combo=ifo,
+    )
+
+    bg_far = significance.apply_far_limit(
+        bg_far,
+        significance_dict,
+        combo=ifo,
+    )
+
     bg_ifar = 1. / bg_far
     fg_ifar = 1. / fg_far
 
@@ -358,6 +378,12 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
             numpy.ones_like(back_stat_exc),
             fg_time_exc,
             **significance_dict[ifo])
+
+        fg_far_exc = significance.apply_far_limit(
+            fg_far_exc,
+            significance_dict,
+            combo=ifo,
+        )
 
         fg_ifar_exc = 1. / fg_far_exc
 

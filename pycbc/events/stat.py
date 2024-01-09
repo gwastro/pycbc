@@ -211,6 +211,9 @@ class QuadratureSumStatistic(Stat):
         """
         Calculate the statistic for a single detector candidate
 
+        For this statistic this is just passing through the
+        single value, which will be the second entry in the tuple.
+
         Parameters
         ----------
         single_info: tuple
@@ -222,7 +225,7 @@ class QuadratureSumStatistic(Stat):
         numpy.ndarray
             The array of single detector statistics
         """
-        return self.single(single_info[1])
+        return single_info[1]
 
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
@@ -663,6 +666,9 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         """
         Calculate the statistic for a single detector candidate
 
+        For this statistic this is just passing through the
+        single value, which will be the second entry in the tuple.
+
         Parameters
         ----------
         single_info: tuple
@@ -674,7 +680,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        return self.single(single_info[1])
+        return single_info[1]
 
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
                         **kwargs):  # pylint:disable=unused-argument
