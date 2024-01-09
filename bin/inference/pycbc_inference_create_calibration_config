@@ -28,36 +28,40 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser()
 
 
-parser.add_argument('-calibration_file_path', '--calibration-file-path',
+parser.add_argument('--calibration-files-path',
                     help='Calibration envelope file path. It can be pre-
                           downloaded or downloaded on the fly', required=True,
                     type=str)
-parser.add_argument('-detectors', '--detectors',  nargs='+',
+parser.add_argument('--detectors',  nargs='+',
                     help='List of detectors', required=True,
                     type=str)
 
-parser.add_argument('-min_freq_list', '--min-freq-list', nargs='+',
+parser.add_argument('--min-freq-list', nargs='+',
                     help='List of minimum frequencies for each detector',
                     required=True, type=float)
 
-parser.add_argument('-max_freq_list', '--max-freq-list', nargs='+',
+parser.add_argument('--max-freq-list', nargs='+',
                     help='List of maximum frequencies for each detector',
                     required=True, type=float)
 
-parser.add_argument('-gps_time', '--gps-time',
+parser.add_argument('--gps-time',
                     help='GPS time at which calibration configuration files 
                           are needed',
                     required=True, type=str)
 
-parser.add_argument('-plots_dir', '--plots-dir',
+parser.add_argument('--output-dir',                                 
+                    help="Path for the output calibration config files",                    
+                    default='.', type=str)
+
+parser.add_argument('--plots-dir',
                     help="Path for the 'sanity check' plots",
                     default='.', type=str)
 
-parser.add_argument('-n_nodes', '--n-nodes',
+parser.add_argument('--n-nodes',
                     help='Number of frequency nodes to be used',
                     default=10, type=int)
 
-parser.add_argument('-plot-sanity-checks', help='Make some plots for sanity checks',
+parser.add_argument('--plot-sanity-checks', help='Make some plots for sanity checks',
                     default=True, type=bool)
 
 # parse the command line
@@ -78,6 +82,10 @@ for ii in range(len(detector_list)):
     input_dict['min_freq_%s'%detector]=min_freq_list[ii]
     input_dict['max_freq_%s'%detector]=max_freq_list[ii]
 
+# Upper and Lower indices of detectors seems unnecessary
+# but they are there to make sure the correct convention
+# is followed for recalibration module in inference config
+# file as well as in detector notation.
 prior_dict = {}
 for detector in detector_list:
     detector = detector.lower()
@@ -95,7 +103,7 @@ for detector in detector_list:
     print('Done for detector %s'%detector)
 
 
-calibration_filename = 'calibration-%s.ini'%tag
+calibration_filename = '%s/calibration-%s.ini'%(output_dir, tag)
 if os.path.isfile(calibration_filename) != True:
     text_file = open(calibration_filename, "w")
     text_file.write("# Details of set up as given in the O1 Binary Black Hole Paper https://arxiv.org/abs/1606.04856 \n")
@@ -145,7 +153,7 @@ if os.path.isfile(calibration_filename) != True:
 else:
     print('Calibration file already present. Either delete it or rename it. Overwriting this file is not allowed!!!')
 
-# Sanity check
+# Sanity check plots
 if opts.plot_sanity_checks:
     for detector in detector_list:
         calib_env_path = input_dict['calib_env_path_%s'%detector.lower()]
