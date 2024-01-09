@@ -231,6 +231,7 @@ if onsource_file:
     logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
 
     # Calculate chirp mass values
+    # FIXME: This should be done by looking up the template within the template bank
     on_mchirp = mchirp_from_mass1_mass2(on_trigs['network/mass1'][:],
                                         on_trigs['network/mass2'][:])
 
