@@ -53,8 +53,8 @@ def sort_injections(args, inj_group, missed, sort_by):
 
     Returns
     -------
-    sorting : array
-        Array of indices that will sort the missed injections as requested.
+    missed_sorted : array
+        Array of indices of missed injections sorted as requested.
     """
     if 'optimal_snr' in sort_by:
         optimal_snrs = [
@@ -71,13 +71,15 @@ def sort_injections(args, inj_group, missed, sort_by):
         if args.maximum_decisive_snr is not None:
             # By setting to 0, these injections will not be considered
             dec_snr[dec_snr > args.maximum_decisive_snr] = 0
-        return dec_snr.argsort()[::-1]
+        sorter = dec_snr.argsort()[::-1]
+        return missed[sorter]
 
     if sort_by == 'network_optimal_snr':
         # descending order of network optimal SNR
         optimal_snrs = numpy.vstack(optimal_snrs)
         net_opt_snrs_squared = (optimal_snrs ** 2).sum(axis=0)
-        return net_opt_snrs_squared.argsort()[::-1]
+        sorter = net_opt_snrs_squared.argsort()[::-1]
+        return missed[sorter]
 
     if sort_by == 'decisive_eff_dist':
         # ascending order of decisive (2nd smallest) chirp distance
@@ -98,7 +100,8 @@ def sort_injections(args, inj_group, missed, sort_by):
             inj_group['mass2'][:][missed]
         )
         dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
-        return dec_chirp_dist.argsort()
+        sorter = dec_chirp_dist.argsort()
+        return missed[sorter]
 
     raise ValueError(f'Invalid injection sorting method "{sort_by}"')
 
@@ -248,8 +251,7 @@ sort_by = workflow.cp.get_opt_tags(
     'sort-by',
     ''
 )
-sorting = sort_injections(args, inj_def, missed, sort_by)
-sorted_missed_indexes = missed[sorting]
+sorted_missed_indexes = sort_injections(args, inj_def, missed, sort_by)
 
 # loop over sorted missed injections to be followed up
 found_inj_idxes = f['found_after_vetoes/injection_index'][:]
