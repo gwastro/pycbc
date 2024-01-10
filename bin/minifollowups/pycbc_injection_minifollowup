@@ -36,7 +36,7 @@ from pycbc.io.hdf import SingleDetTriggers, HFile
 from pycbc.conversions import mchirp_from_mass1_mass2
 
 
-def sort_injections(args, inj_file, missed, sort_by):
+def sort_injections(args, inj_group, missed, sort_by):
     """Return an array of indices to sort the missed injections according to a
     metric of choice.
 
@@ -44,10 +44,10 @@ def sort_injections(args, inj_file, missed, sort_by):
     ----------
     args : object
         CLI arguments parsed by argparse.
-    inj_file : h5py.File instance
-        HDF5 file object containing the injection definition.
+    inj_group : h5py group object
+        HDF5 group object containing the injection definition.
     missed : array
-        Array of indices of missed injections.
+        Array of indices of missed injections into `inj_group`.
     sort_by : str
         Which metric to sort by.
 
@@ -56,8 +56,6 @@ def sort_injections(args, inj_file, missed, sort_by):
     sorting : array
         Array of indices that will sort the missed injections as requested.
     """
-    inj_group = inj_file['injections']
-
     if 'optimal_snr' in sort_by:
         optimal_snrs = [
             inj_group[dsn][:][missed] for dsn in inj_group.keys()
@@ -179,20 +177,21 @@ for ifo in args.single_detector_triggers:
     insp_analysed_seglists[ifo].coalesce()
 
 f = h5py.File(args.injection_file, 'r')
+inj_def = f['injections']
 missed = f['missed/after_vetoes'][:]
 if args.ifar_threshold is not None:
     try:  # injections may not have (inclusive) IFAR present
         ifars = f['found_after_vetoes']['ifar'][:]
     except KeyError:
         ifars = f['found_after_vetoes']['ifar_exc'][:]
-        logging.warn('Inclusive IFAR not found, using exclusive')
+        logging.warning('Inclusive IFAR not found, using exclusive')
     lgc_arr = ifars < args.ifar_threshold
     missed = numpy.append(missed,
                           f['found_after_vetoes']['injection_index'][lgc_arr])
 
 # Get the trigger SNRs and times
 # But only ones which are within a small window of the missed injection
-missed_inj_times = numpy.sort(f['injections/tc'][:][missed])
+missed_inj_times = numpy.sort(inj_def['tc'][:][missed])
 
 # Note: Adding Earth diameter in light seconds to the window here
 # to allow for different IFO's arrival times of the injection
@@ -249,7 +248,7 @@ sort_by = workflow.cp.get_opt_tags(
     'sort-by',
     ''
 )
-sorting = sort_injections(args, f, missed, sort_by)
+sorting = sort_injections(args, inj_def, missed, sort_by)
 sorted_missed_indexes = missed[sorting]
 
 # loop over sorted missed injections to be followed up
@@ -258,14 +257,14 @@ for num_event in range(num_events):
     files = wf.FileList([])
 
     injection_index = sorted_missed_indexes[num_event]
-    time = f['injections/tc'][injection_index]
-    lon = f['injections/ra'][injection_index]
-    lat = f['injections/dec'][injection_index]
+    time = inj_def['tc'][injection_index]
+    lon = inj_def['ra'][injection_index]
+    lat = inj_def['dec'][injection_index]
 
     ifo_times = ''
     inj_params = {}
     for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'tc']:
-        inj_params[val] = f['injections/%s' %(val,)][injection_index]
+        inj_params[val] = inj_def[val][injection_index]
     for single in single_triggers:
         ifo = single.ifo
         det = Detector(ifo)
@@ -332,9 +331,10 @@ for num_event in range(num_events):
                      tags=args.tags + [str(num_event)])
                 break
         else:
-            logging.info('Trigger time {} is not valid in {}, ' \
-                         'skipping singles plots'.format(checkedtime,
-                                                         single.ifo))
+            logging.info(
+                'Trigger time %s is not valid in %s, skipping singles plots',
+                checkedtime, single.ifo
+            )
 
     files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
