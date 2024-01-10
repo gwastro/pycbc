@@ -14,20 +14,98 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Followup foreground events """
 
-import os, argparse, numpy, logging, h5py, copy
+"""Create a workflow for following up missed loud injections."""
+
+import os
+import argparse
+import logging
+import copy
+import numpy
+import h5py
 import pycbc.workflow as wf
+import pycbc.workflow.minifollowups as mini
+import pycbc.version
+import pycbc.pnutils
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.results import layout
 from pycbc.detector import Detector
-import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file
-import pycbc.version, pycbc.pnutils
 from pycbc.io.hdf import SingleDetTriggers, HFile
+from pycbc.conversions import mchirp_from_mass1_mass2
 
-parser = argparse.ArgumentParser(description=__doc__[1:])
+
+def sort_injections(args, inj_file, missed, sort_by):
+    """Return an array of indices to sort the missed injections according to a
+    metric of choice.
+
+    Parameters
+    ----------
+    args : object
+        CLI arguments parsed by argparse.
+    inj_file : h5py.File instance
+        HDF5 file object containing the injection definition.
+    missed : array
+        Array of indices of missed injections.
+    sort_by : str
+        Which metric to sort by.
+
+    Returns
+    -------
+    sorting : array
+        Array of indices that will sort the missed injections as requested.
+    """
+    inj_group = inj_file['injections']
+
+    if 'optimal_snr' in sort_by:
+        optimal_snrs = [
+            inj_group[dsn][:][missed] for dsn in inj_group.keys()
+            if dsn.startswith('optimal_snr_')
+        ]
+        assert optimal_snrs, 'These injections do not have optimal SNRs'
+
+    if sort_by == 'decisive_optimal_snr':
+        # descending order of decisive (2nd largest) optimal SNR
+        dec_snr = numpy.array([
+            sorted(snrs)[-2] for snrs in zip(*optimal_snrs)
+        ])
+        if args.maximum_decisive_snr is not None:
+            # By setting to 0, these injections will not be considered
+            dec_snr[dec_snr > args.maximum_decisive_snr] = 0
+        return dec_snr.argsort()[::-1]
+
+    if sort_by == 'network_optimal_snr':
+        # descending order of network optimal SNR
+        optimal_snrs = numpy.vstack(optimal_snrs)
+        net_opt_snrs_squared = (optimal_snrs ** 2).sum(axis=0)
+        return net_opt_snrs_squared.argsort()[::-1]
+
+    if sort_by == 'decisive_eff_dist':
+        # ascending order of decisive (2nd smallest) chirp distance
+        eff_dists = []
+        for ifo in args.single_detector_triggers:
+            eff_dist = Detector(ifo).effective_distance(
+                inj_group['distance'][:][missed],
+                inj_group['ra'][:][missed],
+                inj_group['dec'][:][missed],
+                inj_group['polarization'][:][missed],
+                inj_group['tc'][:][missed],
+                inj_group['inclination'][:][missed]
+            )
+            eff_dists.append(eff_dist)
+        dec_eff_dist = sorted(eff_dists)[-2]
+        mchirp = mchirp_from_mass1_mass2(
+            inj_group['mass1'][:][missed],
+            inj_group['mass2'][:][missed]
+        )
+        dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+        return dec_chirp_dist.argsort()
+
+    raise ValueError(f'Invalid injection sorting method "{sort_by}"')
+
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
@@ -84,12 +162,16 @@ for ifo in args.single_detector_triggers:
     strig_file = resolve_url_to_file(os.path.abspath(fname),
                                      attrs={'ifos': ifo})
     single_triggers.append(strig_file)
-    insp_data_seglists[ifo] = select_segments_by_definer\
-        (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
-         ifo=ifo)
-    insp_analysed_seglists[ifo] = select_segments_by_definer\
-        (args.inspiral_segments, segment_name=args.inspiral_data_analyzed_name,
-         ifo=ifo)
+    insp_data_seglists[ifo] = select_segments_by_definer(
+        args.inspiral_segments,
+        segment_name=args.inspiral_data_read_name,
+        ifo=ifo
+    )
+    insp_analysed_seglists[ifo] = select_segments_by_definer(
+        args.inspiral_segments,
+        segment_name=args.inspiral_data_analyzed_name,
+        ifo=ifo
+    )
     # NOTE: make_singles_timefreq needs a coalesced set of segments. If this is
     #       being used to determine command-line options for other codes,
     #       please think if that code requires coalesced, or not, segments.
@@ -107,42 +189,6 @@ if args.ifar_threshold is not None:
     lgc_arr = ifars < args.ifar_threshold
     missed = numpy.append(missed,
                           f['found_after_vetoes']['injection_index'][lgc_arr])
-
-num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
-
-try:
-    optstrings = [os for os in f['injections'].keys() if \
-                  os.startswith('optimal_snr_')]
-    optimal_snr = [f['injections/%s' % os][:][missed] for os in optstrings]
-    # 2nd largest opt SNR
-    dec_snr = [sorted(snrs)[-2] for snrs in zip(*optimal_snr)]
-    dec_snr = numpy.array(dec_snr)
-
-    if args.maximum_decisive_snr is not None:
-        # By setting to 0, these injections will not be considered
-        dec_snr[dec_snr > args.maximum_decisive_snr] = 0
-    sorting = dec_snr.argsort()
-    sorting = sorting[::-1]  # descending order of dec opt SNR
-except KeyError:
-    # Fall back to effective distance if optimal SNR not available
-    eff_dist = {}
-    for trig in single_triggers:
-        ifo = trig.ifo
-        eff_dist[ifo] = Detector(ifo).effective_distance(
-                             f['injections/distance'][:][missed],
-                             f['injections/ra'][:][missed],
-                             f['injections/dec'][:][missed],
-                             f['injections/polarization'][:][missed],
-                             f['injections/tc'][:][missed],
-                             f['injections/inclination'][:][missed])
-
-    dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo],
-                             eff_dist[single_triggers[1].ifo])
-    mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(\
-                                              f['injections/mass1'][:][missed],
-                                              f['injections/mass2'][:][missed])
-    dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
-    sorting = dec_chirp_dist.argsort()  # ascending order of dec chirp distance
 
 # Get the trigger SNRs and times
 # But only ones which are within a small window of the missed injection
@@ -188,15 +234,30 @@ for trig in single_triggers:
                 f'{ifo}/snr',
                 return_indices=True)
 
+# figure out how many injections to follow up
+num_events = int(workflow.cp.get_opt_tags(
+    'workflow-injection_minifollowups',
+    'num-events',
+    ''
+))
 if len(missed) < num_events:
     num_events = len(missed)
 
-# loop over loudest events to be followed up
+# sort the injections
+sort_by = workflow.cp.get_opt_tags(
+    'workflow-injection_minifollowups',
+    'sort-by',
+    ''
+)
+sorting = sort_injections(args, f, missed, sort_by)
+sorted_missed_indexes = missed[sorting]
+
+# loop over sorted missed injections to be followed up
 found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
 
-    injection_index = missed[sorting][num_event]
+    injection_index = sorted_missed_indexes[num_event]
     time = f['injections/tc'][injection_index]
     lon = f['injections/ra'][injection_index]
     lat = f['injections/dec'][injection_index]
@@ -349,7 +410,6 @@ for num_event in range(num_events):
                                 params_str='loudest template in %s' % curr_ifo )
 
     layouts += list(layout.grouper(files, 2))
-    num_event += 1
 
 workflow.save()
 layout.two_column_layout(args.output_dir, layouts)
