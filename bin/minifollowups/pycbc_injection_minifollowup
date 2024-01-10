@@ -26,14 +26,12 @@ import h5py
 import pycbc.workflow as wf
 import pycbc.workflow.minifollowups as mini
 import pycbc.version
-import pycbc.pnutils
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.results import layout
 from pycbc.detector import Detector
 from pycbc.workflow.core import resolve_url_to_file
 from pycbc.io.hdf import SingleDetTriggers, HFile
-from pycbc.conversions import mchirp_from_mass1_mass2
 
 
 def sort_injections(args, inj_group, missed, sort_by):
@@ -83,6 +81,8 @@ def sort_injections(args, inj_group, missed, sort_by):
 
     if sort_by == 'decisive_eff_dist':
         # ascending order of decisive (2nd smallest) chirp distance
+        from pycbc.conversions import mchirp_from_mass1_mass2, chirp_distance
+
         eff_dists = []
         for ifo in args.single_detector_triggers:
             eff_dist = Detector(ifo).effective_distance(
@@ -99,7 +99,7 @@ def sort_injections(args, inj_group, missed, sort_by):
             inj_group['mass1'][:][missed],
             inj_group['mass2'][:][missed]
         )
-        dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
+        dec_chirp_dist = chirp_distance(dec_dist, mchirp)
         sorter = dec_chirp_dist.argsort()
         return missed[sorter]
 
@@ -251,14 +251,14 @@ sort_by = workflow.cp.get_opt_tags(
     'sort-by',
     ''
 )
-sorted_missed_indexes = sort_injections(args, inj_def, missed, sort_by)
+missed = sort_injections(args, inj_def, missed, sort_by)
 
 # loop over sorted missed injections to be followed up
 found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
 
-    injection_index = sorted_missed_indexes[num_event]
+    injection_index = missed[num_event]
     time = inj_def['tc'][injection_index]
     lon = inj_def['ra'][injection_index]
     lat = inj_def['dec'][injection_index]
