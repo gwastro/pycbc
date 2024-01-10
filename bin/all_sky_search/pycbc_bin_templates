@@ -9,7 +9,7 @@ import numpy as np
 import pycbc
 import pycbc.pnutils
 from pycbc.version import git_verbose_msg as version
-from pycbc.events import background_bin_from_string, stat as pystat
+from pycbc.events import background_bin_from_string
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
@@ -23,12 +23,8 @@ parser.add_argument('--bank-file', help='hdf format template bank file',
 parser.add_argument('--background-bins', nargs='+',
                     help='Used to provide a list of '
                          'precomputed background bins')
-parser.add_argument('--approximant', type=str, default='SEOBNRv4',
-                    help='Approximant used to calculate template durations.')
 parser.add_argument("--output-file", required=True)
 
-pystat.insert_statistic_option_group(parser,
-                                     default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)

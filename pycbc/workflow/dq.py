@@ -24,6 +24,7 @@
 
 import numpy
 from pycbc.workflow.core import (FileList, Executable, Node, make_analysis_dir)
+import logging
 
 
 class PyCBCBinTemplatesDQExecutable(Executable):
@@ -40,41 +41,46 @@ class PyCBCBinTemplatesDQExecutable(Executable):
 class PyCBCBinTriggerRatesDQExecutable(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
 
-    def create_node(self, workflow, ifo, dq_label, flag_file, flag_name,
-                    analysis_segments, trig_file, template_bins_file):
+    def create_node(self, workflow, flag_file, flag_name,
+                    analysis_segment_file, analysis_segment_name,
+                    trig_file, template_bins_file):
         node = Node(self)
-        node.add_opt('--ifo', ifo)
-        node.add_input_opt('--dq-label', dq_label)
         node.add_input_opt('--template-bins-file', template_bins_file)
         node.add_input_opt('--trig-file', trig_file)
         node.add_input_opt('--flag-file', flag_file)
-        node.add_input_opt('--flag-name', flag_name)
-        node.add_input_opt('--analaysis-segments', analysis_segments)
+        node.add_opt('--flag-name', flag_name)
+        node.add_input_opt('--analysis-segment-file', analysis_segment_file)
+        node.add_opt('--analysis-segment-name', analysis_segment_name)
         node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                  '--output-file')
         return node
 
 
 def setup_dq_reranking(workflow, insps, bank,
-                       analyzable_segs,
+                       analyzable_seg_file,
+                       analyzable_name,
                        dq_seg_file,
                        output_dir=None, tags=None):
+    logging.info("Setting up dq reranking")
     make_analysis_dir(output_dir)
     output_files = FileList()
     output_labels = []
+    if not tags:
+        tags = []
 
     dq_labels = workflow.cp.get_subsections('workflow-data_quality')
-    if tags:
-        dq_tags = tags + dq_labels
-    else:
-        dq_tags = dq_labels
+    dq_labels = numpy.array(dq_labels)
 
-    dq_types = [workflow.cp.get_opt_tags('workflow-data_quality', 'dq-type', [dq_label])
-                for dq_label in dq_labels]
-    dq_ifos = [workflow.cp.get_opt_tags('workflow-data_quality', 'dq-ifo', [dq_label])
-               for dq_label in dq_labels]
-    dq_names = [workflow.cp.get_opt_tags('workflow-data_quality', 'dq-name', [dq_label])
-                for dq_label in dq_labels]
+    dq_types = numpy.array([workflow.cp.get_opt_tags(
+            'workflow-data_quality', 'dq-type', [dq_label])
+            for dq_label in dq_labels])
+    dq_ifos = numpy.array([workflow.cp.get_opt_tags(
+            'workflow-data_quality', 'dq-ifo', [dq_label])
+            for dq_label in dq_labels])
+    dq_names = numpy.array([workflow.cp.get_opt_tags(
+            'workflow-data_quality', 'dq-name', [dq_label])
+            for dq_label in dq_labels])
+
     ifos = numpy.unique(dq_ifos)
 
     for ifo in ifos:
@@ -84,9 +90,11 @@ def setup_dq_reranking(workflow, insps, bank,
         mask = numpy.array([ifo == dq_ifo for dq_ifo in dq_ifos])
         assert numpy.sum(mask) > 0, f"Received no dq files for {ifo}"
         assert numpy.sum(mask) < 2, f"Received more than one dq file for {ifo}"
-        dq_label = dq_labels[mask][0]
-        dq_type = dq_types[mask][0]
-        dq_name = dq_names[mask][0]
+        dq_label = str(dq_labels[mask][0])
+        dq_type = str(dq_types[mask][0])
+        dq_name = str(dq_names[mask][0])
+
+        dq_tags = tags + [dq_label]
 
         # get triggers for this ifo
         ifo_insp = [insp for insp in insps if (insp.ifo == ifo)]
@@ -99,7 +107,7 @@ def setup_dq_reranking(workflow, insps, bank,
             'bin_templates',
             ifos=ifo,
             out_dir=output_dir,
-            tags=dq_tags)
+            tags=tags)
         bin_templates_node = bin_templates_exe.create_node(workflow, ifo, bank)
         workflow += bin_templates_node
         template_bins_file = bin_templates_node.output_file
@@ -119,14 +127,15 @@ def setup_dq_reranking(workflow, insps, bank,
             tags=dq_tags)
         bin_triggers_node = bin_triggers_exe.create_node(
             workflow,
-            ifo,
             flag_file,
             flag_name,
-            analyzable_segs,
+            analyzable_seg_file,
+            analyzable_name,
             ifo_insp,
             template_bins_file)
         workflow += bin_triggers_node
         output_files += bin_triggers_node.output_files
         output_labels += [dq_label]
 
+    logging.info("Finished setting up dq reranking")
     return output_files, output_labels

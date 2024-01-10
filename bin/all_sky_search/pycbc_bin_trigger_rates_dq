@@ -20,13 +20,12 @@ from pycbc.version import git_verbose_msg as version
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--verbose', action="store_true")
-parser.add_argument("--ifo", type=str, required=True)
-parser.add_argument("--dq-label", type=str, required=True)
 parser.add_argument("--template-bins-file", required=True)
 parser.add_argument("--trig-file", required=True)
 parser.add_argument("--flag-file", required=True)
 parser.add_argument("--flag-name", required=True)
-parser.add_argument("--analysis-segments", required=True)
+parser.add_argument("--analysis-segment-file", required=True)
+parser.add_argument("--analysis-segment-name", required=True)
 parser.add_argument("--gating-windows", nargs='+',
                     action=MultiDetOptionAction,
                     help="Seconds to be reweight before and after the central time "
@@ -35,9 +34,6 @@ parser.add_argument("--gating-windows", nargs='+',
 parser.add_argument("--stat-threshold", type=float, default=1.,
                     help="Only consider triggers with --sngl-ranking value "
                     "above this threshold")
-parser.add_argument("--f-lower", type=float, default=15.,
-                    help='Enforce a uniform low frequency cutoff to '
-                         'calculate template duration over the bank')
 parser.add_argument("--output-file", required=True)
 
 pystat.insert_statistic_option_group(
@@ -47,7 +43,7 @@ pycbc.init_logging(args.verbose)
 
 logging.info('Start')
 
-ifo = args.ifo
+ifo, flag_name = args.flag_name.split(':')
 
 # Setup a data mask to remove any triggers with SNR below threshold
 # This works as a pre-filter as SNR is always greater than or equal
@@ -76,7 +72,7 @@ with HFile(args.trig_file, 'r') as trig_file:
 
     # also get the gated times while we have the file open
     gate_times = []
-    if args.gating_window:
+    if args.gating_windows:
         logging.info('Getting gated times')
         try:
             gating_key = f'{ifo}/gating'
@@ -122,15 +118,21 @@ with h5.File(args.template_bins_file, 'r') as f:
     for bin_name in ifo_grp.keys():
         bin_tids_dict[bin_name] = ifo_grp[bin_name]['tids'][:]
 
+
+# get analysis segments
+analysis_segs = select_segments_by_definer(args.analysis_segment_file,
+                                           segment_name=args.analysis_segment_name,
+                                           ifo=ifo)
+
 # get flag segments
 flag_segs = select_segments_by_definer(args.flag_file,
-                                       segment_name=args.flag_name,
+                                       segment_name=flag_name,
                                        ifo=ifo)
 
 # construct gate segments
 gating_segs = segmentlist([])
 if args.gating_windows:
-    gating_windows = args.gating_windows[args.ifo].split(',')
+    gating_windows = args.gating_windows[ifo].split(',')
     gate_before = float(gating_windows[0])
     gate_after = float(gating_windows[1])
     if gate_before > 0 or gate_after < 0:
@@ -143,7 +145,6 @@ if args.gating_windows:
         ).coalesce()
 
 # make segments into mutually exclusive dq states
-analysis_segs = args.analysis_segments
 gating_segs = gating_segs & analysis_segs
 flag_segs = flag_segs & analysis_segs
 

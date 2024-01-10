@@ -28,7 +28,6 @@ values.
 import logging
 import numpy
 import h5py
-import copy
 from . import ranking
 from . import coinc_rate
 from .eventmgr_cython import logsignalrateinternals_computepsignalbins
@@ -1564,9 +1563,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         # First get signal PDF logr_s
         stat = {ifo: st for ifo, st in s}
-
-        self.curr_mchirp = kwargs['mchirp']
-
         logr_s = self.logsignalrate(stat, slide * step, to_shift)
 
         # Find total volume of phase-time-amplitude space occupied by noise
@@ -2088,11 +2084,11 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
             ifo_grp = dq_file[ifo]
-            if 'dqsegs' in ifo_grp.keys():
+            if 'dq_segments' in ifo_grp.keys():
                 # if segs are in stat file, we are not in LL
                 assert not self.low_latency, 'Should not have segments in LL'
                 dq_state_segs_dict = {}
-                for k in ifo_grp['dqsegs'].keys():
+                for k in ifo_grp['dq_segments'].keys():
                     seg_dict = {}
                     seg_dict['start'] = ifo_grp[f'dq_segments/{k}/segment_starts'][:]
                     seg_dict['end'] = ifo_grp[f'dq_segments/{k}/segment_ends'][:]
@@ -2142,11 +2138,28 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
                 starts = self.dq_state_segments[ifo][k]['start']
                 ends = self.dq_state_segments[ifo][k]['end']
                 inds = indices_within_times(times, starts, ends)
-                # states are named in file as 'stateN'
-                dq_state[inds] = int(k[5:])
+                # states are named in file as 'dq_state_N', need to extract N
+                dq_state[inds] = int(k[9:])
         return dq_state
 
-    def single(self, trigs):
+    def lognoiserate(self, trigs):
+        """
+        Calculate the log noise rate density over single-ifo ranking
+
+        Read in single trigger information, compute the ranking
+        and rescale by the fitted coefficients alpha and rate
+
+        Parameters
+        -----------
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
+
+        Returns
+        ---------
+        lognoiserate: numpy.array
+            Array of log noise rate density for each input trigger.
+        """
+
         # make sure every trig has a dq state
 
         try:
@@ -2165,34 +2178,13 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             dq_state = trigs['dq_state'][:]
         else:
             dq_state = self.find_dq_state_by_time(
-                ifo, trigs['end_time'][:]
-            )
+                ifo, trigs['end_time'][:])
 
-        trigsc = copy.copy(trigs)
-        trigsc['dq_rate'] = self.find_dq_noise_rate(trigsc, dq_state)
-        singles = ExpFitFgBgNormStatistic.single(self, trigsc)
-        return singles
+        dq_rate = self.find_dq_noise_rate(trigs, dq_state)
 
-    def lognoiserate(self, trigs):
-        """
-        Calculate the log noise rate density over single-ifo ranking
-
-        Read in single trigger information, compute the ranking
-        and rescale by the fitted coefficients alpha and rate
-
-        Parameters
-        -----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information.
-
-        Returns
-        ---------
-        lognoisel: numpy.array
-            Array of log noise rate density for each input trigger.
-        """
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
                     self, trigs)
-        logr_n += numpy.log(trigs['dq_rate'][:])
+        logr_n += numpy.log(dq_rate)
         return logr_n
 
 
