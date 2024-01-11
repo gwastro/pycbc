@@ -557,7 +557,8 @@ for dqf, dql in zip(dqfiles, dqfile_labels):
 # DQ background binning plot
 ifo_bins = workflow.cp.get_subsections('bin_templates')
 for ifo in ifo_bins:
-    background_bins = workflow.cp.get_opt_tags('bin_templates', 'background-bins', tags=[ifo])
+    background_bins = workflow.cp.get_opt_tags(
+        'bin_templates', 'background-bins', tags=[ifo])
     wf.make_template_plot(workflow, hdfbank, rdir['data_quality'],
                           bins=background_bins, tags=[ifo, 'dq_bins'])
 

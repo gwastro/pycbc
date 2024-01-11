@@ -11,7 +11,8 @@ from ligo.segments import segmentlist
 
 import pycbc
 from pycbc.events import stat as pystat
-from pycbc.events.veto import (select_segments_by_definer, start_end_to_segments,
+from pycbc.events.veto import (select_segments_by_definer,
+                               start_end_to_segments,
                                segments_to_start_end)
 from pycbc.types.optparse import MultiDetOptionAction
 from pycbc.io.hdf import HFile, SingleDetTriggers
@@ -28,9 +29,9 @@ parser.add_argument("--analysis-segment-file", required=True)
 parser.add_argument("--analysis-segment-name", required=True)
 parser.add_argument("--gating-windows", nargs='+',
                     action=MultiDetOptionAction,
-                    help="Seconds to be reweight before and after the central time "
-                         "of each gate. Given as detector-values pairs, e.g. "
-                         "H1:-1,2.5 L1:-1,2.5 V1:0,0")
+                    help="Seconds to be reweight before and after the central"
+                         "time of each gate. Given as detector-values pairs,"
+                         "e.g. H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--stat-threshold", type=float, default=1.,
                     help="Only consider triggers with --sngl-ranking value "
                     "above this threshold")
@@ -120,9 +121,20 @@ with h5.File(args.template_bins_file, 'r') as f:
 
 
 # get analysis segments
-analysis_segs = select_segments_by_definer(args.analysis_segment_file,
-                                           segment_name=args.analysis_segment_name,
-                                           ifo=ifo)
+analysis_segs = select_segments_by_definer(
+    args.analysis_segment_file,
+    segment_name=args.analysis_segment_name,
+    ifo=ifo)
+
+
+# utility function to compute segment list durations
+def segs_duration(segs):
+    starts, ends = segments_to_start_end(segs)
+    durs = ends - starts
+    return np.sum(durs)
+
+
+livetime = segs_duration(analysis_segs)
 
 # get flag segments
 flag_segs = select_segments_by_definer(args.flag_file,
@@ -162,13 +174,6 @@ def dq_state_at_time(t):
     return None
 
 
-# utility function to compute segment list durations
-def segs_duration(segs):
-    starts, ends = segments_to_start_end(segs)
-    durs = ends - starts
-    return np.sum(durs)
-
-
 # compute and save results
 with h5.File(args.output_file, 'w') as f:
     ifo_grp = f.create_group(ifo)
@@ -189,7 +194,7 @@ with h5.File(args.output_file, 'w') as f:
         dq_rates = np.zeros(3, dtype=np.float64)
         for state in [0, 1, 2]:
             frac_eff = np.mean(trig_states == state)
-            frac_dt = segs_duration(dq_state_segs_dict[state]) / segs_duration(analysis_segs)
+            frac_dt = segs_duration(dq_state_segs_dict[state]) / livetime
             dq_rates[state] = frac_eff / frac_dt
         bin_grp['dq_rates'] = dq_rates
 
