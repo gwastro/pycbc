@@ -22,9 +22,9 @@
 # =============================================================================
 #
 
+import logging
 import numpy
 from pycbc.workflow.core import (FileList, Executable, Node, make_analysis_dir)
-import logging
 
 
 class PyCBCBinTemplatesDQExecutable(Executable):
