@@ -1997,20 +1997,14 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
                                          ifos=ifos, **kwargs)
         self.dq_rates_by_state = {}
         self.dq_bin_by_tid = {}
-        self.dq_state_segments = None
-        self.low_latency = False
+        self.dq_state_segments = {}
 
         for ifo in self.ifos:
             key = f'{ifo}-dq_stat_info'
             if key in self.files.keys():
-                dq_rates = self.assign_dq_rates(key)
-                dq_bins = self.assign_template_bins(key)
-                if ifo not in self.dq_rates_by_state:
-                    self.dq_rates_by_state[ifo] = {}
-                    self.dq_bin_by_tid[ifo] = {}
-                self.setup_segments(key)
-                self.dq_rates_by_state[ifo] = dq_rates
-                self.dq_bin_by_tid[ifo] = dq_bins
+                self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
+                self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
+                self.dq_state_segments[ifo] = self.setup_segments(key)
 
     def assign_template_bins(self, key):
         """
@@ -2076,29 +2070,16 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
             ifo_grp = dq_file[ifo]
-            if 'dq_segments' in ifo_grp.keys():
-                # if segs are in stat file, we are not in LL
-                assert not self.low_latency, 'Should not have segments in LL'
-                dq_state_segs_dict = {}
-                for k in ifo_grp['dq_segments'].keys():
-                    seg_dict = {}
-                    seg_dict['start'] = \
-                        ifo_grp[f'dq_segments/{k}/segment_starts'][:]
-                    seg_dict['end'] = \
-                        ifo_grp[f'dq_segments/{k}/segment_ends'][:]
-                    dq_state_segs_dict[k] = seg_dict
+            dq_state_segs_dict = {}
+            for k in ifo_grp['dq_segments'].keys():
+                seg_dict = {}
+                seg_dict['start'] = \
+                    ifo_grp[f'dq_segments/{k}/segment_starts'][:]
+                seg_dict['end'] = \
+                    ifo_grp[f'dq_segments/{k}/segment_ends'][:]
+                dq_state_segs_dict[k] = seg_dict
 
-                if self.dq_state_segments is None:
-                    self.dq_state_segments = {}
-                if ifo not in self.dq_state_segments:
-                    self.dq_state_segments[ifo] = {}
-
-                self.dq_state_segments[ifo] = dq_state_segs_dict
-            else:
-                # we must be in LL, shouldn't have segments
-                assert not self.dq_state_segments, \
-                      'Should not have segments in LL'
-                self.low_latency = True
+        return dq_state_segs_dict
 
     def find_dq_noise_rate(self, trigs, dq_state):
         """Get dq values for a specific ifo and dq states"""
@@ -2161,20 +2142,13 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             # works in offline
             ifo = trigs.ifo
         except AttributeError:
-            # works in low-latency
             ifo = trigs['ifo']
             unq = numpy.unique(ifo)
             assert len(unq) == 1
             # Should be exactly one ifo provided
             ifo = unq[0]
 
-        if self.low_latency:
-            # trigs should already have a dq state assigned
-            dq_state = trigs['dq_state'][:]
-        else:
-            dq_state = self.find_dq_state_by_time(
-                ifo, trigs['end_time'][:])
-
+        dq_state = self.find_dq_state_by_time(ifo, trigs['end_time'][:])
         dq_rate = self.find_dq_noise_rate(trigs, dq_state)
 
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
