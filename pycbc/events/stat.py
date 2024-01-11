@@ -423,8 +423,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             if param[ifo].dtype == numpy.int8:
                 # Older style, incorrectly sorted histogram file
                 ncol = param[ifo].shape[1]
-                self.pdtype = [('c%s' % i, param[ifo].dtype)
-                               for i in range(ncol)]
+                self.pdtype = [('c%s' % i, param[ifo].dtype) for i in range(ncol)]
                 self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]),
                                                   dtype=self.pdtype)
                 for i in range(ncol):
@@ -684,7 +683,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         return single_info[1]
 
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
+                        **kwargs):  # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic, defined in Eq 2 of
         [Nitz et al, 2017](https://doi.org/10.3847/1538-4357/aa8f50).
@@ -697,7 +696,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         return cstat ** 0.5
 
     def coinc_lim_for_thresh(self, sngls_list, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest.
         Calculate the required single detector statistic to exceed the
@@ -851,7 +850,6 @@ class ExpFitStatistic(QuadratureSumStatistic):
             assert len(self.ifos) == 1
             # Should be exactly one ifo provided
             ifo = self.ifos[0]
-
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
         alphai = self.fits_by_tid[ifo]['smoothed_fit_coeff'][tnum]
@@ -1485,7 +1483,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             self.curr_tnum = trigs['template_id']
             # Should only be one ifo fit file provided
             assert len(self.ifos) == 1
-
         # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
         singles['benchmark_logvol'] = self.benchmark_logvol[self.curr_tnum]
@@ -1631,8 +1628,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         if thresh <= -30.:
             return numpy.ones(len(s[0][1]['snglstat'])) * numpy.inf
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
-        # Add limifo to singles dict so that overlap
-        # time is calculated correctly
+        # Add limifo to singles dict so that overlap time is calculated correctly
         sngl_rates[limifo] = numpy.zeros(len(s[0][1]))
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
@@ -1791,7 +1787,6 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         from pycbc.conversions import mchirp_from_mass1_mass2
         self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
                                                    trigs.param['mass2'])
-
         if self.mcm is not None:
             # Careful - input might be a str, so cast to float
             self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
