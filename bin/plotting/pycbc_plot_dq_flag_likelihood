@@ -6,11 +6,11 @@ import argparse
 import numpy
 import pycbc
 import h5py
-from matplotlib import use
+from matplotlib import use as matplotlib_use
 from matplotlib import pyplot
 from pycbc.version import git_verbose_msg as version
 import pycbc.results
-use('Agg')
+matplotlib_use('Agg')
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)

@@ -66,7 +66,7 @@ def setup_dq_reranking(workflow, insps, bank,
     make_analysis_dir(output_dir)
     output_files = FileList()
     output_labels = []
-    if not tags:
+    if tags is None:
         tags = []
 
     dq_labels = workflow.cp.get_subsections('workflow-data_quality')
@@ -82,7 +82,7 @@ def setup_dq_reranking(workflow, insps, bank,
             'workflow-data_quality', 'dq-name', [dq_label])
             for dq_label in dq_labels])
 
-    ifos = numpy.unique(dq_ifos)
+    ifos = set(dq_ifos)
 
     for ifo in ifos:
         # FIXME : make this able to take multiple dq files per ifo

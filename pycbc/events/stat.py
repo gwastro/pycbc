@@ -1979,7 +1979,8 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
     the DQ time series.
     """
 
-    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
+    def __init__(self, sngl_ranking, files=None, ifos=None,
+                 **kwargs):
         """
         Parameters
         ----------
