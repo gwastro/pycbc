@@ -23,7 +23,6 @@
 #
 
 import logging
-import numpy
 from pycbc.workflow.core import (FileList, Executable, Node, make_analysis_dir)
 
 
@@ -70,30 +69,27 @@ def setup_dq_reranking(workflow, insps, bank,
         tags = []
 
     dq_labels = workflow.cp.get_subsections('workflow-data_quality')
-    dq_labels = numpy.array(dq_labels)
 
-    dq_types = numpy.array([workflow.cp.get_opt_tags(
-            'workflow-data_quality', 'dq-type', [dq_label])
-            for dq_label in dq_labels])
-    dq_ifos = numpy.array([workflow.cp.get_opt_tags(
-            'workflow-data_quality', 'dq-ifo', [dq_label])
-            for dq_label in dq_labels])
-    dq_names = numpy.array([workflow.cp.get_opt_tags(
-            'workflow-data_quality', 'dq-name', [dq_label])
-            for dq_label in dq_labels])
+    dq_ifos = {}
+    dq_names = {}
+    dq_types = {}
+    for dql in dq_labels:
+        dq_ifos[dql] = workflow.cp.get_opt_tags(
+            'workflow-data_quality', 'dq-ifo', [dql])
+        dq_names[dql] = workflow.cp.get_opt_tags(
+            'workflow-data_quality', 'dq-name', [dql])
+        dq_types[dql] = workflow.cp.get_opt_tags(
+            'workflow-data_quality', 'dq-type', [dql])
 
-    ifos = set(dq_ifos)
+    ifos = set(dq_ifos.values())
 
     for ifo in ifos:
-        # FIXME : make this able to take multiple dq files per ifo
-
         # get the dq label, type, and name for this ifo
-        mask = (dq_ifos == ifo)
-        assert numpy.sum(mask) > 0, f"Received no dq files for {ifo}"
-        assert numpy.sum(mask) < 2, f"Received more than one dq file for {ifo}"
-        dq_label = str(dq_labels[mask][0])
-        dq_type = str(dq_types[mask][0])
-        dq_name = str(dq_names[mask][0])
+        ifo_dq_labels = [dql for dql in dq_labels if (dq_ifos[dql] == ifo)]
+        assert len(ifo_dq_labels) < 2, f"Received multiple dq files for {ifo}"
+        dq_label = ifo_dq_labels[0]
+        dq_name = dq_names[dq_label]
+        dq_type = dq_types[dq_label]
 
         dq_tags = tags + [dq_label]
 
