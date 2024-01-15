@@ -88,7 +88,7 @@ def setup_dq_reranking(workflow, insps, bank,
         # FIXME : make this able to take multiple dq files per ifo
 
         # get the dq label, type, and name for this ifo
-        mask = numpy.array([ifo == dq_ifo for dq_ifo in dq_ifos])
+        mask = (dq_ifos == ifo)
         assert numpy.sum(mask) > 0, f"Received no dq files for {ifo}"
         assert numpy.sum(mask) < 2, f"Received more than one dq file for {ifo}"
         dq_label = str(dq_labels[mask][0])
