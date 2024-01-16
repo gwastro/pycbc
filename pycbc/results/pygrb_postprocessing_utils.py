@@ -464,9 +464,9 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     # Begin by sorting the triggers into each slide
     for slide_id in slide_dict:
         sorted_trigs[slide_id] = []
-        for i, _ in enumerate(trigs['network/event_id']):
-            idx = trigs['network/slide_id'][i]
-            sorted_trigs[idx].append(i)
+    for i, _ in enumerate(trigs['network/event_id']):
+        idx = trigs['network/slide_id'][i]
+        sorted_trigs[idx].append(i)
 
     for slide_id in slide_dict:
         # These can only *reduce* the analysis time
