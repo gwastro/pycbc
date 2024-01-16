@@ -310,16 +310,17 @@ def _get_id_numbers(ligolw_table, column):
 # =============================================================================
 # Function to build a dictionary (indexed by ifo) of time-slid vetoes
 # =============================================================================
-def _slide_vetoes(vetoes, slide_dict_or_list, slide_id):
+def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
     """Build a dictionary (indexed by ifo) of time-slid vetoes"""
 
     # Copy vetoes
-    slid_vetoes = copy.deepcopy(vetoes)
-
-    # Slide them
-    ifos = vetoes.keys()
-    for ifo in ifos:
-        slid_vetoes[ifo].shift(-slide_dict_or_list[slide_id][ifo])
+    if vetoes is not None:
+        slid_vetoes = copy.deepcopy(vetoes)
+        # Slide them
+        for ifo in ifos:
+            slid_vetoes[ifo].shift(-slide_dict_or_list[slide_id][ifo])
+    else:
+        slid_vetoes = {ifo: segments.segmentlist() for ifo in ifos}
 
     return slid_vetoes
 
@@ -679,7 +680,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
         seg_buffer.coalesce()
 
         # Construct the ifo-indexed dictionary of slid veteoes
-        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id)
+        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
 
         # Construct trial list and check against buffer
         trial_dict[slide_id] = segments.segmentlist()
