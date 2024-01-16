@@ -16,7 +16,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, sys, argparse, logging, re, h5py, pycbc.workflow as wf
+import os
+import sys
+import argparse
+import logging
+import re
+import h5py
+
+import pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
@@ -113,7 +120,7 @@ if args.sort_variable not in f[file_val]:
 # _many_ more events to make sure we get enough
 events_to_read = num_events * 100
 
-# Hold your horses! - we've asked for more events than there are!
+# We've asked for more events than there are!
 if len(stat) < num_events:
     num_events = len(stat)
 if len(stat) < events_to_read:

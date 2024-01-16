@@ -482,7 +482,7 @@ fore_xmlall = wf.make_foreground_table(workflow, combined_bg_file,
                     extension='.xml', tags=["xmlall"])
 
 if workflow.cp.has_option_tags('workflow-minifollowups',
-                               'prepare-uploads', ''):
+                               'prepare-gracedb-uploads', ''):
     # Need to get absolute path here
     upload_path = os.path.join(workflow.out_dir, 'upload_data')
     wf.setup_upload_prep_minifollowups(workflow, combined_bg_file, fore_xmlall,

@@ -16,16 +16,23 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Prepare files for upload to GraceDB for foreground events
 """
-import os, sys, argparse, logging, re, h5py, pycbc.workflow as wf
+import os
+import sys
+import argparse
+import logging
+import re
+import h5py
+import numpy as np
+
+from ligo import segments
+
+import pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.io import get_all_subkeys
 import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file, resolve_td_option
-from ligo import segments
-
-import numpy as np
 import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -74,7 +81,8 @@ for ifo in workflow.ifos:
     channel_opts[ifo] = workflow.cp.get_opt_tags(
         "workflow",
         "%s-channel-name" % ifo.lower(),
-        "")
+        ""
+    )
 
 # create a FileList that will contain all output files
 layouts = []
@@ -108,9 +116,6 @@ for ifo in args.single_detector_triggers:
         args.inspiral_segments,
         segment_name=args.inspiral_data_analyzed_name,
         ifo=ifo)
-    # NOTE: make_singles_timefreq needs a coalesced set of segments. If this is
-    #       being used to determine command-line options for other codes,
-    #       please think if that code requires coalesced, or not, segments.
     insp_data_seglists[ifo].coalesce()
     insp_analysed_seglists[ifo].coalesce()
 
@@ -145,12 +150,14 @@ for curr_idx in range(event_idx.size):
         fsdt,
         tids
     )
+
     # Extract approximant
-    if 'approximant' in params:
-        appx = params['approximant']
-        del params['approximant']
-    else:
+    try:
+        appx = params.pop('approximant')
+    except KeyError:
+        # approximant not stored in params, use default
         appx = None
+
     channel_name = ""
     for ifo in ifo_list:
         ifo_chname = resolve_td_option(
