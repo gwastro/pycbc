@@ -1,6 +1,7 @@
 import numpy as np
 import numpy
 import math
+import os
 from typing import Optional, Tuple
 import lal
 from lal import LIGOTimeGPS
@@ -364,7 +365,7 @@ class PSDFirKernel(object):
 
         return kernel, phase
 
-def generate_early_warning_psds():
+def generate_early_warning_psds(psd_path):
     """
     Definitely make this less hardcoded!!
     """
@@ -372,7 +373,7 @@ def generate_early_warning_psds():
     sample_rate = 0.2
     length = int(tlen * sample_rate)
     flen = length // 2 + 1
-    LISA_A_PSD = pycbc.psd.from_txt('A_psd_4_smooth.txt', flen, 1./tlen, 1./tlen, is_asd_file=False)
+    LISA_A_PSD = pycbc.psd.from_txt(os.path.join(psd_path, 'A_psd_4_smooth.txt'), flen, 1./tlen, 1./tlen, is_asd_file=False)
     psd_kern = PSDFirKernel()
 
     lisa_a_psd_lal = LISA_A_PSD.lal()
@@ -391,7 +392,7 @@ def generate_early_warning_psds():
     pycbc.fft.fft(lisa_a_zero_phase_kern_pycbc, lisa_a_zero_phase_kern_pycbc_fd)
     lisa_a_zero_phase_kern_pycbc_td = lisa_a_zero_phase_kern_pycbc
 
-    LISA_E_PSD = pycbc.psd.from_txt('E_psd_4_smooth.txt', flen, 1./tlen, 1./tlen, is_asd_file=False)
+    LISA_E_PSD = pycbc.psd.from_txt(os.path.join(psd_path, 'E_psd_4_smooth.txt'), flen, 1./tlen, 1./tlen, is_asd_file=False)
     psd_kern = PSDFirKernel()
 
     lisa_e_psd_lal = LISA_E_PSD.lal()
