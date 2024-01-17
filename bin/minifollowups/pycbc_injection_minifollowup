@@ -34,6 +34,13 @@ from pycbc.workflow.core import resolve_url_to_file
 from pycbc.io.hdf import SingleDetTriggers, HFile
 
 
+legal_distance_types = [
+    'decisive_optimal_snr',
+    'comb_optimal_snr',
+    'dec_chirp_distance'
+]
+
+
 def sort_injections(args, inj_group, missed):
     """Return an array of indices to sort the missed injections from most to
     least likely to be detected, according to a metric of choice.
@@ -42,7 +49,8 @@ def sort_injections(args, inj_group, missed):
     ----------
     args : object
         CLI arguments parsed by argparse. Must have a `distance_type` attribute
-        to specify how to sort.
+        to specify how to sort, which must be one of the values in
+        `legal_distance_types`.
     inj_group : h5py group object
         HDF5 group object containing the injection definition.
     missed : array
@@ -102,7 +110,10 @@ def sort_injections(args, inj_group, missed):
         sorter = dec_chirp_dist.argsort()
         return missed[sorter]
 
-    raise ValueError(f'Invalid injection sorting method "{args.distance_type}"')
+    raise ValueError(
+        f'Invalid injection sorting method "{args.distance_type}", ',
+        f'allowed methods are {', '.join(legal_distance_types)}'
+    )
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -137,6 +148,7 @@ parser.add_argument('--nearby-triggers-window', type=float, default=0.05,
                          "display, seconds. Default=0.05")
 parser.add_argument('--distance-type',
                     required=True,
+                    choices=legal_distance_types,
                     help="How to sort missed injections from most to least "
                          "likely to be detected")
 wf.add_workflow_command_line_group(parser)
