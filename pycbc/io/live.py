@@ -499,8 +499,6 @@ class CandidateForGraceDB(object):
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             colors = [source_color(label) for label in labels]
-            import pylab as pl
-
             fig, ax = pl.subplots()
             ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
                    textprops={'fontsize': 15})
