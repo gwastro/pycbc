@@ -111,7 +111,7 @@ if args.log_message is not None:
 
 gracedb.write_log(
     r['graceid'],
-    log_str
+    log_str,
     tag_name=['analyst_comments']
 )
 
