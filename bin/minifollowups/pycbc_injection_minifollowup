@@ -61,6 +61,14 @@ def sort_injections(args, inj_group, missed):
     missed_sorted : array
         Array of indices of missed injections sorted as requested.
     """
+    if not hasattr(args, 'distance_type'):
+        raise ValueError('Distance type not provided')
+    if args.distance_type not in legal_distance_types:
+        raise ValueError(
+            f'Invalid distance type "{args.distance_type}", '
+            f'allowed types are {", ".join(legal_distance_types)}'
+        )
+
     if 'optimal_snr' in args.distance_type:
         optimal_snrs = [
             inj_group[dsn][:][missed] for dsn in inj_group.keys()
@@ -109,11 +117,6 @@ def sort_injections(args, inj_group, missed):
         dec_chirp_dist = chirp_distance(dec_dist, mchirp)
         sorter = dec_chirp_dist.argsort()
         return missed[sorter]
-
-    raise ValueError(
-        f'Invalid injection sorting method "{args.distance_type}", ',
-        f'allowed methods are {', '.join(legal_distance_types)}'
-    )
 
 
 parser = argparse.ArgumentParser(description=__doc__)
