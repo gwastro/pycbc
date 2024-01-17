@@ -17,14 +17,19 @@
 This modules contains functions for reading in data from frame files or caches
 """
 
-import lalframe, logging
-import lal
-import numpy
+import logging
+import warnings
+import os.path
+import glob
+import time
 import math
-import os.path, glob, time
+import re
+from urllib.parse import urlparse
+import numpy
+import lalframe
+import lal
 from gwdatafind import find_urls as find_frame_urls
 import pycbc
-from urllib.parse import urlparse
 from pycbc.types import TimeSeries, zeros
 
 
@@ -256,13 +261,15 @@ def read_frame(location, channels, start_time=None,
     else:
         return _read_channel(channels, stream, start_time, duration)
 
-def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
-    """Return the paths to a span of frame files
+def frame_paths(
+    frame_type, start_time, end_time, server=None, url_type='file', site=None
+):
+    """Return the paths to a span of frame files.
 
     Parameters
     ----------
     frame_type : string
-        The string representation of the frame type (ex. 'H1_ER_C00_L1')
+        The string representation of the frame type (ex. 'H1_ER_C00_L1').
     start_time : int
         The start time that we need the frames to span.
     end_time : int
@@ -274,6 +281,11 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
         Returns only frame URLs with a particular scheme or head such
         as "file" or "https". Default is "file", which queries locally
         stored frames. Option can be disabled if set to None.
+    site : string, optional
+        One-letter string specifying which site you want data from (H, L, V,
+        etc).  If not given, the site is assumed to be the first letter of
+        `frame_type`, which is usually (but not always) a safe assumption.
+
     Returns
     -------
     paths : list of paths
@@ -283,22 +295,73 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     --------
     >>> paths = frame_paths('H1_LDAS_C02_L2', 968995968, 968995968+2048)
     """
-    site = frame_type[0]
+    if site is None:
+        # this case is tolerated for backward compatibility
+        site = frame_type[0]
+        warnings.warn(
+            f'Guessing site {site} from frame type {frame_type}',
+            DeprecationWarning
+        )
     cache = find_frame_urls(site, frame_type, start_time, end_time,
                             urltype=url_type, host=server)
     return [urlparse(entry).path for entry in cache]
+
+
+def get_site_from_type_or_channel(frame_type, channels):
+    """Determine the site for querying gwdatafind (H, L, V, etc) based on
+    substrings of the frame type and channel(s).
+
+    The type should begin with S: or SN:, in which case S is taken as the
+    site.  Otherwise, the same is done with the channel (with the first
+    channel if more than one are given). If that also fails, the site is
+    taken to be the first letter of the frame type, which is usually
+    (but not always) a correct assumption.
+
+    Parameters
+    ----------
+    frame_type : string
+        The frame type, ideally prefixed by the site indicator.
+    channels : string or list of strings
+        The channel name or names.
+
+    Returns
+    -------
+    site : string
+        The site letter.
+    frame_type : string
+        The frame type with the site prefix (if any) removed.
+    """
+    site_re = '^([^:])[^:]?:'
+    m = re.match(site_re, frame_type)
+    if m:
+        return m.groups(1)[0], frame_type[m.end():]
+    chan = channels
+    if isinstance(chan, list):
+        chan = channels[0]
+    m = re.match(site_re, chan)
+    if m:
+        return m.groups(1)[0], frame_type
+    warnings.warn(
+        f'Guessing site {frame_type[0]} from frame type {frame_type}',
+        DeprecationWarning
+    )
+    return frame_type[0], frame_type
+
 
 def query_and_read_frame(frame_type, channels, start_time, end_time,
                          sieve=None, check_integrity=False):
     """Read time series from frame data.
 
-    Query for the locatin of physical frames matching the frame type. Return
+    Query for the location of physical frames matching the frame type. Return
     a time series containing the channel between the given start and end times.
 
     Parameters
     ----------
     frame_type : string
-        The type of frame file that we are looking for.
+        The type of frame file that we are looking for. The string should begin
+        with S: or SN:, in which case S is taken as the site to query. If this
+        is not the case, the site will be guessed from the channel name or from
+        the type in a different way, which may not work.
     channels : string or list of strings
         Either a string that contains the channel name or a list of channel
         name strings.
@@ -324,6 +387,8 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     >>> ts = query_and_read_frame('H1_LDAS_C02_L2', 'H1:LDAS-STRAIN',
     >>>                               968995968, 968995968+2048)
     """
+    site, frame_type = get_site_from_type_or_channel(frame_type, channels)
+
     # Allows compatibility with our standard tools
     # We may want to place this into a higher level frame getting tool
     if frame_type in ['LOSC_STRAIN', 'GWOSC_STRAIN']:
@@ -337,17 +402,23 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
         from pycbc.frame.gwosc import read_frame_gwosc
         return read_frame_gwosc(channels, start_time, end_time)
 
-    logging.info('querying datafind server')
-    paths = frame_paths(frame_type, int(start_time), int(numpy.ceil(end_time)))
-    logging.info('found files: %s' % (' '.join(paths)))
-    return read_frame(paths, channels,
-                      start_time=start_time,
-                      end_time=end_time,
-                      sieve=sieve,
-                      check_integrity=check_integrity)
+    logging.info('Querying datafind server')
+    paths = frame_paths(
+        frame_type,
+        int(start_time),
+        int(numpy.ceil(end_time)),
+        site=site
+    )
+    logging.info('Found frame file paths: %s', ' '.join(paths))
+    return read_frame(
+        paths,
+        channels,
+        start_time=start_time,
+        end_time=end_time,
+        sieve=sieve,
+        check_integrity=check_integrity
+    )
 
-__all__ = ['read_frame', 'frame_paths',
-           'query_and_read_frame']
 
 def write_frame(location, channels, timeseries):
     """Write a list of time series to a single frame file.
@@ -887,3 +958,15 @@ class iDQBuffer(object):
         """
         self.idq.null_advance(blocksize)
         self.idq_state.null_advance(blocksize)
+
+
+__all__ = [
+    'locations_to_cache',
+    'read_frame',
+    'query_and_read_frame',
+    'frame_paths',
+    'write_frame',
+    'DataBuffer',
+    'StatusBuffer',
+    'iDQBuffer'
+]
