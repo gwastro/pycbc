@@ -963,6 +963,10 @@ class ForegroundTriggers(object):
                     val = sngl_col_vals[name][ifo][0][idx]
                     if name == 'end_time':
                         sngl.end = LIGOTimeGPS(val)
+                    elif name == 'chisq':
+                        # Use reduced chisquared to be consistent with Live
+                        dof = 2. * sngl_col_vals['chisq_dof'][ifo][0][idx] - 2.
+                        sngl.chisq = val / dof
                     else:
                         setattr(sngl, name, val)
                 for name in bank_col_names:
