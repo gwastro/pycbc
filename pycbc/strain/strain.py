@@ -504,8 +504,10 @@ def insert_strain_option_group(parser, gps_times=True):
     # Use datafind to get frame files
     data_reading_group.add_argument("--frame-type",
                             type=str,
+                            metavar="S:TYPE",
                             help="(optional), replaces frame-files. Use datafind "
-                                 "to get the needed frame file(s) of this type.")
+                                 "to get the needed frame file(s) of this type "
+                                 "from site S.")
     # Filter frame files by URL
     data_reading_group.add_argument("--frame-sieve",
                             type=str,
@@ -704,7 +706,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                             help="Store of time series data in hdf format")
     # Use datafind to get frame files
     data_reading_group_multi.add_argument("--frame-type", type=str, nargs="+",
-                                    action=MultiDetOptionAction,
+                                    action=MultiDetOptionActionSpecial,
                                     metavar='IFO:FRAME_TYPE',
                                     help="(optional) Replaces frame-files. "
                                          "Use datafind to get the needed frame "
@@ -1975,9 +1977,12 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             idq_state_channel = ':'.join([ifo, args.idq_state_channel[ifo]])
 
         if args.frame_type:
-            frame_src = pycbc.frame.frame_paths(args.frame_type[ifo],
-                                                args.start_time,
-                                                args.end_time)
+            frame_src = pycbc.frame.frame_paths(
+                args.frame_type[ifo],
+                args.start_time,
+                args.end_time,
+                site=ifo[0]
+            )
         else:
             frame_src = [args.frame_src[ifo]]
         strain_channel = ':'.join([ifo, args.channel_name[ifo]])
