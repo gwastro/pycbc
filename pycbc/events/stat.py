@@ -81,9 +81,12 @@ class Stat(object):
 
         self.sngl_ranking = sngl_ranking
         self.sngl_ranking_kwargs = {}
+        self.kwargs = {}
         for key, value in kwargs.items():
             if key.startswith('sngl_ranking_'):
                 self.sngl_ranking_kwargs[key[13:]] = value
+            else:
+                self.kwargs = value
 
     def get_sngl_ranking(self, trigs):
         """
@@ -123,8 +126,7 @@ class Stat(object):
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise NotImplementedError(err_msg)
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -208,8 +210,7 @@ class QuadratureSumStatistic(Stat):
         """
         return self.get_sngl_ranking(trigs)
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -663,8 +664,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -711,8 +711,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if not self.has_hist:
             self.get_hist()
 
-        lim_stat = [b['snglstat'] for a, b in sngls_list if a == limifo][0]
-        s1 = thresh ** 2. - lim_stat ** 2.
+        fixed_stat = [b['snglstat'] for a, b in sngls_list if a != limifo][0]
+        s1 = thresh ** 2. - fixed_stat ** 2.
         # Assume best case scenario and use maximum signal rate
         s1 -= 2. * self.hist_max
         s1[s1 < 0] = 0
@@ -906,8 +906,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         return self.lognoiserate(trigs)
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -1041,8 +1040,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for single detector candidates
 
@@ -1170,8 +1168,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -1490,8 +1487,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         singles['benchmark_logvol'] = self.benchmark_logvol[self.curr_tnum]
         return numpy.array(singles, ndmin=1)
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for single detector candidates
 
@@ -1741,8 +1737,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         logr_s += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return logr_s
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -1762,8 +1757,7 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         """
         rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
             self,
-            single_info,
-            **kwargs)
+            single_info)
         rank_sngl += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return rank_sngl
 
@@ -1918,8 +1912,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
 
         return logr_s
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Calculate the statistic for a single detector candidate
 
@@ -1936,8 +1929,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         """
         rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
             self,
-            single_info,
-            **kwargs)
+            single_info)
         rank_sngl += self.kde_ratio()
         return rank_sngl
 
@@ -2205,15 +2197,13 @@ class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
         return ExpFitFgBgKDEStatistic.logsignalrate(self, stats, shift,
                                                     to_shift)
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
+    def rank_stat_single(self, single_info):
         """
         Inherited, see docstring for ExpFitFgBgKDEStatistic.rank_stat_single
         """
         return ExpFitFgBgKDEStatistic.rank_stat_single(
             self,
-            single_info,
-            **kwargs)
+            single_info)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
         """
