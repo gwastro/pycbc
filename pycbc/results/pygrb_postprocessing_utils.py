@@ -825,5 +825,4 @@ def template_hash_to_id(trigger_file, bank_file):
     for idx, hash in enumerate(hashes):
         matches = numpy.where(trig_hashes == hash)
         trig_ids[matches] = idx
-    # trigs.create_dataset("template_id", data=trig_ids)
     return trig_ids
