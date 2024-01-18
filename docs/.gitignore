@@ -1,5 +1,9 @@
 _build/
-_include/
+_include/*.gwf
+_include/*.rst
+_include/*.hdf
+_include/*.png
+_include/*.ini
 pycbc-build/
 workflow/planning/
 workflow/pycbc-submit-dax-log.txt
