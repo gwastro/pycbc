@@ -151,7 +151,7 @@ for tnum in template_ids:
     sds = rank_method.single(trigs)[trigger_keep_ids]
     stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)
-    trigger_times = sds['end_time']
+    trigger_times = trigs['end_time'][:][trigger_keep_ids]
     if args.cluster_window:
         cid = coinc.cluster_over_time(stat_t, trigger_times,
                                       args.cluster_window)

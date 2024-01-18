@@ -680,7 +680,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        return single_info[1]
+        return single_info[1]['snglstat']
 
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
                         **kwargs):  # pylint:disable=unused-argument
@@ -709,8 +709,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if not self.has_hist:
             self.get_hist()
 
-        lim_stat = [b['snglstat'] for a, b in sngls_list if a == limifo][0]
-        s1 = thresh ** 2. - lim_stat ** 2.
+        fixed_stat = [b['snglstat'] for a, b in sngls_list if a != limifo][0]
+        s1 = thresh ** 2. - fixed_stat ** 2.
         # Assume best case scenario and use maximum signal rate
         s1 -= 2. * self.hist_max
         s1[s1 < 0] = 0
@@ -1006,6 +1006,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
         self.single_increasing = True
+        self.single_dtype = numpy.float32
 
     def use_alphamax(self):
         """
@@ -1056,9 +1057,9 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             The array of single detector statistics
         """
         if self.single_increasing:
-            sngl_multiifo = single_info[1]['snglstat']
+            sngl_multiifo = single_info[1]
         else:
-            sngl_multiifo = -1. * single_info[1]['snglstat']
+            sngl_multiifo = -1. * single_info[1]
         return sngl_multiifo
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
@@ -2182,11 +2183,11 @@ statistic_dict = {
     'quadsum': QuadratureSumStatistic,
     'single_ranking_only': QuadratureSumStatistic,
     'phasetd': PhaseTDStatistic,
-    'exp_fit_stat': ExpFitStatistic,
+    #'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
-    'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
+    #'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'dq_phasetd_exp_fit_fgbg_norm': DQExpFitFgBgNormStatistic,
-    'exp_fit_bg_rate': ExpFitBgRateStatistic,
+    #'exp_fit_bg_rate': ExpFitBgRateStatistic,
     'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
     'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
     'phasetd_exp_fit_fgbg_kde': ExpFitFgBgKDEStatistic,
