@@ -128,16 +128,6 @@ if args.cluster_window is not None:
   logging.info('Clustering events over %s s window within each template',
                args.cluster_window)
 
-extra_kwargs = {}
-for inputstr in args.statistic_keywords:
-    try:
-        key, value = inputstr.split(':')
-        extra_kwargs[key] = value
-    except ValueError:
-        err_txt = "--statistic-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(args.statistic_keywords)
-        raise ValueError(err_txt)
 
 loudest_keep_vals = args.loudest_keep_values.strip('[]').split(',')
 
@@ -187,7 +177,7 @@ for i, tnum in enumerate(template_ids):
     sds = rank_method.single(trigs)[trigger_keep_ids]
     stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)
-    trigger_times = sds['end_time']
+    trigger_times = trigs['end_time'][:][trigger_keep_ids]
     if args.cluster_window is not None:
         cid = coinc.cluster_over_time(stat_t, trigger_times,
                                       args.cluster_window)
