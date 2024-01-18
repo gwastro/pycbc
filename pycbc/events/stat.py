@@ -682,7 +682,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        return single_info[1]
+        return single_info[1]['snglstat']
 
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
                         **kwargs):  # pylint:disable=unused-argument
@@ -1056,9 +1056,9 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             The array of single detector statistics
         """
         if self.single_increasing:
-            sngl_multiifo = single_info[1]['snglstat']
+            sngl_multiifo = single_info[1]
         else:
-            sngl_multiifo = -1. * single_info[1]['snglstat']
+            sngl_multiifo = -1. * single_info[1]
         return sngl_multiifo
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
