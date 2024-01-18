@@ -36,6 +36,7 @@ from ligo import segments
 from ligo.segments.utils import fromsegwizard
 
 from pycbc import __version__
+from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -206,6 +207,11 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
                         ifo_event_id_pos = position[network_event_id_names[dset]]
                     else:
                         ifo_event_id_pos = None
+
+                    # Template ID becomes unhelpful in the merged file.
+                    # This will be handled separately.
+                    if "template_id" in dset:
+                        continue
 
                     # merge dataset
                     position[dset] += _merge_dataset(
@@ -424,6 +430,10 @@ parser.add_argument(
     help="read in listed trigger files",
 )
 parser.add_argument(
+    "--bank-file",
+    help="full template bank file for mapping hashes to ids",
+)
+parser.add_argument(
     "-o",
     "--output-dir",
     default=os.getcwd(),
@@ -512,6 +522,11 @@ else:
         verbose=args.verbose,
         **compression_kw
     )
+
+vprint("-- Mapping template hashes to ids")
+ids = template_hash_to_id(trigger_file=outfile, bank_file=args.bank_file)
+with h5py.File(outfile, "a") as h5f:
+    h5f["network/template_id"] = ids
 
 vprint("-- Binning events")
 bin_events(outfile, bins, args.output_dir, args.user_tag, verbose=args.verbose)
