@@ -135,7 +135,6 @@ Heterodyne / Relative Models
     Supported Marginalizations: distance, coa_phase (dominant mode), polarization
     +++
     Earth Rotation:✅ LISA:✅ Higher Modes:❌
-    :ref:`Example <relative_example>`
 
 .. card:: Relative Time
 
