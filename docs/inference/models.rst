@@ -87,7 +87,6 @@ Standard models with full waveform generation
     Supported Marginalizations: tc (time), distance, coa_phase (dominant mode), polarization, ra dec
     +++
     Earth Rotation:❌ LISA:❌ Higher Modes:✅
-    :ref:`Example <marginalized_time_example>`
 
 .. card:: Marginalized Higher Mode Phase
 
