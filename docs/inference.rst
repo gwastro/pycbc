@@ -513,7 +513,6 @@ Examples
     inference/examples/single.rst
     inference/examples/relative.rst
     inference/examples/hierarchical.rst
-    inference/examples/sampler_platter.rst
     inference/models.rst
 
 ===============================================
