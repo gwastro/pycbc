@@ -184,7 +184,6 @@ Extrinsic Parameter Only Models
     Supported Marginalizations: tc (time), distance, coa_phase (dominant mode), polarization, ra dec
     +++
     Earth Rotation:❌ LISA:❌ Higher Modes:❌
-    :ref:`Example <single_template_examples>`
 
 =================================================
 Composite Models
