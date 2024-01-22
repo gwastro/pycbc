@@ -24,6 +24,8 @@
 import sys
 import os
 import logging
+
+import h5py
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
@@ -105,6 +107,8 @@ parser.add_argument("--injection-set-name", action="store", type=str,
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
+parser.add_argument("--bank-file", action="store", type=str,
+                    help="Location of the full template bank used.")
 ppu.pygrb_add_injmc_opts(parser)
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
@@ -231,9 +235,9 @@ if onsource_file:
     logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
 
     # Calculate chirp mass values
-    # FIXME: This should be done by looking up the template within the template bank
-    on_mchirp = mchirp_from_mass1_mass2(on_trigs['network/mass1'][:],
-                                        on_trigs['network/mass2'][:])
+    bank_file = h5py.File(opts.bank_file, 'r')
+    on_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][on_trigs['network/template_id']],
+                                        bank_file['mass2'][on_trigs['network/template_id']])
 
     # Set loudest event arrays
     #loud_on_bestnr_trigs = None
