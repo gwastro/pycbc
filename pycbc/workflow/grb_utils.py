@@ -331,7 +331,6 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         node.add_input_list_opt("--input-files", insp_files)
         node.add_opt("--user-tag", "PYGRB")
         node.add_opt("--num-trials", self.num_trials)
-        # FIXME: Find the template bank file
         node.add_opt("--bank-file", bank_files)
         # Prepare output file tag
         user_tag = f"PYGRB_GRB{self.trigger_name}"
