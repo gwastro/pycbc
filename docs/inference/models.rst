@@ -196,8 +196,6 @@ Composite Models
     The hierachical model is a container for submodels. Each submodel
     makes an indepedent contribution to an overall likelihood function.
 
-    See :ref:`the full page on the hierarchical model <hierachical_model>`.
-
 .. card:: Multiple Signal
 
     ``'multi_signal'`` :py:class:`pycbc.inference.models.hierarchical.MultiSignalModel`
