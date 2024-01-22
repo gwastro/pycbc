@@ -233,7 +233,7 @@ def get_sky_grid_scale(
     return out
 
 
-def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
+def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_files, insp_files,
                             inj_files, inj_insp_files, inj_tags):
     """
     Generate post-processing section of PyGRB offline workflow
@@ -258,7 +258,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, insp_files,
     job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
     node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
-                                    insp_files, pp_dir)
+                                    insp_files, pp_dir, bank_files)
     wf.add_node(node)
     pp_outs.append(trig_files)
 
@@ -321,7 +321,7 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         self.num_trials = int(cp.get('trig_combiner', 'num-trials'))
 
     def create_node(self, ifo_tag, seg_dir, segment, insp_files,
-                    out_dir, tags=None):
+                    out_dir, bank_files, tags=None):
         node = Node(self)
         node.add_opt('--verbose')
         node.add_opt("--ifo-tag", ifo_tag)
@@ -331,6 +331,8 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         node.add_input_list_opt("--input-files", insp_files)
         node.add_opt("--user-tag", "PYGRB")
         node.add_opt("--num-trials", self.num_trials)
+        # FIXME: Find the template bank file
+        node.add_opt("--bank-file", bank_files)
         # Prepare output file tag
         user_tag = f"PYGRB_GRB{self.trigger_name}"
         if tags:
