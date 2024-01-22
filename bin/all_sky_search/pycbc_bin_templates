@@ -50,5 +50,7 @@ with h5.File(args.output_file, 'w') as f:
         bin_tids = bin_dict[bin_name]
         grp = ifo_grp.create_group(bin_name)
         grp['tids'] = bin_tids
+    f.attrs['f_lower'] = args.f_lower
+    f.attrs['background_bins'] = args.background_bins
 
 logging.info('Finished')

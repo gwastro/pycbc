@@ -76,10 +76,9 @@ with HFile(args.trig_file, 'r') as trig_file:
     if args.gating_windows:
         logging.info('Getting gated times')
         try:
-            gating_key = f'{ifo}/gating'
-            gating_types = trig_file[gating_key].keys()
+            gating_types = trig_file[f'{ifo}/gating'].keys()
             for gt in gating_types:
-                gate_times += list(trig_file[f'{gating_key}/{gt}/time'][:])
+                gate_times += list(trig_file[f'{ifo}/gating/{gt}/time'][:])
             gate_times = np.unique(gate_times)
         except KeyError:
             logging.warning('No gating found in trigger file')
@@ -126,15 +125,7 @@ analysis_segs = select_segments_by_definer(
     segment_name=args.analysis_segment_name,
     ifo=ifo)
 
-
-# utility function to compute segment list durations
-def segs_duration(segs):
-    starts, ends = segments_to_start_end(segs)
-    durs = ends - starts
-    return np.sum(durs)
-
-
-livetime = segs_duration(analysis_segs)
+livetime = analysis_segs.abs()
 
 # get flag segments
 flag_segs = select_segments_by_definer(args.flag_file,
@@ -192,9 +183,9 @@ with h5.File(args.output_file, 'w') as f:
 
         # calculate the dq rates in this bin
         dq_rates = np.zeros(3, dtype=np.float64)
-        for state in [0, 1, 2]:
+        for state, segs in dq_state_segs_dict.items():
             frac_eff = np.mean(trig_states == state)
-            frac_dt = segs_duration(dq_state_segs_dict[state]) / livetime
+            frac_dt = segs.abs() / livetime
             dq_rates[state] = frac_eff / frac_dt
         bin_grp['dq_rates'] = dq_rates
 
