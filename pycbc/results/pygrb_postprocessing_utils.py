@@ -821,7 +821,7 @@ def template_hash_to_id(trigger_file, bank_file):
     hashes = bank['template_hash'][:]
     ifos = [k for k in trigs.keys() if k != 'network']
     trig_hashes = trigs[f'{ifos[0]}/template_hash'][:]
-    trig_ids = numpy.zeros(trig_hashes.shape[0])
+    trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
     for idx, hash in enumerate(hashes):
         matches = numpy.where(trig_hashes == hash)
         trig_ids[matches] = idx
