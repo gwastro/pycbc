@@ -29,8 +29,8 @@ parser.add_argument("--analysis-segment-file", required=True)
 parser.add_argument("--analysis-segment-name", required=True)
 parser.add_argument("--gating-windows", nargs='+',
                     action=MultiDetOptionAction,
-                    help="Seconds to be reweight before and after the central"
-                         "time of each gate. Given as detector-values pairs,"
+                    help="Seconds to reweight before and after the central"
+                         "time of each gate. Given as detector-values pairs, "
                          "e.g. H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--stat-threshold", type=float, default=1.,
                     help="Only consider triggers with --sngl-ranking value "

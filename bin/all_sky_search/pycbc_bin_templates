@@ -13,7 +13,7 @@ from pycbc.events import background_bin_from_string
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
+parser.add_argument('--verbose', action="count")
 parser.add_argument("--ifo", type=str, required=True)
 parser.add_argument("--f-lower", type=float, default=15.,
                     help='Enforce a uniform low frequency cutoff to '
