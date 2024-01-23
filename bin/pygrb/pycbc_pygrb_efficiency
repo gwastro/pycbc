@@ -302,7 +302,7 @@ if do_injections:
 
     # Construct conditions for injection:
     # 1) found louder than background,
-    zero_fap = np.zeros(len(injs['network/tc'])).astype(bool)
+    zero_fap = np.zeros(len(injs['network/end_time_gc'])).astype(bool)
     zero_fap_cut = injs['network/reweighted_snr'] > max_bestnr
     zero_fap = zero_fap | (zero_fap_cut)
 
