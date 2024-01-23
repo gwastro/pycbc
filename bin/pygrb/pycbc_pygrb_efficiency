@@ -303,7 +303,7 @@ if do_injections:
     # Construct conditions for injection:
     # 1) found louder than background,
     zero_fap = np.zeros(len(injs['network/end_time_gc'])).astype(bool)
-    zero_fap_cut = injs['network/reweighted_snr'] > max_bestnr
+    zero_fap_cut = injs['network/reweighted_snr'][:] > max_bestnr
     zero_fap = zero_fap | (zero_fap_cut)
 
     # 2) found (bestnr > 0) but not louder than background (non-zero FAP)
@@ -317,7 +317,7 @@ if do_injections:
     g_ifar['bestnr'] = injs['network/reweighted_snr'][nonzero_fap]
     g_ifar['stat'] = np.zeros([len(g_ifar['bestnr'])])
     for ix, (mc, bestnr) in \
-                enumerate(zip(injs['network/mchirp'][nonzero_fap], g_ifar['bestnr'])):
+                enumerate(zip(found_trig_mchirp[nonzero_fap], g_ifar['bestnr'])):
         g_ifar['stat'][ix] = (full_time_veto_max_bestnr > bestnr).sum()
     g_ifar['stat'] = g_ifar['stat'] / total_trials
 
@@ -341,8 +341,8 @@ if do_injections:
     for ifo in ifos:
         antenna = Detector(ifo)
         f_resp[ifo] = ppu.get_antenna_responses(antenna,
-                                                injs['found/ra'], injs['found/dec'],
-                                                injs['found/tc'])
+                                                injs['found/ra'][:], injs['found/dec'][:],
+                                                injs['found/tc'][:])
 
     inj_sigma_mult = (np.asarray(list(inj_sigma.values())) *
                       np.asarray(list(f_resp.values())))
