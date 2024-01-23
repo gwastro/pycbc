@@ -238,8 +238,8 @@ if onsource_file:
     logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
 
     # Calculate chirp mass values
-    on_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][on_trigs['network/template_id']],
-                                        bank_file['mass2'][on_trigs['network/template_id']])
+    on_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][:][on_trigs['network/template_id']],
+                                        bank_file['mass2'][:][on_trigs['network/template_id']])
 
     # Set loudest event arrays
     #loud_on_bestnr_trigs = None
@@ -296,8 +296,8 @@ if do_injections:
     logging.info("Missed/found injections/triggers loaded.")
 
     # Calculate quantities not included in trigger files, such as chirp mass
-    found_trig_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][injs['network/template_id']],
-                                                bank_file['mass2'][injs['network/template_id']])
+    found_trig_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][:][injs['network/template_id']],
+                                                bank_file['mass2'][:][injs['network/template_id']])
 
 
     # Construct conditions for injection:
