@@ -97,6 +97,8 @@ def read_hdf5_triggers(inputfiles, verbose=False):
         elif name.startswith("network") and \
             NETWORK_IFO_EVENT_ID_REGEX.match(name):
                 return
+        elif "template_id" in name:
+            return
         else:
             shape = obj.shape
             dtype = obj.dtype
@@ -127,11 +129,9 @@ def read_hdf5_triggers(inputfiles, verbose=False):
     # copy dataset contents
     for filename in inputfiles:
         with h5py.File(filename, 'r') as h5in:
-            # Skipping emtpy files
+            # Skipping empty files
             if len(h5in['network']['end_time_gc'][:]):
                 for dset in datasets:
-                    if "template_id" in dset:
-                        continue
                     data = h5in[dset][:]
                     size = data.shape[0]
                     pos = position[dset]
