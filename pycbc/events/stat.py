@@ -47,6 +47,7 @@ _allowed_statistic_features = [
     'normalize_fit_rate',
 ]
 
+
 class Stat(object):
     """Base class which should be extended to provide a statistic"""
 
@@ -201,7 +202,7 @@ class Stat(object):
         err_msg += "sub-classes. You shouldn't be seeing this error!"
         raise NotImplementedError(err_msg)
 
-    def rank_stat_single(self, single_info):
+    def rank_stat_single(self, single_info): # pylint:disable=unused-argument
         """
         Calculate the statistic for a single detector candidate
 
@@ -617,7 +618,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
     def logsignalrate(self, stats, shift, to_shift):
         """
-        Calculate the normalized log rate density of coincident signals via lookup
+        Calculate the normalized log rate density of coincident signals
+        via lookup
 
         Parameters
         ----------
@@ -851,7 +853,8 @@ class ExpFitStatistic(PhaseTDStatistic):
     Statistic approximates the negative log noise coinc rate density per
     template over single-ifo newsnr values.
 
-    Extra features can be added by supplying keyword arguments when initialising
+    Extra features can be added by supplying keyword arguments when
+    initialising.
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
@@ -900,7 +903,7 @@ class ExpFitStatistic(PhaseTDStatistic):
         self.min_snr = numpy.inf
 
         # Some modifiers for the statistic to get it into a nice range
-        self.benchmark_lograte= self.kwargs.get('benchmark_lograte', -14.6)
+        self.benchmark_lograte = self.kwargs.get('benchmark_lograte', -14.6)
         self.min_stat = self.kwargs.get('minimum_statistic_cutoff', -30.)
 
         # Go through the keywords and add class information as needed:
@@ -1055,16 +1058,13 @@ class ExpFitStatistic(PhaseTDStatistic):
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
 
-        analysis_time = float(coeff_file.attrs['analysis_time']) if \
-            self.kwargs['normalize_fit_rate'] else 1
-
         fits_by_tid_dict = {}
         fits_by_tid_dict['smoothed_fit_coeff'] = \
             coeff_file['fit_coeff'][:][tid_sort]
         fits_by_tid_dict['smoothed_rate_above_thresh'] = \
-            coeff_file['count_above_thresh'][:][tid_sort].astype(float) / analysis_time
+            coeff_file['count_above_thresh'][:][tid_sort].astype(float)
         fits_by_tid_dict['smoothed_rate_in_template'] = \
-            coeff_file['count_in_template'][:][tid_sort].astype(float) / analysis_time
+            coeff_file['count_in_template'][:][tid_sort].astype(float)
         if self.kwargs['sensitive_volume']:
             fits_by_tid_dict['median_sigma'] = \
                 coeff_file['median_sigma'][:][tid_sort].astype(float)
@@ -1075,9 +1075,16 @@ class ExpFitStatistic(PhaseTDStatistic):
             fits_by_tid_dict['fit_by_fit_coeff'] = \
                 coeff_fbt['fit_coeff'][:][tid_sort]
             fits_by_tid_dict['fit_by_rate_above_thresh'] = \
-                coeff_fbt['count_above_thresh'][:][tid_sort].astype(float) / analysis_time
+                coeff_fbt['count_above_thresh'][:][tid_sort].astype(float)
             fits_by_tid_dict['fit_by_rate_in_template'] = \
-                coeff_file['count_in_template'][:][tid_sort].astype(float) / analysis_time
+                coeff_file['count_in_template'][:][tid_sort].astype(float)
+
+        if self.kwargs['normalize_fit_rate']:
+             analysis_time = float(coeff_file.attrs['analysis_time'])
+             fits_by_tid_dict['smoothed_rate_above_thresh'] /= analysis_time
+             fits_by_tid_dict['smoothed_rate_in_template'] /= analysis_time
+             fits_by_tid_dict['fit_by_rate_above_thresh'] /= analysis_time
+             fits_by_tid_dict['fit_by_rate_in_template'] /= analysis_time
 
         # Keep the fit threshold in fits_by_tid
         fits_by_tid_dict['thresh'] = coeff_file.attrs['stat_threshold']
@@ -1292,6 +1299,16 @@ class ExpFitStatistic(PhaseTDStatistic):
         return numpy.array(singles, ndmin=1)
 
     def sensitive_volume_factor(self, sngls):
+        """
+        Determine the factor for different network sensitivities
+
+        Assuming a homogeneous distribution of sources, the signal rate
+        should be given by the volume of the sphere to which we are
+        sensitive.
+
+        This is then the cube of the sensitive distance (sigma), divided
+        by a benchmark volume.
+        """
         # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
         network_sigmasq = numpy.amin(
@@ -1392,14 +1409,14 @@ class ExpFitStatistic(PhaseTDStatistic):
                 self.hist_ifos,
                 kwargs['time_addition']
             )
-            # Volume is the allowed time difference window, multiplied by 2pi for
-            # each phase difference dimension and by allowed range of SNR ratio
-            # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
-            # for both phase and SNR
+            # Volume is the allowed time difference window, multiplied by 2pi
+            # for each phase difference dimension and by allowed range of SNR
+            # ratio for each SNR ratio dimension : there are (n_ifos - 1)
+            # dimensions for both phase and SNR
             n_ifos = len(self.hist_ifos)
+            snr_range = (self.srbmax - self.srbmin) * self.swidth
             hist_vol = noise_twindow * \
-                (2. * numpy.pi * (self.srbmax - self.srbmin) * self.swidth) ** \
-                (n_ifos - 1)
+                (2. * numpy.pi * snr_range) ** (n_ifos - 1)
             # Noise PDF is 1/volume, assuming a uniform distribution of noise
             # coincs
             ln_noise_rate -= numpy.log(hist_vol)
@@ -1509,16 +1526,6 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         self.single_increasing = True
         self.single_dtype = numpy.float32
 
-    def use_alphamax(self):
-        """
-        Compute the reference alpha from the fit files.
-
-        Use the harmonic mean of the maximum individual ifo slopes as the
-        reference value of alpha.
-        """
-        inv_alphas = [1. / self.alphamax[i] for i in self.bg_ifos]
-        self.alpharef = 1. / (sum(inv_alphas) / len(inv_alphas))
-
     def single(self, trigs):
         """
         Calculate the necessary single detector information
@@ -1614,6 +1621,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         self._check_coinc_lim_subclass(allowed_names)
 
         return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1] for sngl in s)
+
 
 statistic_dict = {
     'quadsum': QuadratureSumStatistic,
