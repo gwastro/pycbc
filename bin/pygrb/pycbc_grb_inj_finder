@@ -349,7 +349,7 @@ with h5py.File(outfilename, "w") as h5out:
     ids = template_hash_to_id(h5out, args.bank_file)
     h5out.create_dataset(
         "network/template_id",
-        data=FieldArray(ids),
+        data=ids,
         compression="gzip",
         compression_opts=9,
     )
