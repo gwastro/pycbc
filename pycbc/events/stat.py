@@ -2090,10 +2090,9 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         except AttributeError:
             tnum = trigs['template_id']
             ifo = trigs['ifo']
-            unq = numpy.unique(ifo)
-            assert len(unq) == 1
+            assert len(numpy.unique(ifo)) == 1
             # Should be exactly one ifo provided
-            ifo = unq[0]
+            ifo = ifo[0]
 
         dq_val = numpy.zeros(len(dq_state))
 
