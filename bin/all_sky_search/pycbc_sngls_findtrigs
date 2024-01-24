@@ -121,8 +121,6 @@ logging.info("%d out of %d templates kept after applying template cuts",
 logging.info('Clustering events over %s s window within each template',
              args.cluster_window)
 
-
-
 for tnum in template_ids:
     tids_uncut = trigs.set_template(tnum)
 
