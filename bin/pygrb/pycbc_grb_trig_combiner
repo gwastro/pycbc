@@ -226,6 +226,9 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
             while search_datasets:
                 dataset_names.remove(search_datasets.pop())
 
+        template_ids = template_hash_to_id(trigger_file=h5out, bank_path=args.bank_file)
+        h5out.create_dataset("network/template_id", data=template_ids)
+
     if verbose:
         print("Merged triggers written to {}".format(outputfile))
     return outputfile
@@ -525,11 +528,6 @@ else:
         verbose=args.verbose,
         **compression_kw
     )
-
-vprint("-- Mapping template hashes to ids")
-ids = template_hash_to_id(trigger_file=outfile, bank_file=args.bank_file)
-with h5py.File(outfile, "a") as h5f:
-    h5f["network/template_id"] = ids
 
 vprint("-- Binning events")
 bin_events(outfile, bins, args.output_dir, args.user_tag, verbose=args.verbose)

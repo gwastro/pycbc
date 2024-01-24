@@ -806,21 +806,20 @@ def get_coinc_snr(trigs_or_injs, ifos):
     return coinc_snr
 
 
-def template_hash_to_id(trigger_file, bank_file):
+def template_hash_to_id(trigger_file, bank_path):
     """
     This function converts the template hashes from a trigger file
     into `template_id`s that represent indices of the
     templates within the bank.
     Parameters
     ----------
-    trigger_file: filepath for triggers
+    trigger_file: h5py File object for trigger file
     bank_file: filepath for template bank
     """
-    trigs = h5py.File(trigger_file, "r")
-    bank = h5py.File(bank_file, "r")
+    bank = h5py.File(bank_path, "r")
     hashes = bank['template_hash'][:]
-    ifos = [k for k in trigs.keys() if k != 'network']
-    trig_hashes = trigs[f'{ifos[0]}/template_hash'][:]
+    ifos = [k for k in trigger_file.keys() if k != 'network']
+    trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
     trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
     for idx, hash in enumerate(hashes):
         matches = numpy.where(trig_hashes == hash)
