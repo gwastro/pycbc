@@ -66,7 +66,7 @@ for n, dqstate_name in dq_states.items():
 ymax = ymax**1.05
 ax.set_ylim(ymin, ymax)
 ax.set_yscale('log')
-ax.set_ylabel('(Trigger rate during DQ state)/(Mean Rate)')
+ax.set_ylabel('(Trigger rate during DQ state)/(Mean Rate) [Min 1]')
 
 ax.set_xticks(x)
 ax.set_xlabel('Template Bin Number (Longer duration -> Lower number)')
