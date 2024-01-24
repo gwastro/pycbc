@@ -44,7 +44,6 @@ _allowed_statistic_features = [
     'dq',
     'chirp_mass',
     'sensitive_volume',
-    'alpha_constant_below_thresh',
     'normalize_fit_rate',
 ]
 
@@ -1221,10 +1220,11 @@ class ExpFitStatistic(PhaseTDStatistic):
         sngl_stat = self.get_sngl_ranking(trigs)
         lognoisel = - alphai * (sngl_stat - thresh) + numpy.log(alphai) + \
                         numpy.log(ratei)
-        if self.kwargs['alpha_constant_below_thresh']:
-            # Above the threshold we use the usual fit coefficient (alpha)
+
+        if 'alpha_below_thresh' in self.kwargs:
+            # Above the threshold we use the usual fit coefficient (alphai)
             # below threshold use specified alphabelow
-            alphabelow = self.kwargs.get('alpha_below_thresh', 6)
+            alphabelow = float(self.kwargs['alpha_below_thresh'])
             bt = sngl_stat < thresh
             lognoiselbt = - alphabelow * (sngl_stat - thresh) + \
                                numpy.log(alphabelow) + numpy.log(ratei)
