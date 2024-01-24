@@ -227,7 +227,10 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
                 dataset_names.remove(search_datasets.pop())
 
         template_ids = template_hash_to_id(trigger_file=h5out, bank_path=args.bank_file)
-        h5out.create_dataset("network/template_id", data=template_ids)
+        h5out.create_dataset("network/template_id",
+                             data=template_ids,
+                             compression_kw="gzip",
+                             compression_opts=9)
 
     if verbose:
         print("Merged triggers written to {}".format(outputfile))
