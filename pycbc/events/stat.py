@@ -38,9 +38,18 @@ from .eventmgr_cython import logsignalrateinternals_compute2detrate
 
 logger = logging.getLogger('pycbc.events.stat')
 
+_allowed_statistic_features = [
+    'phasetd',
+    'kde',
+    'dq',
+    'chirp_mass',
+    'sensitive_volume',
+    'alpha_constant_below_thresh',
+    'normalize_fit_rate',
+]
 
 class Stat(object):
-    """Base class which should be extended to provide a coincident statistic"""
+    """Base class which should be extended to provide a statistic"""
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
         """
@@ -92,7 +101,7 @@ class Stat(object):
             if key.startswith('sngl_ranking_'):
                 self.sngl_ranking_kwargs[key[13:]] = value
             else:
-                self.kwargs = value
+                self.kwargs[key] = value
 
     def get_file_hashes(self):
         """
@@ -609,7 +618,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
     def logsignalrate(self, stats, shift, to_shift):
         """
-        Calculate the normalized log rate density of signals via lookup
+        Calculate the normalized log rate density of coincident signals via lookup
 
         Parameters
         ----------
@@ -836,12 +845,14 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         return s1 ** 0.5
 
 
-class ExpFitStatistic(QuadratureSumStatistic):
+class ExpFitStatistic(PhaseTDStatistic):
     """
     Detection statistic using an exponential falloff noise model.
 
     Statistic approximates the negative log noise coinc rate density per
     template over single-ifo newsnr values.
+
+    Extra features can be added by supplying keyword arguments when initialising
     """
 
     def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
@@ -859,32 +870,174 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         ifos: list of strs, not used here
             The list of detector names
+        kwargs: values and features needed for the statistic
         """
         if not files:
-            raise RuntimeError("Statistic files not specified")
-        QuadratureSumStatistic.__init__(self, sngl_ranking, files=files,
-                                        ifos=ifos, **kwargs)
+            raise RuntimeError("Files not specified")
 
+        PhaseTDStatistic.__init__(self, sngl_ranking, files=files,
+                                  ifos=ifos, **kwargs)
+
+        # Get the single-detector rates fit files
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.bg_ifos = [at[0] for at in parsed_attrs if
-                       (len(at) == 2 and at[1] == 'fit_coeffs')]
-
+                        (len(at) == 2 and at[1] == 'fit_coeffs')]
         if not len(self.bg_ifos):
             raise RuntimeError("None of the statistic files has the required "
                                "attribute called {ifo}-fit_coeffs !")
 
+        # Get the single-detector rates fit values
         self.fits_by_tid = {}
-        self.alphamax = {}
         for i in self.bg_ifos:
             self.fits_by_tid[i] = self.assign_fits(i)
-            self.get_ref_vals(i)
 
+        # These are important for the coinc_lim_for_thresh method
+        # Is the single threshold a < or > limit?
         self.single_increasing = False
+
+        # Things for calculating the best-case scenario for signal rate
+        self.max_sigmasq = -numpy.inf
+        self.min_snr = numpy.inf
+
+        # Some modifiers for the statistic to get it into a nice range
+        self.benchmark_lograte= self.kwargs.get('benchmark_lograte', -14.6)
+        self.min_stat = self.kwargs.get('minimum_statistic_cutoff', -30.)
+
+        # Go through the keywords and add class information as needed:
+        if self.kwargs['sensitive_volume']:
+            # Add network sensitivity beckmark
+            self.single_dtype.append(('benchmark_logvol', numpy.float32))
+            # benchmark_logvol is a benchmark sensitivity array
+            # over template id
+            ref_ifos = self.kwargs.get('reference_ifos', 'H1,L1').split(',')
+            hl_net_med_sigma = numpy.amin(
+                [self.fits_by_tid[ifo]['median_sigma']
+                 for ifo in ref_ifos],
+                axis=0
+            )
+            self.benchmark_logvol = 3. * numpy.log(hl_net_med_sigma)
+            self.curr_tnum = None
+
+        if self.kwargs['dq']:
+            # Reweight the noise rate by the dq reweighting factor
+            self.dq_val_by_time = {}
+            self.dq_bin_by_id = {}
+            for k in self.files.keys():
+                parsed_attrs = k.split('-')
+                if len(parsed_attrs) < 3:
+                    continue
+                if parsed_attrs[2] == 'dq_ts_reference':
+                    ifo = parsed_attrs[0]
+                    dq_type = parsed_attrs[1]
+                    dq_vals = self.assign_dq_val(k)
+                    dq_bins = self.assign_bin_id(k)
+                    if ifo not in self.dq_val_by_time:
+                        self.dq_val_by_time[ifo] = {}
+                        self.dq_bin_by_id[ifo] = {}
+                    self.dq_val_by_time[ifo][dq_type] = dq_vals
+                    self.dq_bin_by_id[ifo][dq_type] = dq_bins
+
+        if self.kwargs['chirp_mass']:
+            # Reweight the signal rate by the chirp mass of the template
+            # This may be stored as a float, so cast just in case
+            self.mcm = float(self.kwargs.get('max_chirp_mass', numpy.inf))
+            self.curr_mchirp = None
+
+        if self.kwargs['kde']:
+            # Reweight the signal rate by a weighting factor from the KDE of
+            # a signal population normalised by expected relative rate of noise
+            # triggers for a template
+            self.kde_names = []
+            self.find_kdes()
+            self.kde_by_tid = {}
+            for kname in self.kde_names:
+                self.assign_kdes(kname)
+
+    def assign_bin_id(self, key):
+        """
+        Assign bin ID values for DQ reweighting
+
+        Assign each template id to a bin name based on a
+        referenced statistic file.
+
+        Parameters
+        ----------
+        key: str
+            statistic file key string
+
+        Returns
+        ---------
+        bin_dict: dict of strs
+            Dictionary containing the bin name for each template id
+        """
+        ifo = key.split('-')[0]
+        with h5py.File(self.files[key], 'r') as dq_file:
+            bin_names = dq_file.attrs['names'][:]
+            locs = []
+            names = []
+            for bin_name in bin_names:
+                bin_locs = dq_file[ifo + '/locs/' + bin_name][:]
+                locs = list(locs) + list(bin_locs.astype(int))
+                names = list(names) + list([bin_name] * len(bin_locs))
+
+        bin_dict = dict(zip(locs, names))
+        return bin_dict
+
+    def assign_dq_val(self, key):
+        """
+        Assign dq values to each time for every bin based on a
+        referenced statistic file.
+
+        Parameters
+        ----------
+        key: str
+            statistic file key string
+
+        Returns
+        ---------
+        dq_dict: dict of {time: dq_value} dicts for each bin
+            Dictionary containing the mapping between the time
+            and the dq value for each individual bin.
+
+        """
+        ifo = key.split('-')[0]
+        with h5py.File(self.files[key], 'r') as dq_file:
+            times = dq_file[ifo + '/times'][:]
+            bin_names = dq_file.attrs['names'][:]
+            dq_dict = {}
+            for bin_name in bin_names:
+                dq_vals = dq_file[ifo + '/dq_vals/' + bin_name][:]
+                dq_dict[bin_name] = dict(zip(times, dq_vals))
+
+        return dq_dict
+
+    def find_dq_val(self, trigs):
+        """Get dq values for a specific ifo and times"""
+        time = trigs['end_time'].astype(int)
+        try:
+            tnum = trigs.template_num
+            ifo = trigs.ifo
+        except AttributeError:
+            tnum = trigs['template_id']
+            assert len(self.ifos) == 1
+            # Should be exactly one ifo provided
+            ifo = self.ifos[0]
+        dq_val = numpy.zeros(len(time))
+        if ifo in self.dq_val_by_time:
+            for (i, t) in enumerate(time):
+                for k in self.dq_val_by_time[ifo].keys():
+                    if isinstance(tnum, numpy.ndarray):
+                        bin_name = self.dq_bin_by_id[ifo][k][tnum[i]]
+                    else:
+                        bin_name = self.dq_bin_by_id[ifo][k][tnum]
+                    val = self.dq_val_by_time[ifo][k][bin_name][int(t)]
+                    dq_val[i] = max(dq_val[i], val)
+        return dq_val
 
     def assign_fits(self, ifo):
         """
-        Extract fits from fit files
+        Extract fits from single-detector rate fit files
 
         Parameters
         -----------
@@ -903,13 +1056,19 @@ class ExpFitStatistic(QuadratureSumStatistic):
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
 
+        analysis_time = float(coeff_file.attrs['analysis_time']) if \
+            self.kwargs['normalize_fit_rate'] else 1
+
         fits_by_tid_dict = {}
         fits_by_tid_dict['smoothed_fit_coeff'] = \
             coeff_file['fit_coeff'][:][tid_sort]
         fits_by_tid_dict['smoothed_rate_above_thresh'] = \
-            coeff_file['count_above_thresh'][:][tid_sort].astype(float)
+            coeff_file['count_above_thresh'][:][tid_sort].astype(float) / analysis_time
         fits_by_tid_dict['smoothed_rate_in_template'] = \
-            coeff_file['count_in_template'][:][tid_sort].astype(float)
+            coeff_file['count_in_template'][:][tid_sort].astype(float) / analysis_time
+        if self.kwargs['sensitive_volume']:
+            fits_by_tid_dict['median_sigma'] = \
+                coeff_file['median_sigma'][:][tid_sort].astype(float)
 
         # The by-template fits may have been stored in the smoothed fits file
         if 'fit_by_template' in coeff_file:
@@ -917,9 +1076,9 @@ class ExpFitStatistic(QuadratureSumStatistic):
             fits_by_tid_dict['fit_by_fit_coeff'] = \
                 coeff_fbt['fit_coeff'][:][tid_sort]
             fits_by_tid_dict['fit_by_rate_above_thresh'] = \
-                coeff_fbt['count_above_thresh'][:][tid_sort].astype(float)
+                coeff_fbt['count_above_thresh'][:][tid_sort].astype(float) / analysis_time
             fits_by_tid_dict['fit_by_rate_in_template'] = \
-                coeff_file['count_in_template'][:][tid_sort].astype(float)
+                coeff_file['count_in_template'][:][tid_sort].astype(float) / analysis_time
 
         # Keep the fit threshold in fits_by_tid
         fits_by_tid_dict['thresh'] = coeff_file.attrs['stat_threshold']
@@ -1006,11 +1165,46 @@ class ExpFitStatistic(QuadratureSumStatistic):
 
         return alphai, ratei, thresh
 
+    def find_kdes(self):
+        """
+        Find which associated files are for the KDE reweighting
+        """
+        # The stat file attributes are hard-coded as 'signal-kde_file'
+        # and 'template-kde_file'
+        parsed_attrs = [f.split('-') for f in self.files.keys()]
+        self.kde_names = [at[0] for at in parsed_attrs if
+                       (len(at) == 2 and at[1] == 'kde_file')]
+        assert sorted(self.kde_names) == ['signal', 'template'], \
+            "Two stat files are required, they should have stat attr " \
+            "'signal-kde_file' and 'template-kde_file' respectively"
+
+    def assign_kdes(self, kname):
+        """
+        Extract values from KDE files
+
+        Parameters
+        -----------
+        kname: str
+            Used to label the kde files.
+        """
+        with h5py.File(self.files[kname + '-kde_file'], 'r') as kde_file:
+            self.kde_by_tid[kname + '_kdevals'] = kde_file['data_kde'][:].astype(numpy.float32)
+
+    def kde_ratio(self):
+        """
+        Calculate the weighting factor according to the ratio of the
+        signal and template KDE lookup tables
+        """
+        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
+        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
+
+        return numpy.log(signal_kde / template_kde)
+
     def lognoiserate(self, trigs):
         """
         Calculate the log noise rate density over single-ifo ranking
 
-        Read in single trigger information, compute the ranking
+        Read in single trigger information, make the sngl_stat
         and rescale by the fitted coefficients alpha and rate
 
         Parameters
@@ -1025,12 +1219,21 @@ class ExpFitStatistic(QuadratureSumStatistic):
         """
         alphai, ratei, thresh = self.find_fits(trigs)
         sngl_stat = self.get_sngl_ranking(trigs)
-        # alphai is constant of proportionality between single-ifo newsnr and
-        #   negative log noise likelihood in given template
-        # ratei is rate of trigs in given template compared to average
-        # thresh is stat threshold used in given ifo
         lognoisel = - alphai * (sngl_stat - thresh) + numpy.log(alphai) + \
-                      numpy.log(ratei)
+                        numpy.log(ratei)
+        if self.kwargs['alpha_constant_below_thresh']:
+            # Above the threshold we use the usual fit coefficient (alpha)
+            # below threshold use specified alphabelow
+            alphabelow = self.kwargs.get('alpha_below_thresh', 6)
+            bt = sngl_stat < thresh
+            lognoiselbt = - alphabelow * (sngl_stat - thresh) + \
+                               numpy.log(alphabelow) + numpy.log(ratei)
+            lognoisel[bt] = lognoiselbt[bt]
+
+        if self.kwargs['dq']:
+            # Reweight the lognoiserate things by the dq reweighting factor
+            lognoisel += self.find_dq_val(trigs)
+
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
@@ -1038,6 +1241,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
         Calculate the necessary single detector information
 
         In this case the ranking rescaled (see the lognoiserate method here).
+        with the phase, end time, SNR values added in.
 
         Parameters
         ----------
@@ -1050,11 +1254,86 @@ class ExpFitStatistic(QuadratureSumStatistic):
             The array of single detector values
         """
 
-        return self.lognoiserate(trigs)
+        # single-ifo stat = log of noise rate
+        sngl_stat = self.lognoiserate(trigs)
+        # populate other fields to calculate phase/time/amp consistency
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
+        singles['coa_phase'] = trigs['coa_phase'][:]
+        singles['end_time'] = trigs['end_time'][:]
+        singles['snr'] = trigs['snr'][:]
+        # Save info about best-case scenario for use later
+        self.min_snr = min(singles['snr'].min(), self.min_snr)
+
+        if self.kwargs['sensitive_volume']:
+            # populate fields to allow sensitive volume factor calculation
+            singles['sigmasq'] = trigs['sigmasq'][:]
+            try:
+                # exists if accessed via coinc_findtrigs
+                self.curr_tnum = trigs.template_num
+            except AttributeError:
+                # exists for SingleDetTriggers
+                self.curr_tnum = trigs['template_id']
+                # Should only be one ifo fit file provided
+                assert len(self.ifos) == 1
+            # Store benchmark log volume as single-ifo information since
+            # the ranking methods do not have access to template id
+            singles['benchmark_logvol'] = \
+                self.benchmark_logvol[self.curr_tnum]
+
+            # Save info about the best-case scenario for use later:
+            max_sigsq = numpy.max(singles['sigmasq'])
+            self.max_sigmasq = max(max_sigsq, self.max_sigmasq)
+
+        if self.kwargs['chirp_mass']:
+            from pycbc.conversions import mchirp_from_mass1_mass2
+            self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
+                                                       trigs.param['mass2'])
+        return numpy.array(singles, ndmin=1)
+
+    def sensitive_volume_factor(self, sngls):
+        # Network sensitivity for a given coinc type is approximately
+        # determined by the least sensitive ifo
+        network_sigmasq = numpy.amin(
+            [sngl[1]['sigmasq'] for sngl in sngls],
+            axis=0
+        )
+        # Volume \propto sigma^3 or sigmasq^1.5
+        network_logvol = 1.5 * numpy.log(network_sigmasq)
+        # Get benchmark log volume as single-ifo information :
+        # benchmark_logvol for a given template is not ifo-dependent, so
+        # choose the first ifo for convenience
+        benchmark_logvol = sngls[0][1]['benchmark_logvol']
+        network_logvol -= benchmark_logvol
+
+        return network_logvol
+
+    def logsignalrate_shared(self, sngls_info):
+        """
+        Calculate the parts of the log signal rate which are shared by
+        both the single and coinc ranking statistics
+        """
+        # Other features affecting the signal rate
+        sr_factor = 0
+        if self.kwargs['sensitive_volume']:
+            # Sensitive volume - this is proportional to signal rate
+            # assuming a homogeneous universe
+            sr_factor += self.sensitive_volume_factor(sngls_info)
+
+        if self.kwargs['chirp_mass']:
+            # chirp mass reweighting
+            mchirp = min(self.curr_mchirp, self.mcm)
+            sr_factor += numpy.log((mchirp / 20.) ** (11. / 3.))
+
+        if self.kwargs['kde']:
+            # KDE reweighting
+            sr_factor += self.kde_ratio()
+
+        return sr_factor
 
     def rank_stat_single(self, single_info):
         """
-        Calculate the statistic for a single detector candidate
+        Calculate the statistic for single detector candidates
 
         Parameters
         ----------
@@ -1067,61 +1346,136 @@ class ExpFitStatistic(QuadratureSumStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
+        sngls = single_info[1]
+
+        # Basic noise rate: the exp fit rate from the single statistic
+        ln_noise_rate = sngls['snglstat']
+        ln_noise_rate -= self.benchmark_lograte
+
+        # Basic signal rate: snr ** -4
+        ln_s = -4 * numpy.log(sngls['snr'] / self.ref_snr)
+        # Add in the feature-dependent terms to the signal rate
+        ln_s += self.logsignalrate_shared((single_info,))
+
+        # Combine the signal and noise rates
+        loglr = ln_s - ln_noise_rate
+
+        # cut off underflowing and very small values
+        loglr[loglr < self.min_stat] = self.min_stat
+        return loglr
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
         """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
+        # ranking statistic is -ln(expected rate density of noise triggers)
+        # plus normalization constant
+        sngl_dict = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
+
+        # Basic noise rate: sum of noise rates multiplied by the
+        # window they can form coincidences in
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                  sngl_dict, kwargs['time_addition'])
+        ln_noise_rate -= self.benchmark_lograte
+
+        # Basic option is not to have any signal-based assumptions,
+        # so this is zero to begin with
+        ln_s = 0
+
+        if self.kwargs['phasetd']:
+            # Find total volume of phase-time-amplitude space occupied by
+            # noise coincs, so that the logsignalrate function is properly
+            # normalized
+            # Extent of time-difference space occupied
+            noise_twindow = coinc_rate.multiifo_noise_coincident_area(
+                self.hist_ifos,
+                kwargs['time_addition']
+            )
+            # Volume is the allowed time difference window, multiplied by 2pi for
+            # each phase difference dimension and by allowed range of SNR ratio
+            # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
+            # for both phase and SNR
+            n_ifos = len(self.hist_ifos)
+            hist_vol = noise_twindow * \
+                (2. * numpy.pi * (self.srbmax - self.srbmin) * self.swidth) ** \
+                (n_ifos - 1)
+            # Noise PDF is 1/volume, assuming a uniform distribution of noise
+            # coincs
+            ln_noise_rate -= numpy.log(hist_vol)
+
+            # What is the signal pdf?
+            stat = {ifo: st for ifo, st in s}
+            ln_s += self.logsignalrate(stat, slide * step, to_shift)
+
+        # Add in the feature-dependent terms to the signal rate
+        ln_s += self.logsignalrate_shared(s)
+
+        # Combine the signal and noise rates
+        loglr = ln_s - ln_noise_rate
+
+        # cut off underflowing and very small values
+        loglr[loglr < self.min_stat] = self.min_stat
+
+        return loglr
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
         """
         Optimization function to identify coincs too quiet to be of interest
+
+        We are trying to get rid of as many events here at the point where
+        we can be confident that they will not meet ranking statistic
+        thresholds.
+
+        The calculation here is "What is the minimum required snglstat in
+        the pivot IFO which could possibly pass the threshold?"
+
+        There are a couple of points to be wary of here, e.g. in the signal
+        rate calculation, we take the best-case scenario. By using the
+        best-case for signal rate in this calculation, some events are kept
+        at this point which are hopeless.
         """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
+        # Safety against subclassing and not rethinking this
+        allowed_names = ['ExpFitStatistic']
+        self._check_coinc_lim_subclass(allowed_names)
 
-    # Keeping this here to help write the new coinc method.
-    def coinc_OLD(self, s0, s1, slide, step): # pylint:disable=unused-argument
-        """Calculate the final coinc ranking statistic"""
+        if thresh <= self.min_stat:
+            return numpy.ones(len(s[0][1]['snglstat'])) * numpy.inf
 
-        # Approximate log likelihood ratio by summing single-ifo negative
-        # log noise likelihoods
-        loglr = - s0 - s1
-        # add squares of threshold stat values via idealized Gaussian formula
-        threshes = [self.fits_by_tid[i]['thresh'] for i in self.bg_ifos]
-        loglr += sum([t ** 2. / 2. for t in threshes])
-        # convert back to a coinc-SNR-like statistic
-        # via log likelihood ratio \propto rho_c^2 / 2
-        return (2. * loglr) ** 0.5
+        # Modify the sngls so that the pivot ifo snglstats are zero
+        sngl_dict = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
+        sngl_dict[limifo] = numpy.zeros(len(s[0][1]))
 
-    # Keeping this here to help write the new coinc_lim method
-    def coinc_lim_for_thresh_OLD(self, s0, thresh):
-        """Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers.
+        # Noise rate calculated as normal. Because of the modification
+        # above, this is the rank_stat_coinc noise rate calculation
+        # minus the pivot ifo's snglstat
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
+            sngl_dict,
+            kwargs['time_addition']
+        )
+        ln_noise_rate -= self.benchmark_lograte
 
-        Parameters
-        ----------
-        s0: numpy.ndarray
-            Single detector ranking statistic for the first detector.
-        thresh: float
-            The threshold on the coincident statistic.
+        # Basic option is not to have any signal-based assumptions,
+        # so this is zero to begin with
+        ln_s = 0
 
-        Returns
-        -------
-        numpy.ndarray
-            Array of limits on the second detector single statistic to
-        exceed thresh.
-        """
-        s1 = - (thresh ** 2.) / 2. - s0
-        threshes = [self.fits_by_tid[i]['thresh'] for i in self.bg_ifos]
-        s1 += sum([t ** 2. / 2. for t in threshes])
-        return s1
+        if self.kwargs['phasetd']:
+            if not self.has_hist:
+                self.get_hist()
+            # Assume best-case scenario and use maximum signal rate
+            ln_s = numpy.log(self.hist_max
+                             * (self.min_snr / self.ref_snr) ** -4.)
+
+        # Shared info is the same as in the coinc calculation
+        ln_s += self.logsignalrate_shared(s)
+
+        # Combine the signal and noise rates
+        loglr = ln_s - ln_noise_rate
+
+        # From this combined rate, what is the minimum snglstat value
+        # in the pivot IFO needed to reach the threshold?
+        return loglr - thresh
 
 
 class ExpFitCombinedSNR(ExpFitStatistic):
@@ -1262,7 +1616,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1] for sngl in s)
 
 
-class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
+class PhaseTDExpFitStatistic(ExpFitStatistic):
     """
     Statistic combining exponential noise model with signal histogram PDF
     """
@@ -1300,1281 +1654,12 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         uf_phasetd = PhaseTDStatistic.update_file(self, key)
         return uf_exp_fit or uf_phasetd
 
-    def single(self, trigs):
-        """
-        Calculate the necessary single detector information
-
-        In this case the ranking rescaled (see the lognoiserate method here)
-        with the phase, end time, sigma and SNR values added in.
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector values
-        """
-        # same single-ifo stat as ExpFitCombinedSNR
-        sngl_stat = ExpFitCombinedSNR.single(self, trigs)
-        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
-        singles['snglstat'] = sngl_stat
-        singles['coa_phase'] = trigs['coa_phase'][:]
-        singles['end_time'] = trigs['end_time'][:]
-        singles['sigmasq'] = trigs['sigmasq'][:]
-        singles['snr'] = trigs['snr'][:]
-        return numpy.array(singles, ndmin=1)
-
-    def rank_stat_single(self, single_info):
-        """
-        Calculate the statistic for a single detector candidate
-
-        Parameters
-        ----------
-        single_info: tuple
-            Tuple containing two values. The first is the ifo (str) and the
-            second is the single detector triggers.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector statistics
-        """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
-
-    def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
-        """
-        Calculate the coincident detection statistic.
-        """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
-
-    def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
-        """
-        Optimization function to identify coincs too quiet to be of interest
-        Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers.
-        """
-        err_msg = "Sorry! No-one has implemented this method yet! "
-        raise NotImplementedError(err_msg)
-
-    # Keeping the old statistic code here for now to help with reimplementing
-    def coinc_OLD(self, s0, s1, slide, step):
-        # logsignalrate function inherited from PhaseTDStatistic
-        logr_s = self.logsignalrate(s0, s1, slide * step)
-        # rescale by ExpFitCombinedSNR reference slope as for sngl stat
-        cstat = s0['snglstat'] + s1['snglstat'] + logr_s / self.alpharef
-        # cut off underflowing and very small values
-        cstat[cstat < 8.] = 8.
-        # scale to resemble network SNR
-        return cstat / (2. ** 0.5)
-
-    def coinc_lim_for_thresh_OLD(self, s0, thresh):
-        # if the threshold is below this value all triggers will
-        # pass because of rounding in the coinc method
-        if thresh <= (8. / (2. ** 0.5)):
-            return -1. * numpy.ones(len(s0['snglstat'])) * numpy.inf
-        if not self.has_hist:
-            self.get_hist()
-        # Assume best case scenario and use maximum signal rate
-        logr_s = self.hist_max
-        s1 = (2 ** 0.5) * thresh - s0['snglstat'] - logr_s / self.alpharef
-        return s1
-
-
-class ExpFitBgRateStatistic(ExpFitStatistic):
-    """
-    Detection statistic using an exponential falloff noise model.
-
-    Statistic calculates the log noise coinc rate for each
-    template over single-ifo newsnr values.
-    """
-
-    def __init__(self, sngl_ranking, files=None, ifos=None,
-                 benchmark_lograte=-14.6, **kwargs):
-        """
-        Parameters
-        ----------
-        sngl_ranking: str
-            The name of the ranking to use for the single-detector triggers.
-        files: list of strs, needed here
-            A list containing the filenames of hdf format files used to help
-            construct the coincident statistics. The files must have a 'stat'
-            attribute which is used to associate them with the appropriate
-            statistic class.
-        ifos: list of strs, not used here
-            The list of detector names
-        benchmark_lograte: float, default=-14.6
-            benchmark_lograte is log of a representative noise trigger rate.
-            The default comes from H1L1 (O2) and is 4.5e-7 Hz.
-        """
-
-        super(ExpFitBgRateStatistic, self).__init__(sngl_ranking,
-                                                    files=files, ifos=ifos,
-                                                    **kwargs)
-        self.benchmark_lograte = benchmark_lograte
-
-        # Reassign the rate to be number per time rather than an arbitrarily
-        # normalised number
-        for ifo in self.bg_ifos:
-            self.reassign_rate(ifo)
-
-    def reassign_rate(self, ifo):
-        """
-        Reassign the rate to be number per time rather
-
-        Reassign the rate to be number per time rather than an arbitrarily
-        normalised number.
-
-        Parameters
-        -----------
-        ifo: str
-            The ifo to consider.
-        """
-        with h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
-            analysis_time = float(coeff_file.attrs['analysis_time'])
-            fbt = 'fit_by_template' in coeff_file
-
-        self.fits_by_tid[ifo]['smoothed_rate_above_thresh'] /= analysis_time
-        self.fits_by_tid[ifo]['smoothed_rate_in_template'] /= analysis_time
-        # The by-template fits may have been stored in the smoothed fits file
-        if fbt:
-            self.fits_by_tid[ifo]['fit_by_rate_above_thresh'] /= analysis_time
-            self.fits_by_tid[ifo]['fit_by_rate_in_template'] /= analysis_time
-
-    def update_file(self, key):
-        """
-        Update file used in this statistic.
-        If others are used (i.e. this statistic is inherited), they will
-        need updated separately
-        """
-        # Check if the file to update is an ExpFit file
-        uf_expfit = ExpFitStatistic.update_file(self, key)
-        # If this has been updated we must do the reassign_rate step here
-        # on top of the file update from earlier
-        if uf_expfit:
-            # This is a fit coeff file which needs updating
-            # Which ifo is it?
-            ifo = key[:2]
-            self.reassign_rate(ifo)
-            return True
-        return False
-
-    def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
-        """
-        Calculate the coincident detection statistic.
-
-        Parameters
-        ----------
-        sngls_list: list
-            List of (ifo, single detector statistic) tuples
-        slide: (unused in this statistic)
-        step: (unused in this statistic)
-        to_shift: list
-            List of integers indicating what multiples of the time shift will
-            be applied (unused in this statistic)
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of coincident ranking statistic values
-        """
-        # ranking statistic is -ln(expected rate density of noise triggers)
-        # plus normalization constant
-        sngl_dict = {sngl[0]: sngl[1] for sngl in s}
-        ln_noise_rate = coinc_rate.combination_noise_lograte(
-                                  sngl_dict, kwargs['time_addition'])
-        loglr = - ln_noise_rate + self.benchmark_lograte
-        return loglr
-
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
-        """
-        Optimization function to identify coincs too quiet to be of interest
-
-        Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers.
-
-        Parameters
-        ----------
-        s: list
-            List of (ifo, single detector statistic) tuples for all detectors
-            except limifo.
-        thresh: float
-            The threshold on the coincident statistic.
-        limifo: string
-            The ifo for which the limit is to be found.
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of limits on the limifo single statistic to
-            exceed thresh.
-        """
-        # Safety against subclassing and not rethinking this
-        allowed_names = ['ExpFitBgRateStatistic']
-        self._check_coinc_lim_subclass(allowed_names)
-
-        sngl_dict = {sngl[0]: sngl[1] for sngl in s}
-        sngl_dict[limifo] = numpy.zeros(len(s[0][1]))
-        ln_noise_rate = coinc_rate.combination_noise_lograte(
-                                  sngl_dict, kwargs['time_addition'])
-        loglr = - thresh - ln_noise_rate + self.benchmark_lograte
-        return loglr
-
-
-class ExpFitFgBgNormStatistic(PhaseTDStatistic,
-                              ExpFitBgRateStatistic):
-    """
-    Statistic combining PhaseTD, ExpFitBg and additional foreground info.
-    """
-
-    def __init__(self, sngl_ranking, files=None, ifos=None,
-                 reference_ifos='H1,L1', **kwargs):
-        """
-        Parameters
-        ----------
-        sngl_ranking: str
-            The name of the ranking to use for the single-detector triggers.
-        files: list of strs, needed here
-            A list containing the filenames of hdf format files used to help
-            construct the coincident statistics. The files must have a 'stat'
-            attribute which is used to associate them with the appropriate
-            statistic class.
-        ifos: list of strs
-            The list of detector names
-        reference_ifos: string of comma separated ifo prefixes
-            Detectors to be used as the reference network for network
-            sensitivity comparisons. Each must be in fits_by_tid
-        """
-        # read in background fit info and store it
-        ExpFitBgRateStatistic.__init__(self, sngl_ranking, files=files,
-                                       ifos=ifos, **kwargs)
-        # if ifos not already set, determine via background fit info
-        self.ifos = self.ifos or self.bg_ifos
-        # PhaseTD statistic single_dtype plus network sensitivity benchmark
-        PhaseTDStatistic.__init__(self, sngl_ranking, files=files,
-                                  ifos=self.ifos, **kwargs)
-        self.single_dtype.append(('benchmark_logvol', numpy.float32))
-
-        for ifo in self.bg_ifos:
-            self.assign_median_sigma(ifo)
-
-        self.ref_ifos = reference_ifos.split(',')
-        self.benchmark_logvol = None
-        self.assign_benchmark_logvol()
-        self.single_increasing = False
-        # Initialize variable to hold event template id(s)
-        self.curr_tnum = None
-
-    def assign_median_sigma(self, ifo):
-        """
-        Read and sort the median_sigma values from input files.
-
-        Parameters
-        ----------
-        ifo: str
-            The ifo to consider.
-        """
-
-        with h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
-            template_id = coeff_file['template_id'][:]
-            tid_sort = numpy.argsort(template_id)
-            self.fits_by_tid[ifo]['median_sigma'] = \
-                coeff_file['median_sigma'][:][tid_sort]
-
-    def assign_benchmark_logvol(self):
-        """
-        Assign the benchmark log-volume used by the statistic.
-        This is the sensitive log-volume of each template in the
-        network of reference IFOs
-        """
-        # benchmark_logvol is a benchmark sensitivity array over template id
-        bench_net_med_sigma = numpy.amin(
-            [self.fits_by_tid[ifo]['median_sigma'] for ifo in self.ref_ifos],
-            axis=0,
-        )
-        self.benchmark_logvol = 3. * numpy.log(bench_net_med_sigma)
-
-    def update_file(self, key):
-        """
-        Update file used in this statistic.
-        If others are used (i.e. this statistic is inherited), they will
-        need updated separately
-        """
-        # Here we inherit the PhaseTD file checks
-        uf_phasetd = PhaseTDStatistic.update_file(self, key)
-        uf_exp_fit = ExpFitBgRateStatistic.update_file(self, key)
-        if uf_phasetd:
-            # The key to update refers to a PhaseTDStatistic file
-            return True
-        if uf_exp_fit:
-            # The key to update refers to a ExpFitBgRateStatistic file
-            # In this case we must reload some statistic information
-            # Which ifo is it?
-            ifo = key[:2]
-            self.assign_median_sigma(ifo)
-            self.assign_benchmark_logvol()
-            return True
-        return False
-
-    def lognoiserate(self, trigs, alphabelow=6):
-        """
-        Calculate the log noise rate density over single-ifo ranking
-
-        Read in single trigger information, make the newsnr statistic
-        and rescale by the fitted coefficients alpha and rate
-
-        Parameters
-        -----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information.
-        alphabelow: float, default=6
-            Use this slope to fit the noise triggers below the point at which
-            fits are present in the input files.
-
-        Returns
-        ---------
-        lognoisel: numpy.array
-            Array of log noise rate density for each input trigger.
-        """
-        alphai, ratei, thresh = self.find_fits(trigs)
-        newsnr = self.get_sngl_ranking(trigs)
-        # Above the threshold we use the usual fit coefficient (alpha)
-        # below threshold use specified alphabelow
-        bt = newsnr < thresh
-        lognoisel = - alphai * (newsnr - thresh) + numpy.log(alphai) + \
-                        numpy.log(ratei)
-        lognoiselbt = - alphabelow * (newsnr - thresh) + \
-                           numpy.log(alphabelow) + numpy.log(ratei)
-        lognoisel[bt] = lognoiselbt[bt]
-        return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
-
-    def single(self, trigs):
-        """
-        Calculate the necessary single detector information
-
-        In this case the ranking rescaled (see the lognoiserate method here)
-        with the phase, end time, sigma, SNR, template_id and the
-        benchmark_logvol values added in.
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information.
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector values
-        """
-        try:
-            # exists if accessed via coinc_findtrigs
-            self.curr_tnum = trigs.template_num
-        except AttributeError:
-            # exists for SingleDetTriggers & pycbc_live get_coinc
-            self.curr_tnum = trigs['template_id']
-
-        # single-ifo stat = log of noise rate
-        sngl_stat = self.lognoiserate(trigs)
-        # populate other fields to calculate phase/time/amp consistency
-        # and sigma comparison
-        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
-        singles['snglstat'] = sngl_stat
-        singles['coa_phase'] = trigs['coa_phase'][:]
-        singles['end_time'] = trigs['end_time'][:]
-        singles['sigmasq'] = trigs['sigmasq'][:]
-        singles['snr'] = trigs['snr'][:]
-
-        # Store benchmark log volume as single-ifo information since the coinc
-        # method does not have access to template id
-        singles['benchmark_logvol'] = self.benchmark_logvol[self.curr_tnum]
-        return numpy.array(singles, ndmin=1)
-
-    def rank_stat_single(self, single_info):
-        """
-        Calculate the statistic for single detector candidates
-
-        Parameters
-        ----------
-        single_info: tuple
-            Tuple containing two values. The first is the ifo (str) and the
-            second is the single detector triggers.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector statistics
-        """
-        sngls = single_info[1]
-
-        ln_noise_rate = sngls['snglstat']
-        ln_noise_rate -= self.benchmark_lograte
-        network_sigmasq = sngls['sigmasq']
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
-        benchmark_logvol = sngls['benchmark_logvol']
-        network_logvol -= benchmark_logvol
-        ln_s = -4 * numpy.log(sngls['snr'] / self.ref_snr)
-        loglr = network_logvol - ln_noise_rate + ln_s
-        # cut off underflowing and very small values
-        loglr[loglr < -30.] = -30.
-        return loglr
-
-    def rank_stat_coinc(self, s, slide, step, to_shift,
-                        **kwargs): # pylint:disable=unused-argument
-        """
-        Calculate the coincident detection statistic.
-
-        Parameters
-        ----------
-        sngls_list: list
-            List of (ifo, single detector statistic) tuples
-        slide: (unused in this statistic)
-        step: (unused in this statistic)
-        to_shift: list
-            List of integers indicating what multiples of the time shift will
-            be applied (unused in this statistic)
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of coincident ranking statistic values
-        """
-
-        sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
-        # Find total volume of phase-time-amplitude space occupied by
-        # noise coincs
-        if 'dets' in kwargs:
-            ln_noise_rate = coinc_rate.combination_noise_lograte(
-                                    sngl_rates, kwargs['time_addition'],
-                                    kwargs['dets'])
-            # Extent of time-difference space occupied
-            noise_twindow = coinc_rate.multiifo_noise_coincident_area(
-                                self.hist_ifos, kwargs['time_addition'],
-                                kwargs['dets'])
-        else:
-            ln_noise_rate = coinc_rate.combination_noise_lograte(
-                                    sngl_rates, kwargs['time_addition'])
-            noise_twindow = coinc_rate.multiifo_noise_coincident_area(
-                                self.hist_ifos, kwargs['time_addition'])
-
-        ln_noise_rate -= self.benchmark_lograte
-
-        # Network sensitivity for a given coinc type is approximately
-        # determined by the least sensitive ifo
-        network_sigmasq = numpy.amin([sngl[1]['sigmasq'] for sngl in s],
-                                     axis=0)
-        # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
-        # Get benchmark log volume as single-ifo information :
-        # benchmark_logvol for a given template is not ifo-dependent, so
-        # choose the first ifo for convenience
-        benchmark_logvol = s[0][1]['benchmark_logvol']
-        network_logvol -= benchmark_logvol
-
-        # Use prior histogram to get Bayes factor for signal vs noise
-        # given the time, phase and SNR differences between IFOs
-
-        # First get signal PDF logr_s
-        stat = {ifo: st for ifo, st in s}
-        logr_s = self.logsignalrate(stat, slide * step, to_shift)
-
-        # Volume is the allowed time difference window, multiplied by 2pi for
-        # each phase difference dimension and by allowed range of SNR ratio
-        # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
-        # for both phase and SNR
-        n_ifos = len(self.hist_ifos)
-        hist_vol = noise_twindow * \
-            (2. * numpy.pi * (self.srbmax - self.srbmin) * self.swidth) ** \
-            (n_ifos - 1)
-        # Noise PDF is 1/volume, assuming a uniform distribution of noise
-        # coincs
-        logr_n = - numpy.log(hist_vol)
-
-        # Combine to get final statistic: log of
-        # ((rate of signals / rate of noise) * PTA Bayes factor)
-        loglr = network_logvol - ln_noise_rate + logr_s - logr_n
-
-        # cut off underflowing and very small values
-        loglr[loglr < -30.] = -30.
-        return loglr
-
-    def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
-        """
-        Optimization function to identify coincs too quiet to be of interest
-
-        Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers.
-
-        Parameters
-        ----------
-        s: list
-            List of (ifo, single detector statistic) tuples for all detectors
-            except limifo.
-        thresh: float
-            The threshold on the coincident statistic.
-        limifo: string
-            The ifo for which the limit is to be found.
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of limits on the limifo single statistic to
-            exceed thresh.
-        """
-
-        # Safety against subclassing and not rethinking this
-        allowed_names = ['ExpFitFgBgNormStatistic',
-                         'ExpFitFgBgNormBBHStatistic',
-                         'DQExpFitFgBgNormStatistic',
-                         'DQExpFitFgBgKDEStatistic',
-                         'ExpFitFgBgKDEStatistic']
-        self._check_coinc_lim_subclass(allowed_names)
-
-        if not self.has_hist:
-            self.get_hist()
-        # if the threshold is below this value all triggers will
-        # pass because of rounding in the coinc method
-        if thresh <= -30.:
-            return numpy.ones(len(s[0][1]['snglstat'])) * numpy.inf
-        sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
-        # Add limifo to singles dict so that overlap time is calculated correctly
-        sngl_rates[limifo] = numpy.zeros(len(s[0][1]))
-        ln_noise_rate = coinc_rate.combination_noise_lograte(
-                                  sngl_rates, kwargs['time_addition'])
-        ln_noise_rate -= self.benchmark_lograte
-
-        # Assume best case and use the maximum sigma squared from all triggers
-        network_sigmasq = numpy.ones(len(s[0][1])) * kwargs['max_sigmasq']
-        # Volume \propto sigma^3 or sigmasq^1.5
-        network_logvol = 1.5 * numpy.log(network_sigmasq)
-        # Get benchmark log volume as single-ifo information :
-        # benchmark_logvol for a given template is not ifo-dependent, so
-        # choose the first ifo for convenience
-        benchmark_logvol = s[0][1]['benchmark_logvol']
-        network_logvol -= benchmark_logvol
-
-        # Assume best case scenario and use maximum signal rate
-        logr_s = numpy.log(self.hist_max
-                           * (kwargs['min_snr'] / self.ref_snr) ** -4.)
-
-        # Find total volume of phase-time-amplitude space occupied by noise
-        # coincs
-        # Extent of time-difference space occupied
-        noise_twindow = coinc_rate.multiifo_noise_coincident_area(
-                            self.hist_ifos, kwargs['time_addition'])
-        # Volume is the allowed time difference window, multiplied by 2pi for
-        # each phase difference dimension and by allowed range of SNR ratio
-        # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
-        # for both phase and SNR
-        n_ifos = len(self.hist_ifos)
-        hist_vol = noise_twindow * \
-            (2. * numpy.pi * (self.srbmax - self.srbmin) * self.swidth) ** \
-            (n_ifos - 1)
-        # Noise PDF is 1/volume, assuming a uniform distribution of noise
-        # coincs
-        logr_n = - numpy.log(hist_vol)
-
-        loglr = - thresh + network_logvol - ln_noise_rate + logr_s - logr_n
-        return loglr
-
-
-class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
-    """
-    The ExpFitFgBgNormStatistic with a mass weighting factor.
-
-    This is the same as the ExpFitFgBgNormStatistic except the likelihood
-    is multiplied by a signal rate prior modelled as uniform over chirp mass.
-    As templates are distributed roughly according to mchirp^(-11/3) we
-    weight by the inverse of this. This ensures that quiet signals at high
-    mass where template density is sparse are not swamped by events at lower
-    masses where template density is high.
-    """
-
-    def __init__(self, sngl_ranking, files=None, ifos=None,
-                 max_chirp_mass=None, **kwargs):
-        """
-        Parameters
-        ----------
-        sngl_ranking: str
-            The name of the ranking to use for the single-detector triggers.
-        files: list of strs, needed here
-            A list containing the filenames of hdf format files used to help
-            construct the coincident statistics. The files must have a 'stat'
-            attribute which is used to associate them with the appropriate
-            statistic class.
-        ifos: list of strs, not used here
-            The list of detector names
-        max_chirp_mass: float, default=None
-            If given, if a template's chirp mass is above this value it will
-            be reweighted as if it had this chirp mass. This is to avoid the
-            problem where the distribution fails to be accurate at high mass
-            and we can have a case where a single highest-mass template might
-            produce *all* the loudest background (and foreground) events.
-        """
-        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                         ifos=ifos, **kwargs)
-        self.mcm = max_chirp_mass
-        self.curr_mchirp = None
-
-    def logsignalrate(self, stats, shift, to_shift):
-        """
-        Calculate the normalized log rate density of signals via lookup
-
-        This calls back to the Parent class and then applies the chirp mass
-        weighting factor.
-
-        Parameters
-        ----------
-        stats: list of dicts giving single-ifo quantities, ordered as
-            self.ifos
-        shift: numpy array of float, size of the time shift vector for each
-            coinc to be ranked
-        to_shift: list of int, multiple of the time shift to apply ordered
-            as self.ifos
-
-        Returns
-        -------
-        value: log of coinc signal rate density for the given single-ifo
-            triggers and time shifts
-        """
-        # Model signal rate as uniform over chirp mass, background rate is
-        # proportional to mchirp^(-11/3) due to density of templates
-        logr_s = ExpFitFgBgNormStatistic.logsignalrate(
-                    self,
-                    stats,
-                    shift,
-                    to_shift
-                    )
-        logr_s += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
-        return logr_s
-
-    def single(self, trigs):
-        """
-        Calculate the necessary single detector information
-
-        In this case the ranking rescaled (see the lognoiserate method here)
-        with the phase, end time, sigma, SNR, template_id and the
-        benchmark_logvol values added in. This also stored the current chirp
-        mass for use when computing the coinc statistic values.
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector values
-        """
-        from pycbc.conversions import mchirp_from_mass1_mass2
-        try:
-            mass1 = trigs.param['mass1']
-            mass2 = trigs.param['mass2']
-        except AttributeError:
-            mass1 = trigs['mass1']
-            mass2 = trigs['mass2']
-        self.curr_mchirp = mchirp_from_mass1_mass2(mass1, mass2)
-
-        if self.mcm is not None:
-            # Careful - input might be a str, so cast to float
-            self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
-        return ExpFitFgBgNormStatistic.single(self, trigs)
-
-    def rank_stat_single(self, single_info):
-        """
-        Calculate the statistic for a single detector candidate
-
-        This calls back to the Parent class and then applies the chirp mass
-        weighting factor.
-
-        Parameters
-        ----------
-        single_info: tuple
-            Tuple containing two values. The first is the ifo (str) and the
-            second is the single detector triggers.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector statistics
-        """
-        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
-            self,
-            single_info)
-        rank_sngl += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
-        return rank_sngl
-
-    def rank_stat_coinc(self, sngls_list, slide, step, to_shift, **kwargs):
-        """
-        Calculate the coincident detection statistic.
-
-        Parameters
-        ----------
-        sngls_list: list
-            List of (ifo, single detector statistic) tuples
-        slide: (unused in this statistic)
-        step: (unused in this statistic)
-        to_shift: list
-            List of integers indicating what multiples of the time shift will
-            be applied (unused in this statistic)
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of coincident ranking statistic values
-        """
-
-        if 'mchirp' in kwargs:
-            self.curr_mchirp = kwargs['mchirp']
-
-        return ExpFitFgBgNormStatistic.rank_stat_coinc(self,
-                                                       sngls_list,
-                                                       slide,
-                                                       step,
-                                                       to_shift,
-                                                       **kwargs)
-
-    def coinc_lim_for_thresh(self, s, thresh, limifo,
-                             **kwargs): # pylint:disable=unused-argument
-        """
-        Optimization function to identify coincs too quiet to be of interest
-
-        Calculate the required single detector statistic to exceed
-        the threshold for each of the input triggers.
-
-        Parameters
-        ----------
-        s: list
-            List of (ifo, single detector statistic) tuples for all detectors
-            except limifo.
-        thresh: float
-            The threshold on the coincident statistic.
-        limifo: string
-            The ifo for which the limit is to be found.
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of limits on the limifo single statistic to
-            exceed thresh.
-        """
-        loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
-                    self, s, thresh, limifo, **kwargs)
-        loglr += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
-        return loglr
-
-
-class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
-    """
-    The ExpFitFgBgNormStatistic with an additional mass and spin weighting
-    factor determined by KDE statistic files.
-
-    This is the same as the ExpFitFgBgNormStatistic except the likelihood
-    ratio is multiplied by the ratio of signal KDE to template KDE over some
-    parameters covering the bank.
-    """
-
-    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
-        """
-        Parameters
-        ----------
-        sngl_ranking: str
-            The name of the ranking to use for the single-detector triggers.
-        files: list of strs, needed here
-            A list containing the filenames of hdf format files used to help
-            construct the coincident statistics. The files must have a 'stat'
-            attribute which is used to associate them with the appropriate
-            statistic class.
-        ifos: list of strs, not used here
-            The list of detector names
-        """
-        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                         ifos=ifos, **kwargs)
-        self.kde_names = []
-        self.find_kdes()
-        self.kde_by_tid = {}
-        for kname in self.kde_names:
-            self.assign_kdes(kname)
-
-    def find_kdes(self):
-        """
-        Find which associated files are for the KDE reweighting
-        """
-        # The stat file attributes are hard-coded as 'signal-kde_file'
-        # and 'template-kde_file'
-        parsed_attrs = [f.split('-') for f in self.files.keys()]
-        self.kde_names = [at[0] for at in parsed_attrs if
-                       (len(at) == 2 and at[1] == 'kde_file')]
-        assert sorted(self.kde_names) == ['signal', 'template'], \
-            "Two stat files are required, they should have stat attr " \
-            "'signal-kde_file' and 'template-kde_file' respectively"
-
-    def assign_kdes(self, kname):
-        """
-        Extract values from KDE files
-
-        Parameters
-        -----------
-        kname: str
-            Used to label the kde files.
-        """
-        with h5py.File(self.files[kname + '-kde_file'], 'r') as kde_file:
-            self.kde_by_tid[kname + '_kdevals'] = kde_file['data_kde'][:]
-
-    def update_file(self, key):
-        """
-        Update file used in this statistic.
-        If others are used (i.e. this statistic is inherited), they will
-        need updated separately
-        """
-        # Inherit from ExpFitFgBgNormStatistic
-        uf_expfit = ExpFitFgBgNormStatistic.update_file(self, key)
-        if uf_expfit:
-            # The key to update refers to a ExpFitFgBgNormStatistic file
-            return True
-        # Is the key a KDE statistic file that we update here?
-        if key.endswith('kde_file'):
-            logger.info(
-                "Updating %s statistic %s file",
-                ''.join(self.ifos),
-                key
-            )
-            kde_style = key.split('-')[0]
-            self.assign_kdes(kde_style)
-            return True
-        return False
-
-    def kde_ratio(self):
-        """
-        Calculate the weighting factor according to the ratio of the
-        signal and template KDE lookup tables
-        """
-        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
-        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
-
-        return numpy.log(signal_kde / template_kde)
-
-    def logsignalrate(self, stats, shift, to_shift):
-        """
-        Calculate the normalized log rate density of signals via lookup.
-
-        This calls back to the parent class and then applies the ratio_kde
-        weighting factor.
-
-        Parameters
-        ----------
-        stats: list of dicts giving single-ifo quantities, ordered as
-            self.ifos
-        shift: numpy array of float, size of the time shift vector for each
-            coinc to be ranked
-        to_shift: list of int, multiple of the time shift to apply ordered
-            as self.ifos
-
-        Returns
-        -------
-        value: log of coinc signal rate density for the given single-ifo
-            triggers and time shifts
-        """
-        logr_s = ExpFitFgBgNormStatistic.logsignalrate(self, stats, shift,
-                                                       to_shift)
-        logr_s += self.kde_ratio()
-
-        return logr_s
-
-    def rank_stat_single(self, single_info):
-        """
-        Calculate the statistic for a single detector candidate
-
-        Parameters
-        ----------
-        single_info: tuple
-            Tuple containing two values. The first is the ifo (str) and the
-            second is the single detector triggers.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector statistics
-        """
-        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
-            self,
-            single_info)
-        rank_sngl += self.kde_ratio()
-        return rank_sngl
-
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
-        """
-        Optimization function to identify coincs too quiet to be of interest
-
-        Calculate the required single detector statistic to exceed the
-        threshold for each of the input trigers.
-
-        Parameters
-        ----------
-        s: list
-            List of (ifo, single detector statistic) tuples for all detectors
-            except limifo.
-        thresh: float
-            The threshold on the coincident statistic.
-        limifo: string
-            The ifo for which the limit is to be found.
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of limits on the limifo single statistic to
-            exceed thresh.
-        """
-        loglr = ExpFitFgBgNormStatistic.coinc_lim_for_thresh(
-            self, s, thresh, limifo, **kwargs)
-        signal_kde = self.kde_by_tid["signal_kdevals"][self.curr_tnum]
-        template_kde = self.kde_by_tid["template_kdevals"][self.curr_tnum]
-        loglr += numpy.log(signal_kde / template_kde)
-        return loglr
-
-
-class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
-    """
-    The ExpFitFgBgNormStatistic with DQ-based reranking.
-
-    This is the same as the ExpFitFgBgNormStatistic except the likelihood
-    ratio is corrected via estimating relative noise trigger rates based on
-    the DQ time series.
-    """
-
-    def __init__(self, sngl_ranking, files=None, ifos=None,
-                 **kwargs):
-        """
-        Parameters
-        ----------
-        sngl_ranking: str
-            The name of the ranking to use for the single-detector triggers.
-        files: list of strs, needed here
-            A list containing the filenames of hdf format files used to help
-            construct the coincident statistics. The files must have a 'stat'
-            attribute which is used to associate them with the appropriate
-            statistic class.
-        ifos: list of strs, not used here
-            The list of detector names
-        """
-        ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                         ifos=ifos, **kwargs)
-        self.dq_rates_by_state = {}
-        self.dq_bin_by_tid = {}
-        self.dq_state_segments = None
-        self.low_latency = False
-        self.single_dtype.append(('dq_state', int))
-
-        for ifo in self.ifos:
-            key = f'{ifo}-dq_stat_info'
-            if key in self.files.keys():
-                self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
-                self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
-                self.check_low_latency(key)
-                if not self.low_latency:
-                    if self.dq_state_segments is None:
-                        self.dq_state_segments = {}
-                    self.dq_state_segments[ifo] = self.setup_segments(key)
-
-    def check_low_latency(self, key):
-        """
-        Check if the statistic file indicates low latency mode.
-        Parameters
-        ----------
-        key: str
-            Statistic file key string.
-        Returns
-        -------
-        None
-        """
-        ifo = key.split('-')[0]
-        with h5py.File(self.files[key], 'r') as dq_file:
-            ifo_grp = dq_file[ifo]
-            if 'dq_segments' not in ifo_grp.keys():
-                # if segs are not in file, we must be in LL
-                if self.dq_state_segments is not None:
-                    raise ValueError(
-                        'Either all dq stat files must have segments or none'
-                    )
-                self.low_latency = True
-            elif self.low_latency:
-                raise ValueError(
-                    'Either all dq stat files must have segments or none'
-                )
-
-    def assign_template_bins(self, key):
-        """
-        Assign bin ID values
-        Assign each template id to a bin name based on a
-        referenced statistic file.
-
-        Parameters
-        ----------
-        key: str
-            statistic file key string
-
-        Returns
-        ---------
-        bin_dict: dict of strs
-            Dictionary containing the bin name for each template id
-        """
-        ifo = key.split('-')[0]
-        with h5py.File(self.files[key], 'r') as dq_file:
-            tids = []
-            bin_nums = []
-            bin_grp = dq_file[f'{ifo}/bins']
-            for bin_name in bin_grp.keys():
-                bin_tids = bin_grp[f'{bin_name}/tids'][:]
-                tids = list(tids) + list(bin_tids.astype(int))
-                bin_nums = list(bin_nums) + list([bin_name] * len(bin_tids))
-
-        bin_dict = dict(zip(tids, bin_nums))
-        return bin_dict
-
-    def assign_dq_rates(self, key):
-        """
-        Assign dq values to each time for every bin based on a
-        referenced statistic file.
-
-        Parameters
-        ----------
-        key: str
-            statistic file key string
-
-        Returns
-        ---------
-        dq_dict: dict of {time: dq_value} dicts for each bin
-            Dictionary containing the mapping between the time
-            and the dq value for each individual bin.
-
-        """
-        ifo = key.split('-')[0]
-        with h5py.File(self.files[key], 'r') as dq_file:
-            bin_grp = dq_file[f'{ifo}/bins']
-            dq_dict = {}
-            for bin_name in bin_grp.keys():
-                dq_dict[bin_name] = bin_grp[f'{bin_name}/dq_rates'][:]
-
-        return dq_dict
-
-    def setup_segments(self, key):
-        """
-        Store segments from stat file
-        """
-        ifo = key.split('-')[0]
-        with h5py.File(self.files[key], 'r') as dq_file:
-            ifo_grp = dq_file[ifo]
-            dq_state_segs_dict = {}
-            for k in ifo_grp['dq_segments'].keys():
-                seg_dict = {}
-                seg_dict['start'] = \
-                    ifo_grp[f'dq_segments/{k}/segment_starts'][:]
-                seg_dict['end'] = \
-                    ifo_grp[f'dq_segments/{k}/segment_ends'][:]
-                dq_state_segs_dict[k] = seg_dict
-
-        return dq_state_segs_dict
-
-    def update_file(self, key):
-        """
-        Update file used in this statistic.
-        If others are used (i.e. this statistic is inherited), they will
-        need updated separately
-        """
-        # Inherit from ExpFitFgBgNormStatistic
-        uf_expfit = ExpFitFgBgNormStatistic.update_file(self, key)
-        if uf_expfit:
-            # We have updated a ExpFitFgBgNormStatistic file already
-            return True
-        # We also need to check if the DQ files have updated
-        if key.endswith('dq_stat_info'):
-            ifo = key.split('-')[0]
-            logger.info(
-                "Updating %s statistic %s file",
-                ifo,
-                key
-            )
-            self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
-            self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
-            return True
-        return False
-
-    def find_dq_noise_rate(self, trigs):
-        """Get dq values for a specific ifo and dq states"""
-
-        try:
-            ifo = trigs.ifo
-        except AttributeError:
-            ifo = trigs.get('ifo', None)
-            if ifo is None:
-                ifo = self.ifos[0]
-            assert ifo in self.ifos
-
-        dq_state = trigs['dq_state']
-        dq_val = numpy.ones(len(dq_state))
-
-        tnum = self.curr_tnum
-        if ifo in self.dq_rates_by_state:
-            for (i, st) in enumerate(dq_state):
-                if isinstance(tnum, numpy.ndarray):
-                    bin_name = self.dq_bin_by_tid[ifo][tnum[i]]
-                else:
-                    bin_name = self.dq_bin_by_tid[ifo][tnum]
-                dq_val[i] = self.dq_rates_by_state[ifo][bin_name][st]
-        return dq_val
-
-    def find_dq_state_by_time(self, ifo, times):
-        """Get the dq state for an ifo at times"""
-        dq_state = numpy.zeros(len(times), dtype=numpy.uint8)
-        if ifo in self.dq_state_segments:
-            from pycbc.events.veto import indices_within_times
-            for k in self.dq_state_segments[ifo]:
-                starts = self.dq_state_segments[ifo][k]['start']
-                ends = self.dq_state_segments[ifo][k]['end']
-                inds = indices_within_times(times, starts, ends)
-                # states are named in file as 'dq_state_N', need to extract N
-                dq_state[inds] = int(k[9:])
-        return dq_state
-
-    def lognoiserate(self, trigs):
-        """
-        Calculate the log noise rate density over single-ifo ranking
-
-        Read in single trigger information, compute the ranking
-        and rescale by the fitted coefficients alpha and rate
-
-        Parameters
-        -----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information.
-
-        Returns
-        ---------
-        lognoiserate: numpy.array
-            Array of log noise rate density for each input trigger.
-        """
-
-        dq_rate = self.find_dq_noise_rate(trigs)
-        dq_rate = numpy.maximum(dq_rate, 1)
-
-        logr_n = ExpFitFgBgNormStatistic.lognoiserate(
-                    self, trigs)
-        logr_n += numpy.log(dq_rate)
-        return logr_n
-
-    def single(self, trigs):
-        # make sure every trig has a dq state
-        try:
-            ifo = trigs.ifo
-        except AttributeError:
-            ifo = trigs.get('ifo', None)
-            if ifo is None:
-                ifo = self.ifos[0]
-            assert ifo in self.ifos
-
-        singles = ExpFitFgBgNormStatistic.single(self, trigs)
-
-        if self.low_latency:
-            # trigs should already have a dq state assigned
-            singles['dq_state'] = trigs['dq_state'][:]
-        else:
-            singles['dq_state'] = self.find_dq_state_by_time(
-                ifo, trigs['end_time'][:]
-            )
-        return singles
-
-
-class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
-    """
-    The ExpFitFgBgKDEStatistic with DQ-based reranking.
-
-    This is the same as the DQExpFitFgBgNormStatistic except the signal
-    rate is adjusted according to the KDE statistic files
-    """
-
-    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
-        """
-        Parameters
-        ----------
-        sngl_ranking: str
-            The name of the ranking to use for the single-detector triggers.
-        files: list of strs, needed here
-            A list containing the filenames of hdf format files used to help
-            construct the coincident statistics. The files must have a 'stat'
-            attribute which is used to associate them with the appropriate
-            statistic class.
-        ifos: list of strs, not used here
-            The list of detector names
-        """
-        DQExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
-                                           ifos=ifos, **kwargs)
-        self.kde_names = []
-        ExpFitFgBgKDEStatistic.find_kdes(self)
-        self.kde_by_tid = {}
-        for kname in self.kde_names:
-            ExpFitFgBgKDEStatistic.assign_kdes(self, kname)
-
-    def update_file(self, key):
-        """
-        Update file used in this statistic.
-        If others are used (i.e. this statistic is inherited), they will
-        need updated separately
-        """
-        # Inherit from DQExpFitFgBgNormStatistic and ExpFitFgBgKDEStatistic
-        uf_dq = DQExpFitFgBgNormStatistic.update_file(self, key)
-        uf_kde = ExpFitFgBgKDEStatistic.update_file(self, key)
-        return uf_dq or uf_kde
-
-    def kde_ratio(self):
-        """
-        Inherited, see docstring for ExpFitFgBgKDEStatistic.kde_signalrate
-        """
-        return ExpFitFgBgKDEStatistic.kde_ratio(self)
-
-    def logsignalrate(self, stats, shift, to_shift):
-        """
-        Inherited, see docstring for ExpFitFgBgKDEStatistic.logsignalrate
-        """
-        return ExpFitFgBgKDEStatistic.logsignalrate(self, stats, shift,
-                                                    to_shift)
-
-    def rank_stat_single(self, single_info):
-        """
-        Inherited, see docstring for ExpFitFgBgKDEStatistic.rank_stat_single
-        """
-        return ExpFitFgBgKDEStatistic.rank_stat_single(
-            self,
-            single_info)
-
-    def coinc_lim_for_thresh(self, s, thresh, limifo, **kwargs):
-        """
-        Inherited, see docstring for
-        ExpFitFgBgKDEStatistic.coinc_lim_for_thresh
-        """
-        return ExpFitFgBgKDEStatistic.coinc_lim_for_thresh(
-            self, s, thresh, limifo, **kwargs)
-
-
 statistic_dict = {
     'quadsum': QuadratureSumStatistic,
     'single_ranking_only': QuadratureSumStatistic,
     'phasetd': PhaseTDStatistic,
-    'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
-    'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
-    'dq_phasetd_exp_fit_fgbg_norm': DQExpFitFgBgNormStatistic,
-    'exp_fit_bg_rate': ExpFitBgRateStatistic,
-    'phasetd_exp_fit_fgbg_norm': ExpFitFgBgNormStatistic,
-    'phasetd_exp_fit_fgbg_bbh_norm': ExpFitFgBgNormBBHStatistic,
-    'phasetd_exp_fit_fgbg_kde': ExpFitFgBgKDEStatistic,
-    'dq_phasetd_exp_fit_fgbg_kde': DQExpFitFgBgKDEStatistic,
+    'exp_fit': ExpFitStatistic,
 }
 
 
@@ -2660,10 +1745,19 @@ def insert_statistic_option_group(parser, default_ranking_statistic=None):
              "KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ..."
     )
 
+    statistic_opt_group.add_argument(
+        "--statistic-features",
+        nargs='*',
+        default=[],
+        choices=_allowed_statistic_features,
+        help="Provide additional arguments to include particular "
+             "features in the ranking statistic."
+    )
+
     return statistic_opt_group
 
 
-def parse_statistic_keywords_opt(stat_kwarg_list):
+def parse_statistic_feature_options(opts):
     """
     Parse the list of statistic keywords into an appropriate dictionary.
 
@@ -2681,6 +1775,7 @@ def parse_statistic_keywords_opt(stat_kwarg_list):
         Statistic keywords in dict format
     """
     stat_kwarg_dict = {}
+    stat_kwarg_list = opts.statistic_keywords
     for inputstr in stat_kwarg_list:
         try:
             key, value = inputstr.split(':')
@@ -2690,6 +1785,16 @@ def parse_statistic_keywords_opt(stat_kwarg_list):
                       "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
                       "Received {}".format(' '.join(stat_kwarg_list))
             raise ValueError(err_txt)
+
+    # Check that the statistic keywords are allowed
+    for feature in opts.statistic_features:
+        if feature not in _allowed_statistic_features:
+            err_msg = f"--statistic-feature {feature} not recognised"
+            raise NotImplementedError(err_msg)
+
+    # Set values for each feature key to a boolean of whether we want them
+    for feature in _allowed_statistic_features:
+        stat_kwarg_dict[feature] = feature in opts.statistic_features
 
     return stat_kwarg_dict
 
@@ -2726,7 +1831,7 @@ def get_statistic_from_opts(opts, ifos):
             isinstance(opts.statistic_files[0], list):
         opts.statistic_files = sum(opts.statistic_files, [])
 
-    extra_kwargs = parse_statistic_keywords_opt(opts.statistic_keywords)
+    extra_kwargs = parse_statistic_feature_options(opts)
 
     stat_class = get_statistic(opts.ranking_statistic)(
         opts.sngl_ranking,

@@ -128,7 +128,6 @@ if args.cluster_window is not None:
   logging.info('Clustering events over %s s window within each template',
                args.cluster_window)
 
-
 loudest_keep_vals = args.loudest_keep_values.strip('[]').split(',')
 
 threshes = []
