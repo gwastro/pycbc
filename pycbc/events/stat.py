@@ -1615,45 +1615,6 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
         return thresh * ((len(s) + 1) ** 0.5) - sum(sngl[1] for sngl in s)
 
-
-class PhaseTDExpFitStatistic(ExpFitStatistic):
-    """
-    Statistic combining exponential noise model with signal histogram PDF
-    """
-
-    def __init__(self, sngl_ranking, files=None, ifos=None, **kwargs):
-        """
-        Parameters
-        ----------
-        sngl_ranking: str
-            The name of the ranking to use for the single-detector triggers.
-        files: list of strs, needed here
-            A list containing the filenames of hdf format files used to help
-            construct the coincident statistics. The files must have a 'stat'
-            attribute which is used to associate them with the appropriate
-            statistic class.
-        ifos: list of strs, needed here
-            The list of detector names
-        """
-        # read in both foreground PDF and background fit info
-        ExpFitCombinedSNR.__init__(self, sngl_ranking, files=files, ifos=ifos,
-                                   **kwargs)
-        # need the self.single_dtype value from PhaseTDStatistic
-        PhaseTDStatistic.__init__(self, sngl_ranking, files=files,
-                                  ifos=ifos, **kwargs)
-
-    def update_file(self, key):
-        """
-        Update file used in this statistic.
-        If others are used (i.e. this statistic is inherited), they will
-        need updated separately
-        """
-        # Here we inherit the PhaseTD and ExpFit file checks,
-        # nothing else needs doing
-        uf_exp_fit = ExpFitCombinedSNR.update_file(self, key)
-        uf_phasetd = PhaseTDStatistic.update_file(self, key)
-        return uf_exp_fit or uf_phasetd
-
 statistic_dict = {
     'quadsum': QuadratureSumStatistic,
     'single_ranking_only': QuadratureSumStatistic,
