@@ -433,6 +433,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--bank-file",
+    required=True,
     help="full template bank file for mapping hashes to ids",
 )
 parser.add_argument(
