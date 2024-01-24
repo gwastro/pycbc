@@ -51,23 +51,19 @@ fig, ax = pyplot.subplots(figsize=(9, 6))
 ax2 = ax.twinx()
 
 ymax = 1
-ymin = 1
-
+ymin = 0.9
 for n, dqstate_name in dq_states.items():
     dq_rates = numpy.array(
         [ifo_grp['bins'][b]['dq_rates'][n] for b in bin_names])
+    dq_rates = numpy.maximum(dq_rates, 1)
     logrates = numpy.log(dq_rates)
 
     ymax = max(ymax, numpy.max(dq_rates))
-    ymin = min(ymin, numpy.min(dq_rates))
 
     offset = width*(n-1)
     ax.bar(x + offset, dq_rates, width, label=dqstate_name, color=colors[n])
 
 ymax = ymax**1.05
-ymin = ymin**1.05
-if not ymin:
-    ymin = 1e-3
 ax.set_ylim(ymin, ymax)
 ax.set_yscale('log')
 ax.set_ylabel('(Trigger rate during DQ state)/(Mean Rate)')
