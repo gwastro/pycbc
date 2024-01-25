@@ -60,7 +60,7 @@ for n, dqstate_name in dq_states.items():
 
     ymax = max(ymax, numpy.max(dq_rates))
 
-    offset = width*(n-1)
+    offset = width * (n - 1)
     ax.bar(x + offset, dq_rates, width, label=dqstate_name, color=colors[n])
 
 ymax = ymax**1.05
