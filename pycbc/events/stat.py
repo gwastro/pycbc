@@ -1080,11 +1080,12 @@ class ExpFitStatistic(PhaseTDStatistic):
                 coeff_file['count_in_template'][:][tid_sort].astype(float)
 
         if self.kwargs['normalize_fit_rate']:
-             analysis_time = float(coeff_file.attrs['analysis_time'])
-             fits_by_tid_dict['smoothed_rate_above_thresh'] /= analysis_time
-             fits_by_tid_dict['smoothed_rate_in_template'] /= analysis_time
-             fits_by_tid_dict['fit_by_rate_above_thresh'] /= analysis_time
-             fits_by_tid_dict['fit_by_rate_in_template'] /= analysis_time
+            analysis_time = float(coeff_file.attrs['analysis_time'])
+            fits_by_tid_dict['smoothed_rate_above_thresh'] /= analysis_time
+            fits_by_tid_dict['smoothed_rate_in_template'] /= analysis_time
+            if 'fit_by_template' in coeff_file:
+                fits_by_tid_dict['fit_by_rate_above_thresh'] /= analysis_time
+                fits_by_tid_dict['fit_by_rate_in_template'] /= analysis_time
 
         # Keep the fit threshold in fits_by_tid
         fits_by_tid_dict['thresh'] = coeff_file.attrs['stat_threshold']
