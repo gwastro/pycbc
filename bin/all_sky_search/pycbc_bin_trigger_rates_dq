@@ -125,7 +125,7 @@ analysis_segs = select_segments_by_definer(
     segment_name=args.analysis_segment_name,
     ifo=ifo)
 
-livetime = analysis_segs.abs()
+livetime = abs(analysis_segs)
 
 # get flag segments
 flag_segs = select_segments_by_definer(args.flag_file,
@@ -185,7 +185,7 @@ with h5.File(args.output_file, 'w') as f:
         dq_rates = np.zeros(3, dtype=np.float64)
         for state, segs in dq_state_segs_dict.items():
             frac_eff = np.mean(trig_states == state)
-            frac_dt = segs.abs() / livetime
+            frac_dt = abs(segs) / livetime
             dq_rates[state] = frac_eff / frac_dt
         bin_grp['dq_rates'] = dq_rates
 
