@@ -309,7 +309,7 @@ def interpolate(series, delta_f, length=None):
     interpolated series : FrequencySeries
         A new FrequencySeries that has been interpolated.
     """
-    if length == None:
+    if length is None:
         new_n = (len(series)-1) * series.delta_f / delta_f + 1
     else:
         new_n = length
