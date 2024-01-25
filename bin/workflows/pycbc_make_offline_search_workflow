@@ -561,7 +561,7 @@ for ifo in ifo_bins:
         'bin_templates', 'background-bins', tags=[ifo])
     wf.make_template_plot(workflow, hdfbank, rdir['data_quality'],
                           bins=background_bins,
-                          tags=[ifo, 'dq_bins']+bank_tags)
+                          tags=[ifo, 'dq_bins'] + bank_tags)
 
 ############################## Setup the injection runs #######################
 
