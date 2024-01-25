@@ -301,7 +301,7 @@ def interpolate(series, delta_f, length=None):
     length : None or int
         The desired number of frequency samples. The default is None,
         so it will be calculated from the given `series` and `delta_f`.
-        But this will cause a inconsistency issue of length sometimes,
+        But this will cause an inconsistency issue of length sometimes,
         so if `length` is given, then just use it.
 
     Returns
