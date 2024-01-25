@@ -289,7 +289,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     return psd_out
 
-def interpolate(series, delta_f):
+def interpolate(series, delta_f, length=None):
     """Return a new PSD that has been interpolated to the desired delta_f.
 
     Parameters
@@ -298,13 +298,21 @@ def interpolate(series, delta_f):
         Frequency series to be interpolated.
     delta_f : float
         The desired delta_f of the output
+    length : None or int
+        The desired number of frequency samples. The default is None,
+        so it will be calculated from the given `series` and `delta_f`.
+        But this will cause an inconsistency issue of length sometimes,
+        so if `length` is given, then just use it.
 
     Returns
     -------
     interpolated series : FrequencySeries
         A new FrequencySeries that has been interpolated.
     """
-    new_n = (len(series)-1) * series.delta_f / delta_f + 1
+    if length is None:
+        new_n = (len(series)-1) * series.delta_f / delta_f + 1
+    else:
+        new_n = length
     samples = numpy.arange(0, numpy.rint(new_n)) * delta_f
     interpolated_series = numpy.interp(samples, series.sample_frequencies.numpy(), series.numpy())
     return FrequencySeries(interpolated_series, epoch=series.epoch,
