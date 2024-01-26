@@ -1,0 +1,182 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2015-2023 Ian Harry, Gareth Cabourn Davies
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Take a coinc xml file containing a single event and upload to gracedb.
+"""
+
+import os
+import sys
+import argparse
+import logging
+from ligo.gracedb.rest import GraceDb
+import numpy as np
+
+import pycbc
+import lal
+from pycbc.io.live import gracedb_tag_with_version
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--xml-file-for-upload', required=True, type=str,
+                    help='LIGOLW XML file containing the event.')
+parser.add_argument('--log-message', type=str, metavar='MESSAGE',
+                    help='Add a log entry to each upload with the given message')
+parser.add_argument('--testing', action="store_true", default=False,
+                    help="Upload event to the TEST group of gracedb.")
+parser.add_argument('--production-server', action="store_true", default=False,
+                    help="Upload event to production graceDB. If not given "
+                         "events will be uploaded to playground server.")
+parser.add_argument('--search-tag', default='AllSky',
+                    help="Specify the search tag. Default: AllSky")
+parser.add_argument('--snr-timeseries-plot',
+                    help="SNR timeseries plot to be uploaded with the event.")
+parser.add_argument('--asd-plot',
+                    help="ASD plot to be uploaded with the event.")
+parser.add_argument('--skymap-plot',
+                    help="Skymap plot to be uploaded with the event.")
+parser.add_argument('--skymap-fits-file',
+                    help="Skymap .fits file to be uploaded with the event.")
+parser.add_argument('--source-probabilities',
+                    help="Source probabilities file to be uploaded with the "
+                         "event.")
+parser.add_argument('--source-probabilities-plot',
+                    help="Source probabilities plot to be uploaded with the "
+                          "event.")
+parser.add_argument('--labels', nargs='+',
+                    help="Labels to add to the event in GraceDB")
+
+args = parser.parse_args()
+
+pycbc.init_logging(logging.INFO)
+# Make the scitokens logger a little quieter
+# (it is called through GraceDB)
+logging.getLogger('scitokens').setLevel(logging.root.level + 10)
+
+if args.production_server:
+    gracedb = GraceDb()
+else:
+    gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
+
+labels = [l.upper() for l in args.labels]
+allowed_labels = gracedb.allowed_labels
+
+if set(labels) - set(allowed_labels):
+    err_msg = "One or more supplied labels is not available on the server. "
+    err_msg += f"Supplied {','.join(labels)}, allowed "
+    err_msg += f"{','.join(allowed_labels)}."
+    raise RuntimeError(err_msg)
+
+group_tag = 'Test' if args.testing else 'CBC'
+r = gracedb.create_event(
+    group_tag,
+    'pycbc',
+    args.xml_file_for_upload,
+    filecontents=open(args.xml_file_for_upload, "rb").read(),
+    search=args.search_tag,
+    offline=True,
+    labels=labels
+).json()
+
+logging.info("Uploaded event %s.", r["graceid"])
+
+# add info for tracking code version
+gracedb_tag_with_version(gracedb, r['graceid'])
+
+# document the absolute path to the input file
+input_file_str = 'Candidate uploaded from ' \
+    + os.path.abspath(args.xml_file_for_upload)
+gracedb.write_log(r['graceid'], input_file_str)
+
+# document the command line used in the event log
+log_str = 'Upload command: ' + ' '.join(sys.argv)
+
+# add the custom log message, if provided
+if args.log_message is not None:
+    log_str += '. ' + args.log_message
+
+gracedb.write_log(
+    r['graceid'],
+    log_str,
+    tag_name=['analyst_comments']
+)
+
+
+def upload_file(upload_filename, displayname, comment, tag):
+    """
+    Helper function to upload files associated with the event.
+    """
+    logging.info("Uploading %s file %s to event %s.",
+                 displayname, upload_filename, r["graceid"])
+    gracedb.write_log(
+        r["graceid"],
+        comment,
+        filename=upload_filename,
+        tag_name=[tag],
+        displayName=[displayname]
+    )
+
+
+if args.asd_plot:
+    upload_file(
+        args.asd_plot,
+        "ASDs",
+        "PyCBC ASD estimate from the time of event",
+        "psd"
+    )
+
+if args.snr_timeseries_plot:
+    upload_file(
+        args.snr_timeseries_plot,
+        "SNR timeseries",
+        "SNR timeseries plot upload",
+        "background"
+    )
+
+if args.skymap_plot:
+    upload_file(
+        args.skymap_plot,
+        "",
+        "Skymap plot upload",
+        "sky_loc"
+    )
+
+if args.skymap_fits_file:
+    upload_file(
+        args.skymap_fits_file,
+        "",
+        "sky localization complete",
+        "sky_loc"
+    )
+
+if args.source_probabilities:
+    upload_file(
+        args.source_probabilities,
+        "",
+        "Source probabilities JSON file upload",
+        "pe"
+    )
+
+if args.source_probabilities_plot:
+    upload_file(
+        args.source_probabilities_plot,
+        "",
+        "Source probabilities plot upload",
+        "pe"
+    )
+
+logging.info('Done!')

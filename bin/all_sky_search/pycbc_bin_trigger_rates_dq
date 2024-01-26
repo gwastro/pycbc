@@ -19,8 +19,8 @@ from pycbc.io.hdf import HFile, SingleDetTriggers
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
 parser.add_argument("--template-bins-file", required=True)
 parser.add_argument("--trig-file", required=True)
 parser.add_argument("--flag-file", required=True)

@@ -16,7 +16,7 @@
 import sys, h5py, argparse, logging, pycbc.version, numpy
 from scipy.stats import norm
 from pycbc.events import triggers
-
+from pycbc import init_logging
 
 def dist(i1, i2, parvals, smoothing_width):
     """
@@ -172,9 +172,8 @@ parser = argparse.ArgumentParser(usage="",
                 "parameter, to suppress random noise in the resulting "
                 "background model.")
 
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action=pycbc.version.Version)
-parser.add_argument("-V", "--verbose", action="store_true",
-                    help="Print extra debugging information", default=False)
 parser.add_argument("--template-fit-file",
                     help="hdf5 file containing fit coefficients for each"
                          " individual template. Required")
@@ -250,7 +249,7 @@ for inputstr in smooth_kwargs:
 
 assert len(args.log_param) == len(args.fit_param) == len(args.smoothing_width)
 
-pycbc.init_logging(args.verbose)
+init_logging(args.verbose)
 
 fits = h5py.File(args.template_fit_file, 'r')
 

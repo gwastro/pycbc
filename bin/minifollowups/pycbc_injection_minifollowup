@@ -14,20 +14,112 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Followup foreground events """
 
-import os, argparse, numpy, logging, h5py, copy
+"""Create a workflow for following up missed loud injections."""
+
+import os
+import argparse
+import logging
+import copy
+import numpy
+import h5py
 import pycbc.workflow as wf
+import pycbc.workflow.minifollowups as mini
+import pycbc.version
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.results import layout
 from pycbc.detector import Detector
-import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file
-import pycbc.version, pycbc.pnutils
 from pycbc.io.hdf import SingleDetTriggers, HFile
 
-parser = argparse.ArgumentParser(description=__doc__[1:])
+
+legal_distance_types = [
+    'decisive_optimal_snr',
+    'comb_optimal_snr',
+    'dec_chirp_distance'
+]
+
+
+def sort_injections(args, inj_group, missed):
+    """Return an array of indices to sort the missed injections from most to
+    least likely to be detected, according to a metric of choice.
+
+    Parameters
+    ----------
+    args : object
+        CLI arguments parsed by argparse. Must have a `distance_type` attribute
+        to specify how to sort, which must be one of the values in
+        `legal_distance_types`.
+    inj_group : h5py group object
+        HDF5 group object containing the injection definition.
+    missed : array
+        Array of indices of missed injections into `inj_group`.
+
+    Returns
+    -------
+    missed_sorted : array
+        Array of indices of missed injections sorted as requested.
+    """
+    if not hasattr(args, 'distance_type'):
+        raise ValueError('Distance type not provided')
+    if args.distance_type not in legal_distance_types:
+        raise ValueError(
+            f'Invalid distance type "{args.distance_type}", '
+            f'allowed types are {", ".join(legal_distance_types)}'
+        )
+
+    if 'optimal_snr' in args.distance_type:
+        optimal_snrs = [
+            inj_group[dsn][:][missed] for dsn in inj_group.keys()
+            if dsn.startswith('optimal_snr_')
+        ]
+        assert optimal_snrs, 'These injections do not have optimal SNRs'
+
+    if args.distance_type == 'decisive_optimal_snr':
+        # descending order of decisive (2nd largest) optimal SNR
+        dec_snr = numpy.array([
+            sorted(snrs)[-2] for snrs in zip(*optimal_snrs)
+        ])
+        if args.maximum_decisive_snr is not None:
+            # By setting to 0, these injections will not be considered
+            dec_snr[dec_snr > args.maximum_decisive_snr] = 0
+        sorter = dec_snr.argsort()[::-1]
+        return missed[sorter]
+
+    if args.distance_type == 'comb_optimal_snr':
+        # descending order of network optimal SNR
+        optimal_snrs = numpy.vstack(optimal_snrs)
+        net_opt_snrs_squared = (optimal_snrs ** 2).sum(axis=0)
+        sorter = net_opt_snrs_squared.argsort()[::-1]
+        return missed[sorter]
+
+    if args.distance_type == 'dec_chirp_distance':
+        # ascending order of decisive (2nd smallest) chirp distance
+        from pycbc.conversions import mchirp_from_mass1_mass2, chirp_distance
+
+        eff_dists = []
+        for ifo in args.single_detector_triggers:
+            eff_dist = Detector(ifo).effective_distance(
+                inj_group['distance'][:][missed],
+                inj_group['ra'][:][missed],
+                inj_group['dec'][:][missed],
+                inj_group['polarization'][:][missed],
+                inj_group['tc'][:][missed],
+                inj_group['inclination'][:][missed]
+            )
+            eff_dists.append(eff_dist)
+        dec_eff_dist = sorted(eff_dists)[-2]
+        mchirp = mchirp_from_mass1_mass2(
+            inj_group['mass1'][:][missed],
+            inj_group['mass2'][:][missed]
+        )
+        dec_chirp_dist = chirp_distance(dec_dist, mchirp)
+        sorter = dec_chirp_dist.argsort()
+        return missed[sorter]
+
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
@@ -57,6 +149,11 @@ parser.add_argument('--nearby-triggers-window', type=float, default=0.05,
                     help="Maximum time difference between the missed "
                          "injection and the loudest SNR nearby trigger to "
                          "display, seconds. Default=0.05")
+parser.add_argument('--distance-type',
+                    required=True,
+                    choices=legal_distance_types,
+                    help="How to sort missed injections from most to least "
+                         "likely to be detected")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -84,12 +181,16 @@ for ifo in args.single_detector_triggers:
     strig_file = resolve_url_to_file(os.path.abspath(fname),
                                      attrs={'ifos': ifo})
     single_triggers.append(strig_file)
-    insp_data_seglists[ifo] = select_segments_by_definer\
-        (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
-         ifo=ifo)
-    insp_analysed_seglists[ifo] = select_segments_by_definer\
-        (args.inspiral_segments, segment_name=args.inspiral_data_analyzed_name,
-         ifo=ifo)
+    insp_data_seglists[ifo] = select_segments_by_definer(
+        args.inspiral_segments,
+        segment_name=args.inspiral_data_read_name,
+        ifo=ifo
+    )
+    insp_analysed_seglists[ifo] = select_segments_by_definer(
+        args.inspiral_segments,
+        segment_name=args.inspiral_data_analyzed_name,
+        ifo=ifo
+    )
     # NOTE: make_singles_timefreq needs a coalesced set of segments. If this is
     #       being used to determine command-line options for other codes,
     #       please think if that code requires coalesced, or not, segments.
@@ -97,56 +198,21 @@ for ifo in args.single_detector_triggers:
     insp_analysed_seglists[ifo].coalesce()
 
 f = h5py.File(args.injection_file, 'r')
+inj_def = f['injections']
 missed = f['missed/after_vetoes'][:]
 if args.ifar_threshold is not None:
     try:  # injections may not have (inclusive) IFAR present
         ifars = f['found_after_vetoes']['ifar'][:]
     except KeyError:
         ifars = f['found_after_vetoes']['ifar_exc'][:]
-        logging.warn('Inclusive IFAR not found, using exclusive')
+        logging.warning('Inclusive IFAR not found, using exclusive')
     lgc_arr = ifars < args.ifar_threshold
     missed = numpy.append(missed,
                           f['found_after_vetoes']['injection_index'][lgc_arr])
 
-num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
-
-try:
-    optstrings = [os for os in f['injections'].keys() if \
-                  os.startswith('optimal_snr_')]
-    optimal_snr = [f['injections/%s' % os][:][missed] for os in optstrings]
-    # 2nd largest opt SNR
-    dec_snr = [sorted(snrs)[-2] for snrs in zip(*optimal_snr)]
-    dec_snr = numpy.array(dec_snr)
-
-    if args.maximum_decisive_snr is not None:
-        # By setting to 0, these injections will not be considered
-        dec_snr[dec_snr > args.maximum_decisive_snr] = 0
-    sorting = dec_snr.argsort()
-    sorting = sorting[::-1]  # descending order of dec opt SNR
-except KeyError:
-    # Fall back to effective distance if optimal SNR not available
-    eff_dist = {}
-    for trig in single_triggers:
-        ifo = trig.ifo
-        eff_dist[ifo] = Detector(ifo).effective_distance(
-                             f['injections/distance'][:][missed],
-                             f['injections/ra'][:][missed],
-                             f['injections/dec'][:][missed],
-                             f['injections/polarization'][:][missed],
-                             f['injections/tc'][:][missed],
-                             f['injections/inclination'][:][missed])
-
-    dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo],
-                             eff_dist[single_triggers[1].ifo])
-    mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(\
-                                              f['injections/mass1'][:][missed],
-                                              f['injections/mass2'][:][missed])
-    dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
-    sorting = dec_chirp_dist.argsort()  # ascending order of dec chirp distance
-
 # Get the trigger SNRs and times
 # But only ones which are within a small window of the missed injection
-missed_inj_times = numpy.sort(f['injections/tc'][:][missed])
+missed_inj_times = numpy.sort(inj_def['tc'][:][missed])
 
 # Note: Adding Earth diameter in light seconds to the window here
 # to allow for different IFO's arrival times of the injection
@@ -188,23 +254,32 @@ for trig in single_triggers:
                 f'{ifo}/snr',
                 return_indices=True)
 
+# figure out how many injections to follow up
+num_events = int(workflow.cp.get_opt_tags(
+    'workflow-injection_minifollowups',
+    'num-events',
+    ''
+))
 if len(missed) < num_events:
     num_events = len(missed)
 
-# loop over loudest events to be followed up
+# sort the injections
+missed = sort_injections(args, inj_def, missed)
+
+# loop over sorted missed injections to be followed up
 found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
 
-    injection_index = missed[sorting][num_event]
-    time = f['injections/tc'][injection_index]
-    lon = f['injections/ra'][injection_index]
-    lat = f['injections/dec'][injection_index]
+    injection_index = missed[num_event]
+    time = inj_def['tc'][injection_index]
+    lon = inj_def['ra'][injection_index]
+    lat = inj_def['dec'][injection_index]
 
     ifo_times = ''
     inj_params = {}
     for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'tc']:
-        inj_params[val] = f['injections/%s' %(val,)][injection_index]
+        inj_params[val] = inj_def[val][injection_index]
     for single in single_triggers:
         ifo = single.ifo
         det = Detector(ifo)
@@ -271,9 +346,10 @@ for num_event in range(num_events):
                      tags=args.tags + [str(num_event)])
                 break
         else:
-            logging.info('Trigger time {} is not valid in {}, ' \
-                         'skipping singles plots'.format(checkedtime,
-                                                         single.ifo))
+            logging.info(
+                'Trigger time %s is not valid in %s, skipping singles plots',
+                checkedtime, single.ifo
+            )
 
     files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
@@ -349,7 +425,6 @@ for num_event in range(num_events):
                                 params_str='loudest template in %s' % curr_ifo )
 
     layouts += list(layout.grouper(files, 2))
-    num_event += 1
 
 workflow.save()
 layout.two_column_layout(args.output_dir, layouts)
