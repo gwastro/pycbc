@@ -802,7 +802,7 @@ def template_hash_to_id(trigger_file, bank_path):
     ifos = [k for k in trigger_file.keys() if k != 'network']
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
     trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
-    for idx, hash in enumerate(hashes):
-        matches = numpy.where(trig_hashes == hash)
+    for idx, t_hash in enumerate(hashes):
+        matches = numpy.where(trig_hashes == t_hash)
         trig_ids[matches] = idx
     return trig_ids
