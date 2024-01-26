@@ -3,8 +3,11 @@
 import numpy, h5py, argparse
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+from pycbc import init_logging, add_common_pycbc_options
+import logging
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--signal-file')
 parser.add_argument('--template-file', required=True)
 parser.add_argument('--param', nargs='+', required=True,
@@ -21,8 +24,9 @@ parser.add_argument('--plot-order', choices=['file', 'increasing', 'decreasing']
                          ' or "decreasing"')
 parser.add_argument('--which-kde', choices=['signal_kde', 'template_kde', 'ratio_kde'])
 parser.add_argument('--plot-dir', required=True)
-parser.add_argument('--verbose', action='count')
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 if args.plot_type == 'kde_vs_param':
     if len(args.param) != 1:

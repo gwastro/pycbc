@@ -13,15 +13,15 @@
 # Public License for more details.
 
 import numpy, h5py, operator, argparse, logging
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.conversions as convert
 from pycbc import libutils
 from pycbc.events import triggers
 akde = libutils.import_optional('awkde')
 kf = libutils.import_optional('sklearn.model_selection')
 
-
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--signal-file', help='File with parameters of GW signals '
                     'for KDE calculation')
 parser.add_argument('--template-file', required=True, help='Hdf5 file with '
@@ -64,9 +64,8 @@ parser.add_argument('--mchirp-downsample-power', type=float,
                     help='Exponent value for the power law distribution')
 parser.add_argument('--min-ratio', type=float, 
                     help='Minimum ratio for template_kde relative to the maximum')
-parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
-init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
+init_logging(args.verbose)
 
 
 assert len(args.fit_param) == len(args.log_param)

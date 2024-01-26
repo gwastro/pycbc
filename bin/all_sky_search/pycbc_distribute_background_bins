@@ -4,7 +4,7 @@ import pycbc.version
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action=pycbc.version.Version)
-parser.add_argument('--verbose', action='store_true')
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--coinc-files', nargs='+',
                     help="List of coinc files to be redistributed")
 parser.add_argument('--background-bins', nargs='+',

@@ -32,6 +32,7 @@ import pycbc.version
 
 parser = argparse.ArgumentParser(usage="",
     description="Plot histograms of triggers split over various parameters")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file", required=True,
                     help="Input hdf5 file containing single triggers. "
                          "Required")
@@ -39,7 +40,6 @@ parser.add_argument("--bank-file", default=None, required=True,
                     help="hdf file containing template parameters. Required")
 parser.add_argument('--output-file', required=True,
                     help="Output image file. Required")
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--bin-param', default='template_duration',
                     choices=bank_conversions.conversion_options,
                     help="Parameter for binning within plots, default "

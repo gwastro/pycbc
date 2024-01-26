@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
 import numpy, h5py, argparse, logging
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--kde-files', nargs='+', required=True,
                     help='HDF files with KDE values')
 parser.add_argument('--output-file', required=True, help='Name of output HDF file')
 parser.add_argument('--min-ratio', type=float,
                     help='Minimum ratio for template_kde relative to the maximum')
-parser.add_argument('--verbose', action='store_true')
 args = parser.parse_args()
-init_logging(verbose=args.verbose, format='%(asctime)s %(message)s')
+init_logging(args.verbose)
 
 
 input_kdes = [h5py.File(kfile, 'r') for kfile in args.kde_files]

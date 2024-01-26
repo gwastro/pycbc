@@ -11,8 +11,8 @@ from pycbc.events import veto
 from pycbc.types.timeseries import TimeSeries
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
 parser.add_argument("--gps-start-time", type=int,required=True,
                     help="The gps start time of the data "
                           "(integer seconds)")
