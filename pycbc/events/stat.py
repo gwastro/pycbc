@@ -1727,7 +1727,7 @@ def insert_statistic_option_group(parser, default_ranking_statistic=None):
     return statistic_opt_group
 
 
-def parse_statistic_feature_options(opts):
+def parse_statistic_feature_options(stat_features, stat_kwarg_list):
     """
     Parse the list of statistic keywords into an appropriate dictionary.
 
@@ -1745,7 +1745,17 @@ def parse_statistic_feature_options(opts):
         Statistic keywords in dict format
     """
     stat_kwarg_dict = {}
-    stat_kwarg_list = opts.statistic_keywords
+
+    # Check that the statistic keywords are allowed
+    for feature in stat_features:
+        if feature not in _allowed_statistic_features:
+            err_msg = f"--statistic-feature {feature} not recognised"
+            raise NotImplementedError(err_msg)
+
+    # Set values for each feature key to a boolean of whether we want them
+    for feature in _allowed_statistic_features:
+        stat_kwarg_dict[feature] = feature in stat_features
+
     for inputstr in stat_kwarg_list:
         try:
             key, value = inputstr.split(':')
@@ -1755,16 +1765,6 @@ def parse_statistic_feature_options(opts):
                       "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
                       "Received {}".format(' '.join(stat_kwarg_list))
             raise ValueError(err_txt)
-
-    # Check that the statistic keywords are allowed
-    for feature in opts.statistic_features:
-        if feature not in _allowed_statistic_features:
-            err_msg = f"--statistic-feature {feature} not recognised"
-            raise NotImplementedError(err_msg)
-
-    # Set values for each feature key to a boolean of whether we want them
-    for feature in _allowed_statistic_features:
-        stat_kwarg_dict[feature] = feature in opts.statistic_features
 
     return stat_kwarg_dict
 
@@ -1801,7 +1801,10 @@ def get_statistic_from_opts(opts, ifos):
             isinstance(opts.statistic_files[0], list):
         opts.statistic_files = sum(opts.statistic_files, [])
 
-    extra_kwargs = parse_statistic_feature_options(opts)
+    extra_kwargs = parse_statistic_feature_options(
+        opts.statistic_features,
+        opts.statistic_keywords,
+    )
 
     stat_class = get_statistic(opts.ranking_statistic)(
         opts.sngl_ranking,
