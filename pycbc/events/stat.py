@@ -33,6 +33,8 @@ from . import coinc_rate
 from .eventmgr_cython import logsignalrateinternals_computepsignalbins
 from .eventmgr_cython import logsignalrateinternals_compute2detrate
 
+logger = logging.getLogger('pycbc.events.stat')
+
 
 class Stat(object):
     """Base class which should be extended to provide a coincident statistic"""
@@ -64,7 +66,7 @@ class Stat(object):
             if stat in self.files:
                 raise RuntimeError("We already have one file with stat attr ="
                                    " %s. Can't provide more than one!" % stat)
-            logging.info("Found file %s for stat %s", filename, stat)
+            logger.info("Found file %s for stat %s", filename, stat)
             self.files[stat] = filename
 
         # Provide the dtype of the single detector method's output
@@ -381,7 +383,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if selected is None and len(ifos) > 1:
             raise RuntimeError("Couldn't figure out which stat file to use")
 
-        logging.info("Using signal histogram %s for ifos %s", selected, ifos)
+        logger.info("Using signal histogram %s for ifos %s", selected, ifos)
         weights = {}
         param = {}
 
@@ -390,7 +392,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
             # Patch for pre-hdf5=3.0 histogram files
             try:
-                logging.info("Decoding hist ifos ..")
+                logger.info("Decoding hist ifos ..")
                 self.hist_ifos = [i.decode('UTF-8') for i in self.hist_ifos]
             except (UnicodeDecodeError, AttributeError):
                 pass
