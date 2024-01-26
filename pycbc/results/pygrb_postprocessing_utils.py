@@ -790,7 +790,7 @@ def get_coinc_snr(trigs_or_injs, ifos):
 def template_hash_to_id(trigger_file, bank_path):
     """
     This function converts the template hashes from a trigger file
-    into `template_id`s that represent indices of the
+    into 'template_id's that represent indices of the
     templates within the bank.
     Parameters
     ----------
