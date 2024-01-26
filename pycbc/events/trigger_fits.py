@@ -52,6 +52,8 @@ import logging
 import numpy
 from scipy.stats import kstest
 
+logger = logging.getLogger('pycbc.events.trigger_fits')
+
 def exponential_fitalpha(vals, thresh, w):
     """
     Maximum likelihood estimator for the fit factor for
@@ -127,8 +129,8 @@ def fit_above_thresh(distr, vals, thresh=None, weights=None):
         above_thresh = vals >= thresh
         if numpy.count_nonzero(above_thresh) == 0:
             # Nothing is above threshold - warn and return -1
-            logging.warning("No values are above the threshold, %.2f, "
-                            "maximum is %.2f.", thresh, vals.max())
+            logger.warning("No values are above the threshold, %.2f, "
+                           "maximum is %.2f.", thresh, vals.max())
             return -1., -1.
 
         vals = vals[above_thresh]

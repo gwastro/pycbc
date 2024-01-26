@@ -7,8 +7,8 @@ import pycbc.events
 from pycbc.workflow import SegFile
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--foreground-triggers',
                     help="HDF file containing the zerolag foreground triggers "
                          "from the analysis")

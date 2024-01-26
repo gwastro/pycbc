@@ -11,8 +11,8 @@ from ligo.segments import segmentlist, segment
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
                     help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--analysis-segment-file",  required=True,
