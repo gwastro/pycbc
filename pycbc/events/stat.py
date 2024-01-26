@@ -2086,11 +2086,15 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
     def find_dq_noise_rate(self, trigs, dq_state):
         """Get dq values for a specific ifo and dq states"""
+
         try:
             tnum = trigs.template_num
-            ifo = trigs.ifo
         except AttributeError:
             tnum = trigs['template_id']
+
+        try:
+            ifo = trigs.ifo
+        except AttributeError:
             ifo = trigs['ifo']
             assert len(numpy.unique(ifo)) == 1
             # Should be exactly one ifo provided
@@ -2141,14 +2145,12 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         # make sure every trig has a dq state
 
         try:
-            # works in offline
             ifo = trigs.ifo
         except AttributeError:
             ifo = trigs['ifo']
-            unq = numpy.unique(ifo)
-            assert len(unq) == 1
+            assert len(numpy.unique(ifo)) == 1
             # Should be exactly one ifo provided
-            ifo = unq[0]
+            ifo = ifo[0]
 
         dq_state = self.find_dq_state_by_time(ifo, trigs['end_time'][:])
         dq_rate = self.find_dq_noise_rate(trigs, dq_state)
