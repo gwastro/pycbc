@@ -55,8 +55,8 @@ def com_with_detector_key(f, files, group):
     
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-files', nargs='+',
                     help="List of coinc files to be redistributed")
 parser.add_argument('--output-file', help="name of output file")
