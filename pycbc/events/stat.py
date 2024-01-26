@@ -1195,7 +1195,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             Used to label the kde files.
         """
         with h5py.File(self.files[kname + '-kde_file'], 'r') as kde_file:
-            self.kde_by_tid[kname + '_kdevals'] = kde_file['data_kde'][:].astype(numpy.float32)
+            self.kde_by_tid[kname + '_kdevals'] = kde_file['data_kde'][:]
 
     def kde_ratio(self):
         """
