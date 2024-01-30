@@ -242,28 +242,26 @@ if onsource_file:
                                         bank_file['mass2'][:][on_trigs['network/template_id']])
 
     # Set loudest event arrays
-    #loud_on_bestnr_trigs = None
     loud_on_bestnr = 0
-    #loud_on_fap = 1
 
-    # Retrieve BestNRs and record loudest trig by BestNR
+    # Retrieve BestNRs and record loudest trig by BestNR.
+    # Get indices of loudest triggers and pick the loudest.
     if on_trigs:
-        on_trigs_bestnrs = on_trigs['network/reweighted_snr'][:]
-        loud_on_bestnr_trigs, loud_on_bestnr = \
-            np.asarray([[x, y] for y, x in sorted(zip(on_trigs_bestnrs, on_trigs),
-                                                  key=lambda elem: elem[0],
-                                                  reverse=True)])[0]
+        loud_on_bestnr_idx = np.argsort(on_trigs['network/reweighted_snr'])
+        loud_on_bestnr_idx = np.flip(loud_on_bestnr_idx)
+        loud_on_bestnr = np.max(on_trigs['network/reweighted_snr'])
+
+    # Convert to float for output
     loud_on_bestnr = float(loud_on_bestnr)
 
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
-        loud_on_bestnr_trigs = None
+        loud_on_bestnr_idx = None
         loud_on_fap = 1
 
     logging.info("Onsource analysed.")
 
-    if loud_on_bestnr_trigs:
-        trig = loud_on_bestnr_trigs
+    if loud_on_bestnr_idx:
         num_trials_louder = 0
         tot_off_snr = np.array([])
         for slide_id in slide_dict:
