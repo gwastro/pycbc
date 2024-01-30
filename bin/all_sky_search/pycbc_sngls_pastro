@@ -39,7 +39,7 @@ mchirp_power = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", action='count')
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("--single-statmap-files", nargs='+', required=True,

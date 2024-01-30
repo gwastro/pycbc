@@ -30,10 +30,9 @@ import pycbc
 import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument("-V", "--verbose", action="store_true",
-                    help="print extra debugging information", default=False)
 parser.add_argument("--input-bank", required=True,
                     help="Input template bank HDF file.")
 parser.add_argument("--output-bank", required=True,

@@ -14,6 +14,8 @@ import logging
 import numpy
 import pycbc.detector
 
+logger = logging.getLogger('pycbc.events.coinc_rate')
+
 
 def multiifo_noise_lograte(log_rates, slop):
     """
@@ -82,9 +84,9 @@ def combination_noise_rate(rates, slop):
     numpy array
         Expected coincidence rate in the combination, units Hz
     """
-    logging.warning('combination_noise_rate() is liable to numerical '
-                    'underflows, use combination_noise_lograte '
-                    'instead')
+    logger.warning('combination_noise_rate() is liable to numerical '
+                   'underflows, use combination_noise_lograte '
+                   'instead')
     log_rates = {k: numpy.log(r) for (k, r) in rates.items()}
     # exp may underflow
     return numpy.exp(combination_noise_lograte(log_rates, slop))

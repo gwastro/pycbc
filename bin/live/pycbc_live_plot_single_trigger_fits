@@ -58,6 +58,7 @@ logging.info("Getting trigger fits file information")
 with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
     # Get the ifos to plot from the file
     # Check that all the ifos we want to plot are in the file
+    all_ifos = trfit_f.attrs['ifos'].split(',')
     ifos = [k for k in trfit_f.keys() if not k.startswith('bins')]
 
     # Grab some info from the attributes
@@ -104,15 +105,33 @@ init_level = logger.level
 
 logging.info("Plotting fits")
 
-for ifo in ifos:
+for ifo in all_ifos:
     # Skip if no triggers in this IFO
-    if not len(stats[ifo]): continue
+    fig, ax = plt.subplots(1)
+    oput_plot = args.output_plot_name_format.format(ifo=ifo)
+
+    if ifo not in ifos or not len(stats[ifo]):
+        # Plot a blank plot with a message to show it worked, but there
+        # weren't any triggers
+        plt.tick_params(labelcolor='none', top=False, bottom=False, left=False,
+                        right=False)
+        ax.text(
+            0.5, 0.5,
+            "No triggers above threshold in this detector",
+            horizontalalignment='center',
+            verticalalignment='center',
+        )
+        logging.info(f"Saving {oput_plot}")
+        # Save initial logging level
+        logger.setLevel(logging.WARNING)
+        fig.savefig(oput_plot)
+        logger.setLevel(init_level)
+
+        continue
 
     # Keep track of some maxima for use in setting the plot limits
     maxstat = stats[ifo].max()
     max_rate = 0
-
-    fig, ax = plt.subplots(1)
 
     plotbins = np.linspace(fit_threshold, 1.05 * maxstat)
 
@@ -149,7 +168,6 @@ for ifo in ifos:
                 color=bin_colour, label=binlabel, alpha=0.6)
         ax.plot(plotbins, cum_fit, "--", color=bin_colour,
                 label=r"$\alpha = $%.2f" % alphas[ifo][bin_num])
-    oput_plot = args.output_plot_name_format.format(ifo=ifo)
     ax.semilogy()
     ax.grid()
     x_upper = args.x_lim_upper or 1.05 * maxstat

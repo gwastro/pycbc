@@ -10,9 +10,9 @@ from pycbc.events import veto, coinc, significance
 import pycbc.conversions as conv
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-file', type=str,
     help="Coinc statmap file to be recalculated based on foreground removal")
 parser.add_argument('--other-statmap-files', nargs='+',
