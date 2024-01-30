@@ -17,8 +17,7 @@ from pycbc.io.ligolw import (
     make_psd_xmldoc,
     snr_series_to_xml
 )
-from pycbc.results import generate_asd_plot
-from pycbc.results import ifo_color
+from pycbc.results import generate_asd_plot, generate_snr_plot
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
 
@@ -345,8 +344,6 @@ class CandidateForGraceDB(object):
         labels: list
             Optional list of labels to tag the new event with.
         """
-        import matplotlib
-        matplotlib.use('Agg')
         import pylab as pl
 
         if fname.endswith('.xml.gz'):
@@ -446,27 +443,21 @@ class CandidateForGraceDB(object):
             snr_series_plot_fname = self.basename + '_snr.png'
             asd_series_plot_fname = self.basename + '_asd.png'
 
-            pl.figure()
+            triggers = {
+                ifo: (self.coinc_results[f'foreground/{ifo}/end_time']
+                      + self.time_offset,
+                      self.coinc_results[f'foreground/{ifo}/snr'])
+                for ifo in self.et_ifos
+                }
             ref_time = int(self.merger_time)
+            generate_snr_plot(self.snr_series, snr_series_plot_fname,
+                              triggers, ref_time)
+
+            generate_asd_plot(self.psds, asd_series_plot_fname)
+
             for ifo in sorted(self.snr_series):
                 curr_snrs = self.snr_series[ifo]
                 curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
-                pl.plot(curr_snrs.sample_times - ref_time, abs(curr_snrs),
-                        c=ifo_color(ifo), label=ifo)
-                if ifo in self.et_ifos:
-                    base = 'foreground/{}/'.format(ifo)
-                    snr = self.coinc_results[base + 'snr']
-                    mt = (self.coinc_results[base + 'end_time']
-                          + self.time_offset)
-                    pl.plot([mt - ref_time], [snr], c=ifo_color(ifo),
-                            marker='x')
-            pl.legend()
-            pl.xlabel('GPS time from {:d} (s)'.format(ref_time))
-            pl.ylabel('SNR')
-            pl.savefig(snr_series_plot_fname)
-            pl.close()
-
-            generate_asd_plot(self.psds, asd_series_plot_fname)
 
             # Additionally save the PSDs into the snr_series file
             for ifo in sorted(self.psds):

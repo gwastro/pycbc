@@ -517,7 +517,8 @@ class SingleDetTriggers(object):
         be considered."""
 
         # If this becomes memory intensive we can optimize
-        stat = rank_method.rank_stat_single((self.ifo, self.trig_dict()))
+        sds = rank_method.single(self.trig_dict())
+        stat = rank_method.rank_stat_single((self.ifo, sds))
         if len(stat) == 0:
             # No triggers, so just return here
             self.stat = np.array([])
@@ -962,6 +963,10 @@ class ForegroundTriggers(object):
                     val = sngl_col_vals[name][ifo][0][idx]
                     if name == 'end_time':
                         sngl.end = LIGOTimeGPS(val)
+                    elif name == 'chisq':
+                        # Use reduced chisquared to be consistent with Live
+                        dof = 2. * sngl_col_vals['chisq_dof'][ifo][0][idx] - 2.
+                        sngl.chisq = val / dof
                     else:
                         setattr(sngl, name, val)
                 for name in bank_col_names:

@@ -84,12 +84,29 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-snr_filter = '(self.snr>%f)' % (opts.min_snr) if opts.min_snr > 0. else None 
-filts = [f for f in [snr_filter, opts.filter_string] if f is not None]
-filter_func = ' & '.join(filts) if filts else None
+data_mask = None
+if opts.min_snr > 0:
+    with pycbc.io.HFile(opts.single_trig_file, 'r') as trig_file:
+        n_triggers_orig = trig_file[f'{opts.detector}/snr'].size
+        logging.info("Trigger file has %d triggers", n_triggers_orig)
+        logging.info('Generating trigger mask (on SNR)')
+        idx, _ = trig_file.select(
+            lambda snr: snr >= opts.min_snr,
+            f'{opts.detector}/snr',
+            return_indices=True
+        )
+        data_mask = np.zeros(n_triggers_orig, dtype=bool)
+        data_mask[idx] = True
 
-trigs = pycbc.io.SingleDetTriggers(opts.single_trig_file, opts.bank_file,
-                  opts.veto_file, opts.segment_name, filter_func, opts.detector)
+trigs = pycbc.io.SingleDetTriggers(
+    opts.single_trig_file,
+    opts.bank_file,
+    opts.veto_file,
+    opts.segment_name,
+    opts.filter_string,
+    opts.detector,
+    premask=data_mask
+)
 
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
@@ -108,10 +125,14 @@ y = y[mask]
 
 hexbin_style = {
     'gridsize': opts.grid_size,
-    # hexbin shows bins with *less* than mincnt as blank
-    'mincnt': 0,
     'linewidths': 0.03
 }
+
+# In earlier versions mpl will try to take the max over bins with 0 triggers
+# and fail, unless we tell it to leave these blank by setting mincnt
+if matplotlib.__version__ < '3.8.1':
+    hexbin_style['mincnt'] = 0
+
 if opts.log_x:
     hexbin_style['xscale'] = 'log'
 if opts.log_y:
@@ -137,7 +158,7 @@ elif opts.z_var in ranking.sngls_ranking_function_dict:
     max_z = z.max() if opts.max_z is None else opts.max_z
     if max_z / min_z > 10:
         cb_style['ticks'] = LogLocator(subs=range(10))
-    hb = ax.hexbin(x, y, C=z, reduce_C_function=max, **hexbin_style)
+    hb = ax.hexbin(x, y, C=z, reduce_C_function=np.max, **hexbin_style)
     fig.colorbar(hb, **cb_style)
 else:
     raise RuntimeError('z_var = %s is not recognized!' % (opts.z_var))

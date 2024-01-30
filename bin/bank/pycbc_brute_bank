@@ -55,6 +55,8 @@ parser.add_argument('--enable-sigma-bound', action='store_true')
 parser.add_argument('--tau0-threshold', type=float)
 parser.add_argument('--permissive', action='store_true',
     help='Allow waveform generator to fail.')
+parser.add_argument('--placement-iterations', default=1000, type=int, 
+    help='Specify the number of attempts the bank should make when placing points. Use this option if the bank fails to place any points.')
 parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--tolerance', type=float)
 parser.add_argument('--max-mtotal', type=float)
@@ -431,7 +433,7 @@ def cdraw(rtype, ts, te):
             p = {k: p[k][l] for k in p}
 
         i += 1
-        if i > 1000:
+        if i > args.placement_iterations:
             break
 
     if len(p[list(p.keys())[0]]) == 0:

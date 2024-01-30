@@ -117,7 +117,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
                     require_exact_data_fit=False)
 
         if delta_f != psd.delta_f:
-            psd = interpolate(psd, delta_f)
+            psd = interpolate(psd, delta_f, length)
 
     else:
         # Shouldn't be possible to get here
