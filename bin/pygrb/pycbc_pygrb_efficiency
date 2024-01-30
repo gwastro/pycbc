@@ -189,7 +189,7 @@ logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
-    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict, segment_dict, opts)
+    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict, segment_dict)
 
 # Calculate BestNR values and maximum
 time_veto_max_bestnr = {}
@@ -261,7 +261,7 @@ if onsource_file:
 
     logging.info("Onsource analysed.")
 
-    if loud_on_bestnr_idx:
+    if loud_on_bestnr_idx is not None:
         num_trials_louder = 0
         tot_off_snr = np.array([])
         for slide_id in slide_dict:
