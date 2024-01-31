@@ -19,10 +19,14 @@ This modules provides classes and functions for using the emcee_pt sampler
 packages for parameter estimation.
 """
 
-
+import logging
 import numpy
 import emcee
-import logging
+
+# This is a hack that will allow us to continue using emcee's abandoned
+# PTSampler, which relied on `numpy.float`, until the end of time.
+numpy.float = float
+
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
