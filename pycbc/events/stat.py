@@ -1565,12 +1565,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
 
         # First get signal PDF logr_s
         stat = {ifo: st for ifo, st in s}
-
-        try:
-            self.curr_mchirp = kwargs['mchirp']
-        except KeyError:
-            pass
-
         logr_s = self.logsignalrate(stat, slide * step, to_shift)
 
         # Find total volume of phase-time-amplitude space occupied by noise
@@ -1749,32 +1743,6 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         logr_s += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return logr_s
 
-    def rank_stat_single(self, single_info,
-                         **kwargs): # pylint:disable=unused-argument
-        """
-        Calculate the statistic for a single detector candidate
-
-        This calls back to the Parent class and then applies the chirp mass
-        weighting factor.
-
-        Parameters
-        ----------
-        single_info: tuple
-            Tuple containing two values. The first is the ifo (str) and the
-            second is the single detector triggers.
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector statistics
-        """
-        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
-            self,
-            single_info,
-            **kwargs)
-        rank_sngl += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
-        return rank_sngl
-
     def single(self, trigs):
         """
         Calculate the necessary single detector information
@@ -1807,6 +1775,64 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
             # Careful - input might be a str, so cast to float
             self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
         return ExpFitFgBgNormStatistic.single(self, trigs)
+
+    def rank_stat_single(self, single_info,
+                         **kwargs): # pylint:disable=unused-argument
+        """
+        Calculate the statistic for a single detector candidate
+
+        This calls back to the Parent class and then applies the chirp mass
+        weighting factor.
+
+        Parameters
+        ----------
+        single_info: tuple
+            Tuple containing two values. The first is the ifo (str) and the
+            second is the single detector triggers.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector statistics
+        """
+        rank_sngl = ExpFitFgBgNormStatistic.rank_stat_single(
+            self,
+            single_info,
+            **kwargs)
+        rank_sngl += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
+        return rank_sngl
+
+    def rank_stat_coinc(self, sngls_list, slide, step, to_shift, **kwargs):
+        """
+        Calculate the coincident detection statistic.
+
+        Parameters
+        ----------
+        sngls_list: list
+            List of (ifo, single detector statistic) tuples
+        slide: (unused in this statistic)
+        step: (unused in this statistic)
+        to_shift: list
+            List of integers indicating what multiples of the time shift will
+            be applied (unused in this statistic)
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of coincident ranking statistic values
+        """
+
+        try:
+            self.curr_mchirp = kwargs['mchirp']
+        except KeyError:
+            pass
+
+        return ExpFitFgBgNormStatistic.rank_stat_coinc(self,
+                                                       sngls_list,
+                                                       slide,
+                                                       step,
+                                                       to_shift,
+                                                       **kwargs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument
