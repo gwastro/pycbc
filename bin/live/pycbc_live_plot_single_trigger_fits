@@ -23,6 +23,7 @@ import h5py
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
+
 import pycbc
 from pycbc.bin_utils import IrregularBins
 from pycbc.events.trigger_fits import cum_fit as eval_cum_fit

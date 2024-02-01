@@ -22,7 +22,9 @@ import h5py
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
+
 from lal import gpstime
+
 import pycbc
 
 
