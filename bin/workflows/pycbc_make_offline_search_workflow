@@ -191,18 +191,14 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
 # 'statfiles' is list of files used in calculating statistic
 # 'dqfiles' is the subset of files containing data quality information
 statfiles = []
-dqfiles = []
-dqfile_labels = []
-dq_labels = workflow.cp.get_subsections('workflow-data_quality')
-for dq_label in dq_labels:
-    dq_label_files = wf.setup_dq_reranking(workflow, dq_label, insps, hdfbank,
-                                       analyzable_segs, analyzable_file,
-                                       dq_segment_file,
-                                       output_dir='dq',
-                                       tags=['full_data'])
-    statfiles += dq_label_files
-    dqfiles += dq_label_files
-    dqfile_labels += len(dq_label_files) * [dq_label]
+
+dqfiles, dqfile_labels = wf.setup_dq_reranking(workflow, insps,
+                                               hdfbank, analyzable_file,
+                                               analyzable_name,
+                                               dq_segment_file,
+                                               output_dir='dq',
+                                               tags=['full_data'])
+statfiles += dqfiles
 
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name,
@@ -554,32 +550,18 @@ for key in final_bg_files:
 
 # DQ log likelihood plots
 for dqf, dql in zip(dqfiles, dqfile_labels):
-    dq_type = workflow.cp.get_opt_tags('workflow-data_quality', 'dq-type', tags=[dql])
-    tags = [dql, 'full_data']
-    if dq_type == 'timeseries':
-        # plot rates as function of time
-        outdir = rdir[f'data_quality/{dqf.ifo}_{dql}_trigger_rates']
-        wf.make_dq_timeseries_trigger_rate_plot(workflow, [dqf], outdir,
-                                                tags=tags)
-        # plot rates as function of dq percentile
-        outdir = rdir[f'data_quality/{dqf.ifo}_{dql}_percentiles']
-        wf.make_dq_percentile_plot(workflow, [dqf], outdir, tags=tags)
-    elif dq_type == 'flag':
-        # plot rates when flag was on
-        outdir = rdir[f'data_quality/{dqf.ifo}_{dql}_trigger_rates']
-        wf.make_dq_flag_trigger_rate_plot(workflow, [dqf], outdir, tags=[dql])
+    # plot rates when flag was on
+    outdir = rdir[f'data_quality/{dqf.ifo}_{dql}_trigger_rates']
+    wf.make_dq_flag_trigger_rate_plot(workflow, dqf, dql, outdir, tags=[dql])
 
 # DQ background binning plot
-if workflow.cp.has_option_tags('bin_trigger_rates_dq', 'background-bins',
-                               tags=None):
-    background_bins = workflow.cp.get_opt_tags('bin_trigger_rates_dq',
-                                               'background-bins', tags=None)
-    bank_tags = workflow.cp.get_subsections('plot_bank')
-    if len(bank_tags) == 0:
-        bank_tags = ['bank']
-    for b_tag in bank_tags:
-        wf.make_template_plot(workflow, hdfbank, rdir['data_quality'],
-                              bins=background_bins, tags=['dq_bins', b_tag])
+ifo_bins = workflow.cp.get_subsections('bin_templates')
+for ifo in ifo_bins:
+    background_bins = workflow.cp.get_opt_tags(
+        'bin_templates', 'background-bins', tags=[ifo])
+    wf.make_template_plot(workflow, hdfbank, rdir['data_quality'],
+                          bins=background_bins,
+                          tags=[ifo, 'dq_bins'] + bank_tags)
 
 ############################## Setup the injection runs #######################
 

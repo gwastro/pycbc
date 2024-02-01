@@ -25,9 +25,9 @@ def get_ifo_string(fi):
     return istring
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action="version",
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-files', nargs='+',
     help="List of coinc files to be combined")
 parser.add_argument('--background-files', nargs='+', default=None,
@@ -345,6 +345,8 @@ else:
                 f_in.attrs['background_time_exc'],
                 **significance_dict[ifo_combo_key])
 
+del ifo_combo_key
+
 logging.info('Combining false alarm rates from all available backgrounds')
 
 # Convert dictionary of whether the ifo combination is available at trigger
@@ -611,7 +613,7 @@ while True:
             sep_fg_data[key].data['stat'],
             sep_bg_data[key].data['decimation_factor'],
             bg_t_y,
-            **significance_dict[ifo_combo_key])
+            **significance_dict[key])
         fg_far = significance.apply_far_limit(
             fg_far,
             significance_dict,
@@ -635,7 +637,7 @@ while True:
             combined_fg_data.data['stat'],
             sep_bg_data[key].data['decimation_factor'],
             bg_time_ct[key],
-            **significance_dict[ifo_combo_key])
+            **significance_dict[key])
         # Set up variable for whether each coincidence is available in each coincidence time
         is_in_combo_time[key] = np.zeros(n_triggers)
         end_times = np.array(f['segments/%s/end' % key][:])

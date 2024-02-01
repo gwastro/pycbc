@@ -4,6 +4,7 @@ from pycbc.results.versioning import *
 from pycbc.results.color import *
 from pycbc.results.plot import *
 from pycbc.results.psd import *
+from pycbc.results.snr import *
 from pycbc.results.layout import *
 from pycbc.results.dq import *
 from pycbc.results.str_utils import *

@@ -81,6 +81,37 @@ cpdef likelihood_parts_multi_v(double [::1] freqs,
         r0 = r0n
     return hd
 
+# Used for calculating the cross terms of
+# two signals when analyzing multiple signals
+# with no antenna response applied
+cpdef likelihood_parts_det_multi(double [::1] freqs,
+                     double dtc,
+                     double complex[::1] hp,
+                     double complex[::1] h00,
+                     double dtc2,
+                     double complex[::1] hp2,
+                     double complex[::1] h002,
+                     double complex[::1] a0,
+                     double complex[::1] a1,
+                     ) :
+    cdef size_t i
+    cdef double complex hd=0, r0, r0n, r1
+    cdef int N
+
+    N = freqs.shape[0]
+    for i in range(N):
+        r0n = conj((exp(-2.0j * 3.141592653 * dtc * freqs[i])
+               * (hp[i])) / h00[i])
+        r0n *= ((exp(-2.0j * 3.141592653 * dtc2 * freqs[i])
+               * (hp2[i])) / h002[i])
+        r1 = r0n - r0
+        if i > 0:
+            hd += a0[i-1] * r0 + a1[i-1] * r1
+
+        r0 = r0n
+    return hd
+
+
 # Standard likelihood
 cpdef likelihood_parts(double [::1] freqs,
                      double fp,
@@ -126,7 +157,7 @@ cpdef likelihood_parts_det(double [::1] freqs,
                      double [::1] b1,
                      ) :
     cdef size_t i
-    cdef double complex hd=0, r0, r0n, r1, x0, x1, x0n;
+    cdef double complex hd=0, r0, r0n, r1, x0=0, x1, x0n;
     cdef double hh=0
     cdef int N
 
@@ -146,6 +177,7 @@ cpdef likelihood_parts_det(double [::1] freqs,
         r0 = r0n
         x0 = x0n
     return conj(hd), hh
+
 
 # Used where the antenna response may be frequency varying
 cpdef likelihood_parts_v(double [::1] freqs,
