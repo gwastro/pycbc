@@ -19,10 +19,10 @@ This modules provides classes and functions for using the emcee_pt sampler
 packages for parameter estimation.
 """
 
-
+import logging
 import numpy
 import emcee
-import logging
+
 from pycbc.pool import choose_pool
 
 from .base import (BaseSampler, setup_output)
@@ -34,6 +34,10 @@ from ..burn_in import EnsembleMultiTemperedMCMCBurnInTests
 from pycbc.inference.io import EmceePTFile
 from .. import models
 
+
+# This is a hack that will allow us to continue using emcee's abandoned
+# PTSampler, which relied on `numpy.float`, until the end of time.
+numpy.float = float
 
 if emcee.__version__ >= '3.0.0':
     raise ImportError
