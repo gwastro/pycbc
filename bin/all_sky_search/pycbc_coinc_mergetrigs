@@ -5,7 +5,7 @@
 
 import numpy, argparse, h5py, logging
 import pycbc.version
-
+from pycbc import init_logging
 
 def changes(arr):
     l = numpy.where(arr[:-1] != arr[1:])[0]
@@ -30,6 +30,7 @@ def region(f, key, boundaries, ids):
                      dtype=h5py.special_dtype(ref=h5py.RegionReference))
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+')
@@ -38,10 +39,9 @@ parser.add_argument('--bank-file', required=True)
 parser.add_argument('--compression-level', type=int, default=6,
                     help='Set HDF compression level in the output file '
                          '(default 6)')
-parser.add_argument('--verbose', '-v', action='count')
 args = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.INFO)
+init_logging(args.verbose)
 
 f = h5py.File(args.output_file, 'w')
 

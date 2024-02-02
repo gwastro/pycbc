@@ -423,6 +423,7 @@ with h5py.File(args.output, 'w') as fout:
     fout['bins_upper'] = tbins.upper()
     fout['bins_lower'] = tbins.lower()
 
+    fout.attrs['ifos'] = ','.join(args.ifos)
     fout.attrs['analysis_date'] = args.analysis_date
     fout.attrs['input'] = sys.argv
     fout.attrs['cuts'] = args.template_cuts + args.trigger_cuts
