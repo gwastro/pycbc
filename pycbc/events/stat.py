@@ -1822,10 +1822,8 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
             Array of coincident ranking statistic values
         """
 
-        try:
+        if 'mchirp' in kwargs:
             self.curr_mchirp = kwargs['mchirp']
-        except KeyError:
-            pass
 
         return ExpFitFgBgNormStatistic.rank_stat_coinc(self,
                                                        sngls_list,
