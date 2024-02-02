@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+""" Bin templates by their duration
+"""
+import logging
+import argparse
+import h5py as h5
+import numpy as np
+
+import pycbc
+import pycbc.pnutils
+from pycbc.version import git_verbose_msg as version
+from pycbc.events import background_bin_from_string
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="count")
+parser.add_argument("--ifo", type=str, required=True)
+parser.add_argument("--f-lower", type=float, default=15.,
+                    help='Enforce a uniform low frequency cutoff to '
+                         'calculate template duration over the bank')
+parser.add_argument('--bank-file', help='hdf format template bank file',
+                    required=True)
+parser.add_argument('--background-bins', nargs='+',
+                    help='Used to provide a list of '
+                         'precomputed background bins')
+parser.add_argument("--output-file", required=True)
+
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+logging.info('Starting template binning')
+
+with h5.File(args.bank_file, 'r') as bank:
+    logging.info('Sorting bank into bins')
+    data = {
+        'mass1': bank['mass1'][:],
+        'mass2': bank['mass2'][:],
+        'spin1z': bank['spin1z'][:],
+        'spin2z': bank['spin2z'][:],
+        'f_lower': np.ones_like(bank['mass1'][:]) * args.f_lower
+        }
+
+    bin_dict = background_bin_from_string(args.background_bins, data)
+    bin_names = [b.split(':')[0] for b in args.background_bins]
+
+logging.info('Writing bin template ids to file')
+with h5.File(args.output_file, 'w') as f:
+    ifo_grp = f.create_group(args.ifo)
+    for bin_name in bin_names:
+        bin_tids = bin_dict[bin_name]
+        grp = ifo_grp.create_group(bin_name)
+        grp['tids'] = bin_tids
+    f.attrs['f_lower'] = args.f_lower
+    f.attrs['background_bins'] = args.background_bins
+
+logging.info('Finished')

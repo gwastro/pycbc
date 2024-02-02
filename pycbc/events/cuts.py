@@ -37,6 +37,8 @@ from pycbc.io import get_chisq_from_file_choice
 # Only used to check isinstance:
 from pycbc.io.hdf import ReadByTemplate
 
+logger = logging.getLogger('pycbc.events.cuts')
+
 # sngl_rank_keys are the allowed names of reweighted SNR functions
 sngl_rank_keys = ranking.sngls_ranking_function_dict.keys()
 
@@ -97,8 +99,8 @@ def convert_inputstr(inputstr, choices):
     try:
         cut_param, cut_value_str, cut_limit = inputstr.split(':')
     except ValueError as value_e:
-        logging.warning("ERROR: Cut string format not correct, please "
-                        "supply as PARAMETER:VALUE:LIMIT")
+        logger.warning("ERROR: Cut string format not correct, please "
+                       "supply as PARAMETER:VALUE:LIMIT")
         raise value_e
 
     if cut_param.lower() not in choices:
@@ -113,8 +115,8 @@ def convert_inputstr(inputstr, choices):
     try:
         cut_value = float(cut_value_str)
     except ValueError as value_e:
-        logging.warning("ERROR: Cut value must be convertible into a float, "
-                        "got '%s'.", cut_value_str)
+        logger.warning("ERROR: Cut value must be convertible into a float, "
+                       "got '%s'.", cut_value_str)
         raise value_e
 
     return {(cut_param, ineq_functions[cut_limit]): cut_value}
@@ -137,9 +139,9 @@ def check_update_cuts(cut_dict, new_cut):
     new_cut_key = list(new_cut.keys())[0]
     if new_cut_key in cut_dict:
         # The cut has already been called
-        logging.warning("WARNING: Cut parameter %s and function %s have "
-                        "already been used. Utilising the strictest cut.",
-                        new_cut_key[0], new_cut_key[1].__name__)
+        logger.warning("WARNING: Cut parameter %s and function %s have "
+                       "already been used. Utilising the strictest cut.",
+                       new_cut_key[0], new_cut_key[1].__name__)
         # Extract the function and work out which is strictest
         cut_function = new_cut_key[1]
         value_new = list(new_cut.values())[0]
@@ -148,17 +150,17 @@ def check_update_cuts(cut_dict, new_cut):
             # The new threshold would survive the cut of the
             # old threshold, therefore the new threshold is stricter
             # - update it
-            logging.warning("WARNING: New threshold of %.3f is "
-                            "stricter than old threshold %.3f, "
-                            "using cut at %.3f.",
-                            value_new, value_old, value_new)
+            logger.warning("WARNING: New threshold of %.3f is "
+                           "stricter than old threshold %.3f, "
+                           "using cut at %.3f.",
+                           value_new, value_old, value_new)
             cut_dict.update(new_cut)
         else:
             # New cut would not make a difference, ignore it
-            logging.warning("WARNING: New threshold of %.3f is less "
-                            "strict than old threshold %.3f, using "
-                            "cut at %.3f.",
-                            value_new, value_old, value_old)
+            logger.warning("WARNING: New threshold of %.3f is less "
+                           "strict than old threshold %.3f, using "
+                           "cut at %.3f.",
+                           value_new, value_old, value_old)
     else:
         # This is a new cut - add it
         cut_dict.update(new_cut)

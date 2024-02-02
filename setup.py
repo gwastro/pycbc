@@ -203,7 +203,7 @@ extras_require = {
         'scikit-cuda',
     ],
     'igwn': [
-        'ciecplib>=0.4.4',
+        'ciecplib>=0.7.0',
     ],
 }
 
