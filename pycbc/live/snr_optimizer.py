@@ -393,9 +393,12 @@ def args_to_string(args):
     if optimizer_name == 'differential-evolution':
         optimizer_name = 'di'
     for opt in option_dict[args.snr_opt_method]:
-        option_fullname = f'--snr-opt-{optimizer_name}-{opt}'
         key_name = f'snr_opt_{optimizer_name}_{opt}'
         option_value = getattr(args, key_name)
+        # If the option is not given, don't pass it and use default
+        if option_value is None:
+            continue
+        option_fullname = f'--snr-opt-{optimizer_name}-{opt}'
         argstr += f'{option_fullname} {option_value} '
 
     return argstr
