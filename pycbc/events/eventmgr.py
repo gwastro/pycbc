@@ -37,6 +37,8 @@ from . import coinc, ranking
 
 from .eventmgr_cython import findchirp_cluster_over_window_cython
 
+logger = logging.getLogger('pycbc.events.eventmgr')
+
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
     """Return list of values and indices values over threshold in series.
@@ -196,7 +198,7 @@ class EventManager(object):
         from pycbc.io.hdf import dump_state
 
         self.tnum_finished = tnum_finished
-        logging.info('Writing checkpoint file at template %s', tnum_finished)
+        logger.info('Writing checkpoint file at template %s', tnum_finished)
         fp = h5py.File(filename, 'w')
         dump_state(self, fp, protocol=pickle.HIGHEST_PROTOCOL)
         fp.close()
@@ -214,7 +216,7 @@ class EventManager(object):
             raise e
         fp.close()
         next_template = mgr.tnum_finished + 1
-        logging.info('Restoring with checkpoint at template %s', next_template)
+        logger.info('Restoring with checkpoint at template %s', next_template)
         return mgr.tnum_finished + 1, mgr
 
     @classmethod
@@ -351,35 +353,35 @@ class EventManager(object):
 
     def consolidate_events(self, opt, gwstrain=None):
         self.events = numpy.concatenate(self.accumulate)
-        logging.info("We currently have %d triggers", len(self.events))
+        logger.info("We currently have %d triggers", len(self.events))
         if opt.chisq_threshold and opt.chisq_bins:
-            logging.info("Removing triggers with poor chisq")
+            logger.info("Removing triggers with poor chisq")
             self.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
                                  opt.chisq_delta)
-            logging.info("%d remaining triggers", len(self.events))
+            logger.info("%d remaining triggers", len(self.events))
 
         if opt.newsnr_threshold and opt.chisq_bins:
-            logging.info("Removing triggers with NewSNR below threshold")
+            logger.info("Removing triggers with NewSNR below threshold")
             self.newsnr_threshold(opt.newsnr_threshold)
-            logging.info("%d remaining triggers", len(self.events))
+            logger.info("%d remaining triggers", len(self.events))
 
         if opt.keep_loudest_interval:
-            logging.info("Removing triggers not within the top %s "
-                         "loudest of a %s second interval by %s",
-                         opt.keep_loudest_num, opt.keep_loudest_interval,
-                         opt.keep_loudest_stat)
+            logger.info("Removing triggers not within the top %s "
+                        "loudest of a %s second interval by %s",
+                        opt.keep_loudest_num, opt.keep_loudest_interval,
+                        opt.keep_loudest_stat)
             self.keep_loudest_in_interval\
                 (opt.keep_loudest_interval * opt.sample_rate,
                  opt.keep_loudest_num, statname=opt.keep_loudest_stat,
                  log_chirp_width=opt.keep_loudest_log_chirp_window)
-            logging.info("%d remaining triggers", len(self.events))
+            logger.info("%d remaining triggers", len(self.events))
 
         if opt.injection_window and hasattr(gwstrain, 'injections'):
-            logging.info("Keeping triggers within %s seconds of injection",
-                         opt.injection_window)
+            logger.info("Keeping triggers within %s seconds of injection",
+                        opt.injection_window)
             self.keep_near_injection(opt.injection_window,
                                      gwstrain.injections)
-            logging.info("%d remaining triggers", len(self.events))
+            logger.info("%d remaining triggers", len(self.events))
 
         self.accumulate = [self.events]
 

@@ -34,6 +34,7 @@ class fw(object):
 
 parser = argparse.ArgumentParser()
 # General required options
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--sngls-files', nargs='+',
@@ -44,7 +45,6 @@ parser.add_argument('--full-data-background', required=True,
                          'injection coincs')
 parser.add_argument('--ifos', nargs=1,
                     help='List of ifos used in these coincidence files')
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--cluster-window', type=float, default=10,
                     help='Length of time window in seconds to cluster coinc '
                          'events [default=10s]')

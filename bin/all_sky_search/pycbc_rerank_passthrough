@@ -3,10 +3,9 @@
 import h5py, numpy, argparse, logging, pycbc
 
 parser = argparse.ArgumentParser()
-
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--output-file',
     help="File containing the newly assigned statistic values")
 

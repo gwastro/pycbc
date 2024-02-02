@@ -33,6 +33,8 @@ from . import coinc_rate
 from .eventmgr_cython import logsignalrateinternals_computepsignalbins
 from .eventmgr_cython import logsignalrateinternals_compute2detrate
 
+logger = logging.getLogger('pycbc.events.stat')
+
 
 class Stat(object):
     """Base class which should be extended to provide a coincident statistic"""
@@ -64,7 +66,7 @@ class Stat(object):
             if stat in self.files:
                 raise RuntimeError("We already have one file with stat attr ="
                                    " %s. Can't provide more than one!" % stat)
-            logging.info("Found file %s for stat %s", filename, stat)
+            logger.info("Found file %s for stat %s", filename, stat)
             self.files[stat] = filename
 
         # Provide the dtype of the single detector method's output
@@ -381,7 +383,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if selected is None and len(ifos) > 1:
             raise RuntimeError("Couldn't figure out which stat file to use")
 
-        logging.info("Using signal histogram %s for ifos %s", selected, ifos)
+        logger.info("Using signal histogram %s for ifos %s", selected, ifos)
         weights = {}
         param = {}
 
@@ -390,7 +392,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
             # Patch for pre-hdf5=3.0 histogram files
             try:
-                logging.info("Decoding hist ifos ..")
+                logger.info("Decoding hist ifos ..")
                 self.hist_ifos = [i.decode('UTF-8') for i in self.hist_ifos]
             except (UnicodeDecodeError, AttributeError):
                 pass
@@ -1996,24 +1998,18 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         ExpFitFgBgNormStatistic.__init__(self, sngl_ranking, files=files,
                                          ifos=ifos, **kwargs)
-        self.dq_val_by_time = {}
-        self.dq_bin_by_id = {}
-        for k in self.files.keys():
-            parsed_attrs = k.split('-')
-            if len(parsed_attrs) < 3:
-                continue
-            if parsed_attrs[2] == 'dq_ts_reference':
-                ifo = parsed_attrs[0]
-                dq_type = parsed_attrs[1]
-                dq_vals = self.assign_dq_val(k)
-                dq_bins = self.assign_bin_id(k)
-                if ifo not in self.dq_val_by_time:
-                    self.dq_val_by_time[ifo] = {}
-                    self.dq_bin_by_id[ifo] = {}
-                self.dq_val_by_time[ifo][dq_type] = dq_vals
-                self.dq_bin_by_id[ifo][dq_type] = dq_bins
+        self.dq_rates_by_state = {}
+        self.dq_bin_by_tid = {}
+        self.dq_state_segments = {}
 
-    def assign_bin_id(self, key):
+        for ifo in self.ifos:
+            key = f'{ifo}-dq_stat_info'
+            if key in self.files.keys():
+                self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
+                self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
+                self.dq_state_segments[ifo] = self.setup_segments(key)
+
+    def assign_template_bins(self, key):
         """
         Assign bin ID values
         Assign each template id to a bin name based on a
@@ -2031,18 +2027,18 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
-            bin_names = dq_file.attrs['names'][:]
-            locs = []
-            names = []
-            for bin_name in bin_names:
-                bin_locs = dq_file[ifo + '/locs/' + bin_name][:]
-                locs = list(locs) + list(bin_locs.astype(int))
-                names = list(names) + list([bin_name] * len(bin_locs))
+            tids = []
+            bin_nums = []
+            bin_grp = dq_file[f'{ifo}/bins']
+            for bin_name in bin_grp.keys():
+                bin_tids = bin_grp[f'{bin_name}/tids'][:]
+                tids = list(tids) + list(bin_tids.astype(int))
+                bin_nums = list(bin_nums) + list([bin_name] * len(bin_tids))
 
-        bin_dict = dict(zip(locs, names))
+        bin_dict = dict(zip(tids, bin_nums))
         return bin_dict
 
-    def assign_dq_val(self, key):
+    def assign_dq_rates(self, key):
         """
         Assign dq values to each time for every bin based on a
         referenced statistic file.
@@ -2061,37 +2057,72 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
-            times = dq_file[ifo + '/times'][:]
-            bin_names = dq_file.attrs['names'][:]
+            bin_grp = dq_file[f'{ifo}/bins']
             dq_dict = {}
-            for bin_name in bin_names:
-                dq_vals = dq_file[ifo + '/dq_vals/' + bin_name][:]
-                dq_dict[bin_name] = dict(zip(times, dq_vals))
+            for bin_name in bin_grp.keys():
+                dq_dict[bin_name] = bin_grp[f'{bin_name}/dq_rates'][:]
 
         return dq_dict
 
-    def find_dq_val(self, trigs):
-        """Get dq values for a specific ifo and times"""
-        time = trigs['end_time'].astype(int)
+    def setup_segments(self, key):
+        """
+        Check if segments definitions are in stat file
+        If they are, we are running offline and need to store them
+        If they aren't, we are running online
+        """
+        ifo = key.split('-')[0]
+        with h5py.File(self.files[key], 'r') as dq_file:
+            ifo_grp = dq_file[ifo]
+            dq_state_segs_dict = {}
+            for k in ifo_grp['dq_segments'].keys():
+                seg_dict = {}
+                seg_dict['start'] = \
+                    ifo_grp[f'dq_segments/{k}/segment_starts'][:]
+                seg_dict['end'] = \
+                    ifo_grp[f'dq_segments/{k}/segment_ends'][:]
+                dq_state_segs_dict[k] = seg_dict
+
+        return dq_state_segs_dict
+
+    def find_dq_noise_rate(self, trigs, dq_state):
+        """Get dq values for a specific ifo and dq states"""
+
         try:
             tnum = trigs.template_num
-            ifo = trigs.ifo
         except AttributeError:
             tnum = trigs['template_id']
-            assert len(self.ifos) == 1
+
+        try:
+            ifo = trigs.ifo
+        except AttributeError:
+            ifo = trigs['ifo']
+            assert len(numpy.unique(ifo)) == 1
             # Should be exactly one ifo provided
-            ifo = self.ifos[0]
-        dq_val = numpy.zeros(len(time))
-        if ifo in self.dq_val_by_time:
-            for (i, t) in enumerate(time):
-                for k in self.dq_val_by_time[ifo].keys():
-                    if isinstance(tnum, numpy.ndarray):
-                        bin_name = self.dq_bin_by_id[ifo][k][tnum[i]]
-                    else:
-                        bin_name = self.dq_bin_by_id[ifo][k][tnum]
-                    val = self.dq_val_by_time[ifo][k][bin_name][int(t)]
-                    dq_val[i] = max(dq_val[i], val)
+            ifo = ifo[0]
+
+        dq_val = numpy.zeros(len(dq_state))
+
+        if ifo in self.dq_rates_by_state:
+            for (i, st) in enumerate(dq_state):
+                if isinstance(tnum, numpy.ndarray):
+                    bin_name = self.dq_bin_by_tid[ifo][tnum[i]]
+                else:
+                    bin_name = self.dq_bin_by_tid[ifo][tnum]
+                dq_val[i] = self.dq_rates_by_state[ifo][bin_name][st]
         return dq_val
+
+    def find_dq_state_by_time(self, ifo, times):
+        """Get the dq state for an ifo at times"""
+        dq_state = numpy.zeros(len(times), dtype=numpy.uint8)
+        if ifo in self.dq_state_segments:
+            from pycbc.events.veto import indices_within_times
+            for k in self.dq_state_segments[ifo]:
+                starts = self.dq_state_segments[ifo][k]['start']
+                ends = self.dq_state_segments[ifo][k]['end']
+                inds = indices_within_times(times, starts, ends)
+                # states are named in file as 'dq_state_N', need to extract N
+                dq_state[inds] = int(k[9:])
+        return dq_state
 
     def lognoiserate(self, trigs):
         """
@@ -2107,12 +2138,27 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         Returns
         ---------
-        lognoisel: numpy.array
+        lognoiserate: numpy.array
             Array of log noise rate density for each input trigger.
         """
+
+        # make sure every trig has a dq state
+
+        try:
+            ifo = trigs.ifo
+        except AttributeError:
+            ifo = trigs['ifo']
+            assert len(numpy.unique(ifo)) == 1
+            # Should be exactly one ifo provided
+            ifo = ifo[0]
+
+        dq_state = self.find_dq_state_by_time(ifo, trigs['end_time'][:])
+        dq_rate = self.find_dq_noise_rate(trigs, dq_state)
+        dq_rate = numpy.maximum(dq_rate, 1)
+
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
                     self, trigs)
-        logr_n += self.find_dq_val(trigs)
+        logr_n += numpy.log(dq_rate)
         return logr_n
 
 

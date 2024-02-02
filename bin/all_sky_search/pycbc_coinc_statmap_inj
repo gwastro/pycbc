@@ -8,10 +8,11 @@ import argparse, h5py, logging, itertools, copy, pycbc.io, numpy, lal
 from pycbc.events import veto, coinc, significance
 import pycbc.version
 import pycbc.conversions as conv
+from pycbc import init_logging
 
 parser = argparse.ArgumentParser()
 # General required options
-parser.add_argument('--verbose', action='count')
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--cluster-window', type=float, default=10,
@@ -31,11 +32,9 @@ significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
-significance.check_significance_options(args, parser)
+init_logging(args.verbose)
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+significance.check_significance_options(args, parser)
 
 
 window = args.cluster_window
