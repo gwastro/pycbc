@@ -12,18 +12,23 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-import h5py, numpy as np, argparse
+"""Plot the time evolution of fit parameters of PyCBC Live triggers.
+"""
+
+import argparse
+import logging
+import numpy as np
+import h5py
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
-import logging
+
 from lal import gpstime
+
 import pycbc
 
 
-
-parser = argparse.ArgumentParser(usage="",
-    description="Combine fitting parameters from several different files")
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--combined-fits-file", required=True,
@@ -45,7 +50,7 @@ parser.add_argument("--colormap", default="rainbow_r", choices=plt.colormaps(),
 parser.add_argument("--log-colormap", action='store_true',
                     help="Use log spacing for choosing colormap values "
                          "based on duration bins.")
-args=parser.parse_args()
+args = parser.parse_args()
 
 if '{ifo}' not in args.output_plot_name_format or \
     '{type}' not in args.output_plot_name_format:
@@ -93,21 +98,6 @@ with h5py.File(args.combined_fits_file, 'r') as cff:
 
 bin_starts = bins_edges[:-1]
 bin_ends = bins_edges[1:]
-
-bin_max = max(bin_ends)
-bin_min = min(bin_starts)
-
-def bin_proportion(upper, lower, log_spacing=False):
-    if log_spacing:
-        ll = np.log(lower)
-        ul = np.log(lower)
-        centl = (ll + ul) / 2.
-        minl = np.log(bin_min)
-        maxl = np.log(bin_max)
-        return (centl - minl) / (maxl - minl)
-
-    else:
-        return ((lower + upper) / 2. - bin_min) / (bin_max - bin_min)
 
 # Set up the x ticks - note that these are rounded to the nearest
 # midnight, so may not line up exactly with the data
@@ -157,8 +147,7 @@ for ifo in ifos:
         mr = mean_count[ifo][i] / live_total[ifo]
         cr = cons_count[ifo][i] / live_total[ifo]
 
-        bin_prop = bin_proportion(bu, bl,
-                                  log_spacing=args.log_colormap)
+        bin_prop = i / len(bin_starts)
         bin_colour = plt.get_cmap(args.colormap)(bin_prop)
         bin_label = f"duration {bl:.2f}-{bu:.2f}"
         alpha_lines += ax_alpha.plot(separate_starts[ifo], alphas, c=bin_colour,
@@ -199,6 +188,12 @@ for ifo in ifos:
         ax.grid(zorder=-30)
 
     fig_count.tight_layout()
-    fig_count.savefig(args.output_plot_name_format.format(ifo=ifo, type='counts'))
+    fig_count.savefig(
+        args.output_plot_name_format.format(ifo=ifo, type='counts')
+    )
     fig_alpha.tight_layout()
-    fig_alpha.savefig(args.output_plot_name_format.format(ifo=ifo, type='fit_coeffs'))
+    fig_alpha.savefig(
+        args.output_plot_name_format.format(ifo=ifo, type='fit_coeffs')
+    )
+
+logging.info("Done")
