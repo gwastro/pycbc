@@ -89,6 +89,12 @@ stat.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 
+# Check if input file PFNs should be added. Not if this is a subworkflow
+if hasattr(args, 'dax_file_directory') and args.dax_file_directory:
+    add_input_file_pfns = False
+else:
+    add_input_file_pfns = True
+
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
@@ -101,27 +107,40 @@ wf.makedir(args.output_dir)
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
+tmpltbank_file = resolve_url_to_file(
+    os.path.abspath(args.bank_file),
+    add_pfn=add_input_file_pfns
+)
 sngl_file = resolve_url_to_file(
     os.path.abspath(args.single_detector_file),
-    attrs={'ifos': args.instrument}
+    attrs={'ifos': args.instrument},
+    add_pfn=add_input_file_pfns
 )
 
 # Flatten the statistic_files option:
 statfiles = []
 for f in sum(args.statistic_files, []):
-    statfiles.append(resolve_url_to_file(os.path.abspath(f)))
+    statfiles.append(
+        resolve_url_to_file(
+            os.path.abspath(f),
+            add_pfn=add_input_file_pfns
+        )
+    )
 statfiles = wf.FileList(statfiles) if statfiles is not [] else None
 
 if args.veto_file is not None:
     veto_file = resolve_url_to_file(
         os.path.abspath(args.veto_file),
-        attrs={'ifos': args.instrument}
+        attrs={'ifos': args.instrument},
+        add_pfn=add_input_file_pfns
     )
 else:
     veto_file = None
 
-insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
+insp_segs = resolve_url_to_file(
+    os.path.abspath(args.inspiral_segments),
+    add_pfn=add_input_file_pfns
+)
 insp_data_seglists = select_segments_by_definer\
         (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
          ifo=args.instrument)

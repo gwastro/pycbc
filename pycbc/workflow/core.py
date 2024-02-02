@@ -2065,7 +2065,7 @@ class CalledProcessErrorMod(Exception):
         return msg
 
 
-def resolve_url_to_file(curr_pfn, attrs=None):
+def resolve_url_to_file(curr_pfn, add_pfn=True, attrs=None):
     """
     Resolves a PFN into a workflow.File object.
 
@@ -2089,6 +2089,11 @@ def resolve_url_to_file(curr_pfn, attrs=None):
     not important with input files. Exceptions include things like input
     template banks, where ifos and valid times will be checked in the workflow
     and used in the naming of child job output files.
+
+    The add_pfn key-word argument should be True in most use cases. However,
+    if this is a sub-workflow where the file will be transferred down from a 
+    higher workflow, this should not be True to avoid incorrect PFNs being
+    added.
     """
     cvmfsstr1 = 'file:///cvmfs/'
     cvmfsstr2 = 'file://localhost/cvmfs/'
@@ -2098,6 +2103,12 @@ def resolve_url_to_file(curr_pfn, attrs=None):
     # Get LFN
     urlp = urllib.parse.urlparse(curr_pfn)
     curr_lfn = os.path.basename(urlp.path)
+
+    # If this a file being provided in a subworkflow, it must be a local path
+    if not add_pfn:
+        err_msg = "If using add_pfn=False, the provided file must be given as "
+        err_msg += f"a local path. Got {curr_pfn}."
+        raise ValueError(err_msg)
 
     # Does this already exist as a File?
     if curr_lfn in file_input_from_config_dict.keys():
@@ -2112,12 +2123,14 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         curr_file = File.from_path(local_file_path, attrs=attrs)
 
         if curr_pfn.startswith(cvmfsstrs):
-            # Add PFNs for nonlocal sites for special cases (e.g. CVMFS).
-            # This block could be extended as needed
+            if not add_pfn:
+                # Shouldn't be possible to reach here, but safety check anyway.
+                raise ValueError("Its not possible to see this error! Ask Ian")
             curr_file.add_pfn(curr_pfn, site='all')
         else:
             pfn_local = urljoin('file:', pathname2url(local_file_path))
-            curr_file.add_pfn(pfn_local, 'local')
+            if add_pfn:
+                curr_file.add_pfn(pfn_local, 'local')
         # Store the file to avoid later duplication
         tuple_val = (local_file_path, curr_file, curr_pfn)
         file_input_from_config_dict[curr_lfn] = tuple_val
