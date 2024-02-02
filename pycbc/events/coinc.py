@@ -1219,17 +1219,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 sngls_list = [[fixed_ifo, self.trig_stat_memory[:len(i1)]],
                               [shift_ifo, stats[i1]]]
 
-                if len(i1):
-                    c = self.stat_calculator.rank_stat_coinc(
-                        sngls_list,
-                        slide,
-                        self.timeslide_interval,
-                        shift_vec,
-                        time_addition=self.coinc_threshold,
-                        mchirp=mchirp
-                    )
-                else:
-                    c = numpy.array([])
+                c = self.stat_calculator.rank_stat_coinc(
+                    sngls_list,
+                    slide,
+                    self.timeslide_interval,
+                    shift_vec,
+                    time_addition=self.coinc_threshold,
+                    mchirp=mchirp
+                )
 
                 # Store data about new triggers: slide index, stat value and
                 # times.
