@@ -3,8 +3,7 @@ astropy>=2.0.3,!=4.2.1,!=4.0.5
 Mako>=1.0.1
 scipy>=0.16.0
 matplotlib>=2.0.0
-# Remove the upper bound ASAP, this is a temporary fix!!!!!!
-numpy>=1.16.0,!=1.19.0,<1.24.0
+numpy>=1.16.0,!=1.19.0
 pillow
 h5py>=3.0.0,!=3.7.0
 jinja2
