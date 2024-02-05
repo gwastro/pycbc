@@ -7,7 +7,7 @@ import pycbc.version, pycbc.results, pycbc.io
 from itertools import cycle
 from matplotlib import use; use('Agg')
 from matplotlib import pyplot
-from pycbc.events import background_bin_from_string, veto
+from pycbc.events import background_bin_from_string, veto, ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -46,10 +46,21 @@ pycbc.init_logging(args.verbose)
 f = h5py.File(args.trigger_file, 'r')
 ifo = tuple(f.keys())[0]
 
+# Apply presort if we can; if we can't, load everything but it may be
+# inefficient
+xv = args.x_var if args.x_var in ranking.sngls_ranking_function_dict else None
+xt = args.x_min if args.x_var in ranking.sngls_ranking_function_dict else None
+
 # read single-detector triggers
-trigs = pycbc.io.SingleDetTriggers(args.trigger_file, args.bank_file,
-                                   args.veto_file, args.segment_name,
-                                   None, ifo)
+trigs = pycbc.io.SingleDetTriggers(
+    args.trigger_file,
+    ifo,
+    bank_file=args.bank_file,
+    veto_file=args.veto_file,
+    segment_name=args.segment_name,
+    filter_rank=xv,
+    filter_threshold=xt,
+)
 
 # get x values and find the maximum x value
 val = getattr(trigs, args.x_var)

@@ -204,9 +204,14 @@ for ifo in opt.ifos:
     elif trigformat == "hdf":
         if opt.bank_file:
             # io function can currently only handle 1 file
-            sngls = io.hdf.SingleDetTriggers(opt.inputs[0], 
-                  opt.bank_file, opt.veto_file, opt.veto_segment_name,
-                  filter_func, ifo)
+            sngls = io.hdf.SingleDetTriggers(
+                opt.inputs[0],
+                ifo,
+                bank_file=opt.bank_file,
+                veto_file=opt.veto_file,
+                segment_name=opt.veto_segment_name,
+                filter_func=filter_func,
+            )
             done_vetoing = True
         else:
             sngls = io.hdf.DataFromFiles(opt.inputs, group=ifo,
@@ -236,10 +241,10 @@ for ifo in opt.ifos:
     #rchisq = np.maximum(rchisq, bank_rchisq)
 
     if opt.veto_file and not done_vetoing:
-        logging.info("Applying vetoes from %s for ifo %s" % 
+        logging.info("Applying vetoes from %s for ifo %s" %
                      (opt.veto_file, ifo))
         keep_idx, segs = events.veto.indices_outside_segments(
-                         sngls.get_column("end_time").astype(int), 
+                         sngls.get_column("end_time").astype(int),
                          [opt.veto_file], ifo=ifo,
                          segment_name=opt.veto_segment_name)
         snr = snr[keep_idx]
@@ -304,7 +309,7 @@ for ifo in opt.ifos:
             else:
                 mass1_inbin = mass1[pind == i]
                 mass2_inbin = mass2[pind == i]
-                mass_tuples = [(m1, m2) for m1, m2 in 
+                mass_tuples = [(m1, m2) for m1, m2 in
                                                  zip(mass1_inbin, mass2_inbin)]
                 numtmpl = len(set(mass_tuples))
             templates[ifo][i] = numtmpl
@@ -326,7 +331,7 @@ for ifo in opt.ifos:
             stdev[ifo][th][i] = sig_alpha
             _, ks_prob[ifo][th][i] = trstats.KS_test(
                                        opt.fit_function, vals_inbin, alpha, th)
-            outfile.write("%s %.2f %.3g %.3g %d %d %.3f %.3f %.3g\n" % 
+            outfile.write("%s %.2f %.3g %.3g %d %d %.3f %.3f %.3g\n" %
               (ifo, th, lower, upper, numtmpl, counts[ifo][th][i], alpha,
                sig_alpha, ks_prob[ifo][th][i]))
 
@@ -335,7 +340,7 @@ for ifo in opt.ifos:
                 histcounts, edges = np.histogram(vals_inbin, bins=50)
                 cum_counts = histcounts[::-1].cumsum()[::-1]
                 binlabel = r"%.2g - %.2g" % (lower, upper)
-                plt.semilogy(edges[:-1], cum_counts, linewidth=2, 
+                plt.semilogy(edges[:-1], cum_counts, linewidth=2,
                              color=histcolors[i], label=binlabel, alpha=0.6)
 
                 plt.semilogy(plotrange, counts[ifo][th][i] * \
@@ -348,7 +353,7 @@ for ifo in opt.ifos:
                 plt.semilogy(plotrange, counts[ifo][th][i] * \
                   trstats.cum_fit(opt.fit_function, plotrange, alpha - \
                   sig_alpha, th), ":", alpha=0.6, color=histcolors[i])
- 
+
         if opt.plot_dir:
             leg = plt.legend(labelspacing=0.2)
             plt.setp(leg.get_texts(), fontsize=11)
@@ -370,7 +375,7 @@ if opt.plot_dir:
     for ifo in fits.keys():
         for th in opt.stat_threshold:
             plt.errorbar(pbins.centres(), [fits[ifo][th][i] for i in binind],
-              yerr=[stdev[ifo][th][i] for i in binind], fmt="+-", 
+              yerr=[stdev[ifo][th][i] for i in binind], fmt="+-",
               label=ifo + " fit above %.2f" % th)
         if opt.bin_spacing == "log": plt.semilogx()
         plt.grid()
@@ -381,7 +386,7 @@ if opt.plot_dir:
         plt.close()
 
         for th in opt.stat_threshold:
-            plt.plot(pbins.centres(), [ks_prob[ifo][th][i] for i in binind], 
+            plt.plot(pbins.centres(), [ks_prob[ifo][th][i] for i in binind],
               '+--', label=ifo+' KS prob, thresh %.2f' % th)
         if opt.bin_spacing == 'log': plt.loglog()
         else : plt.semilogy()

@@ -244,15 +244,17 @@ def nearby_missedinj(endtime, snr):
 trigger_idx = {}
 trigger_snrs = {}
 trigger_times = {}
+# This finds the triggers near to _any_ missed injection
 for trig in single_triggers:
     ifo = trig.ifo
     with HFile(trig.lfn, 'r') as trig_f:
-        trigger_idx[ifo], trigger_times[ifo], trigger_snrs[ifo] = \
+        trigger_idx[ifo], data_tuple = \
             trig_f.select(
                 nearby_missedinj,
                 f'{ifo}/end_time',
                 f'{ifo}/snr',
-                return_indices=True)
+            )
+    trigger_times[ifo], trigger_snrs[ifo] = data_tuple
 
 # figure out how many injections to follow up
 num_events = int(workflow.cp.get_opt_tags(
@@ -305,7 +307,7 @@ for num_event in range(num_events):
                       tags=args.tags + [str(num_event)])[0],)]
 
     for sngl in single_triggers:
-        # Find the triggers close to this injection at this IFO
+        # Find the triggers close to _this_ injection at this IFO
         ifo = sngl.ifo
         trig_tdiff = abs(inj_params[ifo + '_end_time'] - trigger_times[ifo])
         nearby = trig_tdiff < args.nearby_triggers_window
@@ -315,7 +317,7 @@ for num_event in range(num_events):
             continue
         # Find the loudest SNR in this window
         loudest = numpy.argmax(trigger_snrs[ifo][nearby])
-        # Convert to the indexin the trigger file
+        # Convert to the index in the trigger file
         nearby_trigger_idx = trigger_idx[ifo][nearby][loudest]
         # Make the info snippet
         sngl_info = mini.make_sngl_ifo(workflow, sngl, tmpltbank_file,
@@ -381,19 +383,31 @@ for num_event in range(num_events):
                             use_exact_inj_params=True)
 
     for curr_ifo in args.single_detector_triggers:
+        # Finding loudest template in this detector near to the injection:
+        # First, find triggers close to the missed injection
         single_fname = args.single_detector_triggers[curr_ifo]
-        hd_sngl = SingleDetTriggers(single_fname, args.bank_file, None, None,
-                                    None, curr_ifo)
-        end_times = hd_sngl.end_time
-        # Use SNR here or NewSNR??
-        snr = hd_sngl.snr
-        lgc_mask = abs(end_times - inj_params['tc']) < args.inj_window
+        idx, _ = HFile(single_fname).select(
+            lambda t: abs(t - inj_params['tc']) < args.inj_window,
+            f'{curr_ifo}/end_time',
+            return_data=False,
+        )
 
-        if len(snr[lgc_mask]) == 0:
+        if len(idx) == 0:
+            # No events in the injection window for this detector
             continue
 
-        snr_idx = numpy.arange(len(lgc_mask))[lgc_mask][snr[lgc_mask].argmax()]
-        hd_sngl.mask = [snr_idx]
+        hd_sngl = SingleDetTriggers(
+            single_fname,
+            curr_ifo,
+            bank_file=args.bank_file,
+            premask=idx
+        )
+        # Next, find the loudest within this set of triggers
+        # Use SNR here or NewSNR, or other??
+        loudest_idx = hd_sngl.snr.argmax()
+        hd_sngl.apply_mask([loudest_idx])
+
+        # What are the parameters of this trigger?
         curr_params = copy.deepcopy(inj_params)
         curr_params['mass1'] = hd_sngl.mass1[0]
         curr_params['mass2'] = hd_sngl.mass2[0]

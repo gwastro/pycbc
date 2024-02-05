@@ -105,13 +105,17 @@ def rough_filter(snr, chisq, chisq_dof, end_time, tmp_id, tmp_dur):
     return np.logical_and(end_time > opts.gps_start_time,
                           end_time < opts.gps_end_time + tmp_dur)
 
-indices, snr, chisq, chisq_dof, end_time, template_ids, template_duration = \
-        trig_f.select(rough_filter, opts.detector + '/snr',
-                      opts.detector + '/chisq', opts.detector + '/chisq_dof',
-                      opts.detector + '/end_time',
-                      opts.detector + '/template_id',
-                      opts.detector + '/template_duration',
-                      return_indices=True)
+indices, data_tuple = trig_f.select(
+    rough_filter,
+    'snr',
+    'chisq',
+    'chisq_dof',
+    'end_time',
+    'template_id',
+    'template_duration',
+    group=opts.detector
+)
+snr, chisq, chisq_dof, end_time, template_ids, template_duration = data_tuple
 
 if len(indices) > 0:
     if opts.veto_file:
