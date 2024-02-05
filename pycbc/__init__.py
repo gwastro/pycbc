@@ -186,8 +186,11 @@ if sys.platform == 'darwin':
     # preserve common state information which we have relied on when using
     # multiprocessing based pools.
     import multiprocessing
-    if hasattr(multiprocessing, 'set_start_method'):
-        multiprocessing.set_start_method('fork')
+    if multiprocessing.get_start_method(allow_none=True) is None:
+        if hasattr(multiprocessing, 'set_start_method'):
+            multiprocessing.set_start_method('fork')
+    elif multiprocessing.get_start_method() != 'fork':
+        raise ValueError("PyCBC requires the use of the 'fork' start method for multiprocessing")
 else:
     HAVE_OMP = True
 
