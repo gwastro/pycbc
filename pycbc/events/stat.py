@@ -852,7 +852,9 @@ class ExpFitStatistic(QuadratureSumStatistic):
         try:
             ifo = trigs.ifo
         except AttributeError:
-            ifo = trigs['ifo']
+            ifo = trigs.get('ifo', None)
+            if ifo is None:
+                ifo = self.ifos[0]
             assert ifo in self.ifos
 
         # fits_by_tid is a dictionary of dictionaries of arrays
