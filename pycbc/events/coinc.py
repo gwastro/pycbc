@@ -823,7 +823,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  sngl_ranking, stat_files, ifos,
                  ifar_limit=100,
                  timeslide_interval=.035,
-                 coinc_threshold=.002,
+                 coinc_window_pad=.002,
                  return_background=False,
                  **kwargs):
         """
@@ -848,7 +848,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             calculate.
         timeslide_interval: float
             The time in seconds between consecutive timeslide offsets.
-        coinc_threshold: float
+        coinc_window_pad: float
             Amount of time allowed to form a coincidence in addition to the
             time of flight in seconds.
         return_background: boolean
@@ -872,7 +872,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
-        self.coinc_threshold = coinc_threshold
+        self.coinc_window_pad = coinc_window_pad
 
         self.ifos = ifos
         if len(self.ifos) != 2:
@@ -882,7 +882,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.buffer_size = int(numpy.ceil(self.lookback_time / analysis_block))
 
         det0, det1 = Detector(ifos[0]), Detector(ifos[1])
-        self.time_window = det0.light_travel_time_to_detector(det1) + coinc_threshold
+        self.time_window = det0.light_travel_time_to_detector(det1) + coinc_window_pad
         self.coincs = CoincExpireBuffer(self.buffer_size, self.ifos)
 
         self.singles = {}
@@ -967,7 +967,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                    ifar_limit=args.background_ifar_limit,
                    timeslide_interval=args.timeslide_interval,
                    ifos=ifos,
-                   coinc_threshold=args.coinc_threshold,
+                   coinc_window_pad=args.coinc_window_pad,
                    **kwargs)
 
     @staticmethod
@@ -1224,7 +1224,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                     slide,
                     self.timeslide_interval,
                     shift_vec,
-                    time_addition=self.coinc_threshold,
+                    time_addition=self.coinc_window_pad,
                     mchirp=mchirp
                 )
 

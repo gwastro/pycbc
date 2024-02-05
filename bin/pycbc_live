@@ -969,8 +969,9 @@ parser.add_argument('--gracedb-labels', metavar='LABEL', nargs='+',
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading candidate '
                          'triggers to GraceDB, in years.')
-parser.add_argument('--coinc-threshold', type=float,
-                    help="The time window allowed between coincident triggers",
+parser.add_argument('--coinc-window-pad', type=float,
+                    help="Amount of time allowed to form a coincidence in "
+                         "addition to the time of flight in seconds.",
                     default=0.002)
 parser.add_argument('--file-prefix', default='Live')
 
