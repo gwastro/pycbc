@@ -73,10 +73,7 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
                                     segment_name, out_dir,
                                     tags=tags + ['PART%s' % i])]
 
-    if num_parts > 1:
-        return merge_psds(workflow, psd_files, ifo, out_dir, tags=tags)
-    else:
-        return psd_files[0]
+    return merge_psds(workflow, psd_files, ifo, out_dir, tags=tags)
 
 def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
                   tags=None):
