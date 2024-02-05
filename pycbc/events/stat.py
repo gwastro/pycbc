@@ -1015,7 +1015,19 @@ class ExpFitStatistic(PhaseTDStatistic):
         return dq_dict
 
     def find_dq_val(self, trigs):
-        """Get dq values for a specific ifo and times"""
+        """Get dq values for a specific ifo and times
+
+        Parameters
+        ----------
+        trigs: ReadByTempate or SingleDetTriggers object
+            Object containing information about the triggers to be
+            checked
+
+        Returns
+        -------
+        dq_val: numpy array
+            The value of the dq reweighting factor for each trigger
+        """
         time = trigs['end_time'].astype(int)
         try:
             tnum = trigs.template_num
@@ -1307,8 +1319,18 @@ class ExpFitStatistic(PhaseTDStatistic):
         should be given by the volume of the sphere to which we are
         sensitive.
 
-        This is then the cube of the sensitive distance (sigma), divided
-        by a benchmark volume.
+        Parameters
+        ----------
+        sngls: tuple
+            Single-detector information, tuples of the (ifo, sngl_object),
+            where sngl_object is a ReadByTemplate object or similar.
+
+        Returns
+        -------
+        network_logvol: numpy.array
+            Array of values for the network log-volume factor. This is the
+            log of the cube of the sensitive distance (sigma), divided by
+            a benchmark volume.
         """
         # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
@@ -1330,6 +1352,18 @@ class ExpFitStatistic(PhaseTDStatistic):
         """
         Calculate the parts of the log signal rate which are shared by
         both the single and coinc ranking statistics
+
+        Parameters
+        ----------
+        sngls_info: tuple
+            Single-detector information, tuples of the (ifo, sngl_object),
+            where sngl_object is a ReadByTemplate object or similar.
+
+        Returns
+        -------
+        sr_factor: numpy.ndarray
+            Array of values to be added to the ranking statistic when
+            taking various signal rate factors into account
         """
         # Other features affecting the signal rate
         sr_factor = 0
@@ -1386,6 +1420,28 @@ class ExpFitStatistic(PhaseTDStatistic):
                         **kwargs): # pylint:disable=unused-argument
         """
         Calculate the coincident detection statistic.
+
+        Parameters
+        ----------
+        s: list
+            List of (ifo, single detector statistic) tuples
+        slide: numpy array
+            The number of steps by which to shift each trigger
+        step: float
+            The size of each step, to be multiplied by to_shift
+        to_shift: list
+            List of integers indicating what multiples of the time shift will
+            be applied
+        kwargs: various
+            Key-word arguments to define different features and tunable
+            values in the statistic. Only time_addition is used here
+
+        Returns
+        -------
+        loglr: numpy.ndarray
+            The ranking statistic for each trigger based on the supplied
+            triggers, requested features and keyword arguments
+
         """
         # ranking statistic is -ln(expected rate density of noise triggers)
         # plus normalization constant
@@ -1453,6 +1509,25 @@ class ExpFitStatistic(PhaseTDStatistic):
         rate calculation, we take the best-case scenario. By using the
         best-case for signal rate in this calculation, some events are kept
         at this point which are hopeless.
+
+        Parameters
+        ----------
+        s: list
+            List of (ifo, single detector statistic) tuples
+        thresh: float
+            The threshold value to be checked against
+        limifo: string
+            The pivot detector, i.e. the one in which the sngl stat must
+            reach the value output by ths function
+        kwargs: various
+            Key-word arguments to define different features and tunable
+            values in the statistic. Only time_addition is used here
+
+        Returns
+        -------
+        numpy.array
+            The minimum snglstat values required in the 'pivot' detector
+            in order to reach the threshold specified
         """
         # Safety against subclassing and not rethinking this
         allowed_names = ['ExpFitStatistic']
