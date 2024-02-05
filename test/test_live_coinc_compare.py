@@ -90,7 +90,7 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
 
         # number of single-detector triggers per detector per chunk
         num_single_trigs = 400
-hdfinjfind_ID155_ID0000167
+
         self.num_iterations = 15
 
         # create the single-detector trigger simulator
