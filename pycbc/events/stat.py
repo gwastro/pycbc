@@ -99,7 +99,10 @@ class Stat(object):
         self.kwargs = {}
         for key, value in kwargs.items():
             if key.startswith('sngl_ranking_'):
-                self.sngl_ranking_kwargs[key[13:]] = value
+                # Note that all the sngl_ranking keywords are floats,
+                # so this conversion is safe - if that changes in the future,
+                # we may need something more sophisticated
+                self.sngl_ranking_kwargs[key[13:]] = float(value)
             else:
                 self.kwargs[key] = value
 
