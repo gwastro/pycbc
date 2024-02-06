@@ -903,8 +903,10 @@ class ExpFitStatistic(PhaseTDStatistic):
         self.min_snr = numpy.inf
 
         # Some modifiers for the statistic to get it into a nice range
-        self.benchmark_lograte = self.kwargs.get('benchmark_lograte', -14.6)
-        self.min_stat = self.kwargs.get('minimum_statistic_cutoff', -30.)
+        self.benchmark_lograte = \
+            float(self.kwargs.get('benchmark_lograte', -14.6))
+        self.min_stat = \
+            float(self.kwargs.get('minimum_statistic_cutoff', -30.))
 
         # Go through the keywords and add class information as needed:
         if self.kwargs['sensitive_volume']:
@@ -1257,14 +1259,19 @@ class ExpFitStatistic(PhaseTDStatistic):
         lognoisel = - alphai * (sngl_stat - thresh) + numpy.log(alphai) + \
                         numpy.log(ratei)
 
-        if 'alpha_below_thresh' in self.kwargs:
+        alphabelow = self.kwargs.get('alpha_below_thresh', 6.)
+        try:
+            alphabelow = float(alphabelow)
             # Above the threshold we use the usual fit coefficient (alphai)
             # below threshold use specified alphabelow
-            alphabelow = float(self.kwargs['alpha_below_thresh'])
             bt = sngl_stat < thresh
             lognoiselbt = - alphabelow * (sngl_stat - thresh) + \
                                numpy.log(alphabelow) + numpy.log(ratei)
             lognoisel[bt] = lognoiselbt[bt]
+        except ValueError:
+            # The float conversion will raise this if passed e.g. 'None'
+            # In that case we simply use the fit value everywhere
+            pass
 
         if self.kwargs['dq']:
             # Reweight the lognoiserate things by the dq reweighting factor
