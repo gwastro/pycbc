@@ -20,41 +20,10 @@ import copy, numpy as np
 
 from pycbc import io, events, init_logging
 from pycbc.events import triggers, trigger_fits as trstats
-from pycbc.events import stat as statsmod
+from pycbc.events import stat as statsmod, fits_by_template as fbt
 from pycbc.types.optparse import MultiDetOptionAction
 import pycbc.version
 
-#### DEFINITIONS AND FUNCTIONS ####
-
-def get_stat(statname, trigs, threshold):
-    # For now this is using the single detector ranking. If we want, this
-    # could use the Stat classes in stat.py using similar code as in hdf/io.py
-    # This requires additional options, so only change this if it's useful!
-    chunk_size = 2**23
-    stat = []
-    select = []
-    size = len(trigs['end_time'])
-    s = 0
-    while s < size:
-        e = s + chunk_size if (s + chunk_size) <= size else size
-
-        # read and format chunk of data so it can be read by key
-        # as the stat classes expect.
-        chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
-        
-        rank_method = statsmod.get_statistic_from_opts(args, [args.ifo])
-        chunk_stat = rank_method.get_sngl_ranking(chunk)
-
-        above = chunk_stat >= threshold
-        stat.append(chunk_stat[above])
-        select.append(above)
-        s += chunk_size
-
-    # Return boolean area that selects the triggers above threshold
-    # along with the stat values above threshold
-    return np.concatenate(select), np.concatenate(stat)
-
-#### MAIN ####
 
 parser = argparse.ArgumentParser(usage="",
     description="Perform maximum-likelihood fits of single inspiral trigger"
@@ -142,29 +111,10 @@ trigf = h5py.File(args.trigger_file, 'r')
 logging.info('Opening template file: %s' % args.bank_file)
 templatef = h5py.File(args.bank_file, 'r')
 
-logging.info('Counting number of triggers in each template')
-# template boundaries dataset is in order of template_id
-tb = trigf[args.ifo+'/template_boundaries'][:]
-tid = np.arange(len(tb))
-# template boundary values ascend in the same order as template hash
-# hence sort by hash
-hash_sort = np.argsort(templatef['template_hash'][:])
-tb_hashorder = tb[hash_sort]
-# reorder template IDs in parallel to the boundary values
-tid_hashorder = tid[hash_sort]
-
-# Calculate the differences between the boundary indices to get the
-# number in each template
-# adding on total number at the end to get number in the last template
-total_number = len(trigf[args.ifo + '/template_id'])
-count_in_template_hashorder = np.diff(np.append(tb_hashorder, total_number))
-# re-reorder values from hash order to tid order
-tid_sort = np.argsort(tid_hashorder)
-count_in_template = count_in_template_hashorder[tid_sort]
+count_in_template = fbt.count_in_template(trigf[args.ifo], templatef)
 
 # get the stat values
-logging.info('Calculating stat values')
-abovethresh, stat = get_stat(args, trigf[args.ifo], args.stat_threshold)
+abovethresh, stat = fbt.get_stat(args, trigf[args.ifo], args.stat_threshold)
 logging.info('%i trigs left after thresholding' % len(stat))
 
 tid = trigf[args.ifo + '/template_id'][abovethresh]
@@ -179,19 +129,19 @@ if args.save_trig_param:
             # Should only happen if there are no triggers in the template
             tparam.append(np.nan)
 
-# Calculate total time being analysed from segments
-# use set() to eliminate duplicates
-segment_starts = sorted(set(trigf['{}/search/start_time'.format(args.ifo)][:]))
-segment_ends = sorted(set(trigf['{}/search/end_time'.format(args.ifo)][:]))
-all_segments = events.veto.start_end_to_segments(segment_starts, segment_ends)
+all_segments = fbt.retained_segments(
+    trigf,
+    args.ifo,
+    veto_file=args.veto_file,
+    veto_segment_name=args.veto_segment_name,
+    gating_veto_windows=args.gating_veto_windows
+)
+total_time = abs(all_segments)
 
-# now do vetoing
+# now do vetoing on the triggers
 for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     retain, junk = events.veto.indices_outside_segments(time, [veto_file],
                                  ifo=args.ifo, segment_name=veto_segment_name)
-    all_segments -= events.veto.select_segments_by_definer(veto_file,
-                                                           ifo=args.ifo,
-                                                           segment_name=veto_segment_name)
     stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
@@ -214,7 +164,6 @@ if args.gating_veto_windows:
         gate_times = np.concatenate((autogate_times, detgate_times))
         gveto_segs = events.veto.start_end_to_segments(gate_times + gveto_before,
                                                        gate_times + gveto_after).coalesce()
-        all_segments -= gveto_segs
         gveto_retain_idx = events.veto.indices_outside_times(time,
                                                              gate_times + gveto_before,
                                                              gate_times + gveto_after)
@@ -222,8 +171,6 @@ if args.gating_veto_windows:
         tid = tid[gveto_retain_idx]
         time = time[gveto_retain_idx]
         logging.info('%i trigs left after vetoing triggers near gates' % len(stat))
-
-total_time = abs(all_segments)
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
