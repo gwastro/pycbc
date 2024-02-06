@@ -364,7 +364,7 @@ How triggers are ranked is defined by the ranking-statistic, sngl-ranking, stati
     * - ``minimum_statistic_cutoff``
       - Cutoff for the statistic in order to avoid underflowing and very small statistic values. Default -30.
     * - ``alpha_below_thresh``
-      - If given, the fit coefficient (alpha) below the fit threshold (defined in the fit_by_template jobs) will be replaced by a standard value. This is as below this threshold, Gaussian noise can dominate over the glitch response that dominates above the threshold, and rates will be underestimated, boosting quiet things in noisy templates.. For Gaussian noise, this will be approximately 6.
+      - The fit coefficient (alpha) below the fit threshold (defined in the fit_by_template jobs) will be replaced by a standard value. This is as below this threshold, Gaussian noise can dominate over the glitch response that dominates above the threshold, and rates will be underestimated, boosting quiet things in noisy templates. For Gaussian noise, this will be approximately 6 (the default). To use whatever the fit value is, supply alpha_below_thresh:None.
     * - ``reference_ifos``
       - If using the ``sensitive_volume``feature, these are the detectors used to determine the benchmark value by which the sensitive volume is compared. We use the median sensitive volume in the network of detectors supplied. Default H1,L1.
     * - ``max_chirp_mass``
