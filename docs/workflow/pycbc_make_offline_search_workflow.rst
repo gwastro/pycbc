@@ -320,7 +320,7 @@ How triggers are ranked is defined by the ranking-statistic, sngl-ranking, stati
  - ``statistic-keywords`` = Some statistics require keywords to modify the behavior of the statistic in certain situations. Keywords affecting the sngl-ranking calculation are also given here, starting with ``sngl_ranking_``. These are described in the Keywords table below.
  - ``statistic-files`` = Files to be used in the statistic calculation, of particular note here are the files needed for DQ and KDE reranking.
 
-.. list-table:: Statistics - ``ranking-statistic``
+.. list-table:: Statistics - ranking-statistic
    :widths: 25 75
    :header-rows: 1
    * - Statistic name
@@ -334,7 +334,7 @@ How triggers are ranked is defined by the ranking-statistic, sngl-ranking, stati
    * - ``exp_fit``
      - The ratio of signal-to-noise rates in the triggered network of detectors. The trigger density at a given sngl-ranking is approximated for each template, and this is combined for the triggered network.
 
-.. list-table:: Features for use with the ``exp_fit`` - ``statistic-features`
+.. list-table:: Features for use with exp_fit - statistic-features
    :widths: 25 75
    :header-rows: 1
 
@@ -353,7 +353,7 @@ How triggers are ranked is defined by the ranking-statistic, sngl-ranking, stati
    * - ``chirp_mass``
      - Apply a factor of :math:`log((M_c / 20) ^{11 / 3})` to the statistic. This makes the signal rate uniform over chirp mass, as this factor cancels out the power of -11 / 3 caused by differences in the density of template placement.
 
-.. list-table:: Keywords - ``statistic-keywords``
+.. list-table:: Keywords - statistic-keywords
    :widths: 25 75
    :header-rows: 1
 
