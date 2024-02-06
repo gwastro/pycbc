@@ -12,17 +12,54 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
+"""Fit a background model to single-detector triggers from PyCBC Live.
+
+See https://arxiv.org/abs/2008.07494 for a description of the method."""
+
+import os
+import sys
+import argparse
+import logging
 import numpy as np
+import h5py
 import pycbc
-from pycbc import bin_utils
-from pycbc.events import cuts, triggers, trigger_fits as trstats
+from pycbc.bin_utils import IrregularBins
+from pycbc.events import cuts, trigger_fits as trstats
 from pycbc.io import DictArray
 from pycbc.events import ranking
 from pycbc.events.coinc import cluster_over_time
-import argparse, logging, os, sys, h5py
 
-parser = argparse.ArgumentParser(usage="",
-    description="Plot histograms of triggers split over various parameters")
+
+def duration_bins_from_cli(args):
+    """Create the duration bins from CLI options.
+    """
+    if args.duration_bin_edges:
+        # direct bin specification
+        return np.array(args.duration_bin_edges)
+    # calculate bins from min/max and number
+    min_dur = args.duration_bin_start
+    max_dur = args.duration_bin_end
+    if args.duration_from_bank:
+        # read min/max duration directly from the bank itself
+        with h5py.File(args.duration_from_bank, 'r') as bank_file:
+            temp_durs = bank_file['template_duration'][:]
+        min_dur, max_dur = min(temp_durs), max(temp_durs)
+    if args.duration_bin_spacing == 'log':
+        return np.logspace(
+            np.log10(min_dur),
+            np.log10(max_dur),
+            args.num_duration_bins + 1
+        )
+    if args.duration_bin_spacing == 'linear':
+        return np.linspace(
+            min_dur,
+            max_dur,
+            args.num_duration_bins + 1
+        )
+    raise RuntimeError("Invalid duration bin specification")
+
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--ifos", nargs="+", required=True,
@@ -53,14 +90,18 @@ parser.add_argument("--duration-bin-start", type=float,
                          "--duration-bin-end and --num-duration-bins.")
 parser.add_argument("--duration-bin-end", type=float,
                     help="Longest duration to use for duration bins.")
+parser.add_argument("--duration-from-bank",
+                    help="Path to the template bank file to get max/min "
+                         "durations from.")
 parser.add_argument("--num-duration-bins", type=int,
                     help="How many template duration bins to split the bank "
                          "into before fitting.")
 parser.add_argument("--duration-bin-spacing",
                     choices=['linear','log'], default='log',
                     help="How to set spacing for bank split "
-                         "if using --duration-bin-start, --duration-bin-end "
-                         "and --num-duration-bins.")
+                         "if using --num-duration-bins and "
+                         "--duration-bin-start + --duration-bin-end "
+                         "or --duration-from-bank.")
 parser.add_argument('--prune-loudest', type=int,
                     help="Maximum number of loudest trigger clusters to "
                          "remove from each bin.")
@@ -82,7 +123,6 @@ parser.add_argument("--output", required=True,
 parser.add_argument("--sngl-ranking", default="newsnr",
                     choices=ranking.sngls_ranking_function_dict.keys(),
                     help="The single-detector trigger ranking to use.")
-#parser.add_argument("--", default="", help="")
 
 cuts.insert_cuts_option_group(parser)
 
@@ -95,25 +135,25 @@ prune_options = [args.prune_loudest, args.prune_window,
                  args.prune_stat_threshold]
 
 if any(prune_options) and not all(prune_options):
-        parser.error("Require all or none of --prune-loudest, "
-                     "--prune-window and --prune-stat-threshold")
+    parser.error("Require all or none of --prune-loudest, "
+                 "--prune-window and --prune-stat-threshold")
 
 # Check the bin options
-if args.duration_bin_edges and (args.duration_bin_start or
-                                args.duration_bin_end or
-                                args.num_duration_bins):
-    # duration bin edges specified as well as linear/logarithmic
-    parser.error("Cannot use --duration-bin-edges with "
-                 "--duration-bin-start, --duration-bin-end or "
-                 "--num-duration-bins.")
-
-if not args.duration_bin_edges and not (args.duration_bin_start and
-                                        args.duration_bin_end and
-                                        args.num_duration_bins):
-    parser.error("--duration-bin-start, --duration-bin-end and "
-                 "--num-duration-bins must be set if not using "
-                 "--duration-bin-edges.")
-
+if args.duration_bin_edges:
+    if (args.duration_bin_start or args.duration_bin_end or
+        args.duration_from_bank or args.num_duration_bins):
+        parser.error("Cannot use --duration-bin-edges with "
+                     "--duration-bin-start, --duration-bin-end, "
+                     "--duration-from-bank or --num-duration-bins.")
+else:
+    if not args.num_duration_bins:
+        parser.error("--num-duration-bins must be set if not using "
+                     "--duration-bin-edges.")
+    if not ((args.duration_bin_start and args.duration_bin_end) or
+            args.duration_from_bank):
+        parser.error("--duration-bin-start & --duration-bin-end or "
+                     "--duration-from-bank must be set if not using "
+                     "--duration-bin-edges.")
 if args.duration_bin_end and \
         args.duration_bin_end <= args.duration_bin_start:
     parser.error("--duration-bin-end must be greater than "
@@ -122,24 +162,15 @@ if args.duration_bin_end and \
 
 pycbc.init_logging(args.verbose)
 
-# Create the duration bins
-if args.duration_bin_edges:
-    duration_bin_edges = np.array(args.duration_bin_edges)
-elif args.duration_bin_spacing == 'log':
-    duration_bin_edges = np.logspace(np.log10(args.duration_bin_start),
-                                     np.log10(args.duration_bin_end),
-                                     args.num_duration_bins + 1)
-elif args.duration_bin_spacing == 'linear':
-    duration_bin_edges = np.linspace(args.duration_bin_start,
-                                     args.duration_bin_end,
-                                     args.num_duration_bins + 1)
+duration_bin_edges = duration_bins_from_cli(args)
+logging.info("Duration bin edges: %s", duration_bin_edges)
 
 logging.info("Finding files")
 
 files = [f for f in os.listdir(os.path.join(args.top_directory, args.analysis_date))
          if args.file_identifier in f]
 
-logging.info("{} files found".format(len(files)))
+logging.info("%s files found", len(files))
 
 # Add template duration cuts according to the bin inputs
 args.template_cuts = args.template_cuts or []
@@ -158,7 +189,7 @@ logging.info("Setting up the cut dictionaries")
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 logging.info("Setting up duration bins")
-tbins = bin_utils.IrregularBins(duration_bin_edges)
+tbins = IrregularBins(duration_bin_edges)
 
 # Also calculate live time so that this fitting can be used in rate estimation
 # Live time is not immediately obvious - get an approximation with 8 second
@@ -179,18 +210,16 @@ files = [f for f in os.listdir(date_directory)
          if args.file_identifier in f and f.endswith('hdf')]
 
 events = {}
-counter = 0
 
-for filename in files:
-    counter += 1
-    if counter % 1000 == 0:
-        logging.info("Processed %d files" % counter)
+for counter, filename in enumerate(files):
+    if counter and counter % 1000 == 0:
+        logging.info("Processed %d/%d files", counter, len(files))
         for ifo in args.ifos:
             if ifo not in events:
                 # In case of no triggers for an extended period
                 logging.info("%s: No data", ifo)
             else:
-                logging.info("%s: %d triggers in %.0fs", ifo,
+                logging.info("%s: %d triggers in %.0f s", ifo,
                              events[ifo].data['snr'].size, live_time[ifo])
 
     f = os.path.join(date_directory, filename)
@@ -198,7 +227,7 @@ for filename in files:
     try:
         h5py.File(f, 'r')
     except IOError:
-        logging.info('IOError with file ' + f)
+        logging.warn('IOError with file ' + f)
         continue
 
     # Triggers for this file
@@ -292,7 +321,7 @@ counts = {i: np.zeros(n_bins, dtype=np.float32) for i in args.ifos}
 event_bins = {}
 times_to_prune = {ifo: [] for ifo in args.ifos}
 
-for ifo in events.keys():
+for ifo in events:
     # Sort the events into their bins
     event_bins[ifo] = np.array([tbins[d]
                                for d in events[ifo].data['template_duration']])
@@ -330,7 +359,7 @@ if args.prune_loudest:
                  "triggers in each bin if %s > %.2f", args.prune_window,
                  args.prune_loudest, args.sngl_ranking,
                  args.prune_stat_threshold)
-    for ifo in events.keys():
+    for ifo in events:
         times = events[ifo].data['end_time'][:]
         outwith_window = np.ones_like(times, dtype=bool)
         for t in times_to_prune[ifo]:
@@ -356,7 +385,7 @@ if args.prune_loudest:
                          n_pruned_thisbin, ifo, bin_num)
 
 # Do the fitting for each bin
-for ifo in events.keys():
+for ifo in events:
     for bin_num in range(n_bins):
 
         inbin = event_bins[ifo] == bin_num
@@ -369,30 +398,32 @@ for ifo in events.keys():
 
         counts[ifo][bin_num] = np.count_nonzero(inbin)
         alphas[ifo][bin_num], _ = trstats.fit_above_thresh(
-                args.fit_function,
-                events[ifo].data[args.sngl_ranking][inbin],
-                args.fit_threshold)
+            args.fit_function,
+            events[ifo].data[args.sngl_ranking][inbin],
+            args.fit_threshold
+        )
 
 logging.info("Writing results")
 with h5py.File(args.output, 'w') as fout:
-    for ifo in events.keys():
-        fout.create_group(ifo)
+    for ifo in events:
+        fout_ifo = fout.create_group(ifo)
         # Save the triggers we have used for the fits
-        fout[ifo].create_group('triggers')
+        fout_ifo_trigs = fout_ifo.create_group('triggers')
         for key in events[ifo].data:
-            fout[ifo]['triggers'][key] = events[ifo].data[key]
+            fout_ifo_trigs[key] = events[ifo].data[key]
         if ifo in pruned_trigger_times:
-            fout[ifo]['pruned_trigger_times'] = pruned_trigger_times[ifo]
+            fout_ifo['pruned_trigger_times'] = pruned_trigger_times[ifo]
 
-        fout[ifo]['fit_coeff'] = alphas[ifo]
-        fout[ifo]['counts'] = counts[ifo]
-        fout[ifo].attrs['live_time'] = live_time[ifo]
-        fout[ifo].attrs['pruned_times'] = times_to_prune[ifo]
-        fout[ifo].attrs['n_pruned'] = n_pruned[ifo]
+        fout_ifo['fit_coeff'] = alphas[ifo]
+        fout_ifo['counts'] = counts[ifo]
+        fout_ifo.attrs['live_time'] = live_time[ifo]
+        fout_ifo.attrs['pruned_times'] = times_to_prune[ifo]
+        fout_ifo.attrs['n_pruned'] = n_pruned[ifo]
 
     fout['bins_upper'] = tbins.upper()
     fout['bins_lower'] = tbins.lower()
 
+    fout.attrs['ifos'] = ','.join(args.ifos)
     fout.attrs['analysis_date'] = args.analysis_date
     fout.attrs['input'] = sys.argv
     fout.attrs['cuts'] = args.template_cuts + args.trigger_cuts

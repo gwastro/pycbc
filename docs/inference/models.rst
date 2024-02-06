@@ -135,7 +135,6 @@ Heterodyne / Relative Models
     Supported Marginalizations: distance, coa_phase (dominant mode), polarization
     +++
     Earth Rotation:✅ LISA:✅ Higher Modes:❌
-    :ref:`Example <relative_example>`
 
 .. card:: Relative Time
 
@@ -185,7 +184,6 @@ Extrinsic Parameter Only Models
     Supported Marginalizations: tc (time), distance, coa_phase (dominant mode), polarization, ra dec
     +++
     Earth Rotation:❌ LISA:❌ Higher Modes:❌
-    :ref:`Example <single_template_examples>`
 
 =================================================
 Composite Models
@@ -197,8 +195,6 @@ Composite Models
 
     The hierachical model is a container for submodels. Each submodel
     makes an indepedent contribution to an overall likelihood function.
-
-    See :ref:`the full page on the hierarchical model <hierachical_model>`.
 
 .. card:: Multiple Signal
 
