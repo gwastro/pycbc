@@ -181,7 +181,7 @@ else:
     inj_file.close()
 
 if injclass is not None:
-    # Assume the injection is a XML file or HDF file (LVK format)
+    # The injection file is of known type
     data = injclass.pack_data_into_pycbc_format_input()
     samples = FieldArray.from_kwargs(**data)
     CBCHDFInjectionSet.write(args.output_file, samples)
