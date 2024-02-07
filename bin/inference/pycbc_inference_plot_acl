@@ -39,8 +39,7 @@ parser = io.ResultsArgumentParser(skip_args=['thin-interval', 'temps'],
                                   description="Histograms autocorrelation "
                                               "length per walker from an MCMC "
                                               "sampler.")
-parser.add_argument("--verbose", action="store_true", default=False,
-    help="Print logging info.")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=__version__,
                     help='show version number and exit')
 # output plot options
