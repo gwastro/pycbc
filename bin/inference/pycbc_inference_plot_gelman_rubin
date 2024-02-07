@@ -29,7 +29,9 @@ from pycbc.inference import (gelman_rubin, io, option_utils)
 # add options to command line
 parser = io.ResultsArgumentParser(skip_args=['walkers'])
 
-pycbc.add_common_pycbc_options(parser)
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Print logging info.")
 parser.add_argument('--version', action='version', version=__version__,
                     help='show version number and exit')
 
