@@ -65,8 +65,9 @@ parser.add_argument('--inspiral-data-read-name',
 parser.add_argument('--inspiral-data-analyzed-name',
                     help="Name of inspiral segmentlist containing data "
                          "analyzed by each analysis job.")
-parser.add_argument('--min-snr', type=float, default=6.5,
-                    help="Minimum SNR to consider for loudest triggers")
+parser.add_argument('--min-sngl-ranking', type=float, default=6.5,
+                    help="Minimum sngl-ranking to consider for loudest "
+                         "triggers. Default=6.5.")
 parser.add_argument('--non-coinc-time-only', action='store_true',
                     help="If given remove (veto) single-detector triggers "
                          "that occur during a time when at least one other "
@@ -130,31 +131,14 @@ insp_data_seglists.coalesce()
 num_events = int(workflow.cp.get_opt_tags('workflow-sngl_minifollowups',
                  'num-sngl-events', ''))
 
-# This helps speed up the processing to ignore a large fraction of triggers
-mask = None
-f = hdf.HFile(args.single_detector_file, 'r')
-n_triggers = f['{}/snr'.format(args.instrument)].size
-logging.info("%i triggers in file", n_triggers)
-if args.min_snr:
-    logging.info('Calculating Prefilter')
-    idx, _ = f.select(lambda snr: snr > args.min_snr,
-                      '{}/snr'.format(args.instrument),
-                      return_indices=True)
-    mask = numpy.zeros(n_triggers, dtype=bool)
-    mask[idx] = True
-    if len(idx) < num_events:
-        logging.info("Fewer triggers exist after the --min-snr cut (%d) "
-                     "than requested for the minifollowup (%d)",
-                     len(idx), num_events)
-
 trigs = hdf.SingleDetTriggers(
     args.single_detector_file,
-    args.bank_file,
-    args.foreground_censor_file,
-    args.foreground_segment_name,
-    None,
     args.instrument,
-    premask=mask
+    bank_file=args.bank_file,
+    veto_file=args.foreground_censor_file,
+    segment_name=args.foreground_segment_name,
+    filter_rank=args.sngl_ranking,
+    filter_threshold=args.min_sngl_ranking
 )
 
 # Include gating vetoes
@@ -307,6 +291,7 @@ for rank, num_event in enumerate(order):
     curr_params['spin2z'] = trigs.spin2z[num_event]
     curr_params['f_lower'] = trigs.f_lower[num_event]
     curr_params[args.instrument + '_end_time'] = time
+    curr_params['mean_time'] = time
     # don't require precessing template info if not present
     try:
         curr_params['spin1x'] = trigs.spin1x[num_event]
@@ -322,11 +307,15 @@ for rank, num_event in enumerate(order):
     except:
         pass
 
-    files += mini.make_single_template_plots(workflow, insp_segs,
+    _, sngl_plot = mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
-                            args.inspiral_data_analyzed_name, curr_params,
+                            args.inspiral_data_analyzed_name,
+                            curr_params,
                             args.output_dir,
+                            data_segments={args.instrument : insp_data_seglists},
                             tags=args.tags+[str(rank)])
+
+    files += sngl_plot
 
     files += mini.make_plot_waveform_plot(workflow, curr_params,
                                         args.output_dir, [args.instrument],

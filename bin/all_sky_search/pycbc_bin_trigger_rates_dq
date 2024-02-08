@@ -15,7 +15,7 @@ from pycbc.events.veto import (select_segments_by_definer,
                                start_end_to_segments,
                                segments_to_start_end)
 from pycbc.types.optparse import MultiDetOptionAction
-from pycbc.io.hdf import HFile, SingleDetTriggers
+from pycbc.io.hdf import SingleDetTriggers
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -46,54 +46,11 @@ logging.info('Start')
 
 ifo, flag_name = args.flag_name.split(':')
 
-# Setup a data mask to remove any triggers with SNR below threshold
-# This works as a pre-filter as SNR is always greater than or equal
-# to sngl_ranking, except in the psdvar case, where it could increase.
-
-with HFile(args.trig_file, 'r') as trig_file:
-    n_triggers_orig = trig_file[f'{ifo}/snr'].size
-    logging.info("Trigger file has %d triggers", n_triggers_orig)
-    logging.info('Generating trigger mask')
-    if f'{ifo}/psd_var_val' in trig_file:
-        idx, _, _ = trig_file.select(
-            lambda snr, psdvar: snr / psdvar ** 0.5 >= args.stat_threshold,
-            f'{ifo}/snr',
-            f'{ifo}/psd_var_val',
-            return_indices=True
-        )
-    else:
-        # psd_var_val may not have been calculated
-        idx, _ = trig_file.select(
-            lambda snr: snr >= args.stat_threshold,
-            f'{ifo}/snr',
-            return_indices=True
-        )
-    data_mask = np.zeros(n_triggers_orig, dtype=bool)
-    data_mask[idx] = True
-
-    # also get the gated times while we have the file open
-    gate_times = []
-    if args.gating_windows:
-        logging.info('Getting gated times')
-        try:
-            gating_types = trig_file[f'{ifo}/gating'].keys()
-            for gt in gating_types:
-                gate_times += list(trig_file[f'{ifo}/gating/{gt}/time'][:])
-            gate_times = np.unique(gate_times)
-        except KeyError:
-            logging.warning('No gating found in trigger file')
-
-logging.info("Getting %s triggers from file with pre-cut SNR > %.3f",
-             idx.size, args.stat_threshold)
-
 trigs = SingleDetTriggers(
     args.trig_file,
-    None,
-    None,
-    None,
-    None,
     ifo,
-    premask=data_mask
+    filter_rank=args.sngl_ranking,
+    filter_threshold=args.stat_threshold,
 )
 
 # Extract the data we actually need from the data structure:
@@ -101,23 +58,12 @@ tmplt_ids = trigs.template_id
 trig_times = trigs.end_time
 stat = trigs.get_ranking(args.sngl_ranking)
 
-n_triggers = tmplt_ids.size
-
-logging.info("Applying %s > %.3f cut", args.sngl_ranking,
-             args.stat_threshold)
-keep = stat >= args.stat_threshold
-tmplt_ids = tmplt_ids[keep]
-trig_times = trig_times[keep]
-logging.info("Removed %d triggers, %d remain",
-             n_triggers - tmplt_ids.size, tmplt_ids.size)
-
 # Get the template bins
 bin_tids_dict = {}
 with h5.File(args.template_bins_file, 'r') as f:
     ifo_grp = f[ifo]
     for bin_name in ifo_grp.keys():
         bin_tids_dict[bin_name] = ifo_grp[bin_name]['tids'][:]
-
 
 # get analysis segments
 analysis_segs = select_segments_by_definer(
