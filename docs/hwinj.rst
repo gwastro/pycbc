@@ -202,7 +202,7 @@ Where ``${START}`` is the start of the injection. We kept the same PSD options (
 You can print out the recovered SNR and other parameters as follows ::
 
   echo `python -c "import numpy;from pycbc.io.hdf import SingleDetTriggers; \
-  h1_triggers=SingleDetTriggers('${INSPIRAL_FILE}',None, None, None, None, 'H1'); \
+  h1_triggers=SingleDetTriggers('${INSPIRAL_FILE}', 'H1'); \
   imax=numpy.argmax(h1_triggers.snr); max_snr=h1_triggers.snr[imax]; \
   time=h1_triggers.end_time[imax]; print(time, max_snr)"`
 
