@@ -292,6 +292,8 @@ for num_event in range(num_events):
 
         ifo_times += ' %s:%s ' % (ifo, ifo_time)
         inj_params[ifo + '_end_time'] = ifo_time
+    all_times = [inj_params[sngl.ifo + '_end_time'] for sngl in single_triggers]
+    inj_params['mean_time'] = coinc.mean_if_greater_than_zero(all_times)[0]
 
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
                                args.output_dir, tags=args.tags + [str(num_event)])[0],)]
@@ -331,8 +333,7 @@ for num_event in range(num_events):
     for single in single_triggers:
         checkedtime = time
         if (inj_params[single.ifo + '_end_time'] == -1.0):
-            all_times = [inj_params[sngl.ifo + '_end_time'] for sngl in single_triggers]
-            checkedtime = coinc.mean_if_greater_than_zero(all_times)[0]
+            checkedtime = inj_params['mean_time']
         for seg in insp_analysed_seglists[single.ifo]:
             if checkedtime in seg:
                 files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
@@ -351,7 +352,7 @@ for num_event in range(num_events):
                 checkedtime, single.ifo
             )
 
-    files += mini.make_single_template_plots(workflow, insp_segs,
+    _, norm_plot = mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
@@ -359,8 +360,9 @@ for num_event in range(num_events):
                             params_str='injection parameters as template, ' +\
                                        'here the injection is made as normal',
                             use_exact_inj_params=True)
+    files += norm_plot
 
-    files += mini.make_single_template_plots(workflow, insp_segs,
+    _, inv_plot = mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
@@ -369,8 +371,9 @@ for num_event in range(num_events):
                             params_str='injection parameters as template, ' +\
                                        'here the injection is made inverted',
                             use_exact_inj_params=True)
+    files += inv_plot
 
-    files += mini.make_single_template_plots(workflow, insp_segs,
+    _, noinj_plot = mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
@@ -379,6 +382,7 @@ for num_event in range(num_events):
                             params_str='injection parameters, here no ' +\
                                        'injection was actually performed',
                             use_exact_inj_params=True)
+    files += noinj_plot
 
     for curr_ifo in args.single_detector_triggers:
         single_fname = args.single_detector_triggers[curr_ifo]
@@ -417,12 +421,13 @@ for num_event in range(num_events):
 
         curr_tags = ['TMPLT_PARAMS_%s' %(curr_ifo,)]
         curr_tags += [str(num_event)]
-        files += mini.make_single_template_plots(workflow, insp_segs,
+        _, loudest_plot = mini.make_single_template_plots(workflow, insp_segs,
                                 args.inspiral_data_read_name,
                                 args.inspiral_data_analyzed_name, curr_params,
                                 args.output_dir, inj_file=injection_xml_file,
                                 tags=args.tags + curr_tags,
                                 params_str='loudest template in %s' % curr_ifo )
+        files += loudest_plot
 
     layouts += list(layout.grouper(files, 2))
 
