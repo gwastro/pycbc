@@ -56,6 +56,9 @@ parser.add_argument("-t", "--trig-file", action="store",
 parser.add_argument("-i", "--inj-files", action="store",
                     default=None, nargs="+",
                     help="Location(s) of input injection results file(s)")
+parser.add_argument("-b", "--bank-file", action="store",
+                    default=None,
+                    help="The location of the full template bank file")
 _workflow.add_workflow_command_line_group(parser)
 _workflow.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -374,7 +377,8 @@ for offtrial in offtrials:
         plot_node, output_files = \
             _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
                                       out_dir, trig_file=trig_file,
-                                      inj_file=inj_file, tags=tags)
+                                      inj_file=inj_file,
+                                      bank_file=args.bank_file, tags=tags)
         plotting_nodes.append(plot_node)
         files.append(output_files[0])
 layout.two_column_layout(out_dir, files)

@@ -448,7 +448,8 @@ def build_segment_filelist(workflow):
 
 
 def make_pygrb_plot(workflow, exec_name, out_dir,
-                    ifo=None, inj_file=None, trig_file=None, tags=None):
+                    ifo=None, inj_file=None, trig_file=None,
+                    bank_file=None, tags=None):
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -514,6 +515,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
         onsource_file = configparser_value_to_file(workflow.cp,
                                                    'workflow', 'onsource-file')
         node.add_input_opt('--onsource-file', onsource_file)
+        node.add_input_opt('--bank-file', bank_file)
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--background-output-file',
                                  tags=extra_tags+['max_background'])
@@ -730,7 +732,7 @@ def setup_pygrb_minifollowups(workflow, followups_file,
 
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
-                                 inj_files, tags=None,
+                                 inj_files, bank_file, tags=None,
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.
@@ -743,9 +745,10 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
         results (plots, etc.) will be stored
     trig_file: The triggers File object
     inj_files: FileList of injection results
+    bank_file: The template bank File object
     tags: {None, optional}
         Tags to add to the executables
-    excplicit_dependencies: nodes that must precede this
+    explicit_dependencies: nodes that must precede this
     """
 
     tags = [] if tags is None else tags
@@ -771,6 +774,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
         node.add_input_list_opt('--veto-files', veto_files)
     # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt('--inj-files', inj_files)
+    node.add_input_opt('--bank-file', bank_file)
 
     if tags:
         node.add_list_opt('--tags', tags)
