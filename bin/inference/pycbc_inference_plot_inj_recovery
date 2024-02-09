@@ -21,12 +21,11 @@ from pycbc.results import save_fig_with_metadata
 # parse command line
 parser = io.ResultsArgumentParser(description=__doc__)
 
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
 parser.add_argument("--output-file", required=True, type=str,
                     help="Path to save output plot.")
-parser.add_argument("--verbose", action="store_true",
-                    help="Allows print statements.")
 parser.add_argument("--percentiles", nargs=2, type=float, default=[5, 95],
                     help="Percentiles to use as limits.")
 option_utils.add_scatter_option_group(parser)
