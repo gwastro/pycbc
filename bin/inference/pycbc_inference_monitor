@@ -6,13 +6,13 @@ import os, sys, time, glob, shutil, logging, argparse, pycbc
 import pycbc.workflow as wf
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--inference-file', help="The name of the inference file")
 parser.add_argument('--check-interval', default=10, type=int,
                     help="Polling interval to check for file changes (s)")
 parser.add_argument('--output-dir', help="Output plots / results directory")
 parser.add_argument('--allow-failure', action='store_true',
                     help="Allow for a failure in plot generation")
-parser.add_argument('--verbose', action='store_true')
 
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()

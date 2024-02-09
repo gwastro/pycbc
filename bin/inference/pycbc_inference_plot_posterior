@@ -52,13 +52,12 @@ use('agg')
 
 # add options to command line
 parser = io.ResultsArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 # program-specific
 parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Be verbose")
 parser.add_argument("--plot-prior", nargs="+", type=str,
                     help="Plot the prior on the 1D marginal plots using the "
                          "given config file(s).")
