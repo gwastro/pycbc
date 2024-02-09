@@ -406,6 +406,6 @@ def args_to_string(args):
 
     if args.snr_opt_seed:
         option_value = getattr(arg, 'snr_opt_seed')
-        argstr += f'--snr-opt-seed {option_value}'
+        argstr += f'--snr-opt-seed {option_value} '
 
     return argstr
