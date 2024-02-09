@@ -179,7 +179,7 @@ if args.randomize_template_order:
     shuffle(template_ids)
     template_ids = template_ids[tmin:tmax]
 else:
-    template_ids = numpy.array([range(tmin, tmax)])
+    template_ids = numpy.arange(tmin, tmax)
 
 original_bank_len = len(template_ids)
 

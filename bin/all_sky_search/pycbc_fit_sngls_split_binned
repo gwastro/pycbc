@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from pycbc import events, bin_utils, results
-from pycbc.io import HFile, SingleDetTriggers
+from pycbc.io import SingleDetTriggers
 from pycbc.events import triggers as trigs
 from pycbc.events import trigger_fits as trstats
 from pycbc.events import stat as pystat
@@ -202,47 +202,18 @@ boundaries = trigf[args.ifo + '/template_boundaries'][:]
 
 trigf.close()
 
-# Setup a data mask to remove any triggers with SNR below threshold
-# This works as a pre-filter as SNR is always greater than or equal
-# to sngl_ranking, except in the psdvar case, where it could increase.
-with HFile(args.trigger_file, 'r') as trig_file:
-    n_triggers_orig = trig_file[f'{args.ifo}/snr'].size
-    logging.info("Trigger file has %d triggers", n_triggers_orig)
-    logging.info('Generating trigger mask')
-    if f'{args.ifo}/psd_var_val' in trig_file:
-        idx, _, _ = trig_file.select(
-            lambda snr, psdvar: snr / psdvar ** 0.5 >= args.plot_lower_stat_limit,
-            f'{args.ifo}/snr',
-            f'{args.ifo}/psd_var_val',
-            return_indices=True
-        )
-    else:
-        # psd_var_val may not have been calculated
-        idx, _ = trig_file.select(
-            lambda snr: snr >= args.plot_lower_stat_limit,
-            f'{args.ifo}/snr',
-            return_indices=True
-        )
-    data_mask = np.zeros(n_triggers_orig, dtype=bool)
-    data_mask[idx] = True
-
-
 logging.info('Calculating single stat values from trigger file')
 trigs = SingleDetTriggers(
     args.trigger_file,
-    None,
-    None,
-    None,
-    None,
     args.ifo,
-    premask=data_mask
+    filter_rank=args.sngl_ranking,
+    filter_threshold=args.plot_lower_stat_limit,
 )
 # This is the direct pointer to the HDF file, used later on
 trigf = trigs.trigs_f
 
 stat = trigs.get_ranking(args.sngl_ranking)
 time = trigs.end_time
-
 
 logging.info('Processing template boundaries')
 max_boundary_id = np.argmax(boundaries)
