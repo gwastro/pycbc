@@ -364,8 +364,20 @@ _workflow.makedir(out_dir)
 num_trials = int(wflow.cp.get('trig_combiner', 'num-trials'))
 offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
 inj_sets = wflow.cp.get_subsections('injections')
-# TODO: (randomly extracted) offrtials pages
-
+out_dir = rdir['exclusion_distances']
+_workflow.makedir(out_dir)
+files = _workflow.FileList([])
+# TODO: test this
+for offtrial in offtrials:
+    for inj_set in inj_sets:
+        tags = [offtrial, inj_set]
+        plot_node, output_files = \
+            _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
+                                      out_dir, trig_file=trig_file,
+                                      inj_file=inj_file, tags=tags)
+        plotting_nodes.append(plot_node)
+        files.append(output_files[0])
+layout.two_column_layout(out_dir, files)
 
 #
 # Trigger Followups (TODO)
