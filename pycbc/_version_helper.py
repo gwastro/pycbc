@@ -64,24 +64,23 @@ def call(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     if p.returncode != 0 and on_error == 'raise':
         raise GitInvocationError('Failed to run "%s"' % " ".join(command))
 
-    out = out.decode('utf-8')
+    out = out.decode('utf-8').strip()
 
     if returncode:
-        return out.strip(), p.returncode
-    else:
-        return out.strip()
+        return out, p.returncode
+    return out
 
 
 def get_build_name(git_path='git'):
     """Find the username of the current builder
     """
-    name,retcode = call(('git', 'config', 'user.name'), returncode=True)
+    name, retcode = call(('git', 'config', 'user.name'), returncode=True)
     if retcode:
         name = "Unknown User"
-    email,retcode = call(('git', 'config', 'user.email'), returncode=True)
+    email, retcode = call(('git', 'config', 'user.email'), returncode=True)
     if retcode:
         email = ""
-    return "%s <%s>" % (name, email)
+    return f"{name} <{email}>"
 
 
 def get_build_date():
@@ -100,8 +99,8 @@ def get_last_commit(git_path='git'):
         call((git_path, 'log', '-1',
               '--pretty=format:%H,%ct,%an,%ae,%cn,%ce')).split(","))
     date = time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime(float(udate)))
-    author = '%s <%s>' % (aname, amail)
-    committer = '%s <%s>' % (cname, cmail)
+    author = f'{aname} <{amail}>'
+    committer = f'{cname} <{cmail}>'
     return hash_, date, author, committer
 
 
@@ -111,8 +110,7 @@ def get_git_branch(git_path='git'):
     branch_match = call((git_path, 'rev-parse', '--symbolic-full-name', 'HEAD'))
     if branch_match == "HEAD":
         return None
-    else:
-        return os.path.basename(branch_match)
+    return os.path.basename(branch_match)
 
 
 def get_git_tag(hash_, git_path='git'):
@@ -122,11 +120,12 @@ def get_git_tag(hash_, git_path='git'):
                         '--tags', hash_), returncode=True)
     if status == 0:
         return tag
-    else:
-        return None
+    return None
+
 
 def get_num_commits():
     return call(('git', 'rev-list', '--count', 'HEAD'))
+
 
 def get_git_status(git_path='git'):
     """Returns the state of the git working copy
@@ -134,14 +133,13 @@ def get_git_status(git_path='git'):
     status_output = subprocess.call((git_path, 'diff-files', '--quiet'))
     if status_output != 0:
         return 'UNCLEAN: Modified working tree'
-    else:
-        # check index for changes
-        status_output = subprocess.call((git_path, 'diff-index', '--cached',
-                                         '--quiet', 'HEAD'))
-        if status_output != 0:
-            return 'UNCLEAN: Modified index'
-        else:
-            return 'CLEAN: All modifications committed'
+    # check index for changes
+    status_output = subprocess.call((git_path, 'diff-index', '--cached',
+                                     '--quiet', 'HEAD'))
+    if status_output != 0:
+        return 'UNCLEAN: Modified index'
+    return 'CLEAN: All modifications committed'
+
 
 def determine_latest_release_version():
     """Query the git repository for the last released version of the code.
@@ -152,21 +150,20 @@ def determine_latest_release_version():
     tag_list = call((git_path, 'tag')).split('\n')
 
     # Reduce to only versions
-    tag_list = [t[1:] for t in tag_list if t.startswith('v')]
+    re_magic = re.compile(r"v\d+\.\d+\.\d+$")
+    tag_list = [t[1:] for t in tag_list if re_magic.match(t)]
 
-    # Determine if indeed a tag and store largest
+    # find latest version
     latest_version = None
     latest_version_string = None
-    re_magic = re.compile("\d+\.\d+\.\d+$")
     for tag in tag_list:
-        # Is this a version string
-        if re_magic.match(tag):
-            curr_version = distutils.version.StrictVersion(tag)
-            if latest_version is None or curr_version > latest_version:
-                latest_version = curr_version
-                latest_version_string = tag
+        curr_version = distutils.version.StrictVersion(tag)
+        if latest_version is None or curr_version > latest_version:
+            latest_version = curr_version
+            latest_version_string = tag
 
     return latest_version_string
+
 
 def generate_git_version_info():
     """Query the git repository information to generate a version module.
