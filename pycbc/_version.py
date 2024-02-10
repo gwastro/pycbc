@@ -53,9 +53,27 @@ def print_link(library):
     return link
 
 
+def get_lal_info(module, lib_glob):
+    """Return a string reporting the version and runtime library information
+    for a LAL Python import.
+    """
+    module_path = inspect.getfile(module)
+    version_str = (
+        module.git_version.verbose_msg +
+        "\n\nImported from: " + module_path +
+        "\n\nRuntime libraries:\n"
+    )
+    possible_lib_paths = glob.glob(
+        os.path.join(os.path.dirname(module_path), lib_glob)
+    )
+    for lib_path in possible_paths:
+        version_str += print_link(lib_path)
+    return version_str
+
+
 class Version(argparse.Action):
-    """Subclass of argparse.Action that prints the pycbc, lal and lalsimulation
-    versions.
+    """Subclass of argparse.Action that prints version information for PyCBC,
+    LAL and LALSimulation.
     """
     def __init__(self, nargs=0, **kw):
         super(Version, self).__init__(nargs=nargs, **kw)
@@ -75,13 +93,7 @@ class Version(argparse.Action):
         except ImportError:
             version_str += "\nLAL not installed in environment\n"
         else:
-            lal_module = inspect.getfile(lal)
-            lal_library = os.path.join(os.path.dirname(lal_module), '_lal.so')
-            version_str += (
-                lal.git_version.verbose_msg +
-                "\n\nImported from: " + lal_module +
-                "\n\nRuntime libraries:\n" + print_link(lal_library)
-            )
+            version_str += get_lal_info(lal, '_lal*.so')
 
         version_str += "\n\n--- LALSimulation Version-------------------\n"
         try:
@@ -89,16 +101,10 @@ class Version(argparse.Action):
         except ImportError:
             version_str += "\nLALSimulation not installed in environment\n"
         else:
-            lalsim_module = inspect.getfile(lalsimulation)
-            lalsim_library = os.path.join(
-                os.path.dirname(lalsim_module),
-                '_lalsimulation.so'
-            )
-            version_str += (
-                lalsimulation.git_version.verbose_msg +
-                "\n\nImported from: " + lalsim_module +
-                "\n\nRuntime libraries:\n" + print_link(lalsim_library)
-            )
+            version_str += get_lal_info(lalsimulation, '_lalsimulation*.so')
 
         print(version_str)
         sys.exit(0)
+
+
+__all__ = ['Version']
