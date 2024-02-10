@@ -86,7 +86,7 @@ def get_build_name(git_path='git'):
 def get_build_date():
     """Returns the current datetime as the git build date
     """
-    return time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime())
+    return time.strftime(r'%Y-%m-%d %H:%M:%S +0000', time.gmtime())
 
 
 def get_last_commit(git_path='git'):
@@ -95,10 +95,13 @@ def get_last_commit(git_path='git'):
     Returns a tuple (hash, date, author name, author e-mail,
     committer name, committer e-mail).
     """
-    hash_, udate, aname, amail, cname, cmail = (
-        call((git_path, 'log', '-1',
-              '--pretty=format:%H,%ct,%an,%ae,%cn,%ce')).split(","))
-    date = time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime(float(udate)))
+    hash_, udate, aname, amail, cname, cmail = call((
+        git_path,
+        'log',
+        '-1',
+        r'--pretty=format:%H,%ct,%an,%ae,%cn,%ce'
+    )).split(",")
+    date = time.strftime(r'%Y-%m-%d %H:%M:%S +0000', time.gmtime(float(udate)))
     author = f'{aname} <{amail}>'
     committer = f'{cname} <{cmail}>'
     return hash_, date, author, committer

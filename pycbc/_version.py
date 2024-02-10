@@ -21,6 +21,7 @@ extremely verbose version information for PyCBC, lal, and lalsimulation.
 
 import os
 import sys
+import glob
 import argparse
 import inspect
 import subprocess
@@ -66,7 +67,7 @@ def get_lal_info(module, lib_glob):
     possible_lib_paths = glob.glob(
         os.path.join(os.path.dirname(module_path), lib_glob)
     )
-    for lib_path in possible_paths:
+    for lib_path in possible_lib_paths:
         version_str += print_link(lib_path)
     return version_str
 
