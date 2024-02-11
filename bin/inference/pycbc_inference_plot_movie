@@ -110,6 +110,7 @@ def integer_logspace(start, end, num):
 # the frame number/step options
 skip_args = ['thin-start', 'thin-interval', 'thin-end', 'iteration']
 parser = io.ResultsArgumentParser(description=__doc__, skip_args=skip_args)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
 # make frame number and frame step mutually exclusive
@@ -135,7 +136,6 @@ parser.add_argument("--log-steps", action="store_true", default=False,
 parser.add_argument("--output-prefix", type=str, required=True,
                     help="Output path and prefix for the frame files "
                          "(without extension).")
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--dpi', type=int, default=200,
                     help='Set the dpi for each frame; default is 200')
 parser.add_argument("--nprocesses", type=int, default=None,
