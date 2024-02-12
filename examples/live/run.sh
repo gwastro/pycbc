@@ -195,10 +195,10 @@ python -m mpi4py `which pycbc_live` \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --run-snr-optimization \
+--snr-opt-method differential_evolution \
 --snr-opt-di-maxiter 50 \
 --snr-opt-di-popsize 100 \
---snr-opt-include-candidate \
---snr-opt-seed 42 \
+--snr-opt-extra-opts "--snr-opt-seed 42 --snr-opt-include-candidate " \
 --sngl-ifar-est-dist conservative \
 --single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
@@ -210,6 +210,7 @@ python -m mpi4py `which pycbc_live` \
 # If you would like to use the pso optimizer, change --optimizer to pso
 #  and include these arguments while removing other optimizer args.
 #  You will need to install the pyswarms package into your environment.
+# --snr-opt-method pso \
 # --snr-opt-pso-iters 5 \
 # --snr-opt-pso-particles 250 \
 # --snr-opt-pso-c1 0.5 \
