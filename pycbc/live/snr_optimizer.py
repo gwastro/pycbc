@@ -325,6 +325,10 @@ def insert_snr_optimizer_options(parser):
         help='SNR Optimizer choices: ' + ', '.join(optimizer_choices))
 
     # Add the generic options
+    opt_opt_group.add_argument('--snr-opt-extra-opts',
+        default=None,
+        help='Extra options to pass to the optimizer subprocess. Example:'
+             '"--snr-opt-seed 42 --snr-opt-include-candidate "')
     opt_opt_group.add_argument('--snr-opt-include-candidate',
         action='store_true',
         help='Include parameters of the candidate event in the initialized '
@@ -401,10 +405,8 @@ def args_to_string(args):
         option_fullname = f'--snr-opt-{optimizer_name}-{opt}'
         argstr += f'{option_fullname} {option_value} '
 
-    if args.snr_opt_include_candidate:
-        argstr += '--snr-opt-include-candidate '
-
-    if args.snr_opt_seed is not None:
-        argstr += f'--snr-opt-seed {args.snr_opt_seed} '
+    # Add the extra opts
+    if args.snr_opt_extra_opts is not None:
+        argstr += args.snr_opt_extra_opts
 
     return argstr
