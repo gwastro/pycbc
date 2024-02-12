@@ -326,7 +326,6 @@ def insert_snr_optimizer_options(parser):
 
     # Add the generic options
     opt_opt_group.add_argument('--snr-opt-extra-opts',
-        default=None,
         help='Extra options to pass to the optimizer subprocess. Example:'
              '"--snr-opt-seed 42 --snr-opt-include-candidate "')
     opt_opt_group.add_argument('--snr-opt-include-candidate',
