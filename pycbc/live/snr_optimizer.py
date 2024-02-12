@@ -326,18 +326,20 @@ def insert_snr_optimizer_options(parser):
 
     # Add the generic options
     opt_opt_group.add_argument('--snr-opt-extra-opts',
-        help='Extra options to pass to the optimizer subprocess. Example:'
-             '"--snr-opt-seed 42 --snr-opt-include-candidate "')
+        help='Extra options to pass to the optimizer subprocess. Example: '
+             '--snr-opt-extra-opts "--snr-opt-method differential_evolution '
+             '--snr-opt-di-maxiter 50 --snr-opt-di-popsize 100 '
+             '--snr-opt-seed 42 --snr-opt-include-candidate "')
     opt_opt_group.add_argument('--snr-opt-include-candidate',
         action='store_true',
         help='Include parameters of the candidate event in the initialized '
-             'array for the optimizer. Only relevant for --optimizer pso or '
-             'differential_evolution')
+             'array for the optimizer. Only relevant for --snr-opt-method pso '
+             'or differential_evolution')
     opt_opt_group.add_argument('--snr-opt-seed',
         default='42',
         help='Seed to supply to the random generation of initial array to '
-             'pass to the optimizer. Only relevant for --optimizer pso or '
-             'differential_evolution. Set to ''random'' for a random seed')
+             'pass to the optimizer. Only relevant for --snr-opt-method pso '
+             'or differential_evolution. Set to ''random'' for a random seed')
 
     # For each optimizer, add the possible options
     for optimizer, option_subdict in option_dict.items():
@@ -348,7 +350,7 @@ def insert_snr_optimizer_options(parser):
             option_name = f"--snr-opt-{optimizer_name}-{opt_name}"
             opt_opt_group.add_argument(option_name,
                 type=float,
-                help=f'Only relevant for --optimizer {optimizer}: ' +
+                help=f'Only relevant for --snr-opt-method {optimizer}: ' +
                      opt_help_default[0] +
                      f' Default = {opt_help_default[1]}')
 
