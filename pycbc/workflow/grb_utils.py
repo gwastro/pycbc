@@ -233,7 +233,7 @@ def get_sky_grid_scale(
     return out
 
 
-def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
+def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_files,
                             insp_files, inj_files, inj_insp_files, inj_tags):
     """
     Generate post-processing section of PyGRB offline workflow
@@ -257,8 +257,10 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     exe_class = _select_grb_pp_class(wf, "trig_combiner")
     job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
+    if len(bank_files) > 1:
+        raise NotImplementedError("Multiple banks not supported")
     node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
-                                    insp_files, pp_dir, bank_file)
+                                    insp_files, pp_dir, bank_files[0])
     wf.add_node(node)
     pp_outs.append(trig_files)
 
@@ -285,7 +287,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
                                    if inj_tag in f.tags[1]])
         node, inj_find_file = job_instance.create_node(
                                            tag_inj_files, tag_insp_files,
-                                           bank_file, pp_dir)
+                                           bank_files[0], pp_dir)
         wf.add_node(node)
         inj_find_files.append(inj_find_file)
     pp_outs.append(inj_find_files)
