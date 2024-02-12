@@ -391,21 +391,8 @@ def args_to_string(args):
     Convert the supplied arguments for SNR optimization config into
     a string - this is to be used when running subprocesses
     """
-    argstr = f'--snr-opt-method {args.snr_opt_method} '
-    optimizer_name = args.snr_opt_method.replace('_', '-')
-    if optimizer_name == 'differential-evolution':
-        optimizer_name = 'di'
-    for opt in option_dict[args.snr_opt_method]:
-        key_name = f'snr_opt_{optimizer_name}_{opt}'
-        option_value = getattr(args, key_name)
-        # If the option is not given, don't pass it and use default
-        if option_value is None:
-            continue
-        option_fullname = f'--snr-opt-{optimizer_name}-{opt}'
-        argstr += f'{option_fullname} {option_value} '
-
     # Add the extra opts
     if args.snr_opt_extra_opts is not None:
-        argstr += args.snr_opt_extra_opts
+        argstr = args.snr_opt_extra_opts
 
     return argstr
