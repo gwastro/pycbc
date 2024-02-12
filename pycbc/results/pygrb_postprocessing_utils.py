@@ -797,8 +797,8 @@ def template_hash_to_id(trigger_file, bank_path):
     trigger_file: h5py File object for trigger file
     bank_file: filepath for template bank
     """
-    bank = h5py.File(bank_path, "r")
-    hashes = bank['template_hash'][:]
+    with h5py.File(bank_path, "r") as bank:
+        hashes = bank['template_hash'][:]
     ifos = [k for k in trigger_file.keys() if k != 'network']
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
     trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
