@@ -227,6 +227,17 @@ offsource_trigs.reverse()
 max_bestnr, _, full_time_veto_max_bestnr =\
     ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr, total_trials)
 
+# ==========================
+# Calculate template chirp masses from bank
+# ==========================
+logging.info('Reading template chirp masses')
+with h5py.File(opts.bank_file, 'r') as bank_file:
+    template_mchirps = mchirp_from_mass1_mass2(
+        bank_file['mass1'][:],
+        bank_file['mass2'][:]
+    )
+
+
 
 # =======================
 # Load on source triggers
@@ -238,8 +249,7 @@ if onsource_file:
     logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
 
     # Calculate chirp mass values
-    on_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][:][on_trigs['network/template_id']],
-                                        bank_file['mass2'][:][on_trigs['network/template_id']])
+    on_mchirp = template_mchirps[on_trigs['network/template_id']]
 
     # Set loudest event arrays
     loud_on_bestnr = 0
@@ -294,8 +304,7 @@ if do_injections:
     logging.info("Missed/found injections/triggers loaded.")
 
     # Calculate quantities not included in trigger files, such as chirp mass
-    found_trig_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][:][injs['network/template_id']],
-                                                bank_file['mass2'][:][injs['network/template_id']])
+    found_trig_mchirp = template_mchirps[injs['network/template_id']]
 
 
     # Construct conditions for injection:
