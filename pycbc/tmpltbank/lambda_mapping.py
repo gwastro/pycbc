@@ -14,11 +14,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import re
+import logging
 import numpy
-import pycbc.libutils
-from lal import MTSUN_SI, PI, CreateREAL8Vector
 
+from lal import MTSUN_SI, PI, CreateREAL8Vector
 lalsimulation = pycbc.libutils.import_optional('lalsimulation')
+
+import pycbc.libutils
+
+logger = logging.getLogger('pycbc.tmpltbank.lambda_mapping')
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
 pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\

@@ -27,8 +27,12 @@ specific values from PyCBC template banks.
 """
 
 import numpy as np
+import logging
+
 from pycbc import conversions as conv
 from pycbc import pnutils
+
+logger = logging.getLogger('pycbc.tmpltbank.bank_conversions')
 
 # Convert from parameter name to helper function
 # some multiple names are used for the same function
