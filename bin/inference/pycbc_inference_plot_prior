@@ -46,6 +46,7 @@ def cartesian(arrays):
 parser = argparse.ArgumentParser(
     usage="pycbc_inference_plot_prior [--options]",
     description="Plots prior distributions.")
+pycbc.add_common_pycbc_options(parser)
 # add input options
 parser.add_argument("--config-files", type=str, nargs="+", required=True,
                     help="A file parsable by "
@@ -75,9 +76,6 @@ parser.add_argument("--nsamples", type=int, default=10000,
                          "plotting. Default is 10000.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")
-# verbose option
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="")
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
 

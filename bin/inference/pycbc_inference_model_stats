@@ -37,6 +37,7 @@ from pycbc.workflow import WorkflowConfigParser
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-file", type=str, required=True,
                     help="Input HDF file to read. Can be either an inference "
                          "file or a posterior file.")
@@ -51,8 +52,6 @@ parser.add_argument("--nprocesses", type=int, default=1,
 parser.add_argument("--config-file", nargs="+", type=str, default=None,
                     help="Override the config file stored in the input file "
                           "with the given file(s).")
-parser.add_argument("--verbose", action="count", default=0,
-                    help="Print logging messages.")
 parser.add_argument('--reconstruct-parameters', action="store_true",
                     help="Reconstruct marginalized parameters")
 
