@@ -464,10 +464,9 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     # Begin by sorting the triggers into each slide
     for slide_id in slide_dict:
         sorted_trigs[slide_id] = []
-    for event_id in trigs['network/event_id']:
-        slide_idx = trigs['network/slide_id'][
-            trigs['network/event_id'] == event_id][0]
-        sorted_trigs[slide_idx].append(event_id)
+    for slide_id, event_id in zip(trigs['network/slide_id'],
+                                  trigs['network/event_id']):
+        sorted_trigs[slide_id].append(event_id)
 
     for slide_id in slide_dict:
         # These can only *reduce* the analysis time
@@ -476,7 +475,7 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
         # Check the triggers are all in the analysed segment lists
         for event_id in sorted_trigs[slide_id]:
             end_time = trigs['network/end_time_gc'][
-                'network/event_id' == event_id][0]
+                'network/event_id'][0] == event_id
             if end_time not in curr_seg_list:
                 # This can be raised if the trigger is on the segment boundary,
                 # so check if the trigger is within 1/100 of a second within
@@ -494,7 +493,7 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
         sorted_trigs[slide_id] = [event_id for event_id in
                                   sorted_trigs[slide_id]
                                   if trigs['network/end_time_gc'][
-                                      'network/event_id' == event_id][0]
+                                      'network/event_id'][0] == event_id
                                   in trial_dict[slide_id]]
 
     return sorted_trigs
