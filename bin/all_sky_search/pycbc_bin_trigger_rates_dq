@@ -134,6 +134,7 @@ with h5.File(args.output_file, 'w') as f:
             frac_dt = abs(segs) / livetime
             dq_rates[state] = frac_eff / frac_dt
         bin_grp['dq_rates'] = dq_rates
+        bin_grp['num_triggers'] = len(trig_times_bin)
 
     # save dq state segments
     for dq_state, segs in dq_state_segs_dict.items():
@@ -142,6 +143,7 @@ with h5.File(args.output_file, 'w') as f:
         starts, ends = segments_to_start_end(segs)
         dq_grp['segment_starts'] = starts
         dq_grp['segment_ends'] = ends
+        dq_grp['livetime'] = abs(segs)
 
     f.attrs['stat'] = f'{ifo}-dq_stat_info'
 
