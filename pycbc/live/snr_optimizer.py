@@ -381,15 +381,3 @@ def check_snr_optimizer_options(args, parser):
         key_name = f'snr_opt_{optimizer_name}_{key}'
         if not getattr(args, key_name):
             setattr(args, key_name, value[1])
-
-
-def args_to_string(args):
-    """
-    Convert the supplied arguments for SNR optimization config into
-    a string - this is to be used when running subprocesses
-    """
-    # Add the extra opts
-    if args.snr_opt_extra_opts is not None:
-        argstr = args.snr_opt_extra_opts
-
-    return argstr
