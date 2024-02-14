@@ -106,6 +106,7 @@ class LiveEventManager(object):
         self.enable_gracedb_upload = args.enable_gracedb_upload
         self.run_snr_optimization = args.run_snr_optimization
         self.snr_opt_label = args.snr_opt_label
+        self.snr_opt_options = args.snr_opt_extra_opts
         self.gracedb = None
 
         # Keep track of which events have been uploaded
@@ -132,10 +133,6 @@ class LiveEventManager(object):
             else:
                 # To enable mac testing, this is just set to 1
                 self.fu_cores = 1
-            # Convert SNR optimizer options into a string
-            self.snr_opt_options = args.snr_opt_extra_opts
-        else:
-            self.snr_opt_options = None
 
         if args.enable_embright_has_massgap:
             if args.embright_massgap_max < self.mc_area_args['mass_bdary']['ns_max']:
