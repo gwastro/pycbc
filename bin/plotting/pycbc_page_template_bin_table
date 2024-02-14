@@ -59,7 +59,7 @@ columns = [bin_names, num_templates, frac_templates,
            num_triggers, frac_triggers, trigger_rate]
 columns = [np.array(c) for c in columns]
 
-format_strings = [None, '#', '#.###%', '#', '#.###%', '#.##E0']
+format_strings = [None, '#', '0.000%', '#', '0.000%', '0.00E0']
 
 html_table = pycbc.results.html_table(columns, col_names,
                                       page_size=len(bin_names),

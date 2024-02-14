@@ -41,7 +41,7 @@ columns = [state_names, livetimes, frac_livetimes]
 columns = [np.array(c) for c in columns]
 col_names = ['DQ State', 'Livetime', '% of Livetime']
 
-format_strings = [None, '#.#', '#.##%']
+format_strings = [None, '0.0', '0.00%']
 
 html_table = pycbc.results.html_table(columns, col_names,
                                       page_size=len(state_names),
