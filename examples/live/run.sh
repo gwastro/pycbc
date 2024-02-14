@@ -199,7 +199,6 @@ python -m mpi4py `which pycbc_live` \
     "--snr-opt-method differential_evolution \
     --snr-opt-di-maxiter 50 \
     --snr-opt-di-popsize 100 \
-    --snr-opt-seed 42 \
     --snr-opt-include-candidate " \
 --sngl-ifar-est-dist conservative \
 --single-newsnr-threshold 9 \
@@ -219,7 +218,6 @@ python -m mpi4py `which pycbc_live` \
 #   --snr-opt-pso-c1 0.5 \
 #   --snr-opt-pso-c2 2.0 \
 #   --snr-opt-pso-w 0.01 \
-#   --snr-opt-seed 42 \
 #   --snr-opt-include-candidate " \
 
 # note that, at this point, some SNR optimization processes may still be
