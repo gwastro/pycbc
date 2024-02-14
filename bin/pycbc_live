@@ -121,7 +121,6 @@ class LiveEventManager(object):
             if platform.system() != 'Darwin':
                 available_cores = len(os.sched_getaffinity(0))
                 self.fu_cores = available_cores - analysis_cores
-                self.optimizer = args.snr_opt_method
                 if self.fu_cores <= 0:
                     logging.warning(
                         'Insufficient number of CPU cores (%d) to '
@@ -987,6 +986,11 @@ parser.add_argument('--snr-opt-timeout', type=int, default=400, metavar='SECONDS
                     help='Maximum allowed duration of followup process to maximize SNR')
 parser.add_argument('--snr-opt-label', default='SNR_OPTIMIZED',
                     help='Label to apply to snr-optimized GraceDB uploads')
+parser.add_argument('--snr-opt-extra-opts',
+                    help='Extra options to pass to the optimizer subprocess. Example: '
+                        '--snr-opt-extra-opts "--snr-opt-method differential_evolution '
+                        '--snr-opt-di-maxiter 50 --snr-opt-di-popsize 100 '
+                        '--snr-opt-seed 42 --snr-opt-include-candidate "')
 
 parser.add_argument('--enable-embright-has-massgap', action='store_true', default=False,
                     help='Estimate HasMassGap probability for EMBright info. Lower limit '
@@ -1010,7 +1014,6 @@ Coincer.insert_args(parser)
 SingleDetSGChisq.insert_option_group(parser)
 mchirp_area.insert_args(parser)
 livepau.insert_live_pastro_option_group(parser)
-snr_optimizer.insert_snr_optimizer_options(parser)
 
 args = parser.parse_args()
 
