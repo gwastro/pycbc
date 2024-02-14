@@ -22,6 +22,9 @@ f = h5.File(args.dq_file, 'r')
 grp = f[args.ifo]['bins']
 bin_names = list(grp.keys())
 
+sngl_ranking = f.attrs['sngl_ranking']
+sngl_thresh = f.attrs['sngl_ranking_threshold']
+
 livetime = 0
 seg_grp = f[args.ifo]['dq_segments']
 for k in seg_grp.keys():
@@ -56,11 +59,16 @@ columns = [bin_names, num_templates, frac_templates,
            num_triggers, frac_triggers, trigger_rate]
 columns = [np.array(c) for c in columns]
 
+format_strings = [None, '#', '#.###%', '#', '#.###%', '#.##E0']
+
 html_table = pycbc.results.html_table(columns, col_names,
-                                      page_size=len(bin_names))
+                                      page_size=len(bin_names),
+                                      format_strings=format_strings)
 title = f'{args.ifo} DQ Template Bin Information'
 caption = 'Table of information about template bins ' \
-           + 'used for DQ trigger rate calculations'
+           + 'used for DQ trigger rate calculations. ' \
+           + 'Loud triggers are defined as those with ' \
+           + f'{sngl_ranking} > {sngl_thresh}.'
 
 pycbc.results.save_fig_with_metadata(
     str(html_table), args.output_file, title=title,
