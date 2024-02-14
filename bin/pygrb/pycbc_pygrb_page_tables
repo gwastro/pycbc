@@ -71,21 +71,21 @@ ppu.pygrb_add_bestnr_opts(parser)
 parser.add_argument("--num-loudest-off-trigs", action="store",
                     type=int, default=30, help="Number of loudest " +
                     "offsouce triggers to output details about.")
-parser.add_argument("--found-missed-file", default=None, #required=True
+parser.add_argument("--found-missed-file", default=None, required=True,
                     help="Missed found injection file to output details about.")
-parser.add_argument("--quiet-found-injs-output-file", default=None, #required=True,
+parser.add_argument("--quiet-found-injs-output-file", default=None, required=True,
                     help="Quiet-found injections html output file.")
-parser.add_argument("--missed-found-injs-output-file", default=None, #required=True,
+parser.add_argument("--missed-found-injs-output-file", default=None, required=True,
                     help="Missed-found injections html output file.")
-parser.add_argument("--quiet-found-injs-h5-output-file", default=None, #required=True,
+parser.add_argument("--quiet-found-injs-h5-output-file", default=None, required=True,
                     help="Quiet-found injections h5 output file.")
-parser.add_argument("--loudest-offsource-trigs-output-file", default=None, #required=True,
+parser.add_argument("--loudest-offsource-trigs-output-file", default=None, required=True,
                     help="Loudest offsource triggers html output file.")
-parser.add_argument("--loudest-offsource-trigs-h5-output-file", default=None, #required=True,
+parser.add_argument("--loudest-offsource-trigs-h5-output-file", default=None, required=True,
                     help="Loudest offsource triggers h5 output file.")
-parser.add_argument("--loudest-onsource-trig-output-file", default=None, #required=True,
+parser.add_argument("--loudest-onsource-trig-output-file", default=None, required=True,
                     help="Loudest onsource trigger html output file.")
-parser.add_argument("--loudest-onsource-trig-h5-output-file", default=None, #required=True,
+parser.add_argument("--loudest-onsource-trig-h5-output-file", default=None, required=True,
                     help="Loudest onsource trigger h5 output file.")
 parser.add_argument("-g", "--glitch-check-factor", action="store",
                     type=float, default=1.0, help="When deciding " +
