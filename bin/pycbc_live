@@ -1055,11 +1055,12 @@ evnt = LiveEventManager(args, bank)
 # these are all interferometers involved in the analysis,
 # whether for generating candidates or doing localization only
 ifos = set(args.channel_name.keys())
-logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
 # this is the subset of the interferometers allowed to produce candidates
 trigg_ifos = ifos - set(evnt.skymap_only_ifos)
-logging.info('Using %s for localization only', ppdets(trigg_ifos))
+
+logging.info('Analyzing data from detectors %s', ppdets(ifos))
+logging.info('Using %s for localization only', ppdets(evnt.skymap_only_ifos))
 
 analyze_singles = LiveSingle.verify_args(args, parser, trigg_ifos)
 
