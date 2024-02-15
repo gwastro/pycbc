@@ -561,18 +561,24 @@ for key in final_bg_files:
 
 # DQ log likelihood plots
 for dqf, dql in zip(dqfiles, dqfile_labels):
+    ifo = dqf.ifo
+    outdir = rdir[f'data_quality/{dqf.ifo}_DQ_results']
+
     # plot rates when flag was on
-    outdir = rdir[f'data_quality/{dqf.ifo}_{dql}_trigger_rates']
     wf.make_dq_flag_trigger_rate_plot(workflow, dqf, dql, outdir, tags=[dql])
 
-# DQ background binning plot
-ifo_bins = workflow.cp.get_subsections('bin_templates')
-for ifo in ifo_bins:
+    # make table of dq segment info
+    wf.make_dq_segment_table(workflow, dqf, outdir, tags=[dql])
+
+    # plot background bins
     background_bins = workflow.cp.get_opt_tags(
         'bin_templates', 'background-bins', tags=[ifo])
-    wf.make_template_plot(workflow, hdfbank, rdir['data_quality'],
+    wf.make_template_plot(workflow, hdfbank, outdir,
                           bins=background_bins,
                           tags=[ifo, 'dq_bins'] + bank_tags)
+
+    # make table of template bin info
+    wf.make_template_bin_table(workflow, dqf, outdir, tags=[ifo])
 
 ############################## Setup the injection runs #######################
 
