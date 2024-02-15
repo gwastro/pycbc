@@ -71,9 +71,9 @@ with HFile(args.trig_file, 'r') as trig_file:
     data_mask = np.zeros(n_triggers_orig, dtype=bool)
     data_mask[idx] = True
 
-    # also get the gated times while we have the file open
+if args.gating_windows:
     gate_times = []
-    if args.gating_windows:
+    with h5.File(args.trig_file, 'r') as trig_file:
         logging.info('Getting gated times')
         try:
             gating_types = trig_file[f'{ifo}/gating'].keys()
@@ -188,6 +188,7 @@ with h5.File(args.output_file, 'w') as f:
             frac_dt = abs(segs) / livetime
             dq_rates[state] = frac_eff / frac_dt
         bin_grp['dq_rates'] = dq_rates
+        bin_grp['num_triggers'] = len(trig_times_bin)
 
     # save dq state segments
     for dq_state, segs in dq_state_segs_dict.items():
@@ -196,7 +197,10 @@ with h5.File(args.output_file, 'w') as f:
         starts, ends = segments_to_start_end(segs)
         dq_grp['segment_starts'] = starts
         dq_grp['segment_ends'] = ends
+        dq_grp['livetime'] = abs(segs)
 
     f.attrs['stat'] = f'{ifo}-dq_stat_info'
+    f.attrs['sngl_ranking'] = args.sngl_ranking
+    f.attrs['sngl_ranking_threshold'] = args.stat_threshold
 
 logging.info('Done!')
