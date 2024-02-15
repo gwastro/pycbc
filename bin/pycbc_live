@@ -537,13 +537,20 @@ class LiveEventManager(object):
         logging.info('Coincident candidate! Saving as %s', fname)
 
         # Verbally explain some details not obvious from the other info
-        comment = ('Trigger produced as a {} coincidence. '
-                   'FAR is based on all listed detectors.<br />'
-                   'Two-detector ranking statistic: {}<br />'
-                   'Followup detectors: {}')
-        comment = comment.format(ppdets(coinc_ifos),
-                                 args.ranking_statistic,
-                                 ppdets(followup_ifos))
+        comment = (
+            'Trigger produced as a {} coincidence. '
+            'FAR is based on {}.<br />'
+            'Two-detector ranking statistic: {}<br />'
+            'Followup detectors: {}<br />'
+            'Localization-only detectors: {}'
+        )
+        comment = comment.format(
+            ppdets(coinc_ifos),
+            set(ifos) - set(self.skymap_only_ifos),
+            args.ranking_statistic,
+            ppdets(followup_ifos),
+            ppdets(self.skymap_only_ifos)
+        )
 
         ifar = coinc_results['foreground/ifar']
         upload_checks = self.enable_gracedb_upload and self.ifar_upload_threshold < ifar
@@ -1017,8 +1024,15 @@ args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
 Coincer.verify_args(args, parser)
+
+# all interferometers involved in the analysis
+# (whether for generating candidates or doing localization only)
 ifos = set(args.channel_name.keys())
-analyze_singles = LiveSingle.verify_args(args, parser, ifos)
+
+# subset of the interferometers from which candidates will be produced
+trigg_ifos = ifos - set(evnt.skymap_only_ifos or [])
+
+analyze_singles = LiveSingle.verify_args(args, parser, trigg_ifos)
 
 if args.output_background is not None and len(args.output_background) != 2:
     parser.error('--output-background takes two parameters: period and path')
@@ -1048,11 +1062,14 @@ if bank.min_f_lower < args.low_frequency_cutoff:
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
 evnt = LiveEventManager(args, bank)
-logging.info('Detectors that only aid in the sky localization %s', ppdets(evnt.skymap_only_ifos))
+logging.info(
+    'Using %s for localization only',
+    ppdets(evnt.skymap_only_ifos)
+)
 
 # include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
-setproctitle('PyCBC Live rank {:d} [{}]'.format(evnt.rank, task_name))
+setproctitle(f'PyCBC Live rank {evnt.rank:d} [{task_name}]')
 
 sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
@@ -1122,11 +1139,10 @@ with ctx:
     # create single-detector background "estimators"
     if analyze_singles and evnt.rank == 0:
         sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
-                          for ifo in ifos}
+                          for ifo in trigg_ifos}
 
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
-        trigg_ifos = [ifo for ifo in ifos if ifo not in evnt.skymap_only_ifos]
         ifo_combos = itertools.combinations(trigg_ifos, 2)
         estimators = []
         for combo in ifo_combos:
@@ -1172,7 +1188,7 @@ with ctx:
     # Create dicts to track whether the psd has been recalculated and to hold
     #  psd variation filters
     psd_recalculated = {ifo: True for ifo in ifos}
-    psd_var_filts = {ifo: None for ifo in ifos}
+    psd_var_filts = {ifo: None for ifo in trigg_ifos}
 
     while data_end() < args.end_time:
         t1 = pycbc.gps_now()
@@ -1259,23 +1275,27 @@ with ctx:
 
             # Calculate and add the psd variation for the results
             if args.psd_variation:
-
                 for ifo in results:
-                    logging.info(f"Calculating PSD Variation Statistic for {ifo}")
+                    logging.info("Calculating PSD Variation Statistic for %s", ifo)
 
                     # A new filter is needed if the PSD has been recalculated
                     if psd_recalculated[ifo] is True:
-                        psd_var_filts[ifo] = variation.live_create_filter(data_reader[ifo].psd,
-                                                                          args.psd_segment_length,
-                                                                          int(args.sample_rate))
+                        psd_var_filts[ifo] = variation.live_create_filter(
+                            data_reader[ifo].psd,
+                            args.psd_segment_length,
+                            int(args.sample_rate)
+                        )
                         psd_recalculated[ifo] = False
 
-                    psd_var_ts = variation.live_calc_psd_variation(data_reader[ifo].strain,
-                                                                   psd_var_filts[ifo],
-                                                                   args.increment)
+                    psd_var_ts = variation.live_calc_psd_variation(
+                        data_reader[ifo].strain,
+                        psd_var_filts[ifo],
+                        args.increment
+                    )
 
-                    psd_var_vals = variation.live_find_var_value(results[ifo],
-                                                                 psd_var_ts)
+                    psd_var_vals = variation.live_find_var_value(
+                        results[ifo], psd_var_ts
+                    )
 
                     results[ifo]['psd_var_val'] = psd_var_vals
 
@@ -1310,8 +1330,9 @@ with ctx:
                     data_end() - last_bg_dump_time > float(args.output_background[0]):
                 last_bg_dump_time = int(data_end())
                 bg_dists = coinc_pool.broadcast(output_background, None)
-                bg_fn = '{}-LIVE_BACKGROUND-{}.hdf'.format(''.join(sorted(ifos)),
-                                                           last_bg_dump_time)
+                bg_fn = '{}-LIVE_BACKGROUND-{}.hdf'.format(
+                    ''.join(sorted(trigg_ifos)), last_bg_dump_time
+                )
                 bg_fn = os.path.join(args.output_background[1], bg_fn)
                 with h5py.File(bg_fn, 'w') as bgf:
                     for bg_ifos, bg_data, bg_time in bg_dists:
