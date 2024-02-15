@@ -650,7 +650,7 @@ class LiveEventManager(object):
             comment = (
                 'Trigger produced as a {0} single.<br />'
                 'Detectors used for FAR calculation: {0}.<br />'
-                'Detectors used for localization: {2}.'
+                'Detectors used for localization: {1}.'
             )
             comment = comment.format(ifo, ppdets(followup_ifos))
 
