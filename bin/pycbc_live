@@ -544,18 +544,16 @@ class LiveEventManager(object):
 
         # Verbally explain some details not obvious from the other info
         comment = (
-            'Trigger produced as a {} coincidence. '
-            'FAR is based on {}.<br />'
+            'Trigger produced as a {} coincidence.<br />'
             'Two-detector ranking statistic: {}<br />'
-            'Followup detectors: {}<br />'
-            'Localization-only detectors: {}'
+            'Detectors used for FAR calculation: {}.<br />'
+            'Detectors used for localization: {}.'
         )
         comment = comment.format(
             ppdets(coinc_ifos),
-            set(ifos) - self.skymap_only_ifos,
             args.ranking_statistic,
-            ppdets(followup_ifos),
-            ppdets(self.skymap_only_ifos)
+            set(ifos) - self.skymap_only_ifos,
+            ppdets(followup_ifos)
         )
 
         ifar = coinc_results['foreground/ifar']
@@ -649,9 +647,11 @@ class LiveEventManager(object):
             logging.info('Single-detector candidate! Saving as %s', fname)
 
             # Verbally explain some details not obvious from the other info
-            comment = ('Trigger produced as a {0} single. '
-                       'FAR is based on {0} only.<br />'
-                       'Followup detectors: {1}')
+            comment = (
+                'Trigger produced as a {0} single.<br />'
+                'Detectors used for FAR calculation: {0}.<br />'
+                'Detectors used for localization: {2}.'
+            )
             comment = comment.format(ifo, ppdets(followup_ifos))
 
             # Has a coinc event at this time been uploaded recently?
