@@ -493,7 +493,7 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
         sorted_trigs[slide_id] = [event_id for event_id in
                                   sorted_trigs[slide_id]
                                   if trigs['network/end_time_gc'][
-                                      'network/event_id'][0] == event_id
+                                      trigs['network/event_id'] == event_id][0]
                                   in trial_dict[slide_id]]
 
     return sorted_trigs
