@@ -82,7 +82,13 @@ class LiveEventManager(object):
     def __init__(self, args, bank):
         self.low_frequency_cutoff = args.low_frequency_cutoff
         self.bank = bank
-        self.skymap_only_ifos = [] if args.skymap_only_ifos is None else list(set(args.skymap_only_ifos))
+        # all interferometers involved in the analysis, whether for generating
+        # candidates or doing localization only
+        self.ifos = set(args.channel_name.keys())
+        # interferometers used for localization only
+        self.skymap_only_ifos = set(args.skymap_only_ifos or [])
+        # subset of the interferometers allowed to produce candidates
+        self.trigg_ifos = self.ifos - self.skymap_only_ifos
 
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
@@ -117,7 +123,7 @@ class LiveEventManager(object):
         if self.run_snr_optimization:
             # preestimate the number of CPU cores that we can afford giving
             # to followup processes without slowing down the main search
-            bg_cores = len(tuple(itertools.combinations(ifos, 2)))
+            bg_cores = len(tuple(itertools.combinations(self.trigg_ifos, 2)))
             analysis_cores = 1 + bg_cores
             if platform.system() != 'Darwin':
                 available_cores = len(os.sched_getaffinity(0))
@@ -502,7 +508,7 @@ class LiveEventManager(object):
         logging.info('computing followup data for coinc')
         coinc_ifos = coinc_results['foreground/type'].split('-')
         followup_ifos = set(ifos) - set(coinc_ifos)
-        followup_ifos = list(followup_ifos | set(self.skymap_only_ifos))
+        followup_ifos = list(followup_ifos | self.skymap_only_ifos)
 
         double_ifar = coinc_results['foreground/ifar']
         if double_ifar < args.ifar_double_followup_threshold:
@@ -546,7 +552,7 @@ class LiveEventManager(object):
         )
         comment = comment.format(
             ppdets(coinc_ifos),
-            set(ifos) - set(self.skymap_only_ifos),
+            set(ifos) - self.skymap_only_ifos,
             args.ranking_statistic,
             ppdets(followup_ifos),
             ppdets(self.skymap_only_ifos)
@@ -611,7 +617,7 @@ class LiveEventManager(object):
             logging.info(f'Found {ifo} single with ifar {sifar}')
 
             followup_ifos = [i for i in active if i is not ifo]
-            followup_ifos = list(set(followup_ifos) | set(self.skymap_only_ifos))
+            followup_ifos = list(set(followup_ifos) | self.skymap_only_ifos)
             # Don't recompute ifar considering other ifos
             sld = self.compute_followup_data(
                 [ifo],
@@ -1052,17 +1058,10 @@ if bank.min_f_lower < args.low_frequency_cutoff:
 
 evnt = LiveEventManager(args, bank)
 
-# these are all interferometers involved in the analysis,
-# whether for generating candidates or doing localization only
-ifos = set(args.channel_name.keys())
-
-# this is the subset of the interferometers allowed to produce candidates
-trigg_ifos = ifos - set(evnt.skymap_only_ifos)
-
-logging.info('Analyzing data from detectors %s', ppdets(ifos))
+logging.info('Analyzing data from detectors %s', ppdets(evnt.ifos))
 logging.info('Using %s for localization only', ppdets(evnt.skymap_only_ifos))
 
-analyze_singles = LiveSingle.verify_args(args, parser, trigg_ifos)
+analyze_singles = LiveSingle.verify_args(args, parser, evnt.trigg_ifos)
 
 # include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
@@ -1130,17 +1129,18 @@ with ctx:
         maxlen = args.max_length
     maxlen = int(maxlen)
     data_reader = {ifo: StrainBuffer.from_cli(ifo, args, maxlen)
-                   for ifo in ifos}
+                   for ifo in evnt.ifos}
     evnt.data_readers = data_reader
 
     # create single-detector background "estimators"
     if analyze_singles and evnt.rank == 0:
         sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
-                          for ifo in trigg_ifos}
+                          for ifo in evnt.trigg_ifos}
 
-    # Create double coincident background estimator for every combo
+    # Create double coincident background estimator
+    # for every pair of triggering interferometers
     if args.enable_background_estimation and evnt.rank == 0:
-        ifo_combos = itertools.combinations(trigg_ifos, 2)
+        ifo_combos = itertools.combinations(evnt.trigg_ifos, 2)
         estimators = []
         for combo in ifo_combos:
             logging.info('Will calculate %s background', ppdets(combo, "-"))
@@ -1180,12 +1180,12 @@ with ctx:
     # main analysis loop
     data_end = lambda: data_reader[tuple(data_reader.keys())[0]].end_time
     last_bg_dump_time = int(data_end())
-    psd_count = {ifo:0 for ifo in ifos}
+    psd_count = {ifo:0 for ifo in evnt.ifos}
 
     # Create dicts to track whether the psd has been recalculated and to hold
     #  psd variation filters
-    psd_recalculated = {ifo: True for ifo in ifos}
-    psd_var_filts = {ifo: None for ifo in trigg_ifos}
+    psd_recalculated = {ifo: True for ifo in evnt.ifos}
+    psd_var_filts = {ifo: None for ifo in evnt.trigg_ifos}
 
     while data_end() < args.end_time:
         t1 = pycbc.gps_now()
@@ -1194,7 +1194,7 @@ with ctx:
         results = {}
         evnt.live_detectors = set()
 
-        for ifo in ifos:
+        for ifo in evnt.ifos:
             results[ifo] = False
             status = data_reader[ifo].advance(
                 valid_pad,
@@ -1312,7 +1312,7 @@ with ctx:
             gates = {ifo: data_reader[ifo].gate_params for ifo in data_reader}
 
             # map the results file to an hdf file
-            prefix = '{}-{}-{}-{}'.format(''.join(sorted(ifos)),
+            prefix = '{}-{}-{}-{}'.format(''.join(sorted(evnt.ifos)),
                                           args.file_prefix,
                                           data_end() - args.analysis_chunk,
                                           valid_pad)
@@ -1328,7 +1328,7 @@ with ctx:
                 last_bg_dump_time = int(data_end())
                 bg_dists = coinc_pool.broadcast(output_background, None)
                 bg_fn = '{}-LIVE_BACKGROUND-{}.hdf'.format(
-                    ''.join(sorted(trigg_ifos)), last_bg_dump_time
+                    ''.join(sorted(evnt.trigg_ifos)), last_bg_dump_time
                 )
                 bg_fn = os.path.join(args.output_background[1], bg_fn)
                 with h5py.File(bg_fn, 'w') as bgf:
