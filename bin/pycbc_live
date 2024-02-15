@@ -1025,15 +1025,6 @@ scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
 Coincer.verify_args(args, parser)
 
-# all interferometers involved in the analysis
-# (whether for generating candidates or doing localization only)
-ifos = set(args.channel_name.keys())
-
-# subset of the interferometers from which candidates will be produced
-trigg_ifos = ifos - set(evnt.skymap_only_ifos or [])
-
-analyze_singles = LiveSingle.verify_args(args, parser, trigg_ifos)
-
 if args.output_background is not None and len(args.output_background) != 2:
     parser.error('--output-background takes two parameters: period and path')
 if not args.enable_gracedb_upload and args.enable_single_detector_upload:
@@ -1059,13 +1050,18 @@ if bank.min_f_lower < args.low_frequency_cutoff:
                  'minimum f_lower across all templates '
                  '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
+evnt = LiveEventManager(args, bank)
+
+# these are all interferometers involved in the analysis,
+# whether for generating candidates or doing localization only
+ifos = set(args.channel_name.keys())
 logging.info('Analyzing data from detectors %s', ppdets(ifos))
 
-evnt = LiveEventManager(args, bank)
-logging.info(
-    'Using %s for localization only',
-    ppdets(evnt.skymap_only_ifos)
-)
+# this is the subset of the interferometers allowed to produce candidates
+trigg_ifos = ifos - set(evnt.skymap_only_ifos)
+logging.info('Using %s for localization only', ppdets(trigg_ifos))
+
+analyze_singles = LiveSingle.verify_args(args, parser, trigg_ifos)
 
 # include MPI rank and functional description into proctitle
 task_name = 'root' if evnt.rank == 0 else 'filtering'
