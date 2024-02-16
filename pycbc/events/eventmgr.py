@@ -721,8 +721,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             ifo_events = numpy.array([e for e in self.events
                     if e['ifo'] == self.ifo_dict[ifo]], dtype=self.event_dtype)
             if len(ifo_events):
-                ifo_str = ifo.lower()[0] if ifo != 'H1' else ifo.lower()
-                f['snr_%s' % ifo_str] = abs(ifo_events['snr'])
+                f['snr'] = abs(ifo_events['snr'])
                 f['event_id'] = ifo_events['event_id']
                 try:
                     # Precessing
@@ -736,8 +735,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 f['bank_chisq_dof'] = ifo_events['bank_chisq_dof']
                 f['cont_chisq'] = ifo_events['cont_chisq']
                 f['end_time'] = ifo_events['time_index'] / \
-                        float(self.opt.sample_rate[ifo_str]) + \
-                        self.opt.gps_start_time[ifo_str]
+                        float(self.opt.sample_rate[ifo]) + \
+                        self.opt.gps_start_time[ifo]
                 f['time_index'] = ifo_events['time_index']
                 f['slide_id'] = ifo_events['slide_id']
                 try:
@@ -998,8 +997,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                                       e['ifo'] == self.ifo_dict[ifo]],
                                      dtype=self.event_dtype)
             if len(ifo_events):
-                ifo_str = ifo.lower()[0] if ifo != 'H1' else ifo.lower()
-                f['snr_%s' % ifo_str] = abs(ifo_events['snr'])
+                f['snr'] = abs(ifo_events['snr'])
                 try:
                     # Precessing
                     f['u_vals'] = ifo_events['u_vals']
@@ -1012,8 +1010,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                 f['bank_chisq_dof'] = ifo_events['bank_chisq_dof']
                 f['cont_chisq'] = ifo_events['cont_chisq']
                 f['end_time'] = ifo_events['time_index'] / \
-                        float(self.opt.sample_rate[ifo_str]) + \
-                          self.opt.gps_start_time[ifo_str]
+                        float(self.opt.sample_rate[ifo]) + \
+                          self.opt.gps_start_time[ifo]
                 try:
                     # Precessing
                     template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for
