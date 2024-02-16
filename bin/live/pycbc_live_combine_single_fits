@@ -84,10 +84,11 @@ for f in args.trfits_files:
         same_conf = (fits_f.attrs['sngl_ranking'] == sngl_rank
                      and fits_f.attrs['fit_threshold'] == fit_thresh
                      and fits_f.attrs['fit_function'] == fit_func
+                     and fits_f['bins_lower'].size == bl.size
                      and all(fits_f['bins_lower'][:] == bl)
                      and all(fits_f['bins_upper'][:] == bu))
         if not same_conf:
-            logging.warn(
+            logging.warning(
                 "Found a change in the fit configuration, skipping %s",
                 f
             )
@@ -119,8 +120,8 @@ for f in args.trfits_files:
                 counts_all[ifo].append(ffi['counts'][:])
                 alphas_all[ifo].append(ffi['fit_coeff'][:])
                 if any(np.isnan(ffi['fit_coeff'][:])):
-                    logging.warn("nan in %s, %s", f, ifo)
-                    logging.warn(ffi['fit_coeff'][:])
+                    logging.warning("nan in %s, %s", f, ifo)
+                    logging.warning(ffi['fit_coeff'][:])
 
 # Set up the date array, this is stored as an offset from the first trigger time of
 # the first file to the last trigger of the file
