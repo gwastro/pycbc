@@ -120,6 +120,8 @@ class SinglePool(object):
 
     def map(self, f, items):
         return [f(a) for a in items]
+        
+    imap = map
 
 def use_mpi(require_mpi=False, log=True):
     """ Get whether MPI is enabled and if so the current size and rank
