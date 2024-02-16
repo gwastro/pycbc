@@ -407,14 +407,14 @@ class EventManager(object):
         self.write_performance = True
 
     def write_events(self, outname):
-        """ Write the found events to a sngl inspiral table
+        """Write the found events to a file. The only currently supported format
+        is HDF5, indicated by an .hdf or .h5 extension.
         """
         self.make_output_dir(outname)
-
-        if '.hdf' in outname:
+        if outname.endswith(('.hdf', '.h5')):
             self.write_to_hdf(outname)
-        else:
-            raise ValueError('Cannot write to this format')
+            return
+        raise ValueError('Unsupported event output file format')
 
     def write_to_hdf(self, outname):
         class fw(object):
@@ -660,7 +660,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         """ Add a vector indexed """
         # initialize with zeros - since vectors can be None, look for the
         # longest one that isn't
-        new_events = None
         new_events = numpy.zeros(
             max([len(v) for v in vectors if v is not None]),
             dtype=self.network_event_dtype
@@ -962,16 +961,6 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                                        self.template_event_dict[ifo])
             self.template_event_dict[ifo] = numpy.array([],
                                                         dtype=self.event_dtype)
-
-    def write_events(self, outname):
-        """ Write the found events to a sngl inspiral table
-        """
-        self.make_output_dir(outname)
-
-        if '.hdf' in outname:
-            self.write_to_hdf(outname)
-        else:
-            raise ValueError('Cannot write to this format')
 
     def write_to_hdf(self, outname):
         class fw(object):
