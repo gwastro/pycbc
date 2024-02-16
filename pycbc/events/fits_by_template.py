@@ -175,6 +175,7 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
 
     # many trials may be required to prune in 'quieter' bins
     pruning_done = False
+    skipped_prunes = 0
     for j in range(1000):
         # are all the bins full already?
         numpruned = sum([len(prunedtimes[i]) for i in range(prune_bins)])
@@ -185,6 +186,12 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
         if numpruned > prune_bins * prune_number:
             logging.error('Uh-oh, we pruned too many things .. %i, to be '
                           'precise' % numpruned)
+            raise RuntimeError
+        if not any(test_trigs):
+            logging.error(
+                "Too many things have been removed in the pruning loop, "
+                "and there is nothing left"
+            )
             raise RuntimeError
         loudest = np.argmax(stat[test_trigs])
         lstat = stat[test_trigs][loudest]
@@ -198,8 +205,15 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
             # prune the reference trigger array
             remove = abs(time - ltime) <= prune_window
             test_trigs[remove] = False
+            skipped_prunes += 1
         else:
-            logging.info('Pruning event with stat %f at time %.3f in bin %i' %
+            if skipped_prunes > 0:
+                logging.info(
+                    '%d events skipped due to full bins',
+                    skipped_prunes
+                )
+                skiped_prunes = 0
+            logging.info('Pruning event with stat %.3f at %.3f in bin %i' %
                          (lstat, ltime, lbin))
             # now do the pruning
             remove = abs(time - ltime) <= prune_window
