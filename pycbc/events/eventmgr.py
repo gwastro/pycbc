@@ -427,8 +427,8 @@ class EventManager(object):
         self.write_performance = True
 
     def write_events(self, outname):
-        """Write the found events to a file. The only currently supported format
-        is HDF5, indicated by an .hdf or .h5 extension.
+        """Write the found events to a file. The only currently supported
+        format is HDF5, indicated by an .hdf or .h5 extension.
         """
         self.make_output_dir(outname)
         if outname.endswith(('.hdf', '.h5')):
@@ -613,11 +613,11 @@ class EventManagerMultiDetBase(EventManager):
         datasets: `/<detector>/gating/{file, auto}/{time, width, pad}` where
         "file" and "auto" indicate respectively externally-provided gates and
         internally-generated gates (autogating), and "time", "width" and "pad"
-        indicate the gate center times, total durations and padding durations in
-        seconds respectively.
+        indicate the gate center times, total durations and padding durations
+        in seconds respectively.
         """
         if 'gating_info' not in self.global_params:
-            continue
+            return
         gates = self.global_params['gating_info']
         for ifo, gate_type in itertools.product(self.ifos, ['file', 'auto']):
             if gate_type not in gates[ifo]:
