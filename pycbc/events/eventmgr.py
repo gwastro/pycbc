@@ -180,6 +180,23 @@ def cluster_reduce(idx, snr, window_size):
     return idx.take(ind), snr.take(ind)
 
 
+class H5FileSyntSugar(object):
+    """Convenience class that adds some syntactic sugar to h5py.File.
+    """
+    def __init__(self, name, prefix=''):
+        self.f = h5py.File(name, 'w')
+        self.prefix = prefix
+
+    def __setitem__(self, name, data):
+        self.f.create_dataset(
+            self.prefix + '/' + name,
+            data=data,
+            compression='gzip',
+            compression_opts=9,
+            shuffle=True
+        )
+
+
 class EventManager(object):
     def __init__(self, opt, column, column_types, **kwds):
         self.opt = opt
@@ -420,23 +437,11 @@ class EventManager(object):
         raise ValueError('Unsupported event output file format')
 
     def write_to_hdf(self, outname):
-        class fw(object):
-            def __init__(self, name, prefix):
-                self.f = h5py.File(name, 'w')
-                self.prefix = prefix
-
-            def __setitem__(self, name, data):
-                col = self.prefix + '/' + name
-                self.f.create_dataset(col, data=data,
-                                      compression='gzip',
-                                      compression_opts=9,
-                                      shuffle=True)
-
         self.events.sort(order='template_id')
         th = numpy.array([p['tmplt'].template_hash for p in
                           self.template_params])
         tid = self.events['template_id']
-        f = fw(outname, self.opt.channel_name[0:2])
+        f = H5FileSyntSugar(outname, self.opt.channel_name[0:2])
 
         if len(self.events):
             f['snr'] = abs(self.events['snr'])
@@ -712,19 +717,10 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.template_events = None
 
     def write_to_hdf(self, outname):
-        class fw(object):
-            def __init__(self, name):
-                self.f = h5py.File(name, 'w')
-
-            def __setitem__(self, name, data):
-                col = self.prefix + '/' + name
-                self.f.create_dataset(
-                    col, data=data, compression='gzip', compression_opts=9,
-                    shuffle=True)
         self.events.sort(order='template_id')
         th = numpy.array(
             [p['tmplt'].template_hash for p in self.template_params])
-        f = fw(outname)
+        f = H5FileSyntSugar(outname)
         self.write_gating_info_to_hdf(f)
         # Output network stuff
         f.prefix = 'network'
@@ -981,23 +977,11 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                                                         dtype=self.event_dtype)
 
     def write_to_hdf(self, outname):
-        class fw(object):
-            def __init__(self, name):
-                self.f = h5py.File(name, 'w')
-                self.prefix = ''
-
-            def __setitem__(self, name, data):
-                col = self.prefix + '/' + name
-                self.f.create_dataset(col, data=data,
-                                      compression='gzip',
-                                      compression_opts=9,
-                                      shuffle=True)
-
         self.events.sort(order='template_id')
         th = numpy.array([p['tmplt'].template_hash for p in
                                                          self.template_params])
         tid = self.events['template_id']
-        f = fw(outname)
+        f = H5FileSyntSugar(outname)
         self.write_gating_info_to_hdf(f)
         for ifo in self.ifos:
             f.prefix = ifo
