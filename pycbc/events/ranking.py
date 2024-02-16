@@ -4,7 +4,8 @@ statistic values
 import numpy
 
 
-def effsnr(snr, reduced_x2, fac=250., **kwargs):  # pylint:disable=unused-argument
+def effsnr(snr, reduced_x2, fac=250.,
+        **kwargs):  # pylint:disable=unused-argument
     """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
     """
     snr = numpy.array(snr, ndmin=1, dtype=numpy.float64)
@@ -18,7 +19,8 @@ def effsnr(snr, reduced_x2, fac=250., **kwargs):  # pylint:disable=unused-argume
         return esnr[0]
 
 
-def newsnr(snr, reduced_x2, q=6., n=2., **kwargs):  # pylint:disable=unused-argument
+def newsnr(snr, reduced_x2, q=6., n=2.,
+        **kwargs):  # pylint:disable=unused-argument
     """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
     reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
     definition. Previous implementation in glue/ligolw/lsctables.py
@@ -37,7 +39,8 @@ def newsnr(snr, reduced_x2, q=6., n=2., **kwargs):  # pylint:disable=unused-argu
         return nsnr[0]
 
 
-def newsnr_sgveto(snr, brchisq, sgchisq, **kwargs):  # pylint:disable=unused-argument
+def newsnr_sgveto(snr, brchisq, sgchisq,
+        **kwargs):  # pylint:disable=unused-argument
     """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
     nsnr = numpy.array(
         newsnr(
@@ -58,7 +61,7 @@ def newsnr_sgveto(snr, brchisq, sgchisq, **kwargs):  # pylint:disable=unused-arg
 
 
 def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
-                         min_expected_psdvar=0.65, **kwargs):  # pylint:disable=unused-argument
+        min_expected_psdvar=0.65, **kwargs):  # pylint:disable=unused-argument
     """ Combined SNR derived from SNR, reduced Allen chisq, sine-Gaussian chisq and
     PSD variation statistic"""
     # If PSD var is lower than the 'minimum usually expected value' stop this
@@ -83,10 +86,9 @@ def newsnr_sgveto_psdvar(snr, brchisq, sgchisq, psd_var_val,
 
 
 def newsnr_sgveto_psdvar_threshold(snr, brchisq, sgchisq, psd_var_val,
-                                   min_expected_psdvar=0.65,
-                                   brchisq_threshold=10.0,
-                                   psd_var_val_threshold=10.0,
-                                   **kwargs):  # pylint:disable=unused-argument
+        min_expected_psdvar=0.65, brchisq_threshold=10.0,
+        psd_var_val_threshold=10.0,
+        **kwargs):  # pylint:disable=unused-argument
     """ newsnr_sgveto_psdvar with thresholds applied.
 
     This is the newsnr_sgveto_psdvar statistic with additional options
@@ -112,8 +114,8 @@ def newsnr_sgveto_psdvar_threshold(snr, brchisq, sgchisq, psd_var_val,
 
 
 def newsnr_sgveto_psdvar_scaled(snr, brchisq, sgchisq, psd_var_val,
-                                scaling=0.33, min_expected_psdvar=0.65,
-                                **kwargs):  # pylint:disable=unused-argument
+        scaling=0.33, min_expected_psdvar=0.65,
+        **kwargs):  # pylint:disable=unused-argument
     """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and scaled PSD
     variation statistic. """
     nsnr = numpy.array(
@@ -137,7 +139,7 @@ def newsnr_sgveto_psdvar_scaled(snr, brchisq, sgchisq, psd_var_val,
 
 
 def newsnr_sgveto_psdvar_scaled_threshold(snr, bchisq, sgchisq, psd_var_val,
-                                          threshold=2.0, **kwargs):  # pylint:disable=unused-argument
+        threshold=2.0, **kwargs):  # pylint:disable=unused-argument
     """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq, and
     scaled psd variation.
     """
@@ -225,7 +227,7 @@ def get_newsnr_sgveto(trigs, **kwargs):  # pylint:disable=unused-argument
     return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
 
 
-def get_newsnr_sgveto_psdvar(trigs, **kwargs):  # pylint:disable=unused-argument
+def get_newsnr_sgveto_psdvar(trigs, **kwargs): # pylint:disable=unused-argument
     """
     Calculate snr re-weighted by Allen chisq, sine-gaussian veto and
     psd variation statistic
@@ -252,7 +254,8 @@ def get_newsnr_sgveto_psdvar(trigs, **kwargs):  # pylint:disable=unused-argument
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
 
 
-def get_newsnr_sgveto_psdvar_threshold(trigs, **kwargs):  # pylint:disable=unused-argument
+def get_newsnr_sgveto_psdvar_threshold(trigs,
+        **kwargs):  # pylint:disable=unused-argument
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and scaled
     psd variation statistic
@@ -278,7 +281,8 @@ def get_newsnr_sgveto_psdvar_threshold(trigs, **kwargs):  # pylint:disable=unuse
     return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
 
 
-def get_newsnr_sgveto_psdvar_scaled(trigs, **kwargs):  # pylint:disable=unused-argument
+def get_newsnr_sgveto_psdvar_scaled(trigs,
+        **kwargs):  # pylint:disable=unused-argument
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and scaled
     psd variation statistic
@@ -305,7 +309,8 @@ def get_newsnr_sgveto_psdvar_scaled(trigs, **kwargs):  # pylint:disable=unused-a
     return numpy.array(nsnr_sg_psdscale, ndmin=1, dtype=numpy.float32)
 
 
-def get_newsnr_sgveto_psdvar_scaled_threshold(trigs, **kwargs):  # pylint:disable=unused-argument
+def get_newsnr_sgveto_psdvar_scaled_threshold(trigs,
+        **kwargs):  # pylint:disable=unused-argument
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and scaled
     psd variation statistic. A further threshold is applied to the
@@ -341,23 +346,24 @@ sngls_ranking_function_dict = {
     'newsnr_sgveto_psdvar': get_newsnr_sgveto_psdvar,
     'newsnr_sgveto_psdvar_threshold': get_newsnr_sgveto_psdvar_threshold,
     'newsnr_sgveto_psdvar_scaled': get_newsnr_sgveto_psdvar_scaled,
-    'newsnr_sgveto_psdvar_scaled_threshold': get_newsnr_sgveto_psdvar_scaled_threshold,
+    'newsnr_sgveto_psdvar_scaled_threshold': \
+        get_newsnr_sgveto_psdvar_scaled_threshold,
 }
 
 # Lists of datasets required in the trigs object for each function
-required_datasets = {}
-required_datasets['snr'] = ['snr']
-required_datasets['newsnr'] = required_datasets['snr'] + ['chisq', 'chisq_dof']
-required_datasets['new_snr'] = required_datasets['newsnr']
-required_datasets['newsnr_sgveto'] = required_datasets['newsnr'] + ['sg_chisq']
-required_datasets['newsnr_sgveto_psdvar'] = \
-    required_datasets['newsnr_sgveto'] + ['psd_var_val']
-required_datasets['newsnr_sgveto_psdvar_threshold'] = \
-    required_datasets['newsnr_sgveto_psdvar']
-required_datasets['newsnr_sgveto_psdvar_scaled'] = \
-    required_datasets['newsnr_sgveto_psdvar']
-required_datasets['newsnr_sgveto_psdvar_scaled_threshold'] = \
-    required_datasets['newsnr_sgveto_psdvar']
+reqd_datasets = {}
+reqd_datasets['snr'] = ['snr']
+reqd_datasets['newsnr'] = reqd_datasets['snr'] + ['chisq', 'chisq_dof']
+reqd_datasets['new_snr'] = reqd_datasets['newsnr']
+reqd_datasets['newsnr_sgveto'] = reqd_datasets['newsnr'] + ['sg_chisq']
+reqd_datasets['newsnr_sgveto_psdvar'] = \
+    reqd_datasets['newsnr_sgveto'] + ['psd_var_val']
+reqd_datasets['newsnr_sgveto_psdvar_threshold'] = \
+    reqd_datasets['newsnr_sgveto_psdvar']
+reqd_datasets['newsnr_sgveto_psdvar_scaled'] = \
+    reqd_datasets['newsnr_sgveto_psdvar']
+reqd_datasets['newsnr_sgveto_psdvar_scaled_threshold'] = \
+    reqd_datasets['newsnr_sgveto_psdvar']
 
 
 def get_sngls_ranking_from_trigs(trigs, statname, **kwargs):
