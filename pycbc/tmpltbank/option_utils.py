@@ -594,8 +594,8 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
     if hasattr(opts, 'remnant_mass_threshold') \
             and opts.remnant_mass_threshold is not None:
         logger.info("""You have asked to exclude EM dim NS-BH systems from the
-                       target parameter space. The script will assume that m1 is
-                       the BH and m2 is the NS: make sure that your settings
+                       target parameter space. The script will assume that m1
+                       is the BH and m2 is the NS: make sure that your settings
                        respect this convention. The script will also treat the
                        NS as non-spinning: use NS spins in the template bank
                        at your own risk!""")

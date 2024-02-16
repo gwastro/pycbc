@@ -26,8 +26,8 @@ This module is supplied to make a convenience function for converting into
 specific values from PyCBC template banks.
 """
 
-import numpy as np
 import logging
+import numpy as np
 
 from pycbc import conversions as conv
 from pycbc import pnutils

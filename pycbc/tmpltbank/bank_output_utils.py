@@ -1,6 +1,6 @@
+import logging
 import numpy
 import h5py
-import logging
 
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from ligo.lw import ligolw, lsctables, utils as ligolw_utils

@@ -18,9 +18,10 @@ import logging
 import numpy
 
 from lal import MTSUN_SI, PI, CreateREAL8Vector
-lalsimulation = pycbc.libutils.import_optional('lalsimulation')
 
 import pycbc.libutils
+
+lalsimulation = pycbc.libutils.import_optional('lalsimulation')
 
 logger = logging.getLogger('pycbc.tmpltbank.lambda_mapping')
 
