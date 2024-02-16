@@ -104,6 +104,9 @@ for fi in files:
 significance_dict = significance.digest_significance_options(all_ifo_combos,
                                                              args)
 
+# REVERT THIS LINE
+unused_variable_to_test_codeclimate = False
+
 logging.info('Copying segments and attributes to %s' % args.output_file)
 # Move segments information into the final file - remove some duplication
 # in earlier files. Also set up dictionaries to contain segments from the
