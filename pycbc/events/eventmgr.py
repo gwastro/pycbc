@@ -471,6 +471,10 @@ class EventManager(object):
                 # Not precessing
                 f['sigmasq'] = self.events['sigmasq']
 
+            # Template durations should ideally be stored in the bank file.
+            # At present, however, a few plotting/visualization codes
+            # downstream in the offline search workflow rely on durations being
+            # stored in the trigger files instead.
             template_durations = [p['tmplt'].template_duration for p in
                                   self.template_params]
             f['template_duration'] = numpy.array(template_durations,
@@ -763,11 +767,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                                                    dtype=numpy.float32)
                     f['sigmasq'] = template_sigmasq[tid]
 
-                template_durations = [p['tmplt'].template_duration for p in
-                                      self.template_params]
-                f['template_duration'] = numpy.array(template_durations,
-                                                     dtype=numpy.float32)[tid]
-
                 # FIXME: Can we get this value from the autochisq instance?
                 # cont_dof = self.opt.autochi_number_points
                 # if self.opt.autochi_onesided is None:
@@ -1031,11 +1030,6 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                                                     self.template_params],
                                                    dtype=numpy.float32)
                     f['sigmasq'] = template_sigmasq[tid]
-
-                template_durations = [p['tmplt'].template_duration for p in
-                                      self.template_params]
-                f['template_duration'] = \
-                      numpy.array(template_durations, dtype=numpy.float32)[tid]
 
                 # FIXME: Can we get this value from the autochisq instance?
                 cont_dof = self.opt.autochi_number_points
