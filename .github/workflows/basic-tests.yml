@@ -63,7 +63,7 @@ jobs:
     - name: retrieve built documentation
       uses: actions/download-artifact@v4
       with:
-        pattern: documentation-page-*
+        pattern: documentation-page
         merge-multiple: true
     - name: debug
       run: |
