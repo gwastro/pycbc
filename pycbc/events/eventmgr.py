@@ -599,6 +599,31 @@ class EventManagerMultiDetBase(EventManager):
         self.template_event_dict[ifo] = self.template_events
         self.template_events = None
 
+    def write_gating_info_to_hdf(self, hf):
+        """Write per-detector gating information to an h5py file object.
+        The information is laid out according to the following groups and
+        datasets: `/<detector>/gating/{file, auto}/{time, width, pad}` where
+        "file" and "auto" indicate respectively externally-provided gates and
+        internally-generated gates (autogating), and "time", "width" and "pad"
+        indicate the gate center times, total durations and padding durations in
+        seconds respectively.
+        """
+        if 'gating_info' not in self.global_params:
+            continue
+        gates = self.global_params['gating_info']
+        for ifo, gate_type in itertools.product(self.ifos, ['file', 'auto']):
+            if gate_type not in gates[ifo]:
+                continue
+            hf[f'{ifo}/gating/{gate_type}/time'] = numpy.array(
+                [float(g[0]) for g in gates[ifo][gate_type]]
+            )
+            hf[f'{ifo}/gating/{gate_type}/width'] = numpy.array(
+                [g[1] for g in gates[ifo][gate_type]]
+            )
+            hf[f'{ifo}/gating/{gate_type}/pad'] = numpy.array(
+                [g[2] for g in gates[ifo][gate_type]]
+            )
+
 
 class EventManagerCoherent(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, network_column,
@@ -697,6 +722,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         th = numpy.array(
             [p['tmplt'].template_hash for p in self.template_params])
         f = fw(outname)
+        self.write_gating_info_to_hdf(f)
         # Output network stuff
         f.prefix = 'network'
         network_events = numpy.array(
@@ -816,17 +842,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     numpy.array([filters_per_core / float(self.run_time)])
                 f['search/setup_time_fraction'] = \
                    numpy.array([float(self.setup_time) / float(self.run_time)])
-
-            if 'gating_info' in self.global_params:
-                gating_info = self.global_params['gating_info']
-                for gate_type in ['file', 'auto']:
-                    if gate_type in gating_info:
-                        f['gating/' + gate_type + '/time'] = numpy.array(
-                                 [float(g[0]) for g in gating_info[gate_type]])
-                        f['gating/' + gate_type + '/width'] = numpy.array(
-                                        [g[1] for g in gating_info[gate_type]])
-                        f['gating/' + gate_type + '/pad'] = numpy.array(
-                                        [g[2] for g in gating_info[gate_type]])
 
     def finalize_template_events(self):
         # Check that none of the template events have the same time index as an
@@ -966,6 +981,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
         class fw(object):
             def __init__(self, name):
                 self.f = h5py.File(name, 'w')
+                self.prefix = ''
 
             def __setitem__(self, name, data):
                 col = self.prefix + '/' + name
@@ -979,6 +995,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                                                          self.template_params])
         tid = self.events['template_id']
         f = fw(outname)
+        self.write_gating_info_to_hdf(f)
         for ifo in self.ifos:
             f.prefix = ifo
             ifo_events = numpy.array([e for e in self.events if
@@ -1073,17 +1090,6 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     numpy.array([filters_per_core / float(self.run_time)])
                 f['search/setup_time_fraction'] = \
                    numpy.array([float(self.setup_time) / float(self.run_time)])
-
-            if 'gating_info' in self.global_params:
-                gating_info = self.global_params['gating_info']
-                for gate_type in ['file', 'auto']:
-                    if gate_type in gating_info:
-                        f['gating/' + gate_type + '/time'] = numpy.array(
-                                 [float(g[0]) for g in gating_info[gate_type]])
-                        f['gating/' + gate_type + '/width'] = numpy.array(
-                                        [g[1] for g in gating_info[gate_type]])
-                        f['gating/' + gate_type + '/pad'] = numpy.array(
-                                        [g[2] for g in gating_info[gate_type]])
 
 
 __all__ = ['threshold_and_cluster', 'findchirp_cluster_over_window',
