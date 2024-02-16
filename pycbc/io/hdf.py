@@ -576,7 +576,7 @@ class SingleDetTriggers(object):
             logger.info("Applying threshold of %.3f on %s",
                         filter_threshold, filter_rank)
             fcn_dsets = (ranking.sngls_ranking_function_dict[filter_rank],
-                         ranking.required_datasets[filter_rank])
+                         ranking.reqd_datasets[filter_rank])
             idx, _ = self.trigs_f.select(
                  lambda rank: rank > filter_threshold,
                  filter_rank,
