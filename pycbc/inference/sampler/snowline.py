@@ -28,7 +28,6 @@ packages for parameter estimation.
 
 import sys
 import logging
-import numpy
 
 from pycbc.inference.io.snowline import SnowlineFile
 from pycbc.io.hdf import dump_state
@@ -58,7 +57,7 @@ class SnowlineSampler(BaseSampler):
     _io = SnowlineFile
 
     def __init__(self, model, **kwargs):
-        super(SnowlineSampler, self).__init__(model)
+        super().__init__(model)
 
         import snowline
         log_likelihood_call, prior_call = setup_calls(model, copy_prior=True)
