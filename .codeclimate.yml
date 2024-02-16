@@ -56,4 +56,5 @@ exclude_patterns:
 - tools/*
 - examples/*
 - test/*
+- !bin/*
 
