@@ -24,10 +24,13 @@
 """This modules defines functions for clustering and thresholding timeseries to
 produces event triggers
 """
-import numpy, copy, os.path
+import os.path
+import copy
+import itertools
 import logging
-import h5py
 import pickle
+import numpy
+import h5py
 
 from pycbc.types import Array
 from pycbc.scheme import schemed
