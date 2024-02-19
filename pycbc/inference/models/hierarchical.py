@@ -723,6 +723,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         return loglr
 
     def others_lognl(self):
+        # calculate the combined lognl from all others sub-models
         total_others_lognl = 0
         for lbl, model in self.submodels.items():
             model.update(**{p.subname: self.current_params[p.fullname]
@@ -732,7 +733,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
     def _loglikelihood(self):
         # calculate the combined loglikelihood
-        logl = self.total_loglr() + self.primary_model.lognl + self.others_lognl()
+        logl = self.total_loglr() + self.primary_model.lognl + \
+               self.others_lognl()
 
         # store any extra stats from the submodels
         for lbl, model in self.submodels.items():

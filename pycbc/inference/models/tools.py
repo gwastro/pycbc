@@ -774,7 +774,8 @@ class DistMarg():
             rec['loglikelihood'] = self.lognl + rec['loglr']
         else:
             # calculate the combined loglikelihood
-            rec['loglikelihood'] = self.lognl + rec['loglr'] + set_others_lognl
+            rec['loglikelihood'] = self.lognl + rec['loglr'] + \
+                                   set_others_lognl
         return rec
 
 
