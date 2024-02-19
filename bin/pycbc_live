@@ -1124,12 +1124,16 @@ with ctx:
             args.round_start_time
         logging.info('Starting from: %s', args.start_time)
 
-    # initialize the data readers for all detectors
+    # Initialize the data readers for all detectors. For rank 0, we need data
+    # from all detectors, including the localization-only ones. For higher
+    # ranks, we only need the detectors that can generate candidates.
     if args.max_length is not None:
         maxlen = args.max_length
     maxlen = int(maxlen)
-    data_reader = {ifo: StrainBuffer.from_cli(ifo, args, maxlen)
-                   for ifo in evnt.ifos}
+    data_reader = {
+        ifo: StrainBuffer.from_cli(ifo, args, maxlen)
+        for ifo in (evnt.ifos if evnt.rank == 0 else evnt.trigg_ifos)
+    }
     evnt.data_readers = data_reader
 
     # create single-detector background "estimators"
