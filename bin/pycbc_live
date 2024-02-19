@@ -1193,7 +1193,9 @@ with ctx:
 
     # Create dicts to track whether the psd has been recalculated and to hold
     #  psd variation filters
-    psd_recalculated = {ifo: True for ifo in evnt.ifos}
+    psd_recalculated = {
+        ifo: True for ifo in (evnt.ifos if evnt.rank == 0 else evnt.trigg_ifos)
+    }
     psd_var_filts = {ifo: None for ifo in evnt.trigg_ifos}
 
     while data_end() < args.end_time:
@@ -1203,7 +1205,7 @@ with ctx:
         results = {}
         evnt.live_detectors = set()
 
-        for ifo in evnt.ifos:
+        for ifo in (evnt.ifos if evnt.rank == 0 else evnt.trigg_ifos):
             results[ifo] = False
             status = data_reader[ifo].advance(
                 valid_pad,
