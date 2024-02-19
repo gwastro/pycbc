@@ -723,7 +723,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         return loglr
 
     def others_lognl(self):
-        # calculate the combined lognl from all others sub-models
+        """Calculate the combined lognl from all others sub-models."""
         total_others_lognl = 0
         for lbl, model in self.submodels.items():
             model.update(**{p.subname: self.current_params[p.fullname]
