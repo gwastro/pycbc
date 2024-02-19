@@ -722,15 +722,17 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
         return loglr
 
-    def _loglikelihood(self):
-        others_lognl = 0
+    def others_lognl(self):
+        total_others_lognl = 0
         for lbl, model in self.submodels.items():
             model.update(**{p.subname: self.current_params[p.fullname]
                             for p in self.param_map[lbl]})
-            others_lognl += model.lognl
+            total_others_lognl += model.lognl
+        return total_others_lognl
 
+    def _loglikelihood(self):
         # calculate the combined loglikelihood
-        logl = self.total_loglr() + self.primary_model.lognl + others_lognl
+        logl = self.total_loglr() + self.primary_model.lognl + self.others_lognl()
 
         # store any extra stats from the submodels
         for lbl, model in self.submodels.items():
@@ -901,3 +903,11 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         logging.info("Loading joint_primary_marginalized model")
         return super(HierarchicalModel, cls).from_config(
                 cp, submodels=submodels, **kwargs)
+
+    def reconstruct(self, seed=None):
+        """ Reconstruct marginalized parameters by using the primary
+        model's reconstruct method, total_loglr and others_lognl.
+        """
+        return self.primary_model.reconstruct(
+                seed=seed, set_loglr=self.total_loglr(),
+                set_others_lognl=self.others_lognl())
