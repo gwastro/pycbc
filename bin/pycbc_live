@@ -547,13 +547,15 @@ class LiveEventManager(object):
             'Trigger produced as a {} coincidence.<br />'
             'Two-detector ranking statistic: {}<br />'
             'Detectors used for FAR calculation: {}.<br />'
-            'Detectors used for localization: {}.'
+            'Detectors used for localization: {}.<br />'
+            'Detectors used only for localization: {}.'
         )
         comment = comment.format(
             ppdets(coinc_ifos),
             args.ranking_statistic,
             set(ifos) - self.skymap_only_ifos,
-            ppdets(followup_ifos)
+            ppdets(followup_ifos),
+            ppdets(self.skymap_only_ifos)
         )
 
         ifar = coinc_results['foreground/ifar']
@@ -650,9 +652,12 @@ class LiveEventManager(object):
             comment = (
                 'Trigger produced as a {0} single.<br />'
                 'Detectors used for FAR calculation: {0}.<br />'
-                'Detectors used for localization: {1}.'
+                'Detectors used for localization: {1}.<br />'
+                'Detectors used only for localization: {2}.'
             )
-            comment = comment.format(ifo, ppdets(followup_ifos))
+            comment = comment.format(
+                ifo, ppdets(followup_ifos), ppdets(self.skymap_only_ifos)
+            )
 
             # Has a coinc event at this time been uploaded recently?
             # If so, skip upload - Note that this means that we _always_
