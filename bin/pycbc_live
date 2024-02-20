@@ -542,6 +542,9 @@ class LiveEventManager(object):
         )
         logging.info('Coincident candidate! Saving as %s', fname)
 
+        # Which IFOs were active?
+        live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+
         # Verbally explain some details not obvious from the other info
         comment = (
             'Trigger produced as a {} coincidence.<br />'
@@ -553,9 +556,9 @@ class LiveEventManager(object):
         comment = comment.format(
             ppdets(coinc_ifos),
             args.ranking_statistic,
-            set(ifos) - self.skymap_only_ifos,
-            ppdets(followup_ifos),
-            ppdets(self.skymap_only_ifos)
+            ppdets(set(ifos) - self.skymap_only_ifos),
+            ppdets(live_ifos),
+            ppdets(set(live_ifos) & self.skymap_only_ifos)
         )
 
         ifar = coinc_results['foreground/ifar']
@@ -576,9 +579,6 @@ class LiveEventManager(object):
         # Save the event info/data and what _would_ be run for SNR optimizer,
         # even if not running it - do this before the thread so no
         # data buffers move on in a possible interim period
-
-        # Which IFOs were active?
-        live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
 
         # Tell SNR optimized event about p_terr
         if hasattr(event, 'p_terr') and event.p_terr is not None:
@@ -648,6 +648,9 @@ class LiveEventManager(object):
             )
             logging.info('Single-detector candidate! Saving as %s', fname)
 
+            # Which IFOs were active?
+            live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
+
             # Verbally explain some details not obvious from the other info
             comment = (
                 'Trigger produced as a {0} single.<br />'
@@ -656,7 +659,9 @@ class LiveEventManager(object):
                 'Detectors used only for localization: {2}.'
             )
             comment = comment.format(
-                ifo, ppdets(followup_ifos), ppdets(self.skymap_only_ifos)
+                ifo,
+                ppdets(live_ifos),
+                ppdets(set(live_ifos) & self.skymap_only_ifos)
             )
 
             # Has a coinc event at this time been uploaded recently?
@@ -693,9 +698,6 @@ class LiveEventManager(object):
                 # Don't even save the snr optimization stuff for singles
                 # where there is already a coinc
                 continue
-
-            # Which IFOs were active?
-            live_ifos = [ifo for ifo in sld if 'snr_series' in sld[ifo]]
 
             # Tell SNR optimized event about p_terr
             if hasattr(event, 'p_terr') and event.p_terr is not None:
