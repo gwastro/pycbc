@@ -718,8 +718,7 @@ class DistMarg():
         self.marginalize_vector_weights = - numpy.log(self.vsamples)
         return params
 
-    def reconstruct(self, rec=None, seed=None,
-                    set_loglr=None, set_others_lognl=None):
+    def reconstruct(self, rec=None, seed=None, set_loglr=None):
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
@@ -770,12 +769,7 @@ class DistMarg():
             self.reconstruct_phase = False
 
         rec['loglr'] = loglr[xl]
-        if set_others_lognl is None:
-            rec['loglikelihood'] = self.lognl + rec['loglr']
-        else:
-            # calculate the combined loglikelihood
-            rec['loglikelihood'] = self.lognl + rec['loglr'] + \
-                                   set_others_lognl
+        rec['loglikelihood'] = self.lognl + rec['loglr']
         return rec
 
 

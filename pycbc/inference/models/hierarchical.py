@@ -725,7 +725,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
     def others_lognl(self):
         """Calculate the combined lognl from all others sub-models."""
         total_others_lognl = 0
-        for lbl, model in self.submodels.items():
+        for lbl, model in self.other_models.items():
             model.update(**{p.subname: self.current_params[p.fullname]
                             for p in self.param_map[lbl]})
             total_others_lognl += model.lognl
@@ -910,6 +910,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         """ Reconstruct marginalized parameters by using the primary
         model's reconstruct method, total_loglr and others_lognl.
         """
-        return self.primary_model.reconstruct(
-                seed=seed, set_loglr=self.total_loglr(),
-                set_others_lognl=self.others_lognl())
+        rec = self.primary_model.reconstruct(
+                seed=seed, set_loglr=self.total_loglr())
+        # the primary model's reconstruct doesn't know lognl in other models
+        rec['loglikelihood'] += self.others_lognl()
+        return rec
