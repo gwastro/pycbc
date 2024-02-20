@@ -14,7 +14,6 @@
 
 
 import sys, h5py, argparse, logging, pycbc.version, numpy
-from scipy.stats import norm
 from pycbc.events import triggers, fits_combination as fc
 from pycbc import init_logging
 

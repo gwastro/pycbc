@@ -15,7 +15,7 @@ logger = logging.getLogger('pycbc.events.fits_by_template')
 
 def get_stat(trigs, rank_method, threshold, additional_datasets=None):
     """
-    Get statisic values from the 
+    Get statisic values from the trigger file, do so efficiently
     """
     logger.info('Calculating stat values')
 
@@ -27,33 +27,41 @@ def get_stat(trigs, rank_method, threshold, additional_datasets=None):
     stat = []
     select = []
     size = trigs['end_time'].size
-    s = 0
-    additional_datasets = additional_datasets if additional_datasets is not None else []
-    ad = {ad: [] for ad in additional_datasets}
-    while s < size:
-        e = s + chunk_size if (s + chunk_size) <= size else size
+    chunk_start = 0
+    additional_datasets = additional_datasets \
+        if additional_datasets is not None else []
+    ad_dict = {adk: [] for adk in additional_datasets}
+    while chunk_start < size:
+        chunk_end = chunk_start + chunk_size \
+            if (chunk_start + chunk_size) <= size else size
 
         # read and format chunk of data so it can be read by key
         # as the stat classes expect.
-        chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
+        chunk = {k: trigs[k][chunk_start:chunk_end]
+                 for k in trigs if len(trigs[k]) == size}
 
         chunk_stat = rank_method.get_sngl_ranking(chunk)
 
         above = chunk_stat >= threshold
         stat.append(chunk_stat[above])
         select.append(above)
-        for adk in ad.keys():
-            ad[adk].append(chunk[adk][above])
-        s += chunk_size
+        for adk in ad_dict.keys():
+            ad_dict[adk].append(chunk[adk][above])
+        chunk_start += chunk_size
 
-    ad = {adk: np.concatenate(adv) for adk, adv in ad.items()}
+    ad_dict = {adk: np.concatenate(adv) for adk, adv in ad_dict.items()}
     # Return boolean area that selects the triggers above threshold
     # along with the stat values above threshold
-    return np.concatenate(select), np.concatenate(stat), ad
+    return np.concatenate(select), np.concatenate(stat), ad_dict
 
 
 def count_in_template(trigger_set, template_f):
     """
+    Function to return the number of triggers in each template.
+
+    Lots of this is index juggling, as the triggers are stored in
+    template hash order in the HDF_TRIGGER_MERGE file.
+
     Parameters
     ----------
     trigger_set: h5py Group
@@ -65,24 +73,25 @@ def count_in_template(trigger_set, template_f):
     """
     logger.info('Counting number of triggers in each template')
     # template boundaries dataset is in order of template_id
-    tb = trigger_set['template_boundaries'][:]
-    tid = np.arange(len(tb))
+    template_boundaries = trigger_set['template_boundaries'][:]
+    template_id = np.arange(len(template_boundaries))
     # template boundary values ascend in the same order as template hash
     # hence sort by hash
     hash_sort = np.argsort(template_f['template_hash'][:])
-    tb_hashorder = tb[hash_sort]
+    template_boundaries_hashorder = template_boundaries[hash_sort]
     # reorder template IDs in parallel to the boundary values
-    tid_hashorder = tid[hash_sort]
+    template_id_hashorder = template_id[hash_sort]
 
     # Calculate the differences between the boundary indices to get the
     # number in each template
     # adding on total number at the end to get number in the last template
     total_number = trigger_set['template_id'].size
-    count_in_template_hashorder = np.diff(np.append(tb_hashorder, total_number))
+    count_in_template_hashorder = \
+        np.diff(np.append(template_boundaries_hashorder, total_number))
 
-    # re-reorder values from hash order to tid order
-    tid_sort = np.argsort(tid_hashorder)
-    return count_in_template_hashorder[tid_sort]
+    # re-reorder values from hash order to template_id order
+    template_id_sort = np.argsort(template_id_hashorder)
+    return count_in_template_hashorder[template_id_sort]
 
 
 def retained_segments(trigger_file, ifo, veto_file=None,
@@ -100,22 +109,22 @@ def retained_segments(trigger_file, ifo, veto_file=None,
 
     logger.debug("%.2fs total time", abs(all_segments))
     veto_file = veto_file if veto_file is not None else []
-    veto_segment_name= veto_segment_name \
+    veto_segment_name = veto_segment_name \
         if veto_segment_name is not None else []
 
     # now do vetoing
-    for veto_file, veto_segment_name in zip(veto_file, veto_segment_name):
+    for vfile, vsegment_name in zip(veto_file, veto_segment_name):
         vetoed_segments = veto.select_segments_by_definer(
-            veto_file,
+            vfile,
             ifo=ifo,
-            segment_name=veto_segment_name
+            segment_name=vsegment_name
         )
         all_segments -= vetoed_segments
         logger.info(
            '%2.fs removed when vetoing with %s in %s',
            abs(vetoed_segments),
-           veto_segment_name,
-           veto_file,
+           vsegment_name,
+           vfile,
         )
 
     # Include gating vetoes
@@ -125,11 +134,11 @@ def retained_segments(trigger_file, ifo, veto_file=None,
         gveto_before = float(gating_veto[0])
         gveto_after = float(gating_veto[1])
         if gveto_before > 0 or gveto_after < 0:
-            raise ValueError("Gating veto window values must be negative before "
-                             "gates and positive after gates.")
+            raise ValueError("Gating veto window values must be negative "
+                             "before gates and positive after gates.")
         if not (gveto_before == 0 and gveto_after == 0):
             autogate_times = np.unique(trigger_group['gating/auto/time'][:])
-            if f'gating/file' in trigger_group:
+            if 'gating/file' in trigger_group:
                 detgate_times = trigger_group['gating/file/time'][:]
             else:
                 detgate_times = []
@@ -141,6 +150,7 @@ def retained_segments(trigger_file, ifo, veto_file=None,
             logger.info('%.2f removed near gates', abs(gveto_segs))
 
     return all_segments
+
 
 def segment_mask(time, keep_segments):
     """
@@ -184,8 +194,10 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
             pruning_done = True
             break
         if numpruned > prune_bins * prune_number:
-            logging.error('Uh-oh, we pruned too many things .. %i, to be '
-                          'precise' % numpruned)
+            logging.error(
+                'Uh-oh, we pruned too many things .. %i, to be precise',
+                numpruned
+            )
             raise RuntimeError
         if not any(test_trigs):
             logging.error(
@@ -200,8 +212,14 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
 
         # is the bin where the loudest trigger lives full already?
         if len(prunedtimes[lbin]) == prune_number:
-            logging.debug('%i - Bin %i full, not pruning event with stat %f at '
-                         'time %.3f' % (j, lbin, lstat, ltime))
+            logging.debug(
+                '%i - Bin %i full, not pruning event with stat %.3f at '
+                'time %.3f',
+                j,
+                lbin,
+                lstat,
+                ltime
+            )
             # prune the reference trigger array
             remove = abs(time - ltime) <= prune_window
             test_trigs[remove] = False
@@ -212,9 +230,12 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
                     '%d events skipped due to full bins',
                     skipped_prunes
                 )
-                skiped_prunes = 0
-            logging.info('Pruning event with stat %.3f at %.3f in bin %i' %
-                         (lstat, ltime, lbin))
+            logging.info(
+                'Pruning event with stat %.3f at %.3f in bin %i',
+                lstat,
+                ltime,
+                lbin
+            )
             # now do the pruning
             remove = abs(time - ltime) <= prune_window
             retain_trigs[remove] = False
@@ -228,40 +249,44 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
             "Not enough triggers have been pruned after the loop over "
             "1000 triggers - something could be wrong!"
         )
-    logging.info('%i trigs remain after pruning loop' % np.count_nonzero(retain_trigs))
+    logging.info(
+        '%i trigs remain after pruning loop',
+        np.count_nonzero(retain_trigs)
+    )
     return retain_trigs
 
-def fit_triggers(stat, tid, fit_function, stat_threshold, trange):
+
+def fit_triggers(stat, template_id, fit_function, stat_threshold, template_ids):
     logging.info("Fitting in each template")
     # sorting into template_id order
-    tsort = tid.argsort()
-    tid = tid[tsort]
+    tsort = template_id.argsort()
+    template_id = template_id[tsort]
     stat = stat[tsort]
 
     logging.info("Getting trigger ranges for each template id")
-    left = np.searchsorted(tid, trange, side='left')
-    right = np.searchsorted(tid, trange, side='right')
-    
+    left = np.searchsorted(template_id, template_ids, side='left')
+    right = np.searchsorted(template_id, template_ids, side='right')
+
     counts_above = right - left
-    fits = np.ones(len(trange), dtype=np.float64) * -100
+    fits = np.ones(len(template_ids), dtype=np.float64) * -100
 
     logging.info("Calculating fit coefficients")
-    for j, tnum in enumerate(trange):
+    for j in irange(len(template_ids)):
         if not j % 10000:
             logging.info(
                 "Fitting template %d out of %d",
-                j, len(trange),
+                j, len(template_ids),
             )
         elif not j % 1000:
             logging.debug(
                 "Fitting template %d out of %d",
-                j, len(trange),
+                j, len(template_ids),
             )
 
         if counts_above[j] == 0:
             continue
         stat_in_template = stat[left[j]:right[j]]
-        alpha, sig_alpha = trstats.fit_above_thresh(
+        alpha, _ = trstats.fit_above_thresh(
             fit_function,
             stat_in_template,
             stat_threshold
