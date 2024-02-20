@@ -1,5 +1,5 @@
-import numpy
 import logging
+import numpy
 
 from pycbc.tmpltbank.coord_utils import get_cov_params
 
