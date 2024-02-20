@@ -420,7 +420,7 @@ if post_proc_method == "PYGRB_OFFLINE":
     else:
         logging.info('Entering results module')
         results_files = _workflow.setup_pygrb_results_workflow(wflow, pp_dir,
-                                                               pp_files[1],
+                                                               pp_files[0],
                                                                pp_files[-2],
                                                                bank_files[0])
         logging.info('Leaving results module')

@@ -50,9 +50,10 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",
                     help="Verbose output")
-parser.add_argument("-t", "--trig-file", action="store",
+parser.add_argument("-t", "--trig-files", action="store",
                     default=None, required=True,
-                    help="The location of the trigger file")
+                    help="The location of the trigger files"
+                         " [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]")
 parser.add_argument("-i", "--inj-files", action="store",
                     default=None, nargs="+",
                     help="Location(s) of input injection results file(s)")

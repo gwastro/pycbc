@@ -449,7 +449,7 @@ def build_segment_filelist(workflow):
 
 def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None,
-                    bank_file=None, tags=None):
+                    onsource_file=None, bank_file=None, tags=None):
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -512,8 +512,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Output files and final input file (passed as a File instance)
     if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
-        onsource_file = configparser_value_to_file(workflow.cp,
-                                                   'workflow', 'onsource-file')
         node.add_input_opt('--onsource-file', onsource_file)
         node.add_input_opt('--bank-file', bank_file)
         node.new_output_file_opt(workflow.analysis_time, '.png',
@@ -731,7 +729,7 @@ def setup_pygrb_minifollowups(workflow, followups_file,
     job.add_into_workflow(workflow)
 
 
-def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
+def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
                                  inj_files, bank_file, tags=None,
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
@@ -768,7 +766,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
                      tags=tags)
     node = exe.create_node()
     # Grab and pass all necessary files
-    node.add_input_opt('--trig-file', trig_file)
+    node.add_input_list_opt('--trig-file', trig_files)
     if workflow.cp.has_option('workflow', 'veto-files'):
         veto_files = build_veto_filelist(workflow)
         node.add_input_list_opt('--veto-files', veto_files)
@@ -805,7 +803,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
                     file_url=os.path.join(dax_output, name+'.ini'))
     node.add_output(out_file)
 
-    # Add node to the workflow workflow
+    # Add node to the workflow
     workflow += node
     if explicit_dependencies is not None:
         for dep in explicit_dependencies:
