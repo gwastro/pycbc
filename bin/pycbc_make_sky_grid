@@ -13,6 +13,7 @@ import argparse
 import itertools
 from scipy.spatial.transform import Rotation as R
 
+import pycbc
 from pycbc.detector import Detector
 
 

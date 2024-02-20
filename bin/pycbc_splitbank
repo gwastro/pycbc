@@ -29,10 +29,12 @@
 
 import argparse
 from numpy import random, ceil
+
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 
+import pycbc
 from pycbc import version
 from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
 from pycbc.conversions import mchirp_from_mass1_mass2

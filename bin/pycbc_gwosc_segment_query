@@ -9,6 +9,7 @@ from urllib.request import urlopen
 
 import ligo.segments
 
+import pycbc
 from pycbc.workflow import SegFile
 
 
