@@ -24,7 +24,6 @@
 import sys
 import os
 import logging
-
 import h5py
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -37,7 +36,6 @@ from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.conversions import mchirp_from_mass1_mass2
-
 
 plt.switch_backend('Agg')
 rc("image")
@@ -227,6 +225,17 @@ offsource_trigs.reverse()
 max_bestnr, _, full_time_veto_max_bestnr =\
     ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr, total_trials)
 
+# ==========================
+# Calculate template chirp masses from bank
+# ==========================
+logging.info('Reading template chirp masses')
+with h5py.File(opts.bank_file, 'r') as bank_file:
+    template_mchirps = mchirp_from_mass1_mass2(
+        bank_file['mass1'][:],
+        bank_file['mass2'][:]
+    )
+
+
 
 # =======================
 # Load on source triggers
@@ -238,8 +247,7 @@ if onsource_file:
     logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
 
     # Calculate chirp mass values
-    on_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][:][on_trigs['network/template_id']],
-                                        bank_file['mass2'][:][on_trigs['network/template_id']])
+    on_mchirp = template_mchirps[on_trigs['network/template_id']]
 
     # Set loudest event arrays
     loud_on_bestnr = 0
@@ -247,8 +255,7 @@ if onsource_file:
     # Retrieve BestNRs and record loudest trig by BestNR.
     # Get indices of loudest triggers and pick the loudest.
     if on_trigs:
-        loud_on_bestnr_idx = np.argsort(on_trigs['network/reweighted_snr'])
-        loud_on_bestnr_idx = np.flip(loud_on_bestnr_idx)
+        loud_on_bestnr_idx = np.argmax(on_trigs['network/reweighted_snr'])
         loud_on_bestnr = np.max(on_trigs['network/reweighted_snr'])
 
     # Convert to float for output
@@ -294,8 +301,7 @@ if do_injections:
     logging.info("Missed/found injections/triggers loaded.")
 
     # Calculate quantities not included in trigger files, such as chirp mass
-    found_trig_mchirp = mchirp_from_mass1_mass2(bank_file['mass1'][:][injs['network/template_id']],
-                                                bank_file['mass2'][:][injs['network/template_id']])
+    found_trig_mchirp = template_mchirps[injs['network/template_id']]
 
 
     # Construct conditions for injection:
@@ -419,7 +425,6 @@ if do_injections:
                  num_mc_injs)
 
     # Check injections against on source
-    more_sig_than_onsource = np.ndarray(len(injs['found/distance']))
     if onsource_file:
         more_sig_than_onsource = (inj_fap <= loud_on_fap)
     else:

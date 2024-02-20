@@ -337,7 +337,7 @@ with h5py.File(outfilename, "w") as h5out:
     for x in out_trigs:
         xgroup = h5out.create_group(x)
         for col in out_trigs[x]:
-            if "template_id" in col:
+            if "template_id" == col:
                 continue
             xgroup.create_dataset(
                 col,

@@ -464,17 +464,18 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     # Begin by sorting the triggers into each slide
     for slide_id in slide_dict:
         sorted_trigs[slide_id] = []
-    for i, _ in enumerate(trigs['network/event_id']):
-        idx = trigs['network/slide_id'][i]
-        sorted_trigs[idx].append(i)
+    for slide_id, event_id in zip(trigs['network/slide_id'],
+                                  trigs['network/event_id']):
+        sorted_trigs[slide_id].append(event_id)
 
     for slide_id in slide_dict:
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
         # Check the triggers are all in the analysed segment lists
-        for idx in sorted_trigs[slide_id]:
-            end_time = trigs['network/end_time_gc'][idx]
+        for event_id in sorted_trigs[slide_id]:
+            index = numpy.flatnonzero(trigs['network/event_id'] == event_id)[0]
+            end_time = trigs['network/end_time_gc'][index]
             if end_time not in curr_seg_list:
                 # This can be raised if the trigger is on the segment boundary,
                 # so check if the trigger is within 1/100 of a second within
@@ -489,8 +490,10 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
         # END OF CHECK #
 
         # Keep triggers that are in trial_dict
-        sorted_trigs[slide_id] = [idx for idx in sorted_trigs[slide_id]
-                                  if trigs['network/end_time_gc'][idx]
+        sorted_trigs[slide_id] = [event_id for event_id in
+                                  sorted_trigs[slide_id]
+                                  if trigs['network/end_time_gc'][
+                                      trigs['network/event_id'] == event_id][0]
                                   in trial_dict[slide_id]]
 
     return sorted_trigs
@@ -797,8 +800,8 @@ def template_hash_to_id(trigger_file, bank_path):
     trigger_file: h5py File object for trigger file
     bank_file: filepath for template bank
     """
-    bank = h5py.File(bank_path, "r")
-    hashes = bank['template_hash'][:]
+    with h5py.File(bank_path, "r") as bank:
+        hashes = bank['template_hash'][:]
     ifos = [k for k in trigger_file.keys() if k != 'network']
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
     trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)

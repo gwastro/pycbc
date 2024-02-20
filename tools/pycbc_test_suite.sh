@@ -31,7 +31,7 @@ fi
 if [ "$PYCBC_TEST_TYPE" = "help" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     # check that all executables that do not require
     # special environments can return a help message
-    for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live_nagios_monitor|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb|pycbc_coinc_time)'`
+    for prog in `find ${PATH//:/ } -maxdepth 1 -name 'pycbc*' -print 2>/dev/null | egrep -v '(pycbc_live_nagios_monitor|pycbc_make_offline_grb_workflow|pycbc_mvsc_get_features|pycbc_upload_xml_to_gracedb|pycbc_coinc_time)' | sort | uniq`
     do
         echo -e ">> [`date`] running $prog --help"
         $prog --help &> $LOG_FILE
@@ -45,6 +45,18 @@ if [ "$PYCBC_TEST_TYPE" = "help" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
             echo -e "    Pass."
         fi
     done
+    # also check that --version works for one executable
+    echo -e ">> [`date`] running pycbc_inspiral --version"
+    pycbc_inspiral --version &> $LOG_FILE
+    if test $? -ne 0 ; then
+        RESULT=1
+        echo -e "    FAILED!"
+        echo -e "---------------------------------------------------------"
+        cat $LOG_FILE
+        echo -e "---------------------------------------------------------"
+    else
+        echo -e "    Pass."
+    fi
 fi
 
 if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
