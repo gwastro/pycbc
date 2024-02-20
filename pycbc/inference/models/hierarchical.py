@@ -115,7 +115,9 @@ class HierarchicalModel(BaseModel):
             self.__extra_stats += self.extra_stats_map[lbl]
             # also make sure the model's sampling transforms and waveform
             # transforms are not set, as these are handled by the hierarchical
-            # model, except for `joint_primary_marginalized` model
+            # model, except for `joint_primary_marginalized` model, because
+            # this specific model needs to allow its submodels to handle
+            # transform with prefix on the submodel's level
             if self.name != "joint_primary_marginalized":
                 if model.sampling_transforms is not None:
                     raise ValueError("Model {} has sampling transforms "
