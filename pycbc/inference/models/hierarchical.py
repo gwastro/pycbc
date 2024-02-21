@@ -698,6 +698,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_others = numpy.full(nums, 0 + 0.0j)
         hh_others = numpy.zeros(nums)
 
+        # update parameters in other_models
         for _, other_model in enumerate(self.other_models):
             current_params_other = other_model.current_params.copy()
             for i in range(nums):
@@ -727,13 +728,19 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
     def others_lognl(self):
         """Calculate the combined lognl from all others sub-models."""
         total_others_lognl = 0
-        for lbl, model in self.other_models.items():
-            model.update(**{p.subname: self.current_params[p.fullname]
-                            for p in self.param_map[lbl]})
+        for _, model in self.other_models.items():
             total_others_lognl += model.lognl
         return total_others_lognl
 
     def _loglikelihood(self):
+        # update parameters in primary_model,
+        # other_models will be updated in total_loglr,
+        # because other_models need to handle margin_params
+        for lbl, _ in self.primary_model.items():
+            self.primary_model.update(
+                **{p.subname: self.current_params[p.fullname]
+                for p in self.param_map[lbl]})
+
         # calculate the combined loglikelihood
         logl = self.total_loglr() + self.primary_model.lognl + \
                self.others_lognl()
@@ -908,12 +915,29 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         return super(HierarchicalModel, cls).from_config(
                 cp, submodels=submodels, **kwargs)
 
-    def reconstruct(self, seed=None):
+    def reconstruct(self, rec=None, seed=None):
         """ Reconstruct marginalized parameters by using the primary
         model's reconstruct method, total_loglr and others_lognl.
         """
+        if seed:
+            numpy.random.seed(seed)
+
+        if rec is None:
+            rec = {}
+
+        def get_loglr():
+            # update parameters in primary_model,
+            # other_models will be updated in total_loglr,
+            # because other_models need to handle margin_params
+            for lbl, _ in self.primary_model.items():
+                p = {param.subname: self.current_params[param.fullname]
+                     for param in self.param_map[lbl]}
+            p.update(rec)
+            self.primary_model.update(**p)
+            return self.total_loglr()
+
         rec = self.primary_model.reconstruct(
-                seed=seed, set_loglr=self.total_loglr())
+                rec=rec, seed=seed, set_loglr=get_loglr())
         # the primary model's reconstruct doesn't know lognl in other models
         rec['loglikelihood'] += self.others_lognl()
         return rec
