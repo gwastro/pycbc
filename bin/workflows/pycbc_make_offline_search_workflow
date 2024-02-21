@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/kkacanja/miniconda3/envs/astro2/bin/python3.8
 
 # Copyright (C) 2013-2023, Ian W. Harry, Alex Nitz, Marton Tapai,
 #     Gareth Cabourn Davies
@@ -56,6 +56,80 @@ def ifo_combos(ifos):
         combinations = itertools.combinations(ifos, i)
         for ifocomb in combinations:
             yield ifocomb
+
+def finalize(container, workflow, finalize_workflow):
+    # Create the final log file
+    log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
+                            extension='.html', directory=rdir['workflow'])
+
+    gen_file_html = wf.File(workflow.ifos, 'WORKFLOW-GEN', workflow.analysis_time,
+                            extension='.html', directory=rdir['workflow'])
+
+    # Create a page to contain a dashboard link
+    dashboard_file = wf.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
+                             extension='.html', directory=rdir['workflow'])
+    dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
+    kwds = {'title': "Pegasus Dashboard",
+            'caption': "Link to Pegasus Dashboard",
+            'cmd': "PYCBC_SUBMIT_DAX_ARGV", }
+    save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
+
+    # Create pages for the submission script to write data
+    wf.makedir(rdir['workflow/dax'])
+    wf.makedir(rdir['workflow/input_map'])
+    wf.makedir(rdir['workflow/output_map'])
+    wf.makedir(rdir['workflow/planning'])
+
+    wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
+                                                             rdir.base))
+
+    container += workflow
+    container += finalize_workflow
+
+    container.add_subworkflow_dependancy(workflow, finalize_workflow)
+
+    container.save()
+
+    open_box_result_path = rdir['open_box_result']
+    if os.path.exists(open_box_result_path):
+        os.chmod(open_box_result_path, 0o0700)
+    else:
+        pass
+
+    logging.info("Written dax.")
+
+    # Close the log and flush to the html file
+    logging.shutdown()
+    with open(wf_log_file.storage_path, "r") as logfile:
+        logdata = logfile.read()
+    log_str = """
+    <p>Workflow generation script created workflow in output directory: %s</p>
+    <p>Workflow name is: %s</p>
+    <p>Workflow generation script run on host: %s</p>
+    <pre>%s</pre>
+    """ % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
+    kwds = {'title': 'Workflow Generation Log',
+            'caption': "Log of the workflow script %s" % sys.argv[0],
+            'cmd': ' '.join(sys.argv), }
+    save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+
+    # Add the command line used to a specific file
+    args_to_output = [sys.argv[0]]
+    for arg in sys.argv[1:]:
+        if arg.startswith('--'):
+            # This is an option, add tab
+            args_to_output.append('  ' + arg)
+        else:
+            # This is a parameter, add two tabs
+            args_to_output.append('    ' + arg)
+
+    gen_str = '<pre>' + ' \\\n'.join(args_to_output) + '</pre>'
+    kwds = {'title': 'Workflow Generation Command',
+            'caption': "Command used to generate the workflow.",
+            'cmd': ' '.join(sys.argv), }
+    save_fig_with_metadata(gen_str, gen_file_html.storage_path, **kwds)
+    layout.single_layout(rdir['workflow'], ([dashboard_file, gen_file_html, log_file_html]))
+    sys.exit(0)
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
@@ -183,6 +257,17 @@ ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
                                    datafind_files, splitbank_files_fd,
                                    output_dir, tags=['full_data'])
 
+
+if workflow.cp.has_option('workflow', 'stop-after-inspiral'):
+    stop_after_inspiral = workflow.cp.getboolean('workflow', 'stop-after-inspiral')
+    if stop_after_inspiral:
+        logging.info("Finalization will be stopped after inspiral.")
+        finalize(container, workflow, finalize_workflow)
+    else:
+        stop_after_inspiral = False
+else:
+    stop_after_inspiral = False
+
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                            insps, output_dir,
                                            tags=['full_data'])
@@ -263,6 +348,16 @@ for ifo in ifo_ids.keys():
     no_fg_exc_files[ifo] = wf.setup_sngls(
         workflow, hdfbank, inspcomb, statfiles, final_veto_file,
         final_veto_name, output_dir, tags=ctagsngl)
+
+if workflow.cp.has_option('workflow', 'stop-after-statmap'):
+    stop_after_statmap = workflow.cp.getboolean('workflow', 'stop-after-statmap')
+    if stop_after_statmap:
+        logging.info("Finalization will be stopped after statmap.")
+        finalize(container, workflow, finalize_workflow)
+    else:
+        stop_after_statmap = False
+else:
+    stop_after_statmap = False
 
 ifo_sets = list(ifo_combos(ifo_ids.keys()))
 if analyze_singles:
@@ -836,72 +931,4 @@ wf.make_versioning_page(
 )
 
 ############################ Finalization ####################################
-
-# Create the final log file
-log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
-                        extension='.html', directory=rdir['workflow'])
-
-gen_file_html = wf.File(workflow.ifos, 'WORKFLOW-GEN', workflow.analysis_time,
-                        extension='.html', directory=rdir['workflow'])
-
-# Create a page to contain a dashboard link
-dashboard_file = wf.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
-                         extension='.html', directory=rdir['workflow'])
-dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
-kwds = { 'title' : "Pegasus Dashboard",
-         'caption' : "Link to Pegasus Dashboard",
-         'cmd' : "PYCBC_SUBMIT_DAX_ARGV", }
-save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
-
-# Create pages for the submission script to write data
-wf.makedir(rdir['workflow/dax'])
-wf.makedir(rdir['workflow/input_map'])
-wf.makedir(rdir['workflow/output_map'])
-wf.makedir(rdir['workflow/planning'])
-
-wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
-                         rdir.base))
-
-container += workflow
-container += finalize_workflow
-
-container.add_subworkflow_dependancy(workflow, finalize_workflow)
-
-container.save()
-
-# Protect the open box results folder
-os.chmod(rdir['open_box_result'], 0o0700)
-
-logging.info("Written dax.")
-
-# Close the log and flush to the html file
-logging.shutdown()
-with open (wf_log_file.storage_path, "r") as logfile:
-    logdata=logfile.read()
-log_str = """
-<p>Workflow generation script created workflow in output directory: %s</p>
-<p>Workflow name is: %s</p>
-<p>Workflow generation script run on host: %s</p>
-<pre>%s</pre>
-""" % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
-kwds = { 'title' : 'Workflow Generation Log',
-         'caption' : "Log of the workflow script %s" % sys.argv[0],
-         'cmd' :' '.join(sys.argv), }
-save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
-
-# Add the command line used to a specific file
-args_to_output = [sys.argv[0]]
-for arg in sys.argv[1:]:
-    if arg.startswith('--'):
-        # This is an option, add tab
-        args_to_output.append('  ' + arg)
-    else:
-        # This is a parameter, add two tabs
-        args_to_output.append('    ' + arg)
-
-gen_str = '<pre>' + ' \\\n'.join(args_to_output) + '</pre>'
-kwds = { 'title' : 'Workflow Generation Command',
-         'caption' : "Command used to generate the workflow.",
-         'cmd' :' '.join(sys.argv), }
-save_fig_with_metadata(gen_str, gen_file_html.storage_path, **kwds)
-layout.single_layout(rdir['workflow'], ([dashboard_file, gen_file_html, log_file_html]))
+finalize(container, workflow, finalize_workflow)
