@@ -729,7 +729,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
     def others_lognl(self):
         """Calculate the combined lognl from all others sub-models."""
         total_others_lognl = 0
-        for _, model in self.other_models.items():
+        for model in self.other_models:
             total_others_lognl += model.lognl
         return total_others_lognl
 
