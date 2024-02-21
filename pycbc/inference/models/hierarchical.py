@@ -734,12 +734,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         return total_others_lognl
 
     def _loglikelihood(self):
-        # update parameters in primary_model,
-        # other_models will be updated in total_loglr,
-        # because other_models need to handle margin_params
-        self.primary_model.update(
-            **{p.subname: self.current_params[p.fullname]
-                for p in self.param_map[self.primary_lbl]})
+        for lbl, model in self.submodels.items():
+            # update the model with the current params. This is done here
+            # instead of in `update` because waveform transforms are not
+            # applied until the loglikelihood function is called
+            model.update(**{p.subname: self.current_params[p.fullname]
+                            for p in self.param_map[lbl]})
 
         # calculate the combined loglikelihood
         logl = self.total_loglr() + self.primary_model.lognl + \
@@ -930,7 +930,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # other_models will be updated in total_loglr,
             # because other_models need to handle margin_params
             p = {param.subname: self.current_params[param.fullname]
-                  for param in self.param_map[self.primary_lbl]}
+                 for param in self.param_map[self.primary_lbl]}
             p.update(rec)
             self.primary_model.update(**p)
             return self.total_loglr()
