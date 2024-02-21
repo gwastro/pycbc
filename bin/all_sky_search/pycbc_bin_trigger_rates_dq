@@ -3,208 +3,162 @@
 """
 import logging
 import argparse
-import pycbc
-import pycbc.events
-from pycbc.events import stat as pystat
-from pycbc.types.timeseries import load_timeseries
+
 import numpy as np
 import h5py as h5
-from pycbc.io.hdf import HFile, SingleDetTriggers
+
+from ligo.segments import segmentlist
+
+import pycbc
+from pycbc.events import stat as pystat
+from pycbc.events.veto import (select_segments_by_definer,
+                               start_end_to_segments,
+                               segments_to_start_end)
+from pycbc.types.optparse import MultiDetOptionAction
+from pycbc.io.hdf import SingleDetTriggers
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
-parser.add_argument("--ifo", type=str, required=True)
+parser.add_argument("--template-bins-file", required=True)
 parser.add_argument("--trig-file", required=True)
+parser.add_argument("--flag-file", required=True)
+parser.add_argument("--flag-name", required=True)
+parser.add_argument("--analysis-segment-file", required=True)
+parser.add_argument("--analysis-segment-name", required=True)
+parser.add_argument("--gating-windows", nargs='+',
+                    action=MultiDetOptionAction,
+                    help="Seconds to reweight before and after the central"
+                         "time of each gate. Given as detector-values pairs, "
+                         "e.g. H1:-1,2.5 L1:-1,2.5 V1:0,0")
 parser.add_argument("--stat-threshold", type=float, default=1.,
                     help="Only consider triggers with --sngl-ranking value "
                     "above this threshold")
-parser.add_argument("--f-lower", type=float, default=15.,
-                    help='Enforce a uniform low frequency cutoff to '
-                         'calculate template duration over the bank')
-parser.add_argument("--dq-file", required=True, nargs='+')
-parser.add_argument("--dq-channel", required=False, type=str,
-                    help='name of channel to read in from the provided '
-                         'dq file. Required if file is .hdf5 format')
-parser.add_argument('--bank-file', help='hdf format template bank file',
-                    required=True)
-parser.add_argument('--background-bins', nargs='+',
-                    help='list of background bin format strings')
-parser.add_argument('--n-time-bins', type=int, default=200,
-                    help='Number of time bins to use')
 parser.add_argument("--output-file", required=True)
-parser.add_argument("--prune-number", type=int, default=0,
-                    help="Number of loudest events to remove from each "
-                         "split histogram, default 0")
-parser.add_argument("--prune-window", type=float, default=0.1,
-                    help="Time (s) to remove all triggers around a trigger "
-                         "which is loudest in each split, default 0.1s")
 
-pystat.insert_statistic_option_group(parser,
-        default_ranking_statistic='single_ranking_only')
+pystat.insert_statistic_option_group(
+    parser, default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 logging.info('Start')
 
-ifo = args.ifo
+ifo, flag_name = args.flag_name.split(':')
 
-# Setup a data mask to remove any triggers with SNR below threshold
-# This works as a pre-filter as SNR is always greater than or equal
-# to sngl_ranking, except in the psdvar case, where it could increase.
-
-with HFile(args.trig_file, 'r') as trig_file:
-    n_triggers_orig = trig_file[f'{ifo}/snr'].size
-    logging.info("Trigger file has %d triggers", n_triggers_orig)
-    logging.info('Generating trigger mask')
-    if f'{ifo}/psd_var_val' in trig_file:
-        idx, _, _ = trig_file.select(
-            lambda snr, psdvar: snr / psdvar ** 0.5 >= args.stat_threshold,
-            f'{ifo}/snr',
-            f'{ifo}/psd_var_val',
-            return_indices=True
-        )
-    else:
-        # psd_var_val may not have been calculated
-        idx, _ = trig_file.select(
-            lambda snr: snr >= args.stat_threshold,
-            f'{ifo}/snr',
-            return_indices=True
-        )
-    data_mask = np.zeros(n_triggers_orig, dtype=bool)
-    data_mask[idx] = True
-
-logging.info("Getting %s triggers from file with pre-cut SNR > %.3f",
-             idx.size, args.stat_threshold)
+if args.gating_windows:
+    gate_times = []
+    with h5.File(args.trig_file, 'r') as trig_file:
+        logging.info('Getting gated times')
+        try:
+            gating_types = trig_file[f'{ifo}/gating'].keys()
+            for gt in gating_types:
+                gate_times += list(trig_file[f'{ifo}/gating/{gt}/time'][:])
+            gate_times = np.unique(gate_times)
+        except KeyError:
+            logging.warning('No gating found in trigger file')
 
 trigs = SingleDetTriggers(
     args.trig_file,
-    None,
-    None,
-    None,
-    None,
     ifo,
-    premask=data_mask
+    filter_rank=args.sngl_ranking,
+    filter_threshold=args.stat_threshold,
 )
 
 # Extract the data we actually need from the data structure:
 tmplt_ids = trigs.template_id
 trig_times = trigs.end_time
 stat = trigs.get_ranking(args.sngl_ranking)
-trig_times_int = trig_times.astype(np.int64)
 
-del trigs
+# Get the template bins
+bin_tids_dict = {}
+with h5.File(args.template_bins_file, 'r') as f:
+    ifo_grp = f[ifo]
+    for bin_name in ifo_grp.keys():
+        bin_tids_dict[bin_name] = ifo_grp[bin_name]['tids'][:]
 
-n_triggers = tmplt_ids.size
+# get analysis segments
+analysis_segs = select_segments_by_definer(
+    args.analysis_segment_file,
+    segment_name=args.analysis_segment_name,
+    ifo=ifo)
 
-logging.info("Applying %s > %.3f cut", args.sngl_ranking,
-             args.stat_threshold)
-keep = stat >= args.stat_threshold
-tmplt_ids = tmplt_ids[keep]
-trig_times = trig_times[keep]
-trig_times_int = trig_times_int[keep]
-logging.info("Removed %d triggers, %d remain",
-             n_triggers - tmplt_ids.size, tmplt_ids.size)
+livetime = abs(analysis_segs)
 
-dq_logl = np.array([])
-dq_times = np.array([])
+# get flag segments
+flag_segs = select_segments_by_definer(args.flag_file,
+                                       segment_name=flag_name,
+                                       ifo=ifo)
 
-for filename in args.dq_file:
-    logging.info('Reading DQ file %s', filename)
-    dq_data = load_timeseries(filename, group=args.dq_channel)
-    dq_logl = np.concatenate((dq_logl, dq_data[:]))
-    dq_times = np.concatenate((dq_times, dq_data.sample_times))
-    del dq_data
+# construct gate segments
+gating_segs = segmentlist([])
+if args.gating_windows:
+    gating_windows = args.gating_windows[ifo].split(',')
+    gate_before = float(gating_windows[0])
+    gate_after = float(gating_windows[1])
+    if gate_before > 0 or gate_after < 0:
+        raise ValueError("Gating window values must be negative "
+                         "before gates and positive after gates.")
+    if not (gate_before == 0 and gate_after == 0):
+        gating_segs = start_end_to_segments(
+                gate_times + gate_before,
+                gate_times + gate_after
+        ).coalesce()
 
-n_bins = args.n_time_bins
-percentiles = np.linspace(0, 100, n_bins+1)
-bin_times = np.zeros(n_bins)
-dq_percentiles = np.percentile(dq_logl, percentiles)[1:]
+# make segments into mutually exclusive dq states
+gating_segs = gating_segs & analysis_segs
+flag_segs = flag_segs & analysis_segs
 
-# seconds bin tells what bin each second ends up
-seconds_bin = np.array([n_bins - np.sum(dq_percentiles >= dq_ll)
-                        for dq_ll in dq_logl]).astype(np.int64)
-del dq_percentiles
+dq_state_segs_dict = {}
+dq_state_segs_dict[2] = gating_segs
+dq_state_segs_dict[1] = flag_segs - gating_segs
+dq_state_segs_dict[0] = analysis_segs - flag_segs - gating_segs
 
-# bin times tells how much time ends up in each bin
-bin_times = np.array([np.sum(seconds_bin == i)
-                      for i in range(n_bins)]).astype(np.float64)
-full_time = float(len(seconds_bin))
-times_nz = (bin_times > 0)
-del dq_logl
 
-# create a dict to look up dq percentile at any time
-dq_percentiles_time = dict(zip(dq_times, seconds_bin/n_bins))
-del dq_times
+# utility function to get the dq state at a given time
+def dq_state_at_time(t):
+    for state, segs in dq_state_segs_dict.items():
+        if t in segs:
+            return state
+    return None
 
-with h5.File(args.bank_file, 'r') as bank:
-    if args.background_bins:
-        logging.info('Sorting bank into bins')
-        data = {
-            'mass1': bank['mass1'][:],
-            'mass2': bank['mass2'][:],
-            'spin1z': bank['spin1z'][:],
-            'spin2z': bank['spin2z'][:],
-            'f_lower': np.ones_like(bank['mass1'][:]) * args.f_lower
-            }
-        locs_dict = pycbc.events.background_bin_from_string(
-                                                   args.background_bins, data)
-        del data
-        locs_names = [b.split(':')[0] for b in args.background_bins]
-    else:
-        locs_dict = {'all_bin': np.arange(0, len(bank['mass1'][:]), 1)}
-        locs_names = ['all_bin']
 
-if args.prune_number > 0:
-    for bin_name in locs_names:
-        logging.info('Pruning bin %s', bin_name)
-        bin_locs = locs_dict[bin_name]
-        inbin = np.isin(tmplt_ids, bin_locs)
-        trig_times_bin = trig_times[inbin]
-        trig_stats_bin = stat[inbin]
-
-        for j in range(args.prune_number):
-            max_stat_arg = np.argmax(trig_stats_bin)
-            remove = abs(trig_times_bin[max_stat_arg] - trig_times) \
-                         < args.prune_window
-            logging.info("Prune %d: pruning %d triggers", j, sum(remove))
-            remove_inbin = abs(trig_times_bin[max_stat_arg]
-                               - trig_times_bin) < args.prune_window
-            stat[remove] = 0
-            trig_stats_bin[remove_inbin] = 0
-    keep = np.flatnonzero(stat)
-    logging.info("%d triggers removed through pruning", keep.size)
-    trig_times_int = trig_times_int[keep]
-    tmplt_ids = tmplt_ids[keep]
-    del stat
-    del keep
-
-del trig_times
-
+# compute and save results
 with h5.File(args.output_file, 'w') as f:
-    for bin_name in locs_names:
-        bin_locs = locs_dict[bin_name]
-        inbin = np.isin(tmplt_ids, bin_locs)
-        trig_times_bin = trig_times_int[inbin]
-        trig_percentile = np.array([dq_percentiles_time[t]
-                                    for t in trig_times_bin])
-        logging.info('Processing %d triggers in bin %s',
-                     len(trig_percentile), bin_name)
+    ifo_grp = f.create_group(ifo)
+    all_bin_grp = ifo_grp.create_group('bins')
+    all_dq_grp = ifo_grp.create_group('dq_segments')
 
-        (counts, bins) = np.histogram(trig_percentile, bins=(percentiles)/100)
-        counts = counts.astype(np.float64)
-        rates = np.zeros_like(bin_times)
-        rates[times_nz] = counts[times_nz]/bin_times[times_nz]
-        mean_rate = len(trig_percentile) / full_time
-        if mean_rate > 0.:
-            rates = rates / mean_rate
+    # setup data for each template bin
+    for bin_name, bin_tids in bin_tids_dict.items():
+        bin_grp = all_bin_grp.create_group(bin_name)
+        bin_grp['tids'] = bin_tids
 
-        logging.info('Writing rates to output file %s', args.output_file)
-        grp = f.create_group(bin_name)
-        grp['rates'] = rates
-        grp['locs'] = locs_dict[bin_name]
+        # get the dq states of the triggers in this bin
+        inbin = np.isin(tmplt_ids, bin_tids)
+        trig_times_bin = trig_times[inbin]
+        trig_states = np.array([dq_state_at_time(t) for t in trig_times_bin])
 
-    f.attrs['names'] = locs_names
+        # calculate the dq rates in this bin
+        dq_rates = np.zeros(3, dtype=np.float64)
+        for state, segs in dq_state_segs_dict.items():
+            frac_eff = np.mean(trig_states == state)
+            frac_dt = abs(segs) / livetime
+            dq_rates[state] = frac_eff / frac_dt
+        bin_grp['dq_rates'] = dq_rates
+        bin_grp['num_triggers'] = len(trig_times_bin)
+
+    # save dq state segments
+    for dq_state, segs in dq_state_segs_dict.items():
+        name = f'dq_state_{dq_state}'
+        dq_grp = all_dq_grp.create_group(name)
+        starts, ends = segments_to_start_end(segs)
+        dq_grp['segment_starts'] = starts
+        dq_grp['segment_ends'] = ends
+        dq_grp['livetime'] = abs(segs)
+
+    f.attrs['stat'] = f'{ifo}-dq_stat_info'
+    f.attrs['sngl_ranking'] = args.sngl_ranking
+    f.attrs['sngl_ranking_threshold'] = args.stat_threshold
 
 logging.info('Done!')

@@ -57,9 +57,14 @@ else:
 if filter_func is not None:
     logging.info('Will filter trigs using %s', filter_func)
 # Filter will be stored as self.mask attribute of sngls instance
-sngls = SingleDetTriggers(args.single_trig_file, args.bank_file,
-                          args.veto_file, args.segment_name, filter_func,
-                          args.detector)
+sngls = SingleDetTriggers(
+    args.single_trig_file,
+    args.detector,
+    bank_file=args.bank_file,
+    veto_file=args.veto_file,
+    segment_name=args.segment_name,
+    filter_func=filter_func,
+)
 
 logging.info('Calculating stat')
 rank_method = stat.get_statistic_from_opts(args, [args.detector])

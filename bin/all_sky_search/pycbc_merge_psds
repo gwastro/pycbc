@@ -21,8 +21,8 @@ import logging, argparse, numpy, h5py, pycbc.types
 from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
 parser.add_argument('--psd-files', nargs='+')
 parser.add_argument("--output-file", required=True)
 

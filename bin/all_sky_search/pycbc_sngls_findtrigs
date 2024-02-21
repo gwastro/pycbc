@@ -12,7 +12,7 @@ from pycbc.types.optparse import MultiDetOptionAction
 from pycbc import init_logging
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", action='count')
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action='version',
                     version=pycbc.version.git_verbose_msg)
 # Basic file input options
@@ -139,10 +139,10 @@ for tnum in template_ids:
     trigger_keep_ids = cuts.apply_trigger_cuts(trigs, trigger_cut_dict,
                                                statistic=rank_method)
     tids_full = tids_uncut[trigger_keep_ids]
-    logging.info('%s:%s', tnum, len(tids_uncut))
+    logging.debug('%s:%s', tnum, len(tids_uncut))
     if len(tids_full) < len(tids_uncut):
-        logging.info("%s triggers cut",
-                     len(tids_uncut) - len(tids_full))
+        logging.debug("%s triggers cut",
+                      len(tids_uncut) - len(tids_full))
 
     n_tot_trigs = tids_full.size
     if not n_tot_trigs: continue

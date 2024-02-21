@@ -4,13 +4,13 @@ import shutil, uuid, os.path, atexit
 from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat, ranking, cuts
 import pycbc.version
-from pycbc import pool
+from pycbc import pool, init_logging
 from numpy.random import seed, shuffle
 from pycbc.io.hdf import ReadByTemplate
 from pycbc.types.optparse import MultiDetOptionAction
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", action="count")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     help="Optional veto file. Triggers within veto segments "
@@ -78,9 +78,7 @@ args.segment_name = sum(args.segment_name, [])
 args.veto_files = sum(args.veto_files, [])
 args.trigger_files = sum(args.trigger_files, [])
 
-if args.verbose:
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
-
+init_logging(args.verbose)
 
 def parse_template_range(num_templates, rangestr):
     part = int(rangestr.split('/')[0])
@@ -181,7 +179,7 @@ if args.randomize_template_order:
     shuffle(template_ids)
     template_ids = template_ids[tmin:tmax]
 else:
-    template_ids = numpy.array([range(tmin, tmax)])
+    template_ids = numpy.arange(tmin, tmax)
 
 original_bank_len = len(template_ids)
 
@@ -238,7 +236,7 @@ def process_template(tnum):
     times_full = {}
     sds_full = {}
     tids_full = {}
-    logging.info('Obtaining trigs for template %i ..' % (tnum))
+    logging.debug('Obtaining trigs for template %i ..' % (tnum))
     for i, sngl in zip(trigs.ifos, trigs.singles):
         # Apply cuts to triggers
         tids_uncut = sngl.set_template(tnum)
@@ -247,7 +245,7 @@ def process_template(tnum):
 
         tids_full[i] = tids_uncut[trigger_keep_ids]
         times_full[i] = sngl['end_time'][trigger_keep_ids]
-        logging.info('%s:%s', i, len(tids_uncut))
+        logging.debug('%s:%s', i, len(tids_uncut))
         if len(tids_full[i]) < len(tids_uncut):
             logging.info("%s triggers cut",
                          len(tids_uncut) - len(tids_full[i]))

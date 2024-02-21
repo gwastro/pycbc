@@ -328,13 +328,13 @@ def insert_snr_optimizer_options(parser):
     opt_opt_group.add_argument('--snr-opt-include-candidate',
         action='store_true',
         help='Include parameters of the candidate event in the initialized '
-             'array for the optimizer. Only relevant for --optimizer pso or '
-             'differential_evolution')
+             'array for the optimizer. Only relevant for --snr-opt-method pso '
+             'or differential_evolution')
     opt_opt_group.add_argument('--snr-opt-seed',
         default='42',
         help='Seed to supply to the random generation of initial array to '
-             'pass to the optimizer. Only relevant for --optimizer pso or '
-             'differential_evolution. Set to ''random'' for a random seed')
+             'pass to the optimizer. Only relevant for --snr-opt-method pso '
+             'or differential_evolution. Set to ''random'' for a random seed')
 
     # For each optimizer, add the possible options
     for optimizer, option_subdict in option_dict.items():
@@ -345,7 +345,7 @@ def insert_snr_optimizer_options(parser):
             option_name = f"--snr-opt-{optimizer_name}-{opt_name}"
             opt_opt_group.add_argument(option_name,
                 type=float,
-                help=f'Only relevant for --optimizer {optimizer}: ' +
+                help=f'Only relevant for --snr-opt-method {optimizer}: ' +
                      opt_help_default[0] +
                      f' Default = {opt_help_default[1]}')
 
@@ -381,21 +381,3 @@ def check_snr_optimizer_options(args, parser):
         key_name = f'snr_opt_{optimizer_name}_{key}'
         if not getattr(args, key_name):
             setattr(args, key_name, value[1])
-
-
-def args_to_string(args):
-    """
-    Convert the supplied arguments for SNR optimization config into
-    a string - this is to be used when running subprocesses
-    """
-    argstr = f'--snr-opt-method {args.snr_opt_method} '
-    optimizer_name = args.snr_opt_method.replace('_', '-')
-    if optimizer_name == 'differential-evolution':
-        optimizer_name = 'di'
-    for opt in option_dict[args.snr_opt_method]:
-        option_fullname = f'--snr-opt-{optimizer_name}-{opt}'
-        key_name = f'snr_opt_{optimizer_name}_{opt}'
-        option_value = getattr(args, key_name)
-        argstr += f'{option_fullname} {option_value} '
-
-    return argstr

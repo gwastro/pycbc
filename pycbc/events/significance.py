@@ -32,6 +32,8 @@ import lal
 import numpy as np
 from pycbc.events import trigger_fits as trstats
 
+logger = logging.getLogger('pycbc.events.significance')
+
 
 def count_n_louder(bstat, fstat, dec,
                    **kwargs):  # pylint:disable=unused-argument
@@ -280,8 +282,8 @@ def positive_float(inp):
     """
     fl_in = float(inp)
     if fl_in < 0:
-        logging.warning("Value provided to positive_float is less than zero, "
-                        "this is not allowed")
+        logger.warning("Value provided to positive_float is less than zero, "
+                       "this is not allowed")
         raise ValueError
     return fl_in
 
@@ -406,8 +408,8 @@ def digest_significance_options(combo_keys, args):
                 # Allow options for detector combos that are not actually
                 # used/required for a given job. Such options have
                 # no effect, but emit a warning for (e.g.) diagnostic checks
-                logging.warning("Key %s not used by this code, uses %s",
-                                combo, combo_keys)
+                logger.warning("Key %s not used by this code, uses %s",
+                               combo, combo_keys)
                 significance_dict[combo] = copy.deepcopy(_default_opt_dict)
             significance_dict[combo][argument_key] = conv_func(value)
 
@@ -442,8 +444,8 @@ def apply_far_limit(far, significance_dict, combo=None):
         if significance_dict[combo]['far_limit'] == 0:
             return far_out
         far_limit_str = f"{significance_dict[combo]['far_limit']:.3e}"
-        logging.info("Applying FAR limit of %s to %s events",
-                     far_limit_str, combo)
+        logger.info("Applying FAR limit of %s to %s events",
+                    far_limit_str, combo)
         far_out = np.maximum(far, significance_dict[combo]['far_limit'])
     else:
         # IFO combo supplied as an array, by e.g. pycbc_add_statmap
@@ -453,8 +455,8 @@ def apply_far_limit(far, significance_dict, combo=None):
             if significance_dict[ifo_combo]['far_limit'] == 0:
                 continue
             far_limit_str = f"{significance_dict[ifo_combo]['far_limit']:.3e}"
-            logging.info("Applying FAR limit of %s to %s events",
-                         far_limit_str, ifo_combo)
+            logger.info("Applying FAR limit of %s to %s events",
+                        far_limit_str, ifo_combo)
             this_combo_idx = combo == ifo_combo.encode('utf-8')
             far_out[this_combo_idx] = np.maximum(
                 far[this_combo_idx],
