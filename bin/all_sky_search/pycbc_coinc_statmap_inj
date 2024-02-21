@@ -8,10 +8,11 @@ import argparse, h5py, logging, itertools, copy, pycbc.io, numpy, lal
 from pycbc.events import veto, coinc, significance
 import pycbc.version
 import pycbc.conversions as conv
+from pycbc import init_logging
 
 parser = argparse.ArgumentParser()
 # General required options
-parser.add_argument('--verbose', action='count')
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--cluster-window', type=float, default=10,
@@ -19,48 +20,38 @@ parser.add_argument('--cluster-window', type=float, default=10,
                          'events [default=10s]')
 parser.add_argument('--zero-lag-coincs', nargs='+',
                     help='Files containing the injection zerolag coincidences')
-parser.add_argument('--mixed-coincs-inj-full', nargs='+',
-                    help='Files containing the mixed injection/clean data '
-                         'time slides')
-parser.add_argument('--mixed-coincs-full-inj', nargs='+',
-                    help='Files containing the mixed clean/injection data '
-                         'time slides')
 parser.add_argument('--full-data-background',
                     help='background file from full data for use in analyzing '
                          'injection coincs')
 parser.add_argument('--veto-window', type=float, default=.1,
                     help='Time around each zerolag trigger to window out '
                          '[default=.1s]')
-parser.add_argument('--ranking-statistic-threshold', type=float,
-                    help='Minimum value of the ranking statistic to calculate'
-                         ' a unique inclusive background.')
 parser.add_argument('--ifos', nargs='+',
                     help='List of ifos used in these coincidence files')
 significance.insert_significance_option_group(parser)
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
+init_logging(args.verbose)
+
 significance.check_significance_options(args, parser)
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
-
-ifo_key = ''.join(args.ifos)
-significance_dict = significance.digest_significance_options([ifo_key], args)
 
 window = args.cluster_window
 logging.info("Loading coinc zerolag triggers")
 zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos=args.ifos)
+
+if 'ifos' in zdata.attrs:
+    ifos = zdata.attrs['ifos'].split(' ')
+    logging.info('using ifos from file {}'.format(args.zero_lag_coincs[0]))
+else:
+    ifos = args.ifos
+    logging.info('using ifos from command line input')
+
+ifo_key = ''.join(ifos)
+significance_dict = significance.digest_significance_options([ifo_key], args)
+
 zdata = zdata.cluster(window)
-
-logging.info("Loading coinc full inj triggers")
-fidata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_full_inj,
-                                      ifos=args.ifos).cluster(window)
-
-logging.info("Loading coinc inj full triggers")
-ifdata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_inj_full,
-                                      ifos=args.ifos).cluster(window)
 
 f = h5py.File(args.output_file, "w")
 
@@ -68,7 +59,7 @@ f.attrs['num_of_ifos'] = zdata.attrs['num_of_ifos']
 f.attrs['pivot'] = zdata.attrs['pivot']
 f.attrs['fixed'] = zdata.attrs['fixed']
 f.attrs['timeslide_interval'] = zdata.attrs['timeslide_interval']
-f.attrs['ifos'] = ' '.join(sorted(args.ifos))
+f.attrs['ifos'] = ' '.join(sorted(ifos))
 
 # Copy over the segment for coincs and singles
 for key in zdata.seg.keys():
@@ -99,78 +90,27 @@ f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
-    _, fnlouder_exc = significance.get_n_louder(
+
+    _, fg_far_exc = significance.get_far(
         back_stat,
         zdata.stat,
         dec_fac,
+        background_time,
         **significance_dict[ifo_key])
-    ifar_exc = background_time / (fnlouder_exc + 1)
+
+    fg_far_exc = significance.apply_far_limit(
+        fg_far_exc,
+        significance_dict,
+        combo=ifo_key,
+    )
+
+    ifar_exc = 1. / fg_far_exc
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
 
-    logging.info('calculating injection backgrounds')
-    ifotimes = numpy.array([zdata.data['%s/time' % ifo] for ifo in args.ifos])
-    ftimes = ifotimes.mean(axis=0)
-    start, end = ftimes - args.veto_window, ftimes + args.veto_window
-
-    fnlouder = numpy.zeros(len(ftimes), dtype=numpy.float32)
-    ifar = numpy.zeros(len(ftimes), dtype=numpy.float32)
-    fap = numpy.zeros(len(ftimes), dtype=numpy.float32)
-
-    # We are relying on the injection data set to be the first one,
-    # this is determined
-    # by the argument order to pycbc_coinc_findtrigs
-    pivot_ifo = zdata.attrs['pivot']
-    ifsort = ifdata.data['%s/time' % pivot_ifo].argsort()
-    ifsorted = ifdata.data['%s/time' % pivot_ifo][ifsort]
-    if_start, if_end = numpy.searchsorted(ifsorted, start), \
-                       numpy.searchsorted(ifsorted, end)
-
-    fisort = fidata.data['%s/time' % pivot_ifo].argsort()
-    fisorted = fidata.data['%s/time' % pivot_ifo][fisort]
-    fi_start, fi_end = numpy.searchsorted(fisorted, start), \
-                       numpy.searchsorted(fisorted, end)
-
-    # most of the triggers are here so presort to speed up later sorting
-    bsort = back_stat.argsort()
-    dec_fac = dec_fac[bsort]
-    back_stat = back_stat[bsort]
-
-    for i, fstat in enumerate(zdata.stat):
-        # If the trigger is quiet enough, then don't calculate a separate
-        # background type, as it would not be significantly different
-        if args.ranking_statistic_threshold and \
-                    fstat < args.ranking_statistic_threshold:
-            fnlouder[i] = fnlouder_exc[i]
-            ifar[i] = ifar_exc[i]
-            fap[i] = fap_exc[i]
-            continue
-
-        v1 = fisort[fi_start[i]:fi_end[i]]
-        v2 = ifsort[if_start[i]:if_end[i]]
-
-        inj_stat = numpy.concatenate(
-                     [ifdata.stat[v2], fidata.stat[v1], back_stat])
-        inj_dec = numpy.concatenate(
-                     [numpy.repeat(1, len(v1) + len(v2)), dec_fac])
-
-        _, fnlouder[i] = significance.get_n_louder(
-            inj_stat,
-            fstat,
-            inj_dec,
-            **significance_dict[ifo_key])
-
-        ifar[i] = background_time / (fnlouder[i] + 1)
-        fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
-        logging.info('processed %s, %s' % (i, fstat))
-
-    f['foreground/ifar'] = conv.sec_to_year(ifar)
-    f['foreground/fap'] = fap
 else:
     f['foreground/ifar_exc'] = numpy.array([])
     f['foreground/fap_exc'] = numpy.array([])
-    f['foreground/ifar'] = numpy.array([])
-    f['foreground/fap'] = numpy.array([])
 
 logging.info("Done")

@@ -21,7 +21,7 @@ matplotlib.use('Agg')
 import lal
 import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
 from pycbc.results import followup
-from pycbc.events import stat
+from pycbc.events import stat as pystat
 from pycbc.io import hdf
 
 
@@ -51,6 +51,9 @@ trig_args.add_argument("--n-loudest", type=int, default=None,
 trig_args.add_argument("--trigger-id", type=int, default=None,
     help="Use the trigger with this ID in the HDF file. Must supply either "
          "this option or --n-loudest.")
+parser.add_argument('--title',
+    help="Title for the produced snippet. If not given, will default to "
+         "pre-sets according to the options given")
 parser.add_argument('--include-summary-page-link', action='store_true',
     help="If given, will include a link to the DQ summary page")
 parser.add_argument('--include-gracedb-link', action='store_true',
@@ -59,7 +62,7 @@ parser.add_argument('--include-gracedb-link', action='store_true',
 parser.add_argument('--significance-file',
     help="If given, will search for this trigger's id in the file to see if "
          "stat and p_astro values exists for this trigger.")
-stat.insert_statistic_option_group(parser,
+pystat.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
 
 
@@ -67,29 +70,45 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-# Get the single-ifo triggers
-sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
-                args.veto_file, args.veto_segment_name, None, args.instrument)
-
-rank_method = stat.get_statistic_from_opts(args, [args.instrument])
 if args.trigger_id is not None:
-    sngl_file.mask = [args.trigger_id]
-    trig_id = args.trigger_id
-    sngl_file.mask_to_n_loudest_clustered_events(rank_method, n_loudest=1)
-    stat = sngl_file.stat[0]
+    # Make a mask which is just the trigger of interest
+    mask = numpy.array([args.trigger_id])
+else:
+    mask = None
+
+# Get the single-ifo triggers
+sngl_file = hdf.SingleDetTriggers(
+    args.single_trigger_file,
+    args.instrument,
+    bank_file=args.bank_file,
+    veto_file=args.veto_file,
+    segment_name=args.veto_segment_name,
+    premask=mask,
+)
+
+rank_method = pystat.get_statistic_from_opts(args, [args.instrument])
+
+if args.trigger_id is not None:
+    # Mask already applied
+    pass
 elif args.n_loudest is not None:
     # Cluster by a ranking statistic and retain only the loudest n clustered
     # triggers
-    sngl_file.mask_to_n_loudest_clustered_events(rank_method,
-                                                 n_loudest=args.n_loudest+1)
-    # Restrict to only the nth loudest, instead of all triggers up to nth
-    # loudest
-    stat = sngl_file.stat
-    l = stat.argsort()
-    stat = stat[l[0]]
-    sngl_file.mask = sngl_file.mask[l[0]]
+    sngl_file.mask_to_n_loudest_clustered_events(
+        rank_method,
+        n_loudest=args.n_loudest+1
+    )
 else:
     raise ValueError("Must give --n-loudest or --trigger-id.")
+
+sds = rank_method.single(sngl_file.trig_dict())
+stat = rank_method.rank_stat_single((sngl_file.ifo, sds))
+if args.n_loudest is not None:
+    # Restrict to only the nth loudest, instead of all triggers up to nth
+    # loudest
+    l = stat.argsort()
+    stat = stat[l[0]]
+    sngl_file.apply_mask(l[0])
 
 # make a table for the single detector information ############################
 time = sngl_file.end_time
@@ -135,8 +154,13 @@ else:
 
 if args.ranking_statistic in ["quadsum", "single_ranking_only"]:
     stat_name = sngl_stat_name
+    stat_name_long = sngl_stat_name
 else:
-    stat_name = '_with_'.join(ranking_statistic, sngl_ranking)
+    # Name would be too long - just call it ranking statistic
+    stat_name = 'Ranking Statistic'
+    stat_name_long = ' with '.join(
+        [args.ranking_statistic, args.sngl_ranking]
+    )
 
 headers.append(stat_name)
 
@@ -194,15 +218,16 @@ html = pycbc.results.dq.redirect_javascript + \
         str(pycbc.results.static_table(data, headers))
 ###############################################################################
 
+# Set up default titles and the captions for the file
 if args.n_loudest:
     title = 'Parameters of single-detector event ranked %s' \
         % (args.n_loudest + 1)
-    caption = 'Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, stat_name)
+    caption = 'Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, stat_name_long)
 else:
     title = 'Parameters of single-detector event'
     caption = 'Parameters of the single-detector event. The figures below show the mini-followup data for this event.'
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
                         cmd = ' '.join(sys.argv),
-                        title = title,
+                        title = args.title if args.title else title,
                         caption = caption)

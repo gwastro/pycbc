@@ -177,7 +177,7 @@ python -m mpi4py `which pycbc_live` \
 --max-batch-size 16777216 \
 --output-path output \
 --day-hour-output-prefix \
---sngl-ranking newsnr_sgveto \
+--sngl-ranking newsnr_sgveto_psdvar_threshold \
 --ranking-statistic phasetd \
 --statistic-files statHL.hdf statHV.hdf statLV.hdf \
 --sgchisq-snr-threshold 4 \
@@ -195,13 +195,30 @@ python -m mpi4py `which pycbc_live` \
 --src-class-eff-to-lum-distance 0.74899 \
 --src-class-lum-distance-to-delta -0.51557 -0.32195 \
 --run-snr-optimization \
---enable-single-detector-background \
+--snr-opt-extra-opts \
+    "--snr-opt-method differential_evolution \
+    --snr-opt-di-maxiter 50 \
+    --snr-opt-di-popsize 100 \
+    --snr-opt-include-candidate " \
+--sngl-ifar-est-dist conservative \
 --single-newsnr-threshold 9 \
 --single-duration-threshold 7 \
 --single-reduced-chisq-threshold 2 \
 --single-fit-file single_trigger_fits.hdf \
---sngl-ifar-est-dist conservative \
+--psd-variation \
 --verbose
+
+# If you would like to use the pso optimizer, change --optimizer to pso
+#  and include these arguments while removing other optimizer args.
+#  You will need to install the pyswarms package into your environment.
+# --snr-opt-extra-opts \
+#   "--snr-opt-method pso \
+#   --snr-opt-pso-iters 5 \
+#   --snr-opt-pso-particles 250 \
+#   --snr-opt-pso-c1 0.5 \
+#   --snr-opt-pso-c2 2.0 \
+#   --snr-opt-pso-w 0.01 \
+#   --snr-opt-include-candidate " \
 
 # note that, at this point, some SNR optimization processes may still be
 # running, so the checks below may ignore their results

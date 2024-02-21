@@ -66,7 +66,28 @@ class LogFormatter(logging.Formatter):
         return s
 
 
-def init_logging(verbose=False, format='%(asctime)s %(message)s'):
+def add_common_pycbc_options(parser):
+    """
+    Common utility to add standard options to each PyCBC executable.
+
+    Parameters
+    ----------
+    parser : argparse.ArgumentParser
+        The argument parser to which the options will be added
+    """
+    group = parser.add_argument_group(
+        title="PyCBC common options",
+        description="Common options for PyCBC executables.",
+    )
+    group.add_argument('-V', '--verbose', action='count', default=0,
+                       help='Add verbosity to logging. Adding the option '
+                            'multiple times makes logging progressively '
+                            'more verbose, e.g. --verbose or -V provides '
+                            'logging at the info level, but -VV or '
+                            '--verbose --verbose provides debug logging.')
+
+def init_logging(verbose=False,
+                 format='%(asctime)s %(levelname)s : %(message)s'):
     """Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
@@ -78,8 +99,7 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
         What level to set the verbosity level to. Accepts either a boolean
         or an integer representing the level to set. If True/False will set to
         ``logging.INFO``/``logging.WARN``. For higher logging levels, pass
-        an integer representing the level to set (see the ``logging`` module
-        for details). Default is ``False`` (``logging.WARN``).
+        an integer representing the level to set. (1 = INFO, 2 = DEBUG).
     format : str, optional
         The format to use for logging messages.
     """
@@ -96,15 +116,11 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
 
     signal.signal(signal.SIGUSR1, sig_handler)
 
-    if not verbose:
-        initial_level = logging.WARN
-    elif int(verbose) == 1:
-        initial_level = logging.INFO
-    else:
-        initial_level = int(verbose)
-
+    # See https://docs.python.org/3/library/logging.html#levels
+    # for log level definitions
     logger = logging.getLogger()
-    logger.setLevel(initial_level)
+    verbose_int = 0 if verbose is None else int(verbose)
+    logger.setLevel(logging.WARNING - verbose_int * 10)  # Initial setting
     sh = logging.StreamHandler()
     logger.addHandler(sh)
     sh.setFormatter(LogFormatter(fmt=format))

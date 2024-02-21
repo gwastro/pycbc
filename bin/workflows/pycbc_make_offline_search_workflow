@@ -34,8 +34,7 @@ import os, argparse, logging
 import configparser as ConfigParser
 from ligo import segments
 import numpy, lal, datetime, itertools
-from pycbc.results import create_versioning_page, static_table, layout
-from pycbc.results.versioning import save_fig_with_metadata
+from pycbc.results import static_table, layout, save_fig_with_metadata
 from pycbc.results.metadata import html_escape
 
 
@@ -58,16 +57,17 @@ def ifo_combos(ifos):
         for ifocomb in combinations:
             yield ifocomb
 
-
-# Log to the screen until we know where the output file is
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-    level=logging.INFO)
-
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument('--verbose', action='count',
+    help="Incrementally add more verbosity")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+# By default, we do logging.info, each --verbose adds a level of verbosity
+logging_level = args.verbose + 1 if args.verbose else 1
+pycbc.init_logging(logging_level)
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, args.workflow_name + '-main')
@@ -128,7 +128,8 @@ save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 # Get segments and find the data locations
 sci_seg_name = 'science'
 science_seg_file = wf.get_segments_file(workflow, sci_seg_name, 'segments-science',
-                                        rdir['analysis_time/segment_data'])
+                                        rdir['analysis_time/segment_data'],
+                                        tags=['science'])
 
 ssegs = {}
 for ifo in workflow.ifos:
@@ -146,13 +147,15 @@ datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
 final_veto_name = 'vetoes'
 final_veto_file = wf.get_segments_file(workflow, final_veto_name,
                                        'segments-vetoes',
-                                       rdir['analysis_time/segment_data'])
+                                       rdir['analysis_time/segment_data'],
+                                       tags=['veto'])
 
 # Get dq segments from veto definer and calculate data quality timeseries
 dq_flag_name = 'dq_flag'
 dq_segment_file = wf.get_flag_segments_file(workflow, dq_flag_name,
                                       'segments-dq',
-                                      rdir['analysis_time/segment_data'])
+                                      rdir['analysis_time/segment_data'],
+                                      tags=['dq'])
 
 # Template bank stuff
 hdfbank = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
@@ -185,21 +188,17 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                            tags=['full_data'])
 
 # setup sngl trigger distribution fitting jobs
-# 'statfiles' is list of files used in calculating coinc statistic
+# 'statfiles' is list of files used in calculating statistic
 # 'dqfiles' is the subset of files containing data quality information
 statfiles = []
-dqfiles = []
-dqfile_labels = []
-dq_labels = workflow.cp.get_subsections('workflow-data_quality')
-for dq_label in dq_labels:
-    dq_label_files = wf.setup_dq_reranking(workflow, dq_label, insps, hdfbank,
-                                       analyzable_segs, analyzable_file,
-                                       dq_segment_file,
-                                       output_dir='dq',
-                                       tags=['full_data'])
-    statfiles += dq_label_files
-    dqfiles += dq_label_files
-    dqfile_labels += len(dq_label_files) * [dq_label]
+
+dqfiles, dqfile_labels = wf.setup_dq_reranking(workflow, insps,
+                                               hdfbank, analyzable_file,
+                                               analyzable_name,
+                                               dq_segment_file,
+                                               output_dir='dq',
+                                               tags=['full_data'])
+statfiles += dqfiles
 
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name,
@@ -279,20 +278,29 @@ for ifocomb in ifo_sets:
     else:
         ordered_ifo_list = ifocomb[0]
         coinctag= '1det'
-    other_ifo_keys = list(no_fg_exc_files.keys())
-    other_ifo_keys.remove(ordered_ifo_list)
-    ctagcomb = ['full_data', coinctag]
-    other_bg_files = {ctype: no_fg_exc_files[ctype]
-                      for ctype in other_ifo_keys}
-    final_bg_files[ordered_ifo_list] = wf.setup_exclude_zerolag(
-        workflow,
-        no_fg_exc_files[ordered_ifo_list],
-        wf.FileList(other_bg_files.values()),
-        output_dir, ordered_ifo_list,
-        tags=ctagcomb
-    )
 
-combined_bg_file = wf.setup_combine_statmap(
+    if len(ifo_sets) == 1:
+        # Just one event type - pass it through
+        final_bg_files[ordered_ifo_list] = no_fg_exc_files[ordered_ifo_list]
+    else:
+        # Combining the statmap files, multiple possible event types
+        other_ifo_keys = list(no_fg_exc_files.keys())
+        other_ifo_keys.remove(ordered_ifo_list)
+        ctagcomb = ['full_data', coinctag]
+        other_bg_files = {ctype: no_fg_exc_files[ctype]
+                          for ctype in other_ifo_keys}
+        final_bg_files[ordered_ifo_list] = wf.setup_exclude_zerolag(
+            workflow,
+            no_fg_exc_files[ordered_ifo_list],
+            wf.FileList(other_bg_files.values()),
+            output_dir, ordered_ifo_list,
+            tags=ctagcomb
+        )
+
+if len(ifo_sets) == 1:
+    combined_bg_file = no_fg_exc_files[ordered_ifo_list]
+else:
+    combined_bg_file = wf.setup_combine_statmap(
                                 workflow,
                                 wf.FileList(final_bg_files.values()),
                                 wf.FileList([]),
@@ -446,7 +454,8 @@ for insp_file in full_insps:
         wf.setup_single_det_minifollowups\
             (workflow, insp_file, hdfbank, insp_files_seg_file,
              data_analysed_name, trig_generated_name, 'daxes', currdir,
-             veto_file=censored_veto, veto_segment_name='closed_box',
+             statfiles=wf.FileList(statfiles),
+             fg_file=censored_veto, fg_name='closed_box',
              tags=insp_file.tags + [subsec])
 
 ##################### COINC FULL_DATA plots ###################################
@@ -458,6 +467,7 @@ ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
                                     rdir['open_box_result'],
                                     tags=combined_bg_file.tags + ['open_box'],
                                     executable='page_ifar_catalog')
+
 table = wf.make_foreground_table(workflow, combined_bg_file,
                                  hdfbank, rdir['open_box_result'],
                                  singles=insps, extension='.html',
@@ -466,6 +476,17 @@ table = wf.make_foreground_table(workflow, combined_bg_file,
 fore_xmlall = wf.make_foreground_table(workflow, combined_bg_file,
                     hdfbank, rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlall"])
+
+if workflow.cp.has_option_tags('workflow-minifollowups',
+                               'prepare-gracedb-uploads', ''):
+    # Need to get absolute path here
+    upload_path = os.path.join(workflow.out_dir, 'upload_data')
+    wf.setup_upload_prep_minifollowups(workflow, combined_bg_file, fore_xmlall,
+                                       full_insps, psd_files, hdfbank, insp_files_seg_file,
+                                       data_analysed_name, trig_generated_name,
+                                       'daxes', upload_path,
+                                       tags=combined_bg_file.tags)
+
 fore_xmlloudest = wf.make_foreground_table(workflow, combined_bg_file,
                     hdfbank, rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
@@ -524,9 +545,11 @@ for key in final_bg_files:
         closed_page = [(snrifar_cb, ifar_cb)]
     else:
         closed_page = [(snrifar_cb,)]
-    table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
-                                     singles=insps, extension='.html',
-                                     tags=bg_file.tags)
+    if len(ifo_sets) > 1:
+        # If there is only one ifo_set, then this table has already been made
+        table = wf.make_foreground_table(workflow, bg_file, hdfbank, open_dir,
+                                         singles=insps, extension='.html',
+                                         tags=bg_file.tags)
 
     detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
     layout.two_column_layout(open_dir, detailed_page)
@@ -537,23 +560,25 @@ for key in final_bg_files:
 #################### Plotting of data quality results #########################
 
 # DQ log likelihood plots
-for dqf,dql in zip(dqfiles,dqfile_labels):
-    outdir = rdir[f'data_quality/{dqf.ifo}_trigger_rates_{dql}']
-    wf.make_dq_trigger_rate_plot(workflow, [dqf], outdir, tags=[dql,'full_data'])
+for dqf, dql in zip(dqfiles, dqfile_labels):
+    ifo = dqf.ifo
+    outdir = rdir[f'data_quality/{dqf.ifo}_DQ_results']
 
-    outdir = rdir[f'data_quality/{dqf.ifo}_percentiles_{dql}']
-    wf.make_dq_percentile_plot(workflow, [dqf], outdir, tags=[dql,'full_data'])
+    # plot rates when flag was on
+    wf.make_dq_flag_trigger_rate_plot(workflow, dqf, dql, outdir, tags=[dql])
 
-# DQ background binning plot
-if workflow.cp.has_option_tags('workflow-data_quality', 'background-bins',
-                                tags=None):
-    background_bins = workflow.cp.get_opt_tags('bin_trigger_rates_dq',
-                                               'background-bins',tags=None)
-    bank_tags = workflow.cp.get_subsections('plot_bank')
-    if len(bank_tags) == 0: bank_tags=['bank']
-    for b_tag in bank_tags:
-        wf.make_template_plot(workflow, hdfbank, rdir['data_quality'],
-                              bins=background_bins, tags=['dq_bins',b_tag])
+    # make table of dq segment info
+    wf.make_dq_segment_table(workflow, dqf, outdir, tags=[dql])
+
+    # plot background bins
+    background_bins = workflow.cp.get_opt_tags(
+        'bin_templates', 'background-bins', tags=[ifo])
+    wf.make_template_plot(workflow, hdfbank, outdir,
+                          bins=background_bins,
+                          tags=[ifo, 'dq_bins'] + bank_tags)
+
+    # make table of template bin info
+    wf.make_template_bin_table(workflow, dqf, outdir, tags=[ifo])
 
 ############################## Setup the injection runs #######################
 
@@ -610,7 +635,6 @@ for inj_file, tag in zip(inj_files, inj_tags):
         curr_out = wf.setup_interval_coinc_inj(
             workflow,
             hdfbank,
-            full_insps,
             inspcomb,
             statfiles,
             final_bg_files[ordered_ifo_list],
@@ -804,10 +828,12 @@ ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
                         file_url='file://' + ini_file_path)])
 layout.single_layout(base, ini_file)
 
-
 # Create versioning information
-create_versioning_page(rdir['workflow/version'], container.cp)
-
+wf.make_versioning_page(
+    workflow,
+    container.cp,
+    rdir['workflow/version'],
+)
 
 ############################ Finalization ####################################
 

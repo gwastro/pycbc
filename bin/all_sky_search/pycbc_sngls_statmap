@@ -6,7 +6,7 @@ with producing the combined foreground and background triggers.
 """
 
 import argparse, h5py, itertools
-import lal, logging, numpy
+import lal, logging, numpy, copy
 from pycbc.events import veto, coinc
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import significance
@@ -34,6 +34,7 @@ class fw(object):
 
 parser = argparse.ArgumentParser()
 # General required options
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--sngls-files', nargs='+',
@@ -41,7 +42,6 @@ parser.add_argument('--sngls-files', nargs='+',
                          'information.')
 parser.add_argument('--ifos', nargs=1,
                     help='List of ifos used in these coincidence files')
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--cluster-window', type=float, default=10,
                     help='Length of time window in seconds to cluster coinc '
                          'events [default=10s]')
@@ -49,6 +49,11 @@ parser.add_argument('--veto-window', type=float, default=.1,
                     help='Time around each zerolag trigger to window out '
                          '[default=.1s]')
 significance.insert_significance_option_group(parser)
+parser.add_argument('--hierarchical-removal-ifar-threshold',
+                    type=float, default=0.5,
+                    help="Threshold to hierarchically remove foreground "
+                         "triggers with IFAR (years) above this value "
+                         "[default=0.5yr]")
 parser.add_argument('--hierarchical-removal-window', type=float, default=1.0,
                     help='Time around each trigger to window out for a very '
                          'louder trigger in the hierarchical removal '
@@ -69,14 +74,8 @@ parser.add_argument('--hierarchical-removal-against', type=str,
                          'triggers that are louder than either the "inclusive"'
                          ' (little-dogs-in) background, or the "exclusive" '
                          '(little-dogs-out) background. [default="none"]')
-parser.add_argument('--hierarchical-removal-ifar-thresh', type=float,
-                    default=100,
-                    help="Minimum IFAR for a foreground event to be "
-                         "hierarchically removed from background of quieter "
-                         "events (years) [default=100yr]")
 parser.add_argument('--output-file')
 args = parser.parse_args()
-
 
 significance.check_significance_options(args, parser)
 
@@ -97,6 +96,7 @@ else :
                      "inclusive or exclusive. Use with --help for more "
                      "information.")
 
+
 pycbc.init_logging(args.verbose)
 
 logging.info("Loading triggers")
@@ -110,14 +110,7 @@ logging.info("We have %s triggers" % len(all_trigs.stat))
 logging.info("Clustering triggers")
 all_trigs = all_trigs.cluster(args.cluster_window)
 
-# For now, all triggers are both in the foreground and background
-fore_locs = numpy.flatnonzero(all_trigs.timeslide_id == 0)
-back_locs = numpy.flatnonzero(all_trigs.timeslide_id == 0)
-
 fg_time = float(all_trigs.attrs['foreground_time'])
-exc_veto_time = (len(back_locs) - len(back_locs)) * args.veto_window
-fg_time_exc = fg_time - exc_veto_time
-
 
 logging.info("Dumping foreground triggers")
 f = fw(args.output_file)
@@ -134,47 +127,99 @@ for key in all_trigs.seg.keys():
 f['segments/foreground_veto/start'] = numpy.array([0])
 f['segments/foreground_veto/end'] = numpy.array([0])
 for k in all_trigs.data:
-    f['foreground/' + k] = all_trigs.data[k][fore_locs]
-    f['background/' + k] = all_trigs.data[k][back_locs]
-    f['background_exc/' + k] = all_trigs.data[k][back_locs]
-
+    f['foreground/' + k] = all_trigs.data[k]
+    f['background/' + k] = all_trigs.data[k]
 
 logging.info("Estimating FAN from background statistic values")
 # Ranking statistic of foreground and background
-fore_stat = all_trigs.stat[fore_locs]
-back_stat = all_trigs.stat[back_locs]
-back_stat_exc = all_trigs.stat[back_locs]
-
-bkg_dec_facs = all_trigs.decimation_factor[back_locs]
-bkg_exc_dec_facs = all_trigs.decimation_factor[back_locs]
+fore_stat = back_stat = all_trigs.stat
+bkg_dec_facs = all_trigs.decimation_factor
 
 significance_dict = significance.digest_significance_options([ifo], args)
 
 # Cumulative array of inclusive background triggers and the number of
 # inclusive background triggers louder than each foreground trigger
-back_cnum, fnlouder = significance.get_n_louder(
+bg_far, fg_far = significance.get_far(
     back_stat,
     fore_stat,
     bkg_dec_facs,
+    fg_time,
     **significance_dict[ifo])
+
+fg_far = significance.apply_far_limit(
+    fg_far,
+    significance_dict,
+    combo=ifo,
+)
+bg_far = significance.apply_far_limit(
+    bg_far,
+    significance_dict,
+    combo=ifo,
+)
+
+bg_ifar = 1. / bg_far
+fg_ifar = 1. / fg_far
+
+f['background/ifar'] = conv.sec_to_year(bg_ifar)
+
+f.attrs['background_time'] = fg_time
+f.attrs['foreground_time'] = fg_time
+
+# Find foreground triggers with IFAR > the set limit and remove from
+# the exclusive background
+
+# Need to make copies for use as exclusive triggers as these will have
+# items removed from them, and don't want to overwrite the original
+fg_time_exc = fg_time
+fg_ifar_exc = copy.deepcopy(fg_ifar)
+bg_ifar_exc = copy.deepcopy(bg_ifar)
+back_stat_exc = copy.deepcopy(back_stat)
+bkg_exc_dec_facs = copy.deepcopy(bkg_dec_facs)
+
+# Record indices into all_trigs for the exclusive background
+back_exc_locs = numpy.arange(len(all_trigs.stat))
+
+# Remove trigs from 'exclusive' background if their IFAR is > livetime
+to_keep = bg_ifar_exc <= fg_time_exc
+
+n_removed = bg_ifar_exc.size - sum(to_keep)
+logging.info("Removing %s event(s) from exclusive background",
+             n_removed)
+
+back_stat_exc = back_stat_exc[to_keep]
+bkg_exc_dec_facs = bkg_exc_dec_facs[to_keep]
+back_exc_locs = back_exc_locs[to_keep]
 
 # Cumulative array of exclusive background triggers and the number
 # of exclusive background triggers louder than each foreground trigger
-back_cnum_exc, fnlouder_exc = significance.get_n_louder(
+bg_far_exc, fg_far_exc = significance.get_far(
     back_stat_exc,
     fore_stat,
     bkg_exc_dec_facs,
+    fg_time_exc,
     **significance_dict[ifo])
 
-bg_ifar = fg_time / (back_cnum + 1)
-fg_ifar = fg_time_exc / (fnlouder + 1)
-bg_ifar_exc = fg_time / (back_cnum_exc + 1)
-fg_ifar_exc = fg_time_exc / (fnlouder_exc + 1)
+fg_far_exc = significance.apply_far_limit(
+    fg_far_exc,
+    significance_dict,
+    combo=ifo)
 
-f['background/ifar'] = conv.sec_to_year(bg_ifar)
+bg_far_exc = significance.apply_far_limit(
+    bg_far_exc,
+    significance_dict,
+    combo=ifo)
+
+bg_ifar_exc = 1. / bg_far_exc
+fg_ifar_exc = 1. / fg_far_exc
+
+# Remove a small amount of time from the exclusive fore/background
+# time to account for this removal
+fg_time_exc -= n_removed * args.veto_window
+
+for k in all_trigs.data:
+    f['background_exc/' + k] = all_trigs.data[k][back_exc_locs]
+
 f['background_exc/ifar'] = conv.sec_to_year(bg_ifar_exc)
-f.attrs['background_time'] = fg_time
-f.attrs['foreground_time'] = fg_time
 f.attrs['background_time_exc'] = fg_time_exc
 f.attrs['foreground_time_exc'] = fg_time_exc
 
@@ -215,16 +260,20 @@ if args.max_hierarchical_removal != 0:
         ifar_louder = fg_ifar_exc
 else :
     # It doesn't matter if you choose inclusive or exclusive,
-    # the while loop below will break if none are louder than ifar_louder,
-    # or at the comparison
+    # the while loop below will break if none are louder than
+    # ifar_louder, or at the comparison
     # h_iterations == args.max_hierarchical_removal. But this avoids
     # a NameError
     ifar_louder = fg_ifar
 
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
-#          will happen when fnlouder has no elements that equal 0.
+#          will happen when ifar_louder has no elements that are
+#          above the set threshold, or a set maximum.
 
-while numpy.any(ifar_louder >= fg_time):
+# Convert threshold into seconds
+hier_ifar_thresh_s = args.hierarchical_removal_ifar_threshold * lal.YRJUL_SI
+
+while numpy.any(ifar_louder > hier_ifar_thresh_s):
     # If the user wants to stop doing hierarchical removals after a set
     # number of iterations then break when that happens.
     if (h_iterations == args.max_hierarchical_removal):
@@ -235,16 +284,14 @@ while numpy.any(ifar_louder >= fg_time):
     if h_iterations == 0:
         f['background_h%s/stat' % h_iterations] = back_stat
         f['background_h%s/ifar' % h_iterations] = conv.sec_to_year(bg_ifar)
-        f['background_h%s/timeslide_id' % h_iterations] = all_trigs.data['timeslide_id'][back_locs]
+        for k in all_trigs.data:
+            f['background_h%s/' % h_iterations + k] = all_trigs.data[k]
         f['foreground_h%s/stat' % h_iterations] = fore_stat
         f['foreground_h%s/ifar' % h_iterations] = conv.sec_to_year(fg_ifar)
         f['foreground_h%s/ifar_exc' % h_iterations] = conv.sec_to_year(fg_ifar_exc)
         f['foreground_h%s/fap' % h_iterations] = fap
-        f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
-        trig_id = all_trigs.data['%s/trigger_id' % ifo][fore_locs]
-        trig_time = all_trigs.data['%s/time' % ifo][fore_locs]
-        f['foreground_h%s/%s/time' % (h_iterations,ifo)] = trig_time
-        f['foreground_h%s/%s/trigger_id' % (h_iterations,ifo)] = trig_id
+        for k in all_trigs.data:
+            f['foreground_h%s/' % h_iterations + k] = all_trigs.data[k]
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
 
@@ -283,31 +330,39 @@ while numpy.any(ifar_louder >= fg_time):
     # Step 4: Re-cluster the triggers and calculate the inclusive ifar/fap
     logging.info("Clustering coinc triggers (inclusive of zerolag)")
     all_trigs = all_trigs.cluster(args.cluster_window)
-    fore_locs = all_trigs.timeslide_id == 0
 
-    logging.info("%s clustered foreground triggers" % fore_locs.sum())
+    logging.info("%s clustered foreground triggers" % len(all_trigs))
     logging.info("%s hierarchically removed foreground trigger(s)" % h_iterations)
-
-    back_locs = all_trigs.timeslide_id == 0
-    fore_locs = all_trigs.timeslide_id == 0
 
     logging.info("Dumping foreground triggers")
     logging.info("Dumping background triggers (inclusive of zerolag)")
     for k in all_trigs.data:
-         f['background_h%s/' % h_iterations + k] = all_trigs.data[k][back_locs]
+        f['background_h%s/' % h_iterations + k] = all_trigs.data[k]
 
     logging.info("Calculating FAN from background statistic values")
-    back_stat = all_trigs.stat[back_locs]
-    fore_stat = all_trigs.stat[fore_locs]
+    back_stat = fore_stat = all_trigs.stat
 
-    back_cnum, fnlouder = significance.get_n_louder(
+    bg_far, fg_far = significance.get_far(
         back_stat,
         fore_stat,
         numpy.ones_like(back_stat),
+        fg_time,
         **significance_dict[ifo])
 
-    bg_ifar = fg_time / (back_cnum + 1)
-    fg_ifar = fg_time / (fnlouder + 1)
+    fg_far = significance.apply_far_limit(
+        fg_far,
+        significance_dict,
+        combo=ifo,
+    )
+
+    bg_far = significance.apply_far_limit(
+        bg_far,
+        significance_dict,
+        combo=ifo,
+    )
+
+    bg_ifar = 1. / bg_far
+    fg_ifar = 1. / fg_far
 
     # Update the ifar_louder criteria depending on whether foreground
     # triggers are being removed via inclusive or exclusive background.
@@ -315,15 +370,22 @@ while numpy.any(ifar_louder >= fg_time):
         ifar_louder = fg_ifar
 
     # Exclusive background doesn't change when removing foreground triggers.
-    # So we don't have to take back_cnum_exc, just repopulate fg_ifar_exc
+    # So we don't have to take bg_far_exc, just repopulate fg_ifar_exc
     else:
-        _, fnlouder_exc = significance.get_n_louder(
+        _, fg_far_exc = significance.get_far(
             back_stat_exc,
             fore_stat,
             numpy.ones_like(back_stat_exc),
+            fg_time_exc,
             **significance_dict[ifo])
 
-        fg_ifar_exc = fg_time / (fnlouder_exc + 1)
+        fg_far_exc = significance.apply_far_limit(
+            fg_far_exc,
+            significance_dict,
+            combo=ifo,
+        )
+
+        fg_ifar_exc = 1. / fg_far_exc
 
         ifar_louder = fg_ifar_exc
 
@@ -334,7 +396,7 @@ while numpy.any(ifar_louder >= fg_time):
     f.attrs['background_time_h%s' % h_iterations] = fg_time
     f.attrs['foreground_time_h%s' % h_iterations] = fg_time
 
-    if fore_locs.sum() > 0:
+    if len(all_trigs) > 0:
         # Write ranking statistic to file just for downstream plotting code
         f['foreground_h%s/stat' % h_iterations] = fore_stat
 
@@ -356,9 +418,9 @@ while numpy.any(ifar_louder >= fg_time):
         # These don't change with the iterations but should be written at every
         # level.
 
-        f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
-        trig_id = all_trigs.data['%s/trigger_id' % ifo][fore_locs]
-        trig_time = all_trigs.data['%s/time' % ifo][fore_locs]
+        f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id']
+        trig_id = all_trigs.data['%s/trigger_id' % ifo]
+        trig_time = all_trigs.data['%s/time' % ifo]
         f['foreground_h%s/%s/time' % (h_iterations,ifo)] = trig_time
         f['foreground_h%s/%s/trigger_id' % (h_iterations,ifo)] = trig_id
     else :

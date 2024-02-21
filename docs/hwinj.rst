@@ -181,7 +181,7 @@ You can plot the ASCII waveform files with an X11 connection. It's strongly reco
 
 where ``${OUTPUT_PATH}`` is the path to the output plot.
 
-If you are using ``ssh`` or ``gsissh`` to log into a cluster, you can provide the ``-Y`` option to open an X11 connection. For example ::
+If you are using ``ssh`` to log into a cluster, you can provide the ``-Y`` option to open an X11 connection. For example ::
 
   gsissh -Y ldas-pcdev1.ligo.caltech.edu
 
@@ -202,7 +202,7 @@ Where ``${START}`` is the start of the injection. We kept the same PSD options (
 You can print out the recovered SNR and other parameters as follows ::
 
   echo `python -c "import numpy;from pycbc.io.hdf import SingleDetTriggers; \
-  h1_triggers=SingleDetTriggers('${INSPIRAL_FILE}',None, None, None, None, 'H1'); \
+  h1_triggers=SingleDetTriggers('${INSPIRAL_FILE}', 'H1'); \
   imax=numpy.argmax(h1_triggers.snr); max_snr=h1_triggers.snr[imax]; \
   time=h1_triggers.end_time[imax]; print(time, max_snr)"`
 

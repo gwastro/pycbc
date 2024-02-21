@@ -52,19 +52,26 @@ use('agg')
 
 # add options to command line
 parser = io.ResultsArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 # program-specific
 parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Be verbose")
 parser.add_argument("--plot-prior", nargs="+", type=str,
                     help="Plot the prior on the 1D marginal plots using the "
                          "given config file(s).")
 parser.add_argument("--prior-nsamples", type=int, default=10000,
                     help="The number of samples to use for plotting the "
                          "prior. Default is 10000.")
+parser.add_argument("--colors-multi-run", nargs="+", type=str,
+                    help="For multiple runs, provide colours to be used for successively. Default setting is to use the successive colours specified in matplotlib color cycle.")
+parser.add_argument("--fill-hist", action="store_true", default=False,
+                    help="Fill the 1D marginalized histograms")
+parser.add_argument("--hist-color", 
+                    help="Provide color for histogram outline. Default is black")
+parser.add_argument("--hist-fill-color", default='gray',
+                    help="Provide the fill_color for filled histograms. Default is gray")
 # add options for what plots to create
 option_utils.add_plot_posterior_option_group(parser)
 # scatter configuration
@@ -245,7 +252,10 @@ expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
 
 # get the color cycle to use
 color_cycle = [c['color'] for c in matplotlib.rcParams['axes.prop_cycle']]
-colors = itertools.cycle(color_cycle)
+if opts.colors_multi_run is not None:
+    colors = itertools.cycle(opts.colors_multi_run)
+else:
+    colors = itertools.cycle(color_cycle)
 
 # plot each input file
 logging.info("Plotting")
@@ -258,7 +268,10 @@ for (i, s) in enumerate(samples):
         axis_dict = None
 
     # get a default line color; this is used for the 1D marginal lines
-    linecolor = next(colors)
+    if opts.hist_color:
+        linecolor = opts.hist_color
+    else:
+        linecolor = next(colors)
     # set different colors depending on if one or more files was provided
     if len(opts.input_file) == 1:
         # make the hist color black or white, depending on if dark background
@@ -266,9 +279,15 @@ for (i, s) in enumerate(samples):
         if opts.mpl_style == 'dark_background':
             hist_color = 'white'
         else:
-            hist_color = 'black'
-        # make histograms filled if only one input file to plot
-        fill_color = 'gray'
+            if opts.hist_color:
+                hist_color = opts.hist_color
+            else:
+                hist_color = 'black'
+        # fill histogram if fill_hist is True
+        if opts.fill_hist:
+            fill_color = opts.hist_fill_color
+        else:
+            fill_color = None
         # make the default contour color white if plot density is on
         if not opts.contour_color and opts.plot_density:
             contour_color = 'white'

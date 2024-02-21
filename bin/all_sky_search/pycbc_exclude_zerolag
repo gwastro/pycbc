@@ -10,9 +10,9 @@ from pycbc.events import veto, coinc, significance
 import pycbc.conversions as conv
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-file', type=str,
     help="Coinc statmap file to be recalculated based on foreground removal")
 parser.add_argument('--other-statmap-files', nargs='+',
@@ -94,21 +94,24 @@ for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
 
 logging.info('Recalculating IFARs')
-bnlouder, fnlouder = significance.get_n_louder(
+bg_far, fg_far = significance.get_far(
     filtered_trigs.data['stat'],
     f_in['foreground/stat'][:],
     filtered_trigs.data['decimation_factor'],
+    f_in.attrs['background_time_exc'],
     **significance_dict[all_ifo_key])
-# In principle exc background time should be recalculated
-# However we expect exclude zerolag to be a (very) small correction
-fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
-bg_time_exc = conv.sec_to_year(f_in.attrs['background_time_exc'])
-fg_ifar_exc = bg_time_exc / (fnlouder + 1)
-bg_ifar_exc = bg_time_exc / (bnlouder + 1)
+
+fg_far = significance.apply_far_limit(fg_far, significance_dict, combo=all_ifo_key)
+bg_far = significance.apply_far_limit(bg_far, significance_dict, combo=all_ifo_key)
+
+fg_ifar_exc = 1. / fg_far
+bg_ifar_exc = 1. / bg_far
 
 logging.info('Writing updated ifars to file')
-f_out['foreground/ifar_exc'][:] = fg_ifar_exc
+f_out['foreground/ifar_exc'][:] = conv.sec_to_year(fg_ifar_exc)
+f_out['background_exc/ifar'][:] = conv.sec_to_year(bg_ifar_exc)
+
+fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
 f_out['foreground/fap_exc'][:] = 1 - np.exp(-fg_time_exc / fg_ifar_exc)
-f_out['background_exc/ifar'][:] = bg_ifar_exc
 
 logging.info("Done!")

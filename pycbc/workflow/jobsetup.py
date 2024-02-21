@@ -194,6 +194,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
     # Get the times that can be analysed and needed data lengths
     data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job)
 
+    exe_tags = curr_exe_job.tags
     # Loop over science segments and set up jobs
     for curr_seg in science_segs:
         ########### (2) ############
@@ -245,21 +246,15 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             # make a single job. This catches the case of a split template bank
             # where I run a number of jobs to cover a single range of time.
 
-            # Sort parent jobs to ensure predictable order
-            sorted_parents = sorted(curr_parent,
-                                    key=lambda fobj: fobj.tagged_description)
-            for pnum, parent in enumerate(sorted_parents):
+            for parent in curr_parent:
                 if len(curr_parent) != 1:
-                    tag = ["JOB%d" %(pnum,)]
-                else:
-                    tag = []
-                # To ensure output file uniqueness I add a tag
+                    bank_tag = [t for t in parent.tags if 'bank' in t.lower()]
+                    curr_exe_job.update_current_tags(bank_tag + exe_tags)
                 # We should generate unique names automatically, but it is a
                 # pain until we can set the output names for all Executables
                 node = curr_exe_job.create_node(job_data_seg, job_valid_seg,
                                                 parent=parent,
-                                                df_parents=curr_dfouts,
-                                                tags=tag)
+                                                df_parents=curr_dfouts)
                 workflow.add_node(node)
                 curr_out_files = node.output_files
                 # FIXME: Here we remove PSD files if they are coming through.

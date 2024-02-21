@@ -36,6 +36,7 @@ from ligo import segments
 from ligo.segments.utils import fromsegwizard
 
 from pycbc import __version__
+from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -55,6 +56,8 @@ def _init_combined_file(h5file, attributes, datasets, **compression_kw):
     h5file.attrs.update(attributes)
     # create datasets
     for dset, (shape, dtype) in datasets.items():
+        if "template_id" in dset:
+            continue
         h5file.create_dataset(dset, shape=shape, dtype=dtype,
                               **compression_kw)
 
@@ -207,6 +210,11 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
                     else:
                         ifo_event_id_pos = None
 
+                    # Template ID becomes unhelpful in the merged file.
+                    # This will be handled separately.
+                    if "template_id" in dset:
+                        continue
+
                     # merge dataset
                     position[dset] += _merge_dataset(
                         h5in[dset], h5out[dset], position[dset],
@@ -217,6 +225,12 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
             # only read the search datasets once
             while search_datasets:
                 dataset_names.remove(search_datasets.pop())
+
+        template_ids = template_hash_to_id(trigger_file=h5out, bank_path=args.bank_file)
+        h5out.create_dataset("network/template_id",
+                             data=template_ids,
+                             compression="gzip",
+                             compression_opts=9)
 
     if verbose:
         print("Merged triggers written to {}".format(outputfile))
@@ -279,6 +293,11 @@ def bin_events(inputfile, bins, outdir, filetag,
                             compression_opts=old.compression_opts,
                         )
                         bar.update()
+                    elif isinstance(old, h5py.Group):
+                        # If search group, copy it all over
+                        if "search" in old.name:
+                            h5in.copy(h5in[old.name], h5out, old.name)
+                            bar.update()
                 for ifo in ifos:
                     idx = numpy.in1d(h5in[ifo]["event_id"][()], ifo_index[ifo])
                     for old in h5in[ifo].values():
@@ -290,6 +309,10 @@ def bin_events(inputfile, bins, outdir, filetag,
                                 compression_opts=old.compression_opts,
                             )
                             bar.update()
+                        elif isinstance(old, h5py.Group):
+                            if "search" in old.name:
+                                h5in.copy(h5in[old.name], h5out, old.name)
+                                bar.update()
             bar.close()
             if verbose:
                 print("{} written to {}".format(bin_, outf))
@@ -415,6 +438,11 @@ parser.add_argument(
     help="read in listed trigger files",
 )
 parser.add_argument(
+    "--bank-file",
+    required=True,
+    help="full template bank file for mapping hashes to ids",
+)
+parser.add_argument(
     "-o",
     "--output-dir",
     default=os.getcwd(),
@@ -490,9 +518,6 @@ for i, j in enumerate(offtrials):
 vprint("-- Merging events")
 
 if args.short_slides and args.long_slides:
-    raise NotImplementedError
-
-elif args.short_slides and not args.long_slides:
     raise NotImplementedError
 
 else:

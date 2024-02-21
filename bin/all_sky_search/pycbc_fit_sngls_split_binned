@@ -22,14 +22,17 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from pycbc import events, bin_utils, results
+from pycbc.io import SingleDetTriggers
 from pycbc.events import triggers as trigs
 from pycbc.events import trigger_fits as trstats
 from pycbc.events import stat as pystat
 from pycbc.types.optparse import MultiDetOptionAction
+from pycbc.tmpltbank import bank_conversions
 import pycbc.version
 
 parser = argparse.ArgumentParser(usage="",
     description="Plot histograms of triggers split over various parameters")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file", required=True,
                     help="Input hdf5 file containing single triggers. "
                          "Required")
@@ -37,8 +40,8 @@ parser.add_argument("--bank-file", default=None, required=True,
                     help="hdf file containing template parameters. Required")
 parser.add_argument('--output-file', required=True,
                     help="Output image file. Required")
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--bin-param', default='template_duration',
+                    choices=bank_conversions.conversion_options,
                     help="Parameter for binning within plots, default "
                          "'template_duration'")
 parser.add_argument('--bin-spacing', choices=['linear', 'log'], default='log',
@@ -49,9 +52,11 @@ parser.add_argument('--num-bins', type=int, default=6,
 parser.add_argument('--max-bin-param', type=float, default=None,
                     help="Maximum allowed value of bin-param")
 parser.add_argument('--split-param-one', default='eta',
+                    choices=bank_conversions.conversion_options,
                     help="Parameter for splitting plot grid in y-direction, "
                          "default 'eta'")
 parser.add_argument('--split-param-two', default='chi_eff',
+                    choices=bank_conversions.conversion_options,
                     help="Parameter for splitting plot grid in x-direction, "
                          "default 'chi_eff'")
 parser.add_argument('--split-one-nbins', default=3, type=int,
@@ -82,6 +87,10 @@ parser.add_argument("--gating-veto-windows", nargs='+',
 parser.add_argument("--stat-fit-threshold", type=float, required=True,
                     help="Only fit triggers with statistic value above this "
                          "threshold. Required")
+parser.add_argument("--plot-lower-stat-limit", type=float, required=True,
+                    help="Plot triggers down to this value. Setting this too"
+                         "low will incur huge memory usage in a full search."
+                         "To avoid this, choose 5.5 or larger.")
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
@@ -96,6 +105,8 @@ pystat.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
 args = parser.parse_args()
 
+assert(args.stat_fit_threshold >= args.plot_lower_stat_limit)
+
 pycbc.init_logging(args.verbose)
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
@@ -103,56 +114,46 @@ trigf = h5py.File(args.trigger_file, 'r')
 
 logging.info('Opening template file: %s' % args.bank_file)
 bank = h5py.File(args.bank_file, 'r')
-logging.info('setting up template bank parameters')
-params = {
-        "mass1" : bank['mass1'][:],
-        "mass2" : bank['mass2'][:],
-        "spin1z": bank['spin1z'][:],
-        "spin2z": bank['spin2z'][:]
-}
+logging.info('Getting template bank parameters')
+
+# Calculate params needed
+usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
+
+params = {}
+for par in usedparams:
+    if par in ['template_duration', 'duration']:
+        logging.info('Reading duration from trigger file')
+        # Loop over template regions, return the first duration value from each region.
+        dur = []
+        for ref in trigf[args.ifo + '/template_duration_template'][:]:
+            dur.append(trigf[args.ifo + '/template_duration'][ref][0])
+        params['template_duration'] = np.array(dur)
+    else:
+        logging.info("Calculating %s from template parameters", par)
+        params[par] = bank_conversions.get_bank_property(
+            par, bank, np.arange(bank['mass1'].size))
+
 bank.close()
 
-# Only calculate params if needed
-usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
-extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
-             if par in usedparams]
-
-for ex_p in extparams:
-    if ex_p == 'template_duration':
-        logging.info('Reading duration from trigger file')
-        # List comprehension loops over templates; if a template has no triggers, accessing
-        # the 0th entry of its region reference will return zero due to a quirk of h5py.
-        params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]
-                                 for ref in trigf[args.ifo + '/template_duration_template'][:]])
-    else:
-        logging.info("Calculating " + ex_p + " from template parameters")
-        params[ex_p] = trigs.get_param(ex_p, args, params['mass1'],
-                                       params['mass2'], params['spin1z'],
-                                       params['spin2z'])
-
-# string formats for labels, logging etc.
-formats = {
-        "mchirp": '{:.2f}',
-        "eta": '{:.3f}',
-        "chi_eff": '{:.3f}',
-        'template_duration': '{:.0f}'
-}
-
-logging.info('setting up {}'.format(usedparams))
+logging.info('setting up %s bins', ', '.join(usedparams))
 sp_one_bin_input = (params[args.split_param_one].min(),
                     params[args.split_param_one].max(), args.split_one_nbins)
 sp_two_bin_input = (params[args.split_param_two].min(),
                     params[args.split_param_two].max(), args.split_two_nbins)
 if args.max_bin_param:
-    logging.info(('setting maximum {} value: '
-                  + formats[args.bin_param]).format(args.bin_param,
-                                                    args.max_bin_param))
+    logging.info(
+        'setting maximum %s value: %.3f',
+        args.bin_param,
+        args.max_bin_param
+    )
     pbin_upper_lim = float(args.max_bin_param)
 else:
     pbin_upper_lim = params[args.bin_param].max()
 
 # For templates with no triggers, the duration will be read as zero
 if args.bin_param == 'template_duration' and params[args.bin_param].min() == 0:
+    # Accessing the 0th entry of an empty region reference will return
+    # zero due to a quirk of h5py.
     logging.warn('WARNING: Some templates do not contain triggers')
     # Use the lowest nonzero template duration as lower limit for bins
     pbin_lower_lim = params[args.bin_param][params[args.bin_param] > 0].min()
@@ -161,7 +162,7 @@ else:
 
 bb_input = (pbin_lower_lim, pbin_upper_lim, args.num_bins)
 
-logging.info('splitting {} into bins'.format(args.bin_param))
+logging.info('splitting %s into bins', args.bin_param)
 if args.bin_spacing == 'log':
     assert pbin_lower_lim > 0
     pbins = bin_utils.LogarithmicBins(*bb_input)
@@ -198,10 +199,36 @@ for i, lower_2, upper_2 in zip(range(args.split_two_nbins),
 
 logging.info('Getting template boundaries from trigger file')
 boundaries = trigf[args.ifo + '/template_boundaries'][:]
+
+trigf.close()
+
+logging.info('Calculating single stat values from trigger file')
+trigs = SingleDetTriggers(
+    args.trigger_file,
+    args.ifo,
+    filter_rank=args.sngl_ranking,
+    filter_threshold=args.plot_lower_stat_limit,
+)
+# This is the direct pointer to the HDF file, used later on
+trigf = trigs.trigs_f
+
+stat = trigs.get_ranking(args.sngl_ranking)
+time = trigs.end_time
+
+logging.info('Processing template boundaries')
 max_boundary_id = np.argmax(boundaries)
 sorted_boundary_list = np.sort(boundaries)
 
-logging.info('Processing template boundaries')
+# In the two blocks of code that follows we are trying to figure out the index
+# ranges in the masked trigger lists corresponding to the "boundaries".
+# We will do this by walking over the boundaries in the order they're
+# stored in the file, adding in the number of triggers not removed by the
+# mask every time.
+
+# First step is to loop over the "boundaries" which gives the start position
+# of each block of triggers (corresponding to one template) in the full trigger
+# merge file.
+# Here we identify the end_idx for the triggers corresponding to each template.
 where_idx_end = np.zeros_like(boundaries)
 for idx, idx_start in enumerate(boundaries):
     if idx == max_boundary_id:
@@ -210,22 +237,41 @@ for idx, idx_start in enumerate(boundaries):
         where_idx_end[idx] = sorted_boundary_list[
             np.argmax(sorted_boundary_list == idx_start) + 1]
 
-logging.info('Calculating single stat values from trigger file')
-rank_method = pystat.get_statistic_from_opts(args, [args.ifo])
-stat = rank_method.get_sngl_ranking(trigf[args.ifo])
+# Next we need to map these start/stop indices in the full file, to the start
+# stop indices in the masked list of triggers. We do this by figuring out
+# how many triggers are in the masked list for each template in the order they
+# are stored in the trigger merge file, and keep a running sum.
+curr_count = 0
+mask_start_idx = np.zeros_like(boundaries)
+mask_end_idx = np.zeros_like(boundaries)
+for idx_start in sorted_boundary_list:
+    boundary_idx = np.argmax(boundaries == idx_start)
+    idx_end = where_idx_end[boundary_idx]
+    mask_start_idx[boundary_idx] = curr_count
+    curr_count += np.sum(trigs.mask[idx_start:idx_end])
+    mask_end_idx[boundary_idx] = curr_count
+
 
 if args.veto_file:
     logging.info('Applying DQ vetoes')
-    time = trigf[args.ifo + '/end_time'][:]
-    remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
-                         ifo=args.ifo, segment_name=args.veto_segment_name)
-    # Set stat to zero for triggers being vetoed: given that the fit threshold is
-    # >0 these will not be fitted or plotted.  Avoids complications from changing
-    # the number of triggers, ie changes of template boundary.
-    stat[remove] = np.zeros_like(remove)
-    time[remove] = np.zeros_like(remove)
-    logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
-                      remove.size, stat.size, args.veto_segment_name, args.veto_file))
+    remove, junk = events.veto.indices_within_segments(
+        time,
+        [args.veto_file],
+        ifo=args.ifo,
+        segment_name=args.veto_segment_name
+    )
+    # Set stat to zero for triggers being vetoed: given that the fit threshold
+    # is >0 these will not be fitted or plotted.  Avoids complications from
+    # changing the number of triggers, ie changes of template boundary.
+    stat[remove] = 0.
+    time[remove] = 0.
+    logging.info(
+        '%d out of %d trigs removed after vetoing with %s from %s',
+        remove.size,
+        stat.size,
+        args.veto_segment_name,
+        args.veto_file
+    )
 
 if args.gating_veto_windows:
     logging.info('Applying veto to triggers near gates')
@@ -236,19 +282,24 @@ if args.gating_veto_windows:
         raise ValueError("Gating veto window values must be negative before "
                          "gates and positive after gates.")
     if not (gveto_before == 0 and gveto_after == 0):
-        time = trigf[args.ifo + '/end_time'][:]
         autogate_times = np.unique(trigf[args.ifo + '/gating/auto/time'][:])
         if args.ifo + '/gating/file' in trigf:
             detgate_times = trigf[args.ifo + '/gating/file/time'][:]
         else:
             detgate_times = []
         gate_times = np.concatenate((autogate_times, detgate_times))
-        gveto_remove = events.veto.indices_within_times(time, gate_times + gveto_before,
-                                                        gate_times + gveto_after)
-        stat[gveto_remove] = np.zeros_like(gveto_remove)
-        time[gveto_remove] = np.zeros_like(gveto_remove)
-        logging.info('{} out of {} trigs removed after vetoing triggers near gates'.format(
-                          gveto_remove.size, stat.size))
+        gveto_remove = events.veto.indices_within_times(
+            time,
+            gate_times + gveto_before,
+            gate_times + gveto_after
+        )
+        stat[gveto_remove] = 0.
+        time[gveto_remove] = 0.
+        logging.info(
+            '%d out of %d trigs removed after vetoing triggers near gates',
+            gveto_remove.size,
+            stat.size
+        )
 
 for x in range(args.split_one_nbins):
     if not args.prune_number:
@@ -266,42 +317,48 @@ for x in range(args.split_one_nbins):
         time_inbin = []
         # getting triggers that are in these templates
         for idx in id_in_both:
-            where_idx_start = boundaries[idx]
-            vals_inbin += list(stat[where_idx_start:where_idx_end[idx]])
-            time_inbin += list(time[where_idx_start:where_idx_end[idx]])
+            vals_inbin += list(stat[mask_start_idx[idx]:mask_end_idx[idx]])
+            time_inbin += list(time[mask_start_idx[idx]:mask_end_idx[idx]])
 
         vals_inbin = np.array(vals_inbin)
         time_inbin = np.array(time_inbin)
 
         count_pruned = 0
-        logging.info('Pruning in split {}-{} {}-{}'.format(
-                     args.split_param_one, x, args.split_param_two, y))
+        logging.info(
+            'Pruning in split %s-%i %s-%i',
+            args.split_param_one, x,
+            args.split_param_two, y
+        )
+        logging.info('Currently have %d triggers', len(vals_inbin))
         while count_pruned < args.prune_number:
             # Getting loudest statistic value in split
             max_val_arg = vals_inbin.argmax()
             max_statval = vals_inbin[max_val_arg]
 
-            remove = np.nonzero(abs(time_inbin[max_val_arg] - time)
-                                    < args.prune_window)[0]
+            remove = np.nonzero(
+                abs(time_inbin[max_val_arg] - time) < args.prune_window
+            )[0]
             # Remove from inbin triggers as well in case there
             # are more pruning iterations
-            remove_inbin = np.nonzero(abs(time_inbin[max_val_arg] - time_inbin)
-                                      < args.prune_window)[0]
-            logging.info('Prune {}: removing {} triggers around time {:.2f},'
-                         ' {} in this split'.format(count_pruned, remove.size,
-                                                    time[max_val_arg],
-                                                    remove_inbin.size))
+            remove_inbin = np.nonzero(
+                abs(time_inbin[max_val_arg] - time_inbin) < args.prune_window
+            )[0]
+            logging.info(
+                'Prune %d: removing %d triggers around %.2f, %d in this split',
+                count_pruned,
+                remove.size,
+                time[max_val_arg],
+                remove_inbin.size
+            )
             # Set pruned triggers' stat values to zero, as above for vetoes
-            vals_inbin[remove_inbin] = np.zeros_like(remove_inbin)
-            time_inbin[remove_inbin] = np.zeros_like(remove_inbin)
-            stat[remove] = np.zeros_like(remove)
-            time[remove] = np.zeros_like(remove)
+            vals_inbin[remove_inbin] = 0.
+            time_inbin[remove_inbin] = 0.
+            stat[remove] = 0.
+            time[remove] = 0.
             count_pruned += 1
 
-trigf.close()
-
 logging.info('Setting up plotting and fitting limit values')
-minplot = max(stat[np.nonzero(stat)].min(), args.stat_fit_threshold - 1)
+minplot = max(stat[np.nonzero(stat)].min(), args.plot_lower_stat_limit)
 min_fit = max(minplot, args.stat_fit_threshold)
 max_fit = 1.05 * stat.max()
 if args.plot_max_x:
@@ -321,7 +378,7 @@ fig, axes = plt.subplots(args.split_one_nbins, args.split_two_nbins,
 lines = []
 labels = []
 for i, lower, upper in zip(range(args.num_bins), pbins.lower(), pbins.upper()):
-    binlabel = r"%.3g - %.3g" % (lower, upper)
+    binlabel = f"{lower:#.3g} - {upper:#.3g}"
     line, = axes[0,0].plot([0,0], [0,0], linewidth=2,
                      color=histcolors[i], alpha=0.6)
     lines.append(line)
@@ -345,18 +402,20 @@ for x in range(args.split_one_nbins):
     for y in range(args.split_two_nbins):
         id_bin2 = id_in_bin2[y]
         id_in_both = np.intersect1d(id_bin1, id_bin2)
-        logging.info('split {}: {}, {}: {}'.format(args.split_param_one, x,
-                                                   args.split_param_two, y))
+        logging.info(
+            'Split %s-%i %s-%i',
+            args.split_param_one, x,
+            args.split_param_two, y,
+        )
         ax = axes[x,y]
         for i, lower, upper in zip(range(args.num_bins), pbins.lower(),
                                    pbins.upper()):
             indices_all_conditions = np.intersect1d(pidx[i], id_in_both)
-            logging.info('{} split {}-{}'.format(args.bin_param, lower, upper))
+            logging.info('%s split %#.3g-%#.3g', args.bin_param, lower, upper)
             if len(indices_all_conditions) == 0: continue
             vals_inbin = []
             for idx in indices_all_conditions:
-                where_idx_start = boundaries[idx]
-                vals_inbin += list(stat[where_idx_start:where_idx_end[idx]])
+                vals_inbin += list(stat[mask_start_idx[idx]:mask_end_idx[idx]])
 
             vals_inbin = np.array(vals_inbin)
             vals_above_thresh = vals_inbin[vals_inbin >= args.stat_fit_threshold]
@@ -364,8 +423,8 @@ for x in range(args.split_one_nbins):
                 logging.info('No triggers above threshold')
                 continue
             else:
-                logging.info('{} triggers out of {} above threshold'.format(
-                             len(vals_above_thresh), len(vals_inbin)))
+                logging.info('%d triggers out of %d above threshold',
+                             len(vals_above_thresh), len(vals_inbin))
             alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function,
                                  vals_above_thresh, args.stat_fit_threshold)
             fitted_cum_counts = len(vals_above_thresh) * \
@@ -388,7 +447,7 @@ for x in range(args.split_one_nbins):
             ax.semilogy(edges[:-1], cum_counts, linewidth=2,
                      color=histcolors[i], alpha=0.6)
             ax.semilogy(fitrange, fitted_cum_counts, "--", color=histcolors[i],
-                     label=r"$\alpha = $%.2f" % alpha)
+                    label=f"$\\alpha = ${alpha:#.3f}" % alpha)
             lgd_sub = ax.legend(fontsize='small', framealpha=0.5)
 
             del vals_inbin, vals_above_thresh
@@ -407,25 +466,21 @@ for j in range(args.split_two_nbins):
     axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_ranking, size="large")
     if args.split_two_nbins == 1:
         break
-    axes[0, j].set_xlabel(args.split_param_two + ': ' +
-                          (formats[args.split_param_two] + ' to ' +
-                           formats[args.split_param_two]).format(sp_two_bounds.lower()[j],
-                                     sp_two_bounds.upper()[j]), size="large")
+    xrange_string = f'{sp_two_bounds.lower()[j]:#.3g} to {sp_two_bounds.upper()[j]:#.3g}'
+    axes[0, j].set_xlabel(f'{args.split_param_two}: {xrange_string}', size="large")
     axes[0, j].xaxis.set_label_position("top")
 
 for i in range(args.split_one_nbins):
     if args.split_one_nbins == 1:
         axes[0, 0].set_ylabel('Cumulative number', size='large')
         break
-    axes[i, 0].set_ylabel(args.split_param_one + ': ' +
-                          (formats[args.split_param_one] + ' to ' +
-                           formats[args.split_param_one]).format(sp_one_bounds.lower()[i],
-                                      sp_one_bounds.upper()[i]) + '\ncumulative number',
-                                      size="large")
+    yrange_string = f'{sp_one_bounds.lower()[i]:#.3g} to {sp_one_bounds.upper()[i]:#.3g}'
+    axes[i, 0].set_ylabel(f'{args.split_param_one}: {yrange_string}\ncumulative number',
+        size="large")
 
 fig.tight_layout(rect=(1./(args.split_two_nbins+1), 0, 1, 1))
 
-logging.info('Saving to file ' + args.output_file)
+logging.info('Saving to file %s', args.output_file)
 results.save_fig_with_metadata(
     fig, args.output_file,
     title="{}: {} histogram of single detector triggers split by"

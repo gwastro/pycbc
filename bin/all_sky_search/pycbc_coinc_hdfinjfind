@@ -6,7 +6,7 @@ files.
 import argparse, h5py, logging, types, numpy, os.path
 from ligo.lw import lsctables, utils as ligolw_utils
 from ligo import segments
-from pycbc import events
+from pycbc import events, init_logging
 from pycbc.events import indices_within_segments
 from pycbc.types import MultiDetOptionAction
 from pycbc.inject import CBCHDFInjectionSet
@@ -55,6 +55,7 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
                                         dtype=numpy.float32))
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+', required=True)
@@ -73,13 +74,10 @@ parser.add_argument('--optimal-snr-column', nargs='+',
 parser.add_argument('--redshift-column', default=None,
                     help='Name of sim_inspiral column containing redshift. '
                     'Optional')
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file', required=True)
 args = parser.parse_args()
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+init_logging(args.verbose)
 
 fo = h5py.File(args.output_file, 'w')
 
@@ -277,8 +275,10 @@ for trigger_file, injection_file in zip(args.trigger_files,
             # This is a coincident statmap file
             fo[key].attrs['pivot'] = fkey.attrs['pivot']
             fo[key].attrs['fixed'] = fkey.attrs['fixed']
-        fo[key].attrs['foreground_time'] = fkey.attrs['foreground_time']
-        fo[key].attrs['foreground_time_exc'] = fkey.attrs['foreground_time_exc']
+        if 'foreground_time' in fkey.attrs.keys():
+            fo[key].attrs['foreground_time'] = fkey.attrs['foreground_time']
+        if 'foreground_time_exc' in fkey.attrs.keys():
+            fo[key].attrs['foreground_time_exc'] = fkey.attrs['foreground_time_exc']
 
     hdf_append(fo, 'missed/all', missed + injection_index)
     hdf_append(fo, 'missed/within_analysis', missed_within_time + injection_index)

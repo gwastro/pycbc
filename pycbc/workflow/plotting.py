@@ -29,6 +29,7 @@ from urllib.request import pathname2url
 from urllib.parse import urljoin
 from pycbc.workflow.core import File, FileList, makedir, Executable
 
+
 def excludestr(tags, substr):
     if substr is None:
         return tags
@@ -38,10 +39,12 @@ def excludestr(tags, substr):
         substr = substr[0]
     return [tag for tag in tags if substr not in tag]
 
+
 def requirestr(tags, substr):
     if substr is None:
         return tags
     return [tag for tag in tags if substr in tag]
+
 
 class PlotExecutable(Executable):
     """ plot executable
@@ -55,7 +58,8 @@ class PlotExecutable(Executable):
         node.set_priority(1000)
         return node
 
-def make_template_plot(workflow, bank_file, out_dir,bins=None, 
+
+def make_template_plot(workflow, bank_file, out_dir, bins=None,
                        tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -71,6 +75,7 @@ def make_template_plot(workflow, bank_file, out_dir,bins=None,
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
+
 
 def make_range_plot(workflow, psd_files, out_dir, exclude=None, require=None,
                    tags=None):
@@ -89,6 +94,7 @@ def make_range_plot(workflow, psd_files, out_dir, exclude=None, require=None,
         files += node.output_files
     return files
 
+
 def make_spectrum_plot(workflow, psd_files, out_dir, tags=None,
                        hdf_group=None, precalc_psd_files=None):
     tags = [] if tags is None else tags
@@ -106,6 +112,7 @@ def make_spectrum_plot(workflow, psd_files, out_dir, tags=None,
     workflow += node
     return node.output_files[0]
 
+
 def make_segments_plot(workflow, seg_files, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -114,6 +121,7 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=None):
     node.add_input_list_opt('--segment-files', seg_files)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
+
 
 def make_gating_plot(workflow, insp_files, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -124,6 +132,7 @@ def make_gating_plot(workflow, insp_files, out_dir, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
 
+
 def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -132,6 +141,7 @@ def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
     node.add_input_list_opt('--input-file', insp_files)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
+
 
 def make_foreground_table(workflow, trig_file, bank_file, out_dir,
                           singles=None, extension='.html', tags=None,
@@ -160,6 +170,7 @@ def make_foreground_table(workflow, trig_file, bank_file, out_dir,
     workflow += node
     return node.output_files[0]
 
+
 def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None,
                          require=None, tags=None):
     tags = [] if tags is None else tags
@@ -176,6 +187,7 @@ def make_sensitivity_plot(workflow, inj_file, out_dir, exclude=None,
         workflow += node
         files += node.output_files
     return files
+
 
 def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file,
                           out_dir, exclude=None, require=None, tags=None):
@@ -199,6 +211,7 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file,
         files += node.output_files
     return files
 
+
 def make_inj_table(workflow, inj_file, out_dir, missed=False, singles=None,
                   tags=None):
     tags = [] if tags is None else tags
@@ -216,6 +229,7 @@ def make_inj_table(workflow, inj_file, out_dir, missed=False, singles=None,
     node.new_output_file_opt(inj_file.segment, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
+
 
 def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None,
                   title_text=None, description=None):
@@ -241,6 +255,7 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None,
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
+
 
 def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
     """ Creates a node in the workflow for writing the veto_definer
@@ -268,10 +283,10 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
     workflow += node
     return node.output_files[0]
 
+
 def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     """ Creates a node in the workflow for plotting science, and veto segments.
     """
-
     seg_files = list(seg_files)
     if tags is None: tags = []
     makedir(out_dir)
@@ -286,6 +301,7 @@ def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
+
 
 def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
                    hierarchical_level=None, executable='page_ifar'):
@@ -311,6 +327,7 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
+
 
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
                      out_dir, exclude=None, require=None, tags=None):
@@ -338,6 +355,7 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
             files += node.output_files
     return files
 
+
 def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
                          require=None, tags=None):
     if tags is None:
@@ -357,6 +375,7 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
         workflow += node
         files += node.output_files
     return files
+
 
 def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
                           tags=None, hierarchical_level=None):
@@ -384,6 +403,7 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
     node.new_output_file_opt(bg_file.segment, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
+
 
 def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
                      cumulative=True, tags=None, hierarchical_level=None):
@@ -414,6 +434,7 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
     workflow += node
     return node.output_files[0]
 
+
 def make_results_web_page(workflow, results_dir, template='orange',
                           explicit_dependencies=None):
     template_path = 'templates/'+template+'.html'
@@ -428,6 +449,7 @@ def make_results_web_page(workflow, results_dir, template='orange',
     if explicit_dependencies is not None:
         for dep in explicit_dependencies:
             workflow.add_explicit_dependancy(dep, node)
+
 
 def make_single_hist(workflow, trig_file, veto_file, veto_name,
                      out_dir, bank_file=None, exclude=None,
@@ -454,6 +476,7 @@ def make_single_hist(workflow, trig_file, veto_file, veto_name,
         files += node.output_files
     return files
 
+
 def make_binned_hist(workflow, trig_file, veto_file, veto_name,
                      out_dir, bank_file, exclude=None,
                      require=None, tags=None):
@@ -478,6 +501,7 @@ def make_binned_hist(workflow, trig_file, veto_file, veto_name,
         workflow += node
         files += node.output_files
     return files
+
 
 def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
                      out_dir, exclude=None, require=None, tags=None):
@@ -506,56 +530,41 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
             files += node.output_files
     return files
 
-def make_dq_trigger_rate_plot(workflow, dq_files, out_dir, tags=None):
-    tags = [] if tags is None else tags
-    makedir(out_dir)
-    files = FileList([])
-    for dq_file in dq_files:
-        if workflow.cp.has_option_tags('bin_trigger_rates_dq',
-                                       'background-bins', tags=tags):
-            background_bins = \
-                          workflow.cp.get_opt_tags('bin_trigger_rates_dq',
-                                              'background-bins', tags=tags)
-            bin_names = [tuple(bbin.split(':'))[0] for bbin
-                                             in background_bins.split(' ')]
-        else: bin_names = ['all_bin']
-        for bbin in bin_names:
-            plot_tags = [bbin] + tags
-            node = PlotExecutable(workflow.cp, 'plot_dq_likelihood_vs_time',
-                        ifos=dq_file.ifo,
-                        out_dir=out_dir,
-                        tags=plot_tags).create_node()
-            node.add_opt('--ifo', dq_file.ifo)
-            node.add_opt('--background-bin', bbin)
-            node.add_input_opt('--dq-file', dq_file)
-            node.new_output_file_opt(dq_file.segment, '.png', '--output-file')
-            workflow += node
-            files += node.output_files
-    return files
 
-def make_dq_percentile_plot(workflow, dq_files, out_dir, tags=None):
+def make_dq_flag_trigger_rate_plot(workflow, dq_file, dq_label, out_dir, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
-    files = FileList([])
-    for dq_file in dq_files:
-        if workflow.cp.has_option_tags('bin_trigger_rates_dq',
-                                       'background-bins', tags=tags):
-            background_bins = \
-                          workflow.cp.get_opt_tags('bin_trigger_rates_dq',
-                                              'background-bins', tags=tags)
-            bin_names = [tuple(bbin.split(':'))[0] for bbin
-                                             in background_bins.split(' ')]
-        else: bin_names = ['all_bin']
-        for bbin in bin_names:
-            plot_tags = [bbin] + tags
-            node = PlotExecutable(workflow.cp, 'plot_dq_percentiles',
-                        ifos=dq_file.ifo,
-                        out_dir=out_dir,
-                        tags=plot_tags).create_node()
-            node.add_opt('--ifo', dq_file.ifo)
-            node.add_opt('--background-bin', bbin)
-            node.add_input_opt('--dq-file', dq_file)
-            node.new_output_file_opt(dq_file.segment, '.png', '--output-file')
-            workflow += node
-            files += node.output_files
-    return files
+    node = PlotExecutable(workflow.cp, 'plot_dq_flag_likelihood',
+                          ifos=dq_file.ifo, out_dir=out_dir,
+                          tags=tags).create_node()
+    node.add_input_opt('--dq-file', dq_file)
+    node.add_opt('--dq-label', dq_label)
+    node.add_opt('--ifo', dq_file.ifo)
+    node.new_output_file_opt(dq_file.segment, '.png', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
+
+def make_dq_segment_table(workflow, dq_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'page_dq_table', ifos=dq_file.ifo,
+                          out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--dq-file', dq_file)
+    node.add_opt('--ifo', dq_file.ifo)
+    node.new_output_file_opt(dq_file.segment, '.html', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
+
+def make_template_bin_table(workflow, dq_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'page_template_bin_table',
+                          ifos=dq_file.ifo, out_dir=out_dir,
+                          tags=tags).create_node()
+    node.add_input_opt('--dq-file', dq_file)
+    node.add_opt('--ifo', dq_file.ifo)
+    node.new_output_file_opt(dq_file.segment, '.html', '--output-file')
+    workflow += node
+    return node.output_files[0]

@@ -643,9 +643,9 @@ full URL where the file can be found, and ``SITE`` is the site on which that URL
 resides.
 
 The URI in the ``PHYSICAL_FILE_URL`` can be any of the URIs that Pegasus
-recognizes. The URIs ``file://``, ``gsiftp://``, and ``http://`` are likely
+recognizes. The URIs ``file://``,  ``https://`` are likely
 the most useful. Pegasus will take care of adding transfer jobs for
-``gsiftp://`` and ``http://`` URIs, if the data is not available locally.
+``https://`` URIs, if the data is not available locally.
 
 The string ``SITE`` is a hint that tells Pegasus on which site the
 ``PHYSICAL_FILE_URL`` can be found. The ``SITE`` string should be one of the
@@ -672,7 +672,7 @@ might not be obvious from the hostname in the ``PHYSICAL_FILE_URL``.
 The following rule should be helpful when chosing the ``SITE`` string:
 
 * If you are re-using a file that is available locally with a ``file://`` URI in its ``PHYSICAL_FILE_URL`` (or has an implicit ``file://`` URI since the ``PHYSICAL_FILE_URL`` starts with a ``/``) then the string ``SITE`` should be set to ``local``.
-* If you are re-using a file from another cluster, e.g. you are on the Syracuse cluster and want to re-use data from AEI Atlas cluster, then the string ``SITE`` should be set to ``remote`` for that file. In this case, the URI in ``PHYSICAL_FILE_URL`` will be either ``gsiftp://`` or ``http://`` depending on how the file can be accessed.
+* If you are re-using a file from another cluster, e.g. you are on the Syracuse cluster and want to re-use data from AEI Atlas cluster, then the string ``SITE`` should be set to ``remote`` for that file. In this case, the URI in ``PHYSICAL_FILE_URL`` will begin with the scheme (e.g. ``https://``) depending on how the file can be accessed.
 
 To illustrate this, an example of a simple cache file containing four files for re-use from the ``local`` site is::
 
@@ -684,23 +684,6 @@ To illustrate this, an example of a simple cache file containing four files for 
 Note that the ``LOGICAL_FILE_NAME`` for the veto files is just the name of the
 file, but for the two inspiral files it contains the subdirectory that the
 workflow uses to organize the files by GPS time. In the case of this file Pegasus will delete from the workflow the jobs that create the files ``H1-VETOTIME_CAT3-1169107218-1066800.xml``, ``L1-VETOTIME_CAT3-1169107218-1066800.xml``, ``116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf``, and ``116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf`` when it plans the workflow. Insted, the data will be re-used from the URLs specified in the cache. Since ``site="local"`` for these files, Pegasus expects that the files all exist on the host where the workflow is run from.
-
-To re-use data from a remote cluster, the URLs must contain a file transfer
-mechanism and the ``SITE`` should be set to ``remote``. For example, if the
-files listed in the example above are available on
-``sugwg-condor.phy.syr.edu`` and you want to re-use them in a workflow on the
-AEI Atlas cluster, then the cache file would contain::
-
-    H1-VETOTIME_CAT3-1169107218-1066800.xml gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/H1-VETOTIME_CAT3-1169107218-1066800.xml pool="remote"
-    L1-VETOTIME_CAT3-1169107218-1066800.xml gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/results/1._analysis_time/1.01_segment_data/L1-VETOTIME_CAT3-1169107218-1066800.xml pool="remote"
-    116912/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB0-1169120586-1662.hdf pool="remote"
-    116912/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf gsiftp://sugwg-condor.phy.syr.edu/home/dbrown/projects/aligo/o2/analysis-4/o2-analysis-4/output/full_data/H1-INSPIRAL_FULL_DATA_JOB1-1169120586-1662.hdf pool="remote"
-
-Note that the URL now contains ``gsiftp://sugwg-condor.phy.syr.edu`` rather
-than ``file://localhost`` and the files are listes as ``pool="remote"`` rather
-than ``pool="local"``. Pegasus will re-use these data files adding in
-file transfer jobs to the workflow to move them into the appropriate
-locations.
 
 Once a cache file has been constructed, to enable data re-use, you follow the
 standard instructions for planning and submitting the workflow in the section
@@ -1004,8 +987,8 @@ locations in CVMFS.
 You will also need to specify where the code should get the data needed to generate reduced
 order model waveforms. To do this add the following additional arguments to ``pycbc_submit_dax``::
 
-    --append-site-profile 'local:env|LAL_DATA_PATH:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation' \
-    --append-site-profile 'osg:env|LAL_DATA_PATH:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation' \
+    --append-site-profile 'local:env|LAL_DATA_PATH:/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation' \
+    --append-site-profile 'osg:env|LAL_DATA_PATH:/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation' \
 
 Here, ``current`` is a symbolic link to the latest version of the data and can be replaced with a
 specific release (e.g. ``e02dab8c``) if required.

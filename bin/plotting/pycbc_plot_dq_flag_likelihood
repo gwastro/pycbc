@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+""" Plot the log likelihood percentiles for a DQ bin
+"""
+import sys
+import argparse
+import numpy
+import pycbc
+import h5py
+from matplotlib import use as matplotlib_use
+from matplotlib import pyplot
+from pycbc.version import git_verbose_msg as version
+import pycbc.results
+matplotlib_use('Agg')
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action='version', version=version)
+parser.add_argument('--verbose', action="store_true")
+parser.add_argument("--dq-file", required=True)
+parser.add_argument("--dq-label", required=True)
+parser.add_argument("--ifo", type=str, required=True)
+parser.add_argument("--output-file", required=True)
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+ifo = args.ifo
+
+f = h5py.File(args.dq_file, 'r')
+ifo_grp = f[ifo]
+
+dq_states = ifo_grp['dq_segments'].keys()
+bin_names = ifo_grp['bins'].keys()
+
+num_bins = len(bin_names)
+x = numpy.arange(num_bins)
+width = 0.25
+
+dq_states = {
+    0: 'Clean',
+    1: 'DQ Flag',
+    2: 'Autogating',
+}
+
+colors = {
+    0: 'green',
+    1: 'gold',
+    2: 'red'
+}
+
+fig, ax = pyplot.subplots(figsize=(9, 6))
+ax2 = ax.twinx()
+
+ymax = 1
+ymin = 0.9
+for n, dqstate_name in dq_states.items():
+    dq_rates = numpy.array(
+        [ifo_grp['bins'][b]['dq_rates'][n] for b in bin_names])
+    dq_rates = numpy.maximum(dq_rates, 1)
+    logrates = numpy.log(dq_rates)
+
+    ymax = max(ymax, numpy.max(dq_rates))
+
+    offset = width * (n - 1)
+    ax.bar(x + offset, dq_rates, width, label=dqstate_name, color=colors[n])
+
+ymax = ymax**1.05
+ax.set_ylim(ymin, ymax)
+ax.set_yscale('log')
+ax.set_ylabel('(Trigger rate during DQ state)/(Mean Rate) [Min 1]')
+
+ax.set_xticks(x)
+ax.set_xlabel('Template Bin Number (Longer duration -> Lower number)')
+ax.legend()
+ax.grid()
+
+ax2.set_ylabel('DQ Log Likelihood Penalty')
+ax2.set_ylim(numpy.log(ymin), numpy.log(ymax))
+
+# add meta data and save figure
+plot_title = f'{ifo}:{args.dq_label} DQ Trigger Rates'
+
+ax.set_title(plot_title)
+
+plot_caption = 'The log likelihood correction \
+      during during each dq state for each template bin.'
+pycbc.results.save_fig_with_metadata(
+    fig, args.output_file, title=plot_title,
+    caption=plot_caption, cmd=' '.join(sys.argv))

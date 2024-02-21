@@ -24,12 +24,14 @@ from .base import (initial_dist_from_config, create_new_output_file)
 from .multinest import MultinestSampler
 from .ultranest import UltranestSampler
 from .dummy import DummySampler
+from .refine import RefineSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
     MultinestSampler,
     UltranestSampler,
     DummySampler,
+    RefineSampler,
 )}
 
 try:
@@ -63,6 +65,13 @@ try:
     samplers[DynestySampler.name] = DynestySampler
 except ImportError:
     pass
+
+try:
+    from .nessai import NessaiSampler
+    samplers[NessaiSampler.name] = NessaiSampler
+except ImportError:
+    pass
+
 
 def load_from_config(cp, model, **kwargs):
     """Loads a sampler from the given config file.

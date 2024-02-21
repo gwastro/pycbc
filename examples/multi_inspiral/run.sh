@@ -40,8 +40,8 @@ pycbc_multi_inspiral \
     --gps-end-time ${GPS_END} \
     --trig-start-time ${TRIG_START} \
     --trig-end-time ${TRIG_END} \
-    --longitude 3.44527994344 \
-    --latitude -0.408407044967 \
+    --ra 3.44527994344 \
+    --dec -0.408407044967 \
     --bank-file ${BANK_FILE} \
     --approximant IMRPhenomD \
     --order -1 \

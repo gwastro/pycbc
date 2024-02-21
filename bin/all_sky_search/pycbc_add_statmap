@@ -25,9 +25,9 @@ def get_ifo_string(fi):
     return istring
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action="version",
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-files', nargs='+',
     help="List of coinc files to be combined")
 parser.add_argument('--background-files', nargs='+', default=None,
@@ -160,14 +160,15 @@ if not injection_style:
         if k not in all_ifos:
             pycbc.io.combine_and_copy(f, files, 'background_exc/' + k)
 
+# create dataset of ifo combination strings
+fg_coinc_type = np.array([])
+for f_in in files:
+    key = get_ifo_string(f_in).replace(' ','')
+    combo_repeat = np.array(np.repeat(key.encode('utf8'),
+                            f_in['foreground/stat'].size))
+    fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat])
+
 if args.output_coinc_types:
-    # create dataset of ifo combination strings
-    fg_coinc_type = np.array([])
-    for f_in in files:
-        key = get_ifo_string(f_in).replace(' ','')
-        combo_repeat = np.array(np.repeat(key.encode('utf8'),
-                                f_in['foreground/fap'].size))
-        fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat])
     f['foreground/ifo_combination'] = fg_coinc_type
 
 logging.info('Collating triggers into single structure')
@@ -226,7 +227,7 @@ for f_in in files:
                 bg_exc_trig_ids[ifo] = np.concatenate([bg_exc_trig_ids[ifo],
                     -1 * np.ones_like(f_in['background_exc/stat'][:],
                     dtype=int)])
-n_triggers = f['foreground/ifar'].size
+n_triggers = f['foreground/stat'].size
 logging.info('{} foreground events before clustering'.format(n_triggers))
 
 for ifo in all_ifos:
@@ -271,10 +272,8 @@ for key in f['foreground'].keys():
         for k in f['foreground/%s' % key].keys():
             filter_dataset(f, 'foreground/{}/{}'.format(key, k), cidx)
 
-fg_ifar_init = f['foreground/ifar'][:]
-fg_ifar_exc_init = f['foreground/ifar_exc'][:]
-
-n_triggers = fg_ifar_init.size
+fg_coinc_type = fg_coinc_type[cidx]
+n_triggers = f['foreground/stat'].size
 
 logging.info('Calculating event times to determine which types of coinc '
              'are available')
@@ -304,8 +303,6 @@ far = {}
 far_exc = {}
 bg_time = {}
 bg_time_exc = {}
-fnlouder = {}
-fnlouder_exc = {}
 
 if injection_style:
     # if background files are provided, this is being used for injections
@@ -313,40 +310,42 @@ if injection_style:
     for bg_fname in args.background_files:
         bg_f = h5py.File(bg_fname, 'r')
         ifo_combo_key = bg_f.attrs['ifos'].replace(' ','')
-        _, fnlouder[ifo_combo_key] = \
-            significance.get_n_louder(
+        _, far[ifo_combo_key] = significance.get_far(
                 bg_f['background/stat'][:],
                 f['foreground/stat'][:],
                 bg_f['background/decimation_factor'][:],
+                bg_f.attrs['background_time'],
                 **significance_dict[ifo_combo_key])
 
-        far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / bg_f.attrs['background_time']
-        _, fnlouder_exc[ifo_combo_key] = \
-            significance.get_n_louder(
+        _, far_exc[ifo_combo_key] = \
+            significance.get_far(
                 bg_f['background_exc/stat'][:],
                 f['foreground/stat'][:],
                 bg_f['background_exc/decimation_factor'][:],
+                bg_f.attrs['background_time_exc'],
                 **significance_dict[ifo_combo_key])
-        far_exc[ifo_combo_key] = (fnlouder_exc[ifo_combo_key] + 1) / bg_f.attrs['background_time_exc']
 else:
     # if not injection style input files, then the input files will have the
     # background included
     for f_in in files:
         ifo_combo_key = get_ifo_string(f_in).replace(' ','')
-        _, fnlouder[ifo_combo_key] = \
-            significance.get_n_louder(
+        _, far[ifo_combo_key] = \
+            significance.get_far(
                 f_in['background/stat'][:],
                 f['foreground/stat'][:],
                 f_in['background/decimation_factor'][:],
+                f_in.attrs['background_time'],
                 **significance_dict[ifo_combo_key])
-        far[ifo_combo_key] = (fnlouder[ifo_combo_key] + 1) / f_in.attrs['background_time']
-        _, fnlouder_exc[ifo_combo_key] = \
-            significance.get_n_louder(
+
+        _, far_exc[ifo_combo_key] = \
+            significance.get_far(
                 f_in['background_exc/stat'][:],
                 f['foreground/stat'][:],
                 f_in['background_exc/decimation_factor'][:],
+                f_in.attrs['background_time_exc'],
                 **significance_dict[ifo_combo_key])
-        far_exc[ifo_combo_key] = (fnlouder_exc[ifo_combo_key] + 1) / f_in.attrs['background_time_exc']
+
+del ifo_combo_key
 
 logging.info('Combining false alarm rates from all available backgrounds')
 
@@ -360,8 +359,21 @@ fg_fars = np.array([list(far[ct]) for ct in all_ifo_combos])
 fg_fars_exc = np.array([list(far_exc[ct]) for ct in all_ifo_combos])
 
 # Combine the FARs with the mask to obtain the new ifars
-fg_ifar = conv.sec_to_year(1. / np.sum(isincombo_mask * fg_fars, axis=0))
-fg_ifar_exc = conv.sec_to_year(1. / np.sum(isincombo_mask * fg_fars_exc, axis=0))
+fg_fars_out = np.sum(isincombo_mask * fg_fars, axis=0)
+fg_fars_exc_out = np.sum(isincombo_mask * fg_fars_exc, axis=0)
+
+# Apply any limits as appropriate
+fg_fars_out = significance.apply_far_limit(
+    fg_fars_out,
+    significance_dict,
+    combo=fg_coinc_type)
+fg_fars_exc_out = significance.apply_far_limit(
+    fg_fars_exc_out,
+    significance_dict,
+    combo=fg_coinc_type)
+
+fg_ifar = conv.sec_to_year(1. / fg_fars_out)
+fg_ifar_exc = conv.sec_to_year(1. / fg_fars_exc_out)
 fg_time = f.attrs['foreground_time']
 del isincombo_mask, fg_fars, fg_fars_exc, _
 
@@ -381,8 +393,6 @@ if not injection_style:
     # Only output non-exclusive ifar/fap if it is _not_ an injection case
     f['foreground/ifar'][:] = fg_ifar
     f['foreground/fap'] = 1 - np.exp(-conv.sec_to_year(fg_time) / fg_ifar)
-else:
-    del f['foreground/ifar']
 
 del test_times
 
@@ -420,7 +430,7 @@ bg_coinc_type = np.array([])
 for f_in in files:
     key = get_ifo_string(f_in).replace(' ','')
     combo_repeat_fg = np.array(np.repeat(key.encode('utf8'),
-                               f_in['foreground/fap'].size))
+                               f_in['foreground/stat'].size))
     fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat_fg])
     combo_repeat_bg = np.array(np.repeat(key.encode('utf8'),
                                f_in['background/stat'].size))
@@ -560,6 +570,7 @@ while True:
     final_combined_fg = final_combined_fg + \
                             combined_fg_data.select(where_combined)
     combined_fg_data = combined_fg_data.remove(where_combined)
+    fg_coinc_type = np.delete(fg_coinc_type, where_combined)
     n_triggers -= 1
 
     logging.info('Removing background triggers at time {} within window '
@@ -592,29 +603,41 @@ while True:
     test_times = np.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
                            for tc in zip(*times_tuple)])
     for key in all_ifo_combos:
-        bnlouder, fnlouder = significance.get_n_louder(
-            sep_bg_data[key].data['stat'],
-            sep_fg_data[key].data['stat'],
-            sep_bg_data[key].data['decimation_factor'],
-            **significance_dict[ifo_combo_key])
         # In principle, bg time should be adjusted, but is expected to be a
         # negligible correction
         fg_time_ct[key] -= args.cluster_window
         bg_t_y = conv.sec_to_year(bg_time_ct[key])
         fg_t_y = conv.sec_to_year(fg_time_ct[key])
-        sep_bg_data[key].data['ifar'] = bg_t_y / (bnlouder + 1)
-        sep_fg_data[key].data['ifar'] = bg_t_y / (fnlouder + 1)
+        bg_far, fg_far = significance.get_far(
+            sep_bg_data[key].data['stat'],
+            sep_fg_data[key].data['stat'],
+            sep_bg_data[key].data['decimation_factor'],
+            bg_t_y,
+            **significance_dict[key])
+        fg_far = significance.apply_far_limit(
+            fg_far,
+            significance_dict,
+            combo=key,
+        )
+        bg_far = significance.apply_far_limit(
+            bg_far,
+            significance_dict,
+            combo=key,
+        )
+
+        sep_bg_data[key].data['ifar'] = 1. / bg_far
+        sep_fg_data[key].data['ifar'] = 1. / fg_far
         sep_fg_data[key].data['fap'] = 1 - \
-            np.exp(-fg_t_y / sep_fg_data[key].data['ifar'])
+            np.exp(-fg_t_y * fg_far)
 
     logging.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
-        bnlouder, fnlouder = significance.get_n_louder(
+        _, far[key] = significance.get_far(
             sep_bg_data[key].data['stat'],
             combined_fg_data.data['stat'],
             sep_bg_data[key].data['decimation_factor'],
-            **significance_dict[ifo_combo_key])
-        far[key] = (fnlouder + 1) / bg_time_ct[key]
+            bg_time_ct[key],
+            **significance_dict[key])
         # Set up variable for whether each coincidence is available in each coincidence time
         is_in_combo_time[key] = np.zeros(n_triggers)
         end_times = np.array(f['segments/%s/end' % key][:])
@@ -628,9 +651,15 @@ while True:
     isincombo_mask = np.array([list(is_in_combo_time[ct])
                                for ct in all_ifo_combos])
     fg_fars = np.array([list(far[ct]) for ct in all_ifo_combos])
+    fg_fars_out = np.sum(isincombo_mask * fg_fars, axis=0)
+    fg_fars_out = significance.apply_far_limit(
+        fg_fars_out,
+        significance_dict,
+        combo=fg_coinc_type,
+    )
     # Combine the FARs with the mask to obtain the new ifars
     combined_fg_data.data['ifar'] = conv.sec_to_year(
-        1. / np.sum(isincombo_mask * fg_fars, axis=0))
+        1. / fg_fars_out)
     fg_time -= args.cluster_window
     combined_fg_data.data['fap'] = 1 - \
         np.exp(-conv.sec_to_year(fg_time) / combined_fg_data.data['ifar'])

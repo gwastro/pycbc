@@ -21,7 +21,12 @@ from urllib.request import pathname2url
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
 from Pegasus.api import Arch, OS, SiteCatalog
 
-from pycbc.version import last_release  # noqa
+from pycbc.version import last_release, version, release  # noqa
+
+if release == 'True':
+    sing_version = version
+else:
+    sing_version = last_release
 
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
@@ -202,7 +207,9 @@ def add_osg_site(sitecat, cp):
     site.add_profiles(Namespace.CONDOR, key="should_transfer_files",
                       value="Yes")
     site.add_profiles(Namespace.CONDOR, key="when_to_transfer_output",
-                      value="ON_EXIT_OR_EVICT")
+                      value="ON_SUCCESS")
+    site.add_profiles(Namespace.CONDOR, key="success_exit_code",
+                      value="0")
     site.add_profiles(Namespace.CONDOR, key="+OpenScienceGrid",
                       value="True")
     site.add_profiles(Namespace.CONDOR, key="getenv",
@@ -211,20 +218,18 @@ def add_osg_site(sitecat, cp):
                       value="False")
     site.add_profiles(Namespace.CONDOR, key="+SingularityCleanEnv",
                       value="True")
-    site.add_profiles(Namespace.CONDOR, key="use_x509userproxy",
-                      value="True")
     site.add_profiles(Namespace.CONDOR, key="Requirements",
                       value="(HAS_SINGULARITY =?= TRUE) && "
                             "(HAS_LIGO_FRAMES =?= True) && "
                             "(IS_GLIDEIN =?= True)")
     cvmfs_loc = '"/cvmfs/singularity.opensciencegrid.org/pycbc/pycbc-el8:v'
-    cvmfs_loc += last_release + '"'
+    cvmfs_loc += sing_version + '"'
     site.add_profiles(Namespace.CONDOR, key="+SingularityImage",
                       value=cvmfs_loc)
     # On OSG failure rate is high
     site.add_profiles(Namespace.DAGMAN, key="retry", value="4")
     site.add_profiles(Namespace.ENV, key="LAL_DATA_PATH",
-                      value="/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/current/share/lalsimulation")
+                      value="/cvmfs/software.igwn.org/pycbc/lalsuite-extra/current/share/lalsimulation")
     # Add MKL location to LD_LIBRARY_PATH for OSG
     site.add_profiles(Namespace.ENV, key="LD_LIBRARY_PATH",
                       value="/usr/local/lib:/.singularity.d/libs")

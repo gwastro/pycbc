@@ -16,7 +16,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Followup foreground events
 """
-import os, sys, argparse, logging, re, h5py, pycbc.workflow as wf
+import os
+import sys
+import argparse
+import logging
+import re
+import h5py
+
+import pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
@@ -103,31 +110,39 @@ file_val = args.analysis_category
 stat = f['{}/stat'.format(file_val)][:]
 
 if args.sort_variable not in f[file_val]:
-    all_datasets = [re.sub(file_val, '', ds).strip('/') for ds in get_all_subkeys(f, file_val)]
-    raise KeyError('Sort variable {0} not in {1}: sort choices in '
-                   '{1} are {2}'.format(args.sort_variable, file_val,
-                                        ', '.join(all_datasets)))
+    all_datasets = [re.sub(file_val, '', ds).strip('/')
+                    for ds in get_all_subkeys(f, file_val)]
+    raise KeyError(f'Sort variable {args.sort_variable} not in {file_val}: sort'
+                   f'choices in {file_val} are ' + ', '.join(all_datasets))
 
+# In case we are doing background minifollowup with repeated events,
+# we must include the ordering / template / trigger / time info for
+# _many_ more events to make sure we get enough
 events_to_read = num_events * 100
 
+# We've asked for more events than there are!
 if len(stat) < num_events:
     num_events = len(stat)
 if len(stat) < events_to_read:
     events_to_read = len(stat)
 
+# Get the indices of the events we are considering in the order specified
 sorting = f[file_val + '/' + args.sort_variable][:].argsort()
 if args.sort_order == 'descending':
     sorting = sorting[::-1]
 event_idx = sorting[0:events_to_read]
 stat = stat[event_idx]
 
+# Save the time / trigger / template ids for the events
 times = {}
 tids = {}
-# Version used for multi-ifo coinc code
 ifo_list = f.attrs['ifos'].split(' ')
+f_cat = f[file_val]
 for ifo in ifo_list:
-    times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][event_idx]
-    tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][event_idx]
+    times[ifo] = f_cat[ifo]['time'][:][event_idx]
+    tids[ifo] = f_cat[ifo]['trigger_id'][:][event_idx]
+bank_ids = f_cat['template_id'][:][event_idx]
+f.close()
 
 bank_data = h5py.File(args.bank_file, 'r')
 
@@ -139,21 +154,30 @@ curr_idx = -1
 while event_count < num_events and curr_idx < (events_to_read - 1):
     curr_idx += 1
     files = wf.FileList([])
+    duplicate = False
 
+    # Times and trig ids for trigger timeseries plot
     ifo_times_strings = []
     ifo_tids_strings = []
-    duplicate = False
-    for ifo in times:
-        ifo_times_string = '%s:%s' % (ifo, times[ifo][curr_idx])
-        ifo_tids_string = '%s:%s' % (ifo, tids[ifo][curr_idx])
-        ifo_times_strings += [ifo_times_string]
-        ifo_tids_strings += [ifo_tids_string]
 
-        # For background do not want to follow up 10 background coincs with
-        # the same event in ifo 1 and different events in ifo 2
+    # Mean time to use as reference for zerolag
+    mtime = coinc.mean_if_greater_than_zero(
+        [times[ifo][curr_idx] for ifo in times])[0]
+
+    for ifo in times:
+        plottime = times[ifo][curr_idx]
+        if plottime == -1:  # Ifo is not in coinc
+            # Use mean time instead and don't plot special trigger
+            plottime = mtime
+        else:  # Do plot special trigger
+            ifo_tids_strings += ['%s:%s' % (ifo, tids[ifo][curr_idx])]
+        ifo_times_strings += ['%s:%s' % (ifo, plottime)]
+
+        # For background do not want to follow up 10 background coincs with the
+        # same event in ifo 1 and different events in ifo 2, so record times
         if ifo not in event_times:
             event_times[ifo] = []
-        # Don't skip coincs in zerolag or due to the sentinel time -1
+        # Only do this for background coincident triggers & not sentinel time -1
         if 'background' in args.analysis_category and \
                 times[ifo][curr_idx] != -1 and \
                 int(times[ifo][curr_idx]) in event_times[ifo]:
@@ -175,10 +199,10 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                         workflow,
                         skipped_data,
                         args.output_dir,
-                        tags=['SKIP_{}'.format(event_count)]),)
+                        tags=[f'SKIP_{event_count}']),)
         skipped_data = []
 
-    bank_id = f['{}/template_id'.format(file_val)][:][sorting][curr_idx]
+    bank_id = bank_ids[curr_idx]
 
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, args.output_dir, n_loudest=curr_idx,
@@ -188,40 +212,33 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                              ifo_times, args.output_dir, special_tids=ifo_tids,
                              tags=args.tags + [str(event_count)])
 
-    params = {}
-    for ifo in times:
-        params['%s_end_time' % ifo] = times[ifo][curr_idx]
-        try:
-            # Only present for precessing case
-            params['u_vals_%s'%ifo] = \
-                                 fsdt[ifo][ifo]['u_vals'][tids[ifo][curr_idx]]
-        except:
-            pass
+    params = mini.get_single_template_params(
+        curr_idx,
+        times,
+        bank_data,
+        bank_ids[curr_idx],
+        fsdt,
+        tids
+    )
 
-    params['mass1'] = bank_data['mass1'][bank_id]
-    params['mass2'] = bank_data['mass2'][bank_id]
-    params['spin1z'] = bank_data['spin1z'][bank_id]
-    params['spin2z'] = bank_data['spin2z'][bank_id]
-    params['f_lower'] = bank_data['f_lower'][bank_id]
-    # don't require precessing template info if not present
-    try:
-        params['spin1x'] = bank_data['spin1x'][bank_id]
-        params['spin1y'] = bank_data['spin1y'][bank_id]
-        params['spin2x'] = bank_data['spin2x'][bank_id]
-        params['spin2y'] = bank_data['spin2y'][bank_id]
-        params['inclination'] = bank_data['inclination'][bank_id]
-    except KeyError:
-        pass
+    _, sngl_tmplt_plots = mini.make_single_template_plots(
+        workflow,
+        insp_segs,
+        args.inspiral_data_read_name,
+        args.inspiral_data_analyzed_name,
+        params,
+        args.output_dir,
+        data_segments=insp_data_seglists,
+        tags=args.tags + [str(event_count)]
+    )
+    files += sngl_tmplt_plots
 
-    files += mini.make_single_template_plots(workflow, insp_segs,
-                                    args.inspiral_data_read_name,
-                                    args.inspiral_data_analyzed_name, params,
-                                    args.output_dir,
-                                    tags=args.tags + [str(event_count)])
 
     for single in single_triggers:
         time = times[single.ifo][curr_idx]
         if time==-1:
+            # If this detector did not trigger, still make the plot, but use
+            # the average time of detectors which did trigger
             time = coinc.mean_if_greater_than_zero([times[sngl.ifo][curr_idx]
                                                     for sngl in single_triggers])[0]
         for seg in insp_analysed_seglists[single.ifo]:
@@ -236,8 +253,8 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                      tags=args.tags + [str(event_count)])
                 break
         else:
-            logging.info('Trigger time {} is not valid in {}, ' \
-                         'skipping singles plots'.format(time, single.ifo))
+            logging.info(f'Trigger time {time} is not valid in '
+                         f'{single.ifo}, skipping singles plots')
 
     layouts += list(layout.grouper(files, 2))
 

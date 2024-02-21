@@ -11,8 +11,8 @@ from ligo.segments import segmentlist, segment
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
                     help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--analysis-segment-file",  required=True,
@@ -20,6 +20,7 @@ parser.add_argument("--analysis-segment-file",  required=True,
 parser.add_argument("--segment-name", help="Name of segment list to use")
 parser.add_argument("--cores", default=1, type=int)
 parser.add_argument("--output-file", required=True)
+parser.add_argument("--num-data-retries", default=10, type=int)
 
 pycbc.psd.insert_psd_option_group(parser, output=False)
 pycbc.strain.insert_strain_option_group(parser, gps_times=False)
@@ -48,15 +49,26 @@ def get_psd(input_tuple):
     argstmp.gps_start_time = int(seg[0]) + args.pad_data
     argstmp.gps_end_time = int(seg[1]) - args.pad_data
     tmp_segment = segment([argstmp.gps_start_time, argstmp.gps_end_time])
-    argstmp.channel_name = resolve_td_option(args.channel_name, tmp_segment)
+    # There may be cases where channel name or frame type change within an
+    # analysis (noting that this could be an issue with significance
+    # computation). If so, resolve them for each PSD block. This still
+    # assumes that the channel and frame type are constant during a lock stretch.
+    if args.channel_name:
+        # Option may not have been given at all
+        argstmp.channel_name = resolve_td_option(args.channel_name, tmp_segment)
+    if args.frame_type:
+        # Option is often not given.
+        argstmp.frame_type = resolve_td_option(args.frame_type, tmp_segment)
 
-    # This helps when the filesystem is unreliable, and gives extra retries.
-    # python has an internal limit of ~100 (it is not infinite)
-    try:
-        gwstrain = pycbc.strain.from_cli(argstmp, pycbc.DYN_RANGE_FAC)
-    except RuntimeError:
-        time.sleep(10)
-        return get_psd((seg, i))
+    # This helps when the filesystem is unreliable
+    for i in range(args.num_data_retries):
+        try:
+            gwstrain = pycbc.strain.from_cli(argstmp, pycbc.DYN_RANGE_FAC)
+            break
+        except RuntimeError:
+            time.sleep(10)
+            if i == (args.num_data_retries-1):
+                raise
 
     logging.info('%d: determining strain segmentation', i)
     strain_segments = pycbc.strain.StrainSegments.from_cli(args, gwstrain)

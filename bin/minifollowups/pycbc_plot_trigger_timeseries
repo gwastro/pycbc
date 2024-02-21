@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 """ Plot the single detector trigger timeseries """
 import argparse, logging, pycbc.version, pycbc.results, sys
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import ranking
-from pycbc.io import HFile
+from pycbc.io import HFile, SingleDetTriggers
+import h5py
 import matplotlib; matplotlib.use('Agg'); import pylab
 import numpy
 
@@ -39,8 +41,9 @@ parser.add_argument('--times', nargs='+', type=float,
 parser.add_argument('--special-trigger-ids', nargs='+', type=int,
     action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
     help="The set of special trigger ids to plot a star at")
-parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr',
-    help="Which plot to make; an 'snr' or a newsnr' plot.")
+parser.add_argument('--plot-type',
+    choices=ranking.sngls_ranking_function_dict, default='snr',
+    help="Which single-detector ranking statistic to plot.")
 parser.add_argument('--output-file')
 parser.add_argument('--log-y-axis', action='store_true')
 
@@ -49,73 +52,85 @@ pycbc.init_logging(args.verbose)
 
 any_data = False
 
-# organize the single detector triggers files by ifo in a dict
 fig = pylab.figure()
+
+min_rank = numpy.inf
 for ifo in args.single_trigger_files.keys():
+    logging.info("Getting %s triggers", ifo)
     t = args.times[ifo]
 
-    if args.special_trigger_ids:
-        id_loud = args.special_trigger_ids[ifo]
+    # Identify trigger idxs within window of trigger time
+    with HFile(args.single_trigger_files[ifo], 'r') as data:
+        idx, _ = data.select(
+            lambda endtime: abs(endtime - t) < args.window,
+            'end_time',
+            group=ifo,
+            return_data=False,
+        )
+        data_mask = numpy.zeros(data[ifo]['snr'].size, dtype=bool)
+        data_mask[idx] = True
 
-    data = HFile(args.single_trigger_files[ifo], 'r')
+    if not len(idx):
+        # No triggers in this window, add to the legend and continue
+        # Make sure it isnt on the plot
+        pylab.scatter(-2 * args.window, 0,
+                      color=pycbc.results.ifo_color(ifo),
+                      marker='x',
+                      label=ifo)
+        continue
 
-    # Identify trigger indices within window
-    select_func = lambda *inputs: ((inputs[0] < (t + args.window)) & 
-                                   (inputs[0] > (t - args.window)))
-    times, snr, chisq, chisq_dof = data.select(select_func, ifo + '/end_time',
-                                               ifo + '/snr', ifo + '/chisq',
-                                               ifo + '/chisq_dof')
-                                 
-    # center times on the trigger/chosen time
-    times = times - t
+    trigs = SingleDetTriggers(
+        args.single_trigger_files[ifo],
+        ifo,
+        premask=data_mask
+    )
 
-    if args.plot_type == 'snr':
-        val = snr
+    any_data = True
+    logging.info("Keeping %d triggers in the window", len(idx))
 
-        if args.special_trigger_ids:
-            top = data[ifo]['snr'][id_loud]
+    logging.info("Getting %s", args.plot_type)
+    rank = ranking.get_sngls_ranking_from_trigs(trigs, args.plot_type)
 
-    if args.plot_type == 'newsnr':
-        rchisq = chisq / (2 * chisq_dof - 2)
-        if len(rchisq) > 0:
-            val = ranking.newsnr(snr, rchisq)
-        else:
-            val = numpy.array([])
-
-        # Get the newnsr of the loudest trigger so we can plot a star there
-        if args.special_trigger_ids:
-            rchisq = data[ifo]['chisq'][id_loud] / \
-                (data[ifo]['chisq_dof'][id_loud] * 2 - 2)
-            top = ranking.newsnr(data[ifo]['snr'][id_loud], rchisq)
-
-    if type(val) in [numpy.float32, numpy.float64] or len(val) > 0:
-        any_data = True
-
-    pylab.scatter(times, val, color=pycbc.results.ifo_color(ifo), marker='x',
+    pylab.scatter(trigs['end_time'] - t, rank,
+                  color=pycbc.results.ifo_color(ifo), marker='x',
                   label=ifo)
 
+    min_rank = min(min_rank, rank.min())
+
     if args.special_trigger_ids:
-        any_data = True
-        pylab.scatter([0], [top], marker='*', s=50, color='yellow')
+        special_idx = args.special_trigger_ids[ifo]
+        if special_idx == None:  # No special trigger for this ifo
+            continue
+        elif special_idx not in idx:
+            logging.info("IDX %d not in kept list",
+                         args.special_trigger_ids[ifo])
+            continue
+        special_red_idx = numpy.where(idx == special_idx)[0]
+
+        pylab.scatter(trigs.trigs_f[f'{ifo}/end_time'][special_idx] - t,
+                      rank[special_red_idx], marker='*', s=50, color='yellow')
 
 if args.log_y_axis and any_data:
     pylab.yscale('log')
 
+if not numpy.isinf(min_rank):
+    pylab.ylim(ymin=min_rank)
+
 pylab.xlabel('time (s)')
 pylab.ylabel(args.plot_type)
-
-try:
-    if len(val) > 0:
-        pylab.ylim(ymin=val.min())
-except TypeError:
-    pylab.ylim(ymin=val)
 
 pylab.xlim(xmin=-args.window, xmax=args.window)
 pylab.legend()
 pylab.grid()
+
+logging.info("Saving figure")
 pycbc.results.save_fig_with_metadata(fig, args.output_file,
             cmd = ' '.join(sys.argv),
             title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
-            caption = 'Time series showing the single detector triggers'
-                      ' centered around the time of the trigger of interest.',
+            caption = 'Time series showing the single-detector triggers '
+                      'centered around the time of the trigger of interest. '
+                      'Triggers with ranking 1 have been downweighted beyond '
+                      'consideration, but may still form insignificant '
+                      'events.',
          )
+logging.info("Done!")

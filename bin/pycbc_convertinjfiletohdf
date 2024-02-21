@@ -23,6 +23,7 @@ or the LIGO HDF format) into a PyCBC hdf injection format
 import argparse
 import numpy
 import h5py
+import shutil
 
 import pycbc
 from pycbc.inject import InjectionSet, CBCHDFInjectionSet
@@ -150,7 +151,11 @@ class LVKNewStyleInjectionSet(object):
             elif lvk_name == 't_co_gps_add':
                 continue
             else:
-                data[pycbc_name] = self.inj_file[f'{self.subdir}/{lvk_name}'][:]
+                lvk_file_dset = self.inj_file[f'{self.subdir}/{lvk_name}']
+                if lvk_file_dset.dtype.char in ['U', 'O']:
+                    data[pycbc_name] = lvk_file_dset[:].astype('S')
+                else:
+                    data[pycbc_name] = lvk_file_dset[:]
         return data
 
 
@@ -174,19 +179,16 @@ if args.injection_file.endswith(('.xml', '.xml.gz', '.xmlgz')):
 else:
     # Assume a HDF file - check if new LVK format first
     inj_file = h5py.File(args.injection_file, 'r')
-    if 'file_format' in inj_file.attrs:
+    if 'file_format' in inj_file.attrs or b'file_format' in inj_file.attrs:
         # Assume LVK as PyCBC doesn't have this attribute
         injclass = LVKNewStyleInjectionSet(args.injection_file)
     inj_file.close()
 
-if injclass is None:
-    # Assume this is a PyCBC format
-    injclass = InjectionSet(args.injection_file)
-    data = {}
-    for key in xinj.table[0].__slots__:
-        data[str(key)] = numpy.array([getattr(t, key) for t in xinj.table])
-else:
+if injclass is not None:
+    # The injection file is of known type
     data = injclass.pack_data_into_pycbc_format_input()
-
-samples = FieldArray.from_kwargs(**data)
-CBCHDFInjectionSet.write(args.output_file, samples)
+    samples = FieldArray.from_kwargs(**data)
+    CBCHDFInjectionSet.write(args.output_file, samples)
+else:
+    # Assume the injection is a HDF file (PyCBC format), only make a copy
+    shutil.copy(args.injection_file, args.output_file)

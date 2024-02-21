@@ -52,8 +52,6 @@ parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
 parser.add_argument('--filter-string', default=None, type=str,
                     help='Optional, boolean expression for filtering triggers')
-parser.add_argument('--min-snr', default=0., type=float,
-                    help='Only plot triggers above the given SNR')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Destination path for plot')
 parser.add_argument('--x-var', required=True,
@@ -84,13 +82,27 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-snr_filter = '(self.snr>%f)' % (opts.min_snr) if opts.min_snr > 0. else None 
-filts = [f for f in [snr_filter, opts.filter_string] if f is not None]
-filter_func = ' & '.join(filts) if filts else None
+if opts.z_var == 'density' or opts.min_z is None:
+    filter_rank = None
+    filter_thresh = None
+else:
+    # We can apply a/another filter on the z value
+    filter_rank = opts.z_var
+    filter_thresh = opts.min_z
 
-trigs = pycbc.io.SingleDetTriggers(opts.single_trig_file, opts.bank_file,
-                  opts.veto_file, opts.segment_name, filter_func, opts.detector)
+trigs = pycbc.io.SingleDetTriggers(
+    opts.single_trig_file,
+    opts.detector,
+    bank_file=opts.bank_file,
+    veto_file=opts.veto_file,
+    segment_name=opts.segment_name,
+    filter_func=opts.filter_string,
+    filter_rank=filter_rank,
+    filter_threshold=filter_thresh
+)
 
+# Can this be folded into the SingleDetTriggers call? Maybe, but we can
+# do this later if needed
 x = getattr(trigs, opts.x_var)
 y = getattr(trigs, opts.y_var)
 
@@ -106,12 +118,39 @@ if opts.max_y is not None:
 x = x[mask]
 y = y[mask]
 
+title = f'{opts.z_var.title()} of {opts.detector} triggers ' + \
+        f'over {opts.x_var.title()} and {opts.y_var.title()}'
+fig_caption = f"This plot shows the {opts.z_var} of single detector " + \
+              f"triggers for the {opts.detector} detector. " + \
+              f"{opts.z_var.title()} is shown on the colorbar axis " + \
+              f"against {opts.x_var} and {opts.y_var} on the x- and y-axes."
+
+if not any(mask):
+    # All triggers removed - make a blank plot which says so:
+    fig = pl.figure()
+    ax = fig.gca()
+    pl.text(0.5, 0.5, 'no triggers in the range')
+
+    pycbc.results.save_fig_with_metadata(
+        fig,
+        opts.output_file,
+        title=title,
+        caption=fig_caption,
+        cmd=' '.join(sys.argv),
+        fig_kwds={'dpi': 200}
+    )
+    sys.exit()
+
 hexbin_style = {
     'gridsize': opts.grid_size,
-    # hexbin shows bins with *less* than mincnt as blank
-    'mincnt': 0,
     'linewidths': 0.03
 }
+
+# In earlier versions mpl will try to take the max over bins with 0 triggers
+# and fail, unless we tell it to leave these blank by setting mincnt
+if matplotlib.__version__ < '3.8.1':
+    hexbin_style['mincnt'] = 0
+
 if opts.log_x:
     hexbin_style['xscale'] = 'log'
 if opts.log_y:
@@ -123,7 +162,6 @@ hexbin_style['norm'] = LogNorm(vmin=minz, vmax=maxz)
 logging.info('Plotting')
 fig = pl.figure()
 ax = fig.gca()
-
 
 if opts.z_var == 'density':
     hb = ax.hexbin(x, y, **hexbin_style)
@@ -137,7 +175,7 @@ elif opts.z_var in ranking.sngls_ranking_function_dict:
     max_z = z.max() if opts.max_z is None else opts.max_z
     if max_z / min_z > 10:
         cb_style['ticks'] = LogLocator(subs=range(10))
-    hb = ax.hexbin(x, y, C=z, reduce_C_function=max, **hexbin_style)
+    hb = ax.hexbin(x, y, C=z, reduce_C_function=np.max, **hexbin_style)
     fig.colorbar(hb, **cb_style)
 else:
     raise RuntimeError('z_var = %s is not recognized!' % (opts.z_var))
@@ -145,12 +183,6 @@ else:
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
 ax.set_title(opts.z_var.title() + ' of %s triggers ' % (opts.detector))
-title = '%s of %s triggers over %s and %s' % (opts.z_var.title(),
-                         opts.detector, opts.x_var.title(), opts.y_var.title())
-fig_caption = ("This plot shows the %s of single detector triggers for the %s "
-               "detector. %s is shown on the colorbar axis against %s and %s "
-               "on the x- and y-axes." % (opts.z_var, opts.detector,
-                                   opts.z_var.title(), opts.x_var, opts.y_var))
 pycbc.results.save_fig_with_metadata(fig, opts.output_file, title=title,
                                      caption=fig_caption, cmd=' '.join(sys.argv),
                                      fig_kwds={'dpi': 200})

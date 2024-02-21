@@ -18,6 +18,7 @@ import argparse, logging
 
 import numpy as np
 
+from pycbc import init_logging
 from pycbc.events import triggers
 import pycbc.version
 
@@ -27,9 +28,8 @@ parser = argparse.ArgumentParser(usage="",
                 "parameter, to suppress random noise in the resulting "
                 "background model.")
 
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action=pycbc.version.Version)
-parser.add_argument("-V", "--verbose", action="store_true",
-                    help="Print extra debugging information", default=False)
 parser.add_argument("--template-fit-file",
                     help="Input hdf5 file containing fit coefficients for each"
                          " individual template. Required")
@@ -78,11 +78,7 @@ args = parser.parse_args()
 if args.regression_method == 'nn' and args.num_neighbors < 1:
     raise RuntimeError("Need to give a positive number of nearest neighbors!")
 
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+init_logging(args.verbose)
 
 fits = h5py.File(args.template_fit_file, 'r')
 

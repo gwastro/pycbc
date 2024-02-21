@@ -47,7 +47,7 @@ install_requires = setup_requires + [
     'tqdm',
     'setuptools',
     'gwdatafind',
-    'pegasus-wms.api >= 5.0.3',
+    'pegasus-wms.api >= 5.0.6',
     'python-ligo-lw >= 1.7.0',
     'ligo-segments',
     'lalsuite!=7.2',
@@ -119,7 +119,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.2.dev1'
+        vinfo.version = '2.4.dev1'
         vinfo.release = 'False'
 
     version_script = f"""# coding: utf-8
@@ -203,7 +203,7 @@ extras_require = {
         'scikit-cuda',
     ],
     'igwn': [
-        'ciecplib>=0.4.4',
+        'ciecplib>=0.7.0',
     ],
 }
 

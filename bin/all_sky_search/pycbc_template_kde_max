@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+import numpy, h5py, argparse, logging
+from pycbc import init_logging, add_common_pycbc_options
+
+parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
+parser.add_argument('--kde-files', nargs='+', required=True,
+                    help='HDF files with KDE values')
+parser.add_argument('--output-file', required=True, help='Name of output HDF file')
+parser.add_argument('--min-ratio', type=float,
+                    help='Minimum ratio for template_kde relative to the maximum')
+args = parser.parse_args()
+init_logging(args.verbose)
+
+
+input_kdes = [h5py.File(kfile, 'r') for kfile in args.kde_files]
+if len(input_kdes) < 2:
+    raise ValueError("At least two input files are required.")
+
+
+# Creating output file and save datasets and attributes from input files
+f_dest = h5py.File(args.output_file, 'w')
+for name in input_kdes[0]:
+    if isinstance(input_kdes[0][name], h5py.Dataset):
+        if name == 'data_kde':
+            data_combined = [kfile['data_kde'][:] for kfile in input_kdes]
+            template_kde = numpy.maximum.reduce(data_combined)
+        elif all(isinstance(kfile[name], h5py.Dataset) for kfile in input_kdes):
+            dataset_values = [kfile[name][:] for kfile in input_kdes]
+            f_dest.create_dataset(name, data=dataset_values[0])
+
+for attr_name in input_kdes[0].attrs.keys():
+    attr_values = [kfile.attrs.get(attr_name) for kfile in input_kdes]
+    if all(numpy.array_equal(attr_values[0], attr_val) for attr_val in attr_values[1:]):
+        f_dest.attrs[attr_name] = attr_values[0]
+
+if args.min_ratio is not None:
+    logging.info(f'Applying minimum template KDE ratio {args.min_ratio}')
+    f_dest.attrs['min-kde-ratio'] = args.min_ratio
+    min_val = args.min_ratio * numpy.max(template_kde)
+    template_kde = numpy.maximum(template_kde, min_val)
+f_dest.create_dataset('data_kde', data=template_kde)
+
+for kfile in input_kdes:
+    kfile.close()
+f_dest.close()
+logging.info('Done!')

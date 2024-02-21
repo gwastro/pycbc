@@ -16,6 +16,7 @@
 
 import logging, os.path
 from ligo import segments
+from pycbc.events import coinc
 from pycbc.workflow.core import Executable, FileList
 from pycbc.workflow.core import makedir, resolve_url_to_file
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
@@ -35,7 +36,8 @@ def grouper(iterable, n, fillvalue=None):
 
 def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
                        tmpltbank_file, insp_segs, insp_data_name,
-                       insp_anal_name, dax_output, out_dir, tags=None):
+                       insp_anal_name, dax_output, out_dir,
+                       tags=None):
     """ Create plots that followup the Nth loudest coincident injection
     from a statmap produced HDF file.
 
@@ -56,6 +58,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
         The name of the segmentlist storing data read.
     insp_anal_name: str
         The name of the segmentlist storing data analyzed.
+    dax_output : directory
+        Location of the dax outputs
     out_dir: path
         The directory to store minifollowups result plots and files
     tags: {None, optional}
@@ -114,7 +118,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     # determine if a staging site has been specified
     job = SubWorkflow(fil.name, is_planned=False)
-    input_files = [tmpltbank_file, coinc_file, insp_segs] + single_triggers
+    input_files = [tmpltbank_file, coinc_file, insp_segs] + \
+        single_triggers
     job.add_inputs(*input_files)
     job.set_subworkflow_properties(map_file,
                                    staging_site=workflow.staging_site,
@@ -125,7 +130,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                                    insp_segs, insp_data_name, insp_anal_name,
                                    dax_output, out_dir, veto_file=None,
-                                   veto_segment_name=None, statfiles=None,
+                                   veto_segment_name=None, fg_file=None,
+                                   fg_name=None, statfiles=None,
                                    tags=None):
     """ Create plots that followup the Nth loudest clustered single detector
     triggers from a merged single detector trigger HDF file.
@@ -192,8 +198,11 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
         node.add_opt('--veto-segment-name', veto_segment_name)
+    if fg_file is not None:
+        assert(fg_name is not None)
+        node.add_input_opt('--foreground-censor-file', fg_file)
+        node.add_opt('--foreground-segment-name', fg_name)
     if statfiles:
-        statfiles = statfiles.find_output_with_ifo(curr_ifo)
         node.add_input_list_opt('--statistic-files', statfiles)
     if tags:
         node.add_list_opt('--tags', tags)
@@ -340,10 +349,185 @@ class PlotQScanExecutable(PlotExecutable):
     time_dependent_options = ['--channel-name', '--frame-type']
 
 
+def get_single_template_params(curr_idx, times, bank_data,
+                               bank_id, fsdt, tids):
+    """
+    A function to get the parameters needed for the make_single_template_files
+    function.
+
+    Parameters
+    ----------
+    curr_idx : int
+        The index of the event in the file
+    times : dictionary keyed on IFO of numpy arrays, dtype float
+        The array of trigger times for each detector
+    bank_data : dictionary or h5py file
+        Structure containing the bank information
+    bank_id : int
+        The template index within the bank
+    fsdt : dictionary of h5py files, keyed on IFO
+        The single-detector TRIGGER_MERGE files, keyed by IFO
+    tids : dictionary keyed on IFO of numpy arrays, dtype int
+        The trigger indexes in fsdt for each IFO
+
+    Returns
+    -------
+    params : dictionary
+        A dictionary containing the parameters needed for the event used
+
+    """
+    params = {}
+    for ifo in times:
+        params['%s_end_time' % ifo] = times[ifo][curr_idx]
+        try:
+            # Only present for precessing, so may not exist
+            params['u_vals_%s' % ifo] = \
+                                 fsdt[ifo][ifo]['u_vals'][tids[ifo][curr_idx]]
+        except:
+            pass
+
+    params['mean_time'] = coinc.mean_if_greater_than_zero(
+        [times[ifo][curr_idx] for ifo in times]
+    )[0]
+
+    params['mass1'] = bank_data['mass1'][bank_id]
+    params['mass2'] = bank_data['mass2'][bank_id]
+    params['spin1z'] = bank_data['spin1z'][bank_id]
+    params['spin2z'] = bank_data['spin2z'][bank_id]
+    params['f_lower'] = bank_data['f_lower'][bank_id]
+    if 'approximant' in bank_data:
+        params['approximant'] = bank_data['approximant'][bank_id]
+    # don't require precessing template info if not present
+    try:
+        params['spin1x'] = bank_data['spin1x'][bank_id]
+        params['spin1y'] = bank_data['spin1y'][bank_id]
+        params['spin2x'] = bank_data['spin2x'][bank_id]
+        params['spin2y'] = bank_data['spin2y'][bank_id]
+        params['inclination'] = bank_data['inclination'][bank_id]
+    except KeyError:
+        pass
+    return params
+
+
+def make_single_template_files(workflow, segs, ifo, data_read_name,
+                               analyzed_name, params, out_dir, inj_file=None,
+                               exclude=None, require=None, tags=None,
+                               store_file=False, use_mean_time=False,
+                               use_exact_inj_params=False):
+    """Function for creating jobs to run the pycbc_single_template code and
+    add these jobs to the workflow.
+
+    Parameters
+    -----------
+    workflow : workflow.Workflow instance
+        The pycbc.workflow.Workflow instance to add these jobs to.
+    segs : workflow.File instance
+        The pycbc.workflow.File instance that points to the XML file containing
+        the segment lists of data read in and data analyzed.
+    ifo: str
+        The name of the interferometer
+    data_read_name : str
+        The name of the segmentlist containing the data read in by each
+        inspiral job in the segs file.
+    analyzed_name : str
+        The name of the segmentlist containing the data analyzed by each
+        inspiral job in the segs file.
+    params : dictionary
+        A dictionary containing the parameters of the template to be used.
+        params[ifo+'end_time'] is required for all ifos in workflow.ifos.
+        If use_exact_inj_params is False then also need to supply values for
+        [mass1, mass2, spin1z, spin2x]. For precessing templates one also
+        needs to supply [spin1y, spin1x, spin2x, spin2y, inclination]
+        additionally for precession one must supply u_vals or
+        u_vals_+ifo for all ifos. u_vals is the ratio between h_+ and h_x to
+        use when constructing h(t). h(t) = (h_+ * u_vals) + h_x.
+    out_dir : str
+        Directory in which to store the output files.
+    inj_file : workflow.File (optional, default=None)
+        If given send this injection file to the job so that injections are
+        made into the data.
+    exclude : list (optional, default=None)
+        If given, then when considering which subsections in the ini file to
+        parse for options to add to single_template_plot, only use subsections
+        that *do not* match strings in this list.
+    require : list (optional, default=None)
+        If given, then when considering which subsections in the ini file to
+        parse for options to add to single_template_plot, only use subsections
+        matching strings in this list.
+    tags : list (optional, default=None)
+        The tags to use for this job.
+    store_file : boolean (optional, default=False)
+        Keep the output files of this job.
+    use_mean_time : boolean (optional, default=False)
+        Use the mean time as the center time for all ifos
+    use_exact_inj_params : boolean (optional, default=False)
+        If True do not use masses and spins listed in the params dictionary
+        but instead use the injection closest to the filter time as a template.
+
+    Returns
+    --------
+    output_files : workflow.FileList
+        The list of workflow.Files created in this function.
+    """
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'single_template'
+    secs = requirestr(workflow.cp.get_subsections(name), require)
+    secs = excludestr(secs, exclude)
+    secs = excludestr(secs, workflow.ifo_combinations)
+    # Reanalyze the time around the trigger in each detector
+    curr_exe = SingleTemplateExecutable(workflow.cp, 'single_template',
+                                        ifos=[ifo], out_dir=out_dir,
+                                        tags=tags)
+    start = int(params[ifo + '_end_time'])
+    end = start + 1
+    cseg = segments.segment([start, end])
+    node = curr_exe.create_node(valid_seg=cseg)
+
+    if use_exact_inj_params:
+        node.add_opt('--use-params-of-closest-injection')
+    else:
+        node.add_opt('--mass1', "%.6f" % params['mass1'])
+        node.add_opt('--mass2', "%.6f" % params['mass2'])
+        node.add_opt('--spin1z',"%.6f" % params['spin1z'])
+        node.add_opt('--spin2z',"%.6f" % params['spin2z'])
+        node.add_opt('--template-start-frequency',
+                     "%.6f" % params['f_lower'])
+        # Is this precessing?
+        if 'u_vals' in params or 'u_vals_%s' % ifo in params:
+            node.add_opt('--spin1x',"%.6f" % params['spin1x'])
+            node.add_opt('--spin1y',"%.6f" % params['spin1y'])
+            node.add_opt('--spin2x',"%.6f" % params['spin2x'])
+            node.add_opt('--spin2y',"%.6f" % params['spin2y'])
+            node.add_opt('--inclination',"%.6f" % params['inclination'])
+            try:
+                node.add_opt('--u-val',"%.6f" % params['u_vals'])
+            except:
+                node.add_opt('--u-val',
+                             "%.6f" % params['u_vals_%s' % ifo])
+
+    if params[ifo + '_end_time'] > 0 and not use_mean_time:
+        trig_time = params[ifo + '_end_time']
+    else:
+        trig_time = params['mean_time']
+
+    node.add_opt('--trigger-time', f"{trig_time:.6f}")
+    node.add_input_opt('--inspiral-segments', segs)
+    if inj_file is not None:
+        node.add_input_opt('--injection-file', inj_file)
+    node.add_opt('--data-read-name', data_read_name)
+    node.add_opt('--data-analyzed-name', analyzed_name)
+    node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                             '--output-file', store_file=store_file)
+    workflow += node
+    return node.output_files
+
+
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
-                                  params, out_dir, inj_file=None, exclude=None,
-                                  require=None, tags=None, params_str=None,
-                                  use_exact_inj_params=False):
+                               params, out_dir, inj_file=None, exclude=None,
+                               data_segments=None,
+                               require=None, tags=None, params_str=None,
+                               use_exact_inj_params=False):
     """Function for creating jobs to run the pycbc_single_template code and
     to run the associated plotting code pycbc_single_template_plots and add
     these jobs to the workflow.
@@ -383,6 +567,10 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
         If given, then when considering which subsections in the ini file to
         parse for options to add to single_template_plot, only use subsections
         matching strings in this list.
+    data_segments : dictionary of segment lists
+        Dictionary of segment lists keyed on the IFO. Used to decide if an
+        IFO is plotted if there is valid data. If not given, will plot if
+        the IFO produced a trigger which contributed to the event
     tags : list (optional, default=None)
         Add this list of tags to all jobs.
     params_str : str (optional, default=None)
@@ -394,8 +582,12 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
 
     Returns
     --------
-    output_files : workflow.FileList
-        The list of workflow.Files created in this function.
+    hdf_files : workflow.FileList
+        The list of workflow.Files created by single_template jobs
+        in this function.
+    plot_files : workflow.FileList
+        The list of workflow.Files created by single_template_plot jobs
+        in this function.
     """
     tags = [] if tags is None else tags
     makedir(out_dir)
@@ -403,58 +595,37 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
     secs = excludestr(secs, workflow.ifo_combinations)
-    files = FileList([])
+    hdf_files = FileList([])
+    plot_files = FileList([])
+    valid = {}
+    for ifo in workflow.ifos:
+        valid[ifo] = params['mean_time'] in data_segments[ifo] if data_segments \
+                else params['%s_end_time' % ifo] > 0
     for tag in secs:
         for ifo in workflow.ifos:
-            if params['%s_end_time' % ifo] == -1.0:
+            if not valid[ifo]:
+                # If the IFO is not being used, continue
                 continue
-            # Reanalyze the time around the trigger in each detector
-            curr_exe = SingleTemplateExecutable(workflow.cp, 'single_template',
-                                                ifos=[ifo], out_dir=out_dir,
-                                                tags=[tag] + tags)
-            start = int(params[ifo + '_end_time'])
-            end = start + 1
-            cseg = segments.segment([start, end])
-            node = curr_exe.create_node(valid_seg=cseg)
-
-            if use_exact_inj_params:
-                node.add_opt('--use-params-of-closest-injection')
-            else:
-                node.add_opt('--mass1', "%.6f" % params['mass1'])
-                node.add_opt('--mass2', "%.6f" % params['mass2'])
-                node.add_opt('--spin1z',"%.6f" % params['spin1z'])
-                node.add_opt('--spin2z',"%.6f" % params['spin2z'])
-                node.add_opt('--template-start-frequency',
-                             "%.6f" % params['f_lower'])
-                # Is this precessing?
-                if 'u_vals' in params or 'u_vals_%s' % ifo in params:
-                    node.add_opt('--spin1x',"%.6f" % params['spin1x'])
-                    node.add_opt('--spin1y',"%.6f" % params['spin1y'])
-                    node.add_opt('--spin2x',"%.6f" % params['spin2x'])
-                    node.add_opt('--spin2y',"%.6f" % params['spin2y'])
-                    node.add_opt('--inclination',"%.6f" % params['inclination'])
-                    try:
-                        node.add_opt('--u-val',"%.6f" % params['u_vals'])
-                    except:
-                        node.add_opt('--u-val',
-                                     "%.6f" % params['u_vals_%s' % ifo])
-
-            # str(numpy.float64) restricts to 2d.p. BE CAREFUL WITH THIS!!!
-            str_trig_time = '%.6f' %(params[ifo + '_end_time'])
-            node.add_opt('--trigger-time', str_trig_time)
-            node.add_input_opt('--inspiral-segments', segs)
-            if inj_file is not None:
-                node.add_input_opt('--injection-file', inj_file)
-            node.add_opt('--data-read-name', data_read_name)
-            node.add_opt('--data-analyzed-name', analyzed_name)
-            node.new_output_file_opt(workflow.analysis_time, '.hdf',
-                                     '--output-file', store_file=False)
-            data = node.output_files[0]
-            workflow += node
+            data = make_single_template_files(
+                workflow,
+                segs,
+                ifo,
+                data_read_name,
+                analyzed_name,
+                params,
+                out_dir,
+                inj_file=inj_file,
+                exclude=exclude,
+                require=require,
+                tags=tags + [tag],
+                store_file=False,
+                use_exact_inj_params=use_exact_inj_params
+            )
+            hdf_files += data
             # Make the plot for this trigger and detector
             node = PlotExecutable(workflow.cp, name, ifos=[ifo],
                               out_dir=out_dir, tags=[tag] + tags).create_node()
-            node.add_input_opt('--single-template-file', data)
+            node.add_input_opt('--single-template-file', data[0])
             node.new_output_file_opt(workflow.analysis_time, '.png',
                                      '--output-file')
             title="'%s SNR and chi^2 timeseries" %(ifo)
@@ -474,8 +645,8 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                          params['spin2z'])
             node.add_opt('--plot-caption', caption)
             workflow += node
-            files += node.output_files
-    return files
+            plot_files += node.output_files
+    return hdf_files, plot_files
 
 def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
                             require=None, tags=None):
@@ -525,9 +696,9 @@ def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
     files += node.output_files
     return files
 
-def make_coinc_info(workflow, singles, bank, coinc, out_dir,
+def make_coinc_info(workflow, singles, bank, coinc_file, out_dir,
                     n_loudest=None, trig_id=None, file_substring=None,
-                    sort_order=None, sort_var=None, tags=None):
+                    sort_order=None, sort_var=None, title=None, tags=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
@@ -535,7 +706,7 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
                               out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--single-trigger-files', singles)
-    node.add_input_opt('--statmap-file', coinc)
+    node.add_input_opt('--statmap-file', coinc_file)
     node.add_input_opt('--bank-file', bank)
     if sort_order:
         node.add_opt('--sort-order', sort_order)
@@ -545,6 +716,8 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
         node.add_opt('--n-loudest', str(n_loudest))
     if trig_id is not None:
         node.add_opt('--trigger-id', str(trig_id))
+    if title is not None:
+        node.add_opt('--title', f'"{title}"')
     if file_substring is not None:
         node.add_opt('--statmap-file-subspace-name', file_substring)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
@@ -553,7 +726,7 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     return files
 
 def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
-                  tags=None):
+                  statfiles=None, title=None, tags=None):
     """Setup a job to create sngl detector sngl ifo html summary snippet.
     """
     tags = [] if tags is None else tags
@@ -566,6 +739,10 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--trigger-id', str(trigger_id))
     node.add_opt('--instrument', ifo)
+    if statfiles is not None:
+        node.add_input_list_opt('--statistic-files', statfiles)
+    if title is not None:
+        node.add_opt('--title', f'"{title}"')
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     files += node.output_files
@@ -842,3 +1019,222 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
     workflow += node
     files = node.output_files
     return files
+
+
+def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
+                      event_id, approximant, out_dir, channel_name,
+                      tags=None):
+    """
+    Make files including xml, skymap fits and plots for uploading to gracedb
+    for a given event
+
+    Parameters
+    ----------
+    psd_files: FileList([])
+        PSD Files from MERGE_PSDs for the search as appropriate for the
+        event
+    snr_timeseries: FileList([])
+        SNR timeseries files, one from each IFO, to add to the XML and plot
+        output from pysbs_single_template
+    xml_all: pycbc.workflow.core.File instance
+        XML file containing all events from the search
+    event_id: string
+        an integer to describe the event's position in the xml_all file
+    approximant: byte string
+        The approximant used for the template of the event, to be passed
+        to bayestar for sky location
+    out_dir:
+        The directory where all the output files should go
+    channel_name: string
+        Channel name to be added to the XML file to be uploaded
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+
+    Returns
+    -------
+    all_output_files: FileList
+        List of all output files from this process
+    """
+    indiv_xml_exe = Executable(
+        workflow.cp,
+        'generate_xml',
+        ifos=workflow.ifos, out_dir=out_dir,
+        tags=tags
+    )
+
+    xml_node = indiv_xml_exe.create_node()
+    xml_node.add_input_opt('--input-file', xml_all)
+    xml_node.add_opt('--event-id', event_id)
+    xml_node.add_input_list_opt('--psd-files', psd_files)
+    xml_node.add_input_list_opt('--snr-timeseries', snr_timeseries)
+    xml_node.add_opt('--channel-name', channel_name)
+    xml_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.png',
+        '--snr-timeseries-plot',
+        tags=['snr']
+    )
+    xml_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.png',
+        '--psd-plot',
+        tags=['psd']
+    )
+    xml_out = xml_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.xml',
+        '--output-file'
+    )
+
+    workflow += xml_node
+
+    bayestar_exe = Executable(
+        workflow.cp,
+        'bayestar',
+        ifos=workflow.ifos,
+        out_dir=out_dir,
+        tags=tags
+    )
+
+    bayestar_node = bayestar_exe.create_node()
+    bayestar_node.add_input_opt('--event-xml', xml_out)
+    fits_out = bayestar_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.fits',
+        '--output-file',
+    )
+
+    if approximant == b'SPAtmplt':
+        # Bayestar doesn't use the SPAtmplt approximant
+        approximant = b'TaylorF2'
+    if approximant is not None:
+        bayestar_node.add_opt('--waveform', approximant.decode())
+
+    workflow += bayestar_node
+
+    skymap_plot_exe = PlotExecutable(
+        workflow.cp,
+        'skymap_plot',
+        ifos=workflow.ifos,
+        out_dir=out_dir,
+        tags=tags
+    )
+
+    skymap_plot_node = skymap_plot_exe.create_node()
+    skymap_plot_node.add_input_opt('', fits_out)
+    skymap_plot_node.new_output_file_opt(
+        workflow.analysis_time,
+        '.png',
+        '-o',
+    )
+    workflow += skymap_plot_node
+
+    all_output_files = xml_node.output_files + bayestar_node.output_files + \
+        skymap_plot_node.output_files
+    return all_output_files
+
+
+def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
+                                    single_triggers, psd_files,
+                                    tmpltbank_file, insp_segs, insp_data_name,
+                                    insp_anal_name, dax_output, out_dir,
+                                    tags=None):
+    """ Create plots that followup the Nth loudest coincident injection
+    from a statmap produced HDF file.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    coinc_file:
+    single_triggers: list of pycbc.workflow.File
+        A list cointaining the file objects associated with the merged
+        single detector trigger files for each ifo.
+    psd_files: list of pycbc.workflow.File
+        A list containing the file objects associated with the merged
+        psd files for each ifo.
+    xml_all_file : workflow file object
+        XML File containing all foreground events
+    tmpltbank_file: pycbc.workflow.File
+        The file object pointing to the HDF format template bank
+    insp_segs: SegFile
+       The segment file containing the data read and analyzed by each inspiral
+       job.
+       The segment file containing the data read and analyzed by each inspiral
+       job.
+    insp_data_name: str
+        The name of the segmentlist storing data read.
+    insp_anal_name: str
+        The name of the segmentlist storing data analyzed.
+    dax_output : directory
+        Location of the dax outputs
+    out_dir: path
+        The directory to store minifollowups result plots and files
+    tags: {None, optional}
+        Tags to add to the minifollowups executables
+
+    Returns
+    -------
+    layout: list
+        A list of tuples which specify the displayed file layout for the
+        minifollowups plots.
+    """
+    logging.info('Entering minifollowups module')
+
+    if not workflow.cp.has_section('workflow-minifollowups'):
+        logging.info('There is no [workflow-minifollowups] section in configuration file')
+        logging.info('Leaving minifollowups')
+        return
+
+    tags = [] if tags is None else tags
+    makedir(dax_output)
+    makedir(out_dir)
+
+    # turn the config file into a File class
+    config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + \
+                                  'upload_prep_minifollowup.ini')
+    workflow.cp.write(open(config_path, 'w'))
+
+    config_file = resolve_url_to_file(config_path)
+
+    exe = Executable(workflow.cp, 'upload_prep_minifollowup',
+                     ifos=workflow.ifos, out_dir=dax_output, tags=tags)
+
+    node = exe.create_node()
+    node.add_input_opt('--config-files', config_file)
+    node.add_input_opt('--xml-all-file', xml_all_file)
+    node.add_input_opt('--bank-file', tmpltbank_file)
+    node.add_input_opt('--statmap-file', coinc_file)
+    node.add_multiifo_input_list_opt('--single-detector-triggers',
+                                     single_triggers)
+    node.add_multiifo_input_list_opt('--psd-files', psd_files)
+    node.add_input_opt('--inspiral-segments', insp_segs)
+    node.add_opt('--inspiral-data-read-name', insp_data_name)
+    node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
+    if tags:
+        node.add_list_opt('--tags', tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
+
+    name = node.output_files[0].name
+    map_file = node.output_files[1]
+
+    node.add_opt('--workflow-name', name)
+    node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
+
+    workflow += node
+
+    # execute this in a sub-workflow
+    fil = node.output_files[0]
+
+    # determine if a staging site has been specified
+    job = SubWorkflow(fil.name, is_planned=False)
+    input_files = [xml_all_file, tmpltbank_file, coinc_file, insp_segs] + \
+        single_triggers + psd_files
+    job.add_inputs(*input_files)
+    job.set_subworkflow_properties(map_file,
+                                   staging_site=workflow.staging_site,
+                                   cache_file=workflow.cache_file)
+    job.add_into_workflow(workflow)
+    logging.info('Leaving minifollowups module')

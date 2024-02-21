@@ -35,6 +35,8 @@ from .eventmgr_cython import timecoincidence_getslideint
 from .eventmgr_cython import timecoincidence_findidxlen
 from .eventmgr_cython import timecluster_cython
 
+logger = logging.getLogger('pycbc.events.coinc')
+
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
@@ -55,6 +57,9 @@ def background_bin_from_string(background_bins, data):
     """
     used = numpy.array([], dtype=numpy.uint32)
     bins = {}
+    # Some duration/peak frequency functions are expensive.
+    # Do not want to recompute many times, if using lots of bins.
+    cached_values = {}
     for mbin in background_bins:
         locs = None
         name, bin_type_list, boundary_list = tuple(mbin.split(':'))
@@ -71,7 +76,9 @@ def background_bin_from_string(background_bins, data):
                 raise RuntimeError("Can't parse boundary condition! Must begin "
                                    "with 'lt' or 'gt'")
 
-            if bin_type == 'component' and boundary[0:2] == 'lt':
+            if bin_type in cached_values:
+                vals = cached_values[bin_type]
+            elif bin_type == 'component' and boundary[0:2] == 'lt':
                 # maximum component mass is less than boundary value
                 vals = numpy.maximum(data['mass1'], data['mass2'])
             elif bin_type == 'component' and boundary[0:2] == 'gt':
@@ -91,29 +98,29 @@ def background_bin_from_string(background_bins, data):
             elif bin_type == 'chi_eff':
                 vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
                                                  data['spin1z'], data['spin2z'])
-            elif bin_type == 'SEOBNRv2Peak':
-                vals = pycbc.pnutils.get_freq('fSEOBNRv2Peak',
-                                              data['mass1'], data['mass2'],
-                                              data['spin1z'], data['spin2z'])
-            elif bin_type == 'SEOBNRv4Peak':
-                vals = pycbc.pnutils.get_freq('fSEOBNRv4Peak', data['mass1'],
-                                              data['mass2'], data['spin1z'],
-                                              data['spin2z'])
-            elif bin_type == 'SEOBNRv2duration':
+            elif bin_type.endswith('Peak'):
+                vals = pycbc.pnutils.get_freq(
+                    'f' + bin_type,
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z']
+                )
+                cached_values[bin_type] = vals
+            elif bin_type.endswith('duration'):
                 vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'], data['mass2'],
-                                   data['spin1z'], data['spin2z'],
-                                   data['f_lower'], approximant='SEOBNRv2')
-            elif bin_type == 'SEOBNRv4duration':
-                vals = pycbc.pnutils.get_imr_duration(
-                                   data['mass1'][:], data['mass2'][:],
-                                   data['spin1z'][:], data['spin2z'][:],
-                                   data['f_lower'][:], approximant='SEOBNRv4')
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z'],
+                    data['f_lower'],
+                    approximant=bin_type.replace('duration', '')
+                )
+                cached_values[bin_type] = vals
             else:
                 raise ValueError('Invalid bin type %s' % bin_type)
 
             sub_locs = member_func(vals)
-            del vals
             sub_locs = numpy.where(sub_locs)[0]
             if locs is not None:
                 # find intersection of boundary conditions
@@ -295,7 +302,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         #  tested against fixed and pivot are now present for testing with new
         #  dependent ifos
         for ifo2 in ids:
-            logging.info('added ifo %s, testing against %s' % (ifo1, ifo2))
+            logger.info('added ifo %s, testing against %s' % (ifo1, ifo2))
             w = win(ifo1, ifo2)
             left = time1.searchsorted(ctimes[ifo2] - w)
             right = time1.searchsorted(ctimes[ifo2] + w)
@@ -312,9 +319,9 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
                 # However there are rare corner cases at starts/ends of inspiral
                 #  jobs. For these, arbitrarily keep the first trigger and
                 #  discard the second (and any subsequent ones).
-                logging.warning('Triggers in %s are closer than coincidence '
-                                'window, 1 or more coincs will be discarded. '
-                                'This is a warning, not an error.' % ifo1)
+                logger.warning('Triggers in %s are closer than coincidence '
+                               'window, 1 or more coincs will be discarded. '
+                               'This is a warning, not an error.' % ifo1)
             # identify indices of times in ifo1 that form coincs with ifo2
             dep_ids = left[nz]
             # slide is array of slide ids attached to pivot ifo
@@ -359,7 +366,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
         The set of indices corresponding to the surviving coincidences.
     """
     if len(time1) == 0 or len(time2) == 0:
-        logging.info('No coinc triggers in one, or both, ifos.')
+        logger.info('No coinc triggers in one, or both, ifos.')
         return numpy.array([])
 
     if numpy.isfinite(slide):
@@ -374,9 +381,9 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, **kwargs):
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
-    logging.info('Clustering events over %s s window', window)
+    logger.info('Clustering events over %s s window', window)
     cidx = cluster_over_time(stat, time, window, **kwargs)
-    logging.info('%d triggers remaining', len(cidx))
+    logger.info('%d triggers remaining', len(cidx))
     return cidx
 
 
@@ -405,7 +412,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
     """
     time_coinc_zip = list(zip(*time_coincs))
     if len(time_coinc_zip) == 0:
-        logging.info('No coincident triggers.')
+        logger.info('No coincident triggers.')
         return numpy.array([])
 
     time_avg_num = []
@@ -429,9 +436,9 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window,
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
-    logging.info('Clustering events over %s s window', window)
+    logger.info('Clustering events over %s s window', window)
     cidx = cluster_over_time(stat, time_avg, window, **kwargs)
-    logging.info('%d triggers remaining', len(cidx))
+    logger.info('%d triggers remaining', len(cidx))
 
     return cidx
 
@@ -493,7 +500,7 @@ def cluster_over_time(stat, time, window, method='python',
     right = time.searchsorted(time + window)
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
 
-    logging.debug('%d triggers before clustering', len(time))
+    logger.debug('%d triggers before clustering', len(time))
 
     if method == 'cython':
         j = timecluster_cython(indices, left, right, stat, len(left))
@@ -533,7 +540,7 @@ def cluster_over_time(stat, time, window, method='python',
 
     indices = indices[:j]
 
-    logging.debug('%d triggers remaining', len(indices))
+    logger.debug('%d triggers remaining', len(indices))
     return time_sorting[indices]
 
 
@@ -928,9 +935,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # apply trials factor for the best coinc
         if mresult:
             mresult['foreground/ifar'] = mifar / float(trials)
-            logging.info('Found %s coinc with ifar %s',
-                         mresult['foreground/type'],
-                         mresult['foreground/ifar'])
+            logger.info('Found %s coinc with ifar %s',
+                        mresult['foreground/type'],
+                        mresult['foreground/ifar'])
             return mresult
         # If no coinc, just return one of the results dictionaries. They will
         # all contain the same results (i.e. single triggers) in this case.
@@ -976,6 +983,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             help="The interval between timeslides in seconds", default=0.1)
         group.add_argument('--ifar-remove-threshold', type=float,
             help="NOT YET IMPLEMENTED", default=100.0)
+
+    @staticmethod
+    def verify_args(args, parser):
+        """Verify that psd-var-related options are consistent"""
+        if ((hasattr(args, 'psd_variation') and not args.psd_variation)
+                and 'psdvar' in args.sngl_ranking):
+            parser.error(f"The single ifo ranking stat {args.sngl_ranking} "
+                         "requires --psd-variation.")
 
     @property
     def background_time(self):
@@ -1077,7 +1092,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # convert to single detector trigger values
         # FIXME Currently configured to use pycbc live output
         # where chisq is the reduced chisq and chisq_dof is the actual DOF
-        logging.info("adding singles to the background estimate...")
+        logger.info("adding singles to the background estimate...")
         updated_indices = {}
         for ifo in ifos:
             trigs = results[ifo]
@@ -1233,7 +1248,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         for ifo in valid_ifos:
             trigger_ids[ifo] = numpy.concatenate(trigger_ids[ifo]).astype(numpy.int32)
 
-        logging.info(
+        logger.info(
             "%s: %s background and zerolag coincs",
             ppdets(self.ifos, "-"), len(cstat)
         )
@@ -1246,7 +1261,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             offsets = numpy.concatenate(offsets)
             ctime0 = numpy.concatenate(ctimes[self.ifos[0]]).astype(numpy.float64)
             ctime1 = numpy.concatenate(ctimes[self.ifos[1]]).astype(numpy.float64)
-            logging.info("Clustering %s coincs", ppdets(self.ifos, "-"))
+            logger.info("Clustering %s coincs", ppdets(self.ifos, "-"))
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                   self.timeslide_interval,
                                   self.analysis_block + 2*self.time_window,
@@ -1329,7 +1344,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             A dictionary of arrays containing the coincident results.
         """
         # Let's see how large everything is
-        logging.info(
+        logger.info(
             "%s: %s coincs, %s bytes",
             ppdets(self.ifos, "-"), len(self.coincs), self.coincs.nbytes
         )
