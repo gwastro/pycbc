@@ -633,6 +633,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
         # assume the ground-based submodel as the primary model
         self.primary_model = self.submodels[kwargs['primary_lbl'][0]]
+        self.primary_lbl = kwargs['primary_lbl'][0]
         self.other_models = self.submodels.copy()
         self.other_models.pop(kwargs['primary_lbl'][0])
         self.other_models = list(self.other_models.values())
@@ -736,10 +737,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # update parameters in primary_model,
         # other_models will be updated in total_loglr,
         # because other_models need to handle margin_params
-        for lbl, _ in enumerate(self.primary_model):
-            self.primary_model.update(
-                **{p.subname: self.current_params[p.fullname]
-                   for p in self.param_map[lbl]})
+        self.primary_model.update(
+            **{p.subname: self.current_params[p.fullname]
+                for p in self.param_map[self.primary_lbl]})
 
         # calculate the combined loglikelihood
         logl = self.total_loglr() + self.primary_model.lognl + \
@@ -929,9 +929,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # update parameters in primary_model,
             # other_models will be updated in total_loglr,
             # because other_models need to handle margin_params
-            for lbl, _ in enumerate(self.primary_model):
-                p = {param.subname: self.current_params[param.fullname]
-                     for param in self.param_map[lbl]}
+            p = {param.subname: self.current_params[param.fullname]
+                  for param in self.param_map[self.primary_lbl]}
             p.update(rec)
             self.primary_model.update(**p)
             return self.total_loglr()
