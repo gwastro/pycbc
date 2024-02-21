@@ -739,11 +739,11 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         for lbl, _ in self.primary_model.items():
             self.primary_model.update(
                 **{p.subname: self.current_params[p.fullname]
-                for p in self.param_map[lbl]})
+                   for p in self.param_map[lbl]})
 
         # calculate the combined loglikelihood
         logl = self.total_loglr() + self.primary_model.lognl + \
-               self.others_lognl()
+            self.others_lognl()
 
         # store any extra stats from the submodels
         for lbl, model in self.submodels.items():
