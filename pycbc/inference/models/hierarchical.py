@@ -736,7 +736,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # update parameters in primary_model,
         # other_models will be updated in total_loglr,
         # because other_models need to handle margin_params
-        for lbl, _ in self.primary_model.items():
+        for lbl, _ in enumerate(self.primary_model):
             self.primary_model.update(
                 **{p.subname: self.current_params[p.fullname]
                    for p in self.param_map[lbl]})
@@ -929,7 +929,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # update parameters in primary_model,
             # other_models will be updated in total_loglr,
             # because other_models need to handle margin_params
-            for lbl, _ in self.primary_model.items():
+            for lbl, _ in enumerate(self.primary_model):
                 p = {param.subname: self.current_params[param.fullname]
                      for param in self.param_map[lbl]}
             p.update(rec)
