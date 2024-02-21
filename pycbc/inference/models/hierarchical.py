@@ -926,13 +926,15 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             rec = {}
 
         def get_loglr():
-            # update parameters in primary_model,
-            # other_models will be updated in total_loglr,
-            # because other_models need to handle margin_params
-            p = {param.subname: self.current_params[param.fullname]
-                 for param in self.param_map[self.primary_lbl]}
-            p.update(rec)
-            self.primary_model.update(**p)
+            print("self.current_params: ", self.current_params)
+            for lbl, model in self.submodels.items():
+                # update the model with the current params. This is done here
+                # instead of in `update` because waveform transforms are not
+                # applied until the loglikelihood function is called
+                p = {params.subname: self.current_params[params.fullname]
+                     for params in self.param_map[lbl]}
+                p.update(rec)
+                model.update(**p)
             return self.total_loglr()
 
         rec = self.primary_model.reconstruct(
