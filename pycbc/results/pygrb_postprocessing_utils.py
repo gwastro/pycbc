@@ -850,6 +850,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
 
         # Construct the ifo-indexed dictionary of slid veteoes
         slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
+        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
 
         # Construct trial list and check against buffer
         trial_dict[slide_id] = segments.segmentlist()

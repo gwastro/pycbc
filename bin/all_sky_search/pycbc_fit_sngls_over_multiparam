@@ -174,18 +174,14 @@ parser = argparse.ArgumentParser(usage="",
 
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action=pycbc.version.Version)
-parser.add_argument("--template-fit-file",
+parser.add_argument("--template-fit-file", required=True,
                     help="hdf5 file containing fit coefficients for each"
                          " individual template. Required")
-parser.add_argument("--bank-file", default=None,
-                    help="hdf file containing template parameters. Required "
-                         "unless reading param from template fit file")
+parser.add_argument("--bank-file", required=True,
+                    help="hdf file containing template parameters. Required")
 parser.add_argument("--output", required=True,
                     help="Location for output file containing smoothed fit "
-                         "coefficients.  Required")
-parser.add_argument("--use-template-fit-param", action="store_true",
-                    help="Use parameter values stored in the template fit "
-                         "file as template_param for smoothing.")
+                         "coefficients. Required")
 parser.add_argument("--fit-param", nargs='+',
                     help="Parameter(s) over which to regress the background "
                          "fit coefficients. Required. Either read from "
@@ -196,20 +192,19 @@ parser.add_argument("--fit-param", nargs='+',
                          "multiple parameters, provide them as a list.")
 parser.add_argument("--approximant", default="SEOBNRv4",
                     help="Approximant for template duration. Default SEOBNRv4")
-parser.add_argument("--f-lower", type=float, default=0.,
-                    help="Starting frequency for calculating template "
-                         "duration, if not reading from the template fit file")
+parser.add_argument("--f-lower", type=float,
+                    help="Start frequency for calculating template duration.")
 parser.add_argument("--min-duration", type=float, default=0.,
                     help="Fudge factor for templates with tiny or negative "
                          "values of template_duration: add to duration values"
                          " before fitting. Units seconds.")
 parser.add_argument("--log-param", nargs='+',
-                    help="Take the log of the fit param before smoothing.")
+                    help="Take the log of the fit param before smoothing. "
+                         "Must be a list corresponding to fit params.")
 parser.add_argument("--smoothing-width", type=float, nargs='+', required=True,
-                    help="Distance in the space of fit param values (or the "
-                         "logs of them) to smooth over. Required. "
-                         "This must be a list corresponding to the smoothing "
-                         "parameters.")
+                    help="Distance in the space of fit param values (or their"
+                         " logs) to smooth over. Required. Must be a list "
+                         "corresponding to fit params.")
 parser.add_argument("--smoothing-method", default="smooth_tophat",
                     choices = _smooth_dist_func.keys(),
                     help="Method used to smooth the fit parameters; "
@@ -220,15 +215,14 @@ parser.add_argument("--smoothing-method", default="smooth_tophat",
                          "the smoothing until 500 triggers are reached. "
                          "'distance_weighted' weights the closest templates "
                          "with a normal distribution of width smoothing-width "
-                         "trucated at three smoothing-widths.")
+                         "truncated at three smoothing-widths.")
 parser.add_argument("--smoothing-keywords", nargs='*',
                     help="Keywords for the smoothing function, supplied "
                          "as key:value pairs, e.g. total_trigs:500 to define "
-                         "the number of templates in the n_closest smoothing "
-                         "method")
+                         "the number of templates for n_closest smoothing.")
 parser.add_argument("--output-fits-by-template", action='store_true',
                     help="If given, will output the input file fits to "
-                         "fit_by_template group")
+                         "fit_by_template group.")
 args = parser.parse_args()
 
 if args.smoothing_keywords:
