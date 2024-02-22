@@ -131,6 +131,16 @@ def finalize(container, workflow, finalize_workflow):
     layout.single_layout(rdir['workflow'], ([dashboard_file, gen_file_html, log_file_html]))
     sys.exit(0)
 
+def check_stop(job_name, container, workflow, finalize_workflow):
+    if workflow.cp.has_option('workflow', 'stop-after'):
+        stop_after = workflow.cp.get('workflow', 'stop-after')
+        if stop_after == job_name:
+            logging.info("Search worflow will be stopped after " + str(job_name))
+            finalize(container, workflow, finalize_workflow)
+        else: 
+            pass
+
+
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument('--verbose', action='count',
@@ -257,20 +267,14 @@ ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
                                    datafind_files, splitbank_files_fd,
                                    output_dir, tags=['full_data'])
 
-
-if workflow.cp.has_option('workflow', 'stop-after-inspiral'):
-    stop_after_inspiral = workflow.cp.getboolean('workflow', 'stop-after-inspiral')
-    if stop_after_inspiral:
-        logging.info("Finalization will be stopped after inspiral.")
-        finalize(container, workflow, finalize_workflow)
-    else:
-        stop_after_inspiral = False
-else:
-    stop_after_inspiral = False
+#check to see if workflow should stop at inspiral jobs.
+check_stop('inspiral', container, workflow, finalize_workflow)
 
 insps = wf.merge_single_detector_hdf_files(workflow, hdfbank,
                                            insps, output_dir,
                                            tags=['full_data'])
+
+check_stop('hdf_trigger_merge', container, workflow, finalize_workflow)
 
 # setup sngl trigger distribution fitting jobs
 # 'statfiles' is list of files used in calculating statistic
@@ -349,15 +353,8 @@ for ifo in ifo_ids.keys():
         workflow, hdfbank, inspcomb, statfiles, final_veto_file,
         final_veto_name, output_dir, tags=ctagsngl)
 
-if workflow.cp.has_option('workflow', 'stop-after-statmap'):
-    stop_after_statmap = workflow.cp.getboolean('workflow', 'stop-after-statmap')
-    if stop_after_statmap:
-        logging.info("Finalization will be stopped after statmap.")
-        finalize(container, workflow, finalize_workflow)
-    else:
-        stop_after_statmap = False
-else:
-    stop_after_statmap = False
+#check to see if workflow should stop at statmap jobs.
+check_stop('statmap', container, workflow, finalize_workflow)
 
 ifo_sets = list(ifo_combos(ifo_ids.keys()))
 if analyze_singles:
