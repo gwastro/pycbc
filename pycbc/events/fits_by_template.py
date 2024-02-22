@@ -96,7 +96,7 @@ def count_in_template(trigger_set, template_f):
 def retained_segments(trigger_file, ifo, veto_file=None,
                       veto_segment_name=None, gating_veto_windows=None):
     """
-
+    Work out which segments will be retained after applying vetoes
     """
     logger.info("Getting segment information")
     # Calculate total time being analysed from segments
@@ -172,6 +172,9 @@ def segment_mask(time, keep_segments):
 
 def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2,
         prune_window=0.1, log=False):
+    """
+    Find the mask to apply to triggers after pruning is applied
+    """
     # retain_trigs are the triggers to be retained after pruning
     retain_trigs = np.ones(stat.size, dtype=bool)
     # test_trigs are the triggers to be tested in the pruning loop
@@ -258,9 +261,35 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2,
     )
     return retain_trigs
 
+def report_percentage(i, length, pc_report=10, log_func=logger.info):
+    """
+    Convenience function - report how long through the loop we are.
+
+    Parameters
+    ----------
+    i: integer
+        index being looped through
+    length : integer
+        number of loops we will go through in total
+    pc_report : integer
+        When to report, default every 10 percent
+    log_func : function
+        The logging function used to report the value, this can be
+        changed in order to use more or less verbosity if required
+    """
+    pc_now = int(np.floor(i / length * 100))
+    # This bit stops getting loads of logging each time
+    pc_last = int(np.floor((i - 1) / length * 100))
+    if not pc_now % pc_report and pc_last != pc_now:
+        log_func("Template %d out of %d (%.0f%%)", i, length, pc_now)
+
+
 
 def fit_triggers(stat, template_id, fit_function, stat_threshold,
         template_ids):
+    """
+    Calculate fit coefficient of the distribution of triggers in each template
+    """
     logger.info("Fitting in each template")
     # sorting into template_id order
     tsort = template_id.argsort()
@@ -276,16 +305,9 @@ def fit_triggers(stat, template_id, fit_function, stat_threshold,
 
     logger.info("Calculating fit coefficients")
     for j in range(len(template_ids)):
-        if not j % 10000:
-            logger.info(
-                "Fitting template %d out of %d",
-                j, len(template_ids),
-            )
-        elif not j % 1000:
-            logger.debug(
-                "Fitting template %d out of %d",
-                j, len(template_ids),
-            )
+        report_percentage(j, len(template_ids))
+        report_percentage(j, len(template_ids), pc_report=1,
+                          log_func=logger.debug)
 
         if counts_above[j] == 0:
             continue

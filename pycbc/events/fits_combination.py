@@ -7,6 +7,8 @@ import copy
 import numpy as np
 from scipy.stats import norm
 
+from pycbc.events import fits_by_template as fbt
+
 logger = logging.getLogger('pycbc.events.fits_combination')
 
 
@@ -219,29 +221,6 @@ def digest_smoothing_kwargs(args, parser):
     return kwarg_dict
 
 
-def report_percentage(i, length, pc_report=10, log_func=logger.info):
-    """
-    Convenience function - report how long through the loop we are.
-
-    Parameters
-    ----------
-    i: integer
-        index being looped through
-    length : integer
-        number of loops we will go through in total
-    pc_report : integer
-        When to report, default every 10 percent
-    log_func : function
-        The logging function used to report the value, this can be
-        changed in order to use more or less verbosity if required
-    """
-    pc_now = int(np.floor(i / length * 100))
-    # This bit stops getting loads of logging each time
-    pc_last = int(np.floor((i - 1) / length * 100))
-    if not pc_now % pc_report and pc_last != pc_now:
-        log_func("Template %d out of %d (%.0f%%)", i, length, pc_now)
-
-
 def oned_tophat(parvals, smooth_kwargs, nabove, invalphan, ntotal):
     """
     Handle the one-dimensional case of tophat smoothing separately
@@ -441,9 +420,10 @@ def smooth_samples(parvals, smooth_kwargs, nabove, invalphan, ntotal):
     ntotal_smoothed = []
     for i in np.arange(0, len(nabove)):
         # Info logging every 10 percent (defaults)
-        report_percentage(i, len(nabove))
+        fbt.report_percentage(i, len(nabove))
         # Debug logging every percent
-        report_percentage(i, len(nabove), pc_report=1, log_func=logger.debug)
+        fbt.report_percentage(i, len(nabove), pc_report=1,
+                              log_func=logger.debug)
         slc = slices[i]
         temp_dists = dist(i, slc, parvals, smooth_kwargs['width'])
 
