@@ -3,10 +3,9 @@ Functions and utils to fit single-detector trigger density in each template
 according to a density model
 """
 
-import numpy as np
 import logging
+import numpy as np
 
-import pycbc
 from pycbc.events import veto, trigger_fits as trstats
 from pycbc import bin_utils
 
@@ -96,6 +95,9 @@ def count_in_template(trigger_set, template_f):
 
 def retained_segments(trigger_file, ifo, veto_file=None,
                       veto_segment_name=None, gating_veto_windows=None):
+    """
+
+    """
     logger.info("Getting segment information")
     # Calculate total time being analysed from segments
     # use set() to eliminate duplicates
@@ -121,7 +123,7 @@ def retained_segments(trigger_file, ifo, veto_file=None,
         )
         all_segments -= vetoed_segments
         logger.info(
-           '%2.fs removed when vetoing with %s in %s',
+           '%.2fs removed when vetoing with %s in %s',
            abs(vetoed_segments),
            vsegment_name,
            vfile,
@@ -147,7 +149,7 @@ def retained_segments(trigger_file, ifo, veto_file=None,
                 gate_times + gveto_before,
                 gate_times + gveto_after).coalesce()
             all_segments -= gveto_segs
-            logger.info('%.2f removed near gates', abs(gveto_segs))
+            logger.info('%.2fs removed near gates', abs(gveto_segs))
 
     return all_segments
 
@@ -168,7 +170,8 @@ def segment_mask(time, keep_segments):
     return vmask
 
 
-def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_window=0.1, log=False):
+def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2,
+        prune_window=0.1, log=False):
     # retain_trigs are the triggers to be retained after pruning
     retain_trigs = np.ones(stat.size, dtype=bool)
     # test_trigs are the triggers to be tested in the pruning loop
@@ -190,17 +193,17 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
         # are all the bins full already?
         numpruned = sum([len(prunedtimes[i]) for i in range(prune_bins)])
         if numpruned == prune_bins * prune_number:
-            logging.info('Finished pruning!')
+            logger.info('Finished pruning!')
             pruning_done = True
             break
         if numpruned > prune_bins * prune_number:
-            logging.error(
+            logger.error(
                 'Uh-oh, we pruned too many things .. %i, to be precise',
                 numpruned
             )
             raise RuntimeError
         if not any(test_trigs):
-            logging.error(
+            logger.error(
                 "Too many things have been removed in the pruning loop, "
                 "and there is nothing left"
             )
@@ -212,7 +215,7 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
 
         # is the bin where the loudest trigger lives full already?
         if len(prunedtimes[lbin]) == prune_number:
-            logging.debug(
+            logger.debug(
                 '%i - Bin %i full, not pruning event with stat %.3f at '
                 'time %.3f',
                 j,
@@ -226,11 +229,11 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
             skipped_prunes += 1
         else:
             if skipped_prunes > 0:
-                logging.info(
+                logger.info(
                     '%d events skipped due to full bins',
                     skipped_prunes
                 )
-            logging.info(
+            logger.info(
                 'Pruning event with stat %.3f at %.3f in bin %i',
                 lstat,
                 ltime,
@@ -245,40 +248,41 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2, prune_wind
         del remove
 
     if not pruning_done:
-        logging.warning(
+        logger.warning(
             "Not enough triggers have been pruned after the loop over "
             "1000 triggers - something could be wrong!"
         )
-    logging.info(
+    logger.info(
         '%i trigs remain after pruning loop',
         np.count_nonzero(retain_trigs)
     )
     return retain_trigs
 
 
-def fit_triggers(stat, template_id, fit_function, stat_threshold, template_ids):
-    logging.info("Fitting in each template")
+def fit_triggers(stat, template_id, fit_function, stat_threshold,
+        template_ids):
+    logger.info("Fitting in each template")
     # sorting into template_id order
     tsort = template_id.argsort()
     template_id = template_id[tsort]
     stat = stat[tsort]
 
-    logging.info("Getting trigger ranges for each template id")
+    logger.info("Getting trigger ranges for each template id")
     left = np.searchsorted(template_id, template_ids, side='left')
     right = np.searchsorted(template_id, template_ids, side='right')
 
     counts_above = right - left
     fits = np.ones(len(template_ids), dtype=np.float64) * -100
 
-    logging.info("Calculating fit coefficients")
-    for j in irange(len(template_ids)):
+    logger.info("Calculating fit coefficients")
+    for j in range(len(template_ids)):
         if not j % 10000:
-            logging.info(
+            logger.info(
                 "Fitting template %d out of %d",
                 j, len(template_ids),
             )
         elif not j % 1000:
-            logging.debug(
+            logger.debug(
                 "Fitting template %d out of %d",
                 j, len(template_ids),
             )

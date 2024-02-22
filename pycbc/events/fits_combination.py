@@ -76,7 +76,8 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
     return return_tuple
 
 
-def smooth_tophat(nabove, invalphan, ntotal, dists, **kwargs):  # pylint:disable=unused-argument
+def smooth_tophat(nabove, invalphan, ntotal, dists,
+        **kwargs):  # pylint:disable=unused-argument
     """
     Smooth templates using a tophat function with templates within unit
     dists
@@ -90,7 +91,8 @@ def smooth_tophat(nabove, invalphan, ntotal, dists, **kwargs):  # pylint:disable
     )
 
 
-def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500, **kwargs):  # pylint:disable=unused-argument
+def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500,
+        **kwargs):  # pylint:disable=unused-argument
     """
     Smooth templates according to the closest N templates
     No weighting is applied
@@ -113,7 +115,8 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500, **kwargs
     return smooth_templates(nabove, invalphan, ntotal, idx_to_smooth)
 
 
-def smooth_distance_weighted(nabove, invalphan, ntotal, dists, **kwargs):  # pylint:disable=unused-argument
+def smooth_distance_weighted(nabove, invalphan, ntotal, dists,
+        **kwargs):  # pylint:disable=unused-argument
     """
     Smooth templates weighted according to dists in a unit-width normal
     distribution, truncated at three sigma
@@ -178,7 +181,7 @@ def digest_smoothing_kwargs(args, parser):
     # work out whether we need to apply a log function to the parameter
     for param, slog in zip(args.fit_param, args.log_param):
         log_param = slog[:5].title()
-        if not log_param in ["True", "False"]:
+        if log_param not in ["True", "False"]:
             logger.error(
                 "--log-param value cannot b eavluated to True or False, "
                 "provide this correctly"
@@ -206,13 +209,13 @@ def digest_smoothing_kwargs(args, parser):
         try:
             key, value = inputstr.split(':')
             kwarg_dict[key] = value
-        except ValueError as ve:
+        except ValueError as val_err:
             logger.error(
                 "--smoothing-keywords must take input in the "
                 "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... "
                 "Received %s", ' '.join(args.smoothing_keywords)
             )
-            raise ve
+            raise val_err
     return kwarg_dict
 
 
@@ -235,7 +238,7 @@ def report_percentage(i, length, pc_report=10, log_func=logger.info):
     pc_now = int(np.floor(i / length * 100))
     # This bit stops getting loads of logging each time
     pc_last = int(np.floor((i - 1) / length * 100))
-    if not pc_now % pc_report and not pc_last == pc_now:
+    if not pc_now % pc_report and pc_last != pc_now:
         log_func("Template %d out of %d (%.0f%%)", i, length, pc_now)
 
 
