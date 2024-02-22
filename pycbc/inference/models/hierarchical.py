@@ -926,19 +926,23 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             rec = {}
 
         def get_loglr():
-            print("self.current_params: ", self.current_params)
             for lbl, model in self.submodels.items():
-                # update the model with the current params. This is done here
-                # instead of in `update` because waveform transforms are not
-                # applied until the loglikelihood function is called
-                p = {params.subname: self.current_params[params.fullname]
-                     for params in self.param_map[lbl]}
+                if self.param_map != {}:
+                    # update the model with the current params.
+                    # This is done here instead of in `update` because
+                    # waveform transforms are not applied until the
+                    # loglikelihood function is called
+                    p = {params.subname: self.current_params[params.fullname]
+                         for params in self.param_map[lbl]}
+                else:
+                    # dummy sampler doesn't have real variables
+                    p = {}
                 p.update(rec)
                 model.update(**p)
             return self.total_loglr()
 
         rec = self.primary_model.reconstruct(
-                rec=rec, seed=seed, set_loglr=get_loglr())
+                rec=rec, seed=seed, set_loglr=get_loglr)
         # the primary model's reconstruct doesn't know lognl in other models
         rec['loglikelihood'] += self.others_lognl()
         return rec
