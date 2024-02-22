@@ -79,7 +79,7 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-smooth_kwargs = fc.smoothing_kwargs(args)
+smooth_kwargs = fc.digest_smoothing_kwargs(args, parser)
 
 with h5py.File(args.template_fit_file, 'r') as fits:
     # get template id and template parameter values

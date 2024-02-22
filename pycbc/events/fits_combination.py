@@ -145,52 +145,69 @@ def smooth(nabove, invalphan, ntotal, dists, **kwargs):
                                                ntotal, dists, **kwargs)
 
 
-# Number of smoothing lengths around the current template where
-# distances will be calculated
-# n_closest has no limit as it needs to contain enough
-# templates to contain n triggers, which we cannot know beforehand
+def digest_smoothing_kwargs(args, parser):
+    """
+    Check inputs and pack the arguments into a standard dictionary.
 
-_smooth_cut = {
-    'smooth_tophat': 1,
-    'n_closest': np.inf,
-    'distance_weighted': 3,
-}
+    Parameters
+    ----------
+    args : argparse.ArgumentParser.parse_args() output
+       parser command line arguments, must contain certain values
+    parser : argparse.ArgumentParser
+       parser, so that we can raise errors appropriately
 
-
-def smoothing_kwargs(args):
+    Returns
+    -------
+    kwarg_dict : dictionary
+        Dictionary containing the required information to control the
+        template fits smoothing
+    """
     kwarg_dict = {}
 
     # Input sanitisation
-    assert len(args.log_param) == len(args.fit_param) 
-    assert len(args.log_param) == len(args.smoothing_width)
+    if not len(args.log_param) == len(args.fit_param) or \
+            not len(args.log_param) == len(args.smoothing_width):
+        parser.error("--log-param, --fit-param and --smoothing-width "
+                     "must all have the same number of inputs")
 
     kwarg_dict['fit_param'] = args.fit_param
     kwarg_dict['method'] = args.smoothing_method
     kwarg_dict['width'] = args.smoothing_width
     kwarg_dict['parnames'] = []
+
     # work out whether we need to apply a log function to the parameter
     for param, slog in zip(args.fit_param, args.log_param):
-        log_param = eval(slog[:5].title())
-        par_func = np.log if log_param else lambda x: x
+        log_param = slog[:5].title()
+        if not log_param in ["True", "False"]:
+            logger.error(
+                "--log-param value cannot b eavluated to True or False, "
+                "provide this correctly"
+            )
+            raise ValueError
+        # Provide a function which can calculate the log if needed,
+        # or is transparent if not
+        par_func = np.log if log_param == 'True' else lambda x: x
         kwarg_dict[f'{param}_func'] = par_func
-        parname = param if not log_param else f'log({param})'
-        kwarg_dict['parnames'].append(parname)
-        if not log_param:
-            logger.info('Using param: %s', param)
-        else:
-            logger.info('Using log param: %s', param)
 
-    if args.smoothing_keywords:
+        # For use when reporting the parameters
+        parname = param if not log_param == 'True' else f'log({param})'
+        kwarg_dict['parnames'].append(parname)
+
+        logger.info('Using param: %s', parname)
+
+    # Don't fail if not given
+    if args.smoothing_keywords is not None:
         smooth_kwargs = args.smoothing_keywords
     else:
         smooth_kwargs = []
 
     for inputstr in smooth_kwargs:
+        # Pack these into a dictionary
         try:
             key, value = inputstr.split(':')
             kwarg_dict[key] = value
         except ValueError as ve:
-            logging.error(
+            logger.error(
                 "--smoothing-keywords must take input in the "
                 "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... "
                 "Received %s", ' '.join(args.smoothing_keywords)
@@ -199,30 +216,62 @@ def smoothing_kwargs(args):
     return kwarg_dict
 
 
-def report_percentage(i, length):
+def report_percentage(i, length, pc_report=10, log_func=logger.info):
     """
     Convenience function - report how long through the loop we are.
-    Every ten percent
+
     Parameters
     ----------
     i: integer
         index being looped through
     length : integer
         number of loops we will go through in total
+    pc_report : integer
+        When to report, default every 10 percent
+    log_func : function
+        The logging function used to report the value, this can be
+        changed in order to use more or less verbosity if required
     """
     pc_now = int(np.floor(i / length * 100))
-    # This bit stops getting loads of logging each time 
+    # This bit stops getting loads of logging each time
     pc_last = int(np.floor((i - 1) / length * 100))
-    if not pc_now % 10 and pc_last % 10:
-        logger.info("Template %d out of %d (%.0f%%)", i, length, pc_now)
+    if not pc_now % pc_report and not pc_last == pc_now:
+        log_func("Template %d out of %d (%.0f%%)", i, length, pc_now)
 
 
 def oned_tophat(parvals, smooth_kwargs, nabove, invalphan, ntotal):
-    # Handle the one-dimensional case of tophat smoothing separately
-    # as it is easier to optimize computational performance.
+    """
+    Handle the one-dimensional case of tophat smoothing separately
+    as it is easier to optimize computational performance.
+
+    Parameters
+    ----------
+    parvals: tuple of numpy.ndarray (should be only one)
+        Parameter values being used to smooth over
+    smooth_kwargs: dict
+        Dictionary defining how the smoothing is to be completed
+        This function only uses the 'width' value
+        Made e.g. using smoothing_kwargs above
+    nabove: numpy.ndarray
+        The count of triggers above the fit threshold in each template
+    invalphan: numpy.ndarray
+        The array of n_above / alpha values for all templates
+    ntotal: numpy.ndarray
+        The total number of triggers in each template
+
+    Returns
+    -------
+    nabove_smoothed: numpy.ndarray
+        The smoothed count above threshold value
+    alpha_smoothed: numpy.ndarray
+        The smoothed fit coefficient (alpha) value
+    ntotal_smoothed: numpy.ndarray
+        The smoothed total count in template value
+    """
     logger.info("Using efficient 1D tophat smoothing")
     sort = parvals[0].argsort()
     parvals_0 = parvals[0][sort]
+
     # For each template, find the range of nearby templates which fall within
     # the chosen window.
     left = np.searchsorted(
@@ -241,7 +290,7 @@ def oned_tophat(parvals, smooth_kwargs, nabove, invalphan, ntotal):
     invsum = invalphan.cumsum()
     ntsum = ntotal.cumsum()
 
-    # Number of templates in this 
+    # Number of templates in the region considered
     num = right - left
 
     logger.info("Smoothing ...")
@@ -253,7 +302,50 @@ def oned_tophat(parvals, smooth_kwargs, nabove, invalphan, ntotal):
     return nabove_smoothed, alpha_smoothed, ntotal_smoothed
 
 
+# Number of smoothing lengths around the current template where
+# distances will be calculated
+# n_closest has no limit as it needs to contain enough
+# templates to contain n triggers, which we cannot know beforehand
+
+_smooth_cut = {
+    'smooth_tophat': 1,
+    'n_closest': np.inf,
+    'distance_weighted': 3,
+}
+
+
 def cut_templates(parvals, smoothing_method, smoothing_width, val_names):
+    """
+    Work out which templates are not going to be used in the smoothing
+    and remove them from the list we are checking
+
+    Parameters
+    ----------
+    parvals: tuple of ndarrays
+       Values of parameters of the different dimensions being considered
+       for the distance
+    smoothing_method: string
+       String defining which method is being used for the smoothing, this
+       is used to determine how many 'widths' should be cut.
+    smoothing_width: list of floats
+       Same size as the tuple parvals
+       The re-scaling value in each dimension 
+    val_names: list of strings
+       (Just for logging) List of names corresponding to the parvals
+       Same size as the tuple parvals
+
+    Returns
+    -------
+    par_sort: numpy ndarray of int
+       The ordering of the templates required to convert into the same
+       as used by the slice objects
+
+    slices: list of slice objects
+       Once the templates have been ordered by par_sort, these slices
+       define the region which will be used in the smoothing for that
+       template
+    """
+
     cnum = _smooth_cut[smoothing_method]
     if not np.isfinite(cnum):
         # This is a non-cutting smoothing method, return values so that
@@ -261,6 +353,9 @@ def cut_templates(parvals, smoothing_method, smoothing_width, val_names):
         slices = [slice(0, parvals[0].size) for _ in parvals[0]]
         return None, slices
 
+    # We only cut along the dimension which will work best - maybe this can
+    # be done in multiple dimensions, but it may be a case of diminishing
+    # returns
     cut_lengths = [s * cnum for s in smoothing_width]
     # Find the "longest" dimension in cut lengths
     sort_dim = np.argmax([(v.max() - v.min()) / c
@@ -295,6 +390,31 @@ def cut_templates(parvals, smoothing_method, smoothing_width, val_names):
 
 
 def smooth_samples(parvals, smooth_kwargs, nabove, invalphan, ntotal):
+    """
+    Parameters
+    ----------
+    parvals: tuple of numpy.ndarray
+        Parameter values being used to smooth over
+    smooth_kwargs: dict
+        Dictionary defining how the smoothing is to be completed
+        Made e.g. using smoothing_kwargs above
+    nabove: numpy.ndarray
+        The count of triggers above the fit threshold in each template
+    invalphan: numpy.ndarray
+        The array of n_above / alpha values for all templates
+    ntotal: numpy.ndarray
+        The total number of triggers in each template
+
+    Returns
+    -------
+    nabove_smoothed: numpy.ndarray
+        The smoothed count above threshold value
+    alpha_smoothed: numpy.ndarray
+        The smoothed fit coefficient (alpha) value
+    ntotal_smoothed: numpy.ndarray
+        The smoothed total count in template value
+
+    """
     par_sort, slices = cut_templates(
         parvals,
         smooth_kwargs['method'],
@@ -311,13 +431,16 @@ def smooth_samples(parvals, smooth_kwargs, nabove, invalphan, ntotal):
         invalphan = invalphan[par_sort]
         ntotal = ntotal[par_sort]
 
-    logging.info("Smoothing ...")
+    logger.info("Smoothing ...")
 
     nabove_smoothed = []
     alpha_smoothed = []
     ntotal_smoothed = []
     for i in np.arange(0, len(nabove)):
+        # Info logging every 10 percent (defaults)
         report_percentage(i, len(nabove))
+        # Debug logging every percent
+        report_percentage(i, len(nabove), pc_report=1, log_func=logger.debug)
         slc = slices[i]
         temp_dists = dist(i, slc, parvals, smooth_kwargs['width'])
 
