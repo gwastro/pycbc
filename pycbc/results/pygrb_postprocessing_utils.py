@@ -312,16 +312,17 @@ def _get_id_numbers(ligolw_table, column):
 # =============================================================================
 # Function to build a dictionary (indexed by ifo) of time-slid vetoes
 # =============================================================================
-def _slide_vetoes(vetoes, slide_dict_or_list, slide_id):
+def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
     """Build a dictionary (indexed by ifo) of time-slid vetoes"""
 
     # Copy vetoes
-    slid_vetoes = copy.deepcopy(vetoes)
-
-    # Slide them
-    ifos = vetoes.keys()
-    for ifo in ifos:
-        slid_vetoes[ifo].shift(-slide_dict_or_list[slide_id][ifo])
+    if vetoes is not None:
+        slid_vetoes = copy.deepcopy(vetoes)
+        # Slide them
+        for ifo in ifos:
+            slid_vetoes[ifo].shift(-slide_dict_or_list[slide_id][ifo])
+    else:
+        slid_vetoes = {ifo: segments.segmentlist() for ifo in ifos}
 
     return slid_vetoes
 
@@ -406,46 +407,12 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 
     return numpy.sqrt(fp ** 2 * (1 + numpy.cos(inc)) ** 2 / 4 + fc ** 2)
 
-# =============================================================================
-# Function to calculate the reweighted SNR from the chisq, ported from
-# glue.ligolw.lsctables.MultiInspiralTable
-# =============================================================================
-def get_new_snr(chisq, snr, index=4.0, nhigh = 3.0):
-    """Returns the SNR reweighted by the chisquare"""
-    if chisq > 1:
-        return snr / ((1 + chisq ** ( index / nhigh ) / 2 )) ** ( 1. / index )
-    else:
-        return snr
-
-
-# =============================================================================
-# Porting of the `get_bestnr` method in 
-# glue.ligolw.lsctables.MultiInspiralTable
-# =============================================================================
-def get_bestnr_trig(trig, index=4.0, nhigh=3.0, null_snr_threshold=4.25,
-                    null_grad_thresh=20., null_grad_val=1./5.):
-    """Returns the BestNR statistic for the trigger"""
-    # weight SNR by chisq
-    bestnr = get_new_snr(trig['chisq'], trig['snr'], index=index,
-                        nhigh=nhigh)
-    if trig['nifos'] < 3:
-        return bestnr
-    # recontour null SNR threshold for higher SNRs 
-    if trig['snr'] > null_grad_thresh: 
-        null_snr_threshold += (trig['snr'] - null_grad_thresh) * null_grad_val 
-    # weight SNR by null SNR 
-    if trig['null_snr'] > null_snr_threshold: 
-        bestnr /= 1 + trig['null_snr'] - null_snr_threshold 
-    return bestnr 
-        
-
 
 # =============================================================================
 # Function to calculate the detection statistic of a list of triggers
 # =============================================================================
-def get_bestnrs(trigs, ifos, q=4.0, n=3.0, null_thresh=(4.25, 6), 
-                snr_threshold=6., sngl_snr_threshold=4., new_snr_threshold=None,
-                null_grad_thresh=20., null_grad_val=0.2):
+def get_bestnrs(trigs, ifos, snr_threshold=6., sngl_snr_threshold=4.,
+                new_snr_threshold=None):
     """Calculate BestNR (coh_PTF detection statistic) of triggers through
     signal based vetoes.  The (default) signal based vetoes are:
     * Coherent SNR < 6
@@ -513,10 +480,6 @@ def get_bestnrs(trigs, ifos, q=4.0, n=3.0, null_thresh=(4.25, 6),
                 'chisq': trigs['chisq'][i_trig],
                 'nifos': trigs['nifos'][i_trig],
                     }
-            bestnr[i_trig] = get_bestnr_trig(trig, index=q, nhigh=n,
-                                             null_snr_threshold=null_thresh[0],
-                                             null_grad_thresh=null_grad_thresh,
-                                             null_grad_val=null_grad_val)
             # If we got this far and the bestNR is non-zero, verify that chisq
             # was actually calculated for the trigger, otherwise raise an
             # error with info useful to figure out why this happened.
@@ -528,7 +491,7 @@ def get_bestnrs(trigs, ifos, q=4.0, n=3.0, null_thresh=(4.25, 6),
     return bestnr
 
 # =============================================================================
-# Veto triger
+# Veto trigger
 # ============================================================================= 
 
 def veto_trig(trigs, trial_dict):
@@ -585,15 +548,10 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
     logging.info("Triggers sorted.")
 
     # Local copies of variables entering the BestNR definition
-    chisq_index = opts.chisq_index
-    chisq_nhigh = opts.chisq_nhigh
-    null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
     snr_thresh = opts.snr_threshold
     sngl_snr_thresh = opts.sngl_snr_threshold
     new_snr_thresh = opts.newsnr_threshold
-    null_grad_thresh = opts.null_grad_thresh
-    null_grad_val = opts.null_grad_val
-
+    
     # Build the 3 dictionaries
     trig_time = {}
     trig_snr = {}
@@ -604,14 +562,10 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
 
         trig_bestnr[slide_id] = get_bestnrs(sorted_trigs[slide_id],
                                             ifos,
-                                            q=chisq_index,
-                                            n=chisq_nhigh,
-                                            null_thresh=null_thresh,
                                             snr_threshold=snr_thresh,
                                             sngl_snr_threshold=sngl_snr_thresh,
                                             new_snr_threshold=new_snr_thresh,
-                                            null_grad_thresh=null_grad_thresh,
-                                            null_grad_val=null_grad_val)
+                                            )
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
@@ -853,14 +807,14 @@ def load_segment_dict(hdf_file_path):
     # Get slide IDs
     slide_ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
     # Get segment start/end times
-    seg_starts = hdf_file['network/search/segments/start_time'][:]
-    seg_ends = hdf_file['network/search/segments/end_time'][:]
+    seg_starts = hdf_file['network/search/segments/start_times'][:]
+    seg_ends = hdf_file['network/search/segments/end_times'][:]
     # Write list of segments
-    seg_list = segments.segmentlist()
-    for i in range(len(seg_starts)):
-        seg_list.append(segments.segment(seg_starts[i], seg_ends[i]))
+    seg_list = segments.segmentlist([segments.segment(seg_start, seg_ends[i])
+                                    for i, seg_start in enumerate(seg_starts)])
 
     # Write segment_dict in proper format
+    # At the moment of this comment, there is only one segment
     segment_dict = {slide: seg_list.coalesce() for slide in slide_ids}
 
     return segment_dict
@@ -895,8 +849,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
         seg_buffer.coalesce()
 
         # Construct the ifo-indexed dictionary of slid veteoes
-        if vetoes is not None:
-            slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id)
+        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
 
         # Construct trial list and check against buffer
         trial_dict[slide_id] = segments.segmentlist()
@@ -909,13 +862,9 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
                 curr_trial = segments.segment(trial_end - trial_time,
                                               trial_end)
                 if not seg_buffer.intersects_segment(curr_trial):
-                    if vetoes is not None:
-                        intersect = numpy.any([slid_vetoes[ifo].
+                    intersect = numpy.any([slid_vetoes[ifo].
                                            intersects_segment(curr_trial)
                                            for ifo in ifos])
-                    else:
-                        intersect = False
-                    
                     if not intersect:
                         trial_dict[slide_id].append(curr_trial)
 
@@ -947,11 +896,13 @@ def max_median_stat(slide_dict, time_veto_max_stat, trig_stat, total_trials):
                    else 0 for slide_id in slide_dict])
 
     full_time_veto_max_stat = sort_stat(time_veto_max_stat)
+
     if total_trials % 2:
         median_stat = full_time_veto_max_stat[(total_trials - 1) // 2]
     else:
         median_stat = numpy.mean((full_time_veto_max_stat)
                                  [total_trials//2 - 1: total_trials//2 + 1])
+
     return max_stat, median_stat, full_time_veto_max_stat
 
 
@@ -1003,3 +954,24 @@ def get_coinc_snr(trigs_or_injs, ifos):
     coinc_snr = numpy.sqrt(snr_sum_square)
 
     return coinc_snr
+
+
+def template_hash_to_id(trigger_file, bank_path):
+    """
+    This function converts the template hashes from a trigger file
+    into 'template_id's that represent indices of the
+    templates within the bank.
+    Parameters
+    ----------
+    trigger_file: h5py File object for trigger file
+    bank_file: filepath for template bank
+    """
+    with h5py.File(bank_path, "r") as bank:
+        hashes = bank['template_hash'][:]
+    ifos = [k for k in trigger_file.keys() if k != 'network']
+    trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
+    trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
+    for idx, t_hash in enumerate(hashes):
+        matches = numpy.where(trig_hashes == t_hash)
+        trig_ids[matches] = idx
+    return trig_ids
