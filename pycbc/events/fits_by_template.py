@@ -171,7 +171,7 @@ def segment_mask(time, keep_segments):
 
 
 def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2,
-        prune_window=0.1, log=False):
+               prune_window=0.1, log=False):
     """
     Find the mask to apply to triggers after pruning is applied
     """
@@ -261,6 +261,7 @@ def prune_mask(stat, time, prune_param, prune_number=2, prune_bins=2,
     )
     return retain_trigs
 
+
 def report_percentage(i, length, pc_report=10, log_func=logger.info):
     """
     Convenience function - report how long through the loop we are.
@@ -284,9 +285,8 @@ def report_percentage(i, length, pc_report=10, log_func=logger.info):
         log_func("Template %d out of %d (%.0f%%)", i, length, pc_now)
 
 
-
 def fit_triggers(stat, template_id, fit_function, stat_threshold,
-        template_ids):
+                 template_ids):
     """
     Calculate fit coefficient of the distribution of triggers in each template
     """

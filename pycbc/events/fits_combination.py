@@ -79,7 +79,7 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
 
 
 def smooth_tophat(nabove, invalphan, ntotal, dists,
-        **kwargs):  # pylint:disable=unused-argument
+                  **kwargs):  # pylint:disable=unused-argument
     """
     Smooth templates using a tophat function with templates within unit
     dists
@@ -94,7 +94,7 @@ def smooth_tophat(nabove, invalphan, ntotal, dists,
 
 
 def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500,
-        **kwargs):  # pylint:disable=unused-argument
+                     **kwargs):  # pylint:disable=unused-argument
     """
     Smooth templates according to the closest N templates
     No weighting is applied
@@ -118,7 +118,7 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500,
 
 
 def smooth_distance_weighted(nabove, invalphan, ntotal, dists,
-        **kwargs):  # pylint:disable=unused-argument
+                             **kwargs):  # pylint:disable=unused-argument
     """
     Smooth templates weighted according to dists in a unit-width normal
     distribution, truncated at three sigma
