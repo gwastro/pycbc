@@ -150,7 +150,11 @@ class LVKNewStyleInjectionSet(object):
             elif lvk_name == 't_co_gps_add':
                 continue
             else:
-                data[pycbc_name] = self.inj_file[f'{self.subdir}/{lvk_name}'][:]
+                lvk_file_dset = self.inj_file[f'{self.subdir}/{lvk_name}']
+                if lvk_file_dset.dtype.char in ['U', 'O']:
+                    data[pycbc_name] = lvk_file_dset[:].astype('S')
+                else:
+                    data[pycbc_name] = lvk_file_dset[:]
         return data
 
 
