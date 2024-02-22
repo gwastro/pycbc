@@ -329,7 +329,7 @@ def cut_templates(parvals, smoothing_method, smoothing_width, val_names):
        is used to determine how many 'widths' should be cut.
     smoothing_width: list of floats
        Same size as the tuple parvals
-       The re-scaling value in each dimension 
+       The re-scaling value in each dimension
     val_names: list of strings
        (Just for logging) List of names corresponding to the parvals
        Same size as the tuple parvals
