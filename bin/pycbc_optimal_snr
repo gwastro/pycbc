@@ -185,7 +185,7 @@ if __name__ == '__main__':
     if not opts.time_varying_psds:
         pycbc.psd.verify_psd_options_multi_ifo(opts, parser, detectors)
 
-    pycbc.init_logging(args.verbose)
+    pycbc.init_logging(opts.verbose)
 
     seg_len = opts.seg_length
     sample_rate = opts.sample_rate
