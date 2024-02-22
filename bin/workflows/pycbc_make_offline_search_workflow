@@ -132,8 +132,8 @@ def finalize(container, workflow, finalize_workflow):
     sys.exit(0)
 
 def check_stop(job_name, container, workflow, finalize_workflow):
-    #This function will finalize the workflow and stop it at the job specified. 
-    #Under [workflow] supply the option stop-after = and the job you want the job to stop at. Current options are [inspiral, hdf_trigger_merge, statmap]
+    #This function will finalize the workflow and stop it at the job specified.
+    #Under [workflow] supply the option stop-after = and the job name you want the workflow to stop at. Current options are [inspiral, hdf_trigger_merge, statmap]
     if workflow.cp.has_option('workflow', 'stop-after'):
         stop_after = workflow.cp.get('workflow', 'stop-after')
         if stop_after == job_name:
