@@ -27,9 +27,9 @@ from pycbc.live import snr_optimizer
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--params-file', required=True,
                     help='Location of the attributes file created by PyCBC '
                          'Live')
