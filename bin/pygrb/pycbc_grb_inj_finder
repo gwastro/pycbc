@@ -92,12 +92,16 @@ def read_hdf5_triggers(inputfiles, verbose=False):
     datasets = {}
 
     def _scan_dataset(name, obj):
-        if not isinstance(obj, h5py.Dataset) or "search" or "gating" in name:
+        if not isinstance(obj, h5py.Dataset):
             return
         elif name.startswith("network") and \
             NETWORK_IFO_EVENT_ID_REGEX.match(name):
                 return
         elif "template_id" in name:
+            return
+        elif "search" in name:
+            return
+        elif "gating" in name:
             return
         else:
             shape = obj.shape
@@ -301,7 +305,7 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
             injections_idx = numpy.arange(len(injections))
             if allinjections is not None:
                 injections_idx += len(allinjections)
-            missed.append(injections_idx)
+            missed.extend(injections_idx)
 
         # record all injections
         if allinjections is None:
@@ -333,10 +337,7 @@ with h5py.File(outfilename, "w") as h5out:
     # write injections from recarray
     for name, injlist in (("found", found), ("missed", missed)):
         grp = h5out.create_group(name)
-        if len(injlist) > 0:
-            injs = allinjections[injlist]
-        else:
-            injs = FieldArray(numpy.zeros(0, dtype=allinjections.dtype))
+        injs = allinjections[injlist]
         for field in injs.fieldnames:
             # h5py does not support unicode strings
             if 'U' not in str(injs[field].dtype):
