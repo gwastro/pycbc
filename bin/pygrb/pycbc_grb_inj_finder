@@ -41,7 +41,6 @@ from ligo.segments.utils import fromsegwizard
 
 from pycbc import __version__
 from pycbc.inject import InjectionSet
-from pycbc.io import FieldArray
 from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -268,44 +267,36 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
 
         # read triggers and skip if none
         triggers = read_hdf5_triggers(trigfiles)
-        if len(triggers) > 0:
-            time = triggers['network/end_time_gc']
-            snr = triggers['network/'+args.rank_column]
-            event_id = triggers['network/event_id']
-            time_sorting = time.argsort()
+        time = triggers['network/end_time_gc']
+        snr = triggers['network/'+args.rank_column]
+        event_id = triggers['network/event_id']
+        time_sorting = time.argsort()
 
-            # determine found or missed
-            _left = numpy.searchsorted(
-                time[time_sorting],
-                injtime - args.time_window,
-                side='left',
-            )
-            _right = numpy.searchsorted(
-                time[time_sorting],
-                injtime + args.time_window,
-                side='right',
-             )
+        # determine found or missed
+        _left = numpy.searchsorted(
+            time[time_sorting],
+            injtime - args.time_window,
+            side='left',
+        )
+        _right = numpy.searchsorted(
+            time[time_sorting],
+            injtime + args.time_window,
+            side='right',
+         )
 
-            # get indices of found/missed injections and finding trigger
-            for i, (l, r) in enumerate(
-                    zip(_left, _right),
-                    start=len(allinjections if allinjections is not None else []),
-            ):
-                if not r - l:
-                    missed.append(i)
-                else:
-                    found.append(i)
-                    eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
-                    for x in triggers:
-                        ij = x.split('/')
-                        out_trigs[ij[0]][ij[1]].append(triggers[x][eid])
-        
-        # If no triggers, no found injections
-        else:
-            injections_idx = numpy.arange(len(injections))
-            if allinjections is not None:
-                injections_idx += len(allinjections)
-            missed.extend(injections_idx)
+        # get indices of found/missed injections and finding trigger
+        for i, (l, r) in enumerate(
+                zip(_left, _right),
+                start=len(allinjections if allinjections is not None else []),
+        ):
+            if not r - l:
+                missed.append(i)
+            else:
+                found.append(i)
+                eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
+                for x in triggers:
+                    ij = x.split('/')
+                    out_trigs[ij[0]][ij[1]].append(triggers[x][eid])
 
         # record all injections
         if allinjections is None:
@@ -358,13 +349,12 @@ with h5py.File(outfilename, "w") as h5out:
                 compression_opts=9,
             )
     # map and write template ids if there are triggers
-    if len(h5out['network'].keys()) > 0: 
-        ids = template_hash_to_id(h5out, args.bank_file)
-        h5out.create_dataset(
-            "network/template_id",
-            data=ids,
-            compression="gzip",
-            compression_opts=9,
-        )
+    ids = template_hash_to_id(h5out, args.bank_file)
+    h5out.create_dataset(
+        "network/template_id",
+        data=ids,
+        compression="gzip",
+        compression_opts=9,
+    )
 if args.verbose:
     print("Found/missed written to {}".format(outfilename))
