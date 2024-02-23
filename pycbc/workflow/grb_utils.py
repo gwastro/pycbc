@@ -513,7 +513,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
         seg_filelist = FileList([resolve_url_to_file(sf) for sf in seg_files])
-        node.add_input_list_opt('--segment-files', seg_filelist)
+        node.add_input_list_opt('--seg-files', seg_filelist)
         node.add_input_opt('--onsource-file', resolve_url_to_file(onsource_file))
         node.add_input_opt('--bank-file', resolve_url_to_file(bank_file))
         node.new_output_file_opt(workflow.analysis_time, '.png',

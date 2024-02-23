@@ -126,7 +126,7 @@ plotting_nodes = []
 html_nodes = []
 
 seg_filenames = ['bufferSeg.txt', 'offSourceSeg.txt', 'onSourceSeg.txt']
-seg_files = [os.path.join(args.seg_dir, f) for f in seg_filenames]
+seg_files = [os.path.join(args.segment_dir, f) for f in seg_filenames]
 
 # Logfile of this workflow
 wf_log_file = _workflow.File(wflow.ifos, 'workflow-log', wflow.analysis_time,
