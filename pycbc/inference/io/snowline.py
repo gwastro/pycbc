@@ -21,7 +21,7 @@
 #
 # =============================================================================
 #
-"""Provides IO for the ultranest sampler.
+"""Provides IO for the snowline sampler.
 """
 from .posterior import PosteriorFile
 
