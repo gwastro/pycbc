@@ -120,7 +120,11 @@ class SinglePool(object):
 
     def map(self, f, items):
         return [f(a) for a in items]
-        
+
+    # This is single core, so imap and map
+    # would not behave differently. This is defined
+    # so that the general pool interfaces can use
+    # imap irrespective of the pool type. 
     imap = map
 
 def use_mpi(require_mpi=False, log=True):
