@@ -776,9 +776,7 @@ def get_coinc_snr(trigs_or_injs, ifos):
     single_snr_sq = dict((ifo, None) for ifo in ifos)
     snr_sum_square = numpy.zeros(num_trigs_or_injs)
     for ifo in ifos:
-        key = ifo + '/snr_' + ifo.lower()
-        if ifo.lower() != 'h1':
-            key = key[:-1]
+        key = ifo + '/snr'
         # Square the individual SNRs
         single_snr_sq[ifo] = numpy.square(
             trigs_or_injs[key][:])
