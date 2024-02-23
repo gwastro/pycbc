@@ -400,6 +400,7 @@ for i, offtrial in enumerate(offtrials):
         plot_node, output_files = \
             _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
                                       out_dir, trig_file=offtrial_files[i],
+                                      onsource_file=onsource_file,
                                       inj_file=inj_file,
                                       bank_file=bank_file, tags=tags)
         plotting_nodes.append(plot_node)
