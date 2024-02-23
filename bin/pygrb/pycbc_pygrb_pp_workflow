@@ -122,6 +122,9 @@ wflow.ifos = ifos
 plotting_nodes = []
 html_nodes = []
 
+seg_filenames = ['bufferSeg.txt', 'offSourceSeg.txt', 'onSourceSeg.txt']
+seg_files = [os.path.join(start_rundir, 'segments', f) for f in seg_filenames]
+
 # Logfile of this workflow
 wf_log_file = _workflow.File(wflow.ifos, 'workflow-log', wflow.analysis_time,
                              extension='.txt', directory=rdir['workflow'])
@@ -131,7 +134,6 @@ formatter = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
 logfile.setFormatter(formatter)
 logging.getLogger('').addHandler(logfile)
 logging.info("Created log file %s", wf_log_file.storage_path)
-
 
 # TODO: Pick up inifile, segments plot, GRB time and location, report IFO responses
 # Read the configuration file
@@ -402,7 +404,8 @@ for i, offtrial in enumerate(offtrials):
                                       out_dir, trig_file=offtrial_files[i],
                                       onsource_file=onsource_file,
                                       inj_file=inj_file,
-                                      bank_file=bank_file, tags=tags)
+                                      bank_file=bank_file,
+                                      seg_files=seg_files, tags=tags)
         plotting_nodes.append(plot_node)
         files.extend(output_files)
     eff_layout = list(layout.grouper(files, 2))
