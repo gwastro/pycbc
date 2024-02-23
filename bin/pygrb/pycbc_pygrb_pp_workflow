@@ -405,8 +405,8 @@ for i, offtrial in enumerate(offtrials):
                                       bank_file=bank_file, tags=tags)
         plotting_nodes.append(plot_node)
         files.extend(output_files)
-    inj_layout = list(layout.grouper(files, 2))
-    layout.two_column_layout(out_dir, files, offtrial)
+    eff_layout = list(layout.grouper(files, 2))
+    layout.two_column_layout(out_dir, eff_layout, offtrial)
 
 #
 # Trigger Followups (TODO)

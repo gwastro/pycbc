@@ -82,7 +82,7 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
-parser.add_argument("-F", "--offsource-file", action="store", required=True,
+parser.add_argument("-F", "--trig-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file.")
 # As opposed to offsource-file and trig-file, this only contains onsource
 parser.add_argument("--onsource-file", action="store", default=None,
@@ -124,7 +124,7 @@ if not opts.newsnr_threshold:
 
 # Store options used multiple times in local variables
 outdir = os.path.split(os.path.abspath(opts.background_output_file))[0]
-trig_file = opts.offsource_file
+trig_file = opts.trig_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
 inj_set_name = opts.injection_set_name
