@@ -299,7 +299,8 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         # If no triggers, no found injections
         else:
             injections_idx = numpy.arange(len(injections))
-            if allinjections is not None: injections_idx += len(allinjections)
+            if allinjections is not None:
+                injections_idx += len(allinjections)
             missed.append(injections_idx)
 
         # record all injections
@@ -332,7 +333,10 @@ with h5py.File(outfilename, "w") as h5out:
     # write injections from recarray
     for name, injlist in (("found", found), ("missed", missed)):
         grp = h5out.create_group(name)
-        injs = allinjections[injlist]
+        if len(injlist) > 0:
+            injs = allinjections[injlist]
+        else:
+            injs = FieldArray(numpy.zeros(0, dtype=allinjections.dtype))
         for field in injs.fieldnames:
             # h5py does not support unicode strings
             if 'U' not in str(injs[field].dtype):
