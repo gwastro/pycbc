@@ -45,12 +45,12 @@ parser.add_argument('--psd-files', type=str, nargs='+',
                          'by PyCBC Live.')
 parser.add_argument('--approximant', required=True,
                     help='Waveform approximant string.')
-parser.add_argument('--snr-threshold', default=4.0,
+parser.add_argument('--snr-threshold', type=float, default=4.0,
                     help='If the SNR in ifo X is below this threshold do not '
                          'consider it part of the coincidence. Not implemented')
-parser.add_argument('--chirp-time-f-lower', default=20.,
+parser.add_argument('--chirp-time-f-lower', type=float, default=20.,
                     help='Starting frequency for chirp time window (Hz).')
-parser.add_argument('--chirp-time-window', default=2.,
+parser.add_argument('--chirp-time-window', type=float, default=2.,
                     help='Chirp time window (s).')
 parser.add_argument('--gracedb-server', metavar='URL',
                     help='URL of GraceDB server API for uploading events. '
