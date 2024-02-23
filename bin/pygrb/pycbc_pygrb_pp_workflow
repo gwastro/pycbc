@@ -397,6 +397,8 @@ out_dir = rdir['exclusion_distances']
 _workflow.makedir(out_dir)
 # TODO: add onsource calculation
 for i, offtrial in enumerate(offtrials):
+    out_dir = rdir[f'exclusion_distances/{offtrial}']
+    _workflow.makedir(out_dir)
     files = _workflow.FileList([])
     for inj_set in inj_sets:
         inj_file = list(filter(lambda x: inj_set.lower() in x.lower(), inj_files))
@@ -409,6 +411,7 @@ for i, offtrial in enumerate(offtrials):
                                       inj_file=inj_file,
                                       bank_file=bank_file,
                                       seg_files=seg_files, tags=tags)
+        plot_node.add_opt('--injection-set-name', inj_set)
         plotting_nodes.append(plot_node)
         files.extend(output_files)
     eff_layout = list(layout.grouper(files, 2))
