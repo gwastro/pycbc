@@ -111,9 +111,11 @@ class SnowlineSampler(BaseSampler):
         return inst
 
     def checkpoint(self):
+        """ There is currently no checkpointing implemented"""
         pass
 
     def resume_from_checkpoint(self):
+        """ There is currently no checkpointing implemented"""
         pass
 
     def finalize(self):
