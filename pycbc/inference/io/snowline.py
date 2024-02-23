@@ -27,6 +27,6 @@ from .posterior import PosteriorFile
 
 
 class SnowlineFile(PosteriorFile):
-    """Class to handle file IO for the ``ultranest`` sampler."""
+    """Class to handle file IO for the ``snowline`` sampler."""
 
     name = 'snowline_file'
