@@ -108,6 +108,7 @@ for trig_file in args.trig_files:
         offtrial_files.append(os.path.join(start_rundir, trig_file))
 offtrial_files.sort()
 
+bank_file = os.path.join(start_rundir, args.bank_file)
 
 # Input injection files and injection set names
 inj_files = [start_rundir+'/'+el for el in args.inj_files] 
@@ -398,7 +399,7 @@ for i, offtrial in enumerate(offtrials):
             _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
                                       out_dir, trig_file=offtrial_files[i+1],
                                       inj_file=inj_file,
-                                      bank_file=args.bank_file, tags=tags)
+                                      bank_file=bank_file, tags=tags)
         plotting_nodes.append(plot_node)
         offtrial_files.append(output_files[0])
     layout.two_column_layout(out_dir, files, offtrial)
