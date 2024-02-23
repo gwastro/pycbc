@@ -732,7 +732,7 @@ def setup_pygrb_minifollowups(workflow, followups_file,
 
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
-                                 inj_files, bank_file, tags=None,
+                                 inj_files, bank_file, seg_dir, tags=None,
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.
@@ -775,6 +775,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt('--inj-files', inj_files)
     node.add_input_opt('--bank-file', bank_file)
+    node.add_opt('--segment-dir', seg_dir)
 
     if tags:
         node.add_list_opt('--tags', tags)

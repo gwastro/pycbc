@@ -61,6 +61,9 @@ parser.add_argument("-i", "--inj-files", action="store",
 parser.add_argument("-b", "--bank-file", action="store",
                     default=None,
                     help="The location of the full template bank file")
+parser.add_argument("--segment-dir", action="store",
+                    default=None,
+                    help="The location of the segment files")
 _workflow.add_workflow_command_line_group(parser)
 _workflow.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -123,7 +126,7 @@ plotting_nodes = []
 html_nodes = []
 
 seg_filenames = ['bufferSeg.txt', 'offSourceSeg.txt', 'onSourceSeg.txt']
-seg_files = [os.path.join(start_rundir, 'segments', f) for f in seg_filenames]
+seg_files = [os.path.join(args.seg_dir, f) for f in seg_filenames]
 
 # Logfile of this workflow
 wf_log_file = _workflow.File(wflow.ifos, 'workflow-log', wflow.analysis_time,
