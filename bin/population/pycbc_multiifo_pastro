@@ -18,7 +18,7 @@ use('Agg')
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
 
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.population import fgmc_functions as utils
 from pycbc.population import fgmc_laguerre as fgmcl
 from pycbc.population import fgmc_plots
@@ -34,7 +34,7 @@ rcParams.update({'axes.labelsize': 12,
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-V', '--verbose', action='store_true', default=False)
+add_common_pycbc_options(parser)
 parser.add_argument('--diagnostic-plots', action='store_true', default=False,
                     help='Make extra diagnostic scatter plots')
 parser.add_argument('--full-data-files', nargs='+',
