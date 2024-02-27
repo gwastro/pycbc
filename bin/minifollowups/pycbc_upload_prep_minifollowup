@@ -26,6 +26,7 @@ import numpy as np
 
 from ligo import segments
 
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
@@ -36,9 +37,7 @@ from pycbc.workflow.core import resolve_url_to_file, resolve_td_option
 import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--verbose', action='count',
-                    help='Add progressively more verbose output, '
-                         'default=info')
+add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
@@ -66,11 +65,9 @@ wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
-if args.verbose:
-    args.verbose += 1
-else:
-    args.verbose = 1
-pycbc.init_logging(args.verbose)
+# Default logging level is info: --verbose adds to this
+log_level = 1 if args.verbose is None else args.verbose + 1
+init_logging(log_level)
 
 workflow = wf.Workflow(args)
 
