@@ -31,6 +31,7 @@ import copy
 import numpy
 import logging
 import h5py
+
 import pycbc.tmpltbank
 import pycbc.version
 from pycbc import pnutils
@@ -47,10 +48,9 @@ usage = """usage: %prog [options]"""
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(usage, description=_desc,
            formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
+pycbc.add_common_pycbc_options(parser)
 # Code specific options
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("--verbose", action="store_true", default=False,\
-                    help="verbose output")
 parser.add_argument("--pn-order", action="store", type=str,\
                   default=None,\
                   help="Determines the PN order to use. Note that if you "+\
@@ -106,11 +106,7 @@ opts = parser.parse_args()
 opts.eval_vec4_depth = not opts.skip_vec4_depth
 opts.eval_vec5_depth = not opts.skip_vec5_depth
 
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # Sanity check options
 if not opts.pn_order:

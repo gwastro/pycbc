@@ -16,7 +16,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging, argparse, sys, numpy
+import logging
+import argparse
+import sys
+import numpy
+
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc import DYN_RANGE_FAC
@@ -28,8 +32,7 @@ import pycbc.opt
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector precessing gravitational-wave triggers.")
 
-parser.add_argument("-V", "--verbose", action="store_true",
-                  help="print extra debugging information", default=False )
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--output", type=str, help="FIXME: ADD")
 parser.add_argument("--bank-file", type=str, help="FIXME: ADD")
 parser.add_argument("--snr-threshold",
