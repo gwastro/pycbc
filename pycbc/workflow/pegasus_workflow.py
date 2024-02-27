@@ -35,7 +35,10 @@ import warnings
 from packaging import version
 from urllib.request import pathname2url
 from urllib.parse import urljoin, urlsplit
+
 import Pegasus.api as dax
+
+logger = logging.getLogger('pycbc.workflow.pegasus_workflow')
 
 PEGASUS_FILE_DIRECTORY = os.path.join(os.path.dirname(__file__),
                                       'pegasus_files')
@@ -323,7 +326,7 @@ class Workflow(object):
 
         # Get the logger associated with the Pegasus workflow import
         pegasus_logger = logging.getLogger('Pegasus')
-        pegasus_logger.setLevel(logging.root.level + 10)
+        pegasus_logger.setLevel(logger.level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()
