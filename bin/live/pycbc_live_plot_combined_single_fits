@@ -152,7 +152,8 @@ for ifo in ifos:
         bin_colour = plt.get_cmap(args.colormap)(bin_prop)
         bin_label = f"duration {bl:.2f}-{bu:.2f}"
         alpha_lines += ax_alpha.plot(separate_starts[ifo], alphas, c=bin_colour,
-                                     label=bin_label, marker='x')
+                                     label=bin_label, marker='.',
+                                     markersize=10)
         alpha_lines.append(ax_alpha.axhline(ma,
                                             label="total fit = %.2f" % ma,
                                             c=bin_colour, linestyle='--',))
@@ -162,7 +163,8 @@ for ifo in ifos:
                                             label=alpha_lab))
 
         count_lines += ax_count.plot(separate_starts[ifo], rate, c=bin_colour,
-                                     label=bin_label, marker='x')
+                                     label=bin_label, marker='.',
+                                     markersize=10)
 
         if mr < 1e-3:
             mlab = f"mean = {mr:.3e}"

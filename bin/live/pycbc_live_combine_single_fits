@@ -161,9 +161,8 @@ for ifo in args.ifos:
     fout_ifo['separate_fits/start_time'] = trigger_file_starts[ad_order]
     fout_ifo['separate_fits/end_time'] = trigger_file_ends[ad_order]
 
-    for counter, a_c_u_l in enumerate(zip(alphas_bin[ifo],
-                                          counts_bin[ifo], bu, bl)):
-        a, c, u, l = a_c_u_l
+    for counter, (a, c) in enumerate(zip(alphas_bin[ifo],
+                                         counts_bin[ifo])):
         # Sort alpha and counts by date
         a = np.array(a)[ad_order]
         c = np.array(c)[ad_order]
