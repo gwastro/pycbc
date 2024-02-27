@@ -154,7 +154,8 @@ for ifo in args.ifos:
     logging.info(ifo)
     fout_ifo = fout.create_group(ifo)
     l_times = np.array(live_times[ifo])
-    fout_ifo.attrs['live_time'] = l_times.sum()
+    total_time = l_times.sum()
+    fout_ifo.attrs['live_time'] = total_time
 
     fout_ifo['separate_fits/live_times'] = l_times[ad_order]
     fout_ifo['separate_fits/start_time'] = trigger_file_starts[ad_order]
@@ -166,16 +167,20 @@ for ifo in args.ifos:
         # Sort alpha and counts by date
         a = np.array(a)[ad_order]
         c = np.array(c)[ad_order]
-        invalphan = c / a
-        mean_alpha = c.mean() / invalphan.mean()
-        cons_alpha = np.percentile(a, 100 - args.conservative_percentile)
+
+        # ignore anything with the 'invalid' salient values
+        valid = c > 0
+
+        invalphan = c[valid] / a[valid]
+        mean_alpha = c[valid].mean() / invalphan.mean()
+        cons_alpha = np.percentile(a[valid], 100 - args.conservative_percentile)
         cons_alphas_out[ifo][counter] = cons_alpha
         alphas_out[ifo][counter] = mean_alpha
         # To get the count values, we need to convert to rates and back again
-        r = c / l_times[ad_order]
+        r = c [valid]/ l_times[ad_order][valid]
         cons_rate = np.percentile(r, args.conservative_percentile)
-        cons_counts_out[ifo][counter] = cons_rate * l_times[ad_order].sum()
-        counts_out[ifo][counter] = np.mean(r) * l_times[ad_order].sum()
+        cons_counts_out[ifo][counter] = cons_rate * total_time
+        counts_out[ifo][counter] = np.mean(r) * total_time
 
         fout_ifo[f'separate_fits/bin_{counter:d}/fit_coeff'] = a
         fout_ifo[f'separate_fits/bin_{counter:d}/counts'] = c
