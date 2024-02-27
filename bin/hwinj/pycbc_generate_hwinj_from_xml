@@ -16,10 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 import argparse
 import logging
 import numpy
-import os, sys
+import os
+import sys
+
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.types import TimeSeries
 from pycbc.waveform import get_td_waveform
@@ -41,6 +45,8 @@ parser = argparse.ArgumentParser(
              from the sim_inspiral row, Y is the GPS start time of the ASCII waveform file, \
              and Z is the duration of the file in seconds.')
 
+add_common_pycbc_options(parser)
+
 # add command line options
 parser.add_argument('--injection-file', type=str, required=True,
              help='Path to the LIGOLW XML file that contains a sim_inspiral table.')
@@ -54,9 +60,9 @@ parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'], required=True,
 # parse command line
 opts = parser.parse_args()
 
-# setup log
-logging_level = logging.DEBUG
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+# setup logging - default level is DEBUG (2)
+logging_level = 2 if opts.verbose is None else opts.verbose + 2
+init_logging.(logging_level)
 
 # read in injection LIGOLW XML file
 logging.info('Reading injection file')
