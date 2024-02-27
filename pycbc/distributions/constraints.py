@@ -26,6 +26,7 @@ from pycbc.io import record
 
 logger = logging.getLogger('pycbc.distributions.constraints')
 
+
 class Constraint(object):
     """Creates a constraint that evaluates to True if parameters obey
     the constraint and False if they do not.

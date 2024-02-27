@@ -26,6 +26,7 @@ from pycbc.distributions import uniform
 
 logger = logging.getLogger('pycbc.distributions.angular')
 
+
 class UniformAngle(uniform.Uniform):
     """A uniform distribution in which the dependent variable is between
     `[0,2pi)`.

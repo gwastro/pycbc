@@ -61,6 +61,7 @@ from .pegasus_sites import make_catalog
 
 logger = logging.getLogger('pycbc.workflow.core')
 
+
 def make_analysis_dir(path):
     """
     Make the analysis directory path, any parent directories that don't already

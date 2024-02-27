@@ -32,6 +32,7 @@ from pycbc.workflow.core import Executable
 
 logger = logging.getLogger('pycbc.workflow.versioning')
 
+
 class VersioningExecutable(Executable):
     """
     Executable for getting version information
