@@ -17,14 +17,17 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import os, stat
-import pycbc.results
+import os
+import stat
 import random
 import shutil
 import zipfile
 import codecs
-from ligo import segments
 from jinja2 import Environment, FileSystemLoader
+
+from ligo import segments
+
+import pycbc.results
 from pycbc.results.render import get_embedded_config, render_workflow_html_template, setup_template_render
 from pycbc.workflow import segment
 import pycbc.version
@@ -166,6 +169,7 @@ parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
                   description="Create static html pages of a filesystem's content.")
 parser.add_argument("--version", action="version",
                   version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('-f', '--template-file', type=str,
                   help='Template file to use for skeleton html page.')
 parser.add_argument('-b', '--output-path', type=str,
@@ -181,11 +185,11 @@ parser.add_argument('-s', '--analysis-subtitle', type=str,
 parser.add_argument('-l', '--logo', type=str,
                   default=default_logo_location,
                   help='File location of logo to include at top of page')
-parser.add_argument('-v', '--verbose', action='store_true',
-                  help='Print extra debugging information.', default=False)
 parser.add_argument('-P', '--protect-results', action='store_true',
                   help='Make the output web pages read only.', default=False)
 opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
 
 # edit command line options
 analysis_title = opts.analysis_title.strip('"').rstrip('"')

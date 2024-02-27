@@ -25,6 +25,7 @@ import math
 import copy
 import numpy
 import logging
+
 import pycbc
 import pycbc.version
 import pycbc.psd
@@ -48,8 +49,7 @@ parser = argparse.ArgumentParser(
 
 # Begin with code specific options
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("-V", "--verbose", action="store_true", default=False,
-                    help="verbose output")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--random-seed", action="store", type=int,
                     default=None,
                     help="""Random seed to use when calling numpy.random
@@ -78,11 +78,7 @@ tmpltbank.insert_ethinca_metric_options(parser)
 
 opts = parser.parse_args()
 
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+pycbc.init_logging(opts.verbose)
 
 opts.max_mismatch = 1 - opts.min_match
 tmpltbank.verify_metric_calculation_options(opts, parser)
