@@ -413,7 +413,15 @@ def generate_early_warning_psds(psd_path):
     return [lisa_a_zero_phase_kern_pycbc_fd, lisa_a_zero_phase_kern_pycbc_td], [lisa_e_zero_phase_kern_pycbc_fd, lisa_e_zero_phase_kern_pycbc_td]
 
 
-def generate_data_lisa_ew(waveform_params, psds_for_datagen, psds_for_whitening, seed, window_length, cutoff_time):
+def generate_data_lisa_ew(
+    waveform_params,
+    psds_for_datagen,
+    psds_for_whitening,
+    seed,
+    window_length,
+    cutoff_time,
+    extra_forward_zeroes=0
+):
     window = signal.windows.hann(window_length * 2 + 1)[:window_length]
 
     outs = pycbc.waveform.get_fd_det_waveform(ifos=['LISA_A','LISA_E','LISA_T'], **waveform_params)
@@ -421,13 +429,19 @@ def generate_data_lisa_ew(waveform_params, psds_for_datagen, psds_for_whitening,
     tout_E = outs['LISA_E'].to_timeseries()
     strain_A = pycbc.noise.noise_from_psd(len(tout_A), tout_A.delta_t, psds_for_datagen['LISA_A'], seed=seed+137) * 0.
     strain_E = pycbc.noise.noise_from_psd(len(tout_E), tout_E.delta_t, psds_for_datagen['LISA_E'], seed=seed+13812476) * 0.
+    strain_A.start_time += tout_A.start_time
+    strain_E.start_time += tout_E.start_time
     strain_A[:] += tout_A[:]
     strain_E[:] += tout_E[:]
     strain_w_A = strain_A[:].copy()
-    strain_w_A.data[:10000] *= window
+    if extra_forward_zeroes:
+        strain_w_A.data[:int(extra_forward_zeroes//5)] = 0
+    strain_w_A.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+window_length] *= window
     strain_w_A.data[-int(cutoff_time//5):] = 0
     strain_w_E = strain_E[:].copy()
-    strain_w_E.data[:10000] *= window
+    if extra_forward_zeroes:
+        strain_w_E.data[:int(extra_forward_zeroes//5)] = 0
+    strain_w_E.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+window_length] *= window
     strain_w_E.data[-int(cutoff_time//5):] = 0
 
     strain_fout_A = pycbc.strain.strain.execute_cached_fft(
@@ -462,7 +476,34 @@ def generate_data_lisa_ew(waveform_params, psds_for_datagen, psds_for_whitening,
 
 
 _WINDOW = None
-def generate_waveform_lisa_ew(waveform_params, psds_for_whitening, window_length, cutoff_time, kernel_length, extra_forward_zeroes=0):
+def generate_waveform_lisa_ew(
+    waveform_params,
+    psds_for_whitening,
+    window_length,
+    cutoff_time,
+    kernel_length,
+    extra_forward_zeroes=0,
+):
+    """
+    
+    Parameters
+    ----------
+    waveform_params: dict
+        A dictionary of waveform parameters that will be passed to the waveform
+        generator.
+    psds_for_whitening: dict[str: FrequencySeries]
+        Power spectral denisities for whitening in the frequency-domain.
+    window_length : int
+        Length (in samples) of time-domain window applied to the start of the
+        waveform.
+    cutoff_time: float
+        Time (in seconds) from the end of the waveform to cutoff.
+    kernel_length : int
+        Unused.
+    extra_foward_zeroes : int
+        Time (in seconds) to set to zero at the start of the waveform. If used,
+        the window will be applied starting after the zeroes.
+    """
     global _WINDOW
     if _WINDOW is None or len(_WINDOW) != window_length:
         _WINDOW = signal.windows.hann(window_length * 2 + 1)[:window_length]
@@ -482,12 +523,12 @@ def generate_waveform_lisa_ew(waveform_params, psds_for_whitening, window_length
     
     if extra_forward_zeroes:
         tout_A.data[:int(extra_forward_zeroes//5)] = 0
-    tout_A.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+10000] *= window
+    tout_A.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+window_length] *= window
     tout_A.data[-int(cutoff_time//5):] = 0
     
     if extra_forward_zeroes:
         tout_E.data[:int(extra_forward_zeroes//5)] = 0
-    tout_E.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+10000] *= window
+    tout_E.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+window_length] *= window
     tout_E.data[-int(cutoff_time//5):] = 0
 
     #print(len(tout))

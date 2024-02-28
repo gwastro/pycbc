@@ -32,6 +32,9 @@ from pycbc.waveform.early_warning_wform import PSDFirKernel, generate_early_warn
 from pycbc.waveform.waveform import parse_mode_array, props
 from .tools import marginalize_likelihood
 
+global COUNTS
+COUNTS = {}
+
 waveform_params1 = {'approximant': 'BBHX_PhenomD',
     'mass1': 1E6,
     'mass2': 1E6,
@@ -174,7 +177,8 @@ class LISAEarlyWarningModel(BaseModel):
         seed = int(kwargs.pop('seed'))
         kernel_length = int(kwargs.pop('kernel_length'))
         window_length = int(kwargs.pop('window_length'))
-        tlen = kwargs.pop('tlen')
+        extra_forward_zeroes = int(kwargs.pop('extra_forward_zeroes'))
+        tlen = int(kwargs.pop('tlen'))
         inj_keys = [item for item in kwargs.keys() if item.startswith('injparam')]
         inj_params = {}
         for key in inj_keys:
@@ -216,7 +220,7 @@ class LISAEarlyWarningModel(BaseModel):
         static_params["run_phenomd"] = run_phenomd
         self.static_params = parse_mode_array(static_params)
 
-        tlen = 3140000
+        # tlen = 3140000
         sample_rate = 0.2
         length = int(tlen * sample_rate)
         flen = length // 2 + 1
@@ -241,10 +245,19 @@ class LISAEarlyWarningModel(BaseModel):
         self.kernel_length = kernel_length
         self.window_length = window_length
         self.cutoff_time = cutoff_time
+        self.extra_forward_zeroes = extra_forward_zeroes
 
         # Want to remove this!
         cutoff_time = self.cutoff_time + (curr_params['t_obs_start'] - curr_params['tc'])
-        self.lisa_a_strain, self.lisa_e_strain = generate_data_lisa_ew(curr_params, self.psds_for_datagen, self.whitening_psds, seed, self.window_length, cutoff_time)
+        self.lisa_a_strain, self.lisa_e_strain = generate_data_lisa_ew(
+            curr_params,
+            self.psds_for_datagen,
+            self.whitening_psds,
+            seed,
+            self.window_length, 
+            cutoff_time,
+            extra_forward_zeroes=self.extra_forward_zeroes,
+        )
         self.lisa_a_strain_fd = pycbc.strain.strain.execute_cached_fft(
             self.lisa_a_strain,
             copy_output=True,
@@ -266,8 +279,14 @@ class LISAEarlyWarningModel(BaseModel):
         cparams = copy.deepcopy(self.static_params)
         cparams.update(self.current_params)
         cutoff_time = self.cutoff_time + (cparams['t_obs_start'] - cparams['tc'])
-
-        ws = generate_waveform_lisa_ew(cparams, self.whitening_psds, self.window_length, cutoff_time, self.kernel_length)
+        ws = generate_waveform_lisa_ew(
+            cparams,
+            self.whitening_psds,
+            self.window_length,
+            cutoff_time,
+            self.kernel_length,
+            extra_forward_zeroes=self.extra_forward_zeroes,
+        )
         wform_lisa_a = ws['LISA_A']
         wform_lisa_e = ws['LISA_E']
         #wform_td_A = pycbc.strain.strain.execute_cached_ifft(
