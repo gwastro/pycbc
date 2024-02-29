@@ -29,7 +29,7 @@ and paper <10.1088/1361-6382/ab1101>.
 """
 
 import numpy as np
-from scipy.constants import c
+from astropy.constants import c
 from pycbc.psd.read import from_numpy_arrays
 
 
@@ -53,7 +53,7 @@ def psd_lisa_acc_noise(f, acc_noise_level=3e-15):
     """
     s_acc = acc_noise_level**2 * (1+(4e-4/f)**2)*(1+(f/8e-3)**4)
     s_acc_d = s_acc * (2*np.pi*f)**(-4)
-    s_acc_nu = (2*np.pi*f/c)**2 * s_acc_d
+    s_acc_nu = (2*np.pi*f/c.value)**2 * s_acc_d
 
     return s_acc_nu
 
@@ -77,7 +77,7 @@ def psd_lisa_oms_noise(f, oms_noise_level=15e-12):
         Please see Eq.(9-10) in <LISA-LCST-SGS-TN-001> for more details.
     """
     s_oms_d = oms_noise_level**2 * (1+(2e-3/f)**4)
-    s_oms_nu = s_oms_d * (2*np.pi*f/c)**2
+    s_oms_nu = s_oms_d * (2*np.pi*f/c.value)**2
 
     return s_oms_nu
 
@@ -120,7 +120,7 @@ def omega_length(f, len_arm=2.5e9):
     omega_len : float or numpy.array
         The value of 2*pi*f*LISA_arm_length.
     """
-    omega_len = 2*np.pi*f * len_arm/c
+    omega_len = 2*np.pi*f * len_arm/c.value
 
     return omega_len
 
@@ -458,7 +458,7 @@ def sensitivity_curve_lisa_semi_analytical(length, delta_f, low_freq_cutoff,
     fp_sq = averaged_lisa_fplus_sq_approx(fr, len_arm)
     s_acc_nu, s_oms_nu = lisa_psd_components(
                             fr, acc_noise_level, oms_noise_level)
-    omega_len = 2*np.pi*fr * len_arm/c
+    omega_len = 2*np.pi*fr * len_arm/c.value
     sense_curve = ((s_oms_nu + s_acc_nu*(3+np.cos(2*omega_len))) /
                    (omega_len**2*fp_sq))
     fseries = from_numpy_arrays(fr, sense_curve/2,
