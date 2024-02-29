@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 import pylab
 
-from pybc import init_logging, add_common_pycbc_options
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.types
 import pycbc.results
 

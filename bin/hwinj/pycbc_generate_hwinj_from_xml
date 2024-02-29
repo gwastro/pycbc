@@ -62,7 +62,7 @@ opts = parser.parse_args()
 
 # setup logging - default level is DEBUG (2)
 logging_level = 2 if opts.verbose is None else opts.verbose + 2
-init_logging.(logging_level)
+init_logging(logging_level)
 
 # read in injection LIGOLW XML file
 logging.info('Reading injection file')
