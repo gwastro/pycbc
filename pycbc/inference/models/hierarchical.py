@@ -719,6 +719,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 sh_others[i], hh_others[i] = other_model.loglr
                 other_model.return_sh_hh = False
 
+        if nums == 1:
+            sh_others = sh_others[0]
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
 
