@@ -712,7 +712,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             current_params_other = other_model.current_params.copy()
             for i in range(nums):
                 current_params_other.update(
-                    {key: value[i] if isinstance(value, numpy.ndarray) else \
+                    {key: value[i] if isinstance(value, numpy.ndarray) else
                         value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
                 other_model.return_sh_hh = True
