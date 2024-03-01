@@ -881,8 +881,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.lookback_time = (ifar_limit * lal.YRJUL_SI * timeslide_interval) ** 0.5
         self.buffer_size = int(numpy.ceil(self.lookback_time / analysis_block))
 
-        det0, det1 = Detector(ifos[0]), Detector(ifos[1])
-        self.time_window = det0.light_travel_time_to_detector(det1) + coinc_window_pad
+        self.dets = {}
+        for ifo in ifos:
+            self.dets[ifo] = Detector(ifo)
+
+        self.time_window = self.dets[ifos[0]].light_travel_time_to_detector(self.dets[ifos[1]]) + coinc_window_pad
         self.coincs = CoincExpireBuffer(self.buffer_size, self.ifos)
 
         self.singles = {}
@@ -1225,7 +1228,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                     self.timeslide_interval,
                     shift_vec,
                     time_addition=self.coinc_window_pad,
-                    mchirp=mchirp
+                    mchirp=mchirp,
+                    dets=self.dets
                 )
 
                 # Store data about new triggers: slide index, stat value and
