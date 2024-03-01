@@ -595,11 +595,11 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             filt += filter_i
             norm += norm_i
-        loglr = self.marginalize_loglr(filt, norm)
+
         if self.return_sh_hh:
             results = (filt, norm)
         else:
-            results = loglr
+            results = self.marginalize_loglr(filt, norm)
         return results
 
     def write_metadata(self, fp, group=None):

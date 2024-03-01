@@ -690,9 +690,17 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_primary, hh_primary = self.primary_model.loglr
         self.primary_model.return_sh_hh = False
 
-        nums = self.primary_model.vsamples
-        margin_params = self.primary_model.marginalize_vector_params.copy()
-        margin_params.pop('logw_partial')
+        margin_names = list(
+            self.primary_model.marginalize_vector_params.keys())
+        margin_names.remove('logw_partial')
+        margin_params = {}
+        for key, value in self.primary_model.current_params.items():
+            if key in margin_names:
+                margin_params[key] = value
+                if isinstance(value, numpy.ndarray):
+                    nums = len(value)
+                else:
+                    nums = 1
 
         # add likelihood contribution from space-borne detectors, we
         # calculate sh/hh for each marginalized parameter point
@@ -704,14 +712,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             current_params_other = other_model.current_params.copy()
             for i in range(nums):
                 current_params_other.update(
-                    {key: value[i] for key, value in margin_params.items()})
-                for p in self.primary_model.static_params.keys():
-                    # don't pass primary model's 'f_lower' to LISA
-                    if p not in current_params_other and p != 'f_lower':
-                        current_params_other[p] = \
-                            self.primary_model.static_params[p]
-
-                # sub-model's transform will be done in loglr
+                    {key: value[i] if isinstance(value, numpy.ndarray) else \
+                        value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
                 other_model.return_sh_hh = True
                 sh_others[i], hh_others[i] = other_model.loglr
@@ -917,7 +919,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
     def reconstruct(self, rec=None, seed=None):
         """ Reconstruct marginalized parameters by using the primary
-        model's reconstruct method, total_loglr and others_lognl.
+        model's reconstruct method, total_loglr, and others_lognl.
         """
         if seed:
             numpy.random.seed(seed)

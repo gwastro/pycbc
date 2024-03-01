@@ -219,6 +219,7 @@ class DistMarg():
         self.dist_locs = dist_locs
         self.distance_marginalization = dist_ref / dist_locs, dist_weights
         self.distance_interpolator = None
+        print("[tools] marginalize_distance_interpolator: ", marginalize_distance_interpolator)
         if str_to_bool(marginalize_distance_interpolator):
             setup_args = {}
             if marginalize_distance_snr_range:
@@ -229,6 +230,7 @@ class DistMarg():
                                                 phase=self.marginalize_phase,
                                                 **setup_args)
             self.distance_interpolator = i
+        print("[tools] self.distance_interpolator: ", self.distance_interpolator)
         kwargs['static_params']['distance'] = dist_ref
         return variable_params, kwargs
 
@@ -270,7 +272,7 @@ class DistMarg():
             distance = False
             skip_vector = True
             return_complex = True
-
+        print("[marginalize_loglr] interpolator: ", interpolator)
         return marginalize_likelihood(sh_total, hh_total,
                                       logw=self.marginalize_vector_weights,
                                       phase=self.marginalize_phase,
@@ -887,6 +889,9 @@ def marginalize_likelihood(sh, hh,
     loglr: float
         The marginalized loglikehood ratio
     """
+    print("[marginalize_likelihood] distance: ", distance)
+    print("[marginalize_likelihood] interpolator: ", interpolator)
+    print("[marginalize_likelihood] numpy.isscalar(sh): ", numpy.isscalar(sh))
     if distance and not interpolator and not numpy.isscalar(sh):
         raise ValueError("Cannot do vector marginalization "
                          "and distance at the same time")
