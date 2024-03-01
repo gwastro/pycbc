@@ -98,7 +98,11 @@ parser.add_argument("--cluster-function", choices=["findchirp", "symmetric"],
                     "'findchirp' uses a forward sliding window; 'symmetric' "
                     "will compare each window to the one before and after, keeping "
                     "only a local maximum.", default="findchirp")
+<<<<<<< HEAD
 parser.add_argument("--cluster-window", type=float, default=-1,
+=======
+parser.add_argument("--cluster-window", type=float, default=0,
+>>>>>>> 904f4a40 (default bug in cluster-window in pycbc_inspiral (#4461))
                     help="Length of clustering window in seconds."
                     " Set to 0 to disable clustering.")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
@@ -508,21 +512,11 @@ event_mgr.save_performance(ncores, len(segments), len(bank), run_time, tsetup)
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
-<<<<<<< HEAD
-if opt.fftw_output_float_wisdom_file:
-    fft.fftw.export_single_wisdom_to_filename(
-        opt.fftw_output_float_wisdom_file)
-
-if opt.fftw_output_double_wisdom_file:
-    fft.fftw.export_double_wisdom_to_filename(
-        opt.fftw_output_double_wisdom_file)
-=======
 if opt.fft_backends == 'fftw':
     if opt.fftw_output_float_wisdom_file:
         fft.fftw.export_single_wisdom_to_filename(opt.fftw_output_float_wisdom_file)
 
     if opt.fftw_output_double_wisdom_file:
         fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
->>>>>>> 433dfd81 (fftw_fix (#4418))
 
 logging.info("Finished")
