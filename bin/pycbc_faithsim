@@ -27,6 +27,7 @@ import logging
 from numpy import complex64
 import argparse
 import sys
+
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
 
@@ -84,8 +85,7 @@ parser = argparse.ArgumentParser(usage='',
     description="Calculate faithfulness for a set of waveforms.")
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument("-V", "--verbose", action="store_true",
-                    help="print extra debugging information", default=False)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--param-file", dest="bank_file", metavar="FILE",
                     help="Sngl or Sim Inspiral Table containing waveform "
                          "parameters.")

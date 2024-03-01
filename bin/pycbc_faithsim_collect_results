@@ -5,12 +5,16 @@ Program for collecting the results of pycbc_faithsim comparing two approximants
 computing the match between them and creating a .dat file with the results. 
 """
 
-import numpy as np
-from ligo.lw import utils, table, lsctables
-from pycbc.io.ligolw import LIGOLWContentHandler
 import argparse
+import numpy as np
+
+from ligo.lw import utils, table, lsctables
+
+from pycbc import add_common_pycbc_options, init_logging
+from pycbc.io.ligolw import LIGOLWContentHandler
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument(
     "--match-inputs",
     action="append",
@@ -25,6 +29,8 @@ parser.add_argument(
 )
 parser.add_argument("--output", required=True, help="name of the output .dat file")
 args = parser.parse_args()
+
+init_logging(options.verbose)
 
 mfields = ("match", "overlap", "time_offset", "sigma1", "sigma2")
 bfields = (

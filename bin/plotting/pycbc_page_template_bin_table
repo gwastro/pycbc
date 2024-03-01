@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+""" Make a table of template bin information
+"""
+import sys
+import argparse
+import h5py as h5
+import numpy as np
+
+import pycbc
+import pycbc.results
+from pycbc.version import git_verbose_msg as version
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version", version=version)
+parser.add_argument('--ifo', required=True)
+parser.add_argument('--dq-file', required=True)
+parser.add_argument('--verbose', action='count')
+parser.add_argument('--output-file')
+args = parser.parse_args()
+
+f = h5.File(args.dq_file, 'r')
+grp = f[args.ifo]['bins']
+bin_names = list(grp.keys())
+
+sngl_ranking = f.attrs['sngl_ranking']
+sngl_thresh = f.attrs['sngl_ranking_threshold']
+
+livetime = 0
+seg_grp = f[args.ifo]['dq_segments']
+for k in seg_grp.keys():
+    livetime += seg_grp[k]['livetime'][()]
+
+num_templates = []
+num_triggers = []
+total_templates = 0
+total_triggers = 0
+for bin_name in bin_names:
+    bin_grp = grp[bin_name]
+
+    n_tmp = len(bin_grp['tids'][:])
+    num_templates.append(n_tmp)
+    total_templates += n_tmp
+
+    n_trig = bin_grp['num_triggers'][()]
+    num_triggers.append(n_trig)
+    total_triggers += n_trig
+
+bin_names.append('Total')
+num_triggers.append(total_triggers)
+num_templates.append(total_templates)
+frac_triggers = [n / total_triggers for n in num_triggers]
+frac_templates = [n / total_templates for n in num_templates]
+trigger_rate = [n / livetime for n in num_triggers]
+
+col_names = ['Template Bin', 'Number of Templates', '% of Templates',
+             'Number of Loud Triggers', '% of Loud Triggers',
+             'Loud Trigger Rate (Hz)']
+columns = [bin_names, num_templates, frac_templates,
+           num_triggers, frac_triggers, trigger_rate]
+columns = [np.array(c) for c in columns]
+
+format_strings = [None, '#', '0.000%', '#', '0.0%', '0.00E0']
+
+html_table = pycbc.results.html_table(columns, col_names,
+                                      page_size=len(bin_names),
+                                      format_strings=format_strings)
+title = f'{args.ifo} DQ Template Bin Information'
+caption = 'Table of information about template bins ' \
+           + 'used for DQ trigger rate calculations. ' \
+           + 'Loud triggers are defined as those with ' \
+           + f'{sngl_ranking} > {sngl_thresh}.'
+
+pycbc.results.save_fig_with_metadata(
+    str(html_table), args.output_file, title=title,
+    caption=caption, cmd=' '.join(sys.argv))

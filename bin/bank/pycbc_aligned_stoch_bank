@@ -23,6 +23,7 @@ Stochastic aligned spin bank generator.
 import argparse
 import numpy
 import logging
+
 import pycbc
 import pycbc.version
 from pycbc import tmpltbank
@@ -45,8 +46,7 @@ parser = argparse.ArgumentParser(description=_desc,
 
 # Begin with code specific options
 parser.add_argument("--version", action="version", version=__version__)
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="verbose output")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
                     help="Use a variable upper frequency cutoff in laying "
                     "out the bank.  OPTIONAL.")
@@ -96,12 +96,7 @@ tmpltbank.insert_ethinca_metric_options(parser)
 
 opts = parser.parse_args()
 
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-log_format='%(asctime)s %(message)s'
-logging.basicConfig(format=log_format, level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # delete defaults for redundant options if not varying fupper
 if not opts.vary_fupper:
