@@ -19,10 +19,14 @@ import logging
 import textwrap
 import numpy
 import os
+
 from pycbc.tmpltbank.lambda_mapping import get_ethinca_orders, pycbcValidOrdersHelpDescriptions
 from pycbc import pnutils
 from pycbc.neutron_stars import load_ns_sequence
 from pycbc.types import positive_float, nonnegative_float
+
+logger = logging.getLogger('pycbc.tmpltbank.option_utils')
+
 
 class IndentedHelpFormatterWithNL(argparse.ArgumentDefaultsHelpFormatter):
     """
@@ -589,21 +593,21 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
     # inform him/her about the caveats involved in this.
     if hasattr(opts, 'remnant_mass_threshold') \
             and opts.remnant_mass_threshold is not None:
-        logging.info("""You have asked to exclude EM dim NS-BH systems from the
-                        target parameter space. The script will assume that m1 is
-                        the BH and m2 is the NS: make sure that your settings
-                        respect this convention. The script will also treat the
-                        NS as non-spinning: use NS spins in the template bank
-                        at your own risk!""")
+        logger.info("""You have asked to exclude EM dim NS-BH systems from the
+                       target parameter space. The script will assume that m1
+                       is the BH and m2 is the NS: make sure that your settings
+                       respect this convention. The script will also treat the
+                       NS as non-spinning: use NS spins in the template bank
+                       at your own risk!""")
         if opts.use_eos_max_ns_mass:
-            logging.info("""You have asked to take into account the maximum NS
+            logger.info("""You have asked to take into account the maximum NS
                         mass value for the EOS in use.""")
         # Find out if the EM constraint surface data already exists or not
         # and inform user whether this will be read from file or generated.
         # This is the minumum eta as a function of BH spin and NS mass
         # required to produce an EM counterpart
         if os.path.isfile('constraint_em_bright.npz'):
-            logging.info("""The constraint surface for EM bright binaries
+            logger.info("""The constraint surface for EM bright binaries
                         will be read in from constraint_em_bright.npz.""")
 
     # Assign min/max total mass from mass1, mass2 if not specified

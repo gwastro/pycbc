@@ -5,14 +5,14 @@
 import os
 import argparse
 import logging
+import numpy
+import h5py
 
 # we will make plots on a likely headless machine, so make sure matplotlib's
 # backend is set appropriately
 from matplotlib import use as mpl_use_backend
 mpl_use_backend('agg')
 
-import numpy
-import h5py
 import pycbc
 from pycbc import (
     fft, scheme, version
