@@ -29,11 +29,8 @@ from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, eve
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
-from multiprocessing import Pool
-import pycbc.version
 import pycbc.opt
 import pycbc.inject
-import time
 
 last_progress_update = -1.0
 
@@ -55,9 +52,13 @@ tstart = time.time()
 parser = argparse.ArgumentParser(usage='',
                                  description="Find single detector gravitational-wave triggers.")
 
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action=pycbc.version.Version)
+<<<<<<< HEAD
 parser.add_argument("-V", "--verbose", action="store_true",
                     help="print extra debugging information", default=False)
+=======
+>>>>>>> 98007f4b (Standardize logging: bin, bin/bank and pycbc/tmpltbank (#4631))
 parser.add_argument("--update-progress",
                     help="updates a file 'progress.txt' with a value 0 .. 1.0 when this amount of (filtering) progress was made",
                     type=float, default=0)
