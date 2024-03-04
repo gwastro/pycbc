@@ -25,13 +25,15 @@ import argparse
 import numpy
 import h5py
 import logging
+from numpy import random
+
 import pycbc, pycbc.version
 from pycbc.waveform import bank
-from numpy import random
 
 __author__  = "Soumi De <soumi.de@ligo.org>"
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                   version=pycbc.version.git_verbose_msg)
 parser.add_argument("--bank-file", type=str,
@@ -61,10 +63,10 @@ parser.add_argument("--random-seed", type=int,
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                          "Otherwise, an error is raised.")
-parser.add_argument("--verbose", action="store_true", default=False)
-
 
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 # input checks
 if args.mchirp_sort and (args.random_seed is not None):

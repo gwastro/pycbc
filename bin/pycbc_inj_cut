@@ -29,14 +29,17 @@ __email__ = "stephen.fairhurst@ligo.org"
 import argparse
 import logging
 import numpy
+
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import lsctables
+
 import pycbc
 import pycbc.inject
-from ligo.lw import utils as ligolw_utils
 from pycbc.types import MultiDetOptionAction
-from ligo.lw import lsctables
 import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument('--input', dest='inj_xml', required=True, help='Input LIGOLW injections file.')
 parser.add_argument('--output-missed', dest='output_missed', required=False,
@@ -53,19 +56,12 @@ parser.add_argument('--snr-columns', nargs='+', action=MultiDetOptionAction,
                         ' no useful data in it, good candidates are usually' \
                         ' alpha1, alpha2 etc.')
 parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
-parser.add_argument("-v", "--verbose", action="store_true", default=False,
-                    help="Extended standard output.")
 
 opts = parser.parse_args()
 
-log_fmt = '%(asctime)s %(message)s'
-log_date_fmt = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
+pycbc.init_logging(opts.verbose)
 
-if opts.verbose:
-    logging.info("Loading injections")
 injections = pycbc.inject.InjectionSet(opts.inj_xml)
-
 
 # injections that we should do: table and name of the file that will store it
 output_inject = opts.output_inject
@@ -89,11 +85,20 @@ for i, inj in enumerate(injections.table):
     else:
         out_sim_inspiral_inject.append(inj)
             
-logging.info('Found %d/%d (potentially) found injections.  Storing them to %s.', len(out_sim_inspiral_inject), len(injections.table), output_inject)
-logging.info('Found %d/%d missed injections.', len(out_sim_inspiral_missed), len(injections.table))
+logging.info(
+    'Found %d/%d (potentially) found injections. Storing them to %s.',
+    len(out_sim_inspiral_inject),
+    len(injections.table),
+    output_inject
+)
 
-if opts.verbose:
-    logging.info('Writing output')
+logging.info(
+    'Found %d/%d missed injections.',
+    len(out_sim_inspiral_missed),
+    len(injections.table)
+)
+
+logging.info('Writing output')
 llw_doc = injections.indoc
 llw_root = llw_doc.childNodes[0]
 llw_root.removeChild(injections.table)

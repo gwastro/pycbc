@@ -48,9 +48,8 @@ __program__ = "pycbc_aligned_bank_cat"
 parser = argparse.ArgumentParser(description=__doc__,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=__version__)
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="verbose output")
 parser.add_argument("-i", "--input-glob",
                     help="file glob the list of paramters")
 parser.add_argument("-I", "--input-files", nargs='+',
@@ -76,11 +75,7 @@ tmpltbank.insert_base_bank_options(parser, match_req=False)
 
 options = parser.parse_args()
 
-if options.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+pycbc.init_logging(options.verbose)
 
 # Sanity check options
 if not options.output_file:

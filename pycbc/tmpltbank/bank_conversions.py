@@ -26,9 +26,13 @@ This module is supplied to make a convenience function for converting into
 specific values from PyCBC template banks.
 """
 
+import logging
 import numpy as np
+
 from pycbc import conversions as conv
 from pycbc import pnutils
+
+logger = logging.getLogger('pycbc.tmpltbank.bank_conversions')
 
 # Convert from parameter name to helper function
 # some multiple names are used for the same function

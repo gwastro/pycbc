@@ -25,6 +25,7 @@ from .multinest import MultinestSampler
 from .ultranest import UltranestSampler
 from .dummy import DummySampler
 from .refine import RefineSampler
+from .snowline import SnowlineSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
@@ -32,6 +33,7 @@ samplers = {cls.name: cls for cls in (
     UltranestSampler,
     DummySampler,
     RefineSampler,
+    SnowlineSampler,
 )}
 
 try:
