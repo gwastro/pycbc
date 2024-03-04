@@ -55,10 +55,17 @@ parser = argparse.ArgumentParser(usage='',
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action=pycbc.version.Version)
 <<<<<<< HEAD
+<<<<<<< HEAD
 parser.add_argument("-V", "--verbose", action="store_true",
                     help="print extra debugging information", default=False)
 =======
 >>>>>>> 98007f4b (Standardize logging: bin, bin/bank and pycbc/tmpltbank (#4631))
+=======
+=======
+parser.add_argument("-V", "--verbose", action="store_true",
+                    help="print extra debugging information", default=False)
+>>>>>>> 4aeb1b4e (cleaning the code and correcting checkpointing check)
+>>>>>>> 6439cdb5 (fixing conflict)
 parser.add_argument("--update-progress",
                     help="updates a file 'progress.txt' with a value 0 .. 1.0 when this amount of (filtering) progress was made",
                     type=float, default=0)
@@ -100,10 +107,17 @@ parser.add_argument("--cluster-function", choices=["findchirp", "symmetric"],
                     "will compare each window to the one before and after, keeping "
                     "only a local maximum.", default="findchirp")
 <<<<<<< HEAD
+<<<<<<< HEAD
 parser.add_argument("--cluster-window", type=float, default=-1,
 =======
 parser.add_argument("--cluster-window", type=float, default=0,
 >>>>>>> 904f4a40 (default bug in cluster-window in pycbc_inspiral (#4461))
+=======
+parser.add_argument("--cluster-window", type=float, default=0,
+=======
+parser.add_argument("--cluster-window", type=float, default=-1,
+>>>>>>> 4aeb1b4e (cleaning the code and correcting checkpointing check)
+>>>>>>> 6439cdb5 (fixing conflict)
                     help="Length of clustering window in seconds."
                     " Set to 0 to disable clustering.")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
@@ -317,6 +331,7 @@ def template_triggers(t_num):
         if opt.psdvar_short_segment is not None:
             out_vals['psd_var_val'] = \
 <<<<<<< HEAD
+<<<<<<< HEAD
                 pycbc.psd.find_trigger_value(psd_var,
                                              out_vals['time_index'],
                                              opt.gps_start_time, opt.sample_rate)
@@ -326,6 +341,11 @@ def template_triggers(t_num):
                                       opt.gps_start_time, opt.sample_rate)
         #print(idx, out_vals['time_index'])
 >>>>>>> f85f8bf1 (allow psd var sample rate to change as needed (#4541))
+=======
+                pycbc.psd.find_trigger_value(psd_var,
+                                             out_vals['time_index'],
+                                             opt.gps_start_time, opt.sample_rate)
+>>>>>>> 6439cdb5 (fixing conflict)
 
         out_vals_all.append(copy.deepcopy(out_vals))
     return out_vals_all, tparam
@@ -337,6 +357,7 @@ with ctx:
         # The following FFTW specific options needed to wait until
         # we were inside the scheme context.
 
+<<<<<<< HEAD
         # Import system wisdom.
         if opt.fftw_import_system_wisdom:
             fft.fftw.import_sys_wisdom()
@@ -347,6 +368,16 @@ with ctx:
 
         if opt.fftw_input_double_wisdom_file is not None:
             fft.fftw.import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)
+=======
+    # Read specified user-provided wisdom files
+    if opt.fftw_input_float_wisdom_file is not None:
+        fft.fftw.import_single_wisdom_from_filename(
+            opt.fftw_input_float_wisdom_file)
+
+    if opt.fftw_input_double_wisdom_file is not None:
+        fft.fftw.import_double_wisdom_from_filename(
+            opt.fftw_input_double_wisdom_file)
+>>>>>>> 4aeb1b4e (cleaning the code and correcting checkpointing check)
 
     flow = opt.low_frequency_cutoff
     flen = strain_segments.freq_len
@@ -390,6 +421,7 @@ with ctx:
         logging.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                     opt.psdvar_short_segment, opt.psdvar_long_segment,
                                                     opt.psdvar_psd_duration, opt.psdvar_psd_stride,
                                                     opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
@@ -398,6 +430,11 @@ with ctx:
                 opt.psdvar_psd_duration, opt.psdvar_psd_stride,
                 opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
 >>>>>>> f85f8bf1 (allow psd var sample rate to change as needed (#4541))
+=======
+                                                    opt.psdvar_short_segment, opt.psdvar_long_segment,
+                                                    opt.psdvar_psd_duration, opt.psdvar_psd_stride,
+                                                    opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
+>>>>>>> 6439cdb5 (fixing conflict)
 
 
     if opt.enable_q_transform:
@@ -541,11 +578,21 @@ event_mgr.save_performance(ncores, len(segments), len(bank), run_time, tsetup)
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
+<<<<<<< HEAD
 if opt.fft_backends == 'fftw':
     if opt.fftw_output_float_wisdom_file:
         fft.fftw.export_single_wisdom_to_filename(opt.fftw_output_float_wisdom_file)
 
     if opt.fftw_output_double_wisdom_file:
         fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
+=======
+if opt.fftw_output_float_wisdom_file:
+    fft.fftw.export_single_wisdom_to_filename(
+        opt.fftw_output_float_wisdom_file)
+
+if opt.fftw_output_double_wisdom_file:
+    fft.fftw.export_double_wisdom_to_filename(
+        opt.fftw_output_double_wisdom_file)
+>>>>>>> 4aeb1b4e (cleaning the code and correcting checkpointing check)
 
 logging.info("Finished")
