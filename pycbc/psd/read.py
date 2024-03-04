@@ -23,9 +23,8 @@ import h5py
 import scipy.interpolate
 
 from ligo import segments
-from pycbc.types import FrequencySeries, load_frequencyseries, zeros
+from pycbc.types import FrequencySeries, load_frequencyseries, zeros, float32
 import pycbc.psd
-
 
 def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     """Interpolate n PSD (as two 1-dimensional arrays of frequency and data)
@@ -195,6 +194,7 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
                              low_freq_cutoff)
 
 
+<<<<<<< HEAD
 class PrecomputedTimeVaryingPSD:
     '''Class to read merge psd like files and to attach
     appropriate PSD to the data segment
@@ -202,6 +202,10 @@ class PrecomputedTimeVaryingPSD:
 
     def __init__(self, file_name, length=None, delta_f=None, f_low=None):
 
+=======
+class PrecomputedTimeVaryingPSD(object):
+    def __init__(self, file_name, length=None, delta_f=None, f_low=None):
+>>>>>>> 95c039b8 (We can use precomputed PSD with inspiral now. This needs to be tested carefully)
         with h5py.File(file_name, 'r') as f:
             self.file_name = file_name
             detector = tuple(f.keys())[0]
@@ -223,6 +227,7 @@ class PrecomputedTimeVaryingPSD:
         best_psd = None
         if inp_seg[0] > self.end or inp_seg[1] < self.begin:
             err_msg = "PSD file doesn't contain require times. \n"
+<<<<<<< HEAD
             err_msg += "PSDs are within range ({}, {})".format(self.begin,
                                                                self.end)
             raise ValueError(err_msg)
@@ -238,6 +243,17 @@ class PrecomputedTimeVaryingPSD:
             psd_overlap = abs(nearest & inp_seg)
             best_psd = self.get_psd(sidx[0], delta_f)
 
+=======
+            err_msg += "PSDs are within range ({}, {})".format(self.begin, self.end)
+            raise ValueError(err_msg)
+        sidx = numpy.argpartition(numpy.abs(self.start_times - inp_seg[0]), 2)[:2]
+        nearest = segments.segment(self.start_times[sidx[0]], self.end_times[sidx[0]])
+        next_nearest = segments.segment(self.start_times[sidx[1]], self.end_times[sidx[1]])
+
+        if inp_seg.intersects(nearest):
+            psd_overlap = abs(nearest & inp_seg)
+            best_psd = self.get_psd(sidx[0], delta_f)
+>>>>>>> 95c039b8 (We can use precomputed PSD with inspiral now. This needs to be tested carefully)
         if inp_seg.intersects(next_nearest):
             if psd_overlap < abs(next_nearest & inp_seg):
                 psd_overlap = abs(next_nearest & inp_seg)
@@ -250,15 +266,22 @@ class PrecomputedTimeVaryingPSD:
         return best_psd
 
     def get_psd(self, index, delta_f=None):
+<<<<<<< HEAD
         '''Fetch psd based on index corresponding to times.
         '''
+=======
+>>>>>>> 95c039b8 (We can use precomputed PSD with inspiral now. This needs to be tested carefully)
         group = self.detector + '/psds/' + str(index)
         psd = load_frequencyseries(self.file_name, group=group)
         if delta_f is not None and psd.delta_f != delta_f:
             psd = pycbc.psd.interpolate(psd, delta_f)
         if self.length is not None and self.length != len(psd):
             psd2 = FrequencySeries(zeros(self.length, dtype=psd.dtype),
+<<<<<<< HEAD
                                    delta_f=psd.delta_f)
+=======
+                                    delta_f=psd.delta_f)
+>>>>>>> 95c039b8 (We can use precomputed PSD with inspiral now. This needs to be tested carefully)
             if self.length > len(psd):
                 psd2[:] = numpy.inf
                 psd2[0:len(psd)] = psd
@@ -271,3 +294,7 @@ class PrecomputedTimeVaryingPSD:
             psd[0:k] = numpy.inf
 
         return psd
+<<<<<<< HEAD
+=======
+
+>>>>>>> 95c039b8 (We can use precomputed PSD with inspiral now. This needs to be tested carefully)
