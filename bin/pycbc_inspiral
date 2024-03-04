@@ -301,9 +301,16 @@ def template_triggers(t_num):
         out_vals['sigmasq'] = numpy.zeros(len(snrv), dtype=float32) + sigmasq
         if opt.psdvar_short_segment is not None:
             out_vals['psd_var_val'] = \
+<<<<<<< HEAD
                 pycbc.psd.find_trigger_value(psd_var,
                                              out_vals['time_index'],
                                              opt.gps_start_time, opt.sample_rate)
+=======
+                        pycbc.psd.find_trigger_value(psd_var,
+                                      out_vals['time_index'],
+                                      opt.gps_start_time, opt.sample_rate)
+        #print(idx, out_vals['time_index'])
+>>>>>>> f85f8bf1 (allow psd var sample rate to change as needed (#4541))
 
         out_vals_all.append(copy.deepcopy(out_vals))
     return out_vals_all, tparam
@@ -367,9 +374,16 @@ with ctx:
     if opt.psdvar_segment is not None:
         logging.info("Calculating PSD variation")
         psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
+<<<<<<< HEAD
                                                     opt.psdvar_short_segment, opt.psdvar_long_segment,
                                                     opt.psdvar_psd_duration, opt.psdvar_psd_stride,
                                                     opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
+=======
+                opt.psdvar_short_segment, opt.psdvar_long_segment,
+                opt.psdvar_psd_duration, opt.psdvar_psd_stride,
+                opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
+>>>>>>> f85f8bf1 (allow psd var sample rate to change as needed (#4541))
+
 
     if opt.enable_q_transform:
         logging.info("Performing q-transform on analysis segments")
