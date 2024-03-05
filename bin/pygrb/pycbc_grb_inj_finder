@@ -42,6 +42,7 @@ from ligo.segments.utils import fromsegwizard
 from pycbc import __version__
 from pycbc.inject import InjectionSet
 from pycbc.io import FieldArray
+from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -96,6 +97,8 @@ def read_hdf5_triggers(inputfiles, verbose=False):
         elif name.startswith("network") and \
             NETWORK_IFO_EVENT_ID_REGEX.match(name):
                 return
+        elif "template_id" in name:
+            return
         else:
             shape = obj.shape
             dtype = obj.dtype
@@ -126,7 +129,7 @@ def read_hdf5_triggers(inputfiles, verbose=False):
     # copy dataset contents
     for filename in inputfiles:
         with h5py.File(filename, 'r') as h5in:
-            # Skipping emtpy files
+            # Skipping empty files
             if len(h5in['network']['end_time_gc'][:]):
                 for dset in datasets:
                     data = h5in[dset][:]
@@ -173,6 +176,11 @@ parser.add_argument(
     "--inj-files",
     nargs="+",
     help="path(s) to input injection file(s)",
+)
+parser.add_argument(
+    "--bank-file",
+    required=True,
+    help="full template bank file for mapping hashes to ids",
 )
 parser.add_argument(
     "-o",
@@ -329,12 +337,21 @@ with h5py.File(outfilename, "w") as h5out:
     for x in out_trigs:
         xgroup = h5out.create_group(x)
         for col in out_trigs[x]:
+            if "template_id" == col:
+                continue
             xgroup.create_dataset(
                 col,
                 data=out_trigs[x][col],
                 compression="gzip",
                 compression_opts=9,
             )
-    
+    # map and write template ids
+    ids = template_hash_to_id(h5out, args.bank_file)
+    h5out.create_dataset(
+        "network/template_id",
+        data=ids,
+        compression="gzip",
+        compression_opts=9,
+    )
 if args.verbose:
     print("Found/missed written to {}".format(outfilename))

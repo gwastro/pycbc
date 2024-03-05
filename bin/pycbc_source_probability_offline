@@ -9,12 +9,14 @@ import tqdm
 import argparse
 import logging
 import numpy as np
+
 import pycbc
 from pycbc.io import hdf
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 from pycbc import mchirp_area
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--trigger-file', required=True)
 parser.add_argument('--bank-file', required=True)
 parser.add_argument('--single-detector-triggers', nargs='+', required=True)
@@ -27,7 +29,6 @@ parser.add_argument('--ifar-threshold', type=float, default=None,
                          'above threshold.')
 parser.add_argument('--include-mass-gap', action='store_true',
                     help='Option to include the Mass Gap region.')
-parser.add_argument('--verbose', action='count')
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 mchirp_area.insert_args(parser)

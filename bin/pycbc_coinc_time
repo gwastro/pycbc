@@ -1,7 +1,13 @@
 #!/bin/env python
-import argparse, logging, pycbc.version, ligo.segments, numpy
+import argparse
+import logging
+import numpy
 from dqsegdb.apicalls import dqsegdbQueryTimes as query
+
+import ligo.segments
+
 #from pycbc.workflow.segment import cat_to_veto_def_cat as convert_cat
+import pycbc.version
 
 def sane(seg_list):
     """ Convert list of len two lists containing strs to segment list """
@@ -85,7 +91,7 @@ def get_vetoes(veto_def, ifo, server, veto_name, start_default, end_default):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
+pycbc.add_common_pycbc_options(parser)
 
 parser.add_argument('--gps-start-time', type=int, required=True,
                     help="integer gps start time")

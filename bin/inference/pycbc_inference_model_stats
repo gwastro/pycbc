@@ -27,6 +27,7 @@ import shutil
 import logging
 import time
 import numpy
+import tqdm
 
 import pycbc
 from pycbc.pool import (use_mpi, choose_pool)
@@ -37,6 +38,7 @@ from pycbc.workflow import WorkflowConfigParser
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-file", type=str, required=True,
                     help="Input HDF file to read. Can be either an inference "
                          "file or a posterior file.")
@@ -51,8 +53,6 @@ parser.add_argument("--nprocesses", type=int, default=1,
 parser.add_argument("--config-file", nargs="+", type=str, default=None,
                     help="Override the config file stored in the input file "
                           "with the given file(s).")
-parser.add_argument("--verbose", action="count", default=0,
-                    help="Print logging messages.")
 parser.add_argument('--reconstruct-parameters', action="store_true",
                     help="Reconstruct marginalized parameters")
 
@@ -117,7 +117,8 @@ logging.info('Getting samples')
 with loadfile(opts.input_file, 'r') as fp:
     # we'll need the shape; all the arrays in the samples group should have the
     # same shape
-    shape = fp[fp.samples_group]['loglikelihood'].shape
+    pick = list(fp[fp.samples_group].keys())[0]
+    shape = fp[fp.samples_group][pick].shape
     samples = {}
     for p in model.variable_params:
         samples[p] = fp[fp.samples_group][p][()].flatten()
@@ -128,7 +129,8 @@ logging.info("Loaded %i samples", samples.size)
 
 # get the stats
 logging.info("Calculating stats")
-data = list(pool.map(model_call, enumerate(samples)))
+data = list(tqdm.tqdm(pool.imap(model_call, enumerate(samples)),
+            total=len(samples)))
 stats = [x[0] for x in data]
 rec = [x[1] for x in data]
 

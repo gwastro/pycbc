@@ -33,7 +33,9 @@ import argparse
 import logging
 import numpy
 import h5py
+
 from ligo.lw import lsctables, utils as ligolw_utils
+
 from pycbc import tmpltbank, psd, strain
 from pycbc.io.ligolw import LIGOLWContentHandler
 
@@ -44,8 +46,7 @@ parser = argparse.ArgumentParser(description=__doc__,
 
 # Begin with code specific options
 parser.add_argument("--version", action="version", version=__version__)
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="verbose output")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-bank", action="store", required=True,
                     help="The template bank to use an input.")
 parser.add_argument("--output-file", action="store", required=True,
@@ -88,11 +89,7 @@ pycbc.strain.insert_strain_option_group(parser)
 
 opts = parser.parse_args()
 
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # Sanity check options
 tmpltbank.verify_metric_calculation_options(opts, parser)

@@ -37,6 +37,7 @@ from .cpnest import CPNestFile
 from .multinest import MultinestFile
 from .dynesty import DynestyFile
 from .ultranest import UltranestFile
+from .snowline import SnowlineFile
 from .nessai import NessaiFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
@@ -51,6 +52,7 @@ filetypes = {
     PosteriorFile.name: PosteriorFile,
     UltranestFile.name: UltranestFile,
     NessaiFile.name: NessaiFile,
+    SnowlineFile.name: SnowlineFile,
 }
 
 try:

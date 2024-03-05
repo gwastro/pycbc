@@ -33,7 +33,7 @@ Reading a frame file
 The ``pycbc.frame`` module provides methods for reading these files into ``TimeSeries`` objects as follows::
 
     >>> from pycbc import frame
-    >>> data = frame.read_frame('G-G1_RDS_C01_L3-1049587200-60.gwf', 'G1:DER_DATA_H')
+    >>> data = frame.read_frame('G-G1_RDS_C01_L3-1049587200-60.gwf', 'G1:DER_DATA_H', 1049587200, 1049587200 + 60)
 
 Here the first argument is the path to the frame file of interest, while the second lists the `data channel` of interest whose data exist within the file.
 

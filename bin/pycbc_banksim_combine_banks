@@ -26,6 +26,7 @@ from os.path import isfile
 import argparse
 import logging
 from numpy import *
+
 import pycbc
 import pycbc.version
 
@@ -37,14 +38,15 @@ _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 
 parser.add_argument('--version', action=pycbc.version.Version)
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="verbose output")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("-I", "--input-files", nargs='+',
                     help="Explicit list of input files.")
 parser.add_argument("-o", "--output-file", required=True,
                     help="Output file name")
 
 options = parser.parse_args()
+
+pycbc.init_logging(options.verbose)
 
 dtypef = dtype([('match', float64), ('bank', unicode_, 256),
                 ('bank_i', int32), ('sim', unicode_, 256),

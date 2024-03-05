@@ -19,6 +19,9 @@ mpl_use_backend('agg')
 
 import numpy as np
 import h5py
+
+from ligo.gracedb.rest import GraceDb
+
 import pycbc
 from pycbc.filter import sigmasq
 from pycbc.io import live, WaveformArray
@@ -29,7 +32,6 @@ from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc import frame, waveform, dq
 from pycbc.psd import interpolate
-from ligo.gracedb.rest import GraceDb
 
 
 def default_frame_type(time, ifo):
@@ -476,9 +478,9 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     shutil.rmtree(tmpdir)
 
 if __name__ == '__main__':
-    pycbc.init_logging(True)
 
     parser = argparse.ArgumentParser(description=__doc__)
+    pycbc.add_common_pycbc_options(parser)
     parser.add_argument('--version', action=pycbc.version.Version)
     # note that I am not using a MultiDetOptionAction for --trig-time as I
     # explicitly want to handle cases like `--trig-time 1234` and
@@ -562,6 +564,8 @@ if __name__ == '__main__':
                         help="SNR rescaling factor used in BAYESTAR")
 
     opt = parser.parse_args()
+
+    pycbc.init_logging(opt.verbose)
 
     frame_type_dict = {f.split(':')[0]: f.split(':')[1] for f in opt.frame_type} \
             if opt.frame_type is not None else None

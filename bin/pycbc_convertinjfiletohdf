@@ -23,6 +23,7 @@ or the LIGO HDF format) into a PyCBC hdf injection format
 import argparse
 import numpy
 import h5py
+import shutil
 
 import pycbc
 from pycbc.inject import InjectionSet, CBCHDFInjectionSet
@@ -150,11 +151,16 @@ class LVKNewStyleInjectionSet(object):
             elif lvk_name == 't_co_gps_add':
                 continue
             else:
-                data[pycbc_name] = self.inj_file[f'{self.subdir}/{lvk_name}'][:]
+                lvk_file_dset = self.inj_file[f'{self.subdir}/{lvk_name}']
+                if lvk_file_dset.dtype.char in ['U', 'O']:
+                    data[pycbc_name] = lvk_file_dset[:].astype('S')
+                else:
+                    data[pycbc_name] = lvk_file_dset[:]
         return data
 
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file', required=True,
@@ -162,8 +168,6 @@ parser.add_argument('--injection-file', required=True,
                          "and must contain a SimInspiral table")
 parser.add_argument('--output-file', required=True,
                     help="The ouput file name. Must end in '.hdf'.")
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Be verbose.")
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
@@ -179,14 +183,11 @@ else:
         injclass = LVKNewStyleInjectionSet(args.injection_file)
     inj_file.close()
 
-if injclass is None:
-    # Assume this is a PyCBC format
-    injclass = InjectionSet(args.injection_file)
-    data = {}
-    for key in xinj.table[0].__slots__:
-        data[str(key)] = numpy.array([getattr(t, key) for t in xinj.table])
-else:
+if injclass is not None:
+    # The injection file is of known type
     data = injclass.pack_data_into_pycbc_format_input()
-
-samples = FieldArray.from_kwargs(**data)
-CBCHDFInjectionSet.write(args.output_file, samples)
+    samples = FieldArray.from_kwargs(**data)
+    CBCHDFInjectionSet.write(args.output_file, samples)
+else:
+    # Assume the injection is a HDF file (PyCBC format), only make a copy
+    shutil.copy(args.injection_file, args.output_file)

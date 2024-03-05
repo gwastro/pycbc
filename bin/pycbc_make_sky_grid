@@ -10,9 +10,12 @@ The grid is constructed following the method described in Section V of https://a
 import numpy as np
 import h5py
 import argparse
-from pycbc.detector import Detector
 import itertools
 from scipy.spatial.transform import Rotation as R
+
+import pycbc
+from pycbc.detector import Detector
+
 
 def spher_to_cart(sky_points):
     """Convert spherical coordinates to cartesian coordinates.
@@ -32,15 +35,28 @@ def cart_to_spher(sky_points):
     return spher
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--ra', type=float, help="Right ascension (in rad) of the center of the external trigger error box")
-parser.add_argument('--dec', type=float, help="Declination (in rad) of the center of the external trigger error box")
-parser.add_argument('--instruments', nargs="+", type=str, required=True, help="List of instruments to analyze.")
-parser.add_argument('--sky-error', type=float, required=True, help="3-sigma confidence radius (in rad) of the external trigger error box")
-parser.add_argument('--trigger-time', type=int, required=True, help="Time (in s) of the external trigger")
-parser.add_argument('--timing-uncertainty', type=float, default=0.0001, help="Timing uncertainty (in s) we are willing to accept")
-parser.add_argument('--output', type=str, required=True, help="Name of the sky grid")
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument('--ra', type=float,
+    help="Right ascension (in rad) of the center of the external trigger "
+         "error box")
+parser.add_argument('--dec', type=float,
+    help="Declination (in rad) of the center of the external trigger "
+         "error box")
+parser.add_argument('--instruments', nargs="+", type=str, required=True,
+    help="List of instruments to analyze.")
+parser.add_argument('--sky-error', type=float, required=True,
+    help="3-sigma confidence radius (in rad) of the external trigger error "
+         "box")
+parser.add_argument('--trigger-time', type=int, required=True,
+    help="Time (in s) of the external trigger")
+parser.add_argument('--timing-uncertainty', type=float, default=0.0001,
+    help="Timing uncertainty (in s) we are willing to accept")
+parser.add_argument('--output', type=str, required=True,
+        help="Name of the sky grid")
 
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 if len(args.instruments) == 1:
     parser.error('Can not make a sky grid for only one detector.')

@@ -23,23 +23,25 @@ Take a coinc xml file containing multiple events and upload to gracedb.
 import os
 import argparse
 import logging
-from ligo.gracedb.rest import GraceDb
 import numpy as np
 import h5py
 import matplotlib
 matplotlib.use('agg')
 
-import pycbc
+from ligo.gracedb.rest import GraceDb
 import lal
 import lal.series
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
+
+import pycbc
 from pycbc.io.live import gracedb_tag_with_version
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries
 from pycbc.results import generate_asd_plot
+
 
 def check_gracedb_for_event(gdb_handle, query, far):
     """
@@ -68,6 +70,7 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to upload')
 parser.add_argument('--input-file', required=True, type=str,
@@ -108,6 +111,8 @@ parser.add_argument('--generate-plots', action='store_true',
                          "not given.")
 
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 if args.production_server:
     gracedb = GraceDb()

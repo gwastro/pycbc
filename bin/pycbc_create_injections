@@ -108,10 +108,14 @@ along with any numpy ufunc. So, in the above example, mass ratio (q) is
 constrained to be <= 4 by using a function from the conversions module.
 """
 
-import os, sys
+import os
+import sys
 import argparse
 import logging
 import numpy
+import h5py
+from numpy.random import uniform
+
 import pycbc
 import pycbc.version
 from pycbc.inject import InjectionSet
@@ -122,12 +126,11 @@ from pycbc.io import record
 from pycbc.waveform import parameters
 from pycbc.workflow import configuration
 from pycbc.workflow import WorkflowConfigParser
-from numpy.random import uniform
-import h5py
 
 parser = argparse.ArgumentParser(description=__doc__,
             formatter_class=argparse.RawDescriptionHelpFormatter)
 configuration.add_workflow_command_line_group(parser)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg,
                     help='Prints version information.')
@@ -163,8 +166,6 @@ parser.add_argument('--static-params-section', default="static_params",
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an OSError is raised.")
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Print logging messages.")
 opts = parser.parse_args()
 
 pycbc.init_logging(opts.verbose)

@@ -26,7 +26,9 @@ import imp
 import argparse
 import numpy as np
 import h5py
+
 from ligo.lw import utils, table
+
 import pycbc
 from pycbc import pnutils
 from pycbc.waveform import TemplateBank
@@ -43,8 +45,7 @@ __program__ = "pycbc_banksim_match_combine"
 parser = argparse.ArgumentParser(description=__doc__)
 
 parser.add_argument("--version", action="version", version=__version__)
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="verbose output")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--match-files", nargs='+',
                     help="Explicit list of match files.")
 #parser.add_argument("--inj-files", nargs='+',
@@ -61,6 +62,8 @@ parser.add_argument("--filter-func-file", default=None,
                          "take as call profile, mass1, mass2, spin1z, spin2z, "
                          "as numpy arrays.")
 options = parser.parse_args()
+
+pycbc.init_logging(options.verbose)
 
 dtypem = np.dtype([('match', np.float64), ('bank', np.unicode_, 256),
                       ('bank_i', np.int32), ('sim', np.unicode_, 256),

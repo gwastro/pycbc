@@ -34,6 +34,7 @@ parser = argparse.ArgumentParser(
             usage="pycbc_inference_plot_dynesty_run [--options]",
             description="Plots various figures showing evolution of "
                         "dynesty run.")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-file", type=str, required=True,
                     help="Path to input HDF file.")
 parser.add_argument('--version', action='version', version=__version__,
@@ -41,9 +42,6 @@ parser.add_argument('--version', action='version', version=__version__,
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")
-
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="")
 
 # parse the command line
 opts = parser.parse_args()

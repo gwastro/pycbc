@@ -310,16 +310,17 @@ def _get_id_numbers(ligolw_table, column):
 # =============================================================================
 # Function to build a dictionary (indexed by ifo) of time-slid vetoes
 # =============================================================================
-def _slide_vetoes(vetoes, slide_dict_or_list, slide_id):
+def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
     """Build a dictionary (indexed by ifo) of time-slid vetoes"""
 
     # Copy vetoes
-    slid_vetoes = copy.deepcopy(vetoes)
-
-    # Slide them
-    ifos = vetoes.keys()
-    for ifo in ifos:
-        slid_vetoes[ifo].shift(-slide_dict_or_list[slide_id][ifo])
+    if vetoes is not None:
+        slid_vetoes = copy.deepcopy(vetoes)
+        # Slide them
+        for ifo in ifos:
+            slid_vetoes[ifo].shift(-slide_dict_or_list[slide_id][ifo])
+    else:
+        slid_vetoes = {ifo: segments.segmentlist() for ifo in ifos}
 
     return slid_vetoes
 
@@ -461,36 +462,39 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     sorted_trigs = {}
 
     # Begin by sorting the triggers into each slide
-    # New seems pretty slow, so run it once and then use deepcopy
-    tmp_table = glsctables.New(glsctables.MultiInspiralTable)
     for slide_id in slide_dict:
-        sorted_trigs[slide_id] = copy.deepcopy(tmp_table)
-    for trig in trigs:
-        sorted_trigs[int(trig.time_slide_id)].append(trig)
+        sorted_trigs[slide_id] = []
+    for slide_id, event_id in zip(trigs['network/slide_id'],
+                                  trigs['network/event_id']):
+        sorted_trigs[slide_id].append(event_id)
 
     for slide_id in slide_dict:
         # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
         # Check the triggers are all in the analysed segment lists
-        for trig in sorted_trigs[slide_id]:
-            if trig.end_time not in curr_seg_list:
+        for event_id in sorted_trigs[slide_id]:
+            index = numpy.flatnonzero(trigs['network/event_id'] == event_id)[0]
+            end_time = trigs['network/end_time_gc'][index]
+            if end_time not in curr_seg_list:
                 # This can be raised if the trigger is on the segment boundary,
                 # so check if the trigger is within 1/100 of a second within
                 # the list
-                if trig.get_end() + 0.01 in curr_seg_list:
+                if end_time + 0.01 in curr_seg_list:
                     continue
-                if trig.get_end() - 0.01 in curr_seg_list:
+                if end_time - 0.01 in curr_seg_list:
                     continue
                 err_msg = "Triggers found in input files not in the list of "
                 err_msg += "analysed segments. This should not happen."
                 raise RuntimeError(err_msg)
         # END OF CHECK #
 
-        # The below line works like the inverse of .veto and only returns trigs
-        # that are within the segment specified by trial_dict[slide_id]
-        sorted_trigs[slide_id] = \
-            sorted_trigs[slide_id].vetoed(trial_dict[slide_id])
+        # Keep triggers that are in trial_dict
+        sorted_trigs[slide_id] = [event_id for event_id in
+                                  sorted_trigs[slide_id]
+                                  if trigs['network/end_time_gc'][
+                                      trigs['network/event_id'] == event_id][0]
+                                  in trial_dict[slide_id]]
 
     return sorted_trigs
 
@@ -498,24 +502,13 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
 # =============================================================================
 # Extract basic trigger properties and store them as dictionaries
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
-                                  opts):
+def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
     """Extract and store as dictionaries time, SNR, and BestNR of
     time-slid triggers"""
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
     logging.info("Triggers sorted.")
-
-    # Local copies of variables entering the BestNR definition
-    chisq_index = opts.chisq_index
-    chisq_nhigh = opts.chisq_nhigh
-    null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
-    snr_thresh = opts.snr_threshold
-    sngl_snr_thresh = opts.sngl_snr_threshold
-    new_snr_thresh = opts.newsnr_threshold
-    null_grad_thresh = opts.null_grad_thresh
-    null_grad_val = opts.null_grad_val
 
     # Build the 3 dictionaries
     trig_time = {}
@@ -524,21 +517,12 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
     for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
         if slide_trigs:
-            trig_time[slide_id] = numpy.asarray(slide_trigs.get_end()).\
-                                  astype(float)
-            trig_snr[slide_id] = numpy.asarray(slide_trigs.get_column('snr'))
+            trig_time[slide_id] = trigs['network/end_time_gc'][slide_trigs]
+            trig_snr[slide_id] = trigs['network/coherent_snr'][slide_trigs]
         else:
             trig_time[slide_id] = numpy.asarray([])
             trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = get_bestnrs(slide_trigs,
-                                            q=chisq_index,
-                                            n=chisq_nhigh,
-                                            null_thresh=null_thresh,
-                                            snr_threshold=snr_thresh,
-                                            sngl_snr_threshold=sngl_snr_thresh,
-                                            chisq_threshold=new_snr_thresh,
-                                            null_grad_thresh=null_grad_thresh,
-                                            null_grad_val=null_grad_val)
+        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][slide_trigs]
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
@@ -699,7 +683,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
         seg_buffer.coalesce()
 
         # Construct the ifo-indexed dictionary of slid veteoes
-        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id)
+        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
 
         # Construct trial list and check against buffer
         trial_dict[slide_id] = segments.segmentlist()
@@ -804,3 +788,24 @@ def get_coinc_snr(trigs_or_injs, ifos):
     coinc_snr = numpy.sqrt(snr_sum_square)
 
     return coinc_snr
+
+
+def template_hash_to_id(trigger_file, bank_path):
+    """
+    This function converts the template hashes from a trigger file
+    into 'template_id's that represent indices of the
+    templates within the bank.
+    Parameters
+    ----------
+    trigger_file: h5py File object for trigger file
+    bank_file: filepath for template bank
+    """
+    with h5py.File(bank_path, "r") as bank:
+        hashes = bank['template_hash'][:]
+    ifos = [k for k in trigger_file.keys() if k != 'network']
+    trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
+    trig_ids = numpy.zeros(trig_hashes.shape[0], dtype=int)
+    for idx, t_hash in enumerate(hashes):
+        matches = numpy.where(trig_hashes == t_hash)
+        trig_ids[matches] = idx
+    return trig_ids

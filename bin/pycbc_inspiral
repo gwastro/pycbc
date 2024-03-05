@@ -16,19 +16,24 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys, os, copy
-import logging, argparse, numpy, itertools
+import sys
+import os
+import copy
+import logging
+import argparse
+import numpy
+import itertools
+import time
+from multiprocessing import Pool
+
 import pycbc
 import pycbc.version
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
-from multiprocessing import Pool
-import pycbc.version
 import pycbc.opt
 import pycbc.inject
-import time
 
 last_progress_update = -1.0
 
@@ -48,9 +53,8 @@ tstart = time.time()
 parser = argparse.ArgumentParser(usage='',
     description="Find single detector gravitational-wave triggers.")
 
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action=pycbc.version.Version)
-parser.add_argument("-V", "--verbose", action="store_true",
-                  help="print extra debugging information", default=False )
 parser.add_argument("--update-progress",
                   help="updates a file 'progress.txt' with a value 0 .. 1.0 when this amount of (filtering) progress was made",
                   type=float, default=0)

@@ -31,8 +31,10 @@ import logging
 import h5py
 import configparser
 from scipy import spatial
+
 from ligo.lw import ligolw
 from ligo.lw import utils as ligolw_utils
+
 import pycbc
 import pycbc.psd
 import pycbc.strain
@@ -175,9 +177,8 @@ parser = argparse.ArgumentParser(description=_desc,
            formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument("-V", "--verbose", action="store_true", default=False,
-                    help="verbose output")
 parser.add_argument("-s", "--stack-distance", action="store", type=float,\
                   default=0.2, help="Minimum metric spacing before we "+\
                                "stack.")
@@ -249,12 +250,7 @@ outdoc.appendChild(ligolw.LIGO_LW())
 create_process_table(outdoc, __program__, options=vars(opts))
 ligolw_utils.write_filename(outdoc, opts.metadata_file)
 
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-log_format='%(asctime)s %(message)s'
-logging.basicConfig(format=log_format, level=log_level)
+pycbc.init_logging(opts.verbose)
 
 opts.max_mismatch = 1 - opts.min_match
 

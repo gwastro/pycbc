@@ -1,16 +1,23 @@
 #!/usr/bin/env python
 """ Create HDF strain cache file
 """
-import logging, argparse, numpy, h5py
-import pycbc, pycbc.strain, pycbc.dq
+import logging
+import argparse
+import numpy
+import h5py
+
+import pycbc
+import pycbc.strain
+import pycbc.dq
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
 from pycbc.events.veto import segments_to_start_end
+
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
 parser.add_argument("--science-name", help="Science flag definition")
 parser.add_argument("--segment-server")
 parser.add_argument("--veto-definer-file")

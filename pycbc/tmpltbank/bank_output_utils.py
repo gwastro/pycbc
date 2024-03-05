@@ -1,7 +1,10 @@
+import logging
 import numpy
 import h5py
+
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from ligo.lw import ligolw, lsctables, utils as ligolw_utils
+
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
 from pycbc.io.ligolw import (
@@ -9,6 +12,8 @@ from pycbc.io.ligolw import (
 )
 
 from pycbc.waveform import get_waveform_filter_length_in_time as gwflit
+
+logger = logging.getLogger('pycbc.tmpltbank.bank_output_utils')
 
 def convert_to_sngl_inspiral_table(params, proc_id):
     '''

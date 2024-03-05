@@ -27,12 +27,14 @@ import argparse
 import multiprocessing
 import numpy as np
 import h5py
+
+from ligo.lw import utils as ligolw_utils
+from ligo.lw import lsctables
+
 import pycbc
 import pycbc.inject
 import pycbc.psd
 import pycbc.version
-from ligo.lw import utils as ligolw_utils
-from ligo.lw import lsctables
 from pycbc.filter import sigma, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
                         MultiDetOptionAction, load_frequencyseries
@@ -117,6 +119,7 @@ def get_gc_end_time(injection):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    pycbc.add_common_pycbc_options(parser)
     parser.add_argument("--version", action=pycbc.version.Version)
     parser.add_argument('--input-file', '-i', dest='injection_file',
                         required=True,
@@ -159,11 +162,6 @@ if __name__ == '__main__':
     parser.add_argument('--ignore-waveform-errors', action='store_true',
                         help='Ignore errors in waveform generation and keep '
                              'the corresponding column unchanged')
-    parser.add_argument('--verbose', action='store_true',
-                        help='Print which injection is going to be attempted '
-                             'next and when it completes. Use this to debug '
-                             'misbehaving approximants which crash or quit '
-                             'the Python interpreter')
     parser.add_argument('--progress', action='store_true',
                         help='Show a progress bar (requires tqdm)')
     psd_group = pycbc.psd.insert_psd_option_group_multi_ifo(parser)
@@ -187,10 +185,7 @@ if __name__ == '__main__':
     if not opts.time_varying_psds:
         pycbc.psd.verify_psd_options_multi_ifo(opts, parser, detectors)
 
-    log_level = logging.INFO if opts.verbose else logging.WARN
-    logging.basicConfig(level=log_level,
-                        format='%(asctime)s %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
+    pycbc.init_logging(opts.verbose)
 
     seg_len = opts.seg_length
     sample_rate = opts.sample_rate
@@ -240,20 +235,27 @@ if __name__ == '__main__':
             psd = psds[det](injection_time)
             if psd is None:
                 continue
-            logging.info('Trying injection %s at %s', inj.simulation_id, det)
+            logging.debug('Trying injection %s at %s', inj.simulation_id, det)
             try:
                 wave = get_injection(injections, det, injection_time,
                                      simulation_id=inj.simulation_id)
             except Exception as e:
                 if opts.ignore_waveform_errors:
-                    logging.warn('%s: waveform generation failed, skipping (%s)',
-                                 inj.simulation_id, e)
+                    logging.debug(
+                        '%s: waveform generation failed, skipping (%s)',
+                        inj.simulation_id,
+                        e
+                    )
                     continue
                 else:
                     logging.error('%s: waveform generation failed with the '
                                   'following exception', inj.simulation_id)
                     raise
-            logging.info('Injection %s at %s completed', inj.simulation_id, det)
+            logging.debug(
+                'Injection %s at %s completed',
+                inj.simulation_id,
+                det
+            )
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
             if ligolw:
                 setattr(inj, column, sval)

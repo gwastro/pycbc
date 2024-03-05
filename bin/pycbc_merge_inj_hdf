@@ -24,6 +24,7 @@ import logging
 import argparse
 import numpy as np
 import h5py
+
 import pycbc
 import pycbc.inject
 import pycbc.version
@@ -43,20 +44,16 @@ def get_gc_end_time(injection):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    pycbc.add_common_pycbc_options(parser)
     parser.add_argument("--version", action=pycbc.version.Version)
     parser.add_argument('--injection-files', '-i', dest='injection_file',
                         required=True, nargs='+',
                         help='Input HDF5 files defining injections')
     parser.add_argument('--output-file', '-o', dest='out_file', required=True,
                         help='Output HDF5 file')
-    parser.add_argument("--verbose", action="store_true", default=False,
-                        help="Print logging messages")
     opts = parser.parse_args()
 
-    log_level = logging.INFO if opts.verbose else logging.WARN
-    logging.basicConfig(level=log_level,
-                        format='%(asctime)s %(message)s',
-                        datefmt='%Y-%m-%d %H:%M:%S')
+    pycbc.init_logging(opts.verbose)
 
     logging.info("Loading injections")
 

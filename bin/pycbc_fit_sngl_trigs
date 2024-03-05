@@ -55,10 +55,8 @@ def get_bins(opt, pmin, pmax):
 parser = argparse.ArgumentParser(usage="",
     description="Perform maximum-likelihood fits of single inspiral trigger"
                 "distributions to various functions")
-
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action=pycbc.version.Version)
-parser.add_argument("-V", "--verbose", action="store_true",
-                    help="Print extra debugging information", default=False)
 parser.add_argument("--inputs", nargs="+",
                     help="Input file or space-separated list of input files "
                     "containing single triggers.  Currently .xml(.gz) "
@@ -134,11 +132,7 @@ binopt.add_argument("--irregular-bins",
 
 opt = parser.parse_args()
 
-if opt.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(opt.verbose)
 
 statname = opt.sngl_stat.replace("_", " ")
 paramname = opt.fit_param.replace("_", " ")

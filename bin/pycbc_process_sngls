@@ -6,12 +6,14 @@ import argparse
 import logging
 import numpy
 import h5py
+
+import pycbc
 from pycbc.io import SingleDetTriggers
 from pycbc.events import stat, coinc, veto
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--single-trig-file', required=True,
                     help='Path to file containing single-detector triggers in '
                          'HDF5 format. Required')
@@ -41,7 +43,7 @@ stat.insert_statistic_option_group(parser)
 
 args = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+pycbc.init_logging(args.verbose)
 
 # Munge together SNR cut and any other filter specified
 snr_filter = 'self.snr>%f' % (args.min_snr) if args.min_snr > 0. else None 

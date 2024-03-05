@@ -71,7 +71,7 @@ def isthesame(current_val, val):
 
 parser = ResultsArgumentParser(defaultparams='all', autoparamlabels=False,
                                description=__doc__)
-
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output file to create.")
 parser.add_argument("--force", action="store_true", default=False,
@@ -85,8 +85,6 @@ parser.add_argument("--skip-groups", default=None, nargs="+",
                          "to write all groups if only one file is provided, "
                          "and all groups from the first file except "
                          "sampler_info if multiple files are provided.")
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Be verbose")
 
 opts = parser.parse_args()
 

@@ -9,6 +9,7 @@ import tempfile
 from optparse import OptionParser
 from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
 
+from pycbc import init_logging
 
 class BaseJob(CondorDAGJob, CondorJob):
     def __init__(self, log_dir, executable, cp, section, accounting_group=None):
@@ -65,7 +66,8 @@ parser.add_option('--config', type=str)
 if options.config is None:
     raise ValueError("Config file is required")
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+# logging INFO
+init_logging(1)
 
 confs = ConfigParser.ConfigParser()
 confs.read(options.config)

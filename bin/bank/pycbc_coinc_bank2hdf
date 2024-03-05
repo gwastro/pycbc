@@ -23,6 +23,7 @@ with their template.
 import argparse
 import logging
 import numpy
+
 import pycbc
 from pycbc.waveform import bank
 
@@ -56,6 +57,7 @@ def parse_parameters(parameters):
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--bank-file', required=True,
                     help="The bank file to load. Must end in '.xml[.gz]' "
                          "and must contain a SnglInspiral table or must end "
@@ -82,8 +84,6 @@ bank.add_approximant_arg(parser,
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                          "Otherwise, an error is raised.")
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Be verbose.")
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)

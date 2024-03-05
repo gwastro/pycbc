@@ -29,8 +29,7 @@ from pycbc.inference.io import ResultsArgumentParser, results_from_cli
 
 parser = ResultsArgumentParser(
     description="Makes a table of posterior results.")
-parser.add_argument("--verbose", action="store_true", default=False,
-    help="Print logging info.")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
 parser.add_argument("--print-metadata", nargs="+", metavar="PARAM[:LABEL]",

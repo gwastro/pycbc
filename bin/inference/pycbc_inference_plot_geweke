@@ -32,11 +32,9 @@ from pycbc.inference import (io, geweke, option_utils)
 # add options to command line
 parser = io.ResultsArgumentParser(skip_args=['walkers'])
 
-# program-specific
+pycbc.add_common_pycbc_options(parser)
 
-# verbose option
-parser.add_argument("--verbose", action="store_true", default=False,
-    help="Print logging info.")
+# program-specific
 
 parser.add_argument('--version', action='version', version=__version__,
                     help='show version number and exit')

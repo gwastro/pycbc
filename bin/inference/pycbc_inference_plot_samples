@@ -34,8 +34,7 @@ import sys
 # command line usage
 parser = argparse.parser = io.ResultsArgumentParser(
     skip_args=['chains', 'iteration'])
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Print logging info.")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
 parser.add_argument("--chains", nargs='+', default=None,

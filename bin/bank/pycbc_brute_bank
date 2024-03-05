@@ -19,16 +19,21 @@
 
 """Generate a bank of templates using a brute force stochastic method.
 """
-import numpy, h5py, logging, argparse, numpy.random
+import numpy
+import h5py
+import logging
+import argparse
+import numpy.random
+from scipy.stats import gaussian_kde
+
 import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.conversions
 from pycbc import transforms
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc.distributions import read_params_from_config
 from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
-from scipy.stats import gaussian_kde
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--verbose', action='store_true')
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--output-file', required=True,
     help='Output file name for template bank.')
 parser.add_argument('--input-file',
@@ -71,9 +76,9 @@ parser.add_argument('--tau0-end', type=float)
 parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
+
 pycbc.init_logging(args.verbose)
 numpy.random.seed(args.seed)
-
 
 # Read the .ini file if it's in the input.
 if args.input_config is not None:

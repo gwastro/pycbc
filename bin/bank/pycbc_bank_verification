@@ -26,14 +26,16 @@ import argparse
 import logging
 import numpy
 import h5py
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+
 from ligo.lw import lsctables, utils as ligolw_utils
+
 import pycbc
 import pycbc.version
 from pycbc import tmpltbank, psd, strain
 from pycbc.io.ligolw import LIGOLWContentHandler
-import matplotlib
-matplotlib.use('Agg')
-import pylab
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -48,8 +50,7 @@ parser = argparse.ArgumentParser(description=__doc__,
 
 # Begin with code specific options
 parser.add_argument("--version", action="version", version=__version__)
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="verbose output")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--histogram-output-file", action="store", default=None,
                     help="Output a histogram of fitting factors to the "
                     "supplied file. If not given no histogram is produced.")
@@ -111,11 +112,7 @@ pycbc.strain.insert_strain_option_group(parser)
 
 opts = parser.parse_args()
 
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # Sanity check options
 tmpltbank.verify_metric_calculation_options(opts, parser)

@@ -6,14 +6,11 @@ import json
 import argparse
 import shutil
 from urllib.request import urlopen
+
 import ligo.segments
+
+import pycbc
 from pycbc.workflow import SegFile
-
-
-# Logging formatting from pycbc optimal snr
-log_fmt = '%(asctime)s %(message)s'
-log_date_fmt = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
 
 
 # Function to query json segment data from GWOSC
@@ -64,12 +61,15 @@ def write_xml_file(ifo, summary_segment, segments, filename):
 
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--gps-start-time', type=int, required=True)
 parser.add_argument('--gps-end-time', type=int, required=True)
 parser.add_argument('--include-segments', type=str, required=True)
 parser.add_argument('--output-file', type=str, required=True)
 parser.add_argument('--protract-hw-inj', type=int, default=0)
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 gps_start_time = args.gps_start_time
 gps_end_time = args.gps_end_time

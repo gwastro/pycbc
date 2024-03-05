@@ -79,6 +79,21 @@ or an external package (multinest).
 .. literalinclude:: ../../../examples/inference/samplers/multinest_stub.ini
    :language: ini
    
+============================================================
+`Snowline <https://johannesbuchner.github.io/snowline/>`_
+============================================================
+   
+.. literalinclude:: ../../../examples/inference/samplers/snowline_stub.ini
+   :language: ini
+   
+   
+============================================================
+`nessai <https://github.com/mj-will/nessai>`_
+============================================================
+   
+.. literalinclude:: ../../../examples/inference/samplers/nessai_stub.ini
+   :language: ini
+   
 If we run these samplers, we create the following plot:
 
 .. image:: ../../_include/sample.png

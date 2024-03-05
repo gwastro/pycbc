@@ -5,12 +5,14 @@ import argparse
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
 from itertools import cycle
+
 import pycbc.version
 from pycbc.io.ligolw import LIGOLWContentHandler, get_table_columns
 
 
 # Parse command line
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 group = parser.add_mutually_exclusive_group(required=True)
@@ -30,7 +32,10 @@ if args.output_files and args.output_dir:
 
 # Read in input file
 xmldoc = ligolw_utils.load_filename(
-        args.input_file, verbose=True, contenthandler=LIGOLWContentHandler)
+    args.input_file,
+    verbose=args.verbose,
+    contenthandler=LIGOLWContentHandler
+)
 tabletype = lsctables.SimInspiralTable
 allinjs = tabletype.get_table(xmldoc)
 

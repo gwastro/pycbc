@@ -77,7 +77,10 @@ ax2.set_ylabel('DQ Log Likelihood Penalty')
 ax2.set_ylim(numpy.log(ymin), numpy.log(ymax))
 
 # add meta data and save figure
-plot_title = f'{ifo} DQ Trigger Rates'
+plot_title = f'{ifo}:{args.dq_label} DQ Trigger Rates'
+
+ax.set_title(plot_title)
+
 plot_caption = 'The log likelihood correction \
       during during each dq state for each template bin.'
 pycbc.results.save_fig_with_metadata(
