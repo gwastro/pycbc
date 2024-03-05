@@ -188,10 +188,10 @@ class TimeSeries(Array):
         start_idx = float(start - self.start_time) * self.sample_rate
         end_idx = float(end - self.start_time) * self.sample_rate
 
-        if _numpy.isclose(start_idx, round(start_idx)):
+        if _numpy.isclose(start_idx, round(start_idx), rtol=0, atol=1E-3):
             start_idx = round(start_idx)
 
-        if _numpy.isclose(end_idx, round(end_idx)):
+        if _numpy.isclose(end_idx, round(end_idx), rtol=0, atol=1E-3):
             end_idx = round(end_idx)
 
         if mode == 'floor':

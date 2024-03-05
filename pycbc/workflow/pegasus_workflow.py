@@ -75,7 +75,7 @@ class ProfileShortcuts(object):
         self.add_profile("dagman", "retry", number)
 
     def set_execution_site(self, site):
-        self.add_profile("selector", "execution_site", site)
+        self.add_profile("selector", "execution.site", site)
 
 
 class Executable(ProfileShortcuts):

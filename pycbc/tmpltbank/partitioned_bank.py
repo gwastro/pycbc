@@ -17,7 +17,10 @@
 import copy
 import numpy
 import logging
+
 from pycbc.tmpltbank import coord_utils
+
+logger = logging.getLogger('pycbc.tmpltbank.partitioned_bank')
 
 class PartitionedTmpltbank(object):
     """
@@ -524,7 +527,7 @@ class PartitionedTmpltbank(object):
                 warn_msg += "convention is that mass1 > mass2. Swapping mass1 "
                 warn_msg += "and mass2 and adding point to bank. This message "
                 warn_msg += "will not be repeated."
-                logging.warn(warn_msg)
+                logger.warn(warn_msg)
                 self.spin_warning_given = True
 
         # These that masses obey the restrictions of mass_range_params

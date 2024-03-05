@@ -14,8 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
 import numpy
+
 from pycbc.tmpltbank.lambda_mapping import generate_mapping
+
+logger = logging.getLogger('pycbc.tmpltbank.calc_moments')
 
 
 def determine_eigen_directions(metricParams, preserveMoments=False,

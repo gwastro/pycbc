@@ -17,7 +17,13 @@
 """ Calculate the SNR and CHISQ timeseries for either a chosen template, or
 a specific Nth loudest coincident event.
 """
-import sys, logging, argparse, numpy, pycbc, h5py
+import sys
+import logging
+import argparse
+import numpy
+import h5py
+
+import pycbc
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, filter
 from pycbc.io import WaveformArray
 from pycbc import events
@@ -86,11 +92,10 @@ def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
 
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--subtract-template', action='store_true')
-parser.add_argument("-V", "--verbose", action="store_true",
-                  help="print extra debugging information", default=False )
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--high-frequency-cutoff", type=float,
@@ -182,6 +187,8 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 opt = parser.parse_args()
 
+pycbc.init_logging(opt.verbose)
+
 # Exclude invalid options
 if opt.window and opt.trigger_time is None:
     raise RuntimeError("Can't use --window option without a valid trigger time!")
@@ -210,7 +217,6 @@ strain.verify_strain_options(opt, parser)
 strain.StrainSegments.verify_segment_options(opt, parser)
 scheme.verify_processing_options(opt, parser)
 fft.verify_fft_options(opt,parser)
-pycbc.init_logging(opt.verbose)
 
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, pycbc.DYN_RANGE_FAC)

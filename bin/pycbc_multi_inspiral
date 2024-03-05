@@ -31,9 +31,10 @@ from collections import defaultdict
 import argparse
 import numpy as np
 import h5py
+
 from pycbc import (
     detector, fft, init_logging, inject, opt, psd, scheme, strain, vetoes,
-    waveform, DYN_RANGE_FAC
+    waveform, DYN_RANGE_FAC, add_common_pycbc_options
 )
 from pycbc.events import ranking, coherent as coh, EventManagerCoherent
 from pycbc.filter import MatchedFilterControl
@@ -46,9 +47,7 @@ from pycbc.vetoes import sgchisq
 # pycbc_multi_inspiral executable.
 time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("-V", "--verbose", action="store_true",
-                    help="prints extra debugging information during runtime",
-                    default=False)
+add_common_pycbc_options(parser)
 parser.add_argument("--output", type=str)
 parser.add_argument("--instruments", nargs="+", type=str, required=True,
                     help="List of instruments to analyze.")
@@ -352,10 +351,16 @@ with ctx:
         }
     network_names = sorted(network_out_vals.keys())
     event_mgr = EventManagerCoherent(
-        args, args.instruments, ifo_names,
-        [ifo_out_types[n] for n in ifo_names], network_names,
+        args,
+        args.instruments,
+        ifo_names,
+        [ifo_out_types[n] for n in ifo_names],
+        network_names,
         [network_out_types[n] for n in network_names], 
-        segments=segments, time_slides=time_slides)
+        segments=segments,
+        time_slides=time_slides,
+        gating_info={det: strain_dict[det].gating_info for det in strain_dict}
+    )
 
     # Template bank: filtering and thinning
     logging.info("Read in template bank")
@@ -697,6 +702,9 @@ with ctx:
                 event_mgr.cluster_template_network_events(
                     'time_index', 'reweighted_snr', cluster_window, slide=slide)
         event_mgr.finalize_template_events()
+
+logging.info('Writing output')
 event_mgr.write_events(args.output)
+
 logging.info("Finished")
 logging.info("Time to complete analysis: %d", int(time.time() - time_init))

@@ -30,6 +30,7 @@ import argparse
 import numpy
 import h5py
 import logging
+
 import pycbc
 from pycbc import psd, DYN_RANGE_FAC
 from pycbc.waveform import compress
@@ -40,6 +41,7 @@ from pycbc import filter
 
 
 parser = argparse.ArgumentParser(description=__description__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--bank-file", type=str, required=True,
                     help="Bank hdf file to load.")
 parser.add_argument("--output", type=str, required=True,
@@ -96,7 +98,6 @@ parser.add_argument("--precision", type=str, choices=["double", "single"],
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                     "Otherwise, an error is raised.")
-parser.add_argument("--verbose", action="store_true", default=False)
 
 # Insert the PSD options
 pycbc.psd.insert_psd_option_group(parser, include_data_options=False)
