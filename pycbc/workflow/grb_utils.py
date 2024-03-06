@@ -242,14 +242,9 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     # pp_outs is returned by this function. It is structured as follows:
     # pp_outs[0]: [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
     #             FileList (N can be set by the user and is 6 by default)
-    # pp_outs[1]: ALL_TIMES_CLUSTERED File
-    # pp_outs[2]: OFFSOURCE_CLUSTERED File
-    # pp_outs[3]: ONSOURCE_CLUSTERED File
-    # pp_outs[4]: OFFTRIAL_1_CLUSTERED File
-    # ...
-    # pp_outs[4+N]: OFFTRIAL_N_CLUSTERED File
-    # pp_outs[-2]: FOUNDMISSED FileList covering all injection sets
-    # pp_outs[-1]: FOUNDMISSED-FILTERED FileList covering all injection sets
+    # pp_outs[1]: CLUSTERED FileList, same order as pp_outs[0]
+    # pp_outs[2]: FOUNDMISSED FileList covering all injection sets
+    # pp_outs[3]: FOUNDMISSED-FILTERED FileList covering all injection sets
     #              in the same order as pp_outs[-2]
 
     # Begin setting up trig combiner job(s)
@@ -265,11 +260,13 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     # Trig clustering for each trig file
     exe_class = _select_grb_pp_class(wf, "trig_cluster")
     job_instance = exe_class(wf.cp, "trig_cluster")
+    cluster_files = FileList([])
     for trig_file in trig_files:
         # Create and add nodes
         node, out_file = job_instance.create_node(trig_file, pp_dir)
         wf.add_node(node)
-        pp_outs.append(out_file)
+        cluster_files.append(out_file)
+    pp_outs.append(cluster_files)
 
     # Find injections from triggers
     exe_class = _select_grb_pp_class(wf, "inj_finder")
