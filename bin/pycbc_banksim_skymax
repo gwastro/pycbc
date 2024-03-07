@@ -21,8 +21,12 @@ import sys
 import logging
 from numpy import complex64, float32, sqrt, argmax, real, array
 from argparse import ArgumentParser
+from math import ceil, log
+from tqdm import tqdm
+
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
+
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta, f_SchwarzISCO
 from pycbc.pnutils import nearest_larger_binary_number
 from pycbc.pnutils import mass1_mass2_to_tau0_tau3
@@ -35,11 +39,9 @@ from pycbc.filter import overlap_cplx, matched_filter
 from pycbc.filter import compute_max_snr_over_sky_loc_stat
 from pycbc.filter import compute_max_snr_over_sky_loc_stat_no_phase
 from pycbc.io.ligolw import LIGOLWContentHandler
-from math import ceil, log
 import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain, pycbc.version
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 from pycbc.waveform import TemplateBank
-from tqdm import tqdm
 
 ## Remove the need for these functions ########################################
     
@@ -150,8 +152,7 @@ aprs = sorted(list(set(td_approximants() + fd_approximants())))
 parser = ArgumentParser(description=__doc__)
 parser.add_argument("--match-file", dest="out_file", metavar="FILE",
                     required=True, help="File to output match results")
-parser.add_argument("--verbose", action='store_true', default=False,
-                    help="Print verbose statements")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 

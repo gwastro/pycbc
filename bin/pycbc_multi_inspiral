@@ -31,9 +31,10 @@ from collections import defaultdict
 import argparse
 import numpy as np
 import h5py
+
 from pycbc import (
     detector, fft, init_logging, inject, opt, psd, scheme, strain, vetoes,
-    waveform, DYN_RANGE_FAC
+    waveform, DYN_RANGE_FAC, add_common_pycbc_options
 )
 from pycbc.events import ranking, coherent as coh, EventManagerCoherent
 from pycbc.filter import MatchedFilterControl
@@ -46,9 +47,7 @@ from pycbc.conversions import mchirp_from_mass1_mass2
 # pycbc_multi_inspiral executable.
 time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("-V", "--verbose", action="store_true",
-                    help="prints extra debugging information during runtime",
-                    default=False)
+add_common_pycbc_options(parser)
 parser.add_argument("--output", type=str)
 parser.add_argument("--instruments", nargs="+", type=str, required=True,
                     help="List of instruments to analyze.")
