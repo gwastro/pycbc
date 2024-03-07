@@ -258,6 +258,10 @@ usefiles = filter(
     args.input_files,
 )
 
+if not usefiles:
+    raise ValueError("No files used in inj combiner!\n"
+                     "Check injection set name and inclination.")
+
 # merge injection files, filtering on-the-fly by inclination
 merge_injection_files(
     list(usefiles),
