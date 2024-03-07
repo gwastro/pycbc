@@ -378,6 +378,7 @@ def load_trig_data(input_file, ifos, vetoes):
                 data[key + '_' + ifo] = trigs[ifo][key][...]
     return data
 
+
 # =============================================================================
 # Detector utils:
 # * Function to calculate the antenna response F+^2 + Fx^2
@@ -488,16 +489,17 @@ def get_bestnrs(trigs, ifos, snr_threshold=6., sngl_snr_threshold=4.,
 
     return bestnr
 
+
 # =============================================================================
 # Veto trigger
 # =============================================================================
-
 def veto_trig(trigs, trial_dict):
     """Remove trigs that are not in trial dict"""
     mask = []
     for time in trigs['end_time']:
         mask.append(any([time in trial for trial in trial_dict]))
     return {key: trigs[key][mask] for key in trigs.keys()}
+
 
 # =============================================================================
 # Construct sorted triggers from trials
@@ -671,7 +673,7 @@ def load_missed_found_injections(hdf_file, ifos, opts,
         found_data['rec_%s' % param] = inj_data['/network/%s' % param][...]
 
     found_data['end_time'] = \
-        inj_data['/network/end_time_gc'][...] #needed to use bestNR
+        inj_data['/network/end_time_gc'][...]  #needed to use bestNR
 
     # Staistics value
     filter_stats = ['coherent_snr', 'reweighted_snr', 'null_snr']
@@ -688,14 +690,15 @@ def load_missed_found_injections(hdf_file, ifos, opts,
     snr_ifos = {'V1': 'v', 'H1': 'h1', 'L1': 'l'}
     for ifo in ifos:
         found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
-        found_data['snr_%s' % ifo] = inj_data[ifo + '/snr_' \
-            + snr_ifos[ifo]][...]
+        found_data['snr_%s' % ifo] = inj_data[ifo + '/snr_' + 
+            snr_ifos[ifo]][...]
     # BestNRs
-    found_data['bestnr'] = get_bestnrs(found_data,
-                            ifos,
-                            snr_threshold=opts.snr_threshold,
-                            sngl_snr_threshold=opts.sngl_snr_threshold,
-                            new_snr_threshold=opts.newsnr_threshold)
+    found_data['bestnr'] = \
+        get_bestnrs(found_data,
+                    ifos,
+                    snr_threshold=opts.snr_threshold,
+                    sngl_snr_threshold=opts.sngl_snr_threshold,
+                    new_snr_threshold=opts.newsnr_threshold)
     if background_bestnrs is not None:
         found_data['fap'] = numpy.array(
                 [sum(background_bestnrs > bestnr) for bestnr in
@@ -718,9 +721,9 @@ def load_missed_found_injections(hdf_file, ifos, opts,
                                             found_data['dec'],
                                             found_data['time'])
 
-
-    inj_sigma_mult = numpy.asarray([f_resp[ifo] * \
-        found_data['sigmasq_%s' % ifo] for ifo in ifos])
+    inj_sigma_mult = \
+        numpy.asarray([f_resp[ifo] * 
+                        found_data['sigmasq_%s' % ifo] for ifo in ifos])
     inj_sigma_tot = numpy.sum(inj_sigma_mult, axis=0)
     for ifo in ifos:
         found_data['inj_sigma_mean_%s' % ifo] = numpy.mean(
