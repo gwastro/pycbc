@@ -11,7 +11,6 @@ mpld3>=0.3
 beautifulsoup4>=4.6.0
 cython
 lalsuite!=7.2
-lscsoft-glue>=1.59.3
 ligo-segments
 tqdm
 gwdatafind>=1.1.3
