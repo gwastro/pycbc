@@ -632,8 +632,8 @@ if do_injections:
     plot_caption = f"Injection recovery efficiency using "
     plot_caption += "BestNR as detection statistic.  "
     plot_caption += "Injections louder than loudest foreground trigger."
-    plot_caption += " 90% exclusion distance: %.2f Mpc" % excl_dist
-    plot_caption += " 50% sensitive distance: %.2f Mpc" % sens_dist
+    plot_caption += f" 90% exclusion distance: {excl_dist} Mpc"
+    plot_caption += f" 50% sensitive distance: {sens_dist} Mpc"
     fig_path = opts.onsource_output_file
     save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
                            title=plot_title, caption=plot_caption)
