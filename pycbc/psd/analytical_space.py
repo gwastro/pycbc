@@ -1024,7 +1024,7 @@ def averaged_fplus_sq_approximated(f, len_arm=None):
     polarization angle.
 
     .. math::
-    <\left(4 F_{X}^{+}\right)^{2}>\approx 16 \frac{3}{20} \frac{1}{1+0.6(\omega L)^{2}}
+        <\left(4 F_{X}^{+}\right)^{2}>\approx 16 \frac{3}{20} \frac{1}{1+0.6(\omega L)^{2}}
 
     Parameters
     ----------
@@ -1315,12 +1315,12 @@ def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
     a3 = [-0.478447, -0.884147, -1.15302, -1.14711]
     a4 = [-0.334821, -0.427176, -0.302761, 0.0325887]
     a5 = [0.0658353, 0.128666, 0.175521, 0.187854]
-    fit_a0 = interp1d(t_obs, a0, kind='cubic')
-    fit_a1 = interp1d(t_obs, a1, kind='cubic')
-    fit_a2 = interp1d(t_obs, a2, kind='cubic')
-    fit_a3 = interp1d(t_obs, a3, kind='cubic')
-    fit_a4 = interp1d(t_obs, a4, kind='cubic')
-    fit_a5 = interp1d(t_obs, a5, kind='cubic')
+    fit_a0 = interp1d(t_obs, a0, kind='cubic', fill_value="extrapolate")
+    fit_a1 = interp1d(t_obs, a1, kind='cubic', fill_value="extrapolate")
+    fit_a2 = interp1d(t_obs, a2, kind='cubic', fill_value="extrapolate")
+    fit_a3 = interp1d(t_obs, a3, kind='cubic', fill_value="extrapolate")
+    fit_a4 = interp1d(t_obs, a4, kind='cubic', fill_value="extrapolate")
+    fit_a5 = interp1d(t_obs, a5, kind='cubic', fill_value="extrapolate")
     sh_confusion = np.exp(
         fit_a0(duration) +
         fit_a1(duration) * np.log10(fr*1e3) +
