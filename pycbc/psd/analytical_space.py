@@ -1019,7 +1019,7 @@ def averaged_lisa_fplus_sq_numerical(f, len_arm=2.5e9):
 
 
 def averaged_fplus_sq_approximated(f, len_arm=None):
-    """ A simplified fit for TDI-based space-borne GW detectors'
+    r""" A simplified fit for TDI-based space-borne GW detectors'
     squared antenna response function, averaged over sky and
     polarization angle.
 
@@ -1041,7 +1041,8 @@ def averaged_fplus_sq_approximated(f, len_arm=None):
     -----
         Please see Eq.(9) in <10.1088/1361-6382/ab1101> for more details.
     """
-    fp_sq_approx = (3./20.)*(1./(1.+0.6*(2.*np.pi*f*len_arm)**2))
+    fp_sq_approx = (3./20.)*(1./(1.+0.6*_omega_length(f, len_arm)**2))
+
     return fp_sq_approx
 
 
@@ -1170,7 +1171,7 @@ def sensitivity_curve_lisa_semi_analytical(length, delta_f, low_freq_cutoff,
 def sensitivity_curve_taiji_analytical(length, delta_f, low_freq_cutoff,
                                        len_arm=3e9, acc_noise_level=3e-15,
                                        oms_noise_level=8e-12):
-    """ The semi-analytical Taiji's sensitivity curve (6-links),
+    """ The analytical Taiji's sensitivity curve (6-links),
     averaged over sky and polarization angle.
 
     Parameters
@@ -1191,7 +1192,7 @@ def sensitivity_curve_taiji_analytical(length, delta_f, low_freq_cutoff,
     Returns
     -------
     fseries : FrequencySeries
-        The sky and polarization angle averaged semi-analytical
+        The sky and polarization angle averaged analytical
         Taiji's sensitivity curve (6-links).
     """
     len_arm = np.float64(len_arm)
