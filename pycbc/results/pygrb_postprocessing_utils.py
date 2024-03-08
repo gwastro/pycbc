@@ -517,12 +517,15 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
     for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
         if slide_trigs:
-            trig_time[slide_id] = trigs['network/end_time_gc'][slide_trigs]
-            trig_snr[slide_id] = trigs['network/coherent_snr'][slide_trigs]
+            trig_time[slide_id] = trigs['network/end_time_gc'][
+                trigs['network/event_id'] == slide_trigs]
+            trig_snr[slide_id] = trigs['network/coherent_snr'][
+                trigs['network/event_id'] == slide_trigs]
         else:
             trig_time[slide_id] = numpy.asarray([])
             trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][slide_trigs]
+        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][
+            trigs['network/event_id'] == slide_trigs]
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
