@@ -1022,6 +1022,7 @@ def averaged_fplus_sq_approximated(f, len_arm=None):
     """ A simplified fit for TDI-based space-borne GW detectors'
     squared antenna response function, averaged over sky and
     polarization angle.
+
     .. math::
     <\left(4 F_{X}^{+}\right)^{2}>\approx 16 \frac{3}{20} \frac{1}{1+0.6(\omega L)^{2}}
 
@@ -1307,7 +1308,7 @@ def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
         for more details.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    t_obs = np.linspace(0, 4, 4)
+    t_obs = [0.5, 1, 2, 4]
     a0 = [-85.3498, -85.4336, -85.3919, -85.5448]
     a1 = [-2.64899, -2.46276, -2.69735, -3.23671]
     a2 = [-0.0699707, -0.183175, -0.749294, -1.64187]
