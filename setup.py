@@ -51,6 +51,7 @@ install_requires = setup_requires + [
     'python-ligo-lw >= 1.7.0',
     'ligo-segments',
     'lalsuite!=7.2',
+    'lscsoft-glue>=1.59.3',
     'pykerr',
 ]
 
