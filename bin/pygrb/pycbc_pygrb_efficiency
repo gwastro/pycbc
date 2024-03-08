@@ -74,6 +74,16 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
     err_high = (err_common + err_vary)/err_denom
     err_high_mc = err_high - fraction
 
+    # Check for cases where error bars are negative and set them to zero
+    if (err_low_mc < 0).any():
+        logging.warning("Negative lower error bar(s) detected."
+                        " Setting to zero.")
+        err_low_mc[err_low_mc < 0] = 0
+    if (err_high_mc < 0).any():
+        logging.warning("Negative upper error bar(s) detected."
+                        " Setting to zero.")
+        err_high_mc[err_high_mc < 0] = 0
+
     return err_low_mc, err_high_mc, fraction
 
 
