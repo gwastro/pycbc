@@ -1546,9 +1546,13 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         """
 
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
-        ln_noise_rate = coinc_rate.combination_noise_lograte(
-                                  sngl_rates, kwargs['time_addition'],
-                                  kwargs['dets'])
+        if 'dets' in kwargs:
+            ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                    sngl_rates, kwargs['time_addition'],
+                                    kwargs['dets'])
+        else:
+            ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                    sngl_rates, kwargs['time_addition'])
         ln_noise_rate -= self.benchmark_lograte
 
         # Network sensitivity for a given coinc type is approximately
