@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # Copyright (C) 2015 Christopher M. Biwer
 #
 # This program is free software; you can redistribute it and/or modify it
