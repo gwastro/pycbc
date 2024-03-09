@@ -100,7 +100,8 @@ def psd_tianqin_acc_noise(f, acc_noise_level=1e-15):
         The PSD value or array for acceleration noise.
     Notes
     -----
-        Please see Table(1) in <10.1088/0264-9381/33/3/035010> for more details.
+        Please see Table(1) in <10.1088/0264-9381/33/3/035010>
+        for more details.
     """
     s_acc_nu = _psd_acc_noise(f, acc_noise_level)
 
@@ -193,7 +194,8 @@ def psd_tianqin_oms_noise(f, oms_noise_level=1e-12):
         The PSD value or array for OMS noise.
     Notes
     -----
-        Please see Table(1) in <10.1088/0264-9381/33/3/035010> for more details.
+        Please see Table(1) in <10.1088/0264-9381/33/3/035010>
+        for more details.
     """
     s_oms_nu = _psd_oms_noise(f, oms_noise_level)
 
@@ -416,7 +418,8 @@ def analytical_psd_tianqin_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         The TDI-1.5 PSD (X,Y,Z channel) for TianQin.
     Notes
     -----
-        Please see Table(1) in <10.1088/0264-9381/33/3/035010> for more details.
+        Please see Table(1) in <10.1088/0264-9381/33/3/035010>
+        for more details.
     """
     fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
                                           len_arm, acc_noise_level,
@@ -564,7 +567,8 @@ def analytical_psd_tianqin_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
         The TDI-2.0 PSD (X,Y,Z channel) for TianQin.
     Notes
     -----
-        Please see Table(1) in <10.1088/0264-9381/33/3/035010> for more details.
+        Please see Table(1) in <10.1088/0264-9381/33/3/035010>
+        for more details.
     """
     fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
                                           len_arm, acc_noise_level,
@@ -789,7 +793,8 @@ def analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         The PSD of TianQin's TDI-1.5 channel A and E.
     Notes
     -----
-        Please see Table(1) in <10.1088/0264-9381/33/3/035010> for more details.
+        Please see Table(1) in <10.1088/0264-9381/33/3/035010>
+        for more details.
     """
     fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
                                          len_arm, acc_noise_level,
@@ -936,7 +941,8 @@ def analytical_psd_tianqin_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         The PSD of TianQin's TDI-1.5 channel T.
     Notes
     -----
-        Please see Table(1) in <10.1088/0264-9381/33/3/035010> for more details.
+        Please see Table(1) in <10.1088/0264-9381/33/3/035010>
+        for more details.
     """
     fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
                                         len_arm, acc_noise_level,
@@ -999,7 +1005,6 @@ def averaged_lisa_fplus_sq_numerical(f, len_arm=2.5e9):
     -----
         Please see Eq.(36) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    from scipy.interpolate import interp1d
     from astropy.utils.data import download_file
 
     if len_arm != 2.5e9:
@@ -1024,7 +1029,8 @@ def averaged_fplus_sq_approximated(f, len_arm=None):
     polarization angle.
 
     .. math::
-        <\left(4 F_{X}^{+}\right)^{2}>\approx 16 \frac{3}{20} \frac{1}{1+0.6(\omega L)^{2}}
+        <\left(F_{X}^{+}\right)^{2}>\approx \frac{3}{20} \frac{1}{
+            1+0.6(\omega L)^{2}}
 
     Parameters
     ----------
@@ -1324,11 +1330,11 @@ def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
     fit_a5 = interp1d(t_obs, a5, kind='cubic', fill_value="extrapolate")
     sh_confusion = np.exp(
         fit_a0(duration) +
-        fit_a1(duration) * np.log10(fr*1e3) +
-        fit_a2(duration) * np.log10(fr*1e3)**2 +
-        fit_a3(duration) * np.log10(fr*1e3)**3 +
-        fit_a4(duration) * np.log10(fr*1e3)**4 +
-        fit_a5(duration) * np.log10(fr*1e3)**5
+        fit_a1(duration) * np.log(fr*1e3) +
+        fit_a2(duration) * np.log(fr*1e3)**2 +
+        fit_a3(duration) * np.log(fr*1e3)**3 +
+        fit_a4(duration) * np.log(fr*1e3)**4 +
+        fit_a5(duration) * np.log(fr*1e3)**5
     )
     sh_confusion[(fr < 1e-4) | (fr > 1e-2)] = 0
     fseries = from_numpy_arrays(fr, sh_confusion, length, delta_f,
