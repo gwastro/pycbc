@@ -1442,7 +1442,8 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
     fit_a4 = interp1d(t_obs, a4, kind='cubic', fill_value="extrapolate")
     fit_a5 = interp1d(t_obs, a5, kind='cubic', fill_value="extrapolate")
     fit_a6 = interp1d(t_obs, a6, kind='cubic', fill_value="extrapolate")
-    sh_confusion = np.power(10,
+    sh_confusion = np.power(
+        10,
         fit_a0(duration) +
         fit_a1(duration) * np.log(fr*1e3) +
         fit_a2(duration) * np.log(fr*1e3)**2 +
@@ -1931,7 +1932,8 @@ def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
     """
     if tdi != "1.5":
         raise Exception("The version of TDI, currently only for 1.5.")
-    psd_AE = analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
+    psd_AE = analytical_psd_tianqin_tdi_1p5_AE(length, delta_f,
+                                               low_freq_cutoff,
                                                len_arm, acc_noise_level,
                                                oms_noise_level)
     psd_X_confusion = analytical_psd_tianqin_confusion_noise(
