@@ -26,6 +26,7 @@ This module provides (semi-)analytical PSDs and sensitivity curves for space
 borne detectors, such as LISA, Taiji, and TianQin. Based on LISA technical note
 <LISA-LCST-SGS-TN-001>, LDC manual <LISA-LCST-SGS-MAN-001>,
 paper <10.1088/1361-6382/ab1101>, <10.1088/0264-9381/33/3/035010>,
+<10.1103/PhysRevD.102.063021>, <10.1103/PhysRevD.100.043003>,
 and <10.1103/PhysRevD.107.064021>.
 """
 
@@ -393,7 +394,8 @@ def analytical_psd_lisa_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
 
 
 def analytical_psd_tianqin_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                       len_arm=1e8, acc_noise_level=1e-15,
+                                       len_arm=np.sqrt(3)*1e8,
+                                       acc_noise_level=1e-15,
                                        oms_noise_level=1e-12):
     """ The TDI-1.5 analytical PSD (X,Y,Z channel) for TianQin.
 
@@ -542,7 +544,8 @@ def analytical_psd_lisa_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
 
 
 def analytical_psd_tianqin_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                       len_arm=1e8, acc_noise_level=1e-15,
+                                       len_arm=np.sqrt(3)*1e8,
+                                       acc_noise_level=1e-15,
                                        oms_noise_level=1e-12):
     """ The TDI-2.0 analytical PSD (X,Y,Z channel) for TianQin.
 
@@ -768,7 +771,8 @@ def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
 
 
 def analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                      len_arm=1e8, acc_noise_level=1e-15,
+                                      len_arm=np.sqrt(3)*1e8,
+                                      acc_noise_level=1e-15,
                                       oms_noise_level=1e-12):
     """ The PSD of TianQin's TDI-1.5 channel A and E.
 
@@ -916,7 +920,8 @@ def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
 
 
 def analytical_psd_tianqin_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                     len_arm=1e8, acc_noise_level=1e-15,
+                                     len_arm=np.sqrt(3)*1e8,
+                                     acc_noise_level=1e-15,
                                      oms_noise_level=1e-12):
     """ The PSD of TianQin's TDI-1.5 channel T.
 
@@ -1052,6 +1057,46 @@ def averaged_fplus_sq_approximated(f, len_arm=None):
     return fp_sq_approx
 
 
+def averaged_tianqin_fplus_sq_numerical(f, len_arm=np.sqrt(3)*1e8):
+    """ A numerical fit for TianQin's squared antenna response function,
+    averaged over sky and polarization angle.
+
+    Parameters
+    ----------
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
+    len_arm : float
+        The arm length of TianQin, in the unit of "m".
+
+    Returns
+    -------
+    fp_sq_numerical : float or numpy.array
+        The sky and polarization angle averaged squared antenna response.
+    Notes
+    -----
+        Please see Eq.(15-16) in <10.1103/PhysRevD.100.043003>
+        for more details.
+    """
+    base = averaged_fplus_sq_approximated(f, len_arm)
+    a = [1, 1e-4, 2639e-4, 231/5*1e-4, -2093/1.25*1e-4, 2173e-5,
+         2101e-6, 3027/2*1e-5, -42373/5*1e-6, 176087e-8,
+         -8023/5*1e-7, 5169e-9]
+    omega_len = _omega_length(f, len_arm)
+    omega_len_low_f = omega_len[omega_len < 4.1]
+    omega_len_high_f = omega_len[omega_len >= 4.1]
+    base_low_f = base[:len(omega_len_low_f)]
+    base_high_f = base[len(omega_len_low_f):]
+    low_f_modulation = np.polyval(a[::-1], omega_len_low_f)
+    high_f_modulation = np.exp(
+        -0.322 * np.sin(2*omega_len_high_f-4.712) + 0.078
+    )
+    low_f_result = np.multiply(base_low_f, low_f_modulation)
+    high_f_result = np.multiply(base_high_f, high_f_modulation)
+    fp_sq_numerical = np.concatenate((low_f_result, high_f_result))
+
+    return fp_sq_numerical
+
+
 def averaged_response_lisa_tdi_1p5(f, len_arm=2.5e9):
     """ LISA's TDI-1.5 response function to GW,
     averaged over sky and polarization angle.
@@ -1102,6 +1147,29 @@ def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
     response_tdi_2p0 = response_tdi_1p5 * (2*np.sin(2*omega_len))**2
 
     return response_tdi_2p0
+
+
+def averaged_response_tianqin_tdi_1p5(f, len_arm=np.sqrt(3)*1e8):
+    """ TianQin's TDI-1.5 response function to GW,
+    averaged over sky and polarization angle.
+
+    Parameters
+    ----------
+    f : float or numpy.array
+        The frequency or frequency range, in the unit of "Hz".
+    len_arm : float
+        The arm length of TianQin, in the unit of "m".
+
+    Returns
+    -------
+    response_tdi_1p5 : float or numpy.array
+        The sky and polarization angle averaged TDI-1.5 response to GW.
+    """
+    omega_len = _omega_length(f, len_arm)
+    ave_fp2 = averaged_tianqin_fplus_sq_numerical(f, len_arm)
+    response_tdi_1p5 = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
+
+    return response_tdi_1p5
 
 
 def averaged_response_taiji_tdi_1p5(f, len_arm=3e9):
@@ -1164,6 +1232,50 @@ def sensitivity_curve_lisa_semi_analytical(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     fp_sq = averaged_lisa_fplus_sq_numerical(fr, len_arm)
     s_acc_nu, s_oms_nu = lisa_psd_components(
+                            fr, acc_noise_level, oms_noise_level)
+    omega_len = _omega_length(fr, len_arm)
+    sense_curve = ((s_oms_nu + s_acc_nu*(3+np.cos(2*omega_len))) /
+                   (omega_len**2*fp_sq))
+    fseries = from_numpy_arrays(fr, sense_curve/2,
+                                length, delta_f, low_freq_cutoff)
+
+    return fseries
+
+
+def sensitivity_curve_tianqin_analytical(length, delta_f, low_freq_cutoff,
+                                         len_arm=np.sqrt(3)*1e8,
+                                         acc_noise_level=1e-15,
+                                         oms_noise_level=1e-12):
+    """ The analytical TianQin's sensitivity curve (6-links),
+    averaged over sky and polarization angle.
+
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of TianQin, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+
+    Returns
+    -------
+    fseries : FrequencySeries
+        The sky and polarization angle averaged analytical
+        TianQin's sensitivity curve (6-links).
+    """
+    len_arm = np.float64(len_arm)
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
+    fp_sq = averaged_tianqin_fplus_sq_numerical(fr, len_arm)
+    s_acc_nu, s_oms_nu = tianqin_psd_components(
                             fr, acc_noise_level, oms_noise_level)
     omega_len = _omega_length(fr, len_arm)
     sense_curve = ((s_oms_nu + s_acc_nu*(3+np.cos(2*omega_len))) /
@@ -1286,6 +1398,66 @@ def confusion_fit_lisa(length, delta_f, low_freq_cutoff, duration=1.0):
     return fseries
 
 
+def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
+    """ The TianQin's sensitivity curve for Galactic confusion noise,
+    averaged over sky and polarization angle. No instrumental noise.
+    Only valid for 0.1 mHz < f < 10 mHz. Note that the results between
+    0.5, 1, 2, 4, and 5 years are extrapolated.
+
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    duration : float
+        The duration of observation, between 0 and 5, in the unit of years.
+
+    Returns
+    -------
+    fseries : FrequencySeries
+        The sky and polarization angle averaged
+        TianQin's sensitivity curve for Galactic confusion noise.
+        No instrumental noise.
+    Notes
+    -----
+        Please see Table(II) in <10.1103/PhysRevD.102.063021>
+        for more details.
+    """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
+    t_obs = [0.5, 1, 2, 4, 5]
+    a0 = [-18.6, -18.6, -18.6, -18.6, -18.6]
+    a1 = [-1.22, -1.13, -1.45, -1.43, -1.51]
+    a2 = [0.009, -0.945, 0.315, -0.687, -0.710]
+    a3 = [-1.87, -1.02, -1.19, 0.24, -1.13]
+    a4 = [0.65, 4.05, -4.48, -0.15, -0.83]
+    a5 = [3.6, -4.5, 10.8, -1.8, 13.2]
+    a6 = [-4.6, -0.5, -9.4, -3.2, -19.1]
+    fit_a0 = interp1d(t_obs, a0, kind='cubic', fill_value="extrapolate")
+    fit_a1 = interp1d(t_obs, a1, kind='cubic', fill_value="extrapolate")
+    fit_a2 = interp1d(t_obs, a2, kind='cubic', fill_value="extrapolate")
+    fit_a3 = interp1d(t_obs, a3, kind='cubic', fill_value="extrapolate")
+    fit_a4 = interp1d(t_obs, a4, kind='cubic', fill_value="extrapolate")
+    fit_a5 = interp1d(t_obs, a5, kind='cubic', fill_value="extrapolate")
+    fit_a6 = interp1d(t_obs, a6, kind='cubic', fill_value="extrapolate")
+    sh_confusion = np.power(10,
+        fit_a0(duration) +
+        fit_a1(duration) * np.log(fr*1e3) +
+        fit_a2(duration) * np.log(fr*1e3)**2 +
+        fit_a3(duration) * np.log(fr*1e3)**3 +
+        fit_a4(duration) * np.log(fr*1e3)**4 +
+        fit_a5(duration) * np.log(fr*1e3)**5 +
+        fit_a6(duration) * np.log(fr*1e3)**6
+    )
+    sh_confusion[(fr < 1e-4) | (fr > 1e-2)] = 0
+    fseries = from_numpy_arrays(fr, sh_confusion, length, delta_f,
+                                low_freq_cutoff)
+
+    return fseries
+
+
 def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
     """ The Taiji's sensitivity curve for Galactic confusion noise,
     averaged over sky and polarization angle. No instrumental noise.
@@ -1390,6 +1562,50 @@ def sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
     if duration < 0 or duration > 10:
         raise Exception("Must between 0 and 10.")
     fseries_confusion = confusion_fit_lisa(
+        length, delta_f, low_freq_cutoff, duration)
+    fseries = from_numpy_arrays(base_curve.sample_frequencies,
+                                base_curve+fseries_confusion,
+                                length, delta_f, low_freq_cutoff)
+
+    return fseries
+
+
+def sensitivity_curve_tianqin_confusion(length, delta_f, low_freq_cutoff,
+                                        len_arm=np.sqrt(3)*1e8,
+                                        acc_noise_level=1e-15,
+                                        oms_noise_level=1e-12, duration=1.0):
+    """ The TianQin's sensitivity curve with Galactic confusion noise,
+    averaged over sky and polarization angle.
+
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of TianQin, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+    duration : float
+        The duration of observation, between 0 and 5, in the unit of years.
+
+    Returns
+    -------
+    fseries : FrequencySeries
+        The sky and polarization angle averaged
+        TianQin's sensitivity curve with Galactic confusion noise.
+    """
+    base_curve = sensitivity_curve_tianqin_analytical(
+        length, delta_f, low_freq_cutoff,
+        len_arm, acc_noise_level, oms_noise_level)
+    if duration < 0 or duration > 5:
+        raise Exception("Must between 0 and 5.")
+    fseries_confusion = confusion_fit_tianqin(
         length, delta_f, low_freq_cutoff, duration)
     fseries = from_numpy_arrays(base_curve.sample_frequencies,
                                 base_curve+fseries_confusion,
@@ -1545,6 +1761,50 @@ def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
     return fseries
 
 
+def analytical_psd_tianqin_confusion_noise(length, delta_f, low_freq_cutoff,
+                                           len_arm=np.sqrt(3)*1e8,
+                                           duration=1.0, tdi="1.5"):
+    """ The TDI-1.5 PSD (X,Y,Z channel) for TianQin Galactic confusion noise,
+    no instrumental noise.
+
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of TianQin, in the unit of "m".
+    duration : float
+        The duration of observation, between 0 and 5, in the unit of years.
+    tdi : string
+        The version of TDI, currently only for 1.5.
+
+    Returns
+    -------
+    fseries : FrequencySeries
+        The TDI-1.5 PSD (X,Y,Z channel) for TianQin Galactic confusion
+        noise, no instrumental noise.
+    """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
+    if tdi == "1.5":
+        response = averaged_response_tianqin_tdi_1p5(fr, len_arm)
+    else:
+        raise Exception("The version of TDI, currently only for 1.5.")
+    fseries_response = from_numpy_arrays(fr, np.array(response),
+                                         length, delta_f, low_freq_cutoff)
+    fseries_confusion = confusion_fit_tianqin(
+        length, delta_f, low_freq_cutoff, duration)
+    psd_confusion = 2*fseries_confusion.data * fseries_response.data
+    fseries = from_numpy_arrays(fseries_confusion.sample_frequencies,
+                                psd_confusion, length, delta_f,
+                                low_freq_cutoff)
+
+    return fseries
+
+
 def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
                                          len_arm=3e9, duration=1.0,
                                          tdi="1.5"):
@@ -1627,6 +1887,54 @@ def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
                                             len_arm, acc_noise_level,
                                             oms_noise_level)
     psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(
+                        length, delta_f, low_freq_cutoff,
+                        len_arm, duration, tdi)
+    # Here we assume the confusion noise's contribution to the CSD Sxy is
+    # negligible for low-frequency part. So Sxy doesn't change.
+    fseries = psd_AE + psd_X_confusion
+
+    return fseries
+
+
+def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
+                                            len_arm=np.sqrt(3)*1e8,
+                                            acc_noise_level=1e-15,
+                                            oms_noise_level=1e-12,
+                                            duration=1.0, tdi="1.5"):
+    """ The TDI-1.5 PSD (A,E channel) for TianQin
+    with Galactic confusion noise.
+
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of TianQin, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+    duration : float
+        The duration of observation, between 0 and 5, in the unit of years.
+    tdi : string
+        The version of TDI, currently only for 1.5.
+
+    Returns
+    -------
+    fseries : FrequencySeries
+        The TDI-1.5 PSD (A,E channel) for TianQin with Galactic confusion
+        noise.
+    """
+    if tdi != "1.5":
+        raise Exception("The version of TDI, currently only for 1.5.")
+    psd_AE = analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
+                                               len_arm, acc_noise_level,
+                                               oms_noise_level)
+    psd_X_confusion = analytical_psd_tianqin_confusion_noise(
                         length, delta_f, low_freq_cutoff,
                         len_arm, duration, tdi)
     # Here we assume the confusion noise's contribution to the CSD Sxy is
