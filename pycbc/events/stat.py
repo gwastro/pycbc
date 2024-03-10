@@ -1550,9 +1550,19 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             ln_noise_rate = coinc_rate.combination_noise_lograte(
                                     sngl_rates, kwargs['time_addition'],
                                     kwargs['dets'])
+                                    
+            # Find total volume of phase-time-amplitude space occupied by
+            # noise coincs
+            # Extent of time-difference space occupied
+            noise_twindow = coinc_rate.multiifo_noise_coincident_area(
+                                self.hist_ifos, kwargs['time_addition'],
+                                kwargs['dets'])
         else:
             ln_noise_rate = coinc_rate.combination_noise_lograte(
                                     sngl_rates, kwargs['time_addition'])
+            noise_twindow = coinc_rate.multiifo_noise_coincident_area(
+                                self.hist_ifos, kwargs['time_addition'])
+
         ln_noise_rate -= self.benchmark_lograte
 
         # Network sensitivity for a given coinc type is approximately
@@ -1574,12 +1584,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         stat = {ifo: st for ifo, st in s}
         logr_s = self.logsignalrate(stat, slide * step, to_shift)
 
-        # Find total volume of phase-time-amplitude space occupied by noise
-        # coincs
-        # Extent of time-difference space occupied
-        noise_twindow = coinc_rate.multiifo_noise_coincident_area(
-                            self.hist_ifos, kwargs['time_addition'],
-                            kwargs['dets'])
         # Volume is the allowed time difference window, multiplied by 2pi for
         # each phase difference dimension and by allowed range of SNR ratio
         # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
