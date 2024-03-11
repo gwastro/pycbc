@@ -168,7 +168,7 @@ for ifo in ifos:
 
         if mr < 1e-3:
             mlab = f"mean = {mr:.3e}"
-            clab = f"{conservative_percentile:d}th %ile = {cr:.2e}"
+            clab = f"{conservative_percentile:d}th %ile = {cr:.3e}"
         else:
             mlab = f"mean = {mr:.3f}"
             clab = f"{conservative_percentile:d}th %ile = {cr:.3f}"

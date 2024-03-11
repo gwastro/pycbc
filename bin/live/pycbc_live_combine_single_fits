@@ -170,19 +170,27 @@ for ifo in args.ifos:
         # ignore anything with the 'invalid' salient values
         valid = c > 0
 
+        fout_ifo[f'separate_fits/bin_{counter:d}/fit_coeff'] = a
+        fout_ifo[f'separate_fits/bin_{counter:d}/counts'] = c
+
+        if not any(valid):
+            cons_alphas_out[ifo][counter] = np.nan
+            alphas_out[ifo][counter] = np.nan
+            cons_counts_out[ifo][counter] = np.nan
+            counts_out[ifo][counter] = np.nan
+            continue
+
         invalphan = c[valid] / a[valid]
         mean_alpha = c[valid].mean() / invalphan.mean()
         cons_alpha = np.percentile(a[valid], 100 - args.conservative_percentile)
         cons_alphas_out[ifo][counter] = cons_alpha
         alphas_out[ifo][counter] = mean_alpha
+
         # To get the count values, we need to convert to rates and back again
-        r = c [valid]/ l_times[ad_order][valid]
+        r = c[valid]/ l_times[ad_order][valid]
         cons_rate = np.percentile(r, args.conservative_percentile)
         cons_counts_out[ifo][counter] = cons_rate * total_time
         counts_out[ifo][counter] = np.mean(r) * total_time
-
-        fout_ifo[f'separate_fits/bin_{counter:d}/fit_coeff'] = a
-        fout_ifo[f'separate_fits/bin_{counter:d}/counts'] = c
 
     # Output the mean average values
     fout_ifo['mean/fit_coeff'] = alphas_out[ifo]
@@ -192,17 +200,18 @@ for ifo in args.ifos:
     fout_ifo['conservative/fit_coeff'] = cons_alphas_out[ifo]
     fout_ifo['conservative/counts'] = cons_counts_out[ifo]
 
-    # Take some averages for plotting and summary values
-    overall_invalphan = counts_out[ifo] / alphas_out[ifo]
-    overall_meanalpha = counts_out[ifo].mean() / overall_invalphan.mean()
-
     # For the fixed version, we just set this to 1
     fout_ifo['fixed/counts'] = [1] * len(counts_out[ifo])
     fout_ifo['fixed/fit_coeff'] = [0] * len(alphas_out[ifo])
 
+    # Take some averages for plotting and summary values
+    overall_invalphan = counts_out[ifo] / alphas_out[ifo]
+    overall_meanalpha = np.nanmean(counts_out[ifo]) \
+        / np.nanmean(overall_invalphan)
+
     # Add some useful info to the output file
     fout_ifo.attrs['mean_alpha'] = overall_meanalpha
-    fout_ifo.attrs['total_counts'] = counts_out[ifo].sum()
+    fout_ifo.attrs['total_counts'] = np.nansum(counts_out[ifo])
 
 fout.close()
 
