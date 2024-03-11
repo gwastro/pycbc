@@ -885,7 +885,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         for ifo in ifos:
             self.dets[ifo] = Detector(ifo)
 
-        self.time_window = self.dets[ifos[0]].light_travel_time_to_detector(self.dets[ifos[1]]) + coinc_window_pad
+        self.time_window = self.dets[ifos[0]].light_travel_time_to_detector(
+            self.dets[ifos[1]]) + coinc_window_pad
         self.coincs = CoincExpireBuffer(self.buffer_size, self.ifos)
 
         self.singles = {}
