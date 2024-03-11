@@ -66,6 +66,12 @@ wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
+# Check if input file PFNs should be added. Not if this is a subworkflow
+if hasattr(args, 'dax_file_directory') and args.dax_file_directory:
+    add_input_file_pfns = False
+else:
+    add_input_file_pfns = True
+
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
@@ -76,9 +82,18 @@ wf.makedir(args.output_dir)
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
-coinc_file = resolve_url_to_file(os.path.abspath(args.statmap_file))
-insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
+tmpltbank_file = resolve_url_to_file(
+    os.path.abspath(args.bank_file),
+    add_pfn=add_input_file_pfns
+)
+coinc_file = resolve_url_to_file(
+    os.path.abspath(args.statmap_file),
+    add_pfn=add_input_file_pfns
+)
+insp_segs = resolve_url_to_file(
+    os.path.abspath(args.inspiral_segments),
+    add_pfn=add_input_file_pfns
+)
 
 single_triggers = []
 fsdt = {}
@@ -86,8 +101,11 @@ insp_data_seglists = {}
 insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
-    strig_file = resolve_url_to_file(os.path.abspath(fname),
-                                     attrs={'ifos': ifo})
+    strig_file = resolve_url_to_file(
+        os.path.abspath(fname),
+        attrs={'ifos': ifo},
+        add_pfn=add_input_file_pfns
+    )
     single_triggers.append(strig_file)
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
     insp_data_seglists[ifo] = select_segments_by_definer(

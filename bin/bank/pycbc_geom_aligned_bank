@@ -557,6 +557,12 @@ opts.config_delete = []
 # Now setup the workflow
 workflow = wf.Workflow(opts)
 
+# Check if input file PFNs should be added. Not if this is a subworkflow
+if hasattr(args, 'dax_file_directory') and args.dax_file_directory:
+    add_input_file_pfns = False
+else:
+    add_input_file_pfns = True
+
 # Start with 2dstack jobs
 if opts.storage_path_base:
     curr_dir = os.path.join(opts.storage_path_base, 'stack2d')
@@ -567,8 +573,10 @@ else:
 stack_exe = GeomAligned2DStackExecutable(workflow.cp, 'aligned2dstack',
                                          ifos=workflow.ifos, out_dir=curr_dir)
 num_banks = int((len(newV1s) - 0.5)//opts.split_bank_num) + 1
-input_h5file = resolve_url_to_file(opts.intermediate_data_file)
-
+input_h5file = resolve_url_to_file(
+    opts.intermediate_data_file,
+    add_pfn=add_input_file_pfns
+)
 
 all_outs = wf.FileList([])
 
@@ -590,7 +598,10 @@ else:
 
 combine_exe = AlignedBankCatExecutable(workflow.cp, 'alignedbankcat',
                                         ifos=workflow.ifos, out_dir=curr_dir)
-metadata_file = resolve_url_to_file(opts.metadata_file)
+metadata_file = resolve_url_to_file(
+    opts.metadata_file,
+    add_pfn=add_input_file_pfns
+)
 combine_node = combine_exe.create_node(all_outs, metadata_file,
                                        workflow.analysis_time,
                                        output_file_path=opts.output_file)

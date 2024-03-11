@@ -131,6 +131,12 @@ wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
+# Check if input file PFNs should be added. Not if this is a subworkflow
+if hasattr(args, 'dax_file_directory') and args.dax_file_directory:
+    add_input_file_pfns = False
+else:
+    add_input_file_pfns = True
+
 init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 workflow = wf.Workflow(args)
@@ -155,7 +161,10 @@ num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups',
 num_events = min(num_events, len(fp['BestNR'][:]))
 
 # Determine ifos used in the analysis
-trig_file = resolve_url_to_file(os.path.abspath(args.trig_file))
+trig_file = resolve_url_to_file(
+    os.path.abspath(args.trig_file),
+    add_pfn=add_input_file_pfns
+)
 ifos = extract_ifos(os.path.abspath(args.trig_file))
 num_ifos = len(ifos)
 

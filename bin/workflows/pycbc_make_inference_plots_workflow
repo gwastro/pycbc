@@ -130,7 +130,7 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 # add option groups
 configuration.add_workflow_command_line_group(parser)
 # workflow options
-core.add_workflow_settings_cli(parser, include_subdax_opts=True)
+core.add_workflow_settings_cli(parser)
 parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
 opts = parser.parse_args()
