@@ -233,7 +233,7 @@ def get_newsnr_sgveto(trigs, **kwargs):  # pylint:disable=unused-argument
     return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
 
 
-def get_newsnr_sgveto_psdvar(trigs, **kwargs): # pylint:disable=unused-argument
+def get_newsnr_sgveto_psdvar(trigs, **kwargs):  # pylint:disable=unused-argument
     """
     Calculate snr re-weighted by Allen chisq, sine-gaussian veto and
     psd variation statistic
@@ -260,8 +260,7 @@ def get_newsnr_sgveto_psdvar(trigs, **kwargs): # pylint:disable=unused-argument
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
 
 
-def get_newsnr_sgveto_psdvar_threshold(trigs,
-        **kwargs):  # pylint:disable=unused-argument
+def get_newsnr_sgveto_psdvar_threshold(trigs, **kwargs):  # pylint:disable=unused-argument
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and scaled
     psd variation statistic
@@ -287,8 +286,7 @@ def get_newsnr_sgveto_psdvar_threshold(trigs,
     return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
 
 
-def get_newsnr_sgveto_psdvar_scaled(trigs,
-        **kwargs):  # pylint:disable=unused-argument
+def get_newsnr_sgveto_psdvar_scaled(trigs, **kwargs):  # pylint:disable=unused-argument
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and scaled
     psd variation statistic
@@ -315,8 +313,7 @@ def get_newsnr_sgveto_psdvar_scaled(trigs,
     return numpy.array(nsnr_sg_psdscale, ndmin=1, dtype=numpy.float32)
 
 
-def get_newsnr_sgveto_psdvar_scaled_threshold(trigs,
-        **kwargs):  # pylint:disable=unused-argument
+def get_newsnr_sgveto_psdvar_scaled_threshold(trigs, **kwargs):  # pylint:disable=unused-argument
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and scaled
     psd variation statistic. A further threshold is applied to the
