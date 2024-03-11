@@ -1550,7 +1550,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             ln_noise_rate = coinc_rate.combination_noise_lograte(
                                     sngl_rates, kwargs['time_addition'],
                                     kwargs['dets'])
-                                    
+
             # Find total volume of phase-time-amplitude space occupied by
             # noise coincs
             # Extent of time-difference space occupied
