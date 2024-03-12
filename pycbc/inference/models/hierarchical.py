@@ -710,10 +710,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # update parameters in other_models
         for _, other_model in enumerate(self.other_models):
             current_params_other = other_model.current_params.copy()
+            print("[total_loglr] current_params_other 1: ", current_params_other)
             for i in range(nums):
                 current_params_other.update(
                     {key: value[i] if isinstance(value, numpy.ndarray) else
                         value for key, value in margin_params.items()})
+                print("[total_loglr] current_params_other 2: ", current_params_other)
                 other_model.update(**current_params_other)
                 other_model.return_sh_hh = True
                 sh_others[i], hh_others[i] = other_model.loglr
@@ -737,13 +739,23 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             total_others_lognl += model.lognl
         return total_others_lognl
 
-    def _loglikelihood(self):
+    def update(self, **params):
+        """This update method is also useful for loglr checking."""
+        self._current_params = {}
         for lbl, model in self.submodels.items():
-            # update the model with the current params. This is done here
-            # instead of in `update` because waveform transforms are not
-            # applied until the loglikelihood function is called
-            model.update(**{p.subname: self.current_params[p.fullname]
-                            for p in self.param_map[lbl]})
+            if self.param_map != {}:
+                p = {params.subname: self.current_params[params.fullname]
+                     for params in self.param_map[lbl]}
+            else:
+                # dummy sampler doesn't have real variables,
+                # which means self.param_map is {}
+                p = {}
+            p.update(params)
+            model.update(**p)
+            self._current_params[lbl] = p
+
+    def _loglikelihood(self):
+        self.update()
 
         # calculate the combined loglikelihood
         logl = self.total_loglr() + self.primary_model.lognl + \
@@ -930,19 +942,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             rec = {}
 
         def get_loglr():
-            for lbl, model in self.submodels.items():
-                if self.param_map != {}:
-                    # update the model with the current params.
-                    # This is done here instead of in `update` because
-                    # waveform transforms are not applied until the
-                    # loglikelihood function is called
-                    p = {params.subname: self.current_params[params.fullname]
-                         for params in self.param_map[lbl]}
-                else:
-                    # dummy sampler doesn't have real variables
-                    p = {}
-                p.update(rec)
-                model.update(**p)
+            self.update(**rec)
             return self.total_loglr()
 
         rec = self.primary_model.reconstruct(
