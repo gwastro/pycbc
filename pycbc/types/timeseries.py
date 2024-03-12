@@ -180,18 +180,18 @@ class TimeSeries(Array):
                    exact_indices_threshold=1e-3):
         """Return the slice of the time series that contains the time range
         in GPS seconds.
-        
+
         Note on indices.
-        
+
         Parameters
         ----------
         start: float
-            The start time 
+            The start time
         end: float
             The end time
         mode: str, 'floor'
             The rounding mode to be used when times are requested between samples.
-            The options are 'floor' which preferences choosing rounded down 
+            The options are 'floor' which preferences choosing rounded down
             index and 'nearest' which preferences whichever index is closest.
         exact_indices_threshold: float, 1e-3
             If the start or end time are intended to be at exact indices then
@@ -213,7 +213,7 @@ class TimeSeries(Array):
         # When dealing with time series of different size or transforming
         # between different sample rates, floating point precision calculations
         # can result in start / end times that should be at exact index locations
-        # to be some epsilon different in floating point value. 
+        # to be some epsilon different in floating point value.
         # (2) identify if we intended the start / end to be at an exact sample
         # based on identifying only a trivial difference.
         if exact_indices_threshold:
@@ -226,14 +226,14 @@ class TimeSeries(Array):
                 end_idx = round(end_idx)
 
         # (3) Choose how index selection is done if the start or end time
-        # is actually between samples of the time series. 
+        # is actually between samples of the time series.
         # We choose the index that is rounded down
-        if mode == 'floor': 
+        if mode == 'floor':
             start_idx = int(start_idx)
             end_idx = int(end_idx)
         # We choose the index that is nearest to the
         # time requested.
-        elif mode == 'nearest': 
+        elif mode == 'nearest':
             start_idx = round(start_idx)
             end_idx = round(end_idx)
         else:
