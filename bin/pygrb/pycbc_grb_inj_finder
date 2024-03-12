@@ -282,7 +282,7 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
             time[time_sorting],
             injtime + args.time_window,
             side='right',
-         )
+        )
 
         # get indices of found/missed injections and finding trigger
         for i, (l, r) in enumerate(
