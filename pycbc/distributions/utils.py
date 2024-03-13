@@ -25,11 +25,14 @@
 This module provides functions for drawing samples from a standalone .ini file
 in a Python script, rather than in the command line.
 """
-
+import logging
 import numpy as np
+
 from pycbc.types.config import InterpolatingConfigParser
 from pycbc import transforms
 from pycbc import distributions
+
+logger = logging.getLogger('pycbc.distributions.utils')
 
 
 def prior_from_config(cp, prior_section='prior'):

@@ -928,7 +928,7 @@ class massRangeParameters(object):
             delta_ns_mass or self.default_delta_ns_mass)
         self.use_eos_max_ns_mass = use_eos_max_ns_mass
         if self.remnant_mass_threshold is not None:
-            if self.ns_eos is not '2H':
+            if self.ns_eos != '2H':
                 errMsg = """
                          By setting a value for --remnant-mass-threshold
                          you have asked to filter out EM dim NS-BH templates.

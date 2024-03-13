@@ -29,8 +29,7 @@ import pycbc
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--verbose", action="store_true",
-                    help="Print extra debugging information", default=False)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--combined-fits-file", required=True,
                     help="File containing information on the combined trigger "
                          "fits.")

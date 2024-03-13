@@ -16,10 +16,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+
 import argparse
 import logging
 import numpy
-import os, sys
+import os
+import sys
+
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.types import TimeSeries
 from pycbc.waveform import get_td_waveform
@@ -41,6 +45,8 @@ parser = argparse.ArgumentParser(
              from the sim_inspiral row, Y is the GPS start time of the ASCII waveform file, \
              and Z is the duration of the file in seconds.')
 
+add_common_pycbc_options(parser)
+
 # add command line options
 parser.add_argument('--injection-file', type=str, required=True,
              help='Path to the LIGOLW XML file that contains a sim_inspiral table.')
@@ -54,9 +60,9 @@ parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'], required=True,
 # parse command line
 opts = parser.parse_args()
 
-# setup log
-logging_level = logging.DEBUG
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+# setup logging - default level is DEBUG (2)
+logging_level = 2 if opts.verbose is None else opts.verbose + 2
+init_logging(logging_level)
 
 # read in injection LIGOLW XML file
 logging.info('Reading injection file')
@@ -93,18 +99,25 @@ for sim in injections.table:
 
         # create a time series of zeroes to inject waveform into
         initial_array = numpy.zeros(num_samples, dtype=h_plus.dtype)
-        output = TimeSeries(initial_array, delta_t=1.0/opts.sample_rate, epoch=start_time, dtype=h_plus.dtype)
+        output = TimeSeries(
+            initial_array,
+            delta_t=1.0/opts.sample_rate,
+            epoch=start_time,
+            dtype=h_plus.dtype)
 
         # inject waveform into time series of zeroes
         logging.info('Injecting %s waveform into timeseries of zeroes', ifo)
         injections.apply(output, ifo, simulation_ids=[sim.simulation_id])
 
         # set output filename
-        txt_filename = opts.tag + str(sim_id) + '_' + str(start_time) + '_' + ifo + '.txt'
+        txt_filename = f'{opts.tag}{sim_id:d}_{start_time:d}_{ifo}.txt'
 
         # check if filename does not exist
         if os.path.exists(txt_filename):
-            logging.warn('Filename %s already exists and will not be overwritten', txt_filename)
+            logging.warning(
+                'Filename %s already exists and will not be overwritten',
+                txt_filename
+            )
             sys.exit()
 
         # save waveform as single column ASCII for awgstream to use

@@ -154,7 +154,7 @@ else:
 if args.bin_param == 'template_duration' and params[args.bin_param].min() == 0:
     # Accessing the 0th entry of an empty region reference will return
     # zero due to a quirk of h5py.
-    logging.warn('WARNING: Some templates do not contain triggers')
+    logging.warning('WARNING: Some templates do not contain triggers')
     # Use the lowest nonzero template duration as lower limit for bins
     pbin_lower_lim = params[args.bin_param][params[args.bin_param] > 0].min()
 else:

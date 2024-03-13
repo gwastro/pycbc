@@ -30,9 +30,11 @@ http://pycbc.org/pycbc/latest/html/workflow.html
 
 import glob
 import os
+import logging
 import numpy as np
 from scipy.stats import rayleigh
 from gwdatafind.utils import filename_metadata
+
 from pycbc import makedir
 from pycbc.workflow.core import \
     File, FileList, configparser_value_to_file, resolve_url_to_file,\
@@ -40,6 +42,8 @@ from pycbc.workflow.core import \
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
 from pycbc.workflow.plotting import PlotExecutable
+
+logger = logging.getLogger('pycbc.workflow.grb_utils')
 
 
 def _select_grb_pp_class(wflow, curr_exe):

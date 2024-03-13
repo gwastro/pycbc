@@ -19,12 +19,11 @@ import argparse
 import logging
 import numpy as np
 import h5py
+
 import pycbc
 
-
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--verbose", action="store_true",
-                    help="Print extra debugging information", default=False)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trfits-files", nargs="+", required=True,
                     help="Files containing daily trigger fits")
 parser.add_argument("--conservative-percentile", type=int, default=95,

@@ -16,12 +16,16 @@
 """This modules provides classes for evaluating distributions for mchirp and
 q (i.e., mass ratio) from uniform component mass.
 """
-
+import logging
 import numpy
+
 from scipy.interpolate import interp1d
 from scipy.special import hyp2f1
+
 from pycbc.distributions import power_law
 from pycbc.distributions import bounded
+
+logger = logging.getLogger('pycbc.distributions.mass')
 
 
 class MchirpfromUniformMass1Mass2(power_law.UniformPowerLaw):

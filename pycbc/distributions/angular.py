@@ -15,13 +15,16 @@
 """
 This modules provides classes for evaluating angular distributions.
 """
-
+import logging
 from configparser import Error
 import numpy
+
 from pycbc import VARARGS_DELIM
 from pycbc import boundaries
 from pycbc.distributions import bounded
 from pycbc.distributions import uniform
+
+logger = logging.getLogger('pycbc.distributions.angular')
 
 
 class UniformAngle(uniform.Uniform):
