@@ -271,7 +271,7 @@ for entry in temp_bank:
                     vec3_max = temmpvec3_max
                     vec3_depth = vec3_max - vec3_min
             if vec3_max < xis_close[:,2].max():
-                logging.warniing(
+                logging.warning(
                     "WARNING: Numerical placement fails, trying again"
                 )
                 temp_idx = xis_close[:,2].argmax()
