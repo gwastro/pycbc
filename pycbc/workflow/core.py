@@ -46,7 +46,6 @@ from operator import attrgetter
 import lal
 import lal.utils
 import Pegasus.api  # Try and move this into pegasus_workflow
-from glue import lal as gluelal
 from ligo import segments
 from ligo.lw import lsctables, ligolw
 from ligo.lw import utils as ligolw_utils
@@ -1586,6 +1585,8 @@ class FileList(list):
         """
         Return all files in this object as a glue.lal.Cache object
         """
+        from glue import lal as gluelal
+
         lal_cache = gluelal.Cache([])
         for entry in self:
             try:
