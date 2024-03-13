@@ -1401,7 +1401,7 @@ def confusion_fit_lisa(length, delta_f, low_freq_cutoff, duration=1.0):
 def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
     """ The TianQin's sensitivity curve for Galactic confusion noise,
     averaged over sky and polarization angle. No instrumental noise.
-    Only valid for 0.1 mHz < f < 10 mHz. Note that the results between
+    Only valid for 0.5 mHz < f < 10 mHz. Note that the results between
     0.5, 1, 2, 4, and 5 years are extrapolated.
 
     Parameters
@@ -1445,15 +1445,15 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
     sh_confusion = np.power(
         10,
         fit_a0(duration) +
-        fit_a1(duration) * np.log(fr*1e3) +
-        fit_a2(duration) * np.log(fr*1e3)**2 +
-        fit_a3(duration) * np.log(fr*1e3)**3 +
-        fit_a4(duration) * np.log(fr*1e3)**4 +
-        fit_a5(duration) * np.log(fr*1e3)**5 +
-        fit_a6(duration) * np.log(fr*1e3)**6
+        fit_a1(duration) * np.log10(fr*1e3) +
+        fit_a2(duration) * np.log10(fr*1e3)**2 +
+        fit_a3(duration) * np.log10(fr*1e3)**3 +
+        fit_a4(duration) * np.log10(fr*1e3)**4 +
+        fit_a5(duration) * np.log10(fr*1e3)**5 +
+        fit_a6(duration) * np.log10(fr*1e3)**6
     )
-    sh_confusion[(fr < 1e-4) | (fr > 1e-2)] = 0
-    fseries = from_numpy_arrays(fr, sh_confusion, length, delta_f,
+    sh_confusion[(fr < 5e-4) | (fr > 1e-2)] = 0
+    fseries = from_numpy_arrays(fr, sh_confusion**2, length, delta_f,
                                 low_freq_cutoff)
 
     return fseries
