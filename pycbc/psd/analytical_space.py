@@ -1451,9 +1451,9 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
         fit_a4(duration) * np.log10(fr*1e3)**4 +
         fit_a5(duration) * np.log10(fr*1e3)**5 +
         fit_a6(duration) * np.log10(fr*1e3)**6
-    )
+    )**2
     sh_confusion[(fr < 5e-4) | (fr > 1e-2)] = 0
-    fseries = from_numpy_arrays(fr, sh_confusion**2, length, delta_f,
+    fseries = from_numpy_arrays(fr, sh_confusion, length, delta_f,
                                 low_freq_cutoff)
 
     return fseries
