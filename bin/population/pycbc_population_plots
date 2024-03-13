@@ -41,7 +41,7 @@ from pycbc.population import rates_functions as rf
 
 # Parse command line
 parser = argparse.ArgumentParser(
-    description="Plot rate prior and posteriors."
+    description=__doc__
 )
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--prior-samples', required=True,

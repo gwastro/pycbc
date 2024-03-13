@@ -500,7 +500,7 @@ class Executable(pegasus_workflow.Executable):
             msg="Cannot find file-retention-level in [workflow] section "
             msg+="of the configuration file. Setting a default value of "
             msg+="retain all files."
-            logger.warn(msg)
+            logger.warning(msg)
             self.retain_files = True
             self.global_retention_threshold = 1
             self.cp.set("workflow", "file-retention-level", "all_files")
@@ -531,7 +531,7 @@ class Executable(pegasus_workflow.Executable):
                     warn_msg += "been set in class {0}. ".format(type(self))
                     warn_msg += "This value should be set explicitly. "
                     warn_msg += "All output from this class will be stored."
-                    logger.warn(warn_msg)
+                    logger.warning(warn_msg)
                     Executable._warned_classes_list.append(type(self).__name__)
             elif self.global_retention_threshold > self.current_retention_level:
                 self.retain_files = False
@@ -554,7 +554,7 @@ class Executable(pegasus_workflow.Executable):
         if tags is None:
             tags = []
         if '' in tags:
-            logger.warn('DO NOT GIVE ME EMPTY TAGS (in %s)', self.name)
+            logger.warning('DO NOT GIVE ME EMPTY TAGS (in %s)', self.name)
             tags.remove('')
         tags = [tag.upper() for tag in tags]
         self.tags = tags
@@ -563,7 +563,7 @@ class Executable(pegasus_workflow.Executable):
             warn_msg = "This job has way too many tags. "
             warn_msg += "Current tags are {}. ".format(' '.join(tags))
             warn_msg += "Current executable {}.".format(self.name)
-            logger.info(warn_msg)
+            logger.warning(warn_msg)
 
         if len(tags) != 0:
             self.tagged_name = "{0}-{1}".format(self.name, '_'.join(tags))
@@ -609,7 +609,7 @@ class Executable(pegasus_workflow.Executable):
             else:
                 warn_string = "warning: config file is missing section "
                 warn_string += "[{0}]".format(sec)
-                logger.warn(warn_string)
+                logger.warning(warn_string)
 
         # get uppermost section
         if self.cp.has_section(f'{self.name}-defaultvalues'):
@@ -1166,7 +1166,7 @@ class File(pegasus_workflow.File):
         if tags is None:
             tags = []
         if '' in tags:
-            logger.warn('DO NOT GIVE EMPTY TAGS (from %s)', exe_name)
+            logger.warning('DO NOT GIVE EMPTY TAGS (from %s)', exe_name)
             tags.remove('')
         self.tags = tags
 
@@ -1846,7 +1846,7 @@ class SegFile(File):
                         # Setting valid segment now is hard!
                         warn_msg = "No information with which to set valid "
                         warn_msg += "segment."
-                        logger.warn(warn_msg)
+                        logger.warning(warn_msg)
                         valid_segment = segments.segment([0,1])
         instnc = cls(ifo_list, description, valid_segment,
                      segment_dict=segmentlistdict, seg_summ_dict=seg_summ_dict,

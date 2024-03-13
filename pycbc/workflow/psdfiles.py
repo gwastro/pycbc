@@ -139,7 +139,7 @@ def setup_psd_pregenerated(workflow, tags=None):
             except ConfigParser.Error:
                 # It's unlikely, but not impossible, that only some ifos
                 # will have pregenerated PSDs
-                logger.warn("No psd file specified for IFO %s.", ifo)
+                logger.warning("No psd file specified for IFO %s.", ifo)
                 pass
 
     return psd_files

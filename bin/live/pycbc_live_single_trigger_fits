@@ -227,7 +227,7 @@ for counter, filename in enumerate(files):
     try:
         h5py.File(f, 'r')
     except IOError:
-        logging.warn('IOError with file ' + f)
+        logging.warning('IOError with file %s', f)
         continue
 
     # Triggers for this file

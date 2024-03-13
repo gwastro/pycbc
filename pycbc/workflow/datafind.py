@@ -832,7 +832,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
             if not cache[0].scheme == 'file':
                 warn_msg = "We have %s entries in the " %(cache[0].scheme,)
                 warn_msg += "cache file. I do not check if these exist."
-                logger.info(warn_msg)
+                logger.warning(warn_msg)
                 continue
             _, currMissingFrames = cache.checkfilesexist(on_missing="warn")
             missingSegs = segments.segmentlist(e.segment \
@@ -1042,7 +1042,7 @@ def log_datafind_command(observatory, frameType, startTime, endTime,
         else:
             errMsg = "Unknown datafind kwarg given: %s. " %(name)
             errMsg+= "This argument is stripped in the logged .sh command."
-            logger.warn(errMsg)
+            logger.warning(errMsg)
 
     fileName = "%s-%s-%d-%d.sh" \
                %(observatory, frameType, startTime, endTime-startTime)

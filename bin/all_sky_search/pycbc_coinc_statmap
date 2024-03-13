@@ -202,8 +202,8 @@ else:
 back_locs = all_trigs.timeslide_id != 0
 
 if (back_locs.sum()) == 0:
-    logging.warn("There were no background events, so we could not assign "
-                 "any statistic values")
+    logging.warning("There were no background events, so we could not "
+                    "assign any statistic values")
     sys.exit()
 
 logging.info("Dumping background triggers (inclusive of zerolag)")

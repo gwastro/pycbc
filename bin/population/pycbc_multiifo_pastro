@@ -249,7 +249,7 @@ if args.diagnostic_plots:
 
 # add in prior event info
 if args.prior_event_info:
-    logging.warn('Adding events from', args.prior_event_info)
+    logging.warning('Adding events from', args.prior_event_info)
     prior_info = np.genfromtxt(args.prior_event_info, names=True)
     allfgbg = np.append(allfgbg, prior_info['ln_bayes_factor'])
 else:  # no prior events!
@@ -291,7 +291,7 @@ cmed, cminus, cplus = fgmc_plots.dist_summary(
 # if VT and error are provided, convert signal PDF to rate PDF
 if args.vt_mean:
     if args.vt_err is None:
-        logging.warn('NB : no VT error provided, will use 0!')
+        logging.warning('NB : no VT error provided, will use 0!')
         args.vt_err = 0.
     logging.info('Rate in units of ' + args.rate_units + ' ...')
     print('Rate without VT uncertainty :')
