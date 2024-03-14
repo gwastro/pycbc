@@ -2,14 +2,23 @@
 """ Make histograms of single detector triggers
 """
 
-import numpy, argparse, h5py, logging, sys
-import pycbc.version, pycbc.results, pycbc.io
+import numpy
+import argparse
+import h5py
+import logging
+import sys
 from itertools import cycle
-from matplotlib import use; use('Agg')
+from matplotlib import use
+use('Agg')
 from matplotlib import pyplot
+
+import pycbc.version
+import pycbc.results
+import pycbc.io
 from pycbc.events import background_bin_from_string, veto, ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file', required=True,
                     help="Combined single detector hdf trigger file")
@@ -32,7 +41,6 @@ parser.add_argument('--x-min', type=float, default=6,
 parser.add_argument('--special-time', type=float,
                     help="plot triggers within +-1s of a given time in a "
                          "different color (black)")
-parser.add_argument('--verbose')
 args = parser.parse_args()
 
 # sanity check command line options

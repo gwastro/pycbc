@@ -5,8 +5,9 @@ import numpy, h5py, argparse, matplotlib
 from matplotlib import colors
 matplotlib.use('Agg')
 import pylab, pycbc.results
+
 from pycbc.io import get_chisq_from_file_choice, chisq_choices
-from pycbc import conversions
+from pycbc import conversions, init_logging, add_common_pycbc_options
 from pycbc.detector import Detector
 import pycbc.version
 
@@ -17,6 +18,7 @@ def snr_from_chisq(chisq, newsnr, q=6.):
     return snr
 
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--found-injection-file', required=True,
@@ -44,6 +46,8 @@ parser.add_argument('--chisq-choice', choices=chisq_choices,
                     help='Which chisquared to plot. Default=traditional')
 parser.add_argument('--output-file', required=True)
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 # Add the background triggers
 f = h5py.File(args.coinc_statistic_file, 'r')

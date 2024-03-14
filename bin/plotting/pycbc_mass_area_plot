@@ -9,15 +9,18 @@ the m1 & m2 plane when given a central mchirp value and uncertainty.
 """
 
 import argparse
-from pycbc.mchirp_area import calc_areas
-from pycbc.mchirp_area import src_mass_from_z_det_mass
-from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 import numpy
 from matplotlib import use; use("Agg")
 from matplotlib import pyplot
 
+from pycbc import init_logging, add_common_pycbc_options
+from pycbc.mchirp_area import calc_areas
+from pycbc.mchirp_area import src_mass_from_z_det_mass
+from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
+
 # ARGUMENT PARSER
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument("--central-mc", type=float, help="Central value of mchirp")
 parser.add_argument("--delta-mc", type=float, help="Uncertainty for mchirp")
 parser.add_argument("--min-m2", type=float, help="Minimum value for m2")
@@ -28,6 +31,8 @@ parser.add_argument("--ns-max", type=float, help="Maximum neutron star mass")
 parser.add_argument("--gap-max", type=float, help="Minimum black hole mass")
 
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 if args.central_mc and args.delta_mc:
     central_mc = float(args.central_mc)

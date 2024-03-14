@@ -29,10 +29,12 @@ import sys
 import matplotlib
 matplotlib.use('agg')
 import pylab
-import pycbc.results
 from matplotlib.colors import LogNorm
 
+import pycbc.results
+
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--psd-file', required=True,
                     help='HDF file containing the PSDs.')
 parser.add_argument('--output-file', required=True,
@@ -47,7 +49,6 @@ parser.add_argument('--reduction-method', choices=['min','max','mean','median'],
                     default='mean',
                     help='Method of reducing the ASD data into fewer'
                          ' frequency bins to plot (default %(default)s).')
-parser.add_argument('--verbose', action='store_true')
 
 opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)

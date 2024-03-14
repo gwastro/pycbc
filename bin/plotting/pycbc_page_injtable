@@ -2,20 +2,28 @@
 """ Make a table of found injection information
 """
 import argparse, h5py, numpy as np, pycbc.results, pycbc.detector, sys
+from itertools import combinations
+
+from pyccb import add_common_pycbc_options, init_logging 
 from pycbc.types import MultiDetOptionAction
 import pycbc.pnutils, pycbc.events
 import pycbc.version
-from itertools import combinations
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
-parser.add_argument('--injection-file', help='HDF File containing the matched injections')
-parser.add_argument('--single-trigger-files', nargs='*', help="HDF format single detector trigger files", action=MultiDetOptionAction)
-parser.add_argument('--verbose', action='count')
+parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--injection-file',
+                    help='HDF File containing the matched injections')
+parser.add_argument('--single-trigger-files', nargs='*',
+                    action=MultiDetOptionAction,
+                    help="HDF format single detector trigger files")
 parser.add_argument('--show-missed', action='store_true')
 parser.add_argument('--output-file')
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 f = h5py.File(args.injection_file,'r')
 inj = f['injections']

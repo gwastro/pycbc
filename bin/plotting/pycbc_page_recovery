@@ -10,7 +10,7 @@ from pycbc import pnutils, results
 from pycbc.events import triggers
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", action="count")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("--injection-file", required=True,
@@ -55,9 +55,7 @@ if args.x_param is not None and "v_param" not in args.plot_type:
 if "v_param" in args.plot_type and args.x_param is None:
     raise RuntimeError("Need an --x-param to plot errors against!")
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(args.verbose)
 
 logging.info("Reading data...")
 injs = h5py.File(args.injection_file, "r")

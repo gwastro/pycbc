@@ -1,23 +1,38 @@
 #!/usr/bin/env python
-import numpy, h5py, argparse, matplotlib, sys
+import numpy
+import h5py
+import argparse
+import matplotlib
+import sys
 matplotlib.use('Agg')
-import pylab, pycbc.results, pycbc.version
+import pylab
+
+import pycbc.results
+import pycbc.version
 from pycbc.events import veto
 from pycbc.io import get_chisq_from_file_choice, chisq_choices
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--trigger-file', help='Single ifo trigger file')
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--veto-file', help='Optional, file of veto segments to remove triggers')
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--veto-file',
+                    help='Optional, file of veto segments to remove triggers')
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
-parser.add_argument('--min-snr', type=float, help='Optional, Minimum SNR to plot')
+parser.add_argument('--min-snr', type=float,
+                    help='Optional, Minimum SNR to plot')
 parser.add_argument('--output-file')
-parser.add_argument('--newsnr-contours', nargs='*', help="List of newsnr values to draw contours at.", default=[])
+parser.add_argument('--newsnr-contours', nargs='*',
+                    help="List of newsnr values to draw contours at.",
+                    default=[])
 parser.add_argument('--chisq-choice', choices=chisq_choices,
                     default='traditional',
                     help='Which chisquared to plot. Default=traditional')
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 f = h5py.File(args.trigger_file, 'r')
 ifo = tuple(f.keys())[0]
