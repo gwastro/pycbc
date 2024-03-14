@@ -38,7 +38,9 @@ from pycbc.psd.read import from_numpy_arrays
 
 def _psd_acc_noise(f, acc_noise_level=None):
     """ The PSD of TDI-based space-borne GW
-    detectors' acceleration noise.
+    detectors' acceleration noise. Note that
+    this is suitable for LISA and Taiji, TianQin
+    has a different form.
 
     Parameters
     ----------
@@ -102,9 +104,10 @@ def psd_tianqin_acc_noise(f, acc_noise_level=1e-15):
     Notes
     -----
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
-        for more details.
+        and that paper for more details.
     """
-    s_acc_nu = _psd_acc_noise(f, acc_noise_level)
+    s_acc_d = acc_noise_level**2 * (2*np.pi*f)**(-4) * (1+1e-4/f)
+    s_acc_nu = (2*np.pi*f/c.value)**2 * s_acc_d
 
     return s_acc_nu
 
@@ -134,6 +137,8 @@ def psd_taiji_acc_noise(f, acc_noise_level=3e-15):
 
 def _psd_oms_noise(f, oms_noise_level=None):
     """ The PSD of TDI-based space-borne GW detectors' OMS noise.
+    Note that this is suitable for LISA and Taiji, TianQin
+    has a different form.
 
     Parameters
     ----------
@@ -196,9 +201,10 @@ def psd_tianqin_oms_noise(f, oms_noise_level=1e-12):
     Notes
     -----
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
-        for more details.
+        and that paper for more details.
     """
-    s_oms_nu = _psd_oms_noise(f, oms_noise_level)
+    s_oms_d = oms_noise_level**2
+    s_oms_nu = s_oms_d * (2*np.pi*f/c.value)**2
 
     return s_oms_nu
 
@@ -352,7 +358,8 @@ def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     s_acc_nu = _psd_acc_noise(fr, acc_noise_level)
     s_oms_nu = _psd_oms_noise(fr, oms_noise_level)
     omega_len = _omega_length(fr, len_arm)
-    psd = 16*(np.sin(omega_len))**2 * (s_oms_nu+s_acc_nu*(3+np.cos(omega_len)))
+    psd = 16*(np.sin(omega_len))**2 * (s_oms_nu+
+                                       s_acc_nu*(3+np.cos(2*omega_len)))
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
     return fseries
@@ -501,8 +508,8 @@ def _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     s_acc_nu = _psd_acc_noise(fr, acc_noise_level)
     s_oms_nu = _psd_oms_noise(fr, oms_noise_level)
     omega_len = _omega_length(fr, len_arm)
-    psd = (64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 *
-           (s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len))))
+    psd = 64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 * (
+        s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len)))
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
     return fseries
