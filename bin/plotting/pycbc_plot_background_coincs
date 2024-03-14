@@ -1,17 +1,23 @@
 #!/usr/bin/env python
 """ Plot PyCBC's background coinc triggers
 """
-import numpy, h5py, argparse
-import matplotlib; matplotlib.use('Agg')
+import numpy
+import h5py
+import argparse
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
 import pylab
+
+from pycbc import add_common_pycbc_options, init_logging
 
 def get_var(data, name):
     if name in data:
         return data[name][:]
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--coinc-file', help="Coincident trigger file. The result"
                                          " of pycbc_coinc_statmap ")
 parser.add_argument('--x-var', type=str, required=True,
@@ -27,7 +33,9 @@ parser.add_argument('--grid-size', default=100, help="Number of hexbins", type=i
 parser.add_argument('--dpi', type=int, default=200)
 parser.add_argument('--output-file')
 args = parser.parse_args()     
-                    
+
+init_logging(args.verbose)
+
 f = h5py.File(args.coinc_file)
 bdata = f['background_exc']
 x = get_var(bdata, args.x_var)

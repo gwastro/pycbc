@@ -5,12 +5,17 @@ import matplotlib
 matplotlib.use('Agg')
 import numpy, argparse, h5py, os, pylab, pycbc.pnutils
 
-parser = argparse.ArgumentParser()
+from pycbc import init_logging, add_common_pycbc_options
+
+parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--bank-file')
 parser.add_argument('--output-file')
 parser.add_argument('--chisq-bins')
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 bf = h5py.File(args.bank_file)
 m1 = bf['mass1'][:]

@@ -4,11 +4,13 @@
 import matplotlib
 matplotlib.use('Agg')
 import h5py, numpy, argparse, pylab, pycbc.results, sys
+
 import pycbc.psd
 import pycbc.version
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("--psd-files", nargs='+', required=True,
@@ -39,6 +41,8 @@ parser.add_argument("--memory-limit", default=2., type=float, metavar="X GB",
 pycbc.psd.insert_psd_option_group(parser, output=False)
 pycbc.results.add_style_opt_to_parser(parser)
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 # set the matplotlib style
 pycbc.results.set_style_from_cli(args)

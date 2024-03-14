@@ -14,17 +14,21 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Plot effective fitting factor from a bunch of point-source files.
+"""
+Plot effective fitting factor vs mass1 and mass2 from a various
+point-source files.
 """
 
 import sys
 import h5py
 import numpy
 import argparse
+import logging
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.version
 from pycbc import results
 
@@ -34,7 +38,8 @@ __date__    = pycbc.version.date
 __program__ = "pycbc_banksim_plot_eff_fitting_factor"
 
 parser = argparse.ArgumentParser(usage='',
-    description="Plot effective fitting factor vs mass1 and mass2.")
+    description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument('--input-files', nargs='+', default=None, required=True,
                     help="List of input files.")
@@ -56,6 +61,8 @@ parser.add_argument('--log-colorbar', action='store_true', default=False,
                          "showing 1 - fitting factor.")
 
 opt = parser.parse_args()
+
+init_logging(opt.verbose)
 
 m1 = []
 m2 = []

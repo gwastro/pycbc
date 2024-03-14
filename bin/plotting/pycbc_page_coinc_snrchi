@@ -8,7 +8,7 @@ import pylab, pycbc.results
 from pycbc.io import (
     get_chisq_from_file_choice, chisq_choices, SingleDetTriggers
 )
-from pycbc import conversions
+from pycbc import conversions, init_logging, add_common_pycbc_options
 from pycbc.detector import Detector
 import pycbc.version
 
@@ -19,6 +19,7 @@ def snr_from_chisq(chisq, newsnr, q=6.):
     return snr
 
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--found-injection-file', required=True,
@@ -47,6 +48,7 @@ parser.add_argument('--chisq-choice', choices=chisq_choices,
 parser.add_argument('--output-file', required=True)
 args = parser.parse_args()
 
+init_logging(args.verbose)
 # First - check the IFO being used
 with h5py.File(args.single_trigger_file, 'r') as stf:
     ifo = tuple(stf.keys())[0]

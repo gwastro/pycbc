@@ -38,6 +38,7 @@ import pycbc.version
 from pycbc.events import ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--single-trig-file', required=True,
@@ -80,7 +81,7 @@ parser.add_argument('--min-z', type=float, help='Optional minimum z value')
 parser.add_argument('--max-z', type=float, help='Optional maximum z value')
 opts = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+pycbc.init_logging(opts.verbose)
 
 if opts.z_var == 'density' or opts.min_z is None:
     filter_rank = None
