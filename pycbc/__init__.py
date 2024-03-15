@@ -86,7 +86,7 @@ def add_common_pycbc_options(parser):
                             'logging at the info level, but -vv or '
                             '--verbose --verbose provides debug logging.')
 
-def init_logging(verbose=False,
+def init_logging(verbose=False, default_level=0,
                  format='%(asctime)s %(levelname)s : %(message)s'):
     """Common utility for setting up logging in PyCBC.
 
@@ -119,7 +119,8 @@ def init_logging(verbose=False,
     # See https://docs.python.org/3/library/logging.html#levels
     # for log level definitions
     logger = logging.getLogger()
-    verbose_int = 0 if verbose is None else int(verbose)
+    verbose_int = default_level if verbose is None \
+        else int(verbose) + default_level
     logger.setLevel(logging.WARNING - verbose_int * 10)  # Initial setting
     sh = logging.StreamHandler()
     logger.addHandler(sh)

@@ -28,12 +28,13 @@ import h5py
 import matplotlib
 matplotlib.use('agg')
 
-import pycbc
 import lal
 import lal.series
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
+
+import pycbc
 from pycbc.io.ligolw import (
     LIGOLWContentHandler,
     snr_series_to_xml,
@@ -44,8 +45,7 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.results import generate_asd_plot, generate_snr_plot
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--verbose", action='count',
-                    help="Increase logging level, default=info")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to upload')
 parser.add_argument("--snr-timeseries", nargs='+', required=True,
@@ -72,11 +72,8 @@ parser.add_argument('--delta-f', type=float, default=0.25,
 
 args = parser.parse_args()
 
-if args.verbose:
-    args.verbose += 1
-else:
-    args.verbose = 1
-pycbc.init_logging(args.verbose)
+# Default logging level is info: --verbose adds to this
+pycbc.init_logging(args.verbose, default_level=1)
 
 xmldoc = ligolw_utils.load_filename(args.input_file,
                              contenthandler=LIGOLWContentHandler)

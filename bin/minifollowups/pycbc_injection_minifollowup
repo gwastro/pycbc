@@ -163,8 +163,7 @@ args = parser.parse_args()
 
 
 # Default logging level is info: --verbose adds to this
-log_level = 1 if args.verbose is None else args.verbose + 1
-init_logging(log_level)
+init_logging(args.verbose, default_level=1)
 
 workflow = wf.Workflow(args)
 
