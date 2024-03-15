@@ -1,17 +1,17 @@
 #! /usr/bin/env python
 
-
-__prog__ = 'pycbc_get_ffinal'
-__author__ = 'Collin Capano <collin.capano@ligo.org>'
-__description__ = """
-Finds the maximum frequency of waveforms by generating them. Will also report
+"""Finds the maximum frequency of waveforms by generating them. Will also report
 the duration of time domain waveforms.
 """
 
+__prog__ = 'pycbc_get_ffinal'
+__author__ = 'Collin Capano <collin.capano@ligo.org>'
+
 import os, sys
 import numpy
-import optparse
+import argparse
 
+import pycbc
 from pycbc import waveform
 
 from ligo.lw import lsctables
@@ -19,91 +19,90 @@ from ligo.lw import utils as ligolw_utils
 from ligo.lw import table
 from ligo.lw.utils import process
 
-def fstr(input):
-    """
-    Helper function that automatically strips new line characters from a
-    string. This is so that you can input multi-line strings to optparse
-    without having to worry about the formatting being messed up in the help
-    message.
+appx_options = waveform.td_approximants() + waveform.fd_approximants()
 
-    Parameters
-    ----------
-    input: string
-        The input string to strip new line characters from.
-    """
-    return ' '.join(map(str.strip, input.split('\n'))).strip()
-
-
-parser = optparse.OptionParser(description = fstr(__description__))
-parser.add_option("-i", "--input", help=fstr("""
-    Input file. If specified, any single waveform parameters given by the below
-    options will be ignored.
-    """))
-parser.add_option("-o", "--output", help=fstr("""
-    Output file. Required if specifying an input file."""))
-parser.add_option("-a", "--approximant",  help=fstr("""
-    What approximant to use to genrate the waveform(s). Options are:
-    TD approximants: %s.""" %(', '.join(waveform.td_approximants())) + """ 
-    FD approximants: %s.""" %(', '.join(waveform.fd_approximants()))))
-parser.add_option('-f', '--f-min', type='float', help=fstr("""
-    Frequency at which to start the waveform generation (in Hz)."""))
-parser.add_option('-r', '--sample-rate', type='int', help = fstr("""
-    Sample rate to use (in Hz). Required for TD approximants."""))
-parser.add_option('-s', '--segment-length', type='int', help = fstr("""
-    The inverse of deltaF (in s). Required for FD approximants."""))
-parser.add_option('-m', '--max-sample-rate', type='int', help = fstr("""
-    Optional. Maximum sample rate to use (in Hz). If the Nyquist frequency of
-    the given sample rate is lower than the ringdown frequency, an error will
-    occur for some waveform approximants. If max-sample-rate is specified,
-    the code will try increasing the sample-rate by a factor of 2 until it
-    finds a frequency that works or until it exceeds the specified maximum
-    rate."""))
-parser.add_option('-v', '--verbose', action='store_true', help='Be verbose.')
-waveformOpts = optparse.OptionGroup(parser, fstr("""
-    Optional arguments for specifying a single waveform. These will be ignored
-    if an input file is given."""))
-waveformOpts.add_option('', '--mass1', type='float', help=fstr("""
-    Specify mass1 of a single waveform."""))
-waveformOpts.add_option('', '--mass2', type='float', help=fstr("""
-    Specify mass2 of a single waveform."""))
-waveformOpts.add_option('', '--spin1x', type='float', default=0,
+parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument("-i", "--input",
+                    help="Input file. If specified, any single waveform "
+                         "parameters given by the below options will be "
+                         "ignored.")
+parser.add_argument("-o", "--output",
+                    help="Output file. Required if specifying an input "
+                         "file.")
+parser.add_argument("-a", "--approximant", required=True,
+                    help=("What approximant to use to generate the "
+                          "waveform(s). Options are: TD approximants: %s."
+                          % ', '.join(waveform.td_approximants()) +
+                          ". FD approximants: %s." %
+                          ', '.join(waveform.fd_approximants())),
+                    choices=appx_options)
+parser.add_argument('-f', '--f-min', type=float,
+                    help="Frequency at which to start the waveform "
+                         "generation (in Hz).")
+parser.add_argument('-r', '--sample-rate', type=int,
+                    help="Sample rate to use (in Hz). Required for TD "
+                         "approximants.")
+parser.add_argument('-s', '--segment-length', type=int,
+                    help = "The inverse of deltaF (in s). Required for FD "
+                           "approximants.")
+parser.add_argument('-m', '--max-sample-rate', type=int,
+                    help="Optional. Maximum sample rate to use (in Hz). "
+                         "If the Nyquist frequency of the given sample rate "
+                         "is lower than the ringdown frequency, an error "
+                         "will occur for some waveform approximants. If "
+                         "max-sample-rate is specified, the code will try "
+                         "increasing the sample-rate by a factor of 2 until "
+                         "it finds a frequency that works or until it "
+                         "exceeds the specified maximum rate.")
+waveform_opts = parser.add_argument_group("Waveform Options",
+    "Optional arguments for specifying a single waveform. These will be "
+    "ignored if an input file is given.")
+waveform_opts.add_argument('--mass1', type=float,
+    help="Specify mass1 of a single waveform.")
+waveform_opts.add_argument('--mass2', type=float,
+    help="Specify mass2 of a single waveform.")
+waveform_opts.add_argument('--spin1x', type=float, default=0,
     help='Specify spin1x of a single waveform.')
-waveformOpts.add_option('', '--spin1y', type='float', default=0,
+waveform_opts.add_argument('--spin1y', type=float, default=0,
     help='Specify spin1y of a single waveform.')
-waveformOpts.add_option('', '--spin1z', type='float', default=0,
+waveform_opts.add_argument('--spin1z', type=float, default=0,
     help='Specify spin1z of a single waveform.')
-waveformOpts.add_option('', '--spin2x', type='float', default=0,
+waveform_opts.add_argument('--spin2x', type=float, default=0,
     help='Specify spin2x of a single waveform.')
-waveformOpts.add_option('', '--spin2y', type='float', default=0,
+waveform_opts.add_argument('--spin2y', type=float, default=0,
     help='Specify spin2y of a single waveform.')
-waveformOpts.add_option('', '--spin2z', type='float', default=0,
+waveform_opts.add_argument('--spin2z', type=float, default=0,
     help='Specify spin2z of a single waveform.')
-waveformOpts.add_option('', '--lambda1', type='float', default=0,
+waveform_opts.add_argument('--lambda1', type=float, default=0,
     help='Specify lambda1 of a single waveform.')
-waveformOpts.add_option('', '--lambda2', type='float', default=0,
+waveform_opts.add_argument('--lambda2', type=float, default=0,
     help='Specify lambda2 of a single waveform.')
-waveformOpts.add_option('', '--phase-order', type='int', default=-1,
+waveform_opts.add_argument('--phase-order', type=int, default=-1,
     help='Specify phase-order of a single waveform.')
-waveformOpts.add_option('', '--spin-order', type='int', default=-1,
+waveform_opts.add_argument('--spin-order', type=int, default=-1,
     help='Specify spin-order of a single waveform.')
-waveformOpts.add_option('', '--tidal-order', type = 'int', default=-1,
+waveform_opts.add_argument('--tidal-order', type=int, default=-1,
     help='Specify tidal-order of a single waveform.')
-waveformOpts.add_option('', '--amplitude-order', type = 'int', default=-1,
+waveform_opts.add_argument('--amplitude-order', type=int, default=-1,
     help='Specify amplitude-order of a single waveform.')
-parser.add_option_group(waveformOpts)
 
-opts, _ = parser.parse_args()
+opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
 
 # check options
 if opts.input is None and (opts.mass1 is None or opts.mass2 is None):
-    raise ValueError("Must specify input file or at least mass1,mass2 "
-                     "of a single waveform")
+    parser.error("Must specify input file or at least mass1,mass2 "
+                 "of a single waveform")
+
 infile = opts.input
 if opts.input is not None and opts.output is None:
-    raise ValueError("Must specify output if giving input file")
+    parser.error("Must specify output if giving input file")
 outfile = opts.output
 if opts.approximant is None:
-    raise ValueError("Must specify an approximant")
+    parser.error("Must specify an approximant")
+
 fd_approx = opts.approximant in waveform.fd_approximants()
 if not fd_approx and opts.approximant not in waveform.td_approximants():
     raise ValueError("Unrecognized approximant {}".format(opts.approximant))
@@ -132,7 +131,7 @@ if infile is not None:
     this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__)
     sngl_insp_table = table.Table.get_table(xmldoc, 'sngl_inspiral')
 else:
-    # FIXME: try to get this from the waveformOpts group
+    # FIXME: try to get this from the waveform_opts group
     tmplt_args = ['mass1', 'mass2', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
         'spin2y', 'spin2z', 'lambda1', 'lambda2', 'phase_order', 'spin_order',
         'tidal_order', 'amplitude_order']

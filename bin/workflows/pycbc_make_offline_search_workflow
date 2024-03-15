@@ -158,7 +158,7 @@ wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
-# By default, we do logging.info, each --verbose adds a level of verbosity
+# Default logging level is info: --verbose adds to this 
 pycbc.init_logging(args.verbose, default_level=1)
 
 container = wf.Workflow(args, args.workflow_name)
@@ -182,21 +182,13 @@ rdir = layout.SectionNumber('results', ['analysis_time',
 wf.makedir(rdir.base)
 wf.makedir(rdir['workflow'])
 
-# We are _also_ logging to a file, we only do INFO here
+# We are _also_ logging to a file
 wf_log_file = wf.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
                       extension='.txt',
                       directory=rdir['workflow'])
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    filename=wf_log_file.storage_path,
-                    level=logging.INFO,
-                    filemode='w')
-
-logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
-logfile.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
-logfile.setFormatter(formatter)
-logging.getLogger('').addHandler(logfile)
+pycbc.init_logging(args.verbose, default_level=1,
+                   log_file=wf_log_file.storage_path)
 logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # put start / end time at top of summary page

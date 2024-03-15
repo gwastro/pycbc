@@ -15,14 +15,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
 from glob import glob
 from os import path
 import argparse
 import numpy as np
 from h5py import File
+
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 import pycbc
-import logging
 
 
 # Globals
@@ -142,6 +143,7 @@ formatter = argparse.RawDescriptionHelpFormatter
 parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser(formatter_class=formatter,
                                  description=long_description)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-files", nargs='+', required=True,
                     help="List of comparison files created by running"
                     " 'pycbc_injection_set_comparison' on several injection"
@@ -151,8 +153,6 @@ parser.add_argument("--output-file", type=str, required=True,
 parser.add_argument("--found-type", type=str, required=True,
 		    choices=['found', 'found_after_vetoes'],
                     help="Which class of found injections to collate")
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Print extra debugging information")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)

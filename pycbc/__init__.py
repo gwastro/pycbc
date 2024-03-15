@@ -86,7 +86,8 @@ def add_common_pycbc_options(parser):
                             'logging at the info level, but -vv or '
                             '--verbose --verbose provides debug logging.')
 
-def init_logging(verbose=False, default_level=0,
+
+def init_logging(verbose=False, default_level=0, to_file=None,
                  format='%(asctime)s %(levelname)s : %(message)s'):
     """Common utility for setting up logging in PyCBC.
 
@@ -100,6 +101,12 @@ def init_logging(verbose=False, default_level=0,
         or an integer representing the level to set. If True/False will set to
         ``logging.INFO``/``logging.WARN``. For higher logging levels, pass
         an integer representing the level to set. (1 = INFO, 2 = DEBUG).
+    default_level : int, optional
+        The default level, to be added to any verbose option if it is an
+        integer, or set to this value if it is None or False
+    to_file : filepath
+        Set up logging to a file instead of the stderr. File will be
+        overwritten if it already exists.
     format : str, optional
         The format to use for logging messages.
     """
@@ -122,9 +129,12 @@ def init_logging(verbose=False, default_level=0,
     verbose_int = default_level if verbose is None \
         else int(verbose) + default_level
     logger.setLevel(logging.WARNING - verbose_int * 10)  # Initial setting
-    sh = logging.StreamHandler()
-    logger.addHandler(sh)
-    sh.setFormatter(LogFormatter(fmt=format))
+    if to_file is not None:
+        handler = logging.FileHandler(to_file, mode='w')
+    else:
+        handler = logging.StreamHandler()
+    logger.addHandler(handler)
+    handler.setFormatter(LogFormatter(fmt=format))
 
 
 def makedir(path):

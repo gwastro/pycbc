@@ -126,11 +126,7 @@ if args.output_file is not None and len(args.stat_threshold) > 1:
     raise RuntimeError("Cannot plot more than one threshold in a single "
                        "output file!")
 
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
 statname = "reweighted SNR" if args.sngl_ranking == "new_snr" else \
            args.sngl_ranking.replace("_", " ").replace("snr", "SNR")
