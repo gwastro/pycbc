@@ -1,9 +1,12 @@
 """ This module contains utilities to manipulate trigger lists based on
 segment.
 """
+import logging
 import numpy
 from ligo.lw import table, lsctables, utils as ligolw_utils
 from ligo.segments import segment, segmentlist
+
+logger = logging.getLogger('pycbc.events.veto')
 
 def start_end_to_segments(start, end):
     return segmentlist([segment(s, e) for s, e in zip(start, end)])

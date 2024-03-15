@@ -8,6 +8,7 @@ from lal import gpstime as lalgps
 
 logger = logging.getLogger('pycbc.io.live')
 
+logger = logging.getLogger('pycbc.io.live')
 
 def maximum_string(numbers):
     """

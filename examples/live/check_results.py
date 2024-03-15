@@ -195,7 +195,7 @@ parser.add_argument('--injections', type=str, required=True)
 parser.add_argument('--detectors', type=str, required=True, nargs='+')
 args = parser.parse_args()
 
-log.basicConfig(level=log.INFO, format='%(asctime)s %(message)s')
+pycbc.init_logging(1)
 
 single_fail = check_single_results(args)
 found_fail = check_found_events(args)

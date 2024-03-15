@@ -4,6 +4,7 @@ from .hdf import *
 from .record import *
 from .gracedb import *
 
+logger = logging.getLogger('pycbc.io')
 
 def get_file(url, retry=5, **args):
     """ Retrieve file with retry upon failure
@@ -17,7 +18,7 @@ def get_file(url, retry=5, **args):
         try:
             return download_file(url, **args)
         except Exception as e:
-            logging.warning("Failed on attempt %d to download %s", i, url)
+            logger.warning("Failed on attempt %d to download %s", i, url)
             if i >= retry:
-                logging.error("Giving up on %s", url)
+                logger.error("Giving up on %s", url)
                 raise e

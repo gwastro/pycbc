@@ -22,6 +22,8 @@ import os, sys
 import logging
 from collections import OrderedDict
 
+logger = logging.getLogger('pycbc.opt')
+
 # Work around different Python versions to get runtime
 # info on hardware cache sizes
 _USE_SUBPROCESS = False
@@ -38,7 +40,8 @@ else:
 
 if os.environ.get("LEVEL2_CACHE_SIZE", None):
     LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])
-    logging.info("opt: using LEVEL2_CACHE_SIZE %d from environment" % LEVEL2_CACHE_SIZE)
+    logger.info("opt: using LEVEL2_CACHE_SIZE %d from environment",
+                LEVEL2_CACHE_SIZE)
 elif HAVE_GETCONF:
     if _USE_SUBPROCESS:
         def getconf(confvar):
@@ -98,19 +101,27 @@ def verify_optimization_options(opt, parser):
 
     if opt.cpu_affinity_from_env is not None:
         if opt.cpu_affinity is not None:
-            logging.error("Both --cpu_affinity_from_env and --cpu_affinity specified")
+            logger.error(
+                "Both --cpu_affinity_from_env and --cpu_affinity specified"
+            )
             sys.exit(1)
 
         requested_cpus = os.environ.get(opt.cpu_affinity_from_env)
 
         if requested_cpus is None:
-            logging.error("CPU affinity requested from environment variable %s "
-                          "but this variable is not defined" % opt.cpu_affinity_from_env)
+            logger.error(
+                "CPU affinity requested from environment variable %s "
+                "but this variable is not defined",
+                opt.cpu_affinity_from_env
+            )
             sys.exit(1)
 
         if requested_cpus == '':
-            logging.error("CPU affinity requested from environment variable %s "
-                          "but this variable is empty" % opt.cpu_affinity_from_env)
+            logger.error(
+                "CPU affinity requested from environment variable %s "
+                "but this variable is empty",
+                opt.cpu_affinity_from_env
+            )
             sys.exit(1)
 
     if requested_cpus is None:
@@ -121,11 +132,13 @@ def verify_optimization_options(opt, parser):
         retcode = os.system(command)
 
         if retcode != 0:
-            logging.error('taskset command <%s> failed with return code %d' % \
-                          (command, retcode))
+            logger.error(
+                'taskset command <%s> failed with return code %d', 
+                command, retcode
+            )
             sys.exit(1)
 
-        logging.info("Pinned to CPUs %s " % requested_cpus)
+        logger.info("Pinned to CPUs %s ", requested_cpus)
 
 class LimitedSizeDict(OrderedDict):
     """ Fixed sized dict for FIFO caching"""

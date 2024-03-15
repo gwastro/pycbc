@@ -32,6 +32,8 @@ from functools import wraps
 import logging
 from .libutils import get_ctypes_library
 
+logger = logging.getLogger('pycbc.scheme')
+
 
 class _SchemeManager(object):
     _single = None

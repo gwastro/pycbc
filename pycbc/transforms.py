@@ -19,6 +19,7 @@ This modules provides classes and functions for transforming parameters.
 import os
 import logging
 import numpy
+
 from pycbc import conversions
 from pycbc import coordinates
 from pycbc import cosmology
@@ -27,6 +28,8 @@ from pycbc.waveform import parameters
 from pycbc.boundaries import Bounds
 from pycbc import VARARGS_DELIM
 from pycbc.pnutils import jframe_to_l0frame
+
+logger = logging.getLogger('pycbc.transforms')
 
 
 class BaseTransform(object):
@@ -878,13 +881,12 @@ class SphericalSpin1ToCartesianSpin1(SphericalToCartesian):
     name = "spherical_spin_1_to_cartesian_spin_1"
 
     def __init__(self):
-        logging.warning(
-            "Deprecation warning: the {} transform will be "
-            "removed in a future update. Please use {} instead, "
+        logger.warning(
+            "Deprecation warning: the %s transform will be "
+            "removed in a future update. Please use %s instead, "
             "passing spin1x, spin1y, spin1z, spin1_a, "
-            "spin1_azimuthal, spin1_polar as arguments.".format(
-                self.name, SphericalToCartesian.name
-            )
+            "spin1_azimuthal, spin1_polar as arguments.",
+            self.name, SphericalToCartesian.name
         )
         super(SphericalSpin1ToCartesianSpin1, self).__init__(
             "spin1x", "spin1y", "spin1z", "spin1_a",
@@ -905,13 +907,12 @@ class SphericalSpin2ToCartesianSpin2(SphericalToCartesian):
     name = "spherical_spin_2_to_cartesian_spin_2"
 
     def __init__(self):
-        logging.warning(
-            "Deprecation warning: the {} transform will be "
-            "removed in a future update. Please use {} instead, "
+        logger.warning(
+            "Deprecation warning: the %s transform will be "
+            "removed in a future update. Please use %s instead, "
             "passing spin2x, spin2y, spin2z, spin2_a, "
-            "spin2_azimuthal, spin2_polar as arguments.".format(
-                self.name, SphericalToCartesian.name
-            )
+            "spin2_azimuthal, spin2_polar as arguments.",
+            self.name, SphericalToCartesian.name
         )
         super(SphericalSpin2ToCartesianSpin2, self).__init__(
             "spin2x", "spin2y", "spin2z",
@@ -1401,7 +1402,7 @@ class LambdaFromTOVFile(BaseTransform):
                 try:
                     d = maps["distance"]
                 except KeyError as e:
-                    logging.warning(
+                    logger.warning(
                         "Either provide distance samples in the "
                         "list of samples to be transformed, or "
                         "provide a fixed distance value as input "
@@ -2470,13 +2471,12 @@ class CartesianSpin1ToSphericalSpin1(CartesianToSpherical):
     name = "cartesian_spin_1_to_spherical_spin_1"
 
     def __init__(self):
-        logging.warning(
-            "Deprecation warning: the {} transform will be "
-            "removed in a future update. Please use {} instead, "
+        logger.warning(
+            "Deprecation warning: the %s transform will be "
+            "removed in a future update. Please use %s instead, "
             "passing spin1x, spin1y, spin1z, spin1_a, "
-            "spin1_azimuthal, spin1_polar as arguments.".format(
-                self.name, CartesianToSpherical.name
-            )
+            "spin1_azimuthal, spin1_polar as arguments.",
+            self.name, CartesianToSpherical.name
         )
         super(CartesianSpin1ToSphericalSpin1, self).__init__(
             "spin1x", "spin1y", "spin1z",
@@ -2495,13 +2495,12 @@ class CartesianSpin2ToSphericalSpin2(CartesianToSpherical):
     name = "cartesian_spin_2_to_spherical_spin_2"
 
     def __init__(self):
-        logging.warning(
+        logger.warning(
             "Deprecation warning: the {} transform will be "
             "removed in a future update. Please use {} instead, "
             "passing spin2x, spin2y, spin2z, spin2_a, "
-            "spin2_azimuthal, spin2_polar as arguments.".format(
-                self.name, CartesianToSpherical.name
-            )
+            "spin2_azimuthal, spin2_polar as arguments.",
+            self.name, CartesianToSpherical.name
         )
         super(CartesianSpin2ToSphericalSpin2, self).__init__(
             "spin2x", "spin2y", "spin2z",

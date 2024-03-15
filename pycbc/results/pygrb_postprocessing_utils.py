@@ -27,12 +27,15 @@ import os
 import logging
 import argparse
 import copy
-
 import numpy
 import h5py
+
 from scipy import stats
 import ligo.segments as segments
 from pycbc.events.coherent import reweightedsnr_cut
+
+logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
+
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo.lw import utils
@@ -496,7 +499,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
-    logging.info("Triggers sorted.")
+    logger.info("Triggers sorted.")
 
     # Build the 3 dictionaries
     trig_time = {}
@@ -518,7 +521,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
             trigs['network/reweighted_snr'][indices],
             opts.newsnr_threshold)
 
-    logging.info("Time, SNR, and BestNR of triggers extracted.")
+    logger.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
 
@@ -548,7 +551,7 @@ def extract_ifos(trig_file):
 def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     """Extracts IFOs from HDF files and vetoes from a directory"""
 
-    logging.info("Extracting IFOs and vetoes.")
+    logger.info("Extracting IFOs and vetoes.")
 
     # Extract IFOs
     ifos = extract_ifos(trig_file)
