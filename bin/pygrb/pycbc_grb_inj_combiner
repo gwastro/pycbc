@@ -261,7 +261,8 @@ usefiles = filter(
 if not usefiles:
     raise ValueError("No files used in inj combiner!\n"
                      "Check injection set name and inclination.\n"
-                     "It should have the form {ANY TEXT}{inclination}INJ")
+                     "It should have the following form:\n"
+                     "{ANY TEXT}{maximum inclination value}INJ.{extension}")
 
 # merge injection files, filtering on-the-fly by inclination
 merge_injection_files(
