@@ -67,9 +67,6 @@ def check_gracedb_for_event(gdb_handle, query, far):
     return False
 
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    level=logging.INFO)
-
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--psd-files", nargs='+', required=True,

@@ -13,8 +13,6 @@ from pycbc import init_logging
 import pycbc.events
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--single-ifo-trigs', type=str, required=True,
