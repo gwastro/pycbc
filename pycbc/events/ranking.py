@@ -2,6 +2,9 @@
 statistic values
 """
 import numpy
+import logging
+
+logger = logging.getLogger('pycbc.events.ranking')
 
 
 def effsnr(snr, reduced_x2, fac=250.):

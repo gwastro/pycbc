@@ -25,7 +25,9 @@ import glob
 import argparse
 import inspect
 import subprocess
+import logging
 
+logger = logging.getLogger('pycbc._version')
 
 def print_link(library):
     err_msg = (

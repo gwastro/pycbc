@@ -29,16 +29,21 @@
 between observatories.
 """
 import os
+import logging
 import numpy as np
+from numpy import cos, sin, pi
+
 import lal
-import pycbc.libutils
-from pycbc.types import TimeSeries
-from pycbc.types.config import InterpolatingConfigParser
 from astropy.time import Time
 from astropy import constants, coordinates, units
 from astropy.coordinates.matrix_utilities import rotation_matrix
 from astropy.units.si import sday, meter
-from numpy import cos, sin, pi
+
+import pycbc.libutils
+from pycbc.types import TimeSeries
+from pycbc.types.config import InterpolatingConfigParser
+
+logger = logging.getLogger('pycbc.detector')
 
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf

@@ -27,11 +27,14 @@
 
 import os
 import numpy as np
-import lal
 import copy
 import logging
 from abc import ABCMeta, abstractmethod
 import h5py
+
+import lal
+from ligo.lw import utils as ligolw_utils, ligolw, lsctables
+
 from pycbc import waveform, frame, libutils
 from pycbc.opt import LimitedSizeDict
 from pycbc.waveform import (get_td_waveform, fd_det,
@@ -44,7 +47,8 @@ from pycbc.conversions import tau0_from_mass1_mass2
 from pycbc.filter import resample_to_delta_t
 import pycbc.io
 from pycbc.io.ligolw import LIGOLWContentHandler
-from ligo.lw import utils as ligolw_utils, ligolw, lsctables
+
+logger = logging.getLogger('pycbc.inject.inject')
 
 sim = libutils.import_optional('lalsimulation')
 
@@ -111,7 +115,7 @@ def projector(detector_name, inj, hp, hc, distance_scale=1):
     if hasattr(inj, 'detector_projection_method'):
         projection_method = inj.detector_projection_method
 
-    logging.info('Injecting at %s, method is %s', tc, projection_method)
+    logger.info('Injecting at %s, method is %s', tc, projection_method)
 
     # compute the detector response and add it to the strain
     signal = detector.project_wave(hp_tapered, hc_tapered,

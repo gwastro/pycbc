@@ -1,6 +1,10 @@
 import numpy
 import bisect
+import logging
+
 from . import bin_utils
+
+logger = logging.getLogger('pycbc.rate')
 
 
 def integral_element(mu, pdf):

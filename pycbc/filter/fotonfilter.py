@@ -23,6 +23,8 @@ from pycbc import frame
 # import dependencies that are not standard to pycbc
 from foton import Filter, iir2z
 
+logger = logging.getLogger('pycbc.filter.fotonfilter')
+
 def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
     ''' This function just checks the first time in the SWSTAT channel
     to see if the filter was on, it doesn't check times beyond that.
@@ -74,7 +76,7 @@ def filter_data(data, filter_name, filter_file, bits, filterbank_off=False,
         # if bit is on then filter the data
         bit = int(bits[-(i+1)])
         if bit:
-            logging.info('filtering with filter module %d', i)
+            logger.info('filtering with filter module %d', i)
 
             # if there are second-order sections then filter with them
             if len(filter.sections):
@@ -84,7 +86,9 @@ def filter_data(data, filter_name, filter_file, bits, filterbank_off=False,
             else:
                 coeffs = iir2z(filter_file[filter_name][i])
                 if len(coeffs) > 1:
-                    logging.info('Gain-only filter module return more than one number')
+                    logger.info(
+                        'Gain-only filter module return more than one number'
+                    )
                     sys.exit()
                 gain = coeffs[0]
                 data = gain * data

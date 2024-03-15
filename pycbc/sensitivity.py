@@ -1,8 +1,12 @@
 """ This module contains utilities for calculating search sensitivity
 """
 import numpy
+import logging
+
 from pycbc.conversions import chirp_distance
 from . import bin_utils
+
+logger = logging.getLogger('pycbc.sensitivity')
 
 
 def compute_search_efficiency_in_bins(

@@ -32,6 +32,7 @@ from ligo.segments import segmentlist, segment
 from pycbc.frame.gwosc import get_run
 from pycbc.io import get_file
 
+logger = logging.getLogger('pycbc.dq')
 
 def parse_veto_definer(veto_def_filename, ifos):
     """ Parse a veto definer file from the filename and return a dictionary
@@ -117,10 +118,10 @@ def query_dqsegdb2(detector, flag_name, start_time, end_time, server):
                                    host=server)
         return query_res['active']
     except Exception as e:
-        logging.error('Could not query segment database, check name '
-                      '(%s), times (%d-%d) and server (%s)',
-                      complete_flag, int(start_time), int(end_time),
-                      server)
+        logger.error('Could not query segment database, check name '
+                     '(%s), times (%d-%d) and server (%s)',
+                     complete_flag, int(start_time), int(end_time),
+                     server)
         raise e
 
 def query_flag(ifo, segment_name, start_time, end_time,

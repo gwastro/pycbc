@@ -27,12 +27,16 @@ import os
 import logging
 import argparse
 import copy
-
 import numpy
 import h5py
+
 from scipy import stats
 from ligo import segments
+
 from pycbc.detector import Detector
+
+logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
+
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo.lw import utils, lsctables
@@ -508,7 +512,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
-    logging.info("Triggers sorted.")
+    logger.info("Triggers sorted.")
 
     # Build the 3 dictionaries
     trig_time = {}
@@ -523,7 +527,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
             trig_time[slide_id] = numpy.asarray([])
             trig_snr[slide_id] = numpy.asarray([])
         trig_bestnr[slide_id] = trigs['network/reweighted_snr'][slide_trigs]
-    logging.info("Time, SNR, and BestNR of triggers extracted.")
+    logger.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
 
@@ -553,7 +557,7 @@ def extract_ifos(trig_file):
 def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     """Extracts IFOs from HDF files and vetoes from a directory"""
 
-    logging.info("Extracting IFOs and vetoes.")
+    logger.info("Extracting IFOs and vetoes.")
 
     # Extract IFOs
     ifos = extract_ifos(trig_file)
@@ -574,9 +578,9 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
     """Loads injections from PyGRB output file"""
 
     if label is None:
-        logging.info("Loading injections...")
+        logger.info("Loading injections...")
     else:
-        logging.info("Loading %s...", label)
+        logger.info("Loading %s...", label)
 
     insp_table = glsctables.MultiInspiralTable
     if sim_table:
@@ -590,9 +594,9 @@ def load_injections(inj_file, vetoes, sim_table=False, label=None):
     injs.extend(inj for inj in inj_table if inj.get_end() not in vetoes)
 
     if label is None:
-        logging.info("%d injections found.", len(injs))
+        logger.info("%d injections found.", len(injs))
     else:
-        logging.info("%d %s found.", len(injs), label)
+        logger.info("%d %s found.", len(injs), label)
 
     return injs
 
