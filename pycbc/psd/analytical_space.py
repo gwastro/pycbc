@@ -323,8 +323,7 @@ def _omega_length(f, len_arm=None):
 
 
 def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                len_arm=None, acc_noise_level=None,
-                                oms_noise_level=None):
+                                len_arm=None, psd_components=None):
     """ The TDI-1.5 analytical PSD (X,Y,Z channel) for TDI-based
     space-borne GW detectors.
 
@@ -338,10 +337,8 @@ def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of the detector, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
+    psd_components : numpy.array
+        The PSDs of acceleration noise and OMS noise.
 
     Returns
     -------
@@ -355,8 +352,8 @@ def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     acc_noise_level = np.float64(acc_noise_level)
     oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = _psd_acc_noise(fr, acc_noise_level)
-    s_oms_nu = _psd_oms_noise(fr, oms_noise_level)
+    s_acc_nu = psd_components[0]
+    s_oms_nu = psd_components[1]
     omega_len = _omega_length(fr, len_arm)
     psd = 16*(np.sin(omega_len))**2 * (s_oms_nu+
                                        s_acc_nu*(3+np.cos(2*omega_len)))
@@ -393,9 +390,10 @@ def analytical_psd_lisa_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
     """
+    psd_components = np.array(lisa_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, acc_noise_level,
-                                          oms_noise_level)
+                                          len_arm, psd_components)
 
     return fseries
 
@@ -430,9 +428,10 @@ def analytical_psd_tianqin_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
         for more details.
     """
+    psd_components = np.array(tianqin_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, acc_noise_level,
-                                          oms_noise_level)
+                                          len_arm, psd_components)
 
     return fseries
 
@@ -465,16 +464,16 @@ def analytical_psd_taiji_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
     """
+    psd_components = np.array(taiji_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, acc_noise_level,
-                                          oms_noise_level)
+                                          len_arm, psd_components)
 
     return fseries
 
 
 def _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                len_arm=None, acc_noise_level=None,
-                                oms_noise_level=None):
+                                len_arm=None, psd_components=None):
     """ The TDI-2.0 analytical PSD (X,Y,Z channel) for TDI-based
     space-borne GW detectors.
 
@@ -488,10 +487,8 @@ def _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
         Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of the detector, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
+    psd_components : numpy.array
+        The PSDs of acceleration noise and OMS noise.
 
     Returns
     -------
@@ -505,8 +502,8 @@ def _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     acc_noise_level = np.float64(acc_noise_level)
     oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = _psd_acc_noise(fr, acc_noise_level)
-    s_oms_nu = _psd_oms_noise(fr, oms_noise_level)
+    s_acc_nu = psd_components[0]
+    s_oms_nu = psd_components[1]
     omega_len = _omega_length(fr, len_arm)
     psd = 64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 * (
         s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len)))
@@ -543,9 +540,10 @@ def analytical_psd_lisa_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
     """
+    psd_components = np.array(lisa_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, acc_noise_level,
-                                          oms_noise_level)
+                                          len_arm, psd_components)
 
     return fseries
 
@@ -580,9 +578,10 @@ def analytical_psd_tianqin_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
         for more details.
     """
+    psd_components = np.array(tianqin_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, acc_noise_level,
-                                          oms_noise_level)
+                                          len_arm, psd_components)
 
     return fseries
 
@@ -615,16 +614,16 @@ def analytical_psd_taiji_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
     """
+    psd_components = np.array(taiji_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, acc_noise_level,
-                                          oms_noise_level)
+                                          len_arm, psd_components)
 
     return fseries
 
 
 def _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
-                               len_arm=None, acc_noise_level=None,
-                               oms_noise_level=None):
+                               len_arm=None, psd_components=None):
     """ The cross-spectrum density between TDI channel X and Y.
 
     Parameters
@@ -637,10 +636,8 @@ def _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
         Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of the detector, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
+    psd_components : numpy.array
+        The PSDs of acceleration noise and OMS noise.
 
     Returns
     -------
@@ -654,8 +651,8 @@ def _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
     acc_noise_level = np.float64(acc_noise_level)
     oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = _psd_acc_noise(fr, acc_noise_level)
-    s_oms_nu = _psd_oms_noise(fr, oms_noise_level)
+    s_acc_nu = psd_components[0]
+    s_oms_nu = psd_components[1]
     omega_len = _omega_length(fr, len_arm)
     csd = (-8*np.sin(omega_len)**2 * np.cos(omega_len) *
            (s_oms_nu+4*s_acc_nu))
@@ -692,16 +689,16 @@ def analytical_csd_lisa_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(56) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
+    psd_components = np.array(lisa_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
-                                         len_arm, acc_noise_level,
-                                         oms_noise_level)
+                                         len_arm, psd_components)
 
     return fseries
 
 
 def _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                               len_arm=None, acc_noise_level=None,
-                               oms_noise_level=None):
+                               len_arm=None, psd_components=None):
     """ The PSD of TDI-1.5 channel A and E.
 
     Parameters
@@ -714,10 +711,8 @@ def _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of the detector, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
+    psd_components : numpy.array
+        The PSDs of acceleration noise and OMS noise.
 
     Returns
     -------
@@ -731,8 +726,8 @@ def _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     acc_noise_level = np.float64(acc_noise_level)
     oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu, s_oms_nu = lisa_psd_components(
-                          fr, acc_noise_level, oms_noise_level)
+    s_acc_nu = psd_components[0]
+    s_oms_nu = psd_components[1]
     omega_len = _omega_length(fr, len_arm)
     psd = (8*(np.sin(omega_len))**2 *
            (4*(1+np.cos(omega_len)+np.cos(omega_len)**2)*s_acc_nu +
@@ -770,9 +765,10 @@ def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(58) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
+    psd_components = np.array(lisa_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                         len_arm, acc_noise_level,
-                                         oms_noise_level)
+                                         len_arm, psd_components)
 
     return fseries
 
@@ -807,9 +803,10 @@ def analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
         for more details.
     """
+    psd_components = np.array(tianqin_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                         len_arm, acc_noise_level,
-                                         oms_noise_level)
+                                         len_arm, psd_components)
 
     return fseries
 
@@ -842,16 +839,16 @@ def analytical_psd_taiji_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
     """
+    psd_components = np.array(taiji_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                         len_arm, acc_noise_level,
-                                         oms_noise_level)
+                                         len_arm, psd_components)
 
     return fseries
 
 
 def _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                              len_arm=None, acc_noise_level=None,
-                              oms_noise_level=None):
+                              len_arm=None, psd_components=None):
     """ The PSD of TDI-1.5 channel T.
 
     Parameters
@@ -864,10 +861,8 @@ def _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         Low-frequency cutoff for output FrequencySeries.
     len_arm : float
         The arm length of the detector, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
+    psd_components : numpy.array
+        The PSDs of acceleration noise and OMS noise.
 
     Returns
     -------
@@ -881,8 +876,8 @@ def _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     acc_noise_level = np.float64(acc_noise_level)
     oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = _psd_acc_noise(fr, acc_noise_level)
-    s_oms_nu = _psd_oms_noise(fr, oms_noise_level)
+    s_acc_nu = psd_components[0]
+    s_oms_nu = psd_components[1]
     omega_len = _omega_length(fr, len_arm)
     psd = (32*np.sin(omega_len)**2 * np.sin(omega_len/2)**2 *
            (4*s_acc_nu*np.sin(omega_len/2)**2 + s_oms_nu))
@@ -919,9 +914,10 @@ def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(59) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
+    psd_components = np.array(lisa_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                        len_arm, acc_noise_level,
-                                        oms_noise_level)
+                                        len_arm, psd_components)
 
     return fseries
 
@@ -956,9 +952,10 @@ def analytical_psd_tianqin_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
         for more details.
     """
+    psd_components = np.array(tianqin_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                        len_arm, acc_noise_level,
-                                        oms_noise_level)
+                                        len_arm, psd_components)
 
     return fseries
 
@@ -991,9 +988,10 @@ def analytical_psd_taiji_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
     """
+    psd_components = np.array(taiji_psd_components(
+        acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                        len_arm, acc_noise_level,
-                                        oms_noise_level)
+                                        len_arm, psd_components)
 
     return fseries
 
@@ -1897,8 +1895,9 @@ def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
     psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(
                         length, delta_f, low_freq_cutoff,
                         len_arm, duration, tdi)
-    # Here we assume the confusion noise's contribution to the CSD Sxy is
-    # negligible for low-frequency part. So Sxy doesn't change.
+    # Here we assume the confusion noise's contribution to the CSD S_XY is
+    # negligible for low-frequency part. So S_XY doesn't change.
+    # S_A = S_E = S_X - S_XY
     fseries = psd_AE + psd_X_confusion
 
     return fseries
@@ -1946,8 +1945,9 @@ def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
     psd_X_confusion = analytical_psd_tianqin_confusion_noise(
                         length, delta_f, low_freq_cutoff,
                         len_arm, duration, tdi)
-    # Here we assume the confusion noise's contribution to the CSD Sxy is
-    # negligible for low-frequency part. So Sxy doesn't change.
+    # Here we assume the confusion noise's contribution to the CSD S_XY is
+    # negligible for low-frequency part. So S_XY doesn't change.
+    # S_A = S_E = S_X - S_XY
     fseries = psd_AE + psd_X_confusion
 
     return fseries
@@ -1993,8 +1993,9 @@ def analytical_psd_taiji_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
     psd_X_confusion = analytical_psd_taiji_confusion_noise(
                         length, delta_f, low_freq_cutoff,
                         len_arm, duration, tdi)
-    # Here we assume the confusion noise's contribution to the CSD Sxy is
-    # negligible for low-frequency part. So Sxy doesn't change.
+    # Here we assume the confusion noise's contribution to the CSD S_XY is
+    # negligible for low-frequency part. So S_XY doesn't change.
+    # S_A = S_E = S_X - S_XY
     fseries = psd_AE + psd_X_confusion
 
     return fseries
