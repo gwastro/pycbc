@@ -141,7 +141,8 @@ def add_gate_option_group(parser):
     return gate_group
 
 
-def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
+def gate_and_paint(data, lindex, rindex, kernel, copy=True,
+                   zero_after_gate=False, zero_before_gate=False):
     """Gates and in-paints data.
 
     Parameters
@@ -152,11 +153,22 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
         The start index of the gate.
     rindex : int
         The end index of the gate.
-    invpsd : FrequencySeries
-        The inverse of the PSD.
+    kernel : FrequencySeries
+        The kernel to use for in-painting. Should be either the
+        inverse PSD or the inverse ASD. If the former (latter), the time
+        series will in-painted such that the over-whitened (whitened) data
+        will be zero in the gated region.
     copy : bool, optional
         Copy the data before applying the gate. Otherwise, the gate will
         be applied in-place. Default is True.
+    zero_before_gate : bool, optional
+        If True, the time series will be zeroed out before the gate time.
+        In painting is still only done within the gate time. Default is False.
+    zero_after_gate : bool, optional
+        If True, the time series will be zeroed out after the gate time.
+        In painting is still only done within the gate time. Default is False.
+        If both zero_before_gate and zero_after_gate are set to True, a
+        ValueError is raised.
 
     Returns
     -------
@@ -168,15 +180,22 @@ def gate_and_paint(data, lindex, rindex, invpsd, copy=True):
     # Copy the data and zero inside the hole
     if copy:
         data = data.copy()
-    # Here's ambiguity about when gate end time exactly is, rindex-1 or rindex?
     data[lindex:rindex] = 0
-
-    # get the over-whitened gated data
-    tdfilter = invpsd.astype('complex').to_timeseries() * invpsd.delta_t
-    owhgated_data = (data.to_frequencyseries() * invpsd).to_timeseries()
+    if zero_before_gate and zero_after_gate:
+        raise ValueError("zero_before_gate and zero_after_gate cannot both be "
+                         "set to True")
+    if zero_before_gate:
+        # also zero everything before
+        data[:lindex] = 0
+    if zero_after_gate:
+        # also zero everything after
+        data[rindex:] = 0
+    # get the filtered gated data
+    tdfilter = kernel.astype('complex').to_timeseries() * kernel.delta_t
+    filtered_data = (data.to_frequencyseries() * kernel).to_timeseries()
 
     # remove the projection into the null space
     proj = linalg.solve_toeplitz(tdfilter[:(rindex - lindex)],
-                                 owhgated_data[lindex:rindex])
+                                 filtered_data[lindex:rindex])
     data[lindex:rindex] -= proj
     return data
