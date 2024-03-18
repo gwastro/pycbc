@@ -394,8 +394,9 @@ def analytical_psd_lisa_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
                                           len_arm, psd_components)
 
@@ -432,8 +433,9 @@ def analytical_psd_tianqin_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
         for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(tianqin_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
                                           len_arm, psd_components)
 
@@ -468,8 +470,9 @@ def analytical_psd_taiji_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(taiji_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
                                           len_arm, psd_components)
 
@@ -542,8 +545,9 @@ def analytical_psd_lisa_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
                                           len_arm, psd_components)
 
@@ -580,8 +584,9 @@ def analytical_psd_tianqin_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
         for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(tianqin_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
                                           len_arm, psd_components)
 
@@ -616,8 +621,9 @@ def analytical_psd_taiji_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(taiji_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
                                           len_arm, psd_components)
 
@@ -689,8 +695,9 @@ def analytical_csd_lisa_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(56) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
                                          len_arm, psd_components)
 
@@ -763,8 +770,9 @@ def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(58) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
                                          len_arm, psd_components)
 
@@ -801,8 +809,9 @@ def analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
         for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(tianqin_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
                                          len_arm, psd_components)
 
@@ -837,8 +846,9 @@ def analytical_psd_taiji_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(taiji_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
                                          len_arm, psd_components)
 
@@ -910,8 +920,9 @@ def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     -----
         Please see Eq.(59) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
                                         len_arm, psd_components)
 
@@ -948,8 +959,9 @@ def analytical_psd_tianqin_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
         for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(tianqin_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
                                         len_arm, psd_components)
 
@@ -984,8 +996,9 @@ def analytical_psd_taiji_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
     """
+    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(taiji_psd_components(
-        acc_noise_level, oms_noise_level))
+        fr, acc_noise_level, oms_noise_level))
     fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
                                         len_arm, psd_components)
 
