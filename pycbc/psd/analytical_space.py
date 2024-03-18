@@ -249,6 +249,8 @@ def lisa_psd_components(f, acc_noise_level=3e-15, oms_noise_level=15e-12):
     low_freq_component, high_freq_component :
         The PSD value or array for acceleration and OMS noise.
     """
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
     low_freq_component = psd_lisa_acc_noise(f, acc_noise_level)
     high_freq_component = psd_lisa_oms_noise(f, oms_noise_level)
 
@@ -272,6 +274,8 @@ def tianqin_psd_components(f, acc_noise_level=1e-15, oms_noise_level=1e-12):
     low_freq_component, high_freq_component :
         The PSD value or array for acceleration and OMS noise.
     """
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
     low_freq_component = psd_tianqin_acc_noise(f, acc_noise_level)
     high_freq_component = psd_tianqin_oms_noise(f, oms_noise_level)
 
@@ -295,6 +299,8 @@ def taiji_psd_components(f, acc_noise_level=3e-15, oms_noise_level=8e-12):
     low_freq_component, high_freq_component :
         The PSD value or array for acceleration and OMS noise.
     """
+    acc_noise_level = np.float64(acc_noise_level)
+    oms_noise_level = np.float64(oms_noise_level)
     low_freq_component = psd_taiji_acc_noise(f, acc_noise_level)
     high_freq_component = psd_taiji_oms_noise(f, oms_noise_level)
 
@@ -349,13 +355,11 @@ def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         Please see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
     """
     len_arm = np.float64(len_arm)
-    acc_noise_level = np.float64(acc_noise_level)
-    oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
     omega_len = _omega_length(fr, len_arm)
-    psd = 16*(np.sin(omega_len))**2 * (s_oms_nu+
+    psd = 16*(np.sin(omega_len))**2 * (s_oms_nu +
                                        s_acc_nu*(3+np.cos(2*omega_len)))
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
@@ -499,8 +503,6 @@ def _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
         Please see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
     """
     len_arm = np.float64(len_arm)
-    acc_noise_level = np.float64(acc_noise_level)
-    oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
@@ -648,8 +650,6 @@ def _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
         Please see Eq.(56) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
     len_arm = np.float64(len_arm)
-    acc_noise_level = np.float64(acc_noise_level)
-    oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
@@ -723,8 +723,6 @@ def _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         Please see Eq.(58) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
     len_arm = np.float64(len_arm)
-    acc_noise_level = np.float64(acc_noise_level)
-    oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
@@ -873,8 +871,6 @@ def _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         Please see Eq.(59) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
     """
     len_arm = np.float64(len_arm)
-    acc_noise_level = np.float64(acc_noise_level)
-    oms_noise_level = np.float64(oms_noise_level)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
