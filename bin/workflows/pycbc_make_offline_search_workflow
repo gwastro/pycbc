@@ -188,7 +188,7 @@ wf_log_file = wf.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
                       directory=rdir['workflow'])
 
 pycbc.init_logging(args.verbose, default_level=1,
-                   log_file=wf_log_file.storage_path)
+                   to_file=wf_log_file.storage_path)
 logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # put start / end time at top of summary page
