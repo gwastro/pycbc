@@ -348,7 +348,6 @@ class _HDFInjectionSet(metaclass=ABCMeta):
 
     Attributes
     ----------
-    filehandler
     table
     static_args
     extra_args
