@@ -4,7 +4,7 @@
 import argparse, h5py, numpy as np, pycbc.results, pycbc.detector, sys
 from itertools import combinations
 
-from pyccb import add_common_pycbc_options, init_logging 
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.types import MultiDetOptionAction
 import pycbc.pnutils, pycbc.events
 import pycbc.version

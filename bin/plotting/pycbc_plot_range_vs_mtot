@@ -28,7 +28,7 @@ parser.add_argument("--psd-files", nargs='+',
 parser.add_argument("--output-file", help='output file name')
 parser.add_argument("--min_mtot", nargs="+", type=float,
                     help="Minimum total mass for range")
-parser.add_argument("--max_mtot", nargs="+", type=float
+parser.add_argument("--max_mtot", nargs="+", type=float,
                     help="Maximum total mass for range")
 parser.add_argument("--d_mtot", nargs="+", type=float,
                     help="Delta total mass for range ")

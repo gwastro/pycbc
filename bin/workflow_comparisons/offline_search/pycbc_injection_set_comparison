@@ -1,6 +1,4 @@
-"""
-Detailed comparison of a specified injection set between two PyCBC runs
-"""#!/usr/bin/env python
+#!/usr/bin/env python
 # Copyright (C) 2020 Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -16,6 +14,9 @@ Detailed comparison of a specified injection set between two PyCBC runs
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+Detailed comparison of a specified injection set between two PyCBC runs
+"""
 
 import logging
 from glob import glob
@@ -26,6 +27,7 @@ from h5py import File
 
 from pycbc.events import ranking
 import pycbc
+
 
 def parse_injection_path(injname, basedir):
     dirpath = path.expandvars(basedir)
