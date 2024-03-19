@@ -11,6 +11,7 @@ _s_per_yr = 1. / conv.sec_to_year(1.)
 
 logger = logging.getLogger('pycbc.population.live_pastro')
 
+
 def check_template_param_bin_data(spec_json):
     """
     Parameters

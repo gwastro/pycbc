@@ -8,6 +8,7 @@ from lal import gpstime as lalgps
 
 logger = logging.getLogger('pycbc.io.live')
 
+<<<<<<< HEAD
 logger = logging.getLogger('pycbc.io.live')
 
 def maximum_string(numbers):
@@ -122,6 +123,11 @@ def find_trigger_files(directory, gps_start_time, gps_end_time,
     """
     Find a list of PyCBC live trigger files which are between the gps
     start and end times given
+=======
+
+class CandidateForGraceDB(object):
+    """This class provides an interface for uploading candidates to GraceDB.
+>>>>>>> a49c41e2c (CC)
     """
 
     # Find the string at the start of the gps time which will match all

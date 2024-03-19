@@ -1,8 +1,8 @@
 """ This module contains functions for calculating single-ifo ranking
 statistic values
 """
-import numpy
 import logging
+import numpy
 
 logger = logging.getLogger('pycbc.events.ranking')
 

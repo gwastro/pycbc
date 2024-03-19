@@ -870,7 +870,7 @@ class SphericalToCartesian(BaseTransform):
 
 class SphericalSpin1ToCartesianSpin1(SphericalToCartesian):
     """Converts spherical spin parameters (radial and two angles) to
-    catesian spin parameters. This class only transforms spsins for the first
+    catesian spin parameters. This class only transforms spins for the first
     component mass.
 
     **Deprecation Warning:** This will be removed in a future update. Use
@@ -896,7 +896,7 @@ class SphericalSpin1ToCartesianSpin1(SphericalToCartesian):
 
 class SphericalSpin2ToCartesianSpin2(SphericalToCartesian):
     """Converts spherical spin parameters (radial and two angles) to
-    catesian spin parameters. This class only transforms spsins for the first
+    catesian spin parameters. This class only transforms spins for the first
     component mass.
 
     **Deprecation Warning:** This will be removed in a future update. Use

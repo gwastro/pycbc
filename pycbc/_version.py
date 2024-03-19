@@ -29,6 +29,7 @@ import logging
 
 logger = logging.getLogger('pycbc._version')
 
+
 def print_link(library):
     err_msg = (
         "Could not execute runtime linker to determine\n"

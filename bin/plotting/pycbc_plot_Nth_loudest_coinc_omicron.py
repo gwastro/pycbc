@@ -16,8 +16,8 @@ import matplotlib.pyplot as plt
 from ligo.lw import lsctables, utils
 
 import pycbc.events
-from pycbc.waveform import (get_td_waveform,
-    frequency_from_polarizations, amplitude_from_polarizations)
+from pycbc.waveform import get_td_waveform, \
+    frequency_from_polarizations, amplitude_from_polarizations
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
