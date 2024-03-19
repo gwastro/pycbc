@@ -10,7 +10,7 @@ import pycbc
 import pycbc.results
 from pycbc.version import git_verbose_msg as version
 
-parser = argparse.ArgumentParser(descripton=__doc__)
+parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=version)
 parser.add_argument('--ifo', required=True)
