@@ -519,6 +519,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--onsource-output-file',
                                  tags=extra_tags+['onsource'])
+        node.add_opt('--inj-set-name', tags[1])
     else:
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--output-file', tags=extra_tags)

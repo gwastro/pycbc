@@ -395,7 +395,6 @@ offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
 inj_sets = wflow.cp.get_subsections('injections')
 out_dir = rdir['exclusion_distances']
 _workflow.makedir(out_dir)
-# TODO: add onsource calculation
 for i, offtrial in enumerate(offtrials):
     out_dir = rdir[f'exclusion_distances/{offtrial}']
     _workflow.makedir(out_dir)
@@ -406,8 +405,8 @@ for i, offtrial in enumerate(offtrials):
         tags = [offtrial, inj_set]
         plot_node, output_files = \
             _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
-                                      out_dir, trig_file=offtrial_files[i],
-                                      onsource_file=onsource_file,
+                                      out_dir, trig_file=offsource_file,
+                                      onsource_file=offtrial_files[i],
                                       inj_file=inj_file,
                                       bank_file=bank_file,
                                       seg_files=seg_files, tags=tags)
@@ -416,6 +415,9 @@ for i, offtrial in enumerate(offtrials):
         files.extend(output_files)
     eff_layout = list(layout.grouper(files, 2))
     layout.two_column_layout(out_dir, eff_layout, offtrial)
+
+# TODO: add onsource calculation
+# Run efficiency code like above, but replace onsource_file with onsource_file
 
 #
 # Trigger Followups (TODO)
