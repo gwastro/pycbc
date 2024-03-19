@@ -18,7 +18,7 @@ use('Agg')
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
 
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.population import fgmc_functions as utils
 from pycbc.population import fgmc_laguerre as fgmcl
 from pycbc.population import fgmc_plots
@@ -34,7 +34,7 @@ rcParams.update({'axes.labelsize': 12,
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-V', '--verbose', action='store_true', default=False)
+add_common_pycbc_options(parser)
 parser.add_argument('--diagnostic-plots', action='store_true', default=False,
                     help='Make extra diagnostic scatter plots')
 parser.add_argument('--full-data-files', nargs='+',
@@ -249,7 +249,7 @@ if args.diagnostic_plots:
 
 # add in prior event info
 if args.prior_event_info:
-    logging.warn('Adding events from', args.prior_event_info)
+    logging.warning('Adding events from', args.prior_event_info)
     prior_info = np.genfromtxt(args.prior_event_info, names=True)
     allfgbg = np.append(allfgbg, prior_info['ln_bayes_factor'])
 else:  # no prior events!
@@ -291,7 +291,7 @@ cmed, cminus, cplus = fgmc_plots.dist_summary(
 # if VT and error are provided, convert signal PDF to rate PDF
 if args.vt_mean:
     if args.vt_err is None:
-        logging.warn('NB : no VT error provided, will use 0!')
+        logging.warning('NB : no VT error provided, will use 0!')
         args.vt_err = 0.
     logging.info('Rate in units of ' + args.rate_units + ' ...')
     print('Rate without VT uncertainty :')

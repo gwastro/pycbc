@@ -27,7 +27,10 @@
 Base coordinate transformations, this module provides transformations between
 cartesian and spherical coordinates.
 """
+import logging
 import numpy
+
+logger = logging.getLogger('pycbc.coordinates.base')
 
 
 def cartesian_to_spherical_rho(x, y, z):

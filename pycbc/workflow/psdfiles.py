@@ -31,8 +31,11 @@ workflows.
 
 import logging
 import configparser as ConfigParser
+
 from pycbc.workflow.core import FileList
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
+
+logger = logging.getLogger('pycbc.workflow.psdfiles')
 
 def setup_psd_workflow(workflow, science_segs, datafind_outs,
                              output_dir=None, tags=None):
@@ -62,7 +65,7 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
     '''
     if tags is None:
         tags = []
-    logging.info("Entering static psd module.")
+    logger.info("Entering static psd module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
 
@@ -76,14 +79,14 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
         return FileList([])
 
     if psdMethod == "PREGENERATED_FILE":
-        logging.info("Setting psd from pre-generated file(s).")
+        logger.info("Setting psd from pre-generated file(s).")
         psd_files = setup_psd_pregenerated(workflow, tags=tags)
     else:
         errMsg = "PSD method not recognized. Only "
         errMsg += "PREGENERATED_FILE is currently supported."
         raise ValueError(errMsg)
 
-    logging.info("Leaving psd module.")
+    logger.info("Leaving psd module.")
     return psd_files
 
 
@@ -136,7 +139,7 @@ def setup_psd_pregenerated(workflow, tags=None):
             except ConfigParser.Error:
                 # It's unlikely, but not impossible, that only some ifos
                 # will have pregenerated PSDs
-                logging.warn("No psd file specified for IFO %s." % (ifo,))
+                logger.warning("No psd file specified for IFO %s.", ifo)
                 pass
 
     return psd_files

@@ -586,7 +586,10 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             with h5py.File(injection_file, "r") as fp:
                 super(BaseInferenceFile, self).copy(fp, group)
         except IOError:
-            logging.warn("Could not read %s as an HDF file", injection_file)
+            logging.warning(
+                "Could not read %s as an HDF file",
+                injection_file
+            )
 
     def read_injections(self, group=None):
         """Gets injection parameters.

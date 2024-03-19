@@ -109,8 +109,11 @@ if args.store_bank_values:
         if n == 'template_hash':
             continue
         if not hasattr(sngls, n):
-            logging.warn("Bank's %s dataset or group is not supported "
-                         "by SingleDetTriggers, ignoring it", n)
+            logging.warning(
+                "Bank's %s dataset or group is not supported "
+                "by SingleDetTriggers, ignoring it",
+                n
+            )
             continue
         # don't repeat things that already came from the trigger file
         # (e.g. template_duration)

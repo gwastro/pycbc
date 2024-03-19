@@ -88,8 +88,10 @@ try:
     accounting_group = confs.get('workflow', 'accounting-group')
 except:
     accounting_group = None
-    logging.warn('Warning: accounting-group not specified, LDG clusters may'
-                 ' reject this workflow!')
+    logging.warning(
+        'Warning: accounting-group not specified, LDG clusters may '
+        'reject this workflow!'
+    )
 
 logging.info("Making workspace directories")
 mkdir('scripts')

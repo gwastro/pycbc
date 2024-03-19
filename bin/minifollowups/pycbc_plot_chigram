@@ -1,9 +1,18 @@
 #!/bin/env python
-import h5py, pycbc.types, numpy, argparse, pycbc.results, sys
-import matplotlib; matplotlib.use('Agg')
+import h5py
+import numpy
+import argparse
+import sys
+import matplotlib
+matplotlib.use('Agg')
 import pylab
 
+from pycbc import init_logging, add_common_pycbc_options
+import pycbc.types
+import pycbc.results
+
 parser=argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument('--single-template-file',
                     help="HDF output of pycbc_single_template")
 parser.add_argument('--central-time', type=float,
@@ -15,6 +24,8 @@ parser.add_argument('--window', type=float,
 parser.add_argument('--plot-type', choices=['snr', 'chisq'], default='chisq')
 parser.add_argument('--output-file')
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 f = h5py.File(args.single_template_file, 'r')
 y = f['chisq_boundaries'][:]

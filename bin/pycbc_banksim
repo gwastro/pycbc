@@ -363,9 +363,9 @@ with ctx:
         if f_lower < options.filter_low_frequency_cutoff:
             # Not entirely clear what to do here?
             if not flow_warned:
-                logging.warn("Template's flower is smaller than "
-                             "--filter-low-frequency-cutoff. Raising flower "
-                             "of template to match.")
+                logging.warning("Template's flower is smaller than "
+                                "--filter-low-frequency-cutoff. Raising "
+                                "flower of template to match.")
                 flow_warned=True
             f_lower = options.filter_low_frequency_cutoff
 
