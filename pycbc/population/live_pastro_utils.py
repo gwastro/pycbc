@@ -4,6 +4,7 @@ from . import live_pastro as livepa
 
 logger = logging.getLogger('pycbc.population.live_pastro_utils')
 
+
 def insert_live_pastro_option_group(parser):
     """ Add low-latency p astro options to the argparser object.
 

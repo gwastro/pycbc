@@ -20,6 +20,7 @@ from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 
 logger = logging.getLogger('pycbc.mchirp_area')
 
+
 def insert_args(parser):
     mchirp_group = parser.add_argument_group("Arguments for estimating the "
                                              "source probabilities of a "

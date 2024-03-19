@@ -133,7 +133,7 @@ def verify_optimization_options(opt, parser):
 
         if retcode != 0:
             logger.error(
-                'taskset command <%s> failed with return code %d', 
+                'taskset command <%s> failed with return code %d',
                 command, retcode
             )
             sys.exit(1)

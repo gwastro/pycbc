@@ -10,6 +10,7 @@ from . import fgmc_functions as fgmcfun
 
 logger = logging.getLogger('pycbc.population.live_pastro')
 
+
 def check_template_param_bin_data(spec_json):
     """
     Parameters
@@ -182,7 +183,7 @@ def template_param_bin_pa(padata, trdata, horizons):
     # FAR is in Hz, therefore convert to rate per year (per SNR)
     dnoise = noise_density_from_far(trdata['far'], expfac) * lal_s_per_yr
     logger.debug('FAR %.3g, noise density per yr per SNR %.3g',
-                  trdata['far'], dnoise)
+                 trdata['far'], dnoise)
     # Scale by fraction of templates in bin
     dnoise *= padata.bank['tcounts'][bind] / padata.bank['num_t']
     logger.debug('Noise density in bin %.3g', dnoise)

@@ -5,6 +5,7 @@ from .record import *
 
 logger = logging.getLogger('pycbc.io')
 
+
 def get_file(url, retry=5, **args):
     """ Retrieve file with retry upon failure
 

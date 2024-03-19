@@ -29,6 +29,7 @@ import logging
 
 logger = logging.getLogger('pycbc._version_helper')
 
+
 class GitInfo(object):
     def __init__(self):
         self.date = None

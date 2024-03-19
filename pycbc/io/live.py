@@ -23,6 +23,7 @@ from pycbc.mchirp_area import calc_probabilities
 
 logger = logging.getLogger('pycbc.io.live')
 
+
 class CandidateForGraceDB(object):
     """This class provides an interface for uploading candidates to GraceDB.
     """
@@ -296,7 +297,10 @@ class CandidateForGraceDB(object):
         save_dir = os.path.dirname(fname)
         # Save EMBright properties info as json
         if self.hasmassgap is not None:
-            self.embright_file = os.path.join(save_dir, 'pycbc.em_bright.json')
+            self.embright_file = os.path.join(
+                save_dir,
+                'pycbc.em_bright.json'
+            )
             with open(self.embright_file, 'w') as embrightf:
                 json.dump({'HasMassGap': self.hasmassgap}, embrightf)
             logger.info('EM Bright file saved as %s', self.embright_file)
@@ -313,7 +317,10 @@ class CandidateForGraceDB(object):
             self.prob_file = os.path.join(save_dir, 'src_probs.json')
             with open(self.prob_file, 'w') as probf:
                 json.dump(self.probabilities, probf)
-            logger.info('Source probabilities file saved as %s', self.prob_file)
+            logger.info(
+                'Source probabilities file saved as %s',
+                self.prob_file
+            )
             # Don't save any other files!
             return
 
@@ -487,7 +494,7 @@ class CandidateForGraceDB(object):
                 )
             except Exception as exc:
                 logger.error('Failed to upload SNR timeseries and ASD for %s',
-                              gid)
+                             gid)
                 logger.error(str(exc))
 
         # If 'self.prob_file' exists, make pie plot and do uploads.
@@ -541,8 +548,8 @@ class CandidateForGraceDB(object):
                     self.gracedb.write_log(
                         gid, text, tag_name=['analyst_comments'])
             except Exception as exc:
-                logger.error('Something failed during annotation of analyst'
-                              ' comments for event %s on GraceDB.', fname)
+                logger.error('Something failed during annotation of analyst '
+                             'comments for event %s on GraceDB.', fname)
                 logger.error(str(exc))
 
         return gid
