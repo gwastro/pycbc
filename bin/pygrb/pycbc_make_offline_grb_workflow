@@ -36,7 +36,7 @@ matplotlib.use('agg')
 
 from ligo.segments import segment, segmentlistdict
 
-from pycbc iomport init_logging, add_common_pycbc_options
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.workflow as _workflow
 from pycbc.workflow.core import configparser_value_to_file
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot

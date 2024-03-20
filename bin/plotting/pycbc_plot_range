@@ -26,7 +26,7 @@ parser.add_argument("--psd-files", nargs='+', help='HDF file of psds')
 parser.add_argument("--output-file", help='output file name')
 parser.add_argument("--mass1", nargs="+", type=float,
                     help="Mass of first component in solar masses")
-parser.add_argument("--mass2", nargs="+", 
+parser.add_argument("--mass2", nargs="+", type=float,
                     help="Mass of second component in solar masses")
 parser.add_argument("--approximant", nargs="+",
                     help="approximant to use for range")
