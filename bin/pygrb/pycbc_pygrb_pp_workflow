@@ -410,7 +410,6 @@ for i, offtrial in enumerate(offtrials):
                                       inj_file=inj_file,
                                       bank_file=bank_file,
                                       seg_files=seg_files, tags=tags)
-        plot_node.add_opt('--injection-set-name', inj_set)
         plotting_nodes.append(plot_node)
         files.extend(output_files)
     eff_layout = list(layout.grouper(files, 2))
