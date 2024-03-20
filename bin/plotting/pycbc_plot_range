@@ -4,6 +4,7 @@
 import matplotlib
 matplotlib.use('Agg');
 import h5py
+import logging
 import numpy
 import argparse
 import pylab
