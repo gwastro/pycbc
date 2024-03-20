@@ -245,13 +245,29 @@ assert len(args.log_param) == len(args.fit_param) == len(args.smoothing_width)
 
 init_logging(args.verbose)
 
-fits = h5py.File(args.template_fit_file, 'r')
+with h5py.File(args.template_fit_file, 'r') as fits:
+    # get attributes from the template-level fit
+    ifo = fits.attrs['ifo']
+    stat_threshold = fits.attrs['stat_threshold']
+    analysis_time = fits.attrs['analysis_time'] if 'analysis_time' in fits.attrs else None
 
-# get the ifo from the template-level fit
-ifo = fits.attrs['ifo']
+    # get template id and template parameter values
+    tid = fits['template_id'][:]
+    nabove = fits['count_above_thresh'][:]
+    ntotal = fits['count_in_template'][:]
+    alpha = fits['fit_coeff'][:]
+    try:
+        median_sigma = fits['median_sigma'][:]
+    except KeyError:
+        logging.info('Median_sigma dataset not present in input file')
+        median_sigma = None
 
-# get template id and template parameter values
-tid = fits['template_id'][:]
+    if args.output_fits_by_template:
+        fbtdict = {}
+        for k in ['count_above_thresh', 'fit_coeff', 'count_in_template']:
+            fbtdict[k] = fits[k][:]
+
+
 
 logging.info('Calculating template parameter values')
 bank = h5py.File(args.bank_file, 'r')
@@ -273,11 +289,9 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'true', or 'false'")
 
-nabove = fits['count_above_thresh'][:]
-ntotal = fits['count_in_template'][:]
 # For an exponential fit 1/alpha is linear in the trigger statistic values
 # so calculating weighted sums or averages of 1/alpha is appropriate
-invalpha = 1. / fits['fit_coeff'][:]
+invalpha = 1. / alpha
 invalphan = invalpha * nabove
 
 nabove_smoothed = []
@@ -377,10 +391,8 @@ outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed
 outfile['count_in_template'] = ntotal_smoothed
-try:
-    outfile['median_sigma'] = fits['median_sigma'][:]
-except KeyError:
-    logging.info('Median_sigma dataset not present in input file')
+if median_sigma is not None:
+    outfile['median_sigma'] = median_sigma
 
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
     if slog in ['false', 'False', 'FALSE']:
@@ -391,13 +403,13 @@ for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
 if args.output_fits_by_template:
     outfile.create_group('fit_by_template')
     for k in ['count_above_thresh', 'fit_coeff', 'count_in_template']:
-        outfile['fit_by_template'][k] = fits[k][:]
+        outfile['fit_by_template'][k] = fbtdict[k]
 
 # Add metadata, some is inherited from template level fit
 outfile.attrs['ifo'] = ifo
-outfile.attrs['stat_threshold'] = fits.attrs['stat_threshold']
-if 'analysis_time' in fits.attrs:
-    outfile.attrs['analysis_time'] = fits.attrs['analysis_time']
+outfile.attrs['stat_threshold'] = stat_threshold
+if analysis_time is not None:
+    outfile.attrs['analysis_time'] = analysis_time
 
 # Add a magic file attribute so that coinc_findtrigs can parse it
 outfile.attrs['stat'] = ifo + '-fit_coeffs'
