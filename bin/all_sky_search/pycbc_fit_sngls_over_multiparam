@@ -88,7 +88,11 @@ def smooth_tophat(nabove, invalphan, ntotal, dists):
                             idx_within_area)
 
 
-def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500):
+_default_total_trigs = 500
+
+
+def smooth_n_closest(nabove, invalphan, ntotal, dists,
+                     total_trigs=_default_total_trigs):
     """
     Smooth templates according to the closest N templates
     No weighting is applied
@@ -97,13 +101,11 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500):
     templates_required = 0
     n_triggers = 0
     # Count number of templates required to gather total_trigs templates,
-    # start at closest
-    # total_trigs, if supplied on command line will be a str so convert to int
-    while n_triggers < int(total_trigs):
-        n_triggers += nabove[dist_sort[n_triggers]]
-        templates_required += 1
-    logging.debug("%d templates required to obtain %d triggers",
-                  templates_required, n_triggers)
+    # starting at closest
+    ntcs = nabove[dist_sort].cumsum()
+    templates_required = numpy.searchsorted(ntcs, total_trigs) + 1
+    logging.debug("%d template(s) required to obtain %d(>%d) triggers",
+                  templates_required, ntcs[templates_required - 1], total_trigs)
     idx_to_smooth = dist_sort[:templates_required]
     return smooth_templates(nabove, invalphan, ntotal, idx_to_smooth)
 
@@ -254,6 +256,7 @@ ntotal = numpy.array([], dtype=int)
 alpha = numpy.array([], dtype=float)
 median_sigma = numpy.array([], dtype=float)
 
+logging.info("Loading input template fits")
 for filename in args.template_fit_file:
     with h5py.File(filename, 'r') as fits:
         # get attributes from the template-level fit
@@ -284,7 +287,6 @@ for filename in args.template_fit_file:
         except KeyError:
             logging.info('Median_sigma dataset not present in input file')
             median_sigma = None
-
 
 # For an exponential fit 1/alpha is linear in the trigger statistic values
 # so calculating weighted sums or averages of 1/alpha is appropriate
@@ -337,6 +339,16 @@ if args.output_fits_by_template:
         alpha = nabove / invalphan
     alpha[nabove == 0] = -100
     fbt_dict['fit_coeff'] = alpha
+
+n_required = _default_total_trigs if 'total_trigs' not in kwarg_dict \
+    else kwarg_dict['total_trigs']
+if args.smoothing_method == 'n_closest' and n_required > nabove.sum():
+    logging.warning(
+        "There are %.2f triggers above threshold, not enough to give a "
+        "total of %d for smoothing",
+        nabove.sum(),
+        n_required
+    )
 
 logging.info('Calculating template parameter values')
 bank = h5py.File(args.bank_file, 'r')
