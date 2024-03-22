@@ -41,7 +41,6 @@ from ligo.segments.utils import fromsegwizard
 
 from pycbc import __version__
 from pycbc.inject import InjectionSet
-from pycbc.io import FieldArray
 from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -92,12 +91,16 @@ def read_hdf5_triggers(inputfiles, verbose=False):
     datasets = {}
 
     def _scan_dataset(name, obj):
-        if not isinstance(obj, h5py.Dataset) or "search" in name:
+        if not isinstance(obj, h5py.Dataset):
             return
         elif name.startswith("network") and \
             NETWORK_IFO_EVENT_ID_REGEX.match(name):
                 return
         elif "template_id" in name:
+            return
+        elif "search" in name:
+            return
+        elif "gating" in name:
             return
         else:
             shape = obj.shape
