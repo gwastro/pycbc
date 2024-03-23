@@ -50,16 +50,19 @@ def generate_asd_plot(psddict, output_filename):
     """
     from matplotlib import pyplot as plt
     asd_fig, asd_ax = plt.subplots(1)
+    asd_min = [3E-24]
     for ifo in sorted(psddict.keys()):
-        curr_psd = psddict[ifo]
         # Can't plot log(0) so start from point 1
+        asd_to_plot = psddict[ifo][1:] ** 0.5 / DYN_RANGE_FAC
+        asd_min.append(min(asd_to_plot))
         asd_ax.loglog(curr_psd.sample_frequencies[1:],
-                      curr_psd[1:] ** 0.5 / DYN_RANGE_FAC,
-                      c=ifo_color(ifo), label=ifo)
+                      asd_to_plot,
+                      c=ifo_color(ifo),
+                      label=ifo)
 
     asd_ax.legend()
     asd_ax.set_xlim([10, 1300])
-    asd_ax.set_ylim([3E-24, 1E-20])
+    asd_ax.set_ylim([min(asd_min), 1E-20])
     asd_ax.set_xlabel('Frequency (Hz)')
     asd_ax.set_ylabel('ASD')
     asd_fig.savefig(output_filename)
