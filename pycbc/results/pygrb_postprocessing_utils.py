@@ -34,6 +34,7 @@ from scipy import stats
 from ligo import segments
 
 from pycbc.detector import Detector
+from pycbc import add_common_pycbc_options
 
 logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
 
@@ -64,9 +65,8 @@ def pygrb_initialize_plot_parser(description=None, version=None):
     formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=formatter_class)
+    add_common_pycbc_options(parser)
     parser.add_argument("--version", action="version", version=version)
-    parser.add_argument("-v", "--verbose", default=False, action="store_true",
-                        help="Verbose output")
     parser.add_argument("-o", "--output-file", default=None,
                         help="Output file.")
     parser.add_argument("--x-lims", action="store", default=None,
