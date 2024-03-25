@@ -102,7 +102,7 @@ parser.add_argument('--log-y', action='store_true',
                     help='Make y-axis logarithmic')
 args = parser.parse_args()
 
-pycbc.init_logging(opts.verbose)
+pycbc.init_logging(args.verbose)
 
 bank = H5BankFile(args.bank_file, 'r')
 f_lower = args.f_lower or bank['f_lower'][:]
