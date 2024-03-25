@@ -33,7 +33,9 @@ from matplotlib import pyplot as plt
 from matplotlib import rc
 import numpy
 import scipy
+
 import pycbc.version
+from pycbc.detector import Detector
 from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata

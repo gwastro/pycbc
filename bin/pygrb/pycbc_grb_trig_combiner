@@ -35,7 +35,7 @@ from gwdatafind.utils import (file_segment, filename_metadata)
 from ligo import segments
 from ligo.segments.utils import fromsegwizard
 
-from pycbc import __version__
+from pycbc import __version__, add_common_pycbc_options, init_logging
 from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -340,13 +340,7 @@ parser = argparse.ArgumentParser(
     description=__doc__,
 )
 
-parser.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",
-    default=False,
-    help="verbose output with microsecond timer (default: %(default)s)",
-)
+add_common_pycbc_options(parser)
 parser.add_argument(
     "-V",
     "--version",
@@ -457,6 +451,8 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+
+init_logging(args)
 
 vprint = print if args.verbose else str
 

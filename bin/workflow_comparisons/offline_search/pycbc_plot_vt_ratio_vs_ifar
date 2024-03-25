@@ -15,6 +15,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+Plot ratios of VTs calculated at various IFARs using pycbc_page_sensitivity
+(run with --hdf-out option) for two comparable analyses
+"""
 
 import h5py
 import matplotlib
@@ -25,11 +29,10 @@ import argparse
 from matplotlib.pyplot import cm
 from math import ceil
 
-parser = argparse.ArgumentParser()
-parser = argparse.ArgumentParser(description="Plot ratios of VTs calculated at"
-                                 " various IFARs using pycbc_page_sensitivity"
-                                 " (run with --hdf-out option) for two"
-                                 " comparable analyses ")
+from pycbc import add_common_pycbc_options, init_logging
+
+parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--vt-file-one', required=True,
                     help="HDF file containing VT curves, first set of data"
                     " for comparison")
@@ -45,6 +48,8 @@ parser.add_argument('--log-x', action='store_true', default=False,
 parser.add_argument('--log-y', action='store_true', default=False,
                     help='Use logarithmic y-axis')
 args = parser.parse_args()
+
+init_logging(args)
 
 # Load in the two datasets
 f1 = h5py.File(args.vt_file_one)

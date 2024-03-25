@@ -31,6 +31,7 @@ from matplotlib import rc
 import numpy as np
 import scipy
 from scipy import stats
+
 import pycbc.version
 from pycbc import init_logging
 from pycbc.detector import Detector
