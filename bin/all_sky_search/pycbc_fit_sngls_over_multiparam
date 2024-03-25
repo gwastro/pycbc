@@ -265,8 +265,7 @@ for filename in args.template_fit_file:
         for k in fits.attrs.keys():
             if k == 'analysis_time':
                 # For this, we want the mean, not check that it is identical
-                analysis_time += fits.attrs['analysis_time'] \
-                    if 'analysis_time' in fits.attrs else 0
+                analysis_time += fits.attrs['analysis_time']
                 continue
             if k not in attr_dict:
                 # This is the first time this attribute
