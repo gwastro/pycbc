@@ -58,7 +58,7 @@ def generate_asd_plot(psddict, output_filename, f_min=10.):
         curr_psd = psddict[ifo]
         freqs = curr_psd.sample_frequencies
         physical = (freqs >= f_min)  # Ignore lower frequencies
-        asd_to_plot = psddict[ifo][physical] ** 0.5 / DYN_RANGE_FAC
+        asd_to_plot = curr_psd[physical] ** 0.5 / DYN_RANGE_FAC
         asd_min.append(min(asd_to_plot))
         asd_ax.loglog(freqs[physical],
                       asd_to_plot,
