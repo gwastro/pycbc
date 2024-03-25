@@ -177,8 +177,10 @@ parser = argparse.ArgumentParser(usage="",
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("--template-fit-file", required=True, nargs='+',
-                    help="hdf5 file containing fit coefficients for each"
-                         " individual template. Required")
+                    help="hdf5 file(s) containing fit coefficients for each "
+                         "individual template. Can smooth over multiple "
+                         "files provided they correspond to the same bank "
+                         "and fitting settings. Required")
 parser.add_argument("--bank-file", required=True,
                     help="hdf file containing template parameters. Required")
 parser.add_argument("--output", required=True,
@@ -262,7 +264,9 @@ for filename in args.template_fit_file:
         # get attributes from the template-level fit
         for k in fits.attrs.keys():
             if k == 'analysis_time':
-                # We handle this differently
+                # For this, we want the mean, not check that it is identical
+                analysis_time += fits.attrs['analysis_time'] \
+                    if 'analysis_time' in fits.attrs else 0
                 continue
             if k not in attr_dict:
                 # This is the first time this attribute
@@ -274,8 +278,6 @@ for filename in args.template_fit_file:
                 err_msg += f"has attribute {k} of {fits.attrs[k]}, whereas "
                 err_msg += f"previous files have value {attr_dict[k]}"
                 raise RuntimeError(err_msg)
-
-        analysis_time += fits.attrs['analysis_time'] if 'analysis_time' in fits.attrs else 0
 
         # get template id and template parameter values
         tid = numpy.concatenate((tid, fits['template_id'][:]))
@@ -293,11 +295,12 @@ for filename in args.template_fit_file:
 invalpha = 1. / alpha
 invalphan = invalpha * nabove
 
+# convert the sum above into a mean
 analysis_time /= len(args.template_fit_file)
 
 # If we are using multiple files, we should 'smooth' within each template
 # before smoothing over templates going forward. As the templates will
-# all be have identical template_ids and have the same number of values,
+# all have identical template_ids and have the same number of values,
 # we can take the mean of means and it will still be correct
 if len(args.template_fit_file) > 1:
     logging.info("Averaging within the same template for multiple files")
