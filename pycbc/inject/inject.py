@@ -352,7 +352,6 @@ class _HDFInjectionSet(metaclass=ABCMeta):
 
     Attributes
     ----------
-    filehandler
     table
     static_args
     extra_args
@@ -369,7 +368,6 @@ class _HDFInjectionSet(metaclass=ABCMeta):
         # open the file
         fp = h5py.File(sim_file, 'r')
         group = fp if hdf_group is None else fp[hdf_group]
-        self.filehandler = fp
         # get parameters
         parameters = list(group.keys())
         # get all injection parameter values
@@ -418,6 +416,7 @@ class _HDFInjectionSet(metaclass=ABCMeta):
         self.table = self._tableclass.from_kwargs(**injvals)
         # save the extra arguments
         self.extra_args = kwds
+        fp.close()
 
     @abstractmethod
     def apply(self, strain, detector_name, distance_scale=1,
