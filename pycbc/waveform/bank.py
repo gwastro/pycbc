@@ -582,34 +582,59 @@ class LiveFilterBank(TemplateBank):
 
         return self.get_template(index)
 
-    def get_template(self, index, min_buffer=None):
+    def get_template(self, index, td_samples=None):
+        """Calculate and return the frequency-domain waveform for the template
+        with the given index. The frequency resolution can optionally be
+        controlled by giving the duration of the waveform in the time domain in
+        terms of number of samples.
+
+        Parameters
+        ----------
+        index: int
+            Index of the template in the bank.
+        td_samples: int, optional
+            Duration of the waveform in the time domain, in units of samples,
+            used to define the length and resolution of the frequency series.
+            If not given, this is calculated from the template parameters.
+
+        Returns
+        -------
+        htilde: FrequencySeries
+            Template waveform in the frequency domain.
+        """
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
         flow = self.table[index].f_lower
 
-        # Determine the length of time of the filter, rounded up to
-        # nearest power of two
-        if min_buffer is None:
-            min_buffer =  self.minimum_buffer
-        min_buffer += 0.5
+        if td_samples is None:
+            time_duration = self.minimum_buffer
+            time_duration += 0.5
 
-        from pycbc.waveform.waveform import props
-        p = props(self.table[index])
-        p.pop('approximant')
-        buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
-        if not buff_size:
-            raise RuntimeError('Template waveform %s not recognized!' % approximant)
+            from pycbc.waveform.waveform import props
+            p = props(self.table[index])
+            p.pop('approximant')
+            waveform_duration = pycbc.waveform.get_waveform_filter_length_in_time(
+                approximant, **p
+            )
+            if waveform_duration is None:
+                raise RuntimeError(f'Template waveform {approximant} not recognized!')
+            time_duration += waveform_duration
+            td_samples = self.round_up(time_duration * self.sample_rate)
 
-        tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
-        flen = int(tlen / 2 + 1)
+        flen = int(td_samples / 2 + 1)
 
-        delta_f = self.sample_rate / float(tlen)
+        delta_f = self.sample_rate / float(td_samples)
 
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen - 1) * delta_f
 
-        logging.info("Generating %s, %ss, %i, starting from %s Hz",
-                     approximant, 1.0 / delta_f, index, flow)
+        logging.info(
+            "Generating %s, duration %s s, index %i, starting from %s Hz",
+            approximant,
+            1.0 / delta_f,
+            index,
+            flow
+        )
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC

@@ -1831,16 +1831,42 @@ def followup_event_significance(ifo, data_reader, bank,
     onsource_end += coinc_threshold
 
     # Calculate how much time needed to calculate significance
-    trim_pad = (data_reader.trim_padding * data_reader.strain.delta_t)
-    bdur = int(lookback + 2.0 * trim_pad + length_in_time)
-    if bdur > data_reader.strain.duration * .75:
-        bdur = data_reader.strain.duration * .75
+    trim_pad = data_reader.trim_padding * data_reader.strain.delta_t
+    bdur = int(lookback + 2 * trim_pad + length_in_time)
+    bdur_samples = bank.round_up(bdur * bank.sample_rate)
+    max_safe_bdur_samples = int(
+        data_reader.strain.duration * .9 * bank.sample_rate
+    )
+    if bdur_samples > max_safe_bdur_samples:
+        bdur_samples = max_safe_bdur_samples
+        new_lookback = bdur_samples / bank.sample_rate - (2 * trim_pad + length_in_time)
+        if new_lookback > 0:
+            logging.warning(
+                'Strain buffer too short for a lookback time of %f s, '
+                'reducing lookback to %f s',
+                lookback,
+                new_lookback
+            )
+        else:
+            logging.error(
+                'Strain buffer too short to compute the followup SNR time '
+                'series for template %d, will not use %s for followup',
+                template_id,
+                ifo
+            )
+            return None
+    bdur = bdur_samples / bank.sample_rate
 
     # Require all strain be valid within lookback time
     if data_reader.state is not None:
         state_start_time = data_reader.strain.end_time \
                 - data_reader.reduced_pad * data_reader.strain.delta_t - bdur
         if not data_reader.state.is_extent_valid(state_start_time, bdur):
+            logging.info(
+                '%s strain buffer contains invalid data during lookback, '
+                'will not use for followup',
+                ifo
+            )
             return None
 
     # We won't require that all DQ checks be valid for now, except at
@@ -1849,10 +1875,15 @@ def followup_event_significance(ifo, data_reader, bank,
         dq_start_time = onsource_start - duration / 2.0
         dq_duration = onsource_end - onsource_start + duration
         if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
+            logging.info(
+                '%s DQ buffer indicates invalid data during onsource window, '
+                'will not use for followup',
+                ifo
+            )
             return None
 
     # Calculate SNR time series for this duration
-    htilde = bank.get_template(template_id, min_buffer=bdur)
+    htilde = bank.get_template(template_id, td_samples=bdur_samples)
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
     sigma2 = htilde.sigmasq(stilde.psd)
