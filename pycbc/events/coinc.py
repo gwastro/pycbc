@@ -950,12 +950,16 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # Allow None inputs
         stat_files = args.statistic_files or []
+        stat_features = args.statistic_features or []
         stat_keywords = args.statistic_keywords or []
 
         # flatten the list of lists of filenames to a single list (may be empty)
         stat_files = sum(stat_files, [])
 
-        kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
+        kwargs = stat.parse_statistic_feature_options(
+            stat_features,
+            stat_keywords,
+        )
 
         return cls(num_templates, analysis_chunk,
                    args.ranking_statistic,

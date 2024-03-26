@@ -121,18 +121,6 @@ logging.info("%d out of %d templates kept after applying template cuts",
 logging.info('Clustering events over %s s window within each template',
              args.cluster_window)
 
-extra_kwargs = {}
-for inputstr in args.statistic_keywords:
-    try:
-        key, value = inputstr.split(':')
-        extra_kwargs[key] = value
-    except ValueError:
-        err_txt = "--statistic-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(args.statistic_keywords)
-        raise ValueError(err_txt)
-
-
 for tnum in template_ids:
     tids_uncut = trigs.set_template(tnum)
 
@@ -149,9 +137,8 @@ for tnum in template_ids:
 
     # Stat class instance to calculate the ranking statistic
     sds = rank_method.single(trigs)[trigger_keep_ids]
-    stat_t = rank_method.rank_stat_single((ifo, sds),
-                                          **extra_kwargs)
-    trigger_times = sds['end_time']
+    stat_t = rank_method.rank_stat_single((ifo, sds))
+    trigger_times = trigs['end_time'][:][trigger_keep_ids]
     if args.cluster_window:
         cid = coinc.cluster_over_time(stat_t, trigger_times,
                                       args.cluster_window)
