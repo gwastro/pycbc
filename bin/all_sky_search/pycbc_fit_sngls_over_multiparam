@@ -264,12 +264,11 @@ for filename in args.template_fit_file:
         # get attributes from the template-level fit
         for k in fits.attrs.keys():
             if k == 'analysis_time':
-                # For this, we want the mean, not check that it is identical
+                # For this attribute only, we want the mean
                 analysis_time += fits.attrs['analysis_time']
                 continue
             if k not in attr_dict:
-                # This is the first time this attribute
-                # has been encountered
+                # It's the first time we encounter this attribute
                 attr_dict[k] = fits.attrs[k]
             elif not attr_dict[k] == fits.attrs[k]:
                 # Check that the files are consistent with one another
@@ -297,7 +296,7 @@ invalphan = invalpha * nabove
 # convert the sum above into a mean
 analysis_time /= len(args.template_fit_file)
 
-# If we are using multiple files, we should 'smooth' within each template
+# If we are using multiple files, we should average within each template
 # before smoothing over templates going forward. As the templates will
 # all have identical template_ids and have the same number of values,
 # we can take the mean of means and it will still be correct
@@ -326,9 +325,9 @@ if len(args.template_fit_file) > 1:
     median_sigma = (mssum[right] - mssum[left]) / num
 
 if args.output_fits_by_template:
-    # Save fit_by_template values for saving later
-    # Note that these will be the values averaged over the same template in
-    # different files in the case that we have two or more input files
+    # Store fit_by_template values for output file
+    # For more than one input fit file, these values are averaged over the same
+    # template in different files
     fbt_dict = {
         'count_above_thresh': nabove,
         'count_in_template': ntotal,
