@@ -88,6 +88,7 @@ def smooth_tophat(nabove, invalphan, ntotal, dists):
                             idx_within_area)
 
 
+# This is the default number of triggers required for n_closest smoothing
 _default_total_trigs = 500
 
 
@@ -240,10 +241,10 @@ for inputstr in smooth_kwargs:
         key, value = inputstr.split(':')
         kwarg_dict[key] = value
     except ValueError:
-            err_txt = "--smoothing-keywords must take input in the " \
-                      "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                      "Received {}".format(' '.join(args.smoothing_keywords))
-            raise ValueError(err_txt)
+        err_txt = "--smoothing-keywords must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                  "Received {}".format(' '.join(args.smoothing_keywords))
+        raise ValueError(err_txt)
 
 assert len(args.log_param) == len(args.fit_param) == len(args.smoothing_width)
 
