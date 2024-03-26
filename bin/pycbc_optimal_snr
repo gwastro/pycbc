@@ -326,7 +326,7 @@ if __name__ == '__main__':
 
             iterator = tqdm(iterator, total=len(inj_table))
         except ImportError:
-            logging.warn('cannot import tqdm; not showing progress bar')
+            logging.warning('cannot import tqdm; not showing progress bar')
             pass
 
     for inj in iterator:

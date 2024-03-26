@@ -27,12 +27,18 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 """
 
-import os, shutil, itertools
+import os
+import shutil
+import itertools
 import logging
+
 from ligo import segments
 from ligo.segments import utils as segmentsUtils
+
 from pycbc.workflow.core import SegFile, make_analysis_dir
 from pycbc.workflow.core import resolve_url
+
+logger = logging.getLogger('pycbc.workflow.segment')
 
 def save_veto_definer(cp, out_dir, tags=None):
     """ Retrieve the veto definer file and save it locally
@@ -132,7 +138,7 @@ def get_segments_file(workflow, name, option_name, out_dir, tags=None):
             segs[key] = query_str(ifo, flag_str, start, end,
                                   source=source, server=server,
                                   veto_definer=veto_definer)
-        logging.info("%s: got %s flags", ifo, option_name)
+        logger.info("%s: got %s flags", ifo, option_name)
 
     return SegFile.from_segment_list_dict(name, segs,
                                           extension='.xml',
@@ -185,8 +191,8 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     commonsegs = sciencesegs.extract_common(sciencesegs.keys())
     offsrclist = commonsegs[tuple(commonsegs.keys())[0]]
     if len(offsrclist) > 1:
-        logging.info("Removing network segments that do not contain trigger "
-                     "time")
+        logger.info("Removing network segments that do not contain trigger "
+                    "time")
         for seg in offsrclist:
             if triggertime in seg:
                 offsrc = seg
@@ -196,22 +202,22 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     if abs(offsrc) < minduration + 2 * padding:
         fail = segments.segment([triggertime - minduration / 2. - padding,
                                  triggertime + minduration / 2. + padding])
-        logging.warning("Available network segment shorter than minimum "
-                        "allowed duration.")
+        logger.warning("Available network segment shorter than minimum "
+                       "allowed duration.")
         return None, fail
 
     # Will segment duration be the maximum desired length or not?
     if abs(offsrc) >= maxduration + 2 * padding:
-        logging.info("Available network science segment duration (%ds) is "
-                     "greater than the maximum allowed segment length (%ds). "
-                     "Truncating..." % (abs(offsrc), maxduration))
+        logger.info("Available network science segment duration (%ds) is "
+                    "greater than the maximum allowed segment length (%ds). "
+                    "Truncating...", abs(offsrc), maxduration)
     else:
-        logging.info("Available network science segment duration (%ds) is "
-                     "less than the maximum allowed segment length (%ds)."
-                     % (abs(offsrc), maxduration))
+        logger.info("Available network science segment duration (%ds) is "
+                    "less than the maximum allowed segment length (%ds).",
+                    abs(offsrc), maxduration)
 
-    logging.info("%ds of padding applied at beginning and end of segment."
-                 % padding)
+    logger.info("%ds of padding applied at beginning and end of segment.",
+                padding)
 
 
     # Construct on-source
@@ -219,10 +225,9 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     onend = triggertime + onafter
     oncentre = onstart + ((onbefore + onafter) / 2)
     onsrc = segments.segment(onstart, onend)
-    logging.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
-                 " trigger)."
-                 % (abs(onsrc), triggertime - onsrc[0],
-                    onsrc[1] - triggertime))
+    logger.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
+                " trigger).", abs(onsrc), triggertime - onsrc[0],
+                onsrc[1] - triggertime)
     onsrc = segments.segmentlist([onsrc])
 
     # Maximal, centred coherent network segment
@@ -246,8 +251,8 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
     # Trimming off-source
     excess = (abs(offsrc) - 2 * padding) % quanta
     if excess != 0:
-        logging.info("Trimming %ds excess time to make OFF-SOURCE duration a "
-                     "multiple of %ds" % (excess, quanta))
+        logger.info("Trimming %ds excess time to make OFF-SOURCE duration a "
+                    "multiple of %ds", excess, quanta)
         offset = (offsrc[0] + abs(offsrc) / 2.) - oncentre
         if 2 * abs(offset) > excess:
             if offset < 0:
@@ -258,18 +263,17 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                                            offsrc[1] - excess)
             assert abs(offsrc) % quanta == 2 * padding
         else:
-            logging.info("This will make OFF-SOURCE symmetrical about trigger "
-                         "time.")
+            logger.info("This will make OFF-SOURCE symmetrical about trigger "
+                        "time.")
             start = int(offsrc[0] - offset + excess / 2)
             end = int(offsrc[1] - offset - round(float(excess) / 2))
             offsrc = segments.segment(start, end)
             assert abs(offsrc) % quanta == 2 * padding
 
-    logging.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
-                 "after trigger)."
-                 % (abs(offsrc) - 2 * padding,
-                    triggertime - offsrc[0] - padding,
-                    offsrc[1] - triggertime - padding))
+    logger.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
+                "after trigger).", abs(offsrc) - 2 * padding,
+                triggertime - offsrc[0] - padding,
+                offsrc[1] - triggertime - padding)
     offsrc = segments.segmentlist([offsrc])
 
     # Put segments into segmentlistdicts
@@ -324,7 +328,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
         offsource = {}
         for ifo_combo in ifo_combos:
             ifos = "".join(ifo_combo)
-            logging.info("Calculating optimal segment for %s.", ifos)
+            logger.info("Calculating optimal segment for %s.", ifos)
             segs = segments.segmentlistdict({ifo: scisegs[ifo]
                                              for ifo in ifo_combo})
             onsource[ifos], offsource[ifos] = get_triggered_coherent_segment(\
@@ -344,8 +348,8 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                                 key=(lambda key: seg_lens[key]))
             else:
                 best_comb = tuple(offsource.keys())[0]
-            logging.info("No combination of %d IFOs with suitable science "
-                         "segment.", num_ifos)
+            logger.info("No combination of %d IFOs with suitable science "
+                        "segment.", num_ifos)
         else:
             # Identify best analysis segment
             if len(valid_combs) > 1:
@@ -355,7 +359,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                                 key=(lambda key: seg_lens[key]))
             else:
                 best_comb = valid_combs[0]
-            logging.info("Calculated science segments.")
+            logger.info("Calculated science segments.")
 
             offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
             segmentsUtils.tosegwizard(open(offsourceSegfile, "w"),
@@ -381,7 +385,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
 
         num_ifos -= 1
 
-    logging.warning("No suitable science segments available.")
+    logger.warning("No suitable science segments available.")
     try:
         return None, offsource[best_comb]
     except UnboundLocalError:
@@ -456,9 +460,9 @@ def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
                 segs[key] = query_str(ifo, flag, start, end,
                                       source=source, server=server,
                                       veto_definer=veto_definer)
-                logging.info("%s: got %s segments", ifo, flag_name)
+                logger.info("%s: got %s segments", ifo, flag_name)
         else:
-            logging.info("%s: no segments requested", ifo)
+            logger.info("%s: no segments requested", ifo)
 
     return SegFile.from_segment_list_dict(name, segs,
                                           extension='.xml',

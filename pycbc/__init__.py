@@ -110,8 +110,8 @@ def init_logging(verbose=False,
             log_level = logging.WARN
         else:
             log_level = logging.DEBUG
-        logging.warn('Got signal %d, setting log level to %d',
-                     signum, log_level)
+        logging.warning('Got signal %d, setting log level to %d',
+                        signum, log_level)
         logger.setLevel(log_level)
 
     signal.signal(signal.SIGUSR1, sig_handler)

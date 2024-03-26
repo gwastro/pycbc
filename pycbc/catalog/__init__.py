@@ -25,8 +25,12 @@
 """ This package provides information about LIGO/Virgo detections of
 compact binary mergers
 """
+import logging
 import numpy
+
 from . import catalog
+
+logger = logging.getLogger('pycbc.catalog')
 
 _aliases = {}
 _aliases['mchirp'] = 'chirp_mass_source'

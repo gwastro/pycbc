@@ -17,12 +17,16 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
+import logging
+import numpy
+import os
+import sys
+
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import table
 from ligo.lw import utils
-import logging
-import numpy
+
 import pycbc
 import pycbc.version
 from pycbc import DYN_RANGE_FAC
@@ -39,8 +43,6 @@ from pycbc.types.optparse import MultiDetOptionAppendAction
 from pycbc.types.optparse import convert_to_process_params_dict
 from pycbc.io.ligolw import create_process_table
 from pycbc.waveform import FilterBank, get_td_waveform, td_approximants, taper_timeseries
-import os
-import sys
 
 def _empty_row(obj):
     """Create an empty sim_inspiral or sngl_inspiral row where the columns have
@@ -116,6 +118,7 @@ parser = argparse.ArgumentParser(
                   usage=__name__ + ' [--options]',
                   description="Generates a hardware injection waveform using "
                               "a time-domain waveform.")
+pycbc.add_common_pycbc_options(parser)
 
 # IFO network options
 parser.add_argument('--network-snr', type=float, required=True,
@@ -239,14 +242,14 @@ if not opts.psd_estimation and (opts.frame_files or opts.frame_type
                    "(--frame-files, --frame-type, --frame-cache, "
                    "and --fake-strain).")
 
-# setup log
-logging_level = logging.DEBUG
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+# setup log: default is DEBUG (2)
+log_level = 2 if opts.verbose is None else opts.verbose + 2
+pycbc.init_logging(opts.verbose)
 
 # check that sample rates are the same
 for ifo in opts.instruments:
     if opts.sample_rate[ifo] != opts.sample_rate[opts.instruments[0]]:
-        logging.warn('Sample rates must be equal for all IFOs.')
+        logging.warning('Sample rates must be equal for all IFOs.')
         sys.exit()
 sample_rate = opts.sample_rate[opts.instruments[0]]
 
@@ -510,8 +513,8 @@ prefix = opts.tag + '_' + str(start_time)
 logging.info('Writing XML file')
 xml_filename = prefix + '.xml.gz'
 if os.path.exists(xml_filename):
-    logging.warn('Filename %s already exists and will not be overwritten',
-                 xml_filename)
+    logging.warning('Filename %s already exists and will not be overwritten',
+                    xml_filename)
     sys.exit()
 else:
     utils.write_filename(outdoc, xml_filename)
@@ -534,8 +537,8 @@ for ifo in opts.instruments:
 
     # check if filename exists
     if os.path.exists(txt_filename):
-        logging.warn('Filename %s already exists and will not be overwritten',
-                     txt_filename)
+        logging.warning('Filename %s already exists and will not be overwritten',
+                        txt_filename)
         sys.exit()
 
     # save waveform as single-column ASCII for awgstream to use

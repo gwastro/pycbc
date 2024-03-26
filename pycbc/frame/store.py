@@ -16,9 +16,13 @@
 """
 This modules contains functions for reading in data from hdf stores
 """
+import logging
 import h5py
 import numpy
+
 from pycbc.types import TimeSeries
+
+logger = logging.getLogger('pycbc.frame.store')
 
 
 def read_store(fname, channel, start_time, end_time):

@@ -15,9 +15,13 @@
 """
 This modules provides classes for evaluating uniform distributions.
 """
-
+import logging
 import numpy
+
 from pycbc.distributions import bounded
+
+logger = logging.getLogger('pycbc.distributions.uniform')
+
 
 class Uniform(bounded.BoundedDist):
     """

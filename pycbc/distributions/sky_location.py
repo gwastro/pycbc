@@ -19,10 +19,14 @@ right ascension and declination.
 
 import logging
 import numpy
+
 from scipy.spatial.transform import Rotation
+
 from pycbc.distributions import angular
 from pycbc import VARARGS_DELIM
 from pycbc.io import FieldArray
+
+logger = logging.getLogger('pycbc.distributions.sky_location')
 
 
 class UniformSky(angular.UniformSolidAngle):
@@ -100,7 +104,7 @@ class FisherSky():
                 '(preferably much smaller)'
             )
         if sigma > 0.35:
-            logging.warning(
+            logger.warning(
                 'Warning: sigma = %s rad is probably too large for the '
                 'Fisher approximation to be valid', sigma
             )

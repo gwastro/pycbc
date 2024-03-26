@@ -25,8 +25,12 @@
 """ This modules contains information about the announced LIGO/Virgo
 compact binary mergers
 """
+import logging
 import json
+
 from pycbc.io import get_file
+
+logger = logging.getLogger('pycbc.catalog.catalog')
 
 # For the time being all quantities are the 1-d median value
 # FIXME with posteriors when available and we can just post-process that

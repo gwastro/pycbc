@@ -22,6 +22,7 @@ import argparse
 import logging
 import numpy as np
 import h5py
+
 import pycbc
 from pycbc.bin_utils import IrregularBins
 from pycbc.events import cuts, trigger_fits as trstats
@@ -60,8 +61,7 @@ def duration_bins_from_cli(args):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--verbose", action="store_true",
-                    help="Print extra debugging information", default=False)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--ifos", nargs="+", required=True,
                     help="Which ifo are we fitting the triggers for? "
                          "Required")
@@ -128,6 +128,8 @@ cuts.insert_cuts_option_group(parser)
 
 args = parser.parse_args()
 
+pycbc.init_logging(args.verbose)
+
 # Check input options
 
 # Pruning options are mutually required or not needed
@@ -159,8 +161,6 @@ if args.duration_bin_end and \
     parser.error("--duration-bin-end must be greater than "
                  "--duration-bin-start, got "
                  f"{args.duration_bin_end} and {args.duration_bin_start}")
-
-pycbc.init_logging(args.verbose)
 
 duration_bin_edges = duration_bins_from_cli(args)
 logging.info("Duration bin edges: %s", duration_bin_edges)
@@ -227,7 +227,7 @@ for counter, filename in enumerate(files):
     try:
         h5py.File(f, 'r')
     except IOError:
-        logging.warn('IOError with file ' + f)
+        logging.warning('IOError with file %s', f)
         continue
 
     # Triggers for this file

@@ -19,7 +19,11 @@ set of points
 import logging
 import numpy
 import numpy.random
+
 from pycbc import VARARGS_DELIM
+
+logger = logging.getLogger('pycbc.distributions.fixedsamples')
+
 
 class FixedSamples(object):
     """
@@ -137,7 +141,7 @@ class FixedSamples(object):
             raise ValueError("Fixed sample distrubtion only supports a single"
                              " distribution to sample from.")
 
-        logging.info('Drawing samples for fixed sample distribution:%s', params)
+        logger.info('Drawing samples for fixed sample distribution:%s', params)
         samples = dist[0].rvs(size=int(float(size)))
         samples = {p: samples[p] for p in samples.dtype.names}
 

@@ -527,7 +527,7 @@ class PartitionedTmpltbank(object):
                 warn_msg += "convention is that mass1 > mass2. Swapping mass1 "
                 warn_msg += "and mass2 and adding point to bank. This message "
                 warn_msg += "will not be repeated."
-                logger.warn(warn_msg)
+                logger.warning(warn_msg)
                 self.spin_warning_given = True
 
         # These that masses obey the restrictions of mass_range_params

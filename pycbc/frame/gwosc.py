@@ -17,11 +17,14 @@
 This modules contains functions for getting data from the Gravitational Wave
 Open Science Center (GWOSC).
 """
+import logging
 import json
 from urllib.request import urlopen
+
 from pycbc.io import get_file
 from pycbc.frame import read_frame
 
+logger = logging.getLogger('pycbc.frame.gwosc')
 
 _GWOSC_URL = "https://www.gwosc.org/archive/links/%s/%s/%s/%s/json/"
 

@@ -14,8 +14,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import logging, os.path
+import logging
+import os.path
+
 from ligo import segments
+
 from pycbc.events import coinc
 from pycbc.workflow.core import Executable, FileList
 from pycbc.workflow.core import makedir, resolve_url_to_file
@@ -27,6 +30,8 @@ except ImportError:
     # Python 2
     from itertools import izip_longest as zip_longest
 from pycbc.workflow.pegasus_workflow import SubWorkflow
+
+logger = logging.getLogger('pycbc.workflow.minifollowups')
 
 def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
@@ -71,11 +76,13 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
         A list of tuples which specify the displayed file layout for the
         minifollops plots.
     """
-    logging.info('Entering minifollowups module')
+    logger.info('Entering minifollowups module')
 
     if not workflow.cp.has_section('workflow-minifollowups'):
-        logging.info('There is no [workflow-minifollowups] section in configuration file')
-        logging.info('Leaving minifollowups')
+        msg = 'There is no [workflow-minifollowups] section in '
+        msg += 'configuration file'
+        logger.info(msg)
+        logger.info('Leaving minifollowups')
         return
 
     tags = [] if tags is None else tags
@@ -125,7 +132,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
     job.add_into_workflow(workflow)
-    logging.info('Leaving minifollowups module')
+    logger.info('Leaving minifollowups module')
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                                    insp_segs, insp_data_name, insp_anal_name,
@@ -163,13 +170,13 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         A list of tuples which specify the displayed file layout for the
         minifollops plots.
     """
-    logging.info('Entering minifollowups module')
+    logger.info('Entering minifollowups module')
 
     if not workflow.cp.has_section('workflow-sngl_minifollowups'):
         msg = 'There is no [workflow-sngl_minifollowups] section in '
         msg += 'configuration file'
-        logging.info(msg)
-        logging.info('Leaving minifollowups')
+        logger.info(msg)
+        logger.info('Leaving minifollowups')
         return
 
     tags = [] if tags is None else tags
@@ -233,7 +240,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
     job.add_into_workflow(workflow)
-    logging.info('Leaving minifollowups module')
+    logger.info('Leaving minifollowups module')
 
 
 def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
@@ -269,11 +276,13 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
         A list of tuples which specify the displayed file layout for the
         minifollops plots.
     """
-    logging.info('Entering injection minifollowups module')
+    logger.info('Entering injection minifollowups module')
 
     if not workflow.cp.has_section('workflow-injection_minifollowups'):
-        logging.info('There is no [workflow-injection_minifollowups] section in configuration file')
-        logging.info('Leaving minifollowups')
+        msg = 'There is no [workflow-injection_minifollowups] section in '
+        msg += 'configuration file'
+        logger.info(msg)
+        logger.info('Leaving minifollowups')
         return
 
     tags = [] if tags is None else tags
@@ -322,7 +331,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
                                    cache_file=workflow.cache_file)
     job.add_into_workflow(workflow)
 
-    logging.info('Leaving injection minifollowups module')
+    logger.info('Leaving injection minifollowups module')
 
 
 class SingleTemplateExecutable(PlotExecutable):
@@ -1179,11 +1188,13 @@ def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
         A list of tuples which specify the displayed file layout for the
         minifollowups plots.
     """
-    logging.info('Entering minifollowups module')
+    logger.info('Entering minifollowups module')
 
     if not workflow.cp.has_section('workflow-minifollowups'):
-        logging.info('There is no [workflow-minifollowups] section in configuration file')
-        logging.info('Leaving minifollowups')
+        msg = 'There is no [workflow-minifollowups] section in '
+        msg += 'configuration file'
+        logger.info(msg)
+        logger.info('Leaving minifollowups')
         return
 
     tags = [] if tags is None else tags
@@ -1237,4 +1248,4 @@ def setup_upload_prep_minifollowups(workflow, coinc_file, xml_all_file,
                                    staging_site=workflow.staging_site,
                                    cache_file=workflow.cache_file)
     job.add_into_workflow(workflow)
-    logging.info('Leaving minifollowups module')
+    logger.info('Leaving minifollowups module')

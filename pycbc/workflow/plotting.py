@@ -25,9 +25,14 @@
 This module is responsible for setting up plotting jobs.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
+
+import logging
 from urllib.request import pathname2url
 from urllib.parse import urljoin
+
 from pycbc.workflow.core import File, FileList, makedir, Executable
+
+logger = logging.getLogger('pycbc.workflow.plotting')
 
 
 def excludestr(tags, substr):

@@ -29,8 +29,7 @@ import pycbc
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--verbose", action="store_true",
-                    help="Print extra debugging information", default=False)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--combined-fits-file", required=True,
                     help="File containing information on the combined trigger "
                          "fits.")
@@ -140,7 +139,8 @@ for ifo in ifos:
             continue
 
         l_times = separate_times[ifo]
-        rate = counts / l_times
+        with np.errstate(divide='ignore'):
+            rate = counts / l_times
 
         ma = mean_alpha[ifo][i]
         ca = cons_alpha[ifo][i]
@@ -151,7 +151,8 @@ for ifo in ifos:
         bin_colour = plt.get_cmap(args.colormap)(bin_prop)
         bin_label = f"duration {bl:.2f}-{bu:.2f}"
         alpha_lines += ax_alpha.plot(separate_starts[ifo], alphas, c=bin_colour,
-                                     label=bin_label)
+                                     label=bin_label, marker='.',
+                                     markersize=10)
         alpha_lines.append(ax_alpha.axhline(ma,
                                             label="total fit = %.2f" % ma,
                                             c=bin_colour, linestyle='--',))
@@ -161,14 +162,22 @@ for ifo in ifos:
                                             label=alpha_lab))
 
         count_lines += ax_count.plot(separate_starts[ifo], rate, c=bin_colour,
-                                     label=bin_label)
+                                     label=bin_label, marker='.',
+                                     markersize=10)
+
+        if mr < 1e-3:
+            mlab = f"mean = {mr:.3e}"
+            clab = f"{conservative_percentile:d}th %ile = {cr:.3e}"
+        else:
+            mlab = f"mean = {mr:.3f}"
+            clab = f"{conservative_percentile:d}th %ile = {cr:.3f}"
+
         count_lines.append(ax_count.axhline(mr,
                                             c=bin_colour, linestyle='--',
-                                            label=f"mean = {mr:.3f}"))
-        count_lab = f"{conservative_percentile:d}th %ile = {cr:.3f}"
+                                            label=mlab))
         count_lines.append(ax_count.axhline(cr,
                                             c=bin_colour, linestyle=':',
-                                            label=count_lab))
+                                            label=clab))
 
     alpha_labels = [l.get_label() for l in alpha_lines]
     ax_alpha.legend(alpha_lines, alpha_labels, loc='lower center',

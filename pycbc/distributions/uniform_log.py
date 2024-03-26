@@ -15,9 +15,13 @@
 """ This modules provides classes for evaluating distributions whose logarithm
 are uniform.
 """
-
+import logging
 import numpy
+
 from pycbc.distributions import uniform
+
+logger = logging.getLogger('pycbc.distributions.uniform_log')
+
 
 class UniformLog10(uniform.Uniform):
     """ A uniform distribution on the log base 10 of the given parameters.

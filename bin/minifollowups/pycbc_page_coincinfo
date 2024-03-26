@@ -16,17 +16,28 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Make tables describing a foreground event"""
 
-import h5py, argparse, logging, sys
-import matplotlib; matplotlib.use('Agg')
-import numpy, lal, datetime
-import pycbc.version, pycbc.results, pycbc.pnutils
+import h5py
+import argparse
+import logging
+import sys
+import matplotlib
+matplotlib.use('Agg')
+import datetime
+import numpy
+
+import lal
+
+from pycbc import add_common_pycbc_options
+import pycbc.version
+import pycbc.results
+import pycbc.pnutils
 from pycbc.events import ranking
 from pycbc.results import followup
 
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--single-trigger-files', nargs='+',
     help="HDF format single detector trigger files for the full data run")
 parser.add_argument('--bank-file',

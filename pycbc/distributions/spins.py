@@ -15,8 +15,9 @@
 """
 This modules provides spin distributions of CBCs.
 """
-
+import logging
 import numpy
+
 from pycbc import conversions
 from pycbc.distributions.uniform import Uniform
 from pycbc.distributions.angular import UniformAngle
@@ -24,6 +25,9 @@ from pycbc.distributions.power_law import UniformPowerLaw
 from pycbc.distributions.arbitrary import Arbitrary
 from pycbc.distributions.bounded import get_param_bounds_from_config, \
     VARARGS_DELIM, BoundedDist
+
+logger = logging.getLogger('pycbc.distributions.spins')
+
 
 class IndependentChiPChiEff(Arbitrary):
     r"""A distribution such that :math:`\chi_{\mathrm{eff}}` and

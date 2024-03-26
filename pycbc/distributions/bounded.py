@@ -15,13 +15,15 @@
 """
 This modules provides classes for evaluating distributions with bounds.
 """
-
+import logging
 import warnings
 from configparser import Error
-
 import numpy
+
 from pycbc import boundaries
 from pycbc import VARARGS_DELIM
+
+logger = logging.getLogger('pycbc.distributions.bounded')
 
 #
 #   Distributions for priors

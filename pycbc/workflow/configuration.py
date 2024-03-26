@@ -38,6 +38,8 @@ from urllib.parse import urlparse
 
 from pycbc.types.config import InterpolatingConfigParser
 
+logger = logging.getLogger('pycbc.workflow.configuration')
+
 # NOTE urllib is weird. For some reason it only allows known schemes and will
 # give *wrong* results, rather then failing, if you use something like gsiftp
 # We can add schemes explicitly, as below, but be careful with this!
@@ -90,7 +92,7 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         import ciecplib
         # Make the scitokens logger a little quieter
         # (it is called through ciecpclib)
-        logging.getLogger('scitokens').setLevel(logging.root.level + 10)
+        logging.getLogger('scitokens').setLevel(logger.level + 10)
         with ciecplib.Session() as s:
             if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
                 # authenticate with git.ligo.org using callback

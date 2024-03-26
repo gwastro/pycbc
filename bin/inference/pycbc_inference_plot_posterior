@@ -226,7 +226,7 @@ if opts.plot_injection_parameters:
             vals = injections[p]
         except (NameError, TypeError, AttributeError):
             # injection doesn't have this parameter, skip
-            logging.warn("Could not find injection parameter {}".format(p))
+            logging.warning("Could not find injection parameter %s", p)
             continue
 
         if opts.pick_injection_by_time:

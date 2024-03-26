@@ -32,10 +32,13 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 import logging
 import os.path
 import configparser as ConfigParser
+
 from pycbc.workflow.core import FileList, make_analysis_dir, Node
 from pycbc.workflow.core import Executable, resolve_url_to_file
 from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
         PycbcCreateInjectionsExecutable, select_generic_executable)
+
+logger = logging.getLogger('pycbc.workflow.injection')
 
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -90,7 +93,7 @@ def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                                               'parallelization-factor',
                                               tags))
     except Exception as e:
-        logging.warning(e)
+        logger.warning(e)
         factor = 1
 
     if factor == 1:
@@ -196,7 +199,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     """
     if tags is None:
         tags = []
-    logging.info("Entering injection module.")
+    logger.info("Entering injection module.")
     make_analysis_dir(output_dir)
 
     # Get full analysis segment for output file naming
@@ -254,5 +257,5 @@ def setup_injection_workflow(workflow, output_dir=None,
 
         inj_tags.append(inj_tag)
 
-    logging.info("Leaving injection module.")
+    logger.info("Leaving injection module.")
     return inj_files, inj_tags

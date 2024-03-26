@@ -25,9 +25,12 @@ import matplotlib.pyplot as plt
 import numpy
 import sys
 
+from pycbc import add_common_pycbc_options, init_logging
+
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
+add_common_pycbc_options(parser)
 
 # I/O options
 parser.add_argument("--input-file", required=True,
@@ -51,19 +54,11 @@ parser.add_argument("--y-label", default="Counts",
 parser.add_argument("--title", default="",
                     help="Title shown above plot.")
 
-# verbose option
-parser.add_argument("--verbose", action="store_true",
-                    help="Display log messages while executing.")
-
 # parse command line
 opts = parser.parse_args()
 
 # setup log
-if opts.verbose:
-    logging_level = logging.DEBUG
-else:
-    logging_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=logging_level)
+init_logging(opts.verbose)
 
 # read data
 logging.info("Reading data")

@@ -27,19 +27,23 @@ __date__ = "31.10.2017"
 
 import logging
 import argparse
-import pycbc.version
-
-import h5py
-import pylab
-import numpy as np
-import scipy.stats as ss
-from matplotlib import cm
-from pycbc.population import rates_functions as rf
 from numpy import logaddexp, log, newaxis, expm1
+import h5py
+import numpy as np
+from matplotlib import cm
+import pylab
+
+import scipy.stats as ss
+
+import pycbc
+import pycbc.version
+from pycbc.population import rates_functions as rf
 
 # Parse command line
-parser = argparse.ArgumentParser(description=
-                                      "Plot rate prior and posteriors.")
+parser = argparse.ArgumentParser(
+    description=__doc__
+)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--prior-samples', required=True,
                               help="File containing rate prior samples")
 parser.add_argument('--posterior-samples', nargs='+', required=True,
@@ -56,6 +60,8 @@ parser.add_argument('--plot-labels', nargs='+',
               required=True, help="Labels for the population models.")
 
 opts = parser.parse_args()
+pycbc.init_logging(opts.verbose)
+
 assert len(opts.posterior_samples) == len(opts.population_models), \
               "Unequal number of posterior files and population models!"
 

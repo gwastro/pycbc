@@ -15,13 +15,16 @@
 """
 This modules provides classes for evaluating multi-dimensional constraints.
 """
-
+import logging
 import re
 import scipy.spatial
 import numpy
 import h5py
+
 from pycbc import transforms
 from pycbc.io import record
+
+logger = logging.getLogger('pycbc.distributions.constraints')
 
 
 class Constraint(object):

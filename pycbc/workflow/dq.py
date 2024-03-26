@@ -25,6 +25,8 @@
 import logging
 from pycbc.workflow.core import (FileList, Executable, Node, make_analysis_dir)
 
+logger = logging.getLogger('pycbc.workflow.dq')
+
 
 class PyCBCBinTemplatesDQExecutable(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -61,7 +63,7 @@ def setup_dq_reranking(workflow, insps, bank,
                        analyzable_name,
                        dq_seg_file,
                        output_dir=None, tags=None):
-    logging.info("Setting up dq reranking")
+    logger.info("Setting up dq reranking")
     make_analysis_dir(output_dir)
     output_files = FileList()
     output_labels = []
@@ -135,5 +137,5 @@ def setup_dq_reranking(workflow, insps, bank,
         output_files += bin_triggers_node.output_files
         output_labels += [dq_label]
 
-    logging.info("Finished setting up dq reranking")
+    logger.info("Finished setting up dq reranking")
     return output_files, output_labels

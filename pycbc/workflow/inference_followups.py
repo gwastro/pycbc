@@ -16,9 +16,13 @@
 """
 Module that contains functions for setting up the inference workflow.
 """
+import logging
+
 from pycbc.workflow.core import (Executable, makedir)
 from pycbc.workflow.plotting import PlotExecutable
 from pycbc.results import layout
+
+logger = logging.getLogger('pycbc.workflow.inference_followups')
 
 
 def make_inference_plot(workflow, input_file, output_dir,

@@ -13,12 +13,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
+import logging
 import re
 import numpy
+
 import pycbc
 from pycbc import conversions, boundaries
+
 from . import uniform, bounded
+
+logger = logging.getLogger('pycbc.distributions.qnm')
 
 
 class UniformF0Tau(uniform.Uniform):

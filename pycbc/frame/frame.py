@@ -26,12 +26,15 @@ import math
 import re
 from urllib.parse import urlparse
 import numpy
+
 import lalframe
 import lal
 from gwdatafind import find_urls as find_frame_urls
+
 import pycbc
 from pycbc.types import TimeSeries, zeros
 
+logger = logging.getLogger('pycbc.frame.frame')
 
 # map LAL series types to corresponding functions and Numpy types
 _fr_type_map = {
@@ -198,7 +201,7 @@ def read_frame(location, channels, start_time=None,
 
     cum_cache = locations_to_cache(locations)
     if sieve:
-        logging.info("Using frames that match regexp: %s", sieve)
+        logger.info("Using frames that match regexp: %s", sieve)
         lal.CacheSieve(cum_cache, 0, 0, None, None, sieve)
     if start_time is not None and end_time is not None:
         # Before sieving, check if this is sane. Otherwise it will fail later.
@@ -402,14 +405,14 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
         from pycbc.frame.gwosc import read_frame_gwosc
         return read_frame_gwosc(channels, start_time, end_time)
 
-    logging.info('Querying datafind server')
+    logger.info('Querying datafind server')
     paths = frame_paths(
         frame_type,
         int(start_time),
         int(numpy.ceil(end_time)),
         site=site
     )
-    logging.info('Found frame file paths: %s', ' '.join(paths))
+    logger.info('Found frame file paths: %s', ' '.join(paths))
     return read_frame(
         paths,
         channels,
