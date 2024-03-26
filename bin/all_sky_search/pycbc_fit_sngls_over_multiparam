@@ -253,6 +253,11 @@ init_logging(args.verbose)
 analysis_time = 0
 attr_dict = {}
 
+# This will be used to check the fit files have the same number of templates
+# (therefore probably using the same bank)
+num_templates = None
+
+# These end up as n_files * n_templates arrays
 tid = numpy.array([], dtype=int)
 nabove = numpy.array([], dtype=int)
 ntotal = numpy.array([], dtype=int)
@@ -262,6 +267,14 @@ median_sigma = numpy.array([], dtype=float)
 logging.info("Loading input template fits")
 for filename in args.template_fit_file:
     with h5py.File(filename, 'r') as fits:
+        if num_templates is None:
+            # First file; store number of templates
+            num_templates = fits['template_id'].size
+        elif not num_templates == fits['template_id'].size:
+            raise RuntimeError(
+                "Input fit files correspond to different banks. "
+                "This situation is not yet supported."
+            )
         # get attributes from the template-level fit
         for k in fits.attrs.keys():
             if k == 'analysis_time':
@@ -271,6 +284,9 @@ for filename in args.template_fit_file:
             if k not in attr_dict:
                 # It's the first time we encounter this attribute
                 attr_dict[k] = fits.attrs[k]
+            elif k == 'ifo':
+                # We don't mind if this attribute is different
+                continue
             elif not attr_dict[k] == fits.attrs[k]:
                 # Check that the files are consistent with one another
                 err_msg = f"Input files are not consistent, file {filename} "
@@ -297,11 +313,12 @@ invalphan = invalpha * nabove
 # convert the sum above into a mean
 analysis_time /= len(args.template_fit_file)
 
-# If we are using multiple files, we should average within each template
-# before smoothing over templates going forward. As the templates will
-# all have identical template_ids and have the same number of values,
-# we can take the mean of means and it will still be correct
 if len(args.template_fit_file) > 1:
+    # From the n_templates * n_files arrays, average within each template.
+    # To do this, we average the n_files occurrences which have the same tid
+
+    # The linearity of the average means that we can do this in two steps
+    # without biasing the final result.
     logging.info("Averaging within the same template for multiple files")
     tid_unique = numpy.unique(tid)
 
