@@ -9,13 +9,16 @@ plane as a function of central mchirp value.
 """
 
 import argparse
-from pycbc.mchirp_area import calc_areas
 import numpy
 from matplotlib import use; use("Agg")
 from matplotlib import pyplot
 
+from pycbc import init_logging, add_common_pycbc_options
+from pycbc.mchirp_area import calc_areas
+
 # ARGUMENT PARSER
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument("--min-m2", type=float, help="Minimum value for m2")
 parser.add_argument("--max-m1", type=float, help="Maximum value for m1")
 parser.add_argument("--ns-max", type=float, help="Maximum neutron star mass")
@@ -23,6 +26,8 @@ parser.add_argument("--gap-max", type=float, help="Minimum black hole mass")
 parser.add_argument("--central-z", type=float, help="Central redshift value")
 parser.add_argument("--delta-z", type=float, help="Redshift uncertainty")
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 if args.min_m2 and args.max_m1:
     m1_max = float(args.max_m1)

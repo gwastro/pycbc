@@ -20,7 +20,10 @@ import urllib.parse
 
 import lal
 import lalframe
+
 import pycbc.version
+
+logger = logging.getLogger('pycbc.results.versioning')
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -115,7 +118,7 @@ def get_code_version_numbers(executable_names, executable_files):
     code_version_dict = {}
     for exe_name, value in zip(executable_names, executable_files):
         value = urllib.parse.urlparse(value)
-        logging.info("Getting version info for %s", exe_name)
+        logger.info("Getting version info for %s", exe_name)
         version_string = None
         if value.scheme in ['gsiftp', 'http', 'https']:
             code_version_dict[exe_name] = "Using bundle downloaded from %s" % value

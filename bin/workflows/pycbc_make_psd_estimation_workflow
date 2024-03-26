@@ -19,27 +19,30 @@
 """Program for setting up a workflow which estimates the average PSD of a given
 portion of strain data."""
 
-import pycbc
-import pycbc.version
-import pycbc.workflow
 import os.path
 import argparse
 import logging
-from ligo import segments as _segments
 import datetime
-import lal, sys
+import sys
+
+from ligo import segments as _segments
+import lal
+
+import pycbc
+import pycbc.version
+import pycbc.workflow
 from pycbc.results import save_fig_with_metadata, two_column_layout
 import pycbc.workflow
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    level=logging.INFO)
-
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 pycbc.workflow.add_workflow_command_line_group(parser)
 pycbc.workflow.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose, default_level=1)
 
 # FIXME: opts.tags is currently unused here.
 

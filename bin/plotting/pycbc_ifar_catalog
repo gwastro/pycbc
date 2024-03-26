@@ -19,21 +19,23 @@ import argparse
 import h5py
 import numpy
 import sys
+import logging
 import matplotlib as mpl; mpl.use('Agg')
 import pylab
+
+from scipy.stats import norm, poisson
+
 import pycbc.results
 import pycbc.version
 from pycbc import conversions
-from scipy.stats import norm, poisson
-import logging
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
 
 parser = argparse.ArgumentParser(usage='pycbc_ifar_catalog [--options]',
                     description='Plots cumulative IFAR vs count for'
                           ' foreground triggers')
+add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--trigger-files', nargs='+',
                     help='Path to coincident trigger HDF file(s)')
 parser.add_argument('--output-file', required=True,

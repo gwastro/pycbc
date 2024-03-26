@@ -9,11 +9,16 @@ detector frame mass and redshift.
 """
 
 import math
+import logging
 import numpy as np
-from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
+
 from scipy.integrate import quad
-from pycbc.cosmology import _redshift
 from astropy.cosmology import FlatLambdaCDM
+
+from pycbc.cosmology import _redshift
+from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
+
+logger = logging.getLogger('pycbc.mchirp_area')
 
 
 def insert_args(parser):

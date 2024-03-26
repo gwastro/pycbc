@@ -31,6 +31,7 @@ from pycbc.inference import io
 from pycbc.results import metadata
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--input-file', type=str, required=True,
                     help='Path to the input HDF file.')
 parser.add_argument('--output-file', type=str, required=True,
@@ -48,7 +49,8 @@ parser.add_argument('-b', '--plot-nchains-burned-in', action='store_true',
                          'ensemble samplers, this will be all or nothing.')
 opts = parser.parse_args()
 
-pycbc.init_logging(True)
+# Default logging level is info: --verbose adds to this
+pycbc.init_logging(opts.verbose, default_level=1)
 
 nplots = sum([opts.plot_act, opts.plot_effective_nsamples,
               opts.plot_nchains_burned_in, opts.plot_checkpoint_dt])

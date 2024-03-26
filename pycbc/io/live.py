@@ -21,6 +21,8 @@ from pycbc.results import generate_asd_plot, generate_snr_plot
 from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
 
+logger = logging.getLogger('pycbc.io.live')
+
 
 class CandidateForGraceDB(object):
     """This class provides an interface for uploading candidates to GraceDB.
@@ -295,24 +297,30 @@ class CandidateForGraceDB(object):
         save_dir = os.path.dirname(fname)
         # Save EMBright properties info as json
         if self.hasmassgap is not None:
-            self.embright_file = os.path.join(save_dir, 'pycbc.em_bright.json')
+            self.embright_file = os.path.join(
+                save_dir,
+                'pycbc.em_bright.json'
+            )
             with open(self.embright_file, 'w') as embrightf:
                 json.dump({'HasMassGap': self.hasmassgap}, embrightf)
-            logging.info('EM Bright file saved as %s', self.embright_file)
+            logger.info('EM Bright file saved as %s', self.embright_file)
 
         # Save multi-cpt p astro as json
         if self.astro_probs is not None:
             self.multipa_file = os.path.join(save_dir, 'pycbc.p_astro.json')
             with open(self.multipa_file, 'w') as multipaf:
                 json.dump(self.astro_probs, multipaf)
-            logging.info('Multi p_astro file saved as %s', self.multipa_file)
+            logger.info('Multi p_astro file saved as %s', self.multipa_file)
 
         # Save source probabilities in a json file
         if self.probabilities is not None:
             self.prob_file = os.path.join(save_dir, 'src_probs.json')
             with open(self.prob_file, 'w') as probf:
                 json.dump(self.probabilities, probf)
-            logging.info('Source probabilities file saved as %s', self.prob_file)
+            logger.info(
+                'Source probabilities file saved as %s',
+                self.prob_file
+            )
             # Don't save any other files!
             return
 
@@ -322,7 +330,7 @@ class CandidateForGraceDB(object):
             with open(self.pastro_file, 'w') as pastrof:
                 json.dump({'p_astro': self.p_astro, 'p_terr': self.p_terr},
                           pastrof)
-            logging.info('P_astro file saved as %s', self.pastro_file)
+            logger.info('P_astro file saved as %s', self.pastro_file)
 
     def upload(self, fname, gracedb_server=None, testing=True,
                extra_strings=None, search='AllSky', labels=None):
@@ -364,7 +372,7 @@ class CandidateForGraceDB(object):
 
         # connect to GraceDB if we are not reusing a connection
         if not hasattr(self, 'gracedb'):
-            logging.info('Connecting to GraceDB')
+            logger.info('Connecting to GraceDB')
             gdbargs = {'reload_certificate': True, 'reload_buffer': 300}
             if gracedb_server:
                 gdbargs['service_url'] = gracedb_server
@@ -372,11 +380,11 @@ class CandidateForGraceDB(object):
                 from ligo.gracedb.rest import GraceDb
                 self.gracedb = GraceDb(**gdbargs)
             except Exception as exc:
-                logging.error('Failed to create GraceDB client')
-                logging.error(exc)
+                logger.error('Failed to create GraceDB client')
+                logger.error(exc)
 
         # create GraceDB event
-        logging.info('Uploading %s to GraceDB', fname)
+        logger.info('Uploading %s to GraceDB', fname)
         group = 'Test' if testing else 'CBC'
         gid = None
         try:
@@ -388,10 +396,10 @@ class CandidateForGraceDB(object):
                 labels=labels
             )
             gid = response.json()["graceid"]
-            logging.info("Uploaded event %s", gid)
+            logger.info("Uploaded event %s", gid)
         except Exception as exc:
-            logging.error('Failed to create GraceDB event')
-            logging.error(str(exc))
+            logger.error('Failed to create GraceDB event')
+            logger.error(str(exc))
 
         # Upload em_bright properties JSON
         if self.hasmassgap is not None and gid is not None:
@@ -401,11 +409,11 @@ class CandidateForGraceDB(object):
                     filename=self.embright_file,
                     tag_name=['em_bright']
                 )
-                logging.info('Uploaded em_bright properties for %s', gid)
+                logger.info('Uploaded em_bright properties for %s', gid)
             except Exception as exc:
-                logging.error('Failed to upload em_bright properties file '
-                              'for %s', gid)
-                logging.error(str(exc))
+                logger.error('Failed to upload em_bright properties file '
+                             'for %s', gid)
+                logger.error(str(exc))
 
         # Upload multi-cpt p_astro JSON
         if self.astro_probs is not None and gid is not None:
@@ -416,13 +424,13 @@ class CandidateForGraceDB(object):
                     tag_name=['p_astro'],
                     label='PASTRO_READY'
                 )
-                logging.info('Uploaded multi p_astro for %s', gid)
+                logger.info('Uploaded multi p_astro for %s', gid)
             except Exception as exc:
-                logging.error(
+                logger.error(
                     'Failed to upload multi p_astro file for %s',
                     gid
                 )
-                logging.error(str(exc))
+                logger.error(str(exc))
 
         # If there is p_astro but no probabilities, upload p_astro JSON
         if hasattr(self, 'pastro_file') and gid is not None:
@@ -432,10 +440,10 @@ class CandidateForGraceDB(object):
                     filename=self.pastro_file,
                     tag_name=['sig_info']
                 )
-                logging.info('Uploaded p_astro for %s', gid)
+                logger.info('Uploaded p_astro for %s', gid)
             except Exception as exc:
-                logging.error('Failed to upload p_astro file for %s', gid)
-                logging.error(str(exc))
+                logger.error('Failed to upload p_astro file for %s', gid)
+                logger.error(str(exc))
 
         # plot the SNR timeseries and noise PSDs
         if self.snr_series is not None:
@@ -485,9 +493,9 @@ class CandidateForGraceDB(object):
                     tag_name=['psd'], displayName=['ASDs']
                 )
             except Exception as exc:
-                logging.error('Failed to upload SNR timeseries and ASD for %s',
-                              gid)
-                logging.error(str(exc))
+                logger.error('Failed to upload SNR timeseries and ASD for %s',
+                             gid)
+                logger.error(str(exc))
 
         # If 'self.prob_file' exists, make pie plot and do uploads.
         # The pie plot only shows relative astrophysical source
@@ -513,23 +521,23 @@ class CandidateForGraceDB(object):
                         filename=self.prob_file,
                         tag_name=['pe']
                     )
-                    logging.info('Uploaded source probabilities for %s', gid)
+                    logger.info('Uploaded source probabilities for %s', gid)
                     self.gracedb.write_log(
                         gid,
                         'Source probabilities plot upload',
                         filename=self.prob_plotf,
                         tag_name=['pe']
                     )
-                    logging.info(
+                    logger.info(
                         'Uploaded source probabilities pie chart for %s',
                         gid
                     )
                 except Exception as exc:
-                    logging.error(
+                    logger.error(
                         'Failed to upload source probability results for %s',
                         gid
                     )
-                    logging.error(str(exc))
+                    logger.error(str(exc))
 
         if gid is not None:
             try:
@@ -540,9 +548,9 @@ class CandidateForGraceDB(object):
                     self.gracedb.write_log(
                         gid, text, tag_name=['analyst_comments'])
             except Exception as exc:
-                logging.error('Something failed during annotation of analyst'
-                              ' comments for event %s on GraceDB.', fname)
-                logging.error(str(exc))
+                logger.error('Something failed during annotation of analyst '
+                             'comments for event %s on GraceDB.', fname)
+                logger.error(str(exc))
 
         return gid
 

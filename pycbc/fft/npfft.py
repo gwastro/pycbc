@@ -31,6 +31,8 @@ import numpy.fft
 from .core import _check_fft_args
 from .core import _BaseFFT, _BaseIFFT
 
+logger = logging.getLogger('pycbc.events.npfft')
+
 _INV_FFT_MSG = ("I cannot perform an {} between data with an input type of "
                 "{} and an output type of {}")
 
@@ -76,7 +78,7 @@ class FFT(_BaseFFT):
     """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(FFT, self).__init__(invec, outvec, nbatch, size)
-        logging.warning(WARN_MSG)
+        logger.warning(WARN_MSG)
         self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
 
     def execute(self):
@@ -89,7 +91,7 @@ class IFFT(_BaseIFFT):
     """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(IFFT, self).__init__(invec, outvec, nbatch, size)
-        logging.warning(WARN_MSG)
+        logger.warning(WARN_MSG)
         self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
 
     def execute(self):

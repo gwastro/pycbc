@@ -35,6 +35,7 @@ import numpy
 import scipy
 import h5py
 import pycbc.version
+
 from pycbc.detector import Detector
 from pycbc import init_logging
 from pycbc.results import save_fig_with_metadata

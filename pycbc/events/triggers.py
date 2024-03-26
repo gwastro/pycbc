@@ -16,12 +16,15 @@
 """ This modules contains functions for reading single and coincident triggers
 from the command line.
 """
-
+import logging
 import h5py
 import numpy
+
 from pycbc import conversions, pnutils
 from pycbc.events import coinc
 import pycbc.detector
+
+logger = logging.getLogger('pycbc.events.triggers')
 
 
 def insert_bank_bins_option_group(parser):

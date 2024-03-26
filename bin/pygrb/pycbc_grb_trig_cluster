@@ -35,7 +35,7 @@ import h5py
 from gwdatafind.utils import filename_metadata
 
 from pycbc import __version__
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -119,13 +119,7 @@ parser = argparse.ArgumentParser(
     description=__doc__,
 )
 
-parser.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",
-    default=False,
-    help="verbose output with microsecond timer (default: %(default)s)",
-)
+add_common_pycbc_options(parser)
 parser.add_argument(
     "-V",
     "--version",

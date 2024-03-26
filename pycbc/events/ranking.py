@@ -1,7 +1,10 @@
 """ This module contains functions for calculating single-ifo ranking
 statistic values
 """
+import logging
 import numpy
+
+logger = logging.getLogger('pycbc.events.ranking')
 
 
 def effsnr(snr, reduced_x2, fac=250.):

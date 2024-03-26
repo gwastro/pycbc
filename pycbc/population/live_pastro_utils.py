@@ -2,6 +2,8 @@ import logging
 import json
 from . import live_pastro as livepa
 
+logger = logging.getLogger('pycbc.population.live_pastro_utils')
+
 
 def insert_live_pastro_option_group(parser):
     """ Add low-latency p astro options to the argparser object.
@@ -72,7 +74,7 @@ class PAstroData():
             except KeyError as ke:
                 raise ValueError("Can't find 'method' in p_astro spec file!") \
                     from ke
-            logging.info('Setting up p_astro data with method %s', self.method)
+            logger.info('Setting up p_astro data with method %s', self.method)
             self.spec = _check_spec[self.method](self.spec_json)
             self.bank = _read_bank[self.method](self.spec, bank)
 
@@ -93,9 +95,9 @@ class PAstroData():
                     trigger_data['network_snr'] < snrlim:
                 return trigger_data
 
-            logging.debug('Truncating FAR and SNR from %f, %f to %f, %f',
-                          trigger_data['far'], trigger_data['network_snr'],
-                          farlim, snrlim)
+            logger.debug('Truncating FAR and SNR from %f, %f to %f, %f',
+                         trigger_data['far'], trigger_data['network_snr'],
+                         farlim, snrlim)
             trigger_data['network_snr'] = snrlim
             trigger_data['far'] = farlim
             return trigger_data
@@ -107,7 +109,7 @@ class PAstroData():
         if not self.do:
             return None, None
 
-        logging.info('Computing p_astro')
+        logger.info('Computing p_astro')
         p_astro, p_terr = _do_calc[self.method](self, trigger_data, horizons)
         return p_astro, p_terr
 

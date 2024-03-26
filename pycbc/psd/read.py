@@ -22,6 +22,8 @@ import numpy
 import scipy.interpolate
 from pycbc.types import FrequencySeries
 
+logger = logging.getLogger('pycbc.psd.read')
+
 def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     """Interpolate n PSD (as two 1-dimensional arrays of frequency and data)
     to the desired length, delta_f and low frequency cutoff.
@@ -62,11 +64,11 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     noise_data = noise_data[data_start:]
 
     if (length - 1) * delta_f > freq_data[-1]:
-        logging.warning('Requested number of samples exceeds the highest '
-                        'available frequency in the input data, '
-                        'will use max available frequency instead. '
-                        '(requested %f Hz, available %f Hz)',
-                        (length - 1) * delta_f, freq_data[-1])
+        logger.warning('Requested number of samples exceeds the highest '
+                       'available frequency in the input data, '
+                       'will use max available frequency instead. '
+                       '(requested %f Hz, available %f Hz)',
+                       (length - 1) * delta_f, freq_data[-1])
         length = int(freq_data[-1]/delta_f + 1)
 
     flog = numpy.log(freq_data)

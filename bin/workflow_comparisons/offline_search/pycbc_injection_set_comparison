@@ -14,15 +14,20 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+Detailed comparison of a specified injection set between two PyCBC runs
+"""
 
+import logging
 from glob import glob
 from os import path
 import argparse
 import numpy as np
 from h5py import File
+
 from pycbc.events import ranking
 import pycbc
-import logging
+
 
 def parse_injection_path(injname, basedir):
     dirpath = path.expandvars(basedir)
@@ -362,10 +367,8 @@ def compare_missed_injs(reference_run, comparison_run, outfp):
     return
 
 
-parser = argparse.ArgumentParser()
-parser = argparse.ArgumentParser(usage="",
-    description="Detailed comparison of a specified injection set between two"
-                                 " PyCBC runs")
+parser = argparse.ArgumentParser(usage="", description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--injection-label", type=str, required=True,
                     help="Label of injection set")
 parser.add_argument("--reference-dir", type=str, required=True,
@@ -390,8 +393,6 @@ parser.add_argument("--single-detector-statistic", type=str, default='newsnr',
                     choices=ranking.sngls_ranking_function_dict.keys(),
                     help="Which single-detector statistic to calculate for"
                     " found injections")
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Print extra debugging information")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)

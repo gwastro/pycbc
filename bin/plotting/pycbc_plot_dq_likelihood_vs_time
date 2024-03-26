@@ -7,14 +7,16 @@ import argparse
 import numpy
 import pycbc
 import h5py
-from matplotlib import use; use('Agg')
+from matplotlib import use
+use('Agg')
 from matplotlib import pyplot
+
 from pycbc.version import git_verbose_msg as version
 import pycbc.results
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=version)
-parser.add_argument('--verbose', action="store_true")
 parser.add_argument("--ifo", type=str, required=True)
 parser.add_argument("--dq-file", required=True)
 parser.add_argument('--background-bin', default='all_bin')
