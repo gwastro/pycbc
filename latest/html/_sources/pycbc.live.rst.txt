@@ -1,0 +1,21 @@
+pycbc.live package
+==================
+
+Submodules
+----------
+
+pycbc.live.snr\_optimizer module
+--------------------------------
+
+.. automodule:: pycbc.live.snr_optimizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.live
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.events.single &mdash; PyCBC 2.4.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=0597a172"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+        <script src="../../../_static/terminal.css?v=d691274a"></script>
+        <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+        <script src="../../../_static/design-tabs.js?v=36754332"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+      <li class="breadcrumb-item active">pycbc.events.single</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.events.single</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; utilities for assigning FAR to single detector triggers</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pycbc.events</span> <span class="kn">import</span> <span class="n">ranking</span><span class="p">,</span> <span class="n">trigger_fits</span> <span class="k">as</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">pycbc.types</span> <span class="kn">import</span> <span class="n">MultiDetOptionAction</span>
+<span class="kn">from</span> <span class="nn">pycbc</span> <span class="kn">import</span> <span class="n">conversions</span> <span class="k">as</span> <span class="n">conv</span>
+<span class="kn">from</span> <span class="nn">pycbc</span> <span class="kn">import</span> <span class="n">bin_utils</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.events.single&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="LiveSingle"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle">[docs]</a><span class="k">class</span> <span class="nc">LiveSingle</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ifo</span><span class="p">,</span>
+                 <span class="n">newsnr_threshold</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+                 <span class="n">reduced_chisq_threshold</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                 <span class="n">duration_threshold</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">fit_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">sngl_ifar_est_dist</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">fixed_ifar</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ifo</span> <span class="o">=</span> <span class="n">ifo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit_file</span> <span class="o">=</span> <span class="n">fit_file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span> <span class="o">=</span> <span class="n">sngl_ifar_est_dist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_ifar</span> <span class="o">=</span> <span class="n">fixed_ifar</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;newsnr&quot;</span><span class="p">:</span> <span class="n">newsnr_threshold</span><span class="p">,</span>
+            <span class="s2">&quot;reduced_chisq&quot;</span><span class="p">:</span> <span class="n">reduced_chisq_threshold</span><span class="p">,</span>
+            <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="n">duration_threshold</span><span class="p">}</span>
+
+<div class="viewcode-block" id="LiveSingle.insert_args"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.insert_args">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">insert_args</span><span class="p">(</span><span class="n">parser</span><span class="p">):</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-newsnr-threshold&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Newsnr min threshold for single triggers. &#39;</span>
+                                 <span class="s1">&#39;Can be given as a single value or as &#39;</span>
+                                 <span class="s1">&#39;detector-value pairs, e.g. H1:6 L1:7 V1:6.5&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-reduced-chisq-threshold&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Maximum reduced chi-squared threshold for &#39;</span>
+                                 <span class="s1">&#39;single triggers. Can be given as a single &#39;</span>
+                                 <span class="s1">&#39;value or as detector-value pairs, e.g. &#39;</span>
+                                 <span class="s1">&#39;H1:2 L1:2 V1:3&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-duration-threshold&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Minimum duration threshold for single &#39;</span>
+                                 <span class="s1">&#39;triggers. Can be given as a single value &#39;</span>
+                                 <span class="s1">&#39;or as detector-value pairs, e.g. H1:6 L1:6 &#39;</span>
+                                 <span class="s1">&#39;V1:8&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-fixed-ifar&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;A fixed value for IFAR, still uses cuts &#39;</span>
+                                 <span class="s1">&#39;defined by command line. Can be given as &#39;</span>
+                                 <span class="s1">&#39;a single value or as detector-value pairs, &#39;</span>
+                                 <span class="s1">&#39;e.g. H1:0.001 L1:0.001 V1:0.0005&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--single-fit-file&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;File which contains definitons of fit &#39;</span>
+                                 <span class="s1">&#39;coefficients and counts for specific &#39;</span>
+                                 <span class="s1">&#39;single trigger IFAR fitting.&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--sngl-ifar-est-dist&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                            <span class="n">action</span><span class="o">=</span><span class="n">MultiDetOptionAction</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Which trigger distribution to use when &#39;</span>
+                                 <span class="s1">&#39;calculating IFAR of single triggers. &#39;</span>
+                                 <span class="s1">&#39;Can be given as a single value or as &#39;</span>
+                                 <span class="s1">&#39;detector-value pairs, e.g. H1:mean &#39;</span>
+                                 <span class="s1">&#39;L1:mean V1:conservative&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LiveSingle.verify_args"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.verify_args">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">verify_args</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">ifos</span><span class="p">):</span>
+        <span class="n">sngl_opts</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">single_reduced_chisq_threshold</span><span class="p">,</span>
+                     <span class="n">args</span><span class="o">.</span><span class="n">single_duration_threshold</span><span class="p">,</span>
+                     <span class="n">args</span><span class="o">.</span><span class="n">single_newsnr_threshold</span><span class="p">,</span>
+                     <span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">]</span>
+        <span class="n">sngl_opts_str</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;--single-reduced-chisq-threshold, &quot;</span>
+                         <span class="s2">&quot;--single-duration-threshold, &quot;</span>
+                         <span class="s2">&quot;--single-newsnr-threshold, &quot;</span>
+                         <span class="s2">&quot;--sngl-ifar-est-dist&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sngl_opts</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">sngl_opts</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Single detector trigger options (</span><span class="si">{</span><span class="n">sngl_opts_str</span><span class="si">}</span><span class="s2">) &quot;</span>
+                         <span class="s2">&quot;must either all be given or none.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">enable_single_detector_upload</span> \
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">enable_gracedb_upload</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;--enable-single-detector-upload requires &quot;</span>
+                         <span class="s2">&quot;--enable-gracedb-upload to be set.&quot;</span><span class="p">)</span>
+
+        <span class="n">sngl_optional_opts</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">single_fixed_ifar</span><span class="p">,</span>
+                              <span class="n">args</span><span class="o">.</span><span class="n">single_fit_file</span><span class="p">]</span>
+        <span class="n">sngl_optional_opts_str</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;--single-fixed-ifar, &quot;</span>
+                                  <span class="s2">&quot;--single-fit-file&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sngl_optional_opts</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">sngl_opts</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Optional singles options &quot;</span>
+                         <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">sngl_optional_opts_str</span><span class="si">}</span><span class="s2">) given but no &quot;</span>
+                         <span class="sa">f</span><span class="s2">&quot;required options (</span><span class="si">{</span><span class="n">sngl_opts_str</span><span class="si">}</span><span class="s2">) are.&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">ifos</span><span class="p">:</span>
+            <span class="c1"># Check which option(s) are needed for each IFO and if they exist:</span>
+
+            <span class="c1"># Notes for the logic here:</span>
+            <span class="c1"># args.sngl_ifar_est_dist.default_set is True if single value has</span>
+            <span class="c1"># been set to be the same for all values</span>
+            <span class="c1"># bool(args.sngl_ifar_est_dist) is True if option is given</span>
+            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span> <span class="ow">and</span> \
+                    <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="o">.</span><span class="n">default_set</span> \
+                    <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                <span class="c1"># Option has been given, different for each IFO,</span>
+                <span class="c1"># and this one is not present</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;All IFOs required in --single-ifar-est-dist &quot;</span>
+                             <span class="s2">&quot;if IFO-specific options are given.&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Default - no singles being used</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;fixed&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">single_fit_file</span><span class="p">:</span>
+                    <span class="c1"># Fixed IFAR option doesnt need the fits file</span>
+                    <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Single detector trigger fits file must be &quot;</span>
+                                 <span class="s2">&quot;given if --single-ifar-est-dist is not &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;fixed for all ifos (at least </span><span class="si">{</span><span class="n">ifo</span><span class="si">}</span><span class="s2"> has &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;option </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">ifo</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">single_fixed_ifar</span><span class="p">:</span>
+                    <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">single_fixed_ifar</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="si">}</span><span class="s2"> given &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;for </span><span class="si">{</span><span class="n">ifo</span><span class="si">}</span><span class="s2"> in --single-fixed-ifar, but &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;--single-ifar-est-dist for </span><span class="si">{</span><span class="n">ifo</span><span class="si">}</span><span class="s2"> &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;is </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span><span class="si">}</span><span class="s2">, not &quot;</span>
+                                 <span class="s2">&quot;fixed.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Check that the fixed IFAR value has actually been</span>
+                <span class="c1"># given if using this instead of a distribution</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">single_fixed_ifar</span><span class="p">[</span><span class="n">ifo</span><span class="p">]:</span>
+                    <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--single-fixed-ifar must be &quot;</span>
+                                 <span class="s2">&quot;given if --single-ifar-est-dist is fixed. &quot;</span>
+                                 <span class="sa">f</span><span class="s2">&quot;This is true for at least </span><span class="si">{</span><span class="n">ifo</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Return value is a boolean whether we are analysing singles or not</span>
+        <span class="c1"># The checks already performed mean that all(sngl_opts) is okay</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">sngl_opts</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LiveSingle.from_cli"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.from_cli">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_cli</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">ifo</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+           <span class="n">ifo</span><span class="p">,</span> <span class="n">newsnr_threshold</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_newsnr_threshold</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+           <span class="n">reduced_chisq_threshold</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_reduced_chisq_threshold</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+           <span class="n">duration_threshold</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_duration_threshold</span><span class="p">[</span><span class="n">ifo</span><span class="p">],</span>
+           <span class="n">fixed_ifar</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_fixed_ifar</span><span class="p">,</span>
+           <span class="n">fit_file</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">single_fit_file</span><span class="p">,</span>
+           <span class="n">sngl_ifar_est_dist</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">[</span><span class="n">ifo</span><span class="p">]</span>
+           <span class="p">)</span></div>
+
+<div class="viewcode-block" id="LiveSingle.check"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.check">[docs]</a>    <span class="k">def</span> <span class="nf">check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigs</span><span class="p">,</span> <span class="n">data_reader</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Look for a single detector trigger that passes the thresholds in</span>
+<span class="sd">        the current data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Apply cuts to trigs before clustering</span>
+        <span class="c1"># Cut on snr so that triggers which could not reach newsnr</span>
+        <span class="c1"># threshold do not have newsnr calculated</span>
+        <span class="n">valid_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;template_duration&#39;</span><span class="p">]</span> <span class="o">&gt;</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;duration&#39;</span><span class="p">])</span> <span class="o">&amp;</span> \
+                    <span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">]</span> <span class="o">&lt;</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;reduced_chisq&#39;</span><span class="p">])</span> <span class="o">&amp;</span> \
+                    <span class="p">(</span><span class="n">trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">]</span> <span class="o">&gt;</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;newsnr&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">valid_idx</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">cutdurchi_trigs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">trigs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">valid_idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trigs</span><span class="p">}</span>
+
+        <span class="c1"># This uses the pycbc live convention of chisq always meaning the</span>
+        <span class="c1"># reduced chisq.</span>
+        <span class="n">nsnr_all</span> <span class="o">=</span> <span class="n">ranking</span><span class="o">.</span><span class="n">newsnr</span><span class="p">(</span><span class="n">cutdurchi_trigs</span><span class="p">[</span><span class="s1">&#39;snr&#39;</span><span class="p">],</span>
+                                  <span class="n">cutdurchi_trigs</span><span class="p">[</span><span class="s1">&#39;chisq&#39;</span><span class="p">])</span>
+        <span class="n">nsnr_idx</span> <span class="o">=</span> <span class="n">nsnr_all</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">thresholds</span><span class="p">[</span><span class="s1">&#39;newsnr&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">nsnr_idx</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">cutall_trigs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">cutdurchi_trigs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">nsnr_idx</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trigs</span><span class="p">}</span>
+
+        <span class="c1"># &#39;cluster&#39; by taking the maximal newsnr value over the trigger set</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">nsnr_all</span><span class="p">[</span><span class="n">nsnr_idx</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span>
+
+        <span class="c1"># calculate the (inverse) false-alarm rate</span>
+        <span class="n">nsnr</span> <span class="o">=</span> <span class="n">nsnr_all</span><span class="p">[</span><span class="n">nsnr_idx</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">dur</span> <span class="o">=</span> <span class="n">cutall_trigs</span><span class="p">[</span><span class="s1">&#39;template_duration&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">ifar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_ifar</span><span class="p">(</span><span class="n">nsnr</span><span class="p">,</span> <span class="n">dur</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ifar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># fill in a new candidate event</span>
+        <span class="n">candidate</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="sa">f</span><span class="s1">&#39;foreground/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">cutall_trigs</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">trigs</span>
+        <span class="p">}</span>
+        <span class="n">candidate</span><span class="p">[</span><span class="s1">&#39;foreground/stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nsnr</span>
+        <span class="n">candidate</span><span class="p">[</span><span class="s1">&#39;foreground/ifar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ifar</span>
+        <span class="n">candidate</span><span class="p">[</span><span class="s1">&#39;HWINJ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_reader</span><span class="o">.</span><span class="n">near_hwinj</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">candidate</span></div>
+
+<div class="viewcode-block" id="LiveSingle.calculate_ifar"><a class="viewcode-back" href="../../../pycbc.events.html#pycbc.events.single.LiveSingle.calculate_ifar">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_ifar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sngl_ranking</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Calculating IFAR&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_ifar</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">ifo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_ifar</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_ifar</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo</span><span class="p">]</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fit_file</span><span class="p">:</span>
+                <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">fit_file</span><span class="p">[</span><span class="s1">&#39;bins_edges&#39;</span><span class="p">][:]</span>
+                <span class="n">live_time</span> <span class="o">=</span> <span class="n">fit_file</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo</span><span class="p">]</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;live_time&#39;</span><span class="p">]</span>
+                <span class="n">thresh</span> <span class="o">=</span> <span class="n">fit_file</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s1">&#39;fit_threshold&#39;</span><span class="p">]</span>
+                <span class="n">dist_grp</span> <span class="o">=</span> <span class="n">fit_file</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ifo</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">sngl_ifar_est_dist</span><span class="p">]</span>
+                <span class="n">rates</span> <span class="o">=</span> <span class="n">dist_grp</span><span class="p">[</span><span class="s1">&#39;counts&#39;</span><span class="p">][:]</span> <span class="o">/</span> <span class="n">live_time</span>
+                <span class="n">coeffs</span> <span class="o">=</span> <span class="n">dist_grp</span><span class="p">[</span><span class="s1">&#39;fit_coeff&#39;</span><span class="p">][:]</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s1">&#39;Single fit file </span><span class="si">%s</span><span class="s1"> not found; &#39;</span>
+                <span class="s1">&#39;dropping a potential single-detector candidate!&#39;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fit_file</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">bin_utils</span><span class="o">.</span><span class="n">IrregularBins</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span>
+        <span class="n">dur_bin</span> <span class="o">=</span> <span class="n">bins</span><span class="p">[</span><span class="n">duration</span><span class="p">]</span>
+
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">rates</span><span class="p">[</span><span class="n">dur_bin</span><span class="p">]</span>
+        <span class="n">coeff</span> <span class="o">=</span> <span class="n">coeffs</span><span class="p">[</span><span class="n">dur_bin</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">rate</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Single trigger fits are not valid - singles &quot;</span>
+                <span class="s2">&quot;cannot be assessed for this detector at this time.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">rate_louder</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">fits</span><span class="o">.</span><span class="n">cum_fit</span><span class="p">(</span><span class="s1">&#39;exponential&#39;</span><span class="p">,</span> <span class="p">[</span><span class="n">sngl_ranking</span><span class="p">],</span>
+                                          <span class="n">coeff</span><span class="p">,</span> <span class="n">thresh</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># apply a trials factor of the number of duration bins</span>
+        <span class="n">rate_louder</span> <span class="o">*=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rates</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">conv</span><span class="o">.</span><span class="n">sec_to_year</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">rate_louder</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Mar 26, 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
