@@ -305,7 +305,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
             inj_comb_files.append(inj_comb_file)
     pp_outs.append(inj_comb_files)
 
-    return pp_outs
+    return trig_files, cluster_files, inj_find_files, inj_comb_files
 
 
 class PycbcGrbTrigCombinerExecutable(Executable):
