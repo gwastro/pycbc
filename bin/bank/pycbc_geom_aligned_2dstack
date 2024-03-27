@@ -252,7 +252,9 @@ for entry in temp_bank:
         # Double check that no points appear outside what was calculated above
         if len(xis_close):
             if vec3_min > xis_close[:,2].min():
-                logging.warn("WARNING: Numerical placement fails, trying again")
+                logging.warning(
+                    "WARNING: Numerical placement fails, trying again"
+                )
                 temp_idx = xis_close[:,2].argmin()
                 temmpBestMasses = masses_close[temp_idx]
                 temmpBestXis = xis_close[temp_idx]
@@ -269,7 +271,9 @@ for entry in temp_bank:
                     vec3_max = temmpvec3_max
                     vec3_depth = vec3_max - vec3_min
             if vec3_max < xis_close[:,2].max():
-                logging.warn("WARNING: Numerical placement fails, trying again")
+                logging.warning(
+                    "WARNING: Numerical placement fails, trying again"
+                )
                 temp_idx = xis_close[:,2].argmax()
                 temmpBestMasses = physMasses[temp_idx]
                 temmpBestXis = xis[temp_idx]

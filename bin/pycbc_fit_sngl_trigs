@@ -216,7 +216,7 @@ for ifo in opt.ifos:
 
     snr = sngls.get_column("snr")
     if not len(snr):
-        logging.warn("no trigs, skipping %s" % ifo)
+        logging.warning("no trigs, skipping %s", ifo)
         continue
     chisq = sngls.get_column("chisq")
     chisq_dof = sngls.get_column("chisq_dof")

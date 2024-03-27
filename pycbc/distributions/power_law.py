@@ -16,9 +16,12 @@
 This modules provides classes for evaluating distributions where the
 probability density function is a power law.
 """
-
+import logging
 import numpy
+
 from pycbc.distributions import bounded
+
+logger = logging.getLogger('pycbc.distributions.power_law')
 
 class UniformPowerLaw(bounded.BoundedDist):
     r"""
