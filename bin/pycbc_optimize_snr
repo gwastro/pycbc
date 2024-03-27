@@ -27,7 +27,12 @@ from pycbc.live import snr_optimizer
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-pycbc.add_common_pycbc_options(parser)
+parser.add_argument('-v', '--verbose', action='count', default=0,
+                    help='Add verbosity to logging. Adding the option '
+                        'multiple times makes logging progressively '
+                        'more verbose, e.g. --verbose or -v provides '
+                        'logging at the info level, but -vv or '
+                        '--verbose --verbose provides debug logging.')
 parser.add_argument('--version', action='version',
                     version=version.git_verbose_msg)
 parser.add_argument('--params-file', required=True,
