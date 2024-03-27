@@ -26,9 +26,11 @@ class NetBank(DummySampler):
     name = 'net_bank'
 
     def __init__(self, model, *args, nprocesses=1, use_mpi=False,
-                 num_samples=1000, 
                  bank=None,
                  mapfile=None,
+                 loglr_region=25,
+                 node_draw_size=1e6,
+                 resample_draw_size=2e5,
                  **kwargs):
         super().__init__(model, *args)
 
@@ -42,6 +44,9 @@ class NetBank(DummySampler):
         self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         self._samples = {}
           
+        self.loglr_region = float(self.loglr_region)
+        self.node_draw_size = int(node_draw_size)
+        self.resample_draw_size = int(resample_draw_size)
 
     def run(self):
         logging.info('Retrieving params of parameter space nodes')
@@ -74,7 +79,7 @@ class NetBank(DummySampler):
             self.model.update(**pset)
             node_loglrs.append(self.model.loglr)
         node_loglrs = numpy.array(node_loglrs)
-        loglr_bound = node_loglrs.max() - 25
+        loglr_bound = node_loglrs.max() - self.loglr_region
 
         logging.info('Drawing proposal samples from node regions')
         logw = node_loglrs + numpy.log(self.lengths)
@@ -83,38 +88,48 @@ class NetBank(DummySampler):
         logw2 -= logsumexp(logw2)
         weight = numpy.exp(logw2)
 
-        size = int(1e6)
         logging.info("...draw template bins")
-        draw = choice(passed, size=size, replace=True, p=weight)
+        draw = choice(passed, size=self.node_draw_size, replace=True, p=weight)
 
         logging.info('...drawn random points within bins')
-        psamp = FieldArray(size, dtype=params.dtype)
+        psamp = FieldArray(self.node_draw_size, dtype=params.dtype)
         for i in range(len(psamp)):
             psamp[i] = choice(dmap[draw[i]])
 
-        logw3 = numpy.zeros(size)
+        logw3 = numpy.zeros(self.node_draw_size)
         upsamp, expand = numpy.unique(psamp, return_inverse=True)
 
         logging.info("Possible unique values %s", self.lengths[passed].sum())
         logging.info("Templates drawn from %s", len(numpy.unique(draw)))
         logging.info("Unique values first draw %s", len(upsamp))
 
-        for i, s in tqdm.tqdm(enumerate(upsamp), total=len(upsamp), position=0, leave=True):
-            self.model.update(**{p: upsamp[p][i] for p in self.model.variable_params}) 
-            ll =  self.model.logl
+        # Calculate the likelihood values for the unique parameter space
+        # points
+        loglr_samp = []
+        for i, s in tqdm.tqdm(enumerate(upsamp), total=len(upsamp)):
+            pset = {p: upsamp[p][i] for p in self.model.variable_params}
+            self.model.update(**pset) 
+            ll =  self.model.loglikelihood
+            loglr_samp.append(ll)
             logw3[i] += ll
+        loglr_samp = numpy.array(loglr_samp)
 
+        # Draw samples based on the actual likelihood relative to the
+        # initial weights
         logw3 = logw3[expand] - numpy.array(node_loglrs)[draw]
-
         logw3 -= logsumexp(logw3)
         weight2 = numpy.exp(logw3)
 
-        draw2 = choice(len(psamp), size=200000, replace=True, p=weight2)
-        logging.info("Unique values second draw %s", len(numpy.unique(psamp[draw2])))
+        draw2 = choice(len(psamp), size=self.resample_draw_size,
+                       replace=True, p=weight2)
+        logging.info("Unique values second draw %s",
+                     len(numpy.unique(psamp[draw2])))
         logging.info("ESS = %s", 1.0 / (weight2 ** 2.0).sum())
 
+        # Prepare the equally weighted output samples
         fsamp = FieldArray(len(draw2), dtype=params.dtype)
         for i in range(len(draw2)):
             fsamp[i] = psamp[draw2[i]]
 
         self._samples = {p: fsamp[p] for p in self.model.variable_params}
+        self._samples['loglikelihood'] = loglr_samp[expand][draw2]
