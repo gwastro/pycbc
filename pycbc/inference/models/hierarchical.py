@@ -745,11 +745,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             total_others_lognl += model.lognl
         return total_others_lognl
 
-    def update(self, **params):
-        """This update method is also useful for loglr checking,
-        the original update method in base module can't update
-        parameters in submodels correctly in loglr checking."""
-        self._current_params = {}
+    def _loglikelihood(self):
         for lbl, model in self.submodels.items():
             if self.param_map != {}:
                 p = {params.subname: self.current_params[params.fullname]
@@ -758,12 +754,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 # dummy sampler doesn't have real variables,
                 # which means self.param_map is {}
                 p = {}
-            p.update(params)
             model.update(**p)
-            self._current_params[lbl] = p
-
-    def _loglikelihood(self):
-        self.update()
 
         # calculate the combined loglikelihood
         logl = self.total_loglr() + self.primary_model.lognl + \
@@ -953,7 +944,16 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             rec = {}
 
         def get_loglr():
-            self.update(**rec)
+            for lbl, model in self.submodels.items():
+                if self.param_map != {}:
+                    p = {params.subname: self.current_params[params.fullname]
+                         for params in self.param_map[lbl]}
+                else:
+                    # dummy sampler doesn't have real variables,
+                    # which means self.param_map is {}
+                    p = {}
+                p.update(**rec)
+                model.update(**p)
             return self.total_loglr()
 
         rec = self.primary_model.reconstruct(
