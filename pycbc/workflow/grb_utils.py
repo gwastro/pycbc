@@ -264,13 +264,6 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     inj_comb_files : FOUNDMISSED-FILTERED FileList covering all injection sets
                      in the same order as pp_outs[-2]
     """
-    # A set of FileLists is returned by this function. It is structured as follows:
-    # pp_outs[0]: [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
-    #             FileList (N can be set by the user and is 6 by default)
-    # pp_outs[1]: CLUSTERED FileList, same order as pp_outs[0]
-    # pp_outs[2]: FOUNDMISSED FileList covering all injection sets
-    # pp_outs[3]: FOUNDMISSED-FILTERED FileList covering all injection sets
-    #              in the same order as pp_outs[-2]
 
     # Begin setting up trig combiner job(s)
     # Select executable class and initialize

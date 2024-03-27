@@ -265,7 +265,7 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         injections = tmpinj[keep]
         injtime = injtime[keep]
 
-        # read triggers and skip if none
+        # read triggers
         triggers = read_hdf5_triggers(trigfiles)
         time = triggers['network/end_time_gc']
         snr = triggers['network/'+args.rank_column]
@@ -282,7 +282,7 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
             time[time_sorting],
             injtime + args.time_window,
             side='right',
-         )
+        )
 
         # get indices of found/missed injections and finding trigger
         for i, (l, r) in enumerate(
@@ -348,7 +348,7 @@ with h5py.File(outfilename, "w") as h5out:
                 compression="gzip",
                 compression_opts=9,
             )
-    # map and write template ids if there are triggers
+    # map and write template ids
     ids = template_hash_to_id(h5out, args.bank_file)
     h5out.create_dataset(
         "network/template_id",

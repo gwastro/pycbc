@@ -415,8 +415,7 @@ for i, offtrial in enumerate(offtrials):
     eff_layout = list(layout.grouper(files, 2))
     layout.two_column_layout(out_dir, eff_layout, offtrial)
 
-# TODO: add onsource calculation
-# Run efficiency code like above, but replace onsource_file with onsource_file
+# TODO: add onsource calculation by using the true onsource file
 
 #
 # Trigger Followups (TODO)
