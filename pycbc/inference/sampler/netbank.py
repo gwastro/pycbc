@@ -1,7 +1,7 @@
 """ Direct monte carlo sampling using pregenerated mapping files that
 encode the intrinsic parameter space.
 """
-import numpy, tqdm, h5py, logging
+import numpy, h5py, logging
 from numpy.random import choice
 from scipy.special import logsumexp
 from pycbc.io import FieldArray
@@ -12,6 +12,13 @@ from pycbc.pool import choose_pool
 from .dummy import DummySampler
 
 from .base import (BaseSampler, setup_output)
+
+def call_likelihood(params):
+    """ Accessor to update the global model and call its reconstruction
+    routine.
+    """
+    models._global_instance.update(**params)
+    return models._global_instance.loglikelihood
 
 class NetBank(DummySampler):
     """Direct monte-carlo sampler using a preconstructed parameter space
@@ -40,8 +47,8 @@ class NetBank(DummySampler):
         self._samples = {}
           
         self.loglr_region = float(loglr_region)
-        self.node_draw_size = int(node_draw_size)
-        self.resample_draw_size = int(resample_draw_size)
+        self.node_draw_size = int(float(node_draw_size))
+        self.resample_draw_size = int(float(resample_draw_size))
 
     def run(self):
         logging.info('Retrieving params of parameter space nodes')
@@ -49,18 +56,18 @@ class NetBank(DummySampler):
             bparams = {p: f['bank'][p][:] for p in self.variable_params}
             dmap = []
             num_nodes = len(bparams[list(bparams.keys())[0]])
-            for i in tqdm.tqdm(range(num_nodes)):
+            for i in range(num_nodes):
                 dmap.append(f['map'][str(i)][:])
         dtype = dmap[0].dtype     
         lengths = numpy.array([len(x) for x in dmap])  
         
         logging.info('Calculating likelihood at nodes')
-        node_loglrs = []
-        for i in tqdm.tqdm(range(num_nodes)):
+        args = []
+        for i in range(num_nodes):
             pset = {p: bparams[p][i] for p in self.model.variable_params}
-            self.model.update(**pset)
-            node_loglrs.append(self.model.loglr)
-        node_loglrs = numpy.array(node_loglrs)
+            args.append(pset)
+            
+        node_loglrs = numpy.array(self.pool.map(call_likelihood, args))
         loglr_bound = node_loglrs.max() - self.loglr_region
 
         logging.info('Drawing proposal samples from node regions')
@@ -78,27 +85,22 @@ class NetBank(DummySampler):
         for i in range(len(psamp)):
             psamp[i] = choice(dmap[draw[i]])
 
-        logw3 = numpy.zeros(self.node_draw_size)
         upsamp, expand = numpy.unique(psamp, return_inverse=True)
-
         logging.info("Possible unique values %s", lengths[passed].sum())
         logging.info("Templates drawn from %s", len(numpy.unique(draw)))
         logging.info("Unique values first draw %s", len(upsamp))
 
         # Calculate the likelihood values for the unique parameter space
         # points
-        loglr_samp = []
-        for i, s in tqdm.tqdm(enumerate(upsamp), total=len(upsamp)):
+        args = []
+        for i, s in enumerate(upsamp):
             pset = {p: upsamp[p][i] for p in self.model.variable_params}
-            self.model.update(**pset) 
-            ll =  self.model.loglikelihood
-            loglr_samp.append(ll)
-            logw3[i] += ll
-        loglr_samp = numpy.array(loglr_samp)
+            args.append(pset)
+        loglr_samp = numpy.array(self.pool.map(call_likelihood, args))
 
         # Draw samples based on the actual likelihood relative to the
         # initial weights
-        logw3 = logw3[expand] - numpy.array(node_loglrs)[draw]
+        logw3 = loglr_samp[expand] - numpy.array(node_loglrs)[draw]
         logw3 -= logsumexp(logw3)
         weight2 = numpy.exp(logw3)
 
