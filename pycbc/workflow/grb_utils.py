@@ -241,9 +241,30 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
                             insp_files, inj_files, inj_insp_files, inj_tags):
     """
     Generate post-processing section of PyGRB offline workflow
+
+    Parameters
+    ----------
+    wf : The workflow object
+    pp_dir : The directory where the post-processing files will be stored
+    seg_dir : The directory where the segment files are stored
+    segment : The segment to be analyzed
+    bank_file : The full template bank file
+    insp_files : The list of inspiral files
+    inj_files : The list of injection files
+    inj_insp_files : The list of inspiral files for injections
+    inj_tags : The list of injection tags
+
+    Returns
+    -------
+    trig_files : The list of combined trigger files
+                 [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
+                 FileList (N can be set by the user and is 6 by default)
+    cluster_files : CLUSTERED FileList, same order as pp_outs[0]
+    inj_find_files : FOUNDMISSED FileList covering all injection sets
+    inj_comb_files : FOUNDMISSED-FILTERED FileList covering all injection sets
+                     in the same order as pp_outs[-2]
     """
-    pp_outs = FileList([])
-    # pp_outs is returned by this function. It is structured as follows:
+    # A set of FileLists is returned by this function. It is structured as follows:
     # pp_outs[0]: [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
     #             FileList (N can be set by the user and is 6 by default)
     # pp_outs[1]: CLUSTERED FileList, same order as pp_outs[0]
@@ -259,7 +280,6 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
                                     insp_files, pp_dir, bank_file)
     wf.add_node(node)
-    pp_outs.append(trig_files)
 
     # Trig clustering for each trig file
     exe_class = _select_grb_pp_class(wf, "trig_cluster")
@@ -270,7 +290,6 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
         node, out_file = job_instance.create_node(trig_file, pp_dir)
         wf.add_node(node)
         cluster_files.append(out_file)
-    pp_outs.append(cluster_files)
 
     # Find injections from triggers
     exe_class = _select_grb_pp_class(wf, "inj_finder")
@@ -289,7 +308,6 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
                                            bank_file, pp_dir)
         wf.add_node(node)
         inj_find_files.append(inj_find_file)
-    pp_outs.append(inj_find_files)
 
     # Combine injections
     exe_class = _select_grb_pp_class(wf, "inj_combiner")
@@ -303,7 +321,6 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
                                                            segment)
             wf.add_node(node)
             inj_comb_files.append(inj_comb_file)
-    pp_outs.append(inj_comb_files)
 
     return trig_files, cluster_files, inj_find_files, inj_comb_files
 
