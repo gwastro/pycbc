@@ -690,17 +690,23 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_primary, hh_primary = self.primary_model.loglr
         self.primary_model.return_sh_hh = False
 
-        margin_names = list(
+        margin_names_vector = list(
             self.primary_model.marginalize_vector_params.keys())
-        margin_names.remove('logw_partial')
+        if 'logw_partial' in margin_names_vector:
+            margin_names_vector.remove('logw_partial')
+
         margin_params = {}
+        nums = 1
         for key, value in self.primary_model.current_params.items():
-            if key in margin_names:
+            # add marginalize_vector_params
+            if key in margin_names_vector:
                 margin_params[key] = value
                 if isinstance(value, numpy.ndarray):
                     nums = len(value)
-                else:
-                    nums = 1
+            # add distance if it has been marginalized
+            if self.primary_model.distance_marginalization:
+                margin_params['distance'] = numpy.full(
+                    nums, self.primary_model.current_params['distance'])
 
         # add likelihood contribution from space-borne detectors, we
         # calculate sh/hh for each marginalized parameter point
@@ -709,13 +715,13 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
         # update parameters in other_models
         for _, other_model in enumerate(self.other_models):
+            # not using self.primary_model.current_params, because others_model
+            # may have its own static parameters
             current_params_other = other_model.current_params.copy()
-            print("[total_loglr] current_params_other 1: ", current_params_other)
             for i in range(nums):
                 current_params_other.update(
                     {key: value[i] if isinstance(value, numpy.ndarray) else
                         value for key, value in margin_params.items()})
-                print("[total_loglr] current_params_other 2: ", current_params_other)
                 other_model.update(**current_params_other)
                 other_model.return_sh_hh = True
                 sh_others[i], hh_others[i] = other_model.loglr
@@ -740,7 +746,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         return total_others_lognl
 
     def update(self, **params):
-        """This update method is also useful for loglr checking."""
+        """This update method is also useful for loglr checking,
+        the original update method in base module can't update
+        parameters in submodels correctly in loglr checking."""
         self._current_params = {}
         for lbl, model in self.submodels.items():
             if self.param_map != {}:
@@ -908,8 +916,11 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # it will not be listed in `variable_params` and `prior` sections
         primary_model = submodels[kwargs['primary_lbl'][0]]
         marginalized_params = primary_model.marginalize_vector_params.copy()
-        marginalized_params.pop('logw_partial')
-        marginalized_params = list(marginalized_params.keys())
+        if 'logw_partial' in marginalized_params:
+            marginalized_params.pop('logw_partial')
+            marginalized_params = list(marginalized_params.keys())
+        else:
+            marginalized_params = []
         # this may also include 'f_ref', 'f_lower', 'approximant',
         # but doesn't matter
         marginalized_params += list(primary_model.static_params.keys())
