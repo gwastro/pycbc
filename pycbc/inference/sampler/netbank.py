@@ -1,7 +1,6 @@
-""" Dummy class when no actual sampling is needed, but we may want to do
-some reconstruction supported by the likelihood model.
+""" Direct monte carlo sampling using pregenerated mapping files that
+encode the intrinsic parameter space.
 """
-
 import numpy, tqdm, h5py, logging
 from numpy.random import choice
 from scipy.special import logsumexp
@@ -26,7 +25,6 @@ class NetBank(DummySampler):
     name = 'net_bank'
 
     def __init__(self, model, *args, nprocesses=1, use_mpi=False,
-                 bank=None,
                  mapfile=None,
                  loglr_region=25,
                  node_draw_size=1e6,
@@ -34,47 +32,31 @@ class NetBank(DummySampler):
                  **kwargs):
         super().__init__(model, *args)
 
-        self.bank = bank
         self.mapfile = mapfile
 
         models._global_instance = model
         self.model = model
-        
-        self.num_samples = int(num_samples)
         self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         self._samples = {}
           
-        self.loglr_region = float(self.loglr_region)
+        self.loglr_region = float(loglr_region)
         self.node_draw_size = int(node_draw_size)
         self.resample_draw_size = int(resample_draw_size)
 
     def run(self):
         logging.info('Retrieving params of parameter space nodes')
-        bparams = {}
-        with h5py.File(self.bank, 'r') as f:
-            for p in self.model.variable_params:
-                bparams[p] = f[p][:]
- 
-        logging.info('formatting input')
-        f = h5py.File(self.mapfile, 'r')
-
-        idx = f['idx'][:]
-        match = f['match'][:]
-        params = f['params'][:]
-
-        dmap = []
-        for i in tqdm.tqdm(range(len(bparams[p]))):
-            dmap.append([])
-            select =  params[numpy.where(idx == i)[0]]
-            dmap[i] = select  
-
-        self.dmap = dmap
-        self.lengths = numpy.array([len(x) for x in dmap])
-        f.close()   
+        with h5py.File(self.mapfile, 'r') as f:
+            bparams = {p: f['bank'][p][:] for p in self.variable_params}
+            dmap = []
+            num_nodes = len(bparams[list(bparams.keys())[0]])
+            for i in tqdm.tqdm(range(num_nodes)):
+                dmap.append(f['map'][str(i)][:])
+        dtype = dmap[0].dtype     
+        lengths = numpy.array([len(x) for x in dmap])  
         
         logging.info('Calculating likelihood at nodes')
         node_loglrs = []
-        for i in tqdm.tqdm(range(len(bparams[p]))):
+        for i in tqdm.tqdm(range(num_nodes)):
             pset = {p: bparams[p][i] for p in self.model.variable_params}
             self.model.update(**pset)
             node_loglrs.append(self.model.loglr)
@@ -82,7 +64,7 @@ class NetBank(DummySampler):
         loglr_bound = node_loglrs.max() - self.loglr_region
 
         logging.info('Drawing proposal samples from node regions')
-        logw = node_loglrs + numpy.log(self.lengths)
+        logw = node_loglrs + numpy.log(lengths)
         passed = numpy.where(node_loglrs > loglr_bound)[0]
         logw2 = logw[passed]
         logw2 -= logsumexp(logw2)
@@ -92,14 +74,14 @@ class NetBank(DummySampler):
         draw = choice(passed, size=self.node_draw_size, replace=True, p=weight)
 
         logging.info('...drawn random points within bins')
-        psamp = FieldArray(self.node_draw_size, dtype=params.dtype)
+        psamp = FieldArray(self.node_draw_size, dtype=dtype)
         for i in range(len(psamp)):
             psamp[i] = choice(dmap[draw[i]])
 
         logw3 = numpy.zeros(self.node_draw_size)
         upsamp, expand = numpy.unique(psamp, return_inverse=True)
 
-        logging.info("Possible unique values %s", self.lengths[passed].sum())
+        logging.info("Possible unique values %s", lengths[passed].sum())
         logging.info("Templates drawn from %s", len(numpy.unique(draw)))
         logging.info("Unique values first draw %s", len(upsamp))
 
@@ -127,7 +109,7 @@ class NetBank(DummySampler):
         logging.info("ESS = %s", 1.0 / (weight2 ** 2.0).sum())
 
         # Prepare the equally weighted output samples
-        fsamp = FieldArray(len(draw2), dtype=params.dtype)
+        fsamp = FieldArray(len(draw2), dtype=dtype)
         for i in range(len(draw2)):
             fsamp[i] = psamp[draw2[i]]
 
