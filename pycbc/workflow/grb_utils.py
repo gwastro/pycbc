@@ -256,13 +256,17 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
 
     Returns
     -------
-    trig_files : The list of combined trigger files
-                 [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
-                 FileList (N can be set by the user and is 6 by default)
-    cluster_files : CLUSTERED FileList, same order as pp_outs[0]
-    inj_find_files : FOUNDMISSED FileList covering all injection sets
-    inj_comb_files : FOUNDMISSED-FILTERED FileList covering all injection sets
-                     in the same order as pp_outs[-2]
+    trig_files : FileList
+        The list of combined trigger files
+        [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
+        FileList (N can be set by the user and is 6 by default)
+    cluster_files : FileList
+        CLUSTERED FileList, same order as trig_files
+    inj_find_files : FileList
+        FOUNDMISSED FileList covering all injection sets
+    inj_comb_files : FileList
+        FOUNDMISSED-FILTERED FileList covering all injection sets
+                     in the same order as inj_find_files
     """
 
     # Begin setting up trig combiner job(s)
