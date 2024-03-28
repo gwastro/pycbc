@@ -1832,15 +1832,22 @@ def followup_event_significance(ifo, data_reader, bank,
 
     # Calculate how much time needed to calculate significance
     trim_pad = data_reader.trim_padding * data_reader.strain.delta_t
-    bdur = int(lookback + 2 * trim_pad + length_in_time)
-    bdur_samples = bank.round_up(bdur * bank.sample_rate)
-    max_safe_bdur_samples = int(
-        data_reader.strain.duration * .9 * bank.sample_rate
+    buffer_duration = lookback + 2 * trim_pad + length_in_time
+    buffer_samples = bank.round_up(int(buffer_duration * bank.sample_rate))
+    max_safe_buffer_samples = int(
+        0.9 * data_reader.strain.duration * bank.sample_rate
     )
-    if bdur_samples > max_safe_bdur_samples:
-        bdur_samples = max_safe_bdur_samples
-        new_lookback = bdur_samples / bank.sample_rate - (2 * trim_pad + length_in_time)
-        if new_lookback > 0:
+    if buffer_samples > max_safe_buffer_samples:
+        buffer_samples = max_safe_buffer_samples
+        new_lookback = (
+            buffer_samples / bank.sample_rate - (2 * trim_pad + length_in_time)
+        )
+        # Require a minimum lookback time of twice the onsource window or SNR
+        # time series (whichever is longer) so we have enough data for the
+        # onsource window, the SNR time series, and at least a few background
+        # samples
+        min_required_lookback = 2 * max(onsource_end - onsource_start, duration)
+        if new_lookback > min_required_lookback:
             logging.warning(
                 'Strain buffer too short for a lookback time of %f s, '
                 'reducing lookback to %f s',
@@ -1850,18 +1857,24 @@ def followup_event_significance(ifo, data_reader, bank,
         else:
             logging.error(
                 'Strain buffer too short to compute the followup SNR time '
-                'series for template %d, will not use %s for followup',
+                'series for template %d, will not use %s for followup. '
+                'Either use shorter templates, or raise --max-length.',
                 template_id,
                 ifo
             )
             return None
-    bdur = bdur_samples / bank.sample_rate
+    buffer_duration = buffer_samples / bank.sample_rate
 
     # Require all strain be valid within lookback time
     if data_reader.state is not None:
-        state_start_time = data_reader.strain.end_time \
-                - data_reader.reduced_pad * data_reader.strain.delta_t - bdur
-        if not data_reader.state.is_extent_valid(state_start_time, bdur):
+        state_start_time = (
+            data_reader.strain.end_time
+            - data_reader.reduced_pad * data_reader.strain.delta_t
+            - buffer_duration
+        )
+        if not data_reader.state.is_extent_valid(
+            state_start_time, buffer_duration
+        ):
             logging.info(
                 '%s strain buffer contains invalid data during lookback, '
                 'will not use for followup',
@@ -1883,7 +1896,7 @@ def followup_event_significance(ifo, data_reader, bank,
             return None
 
     # Calculate SNR time series for this duration
-    htilde = bank.get_template(template_id, td_samples=bdur_samples)
+    htilde = bank.get_template(template_id, td_samples=buffer_samples)
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
     sigma2 = htilde.sigmasq(stilde.psd)
