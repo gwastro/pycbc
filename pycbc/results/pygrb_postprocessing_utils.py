@@ -31,8 +31,9 @@ import copy
 import numpy
 import h5py
 from scipy import stats
-from ligo import segments
+import ligo.segments as segments
 from pycbc.detector import Detector
+from pycbc.conversions import mchirp_from_mass1_mass2
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo.lw import utils, lsctables
@@ -198,9 +199,9 @@ def load_xml_table(file_name, table_name):
     return Table.get_table(xml_doc, table_name)
 
 
-# ==============================================================================
+# =============================================================================
 # Function to load segments from an xml file
-# ==============================================================================
+# =============================================================================
 def _load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
     """Read a ligo.segments.segmentlist from the file object file containing an
     xml segment table.
@@ -330,7 +331,7 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
 #
 
 # =============================================================================
-# Function to load triggers
+# Functions to load triggers
 # =============================================================================
 def load_triggers(input_file, vetoes):
     """Loads triggers from PyGRB output file"""
@@ -342,6 +343,40 @@ def load_triggers(input_file, vetoes):
         raise NotImplementedError
 
     return trigs
+
+
+def load_trig_data(input_file, ifos, vetoes):
+    """Loads triggers data and ifo triggers data into a dictionary from
+    a PyGRB bank file"""
+    trigs = load_triggers(input_file, vetoes)
+    # Load network data into dictionaty
+    data = {
+        "end_time": trigs["/network/end_time_gc"][...],
+        "ra": trigs["/network/ra"][...],
+        "dec": trigs["/network/dec"][...],
+        "coherent_snr": trigs["/network/coherent_snr"][...],
+        "null_snr": trigs["/network/null_snr"][...],
+        "reweighted_snr": trigs["/network/reweighted_snr"][...],
+        "chisq": trigs["/network/my_network_chisq"][...],
+        "bank_chisq": trigs["/network/my_network_bank_chisq"][...],
+        "cont_chisq": trigs["/network/my_network_cont_chisq"][...],
+        "time_slide_id": trigs["/network/slide_id"][...],
+        "mass1": trigs["/network/mass1"][...],
+        "mass2": trigs["/network/mass2"][...],
+        "mchirp": trigs["/network/mchirp"][...],
+        "nifos": trigs["/network/nifo"][...].astype(int)
+    }
+    # Load ifos data into dictionary
+    for ifo in ifos:
+        ifo_keys = list(trigs[ifo].keys())
+        if "search" in ifo_keys:
+            ifo_keys.remove("search")
+        for key in ifo_keys:
+            if 'snr' in key:
+                data[key.split('_')[0] + '_' + ifo] = trigs[ifo][key][...]
+            else:
+                data[key + '_' + ifo] = trigs[ifo][key][...]
+    return data
 
 
 # =============================================================================
@@ -377,14 +412,11 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 # =============================================================================
 # Function to calculate the detection statistic of a list of triggers
 # =============================================================================
-def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
-                sngl_snr_threshold=4., chisq_threshold=None,
-                null_grad_thresh=20., null_grad_val=0.2):
+def get_bestnrs(trigs, ifos, snr_threshold=6., sngl_snr_threshold=4.,
+                new_snr_threshold=None):
     """Calculate BestNR (coh_PTF detection statistic) of triggers through
     signal based vetoes.  The (default) signal based vetoes are:
     * Coherent SNR < 6
-    * Bank chi-squared reduced (new) SNR < 6
-    * Auto veto reduced (new) SNR < 6
     * Single-detector SNR (from two most sensitive IFOs) < 4
     * Null SNR (CoincSNR^2 - CohSNR^2)^(1/2) < null_thresh
 
@@ -395,62 +427,78 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
         return numpy.array([])
 
     # Grab sky position and timing
-    ra = trigs.get_column('ra')
-    dec = trigs.get_column('dec')
-    time = trigs.get_end()
+    ra = trigs['ra']
+    dec = trigs['dec']
+    time = trigs['end_time']
 
     # Initialize BestNRs
-    snr = trigs.get_column('snr')
+    snr = trigs['coherent_snr']
+    reweighted_snr = trigs['reweighted_snr']
     bestnr = numpy.ones(len(snr))
 
     # Coherent SNR cut
-    bestnr[numpy.asarray(snr) < snr_threshold] = 0
+    bestnr[snr < snr_threshold] = 0
 
     # Bank and auto chi-squared cuts
-    if not chisq_threshold:
-        chisq_threshold = snr_threshold
-    for chisq in ['bank_chisq', 'cont_chisq']:
-        bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
-                                               column=chisq))
-               < chisq_threshold] = 0
-
-    # Define IFOs for sngl cut
-    ifos = list(map(str, trigs[0].get_ifos()))
+    if not new_snr_threshold:
+        new_snr_threshold = snr_threshold
+    # To be revised. Originally this was using bank and cont chisq,
+    # now we use the reweighted snr calculated from the power chisq
+    # of the multi inspiral bank
+    bestnr[reweighted_snr < new_snr_threshold] = 0
 
     # Single detector SNR cut
     sens = {}
-    sigmasqs = trigs.get_sigmasqs()
-    ifo_snr = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
+    ifo_snr = {}
     for ifo in ifos:
         antenna = Detector(ifo)
-        sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra,
-                                                          dec, time)
+        sens[ifo] = trigs['sigmasq_%s' % ifo] * get_antenna_responses(antenna,
+                                                                      ra, dec,
+                                                                      time)
+        ifo_snr[ifo] = trigs['snr_%s' % ifo]
     # Apply this cut only if there is more than 1 IFO
     if len(ifos) > 1:
-        for i_trig, _ in enumerate(trigs):
+        for i_trig in range(len(snr)):
             # Apply only to triggers that were not already cut previously
             if bestnr[i_trig] != 0:
                 ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
                 if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold or
                         ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
                     bestnr[i_trig] = 0
-    for i_trig, trig in enumerate(trigs):
+
+    for i_trig in range(len(bestnr)):
         # Get chisq reduced (new) SNR for triggers that were not cut so far
-        # NOTE: .get_bestnr is in glue.ligolw.lsctables.MultiInspiralTable
+        # Ideally we should not have any of them right now
+        # NOTE: it may be redundant without the implementation of bank and
+        # cont chisq
         if bestnr[i_trig] != 0:
-            bestnr[i_trig] = trig.get_bestnr(index=q, nhigh=n,
-                                             null_snr_threshold=null_thresh[0],
-                                             null_grad_thresh=null_grad_thresh,
-                                             null_grad_val=null_grad_val)
+            # Define the input trig as a dictionary
+            trig = {
+                'snr': trigs['coherent_snr'][i_trig],
+                'null_snr': trigs['null_snr'][i_trig],
+                'chisq': trigs['chisq'][i_trig],
+                'nifos': trigs['nifos'][i_trig],
+                    }
             # If we got this far and the bestNR is non-zero, verify that chisq
             # was actually calculated for the trigger, otherwise raise an
             # error with info useful to figure out why this happened.
-            if bestnr[i_trig] != 0 and trig.chisq == 0:
+            if bestnr[i_trig] != 0 and trig['chisq'] == 0:
                 err_msg = "Chisq not calculated for trigger with end time "
-                err_msg += f"{trig.get_end()} and SNR {trig.snr}."
+                err_msg += f"{time[i_trig]} and SNR {trig['snr']}."
                 raise RuntimeError(err_msg)
 
     return bestnr
+
+
+# =============================================================================
+# Veto trigger
+# =============================================================================
+def veto_trig(trigs, trial_dict):
+    """Remove trigs that are not in trial dict"""
+    mask = []
+    for time in trigs['end_time']:
+        mask.append(any([time in trial for trial in trial_dict]))
+    return {key: trigs[key][mask] for key in trigs.keys()}
 
 
 # =============================================================================
@@ -458,51 +506,40 @@ def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
 # =============================================================================
 def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     """Constructs sorted triggers from a trials dictionary"""
-
     sorted_trigs = {}
-
-    # Begin by sorting the triggers into each slide
-    for slide_id in slide_dict:
-        sorted_trigs[slide_id] = []
-    for slide_id, event_id in zip(trigs['network/slide_id'],
-                                  trigs['network/event_id']):
-        sorted_trigs[slide_id].append(event_id)
+    trigs_keys = list(trigs.keys())
 
     for slide_id in slide_dict:
-        # These can only *reduce* the analysis time
+        # Sort the network trigs for each timeslide
+        sorted_trigs[slide_id] = \
+            {key: trigs[key][trigs['time_slide_id'].astype(int) == slide_id]
+             for key in trigs_keys}
         curr_seg_list = seg_dict[slide_id]
-
         # Check the triggers are all in the analysed segment lists
-        for event_id in sorted_trigs[slide_id]:
-            index = numpy.flatnonzero(trigs['network/event_id'] == event_id)[0]
-            end_time = trigs['network/end_time_gc'][index]
-            if end_time not in curr_seg_list:
+        for time in sorted_trigs[slide_id]['end_time']:
+            if time not in curr_seg_list:
                 # This can be raised if the trigger is on the segment boundary,
                 # so check if the trigger is within 1/100 of a second within
                 # the list
-                if end_time + 0.01 in curr_seg_list:
+                if time + 0.01 in curr_seg_list:
                     continue
-                if end_time - 0.01 in curr_seg_list:
+                if time - 0.01 in curr_seg_list:
                     continue
                 err_msg = "Triggers found in input files not in the list of "
                 err_msg += "analysed segments. This should not happen."
                 raise RuntimeError(err_msg)
         # END OF CHECK #
 
-        # Keep triggers that are in trial_dict
-        sorted_trigs[slide_id] = [event_id for event_id in
-                                  sorted_trigs[slide_id]
-                                  if trigs['network/end_time_gc'][
-                                      trigs['network/event_id'] == event_id][0]
-                                  in trial_dict[slide_id]]
-
+        sorted_trigs[slide_id] = \
+            veto_trig(sorted_trigs[slide_id], trial_dict[slide_id])
     return sorted_trigs
 
 
 # =============================================================================
 # Extract basic trigger properties and store them as dictionaries
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
+def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
+                                  ifos, opts):
     """Extract and store as dictionaries time, SNR, and BestNR of
     time-slid triggers"""
 
@@ -510,19 +547,25 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
     logging.info("Triggers sorted.")
 
+    # Local copies of variables entering the BestNR definition
+    snr_thresh = opts.snr_threshold
+    sngl_snr_thresh = opts.sngl_snr_threshold
+    new_snr_thresh = opts.newsnr_threshold
+
     # Build the 3 dictionaries
     trig_time = {}
     trig_snr = {}
     trig_bestnr = {}
     for slide_id in slide_dict:
-        slide_trigs = sorted_trigs[slide_id]
-        if slide_trigs:
-            trig_time[slide_id] = trigs['network/end_time_gc'][slide_trigs]
-            trig_snr[slide_id] = trigs['network/coherent_snr'][slide_trigs]
-        else:
-            trig_time[slide_id] = numpy.asarray([])
-            trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][slide_trigs]
+        trig_time[slide_id] = sorted_trigs[slide_id]['end_time']
+        trig_snr[slide_id] = sorted_trigs[slide_id]['coherent_snr']
+
+        trig_bestnr[slide_id] = get_bestnrs(sorted_trigs[slide_id],
+                                            ifos,
+                                            snr_threshold=snr_thresh,
+                                            sngl_snr_threshold=sngl_snr_thresh,
+                                            new_snr_threshold=new_snr_thresh,
+                                            )
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
@@ -570,6 +613,124 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
 # =============================================================================
 # Function to load injections
 # =============================================================================
+def load_missed_found_injections(hdf_file, ifos, opts,
+                                 background_bestnrs=None):
+    """Loads found and missed injections from a PyGRB output hdf file as
+    two dictionaries"""
+    inj_data = h5py.File(hdf_file, 'r')
+    inj_params = ['mass1', 'mass2', 'distance', 'inclination', 'ra', 'dec',
+                  'polarization', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
+                  'spin2y', 'spin2z']
+    found_data = {}
+    missed_data = {}
+    logging.info('Loading injections...')
+
+    # Load injections parameters
+    for param in inj_params:
+        missed_data[param] = inj_data['/missed/%s' % param][...]
+        found_data[param] = inj_data['/found/%s' % param][...]
+
+    # Calculate injections mchirp
+    missed_data['mchirp'] = mchirp_from_mass1_mass2(missed_data['mass1'],
+                                                    missed_data['mass2'])
+    found_data['mchirp'] = mchirp_from_mass1_mass2(found_data['mass1'],
+                                                   found_data['mass2'])
+
+    # Injections time
+    found_data['time'] = inj_data['/found/tc'][...]
+    missed_data['time'] = inj_data['/missed/tc'][...]
+
+    # Calculate effective distance for the ifos
+    found_data['eff_dist'] = 0
+    missed_data['eff_dist'] = 0
+    for ifo in ifos:
+        antenna = Detector(ifo)
+        found_data['eff_dist_%s' % ifo] = antenna.effective_distance(
+                                    found_data['distance'],
+                                    found_data['ra'],
+                                    found_data['dec'],
+                                    found_data['polarization'],
+                                    found_data['time'],
+                                    found_data['inclination']
+                                    )
+        missed_data['eff_dist_%s' % ifo] = antenna.effective_distance(
+                                    missed_data['distance'],
+                                    missed_data['ra'],
+                                    missed_data['dec'],
+                                    missed_data['polarization'],
+                                    missed_data['time'],
+                                    missed_data['inclination']
+                                    )
+        found_data['eff_dist'] += 1.0 / found_data['eff_dist_%s' % ifo]
+        missed_data['eff_dist'] += 1.0 / missed_data['eff_dist_%s' % ifo]
+    found_data['eff_dist'] = 1.0 / found_data['eff_dist']
+    missed_data['eff_dist'] = 1.0 / missed_data['eff_dist']
+
+    # Get recovered parameters and statistic values for the found injections
+    # Recovered parameters
+    rec_params = ['mchirp', 'mass1', 'mass2', 'ra', 'dec']
+    for param in rec_params:
+        found_data['rec_%s' % param] = inj_data['/network/%s' % param][...]
+
+    found_data['end_time'] = \
+        inj_data['/network/end_time_gc'][...]  # needed to use bestNR
+
+    # Staistics value
+    filter_stats = ['coherent_snr', 'reweighted_snr', 'null_snr']
+    for param in filter_stats:
+        found_data[param] = inj_data['/network/%s' % param][...]
+    found_data['chisq'] = inj_data['/network/my_network_chisq'][...]
+    found_data['bank_chisq'] = numpy.zeros(len(found_data['eff_dist']))
+    found_data['cont_chisq'] = numpy.zeros(len(found_data['eff_dist']))
+    found_data['nifos'] = inj_data['/network/nifo'][...].astype(int)
+    # Calibration errors:
+    # Get the relative detector sensitivities averaged over the
+    # parameters. This is used to marginalize over calibration errors.
+    # also save the snr per ifo
+    snr_ifos = {'V1': 'v', 'H1': 'h1', 'L1': 'l'}
+    for ifo in ifos:
+        found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
+        found_data['snr_%s' % ifo] = inj_data[ifo + '/snr_' +
+                                              snr_ifos[ifo]][...]
+    # BestNRs
+    found_data['bestnr'] = \
+        get_bestnrs(found_data,
+                    ifos,
+                    snr_threshold=opts.snr_threshold,
+                    sngl_snr_threshold=opts.sngl_snr_threshold,
+                    new_snr_threshold=opts.newsnr_threshold)
+    if background_bestnrs is not None:
+        found_data['fap'] = numpy.array(
+                [sum(background_bestnrs > bestnr) for bestnr in
+                 found_data['bestnr']],
+                dtype=float) / len(background_bestnrs)
+    # Antenna responses
+    f_resp = {}
+    for ifo in ifos:
+        if sum(found_data['sigmasq_%s' % ifo] == 0):
+            logging.info("%s: sigmasq not set for at least one trigger.", ifo)
+        if sum(found_data['sigmasq_%s' % ifo] != 0) == 0:
+            logging.info("%s: sigmasq not set for any trigger.", ifo)
+            if len(ifos) == 1:
+                msg = "This is a single ifo analysis. "
+                msg += "Setting sigmasq to unity for all triggers."
+                logging.info(msg)
+                found_data['sigmasq_%s' % ifo][:] = 1.0
+        antenna = Detector(ifo)
+        f_resp[ifo] = get_antenna_responses(antenna, found_data['ra'],
+                                            found_data['dec'],
+                                            found_data['time'])
+
+    inj_sigma_mult = \
+        numpy.asarray([f_resp[ifo] *
+                       found_data['sigmasq_%s' % ifo] for ifo in ifos])
+    inj_sigma_tot = numpy.sum(inj_sigma_mult, axis=0)
+    for ifo in ifos:
+        found_data['inj_sigma_mean_%s' % ifo] = numpy.mean(
+            found_data['sigmasq_%s' % ifo] * f_resp[ifo] / inj_sigma_tot)
+    return found_data, missed_data
+
+
 def load_injections(inj_file, vetoes, sim_table=False, label=None):
     """Loads injections from PyGRB output file"""
 
@@ -683,6 +844,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
         seg_buffer.coalesce()
 
         # Construct the ifo-indexed dictionary of slid veteoes
+        slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
         slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
 
         # Construct trial list and check against buffer
