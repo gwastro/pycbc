@@ -260,7 +260,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
         The list of combined trigger files
         [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
         FileList (N can be set by the user and is 6 by default)
-    cluster_files : FileList
+    clustered_files : FileList
         CLUSTERED FileList, same order as trig_files
     inj_find_files : FileList
         FOUNDMISSED FileList covering all injection sets
@@ -281,12 +281,12 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     # Trig clustering for each trig file
     exe_class = _select_grb_pp_class(wf, "trig_cluster")
     job_instance = exe_class(wf.cp, "trig_cluster")
-    cluster_files = FileList([])
+    clustered_files = FileList([])
     for trig_file in trig_files:
         # Create and add nodes
         node, out_file = job_instance.create_node(trig_file, pp_dir)
         wf.add_node(node)
-        cluster_files.append(out_file)
+        clustered_files.append(out_file)
 
     # Find injections from triggers
     exe_class = _select_grb_pp_class(wf, "inj_finder")
@@ -319,7 +319,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
             wf.add_node(node)
             inj_comb_files.append(inj_comb_file)
 
-    return trig_files, cluster_files, inj_find_files, inj_comb_files
+    return trig_files, clustered_files, inj_find_files, inj_comb_files
 
 
 class PycbcGrbTrigCombinerExecutable(Executable):
