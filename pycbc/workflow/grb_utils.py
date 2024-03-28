@@ -267,7 +267,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
         FOUNDMISSED FileList covering all injection sets
     inj_comb_files : FileList
         FOUNDMISSED-FILTERED FileList covering all injection sets
-                     in the same order as inj_find_files
+        in the same order as inj_find_files
         These are filtered by inclination
     """
     # Begin setting up trig combiner job(s)
