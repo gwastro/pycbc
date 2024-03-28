@@ -617,14 +617,16 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
     space-borne and ground-based GW detectors, then transform all
     the parameters into the same frame in the sub model level, use
     `HierarchicalModel` to get the joint likelihood, and marginalize
-    over all the extrinsic parameters supported by `RelativeTimeDom`.
-    Note that LISA submodel only supports the `Relative` for now,
-    for ground-based detectors, please use `RelativeTimeDom`.
+    over all the extrinsic parameters supported by `RelativeTimeDom`
+    or its variants. Note that LISA submodel only supports the `Relative`
+    for now, for ground-based detectors, please use `RelativeTimeDom`
+    or its variants.
 
     Although this likelihood model is used for multiband parameter
     estimation, users can still use it for other purposes, such as
     GW + EM parameter estimation, in this case, please use `RelativeTimeDom`
-    for the GW data, for the likelihood of EM data, there is no restrictions.
+    or its variants for the GW data, for the likelihood of EM data,
+    there is no restrictions.
     """
     name = 'joint_primary_marginalized'
 
@@ -703,7 +705,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 margin_params[key] = value
                 if isinstance(value, numpy.ndarray):
                     nums = len(value)
-            # add distance if it has been marginalized
+            # add distance if it has been marginalized,
+            # use numpy array for it is just let it has the same
+            # shape as marginalize_vector_params
             if self.primary_model.distance_marginalization:
                 margin_params['distance'] = numpy.full(
                     nums, self.primary_model.current_params['distance'])
