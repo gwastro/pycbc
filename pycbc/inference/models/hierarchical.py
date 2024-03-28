@@ -705,12 +705,13 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 margin_params[key] = value
                 if isinstance(value, numpy.ndarray):
                     nums = len(value)
-            # add distance if it has been marginalized,
-            # use numpy array for it is just let it has the same
-            # shape as marginalize_vector_params
-            if self.primary_model.distance_marginalization:
-                margin_params['distance'] = numpy.full(
-                    nums, self.primary_model.current_params['distance'])
+        # add distance if it has been marginalized,
+        # use numpy array for it is just let it has the same
+        # shape as marginalize_vector_params, here we assume
+        # self.primary_model.current_params['distance'] is a number
+        if self.primary_model.distance_marginalization:
+            margin_params['distance'] = numpy.full(
+                nums, self.primary_model.current_params['distance'])
 
         # add likelihood contribution from space-borne detectors, we
         # calculate sh/hh for each marginalized parameter point
