@@ -84,9 +84,7 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         for ifo in ifos:
             att = ifo.lower()
             # TODO: do we want pycbc_grb_inj_finder or other executables upstream to handle this?
-            if 'h' not in att:
-                att = att[0]
-            data['single'][ifo] = trigs['%s/snr_%s' % (ifo, att)][:]
+            data['single'][ifo] = trigs['%s/snr' % ifo][:]
 
         # Get sigma for each ifo
         for ifo in ifos:

@@ -50,12 +50,20 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",
                     help="Verbose output")
-parser.add_argument("-t", "--trig-file", action="store",
-                    default=None, required=True,
-                    help="The location of the trigger file")
+parser.add_argument("-t", "--trig-files", action="store",
+                    required=True, nargs="+",
+                    help="The location of the trigger files"
+                    " [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ...,"
+                    " OFFTRIAL_N]")
 parser.add_argument("-i", "--inj-files", action="store",
                     default=None, nargs="+",
                     help="Location(s) of input injection results file(s)")
+parser.add_argument("-b", "--bank-file", action="store",
+                    default=None,
+                    help="The location of the full template bank file")
+parser.add_argument("--segment-dir", action="store",
+                    default=None,
+                    help="The location of the segment files")
 _workflow.add_workflow_command_line_group(parser)
 _workflow.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -85,18 +93,40 @@ rdir = layout.SectionNumber('webpage', ['offsource_triggers_vs_time',
 _workflow.makedir(rdir.base)
 _workflow.makedir(rdir['workflow'])
 
-# Input trigger file
-trig_file = start_rundir+'/'+args.trig_file 
+# Input trigger files
+# Expected structure: [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
+# Check filename in case this doesn't happen
+all_times_file = None
+onsource_file = None
+offsource_file = None
+offtrial_files = []
+for trig_file in args.trig_files:
+    if not os.path.isfile(trig_file):
+        raise ValueError("Trigger file %s does not exist" % trig_file)
+    if "ALL_TIMES" in trig_file:
+        all_times_file = os.path.join(start_rundir, trig_file)
+    if "ONSOURCE" in trig_file:
+        onsource_file = os.path.join(start_rundir, trig_file)
+    if "OFFSOURCE" in trig_file:
+        offsource_file = os.path.join(start_rundir, trig_file)
+    if "OFFTRIAL" in trig_file:
+        offtrial_files.append(os.path.join(start_rundir, trig_file))
+offtrial_files.sort()
+
+bank_file = os.path.join(start_rundir, args.bank_file)
 
 # Input injection files and injection set names
 inj_files = [start_rundir+'/'+el for el in args.inj_files] 
 
 # IFOs actually used: determined by data availability
-ifos = extract_ifos(trig_file)
+ifos = extract_ifos(offsource_file)
 wflow.ifos = ifos
 
 plotting_nodes = []
 html_nodes = []
+
+seg_filenames = ['bufferSeg.txt', 'offSourceSeg.txt', 'onSourceSeg.txt']
+seg_files = [os.path.join(args.segment_dir, f) for f in seg_filenames]
 
 # Logfile of this workflow
 wf_log_file = _workflow.File(wflow.ifos, 'workflow-log', wflow.analysis_time,
@@ -107,7 +137,6 @@ formatter = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
 logfile.setFormatter(formatter)
 logging.getLogger('').addHandler(logfile)
 logging.info("Created log file %s", wf_log_file.storage_path)
-
 
 # TODO: Pick up inifile, segments plot, GRB time and location, report IFO responses
 # Read the configuration file
@@ -127,7 +156,7 @@ files.append(grb_info_table)
 #
 plot_node, skygrid_plot = _workflow.make_pygrb_plot(wflow, 'pygrb_plot_skygrid',
                                                     out_dir,
-                                                    trig_file=trig_file)
+                                                    trig_file=offsource_file)
 plotting_nodes.append(plot_node)
 files.append(skygrid_plot)
 summary_layout = [(grb_info_table[0],), (skygrid_plot[0],)]
@@ -174,7 +203,7 @@ for snr_type in timeseries:
             tags = [snr_type] if inj_file is None else [snr_type, tuning_inj_set]
             plot_node, output_files = \
                 _workflow.make_pygrb_plot(wflow, 'pygrb_plot_snr_timeseries',
-                                          out_dir, trig_file=trig_file,
+                                          out_dir, trig_file=offsource_file,
                                           inj_file=inj_file, ifo=ifo,
                                           tags=tags)
             plotting_nodes.append(plot_node)
@@ -206,7 +235,7 @@ for veto in vetoes:
             tags = [veto] if inj_file is None else [veto, tuning_inj_set]
             plot_node, output_files = \
                 _workflow.make_pygrb_plot(wflow, 'pygrb_plot_chisq_veto',
-                                          out_dir, trig_file=trig_file,
+                                          out_dir, trig_file=offsource_file,
                                           inj_file=inj_file, ifo=ifo,
                                           tags=tags)
             plotting_nodes.append(plot_node)
@@ -234,7 +263,7 @@ if wflow.cp.has_section('pygrb_plot_coh_ifosnr'):
                 # Single IFO SNR vs Coherent SNR
                 plot_node, output_files = \
                     _workflow.make_pygrb_plot(wflow, 'pygrb_plot_coh_ifosnr',
-                                              out_dir, trig_file=trig_file,
+                                              out_dir, trig_file=offsource_file,
                                               inj_file=inj_file, ifo=ifo,
                                               tags=tags)
                 plotting_nodes.append(plot_node)
@@ -277,7 +306,7 @@ for nstat in nstats:
             tags = tags + [tuning_inj_set] if inj_file is not None else tags 
             plot_node, output_files = \
             _workflow.make_pygrb_plot(wflow, 'pygrb_plot_null_stats', out_dir,
-                                      trig_file=trig_file, inj_file=inj_file,
+                                      trig_file=offsource_file, inj_file=inj_file,
                                       tags=tags)
             plotting_nodes.append(plot_node)
             # We want a File, not a 1-element list with a File
@@ -317,7 +346,7 @@ for inj_set in inj_sets:
             for fm_or_mf in ['missed-on-top', 'found-on-top']:
                 tags = [y_qty, x_qty, fm_or_mf, inj_set] # TODO: last one needed?
                 plot_node, output_files = _workflow.make_pygrb_plot(wflow, 'pygrb_plot_injs_results',
-                                                                    out_dir, trig_file=trig_file,
+                                                                    out_dir, trig_file=offsource_file,
                                                                     ifo=ifo, inj_file=inj_file,
                                                                     tags=tags)
                 plotting_nodes.append(plot_node)
@@ -344,7 +373,7 @@ stats = wflow.cp.get_subsections('pygrb_plot_stats_distribution')
 for stat in stats:
     plot_node, output_file = \
         _workflow.make_pygrb_plot(wflow, 'pygrb_plot_stats_distribution',
-                                  out_dir, trig_file=trig_file,
+                                  out_dir, trig_file=offsource_file,
                                   inj_file=inj_file, tags=[stat])
     plotting_nodes.append(plot_node)
     # We want a File, not a 1-element list with a File
@@ -360,12 +389,33 @@ for stat in stats:
 out_dir = rdir['exclusion_distances']
 _workflow.makedir(out_dir)
 
-# Offtrials and injection sets request by the user
+# Offtrials and injection sets requested by the user
 num_trials = int(wflow.cp.get('trig_combiner', 'num-trials'))
 offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
 inj_sets = wflow.cp.get_subsections('injections')
-# TODO: (randomly extracted) offrtials pages
+out_dir = rdir['exclusion_distances']
+_workflow.makedir(out_dir)
+for i, offtrial in enumerate(offtrials):
+    out_dir = rdir[f'exclusion_distances/{offtrial}']
+    _workflow.makedir(out_dir)
+    files = _workflow.FileList([])
+    for inj_set in inj_sets:
+        inj_file = list(filter(lambda x: inj_set.lower() in x.lower(), inj_files))
+        inj_file = inj_file[0] if len(inj_file) == 1 else None
+        tags = [offtrial, inj_set]
+        plot_node, output_files = \
+            _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
+                                      out_dir, trig_file=offsource_file,
+                                      onsource_file=offtrial_files[i],
+                                      inj_file=inj_file,
+                                      bank_file=bank_file,
+                                      seg_files=seg_files, tags=tags)
+        plotting_nodes.append(plot_node)
+        files.extend(output_files)
+    eff_layout = list(layout.grouper(files, 2))
+    layout.two_column_layout(out_dir, eff_layout, offtrial)
 
+# TODO: add onsource calculation by using the true onsource file
 
 #
 # Trigger Followups (TODO)
