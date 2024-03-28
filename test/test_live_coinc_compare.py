@@ -47,7 +47,9 @@ class SingleDetTrigSimulator:
                     0,
                     self.num_templates,
                     size=self.num_trigs
-                ).astype(np.int32)
+                ).astype(np.int32),
+                "mass1": np.random.uniform(2.0, 100.0, size=self.num_trigs).astype(np.float32),
+                "mass2": np.random.uniform(2.0, 100.0, size=self.num_trigs).astype(np.float32)
             }
         self.start_time += self.analysis_chunk
         return trigs
@@ -73,7 +75,8 @@ class TestPyCBCLiveCoinc(unittest.TestCase):
             statistic_keywords=None,
             timeslide_interval=0.1,
             background_ifar_limit=100,
-            store_background=True
+            store_background=True,
+            coinc_window_pad=0.002
         )
 
         # number of templates in the bank
