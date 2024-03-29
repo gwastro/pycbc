@@ -511,7 +511,7 @@ for i, j in enumerate(offtrials):
         _ts = bins["OFFSOURCE"][0][0]
     else:
         _ts = bins["OFFSOURCE"][1][0]
-        # if the offtrial in the second offsource segment,
+        # if the offtrial is in the second offsource segment,
         # subtract the number of trials in the first offsource segment.
         # This avoids the offtrials overflowing out of the offsource segments.
         j -= offsource_ntrials[0]
