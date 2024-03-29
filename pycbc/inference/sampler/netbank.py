@@ -1,7 +1,7 @@
 """ Direct monte carlo sampling using pregenerated mapping files that
 encode the intrinsic parameter space.
 """
-import numpy, h5py, logging
+import numpy, h5py, logging, tqdm
 from numpy.random import choice
 from scipy.special import logsumexp
 from pycbc.io import FieldArray
@@ -20,6 +20,16 @@ def call_likelihood(params):
     models._global_instance.update(**params)
     return models._global_instance.loglikelihood
 
+def call_rlikelihood(params):
+    """ Accessor to update the global model and call its reconstruction
+    routine.
+    """
+    models._global_instance.update(**params)
+    logl = models._global_instance.loglikelihood
+    models._global_instance.update(**params)
+    rec = models._global_instance.reconstruct()
+    return logl, rec
+
 class NetBank(DummySampler):
     """Direct monte-carlo sampler using a preconstructed parameter space
     mapping file.
@@ -36,6 +46,7 @@ class NetBank(DummySampler):
                  loglr_region=25,
                  node_draw_size=1e6,
                  resample_draw_size=2e5,
+                 reconstruct = False,
                  **kwargs):
         super().__init__(model, *args)
 
@@ -45,7 +56,8 @@ class NetBank(DummySampler):
         self.model = model
         self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         self._samples = {}
-          
+        
+        self.reconstruct = bool(reconstruct)
         self.loglr_region = float(loglr_region)
         self.node_draw_size = int(float(node_draw_size))
         self.resample_draw_size = int(float(resample_draw_size))
@@ -96,7 +108,16 @@ class NetBank(DummySampler):
         for i, s in enumerate(upsamp):
             pset = {p: upsamp[p][i] for p in self.model.variable_params}
             args.append(pset)
-        loglr_samp = numpy.array(self.pool.map(call_likelihood, args))
+        
+        if self.reconstruct:
+            logging.info('Reconstructing any marginalized params...')
+            res = list(tqdm.tqdm(self.pool.imap(call_rlikelihood, args),
+                       total=len(args)))
+            loglr_samp = numpy.array([r[0] for r in res])
+            rec = [r[1] for r in res]
+        else:
+            loglr_samp = numpy.array(list(tqdm.tqdm(self.pool.imap(call_likelihood, args),
+                                     total=len(args))))
 
         # Draw samples based on the actual likelihood relative to the
         # initial weights
@@ -117,3 +138,8 @@ class NetBank(DummySampler):
 
         self._samples = {p: fsamp[p] for p in self.model.variable_params}
         self._samples['loglikelihood'] = loglr_samp[expand][draw2]
+        
+        if self.reconstruct:
+            for k in rec[0]:
+                values = [r[k] for r in rec]
+                self._samples[k] = numpy.array(values)[expand][draw2]
