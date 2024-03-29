@@ -354,7 +354,7 @@ class PycbcGrbTrigCombinerExecutable(Executable):
             user_tag += "_{}".format(tags)
         # Add on/off source and off trial outputs
         output_files = FileList([])
-        outfile_types = ['ALL_TIMES', 'OFFSOURCE', 'ONSOURCE']
+        outfile_types = ['ALL_TIMES', 'ONSOURCE', 'OFFSOURCE']
         for i in range(self.num_trials):
             outfile_types.append("OFFTRIAL_{}".format(i+1))
         for out_type in outfile_types:
