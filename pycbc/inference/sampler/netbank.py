@@ -56,7 +56,7 @@ class NetBank(DummySampler):
         self.model = model
         self.pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         self._samples = {}
-        
+
         self.reconstruct = bool(reconstruct)
         self.loglr_region = float(loglr_region)
         self.node_draw_size = int(float(node_draw_size))
@@ -70,15 +70,15 @@ class NetBank(DummySampler):
             num_nodes = len(bparams[list(bparams.keys())[0]])
             for i in range(num_nodes):
                 dmap.append(f['map'][str(i)][:])
-        dtype = dmap[0].dtype     
-        lengths = numpy.array([len(x) for x in dmap])  
-        
+        dtype = dmap[0].dtype
+        lengths = numpy.array([len(x) for x in dmap])
+
         logging.info('Calculating likelihood at nodes')
         args = []
         for i in range(num_nodes):
             pset = {p: bparams[p][i] for p in self.model.variable_params}
             args.append(pset)
-            
+
         node_loglrs = numpy.array(self.pool.map(call_likelihood, args))
         loglr_bound = node_loglrs.max() - self.loglr_region
 
@@ -97,7 +97,10 @@ class NetBank(DummySampler):
         for i in range(len(psamp)):
             psamp[i] = choice(dmap[draw[i]])
 
-        upsamp, expand = numpy.unique(psamp, return_inverse=True)
+        upsamp, idx, expand, count = numpy.unique(psamp,
+                                             return_index=True,
+                                             return_inverse=True,
+                                             return_counts=True)
         logging.info("Possible unique values %s", lengths[passed].sum())
         logging.info("Templates drawn from %s", len(numpy.unique(draw)))
         logging.info("Unique values first draw %s", len(upsamp))
@@ -108,7 +111,7 @@ class NetBank(DummySampler):
         for i, s in enumerate(upsamp):
             pset = {p: upsamp[p][i] for p in self.model.variable_params}
             args.append(pset)
-        
+
         if self.reconstruct:
             logging.info('Reconstructing any marginalized params...')
             res = list(tqdm.tqdm(self.pool.imap(call_rlikelihood, args),
@@ -121,25 +124,25 @@ class NetBank(DummySampler):
 
         # Draw samples based on the actual likelihood relative to the
         # initial weights
-        logw3 = loglr_samp[expand] - numpy.array(node_loglrs)[draw]
+        logw3 = loglr_samp - numpy.array(node_loglrs)[draw[idx]] + numpy.log(count)
         logw3 -= logsumexp(logw3)
         weight2 = numpy.exp(logw3)
 
-        draw2 = choice(len(psamp), size=self.resample_draw_size,
+        draw2 = choice(len(upsamp), size=self.resample_draw_size,
                        replace=True, p=weight2)
         logging.info("Unique values second draw %s",
-                     len(numpy.unique(psamp[draw2])))
+                     len(numpy.unique(upsamp[draw2])))
         logging.info("ESS = %s", 1.0 / (weight2 ** 2.0).sum())
 
         # Prepare the equally weighted output samples
         fsamp = FieldArray(len(draw2), dtype=dtype)
         for i in range(len(draw2)):
-            fsamp[i] = psamp[draw2[i]]
+            fsamp[i] = upsamp[draw2[i]]
 
         self._samples = {p: fsamp[p] for p in self.model.variable_params}
-        self._samples['loglikelihood'] = loglr_samp[expand][draw2]
-        
+        self._samples['loglikelihood'] = loglr_samp[draw2]
+
         if self.reconstruct:
             for k in rec[0]:
                 values = [r[k] for r in rec]
-                self._samples[k] = numpy.array(values)[expand][draw2]
+                self._samples[k] = numpy.array(values)[draw2]
