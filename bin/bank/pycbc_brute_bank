@@ -23,6 +23,7 @@ import numpy
 import h5py
 import logging
 import argparse
+import pickle
 import numpy.random
 from scipy.stats import gaussian_kde
 
@@ -51,7 +52,7 @@ parser.add_argument('--approximant',  required=True,
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
-parser.add_argument('--max-signal-length', type= float, 
+parser.add_argument('--max-signal-length', type= float,
                     help="When specified, it cuts the maximum length of the waveform model to the lengh provided")
 parser.add_argument('--sample-rate', default=2048, type=float,
     help='sample rate in seconds')
@@ -60,7 +61,7 @@ parser.add_argument('--enable-sigma-bound', action='store_true')
 parser.add_argument('--tau0-threshold', type=float)
 parser.add_argument('--permissive', action='store_true',
     help='Allow waveform generator to fail.')
-parser.add_argument('--placement-iterations', default=1000, type=int, 
+parser.add_argument('--placement-iterations', default=1000, type=int,
     help='Specify the number of attempts the bank should make when placing points. Use this option if the bank fails to place any points.')
 parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--tolerance', type=float)
@@ -279,7 +280,7 @@ class GenUniformWaveform(object):
         self.md = q._data[-100:]
         self.md2 = q._data[0:100]
 
-    def generate(self, **kwds):  
+    def generate(self, **kwds):
         kwds.update(fdict)
         if args.max_signal_length is not None:
                 flow = numpy.arange(self.f_lower, 100, .1)[::-1]
@@ -290,17 +291,17 @@ class GenUniformWaveform(object):
                 f = flow[x]
         else:
                 f = self.f_lower
-        
+
         kwds['f_lower'] = f
-        
-        if kwds['approximant'] in pycbc.waveform.fd_approximants():  
+
+        if kwds['approximant'] in pycbc.waveform.fd_approximants():
             hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
                                                     f_ref=10.0, **kwds)
-            
-            
+
+
             if 'fratio' in kwds:
                 hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
-                    
+
         else:
             dt = 1.0 / args.sample_rate
             hp = pycbc.waveform.get_waveform_filter(
@@ -445,7 +446,7 @@ def cdraw(rtype, ts, te):
         return None
 
     return p
-    
+
 tau0s = args.tau0_start
 tau0e = tau0s + args.tau0_crawl
 
@@ -471,7 +472,7 @@ while tau0s < args.tau0_end:
         if r > 10:
             conv = uconv
         kloop = 0
-        
+
         while ((kloop == 0) or (kconv / okconv) > .5) and len(bank) > 10:
             r += 1
             kloop += 1
@@ -480,8 +481,8 @@ while tau0s < args.tau0_end:
             bank, kconv = bank.check_params(gen, params, args.minimal_match)
             logging.info("%s: Round (K) (%s): %s Size: %s conv: %s added: %s",
                          region, kloop, r, len(bank), kconv, len(bank) - blen)
-            
-            
+
+
             if uconv:
                 logging.info('Ratio of convergences: %2.3f' % (kconv / (uconv)))
                 logging.info('Progress: {:.0%} completed'.format(tau0e/args.tau0_end))
@@ -500,7 +501,7 @@ while tau0s < args.tau0_end:
     tau0e += args.tau0_crawl / 2
 
 o = h5py.File(args.output_file, 'w')
-  
+o.attrs['minimal_match'] = args.minimal_match
 for k in bank.keys():
     val = bank.key(k)
     if val.dtype.char == 'U':
