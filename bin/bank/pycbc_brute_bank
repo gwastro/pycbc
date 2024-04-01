@@ -47,8 +47,8 @@ parser.add_argument('--min',
     help='list of the minimum parameter values', nargs='+', type=float)
 parser.add_argument('--max',
     help='list of the maximum parameter values', nargs='+', type=float)
-parser.add_argument('--approximant',  required=True,
-    help='The waveform approximant to place')
+parser.add_argument('--approximant',  required=False,
+    help='The waveform approximant to place.')
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
@@ -383,7 +383,8 @@ def draw(rtype):
         if args.input_config is not None and waveform_transforms is not None:
             params = transforms.apply_transforms(params, waveform_transforms)
 
-    params['approximant'] = numpy.array([args.approximant]*size)
+    if args.approximant is not None:
+        params['approximant'] = numpy.array([args.approximant]*size)
 
     # Filter out stuff (kde method may also generate samples outside boundaries).
     l = None
