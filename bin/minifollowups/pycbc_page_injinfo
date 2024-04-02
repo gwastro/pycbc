@@ -15,14 +15,21 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Make tables describing a missed injection"""
-import h5py, argparse, pycbc.version, pycbc.results, sys
-import numpy, pycbc.pnutils
+import h5py
+import argparse
+import sys
+import numpy
+
+import pycbc.version
+import pycbc.results
+import pycbc.pnutils
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.detector import Detector
 
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--output-file')
 parser.add_argument('--injection-file', required=True,
     help="The HDF format injection file. Required")
@@ -32,6 +39,8 @@ parser.add_argument('--n-nearest', type=int,
     help="Optional, used in the title")
 
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 f = h5py.File(args.injection_file, 'r')
 iidx = args.injection_index

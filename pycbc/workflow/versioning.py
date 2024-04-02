@@ -26,7 +26,11 @@ Module to generate/manage the executable used for version information
 in workflows
 """
 import os
+import logging
+
 from pycbc.workflow.core import Executable
+
+logger = logging.getLogger('pycbc.workflow.versioning')
 
 
 class VersioningExecutable(Executable):

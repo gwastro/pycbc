@@ -225,8 +225,17 @@ class LiveSingle(object):
 
         rate = rates[dur_bin]
         coeff = coeffs[dur_bin]
+        if np.isnan(coeff) or np.isnan(rate):
+            logger.warning(
+                "Single trigger fits are not valid - singles "
+                "cannot be assessed for this detector at this time."
+            )
+            return None
+
         rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
                                           coeff, thresh)[0]
+
         # apply a trials factor of the number of duration bins
         rate_louder *= len(rates)
+
         return conv.sec_to_year(1. / rate_louder)

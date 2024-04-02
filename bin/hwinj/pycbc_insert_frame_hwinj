@@ -19,6 +19,8 @@
 import argparse
 import logging
 import numpy
+
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.frame import write_frame
 from pycbc import strain as _strain
 
@@ -26,6 +28,7 @@ from pycbc import strain as _strain
 parser = argparse.ArgumentParser(usage='pycbc_insert_frame_hwinj [--options]',
                                  description="Inserts a single-column ASCII "
                                              "file into frame data.")
+add_common_pycbc_options(parser)
 
 # injection options
 parser.add_argument('--hwinj-file', type=str, required=True,
@@ -54,9 +57,9 @@ _strain.insert_strain_option_group(parser)
 # parse command line
 opts = parser.parse_args()
 
-# setup log
-logging_level = logging.DEBUG
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+# setup log: default is DEBUG (2)
+logging_level = 2 if opts.verbose is None else opts.verbose + 2
+init_logging(logging_level)
 
 # get strain
 strain = _strain.from_cli(opts, precision=opts.precision)

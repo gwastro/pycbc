@@ -239,7 +239,7 @@ def get_random_mass(numPoints, massRangeParams, eos='2H'):
             warn_msg += "(%s). " %(max_ns_g_mass)
             warn_msg += "The code will proceed using the latter value "
             warn_msg += "as the boundary mass."
-            logger.warn(warn_msg)
+            logger.warning(warn_msg)
             boundary_mass = max_ns_g_mass
 
         # Empty arrays to store points that pass all cuts
@@ -715,7 +715,7 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
         warn_msg += "for the metric: %s Hz. " %(freqs.min())
         warn_msg += "Distances for these waveforms will be calculated at "
         warn_msg += "the lowest available metric frequency."
-        logger.warn(warn_msg)
+        logger.warning(warn_msg)
     if upper_f_cutoff > freqs.max():
         warn_msg = "WARNING: "
         warn_msg += "Highest frequency cutoff is %s Hz " %(upper_f_cutoff,)
@@ -723,7 +723,7 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
         warn_msg += "for the metric: %s Hz. " %(freqs.max())
         warn_msg += "Distances for these waveforms will be calculated at "
         warn_msg += "the largest available metric frequency."
-        logger.warn(warn_msg)
+        logger.warning(warn_msg)
     return find_closest_calculated_frequencies(cutoffs, freqs)
 
 

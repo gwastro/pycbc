@@ -32,10 +32,14 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 import os
 import logging
 import configparser as ConfigParser
+
 import pycbc
 from pycbc.workflow.core import FileList
 from pycbc.workflow.core import make_analysis_dir, resolve_url_to_file
 from pycbc.workflow.jobsetup import select_tmpltbank_class, sngl_ifo_job_setup
+
+logger = logging.getLogger('pycbc.workflow.tmpltbank')
+
 
 def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
                              output_dir=None, psd_files=None, tags=None,
@@ -69,7 +73,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     '''
     if tags is None:
         tags = []
-    logging.info("Entering template bank generation module.")
+    logger.info("Entering template bank generation module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
 
@@ -80,21 +84,21 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     # There can be a large number of different options here, for e.g. to set
     # up fixed bank, or maybe something else
     if tmpltbankMethod == "PREGENERATED_BANK":
-        logging.info("Setting template bank from pre-generated bank(s).")
+        logger.info("Setting template bank from pre-generated bank(s).")
         tmplt_banks = setup_tmpltbank_pregenerated(workflow, tags=tags)
     # Else we assume template banks will be generated in the workflow
     elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS":
-        logging.info("Adding template bank jobs to workflow.")
+        logger.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_dax_generated(workflow, science_segs,
                                          datafind_outs, output_dir, tags=tags,
                                          psd_files=psd_files)
     elif tmpltbankMethod == "WORKFLOW_INDEPENDENT_IFOS_NODATA":
-        logging.info("Adding template bank jobs to workflow.")
+        logger.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
                                          tags=tags, independent_ifos=True,
                                          psd_files=psd_files)
     elif tmpltbankMethod == "WORKFLOW_NO_IFO_VARIATION_NODATA":
-        logging.info("Adding template bank jobs to workflow.")
+        logger.info("Adding template bank jobs to workflow.")
         tmplt_banks = setup_tmpltbank_without_frames(workflow, output_dir,
                                          tags=tags, independent_ifos=False,
                                          psd_files=psd_files)
@@ -112,7 +116,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     # the bank in the format as it was inputted.
     tmplt_bank_filename=tmplt_banks[0].name
     ext = tmplt_bank_filename.split('.', 1)[1]
-    logging.info("Input bank is a %s file", ext)
+    logger.info("Input bank is a %s file", ext)
     if return_format is None :
         tmplt_banks_return = tmplt_banks
     elif return_format in ('hdf', 'h5', 'hdf5'):
@@ -125,7 +129,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
         else:
             raise NotImplementedError("{0} to {1} conversion is not "
                                       "supported.".format(ext, return_format))
-    logging.info("Leaving template bank generation module.")
+    logger.info("Leaving template bank generation module.")
     return tmplt_banks_return
 
 def setup_tmpltbank_dax_generated(workflow, science_segs, datafind_outs,

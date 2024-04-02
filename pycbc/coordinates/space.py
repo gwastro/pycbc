@@ -29,7 +29,9 @@ is a circular orbit, need to be replaced by a more realistic and general orbit
 model in the near future.
 """
 
+import logging
 import numpy as np
+
 from scipy.spatial.transform import Rotation
 from scipy.optimize import fsolve
 from astropy import units
@@ -39,6 +41,8 @@ from astropy.coordinates import BarycentricMeanEcliptic, PrecessedGeocentric
 from astropy.coordinates import get_body_barycentric
 from astropy.coordinates import SkyCoord
 from astropy.coordinates.builtin_frames import ecliptic_transforms
+
+logger = logging.getLogger('pycbc.coordinates.space')
 
 # This constant makes sure LISA is behind the Earth by 19-23 degrees.
 # Making this a stand-alone constant will also make it callable by

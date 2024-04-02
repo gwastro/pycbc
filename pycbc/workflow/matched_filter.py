@@ -29,12 +29,17 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
 
 
-import os, logging
+import os
+import logging
 from math import radians
+
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (select_matchedfilter_class,
                                      sngl_ifo_job_setup,
                                      multi_ifo_coherent_job_setup)
+
+logger = logging.getLogger('pycbc.workflow.matched_filter')
+
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
@@ -80,7 +85,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     '''
     if tags is None:
         tags = []
-    logging.info("Entering matched-filtering setup module.")
+    logger.info("Entering matched-filtering setup module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
 
@@ -90,13 +95,13 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
 
     # Could have a number of choices here
     if mfltrMethod == "WORKFLOW_INDEPENDENT_IFOS":
-        logging.info("Adding matched-filter jobs to workflow.")
+        logger.info("Adding matched-filter jobs to workflow.")
         inspiral_outs = setup_matchedfltr_dax_generated(workflow, science_segs,
                                       datafind_outs, tmplt_banks, output_dir,
                                       injection_file=injection_file,
                                       tags=tags)
     elif mfltrMethod == "WORKFLOW_MULTIPLE_IFOS":
-        logging.info("Adding matched-filter jobs to workflow.")
+        logger.info("Adding matched-filter jobs to workflow.")
         inspiral_outs = setup_matchedfltr_dax_generated_multi(workflow,
                                       science_segs, datafind_outs, tmplt_banks,
                                       output_dir, injection_file=injection_file,
@@ -106,7 +111,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
         errMsg += "WORKFLOW_INDEPENDENT_IFOS or WORKFLOW_MULTIPLE_IFOS."
         raise ValueError(errMsg)
 
-    logging.info("Leaving matched-filtering setup module.")
+    logger.info("Leaving matched-filtering setup module.")
     return inspiral_outs
 
 def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
@@ -169,7 +174,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     # If we want to use multi-detector matched-filtering or something similar to this
     # it would probably require a new module
     for ifo in ifos:
-        logging.info("Setting up matched-filtering for %s." %(ifo))
+        logger.info("Setting up matched-filtering for %s.", ifo)
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifo,
                                                out_dir=output_dir,
                                                injection_file=injection_file,
@@ -234,7 +239,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     # List for holding the output
     inspiral_outs = FileList([])
 
-    logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
+    logger.info("Setting up matched-filtering for %s.", ' '.join(ifos))
 
     if match_fltr_exe == 'pycbc_multi_inspiral':
         exe_class = select_matchedfilter_class(match_fltr_exe)
@@ -268,8 +273,10 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                  tags=tags)
         if cp.has_option("workflow", "do-long-slides") and "slide" in tags[-1]:
             slide_num = int(tags[-1].replace("slide", ""))
-            logging.info("Setting up matched-filtering for slide {}"
-                         .format(slide_num))
+            logger.info(
+                "Setting up matched-filtering for slide %d",
+                slide_num
+            )
             slide_shift = int(cp.get("inspiral", "segment-length"))
             time_slide_dict = {ifo: (slide_num + 1) * ix * slide_shift
                                for ix, ifo in enumerate(ifos)}

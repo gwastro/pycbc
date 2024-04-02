@@ -219,6 +219,7 @@ class DistMarg():
         self.dist_locs = dist_locs
         self.distance_marginalization = dist_ref / dist_locs, dist_weights
         self.distance_interpolator = None
+
         if str_to_bool(marginalize_distance_interpolator):
             setup_args = {}
             if marginalize_distance_snr_range:
@@ -229,6 +230,7 @@ class DistMarg():
                                                 phase=self.marginalize_phase,
                                                 **setup_args)
             self.distance_interpolator = i
+
         kwargs['static_params']['distance'] = dist_ref
         return variable_params, kwargs
 
@@ -718,7 +720,7 @@ class DistMarg():
         self.marginalize_vector_weights = - numpy.log(self.vsamples)
         return params
 
-    def reconstruct(self, rec=None, seed=None):
+    def reconstruct(self, rec=None, seed=None, set_loglr=None):
         """ Reconstruct the distance or vectored marginalized parameter
         of this class.
         """
@@ -728,11 +730,14 @@ class DistMarg():
         if rec is None:
             rec = {}
 
-        def get_loglr():
-            p = self.current_params.copy()
-            p.update(rec)
-            self.update(**p)
-            return self.loglr
+        if set_loglr is None:
+            def get_loglr():
+                p = self.current_params.copy()
+                p.update(rec)
+                self.update(**p)
+                return self.loglr
+        else:
+            get_loglr = set_loglr
 
         if self.marginalize_vector_params:
             logging.debug('Reconstruct vector')

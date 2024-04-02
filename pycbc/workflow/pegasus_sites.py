@@ -12,16 +12,20 @@ most use cases. You can override individual details here. It should also be
 possible to implement a new site, but not sure how that would work in practice.
 """
 
+import logging
 import os.path
 import tempfile
 import urllib.parse
 from shutil import which
 from urllib.parse import urljoin
 from urllib.request import pathname2url
+
 from Pegasus.api import Directory, FileServer, Site, Operation, Namespace
 from Pegasus.api import Arch, OS, SiteCatalog
 
 from pycbc.version import last_release, version, release  # noqa
+
+logger = logging.getLogger('pycbc.workflow.pegasus_sites')
 
 if release == 'True':
     sing_version = version
