@@ -412,11 +412,14 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 # =============================================================================
 # Function to calculate the detection statistic of a list of triggers
 # =============================================================================
-def get_bestnrs(trigs, ifos, snr_threshold=6., sngl_snr_threshold=4.,
-                new_snr_threshold=None):
+def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
+                sngl_snr_threshold=4., chisq_threshold=None,
+                null_grad_thresh=20., null_grad_val=0.2):
     """Calculate BestNR (coh_PTF detection statistic) of triggers through
     signal based vetoes.  The (default) signal based vetoes are:
     * Coherent SNR < 6
+    * Bank chi-squared reduced (new) SNR < 6
+    * Auto veto reduced (new) SNR < 6
     * Single-detector SNR (from two most sensitive IFOs) < 4
     * Null SNR (CoincSNR^2 - CohSNR^2)^(1/2) < null_thresh
 
@@ -427,64 +430,59 @@ def get_bestnrs(trigs, ifos, snr_threshold=6., sngl_snr_threshold=4.,
         return numpy.array([])
 
     # Grab sky position and timing
-    ra = trigs['ra']
-    dec = trigs['dec']
-    time = trigs['end_time']
+    ra = trigs.get_column('ra')
+    dec = trigs.get_column('dec')
+    time = trigs.get_end()
 
     # Initialize BestNRs
-    snr = trigs['coherent_snr']
-    reweighted_snr = trigs['reweighted_snr']
+    snr = trigs.get_column('snr')
     bestnr = numpy.ones(len(snr))
 
     # Coherent SNR cut
-    bestnr[snr < snr_threshold] = 0
+    bestnr[numpy.asarray(snr) < snr_threshold] = 0
 
     # Bank and auto chi-squared cuts
-    if not new_snr_threshold:
-        new_snr_threshold = snr_threshold
-    # To be revised. Originally this was using bank and cont chisq,
-    # now we use the reweighted snr calculated from the power chisq
-    # of the multi inspiral bank
-    bestnr[reweighted_snr < new_snr_threshold] = 0
+    if not chisq_threshold:
+        chisq_threshold = snr_threshold
+    for chisq in ['bank_chisq', 'cont_chisq']:
+        bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
+                                               column=chisq))
+               < chisq_threshold] = 0
+
+    # Define IFOs for sngl cut
+    ifos = list(map(str, trigs[0].get_ifos()))
 
     # Single detector SNR cut
     sens = {}
-    ifo_snr = {}
+    sigmasqs = trigs.get_sigmasqs()
+    ifo_snr = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
     for ifo in ifos:
         antenna = Detector(ifo)
-        sens[ifo] = trigs['sigmasq_%s' % ifo] * get_antenna_responses(antenna,
-                                                                      ra, dec,
-                                                                      time)
-        ifo_snr[ifo] = trigs['snr_%s' % ifo]
+        sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra,
+                                                          dec, time)
     # Apply this cut only if there is more than 1 IFO
     if len(ifos) > 1:
-        for i_trig in range(len(snr)):
+        for i_trig, _ in enumerate(trigs):
             # Apply only to triggers that were not already cut previously
             if bestnr[i_trig] != 0:
                 ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
                 if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold or
                         ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
                     bestnr[i_trig] = 0
-
-    for i_trig in range(len(bestnr)):
+    for i_trig, trig in enumerate(trigs):
         # Get chisq reduced (new) SNR for triggers that were not cut so far
-        # Ideally we should not have any of them right now
-        # NOTE: it may be redundant without the implementation of bank and
-        # cont chisq
+        # NOTE: .get_bestnr is in glue.ligolw.lsctables.MultiInspiralTable
         if bestnr[i_trig] != 0:
-            # Define the input trig as a dictionary
-            trig = {
-                'snr': trigs['coherent_snr'][i_trig],
-                'null_snr': trigs['null_snr'][i_trig],
-                'chisq': trigs['chisq'][i_trig],
-                'nifos': trigs['nifos'][i_trig],
-                    }
+            bestnr[i_trig] = trig.get_bestnr(index=q, nhigh=n,
+                                             null_snr_threshold=null_thresh[0],
+                                             null_grad_thresh=null_grad_thresh,
+                                             null_grad_val=null_grad_val)
             # If we got this far and the bestNR is non-zero, verify that chisq
             # was actually calculated for the trigger, otherwise raise an
             # error with info useful to figure out why this happened.
-            if bestnr[i_trig] != 0 and trig['chisq'] == 0:
+            if bestnr[i_trig] != 0 and trig.chisq == 0:
                 err_msg = "Chisq not calculated for trigger with end time "
-                err_msg += f"{time[i_trig]} and SNR {trig['snr']}."
+                err_msg += f"{trig.get_end()} and SNR {trig.snr}."
                 raise RuntimeError(err_msg)
 
     return bestnr
@@ -559,25 +557,15 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
     logging.info("Triggers sorted.")
 
-    # Local copies of variables entering the BestNR definition
-    snr_thresh = opts.snr_threshold
-    sngl_snr_thresh = opts.sngl_snr_threshold
-    new_snr_thresh = opts.newsnr_threshold
-
     # Build the 3 dictionaries
     trig_time = {}
     trig_snr = {}
     trig_bestnr = {}
     for slide_id in slide_dict:
-        trig_time[slide_id] = sorted_trigs[slide_id]['end_time']
-        trig_snr[slide_id] = sorted_trigs[slide_id]['coherent_snr']
-
-        trig_bestnr[slide_id] = get_bestnrs(sorted_trigs[slide_id],
-                                            ifos,
-                                            snr_threshold=snr_thresh,
-                                            sngl_snr_threshold=sngl_snr_thresh,
-                                            new_snr_threshold=new_snr_thresh,
-                                            )
+        event_indices = [numpy.where(trigs['network/event_id'] == event_id)[0][0] for event_id in sorted_trigs[slide_id]]
+        trig_time[slide_id] = [trigs['network/end_time_gc'][event_index] for event_index in event_indices]
+        trig_snr[slide_id] = [trigs['network/coherent_snr'][event_index] for event_index in event_indices]
+        trig_bestnr[slide_id] = [trigs['/network/reweighted_snr'][event_index] for event_index in event_indices]
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
