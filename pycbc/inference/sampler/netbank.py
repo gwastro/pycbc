@@ -88,17 +88,27 @@ class NetBank(DummySampler):
         logw2 = logw[passed]
         logw2 -= logsumexp(logw2)
         weight = numpy.exp(logw2)
-
+        
         logging.info("...reading template bins")
         with h5py.File(self.mapfile, 'r') as f:
             for i in passed:
                 dmap[i] = f['map'][str(i)][:]
 
         logging.info("...draw template bins")
-        self.minimum_bin_call = 100
-        drawcount = (weight * self.target_likelihood_calls).astype(numpy.int) + self.minimum_bin_call
-        k = drawcount > lengths[passed]
-        drawcount[k] = lengths[passed][k]
+        drawcount = (weight * self.target_likelihood_calls).astype(numpy.int)
+        
+        dorder = node_loglrs[passed].argsort()[::-1]
+        remainder = 0
+        for i in dorder:
+            c = drawcount[i]
+            l = lengths[passed][i]
+            if c > l:
+                drawcount[i] = l
+                remainder += c - l
+            elif c < l:
+                asize = min(l - c, remainder)
+                drawcount[i] += asize
+                remainder -= asize
         drawweight = weight / drawcount
         total_draw = drawcount.sum()
         
