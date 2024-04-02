@@ -1416,7 +1416,7 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
     """ The TianQin's sensitivity curve for Galactic confusion noise,
     averaged over sky and polarization angle. No instrumental noise.
     Only valid for 0.5 mHz < f < 10 mHz. Note that the results between
-    0.5, 1, 2, 4, and 5 years are extrapolated.
+    0.5, 1, 2, 4, and 5 years are extrapolated, might be non-physical.
 
     Parameters
     ----------
@@ -1456,6 +1456,10 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
     fit_a4 = interp1d(t_obs, a4, kind='cubic', fill_value="extrapolate")
     fit_a5 = interp1d(t_obs, a5, kind='cubic', fill_value="extrapolate")
     fit_a6 = interp1d(t_obs, a6, kind='cubic', fill_value="extrapolate")
+    if duration not in t_obs:
+        raise Warning("Note that the results between " +
+                      "0.5, 1, 2, 4, and 5 years are extrapolated, " +
+                      "might be non-physical.")
     sh_confusion = np.power(
         10,
         fit_a0(duration) +
@@ -1477,7 +1481,7 @@ def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
     """ The Taiji's sensitivity curve for Galactic confusion noise,
     averaged over sky and polarization angle. No instrumental noise.
     Only valid for 0.1 mHz < f < 10 mHz. Note that the results between
-    0.5, 1, 2, and 4 years are extrapolated.
+    0.5, 1, 2, and 4 years are extrapolated, might be non-physical.
 
     Parameters
     ----------
@@ -1515,6 +1519,10 @@ def confusion_fit_taiji(length, delta_f, low_freq_cutoff, duration=1.0):
     fit_a3 = interp1d(t_obs, a3, kind='cubic', fill_value="extrapolate")
     fit_a4 = interp1d(t_obs, a4, kind='cubic', fill_value="extrapolate")
     fit_a5 = interp1d(t_obs, a5, kind='cubic', fill_value="extrapolate")
+    if duration not in t_obs:
+        raise Warning("Note that the results between " +
+                      "0.5, 1, 2, and 4 years are extrapolated, " +
+                      "might be non-physical.")
     sh_confusion = np.exp(
         fit_a0(duration) +
         fit_a1(duration) * np.log(fr*1e3) +
@@ -1864,147 +1872,147 @@ def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
     return fseries
 
 
-def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
-                                         len_arm=2.5e9, acc_noise_level=3e-15,
-                                         oms_noise_level=15e-12,
-                                         duration=1.0, tdi="1.5"):
-    """ The TDI-1.5 PSD (A,E channel) for LISA
-    with Galactic confusion noise.
+# def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
+#                                          len_arm=2.5e9, acc_noise_level=3e-15,
+#                                          oms_noise_level=15e-12,
+#                                          duration=1.0, tdi="1.5"):
+#     """ The TDI-1.5 PSD (A,E channel) for LISA
+#     with Galactic confusion noise.
 
-    Parameters
-    ----------
-    length : int
-        Length of output Frequencyseries.
-    delta_f : float
-        Frequency step for output FrequencySeries.
-    low_freq_cutoff : float
-        Low-frequency cutoff for output FrequencySeries.
-    len_arm : float
-        The arm length of LISA, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
-    duration : float
-        The duration of observation, between 0 and 10, in the unit of years.
-    tdi : string
-        The version of TDI, currently only for 1.5.
+#     Parameters
+#     ----------
+#     length : int
+#         Length of output Frequencyseries.
+#     delta_f : float
+#         Frequency step for output FrequencySeries.
+#     low_freq_cutoff : float
+#         Low-frequency cutoff for output FrequencySeries.
+#     len_arm : float
+#         The arm length of LISA, in the unit of "m".
+#     acc_noise_level : float
+#         The level of acceleration noise.
+#     oms_noise_level : float
+#         The level of OMS noise.
+#     duration : float
+#         The duration of observation, between 0 and 10, in the unit of years.
+#     tdi : string
+#         The version of TDI, currently only for 1.5.
 
-    Returns
-    -------
-    fseries : FrequencySeries
-        The TDI-1.5 PSD (A,E channel) for LISA with Galactic confusion
-        noise.
-    """
-    if tdi != "1.5":
-        raise Exception("The version of TDI, currently only for 1.5.")
-    psd_AE = analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                            len_arm, acc_noise_level,
-                                            oms_noise_level)
-    psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(
-                        length, delta_f, low_freq_cutoff,
-                        len_arm, duration, tdi)
-    # Here we assume the confusion noise's contribution to the CSD S_XY is
-    # negligible for low-frequency part. So S_XY doesn't change.
-    # S_A = S_E = S_X - S_XY
-    fseries = psd_AE + psd_X_confusion
+#     Returns
+#     -------
+#     fseries : FrequencySeries
+#         The TDI-1.5 PSD (A,E channel) for LISA with Galactic confusion
+#         noise.
+#     """
+#     if tdi != "1.5":
+#         raise Exception("The version of TDI, currently only for 1.5.")
+#     psd_AE = analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
+#                                             len_arm, acc_noise_level,
+#                                             oms_noise_level)
+#     psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(
+#                         length, delta_f, low_freq_cutoff,
+#                         len_arm, duration, tdi)
+#     # Here we assume the confusion noise's contribution to the CSD S_XY is
+#     # negligible for low-frequency part. So S_XY doesn't change.
+#     # S_A = S_E = S_X - S_XY
+#     fseries = psd_AE + psd_X_confusion
 
-    return fseries
-
-
-def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
-                                            len_arm=np.sqrt(3)*1e8,
-                                            acc_noise_level=1e-15,
-                                            oms_noise_level=1e-12,
-                                            duration=1.0, tdi="1.5"):
-    """ The TDI-1.5 PSD (A,E channel) for TianQin
-    with Galactic confusion noise.
-
-    Parameters
-    ----------
-    length : int
-        Length of output Frequencyseries.
-    delta_f : float
-        Frequency step for output FrequencySeries.
-    low_freq_cutoff : float
-        Low-frequency cutoff for output FrequencySeries.
-    len_arm : float
-        The arm length of TianQin, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
-    duration : float
-        The duration of observation, between 0 and 5, in the unit of years.
-    tdi : string
-        The version of TDI, currently only for 1.5.
-
-    Returns
-    -------
-    fseries : FrequencySeries
-        The TDI-1.5 PSD (A,E channel) for TianQin with Galactic confusion
-        noise.
-    """
-    if tdi != "1.5":
-        raise Exception("The version of TDI, currently only for 1.5.")
-    psd_AE = analytical_psd_tianqin_tdi_1p5_AE(length, delta_f,
-                                               low_freq_cutoff,
-                                               len_arm, acc_noise_level,
-                                               oms_noise_level)
-    psd_X_confusion = analytical_psd_tianqin_confusion_noise(
-                        length, delta_f, low_freq_cutoff,
-                        len_arm, duration, tdi)
-    # Here we assume the confusion noise's contribution to the CSD S_XY is
-    # negligible for low-frequency part. So S_XY doesn't change.
-    # S_A = S_E = S_X - S_XY
-    fseries = psd_AE + psd_X_confusion
-
-    return fseries
+#     return fseries
 
 
-def analytical_psd_taiji_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
-                                          len_arm=3e9, acc_noise_level=3e-15,
-                                          oms_noise_level=8e-12,
-                                          duration=1.0, tdi="1.5"):
-    """ The TDI-1.5 PSD (A,E channel) for Taiji
-    with Galactic confusion noise.
+# def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
+#                                             len_arm=np.sqrt(3)*1e8,
+#                                             acc_noise_level=1e-15,
+#                                             oms_noise_level=1e-12,
+#                                             duration=1.0, tdi="1.5"):
+#     """ The TDI-1.5 PSD (A,E channel) for TianQin
+#     with Galactic confusion noise.
 
-    Parameters
-    ----------
-    length : int
-        Length of output Frequencyseries.
-    delta_f : float
-        Frequency step for output FrequencySeries.
-    low_freq_cutoff : float
-        Low-frequency cutoff for output FrequencySeries.
-    len_arm : float
-        The arm length of Taiji, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
-    duration : float
-        The duration of observation, between 0 and 4, in the unit of years.
-    tdi : string
-        The version of TDI, currently only for 1.5.
+#     Parameters
+#     ----------
+#     length : int
+#         Length of output Frequencyseries.
+#     delta_f : float
+#         Frequency step for output FrequencySeries.
+#     low_freq_cutoff : float
+#         Low-frequency cutoff for output FrequencySeries.
+#     len_arm : float
+#         The arm length of TianQin, in the unit of "m".
+#     acc_noise_level : float
+#         The level of acceleration noise.
+#     oms_noise_level : float
+#         The level of OMS noise.
+#     duration : float
+#         The duration of observation, between 0 and 5, in the unit of years.
+#     tdi : string
+#         The version of TDI, currently only for 1.5.
 
-    Returns
-    -------
-    fseries : FrequencySeries
-        The TDI-1.5 PSD (A,E channel) for Taiji with Galactic confusion
-        noise.
-    """
-    if tdi != "1.5":
-        raise Exception("The version of TDI, currently only for 1.5.")
-    psd_AE = analytical_psd_taiji_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                             len_arm, acc_noise_level,
-                                             oms_noise_level)
-    psd_X_confusion = analytical_psd_taiji_confusion_noise(
-                        length, delta_f, low_freq_cutoff,
-                        len_arm, duration, tdi)
-    # Here we assume the confusion noise's contribution to the CSD S_XY is
-    # negligible for low-frequency part. So S_XY doesn't change.
-    # S_A = S_E = S_X - S_XY
-    fseries = psd_AE + psd_X_confusion
+#     Returns
+#     -------
+#     fseries : FrequencySeries
+#         The TDI-1.5 PSD (A,E channel) for TianQin with Galactic confusion
+#         noise.
+#     """
+#     if tdi != "1.5":
+#         raise Exception("The version of TDI, currently only for 1.5.")
+#     psd_AE = analytical_psd_tianqin_tdi_1p5_AE(length, delta_f,
+#                                                low_freq_cutoff,
+#                                                len_arm, acc_noise_level,
+#                                                oms_noise_level)
+#     psd_X_confusion = analytical_psd_tianqin_confusion_noise(
+#                         length, delta_f, low_freq_cutoff,
+#                         len_arm, duration, tdi)
+#     # Here we assume the confusion noise's contribution to the CSD S_XY is
+#     # negligible for low-frequency part. So S_XY doesn't change.
+#     # S_A = S_E = S_X - S_XY
+#     fseries = psd_AE + psd_X_confusion
 
-    return fseries
+#     return fseries
+
+
+# def analytical_psd_taiji_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
+#                                           len_arm=3e9, acc_noise_level=3e-15,
+#                                           oms_noise_level=8e-12,
+#                                           duration=1.0, tdi="1.5"):
+#     """ The TDI-1.5 PSD (A,E channel) for Taiji
+#     with Galactic confusion noise.
+
+#     Parameters
+#     ----------
+#     length : int
+#         Length of output Frequencyseries.
+#     delta_f : float
+#         Frequency step for output FrequencySeries.
+#     low_freq_cutoff : float
+#         Low-frequency cutoff for output FrequencySeries.
+#     len_arm : float
+#         The arm length of Taiji, in the unit of "m".
+#     acc_noise_level : float
+#         The level of acceleration noise.
+#     oms_noise_level : float
+#         The level of OMS noise.
+#     duration : float
+#         The duration of observation, between 0 and 4, in the unit of years.
+#     tdi : string
+#         The version of TDI, currently only for 1.5.
+
+#     Returns
+#     -------
+#     fseries : FrequencySeries
+#         The TDI-1.5 PSD (A,E channel) for Taiji with Galactic confusion
+#         noise.
+#     """
+#     if tdi != "1.5":
+#         raise Exception("The version of TDI, currently only for 1.5.")
+#     psd_AE = analytical_psd_taiji_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
+#                                              len_arm, acc_noise_level,
+#                                              oms_noise_level)
+#     psd_X_confusion = analytical_psd_taiji_confusion_noise(
+#                         length, delta_f, low_freq_cutoff,
+#                         len_arm, duration, tdi)
+#     # Here we assume the confusion noise's contribution to the CSD S_XY is
+#     # negligible for low-frequency part. So S_XY doesn't change.
+#     # S_A = S_E = S_X - S_XY
+#     fseries = psd_AE + psd_X_confusion
+
+#     return fseries
