@@ -16,7 +16,11 @@
 """
 import logging
 import numpy
+
 from pycbc.io.record import FieldArray
+
+logger = logging.getLogger('pycbc.distributions.joint')
+
 
 class JointDistribution(object):
     """
@@ -111,7 +115,7 @@ class JointDistribution(object):
         n_test_samples = kwargs["n_test_samples"] \
                              if "n_test_samples" in kwargs else int(1e6)
         if self._constraints:
-            logging.info("Renormalizing distribution for constraints")
+            logger.info("Renormalizing distribution for constraints")
 
             # draw samples
             samples = {}

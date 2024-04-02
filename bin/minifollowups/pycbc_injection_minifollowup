@@ -23,6 +23,8 @@ import logging
 import copy
 import numpy
 import h5py
+
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.workflow as wf
 import pycbc.workflow.minifollowups as mini
 import pycbc.version
@@ -120,6 +122,7 @@ def sort_injections(args, inj_group, missed):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
@@ -158,8 +161,10 @@ wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    level=logging.INFO)
+
+# Default logging level is info: --verbose adds to this
+log_level = 1 if args.verbose is None else args.verbose + 1
+init_logging(log_level)
 
 workflow = wf.Workflow(args)
 

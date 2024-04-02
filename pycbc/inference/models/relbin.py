@@ -212,6 +212,9 @@ class Relative(DistMarg, BaseGaussianNoise):
         self.fid_params = self.static_params.copy()
         self.fid_params.update(fiducial_params)
 
+        # the flag used in `_loglr`
+        self.return_sh_hh = False
+
         for k in self.static_params:
             if self.fid_params[k] == 'REPLACE':
                self.fid_params.pop(k)
@@ -522,6 +525,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
+        or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
 
         .. math::
 
@@ -535,6 +539,9 @@ class Relative(DistMarg, BaseGaussianNoise):
         -------
         float
             The value of the log likelihood ratio.
+        or
+        tuple
+            The inner product (<s|h>, <h|h>).
         """
         # get model params
         p = self.current_params
@@ -588,8 +595,12 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             filt += filter_i
             norm += norm_i
-        loglr = self.marginalize_loglr(filt, norm)
-        return loglr
+
+        if self.return_sh_hh:
+            results = (filt, norm)
+        else:
+            results = self.marginalize_loglr(filt, norm)
+        return results
 
     def write_metadata(self, fp, group=None):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
@@ -810,6 +821,7 @@ class RelativeTimeDom(RelativeTime):
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
+        or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
 
         .. math::
 
@@ -823,6 +835,9 @@ class RelativeTimeDom(RelativeTime):
         -------
         float
             The value of the log likelihood ratio.
+        or
+        tuple
+            The inner product (<s|h>, <h|h>).
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
         p = self.current_params
@@ -850,14 +865,16 @@ class RelativeTimeDom(RelativeTime):
                                                        0, p['tc'])
             dts = p['tc'] + dt
             f = (fp + 1.0j * fc) * pol_phase
-
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
-
             sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
-        return loglr
+        if self.return_sh_hh:
+            results = (sh_total, hh_total)
+        else:
+            results = loglr
+        return results

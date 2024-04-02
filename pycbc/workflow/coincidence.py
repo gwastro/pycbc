@@ -29,8 +29,12 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 
 import os
 import logging
+
 from ligo import segments
+
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
+
+logger = logging.getLogger('pycbc.workflow.coincidence')
 
 class PyCBCBank2HDFExecutable(Executable):
     """Converts xml tmpltbank to hdf format"""
@@ -385,7 +389,7 @@ def convert_bank_to_hdf(workflow, xmlbank, out_dir, tags=None):
     if len(xmlbank) > 1:
         raise ValueError('Can only convert a single template bank')
 
-    logging.info('convert template bank to HDF')
+    logger.info('convert template bank to HDF')
     make_analysis_dir(out_dir)
     bank2hdf_exe = PyCBCBank2HDFExecutable(workflow.cp, 'bank2hdf',
                                             ifos=workflow.ifos,
@@ -400,7 +404,7 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
     if tags is None:
         tags = []
     #FIXME, make me not needed
-    logging.info('convert single inspiral trigger files to hdf5')
+    logger.info('convert single inspiral trigger files to hdf5')
     make_analysis_dir(out_dir)
 
     trig_files = FileList()
@@ -485,7 +489,7 @@ def setup_interval_coinc_inj(workflow, hdfbank,
     if tags is None:
         tags = []
     make_analysis_dir(out_dir)
-    logging.info('Setting up coincidence for injections')
+    logger.info('Setting up coincidence for injections')
 
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence',
@@ -517,7 +521,7 @@ def setup_interval_coinc_inj(workflow, hdfbank,
         bg_files += coinc_node.output_files
         workflow.add_node(coinc_node)
 
-    logging.info('...leaving coincidence for injections')
+    logger.info('...leaving coincidence for injections')
 
     return setup_statmap_inj(workflow, ifiles.keys(), bg_files,
                              background_file, out_dir,
@@ -533,7 +537,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     if tags is None:
         tags = []
     make_analysis_dir(out_dir)
-    logging.info('Setting up coincidence')
+    logger.info('Setting up coincidence')
 
     ifos, _ = trig_files.categorize_by_attr('ifo')
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
@@ -562,7 +566,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     statmap_files = setup_statmap(workflow, ifos, bg_files,
                                   out_dir, tags=tags)
 
-    logging.info('...leaving coincidence ')
+    logger.info('...leaving coincidence ')
     return statmap_files
 
 
@@ -594,7 +598,7 @@ def setup_sngls(workflow, hdfbank, trig_files, stat_files,
     statmap_files = setup_sngls_statmap(workflow, ifos[0], bg_files,
                                         out_dir, tags=tags)
 
-    logging.info('...leaving coincidence ')
+    logger.info('...leaving coincidence ')
     return statmap_files
 
 
@@ -630,7 +634,7 @@ def setup_sngls_inj(workflow, hdfbank, inj_trig_files,
                                             background_file,
                                             out_dir, tags=tags)
 
-    logging.info('...leaving coincidence ')
+    logger.info('...leaving coincidence ')
     return statmap_files
 
 
@@ -673,7 +677,7 @@ def setup_combine_statmap(workflow, final_bg_file_list, bg_file_list,
     if tags is None:
         tags = []
     make_analysis_dir(out_dir)
-    logging.info('Setting up combine statmap')
+    logger.info('Setting up combine statmap')
 
     cstat_exe_name = os.path.basename(workflow.cp.get("executables",
                                                       "combine_statmap"))
@@ -707,7 +711,7 @@ def setup_exclude_zerolag(workflow, statmap_file, other_statmap_files,
     if tags is None:
         tags = []
     make_analysis_dir(out_dir)
-    logging.info('Setting up exclude zerolag')
+    logger.info('Setting up exclude zerolag')
 
     exc_zerolag_exe = PyCBCExcludeZerolag(workflow.cp, 'exclude_zerolag',
                                           ifos=ifos, tags=tags,
@@ -729,10 +733,10 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir,
     make_analysis_dir(out_dir)
 
     if not workflow.cp.has_section("workflow-rerank"):
-        logging.info("No reranking done in this workflow")
+        logger.info("No reranking done in this workflow")
         return statmap_file
     else:
-        logging.info("Setting up reranking of candidates")
+        logger.info("Setting up reranking of candidates")
 
     # Generate reduced data files (maybe this could also be used elsewhere?)
     stores = FileList([])

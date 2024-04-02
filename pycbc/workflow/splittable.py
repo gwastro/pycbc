@@ -30,10 +30,13 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import os
 import logging
+
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (PycbcSplitBankExecutable,
         PycbcSplitBankXmlExecutable, PycbcSplitInspinjExecutable,
         PycbcHDFSplitInjExecutable)
+
+logger = logging.getLogger('pycbc.workflow.splittable')
 
 def select_splitfilejob_instance(curr_exe):
     """
@@ -95,7 +98,7 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
     '''
     if tags is None:
         tags = []
-    logging.info("Entering split output files module.")
+    logger.info("Entering split output files module.")
     make_analysis_dir(out_dir)
     # Parse for options in .ini file
     splitMethod = workflow.cp.get_opt_tags("workflow-splittable",
@@ -103,7 +106,7 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
 
     if splitMethod == "IN_WORKFLOW":
         # Scope here for choosing different options
-        logging.info("Adding split output file jobs to workflow.")
+        logger.info("Adding split output file jobs to workflow.")
         split_table_outs = setup_splittable_dax_generated(workflow,
                 input_tables, out_dir, tags)
     elif splitMethod == "NOOP":
@@ -115,7 +118,7 @@ def setup_splittable_workflow(workflow, input_tables, out_dir=None, tags=None):
         errMsg += "IN_WORKFLOW or NOOP."
         raise ValueError(errMsg)
 
-    logging.info("Leaving split output files module.")
+    logger.info("Leaving split output files module.")
     return split_table_outs
 
 def setup_splittable_dax_generated(workflow, input_tables, out_dir, tags):

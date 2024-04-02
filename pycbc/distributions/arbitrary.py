@@ -16,12 +16,15 @@
 This modules provides classes for evaluating arbitrary distributions from
 a file.
 """
-
+import logging
 import h5py
 import numpy
 import scipy.stats
+
 from pycbc.distributions import bounded
 import pycbc.transforms
+
+logger = logging.getLogger('pycbc.distributions.arbitrary')
 
 class Arbitrary(bounded.BoundedDist):
     r"""A distribution constructed from a set of parameter values using a kde.

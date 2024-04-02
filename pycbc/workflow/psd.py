@@ -17,9 +17,15 @@
 """This module is responsible for setting up PSD-related jobs in workflows.
 """
 
+import logging
+
+from ligo.segments import segmentlist
+
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable
 from pycbc.workflow.core import SegFile
-from ligo.segments import segmentlist
+
+logger = logging.getLogger('pycbc.workflow.psd')
+
 
 class CalcPSDExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS

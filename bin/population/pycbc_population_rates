@@ -17,6 +17,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
+Estimate rates for flat in log and power-law mass distribution.
+
 This script estimates black hole merger rates for astro-physical models:
 1) Uniform in log of the component mass
 2) Power-law distribution of the masses
@@ -32,19 +34,20 @@ __date__ = "31.10.2017"
 
 import logging
 import argparse
-import pycbc.version
-
 import h5py
 import numpy as np
 import scipy.stats as ss
+from numpy import logaddexp, log, newaxis, expm1
+
+import pycbc
 from pycbc.population import scale_injections as si
 from pycbc.population import rates_functions as rf
-from numpy import logaddexp, log, newaxis, expm1
+import pycbc.version
 
 
 # Parse command line
-parser = argparse.ArgumentParser(description="Estimate rates for flat in "
-                                     "log and power-law mass distribution.")
+parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--sim-files', nargs='+', required=True, help="List of "
                         "simulation files to estimate the sensitive volume")
 parser.add_argument('--m_dist', nargs='+', required=True, help="Specify "
@@ -84,6 +87,9 @@ parser.add_argument('--calibration-error', dest='cal_err', type=float,
                                       " errors in measurement of distance.")
 
 opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
+
 path = opts.output_file
 
 assert opts.min_tmplt_mchirp < opts.max_tmplt_mchirp, \

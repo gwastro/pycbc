@@ -15,11 +15,14 @@
 """
 This modules provides classes for evaluating Gaussian distributions.
 """
-
+import logging
 import numpy
 from scipy.special import erf, erfinv
 import scipy.stats
+
 from pycbc.distributions import bounded
+
+logger = logging.getLogger('pycbc.distributions.gaussian')
 
 class Gaussian(bounded.BoundedDist):
     r"""A Gaussian distribution on the given parameters; the parameters are

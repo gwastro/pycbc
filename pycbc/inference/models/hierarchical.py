@@ -1,4 +1,5 @@
 # Copyright (C) 2022  Collin Capano
+#               2023  Alex Nitz & Shichao Wu
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -26,6 +27,7 @@
 
 import shlex
 import logging
+import numpy
 from pycbc import transforms
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
@@ -43,7 +45,7 @@ class HierarchicalModel(BaseModel):
     r"""Model that is a combination of other models.
 
     Sub-models are treated as being independent of each other, although
-    they can share parameters. In other words, the hiearchical likelihood is:
+    they can share parameters. In other words, the hierarchical likelihood is:
 
     .. math::
 
@@ -113,17 +115,20 @@ class HierarchicalModel(BaseModel):
             self.__extra_stats += self.extra_stats_map[lbl]
             # also make sure the model's sampling transforms and waveform
             # transforms are not set, as these are handled by the hierarchical
-            # model
-            if model.sampling_transforms is not None:
-                raise ValueError("Model {} has sampling transforms set; "
-                                 "in a hierarchical analysis, these are "
-                                 "handled by the hiearchical model"
-                                 .format(lbl))
-            if model.waveform_transforms is not None:
-                raise ValueError("Model {} has waveform transforms set; "
-                                 "in a hierarchical analysis, these are "
-                                 "handled by the hiearchical model"
-                                 .format(lbl))
+            # model, except for `joint_primary_marginalized` model, because
+            # this specific model needs to allow its submodels to handle
+            # transform with prefix on the submodel's level
+            if self.name != "joint_primary_marginalized":
+                if model.sampling_transforms is not None:
+                    raise ValueError("Model {} has sampling transforms "
+                                     "set; in a hierarchical analysis, "
+                                     "these are handled by the "
+                                     "hierarchical model".format(lbl))
+                if model.waveform_transforms is not None:
+                    raise ValueError("Model {} has waveform transforms "
+                                     "set; in a hierarchical analysis, "
+                                     "these are handled by the "
+                                     "hierarchical model".format(lbl))
 
     @property
     def hvariable_params(self):
@@ -238,7 +243,7 @@ class HierarchicalModel(BaseModel):
         .. code-block:: ini
 
             [model]
-            name = hiearchical
+            name = hierarchical
             submodels = event1 event2
 
             [event1__model]
@@ -599,3 +604,363 @@ class MultiSignalModel(HierarchicalModel):
             for stat in self.extra_stats_map[lbl]:
                 setattr(self._current_stats, stat, mstats[stat.subname])
         return logl
+
+
+class JointPrimaryMarginalizedModel(HierarchicalModel):
+    """ Hierarchical heterodyne likelihood for coherent multiband
+    parameter estimation which combines data from space-borne and
+    ground-based GW detectors coherently. Currently, this only
+    supports LISA as the space-borne GW detector.
+
+    Sub models are treated as if the same GW source (such as a GW
+    from stellar-mass BBH) is observed in different frequency bands by
+    space-borne and ground-based GW detectors, then transform all
+    the parameters into the same frame in the sub model level, use
+    `HierarchicalModel` to get the joint likelihood, and marginalize
+    over all the extrinsic parameters supported by `RelativeTimeDom`
+    or its variants. Note that LISA submodel only supports the `Relative`
+    for now, for ground-based detectors, please use `RelativeTimeDom`
+    or its variants.
+
+    Although this likelihood model is used for multiband parameter
+    estimation, users can still use it for other purposes, such as
+    GW + EM parameter estimation, in this case, please use `RelativeTimeDom`
+    or its variants for the GW data, for the likelihood of EM data,
+    there is no restrictions.
+    """
+    name = 'joint_primary_marginalized'
+
+    def __init__(self, variable_params, submodels, **kwargs):
+        super().__init__(variable_params, submodels, **kwargs)
+
+        # assume the ground-based submodel as the primary model
+        self.primary_model = self.submodels[kwargs['primary_lbl'][0]]
+        self.primary_lbl = kwargs['primary_lbl'][0]
+        self.other_models = self.submodels.copy()
+        self.other_models.pop(kwargs['primary_lbl'][0])
+        self.other_models = list(self.other_models.values())
+
+    def write_metadata(self, fp, group=None):
+        """Adds metadata to the output files
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.BaseInferenceFile instance
+            The inference file to write to.
+        group : str, optional
+            If provided, the metadata will be written to the attrs specified
+            by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
+            written to the top-level attrs (``fp.attrs``).
+        """
+        super().write_metadata(fp, group=group)
+        sampattrs = fp.getattrs(group=fp.samples_group)
+        # if a group is specified, prepend the lognl names with it
+        if group is None or group == '/':
+            prefix = ''
+        else:
+            prefix = group.replace('/', '__')
+            if not prefix.endswith('__'):
+                prefix += '__'
+        try:
+            for lbl, model in self.submodels.items():
+                sampattrs['{}lognl'.format(prefix + '%s__' % lbl)
+                          ] = model.lognl
+        except AttributeError:
+            pass
+
+    def total_loglr(self):
+        r"""Computes the total log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
+        # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
+
+        # note that for SOBHB signals, ground-based detectors dominant SNR
+        # and accuracy of (tc, ra, dec)
+        self.primary_model.return_sh_hh = True
+        sh_primary, hh_primary = self.primary_model.loglr
+        self.primary_model.return_sh_hh = False
+
+        margin_names_vector = list(
+            self.primary_model.marginalize_vector_params.keys())
+        if 'logw_partial' in margin_names_vector:
+            margin_names_vector.remove('logw_partial')
+
+        margin_params = {}
+        nums = 1
+        for key, value in self.primary_model.current_params.items():
+            # add marginalize_vector_params
+            if key in margin_names_vector:
+                margin_params[key] = value
+                if isinstance(value, numpy.ndarray):
+                    nums = len(value)
+        # add distance if it has been marginalized,
+        # use numpy array for it is just let it has the same
+        # shape as marginalize_vector_params, here we assume
+        # self.primary_model.current_params['distance'] is a number
+        if self.primary_model.distance_marginalization:
+            margin_params['distance'] = numpy.full(
+                nums, self.primary_model.current_params['distance'])
+
+        # add likelihood contribution from space-borne detectors, we
+        # calculate sh/hh for each marginalized parameter point
+        sh_others = numpy.full(nums, 0 + 0.0j)
+        hh_others = numpy.zeros(nums)
+
+        # update parameters in other_models
+        for _, other_model in enumerate(self.other_models):
+            # not using self.primary_model.current_params, because others_model
+            # may have its own static parameters
+            current_params_other = other_model.current_params.copy()
+            for i in range(nums):
+                current_params_other.update(
+                    {key: value[i] if isinstance(value, numpy.ndarray) else
+                        value for key, value in margin_params.items()})
+                other_model.update(**current_params_other)
+                other_model.return_sh_hh = True
+                sh_others[i], hh_others[i] = other_model.loglr
+                other_model.return_sh_hh = False
+
+        if nums == 1:
+            sh_others = sh_others[0]
+        sh_total = sh_primary + sh_others
+        hh_total = hh_primary + hh_others
+
+        # calculate marginalize_vector_weights
+        self.primary_model.marginalize_vector_weights = \
+            - numpy.log(self.primary_model.vsamples)
+        loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
+        return loglr
+
+    def others_lognl(self):
+        """Calculate the combined lognl from all others sub-models."""
+        total_others_lognl = 0
+        for model in self.other_models:
+            total_others_lognl += model.lognl
+        return total_others_lognl
+
+    def update_all_models(self, **params):
+        """This update method is also useful for loglr checking,
+        the original update method in base module can't update
+        parameters in submodels correctly in loglr checking."""
+        for lbl, model in self.submodels.items():
+            if self.param_map != {}:
+                p = {params.subname: self.current_params[params.fullname]
+                     for params in self.param_map[lbl]}
+            else:
+                # dummy sampler doesn't have real variables,
+                # which means self.param_map is {}
+                p = {}
+            p.update(params)
+            model.update(**p)
+
+    def _loglikelihood(self):
+        self.update_all_models()
+
+        # calculate the combined loglikelihood
+        logl = self.total_loglr() + self.primary_model.lognl + \
+            self.others_lognl()
+
+        # store any extra stats from the submodels
+        for lbl, model in self.submodels.items():
+            mstats = model.current_stats
+            for stat in self.extra_stats_map[lbl]:
+                setattr(self._current_stats, stat, mstats[stat.subname])
+        return logl
+
+    @classmethod
+    def from_config(cls, cp, **kwargs):
+        r"""Initializes an instance of this class from the given config file.
+        For more details, see `from_config` in `HierarchicalModel`.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser
+            Config file parser to read.
+        \**kwargs :
+            All additional keyword arguments are passed to the class. Any
+            provided keyword will override what is in the config file.
+        """
+        # we need the read from config function from the init; to prevent
+        # circular imports, we import it here
+        from pycbc.inference.models import read_from_config
+        # get the submodels
+        kwargs['primary_lbl'] = shlex.split(cp.get('model', 'primary_model'))
+        kwargs['others_lbls'] = shlex.split(cp.get('model', 'other_models'))
+        submodel_lbls = kwargs['primary_lbl'] + kwargs['others_lbls']
+        # sort parameters by model
+        vparam_map = map_params(hpiter(cp.options('variable_params'),
+                                       submodel_lbls))
+        sparam_map = map_params(hpiter(cp.options('static_params'),
+                                       submodel_lbls))
+
+        # we'll need any waveform transforms for the initializing sub-models,
+        # as the underlying models will receive the output of those transforms
+
+        # if `waveform_transforms` section doesn't have the prefix of
+        # sub-model's name, then add this `waveform_transforms` section
+        # into top level, if not, add it into sub-models' config
+        if any(cp.get_subsections('waveform_transforms')):
+            waveform_transforms = transforms.read_transforms_from_config(
+                cp, 'waveform_transforms')
+            wfoutputs = set.union(*[t.outputs
+                                    for t in waveform_transforms])
+            wfparam_map = map_params(hpiter(wfoutputs, submodel_lbls))
+        else:
+            wfparam_map = {lbl: [] for lbl in submodel_lbls}
+        # initialize the models
+        submodels = {}
+        logging.info("Loading submodels")
+        for lbl in submodel_lbls:
+            logging.info("============= %s =============", lbl)
+            # create a config parser to pass to the model
+            subcp = WorkflowConfigParser()
+            # copy sections over that start with the model label (this should
+            # include the [model] section for that model)
+            copy_sections = [
+                HierarchicalParam(sec, submodel_lbls)
+                for sec in cp.sections() if lbl in
+                sec.split('-')[0].split(HierarchicalParam.delim, 1)[0]]
+            for sec in copy_sections:
+                # check that the user isn't trying to set variable or static
+                # params for the model (we won't worry about waveform or
+                # sampling transforms here, since that is checked for in the
+                # __init__)
+                if sec.subname in ['variable_params', 'static_params']:
+                    raise ValueError("Section {} found in the config file; "
+                                     "[variable_params] and [static_params] "
+                                     "sections should not include model "
+                                     "labels. To specify parameters unique to "
+                                     "one or more sub-models, prepend the "
+                                     "individual parameter names with the "
+                                     "model label. See HierarchicalParam for "
+                                     "details.".format(sec))
+                subcp.add_section(sec.subname)
+                for opt, val in cp.items(sec):
+                    subcp.set(sec.subname, opt, val)
+            # set the static params
+            subcp.add_section('static_params')
+            for param in sparam_map[lbl]:
+                subcp.set('static_params', param.subname,
+                          cp.get('static_params', param.fullname))
+
+            # set the variable params: different from the standard
+            # hierarchical model, in this multiband model, all sub-models
+            # has the same variable parameters, so we don't need to worry
+            # about the unique variable issue. Besides, the primary model
+            # needs to do marginalization, so we must set variable_params
+            # and prior section before initializing it.
+
+            subcp.add_section('variable_params')
+            for param in vparam_map[lbl]:
+                if lbl in kwargs['primary_lbl']:
+                    subcp.set('variable_params', param.subname,
+                              cp.get('variable_params', param.fullname))
+                else:
+                    subcp.set('static_params', param.subname, 'REPLACE')
+
+            for section in cp.sections():
+                # the primary model needs prior of marginlized parameters
+                if 'prior-' in section and lbl in kwargs['primary_lbl']:
+                    prior_section = '%s' % section
+                    subcp[prior_section] = cp[prior_section]
+                # if `waveform_transforms` has a prefix,
+                # add it into sub-models' config
+                elif '%s_waveform_transforms' % lbl in section:
+                    transforms_section = '%s' % section
+                    subcp[transforms_section] = cp[transforms_section]
+                else:
+                    pass
+
+            # similar to the standard hierarchical model,
+            # add the outputs from the waveform transforms if sub-model
+            # doesn't need marginalization
+            if lbl not in kwargs['primary_lbl']:
+                for param in wfparam_map[lbl]:
+                    subcp.set('static_params', param.subname, 'REPLACE')
+
+            # save the vitual config file to disk for later check
+            with open('%s.ini' % lbl, 'w', encoding='utf-8') as file:
+                subcp.write(file)
+
+            # initialize
+            submodel = read_from_config(subcp)
+
+            if lbl not in kwargs['primary_lbl']:
+                # similar to the standard hierarchical model,
+                # move the static params back to variable if sub-model
+                # doesn't need marginalization
+                for p in vparam_map[lbl]:
+                    submodel.static_params.pop(p.subname)
+                submodel.variable_params = tuple(p.subname
+                                                 for p in vparam_map[lbl])
+                # similar to the standard hierarchical model,
+                # remove the waveform transform parameters if sub-model
+                # doesn't need marginalization
+                for p in wfparam_map[lbl]:
+                    submodel.static_params.pop(p.subname)
+            submodels[lbl] = submodel
+            logging.info("")
+
+        # remove all marginalized parameters from the top-level model's
+        # `variable_params` and `prior` sections
+        # here we ignore `coa_phase`, because if it's been marginalized,
+        # it will not be listed in `variable_params` and `prior` sections
+        primary_model = submodels[kwargs['primary_lbl'][0]]
+        marginalized_params = primary_model.marginalize_vector_params.copy()
+        if 'logw_partial' in marginalized_params:
+            marginalized_params.pop('logw_partial')
+            marginalized_params = list(marginalized_params.keys())
+        else:
+            marginalized_params = []
+        # this may also include 'f_ref', 'f_lower', 'approximant',
+        # but doesn't matter
+        marginalized_params += list(primary_model.static_params.keys())
+        for p in primary_model.static_params.keys():
+            p_full = '%s__%s' % (kwargs['primary_lbl'][0], p)
+            if p_full not in cp['static_params']:
+                cp['static_params'][p_full] = "%s" % \
+                    primary_model.static_params[p]
+
+        for section in cp.sections():
+            if 'prior-' in section:
+                p = section.split('-')[-1]
+                if p in marginalized_params:
+                    cp['variable_params'].pop(p)
+                    cp.pop(section)
+
+        # now load the model
+        logging.info("Loading joint_primary_marginalized model")
+        return super(HierarchicalModel, cls).from_config(
+                cp, submodels=submodels, **kwargs)
+
+    def reconstruct(self, rec=None, seed=None):
+        """ Reconstruct marginalized parameters by using the primary
+        model's reconstruct method, total_loglr, and others_lognl.
+        """
+        if seed:
+            numpy.random.seed(seed)
+
+        if rec is None:
+            rec = {}
+
+        def get_loglr():
+            self.update_all_models(**rec)
+            return self.total_loglr()
+
+        rec = self.primary_model.reconstruct(
+                rec=rec, seed=seed, set_loglr=get_loglr)
+        # the primary model's reconstruct doesn't know lognl in other models
+        rec['loglikelihood'] += self.others_lognl()
+        return rec
