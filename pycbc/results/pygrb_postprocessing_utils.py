@@ -506,32 +506,44 @@ def veto_trig(trigs, trial_dict):
 # =============================================================================
 def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
     """Constructs sorted triggers from a trials dictionary"""
+
     sorted_trigs = {}
-    trigs_keys = list(trigs.keys())
+
+    # Begin by sorting the triggers into each slide
+    for slide_id in slide_dict:
+        sorted_trigs[slide_id] = []
+    for slide_id, event_id in zip(trigs['network/slide_id'],
+                                  trigs['network/event_id']):
+        sorted_trigs[slide_id].append(event_id)
 
     for slide_id in slide_dict:
-        # Sort the network trigs for each timeslide
-        sorted_trigs[slide_id] = \
-            {key: trigs[key][trigs['time_slide_id'].astype(int) == slide_id]
-             for key in trigs_keys}
+        # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
+
         # Check the triggers are all in the analysed segment lists
-        for time in sorted_trigs[slide_id]['end_time']:
-            if time not in curr_seg_list:
+        for event_id in sorted_trigs[slide_id]:
+            index = numpy.flatnonzero(trigs['network/event_id'] == event_id)[0]
+            end_time = trigs['network/end_time_gc'][index]
+            if end_time not in curr_seg_list:
                 # This can be raised if the trigger is on the segment boundary,
                 # so check if the trigger is within 1/100 of a second within
                 # the list
-                if time + 0.01 in curr_seg_list:
+                if end_time + 0.01 in curr_seg_list:
                     continue
-                if time - 0.01 in curr_seg_list:
+                if end_time - 0.01 in curr_seg_list:
                     continue
                 err_msg = "Triggers found in input files not in the list of "
                 err_msg += "analysed segments. This should not happen."
                 raise RuntimeError(err_msg)
         # END OF CHECK #
 
-        sorted_trigs[slide_id] = \
-            veto_trig(sorted_trigs[slide_id], trial_dict[slide_id])
+        # Keep triggers that are in trial_dict
+        sorted_trigs[slide_id] = [event_id for event_id in
+                                  sorted_trigs[slide_id]
+                                  if trigs['network/end_time_gc'][
+                                      trigs['network/event_id'] == event_id][0]
+                                  in trial_dict[slide_id]]
+
     return sorted_trigs
 
 
