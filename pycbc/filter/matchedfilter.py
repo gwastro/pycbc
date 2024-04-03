@@ -1804,7 +1804,48 @@ def followup_event_significance(ifo, data_reader, bank,
     to determine if the SNR in the first detector has a significant peak
     in the on-source window. The significance is given in terms of a
     p-value. See Dal Canton et al. 2021 (https://arxiv.org/abs/2008.07494)
-    for details.
+    for details. A portion of the SNR time series around the on-source window
+    is also returned for use in BAYESTAR.
+
+    Parameters
+    ----------
+    ifo: str
+        Which detector is being used for the calculation.
+    data_reader: StrainBuffer
+        StrainBuffer object providing the data for the given detector.
+    bank: LiveFilterBank
+        Template bank object providing the template related quantities.
+    template_id: int
+        Index of the template in the bank.
+    coinc_times: dict
+        Dictionary keyed by detector names reporting the coalescence times of
+        a candidate measured at the different detectors.
+    coinc_threshold: float
+        Nominal statistical uncertainty in `coinc_times`; expands the
+        on-source window by twice the given amount.
+    lookback: float
+        Nominal amount of time to use for the calculation of the onsource and
+        offsource SNR time series. The actual time may be reduced depending on
+        the duration of the template and the strain buffer in the data reader.
+    duration: float
+        Duration of the SNR time series to be reported to BAYESTAR.
+
+    Returns
+    -------
+    followup_info: dict or None
+        If the calculation cannot be carried out, for example because `ifo` is
+        not in observing mode at the requested time, then None is returned.
+        Otherwise, the dict contains the following keys:
+        * `snr_series`: TimeSeries object containing the SNR time series for
+          BAYESTAR.
+        * `peak_time`: time of maximum SNR in the on-source window.
+        `pvalue`: p-value for the maximum on-source SNR compared to the
+          off-source realizations.
+        * `pvalue_saturated`: bool indicating whether the p-value is limited by
+          the number of off-source realizations, i.e. whether the maximum
+          on-source SNR is larger than all the off-source ones.
+        * `sigma2`: SNR normalization factor (squared) for the given template
+          and detector.
     """
     from pycbc.waveform import get_waveform_filter_length_in_time
     tmplt = bank.table[template_id]
