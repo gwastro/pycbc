@@ -285,7 +285,8 @@ class DistMarg():
 
         # Update the current proposed times and the marginalization values
         logw = self.premarg['logw_partial']
-        choice = numpy.random.randint(0, len(logw), size=self.vsamples)
+        choice = numpy.random.choice(len(logw), size=self.vsamples,
+                                     replace=False)
 
         for k in self.snr_params:
             self.marginalize_vector_params[k] = self.premarg[k][choice]

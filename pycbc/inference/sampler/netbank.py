@@ -88,15 +88,15 @@ class NetBank(DummySampler):
         logw2 = logw[passed]
         logw2 -= logsumexp(logw2)
         weight = numpy.exp(logw2)
-        
+
         logging.info("...reading template bins")
         with h5py.File(self.mapfile, 'r') as f:
             for i in passed:
                 dmap[i] = f['map'][str(i)][:]
 
         logging.info("...draw template bins")
-        drawcount = (weight * self.target_likelihood_calls).astype(numpy.int)
-        
+        drawcount = (weight * self.target_likelihood_calls).astype(int)
+
         dorder = node_loglrs[passed].argsort()[::-1]
         remainder = 0
         for i in dorder:
@@ -111,7 +111,7 @@ class NetBank(DummySampler):
                 remainder -= asize
         drawweight = weight / drawcount
         total_draw = drawcount.sum()
-        
+
         logging.info('...drawn random points within bins')
         psamp = FieldArray(total_draw, dtype=dtype)
         pweight = numpy.zeros(total_draw, dtype=float)
@@ -149,11 +149,13 @@ class NetBank(DummySampler):
         logw3 -= logsumexp(logw3)
         weight2 = numpy.exp(logw3)
 
-        draw2 = choice(len(psamp), size=self.resample_draw_size,
+        ess = 1.0 / (weight2 ** 2.0).sum()
+        logging.info("ESS = %s", ess)
+
+        draw2 = choice(len(psamp), size=int(ess * 5),
                        replace=True, p=weight2)
         logging.info("Unique values second draw %s",
                      len(numpy.unique(psamp[draw2])))
-        logging.info("ESS = %s", 1.0 / (weight2 ** 2.0).sum())
 
         # Prepare the equally weighted output samples
         fsamp = FieldArray(len(draw2), dtype=dtype)
