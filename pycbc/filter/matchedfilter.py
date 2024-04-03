@@ -1819,14 +1819,16 @@ def followup_event_significance(ifo, data_reader, bank,
         Index of the template in the bank.
     coinc_times: dict
         Dictionary keyed by detector names reporting the coalescence times of
-        a candidate measured at the different detectors.
+        a candidate measured at the different detectors. Used to define the
+        on-source window of the candidate in `ifo`.
     coinc_threshold: float
         Nominal statistical uncertainty in `coinc_times`; expands the
         on-source window by twice the given amount.
     lookback: float
         Nominal amount of time to use for the calculation of the onsource and
         offsource SNR time series. The actual time may be reduced depending on
-        the duration of the template and the strain buffer in the data reader.
+        the duration of the template and the strain buffer in the data reader
+        (if so, a warning is logged).
     duration: float
         Duration of the SNR time series to be reported to BAYESTAR.
 
@@ -1839,7 +1841,7 @@ def followup_event_significance(ifo, data_reader, bank,
         * `snr_series`: TimeSeries object containing the SNR time series for
           BAYESTAR.
         * `peak_time`: time of maximum SNR in the on-source window.
-        `pvalue`: p-value for the maximum on-source SNR compared to the
+        * `pvalue`: p-value for the maximum on-source SNR compared to the
           off-source realizations.
         * `pvalue_saturated`: bool indicating whether the p-value is limited by
           the number of off-source realizations, i.e. whether the maximum
