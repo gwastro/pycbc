@@ -1104,6 +1104,65 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         return select_waveform_modes_generator(approximant)
 
 
+class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
+    """Generates frequency-domain waveforms directly in the detector frame.
+
+    Uses :py:func:`waveform.get_fd_det_waveform` as a generator
+    function to create frequency-domain CBC waveforms that include the detector
+    response.
+
+    For details, on methods and arguments, see :py:class:`BaseCBCGenerator`.
+    """
+    def __init__(
+        self,
+        epoch,
+        detectors=None,
+        variable_args=(),
+        gates=None,
+        recalib=None,
+        **frozen_params
+    ):
+        self.set_epoch(epoch)
+        self.detectors = detectors
+
+        if gates is not None:
+            raise RuntimeError(
+                f"{self.__class__.__name__} does not support `gates`"
+            )
+        if recalib is not None:
+            raise RuntimeError(
+                f"{self.__class__.__name__} does not support `recalib`"
+            )
+
+        if detectors is None:
+            raise ValueError("Must specify detectors!")
+
+        # get_fd_det_waveform should take an `ifos` argument, so we add it to
+        # the frozen params
+        super().__init__(
+            waveform.get_fd_det_waveform,
+            variable_args=variable_args,
+            ifos=detectors,
+            **frozen_params
+        )
+
+    def set_epoch(self, epoch):
+        """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
+        self._epoch = float(epoch)
+
+    @property
+    def epoch(self):
+        """The GPS start time of the frequency series returned by the generate
+        function. A time shift is applied to the waveform equal to tc-epoch.
+        Update by using ``set_epoch``
+        """
+        return _lal.LIGOTimeGPS(self._epoch)
+
+    @staticmethod
+    def select_rframe_generator(approximant):
+        return None
+
+
 #
 # =============================================================================
 #
