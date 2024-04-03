@@ -1896,7 +1896,9 @@ def followup_event_significance(ifo, data_reader, bank,
             return None
 
     # Calculate SNR time series for this duration
-    htilde = bank.get_template(template_id, td_samples=buffer_samples)
+    htilde = bank.get_template(
+        template_id, bank.sample_rate / float(buffer_samples)
+    )
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
     sigma2 = htilde.sigmasq(stilde.psd)
