@@ -549,7 +549,7 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
 # Extract basic trigger properties and store them as dictionaries
 # =============================================================================
 def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
-                                  ifos, opts):
+                                  opts):
     """Extract and store as dictionaries time, SNR, and BestNR of
     time-slid triggers"""
 
@@ -570,6 +570,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
                               for event_index in event_indices])
         trig_bestnr[slide_id] = numpy.array([trigs['/network/reweighted_snr'][event_index]
                                  for event_index in event_indices])
+        trig_bestnr[slide_id][trig_bestnr[slide_id] < opts.newsnr_threshold] = 0
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
