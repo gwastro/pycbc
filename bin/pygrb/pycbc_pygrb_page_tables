@@ -30,6 +30,7 @@ import numpy as np
 from scipy import stats
 import h5py
 import pycbc.version
+from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.detector import Detector
 from pycbc import init_logging
 import pycbc.results
@@ -95,6 +96,8 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
+parser.add_argument("--triggers-bank-file", action="store", type=str,
+                    help="Location of the full template bank used.")
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -109,6 +112,7 @@ if output_files.count(None) == len(output_files):
     msg = "Please specify at least one output file location."
     parser.error(msg)
 
+"""
 if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
     opts.quiet_found_injs_h5_output_file:
     do_injections = True
@@ -127,7 +131,7 @@ if opts.loudest_onsource_trig_output_file or opts.loudest_onsource_trig_h5_outpu
 
 if not opts.newsnr_threshold:
     opts.newsnr_threshold = opts.snr_threshold
-
+"""
 # Store options used multiple times in local variables
 trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
@@ -185,11 +189,19 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trig_data = ppu.load_trig_data(trig_file, ifos, None)
+trig_data = ppu.load_triggers(trig_file, None)
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
 segment_dict = ppu.load_segment_dict(trig_file)
+
+# Read the template masses
+logging.info('Loading triggers template masses')
+bank_data =  h5py.File(opts.triggers_bank_file, 'r')
+mchirps = mchirp_from_mass1_mass2(
+        bank_data['mass1'][...],
+        bank_data['mass2'][...]
+    )
 
 # Construct trials
 logging.info("Constructing trials.")
@@ -201,7 +213,7 @@ logging.info("%d trials generated.", total_trials)
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
     ppu.extract_basic_trig_properties(trial_dict, trig_data, slide_dict, 
-                                      segment_dict, ifos, opts)
+                                      segment_dict, opts)
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
 time_veto_max_bestnr = {}
@@ -211,6 +223,10 @@ for slide_id in slide_dict:
     time_veto_max_bestnr[slide_id] = np.zeros(num_slide_segs)
 
 for slide_id in slide_dict:
+    ## TO BE REMOVED
+    trig_time[slide_id] = np.asarray(trig_time[slide_id])
+    trig_snr[slide_id] = np.asarray(trig_snr[slide_id])
+    trig_bestnr[slide_id] = np.asarray(trig_bestnr[slide_id])
     for j, trial in enumerate(trial_dict[slide_id]):
         trial_cut = (trial[0] <= trig_time[slide_id])\
                           & (trig_time[slide_id] < trial[1])
@@ -234,7 +250,7 @@ offsource_trigs = []
 sorted_trigs = ppu.sort_trigs(trial_dict, trig_data, slide_dict, segment_dict)
 for slide_id in slide_dict:
     offsource_trigs.extend(zip(trig_bestnr[slide_id],
-                               get_trig_dictionary(sorted_trigs[slide_id])))
+                               sorted_trigs[slide_id]))
 
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
@@ -253,12 +269,13 @@ if lofft_outfile or lofft_h5_outfile:
     # Gather properties of the loudest offsource triggers
     for i in range(min(len(offsource_trigs), opts.num_loudest_off_trigs)):
         bestnr = offsource_trigs[i][0]
-        trig = offsource_trigs[i][1]
-        trig_slide_id = int(trig['time_slide_id'])
+        trig_id = offsource_trigs[i][1]
+        trig_index = np.where(trig_data['network/event_id'] == trig_id)[0][0]
+        trig_slide_id = int(trig_data['network/template_id'][trig_index])
 
         # Get trial of trigger, triggers with 'No trial' should have been removed!
         for j, trial in enumerate(trial_dict[trig_slide_id]):
-            if trig['end_time'] in trial:
+            if trig_data['network/end_time_gc'][trig_index] in trial:
                 chunk_num = j
                 break
         else:
@@ -272,14 +289,17 @@ if lofft_outfile or lofft_h5_outfile:
                     num_trials_louder += 1
         fap = num_trials_louder/total_trials
         pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
-        #bank chisq and cont chisq  replacede with Nones
         d = [chunk_num, trig_slide_id, pval,
-             np.asarray(trig['end_time']).astype(float),
-             trig['mass1'], trig['mass2'], trig['mchirp'],
-             (np.degrees(trig['ra'])), (np.degrees(trig['dec'])),
-             trig['coherent_snr'], trig['chisq'], trig['bank_chisq'],
-             trig['cont_chisq'], trig['null_snr']]
-        d.extend([trig['snr_%s' % ifo] for ifo in ifos])
+             trig_data['network/end_time_gc'][trig_index],
+             bank_data['mass1'][trig_data['network/template_id'][trig_index]],
+             bank_data['mass2'][trig_data['network/template_id'][trig_index]],
+             mchirps[trig_index],
+             np.degrees(trig_data['network/ra'][trig_index]),
+             np.degrees(trig_data['network/dec'][trig_index]),
+             trig_data['network/coherent_snr'][trig_index],
+             trig_data['network/my_network_chisq'][trig_index],
+             trig_data['network/null_snr'][trig_index]]
+        d.extend([trig_data['snr_%s' % ifo][trig_index] for ifo in ifos])
         d.extend([slide_dict[trig_slide_id][ifo] for ifo in ifos])
         d.append(bestnr)
         td.append(d)
@@ -287,7 +307,7 @@ if lofft_outfile or lofft_h5_outfile:
     # th: table header
     th = ['Trial', 'Slide Num', 'p-value', 'GPS time',\
           'Rec. m1', 'Rec. m2', 'Rec. Mc',\
-          'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto',\
+          'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2',\
           'Null SNR']
     th.extend(['%s SNR' % ifo for ifo in ifos])
     th.extend(['%s time shift (s)' % ifo for ifo in ifos])
@@ -352,30 +372,22 @@ if lofft_outfile or lofft_h5_outfile:
 if onsource_file:
 
     # Get trigs
-    on_trigs = ppu.load_trig_data(onsource_file, ifos, None)
+    on_trigs = ppu.load_triggers(onsource_file, ifos, None)
     logging.info("%d onsource triggers loaded.", len(on_trigs))
 
     # Separate off chirp mass column
-    on_mchirp = on_trigs['mchirp']
+    on_mchirp = on_trigs['mchirp'] ## REVISE
 
     # Record loudest trig by BestNR
     loud_on_bestnr = 0
     if on_trigs:
-        on_trigs_bestnrs = ppu.get_bestnrs(trigs=on_trigs,
-                                           ifos=ifos,
-                                           q=chisq_index,
-                                           n=chisq_nhigh,
-                                           null_thresh=null_thresh,
-                                           snr_threshold=snr_thresh,
-                                           sngl_snr_threshold=sngl_snr_thresh,
-                                           new_snr_threshold=new_snr_thresh,
-                                           null_grad_thresh=null_grad_thresh,
-                                           null_grad_val=null_grad_val)
+        on_trigs_bestnrs = on_trigs['network/reweighted_snr'][...]
+        on_trigs_bestnrs[on_trigs_bestnrs < opts.newsnr_threshold] = 0
 
         # Gather bestNR index
         bestNR_event = np.argmax(on_trigs_bestnrs)
         loud_on_bestnr_trigs, loud_on_bestnr = \
-            ({key: on_trigs[key][bestNR_event] for key in on_trigs.keys()},
+            (on_trigs['network/event_id'][bestNR_event],
              on_trigs_bestnrs[bestNR_event])
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
@@ -389,7 +401,7 @@ if onsource_file:
     # Gather data
     loud_on_fap = 1
     if loud_on_bestnr_trigs:
-        trig = loud_on_bestnr_trigs
+        trig_id = loud_on_bestnr_trigs
         num_trials_louder = 0
         tot_off_snr = np.array([])
         for slide_id in slide_dict:
