@@ -1873,7 +1873,14 @@ def followup_event_significance(ifo, data_reader, bank,
     onsource_start -= coinc_threshold
     onsource_end += coinc_threshold
 
-    # Calculate how much time needed to calculate significance
+    # Calculate how much time is needed to calculate the significance.
+    # At the minimum, we need enough time to include the lookback, plus time
+    # that we will throw away because of corruption from finite-duration filter
+    # responses (this is equal to the nominal padding plus the template
+    # duration). Next, for efficiency, we round the resulting duration up to
+    # align it with one of the frequency resolutions preferred by the template
+    # bank. And finally, the resulting duration must fit into the strain buffer
+    # available in the data reader, so we check that.
     trim_pad = data_reader.trim_padding * data_reader.strain.delta_t
     buffer_duration = lookback + 2 * trim_pad + length_in_time
     buffer_samples = bank.round_up(int(buffer_duration * bank.sample_rate))
@@ -1938,7 +1945,7 @@ def followup_event_significance(ifo, data_reader, bank,
             )
             return None
 
-    # Calculate SNR time series for this duration
+    # Calculate SNR time series for the entire lookback duration
     htilde = bank.get_template(
         template_id, bank.sample_rate / float(buffer_samples)
     )
@@ -1947,7 +1954,7 @@ def followup_event_significance(ifo, data_reader, bank,
     sigma2 = htilde.sigmasq(stilde.psd)
     snr, _, norm = matched_filter_core(htilde, stilde, h_norm=sigma2)
 
-    # Find peak in on-source and determine p-value
+    # Find peak SNR in on-source and determine p-value
     onsrc = snr.time_slice(onsource_start, onsource_end)
     peak = onsrc.abs_arg_max()
     peak_time = peak * snr.delta_t + onsrc.start_time
