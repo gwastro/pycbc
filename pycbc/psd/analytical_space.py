@@ -307,7 +307,7 @@ def taiji_psd_components(f, acc_noise_level=3e-15, oms_noise_level=8e-12):
     return low_freq_component, high_freq_component
 
 
-def _omega_length(f, len_arm=None):
+def omega_length(f, len_arm=None):
     """ The function to calculate 2*pi*f*arm_length.
 
     Parameters
@@ -358,7 +358,7 @@ def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
-    omega_len = _omega_length(fr, len_arm)
+    omega_len = omega_length(fr, len_arm)
     psd = 16*(np.sin(omega_len))**2 * (s_oms_nu +
                                        s_acc_nu*(3+np.cos(2*omega_len)))
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
@@ -509,7 +509,7 @@ def _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
-    omega_len = _omega_length(fr, len_arm)
+    omega_len = omega_length(fr, len_arm)
     psd = 64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 * (
         s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len)))
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
@@ -659,7 +659,7 @@ def _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
-    omega_len = _omega_length(fr, len_arm)
+    omega_len = omega_length(fr, len_arm)
     csd = (-8*np.sin(omega_len)**2 * np.cos(omega_len) *
            (s_oms_nu+4*s_acc_nu))
     fseries = from_numpy_arrays(fr, csd, length, delta_f, low_freq_cutoff)
@@ -733,7 +733,7 @@ def _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
-    omega_len = _omega_length(fr, len_arm)
+    omega_len = omega_length(fr, len_arm)
     psd = (8*(np.sin(omega_len))**2 *
            (4*(1+np.cos(omega_len)+np.cos(omega_len)**2)*s_acc_nu +
            (2+np.cos(omega_len))*s_oms_nu))
@@ -884,7 +884,7 @@ def _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     s_acc_nu = psd_components[0]
     s_oms_nu = psd_components[1]
-    omega_len = _omega_length(fr, len_arm)
+    omega_len = omega_length(fr, len_arm)
     psd = (32*np.sin(omega_len)**2 * np.sin(omega_len/2)**2 *
            (4*s_acc_nu*np.sin(omega_len/2)**2 + s_oms_nu))
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
@@ -1066,7 +1066,7 @@ def averaged_fplus_sq_approximated(f, len_arm=None):
     -----
         Please see Eq.(9) in <10.1088/1361-6382/ab1101> for more details.
     """
-    fp_sq_approx = (3./20.)*(1./(1.+0.6*_omega_length(f, len_arm)**2))
+    fp_sq_approx = (3./20.)*(1./(1.+0.6*omega_length(f, len_arm)**2))
 
     return fp_sq_approx
 
@@ -1095,7 +1095,7 @@ def averaged_tianqin_fplus_sq_numerical(f, len_arm=np.sqrt(3)*1e8):
     a = [1, 1e-4, 2639e-4, 231/5*1e-4, -2093/1.25*1e-4, 2173e-5,
          2101e-6, 3027/2*1e-5, -42373/5*1e-6, 176087e-8,
          -8023/5*1e-7, 5169e-9]
-    omega_len = _omega_length(f, len_arm)
+    omega_len = omega_length(f, len_arm)
     omega_len_low_f = omega_len[omega_len < 4.1]
     omega_len_high_f = omega_len[omega_len >= 4.1]
     base_low_f = base[:len(omega_len_low_f)]
@@ -1130,7 +1130,7 @@ def averaged_response_lisa_tdi_1p5(f, len_arm=2.5e9):
     -----
         Please see Eq.(39) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    omega_len = _omega_length(f, len_arm)
+    omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_lisa_fplus_sq_numerical(f, len_arm)
     response_tdi_1p5 = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
 
@@ -1156,7 +1156,7 @@ def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
     -----
         Please see Eq.(40) in <LISA-LCST-SGS-TN-001> for more details.
     """
-    omega_len = _omega_length(f, len_arm)
+    omega_len = omega_length(f, len_arm)
     response_tdi_1p5 = averaged_response_lisa_tdi_1p5(f, len_arm)
     response_tdi_2p0 = response_tdi_1p5 * (2*np.sin(2*omega_len))**2
 
@@ -1179,7 +1179,7 @@ def averaged_response_tianqin_tdi_1p5(f, len_arm=np.sqrt(3)*1e8):
     response_tdi_1p5 : float or numpy.array
         The sky and polarization angle averaged TDI-1.5 response to GW.
     """
-    omega_len = _omega_length(f, len_arm)
+    omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_tianqin_fplus_sq_numerical(f, len_arm)
     response_tdi_1p5 = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
 
@@ -1202,7 +1202,7 @@ def averaged_response_taiji_tdi_1p5(f, len_arm=3e9):
     response_tdi_1p5 : float or numpy.array
         The sky and polarization angle averaged TDI-1.5 response to GW.
     """
-    omega_len = _omega_length(f, len_arm)
+    omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_fplus_sq_approximated(f, len_arm)
     response_tdi_1p5 = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
 
@@ -1247,7 +1247,7 @@ def sensitivity_curve_lisa_semi_analytical(length, delta_f, low_freq_cutoff,
     fp_sq = averaged_lisa_fplus_sq_numerical(fr, len_arm)
     s_acc_nu, s_oms_nu = lisa_psd_components(
                             fr, acc_noise_level, oms_noise_level)
-    omega_len = _omega_length(fr, len_arm)
+    omega_len = omega_length(fr, len_arm)
     sense_curve = ((s_oms_nu + s_acc_nu*(3+np.cos(2*omega_len))) /
                    (omega_len**2*fp_sq))
     fseries = from_numpy_arrays(fr, sense_curve/2,
@@ -1291,7 +1291,7 @@ def sensitivity_curve_tianqin_analytical(length, delta_f, low_freq_cutoff,
     fp_sq = averaged_tianqin_fplus_sq_numerical(fr, len_arm)
     s_acc_nu, s_oms_nu = tianqin_psd_components(
                             fr, acc_noise_level, oms_noise_level)
-    omega_len = _omega_length(fr, len_arm)
+    omega_len = omega_length(fr, len_arm)
     sense_curve = ((s_oms_nu + s_acc_nu*(3+np.cos(2*omega_len))) /
                    (omega_len**2*fp_sq))
     fseries = from_numpy_arrays(fr, sense_curve/2,
@@ -1334,7 +1334,7 @@ def sensitivity_curve_taiji_analytical(length, delta_f, low_freq_cutoff,
     fp_sq = averaged_fplus_sq_approximated(fr, len_arm)
     s_acc_nu, s_oms_nu = taiji_psd_components(
                             fr, acc_noise_level, oms_noise_level)
-    omega_len = _omega_length(fr, len_arm)
+    omega_len = omega_length(fr, len_arm)
     sense_curve = ((s_oms_nu + s_acc_nu*(3+np.cos(2*omega_len))) /
                    (omega_len**2*fp_sq))
     fseries = from_numpy_arrays(fr, sense_curve/2,
