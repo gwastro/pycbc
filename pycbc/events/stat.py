@@ -2271,14 +2271,42 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
                                          ifos=ifos, **kwargs)
         self.dq_rates_by_state = {}
         self.dq_bin_by_tid = {}
-        self.dq_state_segments = {}
+        self.dq_state_segments = None
+        self.low_latency = False
 
         for ifo in self.ifos:
             key = f'{ifo}-dq_stat_info'
             if key in self.files.keys():
                 self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
                 self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
-                self.dq_state_segments[ifo] = self.setup_segments(key)
+                self.check_low_latency(key)
+                if not self.low_latency:
+                    if self.dq_state_segments is None:
+                        self.dq_state_segments = {}
+                    self.dq_state_segments[ifo] = self.setup_segments(key)
+
+    def check_low_latency(self, key):
+        """
+        Check if the statistic file indicates low latency mode.
+        Parameters
+        ----------
+        key: str
+            Statistic file key string.
+        Returns
+        -------
+        None
+        """
+        ifo = key.split('-')[0]
+        with h5py.File(self.files[key], 'r') as dq_file:
+            ifo_grp = dq_file[ifo]
+            if 'dq_segments' in ifo_grp.keys():
+                # if segs are in stat file, we are not in LL
+                assert not self.low_latency, 'Should not have segments in LL'
+            else:
+                # we must be in LL, shouldn't have segments
+                assert not self.dq_state_segments, \
+                      'Should not have segments in LL'
+                self.low_latency = True
 
     def assign_template_bins(self, key):
         """
@@ -2337,9 +2365,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
     def setup_segments(self, key):
         """
-        Check if segments definitions are in stat file
-        If they are, we are running offline and need to store them
-        If they aren't, we are running online
+        Store segments from stat file
         """
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
@@ -2379,7 +2405,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             return True
         return False
 
-    def find_dq_noise_rate(self, trigs, dq_state):
+    def find_dq_noise_rate(self, trigs):
         """Get dq values for a specific ifo and dq states"""
 
         try:
@@ -2395,6 +2421,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             # Should be exactly one ifo provided
             ifo = ifo[0]
 
+        dq_state = trigs['dq_state']
         dq_val = numpy.zeros(len(dq_state))
 
         if ifo in self.dq_rates_by_state:
@@ -2437,23 +2464,35 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             Array of log noise rate density for each input trigger.
         """
 
-        # make sure every trig has a dq state
-        try:
-            ifo = trigs.ifo
-        except AttributeError:
-            ifo = trigs['ifo']
-            assert len(numpy.unique(ifo)) == 1
-            # Should be exactly one ifo provided
-            ifo = ifo[0]
-
-        dq_state = self.find_dq_state_by_time(ifo, trigs['end_time'][:])
-        dq_rate = self.find_dq_noise_rate(trigs, dq_state)
+        dq_rate = self.find_dq_noise_rate(trigs)
         dq_rate = numpy.maximum(dq_rate, 1)
 
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
                     self, trigs)
         logr_n += numpy.log(dq_rate)
         return logr_n
+
+    def single(self, trigs):
+        # make sure every trig has a dq state
+        try:
+            # works in offline
+            ifo = trigs.ifo
+        except AttributeError:
+            # works in low-latency
+            ifo = trigs['ifo'][0]
+            # Should be exactly one ifo provided
+            assert len(numpy.unique(trigs['ifo'])) == 1
+
+        singles = ExpFitFgBgNormStatistic.single(self, trigs)
+
+        if self.low_latency:
+            # trigs should already have a dq state assigned
+            singles['dq_state'] = trigs['dq_state'][:]
+        else:
+            singles['dq_state'] = self.find_dq_state_by_time(
+                ifo, trigs['end_time'][:]
+            )
+        return singles
 
 
 class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):
