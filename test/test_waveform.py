@@ -28,7 +28,7 @@ import unittest
 import numpy
 from numpy import sqrt, cos, sin
 from pycbc.scheme import CPUScheme
-from pycbc.waveform import get_td_waveform, get_fd_waveform
+from pycbc.waveform import get_td_waveform, get_fd_waveform, get_fd_waveform_sequence
 from utils import parse_args_all_schemes, simple_exit
 from pycbc.types import Array
 
