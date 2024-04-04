@@ -41,7 +41,7 @@ def create_full_filt(freqs, filt, plong, srate, psd_duration):
     fweight = norm * fweight
     fwhiten = numpy.sqrt(2. / srate) / numpy.sqrt(plong)
     fwhiten[0] = 0.
-    full_filt = sig.hann(int(psd_duration * srate)) * numpy.roll(
+    full_filt = sig.windows.hann(int(psd_duration * srate)) * numpy.roll(
         irfft(fwhiten * fweight), int(psd_duration / 2) * srate)
 
     return full_filt
