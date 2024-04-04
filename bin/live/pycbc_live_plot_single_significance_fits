@@ -134,8 +134,15 @@ for ifo in all_ifos:
         binlabel = f"{lower:.3g} - {upper:.3g}"
 
         inbin = event_bin == bin_num
+        bin_prop = bin_num / len(tbins)
+        bin_colour = plt.get_cmap(args.colormap)(bin_prop)
+
         # Skip if there are no triggers in this bin in this IFO
-        if not any(inbin):
+        if not any(inbin) or alphas[ifo][bin_num] == -1:
+            ax.plot([],[], linewidth=2,
+                color=bin_colour, label=binlabel, alpha=0.6)
+            ax.plot([],[], "--", color=bin_colour,
+                label="No triggers")
             continue
         binned_sngl_stats = stats[ifo][event_bin == bin_num]
 
@@ -154,8 +161,6 @@ for ifo in all_ifos:
         )
         cum_fit = counts[ifo][bin_num] / live_time[ifo] * ecf
 
-        bin_prop = bin_num / len(tbins)
-        bin_colour = plt.get_cmap(args.colormap)(bin_prop)
         ax.plot(edges[:-1], cum_rate, linewidth=2,
                 color=bin_colour, label=binlabel, alpha=0.6)
         ax.plot(plotbins, cum_fit, "--", color=bin_colour,

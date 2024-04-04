@@ -416,10 +416,13 @@ for ifo in events:
             alphas[ifo][bin_num] = -1
             continue
 
-        counts[ifo][bin_num] = np.count_nonzero(inbin)
+        stat_inbin = events[ifo].data['stat'][inbin]
+        counts[ifo][bin_num] = \
+            np.count_nonzero(stat_inbin > args.fit_threshold[ifo])
+
         alphas[ifo][bin_num], _ = trstats.fit_above_thresh(
             args.fit_function[ifo],
-            events[ifo].data['stat'][inbin],
+            stat_inbin,
             args.fit_threshold[ifo]
         )
 
