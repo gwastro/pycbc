@@ -253,10 +253,6 @@ init_logging(args.verbose)
 analysis_time = 0
 attr_dict = {}
 
-# This will be used to check the fit files have the same number of templates
-# (therefore probably using the same bank)
-num_templates = None
-
 # These end up as n_files * n_templates arrays
 tid = numpy.array([], dtype=int)
 nabove = numpy.array([], dtype=int)
@@ -265,10 +261,14 @@ alpha = numpy.array([], dtype=float)
 median_sigma = numpy.array([], dtype=float)
 
 logging.info("Loading input template fits")
+
+# This will be used to check the fit files have the same number of templates
+# (therefore probably using the same bank)
+num_templates = None
+
 for filename in args.template_fit_file:
     with h5py.File(filename, 'r') as fits:
         if num_templates is None:
-            # First file; store number of templates
             num_templates = fits['template_id'].size
         elif not num_templates == fits['template_id'].size:
             raise RuntimeError(
@@ -285,7 +285,15 @@ for filename in args.template_fit_file:
                 # It's the first time we encounter this attribute
                 attr_dict[k] = fits.attrs[k]
             elif k == 'ifo':
-                # We don't mind if this attribute is different
+                # We don't mind if this attribute is different, however the
+                # output attributes will only correspond to the first file's
+                # IFO. Warn if different IFOs are being used.
+                if not attr_dict[k] == fits.attrs[k]:
+                    logging.warning(
+                        "Fit files correspond to different IFOs: %s and %s, "
+                        "only %s is being used for output file attributes",
+                        attr_dict[k], fits.attrs[k]
+                    )
                 continue
             elif not attr_dict[k] == fits.attrs[k]:
                 # Check that the files are consistent with one another
