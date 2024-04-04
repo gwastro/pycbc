@@ -147,7 +147,7 @@ wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
-pycbc.init_logging(args)
+pycbc.init_logging(args.verbose)
 
 # Create the workflow object
 workflow = wf.Workflow(args)
