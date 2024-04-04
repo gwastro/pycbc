@@ -707,12 +707,12 @@ class LISA_detector(object):
         self.dt = None
         self.n = None
         self.response_init = None
-        self.t0 = None
+        self.t0 = 10000
         
         # initialize whether to use gpu; FLR has handles if this cannot be done
         self.use_gpu = use_gpu
 
-    def project_wf(self, hp, hc, lamb, beta, t0=10000., use_gpu=None):
+    def project_wf(self, hp, hc, lamb, beta, t0=None, use_gpu=None):
         """
         Project a radiation frame (SSB) waveform to the LISA constellation.
         This *does not* perform TDI; this only produces a detector frame
@@ -733,8 +733,8 @@ class LISA_detector(object):
             The ecleptic longitude in the SSB frame.
 
         t0 : float (optional)
-            Number of seconds to omit from start and end of waveform. Defaults
-            to FastLISAResponse preset of 10000 s.
+            Number of seconds to omit from start and end of waveform. Default
+            to FLR default of 10000 s.
 
         use_gpu : bool (optional)
             Flag whether to use GPU support. Default to class input.
@@ -748,7 +748,6 @@ class LISA_detector(object):
         """
         from fastlisaresponse import pyResponseTDI
 
-        s_to_yr = 3.168808781402895e-08 # seconds to years conversion factor
         dt = hp.delta_t # timestep (s)
         n = len(hp) # number of points
 
@@ -767,23 +766,24 @@ class LISA_detector(object):
                 raise ImportError('CuPy not imported but is required for GPU usage')
             else:
                 wf = cupy.asarray(wf)
-
+                
         # initialize the FLR class
         response_init = pyResponseTDI(dt, n, self.orbit_kwargs, use_gpu=use_gpu)
 
-        # cache n, dt, response init
+        # cache response init
         self.dt = dt
         self.n = n
         self.response_init = response_init
-        self.t0 = t0
+        if t0 is not None:
+            self.t0 = t0
 
         # project the signal
-        response_init.get_projections(wf, lamb, beta, t0)
+        response_init.get_projections(wf, lamb, beta, self.t0)
         wf_proj = response_init.y_gw
         
         return wf_proj
 
-    def get_tdi(self, hp, hc, lamb, beta, tdi='XYZ', tdi_orbit_kwargs=None, use_gpu=None):
+    def get_tdi(self, hp, hc, lamb, beta, t0=None, tdi='XYZ', tdi_orbit_kwargs=None, use_gpu=None):
         """
         Calculate the TDI variables given a waveform and LISA orbit data.
 
@@ -800,6 +800,10 @@ class LISA_detector(object):
 
         beta : float
             The ecleptic longitude in the SSB frame.
+            
+        t0 : float (optional)
+            Number of seconds to omit from start and end of waveform. Default
+            to FLR default of 10000 s.
 
         tdi : str (optional)
             The TDI observables to calculate. Accepts 'XYZ', 'AET', or 'AE'.
@@ -821,6 +825,10 @@ class LISA_detector(object):
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
+            
+        # update t0 if provided
+        if t0 is not None:
+            self.t0 = t0
         
         # generate the Doppler time series
         links = self.project_wf(hp, hc, lamb, beta, t0=self.t0, use_gpu=use_gpu)
