@@ -45,7 +45,6 @@ class NetBank(DummySampler):
                  mapfile=None,
                  loglr_region=25,
                  target_likelihood_calls=1e5,
-                 resample_draw_size=2e5,
                  reconstruct = False,
                  **kwargs):
         super().__init__(model, *args)
@@ -60,7 +59,6 @@ class NetBank(DummySampler):
         self.target_likelihood_calls = int(target_likelihood_calls)
         self.reconstruct = bool(reconstruct)
         self.loglr_region = float(loglr_region)
-        self.resample_draw_size = int(float(resample_draw_size))
 
     def run(self):
         logging.info('Retrieving params of parameter space nodes')
