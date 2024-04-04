@@ -56,7 +56,7 @@ class TestWaveform(unittest.TestCase):
                 self.assertTrue(len(htilde)> 0)
 
     def test_frequency_sequence(self):
-        sample_points = np.geomspace(10, 400, 50)
+        sample_points = numpy.geomspace(10, 400, 50)
         hp, hc = get_fd_waveform_sequence(approximant="IMRPhenomXAS", mass1=20, mass2=20, sample_points=sample_points)
         hp_ref, hc_ref = get_fd_waveform_sequence(approximant="IMRPhenomXAS", mass1=20, mass2=20, sample_points=Array(sample_points))
         self.assertEqual(hp, hp_ref)
