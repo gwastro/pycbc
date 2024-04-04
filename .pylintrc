@@ -1,2 +1,6 @@
 [BASIC]
-good-names=logger
+# Allow certain names for variables
+good-names=logger,Run
+
+# Allow variables to have one-or-two character names
+good-names-rgxs=^[_a-z][_a-z0-9]?$
