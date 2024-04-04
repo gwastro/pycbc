@@ -18,8 +18,8 @@ This modules contains functions reading, generating, and segmenting strain data
 """
 import copy
 import logging
-import numpy
 import functools
+import numpy
 
 from scipy.signal import kaiserord
 
