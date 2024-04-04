@@ -1807,6 +1807,17 @@ def followup_event_significance(ifo, data_reader, bank,
     for details. A portion of the SNR time series around the on-source window
     is also returned for use in BAYESTAR.
 
+    If the calculation cannot be carried out, for example because `ifo` is
+    not in observing mode at the requested time, then None is returned.
+    Otherwise, the dict contains the following keys. `snr_series` is a
+    TimeSeries object with the SNR time series for BAYESTAR. `peak_time` is the
+    time of maximum SNR in the on-source window. `pvalue` is the p-value for
+    the maximum on-source SNR compared to the off-source realizations.
+    `pvalue_saturated` is a bool indicating whether the p-value is limited by
+    the number of off-source realizations, i.e. whether the maximum on-source
+    SNR is larger than all the off-source ones. `sigma2` is the SNR
+    normalization (squared) for the given template and detector.
+
     Parameters
     ----------
     ifo: str
@@ -1835,19 +1846,8 @@ def followup_event_significance(ifo, data_reader, bank,
     Returns
     -------
     followup_info: dict or None
-        If the calculation cannot be carried out, for example because `ifo` is
-        not in observing mode at the requested time, then None is returned.
-        Otherwise, the dict contains the following keys:
-        * `snr_series`: TimeSeries object containing the SNR time series for
-          BAYESTAR.
-        * `peak_time`: time of maximum SNR in the on-source window.
-        * `pvalue`: p-value for the maximum on-source SNR compared to the
-          off-source realizations.
-        * `pvalue_saturated`: bool indicating whether the p-value is limited by
-          the number of off-source realizations, i.e. whether the maximum
-          on-source SNR is larger than all the off-source ones.
-        * `sigma2`: SNR normalization factor (squared) for the given template
-          and detector.
+        Results of the followup calculation (see above) or None if `ifo` did
+        not have usable data.
     """
     from pycbc.waveform import get_waveform_filter_length_in_time
     tmplt = bank.table[template_id]
