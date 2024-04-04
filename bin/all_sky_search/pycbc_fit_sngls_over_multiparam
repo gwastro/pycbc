@@ -292,7 +292,7 @@ for filename in args.template_fit_file:
                     logging.warning(
                         "Fit files correspond to different IFOs: %s and %s, "
                         "only %s is being used for output file attributes",
-                        attr_dict[k], fits.attrs[k]
+                        attr_dict[k], fits.attrs[k], attr_dict[k],
                     )
                 continue
             elif not attr_dict[k] == fits.attrs[k]:
