@@ -613,8 +613,6 @@ class BaseInferenceFile(h5py.File, metaclass=ABCMeta):
             group = '/'.join([group, self.injections_group])
         injset = InjectionSet(self.filename, hdf_group=group)
         injections = injset.table.view(FieldArray)
-        # close the new open filehandler to self
-        injset._injhandler.filehandler.close()
         return injections
 
     def write_command_line(self):

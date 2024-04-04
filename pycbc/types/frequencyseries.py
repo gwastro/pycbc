@@ -404,6 +404,7 @@ class FrequencySeries(Array):
             if self.kind != 'real':
                 raise ValueError('XML only supports real frequency series')
             output = self.lal()
+            output.name = 'psd'
             # When writing in this format we must *not* have the 0 values at
             # frequencies less than flow. To resolve this we set the first
             # non-zero value < flow.
