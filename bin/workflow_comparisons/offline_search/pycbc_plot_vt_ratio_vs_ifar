@@ -49,7 +49,7 @@ parser.add_argument('--log-y', action='store_true', default=False,
                     help='Use logarithmic y-axis')
 args = parser.parse_args()
 
-init_logging(args)
+init_logging(args.verbose)
 
 # Load in the two datasets
 f1 = h5py.File(args.vt_file_one)

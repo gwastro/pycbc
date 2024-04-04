@@ -161,7 +161,7 @@ wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
-init_logging(args)
+init_logging(args.verbose)
 
 # FIXME: opts.tags is currently unused here.
 

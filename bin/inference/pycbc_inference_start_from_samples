@@ -21,7 +21,7 @@ parser.add_argument('--ntemps', type=int)
 parser.add_argument('--nwalkers', type=int)
 args = parser.parse_args()
 
-init_logging(opts)
+init_logging(opts.verbose)
 
 # populate an emcee start file with
 # values chosen from a dynesty file

@@ -28,7 +28,7 @@ parser.add_argument('--ind-samples', help='use only this number of samples',
                     default=1000, type=int)
 args = parser.parse_args()
 
-init_logging(args)
+init_logging(args.verbose)
 
 size = int(1e6)
 d1 = io.loadfile(args.input_file, 'r')

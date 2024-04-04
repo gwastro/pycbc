@@ -44,7 +44,7 @@ parser.add_argument('--colormap',
 
 opts = parser.parse_args()
 
-init_logging(opts)
+init_logging(opts.verbose)
 
 cmd = 'ligo-skymap-plot {} -o {} --annotate --contour 50 90'.format(
     opts.input_file, opts.output_file)

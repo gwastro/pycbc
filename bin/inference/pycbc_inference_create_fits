@@ -70,7 +70,7 @@ parser.add_argument('--tc', default='tc',
                          '"tc".')
 opts = parser.parse_args()
 
-init_logging(opts)
+init_logging(opts.verbose)
 
 fp = io.loadfile(opts.input_file, 'r')
 samples = fp.read_samples([opts.ra, opts.dec, opts.distance, opts.tc])

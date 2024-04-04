@@ -55,7 +55,7 @@ parser.add_argument("--integrand-logarithmic", action="store_true",
 parser.add_argument("--output-file", type=str)
 args = parser.parse_args()
 
-init_logging(args)
+init_logging(args.verbose)
 
 # Read in the necessary data
 fp = io.loadfile(args.inference_file, "r")

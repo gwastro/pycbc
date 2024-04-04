@@ -452,7 +452,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-init_logging(args)
+init_logging(args.verbose)
 
 vprint = print if args.verbose else str
 

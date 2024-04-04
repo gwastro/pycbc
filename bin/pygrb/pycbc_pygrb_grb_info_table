@@ -67,7 +67,7 @@ parser.add_argument("--output-file", action="store",
 
 opts = parser.parse_args()
 
-init_logging(opts)
+init_logging(opts.verbose)
 
 headers = []
 data = [[]]
