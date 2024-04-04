@@ -2435,7 +2435,10 @@ def get_statistic_from_opts(opts, ifos):
         opts.statistic_keywords = []
 
     # flatten the list of lists of filenames to a single list (may be empty)
-    opts.statistic_files = sum(opts.statistic_files, [])
+    # if needed (e.g. not calling get_statistic_from_opts in a loop)
+    if len(opts.statistic_files) > 0 and \
+            isinstance(opts.statistic_files[0], list):
+        opts.statistic_files = sum(opts.statistic_files, [])
 
     extra_kwargs = parse_statistic_keywords_opt(opts.statistic_keywords)
 
