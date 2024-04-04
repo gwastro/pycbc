@@ -345,40 +345,6 @@ def load_triggers(input_file, vetoes):
     return trigs
 
 
-def load_trig_data(input_file, ifos, vetoes):
-    """Loads triggers data and ifo triggers data into a dictionary from
-    a PyGRB bank file"""
-    trigs = load_triggers(input_file, vetoes)
-    # Load network data into dictionaty
-    data = {
-        "end_time": trigs["/network/end_time_gc"][...],
-        "ra": trigs["/network/ra"][...],
-        "dec": trigs["/network/dec"][...],
-        "coherent_snr": trigs["/network/coherent_snr"][...],
-        "null_snr": trigs["/network/null_snr"][...],
-        "reweighted_snr": trigs["/network/reweighted_snr"][...],
-        "chisq": trigs["/network/my_network_chisq"][...],
-        "bank_chisq": trigs["/network/my_network_bank_chisq"][...],
-        "cont_chisq": trigs["/network/my_network_cont_chisq"][...],
-        "time_slide_id": trigs["/network/slide_id"][...],
-        "mass1": trigs["/network/mass1"][...],
-        "mass2": trigs["/network/mass2"][...],
-        "mchirp": trigs["/network/mchirp"][...],
-        "nifos": trigs["/network/nifo"][...].astype(int)
-    }
-    # Load ifos data into dictionary
-    for ifo in ifos:
-        ifo_keys = list(trigs[ifo].keys())
-        if "search" in ifo_keys:
-            ifo_keys.remove("search")
-        for key in ifo_keys:
-            if 'snr' in key:
-                data[key.split('_')[0] + '_' + ifo] = trigs[ifo][key][...]
-            else:
-                data[key + '_' + ifo] = trigs[ifo][key][...]
-    return data
-
-
 # =============================================================================
 # Detector utils:
 # * Function to calculate the antenna response F+^2 + Fx^2
