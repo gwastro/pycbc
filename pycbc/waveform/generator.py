@@ -1115,13 +1115,21 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
     """
     def __init__(
         self,
-        epoch,
+        rFrameGeneratorClass=None,
+        epoch=None,
         detectors=None,
         variable_args=(),
         gates=None,
         recalib=None,
         **frozen_params
     ):
+
+        if rFrameGeneratorClass is not None:
+            raise ValueError(
+                f"{self.__class__.__name__} does not supprt using a radiation "
+                "frame generator class."
+            )
+
         self.set_epoch(epoch)
         self.detectors = detectors
 
@@ -1135,14 +1143,13 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
             )
 
         if detectors is None:
-            raise ValueError("Must specify detectors!")
+            raise ValueError(
+                f"Must specify detectors to use {self.__class__.__name__}."
+            )
 
-        # get_fd_det_waveform should take an `ifos` argument, so we add it to
-        # the frozen params
         super().__init__(
             waveform.get_fd_det_waveform,
             variable_args=variable_args,
-            ifos=detectors,
             **frozen_params
         )
 
@@ -1160,7 +1167,27 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
 
     @staticmethod
     def select_rframe_generator(approximant):
+        """Returns the radiation frame generator.
+
+        Returns ``None`` since this class does not support generating waveforms
+        in the radiation frame.
+        """
         return None
+
+    def generate(self, **kwargs):
+        """Generates and returns a waveform in the detector frame.
+
+        Returns
+        -------
+        dict :
+            Dictionary of ``detector names -> h``, where is the waveform in the
+            specified detector.
+        """
+        wfs = super().generate(ifos=self.detectors, **kwargs)
+        for det in self.detectors:
+            wfs[det]._epoch = self._epoch
+            wfs[det] = apply_fd_time_shift(wfs[det], kwargs["tc"], copy=False)
+        return wfs
 
 
 #
