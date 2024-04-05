@@ -497,6 +497,7 @@ if args.run_daily_at is not None:
     # keep running and repeat the fitting every day at the given hour
     if not re.match('[0-9][0-9]:[0-9][0-9]:[0-9][0-9]', args.run_daily_at):
         parser.error('--run-daily-at takes a UTC time in the format HH:MM:SS')
+    logging.info('Starting in daily run mode')
     while True:
         wait_for_utc_time(args.run_daily_at)
         logging.info('==== Time to update the single fits, waking up ====')
