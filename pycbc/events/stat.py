@@ -845,8 +845,10 @@ class ExpFitStatistic(QuadratureSumStatistic):
             The thresh fit value(s)
         """
         try:
+            # Exists where trigs is a class with the template num attribute
             tnum = trigs.template_num
         except AttributeError:
+            # Exists where trigs is dict-like
             tnum = trigs['template_id']
 
         try:
@@ -1546,13 +1548,13 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         """
 
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
+        # Find total volume of phase-time-amplitude space occupied by
+        # noise coincs
         if 'dets' in kwargs:
             ln_noise_rate = coinc_rate.combination_noise_lograte(
                                     sngl_rates, kwargs['time_addition'],
                                     kwargs['dets'])
-
-            # Find total volume of phase-time-amplitude space occupied by
-            # noise coincs
+                                    
             # Extent of time-difference space occupied
             noise_twindow = coinc_rate.multiifo_noise_coincident_area(
                                 self.hist_ifos, kwargs['time_addition'],
