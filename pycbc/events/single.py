@@ -3,7 +3,7 @@
 import logging
 import h5py
 import numpy as np
-from pycbc.events import ranking, trigger_fits as fits
+from pycbc.events import ranking, trigger_fits as fits, stat
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
 from pycbc import bin_utils
@@ -18,11 +18,22 @@ class LiveSingle(object):
                  duration_threshold=0,
                  fit_file=None,
                  sngl_ifar_est_dist=None,
-                 fixed_ifar=None):
+                 fixed_ifar=None,
+                 statistic=None,
+                 sngl_ranking=None,
+                 stat_files=None):
         self.ifo = ifo
         self.fit_file = fit_file
         self.sngl_ifar_est_dist = sngl_ifar_est_dist
         self.fixed_ifar = fixed_ifar
+
+        stat_class = stat.get_statistic(statistic)
+        self.stat_calculator = stat_class(
+            sngl_ranking,
+            stat_files,
+            ifos=[ifo],
+            **kwargs
+        )
 
         self.thresholds = {
             "newsnr": newsnr_threshold,
@@ -33,9 +44,10 @@ class LiveSingle(object):
     def insert_args(parser):
         parser.add_argument('--single-newsnr-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction,
-                            help='Newsnr min threshold for single triggers. '
-                                 'Can be given as a single value or as '
-                                 'detector-value pairs, e.g. H1:6 L1:7 V1:6.5')
+                            help='Reweighted SNR min threshold for '
+                                 'single-detector events. Can be given '
+                                 'as a single value or as detector-value '
+                                 'pairs, e.g. H1:6 L1:7 V1:6.5')
         parser.add_argument('--single-reduced-chisq-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction,
                             help='Maximum reduced chi-squared threshold for '
@@ -147,7 +159,10 @@ class LiveSingle(object):
            duration_threshold=args.single_duration_threshold[ifo],
            fixed_ifar=args.single_fixed_ifar,
            fit_file=args.single_fit_file,
-           sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo]
+           sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo],
+           statistic=args.ranking_statistic,
+           sngl_ranking=args.sngl_ranking,
+           stat_files=args.statistic_files
            )
 
     def check(self, trigs, data_reader):
@@ -158,35 +173,53 @@ class LiveSingle(object):
         # Apply cuts to trigs before clustering
         # Cut on snr so that triggers which could not reach newsnr
         # threshold do not have newsnr calculated
+        if 'psd_var_val' in trigs:
+            # We should apply the PSD variation rescaling, as this can
+            # re-weight the SNR to be above SNR
+            trig_chisq = trigs['chisq'] / trigs['psd_var_val']
+            trig_snr = trigs['snr'] / (trigs['psd_var_val'] ** 0.5)
+        else:
+            trig_chisq = trigs['chisq']
+            trig_snr = trigs['snr']
+
         valid_idx = (trigs['template_duration'] >
                      self.thresholds['duration']) & \
-                    (trigs['chisq'] <
+                    (trig_chisq <
                      self.thresholds['reduced_chisq']) & \
-                    (trigs['snr'] >
+                    (trigs_snr >
                      self.thresholds['newsnr'])
         if not np.any(valid_idx):
             return None
 
-        cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
+        cut_trigs = {k: trigs[k][valid_idx] for k in trigs}
 
-        # This uses the pycbc live convention of chisq always meaning the
-        # reduced chisq.
-        nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
-                                  cutdurchi_trigs['chisq'])
-        nsnr_idx = nsnr_all > self.thresholds['newsnr']
-        if not np.any(nsnr_idx):
+        # Convert back from the pycbc live convention of chisq always
+        # meaning the reduced chisq.
+        trigsc = copy.copy(cut_trigs)
+        trigsc['ifo'] = self.ifo
+        trigsc['chisq'] = cut_trigs['chisq'] * cut_trigs['chisq_dof']
+        trigsc['chisq_dof'] = (cut_trigs['chisq_dof'] + 2) / 2
+
+        # Calculate the ranking reweighted SNR for cutting
+        single_rank = self.stat_calculator.get_single_ranking(trigsc)
+        sngl_idx = single_rank > self.thresholds['newsnr']
+        if not np.any(sngl_idx):
             return None
 
-        cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
+        cutall_trigs = {k: trigsc[k][sngl_idx]
                         for k in trigs}
 
-        # 'cluster' by taking the maximal newsnr value over the trigger set
-        i = nsnr_all[nsnr_idx].argmax()
+        # Calculate the ranking statistic
+        sngl_stat = self.stat_calculator.single(cutall_trigs)
+        rank = self.stat_calculator.rank_stat_single((ifo, sngl_stat))
+
+        # 'cluster' by taking the maximal statistic value over the trigger set
+        i = rank.argmax()
 
         # calculate the (inverse) false-alarm rate
-        nsnr = nsnr_all[nsnr_idx][i]
-        dur = cutall_trigs['template_duration'][i]
-        ifar = self.calculate_ifar(nsnr, dur)
+        sngl_rank = rank[i]
+        dur = trigsc['template_duration'][i]
+        ifar = self.calculate_ifar(sngl_rank, dur)
         if ifar is None:
             return None
 
@@ -194,7 +227,7 @@ class LiveSingle(object):
         candidate = {
             f'foreground/{self.ifo}/{k}': cutall_trigs[k][i] for k in trigs
         }
-        candidate['foreground/stat'] = nsnr
+        candidate['foreground/stat'] = sngl_rank
         candidate['foreground/ifar'] = ifar
         candidate['HWINJ'] = data_reader.near_hwinj()
         return candidate
@@ -232,8 +265,12 @@ class LiveSingle(object):
             )
             return None
 
-        rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
-                                          coeff, thresh)[0]
+        rate_louder = rate * fits.cum_fit(
+            'exponential',
+            [sngl_ranking],
+            coeff,
+            thresh
+        )[0]
 
         # apply a trials factor of the number of duration bins
         rate_louder *= len(rates)
