@@ -881,9 +881,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.lookback_time = (ifar_limit * lal.YRJUL_SI * timeslide_interval) ** 0.5
         self.buffer_size = int(numpy.ceil(self.lookback_time / analysis_block))
 
-        self.dets = {}
-        for ifo in ifos:
-            self.dets[ifo] = Detector(ifo)
+        self.dets = {ifo: Detector(ifo) for ifo in ifos}
 
         self.time_window = self.dets[ifos[0]].light_travel_time_to_detector(
             self.dets[ifos[1]]) + coinc_window_pad
@@ -1177,9 +1175,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             # Find newly added triggers in fixed_ifo
             trigs = results[fixed_ifo]
             # Calculate mchirp as a vectorized operation
-            mass1s = trigs['mass1']
-            mass2s = trigs['mass2']
-            mchirps = mchirp_from_mass1_mass2(mass1s, mass2s)
+            mchirps = mchirp_from_mass1_mass2(
+                trigs['mass1'], trigs['mass2']
+            )
             # Loop over them one trigger at a time
             for i in range(len(trigs['end_time'])):
                 trig_stat = trigs['stat'][i]

@@ -147,9 +147,7 @@ def multiifo_noise_coincident_area(ifos, slop, dets=None):
     """
     # set up detector objects
     if dets is None:
-        dets = {}
-        for ifo in ifos:
-            dets[ifo] = pycbc.detector.Detector(ifo)
+        dets = {ifo: pycbc.detector.Detector(ifo) for ifo in ifos}
     n_ifos = len(ifos)
 
     if n_ifos == 2:
