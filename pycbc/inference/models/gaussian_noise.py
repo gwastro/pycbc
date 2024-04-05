@@ -707,6 +707,15 @@ class GaussianNoise(BaseGaussianNoise):
         log likelihood. Default is to not include it.
     static_params : dict, optional
         A dictionary of parameter names -> values to keep fixed.
+    det_frame_waveform : bool
+        If True, the waveform will be generated directly in the detector frame
+        using the
+        :py:class:`~pycbc.waveform.generator.FDomainDirectDetFrameGenerator`.
+        This requires the approximant be implemented in
+        :py:func:`~pycbc.waveform.get_fd_det_waveform`.
+        If False, the
+        :py:class:`~pycbc.waveform.generator.FDomainDetFrameGenerator` will be
+        used instead. Defaults to :code:`False`.
     \**kwargs :
         All other keyword arguments are passed to ``BaseDataModel``.
 
