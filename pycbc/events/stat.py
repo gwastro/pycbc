@@ -2409,11 +2409,6 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         """Get dq values for a specific ifo and dq states"""
 
         try:
-            tnum = trigs.template_num
-        except AttributeError:
-            tnum = trigs['template_id']
-
-        try:
             ifo = trigs.ifo
         except AttributeError:
             ifo = trigs['ifo']
@@ -2422,8 +2417,9 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             ifo = ifo[0]
 
         dq_state = trigs['dq_state']
-        dq_val = numpy.zeros(len(dq_state))
+        dq_val = numpy.ones(len(dq_state))
 
+        tnum = self.curr_tnum
         if ifo in self.dq_rates_by_state:
             for (i, st) in enumerate(dq_state):
                 if isinstance(tnum, numpy.ndarray):
