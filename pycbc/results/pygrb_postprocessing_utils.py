@@ -534,8 +534,9 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
                                for event_index in event_indices])
         trig_snr[slide_id] = numpy.array([trigs['network/coherent_snr'][event_index]
                               for event_index in event_indices])
-        trig_bestnr[slide_id] = numpy.array([trigs['/network/reweighted_snr'][event_index]
-                                 for event_index in event_indices])
+        trig_bestnr[slide_id] = numpy.array([1 if trigs['/network/reweighted_snr'][event_index] 
+                                             >= opts.newsnr_threshold
+                                             else 0 for event_index in event_indices])
         trig_bestnr[slide_id][trig_bestnr[slide_id] < opts.newsnr_threshold] = 0
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
