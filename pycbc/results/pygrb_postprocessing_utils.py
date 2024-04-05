@@ -583,38 +583,6 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
 
 
 # =============================================================================
-# Function to load injections
-# =============================================================================
-
-
-def load_injections(inj_file, vetoes, sim_table=False, label=None):
-    """Loads injections from PyGRB output file"""
-
-    if label is None:
-        logging.info("Loading injections...")
-    else:
-        logging.info("Loading %s...", label)
-
-    insp_table = glsctables.MultiInspiralTable
-    if sim_table:
-        insp_table = glsctables.SimInspiralTable
-
-    # Load injections in injection file
-    inj_table = load_xml_table(inj_file, insp_table.tableName)
-
-    # Extract injections in time-slid non-vetoed data
-    injs = lsctables.New(insp_table, columns=insp_table.loadcolumns)
-    injs.extend(inj for inj in inj_table if inj.get_end() not in vetoes)
-
-    if label is None:
-        logging.info("%d injections found.", len(injs))
-    else:
-        logging.info("%d %s found.", len(injs), label)
-
-    return injs
-
-
-# =============================================================================
 # Function to load timeslides
 # =============================================================================
 def load_time_slides(hdf_file_path):
