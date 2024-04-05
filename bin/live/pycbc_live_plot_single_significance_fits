@@ -81,6 +81,8 @@ with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
     stats = {ifo: {} for ifo in ifos}
     durations = {ifo: {} for ifo in ifos}
     for ifo in ifos:
+        if 'triggers' not in trfit_f[ifo]:
+            continue
         stats[ifo] = trfit_f[ifo]['triggers']['stat'][:]
         durations[ifo] = trfit_f[ifo]['triggers']['template_duration'][:]
     live_time = {ifo: trfit_f[ifo].attrs['live_time'] for ifo in ifos}

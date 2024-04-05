@@ -101,7 +101,7 @@ for f in args.trfits_files:
         gps_last = 0
         gps_first = np.inf
         for ifo in args.ifos:
-            if ifo not in fits_f:
+            if ifo not in fits_f or 'triggers' not in fits_f[ifo]:
                 continue
             trig_times = fits_f[ifo]['triggers']['end_time'][:]
             gps_last = max(gps_last, trig_times.max())
