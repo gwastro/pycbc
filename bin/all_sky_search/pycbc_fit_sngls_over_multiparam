@@ -262,10 +262,9 @@ median_sigma = numpy.array([], dtype=float)
 
 logging.info("Loading input template fits")
 
-# This will be used to check the fit files have the same number of templates
-# (therefore probably using the same bank)
+# Check on fit files having the same number of templates, as expected if
+# they use the same bank
 num_templates = None
-
 for filename in args.template_fit_file:
     with h5py.File(filename, 'r') as fits:
         if num_templates is None:
