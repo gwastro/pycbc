@@ -516,7 +516,8 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
     trig_bestnr = {}
     for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
-        indices = numpy.nonzero(numpy.isin(trigs['network/event_id'], slide_trigs))[0]
+        indices = numpy.nonzero(
+            numpy.isin(trigs['network/event_id'], slide_trigs))[0]
         if slide_trigs:
             trig_time[slide_id] = trigs['network/end_time_gc'][
                 indices]
