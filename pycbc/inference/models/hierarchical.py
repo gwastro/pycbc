@@ -640,6 +640,10 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.other_models.pop(kwargs['primary_lbl'][0])
         self.other_models = list(self.other_models.values())
 
+        # determine whether to accelerate total_loglr
+        from pycbc.inference.models.tools import str_to_bool
+        self.accelerate_loglr = str_to_bool(kwargs['acclerate_loglr'][0])
+
     def write_metadata(self, fp, group=None):
         """Adds metadata to the output files
 
@@ -697,14 +701,27 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         if 'logw_partial' in margin_names_vector:
             margin_names_vector.remove('logw_partial')
 
+        i_max = numpy.argmax(
+            self.primary_model.marginalize_vector_params['logw_partial'])
+
         margin_params = {}
         nums = 1
-        for key, value in self.primary_model.current_params.items():
-            # add marginalize_vector_params
-            if key in margin_names_vector:
-                margin_params[key] = value
-                if isinstance(value, numpy.ndarray):
-                    nums = len(value)
+
+        if self.accelerate_loglr:
+            # Due to the high precision of extrinsic parameters constrined
+            # by the primary model, the mismatch of wavefroms in others by
+            # varing those parameters is pretty small, so we can keep them
+            # static to accelerate total_loglr.
+            for p in margin_names_vector:
+                margin_params[p] = \
+                    self.primary_model.marginalize_vector_params[p][i_max]
+        else:
+            for key, value in self.primary_model.current_params.items():
+                # add marginalize_vector_params
+                if key in margin_names_vector:
+                    margin_params[key] = value
+                    if isinstance(value, numpy.ndarray):
+                        nums = len(value)
         # add distance if it has been marginalized,
         # use numpy array for it is just let it has the same
         # shape as marginalize_vector_params, here we assume
@@ -736,10 +753,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             sh_others = sh_others[0]
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
-
-        # calculate marginalize_vector_weights
-        self.primary_model.marginalize_vector_weights = \
-            - numpy.log(self.primary_model.vsamples)
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
         return loglr
 
@@ -804,6 +817,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                                        submodel_lbls))
         sparam_map = map_params(hpiter(cp.options('static_params'),
                                        submodel_lbls))
+        # get the acceleration label
+        kwargs['acclerate_loglr'] = shlex.split(
+            cp.get('model', 'accelerate_others_in_total_loglr'))
 
         # we'll need any waveform transforms for the initializing sub-models,
         # as the underlying models will receive the output of those transforms
