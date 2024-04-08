@@ -3,6 +3,8 @@
 import logging
 import h5py
 import numpy as np
+import copy
+
 from pycbc.events import ranking, trigger_fits as fits, stat
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
@@ -21,7 +23,8 @@ class LiveSingle(object):
                  fixed_ifar=None,
                  statistic=None,
                  sngl_ranking=None,
-                 stat_files=None):
+                 stat_files=None,
+                 **kwargs):
         self.ifo = ifo
         self.fit_file = fit_file
         self.sngl_ifar_est_dist = sngl_ifar_est_dist
@@ -153,6 +156,15 @@ class LiveSingle(object):
 
     @classmethod
     def from_cli(cls, args, ifo):
+        from . import stat
+        # Allow None inputs
+        stat_files = args.statistic_files or []
+        stat_keywords = args.statistic_keywords or []
+
+        # flatten the list of lists of filenames to a single list (may be empty)
+        stat_files = sum(stat_files, [])
+
+        kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
         return cls(
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
@@ -162,7 +174,8 @@ class LiveSingle(object):
            sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo],
            statistic=args.ranking_statistic,
            sngl_ranking=args.sngl_ranking,
-           stat_files=args.statistic_files
+           stat_files=stat_files,
+           **kwargs
            )
 
     def check(self, trigs, data_reader):
@@ -186,7 +199,7 @@ class LiveSingle(object):
                      self.thresholds['duration']) & \
                     (trig_chisq <
                      self.thresholds['reduced_chisq']) & \
-                    (trigs_snr >
+                    (trig_snr >
                      self.thresholds['newsnr'])
         if not np.any(valid_idx):
             return None
@@ -201,7 +214,7 @@ class LiveSingle(object):
         trigsc['chisq_dof'] = (cut_trigs['chisq_dof'] + 2) / 2
 
         # Calculate the ranking reweighted SNR for cutting
-        single_rank = self.stat_calculator.get_single_ranking(trigsc)
+        single_rank = self.stat_calculator.get_sngl_ranking(trigsc)
         sngl_idx = single_rank > self.thresholds['newsnr']
         if not np.any(sngl_idx):
             return None
@@ -211,7 +224,7 @@ class LiveSingle(object):
 
         # Calculate the ranking statistic
         sngl_stat = self.stat_calculator.single(cutall_trigs)
-        rank = self.stat_calculator.rank_stat_single((ifo, sngl_stat))
+        rank = self.stat_calculator.rank_stat_single((self.ifo, sngl_stat))
 
         # 'cluster' by taking the maximal statistic value over the trigger set
         i = rank.argmax()
