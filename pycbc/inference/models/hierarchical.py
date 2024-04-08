@@ -701,9 +701,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         if 'logw_partial' in margin_names_vector:
             margin_names_vector.remove('logw_partial')
 
-        i_max = numpy.argmax(
-            self.primary_model.marginalize_vector_params['logw_partial'])
-
+        i_max = numpy.argmax(sh_primary - 0.5 * hh_primary)
         margin_params = {}
         nums = 1
 
