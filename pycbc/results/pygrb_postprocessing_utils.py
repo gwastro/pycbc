@@ -516,13 +516,17 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
     trig_bestnr = {}
     for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
+        indices = numpy.nonzero(
+            numpy.isin(trigs['network/event_id'], slide_trigs))[0]
         if slide_trigs:
-            trig_time[slide_id] = trigs['network/end_time_gc'][slide_trigs]
-            trig_snr[slide_id] = trigs['network/coherent_snr'][slide_trigs]
+            trig_time[slide_id] = trigs['network/end_time_gc'][
+                indices]
+            trig_snr[slide_id] = trigs['network/coherent_snr'][
+                indices]
         else:
             trig_time[slide_id] = numpy.asarray([])
             trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][slide_trigs]
+        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][indices]
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
@@ -776,9 +780,7 @@ def get_coinc_snr(trigs_or_injs, ifos):
     single_snr_sq = dict((ifo, None) for ifo in ifos)
     snr_sum_square = numpy.zeros(num_trigs_or_injs)
     for ifo in ifos:
-        key = ifo + '/snr_' + ifo.lower()
-        if ifo.lower() != 'h1':
-            key = key[:-1]
+        key = ifo + '/snr'
         # Square the individual SNRs
         single_snr_sq[ifo] = numpy.square(
             trigs_or_injs[key][:])

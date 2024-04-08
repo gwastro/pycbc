@@ -137,11 +137,7 @@ inj_data = load_data(inj_file, vetoes, injections=True)
 # Specify HDF file keys for x quantity (time) and y quantity (SNR)
 if snr_type == 'single':
     x_key = opts.ifo + '/end_time'
-    y_key = opts.ifo + '/snr_' + opts.ifo.lower()
-    # TODO: Undoes current L710 in EventManagerCoherent.write_to_hdf
-    # and is ugly hardcoded!
-    if opts.ifo.lower() != 'h1':
-        y_key = y_key[:-1]
+    y_key = opts.ifo + '/snr'
 else:
     x_key = 'network/end_time_gc'
     y_key = 'network/' + snr_type + '_snr'

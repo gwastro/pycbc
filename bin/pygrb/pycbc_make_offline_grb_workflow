@@ -413,9 +413,8 @@ post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
 pp_files = _workflow.FileList([])
 results_files = _workflow.FileList([])
 if post_proc_method == "PYGRB_OFFLINE":
-    # The content and structure of pp_files are described in the definition
-    # of _workflow.setup_pygrb_pp_workflow
-    pp_files = _workflow.setup_pygrb_pp_workflow(wflow, pp_dir, seg_dir,
+    trig_comb_files, clustered_files, inj_find_files, inj_comb_files =\
+        _workflow.setup_pygrb_pp_workflow(wflow, pp_dir, seg_dir,
                                       sciSegs[ifo][0], full_bank_file, inspiral_files,
                                       injs, inj_insp_files, inj_tags)
     sec_name = 'workflow-pygrb_pp_workflow'
@@ -425,8 +424,10 @@ if post_proc_method == "PYGRB_OFFLINE":
     else:
         logging.info('Entering results module')
         results_files = _workflow.setup_pygrb_results_workflow(wflow, pp_dir,
-                                                               pp_files[1],
-                                                               pp_files[-2])
+                                                               clustered_files,
+                                                               inj_comb_files,
+                                                               full_bank_file,
+                                                               seg_dir)
         logging.info('Leaving results module')
 
 all_files.extend(pp_files)
