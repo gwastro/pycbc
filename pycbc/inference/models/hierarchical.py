@@ -701,7 +701,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         if 'logw_partial' in margin_names_vector:
             margin_names_vector.remove('logw_partial')
 
-        i_max = numpy.argmax(sh_primary - 0.5 * hh_primary)
         margin_params = {}
         nums = 1
 
@@ -710,9 +709,14 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # by the primary model, the mismatch of wavefroms in others by
             # varing those parameters is pretty small, so we can keep them
             # static to accelerate total_loglr.
+            i_max_extrinsic = numpy.argmax(sh_primary - 0.5 * hh_primary)
             for p in margin_names_vector:
-                margin_params[p] = \
-                    self.primary_model.marginalize_vector_params[p][i_max]
+                if isinstance(self.primary_model.current_params[p],
+                              numpy.ndarray):
+                    margin_params[p] = \
+                        self.primary_model.current_params[p][i_max_extrinsic]
+                else:
+                    margin_params[p] = self.primary_model.current_params[p]
         else:
             for key, value in self.primary_model.current_params.items():
                 # add marginalize_vector_params
