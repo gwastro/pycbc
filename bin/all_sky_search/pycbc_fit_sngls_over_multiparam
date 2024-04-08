@@ -88,7 +88,12 @@ def smooth_tophat(nabove, invalphan, ntotal, dists):
                             idx_within_area)
 
 
-def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500):
+# This is the default number of triggers required for n_closest smoothing
+_default_total_trigs = 500
+
+
+def smooth_n_closest(nabove, invalphan, ntotal, dists,
+                     total_trigs=_default_total_trigs):
     """
     Smooth templates according to the closest N templates
     No weighting is applied
@@ -97,13 +102,11 @@ def smooth_n_closest(nabove, invalphan, ntotal, dists, total_trigs=500):
     templates_required = 0
     n_triggers = 0
     # Count number of templates required to gather total_trigs templates,
-    # start at closest
-    # total_trigs, if supplied on command line will be a str so convert to int
-    while n_triggers < int(total_trigs):
-        n_triggers += nabove[dist_sort[n_triggers]]
-        templates_required += 1
-    logging.debug("%d templates required to obtain %d triggers",
-                  templates_required, n_triggers)
+    # starting at closest
+    ntcs = nabove[dist_sort].cumsum()
+    templates_required = numpy.searchsorted(ntcs, total_trigs) + 1
+    logging.debug("%d template(s) required to obtain %d(>%d) triggers",
+                  templates_required, ntcs[templates_required - 1], total_trigs)
     idx_to_smooth = dist_sort[:templates_required]
     return smooth_templates(nabove, invalphan, ntotal, idx_to_smooth)
 
@@ -174,9 +177,11 @@ parser = argparse.ArgumentParser(usage="",
 
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action=pycbc.version.Version)
-parser.add_argument("--template-fit-file", required=True,
-                    help="hdf5 file containing fit coefficients for each"
-                         " individual template. Required")
+parser.add_argument("--template-fit-file", required=True, nargs='+',
+                    help="hdf5 file(s) containing fit coefficients for each "
+                         "individual template. Can smooth over multiple "
+                         "files provided they correspond to the same bank "
+                         "and fitting settings. Required")
 parser.add_argument("--bank-file", required=True,
                     help="hdf file containing template parameters. Required")
 parser.add_argument("--output", required=True,
@@ -236,22 +241,140 @@ for inputstr in smooth_kwargs:
         key, value = inputstr.split(':')
         kwarg_dict[key] = value
     except ValueError:
-            err_txt = "--smoothing-keywords must take input in the " \
-                      "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                      "Received {}".format(' '.join(args.smoothing_keywords))
-            raise ValueError(err_txt)
+        err_txt = "--smoothing-keywords must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                  "Received {}".format(' '.join(args.smoothing_keywords))
+        raise ValueError(err_txt)
 
 assert len(args.log_param) == len(args.fit_param) == len(args.smoothing_width)
 
 init_logging(args.verbose)
 
-fits = h5py.File(args.template_fit_file, 'r')
+analysis_time = 0
+attr_dict = {}
 
-# get the ifo from the template-level fit
-ifo = fits.attrs['ifo']
+# These end up as n_files * n_templates arrays
+tid = numpy.array([], dtype=int)
+nabove = numpy.array([], dtype=int)
+ntotal = numpy.array([], dtype=int)
+alpha = numpy.array([], dtype=float)
+median_sigma = numpy.array([], dtype=float)
 
-# get template id and template parameter values
-tid = fits['template_id'][:]
+logging.info("Loading input template fits")
+
+# Check on fit files having the same number of templates, as expected if
+# they use the same bank
+num_templates = None
+for filename in args.template_fit_file:
+    with h5py.File(filename, 'r') as fits:
+        if num_templates is None:
+            num_templates = fits['template_id'].size
+        elif not num_templates == fits['template_id'].size:
+            raise RuntimeError(
+                "Input fit files correspond to different banks. "
+                "This situation is not yet supported."
+            )
+        # get attributes from the template-level fit
+        for k in fits.attrs.keys():
+            if k == 'analysis_time':
+                # For this attribute only, we want the mean
+                analysis_time += fits.attrs['analysis_time']
+                continue
+            if k not in attr_dict:
+                # It's the first time we encounter this attribute
+                attr_dict[k] = fits.attrs[k]
+            elif k == 'ifo':
+                # We don't mind if this attribute is different, however the
+                # output attributes will only correspond to the first file's
+                # IFO. Warn if different IFOs are being used.
+                if not attr_dict[k] == fits.attrs[k]:
+                    logging.warning(
+                        "Fit files correspond to different IFOs: %s and %s, "
+                        "only %s is being used for output file attributes",
+                        attr_dict[k], fits.attrs[k], attr_dict[k],
+                    )
+                continue
+            elif not attr_dict[k] == fits.attrs[k]:
+                # Check that the files are consistent with one another
+                err_msg = f"Input files are not consistent, file {filename} "
+                err_msg += f"has attribute {k} of {fits.attrs[k]}, whereas "
+                err_msg += f"previous files have value {attr_dict[k]}"
+                raise RuntimeError(err_msg)
+
+        # get template id and template parameter values
+        tid = numpy.concatenate((tid, fits['template_id'][:]))
+        nabove = numpy.concatenate((nabove, fits['count_above_thresh'][:]))
+        ntotal = numpy.concatenate((ntotal, fits['count_in_template'][:]))
+        alpha = numpy.concatenate((alpha, fits['fit_coeff'][:]))
+        try:
+            median_sigma = numpy.concatenate((median_sigma, fits['median_sigma'][:]))
+        except KeyError:
+            logging.info('Median_sigma dataset not present in input file')
+            median_sigma = None
+
+# For an exponential fit 1/alpha is linear in the trigger statistic values
+# so calculating weighted sums or averages of 1/alpha is appropriate
+invalpha = 1. / alpha
+invalphan = invalpha * nabove
+
+# convert the sum above into a mean
+analysis_time /= len(args.template_fit_file)
+
+if len(args.template_fit_file) > 1:
+    # From the n_templates * n_files arrays, average within each template.
+    # To do this, we average the n_files occurrences which have the same tid
+
+    # The linearity of the average means that we can do this in two steps
+    # without biasing the final result.
+    logging.info("Averaging within the same template for multiple files")
+    tid_unique = numpy.unique(tid)
+
+    # sort into template_id order
+    tidsort = tid.argsort()
+
+    # For each unique template id, find the range of identical template ids
+    left = numpy.searchsorted(tid[tidsort], tid_unique, side='left')
+    right = numpy.searchsorted(tid[tidsort], tid_unique, side='right') - 1
+
+    # Precompute the sums so we can quickly look up differences
+    nasum = nabove[tidsort].cumsum()
+    invsum = invalphan[tidsort].cumsum()
+    ntsum = ntotal[tidsort].cumsum()
+    mssum = median_sigma[tidsort].cumsum()
+    num = right - left
+
+    tid = tid_unique
+    nabove = (nasum[right] - nasum[left]) / num
+    invalphan = (invsum[right] - invsum[left]) / num
+    ntotal = (ntsum[right] - ntsum[left]) / num
+    median_sigma = (mssum[right] - mssum[left]) / num
+
+if args.output_fits_by_template:
+    # Store fit_by_template values for output file
+    # For more than one input fit file, these values are averaged over the same
+    # template in different files
+    fbt_dict = {
+        'count_above_thresh': nabove,
+        'count_in_template': ntotal,
+    }
+    with numpy.errstate(invalid='ignore'):
+        # If n_above is zero, then we'll get an 'invalid' warning as we
+        # are dividing zero by zero. This is normal, and we'll deal with
+        # those properly just below, so ignore this so people don't see
+        # a warning and panic
+        alpha = nabove / invalphan
+    alpha[nabove == 0] = -100
+    fbt_dict['fit_coeff'] = alpha
+
+n_required = _default_total_trigs if 'total_trigs' not in kwarg_dict \
+    else kwarg_dict['total_trigs']
+if args.smoothing_method == 'n_closest' and n_required > nabove.sum():
+    logging.warning(
+        "There are %.2f triggers above threshold, not enough to give a "
+        "total of %d for smoothing",
+        nabove.sum(),
+        n_required
+    )
 
 logging.info('Calculating template parameter values')
 bank = h5py.File(args.bank_file, 'r')
@@ -272,13 +395,6 @@ for param, slog in zip(args.fit_param, args.log_param):
         parnames.append(f"log({param})")
     else:
         raise ValueError("invalid log param argument, use 'true', or 'false'")
-
-nabove = fits['count_above_thresh'][:]
-ntotal = fits['count_in_template'][:]
-# For an exponential fit 1/alpha is linear in the trigger statistic values
-# so calculating weighted sums or averages of 1/alpha is appropriate
-invalpha = 1. / fits['fit_coeff'][:]
-invalphan = invalpha * nabove
 
 nabove_smoothed = []
 alpha_smoothed = []
@@ -333,9 +449,6 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     logging.info("Cutting between %d and %d templates for each smoothing",
                  n_removed.min(), n_removed.max())
     # Sort the values to be smoothed by parameter value
-    nabove = nabove[par_sort]
-    invalphan = invalphan[par_sort]
-    ntotal = ntotal[par_sort]
     logging.info("Smoothing ...")
     slices = [slice(l,r) for l, r in zip(lefts, rights)]
     for i in rang:
@@ -343,9 +456,9 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
         slc = slices[i]
         d = dist(i, slc, parvals, args.smoothing_width)
 
-        smoothed_tuple = smooth(nabove[slc],
-                                invalphan[slc],
-                                ntotal[slc],
+        smoothed_tuple = smooth(nabove[par_sort][slc],
+                                invalphan[par_sort][slc],
+                                ntotal[par_sort][slc],
                                 d,
                                 args.smoothing_method,
                                 **kwarg_dict)
@@ -377,10 +490,8 @@ outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed
 outfile['count_in_template'] = ntotal_smoothed
-try:
-    outfile['median_sigma'] = fits['median_sigma'][:]
-except KeyError:
-    logging.info('Median_sigma dataset not present in input file')
+if median_sigma is not None:
+    outfile['median_sigma'] = median_sigma
 
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
     if slog in ['false', 'False', 'FALSE']:
@@ -389,16 +500,16 @@ for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
         outfile[param] = numpy.exp(vals)
 
 if args.output_fits_by_template:
-    outfile.create_group('fit_by_template')
-    for k in ['count_above_thresh', 'fit_coeff', 'count_in_template']:
-        outfile['fit_by_template'][k] = fits[k][:]
+    fbt_group = outfile.create_group('fit_by_template')
+    for k, v in fbt_dict.items():
+        fbt_group[k] = v
 
 # Add metadata, some is inherited from template level fit
-outfile.attrs['ifo'] = ifo
-outfile.attrs['stat_threshold'] = fits.attrs['stat_threshold']
-if 'analysis_time' in fits.attrs:
-    outfile.attrs['analysis_time'] = fits.attrs['analysis_time']
+for k, v in attr_dict.items():
+    outfile.attrs[k] = v
+if not analysis_time == 0:
+    outfile.attrs['analysis_time'] = analysis_time
 
 # Add a magic file attribute so that coinc_findtrigs can parse it
-outfile.attrs['stat'] = ifo + '-fit_coeffs'
+outfile.attrs['stat'] = attr_dict['ifo'] + '-fit_coeffs'
 logging.info('Done!')
