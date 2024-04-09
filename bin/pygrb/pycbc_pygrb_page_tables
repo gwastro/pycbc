@@ -48,6 +48,27 @@ __program__ = "pycbc_pygrb_page_tables"
 # =============================================================================
 # Functions
 # =============================================================================
+def additional_injection_data(data, ifos):
+    """Calculates chirp mass and effective sistance"""
+    data['mchirp'] = mchirp_from_mass1_mass2(data['mass1'],
+                                            data['mass2'])
+    eff_dist = 0
+    for ifo in ifos:
+        antenna = Detector(ifo)
+        data['eff_dist_%s' % ifo] = antenna.effective_distance(
+                                    data['distance'],
+                                    data['ra'],
+                                    data['dec'],
+                                    data['polarization'],
+                                    data['time'],
+                                    data['inclination']
+                                    )
+        eff_dist += 1.0 / data['eff_dist_%s' % ifo]
+    data['eff_dist'] = 1.0 / eff_dist
+    return data
+        
+    
+    
 def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
                                  background_bestnrs=None):
     """Loads found and missed injections from a PyGRB output hdf file as
@@ -77,30 +98,8 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     missed_data['time'] = inj_data['/missed/tc'][...]
 
     # Calculate effective distance for the ifos
-    found_data['eff_dist'] = 0
-    missed_data['eff_dist'] = 0
-    for ifo in ifos:
-        antenna = Detector(ifo)
-        found_data['eff_dist_%s' % ifo] = antenna.effective_distance(
-                                    found_data['distance'],
-                                    found_data['ra'],
-                                    found_data['dec'],
-                                    found_data['polarization'],
-                                    found_data['time'],
-                                    found_data['inclination']
-                                    )
-        missed_data['eff_dist_%s' % ifo] = antenna.effective_distance(
-                                    missed_data['distance'],
-                                    missed_data['ra'],
-                                    missed_data['dec'],
-                                    missed_data['polarization'],
-                                    missed_data['time'],
-                                    missed_data['inclination']
-                                    )
-        found_data['eff_dist'] += 1.0 / found_data['eff_dist_%s' % ifo]
-        missed_data['eff_dist'] += 1.0 / missed_data['eff_dist_%s' % ifo]
-    found_data['eff_dist'] = 1.0 / found_data['eff_dist']
-    missed_data['eff_dist'] = 1.0 / missed_data['eff_dist']
+    found_data = additional_injection_data(found_data, ifos)
+    missed_data = additional_injection_data(missed_data, ifos)
 
     # Get recovered parameters and statistic values for the found injections
     # Recovered parameters
