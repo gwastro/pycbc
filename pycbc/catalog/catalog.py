@@ -37,16 +37,13 @@ logger = logging.getLogger('pycbc.catalog.catalog')
 
 # LVC catalogs
 base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
-_catalogs = {'GWTC-1-confident': 'LVC',
-             'GWTC-1-marginal': 'LVC',
-             'Initial_LIGO_Virgo': 'LVC',
-             'O1_O2-Preliminary': 'LVC',
-             'O3_Discovery_Papers': 'LVC',
-             'GWTC-2': 'LVC',
-             'GWTC-2.1-confident': 'LVC',
-             'GWTC-2.1-marginal': 'LVC',
-             'GWTC-3-confident': 'LVC',
-             'GWTC-3-marginal': 'LVC'}
+
+def lvk_catalogs():
+    _catalog_source = "https://gwosc.org/eventapi/json/"
+    catalog_list = get_file(_catalog_source)
+    return catalog_list
+
+_catalogs = {cname: 'LVK' for cname in lvk_catalogs.keys()}
 
 # add some aliases
 _aliases = {}
@@ -55,11 +52,9 @@ _aliases['gwtc-2'] = 'GWTC-2'
 _aliases['gwtc-2.1'] = 'GWTC-2.1-confident'
 _aliases['gwtc-3'] = 'GWTC-3-confident'
 
-
 def list_catalogs():
     """Return a list of possible GW catalogs to query"""
     return list(_catalogs.keys())
-
 
 def get_source(source):
     """Get the source data for a particular GW catalog

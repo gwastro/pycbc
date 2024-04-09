@@ -28,7 +28,7 @@ compact binary mergers
 import logging
 import numpy
 
-from . import catalog
+from . import catalog, list_catalogs
 
 logger = logging.getLogger('pycbc.catalog')
 
@@ -40,19 +40,17 @@ _aliases['snr'] = 'network_matched_filter_snr'
 _aliases['z'] = _aliases['redshift'] = 'redshift'
 _aliases['distance'] = 'luminosity_distance'
 
+def find_event_in_catalog(source='any'):
+    """ Get event data
+    """
+    if source == 'any':
+        catalogs = list_catalogs()
+    else:
+        catalogs = [source]
 
-class Merger(object):
-    """Informaton about a specific compact binary merger"""
-    def __init__(self, name, source='gwtc-1'):
-        """ Return the information of a merger
-
-        Parameters
-        ----------
-        name: str
-            The name (GW prefixed date) of the merger event.
-        """
+    for catalog in catalogs:
         try:
-            self.data = catalog.get_source(source)[name]
+            data = catalog.get_source(source)[name]
         except KeyError:
             # Try common name
             data = catalog.get_source(source)
@@ -60,11 +58,24 @@ class Merger(object):
                 cname = data[mname]['commonName']
                 if cname == name:
                     name = mname
-                    self.data = data[name]
+                    data = data[name]
                     break
-            else:
-                raise ValueError('Did not find merger matching'
-                                 ' name: {}'.format(name))
+    else:
+        raise ValueError('Did not find merger matching'
+                         ' name: {}'.format(name))
+    return data
+
+class Merger(object):
+    """Informaton about a specific compact binary merger"""
+    def __init__(self, name, source='any'):
+        """ Return the information of a merger
+
+        Parameters
+        ----------
+        name: str
+            The name (GW prefixed date) of the merger event.
+        """
+        self.data = find_event_in_catalog(source=source)
 
         # Set some basic params from the dataset
         for key in self.data:
