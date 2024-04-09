@@ -1015,7 +1015,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
         self.single_increasing = True
-        single.single_dtype = numpy.float32
+        self.single_dtype = numpy.float32
 
     def use_alphamax(self):
         """

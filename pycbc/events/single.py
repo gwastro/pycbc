@@ -1,11 +1,11 @@
 """ utilities for assigning FAR to single detector triggers
 """
 import logging
+import copy
 import h5py
 import numpy as np
-import copy
 
-from pycbc.events import ranking, trigger_fits as fits, stat
+from pycbc.events import trigger_fits as fits, stat
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
 from pycbc import bin_utils
@@ -156,7 +156,6 @@ class LiveSingle(object):
 
     @classmethod
     def from_cli(cls, args, ifo):
-        from . import stat
         # Allow None inputs
         stat_files = args.statistic_files or []
         stat_keywords = args.statistic_keywords or []
@@ -232,7 +231,7 @@ class LiveSingle(object):
         # calculate the (inverse) false-alarm rate
         sngl_rank = rank[i]
         dur = trigsc['template_duration'][i]
-        ifar = self.calculate_ifar(sngl_rank, dur)
+        ifar = self.calculate_ifar(rank, dur)
         if ifar is None:
             return None
 
@@ -240,7 +239,7 @@ class LiveSingle(object):
         candidate = {
             f'foreground/{self.ifo}/{k}': cutall_trigs[k][i] for k in trigs
         }
-        candidate['foreground/stat'] = sngl_rank
+        candidate['foreground/stat'] = rank
         candidate['foreground/ifar'] = ifar
         candidate['HWINJ'] = data_reader.near_hwinj()
         return candidate
