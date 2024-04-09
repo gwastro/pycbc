@@ -103,8 +103,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
 
     # Get recovered parameters and statistic values for the found injections
     # Recovered parameters
-    rec_params = ['mass1', 'mass2', 'spin1z', 'spin2z']
-    for param in rec_params:
+for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
         found_data['rec_%s' % param] = bank_file[param][inj_data['network/template_id']]
 
     found_data['end_time_gc'] = \
