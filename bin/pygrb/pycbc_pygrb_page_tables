@@ -68,6 +68,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     # Calculate injections mchirp
     missed_data['mchirp'] = mchirp_from_mass1_mass2(missed_data['mass1'],
                                                     missed_data['mass2'])
+    
     found_data['mchirp'] = mchirp_from_mass1_mass2(found_data['mass1'],
                                                    found_data['mass2'])
 
@@ -103,7 +104,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
 
     # Get recovered parameters and statistic values for the found injections
     # Recovered parameters
-for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
+    for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
         found_data['rec_%s' % param] = bank_file[param][inj_data['network/template_id']]
 
     found_data['end_time_gc'] = \
@@ -112,7 +113,8 @@ for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
         found_data['rec_mass1'],
         found_data['rec_mass2'])
     # Staistics value
-for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
+    filter_stats = ['coherent_snr', 'reweighted_snr', 'null_snr']
+    for param in filter_stats:
         found_data[param] = inj_data['/network/%s' % param][...]
     found_data['chisq'] = inj_data['/network/my_network_chisq'][...]
     found_data['nifos'] = inj_data['/network/nifo'][...].astype(int)
@@ -120,11 +122,9 @@ for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
     # Get the relative detector sensitivities averaged over the
     # parameters. This is used to marginalize over calibration errors.
     # also save the snr per ifo
-    snr_ifos = {'V1': 'v', 'H1': 'h1', 'L1': 'l'}
     for ifo in ifos:
         found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
-        found_data['snr_%s' % ifo] = inj_data[ifo + '/snr_' +
-                                              snr_ifos[ifo]][...]
+        found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
     # BestNRs
     found_data['bestnr'] = np.ones(len(found_data['reweighted_snr']))
     found_data['bestnr'][found_data['reweighted_snr'] < snr_threshold] = 0
