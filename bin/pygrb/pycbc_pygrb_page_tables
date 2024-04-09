@@ -111,8 +111,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         found_data['rec_mass1'],
         found_data['rec_mass2'])
     # Staistics value
-    filter_stats = ['coherent_snr', 'reweighted_snr', 'null_snr']
-    for param in filter_stats:
+    for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
         found_data[param] = inj_data['/network/%s' % param][...]
     found_data['chisq'] = inj_data['/network/my_network_chisq'][...]
     found_data['nifos'] = inj_data['/network/nifo'][...].astype(int)
@@ -392,6 +391,8 @@ if lofft_outfile or lofft_h5_outfile:
              bank_data['mass1'][trig_data['network/template_id'][trig_index]],
              bank_data['mass2'][trig_data['network/template_id'][trig_index]],
              mchirps[trig_index],
+             bank_data['spin1z'][trig_data['network/template_id'][trig_index]],
+             bank_data['spin2z'][trig_data['network/template_id'][trig_index]],
              trig_data['network/coherent_snr'][trig_index],
              trig_data['network/my_network_chisq'][trig_index],
              trig_data['network/null_snr'][trig_index]]
@@ -402,7 +403,7 @@ if lofft_outfile or lofft_h5_outfile:
 
     # th: table header
     th = ['Trial', 'Slide Num', 'p-value', 'GPS time',
-          'Rec. m1', 'Rec. m2', 'Rec. Mc',
+          'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z', 'Rec. spin2z',
           'SNR', 'Chi^2', 'Null SNR']
     th.extend(['%s SNR' % ifo for ifo in ifos])
     th.extend(['%s time shift (s)' % ifo for ifo in ifos])
@@ -433,7 +434,7 @@ if lofft_outfile or lofft_h5_outfile:
 
         # Format of table data
         format_strings = ['##.##', '##.##', None, '##.#####',
-                          '##.##', '##.##', '##.##',
+                          '##.##', '##.##', '##.##', '##.##', '##.##',
                           '##.##', '##.##', '##.##']
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##' for ifo in ifos])
@@ -512,7 +513,9 @@ if onsource_file:
              on_trigs['network/end_time_gc'][trig_index],
              bank_data['mass1'][on_trigs['network/template_id'][trig_index]],
              bank_data['mass2'][on_trigs['network/template_id'][trig_index]],
-             mchirps['mchirp'][on_trigs['network/template_id'][trig_index]],
+             mchirps[on_trigs['network/template_id'][trig_index]],
+             bank_data['spin1z'][on_trigs['network/template_id'][trig_index]],
+             bank_data['spin2z'][on_trigs['network/template_id'][trig_index]],
              on_trigs['network/coherent_snr'][trig_index],
              on_trigs['network/my_network_chisq'][trig_index],
              on_trigs['network/null_snr'][trig_index]] + \
@@ -523,8 +526,8 @@ if onsource_file:
                   [0 for ifo in ifos] + [0])
 
     # Table header
-    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc',\
-          'SNR', 'Chi^2', 'Null SNR'] +\
+    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z',
+            'Rec. spin2z', 'SNR', 'Chi^2', 'Null SNR'] + \
          ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
 
     td = list(zip(*td))
@@ -542,7 +545,7 @@ if onsource_file:
 
         # Format of table data
         format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
-                          '##.##', '##.##']
+                          '##.##', '##.##', '##.##', '##.##']
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##'])
 
@@ -741,7 +744,8 @@ if do_injections:
           'Chi^2', 'Null SNR'] +\
          ['SNR %s' % ifo for ifo in ifos] +\
          ['BestNR', 'Inj S1x', 'Inj S1y', 'Inj S1z',\
-                    'Inj S2x', 'Inj S2y', 'Inj S2z']
+                    'Inj S2x', 'Inj S2y', 'Inj S2z',
+                    'Rec S1z', 'Rec S2z']
     # Format of table data
     format_strings = ['##.##']
     format_strings.extend(['##.##' for ifo in ifos])
@@ -752,8 +756,9 @@ if do_injections:
                            '##.##', '##.##', '##.##'])
     format_strings.extend(['##.##' for ifo in ifos])
     format_strings.extend(['##.##',
-                           '##.##', '##.##', '##.##', '##.##', '##.##',
-                           '##.##'])
+                           '##.##', '##.##', '##.##',
+                           '##.##', '##.##', '##.##',
+                           '##.##', '##.##',])
     sngl_snr_keys = ['snr_%s' % ifo for ifo in ifos]
     keys = ['distance']
     keys += ['eff_dist_%s' % ifo for ifo in ifos]
