@@ -33,10 +33,9 @@ import h5py
 from scipy import stats
 import ligo.segments as segments
 from pycbc.detector import Detector
-from pycbc.conversions import mchirp_from_mass1_mass2
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
-    from ligo.lw import utils, lsctables
+    from ligo.lw import utils
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
     # Handle MultiInspiral xml-tables with glue,
@@ -528,16 +527,21 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
     trig_snr = {}
     trig_bestnr = {}
     for slide_id in slide_dict:
-        event_indices = [numpy.where(trigs['network/event_id'] == event_id)[0][0] 
+        event_indices = [numpy.where(
+            trigs['network/event_id'] == event_id)[0][0]
                          for event_id in sorted_trigs[slide_id]]
-        trig_time[slide_id] = numpy.array([trigs['network/end_time_gc'][event_index]
-                               for event_index in event_indices])
-        trig_snr[slide_id] = numpy.array([trigs['network/coherent_snr'][event_index]
-                              for event_index in event_indices])
-        trig_bestnr[slide_id] = numpy.array([1 if trigs['/network/reweighted_snr'][event_index] 
-                                             >= opts.newsnr_threshold
-                                             else 0 for event_index in event_indices])
-        trig_bestnr[slide_id][trig_bestnr[slide_id] < opts.newsnr_threshold] = 0
+        trig_time[slide_id] = numpy.array(
+            [trigs['network/end_time_gc'][event_index]
+             for event_index in event_indices])
+        trig_snr[slide_id] = numpy.array(
+            [trigs['network/coherent_snr'][event_index]
+             for event_index in event_indices])
+        trig_bestnr[slide_id] = numpy.array(
+            [1 if trigs['/network/reweighted_snr'][event_index]
+             >= opts.newsnr_threshold
+             else 0 for event_index in event_indices])
+        trig_bestnr[slide_id][trig_bestnr[slide_id] <
+                              opts.newsnr_threshold] = 0
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
