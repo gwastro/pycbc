@@ -66,9 +66,8 @@ def additional_injection_data(data, ifos):
         eff_dist += 1.0 / data['eff_dist_%s' % ifo]
     data['eff_dist'] = 1.0 / eff_dist
     return data
-        
-    
-    
+
+
 def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
                                  background_bestnrs=None):
     """Loads found and missed injections from a PyGRB output hdf file as
@@ -393,8 +392,6 @@ if lofft_outfile or lofft_h5_outfile:
              bank_data['mass1'][trig_data['network/template_id'][trig_index]],
              bank_data['mass2'][trig_data['network/template_id'][trig_index]],
              mchirps[trig_index],
-             np.degrees(trig_data['network/ra'][trig_index]),
-             np.degrees(trig_data['network/dec'][trig_index]),
              trig_data['network/coherent_snr'][trig_index],
              trig_data['network/my_network_chisq'][trig_index],
              trig_data['network/null_snr'][trig_index]]
@@ -404,10 +401,9 @@ if lofft_outfile or lofft_h5_outfile:
         td.append(d)
 
     # th: table header
-    th = ['Trial', 'Slide Num', 'p-value', 'GPS time',\
-          'Rec. m1', 'Rec. m2', 'Rec. Mc',\
-          'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2',\
-          'Null SNR']
+    th = ['Trial', 'Slide Num', 'p-value', 'GPS time',
+          'Rec. m1', 'Rec. m2', 'Rec. Mc',
+          'SNR', 'Chi^2', 'Null SNR']
     th.extend(['%s SNR' % ifo for ifo in ifos])
     th.extend(['%s time shift (s)' % ifo for ifo in ifos])
     th.append('BestNR')
@@ -438,7 +434,7 @@ if lofft_outfile or lofft_h5_outfile:
         # Format of table data
         format_strings = ['##.##', '##.##', None, '##.#####',
                           '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##', '##.##', '##.##']
+                          '##.##', '##.##', '##.##']
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##'])
@@ -517,8 +513,6 @@ if onsource_file:
              bank_data['mass1'][on_trigs['network/template_id'][trig_index]],
              bank_data['mass2'][on_trigs['network/template_id'][trig_index]],
              mchirps['mchirp'][on_trigs['network/template_id'][trig_index]],
-             np.degrees(on_trigs['network/ra'][trig_index]),
-             np.degrees(on_trigs['network/dec'][trig_index]),
              on_trigs['network/coherent_snr'][trig_index],
              on_trigs['network/my_network_chisq'][trig_index],
              on_trigs['network/null_snr'][trig_index]] + \
@@ -529,8 +523,8 @@ if onsource_file:
                   [0 for ifo in ifos] + [0])
 
     # Table header
-    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
-          'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR'] +\
+    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc',\
+          'SNR', 'Chi^2', 'Null SNR'] +\
          ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
 
     td = list(zip(*td))
@@ -548,7 +542,7 @@ if onsource_file:
 
         # Format of table data
         format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##', '##.##']
+                          '##.##', '##.##']
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##'])
 
