@@ -112,8 +112,7 @@ for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
         found_data['rec_mass1'],
         found_data['rec_mass2'])
     # Staistics value
-    filter_stats = ['coherent_snr', 'reweighted_snr', 'null_snr']
-    for param in filter_stats:
+for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
         found_data[param] = inj_data['/network/%s' % param][...]
     found_data['chisq'] = inj_data['/network/my_network_chisq'][...]
     found_data['nifos'] = inj_data['/network/nifo'][...].astype(int)
