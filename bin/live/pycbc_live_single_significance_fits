@@ -169,16 +169,8 @@ if args.duration_bin_end and \
                  "--duration-bin-start, got "
                  f"{args.duration_bin_end} and {args.duration_bin_start}")
 
-stat_kwargs = {}
-for inputstr in args.statistic_keywords:
-    try:
-        key, value = inputstr.split(':')
-        stat_kwargs[key] = value
-    except ValueError:
-        err_txt = "--statistic-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(args.statistic_keywords)
-        raise ValueError(err_txt)
+
+stat_kwargs = parse_statistic_keywords_opt(args.statistic_keywords)
 
 duration_bin_edges = duration_bins_from_cli(args)
 logging.info("Duration bin edges: %s", duration_bin_edges)
