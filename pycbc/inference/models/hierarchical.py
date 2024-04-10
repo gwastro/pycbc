@@ -700,9 +700,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             self.primary_model.marginalize_vector_params.keys())
         if 'logw_partial' in margin_names_vector:
             margin_names_vector.remove('logw_partial')
-
         margin_params = {}
-        nums = 1
 
         if self.accelerate_loglr:
             # Due to the high precision of extrinsic parameters constrined
@@ -715,8 +713,10 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                               numpy.ndarray):
                     margin_params[p] = \
                         self.primary_model.current_params[p][i_max_extrinsic]
+                    nums = len(self.primary_model.current_params[p])
                 else:
                     margin_params[p] = self.primary_model.current_params[p]
+                    nums = 1
         else:
             for key, value in self.primary_model.current_params.items():
                 # add marginalize_vector_params
@@ -742,20 +742,36 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # not using self.primary_model.current_params, because others_model
             # may have its own static parameters
             current_params_other = other_model.current_params.copy()
-            for i in range(nums):
+            if not self.accelerate_loglr:
+                for i in range(nums):
+                    current_params_other.update(
+                        {key: value[i] if isinstance(value, numpy.ndarray)
+                         else value for key, value in margin_params.items()})
+                    other_model.update(**current_params_other)
+                    other_model.return_sh_hh = True
+                    sh_others[i], hh_others[i] = other_model.loglr
+                    other_model.return_sh_hh = False
+            else:
                 current_params_other.update(
-                    {key: value[i] if isinstance(value, numpy.ndarray) else
-                        value for key, value in margin_params.items()})
-                other_model.update(**current_params_other)
+                    {key: value[0] if isinstance(value, numpy.ndarray)
+                     else value for key, value in margin_params.items()})
+                other_model.update(**current_params_other)               
                 other_model.return_sh_hh = True
-                sh_others[i], hh_others[i] = other_model.loglr
+                sh_others_max, hh_others_max = other_model.loglr
                 other_model.return_sh_hh = False
+                sh_others = numpy.full(nums, sh_others_max)
+                hh_others = numpy.full(nums, hh_others_max)
 
         if nums == 1:
+            # the type of the original sh/hh_others are numpy.array,
+            # might not the same as sh/hh_primary during reconstruct,
+            # during reconstruct of distance, sh/hh_others need to be scalar
             sh_others = sh_others[0]
+            hh_others = hh_others[0]
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
+
         return loglr
 
     def others_lognl(self):
