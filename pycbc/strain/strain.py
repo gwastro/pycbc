@@ -1952,7 +1952,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         return self.wait_duration <= 0
 
     @classmethod
-    def from_cli(cls, ifo, args, maxlen):
+    def from_cli(cls, ifo, args):
         """Initialize a StrainBuffer object (data reader) for a particular
         detector.
         """
@@ -1987,34 +1987,38 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             frame_src = [args.frame_src[ifo]]
         strain_channel = ':'.join([ifo, args.channel_name[ifo]])
 
-        return cls(frame_src, strain_channel,
-                   args.start_time, max_buffer=maxlen,
-                   state_channel=state_channel,
-                   data_quality_channel=dq_channel,
-                   idq_channel=idq_channel,
-                   idq_state_channel=idq_state_channel,
-                   idq_threshold=args.idq_threshold,
-                   sample_rate=args.sample_rate,
-                   low_frequency_cutoff=args.low_frequency_cutoff,
-                   highpass_frequency=args.highpass_frequency,
-                   highpass_reduction=args.highpass_reduction,
-                   highpass_bandwidth=args.highpass_bandwidth,
-                   psd_samples=args.psd_samples,
-                   trim_padding=args.trim_padding,
-                   psd_segment_length=args.psd_segment_length,
-                   psd_inverse_length=args.psd_inverse_length,
-                   autogating_threshold=args.autogating_threshold,
-                   autogating_cluster=args.autogating_cluster,
-                   autogating_pad=args.autogating_pad,
-                   autogating_width=args.autogating_width,
-                   autogating_taper=args.autogating_taper,
-                   autogating_duration=args.autogating_duration,
-                   autogating_psd_segment_length=args.autogating_psd_segment_length,
-                   autogating_psd_stride=args.autogating_psd_stride,
-                   psd_abort_difference=args.psd_abort_difference,
-                   psd_recalculate_difference=args.psd_recalculate_difference,
-                   force_update_cache=args.force_update_cache,
-                   increment_update_cache=args.increment_update_cache[ifo],
-                   analyze_flags=analyze_flags,
-                   data_quality_flags=dq_flags,
-                   dq_padding=args.data_quality_padding)
+        return cls(
+            frame_src,
+            strain_channel,
+            args.start_time,
+            max_buffer=args.max_length,
+            state_channel=state_channel,
+            data_quality_channel=dq_channel,
+            idq_channel=idq_channel,
+            idq_state_channel=idq_state_channel,
+            idq_threshold=args.idq_threshold,
+            sample_rate=args.sample_rate,
+            low_frequency_cutoff=args.low_frequency_cutoff,
+            highpass_frequency=args.highpass_frequency,
+            highpass_reduction=args.highpass_reduction,
+            highpass_bandwidth=args.highpass_bandwidth,
+            psd_samples=args.psd_samples,
+            trim_padding=args.trim_padding,
+            psd_segment_length=args.psd_segment_length,
+            psd_inverse_length=args.psd_inverse_length,
+            autogating_threshold=args.autogating_threshold,
+            autogating_cluster=args.autogating_cluster,
+            autogating_pad=args.autogating_pad,
+            autogating_width=args.autogating_width,
+            autogating_taper=args.autogating_taper,
+            autogating_duration=args.autogating_duration,
+            autogating_psd_segment_length=args.autogating_psd_segment_length,
+            autogating_psd_stride=args.autogating_psd_stride,
+            psd_abort_difference=args.psd_abort_difference,
+            psd_recalculate_difference=args.psd_recalculate_difference,
+            force_update_cache=args.force_update_cache,
+            increment_update_cache=args.increment_update_cache[ifo],
+            analyze_flags=analyze_flags,
+            data_quality_flags=dq_flags,
+            dq_padding=args.data_quality_padding
+        )

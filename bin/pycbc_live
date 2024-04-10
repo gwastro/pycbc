@@ -1156,7 +1156,7 @@ with ctx:
     # from all detectors, including the localization-only ones. For higher
     # ranks, we only need the detectors that can generate candidates.
     data_reader = {
-        ifo: StrainBuffer.from_cli(ifo, args, args.max_length)
+        ifo: StrainBuffer.from_cli(ifo, args)
         for ifo in (evnt.ifos if evnt.rank == 0 else evnt.trigg_ifos)
     }
     evnt.data_readers = data_reader
