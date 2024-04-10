@@ -131,7 +131,7 @@ python -m mpi4py `which pycbc_live` \
 --sample-rate 2048 \
 --enable-bank-start-frequency \
 --low-frequency-cutoff ${f_min} \
---max-length 256 \
+--max-length 512 \
 --approximant "SPAtmplt:mtotal<4" "SEOBNRv4_ROM:else" \
 --chisq-bins "0.72*get_freq('fSEOBNRv4Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)**0.7" \
 --snr-abort-threshold 500 \
