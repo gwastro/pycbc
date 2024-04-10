@@ -1947,7 +1947,7 @@ def followup_event_significance(ifo, data_reader, bank,
 
     # Calculate SNR time series for the entire lookback duration
     htilde = bank.get_template(
-        template_id, bank.sample_rate / float(buffer_samples)
+        template_id, delta_f=bank.sample_rate / float(buffer_samples)
     )
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
