@@ -1174,13 +1174,8 @@ with ctx:
         def get_coinc(results):
             c = estimators[my_coinc_id]
             r = c.add_singles(results)
-            logging.info(
-                'Coincs %i: %s-%s: %s in cbuffer',
-                my_coinc_id,
-                c.ifos[0],
-                c.ifos[1],
-                c.coincs.index
-            )
+            logging.info('Coincs %i: %s-%s: %s in cbuffer', my_coinc_id,
+                         c.ifos[0], c.ifos[1], c.coincs.index)
             return r
 
         def output_background(_):
@@ -1257,8 +1252,6 @@ with ctx:
             if evnt.size > 1:
                 results, valid_end = evnt.gather_results()
 
-            logging.warning("Results:")
-            logging.warning(results)
             # veto detectors with different state between the root
             # and worker nodes (e.g. late frame files on one node only)
             detectors_with_results = set(results.keys())
@@ -1340,8 +1333,7 @@ with ctx:
                                           args.file_prefix,
                                           data_end() - args.analysis_chunk,
                                           valid_pad)
-            logging.warning("Dumping results")
-            logging.warning(results)
+
             evnt.dump(results, prefix, time_index=data_end(),
                       store_psd=(psds if args.store_psd else False),
                       store_loudest_index=args.store_loudest_index,
@@ -1350,7 +1342,6 @@ with ctx:
             # dump the background if needed
             if args.output_background and \
                     data_end() - last_bg_dump_time > float(args.output_background[0]):
-                logging.warning("Data dump")
                 last_bg_dump_time = int(data_end())
                 bg_dists = coinc_pool.broadcast(output_background, None)
                 bg_fn = '{}-LIVE_BACKGROUND-{}.hdf'.format(

@@ -6,7 +6,7 @@ with h5py.File('template_bank.hdf', 'r') as bankf:
     n_templates = bankf['mass1'].size
 
 for ifo in ['H1','L1','V1']:
-    with h5py.File(f'{ifo}-fit_over_multiparam.hdf','w') as fits_f:
+    with h5py.File(f'{ifo}-fit_coeffs.hdf','w') as fits_f:
         fits_f.attrs['analysis_time'] = 430000
         fits_f.attrs['ifo'] = ifo
         fits_f.attrs['stat'] = f'{ifo}-fit_coeffs'
