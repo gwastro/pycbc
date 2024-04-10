@@ -21,6 +21,7 @@ class LiveSingle(object):
                  fit_file=None,
                  sngl_ifar_est_dist=None,
                  fixed_ifar=None,
+                 maximum_ifar=None,
                  statistic=None,
                  sngl_ranking=None,
                  stat_files=None,
@@ -29,6 +30,7 @@ class LiveSingle(object):
         self.fit_file = fit_file
         self.sngl_ifar_est_dist = sngl_ifar_est_dist
         self.fixed_ifar = fixed_ifar
+        self.maximum_ifar = maximum_ifar
 
         stat_class = stat.get_statistic(statistic)
         self.stat_calculator = stat_class(
@@ -69,6 +71,12 @@ class LiveSingle(object):
                                  'defined by command line. Can be given as '
                                  'a single value or as detector-value pairs, '
                                  'e.g. H1:0.001 L1:0.001 V1:0.0005')
+        parser.add_argument('--single-maximum-ifar', nargs='+',
+                            type=float, action=MultiDetOptionAction,
+                            help='A maximum possible value for IFAR for '
+                                 'single-detector events. Can be given as '
+                                 'a single value or as detector-value pairs, '
+                                 'e.g. H1:100 L1:1000 V1:50')
         parser.add_argument('--single-fit-file',
                             help='File which contains definitons of fit '
                                  'coefficients and counts for specific '
@@ -87,6 +95,7 @@ class LiveSingle(object):
                      args.single_duration_threshold,
                      args.single_newsnr_threshold,
                      args.sngl_ifar_est_dist]
+
         sngl_opts_str = ("--single-reduced-chisq-threshold, "
                          "--single-duration-threshold, "
                          "--single-newsnr-threshold, "
@@ -102,12 +111,14 @@ class LiveSingle(object):
                          "--enable-gracedb-upload to be set.")
 
         sngl_optional_opts = [args.single_fixed_ifar,
-                              args.single_fit_file]
+                              args.single_fit_file,
+                              args.single_maximum_ifar]
         sngl_optional_opts_str = ("--single-fixed-ifar, "
-                                  "--single-fit-file")
+                                  "--single-fit-file,"
+                                  "--single-maximum-ifar")
         if any(sngl_optional_opts) and not all(sngl_opts):
             parser.error("Optional singles options "
-                         f"({sngl_optional_opts_str}) given but no "
+                         f"({sngl_optional_opts_str}) given but not all "
                          f"required options ({sngl_opts_str}) are.")
 
         for ifo in ifos:
@@ -169,6 +180,7 @@ class LiveSingle(object):
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
            duration_threshold=args.single_duration_threshold[ifo],
            fixed_ifar=args.single_fixed_ifar,
+           maximum_ifar=args.single_maximum_ifar[ifo],
            fit_file=args.single_fit_file,
            sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo],
            statistic=args.ranking_statistic,
@@ -287,4 +299,4 @@ class LiveSingle(object):
         # apply a trials factor of the number of duration bins
         rate_louder *= len(rates)
 
-        return conv.sec_to_year(1. / rate_louder)
+        return min(conv.sec_to_year(1. / rate_louder), self.maximum_ifar)
