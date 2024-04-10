@@ -129,7 +129,7 @@ for ifo in all_ifos:
     maxstat = stats[ifo].max()
     max_rate = 0
 
-    plotbins = np.linspace(fit_threshold[ifo], 1.05 * maxstat, 400)
+    plotbins = np.linspace(fit_threshold[ifo], maxstat, 400)
 
     logging.info("Putting events into bins")
     event_bin = np.array([tbins[d] for d in durations[ifo]])
@@ -172,9 +172,11 @@ for ifo in all_ifos:
                 label=r"$\alpha = $%.2f" % alphas[ifo][bin_num])
     ax.semilogy()
     ax.grid()
+    statrange = maxstat - max(stats[ifo].min(), fit_threshold[ifo])
+    plotmax = maxstat + statrange * 0.05
     ax.set_xlim(
         fit_threshold[ifo] if args.x_lim_lower is None else args.x_lim_lower,
-        1.05 * maxstat if args.x_lim_upper is None else args.x_lim_upper
+        plotmax if args.x_lim_upper is None else args.x_lim_upper
     )
     ax.set_ylim(
         0.5 / live_time[ifo] if args.y_lim_lower is None else args.y_lim_lower,
