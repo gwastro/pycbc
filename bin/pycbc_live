@@ -804,13 +804,13 @@ class LiveEventManager(object):
                 store_psd[ifo].save(fname, group='%s/psd' % ifo)
 
 
-def check_max_length(waveforms):
+def check_max_length(args, waveforms):
     """Check that the `--max-length` option is sufficient to accomodate the
     longest template in the bank and the PSD estimation options.
     """
     lengths = numpy.array([1.0 / wf.delta_f for wf in waveforms])
     psd_len = args.psd_segment_length * (args.psd_samples // 2 + 1)
-    max_length = max(lengths.max() + args.pvalue_lookback, psd_len)
+    max_length = max(lengths.max() + args.pvalue_lookback_time, psd_len)
     if max_length > args.max_length:
         raise ValueError(
             '--max-length is too short for this template bank. '
@@ -1133,7 +1133,7 @@ with ctx:
     if evnt.rank > 0:
         bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
-        check_max_length(waveforms)
+        check_max_length(args, waveforms)
         mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
                                     args.chisq_bins, sg_chisq,
                                     snr_abort_threshold=args.snr_abort_threshold,
