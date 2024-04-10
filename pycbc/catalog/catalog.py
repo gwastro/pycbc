@@ -40,10 +40,18 @@ base_lvc_url = "https://www.gwosc.org/eventapi/jsonfull/{}/"
 
 def lvk_catalogs():
     _catalog_source = "https://gwosc.org/eventapi/json/"
-    catalog_list = get_file(_catalog_source)
+    catalog_list = json.load(open(get_file(_catalog_source), 'r'))
     return catalog_list
+    
+def populate_catalogs():
+    """ Refresh set of known catalogs
+    """
+    global _catalogs
+    if _catalogs is None:
+        # update the LVK catalog information
+         _catalogs = {cname: 'LVK' for cname in lvk_catalogs().keys()}
 
-_catalogs = {cname: 'LVK' for cname in lvk_catalogs.keys()}
+_catalogs = None
 
 # add some aliases
 _aliases = {}
@@ -54,17 +62,20 @@ _aliases['gwtc-3'] = 'GWTC-3-confident'
 
 def list_catalogs():
     """Return a list of possible GW catalogs to query"""
+    populate_catalogs()    
     return list(_catalogs.keys())
 
 def get_source(source):
     """Get the source data for a particular GW catalog
     """
+    populate_catalogs()
+
     if source in _aliases:
         source = _aliases[source]
 
     if source in _catalogs:
         catalog_type = _catalogs[source]
-        if catalog_type == 'LVC':
+        if catalog_type == 'LVK':
             fname = get_file(base_lvc_url.format(source), cache=True)
             data = json.load(open(fname, 'r'))
     else:
