@@ -757,7 +757,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 current_params_other.update(
                     {key: value[0] if isinstance(value, numpy.ndarray)
                      else value for key, value in margin_params.items()})
-                other_model.update(**current_params_other)               
+                other_model.update(**current_params_other)
                 other_model.return_sh_hh = True
                 sh_others_max, hh_others_max = other_model.loglr
                 other_model.return_sh_hh = False
