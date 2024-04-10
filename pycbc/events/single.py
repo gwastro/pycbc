@@ -171,7 +171,8 @@ class LiveSingle(object):
         stat_files = args.statistic_files or []
         stat_keywords = args.statistic_keywords or []
 
-        # flatten the list of lists of filenames to a single list (may be empty)
+        # flatten the list of lists of filenames to a single list
+        # (may be empty)
         stat_files = sum(stat_files, [])
 
         kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
@@ -241,9 +242,10 @@ class LiveSingle(object):
         i = rank.argmax()
 
         # calculate the (inverse) false-alarm rate
-        sngl_rank = rank[i]
-        dur = trigsc['template_duration'][i]
-        ifar = self.calculate_ifar(rank, dur)
+        ifar = self.calculate_ifar(
+            rank[i],
+            trigsc['template_duration'][i]
+        )
         if ifar is None:
             return None
 
@@ -251,7 +253,7 @@ class LiveSingle(object):
         candidate = {
             f'foreground/{self.ifo}/{k}': cutall_trigs[k][i] for k in trigs
         }
-        candidate['foreground/stat'] = rank
+        candidate['foreground/stat'] = rank[i]
         candidate['foreground/ifar'] = ifar
         candidate['HWINJ'] = data_reader.near_hwinj()
         return candidate
