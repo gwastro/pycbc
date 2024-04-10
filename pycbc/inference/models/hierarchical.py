@@ -724,6 +724,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     margin_params[key] = value
                     if isinstance(value, numpy.ndarray):
                         nums = len(value)
+                    else:
+                        nums = 1
         # add distance if it has been marginalized,
         # use numpy array for it is just let it has the same
         # shape as marginalize_vector_params, here we assume
@@ -770,6 +772,10 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             hh_others = hh_others[0]
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
+
+        # calculate marginalize_vector_weights
+        self.primary_model.marginalize_vector_weights = \
+            - numpy.log(self.primary_model.vsamples)
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
 
         return loglr
