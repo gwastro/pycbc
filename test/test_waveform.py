@@ -28,8 +28,9 @@ import unittest
 import numpy
 from numpy import sqrt, cos, sin
 from pycbc.scheme import CPUScheme
-from pycbc.waveform import get_td_waveform, get_fd_waveform
+from pycbc.waveform import get_td_waveform, get_fd_waveform, get_fd_waveform_sequence
 from utils import parse_args_all_schemes, simple_exit
+from pycbc.types import Array
 
 _scheme, _context = parse_args_all_schemes("Waveform")
 
@@ -54,6 +55,12 @@ class TestWaveform(unittest.TestCase):
                 htilde, g = get_fd_waveform(approximant=waveform,mass1=20,mass2=20,delta_f=1.0/256,f_lower=40)
                 self.assertTrue(len(htilde)> 0)
 
+    def test_frequency_sequence(self):
+        sample_points = numpy.geomspace(10, 400, 50)
+        hp, hc = get_fd_waveform_sequence(approximant="IMRPhenomXAS", mass1=20, mass2=20, sample_points=sample_points)
+        hp_ref, hc_ref = get_fd_waveform_sequence(approximant="IMRPhenomXAS", mass1=20, mass2=20, sample_points=Array(sample_points))
+        self.assertEqual(hp, hp_ref)
+        self.assertEqual(hc, hc_ref)
 
     def test_spintaylorf2GPU(self):
 
