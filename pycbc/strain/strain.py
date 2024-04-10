@@ -1420,8 +1420,8 @@ STRAINBUFFER_UNIQUE_ID_3 = 665849947
 
 class StrainBuffer(pycbc.frame.DataBuffer):
     def __init__(self, frame_src, channel_name, start_time,
-                 max_buffer=512,
-                 sample_rate=4096,
+                 max_buffer,
+                 sample_rate,
                  low_frequency_cutoff=20,
                  highpass_frequency=15.0,
                  highpass_reduction=200.0,
@@ -1462,9 +1462,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Name of the channel to read from the frame files
         start_time:
             Time to start reading from.
-        max_buffer: {int, 512}, Optional
-            Length of the buffer in seconds
-        sample_rate: {int, 2048}, Optional
+        max_buffer: int
+            Length of the strain buffer in seconds.
+        sample_rate: int, Optional
             Rate in Hz to sample the data.
         low_frequency_cutoff: {float, 20}, Optional
             The low frequency cutoff to use for inverse spectrum truncation
@@ -1536,7 +1536,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             filesystem.
         """
         super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
-                                           max_buffer=32,
+                                           max_buffer=max_buffer,
                                            force_update_cache=force_update_cache,
                                            increment_update_cache=increment_update_cache)
 
@@ -1988,7 +1988,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         strain_channel = ':'.join([ifo, args.channel_name[ifo]])
 
         return cls(frame_src, strain_channel,
-                   args.start_time, max_buffer=maxlen * 2,
+                   args.start_time, max_buffer=maxlen,
                    state_channel=state_channel,
                    data_quality_channel=dq_channel,
                    idq_channel=idq_channel,
