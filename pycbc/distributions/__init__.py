@@ -125,7 +125,7 @@ def read_params_from_config(cp, prior_section='prior',
         defined for them. Default is 'variable_params'.
     sargs_section : str, optional
         The section to get the parameters that will remain fixed. Default is
-        'static_args'.
+        'static_params'.
 
     Returns
     -------
