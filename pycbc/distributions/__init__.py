@@ -134,7 +134,7 @@ def read_params_from_config(cp, prior_section='prior',
     static_args : dict
         Dictionary of names -> values giving the parameters to keep fixed.
     """
-    # sanity check that each parameter in [variable_params] has a priors section
+    # sanity check that each parameter in [variable_params] has a prior section
     variable_args = cp.options(vargs_section)
     subsections = cp.get_subsections(prior_section)
     tags = set([p for tag in subsections for p in tag.split('+')])
