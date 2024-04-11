@@ -86,6 +86,7 @@ class LISAEarlyWarningModel(BaseModel):
         extra_forward_zeroes = int(kwargs.pop('extra_forward_zeroes'))
         tlen = int(kwargs.pop('tlen'))
         sample_rate = float(kwargs.pop('sample_rate'))
+        psd_duration = int(kwargs.pop('psd_duration'))
         inj_keys = [item for item in kwargs.keys() if item.startswith('injparam')]
         inj_params = {}
         for key in inj_keys:
@@ -143,7 +144,6 @@ class LISAEarlyWarningModel(BaseModel):
         self.psds_for_datagen = {}
         self.psds_for_datagen['LISA_A'] = psd
         self.psds_for_datagen['LISA_E'] = psd.copy()
-        psd_duration = inj_params['t_obs_start'] - inj_params['tc']
         assert psd_duration == 2592000
         psds_outs = generate_early_warning_psds(
             psd_file,
@@ -168,7 +168,7 @@ class LISAEarlyWarningModel(BaseModel):
         self.lisa_a_strain, self.lisa_e_strain = generate_data_lisa_ew(
             curr_params,
             psds_for_datagen=self.psds_for_datagen,
-            whitening_psds=self.whitening_psds,
+            psds_for_whitening=self.whitening_psds,
             seed=seed,
             window_length=self.window_length, 
             cutoff_time=cutoff_time,
