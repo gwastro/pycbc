@@ -365,49 +365,54 @@ class PSDFirKernel(object):
 
         return kernel, phase
 
-def generate_early_warning_psds(psd_path):
+def generate_early_warning_psds(
+    psd_file,
+    tlen,
+    sample_rate,
+    duration,
+    kernel_length=10000,
+):
     """
     Definitely make this less hardcoded!!
     """
-    tlen = 3140000
-    sample_rate = 0.2
     length = int(tlen * sample_rate)
     flen = length // 2 + 1
-    LISA_A_PSD = pycbc.psd.from_txt(os.path.join(psd_path, 'A_psd_4_smooth.txt'), flen, 1./tlen, 1./tlen, is_asd_file=False)
+    delta_f = 1 / duration
+    delta_t = 1 / sample_rate
+    td_psd_length = int(duration * sample_rate)
+    # Use sames PSD for A & E
+    psd = pycbc.psd.from_txt(psd_file, flen, 1./tlen, 1./tlen, is_asd_file=False)
     psd_kern = PSDFirKernel()
 
-    lisa_a_psd_lal = LISA_A_PSD.lal()
+    lisa_a_psd_lal = psd.lal()
 
     first_psd_kern, latency, sample_rate = psd_kern.psd_to_linear_phase_whitening_fir_kernel(lisa_a_psd_lal)
     lisa_a_zero_phase_kern, phase = psd_kern.linear_phase_fir_kernel_to_minimum_phase_whitening_fir_kernel(first_psd_kern, sample_rate)
     lisa_a_zero_phase_kern = lisa_a_zero_phase_kern * sample_rate**(1.5) / 2**0.5
-    kernel_length = 10000
     lisa_a_zero_phase_kern_cut = lisa_a_zero_phase_kern[-kernel_length:]
 
-    lisa_a_zero_phase_kern_pycbc = pycbc.types.TimeSeries(pycbc.types.zeros(2592000//5), delta_t=5.)
+    lisa_a_zero_phase_kern_pycbc = pycbc.types.TimeSeries(pycbc.types.zeros(td_psd_length), delta_t=delta_t)
     lisa_a_zero_phase_kern_pycbc.data[-kernel_length:] = lisa_a_zero_phase_kern[-kernel_length:]
     lisa_a_zero_phase_kern_pycbc.data[0] = lisa_a_zero_phase_kern[0] # Do I want to do this??
 
-    lisa_a_zero_phase_kern_pycbc_fd = pycbc.types.FrequencySeries(pycbc.types.zeros(len(lisa_a_zero_phase_kern_pycbc) //2 + 1, dtype=np.complex128), delta_f = 1/2592000)
+    lisa_a_zero_phase_kern_pycbc_fd = pycbc.types.FrequencySeries(pycbc.types.zeros(len(lisa_a_zero_phase_kern_pycbc) //2 + 1, dtype=np.complex128), delta_f=delta_f)
     pycbc.fft.fft(lisa_a_zero_phase_kern_pycbc, lisa_a_zero_phase_kern_pycbc_fd)
     lisa_a_zero_phase_kern_pycbc_td = lisa_a_zero_phase_kern_pycbc
 
-    LISA_E_PSD = pycbc.psd.from_txt(os.path.join(psd_path, 'E_psd_4_smooth.txt'), flen, 1./tlen, 1./tlen, is_asd_file=False)
     psd_kern = PSDFirKernel()
 
-    lisa_e_psd_lal = LISA_E_PSD.lal()
+    lisa_e_psd_lal = psd.lal()
 
     first_psd_kern, latency, sample_rate = psd_kern.psd_to_linear_phase_whitening_fir_kernel(lisa_e_psd_lal)
     lisa_e_zero_phase_kern, phase = psd_kern.linear_phase_fir_kernel_to_minimum_phase_whitening_fir_kernel(first_psd_kern, sample_rate)
     lisa_e_zero_phase_kern = lisa_e_zero_phase_kern * sample_rate**(1.5) / 2**0.5
-    kernel_length = 10000
     lisa_e_zero_phase_kern_cut = lisa_e_zero_phase_kern[-kernel_length:]
 
-    lisa_e_zero_phase_kern_pycbc = pycbc.types.TimeSeries(pycbc.types.zeros(2592000//5), delta_t=5.)
+    lisa_e_zero_phase_kern_pycbc = pycbc.types.TimeSeries(pycbc.types.zeros(td_psd_length), delta_t=delta_t)
     lisa_e_zero_phase_kern_pycbc.data[-kernel_length:] = lisa_e_zero_phase_kern[-kernel_length:]
     lisa_e_zero_phase_kern_pycbc.data[0] = lisa_e_zero_phase_kern[0] # Do I want to do this??
 
-    lisa_e_zero_phase_kern_pycbc_fd = pycbc.types.FrequencySeries(pycbc.types.zeros(len(lisa_e_zero_phase_kern_pycbc) //2 + 1, dtype=np.complex128), delta_f = 1/2592000)
+    lisa_e_zero_phase_kern_pycbc_fd = pycbc.types.FrequencySeries(pycbc.types.zeros(len(lisa_e_zero_phase_kern_pycbc) //2 + 1, dtype=np.complex128), delta_f=delta_f)
     pycbc.fft.fft(lisa_e_zero_phase_kern_pycbc, lisa_e_zero_phase_kern_pycbc_fd)
     lisa_e_zero_phase_kern_pycbc_td = lisa_e_zero_phase_kern_pycbc
     return [lisa_a_zero_phase_kern_pycbc_fd, lisa_a_zero_phase_kern_pycbc_td], [lisa_e_zero_phase_kern_pycbc_fd, lisa_e_zero_phase_kern_pycbc_td]
@@ -420,6 +425,7 @@ def generate_data_lisa_ew(
     seed,
     window_length,
     cutoff_time,
+    sample_rate,
     extra_forward_zeroes=0
 ):
     window = signal.windows.hann(window_length * 2 + 1)[:window_length]
@@ -435,14 +441,14 @@ def generate_data_lisa_ew(
     strain_E[:] += tout_E[:]
     strain_w_A = strain_A[:].copy()
     if extra_forward_zeroes:
-        strain_w_A.data[:int(extra_forward_zeroes//5)] = 0
-    strain_w_A.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+window_length] *= window
-    strain_w_A.data[-int(cutoff_time//5):] = 0
+        strain_w_A.data[:int(extra_forward_zeroes * sample_rate)] = 0
+    strain_w_A.data[int(extra_forward_zeroes * sample_rate):int(extra_forward_zeroes * sample_rate)+window_length] *= window
+    strain_w_A.data[-int(cutoff_time * sample_rate):] = 0
     strain_w_E = strain_E[:].copy()
     if extra_forward_zeroes:
-        strain_w_E.data[:int(extra_forward_zeroes//5)] = 0
-    strain_w_E.data[int(extra_forward_zeroes//5):int(extra_forward_zeroes//5)+window_length] *= window
-    strain_w_E.data[-int(cutoff_time//5):] = 0
+        strain_w_E.data[:int(extra_forward_zeroes * sample_rate)] = 0
+    strain_w_E.data[int(extra_forward_zeroes * sample_rate):int(extra_forward_zeroes * sample_rate)+window_length] *= window
+    strain_w_E.data[-int(cutoff_time * sample_rate):] = 0
 
     strain_fout_A = pycbc.strain.strain.execute_cached_fft(
         strain_w_A,
@@ -456,7 +462,7 @@ def generate_data_lisa_ew(
         uid=1237
     )
     # FIXME: Might need this!
-    strain_ww_A.data[-int(cutoff_time//5):] = 0
+    strain_ww_A.data[-int(cutoff_time * sample_rate):] = 0
 
     strain_fout_E = pycbc.strain.strain.execute_cached_fft(
         strain_w_E,
@@ -470,7 +476,7 @@ def generate_data_lisa_ew(
         uid=1239
     )
     # FIXME: Might need this!
-    strain_ww_E.data[-int(cutoff_time//5):] = 0
+    strain_ww_E.data[-int(cutoff_time * sample_rate):] = 0
 
     return strain_ww_A, strain_ww_E
 

@@ -28,108 +28,13 @@ from .base import BaseModel
 
 import pycbc.psd
 
-from pycbc.waveform.early_warning_wform import PSDFirKernel, generate_early_warning_psds, generate_data_lisa_ew, generate_waveform_lisa_ew
-from pycbc.waveform.waveform import parse_mode_array, props
+from pycbc.waveform.early_warning_wform import generate_early_warning_psds, generate_data_lisa_ew, generate_waveform_lisa_ew
+from pycbc.waveform.waveform import parse_mode_array
 from .tools import marginalize_likelihood
 
 global COUNTS
 COUNTS = {}
 
-waveform_params1 = {'approximant': 'BBHX_PhenomD',
-    'mass1': 1E6,
-    'mass2': 1E6,
-    't_obs_start':2592000, # This is setting the data length.
-    'f_lower':-1.,
-    'inclination': 0.,
-    'tc':2580000 , # This is the coalescence time.
-    'polarization': 0.,
-    'spin1z': 0.,
-    'spin2z': 0.,
-    'coa_phase' : numpy.pi/2.,
-    'distance': 15000,
-    'eclipticlatitude': 0.628,
-    'eclipticlongitude': 0.785,
-    'low-frequency-cutoff': 0.000001, # Why this *and* f_lower??? Don't think this one is used at all.
-    'f_final': 0.1,
-    'mode_array':[(2,2)],
-    'delta_f': 1./2592000,
-    'run_phenomd':False}
-
-waveform_params2 = {'approximant': 'BBHX_PhenomD',
-    'mass1': 2E6,
-    'mass2': 5E5,
-    't_obs_start':2592000, # This is setting the data length.
-    'f_lower':-1.,
-    'inclination': 0.,
-    'tc':2560000 , # This is the coalescence time.
-    'polarization': 1.3,
-    'spin1z': 0.,
-    'spin2z': 0.,
-    'coa_phase' : 2.67,
-    'distance': 36000,
-    'eclipticlatitude': 1.322,
-    'eclipticlongitude': 2.318,
-    'low-frequency-cutoff': 0.000001, # Why this *and* f_lower??? Don't think this one is used at all.
-    'f_final': 0.1,
-    'mode_array':[(2,2)],
-    'run_phenomd':False}
-
-waveform_params3 = {'approximant': 'BBHX_PhenomD',
-    'mass1': 1E6,
-    'mass2': 7E5,
-    't_obs_start':2592000, # This is setting the data length.
-    'f_lower':-1.,
-    'inclination': 0.2,
-    'tc':2570000 , # This is the coalescence time.
-    'polarization': 0.5,
-    'spin1z': 0.4,
-    'spin2z': -0.3,
-    'coa_phase' : 1.93,
-    'distance': 24000,
-    'eclipticlatitude': 0.162,
-    'eclipticlongitude': 1.272,
-    'low-frequency-cutoff': 0.000001, # Why this *and* f_lower??? Don't think this one is used at all.
-    'f_final': 0.1,
-    'mode_array':[(2,2)],
-    'run_phenomd':False}
-
-waveform_params4 = {'approximant': 'BBHX_PhenomD',
-    'mass1': 2.5E6,
-    'mass2': 2.5E6,
-    't_obs_start':2592000, # This is setting the data length.
-    'f_lower':-1.,
-    'inclination': 0.,
-    'tc':2550000 , # This is the coalescence time.
-    'polarization': 2.3,
-    'spin1z': -0.9,
-    'spin2z': 0.9,
-    'coa_phase' : 0.01,
-    'distance': 62000,
-    'eclipticlatitude': 0.312,
-    'eclipticlongitude': numpy.pi/2.,
-    'low-frequency-cutoff': 0.000001, # Why this *and* f_lower??? Don't think this one is used at all.
-    'f_final': 0.1,
-    'mode_array':[(2,2)],
-    'run_phenomd':False}
-
-waveform_params5 = {'approximant': 'BBHX_PhenomD',
-    'mass1': 6E5,
-    'mass2': 5.5E5,
-    't_obs_start':2592000, # This is setting the data length.
-    'f_lower':-1.,
-    'inclination': 0.245,
-    'tc':2540000 , # This is the coalescence time.
-    'polarization': 0.34,
-    'spin1z': 0.1,
-    'spin2z': 0.5,
-    'coa_phase' : 0.11,
-    'distance': 80000,
-    'eclipticlatitude': 0.790,
-    'eclipticlongitude': 1.865,
-    'low-frequency-cutoff': 0.000001, # Why this *and* f_lower??? Don't think this one is used at all.
-    'f_final': 0.1,
-    'mode_array':[(2,2)],
-    'run_phenomd':False}
 
 # As per https://stackoverflow.com/questions/715417 this is
 # distutils.util.strtobool, but it's being removed in python3.12 so recommend
@@ -168,17 +73,19 @@ class LISAEarlyWarningModel(BaseModel):
             self,
             variable_params,
             static_params=None,
-            phase_marginalization=True,
-            psd_path=None,
+            phase_marginalization=False,
+            psd_file=None,
             **kwargs
         ):
         # Pop relevant values from kwargs
         cutoff_time = int(kwargs.pop('cutoff_time'))
         seed = int(kwargs.pop('seed'))
         kernel_length = int(kwargs.pop('kernel_length'))
+        psd_kernel_length = int(kwargs.pop('psd_kernel_length'))
         window_length = int(kwargs.pop('window_length'))
         extra_forward_zeroes = int(kwargs.pop('extra_forward_zeroes'))
         tlen = int(kwargs.pop('tlen'))
+        sample_rate = float(kwargs.pop('sample_rate'))
         inj_keys = [item for item in kwargs.keys() if item.startswith('injparam')]
         inj_params = {}
         for key in inj_keys:
@@ -208,6 +115,11 @@ class LISAEarlyWarningModel(BaseModel):
         if isinstance(phase_marginalization, str):
             phase_marginalization = strtobool(phase_marginalization)
         self.phase_marginalization = phase_marginalization
+        if self.phase_marginalization:
+            logging.warning(
+                "Phase marginalization is enabled! "
+                "This may leaded to incorrect results!"
+            )
 
         # set up base likelihood parameters
         super().__init__(variable_params, **kwargs)
@@ -220,25 +132,29 @@ class LISAEarlyWarningModel(BaseModel):
         static_params["run_phenomd"] = run_phenomd
         self.static_params = parse_mode_array(static_params)
 
-        # tlen = 3140000
-        sample_rate = 0.2
         length = int(tlen * sample_rate)
         flen = length // 2 + 1
 
-        if psd_path is None:
-            psd_path = os.getcwd()
+        if psd_file is None:
+            raise ValueError("Must specify a PSD file!")
 
-        LISA_A_PSD = pycbc.psd.from_txt(os.path.join(psd_path, 'A_psd_4_smooth.txt'), flen, 1./tlen, 1./tlen, is_asd_file=False)
-        LISA_E_PSD = pycbc.psd.from_txt(os.path.join(psd_path, 'E_psd_4_smooth.txt'), flen, 1./tlen, 1./tlen, is_asd_file=False)
+        # Assume A & E PSDs are the same
+        psd = pycbc.psd.from_txt(psd_file, flen, 1./tlen, 1./tlen, is_asd_file=False)
         self.psds_for_datagen = {}
-        self.psds_for_datagen['LISA_A'] = LISA_A_PSD
-        self.psds_for_datagen['LISA_E'] = LISA_E_PSD
-        psds_outs = generate_early_warning_psds(psd_path)
+        self.psds_for_datagen['LISA_A'] = psd
+        self.psds_for_datagen['LISA_E'] = psd.copy()
+        psd_duration = inj_params['t_obs_start'] - inj_params['tc']
+        assert psd_duration == 2592000
+        psds_outs = generate_early_warning_psds(
+            psd_file,
+            tlen=tlen,
+            sample_rate=sample_rate,
+            duration=psd_duration,
+            kernel_length=psd_kernel_length,
+        )
         self.whitening_psds = {}
         self.whitening_psds['LISA_A'] = psds_outs[0][0]
         self.whitening_psds['LISA_E'] = psds_outs[1][0]
-        #self.whitening_psds['LISA_A'].save('LISA_A_psd_ew.txt')
-        #self.whitening_psds['LISA_E'].save('LISA_E_psd_ew.txt')
 
         # Store data for doing likelihoods.
         curr_params = inj_params
@@ -251,11 +167,12 @@ class LISAEarlyWarningModel(BaseModel):
         cutoff_time = self.cutoff_time + (curr_params['t_obs_start'] - curr_params['tc'])
         self.lisa_a_strain, self.lisa_e_strain = generate_data_lisa_ew(
             curr_params,
-            self.psds_for_datagen,
-            self.whitening_psds,
-            seed,
-            self.window_length, 
-            cutoff_time,
+            psds_for_datagen=self.psds_for_datagen,
+            whitening_psds=self.whitening_psds,
+            seed=seed,
+            window_length=self.window_length, 
+            cutoff_time=cutoff_time,
+            sample_rate=sample_rate,
             extra_forward_zeroes=self.extra_forward_zeroes,
         )
         self.lisa_a_strain_fd = pycbc.strain.strain.execute_cached_fft(
@@ -268,10 +185,6 @@ class LISAEarlyWarningModel(BaseModel):
             copy_output=True,
             uid=3223967
         )
-
-        #self.lisa_a_strain.save('LISA_A_strain.txt')
-        #self.lisa_e_strain.save('LISA_E_strain.txt')
-
 
     def _loglikelihood(self):
         """Returns the log pdf of the multivariate normal.
@@ -289,19 +202,7 @@ class LISAEarlyWarningModel(BaseModel):
         )
         wform_lisa_a = ws['LISA_A']
         wform_lisa_e = ws['LISA_E']
-        #wform_td_A = pycbc.strain.strain.execute_cached_ifft(
-        #    wform_lisa_a,
-        #    copy_output=False,
-        #    uid=12239
-        #)
-        #wform_td_E = pycbc.strain.strain.execute_cached_ifft(
-        #    wform_lisa_e,
-        #    copy_output=False,
-        #    uid=122391
-        #)
 
-        #wform_td_A.save('LISA_A_waveform.txt')
-        #wform_td_E.save('LISA_E_waveform.txt')
         snr_A = pycbc.filter.overlap_cplx(wform_lisa_a, self.lisa_a_strain_fd,
                                      normalized=False)
         snr_E = pycbc.filter.overlap_cplx(wform_lisa_e, self.lisa_e_strain_fd,
@@ -311,9 +212,5 @@ class LISAEarlyWarningModel(BaseModel):
 
         hs = snr_A + snr_E
         hh = (a_norm + e_norm)
-
-        #print ((snr_A[0].real)**2 + (snr_E[0].real)**2)
-        #print(snr_A + snr_E, (a_norm + e_norm)/2., (a_norm_test + e_norm_test)/2., cparams['distance'])
-        #quit_here
 
         return marginalize_likelihood(hs, hh, phase=self.phase_marginalization)
