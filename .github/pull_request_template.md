@@ -9,15 +9,13 @@ e.g. 'Fix bug with numpy import in pycbc_coinc_findtrigs' or 'add high frequency
 This is a brief template for making pull requests for PyCBC.
 This is _not_ a proscriptive template - you can use a different style if you want.
 Please do think about the questions posed here and whether the details will be useful to include in your PR
-Please add sufficient details so that people looking back at the request with no context around the work
-can understand the changes.
+Please add sufficient details so that people looking back at the request with no context around the work can understand the changes.
 To choose reviewers, please look at the git blame for the code you are changing (if applicable),
-or discuss in the gwastro slack.
+or discuss in the #pycbc-code channel of the gwastro slack.
 Please add labels as appropriate
 -->
 
-## Summary
-<!-- Please provide a brief, one-or-two-sentence description of the PR
+<!-- TOP-LEVEL SUMMARY: Please provide a brief, one-or-two-sentence description of the PR here
 -->
 
 ## Standard information about the request
