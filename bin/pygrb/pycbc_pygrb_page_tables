@@ -512,6 +512,8 @@ if onsource_file:
              mchirps[on_trigs['network/template_id'][trig_index]],
              bank_data['spin1z'][on_trigs['network/template_id'][trig_index]],
              bank_data['spin2z'][on_trigs['network/template_id'][trig_index]],
+             np.degrees(on_trigs['network/ra'][trig_index]),
+             np.degrees(on_trigs['network/dec'][trig_index]),
              on_trigs['network/coherent_snr'][trig_index],
              on_trigs['network/my_network_chisq'][trig_index],
              on_trigs['network/null_snr'][trig_index]] + \
@@ -523,7 +525,7 @@ if onsource_file:
 
     # Table header
     th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z',
-            'Rec. spin2z', 'SNR', 'Chi^2', 'Null SNR'] + \
+            'Rec. spin2z', 'Rec. Ra', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR'] + \
          ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
 
     td = list(zip(*td))
@@ -541,7 +543,7 @@ if onsource_file:
 
         # Format of table data
         format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##', '##.##']
+                          '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##'])
 
