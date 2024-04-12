@@ -75,7 +75,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     inj_data = h5py.File(hdf_file, 'r')
     inj_params = ['mass1', 'mass2', 'distance', 'inclination', 'ra', 'dec',
                   'polarization', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
-                  'spin2y', 'spin2z']
+                  'spin2y', 'spin2z', 'tc']
     found_data = {}
     missed_data = {}
     logging.info('Loading injections...')
@@ -91,10 +91,6 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     
     found_data['mchirp'] = mchirp_from_mass1_mass2(found_data['mass1'],
                                                    found_data['mass2'])
-
-    # Injections time
-    found_data['time'] = inj_data['/found/tc'][...]
-    missed_data['time'] = inj_data['/missed/tc'][...]
 
     # Calculate effective distance for the ifos
     found_data = additional_injection_data(found_data, ifos)
