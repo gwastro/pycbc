@@ -459,8 +459,6 @@ if lofft_outfile or lofft_h5_outfile:
     # np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
     #            full_time_veto_max_bestnr, delimiter='/t')
 
-# Close the trig file
-trig_data.close()
 
 # =======================
 # Load on source triggers
