@@ -152,6 +152,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
             found_data['sigmasq_%s' % ifo] * f_resp[ifo] / inj_sigma_tot)
     # Close the hdf file
     inj_data.close()
+    
     return found_data, missed_data
 
 # =============================================================================
@@ -433,7 +434,7 @@ if lofft_outfile or lofft_h5_outfile:
         # Format of table data
         format_strings = ['##.##', '##.##', None, '##.#####',
                           '##.##', '##.##', '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##']
+                          '##.##', '##.##', '##.##', '##.##', '##.##']
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##'])
