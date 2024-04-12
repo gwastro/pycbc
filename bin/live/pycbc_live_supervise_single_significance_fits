@@ -143,7 +143,7 @@ def run_and_error(command_arguments):
 control_options = [
     "check-daily-output",
     "combined-days",
-    "mail-volunteers-file"
+    "mail-volunteers-file",
     "output-directory",
     "output-id-str",
     "public-dir",
