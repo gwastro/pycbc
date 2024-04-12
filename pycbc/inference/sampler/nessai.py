@@ -109,7 +109,7 @@ class NessaiSampler(BaseSampler):
         if output is None:
             output = os.path.join(
                 os.path.dirname(os.path.abspath(self.checkpoint_file)),
-                "outdir_nessai",
+                f"outdir_{self.name}",
             )
 
         if kwargs is not None:
@@ -381,7 +381,6 @@ class NessaiModel(nessai.model.Model):
         # As of nessai v0.12.0, this method is not required to use the
         # importance nested sampler
         raise NotImplementedError
-    
 
 
 class INessaiSampler(NessaiSampler):
