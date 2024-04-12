@@ -226,6 +226,11 @@ def fit_over_multiparam(
         "specified parameters",
         len(daily_files)
     )
+    logging.info(
+        "Smoothing fits using fit_over_multiparam with %d files and "
+        "specified parameters",
+        len(daily_files)
+    )
     file_id_str = f'{first_date}-{end_date}'
     out_fname = fit_over_controls['fit-over-format'].format(
         dates=file_id_str,
@@ -293,7 +298,6 @@ def single_significance_fits(
         day_str,
         day_dt,
         controls,
-        test_options,
         stat_files=None,
     ):
     """
@@ -466,7 +470,6 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
     combined_control_options = config_opts['significance_combined_fits_control']
     combined_plot_options = config_opts['plot_significance_combined']
     combined_plot_control_options = config_opts['plot_significance_combined_control']
-    test_options = config_opts['test']
 
     # The main output directory will have a date subdirectory which we
     # put the output into
@@ -541,7 +544,6 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
             day_str,
             day_dt,
             controls,
-            test_options,
             stat_files=stat_files,
         )
         plot_single_significance_fits(
