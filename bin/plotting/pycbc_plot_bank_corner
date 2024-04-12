@@ -46,6 +46,7 @@ _fit_parameters = [
     'fit_coeff',
     'median_sigma'
 ]
+parameter_options = conversion_options + _fit_parameters
 
 
 parser = argparse.ArgumentParser(usage='pycbc_plot_bank_corner [--options]',
@@ -70,7 +71,7 @@ parser.add_argument("--parameters",
     metavar="PARAM[:LABEL]",
     help="Only plot the given parameters. May also provide a "
          "label for each parameter. Choose from a combination of " + \
-         ", ".join(conversion_options)  + ", though some "
+         ", ".join(parameter_options)  + ", though some "
          "may not be buildable from bank parameters. Can optionally "
          "also specify a LABEL for each parameter. If no LABEL is "
          "provided, PARAM will used as the LABEL. If LABEL "
@@ -175,7 +176,7 @@ cpar = args.color_parameter[0] if args.color_parameter else False
 cpar_label = args.color_parameter_labels[cpar] if cpar else False
 
 required_params = []
-for co in conversion_options + _fit_parameters:
+for co in parameter_options:
     if any([co in par for par in args.parameters]):
         required_params.append(co)
     if cpar and co in cpar:
@@ -208,10 +209,10 @@ logging.info("Required parameters to get from bank: %s",
 # Get parameters not directly in the bank:
 for p in required_params:
     if p in bank: continue
-    if p not in conversion_options + _fit_parameters:
-        raise KeyError(f"Parameter {p} not in bank or conversion "
+    if p not in parameter_options:
+        raise KeyError(f"Parameter {p} not in bank, fits or conversion "
                        "options, choose from bank parameters or " + \
-                       ', '.join(conversion_options))
+                       ', '.join(parameter_options))
     if p in _fit_parameters and args.fits_file is None:
         parser.error(f"Parameter {p} needs a --fits-file, but none is given")
 
