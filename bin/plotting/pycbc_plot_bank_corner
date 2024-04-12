@@ -157,7 +157,7 @@ if args.fits_file is not None:
             param = fits_f[p][:].astype(float)
             # We need to check for the cardinal '-1' value which means
             # that the fit is invalid
-            param[param <= 0] = 0 if 'count' in p else np.nan
+            param[param <= 0] = 0 if 'count' in p and 'log' not in p else np.nan
             bank[p] = param
 
 logging.info("Got %d templates from the bank", banklen)
@@ -236,10 +236,14 @@ if cpar:
 
 # check for min/max values of the color parameter
 for p in required_minmax:
+    minval = np.nanmin(bank_fa[p][bank_fa[p] != -np.inf])
+    maxval = np.nanmax(bank_fa[p][bank_fa[p] != np.inf])
+    valrange = maxval - minval
+
     if p not in mins:
-        mins[p] = np.nanmin(bank_fa[p])
+        mins[p] = minval - 0.05 * valrange
     if p not in maxs:
-        maxs[p] = np.nanmax(bank_fa[p])
+        maxs[p] = maxval + 0.05 * valrange
 
 # Deal with non-coloring case:
 zvals = bank_fa[cpar] if cpar else None
@@ -264,7 +268,7 @@ fig, axis_dict = create_multidim_plot(
     vmax=maxs[cpar] if cpar else 0,
     hist_color=hist_color,
     mins=mins,
-    maxs=maxs
+    maxs=maxs,
 )
 
 title_text = f"{os.path.basename(args.bank_file)}"
