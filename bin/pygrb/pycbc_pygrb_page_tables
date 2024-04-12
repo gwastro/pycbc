@@ -389,6 +389,8 @@ if lofft_outfile or lofft_h5_outfile:
              mchirps[trig_index],
              bank_data['spin1z'][trig_data['network/template_id'][trig_index]],
              bank_data['spin2z'][trig_data['network/template_id'][trig_index]],
+             np.degrees(trig_data['network/ra'][trig_index]),
+             np.degrees(trig_data['network/dec'][trig_index]),
              trig_data['network/coherent_snr'][trig_index],
              trig_data['network/my_network_chisq'][trig_index],
              trig_data['network/null_snr'][trig_index]]
@@ -400,7 +402,7 @@ if lofft_outfile or lofft_h5_outfile:
     # th: table header
     th = ['Trial', 'Slide Num', 'p-value', 'GPS time',
           'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z', 'Rec. spin2z',
-          'SNR', 'Chi^2', 'Null SNR']
+          'Rec. Ra', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR']
     th.extend(['%s SNR' % ifo for ifo in ifos])
     th.extend(['%s time shift (s)' % ifo for ifo in ifos])
     th.append('BestNR')
