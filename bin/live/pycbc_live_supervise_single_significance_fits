@@ -9,8 +9,6 @@ import logging
 import argparse
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-import time
-import copy
 import os
 import shutil
 import subprocess
@@ -20,66 +18,7 @@ from lal import gpstime
 
 import pycbc
 from pycbc.io.hdf import HFile
-
-
-def symlink(target, link_name):
-    """Create a symbolic link replacing the destination and checking for
-    errors.
-    """
-    cp = subprocess.run([
-        'ln', '-sf', target, link_name
-    ])
-    if cp.returncode:
-        raise subprocess.SubprocessError(
-            f"Could not link plot {target} to {link_name}"
-        )
-
-
-def dict_to_args(opts_dict):
-    """
-    Convert an option dictionary into a list to be used by subprocess.run
-    """
-    dargs = []
-    for option in opts_dict.keys():
-        dargs.append('--' + option.strip())
-        value = opts_dict[option]
-        if len(value.split()) > 1:
-            # value is a list, append individually
-            for v in value.split():
-                dargs.append(v)
-        elif not value:
-            # option is a flag, do nothing
-            continue
-        else:
-            # Single value option - easy enough
-            dargs.append(value)
-    return dargs
-
-
-def mail_volunteers_error(controls, mail_body_lines, subject):
-    """
-    Email a list of people, defined by mail-volunteers-file
-    To be used for errors or unusual occurences
-    """
-    if 'mail_volunteers_file' not in controls:
-        logging.info(
-            "No file containing people to email, logging the error instead"
-        )
-        for line in mail_body_lines:
-            logging.warning(line)
-        return
-    with open(controls['mail_volunteers_file'], 'r') as mail_volunteers_file:
-        volunteers = [volunteer.strip() for volunteer in
-                      mail_volunteers_file.readlines()]
-    logging.info("Emailing %s with warnings", ' '.join(volunteers))
-    mail_command = [
-        'mail',
-        '-s',
-        subject
-    ]
-    mail_command += volunteers
-    mail_body = '\n'.join(mail_body_lines)
-    subprocess.run(mail_command, input=mail_body, text=True)
+from pycbc.live import supervision as sv
 
 
 def check_trigger_files(filenames, test_options, controls):
@@ -128,29 +67,8 @@ def check_trigger_files(filenames, test_options, controls):
             for fw in filewarnings:
                 logging.warning("    " + fw)
                 mail_body_lines.append("    " + fw)
-        mail_volunteers_error(
-            controls,
-            mail_body_lines,
-            'PyCBC Live single trigger fits extreme value(s)'
-        )
-
-
-def run_and_error(command_arguments, controls):
-    """
-    Wrapper around subprocess.run to catch errors and send emails if required
-    """
-    logging.info("Running " + " ".join(command_arguments))
-    command_output = subprocess.run(command_arguments, capture_output=True)
-    if command_output.returncode:
-        error_contents = [' '.join(command_arguments),
-                          command_output.stderr.decode()]
-        mail_volunteers_error(
-            controls,
-            error_contents,
-            f"PyCBC live could not run {command_arguments[0]}"
-        )
-        err_msg = f"Could not run {command_arguments[0]}"
-        raise subprocess.SubprocessError(err_msg)
+        sv.mail_volunteers_error(controls, mail_body_lines,
+            'PyCBC Live single trigger fits extreme value(s)')
 
 
 # These are the option used to control the supervision, and will not be passed
@@ -270,9 +188,9 @@ def do_fitting(args, day_dt, day_str):
 
         daily_options['gps-start-time'] = f'{gpstime.utc_to_gps(day_dt).gpsSeconds:d}'
         daily_options['gps-end-time'] = f'{gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds:d}'
-        daily_args += dict_to_args(daily_options)
+        daily_args += sv.dict_to_args(daily_options)
 
-        run_and_error(daily_args, controls)
+        sv.run_and_error(daily_args)
 
         # Add plotting for daily fits, and linking to the public directory
         logging.info("Plotting daily fits")
@@ -286,7 +204,7 @@ def do_fitting(args, day_dt, day_str):
             daily_plot_output,
             '--log-colormap'
         ]
-        run_and_error(daily_plot_arguments, controls)
+        sv.run_and_error(daily_plot_arguments)
 
         # Link the plots to the public-dir if wanted
         if 'public-dir' in controls:
@@ -294,7 +212,7 @@ def do_fitting(args, day_dt, day_str):
                                   daily_options['ifos'].split()]
             logging.info("Linking daily fits plots")
             for dpo in daily_plot_outputs:
-                symlink(dpo, public_dir)
+                sv.symlink(dpo, public_dir)
 
     if args.daily_only:
         if 'check-daily-output' in controls:
@@ -388,9 +306,9 @@ def do_fitting(args, day_dt, day_str):
     combined_options['trfits-files'] = ' '.join(trfits_files)
 
     combined_args = ['pycbc_live_combine_single_significance_fits']
-    combined_args += dict_to_args(combined_options)
+    combined_args += sv.dict_to_args(combined_options)
 
-    run_and_error(combined_args, controls)
+    sv.run_and_error(combined_args)
 
     if 'variable-trigger-fits' in controls:
         logging.info('Copying combined fits file to local filesystem')
@@ -400,7 +318,7 @@ def do_fitting(args, day_dt, day_str):
                 controls['variable-trigger-fits']
             )
         except Exception as e:
-            mail_volunteers_error(
+            sv.mail_volunteers_error(
                 controls,
                 [str(e)],
                 "PyCBC live could not copy to variable trigger fits file"
@@ -425,7 +343,7 @@ def do_fitting(args, day_dt, day_str):
         '--log-colormap'
     ]
 
-    run_and_error(combined_plot_arguments, controls)
+    sv.run_and_error(combined_plot_arguments)
 
     combined_plot_outputs = [
         combined_plot_output.format(ifo=ifo, type='fit_coeffs') for ifo in
@@ -440,28 +358,9 @@ def do_fitting(args, day_dt, day_str):
     if 'public-dir' in controls:
         logging.info("Linking combined fits")
         for cpo in combined_plot_outputs:
-            symlink(cpo, public_dir)
+            sv.symlink(cpo, public_dir)
 
     logging.info('Done')
-
-
-def wait_for_utc_time(target_str):
-    """Wait until the UTC time is as given by `target_str`, in HH:MM:SS format.
-    """
-    target_hour, target_minute, target_second = map(int, target_str.split(':'))
-    now = datetime.utcnow()
-    # for today's target, take now and replace the time
-    target_today = now + relativedelta(
-        hour=target_hour, minute=target_minute, second=target_second
-    )
-    # for tomorrow's target, take now, add one day, and replace the time
-    target_tomorrow = now + relativedelta(
-        days=1, hour=target_hour, minute=target_minute, second=target_second
-    )
-    next_target = target_today if now <= target_today else target_tomorrow
-    sleep_seconds = (next_target - now).total_seconds()
-    logging.info('Waiting %.0f s', sleep_seconds)
-    time.sleep(sleep_seconds)
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -499,7 +398,7 @@ if args.run_daily_at is not None:
         parser.error('--run-daily-at takes a UTC time in the format HH:MM:SS')
     logging.info('Starting in daily run mode')
     while True:
-        wait_for_utc_time(args.run_daily_at)
+        sv.wait_for_utc_time(args.run_daily_at)
         logging.info('==== Time to update the single fits, waking up ====')
         # Get the date string for yesterday's triggers
         day_dt = datetime.utcnow() - timedelta(days=1)
