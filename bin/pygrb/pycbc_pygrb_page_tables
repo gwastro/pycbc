@@ -576,7 +576,8 @@ if do_injections:
         load_missed_found_injections(found_missed_file, ifos, opts.opts.newsnr_threshold,
                                 bank_data, background_bestnrs=full_time_veto_max_bestnr)
     logging.info("Missed/found injections/triggers loaded.")
-
+    logging.info("%d found injections found.", len(found_injs['mchirp']))
+    logging.info("%d missed injections found.", len(missed_injs['mchirp']))
     # Construct conditions for injection:
     # 1) found louder than background,
     zero_fap = found_injs['bestnr'] > max_bestnr
