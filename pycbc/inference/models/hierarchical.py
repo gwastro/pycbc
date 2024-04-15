@@ -706,8 +706,13 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # Due to the high precision of extrinsic parameters constrined
             # by the primary model, the mismatch of wavefroms in others by
             # varing those parameters is pretty small, so we can keep them
-            # static to accelerate total_loglr.
-            i_max_extrinsic = numpy.argmax(sh_primary - 0.5 * hh_primary)
+            # static to accelerate total_loglr. Here, we use matched-filering
+            # SNR instead of lilkelihood, because luminosity distance and
+            # inclination has a very strong degeneracy, change of inclination
+            # will change best match distance, so change the amplitude of
+            # waveform. Using SNR will cancel out the effect of amplitude.
+            i_max_extrinsic = numpy.argmax(
+                numpy.abs(sh_primary) / hh_primary**0.5)
             for p in margin_names_vector:
                 if isinstance(self.primary_model.current_params[p],
                               numpy.ndarray):
@@ -763,6 +768,10 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 other_model.return_sh_hh = False
                 sh_others = numpy.full(nums, sh_others_max)
                 hh_others = numpy.full(nums, hh_others_max)
+
+        # add the effect of inclination back to amplitude of waveform
+        sh_others *= self.primary_model.htf
+        hh_others *= numpy.abs(self.primary_model.htf)**2
 
         if nums == 1:
             # the type of the original sh/hh_others are numpy.array,
