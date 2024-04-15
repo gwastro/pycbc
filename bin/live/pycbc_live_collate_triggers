@@ -174,7 +174,6 @@ if args.output_file_name:
     output_file = args.output_dir + args.output_file_name
 else:
     ifo_string = "".join(args.ifos)
-    print(ifo_string)
     output_file = args.output_dir + f'{ifo_string}-Live-' + start_gpstime + '-' + end_gpstime + '.hdf'
 
 logging.info(f" Creating a file at: {output_file}")
