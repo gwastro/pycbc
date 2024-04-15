@@ -875,6 +875,7 @@ class RelativeTimeDom(RelativeTime):
         loglr = self.marginalize_loglr(sh_total, hh_total)
         if self.return_sh_hh:
             results = (sh_total, hh_total)
+            self.htf = htf
         else:
             results = loglr
         return results
