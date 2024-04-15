@@ -371,6 +371,7 @@ def generate_early_warning_psds(
     sample_rate,
     duration,
     kernel_length=10000,
+    low_freq_cutoff=1e-6,
 ):
     """
     Definitely make this less hardcoded!!
@@ -381,7 +382,7 @@ def generate_early_warning_psds(
     delta_t = 1 / sample_rate
     td_psd_length = int(duration * sample_rate)
     # Use sames PSD for A & E
-    psd = pycbc.psd.from_txt(psd_file, flen, 1./tlen, 1./tlen, is_asd_file=False)
+    psd = pycbc.psd.from_txt(psd_file, flen, 1./tlen, low_freq_cutoff, is_asd_file=False)
     psd_kern = PSDFirKernel()
 
     lisa_a_psd_lal = psd.lal()

@@ -87,6 +87,7 @@ class LISAEarlyWarningModel(BaseModel):
         tlen = int(kwargs.pop('tlen'))
         sample_rate = float(kwargs.pop('sample_rate'))
         psd_duration = int(kwargs.pop('psd_duration'))
+        psd_low_freq_cutoff = float(kwargs.pop('psd_low_freq_cutoff'))
         inj_keys = [item for item in kwargs.keys() if item.startswith('injparam')]
         inj_params = {}
         for key in inj_keys:
@@ -140,7 +141,9 @@ class LISAEarlyWarningModel(BaseModel):
             raise ValueError("Must specify a PSD file!")
 
         # Assume A & E PSDs are the same
-        psd = pycbc.psd.from_txt(psd_file, flen, 1./tlen, 1./tlen, is_asd_file=False)
+        psd = pycbc.psd.from_txt(
+            psd_file, flen, 1./tlen, psd_low_freq_cutoff, is_asd_file=False
+        )
         self.psds_for_datagen = {}
         self.psds_for_datagen['LISA_A'] = psd
         self.psds_for_datagen['LISA_E'] = psd.copy()
@@ -151,6 +154,7 @@ class LISAEarlyWarningModel(BaseModel):
             sample_rate=sample_rate,
             duration=psd_duration,
             kernel_length=psd_kernel_length,
+            low_freq_cutoff=psd_low_freq_cutoff,
         )
         self.whitening_psds = {}
         self.whitening_psds['LISA_A'] = psds_outs[0][0]
