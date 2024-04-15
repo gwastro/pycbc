@@ -149,7 +149,7 @@ if args.trigger_file_method == 'gps-start-end-time':
 
     trigger_files = [
         l for l in glob.glob(args.trigger_dir + '/*/*-Live-*.hdf', recursive=True)
-        if float(l.split('/')[-1][10:27]) > args.gps_start_time and float(l.split('/')[-1][10:27]) < args.gps_end_time
+        if float(l.split('/')[-1].split("-")[2]) > args.gps_start_time and float(l.split('/')[-1].split("-")[2]) < args.gps_end_time
     ]
 
 start = timeit.default_timer()
@@ -163,8 +163,8 @@ if args.output_trigger_file_list:
 
 # Record start and end gpstime for the output file
 #  This assumes the trigger files are sorted chronologically
-start_gpstime = float(trigger_files[0].split('/')[-1][10:27])
-end_gpstime = float(trigger_files[-1].split('/')[-1][10:27])
+start_gpstime = float(trigger_files[0].split('/')[-1].split("-")[2])
+end_gpstime = float(trigger_files[0].split('/')[-1].split("-")[2])
 
 ###########################
 # COLLATE THE TRIGGER FILES
@@ -184,11 +184,15 @@ with h5py.File(output_file, 'a') as destination:
         if ifo not in destination:
             destination.create_group(ifo)
 
+    # The user must give the ifos in the same order as the trigger files
+    #  For PyCBC Live it's always H1L1 or H1L1V1?
+    ifo_prefix = "".join(args.ifos)
+
     file_count = 0
     for source_file in trigger_files:
         file_count += 1
         trigger_file = os.path.basename(source_file)
-        if not (trigger_file.endswith('.hdf') and trigger_file.startswith('*-Live')):
+        if not (trigger_file.endswith('.hdf') and trigger_file.startswith(f'{ifo_prefix}-Live')):
             continue
 
         start_time = float(trigger_file.split('-')[2])
