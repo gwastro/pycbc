@@ -74,7 +74,10 @@ liveio.verify_live_significance_duration_bin_options(args, parser)
 stat_kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
 
 duration_bin_edges = liveio.duration_bins_from_cli(args)
-logging.info("Duration bin edges: %s", ','.join(duration_bin_edges))
+logging.info(
+    "Duration bin edges: %s",
+    ', '.join([f'{e:.3e}' for e in duration_bin_edges])
+)
 
 logging.info("Finding files")
 

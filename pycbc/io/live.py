@@ -3,15 +3,18 @@ import os
 import pathlib
 import datetime
 import pycbc
+import h5py
 import numpy
-import lal
-from lal import gpstime as lalgps
 import json
 import copy
 from multiprocessing.dummy import threading
+
+import lal
+from lal import gpstime as lalgps
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
+
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.io.ligolw import (
@@ -692,6 +695,11 @@ def verify_live_significance_trigger_pruning_options(args, parser):
     prune_options = [args.prune_loudest, args.prune_window,
                      args.prune_stat_threshold]
 
+    if any(prune_options) and not all(prune_options):
+        parser.error("Require all or none of --prune-loudest, "
+                     "--prune-window and --prune-stat-threshold")
+
+
 def add_live_significance_duration_bin_options(parser):
     durbin_group = parser.add_argument_group('Duration Bins')
     durbin_group.add_argument(
@@ -736,10 +744,6 @@ def add_live_significance_duration_bin_options(parser):
     )
 
 def verify_live_significance_duration_bin_options(args, parser):
-    if any(prune_options) and not all(prune_options):
-        parser.error("Require all or none of --prune-loudest, "
-                     "--prune-window and --prune-stat-threshold")
-
     # Check the bin options
     if args.duration_bin_edges:
         if (args.duration_bin_start or args.duration_bin_end or
@@ -811,21 +815,21 @@ def find_trigger_files_from_cli(args):
     Wrapper around the find_trigger_files function to use when called using
     options from the add_live_trigger_selection_options function
     """
-    return liveio.find_trigger_files(
-            args.directory,
-            args.gps_start_time,
-            args.gps_end_time,
-            id_string=args.file_identifier,
-            date_directories=args.date_directories,
-            date_directory_format=args.date_directory_format
-        )
+    return find_trigger_files(
+        args.trigger_directory,
+        args.gps_start_time,
+        args.gps_end_time,
+        id_string=args.file_identifier,
+        date_directories=args.date_directories,
+        date_directory_format=args.date_directory_format
+    )
 
 def duration_bins_from_cli(args):
     """Create the duration bins from CLI options.
     """
     if args.duration_bin_edges:
         # direct bin specification
-        return np.array(args.duration_bin_edges)
+        return numpy.array(args.duration_bin_edges)
     # calculate bins from min/max and number
     min_dur = args.duration_bin_start
     max_dur = args.duration_bin_end
@@ -835,13 +839,13 @@ def duration_bins_from_cli(args):
             temp_durs = bank_file['template_duration'][:]
         min_dur, max_dur = min(temp_durs), max(temp_durs)
     if args.duration_bin_spacing == 'log':
-        return np.logspace(
-            np.log10(min_dur),
-            np.log10(max_dur),
+        return numpy.logspace(
+            numpy.log10(min_dur),
+            numpy.log10(max_dur),
             args.num_duration_bins + 1
         )
     if args.duration_bin_spacing == 'linear':
-        return np.linspace(
+        return numpy.linspace(
             min_dur,
             max_dur,
             args.num_duration_bins + 1
