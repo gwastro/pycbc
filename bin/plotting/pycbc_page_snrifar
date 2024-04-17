@@ -84,7 +84,7 @@ parser.add_argument('--ymax', type=float,
                          '(in units of 1/years)')
 args = parser.parse_args()
 
-pycbc.init_logging(opts.verbose)
+pycbc.init_logging(args.verbose)
 
 logging.info('Read in the data')
 f = h5py.File(args.trigger_file, 'r')
