@@ -869,6 +869,7 @@ def duration_bins_from_cli(args):
         )
     raise RuntimeError("Invalid duration bin specification")
 
+
 __all__ = [
     'CandidateForGraceDB', 'gracedb_tag_with_version',
     'gracedb_tag_with_version', 'add_live_trigger_selection_options',
