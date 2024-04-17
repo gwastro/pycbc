@@ -620,6 +620,7 @@ def filter_file(filename, start_time, end_time):
 
     return ((file_start + duration) >= start_time) and (file_start <= end_time)
 
+
 def add_live_trigger_selection_options(parser):
     """
     Add options required for obtaining the right set of PyCBC live triggers
@@ -666,7 +667,11 @@ def add_live_trigger_selection_options(parser):
              "analysis. Default: 'H1L1V1-Live'."
     )
 
+
 def add_live_significance_trigger_pruning_options(parser):
+    """
+    Add options used for pruning in live singles significance fits
+    """
     pruning_group = parser.add_argument_group("Trigger pruning")
     pruning_group.add_argument(
         "--prune-loudest",
@@ -687,9 +692,10 @@ def add_live_significance_trigger_pruning_options(parser):
              "trigger for pruning."
     )
 
+
 def verify_live_significance_trigger_pruning_options(args, parser):
     """
-    Verify options used to select appropriate triggers for single significance fits
+    Verify options used for pruning in live singles significance fits
     """
     # Pruning options are mutually required or not needed
     prune_options = [args.prune_loudest, args.prune_window,
@@ -701,6 +707,10 @@ def verify_live_significance_trigger_pruning_options(args, parser):
 
 
 def add_live_significance_duration_bin_options(parser):
+    """
+    Add options used to calculate duration bin edges in live
+    singles significance fits
+    """
     durbin_group = parser.add_argument_group('Duration Bins')
     durbin_group.add_argument(
         "--duration-bin-edges",
@@ -735,7 +745,7 @@ def add_live_significance_duration_bin_options(parser):
     )
     durbin_group.add_argument(
         "--duration-bin-spacing",
-        choices=['linear','log'],
+        choices=['linear', 'log'],
         default='log',
         help="How to set spacing for bank split "
              "if using --num-duration-bins and "
@@ -743,11 +753,16 @@ def add_live_significance_duration_bin_options(parser):
              "or --duration-from-bank."
     )
 
+
 def verify_live_significance_duration_bin_options(args, parser):
+    """
+    Verify options used to calculate duration bin edges in live
+    singles significance fits
+    """
     # Check the bin options
     if args.duration_bin_edges:
         if (args.duration_bin_start or args.duration_bin_end or
-            args.duration_from_bank or args.num_duration_bins):
+                args.duration_from_bank or args.num_duration_bins):
             parser.error("Cannot use --duration-bin-edges with "
                          "--duration-bin-start, --duration-bin-end, "
                          "--duration-from-bank or --num-duration-bins.")
@@ -810,6 +825,7 @@ def find_trigger_files(directory, gps_start_time, gps_end_time,
 
     return sorted(matching_files)
 
+
 def find_trigger_files_from_cli(args):
     """
     Wrapper around the find_trigger_files function to use when called using
@@ -823,6 +839,7 @@ def find_trigger_files_from_cli(args):
         date_directories=args.date_directories,
         date_directory_format=args.date_directory_format
     )
+
 
 def duration_bins_from_cli(args):
     """Create the duration bins from CLI options.
