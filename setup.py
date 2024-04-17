@@ -72,10 +72,9 @@ def find_files(dirname, relpath=None):
 
 class cbuild_ext(_build_ext):
     def run(self):
-        import pkg_resources
-
         # At this point we can be sure pip has already installed numpy
-        numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
+        import numpy
+        numpy_incl = numpy.get_include()
 
         for ext in self.extensions:
             if (hasattr(ext, 'include_dirs') and
