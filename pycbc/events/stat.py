@@ -711,8 +711,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if not self.has_hist:
             self.get_hist()
 
-        fixed_stat = [b['snglstat'] for a, b in sngls_list if a != limifo][0]
-        s1 = thresh ** 2. - fixed_stat ** 2.
+        fixed_statsq = sum([b['snglstat'] ** 2 for a, b in sngls_list])
+        s1 = thresh ** 2. - fixed_statsq
         # Assume best case scenario and use maximum signal rate
         s1 -= 2. * self.hist_max
         s1[s1 < 0] = 0

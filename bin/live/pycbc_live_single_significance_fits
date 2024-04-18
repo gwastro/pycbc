@@ -290,14 +290,12 @@ for counter, filename in enumerate(files):
         triggers_cut = {k: trigs_ifo[k][keep_idx]
                         for k in trigs_ifo.keys()}
 
-        # Stat class instance to calculate the ranking statistic
-        sds = rank_method[ifo].single(triggers_cut)
         # Calculate the sngl_ranking values
+        sds = rank_method[ifo].single(triggers_cut)
         sngls_value = rank_method[ifo].rank_stat_single(
             (ifo, sds),
             **stat_kwargs
         )
-        #print(sngls_value)
 
         triggers_cut['stat'] = sngls_value
 
