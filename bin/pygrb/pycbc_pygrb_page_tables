@@ -51,7 +51,7 @@ __program__ = "pycbc_pygrb_page_tables"
 def additional_injection_data(data, ifos):
     """Calculates chirp mass and effective sistance"""
     data['mchirp'] = mchirp_from_mass1_mass2(data['mass1'],
-                                            data['mass2'])
+                                             data['mass2'])
     eff_dist = 0
     for ifo in ifos:
         antenna = Detector(ifo)
@@ -82,8 +82,8 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
 
     # Load injections parameters
     for param in inj_params:
-        missed_data[param] = inj_data['/missed/%s' % param][...]
-        found_data[param] = inj_data['/found/%s' % param][...]
+        missed_data[param] = inj_data['missed/%s' % param][...]
+        found_data[param] = inj_data['found/%s' % param][...]
 
     # Calculate injections mchirp
     missed_data['mchirp'] = mchirp_from_mass1_mass2(missed_data['mass1'],
@@ -102,7 +102,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         found_data['rec_%s' % param] = bank_file[param][inj_data['network/template_id']]
 
     found_data['end_time_gc'] = \
-        inj_data['/network/end_time_gc'][...]  # needed to use bestNR
+        inj_data['network/end_time_gc'][...]  # needed to use bestNR
     found_data['rec_mchirp'] = mchirp_from_mass1_mass2(
         found_data['rec_mass1'],
         found_data['rec_mass2'])
@@ -114,9 +114,9 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     found_data['rec_dec'] = np.degrees(trig_data['network/dec'][event_id_found])
     # Staistics value
     for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
-        found_data[param] = inj_data['/network/%s' % param][...]
-    found_data['chisq'] = inj_data['/network/my_network_chisq'][...]
-    found_data['nifos'] = inj_data['/network/nifo'][...].astype(int)
+        found_data[param] = inj_data['network/%s' % param][...]
+    found_data['chisq'] = inj_data['network/my_network_chisq'][...]
+    found_data['nifos'] = inj_data['network/nifo'][...].astype(int)
     # Calibration errors:
     # Get the relative detector sensitivities averaged over the
     # parameters. This is used to marginalize over calibration errors.
