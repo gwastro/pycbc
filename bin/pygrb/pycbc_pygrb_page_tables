@@ -640,7 +640,7 @@ if do_injections:
     cal_error = 0
     for ifo in ifos:
         cal_error += cal_errs[ifo]**2 * \
-            found_injs['inj_sigma_mean_%s' % ifo] ** 2
+            found_injs['inj_sigma_mean_%s' % ifo]**2
     cal_error = cal_error**0.5
 
     max_dc_cal_error = max(cal_dc_errs.values())
