@@ -766,7 +766,7 @@ if do_injections:
     format_strings.extend(['##.##',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
-                           '##.##', '##.##',])
+                           '##.##', '##.##'])
     sngl_snr_keys = ['snr_%s' % ifo for ifo in ifos]
     keys = ['distance']
     keys += ['eff_dist_%s' % ifo for ifo in ifos]
