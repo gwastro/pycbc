@@ -126,8 +126,8 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
         found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
     # BestNRs
-    found_data['bestnr'] = np.ones(len(found_data['reweighted_snr']))
-    found_data['bestnr'][found_data['reweighted_snr'] < snr_threshold] = 0
+    found_data['bestnr'] = found_data['reweighted_snr'][...]
+    found_data['bestnr'][found_data['bestnr'] < snr_threshold] = 0
     if background_bestnrs is not None:
         found_data['fap'] = np.array(
                 [sum(background_bestnrs > bestnr) for bestnr in
