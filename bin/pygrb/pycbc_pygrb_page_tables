@@ -579,7 +579,7 @@ else:
 # =======================
 if do_injections:
     found_injs, missed_injs = \
-        load_missed_found_injections(found_missed_file, ifos, opts.opts.newsnr_threshold,
+        load_missed_found_injections(found_missed_file, ifos, opts.newsnr_threshold,
                                 bank_data, trig_data,
                                 background_bestnrs=full_time_veto_max_bestnr)
     logging.info("Missed/found injections/triggers loaded.")
