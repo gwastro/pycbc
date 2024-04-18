@@ -1223,13 +1223,6 @@ class ExpFitStatistic(PhaseTDStatistic):
             The thresh fit value(s)
         """
         try:
-            # Exists where trigs is a class with the template num attribute
-            tnum = trigs.template_num
-        except AttributeError:
-            # Exists where trigs is dict-like
-            tnum = trigs['template_id']
-
-        try:
             ifo = trigs.ifo
         except AttributeError:
             ifo = trigs.get('ifo', None)
