@@ -375,17 +375,6 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 
 
 # =============================================================================
-# Veto trigger
-# =============================================================================
-def veto_trig(trigs, trial_dict):
-    """Remove trigs that are not in trial dict"""
-    mask = []
-    for time in trigs['end_time']:
-        mask.append(any([time in trial for trial in trial_dict]))
-    return {key: trigs[key][mask] for key in trigs.keys()}
-
-
-# =============================================================================
 # Construct sorted triggers from trials
 # =============================================================================
 def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
