@@ -771,7 +771,7 @@ if do_injections:
     keys = ['distance']
     keys += ['eff_dist_%s' % ifo for ifo in ifos]
     keys += ['tc', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
-             'rec_mchirp', 'inclination', 'ra', 'dec',
+             'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra', 'rec_dec',
              'coherent_snr', 'chisq', 'null_snr']
     keys += sngl_snr_keys
     keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
