@@ -947,6 +947,9 @@ class ExpFitStatistic(PhaseTDStatistic):
             self.kwargs.get("minimum_statistic_cutoff", -30.0)
         )
 
+        # This will be used to keep track of the template number being used
+        self.curr_tnum = None
+
         # Go through the keywords and add class information as needed:
         if self.kwargs["sensitive_volume"]:
             # Add network sensitivity beckmark
@@ -959,7 +962,6 @@ class ExpFitStatistic(PhaseTDStatistic):
                 axis=0,
             )
             self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
-            self.curr_tnum = None
 
         if self.kwargs["dq"]:
             # Reweight the noise rate by the dq reweighting factor
@@ -1069,11 +1071,6 @@ class ExpFitStatistic(PhaseTDStatistic):
         """Get dq values for a specific ifo and dq states"""
 
         try:
-            tnum = trigs.template_num
-        except AttributeError:
-            tnum = trigs["template_id"]
-
-        try:
             ifo = trigs.ifo
         except AttributeError:
             ifo = trigs["ifo"]
@@ -1085,10 +1082,10 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         if ifo in self.dq_rates_by_state:
             for i, st in enumerate(dq_state):
-                if isinstance(tnum, numpy.ndarray):
-                    bin_name = self.dq_bin_by_tid[ifo][tnum[i]]
+                if isinstance(self.curr_tnum, numpy.ndarray):
+                    bin_name = self.dq_bin_by_tid[ifo][self.curr_tnum[i]]
                 else:
-                    bin_name = self.dq_bin_by_tid[ifo][tnum]
+                    bin_name = self.dq_bin_by_tid[ifo][self.curr_tnum]
                 dq_val[i] = self.dq_rates_by_state[ifo][bin_name][st]
         return dq_val
 
@@ -1242,8 +1239,8 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
-        alphai = self.fits_by_tid[ifo]["smoothed_fit_coeff"][tnum]
-        ratei = self.fits_by_tid[ifo]["smoothed_rate_above_thresh"][tnum]
+        alphai = self.fits_by_tid[ifo]["smoothed_fit_coeff"][self.curr_tnum]
+        ratei = self.fits_by_tid[ifo]["smoothed_rate_above_thresh"][self.curr_tnum]
         thresh = self.fits_by_tid[ifo]["thresh"]
 
         return alphai, ratei, thresh
@@ -1304,6 +1301,15 @@ class ExpFitStatistic(PhaseTDStatistic):
         lognoisel: numpy.array
             Array of log noise rate density for each input trigger.
         """
+        # What is the template number currently being used?
+        try:
+            # exists if accessed via coinc_findtrigs, this is a number
+            self.curr_tnum = trigs.template_num
+        except AttributeError:
+            # exists for SingleDetTriggers & pycbc_live get_coinc,
+            # this is a numpy array
+            self.curr_tnum = trigs["template_id"]
+
         alphai, ratei, thresh = self.find_fits(trigs)
         sngl_stat = self.get_sngl_ranking(trigs)
         lognoisel = (
@@ -1379,14 +1385,6 @@ class ExpFitStatistic(PhaseTDStatistic):
         if self.kwargs["sensitive_volume"]:
             # populate fields to allow sensitive volume factor calculation
             singles["sigmasq"] = trigs["sigmasq"][:]
-            try:
-                # exists if accessed via coinc_findtrigs
-                self.curr_tnum = trigs.template_num
-            except AttributeError:
-                # exists for SingleDetTriggers
-                self.curr_tnum = trigs["template_id"]
-                # Should only be one ifo fit file provided
-                assert len(self.ifos) == 1
             # Store benchmark log volume as single-ifo information since
             # the ranking methods do not have access to template id
             singles["benchmark_logvol"] = self.benchmark_logvol[self.curr_tnum]
@@ -1398,9 +1396,14 @@ class ExpFitStatistic(PhaseTDStatistic):
         if self.kwargs["chirp_mass"]:
             from pycbc.conversions import mchirp_from_mass1_mass2
 
-            self.curr_mchirp = mchirp_from_mass1_mass2(
-                trigs.param["mass1"], trigs.param["mass2"]
-            )
+            try:
+                mass1 = trigs.param['mass1']
+                mass2 = trigs.param['mass2']
+            except AttributeError:
+                mass1 = trigs['mass1']
+                mass2 = trigs['mass2']
+            self.curr_mchirp = mchirp_from_mass1_mass2(mass1, mass2)
+
         return numpy.array(singles, ndmin=1)
 
     def sensitive_volume_factor(self, sngls):
@@ -1465,7 +1468,11 @@ class ExpFitStatistic(PhaseTDStatistic):
 
         if self.kwargs["chirp_mass"]:
             # chirp mass reweighting
-            mchirp = min(self.curr_mchirp, self.mcm)
+            if isinstance(self.curr_mchirp, numpy.ndarray):
+                mchirp = numpy.minimum(self.curr_mchirp, self.mcm)
+            else:
+                # curr_mchirp will be a number
+                mchirp = min(self.curr_mchirp, self.mcm)
             sr_factor += numpy.log((mchirp / 20.0) ** (11.0 / 3.0))
 
         if self.kwargs["kde"]:
@@ -1542,8 +1549,11 @@ class ExpFitStatistic(PhaseTDStatistic):
         # Basic noise rate: sum of noise rates multiplied by the
         # window they can form coincidences in
         ln_noise_rate = coinc_rate.combination_noise_lograte(
-            sngl_dict, kwargs["time_addition"]
+            sngl_dict,
+            kwargs["time_addition"],
+            dets=kwargs.get('dets', None),
         )
+
         ln_noise_rate -= self.benchmark_lograte
 
         # Basic option is not to have any signal-based assumptions,
@@ -1556,7 +1566,9 @@ class ExpFitStatistic(PhaseTDStatistic):
             # normalized
             # Extent of time-difference space occupied
             noise_twindow = coinc_rate.multiifo_noise_coincident_area(
-                self.hist_ifos, kwargs["time_addition"]
+                self.hist_ifos,
+                kwargs["time_addition"],
+                dets=kwargs.get('dets', None),
             )
             # Volume is the allowed time difference window, multiplied by 2pi
             # for each phase difference dimension and by allowed range of SNR
