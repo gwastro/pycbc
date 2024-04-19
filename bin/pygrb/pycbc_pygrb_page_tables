@@ -70,7 +70,7 @@ def additional_injection_data(data, ifos):
 
 def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
                                  trig_data, background_bestnrs=None):
-    """Loads found and missed injections from an hdf file as two dictionaries"""
+    """Loads found and missed injections from an hdf file as two dictionaries
 
      Parameters
      ----------
