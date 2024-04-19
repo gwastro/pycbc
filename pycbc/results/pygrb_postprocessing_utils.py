@@ -32,7 +32,6 @@ import numpy
 import h5py
 from scipy import stats
 import ligo.segments as segments
-from pycbc.detector import Detector
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo.lw import utils
