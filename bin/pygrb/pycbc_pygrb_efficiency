@@ -74,6 +74,16 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
     err_high = (err_common + err_vary)/err_denom
     err_high_mc = err_high - fraction
 
+    # Check for cases where error bars are negative and set them to zero
+    if (err_low_mc < 0).any():
+        logging.warning("Negative lower error bar(s) detected."
+                        " Setting to zero.")
+        err_low_mc[err_low_mc < 0] = 0
+    if (err_high_mc < 0).any():
+        logging.warning("Negative upper error bar(s) detected."
+                        " Setting to zero.")
+        err_high_mc[err_high_mc < 0] = 0
+
     return err_low_mc, err_high_mc, fraction
 
 
@@ -82,9 +92,8 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
-parser.add_argument("-F", "--offsource-file", action="store", required=True,
+parser.add_argument("-F", "--trig-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file.")
-# As opposed to offsource-file and trig-file, this only contains onsource
 parser.add_argument("--onsource-file", action="store", default=None,
                     help="Location of on-source trigger file.")
 parser.add_argument("--background-output-file", default=None, required=True,
@@ -124,7 +133,7 @@ if not opts.newsnr_threshold:
 
 # Store options used multiple times in local variables
 outdir = os.path.split(os.path.abspath(opts.background_output_file))[0]
-trig_file = opts.offsource_file
+trig_file = opts.trig_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
 inj_set_name = opts.injection_set_name
@@ -631,7 +640,9 @@ if do_injections:
     plot_title = "Exclusion distance - "+inj_set_name
     plot_caption = "Injection recovery efficiency using "
     plot_caption += "BestNR as detection statistic.  "
-    plot_caption += "Injections louder than loudest foreground trigger."
+    plot_caption += "Injections louder than loudest foreground trigger.\n"
+    plot_caption += f" 90%% exclusion distance: {excl_dist} Mpc\n"
+    plot_caption += f" 50%% sensitive distance: {sens_dist} Mpc"
     fig_path = opts.onsource_output_file
     save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
                            title=plot_title, caption=plot_caption)

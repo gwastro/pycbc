@@ -26,6 +26,8 @@ import h5py
 import numpy as np
 import argparse
 import logging
+from textwrap import wrap
+
 from pycbc import init_logging
 import pycbc.version
 from pycbc import __version__
@@ -38,6 +40,14 @@ from pycbc.results.scatter_histograms import create_multidim_plot
 from pycbc.results import metadata
 
 conversion_options = bconv.conversion_options
+_fit_parameters = [
+    'count_above_thresh',
+    'count_in_template',
+    'fit_coeff',
+    'median_sigma'
+]
+parameter_options = conversion_options + _fit_parameters
+
 
 parser = argparse.ArgumentParser(usage='pycbc_plot_bank_corner [--options]',
                     description=__doc__)
@@ -61,7 +71,7 @@ parser.add_argument("--parameters",
     metavar="PARAM[:LABEL]",
     help="Only plot the given parameters. May also provide a "
          "label for each parameter. Choose from a combination of " + \
-         ", ".join(conversion_options)  + ", though some "
+         ", ".join(parameter_options)  + ", though some "
          "may not be buildable from bank parameters. Can optionally "
          "also specify a LABEL for each parameter. If no LABEL is "
          "provided, PARAM will used as the LABEL. If LABEL "
@@ -109,6 +119,13 @@ parser.add_argument('--dpi',
     type=int,
     default=200,
     help="Set the DPI of the plot. Default is 200.")
+parser.add_argument('--fits-file',
+    help="Provide a fits file to plot parameters from. Required if any of "
+         ', '.join(_fit_parameters) + " are given as parameters.")
+parser.add_argument('--title',
+    help="A title for the plot. If not given, the files supplied "
+         "and the number of templates will be used")
+
 add_style_opt_to_parser(parser)
 args = parser.parse_args()
 
@@ -128,6 +145,22 @@ with h5py.File(args.bank_file, 'r') as bankf:
         bank[p] = bankf[p][:]
         banklen = bankf[p].size
 
+if args.fits_file is not None:
+    # Add fit parameters to the bank object
+    with h5py.File(args.fits_file, 'r') as fits_f:
+        for p in _fit_parameters:
+            if not fits_f[p].size == banklen:
+                raise RuntimeError(
+                    "Fits parameter %s is not the same size (%d) as the "
+                    "bank (%d), this looks like the fits file does not "
+                    "correspond to this bank" % (p, fits_f[p].size, banklen)
+                )
+            param = fits_f[p][:].astype(float)
+            # We need to check for the cardinal '-1' value which means
+            # that the fit is invalid
+            param[param <= 0] = 0 if 'count' in p and 'log' not in p else np.nan
+            bank[p] = param
+
 logging.info("Got %d templates from the bank", banklen)
 
 # If no parameters are given - just plot whatever is in the bank
@@ -143,7 +176,7 @@ cpar = args.color_parameter[0] if args.color_parameter else False
 cpar_label = args.color_parameter_labels[cpar] if cpar else False
 
 required_params = []
-for co in conversion_options:
+for co in parameter_options:
     if any([co in par for par in args.parameters]):
         required_params.append(co)
     if cpar and co in cpar:
@@ -159,9 +192,6 @@ if 'duration' in required_params and any([p.endswith('_duration')
         # It looks like duration has been added where it didnt need to be
         required_params.remove('duration')
 
-logging.info("Required parameters to get from bank: %s",
-             ', '.join(required_params))
-
 # Do the same with the duration functions, but here we need to make
 # sure we have some other keys in order to calculate duration
 duration_required_keys = ['mass1', 'mass2', 'spin1z',
@@ -173,13 +203,18 @@ if any(['duration' in par for par in args.parameters]):
 # Some things may have been double counted - undo this
 required_params = np.unique(required_params)
 
+logging.info("Required parameters to get from bank: %s",
+             ', '.join(required_params))
+
 # Get parameters not directly in the bank:
 for p in required_params:
     if p in bank: continue
-    if p not in bconv.conversion_options:
-        raise KeyError(f"ERROR Parameter {p} not in bank or conversion "
+    if p not in parameter_options:
+        raise KeyError(f"Parameter {p} not in bank, fits or conversion "
                        "options, choose from bank parameters or " + \
-                       ', '.join(bconv.conversion_options))
+                       ', '.join(parameter_options))
+    if p in _fit_parameters and args.fits_file is None:
+        parser.error(f"Parameter {p} needs a --fits-file, but none is given")
 
     logging.info("Converting %s", p)
     bank[p] = bconv.get_bank_property(p, bank, np.arange(banklen))
@@ -202,10 +237,14 @@ if cpar:
 
 # check for min/max values of the color parameter
 for p in required_minmax:
+    minval = np.nanmin(bank_fa[p][bank_fa[p] != -np.inf])
+    maxval = np.nanmax(bank_fa[p][bank_fa[p] != np.inf])
+    valrange = maxval - minval
+
     if p not in mins:
-        mins[p] = bank_fa[p].min()
+        mins[p] = minval - 0.05 * valrange
     if p not in maxs:
-        maxs[p] = bank_fa[p].max()
+        maxs[p] = maxval + 0.05 * valrange
 
 # Deal with non-coloring case:
 zvals = bank_fa[cpar] if cpar else None
@@ -219,7 +258,7 @@ fig, axis_dict = create_multidim_plot(
     plot_marginal=args.plot_histogram,
     plot_scatter=True,
     plot_contours=False,
-    scatter_cmap="plasma",
+    scatter_cmap="viridis",
     marginal_title=False,
     marginal_percentiles=[],
     fill_color='g',
@@ -230,10 +269,14 @@ fig, axis_dict = create_multidim_plot(
     vmax=maxs[cpar] if cpar else 0,
     hist_color=hist_color,
     mins=mins,
-    maxs=maxs
+    maxs=maxs,
 )
 
-fig.suptitle(f"{os.path.basename(args.bank_file)} - {banklen} templates")
+title_text = f"{os.path.basename(args.bank_file)}"
+if args.fits_file is not None:
+    title_text += f", {os.path.basename(args.fits_file)}"
+title_text += f" - {banklen}\u00a0templates"
+fig.suptitle('\n'.join(wrap(args.title if args.title is not None else title_text, 60)))
 for k, v in axis_dict.items():
     # Some may be long labels - tilt the label a little to fit together
     xlab = v[0].get_xlabel()

@@ -450,6 +450,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
         trig_bestnr[slide_id] = trigs['network/reweighted_snr'][indices]
         trig_bestnr[slide_id][trig_bestnr[slide_id] <
                               opts.newsnr_threshold] = 0
+
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
@@ -673,9 +674,7 @@ def get_coinc_snr(trigs_or_injs, ifos):
     single_snr_sq = dict((ifo, None) for ifo in ifos)
     snr_sum_square = numpy.zeros(num_trigs_or_injs)
     for ifo in ifos:
-        key = ifo + '/snr_' + ifo.lower()
-        if ifo.lower() != 'h1':
-            key = key[:-1]
+        key = ifo + '/snr'
         # Square the individual SNRs
         single_snr_sq[ifo] = numpy.square(
             trigs_or_injs[key][:])

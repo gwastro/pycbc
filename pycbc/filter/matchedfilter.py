@@ -1804,7 +1804,50 @@ def followup_event_significance(ifo, data_reader, bank,
     to determine if the SNR in the first detector has a significant peak
     in the on-source window. The significance is given in terms of a
     p-value. See Dal Canton et al. 2021 (https://arxiv.org/abs/2008.07494)
-    for details.
+    for details. A portion of the SNR time series around the on-source window
+    is also returned for use in BAYESTAR.
+
+    If the calculation cannot be carried out, for example because `ifo` is
+    not in observing mode at the requested time, then None is returned.
+    Otherwise, the dict contains the following keys. `snr_series` is a
+    TimeSeries object with the SNR time series for BAYESTAR. `peak_time` is the
+    time of maximum SNR in the on-source window. `pvalue` is the p-value for
+    the maximum on-source SNR compared to the off-source realizations.
+    `pvalue_saturated` is a bool indicating whether the p-value is limited by
+    the number of off-source realizations, i.e. whether the maximum on-source
+    SNR is larger than all the off-source ones. `sigma2` is the SNR
+    normalization (squared) for the given template and detector.
+
+    Parameters
+    ----------
+    ifo: str
+        Which detector is being used for the calculation.
+    data_reader: StrainBuffer
+        StrainBuffer object providing the data for the given detector.
+    bank: LiveFilterBank
+        Template bank object providing the template related quantities.
+    template_id: int
+        Index of the template in the bank.
+    coinc_times: dict
+        Dictionary keyed by detector names reporting the coalescence times of
+        a candidate measured at the different detectors. Used to define the
+        on-source window of the candidate in `ifo`.
+    coinc_threshold: float
+        Nominal statistical uncertainty in `coinc_times`; expands the
+        on-source window by twice the given amount.
+    lookback: float
+        Nominal amount of time to use for the calculation of the onsource and
+        offsource SNR time series. The actual time may be reduced depending on
+        the duration of the template and the strain buffer in the data reader
+        (if so, a warning is logged).
+    duration: float
+        Duration of the SNR time series to be reported to BAYESTAR.
+
+    Returns
+    -------
+    followup_info: dict or None
+        Results of the followup calculation (see above) or None if `ifo` did
+        not have usable data.
     """
     from pycbc.waveform import get_waveform_filter_length_in_time
     tmplt = bank.table[template_id]
@@ -1830,17 +1873,63 @@ def followup_event_significance(ifo, data_reader, bank,
     onsource_start -= coinc_threshold
     onsource_end += coinc_threshold
 
-    # Calculate how much time needed to calculate significance
-    trim_pad = (data_reader.trim_padding * data_reader.strain.delta_t)
-    bdur = int(lookback + 2.0 * trim_pad + length_in_time)
-    if bdur > data_reader.strain.duration * .75:
-        bdur = data_reader.strain.duration * .75
+    # Calculate how much time is needed to calculate the significance.
+    # At the minimum, we need enough time to include the lookback, plus time
+    # that we will throw away because of corruption from finite-duration filter
+    # responses (this is equal to the nominal padding plus the template
+    # duration). Next, for efficiency, we round the resulting duration up to
+    # align it with one of the frequency resolutions preferred by the template
+    # bank. And finally, the resulting duration must fit into the strain buffer
+    # available in the data reader, so we check that.
+    trim_pad = data_reader.trim_padding * data_reader.strain.delta_t
+    buffer_duration = lookback + 2 * trim_pad + length_in_time
+    buffer_samples = bank.round_up(int(buffer_duration * bank.sample_rate))
+    max_safe_buffer_samples = int(
+        0.9 * data_reader.strain.duration * bank.sample_rate
+    )
+    if buffer_samples > max_safe_buffer_samples:
+        buffer_samples = max_safe_buffer_samples
+        new_lookback = (
+            buffer_samples / bank.sample_rate - (2 * trim_pad + length_in_time)
+        )
+        # Require a minimum lookback time of twice the onsource window or SNR
+        # time series (whichever is longer) so we have enough data for the
+        # onsource window, the SNR time series, and at least a few background
+        # samples
+        min_required_lookback = 2 * max(onsource_end - onsource_start, duration)
+        if new_lookback > min_required_lookback:
+            logging.warning(
+                'Strain buffer too short for a lookback time of %f s, '
+                'reducing lookback to %f s',
+                lookback,
+                new_lookback
+            )
+        else:
+            logging.error(
+                'Strain buffer too short to compute the followup SNR time '
+                'series for template %d, will not use %s for followup. '
+                'Either use shorter templates, or raise --max-length.',
+                template_id,
+                ifo
+            )
+            return None
+    buffer_duration = buffer_samples / bank.sample_rate
 
     # Require all strain be valid within lookback time
     if data_reader.state is not None:
-        state_start_time = data_reader.strain.end_time \
-                - data_reader.reduced_pad * data_reader.strain.delta_t - bdur
-        if not data_reader.state.is_extent_valid(state_start_time, bdur):
+        state_start_time = (
+            data_reader.strain.end_time
+            - data_reader.reduced_pad * data_reader.strain.delta_t
+            - buffer_duration
+        )
+        if not data_reader.state.is_extent_valid(
+            state_start_time, buffer_duration
+        ):
+            logging.info(
+                '%s strain buffer contains invalid data during lookback, '
+                'will not use for followup',
+                ifo
+            )
             return None
 
     # We won't require that all DQ checks be valid for now, except at
@@ -1849,16 +1938,23 @@ def followup_event_significance(ifo, data_reader, bank,
         dq_start_time = onsource_start - duration / 2.0
         dq_duration = onsource_end - onsource_start + duration
         if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
+            logging.info(
+                '%s DQ buffer indicates invalid data during onsource window, '
+                'will not use for followup',
+                ifo
+            )
             return None
 
-    # Calculate SNR time series for this duration
-    htilde = bank.get_template(template_id, min_buffer=bdur)
+    # Calculate SNR time series for the entire lookback duration
+    htilde = bank.get_template(
+        template_id, delta_f=bank.sample_rate / float(buffer_samples)
+    )
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
     sigma2 = htilde.sigmasq(stilde.psd)
     snr, _, norm = matched_filter_core(htilde, stilde, h_norm=sigma2)
 
-    # Find peak in on-source and determine p-value
+    # Find peak SNR in on-source and determine p-value
     onsrc = snr.time_slice(onsource_start, onsource_end)
     peak = onsrc.abs_arg_max()
     peak_time = peak * snr.delta_t + onsrc.start_time

@@ -92,7 +92,7 @@ def combination_noise_rate(rates, slop):
     return numpy.exp(combination_noise_lograte(log_rates, slop))
 
 
-def combination_noise_lograte(log_rates, slop):
+def combination_noise_lograte(log_rates, slop, dets=None):
     """
     Calculate the expected rate of noise coincidences for a combination of
     detectors given log of single detector noise rates
@@ -105,6 +105,9 @@ def combination_noise_lograte(log_rates, slop):
     slop: float
         time added to maximum time-of-flight between detectors to account
         for timing error
+    dets: dict
+        Key: ifo string, Value: pycbc.detector.Detector object
+        If not provided, will be created from ifo strings
 
     Returns
     -------
@@ -112,13 +115,15 @@ def combination_noise_lograte(log_rates, slop):
         Expected log coincidence rate in the combination, units Hz
     """
     # multiply product of trigger rates by the overlap time
-    allowed_area = multiifo_noise_coincident_area(list(log_rates), slop)
+    allowed_area = multiifo_noise_coincident_area(list(log_rates),
+                                                  slop,
+                                                  dets=dets)
     # list(dict.values()) is python-3-proof
     rateprod = numpy.sum(list(log_rates.values()), axis=0)
     return numpy.log(allowed_area) + rateprod
 
 
-def multiifo_noise_coincident_area(ifos, slop):
+def multiifo_noise_coincident_area(ifos, slop, dets=None):
     """
     Calculate the total extent of time offset between 2 detectors,
     or area of the 2d space of time offsets for 3 detectors, for
@@ -131,6 +136,9 @@ def multiifo_noise_coincident_area(ifos, slop):
         list of interferometers
     slop: float
         extra time to add to maximum time-of-flight for timing error
+    dets: dict
+        Key: ifo string, Value: pycbc.detector.Detector object
+        If not provided, will be created from ifo strings
 
     Returns
     -------
@@ -138,9 +146,8 @@ def multiifo_noise_coincident_area(ifos, slop):
         area in units of seconds^(n_ifos-1) that coincident values can fall in
     """
     # set up detector objects
-    dets = {}
-    for ifo in ifos:
-        dets[ifo] = pycbc.detector.Detector(ifo)
+    if dets is None:
+        dets = {ifo: pycbc.detector.Detector(ifo) for ifo in ifos}
     n_ifos = len(ifos)
 
     if n_ifos == 2:

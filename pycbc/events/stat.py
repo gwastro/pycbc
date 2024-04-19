@@ -845,13 +845,20 @@ class ExpFitStatistic(QuadratureSumStatistic):
             The thresh fit value(s)
         """
         try:
-            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            # Exists where trigs is a class with the template num attribute
+            tnum = trigs.template_num
+        except AttributeError:
+            # Exists where trigs is dict-like
+            tnum = trigs['template_id']
+
+        try:
             ifo = trigs.ifo
         except AttributeError:
-            tnum = trigs['template_id']  # exists for SingleDetTriggers
-            assert len(self.ifos) == 1
-            # Should be exactly one ifo provided
-            ifo = self.ifos[0]
+            ifo = trigs.get('ifo', None)
+            if ifo is None:
+                ifo = self.ifos[0]
+            assert ifo in self.ifos
+
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
         alphai = self.fits_by_tid[ifo]['smoothed_fit_coeff'][tnum]
@@ -1481,10 +1488,9 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             # exists if accessed via coinc_findtrigs
             self.curr_tnum = trigs.template_num
         except AttributeError:
-            # exists for SingleDetTriggers
+            # exists for SingleDetTriggers & pycbc_live get_coinc
             self.curr_tnum = trigs['template_id']
-            # Should only be one ifo fit file provided
-            assert len(self.ifos) == 1
+
         # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
         singles['benchmark_logvol'] = self.benchmark_logvol[self.curr_tnum]
@@ -1542,8 +1548,23 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         """
 
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
-        ln_noise_rate = coinc_rate.combination_noise_lograte(
-                                  sngl_rates, kwargs['time_addition'])
+        # Find total volume of phase-time-amplitude space occupied by
+        # noise coincs
+        if 'dets' in kwargs:
+            ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                    sngl_rates, kwargs['time_addition'],
+                                    kwargs['dets'])
+                                    
+            # Extent of time-difference space occupied
+            noise_twindow = coinc_rate.multiifo_noise_coincident_area(
+                                self.hist_ifos, kwargs['time_addition'],
+                                kwargs['dets'])
+        else:
+            ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                    sngl_rates, kwargs['time_addition'])
+            noise_twindow = coinc_rate.multiifo_noise_coincident_area(
+                                self.hist_ifos, kwargs['time_addition'])
+
         ln_noise_rate -= self.benchmark_lograte
 
         # Network sensitivity for a given coinc type is approximately
@@ -1565,11 +1586,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         stat = {ifo: st for ifo, st in s}
         logr_s = self.logsignalrate(stat, slide * step, to_shift)
 
-        # Find total volume of phase-time-amplitude space occupied by noise
-        # coincs
-        # Extent of time-difference space occupied
-        noise_twindow = coinc_rate.multiifo_noise_coincident_area(
-                            self.hist_ifos, kwargs['time_addition'])
         # Volume is the allowed time difference window, multiplied by 2pi for
         # each phase difference dimension and by allowed range of SNR ratio
         # for each SNR ratio dimension : there are (n_ifos - 1) dimensions
@@ -1741,6 +1757,39 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         logr_s += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return logr_s
 
+    def single(self, trigs):
+        """
+        Calculate the necessary single detector information
+
+        In this case the ranking rescaled (see the lognoiserate method here)
+        with the phase, end time, sigma, SNR, template_id and the
+        benchmark_logvol values added in. This also stored the current chirp
+        mass for use when computing the coinc statistic values.
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        try:
+            mass1 = trigs.param['mass1']
+            mass2 = trigs.param['mass2']
+        except AttributeError:
+            mass1 = trigs['mass1']
+            mass2 = trigs['mass2']
+        self.curr_mchirp = mchirp_from_mass1_mass2(mass1, mass2)
+
+        if self.mcm is not None:
+            # Careful - input might be a str, so cast to float
+            self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
+        return ExpFitFgBgNormStatistic.single(self, trigs)
+
     def rank_stat_single(self, single_info,
                          **kwargs): # pylint:disable=unused-argument
         """
@@ -1767,32 +1816,35 @@ class ExpFitFgBgNormBBHStatistic(ExpFitFgBgNormStatistic):
         rank_sngl += numpy.log((self.curr_mchirp / 20.) ** (11. / 3.))
         return rank_sngl
 
-    def single(self, trigs):
+    def rank_stat_coinc(self, sngls_list, slide, step, to_shift, **kwargs):
         """
-        Calculate the necessary single detector information
-
-        In this case the ranking rescaled (see the lognoiserate method here)
-        with the phase, end time, sigma, SNR, template_id and the
-        benchmark_logvol values added in. This also stored the current chirp
-        mass for use when computing the coinc statistic values.
+        Calculate the coincident detection statistic.
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
-            Object holding single detector trigger information.
+        sngls_list: list
+            List of (ifo, single detector statistic) tuples
+        slide: (unused in this statistic)
+        step: (unused in this statistic)
+        to_shift: list
+            List of integers indicating what multiples of the time shift will
+            be applied (unused in this statistic)
 
         Returns
         -------
         numpy.ndarray
-            The array of single detector values
+            Array of coincident ranking statistic values
         """
-        from pycbc.conversions import mchirp_from_mass1_mass2
-        self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
-                                                   trigs.param['mass2'])
-        if self.mcm is not None:
-            # Careful - input might be a str, so cast to float
-            self.curr_mchirp = min(self.curr_mchirp, float(self.mcm))
-        return ExpFitFgBgNormStatistic.single(self, trigs)
+
+        if 'mchirp' in kwargs:
+            self.curr_mchirp = kwargs['mchirp']
+
+        return ExpFitFgBgNormStatistic.rank_stat_coinc(self,
+                                                       sngls_list,
+                                                       slide,
+                                                       step,
+                                                       to_shift,
+                                                       **kwargs)
 
     def coinc_lim_for_thresh(self, s, thresh, limifo,
                              **kwargs): # pylint:disable=unused-argument

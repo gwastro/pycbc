@@ -104,6 +104,7 @@ class LiveEventManager(object):
         self.padata = livepau.PAstroData(args.p_astro_spec, args.bank_file)
         self.use_date_prefix = args.day_hour_output_prefix
         self.ifar_upload_threshold = args.ifar_upload_threshold
+        self.pvalue_lookback_time = args.pvalue_lookback_time
         self.pvalue_livetime = args.pvalue_combination_livetime
         self.gracedb_server = args.gracedb_server
         self.gracedb_search = args.gracedb_search
@@ -221,7 +222,8 @@ class LiveEventManager(object):
                 self.data_readers[ifo],
                 self.bank,
                 template_id,
-                coinc_times
+                coinc_times,
+                lookback=self.pvalue_lookback_time
             )
             if pvalue_info is None:
                 continue
@@ -802,6 +804,20 @@ class LiveEventManager(object):
                 store_psd[ifo].save(fname, group='%s/psd' % ifo)
 
 
+def check_max_length(args, waveforms):
+    """Check that the `--max-length` option is sufficient to accomodate the
+    longest template in the bank and the PSD estimation options.
+    """
+    lengths = numpy.array([1.0 / wf.delta_f for wf in waveforms])
+    psd_len = args.psd_segment_length * (args.psd_samples // 2 + 1)
+    max_length = max(lengths.max() + args.pvalue_lookback_time, psd_len)
+    if max_length > args.max_length:
+        raise ValueError(
+            '--max-length is too short for this template bank. '
+            f'Use at least {max_length}.'
+        )
+
+
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument('--verbose', action='store_true')
@@ -962,6 +978,10 @@ parser.add_argument('--enable-background-estimation', default=False, action='sto
 parser.add_argument('--ifar-double-followup-threshold', type=float, required=True,
                     help='Inverse-FAR threshold to followup double coincs with'
                          'additional detectors')
+parser.add_argument('--pvalue-lookback-time', type=float, default=150,
+                    metavar='SECONDS',
+                    help='Lookback time for the calculation of the p-value in '
+                         'followup detectors.')
 parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
                     help="Livetime used for p-value combination with followup "
                          "detectors, in years")
@@ -985,6 +1005,10 @@ parser.add_argument('--gracedb-labels', metavar='LABEL', nargs='+',
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading candidate '
                          'triggers to GraceDB, in years.')
+parser.add_argument('--coinc-window-pad', type=float,
+                    help="Amount of time allowed to form a coincidence in "
+                         "addition to the time of flight in seconds.",
+                    default=0.002)
 parser.add_argument('--file-prefix', default='Live')
 
 parser.add_argument('--round-start-time', type=int, metavar='X',
@@ -1106,13 +1130,10 @@ with ctx:
         print(e)
         exit()
 
-    maxlen = args.psd_segment_length * (args.psd_samples // 2 + 1)
     if evnt.rank > 0:
         bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
-        lengths = numpy.array([1.0 / wf.delta_f for wf in waveforms])
-        psd_len = args.psd_segment_length * (args.psd_samples // 2 + 1)
-        maxlen = max(lengths.max(), psd_len)
+        check_max_length(args, waveforms)
         mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
                                     args.chisq_bins, sg_chisq,
                                     snr_abort_threshold=args.snr_abort_threshold,
@@ -1134,11 +1155,8 @@ with ctx:
     # Initialize the data readers for all detectors. For rank 0, we need data
     # from all detectors, including the localization-only ones. For higher
     # ranks, we only need the detectors that can generate candidates.
-    if args.max_length is not None:
-        maxlen = args.max_length
-    maxlen = int(maxlen)
     data_reader = {
-        ifo: StrainBuffer.from_cli(ifo, args, maxlen)
+        ifo: StrainBuffer.from_cli(ifo, args)
         for ifo in (evnt.ifos if evnt.rank == 0 else evnt.trigg_ifos)
     }
     evnt.data_readers = data_reader

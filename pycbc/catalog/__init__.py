@@ -28,8 +28,6 @@ compact binary mergers
 import logging
 import numpy
 
-from . import catalog
-
 logger = logging.getLogger('pycbc.catalog')
 
 _aliases = {}
@@ -40,10 +38,42 @@ _aliases['snr'] = 'network_matched_filter_snr'
 _aliases['z'] = _aliases['redshift'] = 'redshift'
 _aliases['distance'] = 'luminosity_distance'
 
+def find_event_in_catalog(name, source=None):
+    """ Get event data from a catalog
+    
+    Parameters
+    ----------
+    name: str
+        Name of event to retrieve from catalog
+    source: str, None
+        If not provided, look through each catalog until event is found.
+        If provided, only check that specific catalog.
+    """
+    from .catalog import list_catalogs, get_source
+
+    if source is None:
+        catalogs = list_catalogs()
+    else:
+        catalogs = [source]
+
+    for catalog in catalogs:
+        try:
+            return get_source(catalog)[name]
+        except KeyError:
+            # Try common name
+            data = get_source(catalog)
+            for mname in data:
+                cname = data[mname]['commonName']
+                if cname.upper() == name.upper():
+                    name = mname
+                    data = data[name]
+                    return data
+    else:
+        raise ValueError(f'Did not find merger matching name: {name}')
 
 class Merger(object):
     """Informaton about a specific compact binary merger"""
-    def __init__(self, name, source='gwtc-1'):
+    def __init__(self, name, source=None):
         """ Return the information of a merger
 
         Parameters
@@ -51,20 +81,7 @@ class Merger(object):
         name: str
             The name (GW prefixed date) of the merger event.
         """
-        try:
-            self.data = catalog.get_source(source)[name]
-        except KeyError:
-            # Try common name
-            data = catalog.get_source(source)
-            for mname in data:
-                cname = data[mname]['commonName']
-                if cname == name:
-                    name = mname
-                    self.data = data[name]
-                    break
-            else:
-                raise ValueError('Did not find merger matching'
-                                 ' name: {}'.format(name))
+        self.data = find_event_in_catalog(name, source=source)
 
         # Set some basic params from the dataset
         for key in self.data:
@@ -150,12 +167,14 @@ class Merger(object):
 class Catalog(object):
     """Manage a set of binary mergers"""
 
-    def __init__(self, source='gwtc-1'):
+    def __init__(self, source='gwtc-3'):
         """ Return the set of detected mergers
 
         The set of detected mergers. At some point this may have some selection
         abilities.
         """
+        from . import catalog
+        
         self.data = catalog.get_source(source=source)
         self.mergers = {name: Merger(name,
                                      source=source) for name in self.data}
