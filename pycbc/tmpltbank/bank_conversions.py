@@ -94,7 +94,7 @@ def get_bank_property(parameter, bank, template_ids):
         if parameter != "premerger_duration" and 'template_duration' in bank:
             # This statement should be the reached only if 'duration'
             # is given, but 'template_duration' is in the bank
-            values = bank['template_duration'][:][template_ids]
+            fullband_dur = bank['template_duration'][:][template_ids]
         elif parameter in ['template_duration', 'duration']:
             # Only calculate fullband/premerger durations if we need to
             fullband_req = True
