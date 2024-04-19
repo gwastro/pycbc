@@ -107,7 +107,6 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     # Calculate injections mchirp
     missed_data['mchirp'] = mchirp_from_mass1_mass2(missed_data['mass1'],
                                                     missed_data['mass2'])
-    
     found_data['mchirp'] = mchirp_from_mass1_mass2(found_data['mass1'],
                                                    found_data['mass2'])
 
@@ -235,7 +234,6 @@ if output_files.count(None) == len(output_files):
     msg = "Please specify at least one output file location."
     parser.error(msg)
 
-
 if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
     opts.quiet_found_injs_h5_output_file:
     do_injections = True
@@ -310,6 +308,7 @@ logging.info("Setting random seed to %d.", opts.seed)
 # Extract IFOs and vetoes
 ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
+
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
 trig_data = ppu.load_triggers(trig_file, None)
