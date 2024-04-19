@@ -49,7 +49,7 @@ __program__ = "pycbc_pygrb_page_tables"
 # Functions
 # =============================================================================
 def additional_injection_data(data, ifos):
-    """Calculates chirp mass and effective sistance"""
+    """Provides data with chirp masses and effective distances"""
     data['mchirp'] = mchirp_from_mass1_mass2(data['mass1'],
                                              data['mass2'])
     eff_dist = 0
