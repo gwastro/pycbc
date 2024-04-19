@@ -300,7 +300,7 @@ slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
 segment_dict = ppu.load_segment_dict(trig_file)
 
-# Read the template masses
+# Calculate chirp masses of templates
 logging.info('Loading triggers template masses')
 bank_data =  h5py.File(opts.triggers_bank_file, 'r')
 mchirps = mchirp_from_mass1_mass2(
