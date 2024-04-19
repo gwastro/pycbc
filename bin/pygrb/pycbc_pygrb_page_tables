@@ -70,8 +70,26 @@ def additional_injection_data(data, ifos):
 
 def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
                                  trig_data, background_bestnrs=None):
-    """Loads found and missed injections from a PyGRB output hdf file as
-    two dictionaries"""
+    """Loads found and missed injections from an hdf file as two dictionaries"""
+
+     Parameters
+     ----------
+     hdf_file: str
+         File path
+     ifos: list
+     snr_threshold: float
+         NewSNR threshold
+     bank_file: h5py.File object
+     trig_data: h5py.File object
+     background_bestnrs: numpy.array, optional
+         Used to compute FAP of quiet injections.
+
+     Returns
+     -------
+     data: tuple of dictionaries
+         Found and missed injection parameter dictionaries.
+     """
+
     inj_data = h5py.File(hdf_file, 'r')
     inj_params = ['mass1', 'mass2', 'distance', 'inclination', 'ra', 'dec',
                   'polarization', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
