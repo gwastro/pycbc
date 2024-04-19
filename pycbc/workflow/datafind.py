@@ -33,7 +33,7 @@ import os, copy
 import logging
 from ligo import segments
 from ligo.lw import utils, table
-from glue import lal
+from gwdatafind import find_urls as find_frame_urls
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 from pycbc.io.ligolw import LIGOLWContentHandler
@@ -686,6 +686,8 @@ def setup_datafind_from_pregenerated_lcf_files(cp, ifos, outputDir, tags=None):
     datafindOuts : pycbc.workflow.core.FileList
         List of all the datafind output files for use later in the pipeline.
     """
+    from glue import lal
+
     if tags is None:
         tags = []
 
@@ -820,6 +822,8 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
     missingFrames: Dict. of ifo keyed lal.Cache instances
         The list of missing frames
     """
+    from glue import lal
+
     missingFrameSegs = {}
     missingFrames = {}
     for cache in datafindcaches:
@@ -974,6 +978,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
         Cache file listing all of the datafind output files for use later in the pipeline.
 
     """
+    from glue import lal
+
     if tags is None:
         tags = []
 
