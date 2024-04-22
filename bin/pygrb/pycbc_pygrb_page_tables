@@ -32,6 +32,7 @@ import h5py
 import pycbc.version
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.detector import Detector
+from pycbc.events.coherent import reweightedsnr_cut
 from pycbc import init_logging
 import pycbc.results
 from pycbc.results import pygrb_postprocessing_utils as ppu
@@ -143,8 +144,8 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
         found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
     # BestNRs
-    found_data['bestnr'] = found_data['reweighted_snr'][...]
-    found_data['bestnr'][found_data['bestnr'] < snr_threshold] = 0
+    found_data['bestnr'] = reweightedsnr_cut(found_data['reweighted_snr'][...],
+                                             snr_threshold)
     if background_bestnrs is not None:
         found_data['fap'] = np.array(
                 [sum(background_bestnrs > bestnr) for bestnr in
@@ -497,8 +498,8 @@ if onsource_file:
     # Record loudest trig by BestNR
     loud_on_bestnr = 0
     if on_trigs:
-        on_trigs_bestnrs = on_trigs['network/reweighted_snr'][...]
-        on_trigs_bestnrs[on_trigs_bestnrs < opts.newsnr_threshold] = 0
+        on_trigs_bestnrs = reweightedsnr_cut(on_trigs['network/reweighted_snr'][...],
+                                             opts.newsnr_threshold)
 
         # Gather bestNR index
         bestNR_event = np.argmax(on_trigs_bestnrs)

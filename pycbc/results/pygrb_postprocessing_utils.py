@@ -32,6 +32,7 @@ import numpy
 import h5py
 from scipy import stats
 import ligo.segments as segments
+from pycbc.events.coherent import reweightedsnr_cut
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo.lw import utils
@@ -447,9 +448,8 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
         else:
             trig_time[slide_id] = numpy.asarray([])
             trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][indices]
-        trig_bestnr[slide_id][trig_bestnr[slide_id] <
-                              opts.newsnr_threshold] = 0
+        trig_bestnr[slide_id] = reweightedsnr_cut(trigs['network/reweighted_snr'][indices],
+                                                  opts.newsnr_threshold)
 
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
