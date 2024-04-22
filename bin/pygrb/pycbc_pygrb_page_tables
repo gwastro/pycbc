@@ -550,7 +550,7 @@ if onsource_file:
 
     # Table header
     th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z',
-           'Rec. spin2z', 'Rec. Ra', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR'] + \
+          'Rec. spin2z', 'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR'] + \
          ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
 
     td = list(zip(*td))
