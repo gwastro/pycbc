@@ -165,7 +165,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         antenna = Detector(ifo)
         f_resp[ifo] = ppu.get_antenna_responses(antenna, found_data['ra'],
                                             found_data['dec'],
-                                            found_data['time'])
+                                            found_data['tc'])
 
     inj_sigma_mult = \
         np.asarray([f_resp[ifo] *
