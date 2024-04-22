@@ -427,7 +427,7 @@ if lofft_outfile or lofft_h5_outfile:
     # th: table header
     th = ['Trial', 'Slide Num', 'p-value', 'GPS time',
           'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z', 'Rec. spin2z',
-          'Rec. Ra', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR']
+          'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR']
     th.extend(['%s SNR' % ifo for ifo in ifos])
     th.extend(['%s time shift (s)' % ifo for ifo in ifos])
     th.append('BestNR')
