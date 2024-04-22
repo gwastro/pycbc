@@ -482,13 +482,14 @@ def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
     return htilde.to_timeseries(delta_t=delta_t)
 
 
-def redshift_td_waveform(srch, z, return_fd=False):
+def redshift_td_waveform(srch, z, tref=0):
     """Redshifts a time-domain waveform.
 
     The waveform will be stretched in time by :math:`(1+z)` and its
     (time-domain) amplitude increased by :math:`(1+z)`. A time shift is also
-    applied to the waveform so that the merger occurs at the same point in
-    the time-series as before the redshift.
+    applied to the waveform so that the specified `tref` occurs at the same
+    point in the red-shifted time series as it did in the source-frame time
+    series.
 
     Parameters
     ----------
@@ -496,21 +497,29 @@ def redshift_td_waveform(srch, z, return_fd=False):
         The waveform to redshift.
     z : float
         The redshift to apply.
+    tref : float, optional
+        The reference time to preserve. Default is 0.
 
     Returns
     -------
     TimeSeries
         The red-shifted waveform.
-    """
-    stretched_srch = (1+z) * srch
-    stretched_srch._delta_t *= 1+z
-    # the merger was originally at t=0. Stretching dt will make the merger
-    # happen later. Need to shift back.
-    tcindex = -srch.start_time / srch.delta_t
-    shift = tcindex * srch.delta_t * (1+z)
-    stretched_srchtilde = stretched_srch.to_frequencyseries()
-    # apply time shift to account for redshift
-    apply_fd_time_shift(stretched_srchtilde, -shift, copy=False)
-    if return_fd:
-        return stretched_srchtilde
-    return stretched_srchtilde.to_timeseries()
+    """                                                                         
+    redshifted = (1+z) * srch                                               
+    redshifted._delta_t *= 1+z
+    # find the location of tref in the original time series
+    tindex = (tref - srch.start_time)/srch.delta_t
+    # find what it's been stretched to and subtract that off
+    tnew = tindex * redshifted.delta_t + redshifted.start_time
+    # the difference
+    shift = (tnew - tref)/redshifted.delta_t
+    # for integer shifts, we can just change the epoch
+    remainder = (shift % 1)
+    shift = int(shift) * redshifted.delta_t
+    redshifted._epoch -= shift
+    # if there was any remaining, we'll need to do sub-sample interpolation
+    if remainder:
+        zhtilde = redshifted.to_frequencyseries()                   
+        apply_fd_time_shift(zhtilde, zhtilde.start_time-(remainder*redshifted.delta_t), copy=False)
+        redshifted = zhtilde.to_timeseries()
+    return redshifted
