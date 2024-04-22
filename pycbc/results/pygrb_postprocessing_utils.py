@@ -448,8 +448,9 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
         else:
             trig_time[slide_id] = numpy.asarray([])
             trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = reweightedsnr_cut(trigs['network/reweighted_snr'][indices],
-                                                  opts.newsnr_threshold)
+        trig_bestnr[slide_id] = reweightedsnr_cut(
+            trigs['network/reweighted_snr'][indices],
+            opts.newsnr_threshold)
 
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
