@@ -128,8 +128,8 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     trig_id = trig_data['network/template_id'][...]
     event_id_found = np.array([ np.where(trig_id == found_id)[0][0] 
                                for found_id in inj_data['network/template_id'][...]])
-    found_data['rec_ra'] = np.degrees(trig_data['network/ra'][event_id_found])
-    found_data['rec_dec'] = np.degrees(trig_data['network/dec'][event_id_found])
+    found_data['rec_ra'] = np.degrees(np.array(trig_data['network/ra'])[event_id_found])
+    found_data['rec_dec'] = np.degrees(np.array(trig_data['network/dec'])[event_id_found])
     # Statistics values
     for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
         found_data[param] = inj_data['network/%s' % param][...]
