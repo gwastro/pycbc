@@ -511,7 +511,7 @@ def mhist(c1, name, cum=False, normed=True, log=False, bins=100, xl="", yl=""):
     pylab.ylabel(yl)
     if log:
         pylab.yscale('log')
-    pylab.hist(c1, bins=bins, normed=normed, histtype='step', cumulative=cum)
+    pylab.hist(c1, bins=bins, density=normed, histtype='step', cumulative=cum)
     pylab.savefig(name)
 
 def mplot(c1, c2, c, name, xl="", yl="", vmin=None, vmax=None):
@@ -537,7 +537,7 @@ pylab.yscale('log')
 pylab.xlim(0.95, 1.0)
 pylab.ylim(1e-4, 1)
 hBins = pylab.arange(0.,1.,0.0005,dtype=float)
-n, bins,patches=pylab.hist(match,cumulative=1,bins=hBins,normed=True)
+n, bins,patches=pylab.hist(match,cumulative=1,bins=hBins,density=True)
 pylab.grid()
 pylab.savefig("plots/cum_hist.png")
     
