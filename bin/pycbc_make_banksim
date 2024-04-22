@@ -318,14 +318,14 @@ f = open("results.dat", "w")
 for row in res: 
     outstr = ""
     if row['bank'] not in btables:
-        indoc = utils.load_filename(row['bank'], False,
+        indoc = utils.load_filename(eval(row['bank']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
-        btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
+        btables[row['bank']] = table.Table.get_table(indoc, "sngl_inspiral")
 
     if row['sim'] not in itables:
-        indoc = utils.load_filename(row['sim'], False,
+        indoc = utils.load_filename(eval(row['sim']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
-        itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
+        itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral")
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
