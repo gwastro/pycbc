@@ -60,7 +60,7 @@ def additional_injection_data(data, ifos):
                                     data['ra'],
                                     data['dec'],
                                     data['polarization'],
-                                    data['time'],
+                                    data['tc'],
                                     data['inclination']
                                     )
         eff_dist += 1.0 / data['eff_dist_%s' % ifo]
@@ -117,7 +117,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     # Get recovered parameters and statistic values for the found injections
     # Recovered parameters
     for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
-        found_data['rec_%s' % param] = bank_file[param][inj_data['network/template_id']]
+        found_data['rec_%s' % param] = np.array(bank_file[param])[inj_data['network/template_id']]
 
     found_data['end_time_gc'] = \
         inj_data['network/end_time_gc'][...]  # needed to use bestNR
@@ -389,7 +389,7 @@ if lofft_outfile or lofft_h5_outfile:
         bestnr = offsource_trigs[i][0]
         trig_id = offsource_trigs[i][1]
         trig_index = np.where(trig_data['network/event_id'] == trig_id)[0][0]
-        trig_slide_id = int(trig_data['network/template_id'][trig_index])
+        trig_slide_id = int(trig_data['network/slide_id'][trig_index])
 
         # Get trial of trigger, triggers with 'No trial' should have been removed!
         for j, trial in enumerate(trial_dict[trig_slide_id]):
@@ -491,7 +491,7 @@ if lofft_outfile or lofft_h5_outfile:
 if onsource_file:
 
     # Get trigs
-    on_trigs = ppu.load_triggers(onsource_file, ifos, None)
+    on_trigs = ppu.load_triggers(onsource_file, None)
     logging.info("%d onsource triggers loaded.", len(on_trigs['network/event_id']))
 
     # Record loudest trig by BestNR
