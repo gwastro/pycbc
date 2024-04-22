@@ -318,14 +318,14 @@ f = open("results.dat", "w")
 for row in res: 
     outstr = ""
     if row['bank'] not in btables:
-        indoc = utils.load_filename(row['bank'], False,
+        indoc = utils.load_filename(eval(row['bank']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
-        btables[row['bank']] = table.get_table(indoc, "sngl_inspiral") 
+        btables[row['bank']] = table.Table.get_table(indoc, "sngl_inspiral")
 
     if row['sim'] not in itables:
-        indoc = utils.load_filename(row['sim'], False,
+        indoc = utils.load_filename(eval(row['sim']).decode('utf-8'), False,
                                     contenthandler=LIGOLWContentHandler)
-        itables[row['sim']] = table.get_table(indoc, "sim_inspiral") 
+        itables[row['sim']] = table.Table.get_table(indoc, "sim_inspiral")
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
@@ -511,7 +511,7 @@ def mhist(c1, name, cum=False, normed=True, log=False, bins=100, xl="", yl=""):
     pylab.ylabel(yl)
     if log:
         pylab.yscale('log')
-    pylab.hist(c1, bins=bins, normed=normed, histtype='step', cumulative=cum)
+    pylab.hist(c1, bins=bins, density=normed, histtype='step', cumulative=cum)
     pylab.savefig(name)
 
 def mplot(c1, c2, c, name, xl="", yl="", vmin=None, vmax=None):
@@ -537,7 +537,7 @@ pylab.yscale('log')
 pylab.xlim(0.95, 1.0)
 pylab.ylim(1e-4, 1)
 hBins = pylab.arange(0.,1.,0.0005,dtype=float)
-n, bins,patches=pylab.hist(match,cumulative=1,bins=hBins,normed=True)
+n, bins,patches=pylab.hist(match,cumulative=1,bins=hBins,density=True)
 pylab.grid()
 pylab.savefig("plots/cum_hist.png")
     
