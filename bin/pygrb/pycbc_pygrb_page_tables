@@ -610,11 +610,6 @@ if do_injections:
     # vetoed_trigs = (~zero_fap) & (~nonzero_fap)
     vetoed_trigs = found_injs['bestnr'] == 0
 
-    # Used to separate triggers into:
-    # 1) zero_fap 'g_found' -- > now acessed by indices: zero_fap
-    # 2) nonzero_fap 'g_ifar' --> now acessed by indices: nonzero_fap
-    # 3) missed because of vetoes 'g_missed2'--> now accessed by indices: vetoed_trigs
-
     logging.info("%d found injections analysed.", len(found_injs['mchirp']))
 
     # Avoids a problem with formatting in the non-static html output file
