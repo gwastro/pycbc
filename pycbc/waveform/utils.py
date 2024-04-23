@@ -482,18 +482,17 @@ def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
     return htilde.to_timeseries(delta_t=delta_t)
 
 
-def redshift_td_waveform(srch, z, tref=0):
-    """Redshifts a time-domain waveform.
+def redshift_waveform(srch, z, tref=0):
+    """Redshifts a time-domain or frequency-domain waveform.
 
-    The waveform will be stretched in time by :math:`(1+z)` and its
-    (time-domain) amplitude increased by :math:`(1+z)`. A time shift is also
-    applied to the waveform so that the specified `tref` occurs at the same
-    point in the red-shifted time series as it did in the source-frame time
-    series.
+    The waveform is stretched in time by :math:`(1+z)` and its (time-domain)
+    amplitude increased by :math:`(1+z)`. A time shift is also applied to the
+    waveform so that the specified `tref` occurs at the same point in the
+    red-shifted time series as it did in the source-frame time series.
 
     Parameters
     ----------
-    srch : TimeSeries
+    srch : TimeSeries or FrequencySeries
         The waveform to redshift.
     z : float
         The redshift to apply.
@@ -502,10 +501,15 @@ def redshift_td_waveform(srch, z, tref=0):
 
     Returns
     -------
-    TimeSeries
-        The red-shifted waveform.
-    """                                                                         
-    redshifted = (1+z) * srch                                               
+    TimeSeries or FrequencySeries
+        The red-shifted waveform. The return type will be the same as `srch`.
+    """
+    isfs = isinstance(srch, FrequencySeries)
+    if isfs:
+        redshifted = srch.to_timeseries()
+        redshifted *= 1+z
+    else:
+        redshifted = (1+z) * srch
     redshifted._delta_t *= 1+z
     # find the location of tref in the original time series
     tindex = (tref - srch.start_time)/srch.delta_t
@@ -518,8 +522,11 @@ def redshift_td_waveform(srch, z, tref=0):
     shift = int(shift) * redshifted.delta_t
     redshifted._epoch -= shift
     # if there was any remaining, we'll need to do sub-sample interpolation
+    if remainder or isfs:
+        redshifted = redshifted.to_frequencyseries()                   
     if remainder:
-        zhtilde = redshifted.to_frequencyseries()                   
-        apply_fd_time_shift(zhtilde, zhtilde.start_time-(remainder*redshifted.delta_t), copy=False)
-        redshifted = zhtilde.to_timeseries()
+        shifttime = redshifted.start_time-(remainder*redshifted.delta_t)
+        apply_fd_time_shift(redshifted, shifttime, copy=False)
+        if not isfs:
+            redshifted = redshifted.to_timeseries()
     return redshifted
