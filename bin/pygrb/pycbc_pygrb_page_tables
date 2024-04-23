@@ -114,8 +114,8 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     # Recovered parameters
     for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
         found_data['rec_%s' % param] = np.array(bank_file[param])[inj_data['network/template_id']]
-    found_data['end_time_gc'] = \
-        inj_data['network/end_time_gc'][...]
+    found_data['time_diff'] = \
+        found_data['tc'] - inj_data['network/end_time_gc'][...]
     found_data['rec_mchirp'] = mchirp_from_mass1_mass2(
         found_data['rec_mass1'],
         found_data['rec_mass2'])
@@ -749,7 +749,7 @@ if do_injections:
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
     th = ['Dist'] + ['Eff. Dist. %s' % site for site in sites] +\
-         ['GPS time'] +\
+         ['GPS time', 'GPS time - Rec. Time'] +\
          ['Inj. m1', 'Inj. m2', 'Inj. Mc', 'Rec. m1', 'Rec. m2', 'Rec. Mc',\
           'Inj. inc', 'Inj. RA', 'Inj. Dec', 'Rec. RA', 'Rec. Dec', 'SNR',\
           'Chi^2', 'Null SNR'] +\
@@ -760,7 +760,7 @@ if do_injections:
     # Format of table data
     format_strings = ['##.##']
     format_strings.extend(['##.##' for ifo in ifos])
-    format_strings.extend(['##.#####',
+    format_strings.extend(['##.#####', '##.#####',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
@@ -774,7 +774,7 @@ if do_injections:
     sngl_snr_keys = ['snr_%s' % ifo for ifo in ifos]
     keys = ['distance']
     keys += ['eff_dist_%s' % ifo for ifo in ifos]
-    keys += ['tc', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
+    keys += ['tc', 'diff_time', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
              'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra', 'rec_dec',
              'coherent_snr', 'chisq', 'null_snr']
     keys += sngl_snr_keys
