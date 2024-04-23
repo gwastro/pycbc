@@ -170,7 +170,7 @@ if args.duration_bin_end and \
                  f"{args.duration_bin_end} and {args.duration_bin_start}")
 
 
-stat_kwargs = parse_statistic_keywords_opt(args.statistic_keywords)
+stat_kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
 
 duration_bin_edges = duration_bins_from_cli(args)
 logging.info("Duration bin edges: %s", duration_bin_edges)
