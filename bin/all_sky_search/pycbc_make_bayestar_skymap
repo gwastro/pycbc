@@ -81,6 +81,10 @@ row = WaveformArray.from_ligolw_table(
 # with the same information, we use [0] here
 waveform = wavebank.parse_approximant_arg(args.approximant, row)[0]
 
+# BAYESTAR uses TaylorF2 instead of SPAtmplt
+if waveform == 'SPAtmplt':
+    waveform = 'TaylorF2'
+
 # Set up the command to pass to bayestar.
 # The XML file path being passed twice is a legacy requirement, not a mistake.
 cmd = [bayestar_exe,
