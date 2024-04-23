@@ -17,6 +17,7 @@
 import glob
 import numpy
 import argparse
+import itertools
 import h5py
 import os
 import logging
@@ -92,14 +93,14 @@ if args.trigger_file_method == 'file':
     if not args.list_of_trigger_files:
         parser.error('Please provide a list of trigger files.')
 
-    trigger_files = numpy.loadtxt(args.list_of_trigger_files,
+    initial_trigger_files = numpy.loadtxt(args.list_of_trigger_files,
                                   delimiter=',', dtype=str)
 
 if args.trigger_file_method == 'dir':
     if not args.trigger_dir:
         parser.error('Please provide a directory containing trigger files.')
 
-    trigger_files = [
+    initial_trigger_files = [
         l for l in glob.glob(args.trigger_dir + '/*/*-Live-*.hdf', recursive=True)
     ]
 
@@ -129,7 +130,7 @@ if args.trigger_file_method == 'start-end-date':
     days = [str(date).replace('-', '_') for date in days]
     num_days = str(len(days))
 
-    trigger_files = [
+    initial_trigger_files = [
         os.path.join(args.trigger_dir, day, trigger_file)
         for day in days
         for trigger_file in os.listdir(os.path.join(args.trigger_dir, day))
@@ -162,7 +163,7 @@ if args.trigger_file_method == 'start-num-days':
     days = [str(date).replace('-', '_') for date in days]
     num_days = str(len(days))
 
-    trigger_files = [
+    initial_trigger_files = [
         os.path.join(args.trigger_dir, day, trigger_file)
         for day in days
         for trigger_file in os.listdir(os.path.join(args.trigger_dir, day))
@@ -176,12 +177,24 @@ if args.trigger_file_method == 'gps-start-end-time':
     if not args.trigger_dir:
         parser.error('Please provide a directory containing trigger files.')
 
-    trigger_files = [
+    initial_trigger_files = [
         l for l in glob.glob(args.trigger_dir + '/*/*-Live-*.hdf', recursive=True)
         if float(l.split('/')[-1].split("-")[2]) > args.gps_start_time and float(l.split('/')[-1].split("-")[2]) < args.gps_end_time
     ]
 
-logging.info(f" {len(trigger_files)} files found")
+logging.info(f" {len(initial_trigger_files)} files found")
+
+# Check if all files found are in the correct format and are trigger files
+ifo_permutations = [''.join(p) for p in itertools.permutations(args.ifos)]
+ifo_prefix_set = set(ifo_permutations)
+
+trigger_files = []
+for source_file in initial_trigger_files:
+    trigger_file = os.path.basename(source_file)
+    if any(trigger_file.startswith(prefix + '-Live') for prefix in ifo_prefix_set):
+        trigger_files.append(source_file)
+
+logging.info(f" {len(trigger_files)} confirmed trigger files")
 
 if args.output_trigger_file_list:
     logging.info(' Writing list of trigger files to: ' + args.output_trigger_file_list)
@@ -212,16 +225,10 @@ with h5py.File(output_file, 'a') as destination:
         if ifo not in destination:
             destination.create_group(ifo)
 
-    # The user must give the ifos in the same order as the trigger files
-    #  For PyCBC Live it's always H1L1 or H1L1V1?
-    ifo_prefix = "".join(args.ifos)
-
     file_count = 0
     for source_file in trigger_files:
         file_count += 1
         trigger_file = os.path.basename(source_file)
-        if not (trigger_file.endswith('.hdf') and trigger_file.startswith(f'{ifo_prefix}-Live')):
-            continue
 
         start_time = float(trigger_file.split('-')[2])
         duration = float(trigger_file.split('-')[3][:-4])
