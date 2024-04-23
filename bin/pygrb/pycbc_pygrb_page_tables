@@ -182,7 +182,10 @@ parser.add_argument("-F", "--offsource-file", action="store", required=True,
 parser.add_argument("--onsource-file", action="store", default=None,
                     help="Location of on-source trigger file.")
 ppu.pygrb_add_injmc_opts(parser)
-ppu.pygrb_add_bestnr_opts(parser)
+parser.add_argument("--newsnr-threshold", action="store", type=float,
+                    default=None, help="NewSNR threshold to " +
+                    "dicriminate events with SNR < threshold." +
+                    "Default None, all the events are considered.")
 parser.add_argument("--num-loudest-off-trigs", action="store",
                     type=int, default=30, help="Number of loudest " +
                     "offsouce triggers to output details about.")
@@ -241,9 +244,6 @@ if opts.loudest_onsource_trig_output_file or opts.loudest_onsource_trig_h5_outpu
         err_msg = "Must provide the on-source file location to output its "
         err_msg += "loudest trigger information."
         parser.error(err_msg)
-
-if not opts.newsnr_threshold:
-    opts.newsnr_threshold = opts.snr_threshold
 
 # Store options used multiple times in local variables
 trig_file = opts.offsource_file
