@@ -552,11 +552,18 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             args['normalize'] = True
         if cp.has_option('model', 'ignore-failed-waveforms'):
             args['ignore_failed_waveforms'] = True
+        if cp.has_option('model', 'det-frame-waveform'):
+            args['det_frame_waveform'] = True
         if cp.has_option('model', 'no-save-data'):
             args['no_save_data'] = True
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'normalize',
-                       'ignore-failed-waveforms', 'no-save-data']
+        ignore_args = [
+            'name',
+            'normalize',
+            'ignore-failed-waveforms',
+            'no-save-data',
+            'det-frame-waveform'
+        ]
         for option in cp.options("model"):
             if option in ("low-frequency-cutoff", "high-frequency-cutoff"):
                 ignore_args.append(option)
@@ -700,6 +707,15 @@ class GaussianNoise(BaseGaussianNoise):
         log likelihood. Default is to not include it.
     static_params : dict, optional
         A dictionary of parameter names -> values to keep fixed.
+    det_frame_waveform : bool
+        If True, the waveform will be generated directly in the detector frame
+        using the
+        :py:class:`~pycbc.waveform.generator.FDomainDirectDetFrameGenerator`.
+        This requires the approximant be implemented in
+        :py:func:`~pycbc.waveform.get_fd_det_waveform`.
+        If False, the
+        :py:class:`~pycbc.waveform.generator.FDomainDetFrameGenerator` will be
+        used instead. Defaults to :code:`False`.
     \**kwargs :
         All other keyword arguments are passed to ``BaseDataModel``.
 
@@ -818,17 +834,22 @@ class GaussianNoise(BaseGaussianNoise):
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
-                 static_params=None, **kwargs):
+                 static_params=None, det_frame_waveform=False, **kwargs):
         # set up the boiler-plate attributes
         super(GaussianNoise, self).__init__(
             variable_params, data, low_frequency_cutoff, psds=psds,
             high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
             static_params=static_params, **kwargs)
         # Determine if all data have the same sampling rate and segment length
+        if det_frame_waveform:
+            generator_class = generator.FDomainDirectDetFrameGenerator
+        else:
+            generator_class = generator.FDomainDetFrameGenerator
         if self.all_ifodata_same_rate_length:
             # create a waveform generator for all ifos
             self.waveform_generator = create_waveform_generator(
                 self.variable_params, self.data,
+                generator_class=generator_class,
                 waveform_transforms=self.waveform_transforms,
                 recalibration=self.recalibration,
                 gates=self.gates, **self.static_params)
@@ -838,6 +859,7 @@ class GaussianNoise(BaseGaussianNoise):
             for det in self.data:
                 self.waveform_generator[det] = create_waveform_generator(
                     self.variable_params, {det: self.data[det]},
+                    generator_class=generator_class,
                     waveform_transforms=self.waveform_transforms,
                     recalibration=self.recalibration,
                     gates=self.gates, **self.static_params)
