@@ -421,7 +421,8 @@ if lofft_outfile or lofft_h5_outfile:
 
     # Write to h5 file
     if lofft_outfile:
-        logging.info("Writing %d lousdest offsource triggers to h5 file.",
+        logging.info("Writing %d loudest offsource triggers to h5 file.",
+                             len(td))
                      len(td))
         lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
         for i, key in enumerate(th):
