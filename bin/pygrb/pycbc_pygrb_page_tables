@@ -765,14 +765,14 @@ if do_injections:
     sngl_snr_keys = ['snr_%s' % ifo for ifo in ifos]
     keys = ['distance']
     keys += ['eff_dist_%s' % ifo for ifo in ifos]
-    keys += ['tc', 'diff_time', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
+    keys += ['tc', 'time_diff', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
              'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra', 'rec_dec',
              'coherent_snr', 'chisq', 'null_snr']
     keys += sngl_snr_keys
     keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
              'rec_spin1z', 'rec_spin2z']
     # The following parameters are available only for recovered injections
-    na_keys = ['diff_time', 'rec_mass1', 'rec_mass2', 'rec_mchirp', 'rec_spin1z',
+    na_keys = ['time_diff', 'rec_mass1', 'rec_mass2', 'rec_mchirp', 'rec_spin1z',
                'rec_spin2z', 'rec_ra', 'rec_dec', 'coherent_snr', 'chisq',
                'null_snr', 'bestnr']
     na_keys += sngl_snr_keys
