@@ -30,187 +30,146 @@ import numpy as np
 from scipy import stats
 import h5py
 import pycbc.version
+from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.detector import Detector
+from pycbc.events.coherent import reweightedsnr_cut
 from pycbc import init_logging
 import pycbc.results
 from pycbc.results import pygrb_postprocessing_utils as ppu
-try:
-    from glue.ligolw import lsctables
-except ImportError:
-    pass
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_page_tables"
 
-
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load trigger data
-def load_data(input_file, vetoes, ifos, opts, injections=False):
-    """Load data from a trigger/injection file"""
-
-    # Initialize the dictionary
-    data = {}
-    data['trig_time'] = None
-    data['coherent'] = None
-    data['reweighted_snr'] = None
-
-    if input_file:
-        if injections:
-            logging.info("Loading injections...")
-            # This will eventually become ppu.load_injections()
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-        else:
-            logging.info("Loading triggers...")
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-            
-        data['trig_time'] = trigs_or_injs['network/end_time_gc'][:]
-        num_trigs_or_injs = len(data['trig_time'])
-        data['coherent'] = trigs_or_injs['network/coherent_snr'][:]
-        data['reweighted_snr'] = trigs_or_injs['network/reweighted_snr'][:]
-
-        if injections:
-            logging.info("%d injections found.", num_trigs_or_injs)
-        else:
-            logging.info("%d triggers found.", num_trigs_or_injs)
-
+def additional_injection_data(data, ifos):
+    """Provides data with chirp masses and effective distances"""
+    data['mchirp'] = mchirp_from_mass1_mass2(data['mass1'],
+                                             data['mass2'])
+    eff_dist = 0
+    for ifo in ifos:
+        antenna = Detector(ifo)
+        data['eff_dist_%s' % ifo] = antenna.effective_distance(
+                                    data['distance'],
+                                    data['ra'],
+                                    data['dec'],
+                                    data['polarization'],
+                                    data['tc'],
+                                    data['inclination']
+                                    )
+        eff_dist += 1.0 / data['eff_dist_%s' % ifo]
+    data['eff_dist'] = 1.0 / eff_dist
     return data
 
 
-def get_column(table, column_name):
-    """Wrapper for glue.ligolw.lsctables.MultiInspiralTable.get_column
-    method. Easier for h5py switch. Note: Must still replace
-    .get_sigmasqs() and .get_snglsnr() methods throughout the scripts.
+def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
+                                 background_bestnrs=None):
+    """Loads found and missed injections from an hdf file as two dictionaries
 
     Parameters
     ----------
-    table: glue.ligolw.lsctables.MultiInspiralTable
-    column_name: str
-
-    Returns
-    -------
-    column: numpy.array
-    """
-
-    # Annoyingly only first letter of ifo for eff_dist in tables.
-    if column_name.startswith("eff_dist_") and column_name.endswith(("1", "2")):
-        column_name = column_name[:-1]
-    elif column_name == "null_snr":
-        return table.get_null_snr()
-
-    return table.get_column(column_name)
-
-
-def dict_to_ndarray(dict_to_convert):
-    """Turn single level dict into 2d numpy.ndarray."""
-
-    return np.asarray(list(dict_to_convert.values()))
-
-
-def lsctable_to_dict(inj_table, ifos, opts, trig_table=None, background_bestnrs=None):
-    """Extract parameters from injections in lsctables. If found extract
-    trigger info.
-
-    Parameters
-    ----------
-    inj_table: ligo.lw.lsctables.SimInspiralTable
+    hdf_file: str
+        File path
     ifos: list
-    trig_table: glue.ligolw.lsctables.MultiInspiralTable, optional
+    snr_threshold: float
+        NewSNR threshold
+    bank_file: h5py.File object
     background_bestnrs: numpy.array, optional
         Used to compute FAP of quiet injections.
 
     Returns
     -------
-    inj_data: dict of parameter numpy.array pairs
-        Found or missed injection parameter dictionary.
+    data: tuple of dictionaries
+        Found and missed injection parameter dictionaries.
     """
 
-    inj_data = {}
+    inj_data = h5py.File(hdf_file, 'r')
+    inj_params = ['mass1', 'mass2', 'distance', 'inclination', 'ra', 'dec',
+                  'polarization', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
+                  'spin2y', 'spin2z', 'tc']
+    found_data = {}
+    # Missed injections (ones not recovered at all)
+    missed_data = {}
+    logging.info('Loading injections...')
 
-    # Local copies of variables entering the BestNR definition
-    chisq_index = opts.chisq_index
-    chisq_nhigh = opts.chisq_nhigh
-    null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
-    snr_thresh = opts.snr_threshold
-    sngl_snr_thresh = opts.sngl_snr_threshold
-    new_snr_thresh = opts.newsnr_threshold
-    null_grad_thresh = opts.null_grad_thresh
-    null_grad_val = opts.null_grad_val
-
-    # Get inj params
-    inj_params = ['mchirp', 'mass1', 'mass2', 'distance', 'inclination',
-                  'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z']
+    # Load injections parameters
     for param in inj_params:
-        inj_data[param] = get_column(inj_table, param)
-    inj_data['ra'] = get_column(inj_table, 'longitude')
-    inj_data['dec'] = get_column(inj_table, 'latitude')
-    inj_data['time'] = get_column(inj_table, 'geocent_end_time') \
-                + 1e-9 * get_column(inj_table, 'geocent_end_time_ns')
+        missed_data[param] = inj_data['missed/%s' % param][...]
+        found_data[param] = inj_data['found/%s' % param][...]
+
+    # Calculate injections mchirp
+    missed_data['mchirp'] = mchirp_from_mass1_mass2(missed_data['mass1'],
+                                                    missed_data['mass2'])
+    found_data['mchirp'] = mchirp_from_mass1_mass2(found_data['mass1'],
+                                                   found_data['mass2'])
+
+    # Calculate effective distance for the ifos
+    found_data = additional_injection_data(found_data, ifos)
+    missed_data = additional_injection_data(missed_data, ifos)
+
+    # Get recovered parameters and statistic values for the found injections
+    # Recovered parameters
+    for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
+        found_data['rec_%s' % param] = np.array(bank_file[param])[inj_data['network/template_id']]
+    found_data['time_diff'] = \
+        found_data['tc'] - inj_data['network/end_time_gc'][...]
+    found_data['rec_mchirp'] = mchirp_from_mass1_mass2(
+        found_data['rec_mass1'],
+        found_data['rec_mass2'])
+    # Recovered RA and Dec
+    found_data['rec_ra'] = np.degrees(inj_data['network/ra'][...])
+    found_data['rec_dec'] = np.degrees(inj_data['network/dec'][...])
+    # Statistics values
+    for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
+        found_data[param] = inj_data['network/%s' % param][...]
+    found_data['chisq'] = inj_data['network/my_network_chisq'][...]
+    found_data['nifos'] = inj_data['network/nifo'][...].astype(int)
+    # Calibration errors:
+    # Get the relative detector sensitivities averaged over the
+    # parameters. This is used to marginalize over calibration errors.
+    # also save the snr per ifo
     for ifo in ifos:
-        site = ifo.lower()
-        inj_data['eff_dist_{}'.format(site)] = get_column(
-            inj_table, 'eff_dist_{}'.format(site))
-    inj_data['eff_dist'] = np.asarray([
-        1.0 / sum(1.0 / inj_data['eff_dist_{}'.format(site)] for ifo in ifos)])
-
-    if trig_table:
-        # Get recovered parameters and statistic values
-        rec_params = ['mchirp', 'mass1', 'mass2', 'ra', 'dec']
-        filter_stats = ['snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr']
-        for param in rec_params:
-            inj_data["rec_" + param] = get_column(trig_table, param)
-        for stat in filter_stats:
-            inj_data[stat] = get_column(trig_table, stat)
-        for ifo in ifos:
-            site = ifo.lower()
-            inj_data['snr_{}'.format(site)] = trig_table.get_sngl_snr(site)
-        inj_data['bestnr'] = ppu.get_bestnrs(trig_table,
-                                             q=chisq_index,
-                                             n=chisq_nhigh,
-                                             null_thresh=null_thresh,
-                                             snr_threshold=snr_thresh,
-                                             sngl_snr_threshold=sngl_snr_thresh,
-                                             chisq_threshold=new_snr_thresh,
-                                             null_grad_thresh=null_grad_thresh,
-                                             null_grad_val=null_grad_val)
-        if background_bestnrs is not None:
-            inj_data['fap'] = np.array(
-                [sum(background_bestnrs > bestnr) for bestnr in inj_data['bestnr']],
+        found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
+        found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
+    # BestNRs
+    found_data['bestnr'] = reweightedsnr_cut(found_data['reweighted_snr'][...],
+                                             snr_threshold)
+    if background_bestnrs is not None:
+        found_data['fap'] = np.array(
+                [sum(background_bestnrs > bestnr) for bestnr in
+                 found_data['bestnr']],
                 dtype=float) / len(background_bestnrs)
+    # Antenna responses
+    f_resp = {}
+    for ifo in ifos:
+        if sum(found_data['sigmasq_%s' % ifo] == 0):
+            logging.info("%s: sigmasq not set for at least one trigger.", ifo)
+        if sum(found_data['sigmasq_%s' % ifo] != 0) == 0:
+            logging.info("%s: sigmasq not set for any trigger.", ifo)
+            if len(ifos) == 1:
+                msg = "This is a single ifo analysis. "
+                msg += "Setting sigmasq to unity for all triggers."
+                logging.info(msg)
+                found_data['sigmasq_%s' % ifo][:] = 1.0
+        antenna = Detector(ifo)
+        f_resp[ifo] = ppu.get_antenna_responses(antenna, found_data['ra'],
+                                            found_data['dec'],
+                                            found_data['tc'])
 
-        # Antenna responses
-        f_resp = {}
-        # Calibration errors:
-        # Get the relative detector sensitivities averaged over the
-        # parameters. This is used to marginalize over calibration errors.
-        inj_sigma = trig_table.get_sigmasqs()
-        # If the sigmasqs are not populated, we can only do calibration
-        # errors in the 1-detector case.
-        for ifo in ifos:
-            if sum(inj_sigma[ifo] == 0):
-                logging.info("%s: sigmasq not set for at least one trigger.", ifo)
-            if sum(inj_sigma[ifo] != 0) == 0:
-                logging.info("%s: sigmasq not set for any trigger.", ifo)
-                if len(ifos) == 1:
-                    msg = "This is a single ifo analysis. "
-                    msg += "Setting sigmasq to unity for all triggers."
-                    logging.info(msg)
-                    inj_sigma[ifo][:] = 1.0
-            antenna = Detector(ifo)
-            f_resp[ifo] = ppu.get_antenna_responses(antenna, inj_data['ra'],
-                                                    inj_data['dec'],
-                                                    inj_data['time'])
-        inj_sigma_mult = dict_to_ndarray(inj_sigma) * dict_to_ndarray(f_resp)
-        inj_sigma_tot = np.sum(inj_sigma_mult, axis=0)
-        for ifo in ifos:
-            inj_data['inj_sigma_mean_%s' % ifo.lower()] = np.mean(
-                inj_sigma[ifo] * f_resp[ifo] / inj_sigma_tot)
-
-    return inj_data
-
+    inj_sigma_mult = \
+        np.asarray([f_resp[ifo] *
+                       found_data['sigmasq_%s' % ifo] for ifo in ifos])
+    inj_sigma_tot = np.sum(inj_sigma_mult, axis=0)
+    for ifo in ifos:
+        found_data['inj_sigma_mean_%s' % ifo] = np.mean(
+            found_data['sigmasq_%s' % ifo] * f_resp[ifo] / inj_sigma_tot)
+    # Close the hdf file
+    inj_data.close()
+    
+    return found_data, missed_data
 
 # =============================================================================
 # Main script starts here
@@ -223,24 +182,28 @@ parser.add_argument("-F", "--offsource-file", action="store", required=True,
 parser.add_argument("--onsource-file", action="store", default=None,
                     help="Location of on-source trigger file.")
 ppu.pygrb_add_injmc_opts(parser)
-ppu.pygrb_add_bestnr_opts(parser)
+parser.add_argument("--newsnr-threshold", action="store", type=float,
+                    default=None, help="NewSNR threshold to " +
+                    "dicriminate events with SNR < threshold." +
+                    "Default None, all the events are considered.")
 parser.add_argument("--num-loudest-off-trigs", action="store",
                     type=int, default=30, help="Number of loudest " +
                     "offsouce triggers to output details about.")
-parser.add_argument("--quiet-found-injs-output-file", default=None, #required=True,
+parser.add_argument("--found-missed-file", default=None, required=True,
+                    help="Missed found injection file to output details about.")
+parser.add_argument("--quiet-found-injs-output-file", default=None, required=True,
                     help="Quiet-found injections html output file.")
-parser.add_argument("--missed-found-injs-output-file", default=None, #required=True,
+parser.add_argument("--missed-found-injs-output-file", default=None, required=True,
                     help="Missed-found injections html output file.")
-# TODO: group hdf5 files into a single one
-parser.add_argument("--quiet-found-injs-h5-output-file", default=None, #required=True,
+parser.add_argument("--quiet-found-injs-h5-output-file", default=None, required=True,
                     help="Quiet-found injections h5 output file.")
-parser.add_argument("--loudest-offsource-trigs-output-file", default=None, #required=True,
+parser.add_argument("--loudest-offsource-trigs-output-file", default=None, required=True,
                     help="Loudest offsource triggers html output file.")
-parser.add_argument("--loudest-offsource-trigs-h5-output-file", default=None, #required=True,
+parser.add_argument("--loudest-offsource-trigs-h5-output-file", default=None, required=True,
                     help="Loudest offsource triggers h5 output file.")
-parser.add_argument("--loudest-onsource-trig-output-file", default=None, #required=True,
+parser.add_argument("--loudest-onsource-trig-output-file", default=None, required=True,
                     help="Loudest onsource trigger html output file.")
-parser.add_argument("--loudest-onsource-trig-h5-output-file", default=None, #required=True,
+parser.add_argument("--loudest-onsource-trig-h5-output-file", default=None, required=True,
                     help="Loudest onsource trigger h5 output file.")
 parser.add_argument("-g", "--glitch-check-factor", action="store",
                     type=float, default=1.0, help="When deciding " +
@@ -250,15 +213,11 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
+parser.add_argument("--bank-file", action="store", type=str, required=True,
+                    help="Location of the full template bank used.")
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
-
-# TODO: split this script into one that handles injections
-# and one that handles loudest on/off-source events?
-# TODO: deal better with the multiple output file possibilities?
-# The hdf5 output files are handy for injection follow-up
-# but for the moment this remains a hacky solution
 output_files = [opts.quiet_found_injs_output_file,
                 opts.missed_found_injs_output_file,
                 opts.quiet_found_injs_h5_output_file,
@@ -286,40 +245,28 @@ if opts.loudest_onsource_trig_output_file or opts.loudest_onsource_trig_h5_outpu
         err_msg += "loudest trigger information."
         parser.error(err_msg)
 
-if not opts.newsnr_threshold:
-    opts.newsnr_threshold = opts.snr_threshold
-
 # Store options used multiple times in local variables
 trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
-chisq_index = opts.chisq_index
-chisq_nhigh = opts.chisq_nhigh
-wf_err = opts.waveform_error
-cal_errs = {}
-cal_errs['G1'] = opts.g1_cal_error
-cal_errs['H1'] = opts.h1_cal_error
-cal_errs['K1'] = opts.k1_cal_error
-cal_errs['L1'] = opts.l1_cal_error
-cal_errs['V1'] = opts.v1_cal_error
-cal_dc_errs = {}
-cal_dc_errs['G1'] = opts.g1_dc_cal_error
-cal_dc_errs['H1'] = opts.h1_dc_cal_error
-cal_dc_errs['K1'] = opts.k1_dc_cal_error
-cal_dc_errs['L1'] = opts.l1_dc_cal_error
-cal_dc_errs['V1'] = opts.v1_dc_cal_error
-snr_thresh = opts.snr_threshold
-sngl_snr_thresh = opts.sngl_snr_threshold
-new_snr_thresh = opts.newsnr_threshold
-null_grad_thresh = opts.null_grad_thresh
-null_grad_val = opts.null_grad_val
-null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
+cal_errs = {
+        'G1': opts.g1_cal_error,
+        'H1': opts.h1_cal_error,
+        'K1': opts.k1_cal_error,
+        'L1': opts.l1_cal_error,
+        'V1': opts.v1_cal_error
+        }
+cal_dc_errs = {
+        'G1': opts.g1_dc_cal_error,
+        'H1': opts.h1_dc_cal_error,
+        'K1': opts.k1_dc_cal_error,
+        'L1': opts.l1_dc_cal_error,
+        'V1': opts.v1_dc_cal_error
+        }
 upper_dist = opts.upper_inj_dist
 lower_dist = opts.lower_inj_dist
 num_bins = opts.num_bins
 wav_err = opts.waveform_error
-cluster_window = opts.cluster_window
-glitch_check_fac = opts.glitch_check_factor
 num_mc_injs = opts.num_mc_injections
 qf_outfile = opts.quiet_found_injs_output_file
 mf_outfile = opts.missed_found_injs_output_file
@@ -347,11 +294,19 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trig_data = load_data(trig_file, vetoes, ifos, opts)
+trig_data = ppu.load_triggers(trig_file, None)
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
 segment_dict = ppu.load_segment_dict(trig_file)
+
+# Calculate chirp masses of templates
+logging.info('Loading triggers template masses')
+bank_data =  h5py.File(opts.bank_file, 'r')
+mchirps = mchirp_from_mass1_mass2(
+        bank_data['mass1'][...],
+        bank_data['mass2'][...]
+    )
 
 # Construct trials
 logging.info("Constructing trials.")
@@ -362,8 +317,8 @@ logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
-    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict, segment_dict, opts)
-
+    ppu.extract_basic_trig_properties(trial_dict, trig_data, slide_dict, 
+                                      segment_dict, opts)
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
 time_veto_max_bestnr = {}
@@ -393,35 +348,35 @@ logging.info("SNR and bestNR maxima calculated.")
 
 # Output details of loudest offsouce triggers, sorted by BestNR
 offsource_trigs = []
-sorted_trigs = ppu.sort_trigs(trial_dict, trigs, slide_dict, segment_dict)
+sorted_trigs = ppu.sort_trigs(trial_dict, trig_data, slide_dict, segment_dict)
 for slide_id in slide_dict:
-    offsource_trigs.extend(zip(trig_bestnr[slide_id], sorted_trigs[slide_id]))
+    offsource_trigs.extend(zip(trig_bestnr[slide_id],
+                               sorted_trigs[slide_id]))
+
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
 
 # Median and max values of SNR and BestNR
-_, median_snr, _ = ppu.max_median_stat(slide_dict, time_veto_max_snr, trig_snr, total_trials)
+_, median_snr, _ = ppu.max_median_stat(slide_dict, time_veto_max_snr,
+                                       trig_snr, total_trials)
 max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
-    ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr, total_trials)
+    ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr,
+                        total_trials)
 
 if lofft_outfile or lofft_h5_outfile:
     # td: table data
     td = []
 
-    # NOTE: Rather than changing the xml table structures, KAGRA piggy backs
-    # on the TAMA column (t). The h2 column is left unused.
-    # TAMA and Hanford2 are therefore no longer supported.
-    ifo_att = {'G1':'g', 'H1':'h1', 'K1': 't', 'L1':'l', 'V1':'v'}
-
     # Gather properties of the loudest offsource triggers
     for i in range(min(len(offsource_trigs), opts.num_loudest_off_trigs)):
         bestnr = offsource_trigs[i][0]
-        trig = offsource_trigs[i][1]
-        trig_slide_id = int(trig.time_slide_id)
+        trig_id = offsource_trigs[i][1]
+        trig_index = np.where(trig_data['network/event_id'] == trig_id)[0][0]
+        trig_slide_id = int(trig_data['network/slide_id'][trig_index])
 
         # Get trial of trigger, triggers with 'No trial' should have been removed!
         for j, trial in enumerate(trial_dict[trig_slide_id]):
-            if trig.get_end() in trial:
+            if trig_data['network/end_time_gc'][trig_index] in trial:
                 chunk_num = j
                 break
         else:
@@ -435,24 +390,27 @@ if lofft_outfile or lofft_h5_outfile:
                     num_trials_louder += 1
         fap = num_trials_louder/total_trials
         pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
-
-        d = [chunk_num, trig_slide_id, pval,\
-             np.asarray(trig.get_end()).astype(float),\
-             trig.mass1, trig.mass2, trig.mchirp,\
-             (np.degrees(trig.ra)), (np.degrees(trig.dec)),\
-             trig.snr, trig.chisq, trig.bank_chisq,\
-             trig.cont_chisq, trig.get_null_snr()]
-        d.extend([getattr(trig, 'snr_%s' % ifo_att[ifo])\
-                         for ifo in ifos])
+        d = [chunk_num, trig_slide_id, pval,
+             trig_data['network/end_time_gc'][trig_index],
+             bank_data['mass1'][trig_data['network/template_id'][trig_index]],
+             bank_data['mass2'][trig_data['network/template_id'][trig_index]],
+             mchirps[trig_index],
+             bank_data['spin1z'][trig_data['network/template_id'][trig_index]],
+             bank_data['spin2z'][trig_data['network/template_id'][trig_index]],
+             np.degrees(trig_data['network/ra'][trig_index]),
+             np.degrees(trig_data['network/dec'][trig_index]),
+             trig_data['network/coherent_snr'][trig_index],
+             trig_data['network/my_network_chisq'][trig_index],
+             trig_data['network/null_snr'][trig_index]]
+        d.extend([trig_data['%s/snr' % ifo][trig_index] for ifo in ifos])
         d.extend([slide_dict[trig_slide_id][ifo] for ifo in ifos])
         d.append(bestnr)
         td.append(d)
 
     # th: table header
-    th = ['Trial', 'Slide Num', 'p-value', 'GPS time',\
-          'Rec. m1', 'Rec. m2', 'Rec. Mc',\
-          'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto',\
-          'Null SNR']
+    th = ['Trial', 'Slide Num', 'p-value', 'GPS time',
+          'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z', 'Rec. spin2z',
+          'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR']
     th.extend(['%s SNR' % ifo for ifo in ifos])
     th.extend(['%s time shift (s)' % ifo for ifo in ifos])
     th.append('BestNR')
@@ -463,7 +421,8 @@ if lofft_outfile or lofft_h5_outfile:
 
     # Write to h5 file
     if lofft_outfile:
-        logging.info("Writing %d lousdest offsource triggers to h5 file.", len(td))
+        logging.info("Writing %d loudest offsource triggers to h5 file.",
+                             len(td))
         lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
         for i, key in enumerate(th):
             lofft_h5_fp.create_dataset(key, data=td[i])
@@ -481,9 +440,8 @@ if lofft_outfile or lofft_h5_outfile:
 
         # Format of table data
         format_strings = ['##.##', '##.##', None, '##.#####',
-                          '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
-                          '##.##']
+                          '##.##', '##.##', '##.##', '##.##', '##.##',
+                          '##.##', '##.##', '##.##', '##.##', '##.##']
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##' for ifo in ifos])
         format_strings.extend(['##.##'])
@@ -492,14 +450,16 @@ if lofft_outfile or lofft_h5_outfile:
                                               page_size=30)
         kwds = {'title' : "Parameters of loudest offsource triggers",
                 'caption' : "Parameters of the "+
-                            str(min(len(offsource_trigs), opts.num_loudest_off_trigs))+
+                            str(min(len(offsource_trigs),
+                                    opts.num_loudest_off_trigs))+
                             " loudest offsource triggers.  "+
                             "The median reweighted SNR value is "+
                             str(median_bestnr)+
                             ".  The median SNR value is "+
                             str(median_snr),
                 'cmd' :' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), lofft_outfile, **kwds)
+        pycbc.results.save_fig_with_metadata(str(html_table),
+                                             lofft_outfile, **kwds)
 
     # Store BestNR and FAP values: for collective FAP value studies at the
     # end of an observing run collectively
@@ -507,35 +467,27 @@ if lofft_outfile or lofft_h5_outfile:
     # np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
     #            full_time_veto_max_bestnr, delimiter='/t')
 
+
 # =======================
 # Load on source triggers
 # =======================
 if onsource_file:
 
     # Get trigs
-    on_trigs = ppu.load_xml_table(onsource_file, "multi_inspiral")
-    logging.info("%d onsource triggers loaded.", len(on_trigs))
-
-    # Separate off chirp mass column
-    on_mchirp = on_trigs.get_column('mchirp')
+    on_trigs = ppu.load_triggers(onsource_file, None)
+    logging.info("%d onsource triggers loaded.", len(on_trigs['network/event_id']))
 
     # Record loudest trig by BestNR
     loud_on_bestnr = 0
     if on_trigs:
-        on_trigs_bestnrs = ppu.get_bestnrs(on_trigs,
-                                           q=chisq_index,
-                                           n=chisq_nhigh,
-                                           null_thresh=null_thresh,
-                                           snr_threshold=snr_thresh,
-                                           sngl_snr_threshold=sngl_snr_thresh,
-                                           chisq_threshold=new_snr_thresh,
-                                           null_grad_thresh=null_grad_thresh,
-                                           null_grad_val=null_grad_val)
-        loud_on_bestnr_trigs, loud_on_bestnr = \
-            np.asarray([[x, y] for y, x in sorted(zip(on_trigs_bestnrs, on_trigs),
-                                                  key=lambda on_trig: on_trig[0],
-                                                  reverse=True)])[0]
+        on_trigs_bestnrs = reweightedsnr_cut(on_trigs['network/reweighted_snr'][...],
+                                             opts.newsnr_threshold)
 
+        # Gather bestNR index
+        bestNR_event = np.argmax(on_trigs_bestnrs)
+        loud_on_bestnr_trigs, loud_on_bestnr = \
+            (on_trigs['network/event_id'][bestNR_event],
+             on_trigs_bestnrs[bestNR_event])
     # If the loudest event has bestnr = 0, there is no event at all!
     if loud_on_bestnr == 0:
         loud_on_bestnr_trigs = None
@@ -548,7 +500,8 @@ if onsource_file:
     # Gather data
     loud_on_fap = 1
     if loud_on_bestnr_trigs:
-        trig = loud_on_bestnr_trigs
+        trig_id = loud_on_bestnr_trigs
+        trig_index = np.where(on_trigs['network/event_id'] == trig_id)[0][0]
         num_trials_louder = 0
         tot_off_snr = np.array([])
         for slide_id in slide_dict:
@@ -560,20 +513,27 @@ if onsource_file:
         fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
         pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
         loud_on_fap = fap
-        d = [pval, np.asarray(trig.get_end()).astype(float),\
-             trig.mass1, trig.mass2, trig.mchirp,\
-             np.degrees(trig.ra), np.degrees(trig.dec),\
-             trig.snr, trig.chisq, trig.bank_chisq,\
-             trig.cont_chisq, trig.get_null_snr()] + \
-             [trig.get_sngl_snr(ifo) for ifo in ifos] + [loud_on_bestnr]
+        d = [pval, 
+             on_trigs['network/end_time_gc'][trig_index],
+             bank_data['mass1'][on_trigs['network/template_id'][trig_index]],
+             bank_data['mass2'][on_trigs['network/template_id'][trig_index]],
+             mchirps[on_trigs['network/template_id'][trig_index]],
+             bank_data['spin1z'][on_trigs['network/template_id'][trig_index]],
+             bank_data['spin2z'][on_trigs['network/template_id'][trig_index]],
+             np.degrees(on_trigs['network/ra'][trig_index]),
+             np.degrees(on_trigs['network/dec'][trig_index]),
+             on_trigs['network/coherent_snr'][trig_index],
+             on_trigs['network/my_network_chisq'][trig_index],
+             on_trigs['network/null_snr'][trig_index]] + \
+             [on_trigs['%s/snr' % ifo][trig_index] for ifo in ifos] + [loud_on_bestnr]
         td.append(d)
     else:
         td.append(["There are no events"] + [0 for number in range(11)] + \
                   [0 for ifo in ifos] + [0])
 
     # Table header
-    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. RA',\
-          'Rec. Dec', 'SNR', 'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
+    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z',
+          'Rec. spin2z', 'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR'] + \
          ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
 
     td = list(zip(*td))
@@ -604,6 +564,9 @@ if onsource_file:
                 'caption' : "Recovered parameters and statistic values of the loudest trigger.",
                 'cmd' :' '.join(sys.argv), }
         pycbc.results.save_fig_with_metadata(str(html_table), lont_outfile, **kwds)
+    
+    # Close the onsource file
+    on_trigs.close()
 else:
     tot_off_snr = np.array([])
     for slide_id in slide_dict:
@@ -616,18 +579,12 @@ else:
 # Post-process injections
 # =======================
 if do_injections:
-
-    found_trig_table = ppu.load_injections(found_missed_file, vetoes)
-    found_inj_table = ppu.load_injections(found_missed_file, vetoes, sim_table=True)
-
+    found_injs, missed_injs = \
+        load_missed_found_injections(found_missed_file, ifos, opts.newsnr_threshold,
+                                bank_data, background_bestnrs=full_time_veto_max_bestnr)
     logging.info("Missed/found injections/triggers loaded.")
-
-    # Extract columns of found injections and triggers
-    found_injs = lsctable_to_dict(
-        found_inj_table, ifos, opts, trig_table=found_trig_table,
-        background_bestnrs=full_time_veto_max_bestnr
-        )
-
+    logging.info("%d found injections found.", len(found_injs['mchirp']))
+    logging.info("%d missed injections found.", len(missed_injs['mchirp']))
     # Construct conditions for injection:
     # 1) found louder than background,
     zero_fap = found_injs['bestnr'] > max_bestnr
@@ -640,16 +597,7 @@ if do_injections:
     # vetoed_trigs = (~zero_fap) & (~nonzero_fap)
     vetoed_trigs = found_injs['bestnr'] == 0
 
-    # Used to separate triggers into:
-    # 1) zero_fap 'g_found' -- > now acessed by indices: zero_fap
-    # 2) nonzero_fap 'g_ifar' --> now acessed by indices: nonzero_fap
-    # 3) missed because of vetoes 'g_missed2'--> now accessed by indices: vetoed_trigs
-
     logging.info("%d found injections analysed.", len(found_injs['mchirp']))
-
-    # Missed injections (ones not recovered at all)
-    missed_inj_table = ppu.load_injections(found_missed_file, vetoes, sim_table=True)
-    missed_injs = lsctable_to_dict(missed_inj_table, ifos, opts)
 
     # Avoids a problem with formatting in the non-static html output file
     missed_na = [-0] * len(missed_injs['mchirp'])
@@ -686,7 +634,8 @@ if do_injections:
     # Begin by calculating the components from each detector
     cal_error = 0
     for ifo in ifos:
-        cal_error += cal_errs[ifo]**2 * found_injs['inj_sigma_mean_%s' % ifo.lower()]**2
+        cal_error += cal_errs[ifo]**2 * \
+            found_injs['inj_sigma_mean_%s' % ifo]**2
     cal_error = cal_error**0.5
 
     max_dc_cal_error = max(cal_dc_errs.values())
@@ -708,7 +657,8 @@ if do_injections:
                                                 cal_error, wav_err,
                                                 max_dc_cal_error)
     long_inj['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
-                                             cal_error, wav_err, max_dc_cal_error)
+                                             cal_error, wav_err,
+                                             max_dc_cal_error)
     logging.info("MC injection set distributed with %d iterations.",\
                  num_mc_injs)
 
@@ -737,12 +687,12 @@ if do_injections:
                 (found_injs['bestnr'] != 0)
     # If not missed, double check bestnr against nearby triggers
     near_test = np.zeros((found_excl).sum()).astype(bool)
-    for j, (t, bestnr) in enumerate(zip(found_injs['time'][found_excl],\
+    for j, (t, bestnr) in enumerate(zip(found_injs['tc'][found_excl],\
                                         found_injs['bestnr'][found_excl])):
         # 0 is the zero-lag timeslide
         near_bestnr = trig_bestnr[0]\
-                      [np.abs(trig_time[0]-t) < cluster_window]
-        near_test[j] = ~((near_bestnr * glitch_check_fac > bestnr).any())
+                      [np.abs(trig_time[0]-t) < opts.cluster_window]
+        near_test[j] = ~((near_bestnr * opts.glitch_check_factor > bestnr).any())
     # Apply the local test
     c = 0
     for z, b in enumerate(found_excl):
@@ -790,36 +740,41 @@ if do_injections:
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
     th = ['Dist'] + ['Eff. Dist. %s' % site for site in sites] +\
-         ['GPS time'] +\
+         ['GPS time', 'GPS time - Rec. Time'] +\
          ['Inj. m1', 'Inj. m2', 'Inj. Mc', 'Rec. m1', 'Rec. m2', 'Rec. Mc',\
           'Inj. inc', 'Inj. RA', 'Inj. Dec', 'Rec. RA', 'Rec. Dec', 'SNR',\
-          'Chi^2', 'Bank veto', 'Auto veto', 'Null SNR'] +\
+          'Chi^2', 'Null SNR'] +\
          ['SNR %s' % ifo for ifo in ifos] +\
          ['BestNR', 'Inj S1x', 'Inj S1y', 'Inj S1z',\
-                    'Inj S2x', 'Inj S2y', 'Inj S2z']
+                    'Inj S2x', 'Inj S2y', 'Inj S2z',
+                    'Rec S1z', 'Rec S2z']
     # Format of table data
     format_strings = ['##.##']
     format_strings.extend(['##.##' for ifo in ifos])
-    format_strings.extend(['##.#####',
+    format_strings.extend(['##.#####', '##.#####',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
                            '##.##', '##.##', '##.##',
-                           '##.##', '##.##', '##.##', '##.##', '##.##', '##.##', '##.##'])
+                           '##.##', '##.##', '##.##',
+                           '##.##', '##.##'])
     format_strings.extend(['##.##' for ifo in ifos])
     format_strings.extend(['##.##',
-                           '##.##', '##.##', '##.##', '##.##', '##.##',
-                           '##.##'])
-    sngl_snr_keys = ['snr_{}'.format(ifo.lower()) for ifo in ifos]
+                           '##.##', '##.##', '##.##',
+                           '##.##', '##.##', '##.##',
+                           '##.##', '##.##'])
+    sngl_snr_keys = ['snr_%s' % ifo for ifo in ifos]
     keys = ['distance']
-    keys += ['eff_dist_{}'.format(ifo.lower()) for ifo in ifos]
-    keys += ['time', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
+    keys += ['eff_dist_%s' % ifo for ifo in ifos]
+    keys += ['tc', 'time_diff', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
              'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra', 'rec_dec',
-             'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr']
+             'coherent_snr', 'chisq', 'null_snr']
     keys += sngl_snr_keys
-    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z']
+    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
+             'rec_spin1z', 'rec_spin2z']
     # The following parameters are available only for recovered injections
-    na_keys = ['rec_mass1', 'rec_mass2', 'rec_mchirp', 'rec_ra', 'rec_dec',
-               'snr', 'chisq', 'bank_chisq', 'cont_chisq', 'null_snr', 'bestnr']
+    na_keys = ['time_diff', 'rec_mass1', 'rec_mass2', 'rec_mchirp', 'rec_spin1z',
+               'rec_spin2z', 'rec_ra', 'rec_dec', 'coherent_snr', 'chisq',
+               'null_snr', 'bestnr']
     na_keys += sngl_snr_keys
     td = []
     for key in keys:
@@ -852,7 +807,8 @@ if do_injections:
                 'caption' : "Recovered parameters and statistic values of \
                 injections that are recovered, but not louder than background.",
                 'cmd' :' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile, **kwds)
+        pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile,
+                                             **kwds)
 
     # Write to html file
     if mf_outfile:
@@ -861,7 +817,8 @@ if do_injections:
             t_missed += [found_injs[key][vetoed_trigs]]
         t_missed = list(zip(*t_missed))
         t_missed.sort(key=lambda elem: elem[0])
-        logging.info("Writing %d missed-found injections to html file.", len(t_missed))
+        logging.info("Writing %d missed-found injections to html file.",
+                     len(t_missed))
 
         t_missed = zip(*t_missed)
         t_missed = [np.asarray(d) for d in t_missed]
@@ -873,6 +830,12 @@ if do_injections:
                 injections that are recovered, but downwieghted to BestNR = 0 \
                 (i.e., vetoed).",
                 'cmd' :' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile, **kwds)
+        pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile,
+                                             **kwds)
+
+# Close the bank file
+bank_data.close()
+# Close the trig file
+trig_data.close()
 
 # Post-processing of injections ends here
