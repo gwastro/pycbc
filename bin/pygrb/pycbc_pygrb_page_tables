@@ -249,24 +249,24 @@ if opts.loudest_onsource_trig_output_file or opts.loudest_onsource_trig_h5_outpu
 trig_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
-cal_errs = {}
-cal_errs['G1'] = opts.g1_cal_error
-cal_errs['H1'] = opts.h1_cal_error
-cal_errs['K1'] = opts.k1_cal_error
-cal_errs['L1'] = opts.l1_cal_error
-cal_errs['V1'] = opts.v1_cal_error
-cal_dc_errs = {}
-cal_dc_errs['G1'] = opts.g1_dc_cal_error
-cal_dc_errs['H1'] = opts.h1_dc_cal_error
-cal_dc_errs['K1'] = opts.k1_dc_cal_error
-cal_dc_errs['L1'] = opts.l1_dc_cal_error
-cal_dc_errs['V1'] = opts.v1_dc_cal_error
+cal_errs = {
+        'G1': opts.g1_cal_error,
+        'H1': opts.h1_cal_error,
+        'K1': opts.k1_cal_error,
+        'L1': opts.l1_cal_error,
+        'V1': opts.v1_cal_error
+        }
+cal_dc_errs = {
+        'G1': opts.g1_dc_cal_error,
+        'H1': opts.h1_dc_cal_error,
+        'K1': opts.k1_dc_cal_error,
+        'L1': opts.l1_dc_cal_error,
+        'V1': opts.v1_dc_cal_error
+        }
 upper_dist = opts.upper_inj_dist
 lower_dist = opts.lower_inj_dist
 num_bins = opts.num_bins
 wav_err = opts.waveform_error
-cluster_window = opts.cluster_window
-glitch_check_fac = opts.glitch_check_factor
 num_mc_injs = opts.num_mc_injections
 qf_outfile = opts.quiet_found_injs_output_file
 mf_outfile = opts.missed_found_injs_output_file
@@ -691,8 +691,8 @@ if do_injections:
                                         found_injs['bestnr'][found_excl])):
         # 0 is the zero-lag timeslide
         near_bestnr = trig_bestnr[0]\
-                      [np.abs(trig_time[0]-t) < cluster_window]
-        near_test[j] = ~((near_bestnr * glitch_check_fac > bestnr).any())
+                      [np.abs(trig_time[0]-t) < opts.cluster_window]
+        near_test[j] = ~((near_bestnr * opts.glitch_check_factor > bestnr).any())
     # Apply the local test
     c = 0
     for z, b in enumerate(found_excl):
