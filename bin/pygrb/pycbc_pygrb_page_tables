@@ -214,7 +214,7 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
-parser.add_argument("--triggers-bank-file", action="store", type=str, required=True,
+parser.add_argument("--bank-file", action="store", type=str, required=True,
                     help="Location of the full template bank used.")
 opts = parser.parse_args()
 
@@ -315,7 +315,7 @@ segment_dict = ppu.load_segment_dict(trig_file)
 
 # Calculate chirp masses of templates
 logging.info('Loading triggers template masses')
-bank_data =  h5py.File(opts.triggers_bank_file, 'r')
+bank_data =  h5py.File(opts.bank_file, 'r')
 mchirps = mchirp_from_mass1_mass2(
         bank_data['mass1'][...],
         bank_data['mass2'][...]
