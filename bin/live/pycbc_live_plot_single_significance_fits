@@ -72,7 +72,7 @@ with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
 
     # Grab some info from the attributes
     if trfit_f.attrs['ranking_statistic'] in ['quadsum','single_ranking_only']:
-        xlabel = trfit_f.attrs['sngl_ranking']
+        x_label = trfit_f.attrs['sngl_ranking']
     else:
         x_label = "Statistic"
     fit_threshold = {ifo: trfit_f[ifo].attrs['fit_threshold'] for ifo in ifos}

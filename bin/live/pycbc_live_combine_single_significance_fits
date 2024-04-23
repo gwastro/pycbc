@@ -151,7 +151,7 @@ logging.info("Writing results")
 fout = h5py.File(args.output, 'w')
 for ifo in args.ifos:
     fout.attrs[f'{ifo}_fit_threshold'] = fit_thresh[ifo]
-    fout.attrs[f'{ifo}_fit_function'] = fit_function[ifo]
+    fout.attrs[f'{ifo}_fit_function'] = fit_func[ifo]
 fout.attrs['conservative_percentile'] = args.conservative_percentile
 fout.attrs['ifos'] = args.ifos
 fout['bins_edges'] = list(bl) + [bu[-1]]
