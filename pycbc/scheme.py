@@ -262,7 +262,7 @@ def insert_processing_option_group(parser):
                       default=0, type=int)
 
 def from_cli(opt):
-    """Parses the command line options and returns a precessing scheme.
+    """Parses the command line options and returns a processing scheme.
 
     Parameters
     ----------
