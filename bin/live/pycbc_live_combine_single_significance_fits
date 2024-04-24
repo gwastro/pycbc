@@ -111,12 +111,10 @@ for f in args.trfits_files:
         seg = segmentlist([segment(fit_start, fit_end)])
         if seg.intersects(seg_all):
             logging.warning(
-                "File %s fit time %d-%d overlaps with previous files (%d-%d)",
+                "File %s fit time %d-%d overlaps with other file(s)",
                 f,
                 fit_start,
                 fit_end,
-                seg_all[0],
-                seg_all[1],
             )
         seg_all |= seg
 
@@ -134,7 +132,6 @@ for f in args.trfits_files:
                 if any(np.isnan(ffi['fit_coeff'][:])):
                     logging.warning("nan in %s, %s", f, ifo)
                     logging.warning(ffi['fit_coeff'][:])
-
 
 # Set up the date array, this is stored as an offset from the first trigger time of
 # the first file to the last trigger of the file
