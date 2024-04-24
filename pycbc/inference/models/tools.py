@@ -51,10 +51,6 @@ def draw_sample(loglr, size=None):
 class DistMarg():
     """Help class to add bookkeeping for likelihood marginalization"""
 
-    marginalize_phase = None
-    distance_marginalization = None
-    distance_interpolator = None
-
     def setup_marginalization(self,
                               variable_params,
                               marginalize_phase=False,
@@ -287,7 +283,11 @@ class DistMarg():
 
         # Update the current proposed times and the marginalization values
         logw = self.premarg['logw_partial']
-        choice = numpy.random.randint(0, len(logw), size=self.vsamples)
+        if self.vsamples == len(logw):
+            choice = slice(None, None)
+        else:
+            choice = numpy.random.choice(len(logw), size=self.vsamples,
+                                     replace=False)
 
         for k in self.snr_params:
             self.marginalize_vector_params[k] = self.premarg[k][choice]
