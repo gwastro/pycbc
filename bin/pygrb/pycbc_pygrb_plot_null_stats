@@ -48,7 +48,7 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, vetoes, ifos, opts, injections=False):
+def load_data(input_file, vetoes, opts, injections=False):
     """Load data from a trigger/injection file"""
 
     null_stat_type = opts.y_variable
@@ -82,7 +82,7 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
                 key = key[:-1]
             data[null_stat_type] = trigs_or_injs[key][:]
         elif null_stat_type == 'coincident':
-            data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs, ifos)
+            data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs)
 
         if injections:
             logging.info("%d injections found.", num_trigs_or_injs)
@@ -180,14 +180,14 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+_, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                         opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, ifos, opts)
+trig_data = load_data(trig_file, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_missed_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_missed_file, vetoes, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")
