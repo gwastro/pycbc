@@ -38,10 +38,7 @@ try:
     from ligo.lw import utils
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
-    # Handle MultiInspiral xml-tables with glue,
-    # as ligo.lw no longer supports them
     from glue.ligolw import lsctables as glsctables
-    # from glue.ligolw.ilwd import ilwdchar as gilwdchar
     from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
@@ -666,23 +663,12 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
 # =============================================================================
 # Function to calculate the coincident SNR
 # =============================================================================
-def get_coinc_snr(trigs_or_injs, ifos):
-    """ Calculate coincident SNR using single IFO SNRs"""
+def get_coinc_snr(trigs_or_injs):
+    """ Calculate coincident SNR using coherent and null SNRs"""
 
-    num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
-
-    # Calculate coincident SNR
-    single_snr_sq = dict((ifo, None) for ifo in ifos)
-    snr_sum_square = numpy.zeros(num_trigs_or_injs)
-    for ifo in ifos:
-        key = ifo + '/snr'
-        # Square the individual SNRs
-        single_snr_sq[ifo] = numpy.square(
-            trigs_or_injs[key][:])
-        # Add them
-        snr_sum_square = numpy.add(snr_sum_square, single_snr_sq[ifo])
-    # Obtain the square root
-    coinc_snr = numpy.sqrt(snr_sum_square)
+    coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
+    null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
+    coinc_snr = numpy.sqrt(coh_snr_sq + null_snr_sq)
 
     return coinc_snr
 
