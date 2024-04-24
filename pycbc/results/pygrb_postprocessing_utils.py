@@ -664,7 +664,7 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
 # Function to calculate the coincident SNR
 # =============================================================================
 def get_coinc_snr(trigs_or_injs):
-    """ Calculate coincident SNR using single IFO SNRs"""
+    """ Calculate coincident SNR using coherent and null SNRs"""
 
     coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
     null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
