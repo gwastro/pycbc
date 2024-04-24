@@ -572,7 +572,9 @@ def maximum_string(numbers):
     Parameters
     ----------
     numbers : list of integers
-        the numbers to find the string which will match all of them
+        A list of integers from which to determine the longest
+        common string prefix. E.g. '12345', '12346', '12356'
+        returns '123'
     """
     # The max length of the number will be the integer above log10
     # of the biggest number
@@ -592,8 +594,8 @@ def maximum_string(numbers):
 
 def filter_file(filename, start_time, end_time):
     """
-    Does filename indicate that any of the file is within the
-    start and end times?
+    Indicate whether the filename indicates that the file is within the
+    start and end times
     Parameters
     ----------
     filename : string
@@ -649,8 +651,8 @@ def add_live_trigger_selection_options(parser):
     finding_group.add_argument(
         "--date-directories",
         action="store_true",
-        help="Are the triggers stored in directories according "
-             "to the date?"
+        help="Indicate if the trigger files are stored in "
+             "directories by date."
     )
     default_dd_format = "%Y_%m_%d"
     finding_group.add_argument(
