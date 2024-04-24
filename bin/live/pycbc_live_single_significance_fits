@@ -354,8 +354,8 @@ with h5py.File(args.output, 'w') as fout:
     fout['bins_lower'] = tbins.lower()
 
     fout.attrs['ifos'] = ','.join(args.ifos)
-    fout.attrs['fit-start'] = args.gps_start_time
-    fout.attrs['fit-end'] = args.gps_end_time
+    fout.attrs['fit_start'] = args.gps_start_time
+    fout.attrs['fit_end'] = args.gps_end_time
     fout.attrs['input'] = sys.argv
     fout.attrs['cuts'] = args.template_cuts + args.trigger_cuts
     fout.attrs['sngl_ranking'] = args.sngl_ranking
