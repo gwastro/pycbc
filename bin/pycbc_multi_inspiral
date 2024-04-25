@@ -571,7 +571,7 @@ with ctx:
                 for ifo in args.instruments
             }
             sigma = {ifo: np.sqrt(sigmasq[ifo]) for ifo in args.instruments}
-            # Every time s_num is zero , run new_template to increment the
+            # Every time s_num is zero, run new_template to increment the
             # template index
             if s_num == 0:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
@@ -855,10 +855,9 @@ with ctx:
                             ifo: snr_dict[ifo][coinc_idx_det_frame[ifo]]
                             for ifo in args.instruments
                         }
-                        # Calculate the powerchi2 and autochi2 values of
-                        # remaining triggers (this uses the SNR timeseries
-                        # before the time delay, so we need to undo it; the
-                        # same holds for normalisation)
+                        # Calculate the powerchi2 values of remaining triggers
+                        # (this uses the SNR timeseries before the time delay,
+                        # so we undo it; the same holds for normalisation)
                         chisq = {}
                         chisq_dof = {}
                         for ifo in args.instruments:
@@ -900,6 +899,8 @@ with ctx:
                         # All out vals must be the same length, so single
                         # value entries are repeated once per event
                         num_events = len(reweighted_snr)
+                        # Calculate the bankchi2 and autochi2 values of
+                        # remaining triggers
                         for ifo in args.instruments:
                             (
                                 ifo_out_vals['bank_chisq'],
