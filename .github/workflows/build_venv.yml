@@ -24,7 +24,7 @@ jobs:
         run: "bash -e tools/docker_build_prepssh.sh"
       -
         env:
-          DOCKER_IMG: igwn/base:el9
+          DOCKER_IMG: igwn/base:el8
           PYCBC_CONTAINER: pycbc_rhel_virtualenv
           DOCKER_SECURE_ENV_VARS: true
         name: "Creating the virtual environment"
