@@ -23,11 +23,23 @@ Reduce a template bank using some input parameter cuts
 
 import numpy
 import logging
-import imp
 import argparse
 import h5py
 import pycbc
 import pycbc.version
+
+import importlib.util
+import importlib.machinery
+
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -51,7 +63,7 @@ pycbc.init_logging(opt.verbose)
 
 bank_fd = h5py.File(opt.input_bank, 'r')
 
-modl = imp.load_source('filter_func', opt.filter_func_file)
+modl = load_source('filter_func', opt.filter_func_file)
 func = modl.filter_tmpltbank
 bool_arr = func(bank_fd)
 
