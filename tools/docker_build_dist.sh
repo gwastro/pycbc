@@ -36,7 +36,7 @@ fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
-  ENV_OS="x86_64_rhel_8"
+  ENV_OS="x86_64_rhel_9"
   yum -y install python310 python310-devel
   yum -y groupinstall "Development Tools"
   yum -y install which rsync
