@@ -37,7 +37,7 @@ fi
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   ENV_OS="x86_64_rhel_9"
-  yum -y install python311 python311-devel
+  yum -y install python3.11 python3.11-devel
   yum -y groupinstall "Development Tools"
   yum -y install which rsync
   yum clean all
