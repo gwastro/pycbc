@@ -77,12 +77,15 @@ class NetBank(DummySampler):
 
         node_loglrs = list(tqdm.tqdm(self.pool.imap(call_likelihood, args),
                                      total=len(args)))
+         
+                                    
+         
         node_loglrs = numpy.array(node_loglrs)
-        loglr_bound = node_loglrs.max() - self.loglr_region
+        loglr_bound = node_loglrs[~numpy.isnan(node_loglrs)].max() - self.loglr_region
 
         logging.info('Drawing proposal samples from node regions')
         logw = node_loglrs + numpy.log(lengths)
-        passed = numpy.where(node_loglrs > loglr_bound)[0]
+        passed = numpy.where((node_loglrs > loglr_bound)  & ~numpy.isnan(node_loglrs))[0]
         logw2 = logw[passed]
         logw2 -= logsumexp(logw2)
         weight = numpy.exp(logw2)
@@ -146,7 +149,6 @@ class NetBank(DummySampler):
         logw3 = loglr_samp + pweight
         logw3 -= logsumexp(logw3)
         weight2 = numpy.exp(logw3)
-
         ess = 1.0 / (weight2 ** 2.0).sum()
         logging.info("ESS = %s", ess)
 

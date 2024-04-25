@@ -70,6 +70,7 @@ parser.add_argument('--min-mchirp', type=float)
 parser.add_argument('--max-mchirp', type=float)
 parser.add_argument('--fixed-params', type=str, nargs='*')
 parser.add_argument('--fixed-values', type=float, nargs='*')
+parser.add_argument('--use-cross', action='store_true')
 parser.add_argument('--max-q', type=float)
 parser.add_argument('--tau0-crawl', type=float)
 parser.add_argument('--tau0-start', type=float)
@@ -292,12 +293,13 @@ class GenUniformWaveform(object):
         else:
                 f = self.f_lower
 
-        kwds['f_lower'] = f
-
+        kwds['approximant'] = kwds['approximant'].decode()
+        
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
             hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
                                                     f_ref=10.0, **kwds)
-
+            if  args.use_cross:
+                hp = hc
 
             if 'fratio' in kwds:
                 hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
