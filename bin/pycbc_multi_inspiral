@@ -273,7 +273,6 @@ with ctx:
     fft.from_cli(args)
     # Set some often used variables for easy access
     flow = args.low_frequency_cutoff
-    flow_dict = defaultdict(lambda: flow)
     # The following for loop is used to check whether
     # the sampling rate, flen and tlen agree for all detectors
     # taking the zeroth detector in the list as a reference.
