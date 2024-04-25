@@ -16,7 +16,7 @@ jobs:
         name: "Set up Python"
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       -
         name: "Preparing a host container"
         run: "docker build -t pycbc-docker-tmp ."
@@ -30,7 +30,7 @@ jobs:
         run: "bash -e docker/etc/docker_commit.sh"
       -
         env:
-          DOCKER_IMG: pycbc/pycbc-el8
+          DOCKER_IMG: pycbc/pycbc-el9
           DOCKER_PASSWORD: "${{secrets.DOCKERHUB_PASSWORD}}"
           DOCKER_USERNAME: "${{secrets.DOCKERHUB_USERNAME}}"
         name: "Pushing docker image"

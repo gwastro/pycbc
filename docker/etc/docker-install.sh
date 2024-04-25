@@ -1,11 +1,11 @@
 #!/bin/bash -v
 set -e
 cd /scratch
-python3.10 -m pip install --upgrade pip
-python3.10 -m pip install -r requirements.txt
-python3.10 -m pip install -r requirements-igwn.txt
-python3.10 -m pip install -r companion.txt
-python3.10 -m pip install .
+python3.11 -m pip install --upgrade pip
+python3.11 -m pip install -r requirements.txt
+python3.11 -m pip install -r requirements-igwn.txt
+python3.11 -m pip install -r companion.txt
+python3.11 -m pip install .
 cd /
 mkdir -p /opt/pycbc/src
 cp -a /scratch /opt/pycbc/src/pycbc
