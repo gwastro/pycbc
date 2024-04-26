@@ -328,9 +328,9 @@ def omega_length(f, len_arm=None):
     return omega_len
 
 
-def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                len_arm=None, psd_components=None):
-    """ The TDI-1.5 analytical PSD (X,Y,Z channel) for TDI-based
+def _analytical_psd_tdi_XYZ(length, delta_f, low_freq_cutoff,
+                            len_arm=None, psd_components=None, tdi="1.5"):
+    """ The TDI-1.5/2.0 analytical PSD (X,Y,Z channel) for TDI-based
     space-borne GW detectors.
 
     Parameters
@@ -345,14 +345,16 @@ def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         The arm length of the detector, in the unit of "m".
     psd_components : numpy.array
         The PSDs of acceleration noise and OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The TDI-1.5 PSD (X,Y,Z channel).
+        The TDI-1.5/2.0 PSD (X,Y,Z channel).
     Notes
     -----
-        Please see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
+        Please see Eq.(19-20) in <LISA-LCST-SGS-TN-001> for more details.
     """
     len_arm = np.float64(len_arm)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
@@ -361,15 +363,20 @@ def _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     omega_len = omega_length(fr, len_arm)
     psd = 16*(np.sin(omega_len))**2 * (s_oms_nu +
                                        s_acc_nu*(3+np.cos(2*omega_len)))
+    if tdi == "2.0":
+        tdi2_factor = 4*(np.sin(2*omega_len))**2
+        psd *= tdi2_factor
+    if tdi not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
     return fseries
 
 
-def analytical_psd_lisa_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                    len_arm=2.5e9, acc_noise_level=3e-15,
-                                    oms_noise_level=15e-12):
-    """ The TDI-1.5 analytical PSD (X,Y,Z channel) for LISA.
+def analytical_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
+                                len_arm=2.5e9, acc_noise_level=3e-15,
+                                oms_noise_level=15e-12, tdi="1.5"):
+    """ The TDI-1.5/2.0 analytical PSD (X,Y,Z channel) for LISA.
 
     Parameters
     ----------
@@ -385,29 +392,31 @@ def analytical_psd_lisa_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The TDI-1.5 PSD (X,Y,Z channel) for LISA.
+        The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA.
     Notes
     -----
-        Please see Eq.(19) in <LISA-LCST-SGS-TN-001> for more details.
+        Please see Eq.(19-20) in <LISA-LCST-SGS-TN-001> for more details.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, psd_components)
+    fseries = _analytical_psd_tdi_XYZ(length, delta_f, low_freq_cutoff,
+                                      len_arm, psd_components, tdi)
 
     return fseries
 
 
-def analytical_psd_tianqin_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                       len_arm=np.sqrt(3)*1e8,
-                                       acc_noise_level=1e-15,
-                                       oms_noise_level=1e-12):
-    """ The TDI-1.5 analytical PSD (X,Y,Z channel) for TianQin.
+def analytical_psd_tianqin_tdi_XYZ(length, delta_f, low_freq_cutoff,
+                                   len_arm=np.sqrt(3)*1e8,
+                                   acc_noise_level=1e-15,
+                                   oms_noise_level=1e-12, tdi="1.5"):
+    """ The TDI-1.5/2.0 analytical PSD (X,Y,Z channel) for TianQin.
 
     Parameters
     ----------
@@ -423,11 +432,13 @@ def analytical_psd_tianqin_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The TDI-1.5 PSD (X,Y,Z channel) for TianQin.
+        The TDI-1.5/2.0 PSD (X,Y,Z channel) for TianQin.
     Notes
     -----
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
@@ -436,16 +447,16 @@ def analytical_psd_tianqin_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(tianqin_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, psd_components)
+    fseries = _analytical_psd_tdi_XYZ(length, delta_f, low_freq_cutoff,
+                                      len_arm, psd_components, tdi)
 
     return fseries
 
 
-def analytical_psd_taiji_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                     len_arm=3e9, acc_noise_level=3e-15,
-                                     oms_noise_level=8e-12):
-    """ The TDI-1.5 analytical PSD (X,Y,Z channel) for Taiji.
+def analytical_psd_taiji_tdi_XYZ(length, delta_f, low_freq_cutoff,
+                                 len_arm=3e9, acc_noise_level=3e-15,
+                                 oms_noise_level=8e-12, tdi="1.5"):
+    """ The TDI-1.5/2.0 analytical PSD (X,Y,Z channel) for Taiji.
 
     Parameters
     ----------
@@ -461,11 +472,13 @@ def analytical_psd_taiji_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The TDI-1.5 PSD (X,Y,Z channel) for Taiji.
+        The TDI-1.5/2.0 PSD (X,Y,Z channel) for Taiji.
     Notes
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
@@ -473,165 +486,14 @@ def analytical_psd_taiji_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(taiji_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, psd_components)
+    fseries = _analytical_psd_tdi_XYZ(length, delta_f, low_freq_cutoff,
+                                      len_arm, psd_components, tdi)
 
     return fseries
 
 
-def _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                len_arm=None, psd_components=None):
-    """ The TDI-2.0 analytical PSD (X,Y,Z channel) for TDI-based
-    space-borne GW detectors.
-
-    Parameters
-    ----------
-    length : int
-        Length of output Frequencyseries.
-    delta_f : float
-        Frequency step for output FrequencySeries.
-    low_freq_cutoff : float
-        Low-frequency cutoff for output FrequencySeries.
-    len_arm : float
-        The arm length of the detector, in the unit of "m".
-    psd_components : numpy.array
-        The PSDs of acceleration noise and OMS noise.
-
-    Returns
-    -------
-    fseries : FrequencySeries
-        The TDI-2.0 PSD (X,Y,Z channel).
-    Notes
-    -----
-        Please see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
-    """
-    len_arm = np.float64(len_arm)
-    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = psd_components[0]
-    s_oms_nu = psd_components[1]
-    omega_len = omega_length(fr, len_arm)
-    psd = 64*(np.sin(omega_len))**2 * (np.sin(2*omega_len))**2 * (
-        s_oms_nu+s_acc_nu*(3+np.cos(2*omega_len)))
-    fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
-
-    return fseries
-
-
-def analytical_psd_lisa_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                    len_arm=2.5e9, acc_noise_level=3e-15,
-                                    oms_noise_level=15e-12):
-    """ The TDI-2.0 analytical PSD (X,Y,Z channel) for LISA.
-
-    Parameters
-    ----------
-    length : int
-        Length of output Frequencyseries.
-    delta_f : float
-        Frequency step for output FrequencySeries.
-    low_freq_cutoff : float
-        Low-frequency cutoff for output FrequencySeries.
-    len_arm : float
-        The arm length of LISA, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
-
-    Returns
-    -------
-    fseries : FrequencySeries
-        The TDI-2.0 PSD (X,Y,Z channel) for LISA.
-    Notes
-    -----
-        Please see Eq.(20) in <LISA-LCST-SGS-TN-001> for more details.
-    """
-    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    psd_components = np.array(lisa_psd_components(
-        fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, psd_components)
-
-    return fseries
-
-
-def analytical_psd_tianqin_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                       len_arm=np.sqrt(3)*1e8,
-                                       acc_noise_level=1e-15,
-                                       oms_noise_level=1e-12):
-    """ The TDI-2.0 analytical PSD (X,Y,Z channel) for TianQin.
-
-    Parameters
-    ----------
-    length : int
-        Length of output Frequencyseries.
-    delta_f : float
-        Frequency step for output FrequencySeries.
-    low_freq_cutoff : float
-        Low-frequency cutoff for output FrequencySeries.
-    len_arm : float
-        The arm length of TianQin, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
-
-    Returns
-    -------
-    fseries : FrequencySeries
-        The TDI-2.0 PSD (X,Y,Z channel) for TianQin.
-    Notes
-    -----
-        Please see Table(1) in <10.1088/0264-9381/33/3/035010>
-        for more details.
-    """
-    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    psd_components = np.array(tianqin_psd_components(
-        fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, psd_components)
-
-    return fseries
-
-
-def analytical_psd_taiji_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                     len_arm=3e9, acc_noise_level=3e-15,
-                                     oms_noise_level=8e-12):
-    """ The TDI-2.0 analytical PSD (X,Y,Z channel) for Taiji.
-
-    Parameters
-    ----------
-    length : int
-        Length of output Frequencyseries.
-    delta_f : float
-        Frequency step for output FrequencySeries.
-    low_freq_cutoff : float
-        Low-frequency cutoff for output FrequencySeries.
-    len_arm : float
-        The arm length of Taiji, in the unit of "m".
-    acc_noise_level : float
-        The level of acceleration noise.
-    oms_noise_level : float
-        The level of OMS noise.
-
-    Returns
-    -------
-    fseries : FrequencySeries
-        The TDI-2.0 PSD (X,Y,Z channel) for Taiji.
-    Notes
-    -----
-        Please see <10.1103/PhysRevD.107.064021> for more details.
-    """
-    fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    psd_components = np.array(taiji_psd_components(
-        fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_2p0_XYZ(length, delta_f, low_freq_cutoff,
-                                          len_arm, psd_components)
-
-    return fseries
-
-
-def _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
-                               len_arm=None, psd_components=None):
+def _analytical_csd_tdi_XY(length, delta_f, low_freq_cutoff,
+                           len_arm=None, psd_components=None, tdi="1.5"):
     """ The cross-spectrum density between TDI channel X and Y.
 
     Parameters
@@ -646,11 +508,13 @@ def _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
         The arm length of the detector, in the unit of "m".
     psd_components : numpy.array
         The PSDs of acceleration noise and OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The CSD between TDI-1.5 channel X and Y.
+        The CSD between TDI-1.5/2.0 channel X and Y.
     Notes
     -----
         Please see Eq.(56) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
@@ -662,14 +526,19 @@ def _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
     omega_len = omega_length(fr, len_arm)
     csd = (-8*np.sin(omega_len)**2 * np.cos(omega_len) *
            (s_oms_nu+4*s_acc_nu))
+    if tdi == "2.0":
+        tdi2_factor = 4*(np.sin(2*omega_len))**2
+        csd *= tdi2_factor
+    if tdi not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries = from_numpy_arrays(fr, csd, length, delta_f, low_freq_cutoff)
 
     return fseries
 
 
-def analytical_csd_lisa_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
-                                   len_arm=2.5e9, acc_noise_level=3e-15,
-                                   oms_noise_level=15e-12):
+def analytical_csd_lisa_tdi_XY(length, delta_f, low_freq_cutoff,
+                               len_arm=2.5e9, acc_noise_level=3e-15,
+                               oms_noise_level=15e-12, tdi="1.5"):
     """ The cross-spectrum density between LISA's TDI channel X and Y.
 
     Parameters
@@ -686,11 +555,13 @@ def analytical_csd_lisa_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The CSD between LISA's TDI-1.5 channel X and Y.
+        The CSD between LISA's TDI-1.5/2.0 channel X and Y.
     Notes
     -----
         Please see Eq.(56) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
@@ -698,15 +569,15 @@ def analytical_csd_lisa_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_csd_tdi_1p5_XY(length, delta_f, low_freq_cutoff,
-                                         len_arm, psd_components)
+    fseries = _analytical_csd_tdi_XY(length, delta_f, low_freq_cutoff,
+                                     len_arm, psd_components, tdi)
 
     return fseries
 
 
-def _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                               len_arm=None, psd_components=None):
-    """ The PSD of TDI-1.5 channel A and E.
+def _analytical_psd_tdi_AE(length, delta_f, low_freq_cutoff,
+                           len_arm=None, psd_components=None, tdi="1.5"):
+    """ The PSD of TDI-1.5/2.0 channel A and E.
 
     Parameters
     ----------
@@ -720,11 +591,13 @@ def _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         The arm length of the detector, in the unit of "m".
     psd_components : numpy.array
         The PSDs of acceleration noise and OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The PSD of TDI-1.5 channel A and E.
+        The PSD of TDI-1.5/2.0 channel A and E.
     Notes
     -----
         Please see Eq.(58) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
@@ -737,15 +610,20 @@ def _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     psd = (8*(np.sin(omega_len))**2 *
            (4*(1+np.cos(omega_len)+np.cos(omega_len)**2)*s_acc_nu +
            (2+np.cos(omega_len))*s_oms_nu))
+    if tdi == "2.0":
+        tdi2_factor = 4*(np.sin(2*omega_len))**2
+        psd *= tdi2_factor
+    if tdi not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
     return fseries
 
 
-def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                   len_arm=2.5e9, acc_noise_level=3e-15,
-                                   oms_noise_level=15e-12):
-    """ The PSD of LISA's TDI-1.5 channel A and E.
+def analytical_psd_lisa_tdi_AE(length, delta_f, low_freq_cutoff,
+                               len_arm=2.5e9, acc_noise_level=3e-15,
+                               oms_noise_level=15e-12, tdi="1.5"):
+    """ The PSD of LISA's TDI-1.5/2.0 channel A and E.
 
     Parameters
     ----------
@@ -761,11 +639,13 @@ def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The PSD of LISA's TDI-1.5 channel A and E.
+        The PSD of LISA's TDI-1.5/2.0 channel A and E.
     Notes
     -----
         Please see Eq.(58) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
@@ -773,17 +653,17 @@ def analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                         len_arm, psd_components)
+    fseries = _analytical_psd_tdi_AE(length, delta_f, low_freq_cutoff,
+                                     len_arm, psd_components, tdi)
 
     return fseries
 
 
-def analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                      len_arm=np.sqrt(3)*1e8,
-                                      acc_noise_level=1e-15,
-                                      oms_noise_level=1e-12):
-    """ The PSD of TianQin's TDI-1.5 channel A and E.
+def analytical_psd_tianqin_tdi_AE(length, delta_f, low_freq_cutoff,
+                                  len_arm=np.sqrt(3)*1e8,
+                                  acc_noise_level=1e-15,
+                                  oms_noise_level=1e-12, tdi="1.5"):
+    """ The PSD of TianQin's TDI-1.5/2.0 channel A and E.
 
     Parameters
     ----------
@@ -799,11 +679,13 @@ def analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The PSD of TianQin's TDI-1.5 channel A and E.
+        The PSD of TianQin's TDI-1.5/2.0 channel A and E.
     Notes
     -----
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
@@ -812,16 +694,16 @@ def analytical_psd_tianqin_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(tianqin_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                         len_arm, psd_components)
+    fseries = _analytical_psd_tdi_AE(length, delta_f, low_freq_cutoff,
+                                     len_arm, psd_components, tdi)
 
     return fseries
 
 
-def analytical_psd_taiji_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                    len_arm=3e9, acc_noise_level=3e-15,
-                                    oms_noise_level=8e-12):
-    """ The PSD of Taiji's TDI-1.5 channel A and E.
+def analytical_psd_taiji_tdi_AE(length, delta_f, low_freq_cutoff,
+                                len_arm=3e9, acc_noise_level=3e-15,
+                                oms_noise_level=8e-12, tdi="1.5"):
+    """ The PSD of Taiji's TDI-1.5/2.0 channel A and E.
 
     Parameters
     ----------
@@ -837,11 +719,13 @@ def analytical_psd_taiji_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The PSD of Taiji's TDI-1.5 channel A and E.
+        The PSD of Taiji's TDI-1.5/2.0 channel A and E.
     Notes
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
@@ -849,15 +733,15 @@ def analytical_psd_taiji_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(taiji_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-                                         len_arm, psd_components)
+    fseries = _analytical_psd_tdi_AE(length, delta_f, low_freq_cutoff,
+                                     len_arm, psd_components, tdi)
 
     return fseries
 
 
-def _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                              len_arm=None, psd_components=None):
-    """ The PSD of TDI-1.5 channel T.
+def _analytical_psd_tdi_T(length, delta_f, low_freq_cutoff,
+                          len_arm=None, psd_components=None, tdi="1.5"):
+    """ The PSD of TDI-1.5/2.0 channel T.
 
     Parameters
     ----------
@@ -871,11 +755,13 @@ def _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         The arm length of the detector, in the unit of "m".
     psd_components : numpy.array
         The PSDs of acceleration noise and OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The PSD of TDI-1.5 channel T.
+        The PSD of TDI-1.5/2.0 channel T.
     Notes
     -----
         Please see Eq.(59) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
@@ -887,15 +773,20 @@ def _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     omega_len = omega_length(fr, len_arm)
     psd = (32*np.sin(omega_len)**2 * np.sin(omega_len/2)**2 *
            (4*s_acc_nu*np.sin(omega_len/2)**2 + s_oms_nu))
+    if tdi == "2.0":
+        tdi2_factor = 4*(np.sin(2*omega_len))**2
+        psd *= tdi2_factor
+    if tdi not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
     return fseries
 
 
-def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                  len_arm=2.5e9, acc_noise_level=3e-15,
-                                  oms_noise_level=15e-12):
-    """ The PSD of LISA's TDI-1.5 channel T.
+def analytical_psd_lisa_tdi_T(length, delta_f, low_freq_cutoff,
+                              len_arm=2.5e9, acc_noise_level=3e-15,
+                              oms_noise_level=15e-12, tdi="1.5"):
+    """ The PSD of LISA's TDI-1.5/2.0 channel T.
 
     Parameters
     ----------
@@ -911,11 +802,13 @@ def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The PSD of LISA's TDI-1.5 channel T.
+        The PSD of LISA's TDI-1.5/2.0 channel T.
     Notes
     -----
         Please see Eq.(59) in <LISA-LCST-SGS-MAN-001(Radler)> for more details.
@@ -923,17 +816,17 @@ def analytical_psd_lisa_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(lisa_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                        len_arm, psd_components)
+    fseries = _analytical_psd_tdi_T(length, delta_f, low_freq_cutoff,
+                                    len_arm, psd_components, tdi)
 
     return fseries
 
 
-def analytical_psd_tianqin_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                     len_arm=np.sqrt(3)*1e8,
-                                     acc_noise_level=1e-15,
-                                     oms_noise_level=1e-12):
-    """ The PSD of TianQin's TDI-1.5 channel T.
+def analytical_psd_tianqin_tdi_T(length, delta_f, low_freq_cutoff,
+                                 len_arm=np.sqrt(3)*1e8,
+                                 acc_noise_level=1e-15,
+                                 oms_noise_level=1e-12, tdi="1.5"):
+    """ The PSD of TianQin's TDI-1.5/2.0 channel T.
 
     Parameters
     ----------
@@ -949,11 +842,13 @@ def analytical_psd_tianqin_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The PSD of TianQin's TDI-1.5 channel T.
+        The PSD of TianQin's TDI-1.5/2.0 channel T.
     Notes
     -----
         Please see Table(1) in <10.1088/0264-9381/33/3/035010>
@@ -962,16 +857,16 @@ def analytical_psd_tianqin_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(tianqin_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                        len_arm, psd_components)
+    fseries = _analytical_psd_tdi_T(length, delta_f, low_freq_cutoff,
+                                    len_arm, psd_components, tdi)
 
     return fseries
 
 
-def analytical_psd_taiji_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                   len_arm=3e9, acc_noise_level=3e-15,
-                                   oms_noise_level=8e-12):
-    """ The PSD of Taiji's TDI-1.5 channel T.
+def analytical_psd_taiji_tdi_T(length, delta_f, low_freq_cutoff,
+                               len_arm=3e9, acc_noise_level=3e-15,
+                               oms_noise_level=8e-12, tdi="1.5"):
+    """ The PSD of Taiji's TDI-1.5/2.0 channel T.
 
     Parameters
     ----------
@@ -987,11 +882,13 @@ def analytical_psd_taiji_tdi_1p5_T(length, delta_f, low_freq_cutoff,
         The level of acceleration noise.
     oms_noise_level : float
         The level of OMS noise.
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The PSD of Taiji's TDI-1.5 channel T.
+        The PSD of Taiji's TDI-1.5/2.0 channel T.
     Notes
     -----
         Please see <10.1103/PhysRevD.107.064021> for more details.
@@ -999,8 +896,8 @@ def analytical_psd_taiji_tdi_1p5_T(length, delta_f, low_freq_cutoff,
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
     psd_components = np.array(taiji_psd_components(
         fr, acc_noise_level, oms_noise_level))
-    fseries = _analytical_psd_tdi_1p5_T(length, delta_f, low_freq_cutoff,
-                                        len_arm, psd_components)
+    fseries = _analytical_psd_tdi_T(length, delta_f, low_freq_cutoff,
+                                    len_arm, psd_components, tdi)
 
     return fseries
 
@@ -1111,8 +1008,8 @@ def averaged_tianqin_fplus_sq_numerical(f, len_arm=np.sqrt(3)*1e8):
     return fp_sq_numerical
 
 
-def averaged_response_lisa_tdi_1p5(f, len_arm=2.5e9):
-    """ LISA's TDI-1.5 response function to GW,
+def averaged_response_lisa_tdi(f, len_arm=2.5e9, tdi="1.5"):
+    """ LISA's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
 
     Parameters
@@ -1121,50 +1018,31 @@ def averaged_response_lisa_tdi_1p5(f, len_arm=2.5e9):
         The frequency or frequency range, in the unit of "Hz".
     len_arm : float
         The arm length of LISA, in the unit of "m".
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
-    response_tdi_1p5 : float or numpy.array
-        The sky and polarization angle averaged TDI-1.5 response to GW.
+    response_tdi : float or numpy.array
+        The sky and polarization angle averaged TDI-1.5/2.0 response to GW.
     Notes
     -----
-        Please see Eq.(39) in <LISA-LCST-SGS-TN-001> for more details.
+        Please see Eq.(39-40) in <LISA-LCST-SGS-TN-001> for more details.
     """
     omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_lisa_fplus_sq_numerical(f, len_arm)
-    response_tdi_1p5 = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
+    response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
+    if tdi == "2.0":
+        tdi2_factor = 4*(np.sin(2*omega_len))**2
+        response_tdi *= tdi2_factor
+    if tdi not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
 
-    return response_tdi_1p5
-
-
-def averaged_response_lisa_tdi_2p0(f, len_arm=2.5e9):
-    """ LISA's TDI-2.0 response function to GW,
-    averaged over sky and polarization angle.
-
-    Parameters
-    ----------
-    f : float or numpy.array
-        The frequency or frequency range, in the unit of "Hz".
-    len_arm : float
-        The arm length of LISA, in the unit of "m".
-
-    Returns
-    -------
-    response_tdi_2p0 : float or numpy.array
-        The sky and polarization angle averaged TDI-2.0 response to GW.
-    Notes
-    -----
-        Please see Eq.(40) in <LISA-LCST-SGS-TN-001> for more details.
-    """
-    omega_len = omega_length(f, len_arm)
-    response_tdi_1p5 = averaged_response_lisa_tdi_1p5(f, len_arm)
-    response_tdi_2p0 = response_tdi_1p5 * (2*np.sin(2*omega_len))**2
-
-    return response_tdi_2p0
+    return response_tdi
 
 
-def averaged_response_tianqin_tdi_1p5(f, len_arm=np.sqrt(3)*1e8):
-    """ TianQin's TDI-1.5 response function to GW,
+def averaged_response_tianqin_tdi(f, len_arm=np.sqrt(3)*1e8, tdi="1.5"):
+    """ TianQin's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
 
     Parameters
@@ -1173,21 +1051,28 @@ def averaged_response_tianqin_tdi_1p5(f, len_arm=np.sqrt(3)*1e8):
         The frequency or frequency range, in the unit of "Hz".
     len_arm : float
         The arm length of TianQin, in the unit of "m".
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
-    response_tdi_1p5 : float or numpy.array
-        The sky and polarization angle averaged TDI-1.5 response to GW.
+    response_tdi : float or numpy.array
+        The sky and polarization angle averaged TDI-1.5/2.0 response to GW.
     """
     omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_tianqin_fplus_sq_numerical(f, len_arm)
-    response_tdi_1p5 = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
+    response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
+    if tdi == "2.0":
+        tdi2_factor = 4*(np.sin(2*omega_len))**2
+        response_tdi *= tdi2_factor
+    if tdi not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
 
-    return response_tdi_1p5
+    return response_tdi
 
 
-def averaged_response_taiji_tdi_1p5(f, len_arm=3e9):
-    """ Taiji's TDI-1.5 response function to GW,
+def averaged_response_taiji_tdi(f, len_arm=3e9, tdi="1.5"):
+    """ Taiji's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
 
     Parameters
@@ -1196,17 +1081,24 @@ def averaged_response_taiji_tdi_1p5(f, len_arm=3e9):
         The frequency or frequency range, in the unit of "Hz".
     len_arm : float
         The arm length of Taiji, in the unit of "m".
+    tdi : str
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
-    response_tdi_1p5 : float or numpy.array
-        The sky and polarization angle averaged TDI-1.5 response to GW.
+    response_tdi : float or numpy.array
+        The sky and polarization angle averaged TDI-1.5/2.0 response to GW.
     """
     omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_fplus_sq_approximated(f, len_arm)
-    response_tdi_1p5 = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
+    response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
+    if tdi == "2.0":
+        tdi2_factor = 4*(np.sin(2*omega_len))**2
+        response_tdi *= tdi2_factor
+    if tdi not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
 
-    return response_tdi_1p5
+    return response_tdi
 
 
 def sensitivity_curve_lisa_semi_analytical(length, delta_f, low_freq_cutoff,
@@ -1460,7 +1352,9 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
         raise Warning("Note that the results between " +
                       "0.5, 1, 2, 4, and 5 years are extrapolated, " +
                       "might be non-physical.")
-    sh_confusion = np.power(
+    # 10/3 is the factor for sky-average, the original fit in the paper
+    # is not sky-averaged.
+    sh_confusion = 10./3 * np.power(
         10,
         fit_a0(duration) +
         fit_a1(duration) * np.log10(fr*1e3) +
@@ -1719,10 +1613,8 @@ def sh_transformed_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
         Please see Eq.(7,41-43) in <LISA-LCST-SGS-TN-001> for more details.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    if tdi == "1.5":
-        response = averaged_response_lisa_tdi_1p5(fr, len_arm)
-    elif tdi == "2.0":
-        response = averaged_response_lisa_tdi_2p0(fr, len_arm)
+    if tdi == "1.5" or tdi == "2.0":
+        response = averaged_response_lisa_tdi(fr, len_arm, tdi)
     else:
         raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries_response = from_numpy_arrays(fr, np.array(response),
@@ -1766,10 +1658,8 @@ def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
         noise, no instrumental noise.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    if tdi == "1.5":
-        response = averaged_response_lisa_tdi_1p5(fr, len_arm)
-    elif tdi == "2.0":
-        response = averaged_response_lisa_tdi_2p0(fr, len_arm)
+    if tdi == "1.5" or tdi == "2.0":
+        response = averaged_response_lisa_tdi(fr, len_arm, tdi)
     else:
         raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries_response = from_numpy_arrays(fr, np.array(response),
@@ -1787,8 +1677,8 @@ def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
 def analytical_psd_tianqin_confusion_noise(length, delta_f, low_freq_cutoff,
                                            len_arm=np.sqrt(3)*1e8,
                                            duration=1.0, tdi="1.5"):
-    """ The TDI-1.5 PSD (X,Y,Z channel) for TianQin Galactic confusion noise,
-    no instrumental noise.
+    """ The TDI-1.5/2.0 PSD (X,Y,Z channel) for TianQin Galactic confusion
+    noise, no instrumental noise.
 
     Parameters
     ----------
@@ -1803,19 +1693,19 @@ def analytical_psd_tianqin_confusion_noise(length, delta_f, low_freq_cutoff,
     duration : float
         The duration of observation, between 0 and 5, in the unit of years.
     tdi : string
-        The version of TDI, currently only for 1.5.
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The TDI-1.5 PSD (X,Y,Z channel) for TianQin Galactic confusion
+        The TDI-1.5/2.0 PSD (X,Y,Z channel) for TianQin Galactic confusion
         noise, no instrumental noise.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    if tdi == "1.5":
-        response = averaged_response_tianqin_tdi_1p5(fr, len_arm)
+    if tdi == "1.5" or tdi == "2.0":
+        response = averaged_response_tianqin_tdi(fr, len_arm, tdi)
     else:
-        raise Exception("The version of TDI, currently only for 1.5.")
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries_response = from_numpy_arrays(fr, np.array(response),
                                          length, delta_f, low_freq_cutoff)
     fseries_confusion = confusion_fit_tianqin(
@@ -1831,8 +1721,8 @@ def analytical_psd_tianqin_confusion_noise(length, delta_f, low_freq_cutoff,
 def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
                                          len_arm=3e9, duration=1.0,
                                          tdi="1.5"):
-    """ The TDI-1.5 PSD (X,Y,Z channel) for Taiji Galactic confusion noise,
-    no instrumental noise.
+    """ The TDI-1.5/2.0 PSD (X,Y,Z channel) for Taiji Galactic confusion
+    noise, no instrumental noise.
 
     Parameters
     ----------
@@ -1847,19 +1737,19 @@ def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
     duration : float
         The duration of observation, between 0 and 4, in the unit of years.
     tdi : string
-        The version of TDI, currently only for 1.5.
+        The version of TDI. Choose from "1.5" or "2.0".
 
     Returns
     -------
     fseries : FrequencySeries
-        The TDI-1.5 PSD (X,Y,Z channel) for Taiji Galactic confusion
+        The TDI-1.5/2.0 PSD (X,Y,Z channel) for Taiji Galactic confusion
         noise, no instrumental noise.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    if tdi == "1.5":
-        response = averaged_response_taiji_tdi_1p5(fr, len_arm)
+    if tdi == "1.5" or tdi == "2.0":
+        response = averaged_response_taiji_tdi(fr, len_arm, tdi)
     else:
-        raise Exception("The version of TDI, currently only for 1.5.")
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries_response = from_numpy_arrays(fr, np.array(response),
                                          length, delta_f, low_freq_cutoff)
     fseries_confusion = confusion_fit_taiji(
@@ -1872,147 +1762,141 @@ def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
     return fseries
 
 
-# def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
-#                                          len_arm=2.5e9, acc_noise_level=3e-15,
-#                                          oms_noise_level=15e-12,
-#                                          duration=1.0, tdi="1.5"):
-#     """ The TDI-1.5 PSD (A,E channel) for LISA
-#     with Galactic confusion noise.
+def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
+                                         len_arm=2.5e9, acc_noise_level=3e-15,
+                                         oms_noise_level=15e-12,
+                                         duration=1.0, tdi="1.5"):
+    """ The TDI-1.5/2.0 PSD (A,E channel) for LISA
+    with Galactic confusion noise.
 
-#     Parameters
-#     ----------
-#     length : int
-#         Length of output Frequencyseries.
-#     delta_f : float
-#         Frequency step for output FrequencySeries.
-#     low_freq_cutoff : float
-#         Low-frequency cutoff for output FrequencySeries.
-#     len_arm : float
-#         The arm length of LISA, in the unit of "m".
-#     acc_noise_level : float
-#         The level of acceleration noise.
-#     oms_noise_level : float
-#         The level of OMS noise.
-#     duration : float
-#         The duration of observation, between 0 and 10, in the unit of years.
-#     tdi : string
-#         The version of TDI, currently only for 1.5.
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of LISA, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+    duration : float
+        The duration of observation, between 0 and 10, in the unit of years.
+    tdi : string
+        The version of TDI. Choose from "1.5" or "2.0".
 
-#     Returns
-#     -------
-#     fseries : FrequencySeries
-#         The TDI-1.5 PSD (A,E channel) for LISA with Galactic confusion
-#         noise.
-#     """
-#     if tdi != "1.5":
-#         raise Exception("The version of TDI, currently only for 1.5.")
-#     psd_AE = analytical_psd_lisa_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-#                                             len_arm, acc_noise_level,
-#                                             oms_noise_level)
-#     psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(
-#                         length, delta_f, low_freq_cutoff,
-#                         len_arm, duration, tdi)
-#     # Here we assume the confusion noise's contribution to the CSD S_XY is
-#     # negligible for low-frequency part. So S_XY doesn't change.
-#     # S_A = S_E = S_X - S_XY
-#     fseries = psd_AE + psd_X_confusion
+    Returns
+    -------
+    fseries : FrequencySeries
+        The TDI-1.5/2.0 PSD (A,E channel) for LISA with Galactic confusion
+        noise.
+    """
+    psd_AE = analytical_psd_lisa_tdi_AE(length, delta_f, low_freq_cutoff,
+                                        len_arm, acc_noise_level,
+                                        oms_noise_level, tdi)
+    psd_X_confusion = semi_analytical_psd_lisa_confusion_noise(
+                        length, delta_f, low_freq_cutoff,
+                        len_arm, duration, tdi)
+    # S_A = S_E = S_X - S_XY, confusion noise's contribution to
+    # S_XY is -0.5 * psd_X_confusion, while for S_X is psd_X_confusion.
+    # S_T = S_X + 2*S_XY, so S_T keeps the same.
+    fseries = psd_AE + 1.5 * psd_X_confusion
 
-#     return fseries
+    return fseries
 
 
-# def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
-#                                             len_arm=np.sqrt(3)*1e8,
-#                                             acc_noise_level=1e-15,
-#                                             oms_noise_level=1e-12,
-#                                             duration=1.0, tdi="1.5"):
-#     """ The TDI-1.5 PSD (A,E channel) for TianQin
-#     with Galactic confusion noise.
+def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
+                                            len_arm=np.sqrt(3)*1e8,
+                                            acc_noise_level=1e-15,
+                                            oms_noise_level=1e-12,
+                                            duration=1.0, tdi="1.5"):
+    """ The TDI-1.5/2.0 PSD (A,E channel) for TianQin
+    with Galactic confusion noise.
 
-#     Parameters
-#     ----------
-#     length : int
-#         Length of output Frequencyseries.
-#     delta_f : float
-#         Frequency step for output FrequencySeries.
-#     low_freq_cutoff : float
-#         Low-frequency cutoff for output FrequencySeries.
-#     len_arm : float
-#         The arm length of TianQin, in the unit of "m".
-#     acc_noise_level : float
-#         The level of acceleration noise.
-#     oms_noise_level : float
-#         The level of OMS noise.
-#     duration : float
-#         The duration of observation, between 0 and 5, in the unit of years.
-#     tdi : string
-#         The version of TDI, currently only for 1.5.
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of TianQin, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+    duration : float
+        The duration of observation, between 0 and 5, in the unit of years.
+    tdi : string
+        The version of TDI. Choose from "1.5" or "2.0".
 
-#     Returns
-#     -------
-#     fseries : FrequencySeries
-#         The TDI-1.5 PSD (A,E channel) for TianQin with Galactic confusion
-#         noise.
-#     """
-#     if tdi != "1.5":
-#         raise Exception("The version of TDI, currently only for 1.5.")
-#     psd_AE = analytical_psd_tianqin_tdi_1p5_AE(length, delta_f,
-#                                                low_freq_cutoff,
-#                                                len_arm, acc_noise_level,
-#                                                oms_noise_level)
-#     psd_X_confusion = analytical_psd_tianqin_confusion_noise(
-#                         length, delta_f, low_freq_cutoff,
-#                         len_arm, duration, tdi)
-#     # Here we assume the confusion noise's contribution to the CSD S_XY is
-#     # negligible for low-frequency part. So S_XY doesn't change.
-#     # S_A = S_E = S_X - S_XY
-#     fseries = psd_AE + psd_X_confusion
+    Returns
+    -------
+    fseries : FrequencySeries
+        The TDI-1.5/2.0 PSD (A,E channel) for TianQin with Galactic confusion
+        noise.
+    """
+    psd_AE = analytical_psd_tianqin_tdi_AE(length, delta_f,
+                                           low_freq_cutoff,
+                                           len_arm, acc_noise_level,
+                                           oms_noise_level, tdi)
+    psd_X_confusion = analytical_psd_tianqin_confusion_noise(
+                        length, delta_f, low_freq_cutoff,
+                        len_arm, duration, tdi)
+    # S_A = S_E = S_X - S_XY, confusion noise's contribution to
+    # S_XY is -0.5 * psd_X_confusion, while for S_X is psd_X_confusion.
+    # S_T = S_X + 2*S_XY, so S_T keeps the same.
+    fseries = psd_AE + 1.5 * psd_X_confusion
 
-#     return fseries
+    return fseries
 
 
-# def analytical_psd_taiji_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
-#                                           len_arm=3e9, acc_noise_level=3e-15,
-#                                           oms_noise_level=8e-12,
-#                                           duration=1.0, tdi="1.5"):
-#     """ The TDI-1.5 PSD (A,E channel) for Taiji
-#     with Galactic confusion noise.
+def analytical_psd_taiji_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
+                                          len_arm=3e9, acc_noise_level=3e-15,
+                                          oms_noise_level=8e-12,
+                                          duration=1.0, tdi="1.5"):
+    """ The TDI-1.5/2.0 PSD (A,E channel) for Taiji
+    with Galactic confusion noise.
 
-#     Parameters
-#     ----------
-#     length : int
-#         Length of output Frequencyseries.
-#     delta_f : float
-#         Frequency step for output FrequencySeries.
-#     low_freq_cutoff : float
-#         Low-frequency cutoff for output FrequencySeries.
-#     len_arm : float
-#         The arm length of Taiji, in the unit of "m".
-#     acc_noise_level : float
-#         The level of acceleration noise.
-#     oms_noise_level : float
-#         The level of OMS noise.
-#     duration : float
-#         The duration of observation, between 0 and 4, in the unit of years.
-#     tdi : string
-#         The version of TDI, currently only for 1.5.
+    Parameters
+    ----------
+    length : int
+        Length of output Frequencyseries.
+    delta_f : float
+        Frequency step for output FrequencySeries.
+    low_freq_cutoff : float
+        Low-frequency cutoff for output FrequencySeries.
+    len_arm : float
+        The arm length of Taiji, in the unit of "m".
+    acc_noise_level : float
+        The level of acceleration noise.
+    oms_noise_level : float
+        The level of OMS noise.
+    duration : float
+        The duration of observation, between 0 and 4, in the unit of years.
+    tdi : string
+        The version of TDI. Choose from "1.5" or "2.0".
 
-#     Returns
-#     -------
-#     fseries : FrequencySeries
-#         The TDI-1.5 PSD (A,E channel) for Taiji with Galactic confusion
-#         noise.
-#     """
-#     if tdi != "1.5":
-#         raise Exception("The version of TDI, currently only for 1.5.")
-#     psd_AE = analytical_psd_taiji_tdi_1p5_AE(length, delta_f, low_freq_cutoff,
-#                                              len_arm, acc_noise_level,
-#                                              oms_noise_level)
-#     psd_X_confusion = analytical_psd_taiji_confusion_noise(
-#                         length, delta_f, low_freq_cutoff,
-#                         len_arm, duration, tdi)
-#     # Here we assume the confusion noise's contribution to the CSD S_XY is
-#     # negligible for low-frequency part. So S_XY doesn't change.
-#     # S_A = S_E = S_X - S_XY
-#     fseries = psd_AE + psd_X_confusion
+    Returns
+    -------
+    fseries : FrequencySeries
+        The TDI-1.5/2.0 PSD (A,E channel) for Taiji with Galactic confusion
+        noise.
+    """
+    psd_AE = analytical_psd_taiji_tdi_AE(length, delta_f, low_freq_cutoff,
+                                         len_arm, acc_noise_level,
+                                         oms_noise_level)
+    psd_X_confusion = analytical_psd_taiji_confusion_noise(
+                        length, delta_f, low_freq_cutoff,
+                        len_arm, duration, tdi)
+    # S_A = S_E = S_X - S_XY, confusion noise's contribution to
+    # S_XY is -0.5 * psd_X_confusion, while for S_X is psd_X_confusion.
+    # S_T = S_X + 2*S_XY, so S_T keeps the same.
+    fseries = psd_AE + 1.5 * psd_X_confusion
 
-#     return fseries
+    return fseries
