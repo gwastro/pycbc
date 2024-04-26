@@ -258,7 +258,7 @@ usefiles = filter(
     args.input_files,
 )
 
-if not usefiles:
+if not list(usefiles):
     raise ValueError("No files used in inj combiner!\n"
                      "Check injection set name and inclination.\n"
                      "It should have the following form:\n"
