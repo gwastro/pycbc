@@ -1,0 +1,517 @@
+#!/usr/bin/env python
+
+"""Supervise the periodic re-fitting of PyCBC Live single-detector triggers,
+and the associated plots.
+"""
+
+import re
+import logging
+import argparse
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+import time
+import copy
+import os
+import shutil
+import subprocess
+import numpy as np
+import lal
+import pycbc
+import h5py
+
+
+def symlink(target, link_name):
+    """Create a symbolic link replacing the destination and checking for
+    errors.
+    """
+    cp = subprocess.run([
+        'ln', '-sf', target, link_name
+    ])
+    if cp.returncode:
+        raise subprocess.SubprocessError(
+            f"Could not link plot {target} to {link_name}"
+        )
+
+
+def dict_to_args(opts_dict):
+    """
+    Convert an option dictionary into a list to be used by subprocess.run
+    """
+    dargs = []
+    for option in opts_dict.keys():
+        dargs.append('--' + option.strip())
+        value = opts_dict[option]
+        if len(value.split()) > 1:
+            # value is a list, append individually
+            for v in value.split():
+                dargs.append(v)
+        elif not value:
+            # option is a flag, do nothing
+            continue
+        else:
+            # Single value option - easy enough
+            dargs.append(value)
+    return dargs
+
+
+def mail_volunteers_error(controls, mail_body_lines, subject):
+    """
+    Email a list of people, defined by mail-volunteers-file
+    To be used for errors or unusual occurences
+    """
+    with open(controls['mail-volunteers-file'], 'r') as mail_volunteers_file:
+        volunteers = [volunteer.strip() for volunteer in
+                      mail_volunteers_file.readlines()]
+    logging.info("Emailing %s with warnings", ' '.join(volunteers))
+    mail_command = [
+        'mail',
+        '-s',
+        subject
+    ]
+    mail_command += volunteers
+    mail_body = '\n'.join(mail_body_lines)
+    subprocess.run(mail_command, input=mail_body, text=True)
+
+
+def check_trigger_files(filenames, test_options, controls):
+    """
+    Check that the fit coefficients meet criteria set
+    """
+    coeff_upper_limit = float(test_options['upper-limit-coefficient'])
+    coeff_lower_limit = float(test_options['lower-limit-coefficient'])
+    warnings = []
+    warning_files = []
+    for filename in filenames:
+        warnings_thisfile = []
+        with h5py.File(filename, 'r') as trff:
+            ifos = [k for k in trff.keys() if not k.startswith('bins')]
+            fit_coeffs = {ifo: trff[ifo]['fit_coeff'][:] for ifo in ifos}
+            bins_upper = trff['bins_upper'][:]
+            bins_lower = trff['bins_lower'][:]
+        # Which bins have at least *some* triggers within the limit
+        use_bins = bins_lower > float(test_options['duration-bin-lower-limit'])
+        for ifo in ifos:
+            coeffs_above = fit_coeffs[ifo][use_bins] > coeff_upper_limit
+            coeffs_below = fit_coeffs[ifo][use_bins] < coeff_lower_limit
+            if not any(coeffs_above) and not any(coeffs_below):
+                continue
+            # Problem - the fit coefficient is outside the limits
+            for bl, bu, fc in zip(bins_lower[use_bins], bins_upper[use_bins],
+                                  fit_coeffs[ifo][use_bins]):
+                if fc < coeff_lower_limit or fc > coeff_upper_limit:
+                    warnings_thisfile.append(
+                        f"WARNING - {ifo} fit coefficient {fc:.3f} in bin "
+                        f"{bl}-{bu} outwith limits "
+                        f"{coeff_lower_limit}-{coeff_upper_limit}"
+                    )
+        if warnings_thisfile:
+            warning_files.append(filename)
+            warnings.append(warnings_thisfile)
+
+    if warnings:
+        # Some coefficients are outside the range
+        # Add the fact that this check failed in the logs
+        logging.warning("Extreme daily fits values found:")
+        mail_body_lines = ["Extreme daily fits values found:"]
+        for filename, filewarnings in zip(warning_files, warnings):
+            logging.warning(filename)
+            mail_body_lines.append(f"Values in {filename}")
+            for fw in filewarnings:
+                logging.warning("    " + fw)
+                mail_body_lines.append("    " + fw)
+        mail_volunteers_error(controls, mail_body_lines,
+            'PyCBC Live single trigger fits extreme value(s)')
+
+
+def run_and_error(command_arguments):
+    """
+    Wrapper around subprocess.run to catch errors and send emails if required
+    """
+    logging.info("Running " + " ".join(command_arguments))
+    command_output = subprocess.run(command_arguments, capture_output=True)
+    if command_output.returncode:
+        error_contents = [' '.join(command_arguments),
+                          command_output.stderr.decode()]
+        mail_volunteers_error(controls, error_contents,
+            f"PyCBC live could not run {command_arguments[0]}")
+        err_msg = f"Could not run {command_arguments[0]}"
+        raise subprocess.SubprocessError(err_msg)
+
+
+# These are the option used to control the supervision, and will not be passed
+# to the subprocesses
+control_options = [
+    "check-daily-output",
+    "combined-days",
+    "mail-volunteers-file",
+    "output-directory",
+    "output-id-str",
+    "public-dir",
+    "replay-duration",
+    "replay-start-time",
+    "submit-dir",
+    "trfits-format",
+    "true-start-time",
+    "variable-trigger-fits",
+]
+
+# these are options which can be taken by both the daily fit code and the
+# combined fitting code
+options_both = ['ifos', 'verbose']
+
+# These options are only for the daily fit code
+daily_fit_options = [
+    'cluster',
+    'duration-bin-edges',
+    'duration-bin-spacing',
+    'duration-from-bank',
+    'file-identifier',
+    'fit-function',
+    'fit-threshold',
+    'num-duration-bins',
+    'prune-loudest',
+    'prune-stat-threshold',
+    'prune-window',
+    'sngl-ranking',
+    'template-cuts',
+    'top-directory',
+    'trigger-cuts',
+]
+
+combined_fit_options = [
+    'conservative-percentile',
+]
+
+coeff_test_options = [
+    'duration-bin-lower-limit',
+    'lower-limit-coefficient',
+    'upper-limit-coefficient',
+]
+
+all_options = control_options + options_both + daily_fit_options \
+              + combined_fit_options + coeff_test_options
+
+
+def do_fitting(args, day_dt, day_str):
+    """
+    Perform the fits as specified
+    """
+    # Read in the config file and pack into appropriate dictionaries
+    daily_options = {}
+    combined_options = {}
+    test_options = {}
+    controls = {}
+
+    with open(args.config_file, 'r') as conf_file:
+        all_lines = conf_file.readlines()
+
+    for line in all_lines:
+        # Ignore whitespace and comments
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith(';'):
+            continue
+
+        option, value = line.split('=')
+        option = option.strip()
+        value = value.strip()
+
+        # If it is a control option, add to the controls dictionary
+        if option in control_options:
+            controls[option] = value
+
+        # If the option is not to control the input, then it is passed
+        # straight to the executable
+        if option in daily_fit_options or option in options_both:
+            daily_options[option] = value
+
+        if option in options_both or option in combined_fit_options:
+            combined_options[option] = value
+
+        if option in coeff_test_options:
+            test_options[option] = value
+
+        if option not in all_options:
+            logging.warning("Option %s unrecognised, ignoring", option)
+
+    # The main output directory will have a date subdirectory which we
+    # put the output into
+    output_dir = os.path.join(controls['output-directory'], day_str)
+    subprocess.run(['mkdir', '-p', output_dir])
+    if 'public-dir' in controls:
+        public_dir = os.path.join(controls['public-dir'], *day_str.split('_'))
+        subprocess.run(['mkdir', '-p', public_dir])
+
+    if not args.combine_only:
+        ##### DAILY FITTING #####
+        daily_options['analysis-date'] = day_str
+        file_id_str = f'{day_str}'
+        if 'output-id-str' in controls:
+            file_id_str += f"-{controls['output-id-str']}"
+        out_fname = f'{file_id_str}-TRIGGER-FITS.hdf'
+        daily_options['output'] = os.path.join(output_dir, out_fname)
+        daily_args = ['pycbc_live_single_significance_fits']
+        daily_args += dict_to_args(daily_options)
+
+        run_and_error(daily_args)
+
+        # Add plotting for daily fits, and linking to the public directory
+        logging.info("Plotting daily fits")
+        daily_plot_output = os.path.join(output_dir,
+                                         '{ifo}-' + f'{out_fname[:-3]}png')
+        daily_plot_arguments = [
+            'pycbc_live_plot_single_significance_fits',
+            '--trigger-fits-file',
+            daily_options['output'],
+            '--output-plot-name-format',
+            daily_plot_output,
+            '--log-colormap'
+        ]
+        run_and_error(daily_plot_arguments)
+
+        # Link the plots to the public-dir if wanted
+        if 'public-dir' in controls:
+            daily_plot_outputs = [daily_plot_output.format(ifo=ifo) for ifo in
+                                  daily_options['ifos'].split()]
+            logging.info("Linking daily fits plots")
+            for dpo in daily_plot_outputs:
+                symlink(dpo, public_dir)
+
+    if args.daily_only:
+        if 'check-daily-output' in controls:
+            logging.info(
+                "Checking that fit coefficients above %s for bins above %ss",
+                test_options['lower-limit-coefficient'],
+                test_options['duration-bin-lower-limit']
+            )
+            check_trigger_files(
+                [daily_options['output']],
+                test_options,
+                controls
+            )
+        logging.info('Done')
+        exit()
+
+    ##### COMBINED FITTING #####
+    combined_days = int(controls['combined-days'])
+    if 'replay-start-time' in controls:
+        replay_start_time = int(controls['replay-start-time'])
+        true_start_time = int(controls['true-start-time'])
+        replay_duration = int(controls['replay-duration'])
+        rep_start_utc = lal.GPSToUTC(replay_start_time)[0:6]
+
+        dt_replay_start = datetime(
+            year=rep_start_utc[0],
+            month=rep_start_utc[1],
+            day=rep_start_utc[2],
+            hour=rep_start_utc[3],
+            minute=rep_start_utc[4],
+            second=rep_start_utc[5]
+        )
+
+        td = (day_dt - dt_replay_start).total_seconds()
+
+        # Time since the start of this replay
+        time_since_replay = np.remainder(td, replay_duration)
+
+        # Add this on to the original start time to get the current time of
+        # the replay data
+        true_utc = lal.GPSToUTC(true_start_time)[0:6]
+        dt_true_start = datetime(
+            year=true_utc[0],
+            month=true_utc[1],
+            day=true_utc[2],
+            hour=true_utc[3],
+            minute=true_utc[4],
+            second=true_utc[5]
+        )
+
+        # Original time of the data being replayed right now
+        current_date = dt_true_start + timedelta(seconds=time_since_replay)
+    else:
+        current_date = day_dt
+
+    date_test = current_date + timedelta(days=1)
+
+    logging.info("Finding trigger fit files for combination")
+    if 'check-daily-output' in controls:
+        logging.info(
+            "Checking all files that fit coefficients above %s for bins "
+            "above %ss",
+            test_options['lower-limit-coefficient'],
+            test_options['duration-bin-lower-limit']
+        )
+
+    trfits_files = []
+    missed_files = 0
+    found_files = 0
+    while found_files < combined_days and missed_files < 10:
+        # Loop through the possible file locations and see if the file exists
+        date_test -= timedelta(days=1)
+        date_out = date_test.strftime("%Y_%m_%d")
+        trfits_filename = controls['trfits-format'].format(date=date_out)
+        # Check that the file exists:
+        if not os.path.exists(trfits_filename):
+            missed_files += 1
+            logging.info(f"File {trfits_filename} does not exist - skipping")
+            continue
+        if not len(trfits_files):
+            end_date = date_out
+        # This is now the oldest file
+        first_date = date_out
+        # reset the "missed files" counter, and add to the "found files"
+        missed_files = 0
+        found_files += 1
+        trfits_files.append(trfits_filename)
+
+    if 'check-daily-output' in controls:
+        check_trigger_files(trfits_files, test_options, controls)
+
+    if missed_files == 10:
+        # If more than 10 days between files, something wrong with analysis.
+        # warn and use fewer files - 10 here is chosen to be an unusual amount
+        # of time for the analysis to be down in standard operation
+        logging.warning('More than 10 days between files, only using '
+                        f'{found_files} files for combination!')
+
+    file_id_str = f'{first_date}-{end_date}'
+    if 'output-id-str' in controls:
+        file_id_str += f"-{controls['output-id-str']}"
+    out_fname = f'{file_id_str}-TRIGGER_FITS_COMBINED'
+    combined_options['output'] = os.path.join(output_dir, out_fname + '.hdf')
+
+    if not trfits_files:
+        raise ValueError("No files meet the criteria")
+
+    combined_options['trfits-files'] = ' '.join(trfits_files)
+
+    combined_args = ['pycbc_live_combine_single_significance_fits']
+    combined_args += dict_to_args(combined_options)
+
+    run_and_error(combined_args)
+
+    logging.info('Copying combined fits file to local filesystem')
+    try:
+        shutil.copyfile(
+            combined_options['output'],
+            controls['variable-trigger-fits']
+        )
+    except Exception as e:
+        mail_volunteers_error(
+            controls,
+            [str(e)],
+            "PyCBC live could not copy to variable trigger fits file"
+        )
+        raise e
+
+
+    logging.info(
+        "%s updated to link to %s",
+        controls['variable-trigger-fits'],
+        combined_options['output']
+    )
+
+    logging.info("Plotting combined fits")
+    # Add plotting for combined fits, and linking to the public directory
+    combined_plot_output = os.path.join(output_dir,
+                                        f"{{ifo}}-{out_fname}-{{type}}.png")
+    combined_plot_arguments = [
+        'pycbc_live_plot_combined_single_significance_fits',
+        '--combined-fits-file',
+        combined_options['output'],
+        '--output-plot-name-format',
+        combined_plot_output,
+        '--log-colormap'
+    ]
+
+    run_and_error(combined_plot_arguments)
+
+    combined_plot_outputs = [
+        combined_plot_output.format(ifo=ifo, type='fit_coeffs') for ifo in
+        combined_options['ifos'].split()
+    ]
+    combined_plot_outputs += [
+        combined_plot_output.format(ifo=ifo, type='counts') for ifo in
+        combined_options['ifos'].split()
+    ]
+
+    # Link the plots to the public-dir if wanted
+    if 'public-dir' in controls:
+        logging.info("Linking combined fits")
+        for cpo in combined_plot_outputs:
+            symlink(cpo, public_dir)
+
+    logging.info('Done')
+
+
+def wait_for_utc_time(target_str):
+    """Wait until the UTC time is as given by `target_str`, in HH:MM:SS format.
+    """
+    target_hour, target_minute, target_second = map(int, target_str.split(':'))
+    now = datetime.utcnow()
+    # for today's target, take now and replace the time
+    target_today = now + relativedelta(
+        hour=target_hour, minute=target_minute, second=target_second
+    )
+    # for tomorrow's target, take now, add one day, and replace the time
+    target_tomorrow = now + relativedelta(
+        days=1, hour=target_hour, minute=target_minute, second=target_second
+    )
+    next_target = target_today if now <= target_today else target_tomorrow
+    sleep_seconds = (next_target - now).total_seconds()
+    logging.info('Waiting %.0f s', sleep_seconds)
+    time.sleep(sleep_seconds)
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--config-file', required=True)
+parser.add_argument(
+    '--date',
+    help='Date to analyse, if not given, will analyse yesterday (UTC). '
+         'Format YYYY_MM_DD. Do not use if using --run-daily-at.'
+)
+parser.add_argument(
+    '--combine-only',
+    action='store_true',
+    help="Only do the combination of singles fit files."
+)
+parser.add_argument(
+    '--daily-only',
+    action='store_true',
+    help="Only do the daily singles fitting."
+)
+parser.add_argument(
+    '--run-daily-at',
+    metavar='HH:MM:SS',
+    help='Stay running and repeat the fitting daily at the given UTC hour.'
+)
+args = parser.parse_args()
+
+pycbc.init_logging(True)
+
+if args.run_daily_at is not None and args.date is not None:
+    parser.error('Cannot take --run-daily-at and --date at the same time')
+
+if args.run_daily_at is not None:
+    # keep running and repeat the fitting every day at the given hour
+    if not re.match('[0-9][0-9]:[0-9][0-9]:[0-9][0-9]', args.run_daily_at):
+        parser.error('--run-daily-at takes a UTC time in the format HH:MM:SS')
+    logging.info('Starting in daily run mode')
+    while True:
+        wait_for_utc_time(args.run_daily_at)
+        logging.info('==== Time to update the single fits, waking up ====')
+        # Get the date string for yesterday's triggers
+        day_dt = datetime.utcnow() - timedelta(days=1)
+        day_str = day_dt.strftime('%Y_%m_%d')
+        do_fitting(args, day_dt, day_str)
+else:
+    # run just once
+    if args.date:
+        day_str = args.date
+        day_dt = datetime.strptime(args.date, '%Y_%m_%d')
+    else:
+        # Get the date string for yesterday's triggers
+        day_dt = datetime.utcnow() - timedelta(days=1)
+        day_str = day_dt.strftime('%Y_%m_%d')
+    do_fitting(args, day_dt, day_str)

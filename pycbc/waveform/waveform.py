@@ -526,6 +526,8 @@ def get_fd_waveform_sequence(template=None, **kwds):
         required = wav_gen.required
     else:
         required = parameters.fd_required
+    if not isinstance(input_params['sample_points'], Array):
+        input_params['sample_points'] = Array(input_params['sample_points'])
     check_args(input_params, required)
     return wav_gen(**input_params)
 

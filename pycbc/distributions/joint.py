@@ -266,12 +266,14 @@ class JointDistribution(object):
         params = self.apply_boundary_conditions(**params)
         result = True
         for dist in self.distributions:
-            param_name = dist.params[0]
-            contain_array = numpy.ones(len(params[param_name]), dtype=bool)
+            param_names = dist.params
+            vlen = len(params[param_names[0]])
+            contain_array = numpy.ones(vlen, dtype=bool)
             # note: enable `__contains__` in `pycbc.distributions.bounded`
             # to handle array-like input, it doesn't work now.
-            for index, k in enumerate(params[param_name]):
-                contain_array[index] = {param_name: k} in dist
+            for i in range(vlen):
+                data = {pname: params[pname][i] for pname in param_names}
+                contain_array[i] = data in dist
             result &= numpy.array(contain_array)
         result &= self.within_constraints(params)
         return result

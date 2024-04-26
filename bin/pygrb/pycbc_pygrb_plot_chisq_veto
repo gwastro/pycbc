@@ -50,7 +50,7 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 # Functions
 # =============================================================================
 # Functions to load trigger data
-def load_data(input_file, vetoes, ifos, opts, injections=False):
+def load_data(input_file, vetoes, opts, injections=False):
     """Load data from a trigger/injection file"""
     
     snr_type = opts.snr_type
@@ -85,7 +85,7 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
 
         # Calculate coincident SNR
         elif snr_type == 'coincident':
-            data[snr_type] = ppu.get_coinc_snr(trigs_or_injs, ifos)
+            data[snr_type] = ppu.get_coinc_snr(trigs_or_injs)
 
         # Tags to find vetoes in HDF files
         veto_tags = {'standard': 'chisq',
@@ -258,10 +258,10 @@ if ifo and ifo not in ifos:
     raise RuntimeError(err_msg)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, ifos, opts)
+trig_data = load_data(trig_file, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_missed_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_missed_file, vetoes, opts, injections=True)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:

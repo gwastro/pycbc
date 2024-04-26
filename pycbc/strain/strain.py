@@ -1420,8 +1420,8 @@ STRAINBUFFER_UNIQUE_ID_3 = 665849947
 
 class StrainBuffer(pycbc.frame.DataBuffer):
     def __init__(self, frame_src, channel_name, start_time,
-                 max_buffer=512,
-                 sample_rate=4096,
+                 max_buffer,
+                 sample_rate,
                  low_frequency_cutoff=20,
                  highpass_frequency=15.0,
                  highpass_reduction=200.0,
@@ -1462,9 +1462,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             Name of the channel to read from the frame files
         start_time:
             Time to start reading from.
-        max_buffer: {int, 512}, Optional
-            Length of the buffer in seconds
-        sample_rate: {int, 2048}, Optional
+        max_buffer: int
+            Length of the strain buffer in seconds.
+        sample_rate: int, Optional
             Rate in Hz to sample the data.
         low_frequency_cutoff: {float, 20}, Optional
             The low frequency cutoff to use for inverse spectrum truncation
@@ -1536,7 +1536,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             filesystem.
         """
         super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
-                                           max_buffer=32,
+                                           max_buffer=max_buffer,
                                            force_update_cache=force_update_cache,
                                            increment_update_cache=increment_update_cache)
 
@@ -1952,7 +1952,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         return self.wait_duration <= 0
 
     @classmethod
-    def from_cli(cls, ifo, args, maxlen):
+    def from_cli(cls, ifo, args):
         """Initialize a StrainBuffer object (data reader) for a particular
         detector.
         """
@@ -1987,34 +1987,38 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             frame_src = [args.frame_src[ifo]]
         strain_channel = ':'.join([ifo, args.channel_name[ifo]])
 
-        return cls(frame_src, strain_channel,
-                   args.start_time, max_buffer=maxlen * 2,
-                   state_channel=state_channel,
-                   data_quality_channel=dq_channel,
-                   idq_channel=idq_channel,
-                   idq_state_channel=idq_state_channel,
-                   idq_threshold=args.idq_threshold,
-                   sample_rate=args.sample_rate,
-                   low_frequency_cutoff=args.low_frequency_cutoff,
-                   highpass_frequency=args.highpass_frequency,
-                   highpass_reduction=args.highpass_reduction,
-                   highpass_bandwidth=args.highpass_bandwidth,
-                   psd_samples=args.psd_samples,
-                   trim_padding=args.trim_padding,
-                   psd_segment_length=args.psd_segment_length,
-                   psd_inverse_length=args.psd_inverse_length,
-                   autogating_threshold=args.autogating_threshold,
-                   autogating_cluster=args.autogating_cluster,
-                   autogating_pad=args.autogating_pad,
-                   autogating_width=args.autogating_width,
-                   autogating_taper=args.autogating_taper,
-                   autogating_duration=args.autogating_duration,
-                   autogating_psd_segment_length=args.autogating_psd_segment_length,
-                   autogating_psd_stride=args.autogating_psd_stride,
-                   psd_abort_difference=args.psd_abort_difference,
-                   psd_recalculate_difference=args.psd_recalculate_difference,
-                   force_update_cache=args.force_update_cache,
-                   increment_update_cache=args.increment_update_cache[ifo],
-                   analyze_flags=analyze_flags,
-                   data_quality_flags=dq_flags,
-                   dq_padding=args.data_quality_padding)
+        return cls(
+            frame_src,
+            strain_channel,
+            args.start_time,
+            max_buffer=args.max_length,
+            state_channel=state_channel,
+            data_quality_channel=dq_channel,
+            idq_channel=idq_channel,
+            idq_state_channel=idq_state_channel,
+            idq_threshold=args.idq_threshold,
+            sample_rate=args.sample_rate,
+            low_frequency_cutoff=args.low_frequency_cutoff,
+            highpass_frequency=args.highpass_frequency,
+            highpass_reduction=args.highpass_reduction,
+            highpass_bandwidth=args.highpass_bandwidth,
+            psd_samples=args.psd_samples,
+            trim_padding=args.trim_padding,
+            psd_segment_length=args.psd_segment_length,
+            psd_inverse_length=args.psd_inverse_length,
+            autogating_threshold=args.autogating_threshold,
+            autogating_cluster=args.autogating_cluster,
+            autogating_pad=args.autogating_pad,
+            autogating_width=args.autogating_width,
+            autogating_taper=args.autogating_taper,
+            autogating_duration=args.autogating_duration,
+            autogating_psd_segment_length=args.autogating_psd_segment_length,
+            autogating_psd_stride=args.autogating_psd_stride,
+            psd_abort_difference=args.psd_abort_difference,
+            psd_recalculate_difference=args.psd_recalculate_difference,
+            force_update_cache=args.force_update_cache,
+            increment_update_cache=args.increment_update_cache[ifo],
+            analyze_flags=analyze_flags,
+            data_quality_flags=dq_flags,
+            dq_padding=args.data_quality_padding
+        )

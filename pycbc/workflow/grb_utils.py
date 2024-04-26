@@ -241,21 +241,35 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
                             insp_files, inj_files, inj_insp_files, inj_tags):
     """
     Generate post-processing section of PyGRB offline workflow
-    """
-    pp_outs = FileList([])
-    # pp_outs is returned by this function. It is structured as follows:
-    # pp_outs[0]: [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
-    #             FileList (N can be set by the user and is 6 by default)
-    # pp_outs[1]: ALL_TIMES_CLUSTERED File
-    # pp_outs[2]: OFFSOURCE_CLUSTERED File
-    # pp_outs[3]: ONSOURCE_CLUSTERED File
-    # pp_outs[4]: OFFTRIAL_1_CLUSTERED File
-    # ...
-    # pp_outs[4+N]: OFFTRIAL_N_CLUSTERED File
-    # pp_outs[-2]: FOUNDMISSED FileList covering all injection sets
-    # pp_outs[-1]: FOUNDMISSED-FILTERED FileList covering all injection sets
-    #              in the same order as pp_outs[-2]
 
+    Parameters
+    ----------
+    wf : The workflow object
+    pp_dir : The directory where the post-processing files will be stored
+    seg_dir : The directory where the segment files are stored
+    segment : The segment to be analyzed
+    bank_file : The full template bank file
+    insp_files : The list of inspiral files
+    inj_files : The list of injection files
+    inj_insp_files : The list of inspiral files for injections
+    inj_tags : The list of injection tags
+
+    Returns
+    -------
+    trig_files : FileList
+        The list of combined trigger files
+        [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
+        FileList (N can be set by the user and is 6 by default)
+    clustered_files : FileList
+        CLUSTERED FileList, same order as trig_files
+        Contains triggers after clustering
+    inj_find_files : FileList
+        FOUNDMISSED FileList covering all injection sets
+    inj_comb_files : FileList
+        FOUNDMISSED-FILTERED FileList covering all injection sets
+        in the same order as inj_find_files
+        These are filtered by inclination
+    """
     # Begin setting up trig combiner job(s)
     # Select executable class and initialize
     exe_class = _select_grb_pp_class(wf, "trig_combiner")
@@ -264,16 +278,16 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
                                     insp_files, pp_dir, bank_file)
     wf.add_node(node)
-    pp_outs.append(trig_files)
 
     # Trig clustering for each trig file
     exe_class = _select_grb_pp_class(wf, "trig_cluster")
     job_instance = exe_class(wf.cp, "trig_cluster")
+    clustered_files = FileList([])
     for trig_file in trig_files:
         # Create and add nodes
         node, out_file = job_instance.create_node(trig_file, pp_dir)
         wf.add_node(node)
-        pp_outs.append(out_file)
+        clustered_files.append(out_file)
 
     # Find injections from triggers
     exe_class = _select_grb_pp_class(wf, "inj_finder")
@@ -292,7 +306,6 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
                                            bank_file, pp_dir)
         wf.add_node(node)
         inj_find_files.append(inj_find_file)
-    pp_outs.append(inj_find_files)
 
     # Combine injections
     exe_class = _select_grb_pp_class(wf, "inj_combiner")
@@ -306,9 +319,8 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
                                                            segment)
             wf.add_node(node)
             inj_comb_files.append(inj_comb_file)
-    pp_outs.append(inj_comb_files)
 
-    return pp_outs
+    return trig_files, clustered_files, inj_find_files, inj_comb_files
 
 
 class PycbcGrbTrigCombinerExecutable(Executable):
@@ -342,7 +354,7 @@ class PycbcGrbTrigCombinerExecutable(Executable):
             user_tag += "_{}".format(tags)
         # Add on/off source and off trial outputs
         output_files = FileList([])
-        outfile_types = ['ALL_TIMES', 'OFFSOURCE', 'ONSOURCE']
+        outfile_types = ['ALL_TIMES', 'ONSOURCE', 'OFFSOURCE']
         for i in range(self.num_trials):
             outfile_types.append("OFFTRIAL_{}".format(i+1))
         for out_type in outfile_types:
@@ -452,7 +464,9 @@ def build_segment_filelist(workflow):
 
 
 def make_pygrb_plot(workflow, exec_name, out_dir,
-                    ifo=None, inj_file=None, trig_file=None, tags=None):
+                    ifo=None, inj_file=None, trig_file=None,
+                    onsource_file=None, bank_file=None,
+                    seg_files=None, tags=None):
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -482,9 +496,9 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     if workflow.cp.has_option('workflow', 'veto-files'):
         veto_files = build_veto_filelist(workflow)
         node.add_input_list_opt('--veto-files', veto_files)
-    # TODO: check this for pygrb_efficiency and pygrb_plot_stats_distribution
+    # TODO: check this for pygrb_plot_stats_distribution
     # They originally wanted seg_files
-    if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency',
+    if exec_name in ['pygrb_plot_injs_results',
                      'pygrb_plot_snr_timeseries',
                      'pygrb_plot_stats_distribution']:
         trig_time = workflow.cp.get('workflow', 'trigger-time')
@@ -511,19 +525,21 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency']:
     #     missed_file = inj_file
     #     node.add_input_opt('--missed-file', missed_file)
-    # FIXME: need found-missed-file option
     # Output files and final input file (passed as a File instance)
     if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
-        onsource_file = configparser_value_to_file(workflow.cp,
-                                                   'workflow', 'onsource-file')
-        node.add_input_opt('--onsource-file', onsource_file)
+        seg_filelist = FileList([resolve_url_to_file(sf) for sf in seg_files])
+        node.add_input_list_opt('--seg-files', seg_filelist)
+        node.add_input_opt('--onsource-file',
+                           resolve_url_to_file(onsource_file))
+        node.add_input_opt('--bank-file', resolve_url_to_file(bank_file))
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--background-output-file',
                                  tags=extra_tags+['max_background'])
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--onsource-output-file',
                                  tags=extra_tags+['onsource'])
+        node.add_opt('--injection-set-name', tags[1])
     else:
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--output-file', tags=extra_tags)
@@ -733,8 +749,8 @@ def setup_pygrb_minifollowups(workflow, followups_file,
     job.add_into_workflow(workflow)
 
 
-def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
-                                 inj_files, tags=None,
+def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
+                                 inj_files, bank_file, seg_dir, tags=None,
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.
@@ -747,9 +763,10 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
         results (plots, etc.) will be stored
     trig_file: The triggers File object
     inj_files: FileList of injection results
+    bank_file: The template bank File object
     tags: {None, optional}
         Tags to add to the executables
-    excplicit_dependencies: nodes that must precede this
+    explicit_dependencies: nodes that must precede this
     """
 
     tags = [] if tags is None else tags
@@ -769,12 +786,14 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
                      tags=tags)
     node = exe.create_node()
     # Grab and pass all necessary files
-    node.add_input_opt('--trig-file', trig_file)
+    node.add_input_list_opt('--trig-file', trig_files)
     if workflow.cp.has_option('workflow', 'veto-files'):
         veto_files = build_veto_filelist(workflow)
         node.add_input_list_opt('--veto-files', veto_files)
     # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt('--inj-files', inj_files)
+    node.add_input_opt('--bank-file', bank_file)
+    node.add_opt('--segment-dir', seg_dir)
 
     if tags:
         node.add_list_opt('--tags', tags)
@@ -805,7 +824,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_file,
                     file_url=os.path.join(dax_output, name+'.ini'))
     node.add_output(out_file)
 
-    # Add node to the workflow workflow
+    # Add node to the workflow
     workflow += node
     if explicit_dependencies is not None:
         for dep in explicit_dependencies:
