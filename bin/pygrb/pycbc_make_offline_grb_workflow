@@ -27,11 +27,11 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_make_offline_grb_workflow"
 
+import shutil
 import sys
 import os
 import argparse
 import logging
-import re
 import pycbc.workflow as _workflow
 from pycbc.workflow.core import configparser_value_to_file
 from ligo.segments import segment, segmentlist, segmentlistdict
