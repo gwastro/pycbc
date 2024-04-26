@@ -317,16 +317,6 @@ if wflow.cp.has_section("workflow-injections"):
     all_files.extend(inj_files)
     injs = inj_files
 
-    # Check injection set name is correct form
-    inj_regex = re.compile(r"[A-Z]*(\d+)(INJ)")
-    inj_name_check = [inj_regex.match(inj_tag) for inj_tag in inj_tags]
-    if not all(inj_name_check):
-        msg = "Injection set name must have the form {ANY TEXT}{maximum "
-        msg += "inclination value}INJ. You have provided the following "
-        msg += "injection set names: %s." % inj_tags
-        logging.error(msg)
-        sys.exit()
-
     # Either split template bank for injections jobs or use same split banks
     # as for standard matched filter jobs
     if wflow.cp.has_section("workflow-splittable-injections"):
