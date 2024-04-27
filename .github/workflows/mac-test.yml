@@ -15,6 +15,7 @@ jobs:
         os: [macos-latest]
         python-version: [3.8, 3.9, '3.10', '3.11']
     steps:
+    - uses: conda-incubator/setup-miniconda@v3
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
