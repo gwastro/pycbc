@@ -30,6 +30,10 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
          conda install lapack==3.9.0
+    - name: installing macosx packages
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+         conda install lapack==3.6.1
     - name: installing auxiliary data files
       run: |
         GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
