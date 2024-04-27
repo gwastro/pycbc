@@ -26,6 +26,10 @@ jobs:
       run: |
         conda install fftw mpi git-lfs graphviz
         pip install "tox<4.0.0" pip setuptools --upgrade
+    - name: installing macosx packages
+      if: matrix.os == 'macos-latest'
+      run: |
+         conda install lapack==3.9.0
     - name: installing auxiliary data files
       run: |
         GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
