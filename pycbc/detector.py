@@ -672,12 +672,7 @@ class LISA_detector(object):
         ----------
         orbit_kwargs : dict
             List of keywords for generating LISA orbital data. Passed into pyResponseTDI
-            instance. Keywords and defaults as set by lisaresponse are:
-
-                'orbit_module' = None
-                'order' = 0
-                'max_t_orbits' = 3.15576e7
-                'orbit_file' = None
+            instance.
 
             Either an orbit file or orbit module is required for projection. 
             If both a file and module are provided, the file will take priority.
@@ -687,8 +682,7 @@ class LISA_detector(object):
             Specify whether to run class on GPU support. Default False.
         """
         # intialize orbit kwargs to FLR defaults
-        self.orbit_kwargs = {'orbit_module': None, 'order': 0, 'max_t_orbits': 3.15576e7,
-                            'orbit_file': None}
+        self.orbit_kwargs = {'orbit_module': None, 'orbit_file': None}
 
         # get kwargs from class input
         for key, val in orbit_kwargs.items():
@@ -768,7 +762,7 @@ class LISA_detector(object):
                 wf = cupy.asarray(wf)
                 
         # initialize the FLR class
-        response_init = pyResponseTDI(dt, n, self.orbit_kwargs, use_gpu=use_gpu)
+        response_init = pyResponseTDI(1/dt, n, self.orbit_kwargs, use_gpu=use_gpu)
 
         # cache response init
         self.dt = dt
