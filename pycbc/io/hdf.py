@@ -810,7 +810,21 @@ class ForegroundTriggers(object):
                         curr.append(hdf_dataset[idx])
                     curr = np.array(curr)
                 else:
-                    curr = self.sngl_files[ifo].get_column(variable)[tid]
+                    # Taking code from FileData's get_column
+                    # This needs to be done more cleanly for master!
+                    group = self.sngl_files[ifo].group
+                    if not len(group.keys()):
+                        return np.array([])
+                    dataset = group[variable]
+                    mask = np.zeros(len(dataset), dtype=bool)
+                    mask[tid] = True
+                    needed_data = dataset[mask]
+                    tid_locations = np.where(mask)[0]
+                    new_tid_locations = np.searchsorted(
+                        tid_locations,
+                        tid
+                    )
+                    curr = needed_data[new_tid_locations]
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
                     curr = np.array([])
