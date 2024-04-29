@@ -237,7 +237,7 @@ args = parser.parse_args()
 init_logging(args.verbose)
 # Set GRB time variable for convenience
 t_gps = args.trigger_time
-# Arange IFOs alphabetically so they are always called in the same order
+# Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
 nifo = len(args.instruments[:])
 # Use class verification methods to check whether input CLI options provided
