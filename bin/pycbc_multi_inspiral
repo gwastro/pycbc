@@ -267,7 +267,7 @@ strain_dict = strain.from_cli_multi_ifos(
 strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
     args, strain_dict, args.instruments
 )
-# Python context
+# Context manager to handle the various possible processing schemes
 ctx = scheme.from_cli(args)
 with ctx:
     fft.from_cli(args)
