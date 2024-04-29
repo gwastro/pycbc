@@ -46,10 +46,31 @@ pycbc.init_logging(args.verbose)
 f = h5py.File(args.trigger_file, 'r')
 ifo = tuple(f.keys())[0]
 
+# This is fixed better on master, but should work here
+if args.x_var == 'snr' or args.x_var == 'newsnr_sgveto':
+    with pycbc.io.HFile(args.trigger_file, 'r') as trig_file:
+        n_triggers_orig = trig_file[f'{ifo}/snr'].size
+        logging.info("Trigger file has %d triggers", n_triggers_orig)
+        logging.info('Generating trigger mask')
+        # psd_var_val may not have been calculated
+        idx, _ = trig_file.select(
+            lambda snr: snr >= args.x_min,
+            f'{ifo}/snr',
+            return_indices=True
+        )
+        data_mask = numpy.zeros(n_triggers_orig, dtype=bool)
+        data_mask[idx] = True
+else:
+    logging.warn(
+        'With %s as --x-var, this is going to be very memory intensive!',
+        args.x_var
+    )
+    data_mask = None
+
 # read single-detector triggers
 trigs = pycbc.io.SingleDetTriggers(args.trigger_file, args.bank_file,
                                    args.veto_file, args.segment_name,
-                                   None, ifo)
+                                   None, ifo, premask=data_mask)
 
 # get x values and find the maximum x value
 val = getattr(trigs, args.x_var)
