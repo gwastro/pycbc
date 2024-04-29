@@ -6,6 +6,7 @@ from matplotlib import colors
 matplotlib.use('Agg')
 import pylab, pycbc.results
 from pycbc.io import get_chisq_from_file_choice, chisq_choices
+from pycbc.io import SingleDetTriggers
 from pycbc import conversions
 from pycbc.detector import Detector
 import pycbc.version
@@ -54,11 +55,22 @@ for tmpifo in ifos:
 
 f = h5py.File(args.single_trigger_file, 'r')
 ifo = tuple(f.keys())[0]
-f = f[ifo]
 tid = b_tids[ifo][:]
-bkg_snr = f['snr'][:][tid]
+mask = numpy.zeros(len(f[f'{ifo}/snr']), dtype=bool)
+f.close()
+mask[tid] = True
+trigs = SingleDetTriggers(
+    args.single_trigger_file,
+    None,
+    None,
+    None,
+    None,
+    ifo,
+    premask=mask
+)
+bkg_snr = trigs['snr']
 
-bkg_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
+bkg_chisq = get_chisq_from_file_choice(trigs, args.chisq_choice)
 
 # don't plot if chisq is not calculated
 bkg_pos = bkg_chisq > 0
@@ -107,11 +119,32 @@ if 'optimal_snr_{}'.format(ifo) in f['injections']:
     opt_snr = f[opt_snr_str][:][inj_idx]
     coloring['optimal_snr'] = (opt_snr, 'Optimal SNR', colors.LogNorm())
 
-f = h5py.File(args.single_injection_file, 'r')[ifo]
 tid = inj_tids[ifo][:]
 if len(tid):
-    inj_snr = f['snr'][:][tid]
-    inj_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
+    f = h5py.File(args.single_injection_file, 'r')
+    mask = numpy.zeros(len(f[f'{ifo}/snr']), dtype=bool)
+    f.close()
+    mask[tid] = True
+    inj_trigs = SingleDetTriggers(
+        args.single_injection_file,
+        None,
+        None,
+        None,
+        None,
+        ifo,
+        premask=mask
+    )
+    inj_snr_data = inj_trigs['snr']
+    inj_chisq_data = get_chisq_from_file_choice(inj_trigs, args.chisq_choice)
+    # But the stuff above would have removed ordering and duplicates now
+    # need something of the right length!
+    tid_locations = numpy.where(mask)[0]
+    new_tid_locations = numpy.searchsorted(
+        tid_locations,
+        tid
+    )
+    inj_snr = inj_snr_data[new_tid_locations]
+    inj_chisq = inj_chisq_data[new_tid_locations]
 else:
     inj_snr = numpy.array([])
     inj_chisq = numpy.array([])
