@@ -329,7 +329,7 @@ def omega_length(f, len_arm=None):
 
 
 def _analytical_psd_tdi_XYZ(length, delta_f, low_freq_cutoff,
-                            len_arm=None, psd_components=None, tdi="1.5"):
+                            len_arm=None, psd_components=None, tdi=None):
     """ The TDI-1.5/2.0 analytical PSD (X,Y,Z channel) for TDI-based
     space-borne GW detectors.
 
@@ -363,11 +363,11 @@ def _analytical_psd_tdi_XYZ(length, delta_f, low_freq_cutoff,
     omega_len = omega_length(fr, len_arm)
     psd = 16*(np.sin(omega_len))**2 * (s_oms_nu +
                                        s_acc_nu*(3+np.cos(2*omega_len)))
-    if tdi == "2.0":
+    if str(tdi) not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         psd *= tdi2_factor
-    if tdi not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
     return fseries
@@ -375,7 +375,7 @@ def _analytical_psd_tdi_XYZ(length, delta_f, low_freq_cutoff,
 
 def analytical_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
                                 len_arm=2.5e9, acc_noise_level=3e-15,
-                                oms_noise_level=15e-12, tdi="1.5"):
+                                oms_noise_level=15e-12, tdi=None):
     """ The TDI-1.5/2.0 analytical PSD (X,Y,Z channel) for LISA.
 
     Parameters
@@ -415,7 +415,7 @@ def analytical_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
 def analytical_psd_tianqin_tdi_XYZ(length, delta_f, low_freq_cutoff,
                                    len_arm=np.sqrt(3)*1e8,
                                    acc_noise_level=1e-15,
-                                   oms_noise_level=1e-12, tdi="1.5"):
+                                   oms_noise_level=1e-12, tdi=None):
     """ The TDI-1.5/2.0 analytical PSD (X,Y,Z channel) for TianQin.
 
     Parameters
@@ -455,7 +455,7 @@ def analytical_psd_tianqin_tdi_XYZ(length, delta_f, low_freq_cutoff,
 
 def analytical_psd_taiji_tdi_XYZ(length, delta_f, low_freq_cutoff,
                                  len_arm=3e9, acc_noise_level=3e-15,
-                                 oms_noise_level=8e-12, tdi="1.5"):
+                                 oms_noise_level=8e-12, tdi=None):
     """ The TDI-1.5/2.0 analytical PSD (X,Y,Z channel) for Taiji.
 
     Parameters
@@ -493,7 +493,7 @@ def analytical_psd_taiji_tdi_XYZ(length, delta_f, low_freq_cutoff,
 
 
 def _analytical_csd_tdi_XY(length, delta_f, low_freq_cutoff,
-                           len_arm=None, psd_components=None, tdi="1.5"):
+                           len_arm=None, psd_components=None, tdi=None):
     """ The cross-spectrum density between TDI channel X and Y.
 
     Parameters
@@ -526,11 +526,11 @@ def _analytical_csd_tdi_XY(length, delta_f, low_freq_cutoff,
     omega_len = omega_length(fr, len_arm)
     csd = (-8*np.sin(omega_len)**2 * np.cos(omega_len) *
            (s_oms_nu+4*s_acc_nu))
-    if tdi == "2.0":
+    if str(tdi) not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         csd *= tdi2_factor
-    if tdi not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries = from_numpy_arrays(fr, csd, length, delta_f, low_freq_cutoff)
 
     return fseries
@@ -538,7 +538,7 @@ def _analytical_csd_tdi_XY(length, delta_f, low_freq_cutoff,
 
 def analytical_csd_lisa_tdi_XY(length, delta_f, low_freq_cutoff,
                                len_arm=2.5e9, acc_noise_level=3e-15,
-                               oms_noise_level=15e-12, tdi="1.5"):
+                               oms_noise_level=15e-12, tdi=None):
     """ The cross-spectrum density between LISA's TDI channel X and Y.
 
     Parameters
@@ -576,7 +576,7 @@ def analytical_csd_lisa_tdi_XY(length, delta_f, low_freq_cutoff,
 
 
 def _analytical_psd_tdi_AE(length, delta_f, low_freq_cutoff,
-                           len_arm=None, psd_components=None, tdi="1.5"):
+                           len_arm=None, psd_components=None, tdi=None):
     """ The PSD of TDI-1.5/2.0 channel A and E.
 
     Parameters
@@ -610,11 +610,11 @@ def _analytical_psd_tdi_AE(length, delta_f, low_freq_cutoff,
     psd = (8*(np.sin(omega_len))**2 *
            (4*(1+np.cos(omega_len)+np.cos(omega_len)**2)*s_acc_nu +
            (2+np.cos(omega_len))*s_oms_nu))
-    if tdi == "2.0":
+    if str(tdi) not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         psd *= tdi2_factor
-    if tdi not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
     return fseries
@@ -622,7 +622,7 @@ def _analytical_psd_tdi_AE(length, delta_f, low_freq_cutoff,
 
 def analytical_psd_lisa_tdi_AE(length, delta_f, low_freq_cutoff,
                                len_arm=2.5e9, acc_noise_level=3e-15,
-                               oms_noise_level=15e-12, tdi="1.5"):
+                               oms_noise_level=15e-12, tdi=None):
     """ The PSD of LISA's TDI-1.5/2.0 channel A and E.
 
     Parameters
@@ -662,7 +662,7 @@ def analytical_psd_lisa_tdi_AE(length, delta_f, low_freq_cutoff,
 def analytical_psd_tianqin_tdi_AE(length, delta_f, low_freq_cutoff,
                                   len_arm=np.sqrt(3)*1e8,
                                   acc_noise_level=1e-15,
-                                  oms_noise_level=1e-12, tdi="1.5"):
+                                  oms_noise_level=1e-12, tdi=None):
     """ The PSD of TianQin's TDI-1.5/2.0 channel A and E.
 
     Parameters
@@ -702,7 +702,7 @@ def analytical_psd_tianqin_tdi_AE(length, delta_f, low_freq_cutoff,
 
 def analytical_psd_taiji_tdi_AE(length, delta_f, low_freq_cutoff,
                                 len_arm=3e9, acc_noise_level=3e-15,
-                                oms_noise_level=8e-12, tdi="1.5"):
+                                oms_noise_level=8e-12, tdi=None):
     """ The PSD of Taiji's TDI-1.5/2.0 channel A and E.
 
     Parameters
@@ -740,7 +740,7 @@ def analytical_psd_taiji_tdi_AE(length, delta_f, low_freq_cutoff,
 
 
 def _analytical_psd_tdi_T(length, delta_f, low_freq_cutoff,
-                          len_arm=None, psd_components=None, tdi="1.5"):
+                          len_arm=None, psd_components=None, tdi=None):
     """ The PSD of TDI-1.5/2.0 channel T.
 
     Parameters
@@ -773,11 +773,11 @@ def _analytical_psd_tdi_T(length, delta_f, low_freq_cutoff,
     omega_len = omega_length(fr, len_arm)
     psd = (32*np.sin(omega_len)**2 * np.sin(omega_len/2)**2 *
            (4*s_acc_nu*np.sin(omega_len/2)**2 + s_oms_nu))
-    if tdi == "2.0":
+    if str(tdi) not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         psd *= tdi2_factor
-    if tdi not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
     fseries = from_numpy_arrays(fr, psd, length, delta_f, low_freq_cutoff)
 
     return fseries
@@ -785,7 +785,7 @@ def _analytical_psd_tdi_T(length, delta_f, low_freq_cutoff,
 
 def analytical_psd_lisa_tdi_T(length, delta_f, low_freq_cutoff,
                               len_arm=2.5e9, acc_noise_level=3e-15,
-                              oms_noise_level=15e-12, tdi="1.5"):
+                              oms_noise_level=15e-12, tdi=None):
     """ The PSD of LISA's TDI-1.5/2.0 channel T.
 
     Parameters
@@ -825,7 +825,7 @@ def analytical_psd_lisa_tdi_T(length, delta_f, low_freq_cutoff,
 def analytical_psd_tianqin_tdi_T(length, delta_f, low_freq_cutoff,
                                  len_arm=np.sqrt(3)*1e8,
                                  acc_noise_level=1e-15,
-                                 oms_noise_level=1e-12, tdi="1.5"):
+                                 oms_noise_level=1e-12, tdi=None):
     """ The PSD of TianQin's TDI-1.5/2.0 channel T.
 
     Parameters
@@ -865,7 +865,7 @@ def analytical_psd_tianqin_tdi_T(length, delta_f, low_freq_cutoff,
 
 def analytical_psd_taiji_tdi_T(length, delta_f, low_freq_cutoff,
                                len_arm=3e9, acc_noise_level=3e-15,
-                               oms_noise_level=8e-12, tdi="1.5"):
+                               oms_noise_level=8e-12, tdi=None):
     """ The PSD of Taiji's TDI-1.5/2.0 channel T.
 
     Parameters
@@ -1008,7 +1008,7 @@ def averaged_tianqin_fplus_sq_numerical(f, len_arm=np.sqrt(3)*1e8):
     return fp_sq_numerical
 
 
-def averaged_response_lisa_tdi(f, len_arm=2.5e9, tdi="1.5"):
+def averaged_response_lisa_tdi(f, len_arm=2.5e9, tdi=None):
     """ LISA's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
 
@@ -1032,16 +1032,16 @@ def averaged_response_lisa_tdi(f, len_arm=2.5e9, tdi="1.5"):
     omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_lisa_fplus_sq_numerical(f, len_arm)
     response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
-    if tdi == "2.0":
+    if str(tdi) not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         response_tdi *= tdi2_factor
-    if tdi not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
 
     return response_tdi
 
 
-def averaged_response_tianqin_tdi(f, len_arm=np.sqrt(3)*1e8, tdi="1.5"):
+def averaged_response_tianqin_tdi(f, len_arm=np.sqrt(3)*1e8, tdi=None):
     """ TianQin's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
 
@@ -1062,16 +1062,16 @@ def averaged_response_tianqin_tdi(f, len_arm=np.sqrt(3)*1e8, tdi="1.5"):
     omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_tianqin_fplus_sq_numerical(f, len_arm)
     response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
-    if tdi == "2.0":
+    if str(tdi) not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         response_tdi *= tdi2_factor
-    if tdi not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
 
     return response_tdi
 
 
-def averaged_response_taiji_tdi(f, len_arm=3e9, tdi="1.5"):
+def averaged_response_taiji_tdi(f, len_arm=3e9, tdi=None):
     """ Taiji's TDI-1.5/2.0 response function to GW,
     averaged over sky and polarization angle.
 
@@ -1092,11 +1092,11 @@ def averaged_response_taiji_tdi(f, len_arm=3e9, tdi="1.5"):
     omega_len = omega_length(f, len_arm)
     ave_fp2 = averaged_fplus_sq_approximated(f, len_arm)
     response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
-    if tdi == "2.0":
+    if str(tdi) not in ["1.5", "2.0"]:
+        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+    if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         response_tdi *= tdi2_factor
-    if tdi not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
 
     return response_tdi
 
@@ -1364,7 +1364,10 @@ def confusion_fit_tianqin(length, delta_f, low_freq_cutoff, duration=1.0):
         fit_a5(duration) * np.log10(fr*1e3)**5 +
         fit_a6(duration) * np.log10(fr*1e3)**6
     )**2
-    sh_confusion[(fr < 5e-4) | (fr > 1e-2)] = 0
+    # avoid the jump of values
+    sh_confusion[(fr > 3e-4) & (fr < 5e-4)] = \
+        sh_confusion[(np.abs(fr - 5e-4)).argmin()]
+    sh_confusion[(fr < 3e-4) | (fr > 1e-2)] = 0
     fseries = from_numpy_arrays(fr, sh_confusion, length, delta_f,
                                 low_freq_cutoff)
 
@@ -1578,7 +1581,7 @@ def sh_transformed_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
                                     len_arm=2.5e9, acc_noise_level=3e-15,
                                     oms_noise_level=15e-12,
                                     base_model="semi", duration=1.0,
-                                    tdi="1.5"):
+                                    tdi=None):
     """ The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA
     with Galactic confusion noise, transformed from LISA sensitivity curve.
 
@@ -1632,7 +1635,7 @@ def sh_transformed_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
 
 def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
                                              len_arm=2.5e9, duration=1.0,
-                                             tdi="1.5"):
+                                             tdi=None):
     """ The TDI-1.5/2.0 PSD (X,Y,Z channel) for LISA Galactic confusion noise,
     no instrumental noise.
 
@@ -1676,7 +1679,7 @@ def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
 
 def analytical_psd_tianqin_confusion_noise(length, delta_f, low_freq_cutoff,
                                            len_arm=np.sqrt(3)*1e8,
-                                           duration=1.0, tdi="1.5"):
+                                           duration=1.0, tdi=None):
     """ The TDI-1.5/2.0 PSD (X,Y,Z channel) for TianQin Galactic confusion
     noise, no instrumental noise.
 
@@ -1720,7 +1723,7 @@ def analytical_psd_tianqin_confusion_noise(length, delta_f, low_freq_cutoff,
 
 def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
                                          len_arm=3e9, duration=1.0,
-                                         tdi="1.5"):
+                                         tdi=None):
     """ The TDI-1.5/2.0 PSD (X,Y,Z channel) for Taiji Galactic confusion
     noise, no instrumental noise.
 
@@ -1765,7 +1768,7 @@ def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
 def analytical_psd_lisa_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
                                          len_arm=2.5e9, acc_noise_level=3e-15,
                                          oms_noise_level=15e-12,
-                                         duration=1.0, tdi="1.5"):
+                                         duration=1.0, tdi=None):
     """ The TDI-1.5/2.0 PSD (A,E channel) for LISA
     with Galactic confusion noise.
 
@@ -1812,7 +1815,7 @@ def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
                                             len_arm=np.sqrt(3)*1e8,
                                             acc_noise_level=1e-15,
                                             oms_noise_level=1e-12,
-                                            duration=1.0, tdi="1.5"):
+                                            duration=1.0, tdi=None):
     """ The TDI-1.5/2.0 PSD (A,E channel) for TianQin
     with Galactic confusion noise.
 
@@ -1859,7 +1862,7 @@ def analytical_psd_tianqin_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
 def analytical_psd_taiji_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
                                           len_arm=3e9, acc_noise_level=3e-15,
                                           oms_noise_level=8e-12,
-                                          duration=1.0, tdi="1.5"):
+                                          duration=1.0, tdi=None):
     """ The TDI-1.5/2.0 PSD (A,E channel) for Taiji
     with Galactic confusion noise.
 
@@ -1890,7 +1893,7 @@ def analytical_psd_taiji_tdi_AE_confusion(length, delta_f, low_freq_cutoff,
     """
     psd_AE = analytical_psd_taiji_tdi_AE(length, delta_f, low_freq_cutoff,
                                          len_arm, acc_noise_level,
-                                         oms_noise_level)
+                                         oms_noise_level, tdi)
     psd_X_confusion = analytical_psd_taiji_confusion_noise(
                         length, delta_f, low_freq_cutoff,
                         len_arm, duration, tdi)
