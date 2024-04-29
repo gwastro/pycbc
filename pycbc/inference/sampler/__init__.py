@@ -104,6 +104,7 @@ def load_from_config(cp, model, **kwargs):
     try:
         return samplers[name].from_config(cp, model, **kwargs)
     except KeyError:
-        raise ImportError(f"No accessible sampler named {name}. Please check if the name is correct"
-                          f" or the required package for this sampler is installed correctly."
+        raise ImportError(f"No accessible sampler named {name}. Please check"
+                          f" if the name is correct or the required package"
+                          f" for this sampler is installed correctly."
                           f" Accessible samplers: {list(samplers.keys())}")
