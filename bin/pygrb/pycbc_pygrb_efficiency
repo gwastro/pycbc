@@ -196,7 +196,8 @@ logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
-    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict, segment_dict)
+    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict,
+                                      segment_dict, opts)
 
 # Calculate BestNR values and maximum
 time_veto_max_bestnr = {}

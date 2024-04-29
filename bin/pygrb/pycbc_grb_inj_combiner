@@ -22,7 +22,6 @@
 
 import argparse
 import os
-import re
 from collections import defaultdict
 from math import (pi as PI, radians)
 
@@ -49,20 +48,7 @@ TQDM_KW = {
     "smoothing": 0.05,
 }
 
-INJSTRING_REGEX = re.compile(r"_[A-Z]*(\d+)(INJ)_(FOUND|MISSED)")
-
 # -- utilties -----------------------------------
-
-
-def use_file(filename, inclination):
-    """Returns `True` if this file can be used to analysis the given inclination
-    """
-    match = INJSTRING_REGEX.search(filename)
-    if match and float(match.groups()[0]) >= inclination:
-        return True
-    return False
-
-
 def theta(h5injgroup):
     """Calculate the theta angle column for an injection group
     """
@@ -252,21 +238,9 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-# determine which files to keep
-usefiles = filter(
-    lambda x: use_file(x, args.max_inclination),
-    args.input_files,
-)
-
-if not usefiles:
-    raise ValueError("No files used in inj combiner!\n"
-                     "Check injection set name and inclination.\n"
-                     "It should have the following form:\n"
-                     "{ANY TEXT}{maximum inclination value}INJ.{extension}")
-
 # merge injection files, filtering on-the-fly by inclination
 merge_injection_files(
-    list(usefiles),
+    args.input_files,
     args.output_file,
     inclination=args.max_inclination,
     verbose=args.verbose,
