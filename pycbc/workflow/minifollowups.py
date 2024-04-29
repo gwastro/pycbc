@@ -1104,11 +1104,12 @@ def make_upload_files(workflow, psd_files, snr_timeseries, xml_all,
         '--output-file',
     )
 
+    # This will be called if the approximant is within the bank
     if approximant == b'SPAtmplt':
         # Bayestar doesn't use the SPAtmplt approximant
         approximant = b'TaylorF2'
     if approximant is not None:
-        bayestar_node.add_opt('--waveform', approximant.decode())
+        bayestar_node.add_opt('--approximant', approximant.decode())
 
     workflow += bayestar_node
 
