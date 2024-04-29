@@ -358,13 +358,12 @@ def _analytical_psd_tdi_XYZ(length, delta_f, low_freq_cutoff,
     """
     len_arm = np.float64(len_arm)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = psd_components[0]
-    s_oms_nu = psd_components[1]
+    s_acc_nu, s_oms_nu = psd_components
     omega_len = omega_length(fr, len_arm)
     psd = 16*(np.sin(omega_len))**2 * (s_oms_nu +
                                        s_acc_nu*(3+np.cos(2*omega_len)))
     if str(tdi) not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         psd *= tdi2_factor
@@ -521,13 +520,12 @@ def _analytical_csd_tdi_XY(length, delta_f, low_freq_cutoff,
     """
     len_arm = np.float64(len_arm)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = psd_components[0]
-    s_oms_nu = psd_components[1]
+    s_acc_nu, s_oms_nu = psd_components
     omega_len = omega_length(fr, len_arm)
     csd = (-8*np.sin(omega_len)**2 * np.cos(omega_len) *
            (s_oms_nu+4*s_acc_nu))
     if str(tdi) not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         csd *= tdi2_factor
@@ -604,14 +602,13 @@ def _analytical_psd_tdi_AE(length, delta_f, low_freq_cutoff,
     """
     len_arm = np.float64(len_arm)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = psd_components[0]
-    s_oms_nu = psd_components[1]
+    s_acc_nu, s_oms_nu = psd_components
     omega_len = omega_length(fr, len_arm)
     psd = (8*(np.sin(omega_len))**2 *
            (4*(1+np.cos(omega_len)+np.cos(omega_len)**2)*s_acc_nu +
            (2+np.cos(omega_len))*s_oms_nu))
     if str(tdi) not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         psd *= tdi2_factor
@@ -768,13 +765,12 @@ def _analytical_psd_tdi_T(length, delta_f, low_freq_cutoff,
     """
     len_arm = np.float64(len_arm)
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    s_acc_nu = psd_components[0]
-    s_oms_nu = psd_components[1]
+    s_acc_nu, s_oms_nu = psd_components
     omega_len = omega_length(fr, len_arm)
     psd = (32*np.sin(omega_len)**2 * np.sin(omega_len/2)**2 *
            (4*s_acc_nu*np.sin(omega_len/2)**2 + s_oms_nu))
     if str(tdi) not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         psd *= tdi2_factor
@@ -924,7 +920,7 @@ def averaged_lisa_fplus_sq_numerical(f, len_arm=2.5e9):
     from astropy.utils.data import download_file
 
     if len_arm != 2.5e9:
-        raise Exception("Currently only support 'len_arm=2.5e9'.")
+        raise ValueError("Currently only support 'len_arm=2.5e9'.")
     # Download the numerical LISA averaged response.
     url = "https://zenodo.org/record/7497853/files/AvFXp2_Raw.npy"
     file_path = download_file(url, cache=True)
@@ -1033,7 +1029,7 @@ def averaged_response_lisa_tdi(f, len_arm=2.5e9, tdi=None):
     ave_fp2 = averaged_lisa_fplus_sq_numerical(f, len_arm)
     response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
     if str(tdi) not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         response_tdi *= tdi2_factor
@@ -1063,7 +1059,7 @@ def averaged_response_tianqin_tdi(f, len_arm=np.sqrt(3)*1e8, tdi=None):
     ave_fp2 = averaged_tianqin_fplus_sq_numerical(f, len_arm)
     response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
     if str(tdi) not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         response_tdi *= tdi2_factor
@@ -1093,7 +1089,7 @@ def averaged_response_taiji_tdi(f, len_arm=3e9, tdi=None):
     ave_fp2 = averaged_fplus_sq_approximated(f, len_arm)
     response_tdi = (4*omega_len)**2 * np.sin(omega_len)**2 * ave_fp2
     if str(tdi) not in ["1.5", "2.0"]:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     if str(tdi) == "2.0":
         tdi2_factor = 4*(np.sin(2*omega_len))**2
         response_tdi *= tdi2_factor
@@ -1478,9 +1474,9 @@ def sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
         base_curve = sensitivity_curve_lisa_SciRD(
             length, delta_f, low_freq_cutoff)
     else:
-        raise Exception("Must choose from 'semi' or 'SciRD'.")
+        raise ValueError("Must choose from 'semi' or 'SciRD'.")
     if duration < 0 or duration > 10:
-        raise Exception("Must between 0 and 10.")
+        raise ValueError("Must between 0 and 10.")
     fseries_confusion = confusion_fit_lisa(
         length, delta_f, low_freq_cutoff, duration)
     fseries = from_numpy_arrays(base_curve.sample_frequencies,
@@ -1524,7 +1520,7 @@ def sensitivity_curve_tianqin_confusion(length, delta_f, low_freq_cutoff,
         length, delta_f, low_freq_cutoff,
         len_arm, acc_noise_level, oms_noise_level)
     if duration < 0 or duration > 5:
-        raise Exception("Must between 0 and 5.")
+        raise ValueError("Must between 0 and 5.")
     fseries_confusion = confusion_fit_tianqin(
         length, delta_f, low_freq_cutoff, duration)
     fseries = from_numpy_arrays(base_curve.sample_frequencies,
@@ -1567,7 +1563,7 @@ def sensitivity_curve_taiji_confusion(length, delta_f, low_freq_cutoff,
         length, delta_f, low_freq_cutoff,
         len_arm, acc_noise_level, oms_noise_level)
     if duration < 0 or duration > 4:
-        raise Exception("Must between 0 and 4.")
+        raise ValueError("Must between 0 and 4.")
     fseries_confusion = confusion_fit_taiji(
         length, delta_f, low_freq_cutoff, duration)
     fseries = from_numpy_arrays(base_curve.sample_frequencies,
@@ -1619,7 +1615,7 @@ def sh_transformed_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
     if tdi in ["1.5", "2.0"]:
         response = averaged_response_lisa_tdi(fr, len_arm, tdi)
     else:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     fseries_response = from_numpy_arrays(fr, np.array(response),
                                          length, delta_f, low_freq_cutoff)
     sh = sensitivity_curve_lisa_confusion(length, delta_f, low_freq_cutoff,
@@ -1664,7 +1660,7 @@ def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
     if tdi in ["1.5", "2.0"]:
         response = averaged_response_lisa_tdi(fr, len_arm, tdi)
     else:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     fseries_response = from_numpy_arrays(fr, np.array(response),
                                          length, delta_f, low_freq_cutoff)
     fseries_confusion = confusion_fit_lisa(
@@ -1708,7 +1704,7 @@ def analytical_psd_tianqin_confusion_noise(length, delta_f, low_freq_cutoff,
     if tdi in ["1.5", "2.0"]:
         response = averaged_response_tianqin_tdi(fr, len_arm, tdi)
     else:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     fseries_response = from_numpy_arrays(fr, np.array(response),
                                          length, delta_f, low_freq_cutoff)
     fseries_confusion = confusion_fit_tianqin(
@@ -1752,7 +1748,7 @@ def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
     if tdi in ["1.5", "2.0"]:
         response = averaged_response_taiji_tdi(fr, len_arm, tdi)
     else:
-        raise Exception("The version of TDI, currently only for 1.5 or 2.0.")
+        raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
     fseries_response = from_numpy_arrays(fr, np.array(response),
                                          length, delta_f, low_freq_cutoff)
     fseries_confusion = confusion_fit_taiji(
