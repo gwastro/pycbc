@@ -24,9 +24,14 @@ space-borne ones, see `pycbc.psd.analytical_space` module.
 import numbers
 from pycbc.types import FrequencySeries
 from pycbc.psd.analytical_space import (
-    analytical_psd_lisa_tdi_1p5_XYZ, analytical_psd_lisa_tdi_2p0_XYZ,
-    analytical_psd_lisa_tdi_1p5_AE, analytical_psd_lisa_tdi_1p5_T,
-    sh_transformed_psd_lisa_tdi_XYZ, analytical_psd_lisa_tdi_AE_confusion)
+    analytical_psd_lisa_tdi_XYZ, analytical_psd_lisa_tdi_AE,
+    analytical_psd_lisa_tdi_T, sh_transformed_psd_lisa_tdi_XYZ,
+    analytical_psd_lisa_tdi_AE_confusion,
+    analytical_psd_tianqin_tdi_XYZ, analytical_psd_tianqin_tdi_AE,
+    analytical_psd_tianqin_tdi_T, analytical_psd_tianqin_tdi_AE_confusion,
+    analytical_psd_taiji_tdi_XYZ, analytical_psd_taiji_tdi_AE,
+    analytical_psd_taiji_tdi_T, analytical_psd_taiji_tdi_AE_confusion,
+    )
 import lal
 import numpy
 
@@ -168,10 +173,20 @@ def flat_unity(length, delta_f, low_freq_cutoff):
 # dict of analytical PSDs coded in PyCBC
 pycbc_analytical_psds = {
     'flat_unity' : flat_unity,
-    'analytical_psd_lisa_tdi_1p5_XYZ' : analytical_psd_lisa_tdi_1p5_XYZ,
-    'analytical_psd_lisa_tdi_2p0_XYZ' : analytical_psd_lisa_tdi_2p0_XYZ,
-    'analytical_psd_lisa_tdi_1p5_AE' : analytical_psd_lisa_tdi_1p5_AE,
-    'analytical_psd_lisa_tdi_1p5_T' : analytical_psd_lisa_tdi_1p5_T,
+
+    'analytical_psd_lisa_tdi_XYZ' : analytical_psd_lisa_tdi_XYZ,
+    'analytical_psd_lisa_tdi_AE' : analytical_psd_lisa_tdi_AE,
+    'analytical_psd_lisa_tdi_T' : analytical_psd_lisa_tdi_T,
     'sh_transformed_psd_lisa_tdi_XYZ' : sh_transformed_psd_lisa_tdi_XYZ,
     'analytical_psd_lisa_tdi_AE_confusion' : analytical_psd_lisa_tdi_AE_confusion,
+
+    'analytical_psd_tianqin_tdi_XYZ' : analytical_psd_tianqin_tdi_XYZ,
+    'analytical_psd_tianqin_tdi_AE' : analytical_psd_tianqin_tdi_AE,
+    'analytical_psd_tianqin_tdi_T' : analytical_psd_tianqin_tdi_T,
+    'analytical_psd_tianqin_tdi_AE_confusion' : analytical_psd_tianqin_tdi_AE_confusion,
+
+    'analytical_psd_taiji_tdi_XYZ' : analytical_psd_taiji_tdi_XYZ,
+    'analytical_psd_taiji_tdi_AE' : analytical_psd_taiji_tdi_AE,
+    'analytical_psd_taiji_tdi_T' : analytical_psd_taiji_tdi_T,
+    'analytical_psd_taiji_tdi_AE_confusion' : analytical_psd_taiji_tdi_AE_confusion,
 }
