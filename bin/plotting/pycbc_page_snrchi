@@ -3,7 +3,8 @@ import numpy, h5py, argparse, matplotlib, sys
 matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
 from pycbc.events import veto
-from pycbc.io import get_chisq_from_file_choice, chisq_choices
+from pycbc.io import get_chisq_from_file_choice, chisq_choices, HFile
+from pycbc.io import SingleDetTriggers
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--trigger-file', help='Single ifo trigger file')
@@ -21,27 +22,38 @@ args = parser.parse_args()
 
 f = h5py.File(args.trigger_file, 'r')
 ifo = tuple(f.keys())[0]
-f = f[ifo]
-snr = f['snr'][:]
-chisq = get_chisq_from_file_choice(f, args.chisq_choice)
+f.close()
+if args.min_snr:
+    with HFile(args.trigger_file, 'r') as trig_file:
+        n_triggers_orig = trig_file[f'{ifo}/snr'].size
+        idx, _ = trig_file.select(
+            lambda snr: snr >= args.min_snr,
+            f'{ifo}/snr',
+            return_indices=True
+        )
+        data_mask = numpy.zeros(n_triggers_orig, dtype=bool)
+        data_mask[idx] = True
+else:
+    data_mask = None
+
+trigs = SingleDetTriggers(
+    args.trigger_file,
+    None,
+    args.veto_file,
+    args.segment_name,
+    None,
+    ifo,
+    premask=data_mask
+)
+
+snr = trigs['snr']
+chisq = get_chisq_from_file_choice(trigs, args.chisq_choice)
 
 def snr_from_chisq(chisq, newsnr, q=6.):
     snr = numpy.zeros(len(chisq)) + float(newsnr)
     ind = numpy.where(chisq > 1.)[0]
     snr[ind] = float(newsnr) / ( 0.5 * (1. + chisq[ind] ** (q/2.)) ) ** (-1./q)
     return snr
-
-if args.veto_file:
-    time = f['end_time'][:]
-    locs, segs = veto.indices_outside_segments(time, [args.veto_file], 
-                                       segment_name=args.segment_name, ifo=ifo)
-    snr = snr[locs]
-    chisq = chisq[locs]
-
-if args.min_snr is not None:
-    locs = snr > args.min_snr
-    snr = snr[locs]
-    chisq = chisq[locs]
 
 fig = pylab.figure(1)
 

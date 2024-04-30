@@ -21,7 +21,7 @@ import subprocess
 import urllib.parse
 
 import lal, lalframe
-import pycbc.version, glue.git_version
+import pycbc.version
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -87,19 +87,6 @@ def get_library_version_info():
     except ImportError:
         pass
     library_list.append(lalsimulationinfo)
-
-    glueinfo = {}
-    glueinfo['Name'] = 'LSCSoft-Glue'
-    glueinfo['ID'] = glue.git_version.id
-    glueinfo['Status'] = glue.git_version.status
-    glueinfo['Version'] = glue.git_version.version
-    glueinfo['Tag'] = glue.git_version.tag
-    glueinfo['Author'] = glue.git_version.author
-    glueinfo['Builder'] = glue.git_version.builder
-    glueinfo['Branch'] = glue.git_version.branch
-    glueinfo['Committer'] = glue.git_version.committer
-    glueinfo['Date'] = glue.git_version.date
-    library_list.append(glueinfo)
 
     pycbcinfo = {}
     pycbcinfo['Name'] = 'PyCBC'

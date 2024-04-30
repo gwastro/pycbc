@@ -151,7 +151,7 @@ for ifo in files.keys():
     mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][tid],
                                                       bank['mass2'][tid]))[0]
 
-    time = d['end_time'][:][i]
+    time = d['end_time'][i]
     utc = lal.GPSToUTC(int(time))[0:6]
 
     # Headers will store the headers that will appear in the table.
