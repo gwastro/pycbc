@@ -96,7 +96,7 @@ def _check_lal_pars(p):
         camelcase = "".join([subkey.capitalize() for subkey in key.split("_")])
         for _key in [key, camelcase]:
             _func  = getattr(
-                lalsimulation, "SimInspiralWaveformParamsInsert" + _key, None
+                lalsimulation, f"SimInspiralWaveformParamsInsert{_key}", None
             )
             if _func is not None:
                 _func(lal_pars, value)
