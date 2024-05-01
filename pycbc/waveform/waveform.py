@@ -91,7 +91,7 @@ def _check_lal_pars(p):
     # try and add all provided items to lal_pars. We try both the provided key
     # as well as a camel case version
     for key, value in p.items():
-        if value is None:
+        if (value is None) or (key in default_args.keys()):
             continue
         camelcase = "".join([subkey.capitalize() for subkey in key.split("_")])
         for _key in [key, camelcase]:
@@ -135,6 +135,10 @@ def _check_lal_pars(p):
         lalsimulation.SimInspiralWaveformParamsInsertdQuadMon2(lal_pars, p['dquad_mon2'])
     if p['numrel_data']:
         lalsimulation.SimInspiralWaveformParamsInsertNumRelData(lal_pars, str(p['numrel_data']))
+    if p['modes_choice']:
+         lalsimulation.SimInspiralWaveformParamsInsertModesChoice(lal_pars, p['modes_choice'])
+     if p['frame_axis']:
+         lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
     if p['side_bands']:
         lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
     if p['mode_array'] is not None:
