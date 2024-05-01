@@ -40,6 +40,9 @@ def symlink(target, link_name):
     Create a symbolic link replacing the destination and checking for
     errors.
     """
+    logger.info(
+        "Linking %s to %s", target, link_name,
+    )
     cp = subprocess.run([
         'ln', '-sf', target, link_name
     ])
@@ -55,17 +58,19 @@ def dict_to_args(opts_dict):
     """
     dargs = []
     for option in opts_dict.keys():
-        dargs.append('--' + option.strip())
         value = opts_dict[option]
-        if len(value.split()) > 1:
-            # value is a list, append individually
-            for v in value.split():
-                dargs.append(v)
-        elif not value:
+        if value is None:
+            continue
+        dargs.append('--' + option.strip())
+        if value is True:
             # option is a flag, do nothing
             continue
+        elif isinstance(value, list):
+            # value is a list, append individually
+            for v in value:
+                dargs.append(v)
         else:
-            # Single value option - easy enough
+            # Single value option - append once
             dargs.append(value)
     return dargs
 
