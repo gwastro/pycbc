@@ -78,10 +78,6 @@ parser.add_argument("--parameters",
          "property of that parameter will be used. If not "
          "provided, will plot all of the parameters in the "
          "bank.")
-parser.add_argument("--log-parameters",
-    nargs="+",
-    default=[],
-    help="Plot these parameters on a log scale")
 parser.add_argument('--plot-histogram',
     action='store_true',
     help="Plot 1D histograms of parameters on the "
