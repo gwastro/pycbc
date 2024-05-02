@@ -271,6 +271,8 @@ elif onsource_file is not None:
         parser.error('Please provide both on-source output files ' +
                      'and both off-source output files when using ' +
                      '--onsource-file.')
+else:
+    parser.error('Please provide --found-missed-file and/or --onsource-file.')
 logging.info("Setting output directory.")
 for output_file in output_files:
     if output_file:
