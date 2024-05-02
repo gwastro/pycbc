@@ -182,34 +182,34 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
-                    default=None, help="Location of off-source trigger file")
-parser.add_argument("--onsource-file", action="store", default=None,
+                    help="Location of off-source trigger file")
+parser.add_argument("--onsource-file", action="store",
                     help="Location of on-source trigger file.")
-parser.add_argument("--found-missed-file", action="store", default=None,
+parser.add_argument("--found-missed-file", action="store",
                     help="HDF format file with injections to output " +
                     "details about.")
 parser.add_argument("--newsnr-threshold", action="store", type=float,
-                    default=None, help="NewSNR threshold to " +
+                    default=0., help="NewSNR threshold to " +
                     "dicriminate events with SNR < threshold." +
-                    "Default None, all the events are considered.")
+                    "Default 0: all the events are considered.")
 parser.add_argument("--num-loudest-off-trigs", action="store",
                     type=int, default=30, help="Number of loudest " +
                     "offsouce triggers to output details about.")
 parser.add_argument("--bank-file", action="store", type=str, required=True,
                     help="Location of the full template bank used.")
-parser.add_argument("--quiet-found-injs-output-file", default=None,
+parser.add_argument("--quiet-found-injs-output-file",
                     help="Quiet-found injections html output file.")
-parser.add_argument("--missed-found-injs-output-file", default=None,
+parser.add_argument("--missed-found-injs-output-file",
                     help="Missed-found injections html output file.")
-parser.add_argument("--quiet-found-injs-h5-output-file", default=None,
+parser.add_argument("--quiet-found-injs-h5-output-file",
                     help="Quiet-found injections h5 output file.")
-parser.add_argument("--loudest-offsource-trigs-output-file", default=None,
+parser.add_argument("--loudest-offsource-trigs-output-file",
                     help="Loudest offsource triggers html output file.")
-parser.add_argument("--loudest-offsource-trigs-h5-output-file", default=None,
+parser.add_argument("--loudest-offsource-trigs-h5-output-file",
                     help="Loudest offsource triggers h5 output file.")
-parser.add_argument("--loudest-onsource-trig-output-file", default=None,
+parser.add_argument("--loudest-onsource-trig-output-file",
                     help="Loudest onsource trigger html output file.")
-parser.add_argument("--loudest-onsource-trig-h5-output-file", default=None,
+parser.add_argument("--loudest-onsource-trig-h5-output-file",
                     help="Loudest onsource trigger h5 output file.")
 parser.add_argument("-g", "--glitch-check-factor", action="store",
                     type=float, default=1.0, help="When deciding " +
