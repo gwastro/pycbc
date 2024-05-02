@@ -121,7 +121,6 @@ class HFile(h5py.File):
 
         # datasets being returned (possibly)
         data = {}
-        indices = np.array([], dtype=np.uint64)
         for arg in args:
             data[arg] = []
 
@@ -137,9 +136,9 @@ class HFile(h5py.File):
 
             if all(mask[i:r]):
                 # Everything allowed through the mask in this chunk
-                submask = np.arange(r - i)
+                submask = np.arange(r - i, dtype=np.uint64)
             else:
-                submask = np.flatnonzero(mask[i:r])
+                submask = np.flatnonzero(mask[i:r], dtype=np.uint64)
 
             # Read each chunk's worth of data
             partial_data = {arg: refs[arg][i:r][mask[i:r]]
@@ -156,9 +155,9 @@ class HFile(h5py.File):
 
             # Find where it passes the function
             keep = fcn(*partial)
-
-            # Keep the indices which pass the function:
-            indices = np.concatenate([indices, submask[keep] + i])
+            # Remove the points in the mask where it _doesn't_ pass
+            # the function
+            mask[i:r][np.invert(keep)] = False
 
             if return_data:
                 # Store the dataset results that pass the function
@@ -173,7 +172,7 @@ class HFile(h5py.File):
         else:
             return_tuple = None
 
-        return indices.astype(np.uint64), return_tuple
+        return mask, return_tuple
 
 
 class DictArray(object):
@@ -549,9 +548,10 @@ class SingleDetTriggers(object):
                  group=detector,
                  chunksize=chunksize,
             )
-            logging.info("%d triggers remain", idx.size)
             # If self.mask already has values, need to take these into account:
             self.and_masks(idx)
+            logging.info("%d triggers remain", self.mask_size)
+            del idx
 
         if filter_func:
             # Apply a filter on the triggers which is _not_ a ranking statistic

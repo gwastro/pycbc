@@ -253,12 +253,13 @@ trigger_times = {}
 for trig in single_triggers:
     ifo = trig.ifo
     with HFile(trig.lfn, 'r') as trig_f:
-        trigger_idx[ifo], data_tuple = \
+        idx, data_tuple = \
             trig_f.select(
                 nearby_missedinj,
                 f'{ifo}/end_time',
                 f'{ifo}/snr',
             )
+    trigger_idx[ifo] = numpy.flatnonzero(idx)
     trigger_times[ifo], trigger_snrs[ifo] = data_tuple
 
 # figure out how many injections to follow up
