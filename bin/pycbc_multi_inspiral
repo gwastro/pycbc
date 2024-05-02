@@ -383,7 +383,7 @@ with ctx:
     template_mem = zeros(tlen, dtype=complex64)
 
     # We are currently using the same matched-filter parameters for all
-    # IFOs. Therefore only all MatchedFilterControl instances are initialized
+    # IFOs. Therefore all MatchedFilterControl instances are initialized
     # in the same way. This can be change if needed.
     # NOTE: Historically, the single detector SNR threshold was applied
     #       to the 2 most sensitive in the network, while this way it applies
