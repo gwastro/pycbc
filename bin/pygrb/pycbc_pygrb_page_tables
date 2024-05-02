@@ -259,7 +259,7 @@ qf_h5_outfile = opts.quiet_found_injs_h5_output_file
 
 # Set output files and directories
 output_files = []
-# The user may want to process injections (also against onsource)...
+# The user may want to process injections (possibily also against onsource)...
 if found_missed_file is not None:
     output_files = [qf_outfile, mf_outfile, qf_h5_outfile]
     if None in output_files:
