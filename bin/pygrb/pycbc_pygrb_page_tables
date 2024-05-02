@@ -42,11 +42,13 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_page_tables"
 
+
 # =============================================================================
 # Functions
 # =============================================================================
 def additional_injection_data(data, ifos):
     """Provides data with chirp masses and effective distances"""
+
     data['mchirp'] = mchirp_from_mass1_mass2(data['mass1'],
                                              data['mass2'])
     eff_dist = 0
@@ -62,6 +64,7 @@ def additional_injection_data(data, ifos):
                                     )
         eff_dist += 1.0 / data['eff_dist_%s' % ifo]
     data['eff_dist'] = 1.0 / eff_dist
+
     return data
 
 
@@ -113,7 +116,8 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     # Get recovered parameters and statistic values for the found injections
     # Recovered parameters
     for param in ['mass1', 'mass2', 'spin1z', 'spin2z']:
-        found_data['rec_%s' % param] = np.array(bank_file[param])[inj_data['network/template_id']]
+        found_data['rec_%s' % param] = \
+            np.array(bank_file[param])[inj_data['network/template_id']]
     found_data['time_diff'] = \
         found_data['tc'] - inj_data['network/end_time_gc'][...]
     found_data['rec_mchirp'] = mchirp_from_mass1_mass2(
@@ -156,20 +160,21 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
                 found_data['sigmasq_%s' % ifo][:] = 1.0
         antenna = Detector(ifo)
         f_resp[ifo] = ppu.get_antenna_responses(antenna, found_data['ra'],
-                                            found_data['dec'],
-                                            found_data['tc'])
+                                                found_data['dec'],
+                                                found_data['tc'])
 
     inj_sigma_mult = \
         np.asarray([f_resp[ifo] *
-                       found_data['sigmasq_%s' % ifo] for ifo in ifos])
+                   found_data['sigmasq_%s' % ifo] for ifo in ifos])
     inj_sigma_tot = np.sum(inj_sigma_mult, axis=0)
     for ifo in ifos:
         found_data['inj_sigma_mean_%s' % ifo] = np.mean(
             found_data['sigmasq_%s' % ifo] * f_resp[ifo] / inj_sigma_tot)
     # Close the hdf file
     inj_data.close()
-    
+
     return found_data, missed_data
+
 
 # =============================================================================
 # Main script starts here
@@ -177,33 +182,34 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
-                    default=None, help="Location of off-source trigger file")
-# As opposed to offsource-file and trig-file, this only contains onsource
-parser.add_argument("--onsource-file", action="store", default=None,
+                    help="Location of off-source trigger file")
+parser.add_argument("--onsource-file", action="store",
                     help="Location of on-source trigger file.")
-ppu.pygrb_add_injmc_opts(parser)
+parser.add_argument("--found-missed-file", action="store",
+                    help="HDF format file with injections to output " +
+                    "details about.")
 parser.add_argument("--newsnr-threshold", action="store", type=float,
-                    default=None, help="NewSNR threshold to " +
+                    default=0., help="NewSNR threshold to " +
                     "dicriminate events with SNR < threshold." +
-                    "Default None, all the events are considered.")
+                    "Default 0: all the events are considered.")
 parser.add_argument("--num-loudest-off-trigs", action="store",
                     type=int, default=30, help="Number of loudest " +
                     "offsouce triggers to output details about.")
-parser.add_argument("--found-missed-file", default=None, required=True,
-                    help="Missed found injection file to output details about.")
-parser.add_argument("--quiet-found-injs-output-file", default=None, required=True,
+parser.add_argument("--bank-file", action="store", type=str, required=True,
+                    help="Location of the full template bank used.")
+parser.add_argument("--quiet-found-injs-output-file",
                     help="Quiet-found injections html output file.")
-parser.add_argument("--missed-found-injs-output-file", default=None, required=True,
+parser.add_argument("--missed-found-injs-output-file",
                     help="Missed-found injections html output file.")
-parser.add_argument("--quiet-found-injs-h5-output-file", default=None, required=True,
+parser.add_argument("--quiet-found-injs-h5-output-file",
                     help="Quiet-found injections h5 output file.")
-parser.add_argument("--loudest-offsource-trigs-output-file", default=None, required=True,
+parser.add_argument("--loudest-offsource-trigs-output-file",
                     help="Loudest offsource triggers html output file.")
-parser.add_argument("--loudest-offsource-trigs-h5-output-file", default=None, required=True,
+parser.add_argument("--loudest-offsource-trigs-h5-output-file",
                     help="Loudest offsource triggers h5 output file.")
-parser.add_argument("--loudest-onsource-trig-output-file", default=None, required=True,
+parser.add_argument("--loudest-onsource-trig-output-file",
                     help="Loudest onsource trigger html output file.")
-parser.add_argument("--loudest-onsource-trig-h5-output-file", default=None, required=True,
+parser.add_argument("--loudest-onsource-trig-h5-output-file",
                     help="Loudest onsource trigger h5 output file.")
 parser.add_argument("-g", "--glitch-check-factor", action="store",
                     type=float, default=1.0, help="When deciding " +
@@ -213,40 +219,13 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
-parser.add_argument("--bank-file", action="store", type=str, required=True,
-                    help="Location of the full template bank used.")
+ppu.pygrb_add_injmc_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
-output_files = [opts.quiet_found_injs_output_file,
-                opts.missed_found_injs_output_file,
-                opts.quiet_found_injs_h5_output_file,
-                opts.loudest_offsource_trigs_output_file,
-                opts.loudest_offsource_trigs_h5_output_file,
-                opts.loudest_onsource_trig_output_file,
-                opts.loudest_onsource_trig_h5_output_file]
-if output_files.count(None) == len(output_files):
-    msg = "Please specify at least one output file location."
-    parser.error(msg)
-
-if opts.quiet_found_injs_output_file or opts.missed_found_injs_output_file or\
-    opts.quiet_found_injs_h5_output_file:
-    do_injections = True
-    if opts.found_missed_file is None:
-        err_msg = "Must provide found-missed injections file "
-        err_msg += "location if processing injections."
-        parser.error(err_msg)
-else:
-    do_injections = False
-
-if opts.loudest_onsource_trig_output_file or opts.loudest_onsource_trig_h5_output_file:
-    if opts.onsource_file is None:
-        err_msg = "Must provide the on-source file location to output its "
-        err_msg += "loudest trigger information."
-        parser.error(err_msg)
 
 # Store options used multiple times in local variables
-trig_file = opts.offsource_file
+offsource_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
 cal_errs = {
@@ -268,15 +247,32 @@ lower_dist = opts.lower_inj_dist
 num_bins = opts.num_bins
 wav_err = opts.waveform_error
 num_mc_injs = opts.num_mc_injections
+lofft_outfile = opts.loudest_offsource_trigs_output_file
+lofft_h5_outfile = opts.loudest_offsource_trigs_h5_output_file
+lont_outfile = opts.loudest_onsource_trig_output_file
+lont_h5_outfile = opts.loudest_onsource_trig_h5_output_file
 qf_outfile = opts.quiet_found_injs_output_file
 mf_outfile = opts.missed_found_injs_output_file
-lofft_outfile = opts.loudest_offsource_trigs_output_file
-lont_outfile = opts.loudest_onsource_trig_output_file
 qf_h5_outfile = opts.quiet_found_injs_h5_output_file
-lofft_h5_outfile = opts.loudest_offsource_trigs_h5_output_file
-lont_h5_outfile = opts.loudest_onsource_trig_h5_output_file
 
-# Set output directories
+# Set output files and directories
+output_files = []
+# The user may want to process injections (possibly also against onsource)...
+if found_missed_file is not None:
+    output_files = [qf_outfile, mf_outfile, qf_h5_outfile]
+    if None in output_files:
+        parser.error('Please provide all 3 injections output files when ' +
+                     'using --found-missed-file')
+# ...or just triggers in offsource and onsource
+elif onsource_file is not None:
+    output_files = [lont_outfile, lont_h5_outfile, lofft_outfile,
+                    lofft_h5_outfile]
+    if None in output_files:
+        parser.error('Please provide both on-source output files ' +
+                     'and both off-source output files when using ' +
+                     '--onsource-file.')
+else:
+    parser.error('Please provide --found-missed-file and/or --onsource-file.')
 logging.info("Setting output directory.")
 for output_file in output_files:
     if output_file:
@@ -289,20 +285,20 @@ np.random.seed(opts.seed)
 logging.info("Setting random seed to %d.", opts.seed)
 
 # Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+ifos, vetoes = ppu.extract_ifos_and_vetoes(offsource_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trig_data = ppu.load_triggers(trig_file, None)
+trig_data = ppu.load_triggers(offsource_file, None)
 logging.info("Loading timeslides.")
-slide_dict = ppu.load_time_slides(trig_file)
+slide_dict = ppu.load_time_slides(offsource_file)
 logging.info("Loading segments.")
-segment_dict = ppu.load_segment_dict(trig_file)
+segment_dict = ppu.load_segment_dict(offsource_file)
 
 # Calculate chirp masses of templates
 logging.info('Loading triggers template masses')
-bank_data =  h5py.File(opts.bank_file, 'r')
+bank_data = h5py.File(opts.bank_file, 'r')
 mchirps = mchirp_from_mass1_mass2(
         bank_data['mass1'][...],
         bank_data['mass2'][...]
@@ -317,7 +313,7 @@ logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
-    ppu.extract_basic_trig_properties(trial_dict, trig_data, slide_dict, 
+    ppu.extract_basic_trig_properties(trial_dict, trig_data, slide_dict,
                                       segment_dict, opts)
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
@@ -335,13 +331,13 @@ for slide_id in slide_dict:
             continue
         # Max SNR
         time_veto_max_snr[slide_id][j] = \
-                        max(trig_snr[slide_id][trial_cut])
+            max(trig_snr[slide_id][trial_cut])
         # Max BestNR
         time_veto_max_bestnr[slide_id][j] = \
-                        max(trig_bestnr[slide_id][trial_cut])
+            max(trig_bestnr[slide_id][trial_cut])
         # Max SNR for triggers passing SBVs
         sbv_cut = trig_bestnr[slide_id] != 0
-        if not (trial_cut&sbv_cut).any():
+        if not (trial_cut & sbv_cut).any():
             continue
 
 logging.info("SNR and bestNR maxima calculated.")
@@ -363,7 +359,7 @@ max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
     ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr,
                         total_trials)
 
-if lofft_outfile or lofft_h5_outfile:
+if lofft_outfile:
     # td: table data
     td = []
 
@@ -371,10 +367,12 @@ if lofft_outfile or lofft_h5_outfile:
     for i in range(min(len(offsource_trigs), opts.num_loudest_off_trigs)):
         bestnr = offsource_trigs[i][0]
         trig_id = offsource_trigs[i][1]
-        trig_index = np.where(trig_data['network/event_id'] == trig_id)[0][0]
+        trig_index = \
+            np.where(trig_data['network/event_id'] == trig_id)[0][0]
         trig_slide_id = int(trig_data['network/slide_id'][trig_index])
 
-        # Get trial of trigger, triggers with 'No trial' should have been removed!
+        # Get trial of trigger, triggers with 'No trial' should have
+        # already been removed!
         for j, trial in enumerate(trial_dict[trig_slide_id]):
             if trig_data['network/end_time_gc'][trig_index] in trial:
                 chunk_num = j
@@ -420,46 +418,44 @@ if lofft_outfile or lofft_h5_outfile:
     td = list(zip(*td))
 
     # Write to h5 file
-    if lofft_outfile:
-        logging.info("Writing %d loudest offsource triggers to h5 file.",
-                             len(td))
-        lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
-        for i, key in enumerate(th):
-            lofft_h5_fp.create_dataset(key, data=td[i])
-        lofft_h5_fp.close()
+    logging.info("Writing %d loudest offsource triggers to h5 file.",
+                 len(td))
+    lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
+    for i, key in enumerate(th):
+        lofft_h5_fp.create_dataset(key, data=td[i])
+    lofft_h5_fp.close()
 
     # Write to html file
-    if lofft_outfile:
-        logging.info("Writing %d loudest triggers to html file.", len(td))
+    logging.info("Writing %d loudest triggers to html file.", len(td))
 
-        # To ensure desired formatting in the html table:
-        # 2) convert the columns to numpy arrays
-        # This is necessary as the p-values need to be treated as strings,
-        # because they may contain a '<'
-        td = [np.asarray(d) for d in td]
+    # To ensure desired formatting in the html table:
+    # 2) convert the columns to numpy arrays
+    # This is necessary as the p-values need to be treated as strings,
+    # because they may contain a '<'
+    td = [np.asarray(d) for d in td]
 
-        # Format of table data
-        format_strings = ['##.##', '##.##', None, '##.#####',
-                          '##.##', '##.##', '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##', '##.##', '##.##']
-        format_strings.extend(['##.##' for ifo in ifos])
-        format_strings.extend(['##.##' for ifo in ifos])
-        format_strings.extend(['##.##'])
-        html_table = pycbc.results.html_table(td, th,
-                                              format_strings=format_strings,
-                                              page_size=30)
-        kwds = {'title' : "Parameters of loudest offsource triggers",
-                'caption' : "Parameters of the "+
-                            str(min(len(offsource_trigs),
-                                    opts.num_loudest_off_trigs))+
-                            " loudest offsource triggers.  "+
-                            "The median reweighted SNR value is "+
-                            str(median_bestnr)+
-                            ".  The median SNR value is "+
-                            str(median_snr),
-                'cmd' :' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table),
-                                             lofft_outfile, **kwds)
+    # Format of table data
+    format_strings = ['##.##', '##.##', None, '##.#####',
+                      '##.##', '##.##', '##.##', '##.##', '##.##',
+                      '##.##', '##.##', '##.##', '##.##', '##.##']
+    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##'])
+    html_table = pycbc.results.html_table(td, th,
+                                          format_strings=format_strings,
+                                          page_size=30)
+    kwds = {'title': "Parameters of loudest offsource triggers",
+            'caption': "Parameters of the " +
+                       str(min(len(offsource_trigs),
+                           opts.num_loudest_off_trigs)) +
+                       " loudest offsource triggers.  " +
+                       "The median reweighted SNR value is " +
+                       str(median_bestnr) +
+                       ".  The median SNR value is " +
+                       str(median_snr),
+            'cmd': ' '.join(sys.argv), }
+    pycbc.results.save_fig_with_metadata(str(html_table),
+                                         lofft_outfile, **kwds)
 
     # Store BestNR and FAP values: for collective FAP value studies at the
     # end of an observing run collectively
@@ -475,13 +471,14 @@ if onsource_file:
 
     # Get trigs
     on_trigs = ppu.load_triggers(onsource_file, None)
-    logging.info("%d onsource triggers loaded.", len(on_trigs['network/event_id']))
+    logging.info("%d onsource triggers loaded.",
+                 len(on_trigs['network/event_id']))
 
     # Record loudest trig by BestNR
     loud_on_bestnr = 0
     if on_trigs:
-        on_trigs_bestnrs = reweightedsnr_cut(on_trigs['network/reweighted_snr'][...],
-                                             opts.newsnr_threshold)
+        on_trigs_bestnrs = reweightedsnr_cut(
+            on_trigs['network/reweighted_snr'][...], opts.newsnr_threshold)
 
         # Gather bestNR index
         bestNR_event = np.argmax(on_trigs_bestnrs)
@@ -505,15 +502,15 @@ if onsource_file:
         num_trials_louder = 0
         tot_off_snr = np.array([])
         for slide_id in slide_dict:
-            num_trials_louder += sum(time_veto_max_bestnr[slide_id] > \
+            num_trials_louder += sum(time_veto_max_bestnr[slide_id] >
                                      loud_on_bestnr)
-            tot_off_snr = np.concatenate([tot_off_snr,\
+            tot_off_snr = np.concatenate([tot_off_snr,
                                           time_veto_max_bestnr[slide_id]])
         fap = num_trials_louder/total_trials
         fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
         pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
         loud_on_fap = fap
-        d = [pval, 
+        d = [pval,
              on_trigs['network/end_time_gc'][trig_index],
              bank_data['mass1'][on_trigs['network/template_id'][trig_index]],
              bank_data['mass2'][on_trigs['network/template_id'][trig_index]],
@@ -525,52 +522,53 @@ if onsource_file:
              on_trigs['network/coherent_snr'][trig_index],
              on_trigs['network/my_network_chisq'][trig_index],
              on_trigs['network/null_snr'][trig_index]] + \
-             [on_trigs['%s/snr' % ifo][trig_index] for ifo in ifos] + [loud_on_bestnr]
+            [on_trigs['%s/snr' % ifo][trig_index] for ifo in ifos] + \
+            [loud_on_bestnr]
         td.append(d)
     else:
-        td.append(["There are no events"] + [0 for number in range(11)] + \
+        td.append(["There are no events"] + [0 for number in range(11)] +
                   [0 for ifo in ifos] + [0])
 
     # Table header
-    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z',
-          'Rec. spin2z', 'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR'] + \
-         ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
+    th = ['p-value', 'GPS time', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
+          'Rec. spin1z', 'Rec. spin2z', 'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2',
+          'Null SNR'] + ['%s SNR' % ifo for ifo in ifos] + ['BestNR']
 
     td = list(zip(*td))
 
     # Write to h5 file
-    if lont_h5_outfile:
-        logging.info("Writing loudest onsource trigger to h5 file.")
-        with h5py.File(lont_h5_outfile, 'w') as lont_h5_fp:
-            for i, key in enumerate(th):
-                lont_h5_fp.create_dataset(key, data=td[i])
+    logging.info("Writing loudest onsource trigger to h5 file.")
+    with h5py.File(lont_h5_outfile, 'w') as lont_h5_fp:
+        for i, key in enumerate(th):
+            lont_h5_fp.create_dataset(key, data=td[i])
 
     # Write to html file
-    if lont_outfile:
-        logging.info("Writing loudest onsource trigger to html file.")
+    logging.info("Writing loudest onsource trigger to html file.")
 
-        # Format of table data
-        format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
-        format_strings.extend(['##.##' for ifo in ifos])
-        format_strings.extend(['##.##'])
+    # Format of table data
+    format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
+                      '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
+    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##'])
 
-        # Table data
-        td = [np.asarray(d) for d in td]
-        html_table = pycbc.results.html_table(td, th,
-                                              format_strings=format_strings,
-                                              page_size=1)
-        kwds = {'title' : "Loudest event",
-                'caption' : "Recovered parameters and statistic values of the loudest trigger.",
-                'cmd' :' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), lont_outfile, **kwds)
-    
+    # Table data
+    td = [np.asarray(d) for d in td]
+    html_table = pycbc.results.html_table(td, th,
+                                          format_strings=format_strings,
+                                          page_size=1)
+    kwds = {'title': "Loudest event",
+            'caption': "Recovered parameters and statistic values of the \
+            loudest trigger.",
+            'cmd': ' '.join(sys.argv), }
+    pycbc.results.save_fig_with_metadata(str(html_table), lont_outfile,
+                                         **kwds)
+
     # Close the onsource file
     on_trigs.close()
 else:
     tot_off_snr = np.array([])
     for slide_id in slide_dict:
-        tot_off_snr = np.concatenate([tot_off_snr,\
+        tot_off_snr = np.concatenate([tot_off_snr,
                                       time_veto_max_bestnr[slide_id]])
     med_snr = np.median(tot_off_snr)
     fap = sum(tot_off_snr > med_snr)/total_trials
@@ -578,10 +576,10 @@ else:
 # =======================
 # Post-process injections
 # =======================
-if do_injections:
-    found_injs, missed_injs = \
-        load_missed_found_injections(found_missed_file, ifos, opts.newsnr_threshold,
-                                bank_data, background_bestnrs=full_time_veto_max_bestnr)
+if found_missed_file is not None:
+    found_injs, missed_injs = load_missed_found_injections(
+        found_missed_file, ifos, opts.newsnr_threshold, bank_data,
+        background_bestnrs=full_time_veto_max_bestnr)
     logging.info("Missed/found injections/triggers loaded.")
     logging.info("%d found injections found.", len(found_injs['mchirp']))
     logging.info("%d missed injections found.", len(missed_injs['mchirp']))
@@ -608,17 +606,17 @@ if do_injections:
     # Create new set of injections for efficiency calculations
     total_injs = len(found_injs['mchirp']) + len(missed_injs['mchirp'])
     long_inj = {}
-    long_inj['dist'] = stats.uniform.rvs(size=total_injs) * (upper_dist-lower_dist) +\
-                  upper_dist
+    long_inj['dist'] = stats.uniform.rvs(size=total_injs) * \
+        (upper_dist-lower_dist) + upper_dist
 
     logging.info("%d long distance injections created.", total_injs)
 
     # Set distance bins and data arrays
-    dist_bins = zip(np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
-                             (upper_dist-lower_dist)/num_bins),\
-                   np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),\
-                             (upper_dist-lower_dist)/num_bins) +\
-                             (upper_dist-lower_dist)/num_bins)
+    dist_bins = zip(np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),
+                              (upper_dist-lower_dist)/num_bins),
+                    np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),
+                              (upper_dist-lower_dist)/num_bins) +
+                    (upper_dist-lower_dist)/num_bins)
     dist_bins = list(dist_bins)
 
     num_dist_bins_plus_one = len(dist_bins) + 1
@@ -643,9 +641,9 @@ if do_injections:
     # Calibration phase uncertainties are neglected
     logging.info("Calibration amplitude uncertainty calculated.")
 
-    # Now create the numbers for the efficiency plots.  These include calibration
-    # and waveform errors incorporated by running over each injection num_mc_injs
-    # times, where each time we draw a random value of distance.
+    # Create the numbers for the efficiency plots.  These include calibration
+    # and waveform errors incorporated by running over each injection
+    # num_mc_injs times, where a random value of distance is drawn each time.
 
     # Distribute injections
     found_injs['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs,
@@ -659,7 +657,7 @@ if do_injections:
     long_inj['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
                                              cal_error, wav_err,
                                              max_dc_cal_error)
-    logging.info("MC injection set distributed with %d iterations.",\
+    logging.info("MC injection set distributed with %d iterations.",
                  num_mc_injs)
 
     # Check injections against on source
@@ -684,15 +682,16 @@ if do_injections:
     # Found: if louder than all on source
     # Missed: if not louder than loudest on source
     found_excl = on_bestnr_cut & (more_sig_than_onsource) & \
-                (found_injs['bestnr'] != 0)
+        (found_injs['bestnr'] != 0)
     # If not missed, double check bestnr against nearby triggers
     near_test = np.zeros((found_excl).sum()).astype(bool)
-    for j, (t, bestnr) in enumerate(zip(found_injs['tc'][found_excl],\
+    for j, (t, bestnr) in enumerate(zip(found_injs['tc'][found_excl],
                                         found_injs['bestnr'][found_excl])):
         # 0 is the zero-lag timeslide
         near_bestnr = trig_bestnr[0]\
                       [np.abs(trig_time[0]-t) < opts.cluster_window]
-        near_test[j] = ~((near_bestnr * opts.glitch_check_factor > bestnr).any())
+        near_test[j] = ~((near_bestnr * opts.glitch_check_factor >
+                          bestnr).any())
     # Apply the local test
     c = 0
     for z, b in enumerate(found_excl):
@@ -741,11 +740,11 @@ if do_injections:
     sites = [ifo[0] for ifo in ifos]
     th = ['Dist'] + ['Eff. Dist. %s' % site for site in sites] +\
          ['GPS time', 'GPS time - Rec. Time'] +\
-         ['Inj. m1', 'Inj. m2', 'Inj. Mc', 'Rec. m1', 'Rec. m2', 'Rec. Mc',\
-          'Inj. inc', 'Inj. RA', 'Inj. Dec', 'Rec. RA', 'Rec. Dec', 'SNR',\
+         ['Inj. m1', 'Inj. m2', 'Inj. Mc', 'Rec. m1', 'Rec. m2', 'Rec. Mc',
+          'Inj. inc', 'Inj. RA', 'Inj. Dec', 'Rec. RA', 'Rec. Dec', 'SNR',
           'Chi^2', 'Null SNR'] +\
          ['SNR %s' % ifo for ifo in ifos] +\
-         ['BestNR', 'Inj S1x', 'Inj S1y', 'Inj S1z',\
+         ['BestNR', 'Inj S1x', 'Inj S1y', 'Inj S1z',
                     'Inj S2x', 'Inj S2y', 'Inj S2z',
                     'Rec S1z', 'Rec S2z']
     # Format of table data
@@ -765,73 +764,72 @@ if do_injections:
     sngl_snr_keys = ['snr_%s' % ifo for ifo in ifos]
     keys = ['distance']
     keys += ['eff_dist_%s' % ifo for ifo in ifos]
-    keys += ['tc', 'time_diff', 'mass1', 'mass2', 'mchirp', 'rec_mass1', 'rec_mass2',
-             'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra', 'rec_dec',
-             'coherent_snr', 'chisq', 'null_snr']
+    keys += ['tc', 'time_diff', 'mass1', 'mass2', 'mchirp', 'rec_mass1',
+             'rec_mass2', 'rec_mchirp', 'inclination', 'ra', 'dec', 'rec_ra',
+             'rec_dec', 'coherent_snr', 'chisq', 'null_snr']
     keys += sngl_snr_keys
-    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y', 'spin2z',
-             'rec_spin1z', 'rec_spin2z']
+    keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
+             'spin2z', 'rec_spin1z', 'rec_spin2z']
     # The following parameters are available only for recovered injections
-    na_keys = ['time_diff', 'rec_mass1', 'rec_mass2', 'rec_mchirp', 'rec_spin1z',
-               'rec_spin2z', 'rec_ra', 'rec_dec', 'coherent_snr', 'chisq',
-               'null_snr', 'bestnr']
+    na_keys = ['time_diff', 'rec_mass1', 'rec_mass2', 'rec_mchirp',
+               'rec_spin1z', 'rec_spin2z', 'rec_ra', 'rec_dec', 'coherent_snr',
+               'chisq', 'null_snr', 'bestnr']
     na_keys += sngl_snr_keys
     td = []
     for key in keys:
         if key in na_keys:
-            td += [np.concatenate((found_injs[key][nonzero_fap],\
-                                   found_injs[key][vetoed_trigs],\
+            td += [np.concatenate((found_injs[key][nonzero_fap],
+                                   found_injs[key][vetoed_trigs],
                                    missed_na))]
         else:
-            td += [np.concatenate((found_injs[key][nonzero_fap],\
-                                   found_injs[key][vetoed_trigs],\
+            td += [np.concatenate((found_injs[key][nonzero_fap],
+                                   found_injs[key][vetoed_trigs],
                                    missed_injs[key]))]
     td = list(zip(*td))
     td.sort(key=lambda elem: elem[0])
     td = list(zip(*td))
+
     # Write to h5 file
-    if qf_h5_outfile:
-        logging.info("Writing %d quiet-found injections to h5 file.", len(td))
-        with h5py.File(qf_h5_outfile, 'w') as qf_h5_fp:
-            for i, key in enumerate(th):
-                qf_h5_fp.create_dataset(key, data=td[i])
+    logging.info("Writing %d quiet-found injections to h5 file.", len(td))
+    with h5py.File(qf_h5_outfile, 'w') as qf_h5_fp:
+        for i, key in enumerate(th):
+            qf_h5_fp.create_dataset(key, data=td[i])
 
     # Write to html file
-    if qf_outfile:
-        logging.info("Writing %d quiet-found injections to html file.", len(td))
-        td = [np.asarray(d) for d in td]
-        html_table = pycbc.results.html_table(td, th,
-                                              format_strings=format_strings,
-                                              page_size=20)
-        kwds = {'title' : "Quiet found injections",
-                'caption' : "Recovered parameters and statistic values of \
-                injections that are recovered, but not louder than background.",
-                'cmd' :' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile,
-                                             **kwds)
+    logging.info("Writing %d quiet-found injections to html file.",
+                 len(td))
+    td = [np.asarray(d) for d in td]
+    html_table = pycbc.results.html_table(td, th,
+                                          format_strings=format_strings,
+                                          page_size=20)
+    kwds = {'title': "Quiet found injections",
+            'caption': "Recovered parameters and statistic values of \
+            injections that are recovered, but not louder than \
+            background.", 'cmd': ' '.join(sys.argv), }
+    pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile,
+                                         **kwds)
 
     # Write to html file
-    if mf_outfile:
-        t_missed = []
-        for key in keys:
-            t_missed += [found_injs[key][vetoed_trigs]]
-        t_missed = list(zip(*t_missed))
-        t_missed.sort(key=lambda elem: elem[0])
-        logging.info("Writing %d missed-found injections to html file.",
-                     len(t_missed))
+    t_missed = []
+    for key in keys:
+        t_missed += [found_injs[key][vetoed_trigs]]
+    t_missed = list(zip(*t_missed))
+    t_missed.sort(key=lambda elem: elem[0])
+    logging.info("Writing %d missed-found injections to html file.",
+                 len(t_missed))
 
-        t_missed = zip(*t_missed)
-        t_missed = [np.asarray(d) for d in t_missed]
-        html_table = pycbc.results.html_table(t_missed, th,
-                                              format_strings=format_strings,
-                                              page_size=20)
-        kwds = {'title' : "Missed found injections",
-                'caption' : "Recovered parameters and statistic values of \
-                injections that are recovered, but downwieghted to BestNR = 0 \
-                (i.e., vetoed).",
-                'cmd' :' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile,
-                                             **kwds)
+    t_missed = zip(*t_missed)
+    t_missed = [np.asarray(d) for d in t_missed]
+    html_table = pycbc.results.html_table(t_missed, th,
+                                          format_strings=format_strings,
+                                          page_size=20)
+    kwds = {'title': "Missed found injections",
+            'caption': "Recovered parameters and statistic values of \
+            injections that are recovered, but downwieghted to BestNR = 0 \
+            (i.e., vetoed).",
+            'cmd': ' '.join(sys.argv), }
+    pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile,
+                                         **kwds)
 
 # Close the bank file
 bank_data.close()
