@@ -50,8 +50,8 @@ __program__ = "pycbc_pygrb_plot_stats_distribution"
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-F", "--trig-file", action="store", required=True,
-                    default=None, help="Location of off-source trigger file")
-parser.add_argument("-x", "--x-variable", default=None, required=True,
+                    help="Location of off-source trigger file")
+parser.add_argument("-x", "--x-variable", required=True,
                     choices=["bestnr", "snr", "snruncut"],
                     help="Quantity to plot on the horizontal axis.")
 opts = parser.parse_args()
