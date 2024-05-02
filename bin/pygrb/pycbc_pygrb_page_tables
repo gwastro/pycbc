@@ -259,18 +259,20 @@ qf_h5_outfile = opts.quiet_found_injs_h5_output_file
 
 # Set output files and directories
 output_files = []
-if onsource_file is not None:
-    output_files = [lont_outfile, lont_h5_outfile, lofft_outfile,
-                    lofft_h5_outfile]
-    if len(output_files) != 4:
-        parser.error('Please provide both on-source output files ' +
-                     'and both off-source output file when using ' +
-                     '--onsource-file.')
-elif found_missed_file is not None:
+# The user may want to process injections (also against onsource)...
+if found_missed_file is not None:
     output_files = [qf_outfile, mf_outfile, qf_h5_outfile]
-    if len(output_files) != 3:
+    if None in output_files:
         parser.error('Please provide all 3 injections output files when ' +
                      'using --found-missed-file')
+# ...or just triggers in offsource and onsource
+elif onsource_file is not None:
+    output_files = [lont_outfile, lont_h5_outfile, lofft_outfile,
+                    lofft_h5_outfile]
+    if None in output_files:
+        parser.error('Please provide both on-source output files ' +
+                     'and both off-source output files when using ' +
+                     '--onsource-file.')
 logging.info("Setting output directory.")
 for output_file in output_files:
     if output_file:
@@ -357,7 +359,7 @@ max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
     ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr,
                         total_trials)
 
-if lofft_outfile or lofft_h5_outfile:
+if lofft_outfile:
     # td: table data
     td = []
 
@@ -416,46 +418,44 @@ if lofft_outfile or lofft_h5_outfile:
     td = list(zip(*td))
 
     # Write to h5 file
-    if lofft_outfile:
-        logging.info("Writing %d loudest offsource triggers to h5 file.",
-                     len(td))
-        lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
-        for i, key in enumerate(th):
-            lofft_h5_fp.create_dataset(key, data=td[i])
-        lofft_h5_fp.close()
+    logging.info("Writing %d loudest offsource triggers to h5 file.",
+                 len(td))
+    lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
+    for i, key in enumerate(th):
+        lofft_h5_fp.create_dataset(key, data=td[i])
+    lofft_h5_fp.close()
 
     # Write to html file
-    if lofft_outfile:
-        logging.info("Writing %d loudest triggers to html file.", len(td))
+    logging.info("Writing %d loudest triggers to html file.", len(td))
 
-        # To ensure desired formatting in the html table:
-        # 2) convert the columns to numpy arrays
-        # This is necessary as the p-values need to be treated as strings,
-        # because they may contain a '<'
-        td = [np.asarray(d) for d in td]
+    # To ensure desired formatting in the html table:
+    # 2) convert the columns to numpy arrays
+    # This is necessary as the p-values need to be treated as strings,
+    # because they may contain a '<'
+    td = [np.asarray(d) for d in td]
 
-        # Format of table data
-        format_strings = ['##.##', '##.##', None, '##.#####',
-                          '##.##', '##.##', '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##', '##.##', '##.##']
-        format_strings.extend(['##.##' for ifo in ifos])
-        format_strings.extend(['##.##' for ifo in ifos])
-        format_strings.extend(['##.##'])
-        html_table = pycbc.results.html_table(td, th,
-                                              format_strings=format_strings,
-                                              page_size=30)
-        kwds = {'title': "Parameters of loudest offsource triggers",
-                'caption': "Parameters of the " +
-                           str(min(len(offsource_trigs),
-                               opts.num_loudest_off_trigs)) +
-                           " loudest offsource triggers.  " +
-                           "The median reweighted SNR value is " +
-                           str(median_bestnr) +
-                           ".  The median SNR value is " +
-                           str(median_snr),
-                'cmd': ' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table),
-                                             lofft_outfile, **kwds)
+    # Format of table data
+    format_strings = ['##.##', '##.##', None, '##.#####',
+                      '##.##', '##.##', '##.##', '##.##', '##.##',
+                      '##.##', '##.##', '##.##', '##.##', '##.##']
+    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##'])
+    html_table = pycbc.results.html_table(td, th,
+                                          format_strings=format_strings,
+                                          page_size=30)
+    kwds = {'title': "Parameters of loudest offsource triggers",
+            'caption': "Parameters of the " +
+                       str(min(len(offsource_trigs),
+                           opts.num_loudest_off_trigs)) +
+                       " loudest offsource triggers.  " +
+                       "The median reweighted SNR value is " +
+                       str(median_bestnr) +
+                       ".  The median SNR value is " +
+                       str(median_snr),
+            'cmd': ' '.join(sys.argv), }
+    pycbc.results.save_fig_with_metadata(str(html_table),
+                                         lofft_outfile, **kwds)
 
     # Store BestNR and FAP values: for collective FAP value studies at the
     # end of an observing run collectively
@@ -537,33 +537,31 @@ if onsource_file:
     td = list(zip(*td))
 
     # Write to h5 file
-    if lont_h5_outfile:
-        logging.info("Writing loudest onsource trigger to h5 file.")
-        with h5py.File(lont_h5_outfile, 'w') as lont_h5_fp:
-            for i, key in enumerate(th):
-                lont_h5_fp.create_dataset(key, data=td[i])
+    logging.info("Writing loudest onsource trigger to h5 file.")
+    with h5py.File(lont_h5_outfile, 'w') as lont_h5_fp:
+        for i, key in enumerate(th):
+            lont_h5_fp.create_dataset(key, data=td[i])
 
     # Write to html file
-    if lont_outfile:
-        logging.info("Writing loudest onsource trigger to html file.")
+    logging.info("Writing loudest onsource trigger to html file.")
 
-        # Format of table data
-        format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
-                          '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
-        format_strings.extend(['##.##' for ifo in ifos])
-        format_strings.extend(['##.##'])
+    # Format of table data
+    format_strings = [None, '##.#####', '##.##', '##.##', '##.##', '##.##',
+                      '##.##', '##.##', '##.##', '##.##', '##.##', '##.##']
+    format_strings.extend(['##.##' for ifo in ifos])
+    format_strings.extend(['##.##'])
 
-        # Table data
-        td = [np.asarray(d) for d in td]
-        html_table = pycbc.results.html_table(td, th,
-                                              format_strings=format_strings,
-                                              page_size=1)
-        kwds = {'title': "Loudest event",
-                'caption': "Recovered parameters and statistic values of the \
-                loudest trigger.",
-                'cmd': ' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), lont_outfile,
-                                             **kwds)
+    # Table data
+    td = [np.asarray(d) for d in td]
+    html_table = pycbc.results.html_table(td, th,
+                                          format_strings=format_strings,
+                                          page_size=1)
+    kwds = {'title': "Loudest event",
+            'caption': "Recovered parameters and statistic values of the \
+            loudest trigger.",
+            'cmd': ' '.join(sys.argv), }
+    pycbc.results.save_fig_with_metadata(str(html_table), lont_outfile,
+                                         **kwds)
 
     # Close the onsource file
     on_trigs.close()
@@ -790,50 +788,48 @@ if found_missed_file is not None:
     td = list(zip(*td))
     td.sort(key=lambda elem: elem[0])
     td = list(zip(*td))
+
     # Write to h5 file
-    if qf_h5_outfile:
-        logging.info("Writing %d quiet-found injections to h5 file.", len(td))
-        with h5py.File(qf_h5_outfile, 'w') as qf_h5_fp:
-            for i, key in enumerate(th):
-                qf_h5_fp.create_dataset(key, data=td[i])
+    logging.info("Writing %d quiet-found injections to h5 file.", len(td))
+    with h5py.File(qf_h5_outfile, 'w') as qf_h5_fp:
+        for i, key in enumerate(th):
+            qf_h5_fp.create_dataset(key, data=td[i])
 
     # Write to html file
-    if qf_outfile:
-        logging.info("Writing %d quiet-found injections to html file.",
-                     len(td))
-        td = [np.asarray(d) for d in td]
-        html_table = pycbc.results.html_table(td, th,
-                                              format_strings=format_strings,
-                                              page_size=20)
-        kwds = {'title': "Quiet found injections",
-                'caption': "Recovered parameters and statistic values of \
-                injections that are recovered, but not louder than \
-                background.", 'cmd': ' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile,
-                                             **kwds)
+    logging.info("Writing %d quiet-found injections to html file.",
+                 len(td))
+    td = [np.asarray(d) for d in td]
+    html_table = pycbc.results.html_table(td, th,
+                                          format_strings=format_strings,
+                                          page_size=20)
+    kwds = {'title': "Quiet found injections",
+            'caption': "Recovered parameters and statistic values of \
+            injections that are recovered, but not louder than \
+            background.", 'cmd': ' '.join(sys.argv), }
+    pycbc.results.save_fig_with_metadata(str(html_table), qf_outfile,
+                                         **kwds)
 
     # Write to html file
-    if mf_outfile:
-        t_missed = []
-        for key in keys:
-            t_missed += [found_injs[key][vetoed_trigs]]
-        t_missed = list(zip(*t_missed))
-        t_missed.sort(key=lambda elem: elem[0])
-        logging.info("Writing %d missed-found injections to html file.",
-                     len(t_missed))
+    t_missed = []
+    for key in keys:
+        t_missed += [found_injs[key][vetoed_trigs]]
+    t_missed = list(zip(*t_missed))
+    t_missed.sort(key=lambda elem: elem[0])
+    logging.info("Writing %d missed-found injections to html file.",
+                 len(t_missed))
 
-        t_missed = zip(*t_missed)
-        t_missed = [np.asarray(d) for d in t_missed]
-        html_table = pycbc.results.html_table(t_missed, th,
-                                              format_strings=format_strings,
-                                              page_size=20)
-        kwds = {'title': "Missed found injections",
-                'caption': "Recovered parameters and statistic values of \
-                injections that are recovered, but downwieghted to BestNR = 0 \
-                (i.e., vetoed).",
-                'cmd': ' '.join(sys.argv), }
-        pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile,
-                                             **kwds)
+    t_missed = zip(*t_missed)
+    t_missed = [np.asarray(d) for d in t_missed]
+    html_table = pycbc.results.html_table(t_missed, th,
+                                          format_strings=format_strings,
+                                          page_size=20)
+    kwds = {'title': "Missed found injections",
+            'caption': "Recovered parameters and statistic values of \
+            injections that are recovered, but downwieghted to BestNR = 0 \
+            (i.e., vetoed).",
+            'cmd': ' '.join(sys.argv), }
+    pycbc.results.save_fig_with_metadata(str(html_table), mf_outfile,
+                                         **kwds)
 
 # Close the bank file
 bank_data.close()
