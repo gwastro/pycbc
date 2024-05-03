@@ -59,8 +59,8 @@ logging.info("Determining the most recent configuration parameters")
 latest_date = None
 for f in args.trfits_files:
     with h5py.File(f, 'r') as fit_f:
-        if latest_date is None or fit_f.attrs['fit_end'] > latest_date:
-            latest_date = fit_f.attrs['fit_end']
+        if latest_date is None or fit_f.attrs['fit_end_gps_time'] > latest_date:
+            latest_date = fit_f.attrs['fit_end_gps_time']
             bl = fit_f['bins_lower'][:]
             bu = fit_f['bins_upper'][:]
             sngl_rank = fit_f.attrs['sngl_ranking']

@@ -36,7 +36,7 @@ from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 
 import pycbc
-from pycbc.io.live import gracedb_tag_with_version
+from pycbc.io.gracedb import gracedb_tag_with_version
 from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries

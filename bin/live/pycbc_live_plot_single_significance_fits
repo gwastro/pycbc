@@ -79,8 +79,8 @@ with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
         x_label = "Ranking statistic"
     fit_threshold = {ifo: trfit_f[ifo].attrs['fit_threshold'] for ifo in ifos}
     fit_function = {ifo: trfit_f[ifo].attrs['fit_function'] for ifo in ifos}
-    start_time = trfit_f.attrs['fit_start']
-    end_time = trfit_f.attrs['fit_end']
+    start_time = trfit_f.attrs['fit_start_gps_time']
+    end_time = trfit_f.attrs['fit_end_gps_time']
     start_str = gpstime.gps_to_utc(start_time).strftime("%Y-%m-%d %H:%M:%S")
     end_str = gpstime.gps_to_utc(end_time).strftime("%Y-%m-%d %H:%M:%S")
 

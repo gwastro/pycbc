@@ -66,7 +66,7 @@ def mail_volunteers_error(controls, mail_body_lines, subject):
         for line in mail_body_lines:
             logging.warning(line)
         return
-    with open(volunteers_file, 'r') as mail_volunteers_file:
+    with open(controls['mail_volunteers_file'], 'r') as mail_volunteers_file:
         volunteers = [volunteer.strip() for volunteer in
                       mail_volunteers_file.readlines()]
     logging.info("Emailing %s with warnings", ' '.join(volunteers))
@@ -397,11 +397,6 @@ def do_fitting(args, day_dt, day_str):
                 combined_options['output'],
                 controls['variable-trigger-fits']
             )
-            logging.info(
-                "%s updated to link to %s",
-                controls['variable-trigger-fits'],
-                combined_options['output']
-            )
         except Exception as e:
             mail_volunteers_error(
                 controls,
@@ -409,6 +404,11 @@ def do_fitting(args, day_dt, day_str):
                 "PyCBC live could not copy to variable trigger fits file"
             )
             raise e
+        logging.info(
+            "%s updated to link to %s",
+            controls['variable-trigger-fits'],
+            combined_options['output']
+        )
 
     logging.info("Plotting combined fits")
     # Add plotting for combined fits, and linking to the public directory

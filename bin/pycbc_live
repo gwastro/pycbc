@@ -31,7 +31,7 @@ from pycbc.strain import StrainBuffer
 from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingle
-from pycbc.io.live import CandidateForGraceDB
+from pycbc.io.gracedb import CandidateForGraceDB
 from pycbc.io.hdf import recursively_save_dict_contents_to_group
 from pycbc.types import positive_int
 import pycbc.waveform.bank

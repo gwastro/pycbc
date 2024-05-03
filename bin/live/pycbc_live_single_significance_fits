@@ -28,6 +28,7 @@ from pycbc.bin_utils import IrregularBins
 from pycbc.events import cuts, trigger_fits as trstats, stat
 from pycbc.io import DictArray
 from pycbc.io import live as liveio
+from pycbc.live import significance_fits as sngls_io
 from pycbc.events import ranking
 from pycbc.events.coinc import cluster_over_time
 from pycbc.types import MultiDetOptionAction
@@ -38,8 +39,8 @@ parser.add_argument("--ifos", nargs="+", required=True,
                     help="Which ifo(s) are we fitting the triggers for? "
                          "Required")
 liveio.add_live_trigger_selection_options(parser)
-liveio.add_live_significance_trigger_pruning_options(parser)
-liveio.add_live_significance_duration_bin_options(parser)
+sngls_io.add_live_significance_trigger_pruning_options(parser)
+sngls_io.add_live_significance_duration_bin_options(parser)
 parser.add_argument("--fit-function", default="exponential",
                     action=MultiDetOptionAction,
                     choices=["exponential", "rayleigh", "power"],
@@ -68,12 +69,12 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # Check input options
-liveio.verify_live_significance_trigger_pruning_options(args, parser)
-liveio.verify_live_significance_duration_bin_options(args, parser)
+sngls_io.verify_live_significance_trigger_pruning_options(args, parser)
+sngls_io.verify_live_significance_duration_bin_options(args, parser)
 
 stat_kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
 
-duration_bin_edges = liveio.duration_bins_from_cli(args)
+duration_bin_edges = sngls_io.duration_bins_from_cli(args)
 logging.info(
     "Duration bin edges: %s",
     ', '.join([f'{e:.3e}' for e in duration_bin_edges])

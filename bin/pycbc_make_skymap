@@ -24,7 +24,7 @@ from ligo.gracedb.rest import GraceDb
 
 import pycbc
 from pycbc.filter import sigmasq
-from pycbc.io import live, WaveformArray
+from pycbc.io import gracedb, WaveformArray
 from pycbc.types import (TimeSeries, FrequencySeries, load_timeseries,
                          load_frequencyseries, MultiDetMultiColonOptionAction,
                          MultiDetOptionAction, MultiDetOptionAppendAction)
@@ -398,7 +398,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
               'skyloc_data': skyloc_data,
               'channel_names': channel_names}
 
-    doc = live.CandidateForGraceDB(
+    doc = gracedb.CandidateForGraceDB(
         trig_ifos,
         trig_ifos,
         coinc_results,
