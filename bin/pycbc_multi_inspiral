@@ -433,8 +433,7 @@ with ctx:
     # Directly use existing SingleDetPowerChisq, SingleDetBankVeto, and
     # SingleDetAutoChisq to calculate single detector chi-squares for
     # multiple IFOs
-    power_chisq = vetoes.SingleDetPowerChisq(args.chisq_bins,
-                                             args.chisq_snr_threshold)
+    power_chisq = vetoes.SingleDetPowerChisq(args.chisq_bins)
     bank_chisq = vetoes.SingleDetBankVeto(
         args.bank_veto_bank_file,
         flen,
