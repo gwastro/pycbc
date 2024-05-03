@@ -31,6 +31,7 @@ import argparse
 import numpy as np
 import h5py
 
+import pycbc.version
 from pycbc import (
     detector,
     fft,
@@ -55,6 +56,7 @@ from pycbc.vetoes import sgchisq
 # pycbc_multi_inspiral executable.
 time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action=pycbc.version.Version)
 add_common_pycbc_options(parser)
 parser.add_argument("--output", type=str)
 parser.add_argument(
@@ -66,18 +68,11 @@ parser.add_argument(
 )
 parser.add_argument("--bank-file", type=str)
 parser.add_argument(
-    "--snr-threshold",
+    "--sngl-snr-threshold",
     type=float,
     metavar='THRESHOLD',
     help="Single IFO SNR threshold for trigger generation."
 )
-# Commenting out unused options: remove if they remain unused
-# parser.add_argument(
-#     "--newsnr-threshold",
-#     type=float,
-#     metavar='THRESHOLD',
-#     help="Cut triggers with NewSNR less than THRESHOLD",
-# )
 parser.add_argument(
     "--low-frequency-cutoff",
     type=float,
@@ -395,7 +390,7 @@ with ctx:
         ifo: MatchedFilterControl(
             args.low_frequency_cutoff,
             None,
-            args.snr_threshold,
+            args.sngl_snr_threshold,
             tlen,
             delta_f,
             complex64,
@@ -736,6 +731,8 @@ with ctx:
                             ifo: ap[ifo][position_index][1]
                             for ifo in args.instruments
                         }
+                        # The cut is applied after the left vs right
+                        # comparison to ensure the arrays have equal lengths
                         if args.projection == 'left+right':
                             # Left polarized coherent SNR
                             project_l = coh.get_projection_matrix(
@@ -749,7 +746,7 @@ with ctx:
                             ) = coh.coherent_snr(
                                 coinc_triggers,
                                 coinc_idx,
-                                args.coinc_threshold,
+                                0.,
                                 project_l,
                                 rho_coinc,
                             )
@@ -765,10 +762,27 @@ with ctx:
                             ) = coh.coherent_snr(
                                 coinc_triggers,
                                 coinc_idx,
-                                args.coinc_threshold,
+                                0.,
                                 project_r,
                                 rho_coinc,
                             )
+                            # Apply cut to remove points with left or right
+                            # polarized coherent SNR below threshold
+                            l_above = rho_coh_l > args.coinc_threshold
+                            r_above = rho_coh_r > args.coinc_threshold
+                            lr_above = l_above & r_above
+                            rho_coh_l = rho_coh_l[lr_above]
+                            rho_coh_r = rho_coh_r[lr_above]
+                            coinc_idx_l = coinc_idx_l[lr_above]
+                            coinc_idx_r = coinc_idx_r[lr_above]
+                            for ifo in coinc_triggers_l.keys():
+                                coinc_triggers_l[ifo] = \
+                                    coinc_triggers_l[ifo][lr_above]
+                            for ifo in coinc_triggers_r.keys():
+                                coinc_triggers_r[ifo] = \
+                                    coinc_triggers_r[ifo][lr_above]
+                            rho_coinc_l = rho_coinc_l[lr_above]
+                            rho_coinc_r = rho_coinc_r[lr_above]
                             # Point by point, track the larger of the two
                             # and store its information
                             max_idx = np.argmax([rho_coh_l, rho_coh_r], axis=0)
