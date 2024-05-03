@@ -58,7 +58,10 @@ def sky_grid_from_cli(parser, args):
         args.sky_grid is not None
         and (args.ra is not None or args.dec is not None)
     ):
-        parser.error('Give either a sky grid or a sky position, not both')
+        parser.error(
+            'Please provide either a sky grid via --sky-grid or a '
+            'single sky position via --ra and --dec, not both'
+        )
     if args.sky_grid is not None:
         with h5py.File(args.sky_grid, 'r') as sky_grid_file:
             ra = sky_grid_file['ra'][:]
