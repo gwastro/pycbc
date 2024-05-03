@@ -201,7 +201,7 @@ for ifo in all_ifos:
     )
     ax.set_xlabel(x_label)
     ax.set_ylabel("Number of louder triggers per live time")
-    title = f"{ifo} {start_str}-{end_str} singles significance fits"
+    title = f"{ifo} singles significance fits from\n{start_str} to {end_str}"
     ax.set_title(title)
     ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5))
     logging.info(f"Saving {oput_plot}")
