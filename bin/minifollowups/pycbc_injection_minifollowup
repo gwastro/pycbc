@@ -402,7 +402,7 @@ for num_event in range(num_events):
             return_data=False,
         )
 
-        if numpy.count_nonzero(idx) == 0:
+        if len(idx) == 0:
             # No events in the injection window for this detector
             continue
 
