@@ -65,7 +65,7 @@ for POL in 'standard' 'left' 'right' 'left+right'; do
             H1:H1-${CHANNEL}-${GPS_START}-${DUR}.gwf \
             L1:L1-${CHANNEL}-${GPS_START}-${DUR}.gwf \
             V1:V1-${CHANNEL}-${GPS_START}-${DUR}.gwf \
-        --snr-threshold 4.0 \
+        --sngl-snr-threshold 4.0 \
         --chisq-bins "0.9*get_freq('fSEOBNRv4Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)**(2./3.)" \
         --bank-veto-bank-file ${BANK_VETO_FILE} \
         --cluster-method window \
