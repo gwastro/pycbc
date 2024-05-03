@@ -900,7 +900,7 @@ with ctx:
                         if nifo > 2:
                             reweighted_snr = ranking.newsnr(
                                 rho_coh, network_chisq_dict,
-                                q=args.chisq_index, n=args.chisq-nhigh
+                                q=args.chisq_index, n=args.chisq_nhigh
                             )
                             # Calculate null reweighted SNR
                             reweighted_snr = coh.reweight_snr_by_null(
@@ -909,7 +909,7 @@ with ctx:
                         elif nifo == 2:
                             reweighted_snr = ranking.newsnr(
                                 rho_coinc, network_chisq_dict,
-                                q=args.chisq_index, n=args.chisq-nhigh
+                                q=args.chisq_index, n=args.chisq_nhigh
                             )
                         else:
                             rho_sngl = abs(
@@ -919,7 +919,7 @@ with ctx:
                             )
                             reweighted_snr = ranking.newsnr(
                                 rho_sngl, network_chisq_dict,
-                                q=args.chisq_index, n=args.chisq-nhigh
+                                q=args.chisq_index, n=args.chisq_nhigh
                             )
                         # All out vals must be the same length, so single
                         # value entries are repeated once per event
