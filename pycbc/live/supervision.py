@@ -93,7 +93,7 @@ def mail_volunteers_error(controls, mail_body_lines, subject):
     mail_body = '\n'.join(mail_body_lines)
     subprocess.run(mail_command, input=mail_body, text=True)
 
-def run_and_error(command_arguments):
+def run_and_error(command_arguments, controls):
     """
     Wrapper around subprocess.run to catch errors and send emails if required
     """
@@ -102,9 +102,12 @@ def run_and_error(command_arguments):
     if command_output.returncode:
         error_contents = [' '.join(command_arguments),
                           command_output.stderr.decode()]
-        mail_volunteers_error(controls, error_contents,
-            f"PyCBC live could not run {command_arguments[0]}")
+        if controls['mail-volunteers-file'] is not None:
+            mail_volunteers_error(controls, error_contents,
+                f"PyCBC live could not run {command_arguments[0]}"
+            )
         err_msg = f"Could not run {command_arguments[0]}"
+        err_msg += ' '.join(error_contents)
         raise subprocess.SubprocessError(err_msg)
 
 def wait_for_utc_time(target_str):
