@@ -225,11 +225,6 @@ def setup_injection_workflow(workflow, output_dir=None,
                           out_dir=output_dir, ifos='HL',
                           tags=curr_tags)
             if exe is PycbcCreateInjectionsExecutable:
-                if workflow.cp.has_option('workflow-injections',
-                                          section+'-config-file'):
-                    logger.error('Please use '+section+'-config-files '
-                                 'instead of '+section+'-config-file '
-                                 'in [workflow-injections]')
                 config_urls = workflow.cp.get('workflow-injections',
                                               section+'-config-files')
                 config_urls = config_urls.split(',')
