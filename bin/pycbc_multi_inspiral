@@ -48,6 +48,7 @@ from pycbc import (
 )
 from pycbc.events import ranking, coherent as coh, EventManagerCoherent
 from pycbc.filter import MatchedFilterControl
+from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.types import zeros, float32, complex64
 from pycbc.vetoes import sgchisq
 
@@ -102,6 +103,7 @@ time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action=pycbc.version.Version)
 add_common_pycbc_options(parser)
+ppu.pygrb_add_bestnr_opts(parser)
 parser.add_argument("--output", type=str)
 parser.add_argument(
     "--instruments",
@@ -111,12 +113,6 @@ parser.add_argument(
     help="List of instruments to analyze.",
 )
 parser.add_argument("--bank-file", type=str)
-parser.add_argument(
-    "--sngl-snr-threshold",
-    type=float,
-    metavar='THRESHOLD',
-    help="Single IFO SNR threshold for trigger generation."
-)
 parser.add_argument(
     "--low-frequency-cutoff",
     type=float,
@@ -274,11 +270,8 @@ inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 sgchisq.SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
 init_logging(args.verbose)
-# Set GRB time variable for convenience
-t_gps = args.trigger_time
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
-nifo = len(args.instruments[:])
 # Use class verification methods to check whether input CLI options provided
 # by parser to pycbc.strain, pycbc.strain.StrainSegments, pycbc.psd,
 # pycbc.scheme, and pycbc.fft modules are sane.
@@ -310,8 +303,13 @@ strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
 ctx = scheme.from_cli(args)
 with ctx:
     fft.from_cli(args)
-    # Set some often used variables for easy access
+    # Set some convenience variables: number of IFOs, lower frequency,
+    # GRB time, sky positions to search (either a grid or single sky point)
+    nifo = len(args.instruments[:])
     flow = args.low_frequency_cutoff
+    t_gps = args.trigger_time
+    sky_positions = sky_grid_from_cli(parser, args)
+    sky_pos_indices = np.arange(sky_positions.shape[1])
     # The following for loop is used to check whether
     # the sampling rate, flen and tlen agree for all detectors
     # taking the zeroth detector in the list as a reference.
@@ -354,15 +352,12 @@ with ctx:
         precision='single',
     )
 
-    sky_positions = sky_grid_from_cli(parser, args)
-    sky_pos_indices = np.arange(sky_positions.shape[1])
-
     logging.info("Determining time slide shifts and time delays")
     # Create a dictionary of time slide shifts; IFO 0 is unshifted
     slide_ids = np.arange(1 + args.num_slides)
     time_slides = {
-        ifo: args.slide_shift * slide_ids * n_ifo
-        for n_ifo, ifo in enumerate(args.instruments)
+        ifo: args.slide_shift * slide_ids * ifo_idx
+        for ifo_idx, ifo in enumerate(args.instruments)
     }
     # Given the time delays wrt to IFO 0 in time_slides, create a dictionary
     # for time delay indices evaluated wrt the geocenter, in units of samples,
@@ -427,7 +422,6 @@ with ctx:
             downsample_factor=args.downsample_factor,
             upsample_threshold=args.upsample_threshold,
             upsample_method=args.upsample_method,
-            cluster_function='symmetric',
         )
         for ifo in args.instruments
     }
@@ -437,7 +431,7 @@ with ctx:
     # Directly use existing SingleDetPowerChisq, SingleDetBankVeto, and
     # SingleDetAutoChisq to calculate single detector chi-squares for
     # multiple IFOs
-    power_chisq = vetoes.SingleDetPowerChisq(args.chisq_bins)
+    power_chisq = vetoes.SingleDetPowerChisq(args.chisq_bins, opt.chisq_snr_threshold)
     bank_chisq = vetoes.SingleDetBankVeto(
         args.bank_veto_bank_file,
         flen,
@@ -615,6 +609,12 @@ with ctx:
                 snr_dict[ifo] = (
                     snr_ts[matched_filter[ifo].segments[s_num].analyze] * norm
                 )
+                # Raise error if this segment has no data
+                if len(snr_dict[ifo]) == 0:
+                    raise RuntimeError(
+                        'The SNR triggers dictionary is empty. This '
+                        'should not be possible.'
+                    )
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
                 idx[ifo] = ind.copy()
@@ -672,14 +672,6 @@ with ctx:
                     logging.info(
                         "Found %d coincident triggers", len(coinc_idx)
                     )
-                    for ifo in args.instruments:
-                        # Raise errror if this segment has no data
-                        # FIXME: raise this sooner?
-                        if len(snr_dict[ifo]) == 0:
-                            raise RuntimeError(
-                                'The SNR triggers dictionary is empty. This '
-                                'should not be possible.'
-                            )
                     # Time delay is applied to indices to have them at the IFOs
                     coinc_idx_det_frame = {
                         ifo: (
