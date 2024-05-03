@@ -75,7 +75,7 @@ for ifo in args.single_trigger_files.keys():
             group=ifo,
             return_data=False,
         )
-        idx = numpy.flatnonzero(data_mask)
+        idx = numpy.flat_nonzero(data_mask)
 
     if not len(idx):
         # No triggers in this window, add to the legend and continue
