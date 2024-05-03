@@ -225,17 +225,17 @@ def setup_injection_workflow(workflow, output_dir=None,
                           out_dir=output_dir, ifos='HL',
                           tags=curr_tags)
             if exe is PycbcCreateInjectionsExecutable:
+                if workflow.cp.has_option('workflow-injections',
+                                          section+'-config-file'):
+                    logger.error('Please use '+section+'-config-files '
+                                 'instead of '+section+'-config-file '
+                                 'in [workflow-injections]')
                 config_urls = workflow.cp.get('workflow-injections',
-                                              section+'-config-file') if \
-                    workflow.cp.has_option('workflow-injections',
-                                           section+'-config-file') else \
-                    workflow.cp.get('workflow-injections',
-                                    section+'-config-files')
+                                              section+'-config-files')
                 config_urls = config_urls.split(',')
                 config_files = FileList([resolve_url_to_file(cf.strip())
                                          for cf in config_urls])
-                node, inj_file = inj_job.create_node()
-                node.add_input_list_opt('--config-files', config_files)
+                node, inj_file = inj_job.create_node(config_files)
             else:
                 node = inj_job.create_node(full_segment)
             if injection_method == "AT_RUNTIME":
