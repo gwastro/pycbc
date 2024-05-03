@@ -1,6 +1,9 @@
+"""
+Class and function for use in dealing with GraceDB uploads
+"""
+
 import logging
 import os
-import pycbc
 import numpy
 import json
 import copy
@@ -11,6 +14,7 @@ from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 
+import pycbc
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.io.ligolw import (
@@ -163,9 +167,9 @@ class CandidateForGraceDB(object):
                         pass
             if sngl.mass1 and sngl.mass2:
                 sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
-                        sngl.mass1, sngl.mass2)
+                    sngl.mass1, sngl.mass2)
                 sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
-                        sngl.mass1, sngl.mass2)
+                    sngl.mass1, sngl.mass2)
                 sngl_populated = sngl
             if sngl.snr:
                 sngl.eff_distance = sngl.sigmasq ** 0.5 / sngl.snr
@@ -225,9 +229,11 @@ class CandidateForGraceDB(object):
         # P astro calculation
         if 'padata' in kwargs:
             if 'p_terr' in kwargs:
-                raise RuntimeError("Both p_astro calculation data and a "
+                raise RuntimeError(
+                    "Both p_astro calculation data and a "
                     "previously calculated p_terr value were provided, this "
-                    "doesn't make sense!")
+                    "doesn't make sense!"
+                )
             assert len(coinc_ifos) < 3, \
                 f"p_astro can't handle {coinc_ifos} coinc ifos!"
             trigger_data = {
@@ -254,20 +260,23 @@ class CandidateForGraceDB(object):
         self.hasmassgap = None
         if 'mc_area_args' in kwargs:
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
-            self.probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
-                                                    coinc_inspiral_row.snr,
-                                                    min(eff_distances),
-                                                    kwargs['mc_area_args'])
+            self.probabilities = calc_probabilities(
+                coinc_inspiral_row.mchirp,
+                coinc_inspiral_row.snr,
+                min(eff_distances),
+                kwargs['mc_area_args']
+            )
             if 'embright_mg_max' in kwargs['mc_area_args']:
                 hasmg_args = copy.deepcopy(kwargs['mc_area_args'])
                 hasmg_args['mass_gap'] = True
                 hasmg_args['mass_bdary']['gap_max'] = \
                     kwargs['mc_area_args']['embright_mg_max']
                 self.hasmassgap = calc_probabilities(
-                                      coinc_inspiral_row.mchirp,
-                                      coinc_inspiral_row.snr,
-                                      min(eff_distances),
-                                      hasmg_args)['Mass Gap']
+                    coinc_inspiral_row.mchirp,
+                    coinc_inspiral_row.snr,
+                    min(eff_distances),
+                    hasmg_args
+                )['Mass Gap']
 
         # Combine p astro and source probs
         if self.p_astro is not None and self.probabilities is not None:
@@ -564,9 +573,10 @@ def gracedb_tag_with_version(gracedb, event_id):
     """
     version_str = 'Using PyCBC version {}{} at {}'
     version_str = version_str.format(
-            pycbc_version.version,
-            ' (release)' if pycbc_version.release else '',
-            os.path.dirname(pycbc.__file__))
+        pycbc_version.version,
+        ' (release)' if pycbc_version.release else '',
+        os.path.dirname(pycbc.__file__)
+    )
     gracedb.write_log(event_id, version_str)
 
 

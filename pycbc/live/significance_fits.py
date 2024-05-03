@@ -1,11 +1,10 @@
+"""
+Functions for defining the live significance fits
+"""
+
 import logging
-import os
-import pathlib
-import datetime
 import h5py
 import numpy
-
-from lal import gpstime as lalgps
 
 logger = logging.getLogger('pycbc.live.single_fits')
 
