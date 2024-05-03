@@ -69,13 +69,14 @@ for ifo in args.single_trigger_files.keys():
 
     # Identify trigger idxs within window of trigger time
     with HFile(args.single_trigger_files[ifo], 'r') as data:
-        data_mask, _ = data.select(
+        idx, _ = data.select(
             lambda endtime: abs(endtime - t) < args.window,
             'end_time',
             group=ifo,
             return_data=False,
         )
-        idx = numpy.flat_nonzero(data_mask)
+        data_mask = numpy.zeros(data[ifo]['snr'].size, dtype=bool)
+        data_mask[idx] = True
 
     if not len(idx):
         # No triggers in this window, add to the legend and continue

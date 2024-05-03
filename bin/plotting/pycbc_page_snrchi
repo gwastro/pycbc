@@ -71,7 +71,7 @@ logging.info(
     args.chisq_choice,
     trigs.mask_size
 )
-snr = trigs['snr']
+snr = trigs.snr
 chisq = get_chisq_from_file_choice(trigs, args.chisq_choice)
 
 
