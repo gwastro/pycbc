@@ -52,6 +52,50 @@ from pycbc.types import zeros, float32, complex64
 from pycbc.vetoes import sgchisq
 
 
+def sky_grid_from_cli(parser, args):
+    """Read the sky grid or the single sky position given the CLI arguments.
+    """
+    if (
+        args.sky_grid is not None
+        and (args.ra is not None or args.dec is not None)
+    ):
+        parser.error(
+            'Please provide either a sky grid via --sky-grid or a '
+            'single sky position via --ra and --dec, not both'
+        )
+    if args.sky_grid is not None:
+        with h5py.File(args.sky_grid, 'r') as sky_grid_file:
+            ra = sky_grid_file['ra'][:]
+            dec = sky_grid_file['dec'][:]
+    elif args.ra is not None and args.dec is not None:
+        ra = np.array([args.ra])
+        dec = np.array([args.dec])
+    else:
+        parser.error(
+            'Please specify a sky grid via --sky-grid '
+            'or a single position via --ra and --dec'
+        )
+    return np.array([ra, dec])
+
+
+def calculate_antenna_pattern(args, sky_pos_indices):
+    """Calculate the antenna pattern functions for all detectors and sky
+    positions.
+    """
+    antenna_pattern = {}
+    for ifo in args.instruments:
+        curr_det = detector.Detector(ifo)
+        antenna_pattern[ifo] = [None] * len(sky_pos_indices)
+        for index in sky_pos_indices:
+            antenna_pattern[ifo][index] = curr_det.antenna_pattern(
+                sky_positions[0][index],
+                sky_positions[1][index],
+                polarization=0,
+                t_gps=t_gps,
+            )
+    return antenna_pattern
+
+
 # The following block of lines sets up the command-line interface (CLI) for the
 # pycbc_multi_inspiral executable.
 time_init = time.time()
@@ -310,25 +354,8 @@ with ctx:
         precision='single',
     )
 
-    # Read the sky grid or the single sky position
-    if (
-        args.sky_grid is not None
-        and args.ra is not None
-        and args.dec is not None
-    ):
-        parser.error('Give either a sky grid or a sky position, not both')
-
-    if args.sky_grid is not None:
-        sky_grid = h5py.File(args.sky_grid, 'r')
-        ra = np.array(sky_grid['ra'])
-        dec = np.array(sky_grid['dec'])
-    if args.ra is not None and args.dec is not None:
-        ra = np.array([args.ra])
-        dec = np.array([args.dec])
-
-    sky_positions = np.array([ra, dec])
-    num_sky_positions = sky_positions.shape[1]
-    positions_array = np.arange(num_sky_positions)
+    sky_positions = sky_grid_from_cli(parser, args)
+    sky_pos_indices = np.arange(sky_positions.shape[1])
 
     logging.info("Determining time slide shifts and time delays")
     # Create a dictionary of time slide shifts; IFO 0 is unshifted
@@ -349,7 +376,7 @@ with ctx:
             )
             for ifo in args.instruments
         }
-        for position_index in positions_array
+        for position_index in sky_pos_indices
     }
     time_delay_idx = {
         slide: {
@@ -365,7 +392,7 @@ with ctx:
                 )
                 for ifo in args.instruments
             }
-            for position_index in positions_array
+            for position_index in sky_pos_indices
         }
         for slide in slide_ids
     }
@@ -516,25 +543,8 @@ with ctx:
         n_bank = len(bank)
         logging.info("Template bank size after thinning: %d", n_bank)
 
-    # Antenna patterns
-    antenna_patterns = [
-        [[0 for i in range(2)] for position_index in positions_array]
-        for i in range(len(args.instruments))
-    ]
-    for i, ifo in enumerate(args.instruments):
-        for position_index in positions_array:
-            antenna_patterns[i][position_index] = detector.Detector(
-                ifo
-            ).antenna_pattern(
-                sky_positions[0][position_index],
-                sky_positions[1][position_index],
-                polarization=0,
-                t_gps=t_gps,
-            )
-
-    ap = {}
-    for i, ifo in enumerate(args.instruments):
-        ap[ifo] = antenna_patterns[i]
+    logging.info("Calculating antenna pattern functions at every sky position")
+    antenna_pattern = calculate_antenna_pattern(args, sky_pos_indices)
 
     logging.info("Starting the filtering...")
     # Loop over templates
@@ -620,11 +630,11 @@ with ctx:
             for slide in range(args.num_slides + 1):
                 logging.info("Analyzing slide %d/%d", slide, args.num_slides)
                 # Loop over sky positions
-                for position_index in positions_array:
+                for position_index in sky_pos_indices:
                     logging.info(
                         "Analyzing sky position %d/%d",
                         position_index + 1,
-                        len(positions_array),
+                        len(sky_pos_indices),
                     )
                     # Adjust the indices of triggers (if there are any)
                     # and store trigger indices list in a dictionary;
@@ -724,11 +734,11 @@ with ctx:
                         logging.info("Calculating their coherent statistics")
                         # Plus and cross antenna pattern dictionaries
                         fp = {
-                            ifo: ap[ifo][position_index][0]
+                            ifo: antenna_pattern[ifo][position_index][0]
                             for ifo in args.instruments
                         }
                         fc = {
-                            ifo: ap[ifo][position_index][1]
+                            ifo: antenna_pattern[ifo][position_index][1]
                             for ifo in args.instruments
                         }
                         # The cut is applied after the left vs right
