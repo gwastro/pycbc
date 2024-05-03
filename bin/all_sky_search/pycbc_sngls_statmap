@@ -341,11 +341,12 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
 
     logging.info("Calculating FAN from background statistic values")
     back_stat = fore_stat = all_trigs.stat
+    bkg_dec_facs = all_trigs.decimation_factor
 
     bg_far, fg_far = significance.get_far(
         back_stat,
         fore_stat,
-        numpy.ones_like(back_stat),
+        bkg_dec_facs,
         fg_time,
         **significance_dict[ifo])
 
@@ -375,7 +376,7 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
         _, fg_far_exc = significance.get_far(
             back_stat_exc,
             fore_stat,
-            numpy.ones_like(back_stat_exc),
+            bkg_exc_dec_facs,
             fg_time_exc,
             **significance_dict[ifo])
 
