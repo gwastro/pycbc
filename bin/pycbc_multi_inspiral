@@ -768,7 +768,6 @@ with ctx:
                             )
                             # Apply cut to remove points with left or right
                             # polarized coherent SNR below threshold
-                            #if len(coinc_snr) != 0:
                             l_above = rho_coh_l > args.coinc_threshold
                             r_above = rho_coh_r > args.coinc_threshold
                             lr_above = l_above & r_above
