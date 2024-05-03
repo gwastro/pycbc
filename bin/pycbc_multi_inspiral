@@ -80,7 +80,7 @@ def calculate_antenna_pattern(args, sky_pos_indices):
     """
     antenna_pattern = {}
     for ifo in args.instruments:
-        curr_det = Detector(ifo)
+        curr_det = detector.Detector(ifo)
         antenna_pattern[ifo] = [None] * len(sky_pos_indices)
         for index in sky_pos_indices:
             antenna_pattern[ifo][index] = curr_det.antenna_pattern(
