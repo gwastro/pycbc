@@ -19,7 +19,7 @@ from pycbc import (
 )
 from pycbc.types import MultiDetOptionAction, load_frequencyseries
 import pycbc.conversions as cv
-from pycbc.io.live import CandidateForGraceDB
+from pycbc.io.gracedb import CandidateForGraceDB
 from pycbc.io.hdf import load_hdf5_to_dict
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
