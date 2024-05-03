@@ -121,7 +121,6 @@ class HFile(h5py.File):
 
         # datasets being returned (possibly)
         data = {}
-        indices = np.array([], dtype=np.uint64)
         for arg in args:
             data[arg] = []
 
@@ -134,12 +133,6 @@ class HFile(h5py.File):
                 # Nothing allowed through the mask in this chunk
                 i += chunksize
                 continue
-
-            if all(mask[i:r]):
-                # Everything allowed through the mask in this chunk
-                submask = np.arange(r - i)
-            else:
-                submask = np.flatnonzero(mask[i:r])
 
             # Read each chunk's worth of data
             partial_data = {arg: refs[arg][i:r][mask[i:r]]
@@ -156,9 +149,10 @@ class HFile(h5py.File):
 
             # Find where it passes the function
             keep = fcn(*partial)
+            remove = np.invert(keep)
 
-            # Keep the indices which pass the function:
-            indices = np.concatenate([indices, submask[keep] + i])
+            # Remove indices which don't pass the function:
+            mask[i:r][remove] = False
 
             if return_data:
                 # Store the dataset results that pass the function
@@ -173,7 +167,7 @@ class HFile(h5py.File):
         else:
             return_tuple = None
 
-        return indices.astype(np.uint64), return_tuple
+        return np.flatnonzero(mask), return_tuple
 
 
 class DictArray(object):
