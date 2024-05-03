@@ -46,7 +46,7 @@ pycbc_multi_inspiral \
     --approximant IMRPhenomD \
     --order -1 \
     --low-frequency-cutoff 30 \
-    --snr-threshold 3.0 \
+    --sngl-snr-threshold 3.0 \
     --chisq-bins "0.9*get_freq('fSEOBNRv4Peak',params.mass1,params.mass2,params.spin1z,params.spin2z)**(2./3.)" \
     --pad-data 8 \
     --strain-high-pass 25 \
