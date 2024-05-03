@@ -75,7 +75,7 @@ def sky_grid_from_cli(parser, args):
 
 
 def calculate_antenna_pattern(args, sky_pos_indices):
-    """Precalculate the antenna pattern functions for all detectors and sky
+    """Calculate the antenna pattern functions for all detectors and sky
     positions.
     """
     antenna_pattern = {}
