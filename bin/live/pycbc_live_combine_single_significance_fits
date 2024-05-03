@@ -104,8 +104,8 @@ for f in args.trfits_files:
             continue
 
         # Get the start/end times of the trigger_fits file
-        fit_start = fits_f.attrs['fit_start']
-        fit_end = fits_f.attrs['fit_end']
+        fit_start = fits_f.attrs['fit_start_gps_time']
+        fit_end = fits_f.attrs['fit_end_gps_time']
         trigger_file_starts.append(fit_start)
         trigger_file_ends.append(fit_end)
         seg = segmentlist([segment(fit_start, fit_end)])
