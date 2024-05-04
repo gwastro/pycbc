@@ -190,8 +190,9 @@ if sys.platform == 'darwin':
         if hasattr(multiprocessing, 'set_start_method'):
             multiprocessing.set_start_method('fork')
     elif multiprocessing.get_start_method() != 'fork':
-        warnings.warn("PyCBC requires the use of the 'fork' start method for multiprocessing, "
-                      "it is currently set to {}".format(multiprocessing.get_start_method()))
+        warnings.warn("PyCBC requires the use of the 'fork' start method"
+                      " for multiprocessing, it is currently set to {}"
+                      .format(multiprocessing.get_start_method()))
 else:
     HAVE_OMP = True
 
