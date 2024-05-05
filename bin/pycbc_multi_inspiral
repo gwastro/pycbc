@@ -215,8 +215,8 @@ parser.add_argument(
     action="store",
     type=float,
     default=4.0,
-    help="Single detector SNR threshold: the two most sensitive detectors "
-    "must have SNR above this (default: 3)."
+    metavar='THRESHOLD',
+    help="Single IFO SNR threshold for trigger generation (default: 4)."
 )
 parser.add_argument(
     "--chisq-index",
