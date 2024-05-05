@@ -48,7 +48,6 @@ from pycbc import (
 )
 from pycbc.events import ranking, coherent as coh, EventManagerCoherent
 from pycbc.filter import MatchedFilterControl
-from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.types import zeros, float32, complex64
 from pycbc.vetoes import sgchisq
 
