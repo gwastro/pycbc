@@ -223,7 +223,7 @@ parser.add_argument(
     action="store",
     type=float,
     default=6.0,
-    help="chisq_index for the reweighting of coherent SNR by chi-square "
+    help="chisq-index (q) for the reweighting of coherent SNR by chi-square "
     "(default: 6)."
 )
 parser.add_argument(
@@ -231,7 +231,8 @@ parser.add_argument(
     action="store",
     type=float,
     default=2.0,
-    help="chisq_nhigh for newSNR calculation (default: 2)."
+    help="chisq-nhigh (n) for the reweighting of coherent SNR by chi-square "
+    "(default: 2)."
 )
 parser.add_argument(
     "--do-null-cut",
