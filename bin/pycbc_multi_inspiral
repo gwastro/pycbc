@@ -933,7 +933,7 @@ with ctx:
                             )
                             # Calculate null reweighted SNR
                             reweighted_snr = coh.reweight_snr_by_null(
-                                reweighted_snr, null, rho_coh
+                                reweighted_snr, null, rho_coh,
                                 null_min=args.null_min,
                                 null_grad=args.null_grad,
                                 null_step=args.null_step,
