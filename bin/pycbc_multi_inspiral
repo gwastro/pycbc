@@ -103,7 +103,6 @@ time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action=pycbc.version.Version)
 add_common_pycbc_options(parser)
-ppu.pygrb_add_bestnr_opts(parser)
 parser.add_argument("--output", type=str)
 parser.add_argument(
     "--instruments",
@@ -213,11 +212,35 @@ parser.add_argument(
     "value will be discarded.",
 )
 parser.add_argument(
-    "--do-null-cut", action='store_true', help="Apply a cut based on null "
-    "SNR: retained triggers have null SNR smaller than null-min and "
-    "coherent SNR smaller than null-step, or null SNR smaller than "
-    "(null-grad * coherent SNR + null_min) and coherent SNR greater than "
-    "null-step."
+    "--sngl-snr-threshold",
+    action="store",
+    type=float,
+    default=4.0,
+    help="Single detector SNR threshold: the two most sensitive detectors "
+    "must have SNR above this (default: 3)."
+)
+parser.add_argument(
+    "--chisq-index",
+    action="store",
+    type=float,
+    default=6.0,
+    help="chisq_index for the reweighting of coherent SNR by chi-square "
+    "(default: 6)."
+)
+parser.add_argument(
+    "--chisq-nhigh",
+    action="store",
+    type=float,
+    default=2.0,
+    help="chisq_nhigh for newSNR calculation (default: 2)."
+)
+parser.add_argument(
+    "--do-null-cut",
+    action='store_true',
+    help="Apply a cut based on null SNR: retained triggers have null SNR "
+    "smaller than null-min and coherent SNR smaller than null-step, or null "
+    "SNR smaller than (null-grad * coherent SNR + null_min) and coherent SNR "
+    "greater than null-step."
 )
 parser.add_argument(
     "--null-min",
