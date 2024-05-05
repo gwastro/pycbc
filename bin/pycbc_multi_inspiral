@@ -213,29 +213,35 @@ parser.add_argument(
     "value will be discarded.",
 )
 parser.add_argument(
-    "--do-null-cut", action='store_true', help="Apply a cut based on null SNR."
+    "--do-null-cut", action='store_true', help="Apply a cut based on null "
+    "SNR: retained triggers have null SNR smaller than null-min and "
+    "coherent SNR smaller than null-step, or null SNR smaller than "
+    "(null-grad * coherent SNR + null_min) and coherent SNR greater than "
+    "null-step."
 )
 parser.add_argument(
     "--null-min",
     type=float,
     default=5.25,
-    help="Triggers with null_snr above this value will be discarded "
-    "(default: 5.25)."
+    help="In addition to its usage with the flag --do-null-cut, null-min is "
+    "used in SNR reweighting: reweighting happens for triggers with null SNR "
+    "greater than (null-min - 1) and coherent SNR smaller than null-step, or "
+    "null SNR greater than (null-grad * coherent SNR + null_min - 1) and "
+    "coherent SNR greater than null-step (default: 5.25)."
 )
 parser.add_argument(
     "--null-grad",
     type=float,
     default=0.2,
-    help="The gradient of the line defining the null cut "
-    "after the null step (default: 0.2)."
+    help="The gradient of the null SNR cut and/or of the SNR reweighting "
+    "theshold when coherent SNR > null_step (default: 0.2)."
 )
 parser.add_argument(
     "--null-step",
     type=float,
     default=20.0,
-    help="Triggers with coherent snr above null_step will "
-    "be cut according to the null_grad and null_min "
-    "(default: 20)."
+    help="The threshold for a second condition set to cut in null SNR "
+    "and/or reweight SNR (default: 20)."
 )
 parser.add_argument(
     "--trigger-time",
@@ -905,6 +911,9 @@ with ctx:
                             # Calculate null reweighted SNR
                             reweighted_snr = coh.reweight_snr_by_null(
                                 reweighted_snr, null, rho_coh
+                                null_min=args.null_min,
+                                null_grad=args.null_grad,
+                                null_step=args.null_step,
                             )
                         elif nifo == 2:
                             reweighted_snr = ranking.newsnr(
