@@ -103,12 +103,6 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         missed_data[param] = inj_data['missed/%s' % param][...]
         found_data[param] = inj_data['found/%s' % param][...]
 
-    # Calculate injections mchirp
-    missed_data['mchirp'] = mchirp_from_mass1_mass2(missed_data['mass1'],
-                                                    missed_data['mass2'])
-    found_data['mchirp'] = mchirp_from_mass1_mass2(found_data['mass1'],
-                                                   found_data['mass2'])
-
     # Calculate effective distance for the ifos
     found_data = additional_injection_data(found_data, ifos)
     missed_data = additional_injection_data(missed_data, ifos)
