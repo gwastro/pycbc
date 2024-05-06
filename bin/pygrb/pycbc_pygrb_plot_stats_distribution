@@ -49,25 +49,17 @@ __program__ = "pycbc_pygrb_plot_stats_distribution"
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
-parser.add_argument("-F", "--offsource-file", action="store", required=True,
-                    default=None, help="Location of off-source trigger file")
-parser.add_argument("-x", "--x-variable", default=None, required=True,
+parser.add_argument("-F", "--trig-file", action="store", required=True,
+                    help="Location of off-source trigger file")
+parser.add_argument("-x", "--x-variable", required=True,
                     choices=["bestnr", "snr", "snruncut"],
                     help="Quantity to plot on the horizontal axis.")
-#parser.add_argument("-S", "--seed", action="store", type=int,
-#                    default=1234, help="Seed to initialize Monte Carlo.")
-ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
-# Check options
-if not opts.newsnr_threshold:
-    opts.newsnr_threshold = opts.snr_threshold
-
 # Store options used multiple times in local variables
-trig_file = opts.offsource_file
-chisq_nhigh = opts.chisq_nhigh
+trig_file = opts.trig_file
 stat = opts.x_variable
 
 # Set output directory
@@ -98,7 +90,8 @@ logging.info("%d trials generated.", total_trials)
 
 # Extract basic trigger properties and store as dictionaries
 trig_time, trig_snr, trig_bestnr = \
-    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict, segment_dict, opts)
+    ppu.extract_basic_trig_properties(trial_dict, trigs, slide_dict,
+                                      segment_dict, opts)
 
 # Calculate SNR and BestNR values and maxima
 time_veto_max_snr = {}
@@ -119,28 +112,31 @@ for slide_id in slide_dict:
             continue
         # Max SNR
         time_veto_max_snr[slide_id][j] = \
-                        max(trig_snr[slide_id][trial_cut])
+            max(trig_snr[slide_id][trial_cut])
         # Max BestNR
         time_veto_max_bestnr[slide_id][j] = \
-                        max(trig_bestnr[slide_id][trial_cut])
+            max(trig_bestnr[slide_id][trial_cut])
         # Max SNR for triggers passing SBVs
         sbv_cut = trig_bestnr[slide_id] != 0
-        if not (trial_cut&sbv_cut).any():
+        if not (trial_cut & sbv_cut).any():
             continue
         time_veto_max_snr_uncut[slide_id][j] =\
-                          max(trig_snr[slide_id][trial_cut & sbv_cut])
+            max(trig_snr[slide_id][trial_cut & sbv_cut])
 
 # This is the data that will be plotted
 full_time_veto_max_snr = ppu.sort_stat(time_veto_max_snr)
 full_time_veto_max_snr_uncut = ppu.sort_stat(time_veto_max_snr_uncut)
-_, _, full_time_veto_max_bestnr =\
-    ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr, total_trials)
+_, _, full_time_veto_max_bestnr = \
+    ppu.max_median_stat(slide_dict, time_veto_max_bestnr, trig_bestnr,
+                        total_trials)
 # The 0.'s here force the histograms to start at (0, 1) if no trial
 # returned a no-event (i.e., BestNR = 0)
 if full_time_veto_max_bestnr[0] != 0.:
     full_time_veto_max_snr = np.concatenate(([0.], full_time_veto_max_snr))
-    full_time_veto_max_snr_uncut = np.concatenate(([0.], full_time_veto_max_snr_uncut))
-    full_time_veto_max_bestnr = np.concatenate(([0.], full_time_veto_max_bestnr))
+    full_time_veto_max_snr_uncut = \
+        np.concatenate(([0.], full_time_veto_max_snr_uncut))
+    full_time_veto_max_bestnr = \
+        np.concatenate(([0.], full_time_veto_max_bestnr))
 
 logging.info("SNR and bestNR maxima calculated.")
 
@@ -206,7 +202,8 @@ ax.fill_between(x + dx/2, lower, upper, alpha=0.3, facecolor='y', step='mid')
 ax.set_xlim((0.9 * min_stat, 1.1 * max_stat))
 ax.set_ylim((0.6/N, ymax))
 plot_title = "Cumulative distribution of background triggers"
-plot_caption = "Background cumulative distribution of the %s " %x_label_dict[stat]
+plot_caption = "Background cumulative distribution of the %s " % \
+    x_label_dict[stat]
 fig_path = opts.output_file
 save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
                        title=plot_title, caption=plot_caption)
