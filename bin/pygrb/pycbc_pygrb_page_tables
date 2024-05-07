@@ -103,12 +103,6 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         missed_data[param] = inj_data['missed/%s' % param][...]
         found_data[param] = inj_data['found/%s' % param][...]
 
-    # Calculate injections mchirp
-    missed_data['mchirp'] = mchirp_from_mass1_mass2(missed_data['mass1'],
-                                                    missed_data['mass2'])
-    found_data['mchirp'] = mchirp_from_mass1_mass2(found_data['mass1'],
-                                                   found_data['mass2'])
-
     # Calculate effective distance for the ifos
     found_data = additional_injection_data(found_data, ifos)
     missed_data = additional_injection_data(missed_data, ifos)
@@ -136,8 +130,19 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     # parameters. This is used to marginalize over calibration errors.
     # also save the snr per ifo
     for ifo in ifos:
-        found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
-        found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
+        if np.all(inj_data['network/event_id'][...] == 
+                      inj_data['%s/event_id' % ifo][...]):
+            found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
+            found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
+        else:
+            # Sort the ifo event_id with respect to the network event_id
+            ifo_sorted_indices = np.argsort(inj_data['network/event_id'][...][
+                np.argsort(inj_data['network/event_id'])].searchsorted(
+                    inj_data['%s/event_id' % ifo][...]))
+            found_data['sigmasq_%s' % ifo] = \
+                inj_data['%s/sigmasq' % ifo][...][ifo_sorted_indices]
+            found_data['snr_%s' % ifo] = \
+                inj_data['%s/snr' % ifo][...][ifo_sorted_indices]
     # BestNRs
     found_data['bestnr'] = reweightedsnr_cut(found_data['reweighted_snr'][...],
                                              snr_threshold)
@@ -369,6 +374,10 @@ if lofft_outfile:
         trig_id = offsource_trigs[i][1]
         trig_index = \
             np.where(trig_data['network/event_id'] == trig_id)[0][0]
+        ifo_trig_index = {
+            ifo: np.where(trig_data['%s/event_id' % ifo] == trig_id)[0][0]
+            for ifo in ifos
+        }
         trig_slide_id = int(trig_data['network/slide_id'][trig_index])
 
         # Get trial of trigger, triggers with 'No trial' should have
@@ -400,7 +409,7 @@ if lofft_outfile:
              trig_data['network/coherent_snr'][trig_index],
              trig_data['network/my_network_chisq'][trig_index],
              trig_data['network/null_snr'][trig_index]]
-        d.extend([trig_data['%s/snr' % ifo][trig_index] for ifo in ifos])
+        d.extend([trig_data['%s/snr' % ifo][ifo_trig_index[ifo]] for ifo in ifos])
         d.extend([slide_dict[trig_slide_id][ifo] for ifo in ifos])
         d.append(bestnr)
         td.append(d)
@@ -499,6 +508,10 @@ if onsource_file:
     if loud_on_bestnr_trigs:
         trig_id = loud_on_bestnr_trigs
         trig_index = np.where(on_trigs['network/event_id'] == trig_id)[0][0]
+        ifo_trig_index = {
+            ifo: np.where(on_trigs['%s/event_id' % ifo] == trig_id)[0][0]
+            for ifo in ifos
+        }
         num_trials_louder = 0
         tot_off_snr = np.array([])
         for slide_id in slide_dict:
@@ -522,7 +535,7 @@ if onsource_file:
              on_trigs['network/coherent_snr'][trig_index],
              on_trigs['network/my_network_chisq'][trig_index],
              on_trigs['network/null_snr'][trig_index]] + \
-            [on_trigs['%s/snr' % ifo][trig_index] for ifo in ifos] + \
+            [on_trigs['%s/snr' % ifo][ifo_trig_index[ifo]] for ifo in ifos] + \
             [loud_on_bestnr]
         td.append(d)
     else:
