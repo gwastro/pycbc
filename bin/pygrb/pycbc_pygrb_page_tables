@@ -130,8 +130,11 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     # parameters. This is used to marginalize over calibration errors.
     # also save the snr per ifo
     for ifo in ifos:
-        if not np.all(inj_data['network/event_id'][...] == 
+        if np.all(inj_data['network/event_id'][...] == 
                       inj_data['%s/event_id' % ifo][...]):
+            found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
+            found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
+        else:
             # Sort the ifo event_id with respect to the network event_id
             ifo_sorted_indices = np.argsort(inj_data['network/event_id'][...][
                 np.argsort(inj_data['network/event_id'])].searchsorted(
@@ -140,9 +143,6 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
                 inj_data['%s/sigmasq' % ifo][...][ifo_sorted_indices]
             found_data['snr_%s' % ifo] = \
                 inj_data['%s/snr' % ifo][...][ifo_sorted_indices]
-        else:
-            found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
-            found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
     # BestNRs
     found_data['bestnr'] = reweightedsnr_cut(found_data['reweighted_snr'][...],
                                              snr_threshold)
