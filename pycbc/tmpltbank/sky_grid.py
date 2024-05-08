@@ -59,11 +59,17 @@ class SkyGrid:
         """
         if cli_args.sky_grid is not None:
             if cli_args.ra is not None or cli_args.dec is not None:
-                cli_parser.error('Use --sky-grid or --ra & --dec, not both')
+                cli_parser.error(
+                    'Please provide either a sky grid via --sky-grid or a '
+                    'single sky position via --ra and --dec, not both'
+                )
             return cls.read_from_file(cli_args.sky_grid)
         if cli_args.ra is not None and cli_args.dec is not None:
             return cls([cli_args.ra], [cli_args.dec])
-        cli_parser.error('--ra and --dec must be used together')
+        cli_parser.error(
+            'Please specify a sky grid via --sky-grid or a single sky '
+            'position via --ra and --dec'
+        )
 
     @classmethod
     def read_from_file(cls, path):
@@ -83,7 +89,10 @@ class SkyGrid:
 
     def calculate_antenna_patterns(self, detector_names, gps_time):
         """Calculate the antenna pattern functions at each point in the grid
-        for a list of GW detectors.
+        for a list of GW detectors. Return a dict, keyed by detector name,
+        whose items are 2-dimensional Numpy arrays. The first dimension of
+        these arrays runs over the sky grid, and the second dimension runs over
+        the plus and cross polarizations.
         """
         result = {}
         for det_name in detector_names:
@@ -91,13 +100,15 @@ class SkyGrid:
             result[det_name] = np.empty((len(self), 2))
             for i, (ra, dec) in enumerate(self):
                 result[det_name][i] = det.antenna_pattern(
-                    ra, dec, 0, t_gps=gps_time
+                    ra, dec, 0, polarization=0, t_gps=gps_time
                 )
         return result
 
     def calculate_time_delays(self, detectors, gps_time):
         """Calculate the time delays from the Earth center to a list of GW
-        detectors at each point in the grid.
+        detectors at each point in the grid. Return a dict, keyed by detector
+        name, whose items are 1-dimensional Numpy arrays containing the time
+        delays for each sky point.
         """
         result = {}
         for det_name in detector_names:
