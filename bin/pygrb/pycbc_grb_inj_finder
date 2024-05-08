@@ -293,10 +293,17 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
                 missed.append(i)
             else:
                 found.append(i)
-                eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
+                # the needed event_id is unique within the split_inj file
+                eid = event_id[l] if r - l == 1 \
+                    else event_id[l + snr[l:r].argmax()]
                 for x in triggers:
                     ij = x.split('/')
-                    out_trigs[ij[0]][ij[1]].append(triggers[x][eid])
+                    # assign a new, unique event_id to a found injections by
+                    # simply counting found injections
+                    if ij[1] == 'event_id':
+                        out_trigs[ij[0]][ij[1]].append(len(found)-1)
+                    else:
+                        out_trigs[ij[0]][ij[1]].append(triggers[x][eid])
 
         # record all injections
         if allinjections is None:
