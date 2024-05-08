@@ -94,11 +94,11 @@ class SkyGrid:
             result[det_name] = np.empty((len(self), 2))
             for i, (ra, dec) in enumerate(self):
                 result[det_name][i] = det.antenna_pattern(
-                    ra, dec, 0, polarization=0, t_gps=gps_time
+                    ra, dec, 0, t_gps=gps_time
                 )
         return result
 
-    def calculate_time_delays(self, detectors, gps_time):
+    def calculate_time_delays(self, detector_names, gps_time):
         """Calculate the time delays from the Earth center to a list of GW
         detectors at each point in the grid. Return a dict, keyed by detector
         name, whose items are 1-dimensional Numpy arrays containing the time
