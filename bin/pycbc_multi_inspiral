@@ -53,11 +53,9 @@ from pycbc.vetoes import sgchisq
 
 
 def sky_grid_from_cli(parser, args):
-    """Read the sky grid or the single sky position given the CLI arguments.
-    """
-    if (
-        args.sky_grid is not None
-        and (args.ra is not None or args.dec is not None)
+    """Read the sky grid or the single sky position given the CLI arguments."""
+    if args.sky_grid is not None and (
+        args.ra is not None or args.dec is not None
     ):
         parser.error(
             'Please provide either a sky grid via --sky-grid or a '
@@ -190,12 +188,10 @@ parser.add_argument(
 parser.add_argument(
     "--ra",
     type=float,
-    help="Right ascension of sky point to search (radians),"
+    help="Right ascension of sky point to search (radians),",
 )
 parser.add_argument(
-    "--dec",
-    type=float,
-    help="Declination of sky point to search (radians),"
+    "--dec", type=float, help="Declination of sky point to search (radians),"
 )
 parser.add_argument(
     "--sky-grid",
@@ -216,7 +212,7 @@ parser.add_argument(
     type=float,
     default=4.0,
     metavar='THRESHOLD',
-    help="Single IFO SNR threshold for trigger generation (default: 4)."
+    help="Single IFO SNR threshold for trigger generation (default: 4).",
 )
 parser.add_argument(
     "--chisq-index",
@@ -224,7 +220,7 @@ parser.add_argument(
     type=float,
     default=6.0,
     help="chisq-index (q) for the reweighting of coherent SNR by chi-square "
-    "(default: 6)."
+    "(default: 6).",
 )
 parser.add_argument(
     "--chisq-nhigh",
@@ -232,7 +228,7 @@ parser.add_argument(
     type=float,
     default=2.0,
     help="chisq-nhigh (n) for the reweighting of coherent SNR by chi-square "
-    "(default: 2)."
+    "(default: 2).",
 )
 parser.add_argument(
     "--do-null-cut",
@@ -240,7 +236,7 @@ parser.add_argument(
     help="Apply a cut based on null SNR: retained triggers have null SNR "
     "smaller than null-min and coherent SNR smaller than null-step, or null "
     "SNR smaller than (null-grad * coherent SNR + null_min) and coherent SNR "
-    "greater than null-step."
+    "greater than null-step.",
 )
 parser.add_argument(
     "--null-min",
@@ -250,21 +246,21 @@ parser.add_argument(
     "used in SNR reweighting: reweighting happens for triggers with null SNR "
     "greater than (null-min - 1) and coherent SNR smaller than null-step, or "
     "null SNR greater than (null-grad * coherent SNR + null_min - 1) and "
-    "coherent SNR greater than null-step (default: 5.25)."
+    "coherent SNR greater than null-step (default: 5.25).",
 )
 parser.add_argument(
     "--null-grad",
     type=float,
     default=0.2,
     help="The gradient of the null SNR cut and/or of the SNR reweighting "
-    "theshold when coherent SNR > null_step (default: 0.2)."
+    "theshold when coherent SNR > null_step (default: 0.2).",
 )
 parser.add_argument(
     "--null-step",
     type=float,
     default=20.0,
     help="The threshold for a second condition set to cut in null SNR "
-    "and/or reweight SNR (default: 20)."
+    "and/or reweight SNR (default: 20).",
 )
 parser.add_argument(
     "--trigger-time",
@@ -353,13 +349,15 @@ with ctx:
         else:
             vname = "Sample rate"
             err_msg = " must be consistent across all ifos."
-            assert sample_rate == strain_dict[ifo].sample_rate, vname+err_msg
+            assert sample_rate == strain_dict[ifo].sample_rate, vname + err_msg
             vname = "Frequency length"
-            assert flen == strain_segments_dict[ifo].freq_len, vname+err_msg
+            assert flen == strain_segments_dict[ifo].freq_len, vname + err_msg
             vname = "Time length"
-            assert tlen == strain_segments_dict[ifo].time_len, vname+err_msg
+            assert tlen == strain_segments_dict[ifo].time_len, vname + err_msg
             vname = "delta_f (=segment length inverse)"
-            assert delta_f == strain_segments_dict[ifo].delta_f, vname+err_msg
+            assert delta_f == strain_segments_dict[ifo].delta_f, (
+                vname + err_msg
+            )
     # segments is a dictionary of frequency domain objects, each one of which
     # is the Fourier transform of the segments in strain_segments_dict
     logging.info("Making frequency-domain data segments")
@@ -729,7 +727,7 @@ with ctx:
                         if len(coinc_idx) != 0:
                             logging.info(
                                 "With max coincident SNR = %.2f",
-                                max(rho_coinc)
+                                max(rho_coinc),
                             )
                     # If there is only one IFO, just take its triggers
                     # and their SNRs
@@ -741,9 +739,7 @@ with ctx:
                         }
                     else:
                         coinc_triggers = {}
-                        logging.info(
-                            "No coincident triggers were found"
-                        )
+                        logging.info("No coincident triggers were found")
                     # If there are triggers above coinc threshold and more
                     # than 2 IFOs, then calculate the coherent statistics for
                     # them and apply the cut on coherent SNR (with threshold
@@ -774,7 +770,7 @@ with ctx:
                             ) = coh.coherent_snr(
                                 coinc_triggers,
                                 coinc_idx,
-                                0.,
+                                0.0,
                                 project_l,
                                 rho_coinc,
                             )
@@ -790,7 +786,7 @@ with ctx:
                             ) = coh.coherent_snr(
                                 coinc_triggers,
                                 coinc_idx,
-                                0.,
+                                0.0,
                                 project_r,
                                 rho_coinc,
                             )
@@ -804,11 +800,13 @@ with ctx:
                             coinc_idx_l = coinc_idx_l[lr_above]
                             coinc_idx_r = coinc_idx_r[lr_above]
                             for ifo in coinc_triggers_l.keys():
-                                coinc_triggers_l[ifo] = \
-                                    coinc_triggers_l[ifo][lr_above]
+                                coinc_triggers_l[ifo] = coinc_triggers_l[ifo][
+                                    lr_above
+                                ]
                             for ifo in coinc_triggers_r.keys():
-                                coinc_triggers_r[ifo] = \
-                                    coinc_triggers_r[ifo][lr_above]
+                                coinc_triggers_r[ifo] = coinc_triggers_r[ifo][
+                                    lr_above
+                                ]
                             rho_coinc_l = rho_coinc_l[lr_above]
                             rho_coinc_r = rho_coinc_r[lr_above]
                             # Point by point, track the larger of the two
@@ -923,20 +921,26 @@ with ctx:
                         # Calculate chisq reweighted SNR
                         if nifo > 2:
                             reweighted_snr = ranking.newsnr(
-                                rho_coh, network_chisq_dict,
-                                q=args.chisq_index, n=args.chisq_nhigh
+                                rho_coh,
+                                network_chisq_dict,
+                                q=args.chisq_index,
+                                n=args.chisq_nhigh,
                             )
                             # Calculate null reweighted SNR
                             reweighted_snr = coh.reweight_snr_by_null(
-                                reweighted_snr, null, rho_coh,
+                                reweighted_snr,
+                                null,
+                                rho_coh,
                                 null_min=args.null_min,
                                 null_grad=args.null_grad,
                                 null_step=args.null_step,
                             )
                         elif nifo == 2:
                             reweighted_snr = ranking.newsnr(
-                                rho_coinc, network_chisq_dict,
-                                q=args.chisq_index, n=args.chisq_nhigh
+                                rho_coinc,
+                                network_chisq_dict,
+                                q=args.chisq_index,
+                                n=args.chisq_nhigh,
                             )
                         else:
                             rho_sngl = abs(
@@ -945,8 +949,10 @@ with ctx:
                                 ]
                             )
                             reweighted_snr = ranking.newsnr(
-                                rho_sngl, network_chisq_dict,
-                                q=args.chisq_index, n=args.chisq_nhigh
+                                rho_sngl,
+                                network_chisq_dict,
+                                q=args.chisq_index,
+                                n=args.chisq_nhigh,
                             )
                         # All out vals must be the same length, so single
                         # value entries are repeated once per event
