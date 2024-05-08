@@ -31,7 +31,6 @@ import argparse
 import numpy as np
 
 from pycbc import (
-    detector,
     fft,
     init_logging,
     inject,
@@ -578,7 +577,9 @@ with ctx:
         logging.info("Template bank size after thinning: %d", n_bank)
 
     logging.info("Calculating antenna pattern functions at every sky position")
-    antenna_pattern = calculate_antenna_patterns(args.instruments, t_gps)
+    antenna_pattern = sky_positions.calculate_antenna_patterns(
+        args.instruments, t_gps
+    )
 
     logging.info("Starting the filtering...")
     # Loop over templates
