@@ -31,26 +31,22 @@ class SkyGrid:
         self.positions = np.vstack([ra, dec]).T
 
     def __len__(self):
-        """Returns the number of points in the sky grid.
-        """
+        """Returns the number of points in the sky grid."""
         return self.positions.shape[0]
 
     def __getitem__(self, index):
-        """Returns the coordinates of a single point in the grid.
-        """
+        """Returns the coordinates of a single point in the grid."""
         return self.positions[index]
 
     @property
     def ras(self):
-        """Returns all right ascensions.
-        """
-        return self.positions[:,0]
+        """Returns all right ascensions."""
+        return self.positions[:, 0]
 
     @property
     def decs(self):
-        """Returns all declinations.
-        """
-        return self.positions[:,1]
+        """Returns all declinations."""
+        return self.positions[:, 1]
 
     @classmethod
     def from_cli(cls, cli_parser, cli_args):
@@ -73,16 +69,14 @@ class SkyGrid:
 
     @classmethod
     def read_from_file(cls, path):
-        """Initialize a sky grid from a given HDF5 file.
-        """
+        """Initialize a sky grid from a given HDF5 file."""
         with h5py.File(path, 'r') as hf:
             ra = hf['ra'][:]
             dec = hf['dec'][:]
         return cls(ra, dec)
 
     def write_to_file(self, path):
-        """Writes a sky grid to an HDF5 file.
-        """
+        """Writes a sky grid to an HDF5 file."""
         with h5py.File(path, 'w') as hf:
             hf['ra'] = self.ras
             hf['dec'] = self.decs

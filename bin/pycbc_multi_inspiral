@@ -414,12 +414,12 @@ with ctx:
         slide: {
             position_index: {
                 ifo: round(
-                        (
-                            time_delays_zerolag[ifo][position_index]
-                            + time_slides[ifo][slide]
-                        )
-                        * sample_rate
+                    (
+                        time_delays_zerolag[ifo][position_index]
+                        + time_slides[ifo][slide]
                     )
+                    * sample_rate
+                )
                 for ifo in args.instruments
             }
             for position_index in range(len(sky_positions))
@@ -647,7 +647,9 @@ with ctx:
                 snr_dict[ifo] = (
                     snr_ts[matched_filter[ifo].segments[s_num].analyze] * norm
                 )
-                assert len(snr_dict[ifo]) > 0, f'SNR time series for {ifo} is empty'
+                assert (
+                    len(snr_dict[ifo]) > 0
+                ), f'SNR time series for {ifo} is empty'
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
                 idx[ifo] = ind.copy()
