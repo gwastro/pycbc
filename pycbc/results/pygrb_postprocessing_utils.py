@@ -126,25 +126,20 @@ def pygrb_add_injmc_opts(parser):
 
 
 def pygrb_add_bestnr_opts(parser):
-    """Add to the parser object the arguments used for BestNR calculation."""
+    """Add to the parser object the arguments used for BestNR calculation,
+    null SNR, single SNR cut and null SNR cut."""
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument("-Q", "--chisq-index", action="store", type=float,
-                        default=6.0, help="chisq_index for newSNR calculation")
+                        default=6.0, help="chisq_index for newSNR " +
+                        "calculation (default: 6)")
     parser.add_argument("-N", "--chisq-nhigh", action="store", type=float,
-                        default=2.0, help="nhigh for newSNR calculation")
+                        default=2.0, help="chisq_nhigh for newSNR " +
+                        "calculation (default: 2")
     parser.add_argument("-B", "--sngl-snr-threshold", action="store",
                         type=float, default=4.0, help="Single detector SNR " +
                         "threshold, the two most sensitive detectors " +
                         "should have SNR above this.")
-    parser.add_argument("-d", "--snr-threshold", action="store", type=float,
-                        default=6.0, help="SNR threshold for recording " +
-                        "triggers.")
-    parser.add_argument("-c", "--newsnr-threshold", action="store", type=float,
-                        default=6.0, help="NewSNR threshold for " +
-                        "calculating the chisq of triggers (based on value " +
-                        "of auto and bank chisq  values. By default will " +
-                        "take the same value as snr-threshold.")
     parser.add_argument("-A", "--null-snr-threshold", action="store",
                         default="3.5,5.25",
                         help="Comma separated lower,higher null SNR " +
