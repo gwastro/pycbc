@@ -152,13 +152,22 @@ def pygrb_add_bestnr_opts(parser):
                         "increase above the threshold")
 
 
+def pygrb_add_bestnr_cut_opt(parser):
+    """Add to the parser object an argument to place a threshold on BestNR."""
+    if parser is None:
+        parser = argparse.ArgumentParser()
+    parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
+                        default=6.0,
+                        help="Cut triggers with NewSNR less than THRESHOLD")
+
+
 # =============================================================================
 # Wrapper to read segments files
 # =============================================================================
 def _read_seg_files(seg_files):
     """Read segments txt files"""
 
-    if len(seg_files) != 3:
+    if len(seg_files) != 3 or seg_files is None:
         err_msg = "The location of three segment files is necessary."
         err_msg += "[bufferSeg.txt, offSourceSeg.txt, onSourceSeg.txt]"
         raise RuntimeError(err_msg)
