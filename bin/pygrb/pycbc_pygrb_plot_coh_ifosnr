@@ -81,15 +81,18 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         data['coherent'] = trigs['network/coherent_snr'][:]
 
         # Get single ifo SNR data
+        ifo_trig_index = {}
         for ifo in ifos:
-            att = ifo.lower()
-            # TODO: do we want pycbc_grb_inj_finder or other executables upstream to handle this?
-            data['single'][ifo] = trigs['%s/snr' % ifo][:]
+            sorted_ifo_ids = [numpy.where(trigs['%s/event_id' % ifo] == idx)[0]
+                              for idx in trigs['network/event_id']]
+            sorted_ifo_ids = numpy.array(sorted_ifo_ids).flatten()
+            ifo_trig_index[ifo] = sorted_ifo_ids
+            data['single'][ifo] = trigs['%s/snr' % ifo][:][sorted_ifo_ids]
 
         # Get sigma for each ifo
         for ifo in ifos:
             sigma = dict((ifo, list(
-                trigs['%s/sigmasq' % ifo])) for ifo in ifos)
+                trigs['%s/sigmasq' % ifo][:][ifo_trig_index[ifo]])) for ifo in ifos)
 
         # Create array for sigma_tot
         sigma_tot = numpy.zeros(num_trigs)
