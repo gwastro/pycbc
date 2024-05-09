@@ -125,13 +125,7 @@ class LISAEarlyWarningModel(BaseModel):
 
         # set up base likelihood parameters
         super().__init__(variable_params, **kwargs)
-        if "mode_array" not in static_params:
-            static_params["mode_array"] = [(2,2)]
 
-        run_phenomd = static_params.get("run_phenomd", "False")
-        if isinstance(run_phenomd, str):
-            run_phenomd = strtobool(run_phenomd)
-        static_params["run_phenomd"] = run_phenomd
         self.static_params = parse_mode_array(static_params)
 
         length = int(tlen * sample_rate)
