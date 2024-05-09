@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 import pycbc.version
 from pycbc import init_logging
+from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import pygrb_plotting_utils as plu
 
@@ -87,6 +88,21 @@ def reset_times(data_time, trig_time):
 
     return data_time
 
+# Apply reweighted SNR cut: when plotting reweighted SNR, keep all points to
+# show the impact of the cut, otherwise remove points with reweighted SNR
+# below threshold
+def prune_data(rw_snr, time_in, snr_in, opts, snr_type):
+    """Prune data from points with reweighted SNR below threshold"""
+
+    rw_snr = reweightedsnr_cut(rw_snr, opts.newsnr_threshold)
+    if snr_type == 'reweighted':
+        return time_in, rw_snr
+    mask = rw_snr == 0
+    time_out = numpy.ma.masked_array(time_in, mask=mask)
+    snr_out = numpy.ma.masked_array(snr_in, mask=mask)
+
+    return time_out, snr_out
+
 
 # =============================================================================
 # Main script starts here
@@ -103,7 +119,7 @@ parser.add_argument("--trigger-time", type=float, default=0,
 parser.add_argument("-y", "--y-variable", default=None,
                     choices=['coherent', 'single', 'reweighted', 'null'],
                     help="Quantity to plot on the vertical axis.")
-ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -160,6 +176,15 @@ start, end = get_start_end_times(trig_data_time, central_time)
 trig_data_time = reset_times(trig_data_time, central_time)
 if inj_file:
     inj_data_time = reset_times(inj_data_time, central_time)
+
+# Obtain rewighted SNRs and apply reweighted SNR cut
+trig_rw_snr = trig_data['network/reweighted_snr'][:]
+inj_rw_snr = inj_data['network/reweighted_snr'][:] if inj_file else None
+trig_data_time, trig_data_snr = \
+    prune_data(trig_rw_snr, trig_data_time, trig_data_snr, opts, snr_type)
+if inj_file:
+    inj_data_time, inj_data_snr = \
+        prune_data(inj_rw_snr, inj_data_time, inj_data_snr, opts, snr_type)
 
 # Generate plots
 logging.info("Plotting...")
