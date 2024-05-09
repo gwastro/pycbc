@@ -117,7 +117,7 @@ parser.add_argument("-C", "--cluster-window", action="store", type=float,
 parser.add_argument("--bank-file", action="store", type=str,
                     help="Location of the full template bank used.")
 ppu.pygrb_add_injmc_opts(parser)
-ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -128,17 +128,12 @@ bank_file = h5py.File(opts.bank_file, 'r')
 # Check options
 do_injections = opts.found_missed_file is not None
 
-if not opts.newsnr_threshold:
-    opts.newsnr_threshold = opts.snr_threshold
-
 # Store options used multiple times in local variables
 outdir = os.path.split(os.path.abspath(opts.background_output_file))[0]
 trig_file = opts.trig_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
 inj_set_name = opts.injection_set_name
-chisq_index = opts.chisq_index
-chisq_nhigh = opts.chisq_nhigh
 wf_err = opts.waveform_error
 cal_errs = {}
 cal_errs['G1'] = opts.g1_cal_error
@@ -152,12 +147,8 @@ cal_dc_errs['H1'] = opts.h1_dc_cal_error
 cal_dc_errs['K1'] = opts.k1_dc_cal_error
 cal_dc_errs['L1'] = opts.l1_dc_cal_error
 cal_dc_errs['V1'] = opts.v1_dc_cal_error
-snr_thresh = opts.snr_threshold
-sngl_snr_thresh = opts.sngl_snr_threshold
+# pycbc_multi_inspiral already applies sngl, coinc and null SNR cuts
 new_snr_thresh = opts.newsnr_threshold
-null_grad_thresh = opts.null_grad_thresh
-null_grad_val = opts.null_grad_val
-null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
 upper_dist = opts.upper_inj_dist
 lower_dist = opts.lower_inj_dist
 num_bins = opts.num_bins
@@ -264,7 +255,7 @@ if onsource_file:
 
     # Retrieve BestNRs and record loudest trig by BestNR.
     # Get indices of loudest triggers and pick the loudest.
-    if on_trigs:
+    if on_trigs and on_trigs['network/reweighted_snr'].size > 0:
         loud_on_bestnr_idx = np.argmax(on_trigs['network/reweighted_snr'])
         loud_on_bestnr = np.max(on_trigs['network/reweighted_snr'])
 
