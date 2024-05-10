@@ -126,8 +126,7 @@ def pygrb_add_injmc_opts(parser):
 
 
 def pygrb_add_bestnr_opts(parser):
-    """Add to the parser object the arguments used for BestNR calculation,
-    null SNR, single SNR cut and null SNR cut."""
+    """Add to the parser object the arguments used for BestNR calculation"""
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument("-Q", "--chisq-index", action="store", type=float,
@@ -136,10 +135,11 @@ def pygrb_add_bestnr_opts(parser):
     parser.add_argument("-N", "--chisq-nhigh", action="store", type=float,
                         default=2.0, help="chisq_nhigh for newSNR " +
                         "calculation (default: 2")
-    parser.add_argument("-B", "--sngl-snr-threshold", action="store",
-                        type=float, default=4.0, help="Single detector SNR " +
-                        "threshold, the two most sensitive detectors " +
-                        "should have SNR above this.")
+
+
+def pygrb_add_null_snr_opts(parser):
+    """Add to the parser object the arguments used for null SNR calculation
+    and null SNR cut."""
     parser.add_argument("-A", "--null-snr-threshold", action="store",
                         default="3.5,5.25",
                         help="Comma separated lower,higher null SNR " +
@@ -150,6 +150,15 @@ def pygrb_add_bestnr_opts(parser):
     parser.add_argument("-D", "--null-grad-val", action="store", type=float,
                         default=0.2, help="Rate the null SNR cut will " +
                         "increase above the threshold")
+
+
+def pygrb_add_single_snr_cut_opt(parser):
+    """Add to the parser object an argument to place a threshold on single
+    detector SNR."""
+    parser.add_argument("-B", "--sngl-snr-threshold", action="store",
+                        type=float, default=4.0, help="Single detector SNR " +
+                        "threshold, the two most sensitive detectors " +
+                        "should have SNR above this.")
 
 
 def pygrb_add_bestnr_cut_opt(parser):
