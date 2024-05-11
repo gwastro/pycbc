@@ -28,7 +28,6 @@ import sys
 import os
 import logging
 import numpy
-import h5py
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import pycbc.version
@@ -50,19 +49,24 @@ __program__ = "pycbc_pygrb_plot_snr_timeseries"
 # Functions
 # =============================================================================
 # Load trigger data
-def load_data(input_file, vetoes, injections=False):
+def load_data(input_file, ifos, vetoes, rw_snr_threshold=None,
+              injections=False):
     """Load data from a trigger/injection file"""
-    
+
     trigs_or_injs = None
     if input_file:
         if injections:
             logging.info("Loading injections...")
             # This will eventually become load_injections
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            trigs_or_injs = \
+                ppu.load_triggers(input_file, ifos, vetoes,
+                                  rw_snr_threshold=rw_snr_threshold)
         else:
             logging.info("Loading triggers...")
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-        
+            trigs_or_injs = \
+                ppu.load_triggers(input_file, ifos, vetoes,
+                                  rw_snr_threshold=rw_snr_threshold)
+
     return trigs_or_injs
 
 
@@ -81,27 +85,11 @@ def get_start_end_times(data_time, central_time):
 
 # Reset times so that t=0 is corresponds to the given trigger time
 def reset_times(data_time, trig_time):
-    """Reset times in data so that t=0 corresponds to the trigger time provided"""
+    """Reset times so that t=0 corresponds to the trigger time provided"""
 
-    #data.time = [t-trig_time for t in data.time]
     data_time = [t-trig_time for t in data_time]
 
     return data_time
-
-# Apply reweighted SNR cut: when plotting reweighted SNR, keep all points to
-# show the impact of the cut, otherwise remove points with reweighted SNR
-# below threshold
-def prune_data(rw_snr, time_in, snr_in, opts, snr_type):
-    """Prune data from points with reweighted SNR below threshold"""
-
-    rw_snr = reweightedsnr_cut(rw_snr, opts.newsnr_threshold)
-    if snr_type == 'reweighted':
-        return time_in, rw_snr
-    mask = rw_snr == 0
-    time_out = numpy.ma.masked_array(time_in, mask=mask)
-    snr_out = numpy.ma.masked_array(snr_in, mask=mask)
-
-    return time_out, snr_out
 
 
 # =============================================================================
@@ -126,7 +114,8 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-inj_file = os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
+inj_file = \
+    os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
 snr_type = opts.y_variable
 ifo = opts.ifo
 if snr_type == 'single' and ifo is None:
@@ -142,13 +131,27 @@ if not os.path.isdir(outdir):
 
 # Extract IFOs and vetoes
 ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
-                                        opts.veto_category)
+                                           opts.veto_category)
 
-# Load trigger data
-trig_data = load_data(trig_file, vetoes)
-
-# Load (or initialize) injection data
-inj_data = load_data(inj_file, vetoes, injections=True)
+# Load trigger and injections data: when plotting reweighted SNR, keep all
+# points to show the impact of the cut, otherwise remove points with
+# reweighted SNR below threshold
+if snr_type == 'reweighted':
+    trig_data = load_data(trig_file, ifos, vetoes)
+    trig_data['network/reweighted_snr'] = \
+        reweightedsnr_cut(trig_data['network/reweighted_snr'],
+                          opts.newsnr_threshold)
+    inj_data = load_data(inj_file, ifos, vetoes, injections=True)
+    if inj_data is not None:
+        inj_data['network/reweighted_snr'] = \
+            reweightedsnr_cut(inj_data['network/reweighted_snr'],
+                              opts.newsnr_threshold)
+else:
+    trig_data = load_data(trig_file, ifos, vetoes,
+                          rw_snr_threshold=opts.newsnr_threshold)
+    inj_data = load_data(inj_file, ifos, vetoes,
+                         rw_snr_threshold=opts.newsnr_threshold,
+                         injections=True)
 
 # Specify HDF file keys for x quantity (time) and y quantity (SNR)
 if snr_type == 'single':
@@ -176,15 +179,6 @@ start, end = get_start_end_times(trig_data_time, central_time)
 trig_data_time = reset_times(trig_data_time, central_time)
 if inj_file:
     inj_data_time = reset_times(inj_data_time, central_time)
-
-# Obtain rewighted SNRs and apply reweighted SNR cut
-trig_rw_snr = trig_data['network/reweighted_snr'][:]
-inj_rw_snr = inj_data['network/reweighted_snr'][:] if inj_file else None
-trig_data_time, trig_data_snr = \
-    prune_data(trig_rw_snr, trig_data_time, trig_data_snr, opts, snr_type)
-if inj_file:
-    inj_data_time, inj_data_snr = \
-        prune_data(inj_rw_snr, inj_data_time, inj_data_snr, opts, snr_type)
 
 # Generate plots
 logging.info("Plotting...")
