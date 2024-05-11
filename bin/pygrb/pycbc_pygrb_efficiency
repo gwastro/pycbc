@@ -31,8 +31,8 @@ import numpy as np
 import scipy
 from scipy import stats
 import pycbc.version
-from pycbc.detector import Detector
 from pycbc import init_logging
+from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.conversions import mchirp_from_mass1_mass2
@@ -169,10 +169,12 @@ if not os.path.isdir(outdir):
 ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
-# Load triggers, time-slides, and segment dictionary
+# Load triggers (apply reweighted SNR cut), time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trigs = ppu.load_triggers(trig_file, vetoes)
-logging.info("%d triggers loaded.", trigs['network/event_id'].len())
+trigs = ppu.load_triggers(trig_file, ifos, vetoes,
+                          rw_snr_threshold=opts.newsnr_threshold)
+logging.info("%d offsource triggers surviving reweighted SNR cut.",
+    len(trigs['network/event_id']))
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
@@ -243,9 +245,10 @@ with h5py.File(opts.bank_file, 'r') as bank_file:
 # =======================
 if onsource_file:
 
-    # Get trigs
-    on_trigs = ppu.load_triggers(onsource_file, vetoes)
-    logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
+    logging.info("Processing onsource.")
+    # Get onsouce_triggers (apply reweighted SNR cut)
+    on_trigs = ppu.load_triggers(onsource_file, ifos, vetoes,
+                                 rw_snr_threshold=opts.newsnr_threshold)
 
     # Calculate chirp mass values
     on_mchirp = template_mchirps[on_trigs['network/template_id']]
@@ -295,9 +298,11 @@ if do_injections:
 
     sites = [ifo[0] for ifo in ifos]
 
-    # Triggers and injections recovered in some form: discard ones at vetoed times
-    # This injs object contains the information about found/missed injections AND triggers
-    injs = ppu.load_triggers(found_missed_file, vetoes)
+    # injs contains the information about found/missed injections AND triggers
+    # Triggers and injections are discared if at vetoed times and/or below
+    # Reweighted SNR thrshold
+    injs = ppu.load_triggers(found_missed_file, ifos, vetoes,
+                             rw_snr_threshold=opts.newsnr_threshold)
 
     logging.info("Missed/found injections/triggers loaded.")
 
@@ -363,7 +368,6 @@ if do_injections:
     logging.info("%d found injections analysed.", len(injs['found/tc']))
 
     # Process missed injections (injs['missed'])
-
     logging.info("%d missed injections analysed.", len(injs['missed/tc']))
 
     # Create new set of injections for efficiency calculations
@@ -596,9 +600,12 @@ if do_injections:
             excl_dist = d + (e - (percentile / 100.)) * (d - d_low) /\
                     (e_low - e)
         else:
+            # Warn the user if the exclusion distance cannot be established,
+            # but let the workflow continue: the user will see the plot(s) and
+            # repeat with more injections
             excl_dist = 0
-            err_msg = "Efficiency below %d%% in first bin!" % (percentile)
-            logging.error(err_msg)
+            msg = "Efficiency below %d%% in first bin!" % (percentile)
+            logging.warning(msg)
         # TODO: include percentile, excl_dist on output pages
 
     # Plot efficiency using loudest foreground
