@@ -54,6 +54,7 @@ parser.add_argument("-F", "--trig-file", action="store", required=True,
 parser.add_argument("-x", "--x-variable", required=True,
                     choices=["bestnr", "snr", "snruncut"],
                     help="Quantity to plot on the horizontal axis.")
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -74,8 +75,9 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trigs = ppu.load_triggers(trig_file, vetoes)
-logging.info("%d triggers loaded.", trigs['network/event_id'].len())
+trigs = ppu.load_triggers(trig_file, ifos, vetoes,
+                          rw_snr_threshold=opts.newsnr_threshold)
+logging.info("%d triggers loaded.", len(trigs['network/event_id']))
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
