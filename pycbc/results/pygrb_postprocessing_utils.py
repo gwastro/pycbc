@@ -166,8 +166,9 @@ def pygrb_add_bestnr_cut_opt(parser):
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
-                        default=6.0,
-                        help="Cut triggers with NewSNR less than THRESHOLD")
+                        default=0.,
+                        help="Cut triggers with NewSNR less than THRESHOLD" +
+                        "Default 0: all events are considered.")
 
 
 # =============================================================================
@@ -342,16 +343,69 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
 # =============================================================================
 # Functions to load triggers
 # =============================================================================
-def load_triggers(input_file, vetoes):
-    """Loads triggers from PyGRB output file"""
+def dataset_iterator(g, prefix=''):
+    """Reach all datasets in and HDF file"""
+
+    for key, item in g.items():
+        # Avoid slash as first character
+        path = prefix[1:] + '/' + key
+        if isinstance(item, h5py.Dataset):
+            yield (path, item)
+        elif isinstance(item, h5py.Group):
+            yield from dataset_iterator(item, path)
+
+
+def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
+    """Loads triggers from PyGRB output file, returning a dictionary"""
 
     trigs = h5py.File(input_file, 'r')
+    rw_snr = trigs['network/reweighted_snr'][:]
+    net_ids = trigs['network/event_id'][:]
+    ifo_ids = {}
+    for ifo in ifos:
+        ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
+    trigs.close()
 
     if vetoes is not None:
         # Developers: see PR 3972 for previous implementation
         raise NotImplementedError
 
-    return trigs
+    # Apply the reweighted SNR cut on the reweighted SNR
+    if rw_snr_threshold is not None:
+        rw_snr = reweightedsnr_cut(rw_snr, rw_snr_threshold)
+
+    # Establish the indices of data not surviving the cut
+    above_thresh = rw_snr > 0
+    num_orig_pts = len(above_thresh)
+
+    # Do not assume that IFO and network datasets are sorted the same way:
+    # find where each surviving network/event_id is placed in the IFO/event_id
+    ifo_ids_above_thresh_locations = {}
+    for ifo in ifos:
+        ifo_ids_above_thresh_locations[ifo] = \
+            numpy.array([numpy.where(ifo_ids[ifo] == net_id)[0][0]
+                         for net_id in net_ids[above_thresh]])
+
+    # Apply the cut on all the data by remove points with reweighted SNR = 0
+    trigs_dict = {}
+    with h5py.File(input_file, "r") as trigs:
+        for (path, dset) in dataset_iterator(trigs):
+            # The dataset contains information other than trig/inj properties:
+            # just copy it
+            if len(dset) != num_orig_pts:
+                trigs_dict[path] = dset[:]
+            # The dataset is relative to an IFO: cut with the correct index
+            elif path[:2] in ifos:
+                ifo = path[:2]
+                if ifo_ids_above_thresh_locations[ifo].size != 0:
+                    trigs_dict[path] = dset[:][ifo_ids_above_thresh_locations[ifo]]
+                else:
+                    trigs_dict[path] = numpy.array([])
+            # The dataset is relative to the network: cut it before copying
+            else:
+                trigs_dict[path] = dset[above_thresh]
+
+    return trigs_dict
 
 
 # =============================================================================
