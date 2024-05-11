@@ -46,12 +46,12 @@ __program__ = "pycbc_pygrb_plot_skygrid"
 # Functions
 # =============================================================================
 # Load trigger data
-def load_data(input_file, vetoes, injections=False):
+def load_data(input_file, ifos, vetoes, injections=False):
     """Load data from a trigger/injection file"""
     
     logging.info("Loading triggers...")
     
-    trigs = ppu.load_triggers(input_file, vetoes)
+    trigs = ppu.load_triggers(input_file, ifos, vetoes)
         
     return trigs
 
@@ -85,7 +85,7 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Load trigger data
-trig_data = load_data(trig_file, vetoes)
+trig_data = load_data(trig_file, ifos, vetoes)
 
 #
 # Generate sky grid plot
