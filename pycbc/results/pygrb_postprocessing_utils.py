@@ -398,7 +398,8 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
             elif path[:2] in ifos:
                 ifo = path[:2]
                 if ifo_ids_above_thresh_locations[ifo].size != 0:
-                    trigs_dict[path] = dset[:][ifo_ids_above_thresh_locations[ifo]]
+                    trigs_dict[path] = \
+                        dset[:][ifo_ids_above_thresh_locations[ifo]]
                 else:
                     trigs_dict[path] = numpy.array([])
             # The dataset is relative to the network: cut it before copying
