@@ -1612,7 +1612,7 @@ def sh_transformed_psd_lisa_tdi_XYZ(length, delta_f, low_freq_cutoff,
         Please see Eq.(7,41-43) in <LISA-LCST-SGS-TN-001> for more details.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    if tdi in ["1.5", "2.0"]:
+    if str(tdi) in ["1.5", "2.0"]:
         response = averaged_response_lisa_tdi(fr, len_arm, tdi)
     else:
         raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
@@ -1657,7 +1657,7 @@ def semi_analytical_psd_lisa_confusion_noise(length, delta_f, low_freq_cutoff,
         noise, no instrumental noise.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    if tdi in ["1.5", "2.0"]:
+    if str(tdi) in ["1.5", "2.0"]:
         response = averaged_response_lisa_tdi(fr, len_arm, tdi)
     else:
         raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
@@ -1701,7 +1701,7 @@ def analytical_psd_tianqin_confusion_noise(length, delta_f, low_freq_cutoff,
         noise, no instrumental noise.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    if tdi in ["1.5", "2.0"]:
+    if str(tdi) in ["1.5", "2.0"]:
         response = averaged_response_tianqin_tdi(fr, len_arm, tdi)
     else:
         raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
@@ -1745,7 +1745,7 @@ def analytical_psd_taiji_confusion_noise(length, delta_f, low_freq_cutoff,
         noise, no instrumental noise.
     """
     fr = np.linspace(low_freq_cutoff, (length-1)*2*delta_f, length)
-    if tdi in ["1.5", "2.0"]:
+    if str(tdi) in ["1.5", "2.0"]:
         response = averaged_response_taiji_tdi(fr, len_arm, tdi)
     else:
         raise ValueError("The version of TDI, currently only for 1.5 or 2.0.")
