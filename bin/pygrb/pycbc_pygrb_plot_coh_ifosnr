@@ -35,8 +35,8 @@ import numpy
 import scipy
 import h5py
 import pycbc.version
-from pycbc.detector import Detector
 from pycbc import init_logging
+from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import pygrb_plotting_utils as plu
@@ -54,7 +54,7 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, vetoes, ifos, opts, injections=False):
+def load_data(input_file, ifos, vetoes, opts, injections=False):
     """Load data from a trigger/injection file"""
 
     # Initialize the dictionary
@@ -70,15 +70,15 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         if injections:
             logging.info("Loading injections...")
             # TODO: This will eventually become load_injections
-            trigs = ppu.load_triggers(input_file, vetoes)
+            trigs = ppu.load_triggers(input_file, ifos, vetoes,
+                                      rw_snr_threshold=opts.newsnr_threshold)
         else:
             logging.info("Loading triggers...")
-            trigs = ppu.load_triggers(input_file, vetoes)
-
-        num_trigs = len(trigs['network/end_time_gc'][:])
+            trigs = ppu.load_triggers(input_file, ifos, vetoes,
+                                      rw_snr_threshold=opts.newsnr_threshold)
 
         # Load SNR data
-        data['coherent'] = trigs['network/coherent_snr'][:]
+        data['coherent'] = trigs['network/coherent_snr']
 
         # Get single ifo SNR data
         ifo_trig_index = {}
@@ -89,19 +89,16 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
                     for idx in trigs['network/event_id']
                 ]
             )
-            sorted_ifo_ids = numpy.array(sorted_ifo_ids).flatten()
             ifo_trig_index[ifo] = sorted_ifo_ids
             data['single'][ifo] = trigs['%s/snr' % ifo][:][sorted_ifo_ids]
 
         # Get sigma for each ifo
+        sigma = {}
         for ifo in ifos:
-            sigma = dict(
-                (ifo, list(trigs['%s/sigmasq' % ifo][:][ifo_trig_index[ifo]]))
-                for ifo in ifos
-            )
+            sigma[ifo] = trigs['%s/sigmasq' % ifo][:][ifo_trig_index[ifo]]
 
         # Create array for sigma_tot
-        sigma_tot = numpy.zeros(num_trigs)
+        sigma_tot = numpy.zeros(len(data['coherent']))
 
         # Get parameters necessary for antenna responses
         ra = trigs['network/ra'][:]
@@ -111,7 +108,9 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         # Get antenna response based parameters
         for ifo in ifos:
             antenna = Detector(ifo)
-            ifo_f_resp = ppu.get_antenna_responses(antenna, ra, dec, time)
+            ifo_f_resp = \
+                ppu.get_antenna_responses(antenna, ra,
+                                          dec, time)
 
             # Get the average for f_resp_mean and calculate sigma_tot
             data['f_resp_mean'][ifo] = ifo_f_resp.mean()
@@ -130,7 +129,7 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
                     data['sigma_max'] = 0
                     data['sigma_min'] = 0
 
-        logging.info("%d triggers found.", num_trigs)
+        logging.info("%d triggers found.", len(data['coherent']))
 
     return data
 
@@ -169,6 +168,7 @@ parser.add_argument("--found-missed-file",
                     help="The hdf injection results file", required=False)
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -215,10 +215,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(
 )
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, ifos, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_file, ifos, vetoes, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")

@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Temporary script to produce qscans of loudest triggers/missed injections
+Set up qscans and SNR timeseries plots of loudest triggers/missed injections
 """
 
 # =============================================================================
@@ -27,22 +27,21 @@ import os
 import argparse
 import logging
 import h5py
-import numpy as np
 from pycbc import init_logging
 import pycbc.workflow as wf
-from pycbc.workflow.core import resolve_url_to_file
+from pycbc.workflow.core import FileList, resolve_url_to_file
 import pycbc.workflow.minifollowups as mini
 import pycbc.version
 import pycbc.events
+import pycbc.results.pygrb_postprocessing_utils as ppu
 from pycbc.results import layout
-from pycbc.results.pygrb_postprocessing_utils import extract_ifos
 from pycbc.workflow.plotting import PlotExecutable
 from pycbc.workflow.grb_utils import build_veto_filelist, build_segment_filelist
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_minifollowupss"
+__program__ = "pycbc_pygrb_minifollowups"
 
 
 # =============================================================================
@@ -112,13 +111,14 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
 # Main script starts here
 # =============================================================================
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("-v", "--verbose", default=False, action="store_true",
                     help="Verbose output")
 parser.add_argument('--trig-file',
-                    help="xml file containing the triggers found by PyGRB")
+                    help="HDF file with the triggers found by PyGRB")
 parser.add_argument('--followups-file',
-                    help="HDF format file containing trigger/injections to follow up")
+                    help="HDF file with the triggers/injections to follow up")
 parser.add_argument('--wiki-file',
                     help="Name of file to save wiki-formatted table in")
 parser.add_argument('--veto-files', nargs='+', action="store",
@@ -129,6 +129,7 @@ parser.add_argument("-a", "--seg-files", nargs="+", action="store",
                     "onsource and offsource segment files.")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
+ppu.pygrb_add_bestnr_cut_opt(parser)
 args = parser.parse_args()
 
 init_logging(args.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -156,7 +157,7 @@ num_events = min(num_events, len(fp['BestNR'][:]))
 
 # Determine ifos used in the analysis
 trig_file = resolve_url_to_file(os.path.abspath(args.trig_file))
-ifos = extract_ifos(os.path.abspath(args.trig_file))
+ifos = ppu.extract_ifos(os.path.abspath(args.trig_file))
 num_ifos = len(ifos)
 
 # (Loudest) off/on-source events are on time-slid data so the
@@ -171,7 +172,7 @@ except:
 
 # Loop over triggers/injections to be followed up
 for num_event in range(num_events):
-    files = wf.FileList([])
+    files = FileList([])
     logging.info('Processing event: %s', num_event)
     gps_time = fp['GPS time'][num_event]
     gps_time = gps_time.astype(float)
@@ -180,7 +181,7 @@ for num_event in range(num_events):
         for key in fp.keys():
             row.append(fp[key][num_event])
         add_wiki_row(wiki_file, row)
-    # Handle off/on-source (loudest) triggers follow-up (which are on slid data)
+    # Handle off/on-source loudest triggers follow-up (which are on slid data)
     if not is_injection_followup:
         for ifo in ifos:
             time_shift = fp[ifo+' time shift (s)'][num_event]

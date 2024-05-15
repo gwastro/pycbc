@@ -49,8 +49,8 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 # =============================================================================
 # Functions
 # =============================================================================
-# Functions to load trigger data
-def load_data(input_file, vetoes, opts, injections=False):
+# Function to load trigger data: includes applying cut in reweighted SNR
+def load_data(input_file, ifos, vetoes, opts, injections=False):
     """Load data from a trigger/injection file"""
     
     snr_type = opts.snr_type
@@ -66,21 +66,22 @@ def load_data(input_file, vetoes, opts, injections=False):
         if injections:
             logging.info("Loading injections...")
             # This will eventually become load_injections
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            trigs_or_injs = \
+                ppu.load_triggers(input_file, ifos, vetoes,
+                                  rw_snr_threshold=opts.newsnr_threshold)
         else:
             logging.info("Loading triggers...")
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            trigs_or_injs = \
+                ppu.load_triggers(input_file, ifos, vetoes,
+                                  rw_snr_threshold=opts.newsnr_threshold)
         
-        num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
+        # Count surviving points
+        num_trigs_or_injs = len(trigs_or_injs['network/reweighted_snr'])
         
         if snr_type in ['coherent', 'null', 'reweighted']:
             data[snr_type] = trigs_or_injs['network/%s_snr' % snr_type][:]
         elif snr_type == 'single':
-            key = opts.ifo + '/snr_' + opts.ifo.lower()
-            # TODO: Undoes current L710 in EventManagerCoherent.write_to_hdf
-            # and is ugly hardcoded!
-            if opts.ifo.lower() != 'h1':
-                key = key[:-1]
+            key = opts.ifo + '/snr'
             data[snr_type] = trigs_or_injs[key][:]
 
         # Calculate coincident SNR
@@ -167,8 +168,7 @@ def contour_colors(opts, new_snrs=None):
     # and keep track of where it is
     if new_snrs is None:
         new_snrs = [5.5, 6, 6.5, 7, 8, 9, 10, 11]
-    new_snr_thresh = opts.newsnr_threshold
-    colors = ["k-" if snr == new_snr_thresh else
+    colors = ["k-" if snr == opts.newsnr_threshold else
               "y-" if snr == int(snr) else
               "y--" for snr in new_snrs]
 
@@ -190,11 +190,12 @@ parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
 parser.add_argument("-y", "--y-variable", required=True,
                     choices=['standard', 'bank', 'auto'],
                     help="Quantity to plot on the vertical axis.")
-# TODO: get 'single' to work
 parser.add_argument("--snr-type", default='coherent',
                     choices=['coherent', 'coincident', 'null', 'reweighted',
                     'single'], help="SNR value to plot on x-axis. Can be " +
                     "coherent, coincident, null, reweighted, or single IFO SNR")
+ppu.pygrb_add_bestnr_cut_opt(parser)
+ppu.pygrb_add_single_snr_cut_opt(parser)
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
@@ -258,10 +259,10 @@ if ifo and ifo not in ifos:
     raise RuntimeError(err_msg)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_missed_file, vetoes, opts, injections=True)
+inj_data = load_data(found_missed_file, ifos, vetoes, opts, injections=True)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:
