@@ -214,18 +214,21 @@ trigger_times_all = np.array(trigger_times_all)
 
 logging.info("%d events", dec_facs.size)
 for t, f in zip(threshes, factors):
-    # Keep events with trigger id as a multiple of the factor
+    # Find the events with statistic above the threshold - these will be kept:
+    abovethresh = stat_all >= t
+    # Any events below threshold, multiply total decimation factor by the
+    # current factor
+    belowthresh = np.logical_not(abovethresh)
+    dec_facs[belowthresh] = f
+
+    # Also keep events with trigger id as an integer multiple of the factor
     # Work out which events would be kept whatever happens
     factor_idx = trigger_ids_all % f == 0
-    # If the events are below the threshold, but being kept, multiply the
-    # decimation factor
     # Find the events which are below this threshold
-    belowthresh_idx = stat_all < t
-    kept_decimated = np.logical_and(factor_idx, belowthresh_idx)
-    dec_facs[kept_decimated] *= int(f)
+    kept_decimated = np.logical_and(factor_idx, belowthresh)
     # Keep events which are above threshold or a trigger_id multiple of
     # the factor
-    keep = np.logical_or(stat_all >= t, factor_idx)
+    keep = np.logical_or(abovethresh, factor_idx)
     # Do the cuts:
     dec_facs = dec_facs[keep]
     stat_all = stat_all[keep]
