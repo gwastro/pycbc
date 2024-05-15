@@ -138,10 +138,10 @@ class HFile(h5py.File):
                 continue
 
             if all(mask[i:r]):
-￼                # Everything allowed through the mask in this chunk
-￼                submask = np.arange(r - i)
-￼            else:
-￼                submask = np.flatnonzero(mask[i:r])
+                # Everything allowed through the mask in this chunk
+                submask = np.arange(r - i)
+            else:
+                submask = np.flatnonzero(mask[i:r])
 
             # Read each chunk's worth of data
             partial_data = {arg: refs[arg][i:r][mask[i:r]]
