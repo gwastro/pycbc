@@ -42,6 +42,7 @@ args.newsnr_contours = \
 # First - get the IFO from the file
 with h5py.File(args.trigger_file, 'r') as f:
     ifo = tuple(f.keys())[0]
+    n_triggers = f[ifo]['snr'].size
 
 logging.info(
     "Plotting SNR vs %s chisq for %s triggers",
@@ -53,9 +54,11 @@ if args.min_snr is not None:
     filter_rank = 'snr'
 else:
     filter_rank = None
-    logging.warning(
-        "Getting triggers with no SNR cut - this will be expensive!"
-    )
+    if n_triggers > 1e7:
+        logging.warning(
+            "Getting %d triggers with no SNR cut - this will be expensive!",
+            n_triggers
+        )
 
 trigs = SingleDetTriggers(
     args.trigger_file,
