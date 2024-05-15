@@ -384,9 +384,9 @@ def generate_early_warning_psds(
     # Use same PSD for A & E
     psd = pycbc.psd.from_txt(psd_file, flen, 1./tlen, 1./tlen, is_asd_file=False)
     if low_freq_cutoff is not None:
-        # Set all values below frequency cutoff to inf
-        # Is 1e30 safe?
-        psd.data[psd.sample_frequencies < low_freq_cutoff] = 1e30
+        raise NotImplementedError(
+            "Lower frequency cutoff is not implemented yet!"
+        )
 
     psd_kern = PSDFirKernel()
 
