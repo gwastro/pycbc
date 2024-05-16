@@ -111,10 +111,7 @@ def calculate_contours(opts, new_snrs=None):
 
     # Determine contour
     null_cont = []
-    null_thresh = []
-    for val in map(float, opts.null_snr_threshold.split(',')):
-        null_thresh.append(val)
-    null_thresh = null_thresh[-1]
+    null_thresh = opts.null_snr_threshold
     null_grad_snr = opts.null_grad_thresh
     null_grad_val = opts.null_grad_val
     for snr in snr_vals:
@@ -170,10 +167,8 @@ if opts.plot_caption is None:
     else:
         opts.plot_caption = opts.plot_caption +\
                              "Black line: veto line.  " +\
-                             "Green line: above this triggers have reduced " +\
-                             "detection statistic.  " +\
-                             "Magenta line: in this line the statistic is " +\
-                             "reduced by a factor of two."
+                             "Magenta line: above this triggers have reduced " +\
+                             "detection statistic."
 
 logging.info("Imported and ready to go.")
 
@@ -208,15 +203,12 @@ if null_stat_type == 'coincident':
     null_stat_conts = [[4, x_max]]
 # Overwhitened null stat (null SNR) and null stat  cases: newSNR contours
 else:
-    cont_colors = ['k-', 'g-', 'm-']
+    cont_colors = ['k-', 'm-']
     null_cont, snr_vals = calculate_contours(opts, new_snrs=None)
     null_stat_conts = [null_cont]
     if zoom_in:
-        null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
-        null_thresh_width = null_thresh[1] - null_thresh[0]
-        null_stat_conts.append(numpy.asarray(null_cont) - null_thresh_width)
-        if null_thresh_width > 1:
-            null_stat_conts.append(numpy.asarray(null_cont) - null_thresh_width + 1)
+        null_thresh = opts.null_snr_threshold
+        null_stat_conts.append(numpy.asarray(null_cont) - 1)
     shade_cont_value = 0
 
 # Overwhitened null stat (null SNR), null stat or coincident SNR vs

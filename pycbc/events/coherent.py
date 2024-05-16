@@ -341,7 +341,7 @@ def null_snr(
         keep = (
             ((null < null_min) & (rho_coh <= null_step))
             | (
-                (null < (rho_coh * null_grad + null_min))
+                (null < ((rho_coh - null_step) * null_grad + null_min))
                 & (rho_coh > null_step)
                 )
             )
