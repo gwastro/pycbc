@@ -212,7 +212,8 @@ parser.add_argument(
     type=float,
     default=4.0,
     metavar='THRESHOLD',
-    help="Single IFO SNR threshold for trigger generation (default: 4).",
+    help="Single detector SNR threshold for trigger generation required in "
+    "at least two detectors (default: 4).",
 )
 parser.add_argument(
     "--chisq-index",
@@ -428,15 +429,14 @@ with ctx:
     # Use tlen of the first IFO as it is the same across IFOs.
     template_mem = zeros(tlen, dtype=complex64)
 
-    # We are currently using the same matched-filter parameters for all
-    # IFOs. Therefore all MatchedFilterControl instances are initialized
-    # in the same way. This can be change if needed.
-    # NOTE: Historically, the single detector SNR threshold was applied
-    #       to the 2 most sensitive in the network, while this way it applies
-    #       to all IFOs.
+    # All MatchedFilterControl instances are initialized in the same way.
+    # This allows to track where the single detector SNR timeseries are
+    # greater than args.sngl_snr_threshold. Later, coh.get_coinc_indexes
+    # will enforce the requirement that at least two single detector SNR
+    # are above args.sngl_snr_threshold, rescuing, where necessary, SNR
+    # timeseries points for detectors below that threshold.
     # NOTE: Do not cluster here for a coherent search (use_cluster=False).
     #       Clustering happens at the end of the template loop.
-    # NOTE: This will apply the SNR cut to single IFO SNR.
     matched_filter = {
         ifo: MatchedFilterControl(
             args.low_frequency_cutoff,
@@ -619,9 +619,7 @@ with ctx:
             corr_dict = dict.fromkeys(args.instruments)
             # - The trigger indices list (idx_dict will be created out of this)
             idx = dict.fromkeys(args.instruments)
-            # - The list of SNR values at the trigger locations
-            snrv_dict = dict.fromkeys(args.instruments)
-            # - Normalized version of snrv_dict
+            # - The list of normalized SNR values at the trigger locations
             snr = dict.fromkeys(args.instruments)
             for ifo in args.instruments:
                 logging.info(
@@ -642,11 +640,10 @@ with ctx:
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
                 idx[ifo] = ind.copy()
-                snrv_dict[ifo] = snrv.copy()
                 snr[ifo] = snrv * norm
 
             # Move onto next segment if there are no triggers.
-            n_trigs = [len(snrv_dict[ifo]) for ifo in args.instruments]
+            n_trigs = [len(snr[ifo]) for ifo in args.instruments]
             if not any(n_trigs):
                 continue
 
@@ -681,7 +678,10 @@ with ctx:
                     }
                     # Find triggers that are coincident (in geocent time) in
                     # multiple IFOs. If a single IFO analysis then just use the
-                    # indices from that IFO, i.e., IFO 0.
+                    # indices from that IFO, i.e., IFO 0; otherwise, this
+                    # method finds coincidences and applies the single IFO cut,
+                    # namely, triggers must have at least 2 IFO SNRs above
+                    # args.sngl_snr_threshold.
                     if nifo > 1:
                         coinc_idx = coh.get_coinc_indexes(
                             idx_dict, time_delay_idx[slide][position_index]
