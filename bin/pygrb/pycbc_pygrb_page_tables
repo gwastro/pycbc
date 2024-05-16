@@ -27,7 +27,6 @@ import sys
 import os
 import logging
 import numpy as np
-from scipy import stats
 import h5py
 import pycbc.version
 from pycbc.conversions import mchirp_from_mass1_mass2
@@ -125,13 +124,9 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         found_data[param] = inj_data['network/%s' % param][...]
     found_data['chisq'] = inj_data['network/my_network_chisq'][...]
     found_data['nifos'] = inj_data['network/nifo'][...].astype(int)
-    # Calibration errors:
-    # Get the relative detector sensitivities averaged over the
-    # parameters. This is used to marginalize over calibration errors.
-    # also save the snr per ifo
     for ifo in ifos:
-        if np.all(inj_data['network/event_id'][...] == 
-                      inj_data['%s/event_id' % ifo][...]):
+        if np.all(inj_data['network/event_id'][...] ==
+                  inj_data['%s/event_id' % ifo][...]):
             found_data['sigmasq_%s' % ifo] = inj_data['%s/sigmasq' % ifo][...]
             found_data['snr_%s' % ifo] = inj_data['%s/snr' % ifo][...]
         else:
@@ -224,7 +219,6 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
-ppu.pygrb_add_injmc_opts(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -233,25 +227,6 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 offsource_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
-cal_errs = {
-        'G1': opts.g1_cal_error,
-        'H1': opts.h1_cal_error,
-        'K1': opts.k1_cal_error,
-        'L1': opts.l1_cal_error,
-        'V1': opts.v1_cal_error
-        }
-cal_dc_errs = {
-        'G1': opts.g1_dc_cal_error,
-        'H1': opts.h1_dc_cal_error,
-        'K1': opts.k1_dc_cal_error,
-        'L1': opts.l1_dc_cal_error,
-        'V1': opts.v1_dc_cal_error
-        }
-upper_dist = opts.upper_inj_dist
-lower_dist = opts.lower_inj_dist
-num_bins = opts.num_bins
-wav_err = opts.waveform_error
-num_mc_injs = opts.num_mc_injections
 lofft_outfile = opts.loudest_offsource_trigs_output_file
 lofft_h5_outfile = opts.loudest_offsource_trigs_h5_output_file
 lont_outfile = opts.loudest_onsource_trig_output_file
@@ -284,10 +259,6 @@ for output_file in output_files:
         outdir = os.path.split(os.path.abspath(output_file))[0]
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
-
-# Initialize random number generator
-np.random.seed(opts.seed)
-logging.info("Setting random seed to %d.", opts.seed)
 
 # Extract IFOs and vetoes
 ifos, vetoes = ppu.extract_ifos_and_vetoes(offsource_file, opts.veto_files,
@@ -409,7 +380,8 @@ if lofft_outfile:
              trig_data['network/coherent_snr'][trig_index],
              trig_data['network/my_network_chisq'][trig_index],
              trig_data['network/null_snr'][trig_index]]
-        d.extend([trig_data['%s/snr' % ifo][ifo_trig_index[ifo]] for ifo in ifos])
+        d.extend([trig_data['%s/snr' % ifo][ifo_trig_index[ifo]]
+                  for ifo in ifos])
         d.extend([slide_dict[trig_slide_id][ifo] for ifo in ifos])
         d.append(bestnr)
         td.append(d)
