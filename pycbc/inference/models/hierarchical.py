@@ -786,20 +786,20 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 sky_factor = 0.5 * (1./numpy.cos(theta) + numpy.cos(theta)) *\
                                 numpy.tan(2*phi)**(-1)
                 a = (sky_factor * numpy.sin(2*psi) + numpy.cos(2*psi)) *\
-                        2*numpy.cos(iota)
+                    2*numpy.cos(iota)
                 b = (sky_factor * numpy.cos(2*psi) - numpy.sin(2*psi)) *\
-                        (1+numpy.cos(iota)**2)
+                    (1+numpy.cos(iota)**2)
                 return numpy.mod(-numpy.arctan2(a, b), 2*numpy.pi)
 
             phase_factor = sh_phase_shift_factor(
                                 margin_params['ra'], margin_params['dec'],
                                 margin_params['polarization'],
                                 margin_params['inclination']) - \
-                            sh_phase_shift_factor(
+                           sh_phase_shift_factor(
                                 margin_params['ra'], margin_params['dec'],
                                 margin_params['polarization'],
                                 margin_params['inclination'])[i_max_extrinsic]
-            sh_others *= numpy.exp(1j*phase_factor)            
+            sh_others *= numpy.exp(1j*phase_factor)
 
         if nums == 1:
             # the type of the original sh/hh_others are numpy.array,
