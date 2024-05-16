@@ -33,7 +33,6 @@ from matplotlib import pyplot as plt
 from matplotlib import rc
 import numpy
 import scipy
-import h5py
 import pycbc.version
 from pycbc import init_logging
 from pycbc.detector import Detector
@@ -108,10 +107,7 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
         # Get antenna response based parameters
         for ifo in ifos:
             antenna = Detector(ifo)
-            ifo_f_resp = \
-                ppu.get_antenna_responses(antenna, ra,
-                                          dec, time)
-
+            ifo_f_resp = ppu.get_antenna_responses(antenna, ra, dec, time)
             # Get the average for f_resp_mean and calculate sigma_tot
             data['f_resp_mean'][ifo] = ifo_f_resp.mean()
             sigma_tot += sigma[ifo] * ifo_f_resp
@@ -145,14 +141,12 @@ def plot_deviation(percentile, snr_grid, y, ax, style):
     # original code line (commented out above)
     y_vals = scipy.stats.ncx2.ppf(percentile, 2, y * y) ** 0.5
     y_vals = numpy.unique(y_vals)
-    x_vals = snr_grid[0 : len(y_vals)]
+    x_vals = snr_grid[0:len(y_vals)]
     n_vals = int(len(y_vals) / 2)
-    f = scipy.interpolate.interp1d(
-        x_vals[0:n_vals],
-        y_vals[0:n_vals],
-        bounds_error=False,
-        fill_value="extrapolate",
-    )
+    f = scipy.interpolate.interp1d(x_vals[0:n_vals],
+                                   y_vals[0:n_vals],
+                                   bounds_error=False,
+                                   fill_value="extrapolate")
     ax.plot(snr_grid, f(snr_grid), style)
 
 
@@ -175,9 +169,8 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_file = (
-    os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
-)
+found_file = os.path.abspath(opts.found_missed_file)\
+    if opts.found_missed_file else None
 zoom_in = opts.zoom_in
 ifo = opts.ifo
 if ifo is None:
@@ -210,9 +203,8 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(
-    trig_file, opts.veto_files, opts.veto_category
-)
+ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
+                                           opts.veto_category)
 
 # Extract trigger data
 trig_data = load_data(trig_file, ifos, vetoes, opts)
@@ -228,23 +220,21 @@ ifo_senstvty = {}
 for i_ifo in ifos:
     senstvty = trig_data['f_resp_mean'][i_ifo] * trig_data['sigma_mean'][i_ifo]
     ifo_senstvty.update({i_ifo: senstvty})
-ifo_senstvty = collections.OrderedDict(
-    sorted(ifo_senstvty.items(), key=operator.itemgetter(1), reverse=True)
-)
+ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
+                                              key=operator.itemgetter(1),
+                                              reverse=True))
 loudness_labels = ['Loudest', 'Second loudest', 'Third loudest']
 
 # Determine the maximum coherent SNR value we are dealing with
-x_max = plu.axis_max_value(
-    trig_data['coherent'], inj_data['coherent'], found_file
-)
+x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'],
+                           found_file)
 max_snr = x_max
 if x_max < 50.0:
     max_snr = 50.0
 
 # Determine the maximum auto veto value we are dealing with
-y_max = plu.axis_max_value(
-    trig_data['single'][opts.ifo], inj_data['single'][opts.ifo], found_file
-)
+y_max = plu.axis_max_value(trig_data['single'][opts.ifo],
+                           inj_data['single'][opts.ifo], found_file)
 
 # Setup the plots
 x_label = "Coherent SNR"
@@ -258,15 +248,11 @@ ax.grid()
 if found_file:
     ax.plot(inj_data['coherent'], inj_data['single'][opts.ifo], 'r+')
 # Sigma-mean, min, max
-y_data = {
-    'mean': trig_data['sigma_mean'][ifo],
-    'min': trig_data['sigma_min'],
-    'max': trig_data['sigma_max'],
-}
+y_data = {'mean': trig_data['sigma_mean'][ifo],
+          'min': trig_data['sigma_min'],
+          'max': trig_data['sigma_max']}
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
-# snr_grid = numpy.arange(0.01, max_snr, 0.01)
 snr_grid = numpy.arange(0.01, max_snr, 1)
-# y_data = [snr_grid*(trig_data['f_resp_mean'][ifo]*x)**0.5 for x in y_data]
 y_data = dict(
     (key, snr_grid * (trig_data['f_resp_mean'][ifo] * y_data[key]) ** 0.5)
     for key in y_data
@@ -294,19 +280,12 @@ if loudness_index < 2:
     polyx.extend([max_snr, 0])
     polyy.extend([limy, limy])
     ax.fill(polyx, polyy, color='#dddddd')
-opts.plot_title = (
-    opts.plot_title + " (%s SNR)" % loudness_labels[loudness_index]
-)
+opts.plot_title += " (%s SNR)" % loudness_labels[loudness_index]
 # Zoom in if asked to do so
 if opts.zoom_in:
     ax.set_xlim([6, 50])
     ax.set_ylim([0, 20])
 # Save plot
-save_fig_with_metadata(
-    fig,
-    opts.output_file,
-    cmd=' '.join(sys.argv),
-    title=opts.plot_title,
-    caption=opts.plot_caption,
-)
+save_fig_with_metadata(fig, opts.output_file, cmd=' '.join(sys.argv),
+                       title=opts.plot_title, caption=opts.plot_caption)
 plt.close()
