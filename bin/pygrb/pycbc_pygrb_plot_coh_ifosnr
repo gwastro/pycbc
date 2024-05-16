@@ -35,8 +35,8 @@ import numpy
 import scipy
 import h5py
 import pycbc.version
-from pycbc.detector import Detector
 from pycbc import init_logging
+from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import pygrb_plotting_utils as plu
@@ -54,7 +54,7 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, vetoes, ifos, opts, injections=False):
+def load_data(input_file, ifos, vetoes, opts, injections=False):
     """Load data from a trigger/injection file"""
 
     # Initialize the dictionary
@@ -70,29 +70,35 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         if injections:
             logging.info("Loading injections...")
             # TODO: This will eventually become load_injections
-            trigs = ppu.load_triggers(input_file, vetoes)
+            trigs = ppu.load_triggers(input_file, ifos, vetoes,
+                                      rw_snr_threshold=opts.newsnr_threshold)
         else:
             logging.info("Loading triggers...")
-            trigs = ppu.load_triggers(input_file, vetoes)
-
-        num_trigs = len(trigs['network/end_time_gc'][:])
+            trigs = ppu.load_triggers(input_file, ifos, vetoes,
+                                      rw_snr_threshold=opts.newsnr_threshold)
 
         # Load SNR data
-        data['coherent'] = trigs['network/coherent_snr'][:]
+        data['coherent'] = trigs['network/coherent_snr']
 
         # Get single ifo SNR data
+        ifo_trig_index = {}
         for ifo in ifos:
-            att = ifo.lower()
-            # TODO: do we want pycbc_grb_inj_finder or other executables upstream to handle this?
-            data['single'][ifo] = trigs['%s/snr' % ifo][:]
+            sorted_ifo_ids = numpy.array(
+                [
+                    numpy.where(trigs['%s/event_id' % ifo] == idx)[0][0]
+                    for idx in trigs['network/event_id']
+                ]
+            )
+            ifo_trig_index[ifo] = sorted_ifo_ids
+            data['single'][ifo] = trigs['%s/snr' % ifo][:][sorted_ifo_ids]
 
         # Get sigma for each ifo
+        sigma = {}
         for ifo in ifos:
-            sigma = dict((ifo, list(
-                trigs['%s/sigmasq' % ifo])) for ifo in ifos)
+            sigma[ifo] = trigs['%s/sigmasq' % ifo][:][ifo_trig_index[ifo]]
 
         # Create array for sigma_tot
-        sigma_tot = numpy.zeros(num_trigs)
+        sigma_tot = numpy.zeros(len(data['coherent']))
 
         # Get parameters necessary for antenna responses
         ra = trigs['network/ra'][:]
@@ -108,11 +114,11 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
 
             # Get the average for f_resp_mean and calculate sigma_tot
             data['f_resp_mean'][ifo] = ifo_f_resp.mean()
-            sigma_tot += (sigma[ifo] * ifo_f_resp)
+            sigma_tot += sigma[ifo] * ifo_f_resp
 
         for ifo in ifos:
             try:
-                sigma_norm = sigma[ifo]/sigma_tot
+                sigma_norm = sigma[ifo] / sigma_tot
                 data['sigma_mean'][ifo] = sigma_norm.mean()
                 if ifo == opts.ifo:
                     data['sigma_max'] = sigma_norm.max()
@@ -123,25 +129,30 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
                     data['sigma_max'] = 0
                     data['sigma_min'] = 0
 
-        logging.info("%d triggers found.", num_trigs)
+        logging.info("%d triggers found.", len(data['coherent']))
 
     return data
+
 
 # Plot lines representing deviations based on non-central chi-square
 def plot_deviation(percentile, snr_grid, y, ax, style):
     """Plot deviations based on non-central chi-square"""
 
     # ncx2: non-central chi-squared; ppf: percent point function
-    #ax.plot(snr_grid, scipy.stats.ncx2.ppf(percentile, 2, y*y)**0.5, style)
+    # ax.plot(snr_grid, scipy.stats.ncx2.ppf(percentile, 2, y*y)**0.5, style)
 
     # Using interpolation to work around "saturation" given by the
     # original code line (commented out above)
-    y_vals = scipy.stats.ncx2.ppf(percentile, 2, y*y)**0.5
+    y_vals = scipy.stats.ncx2.ppf(percentile, 2, y * y) ** 0.5
     y_vals = numpy.unique(y_vals)
-    x_vals = snr_grid[0:len(y_vals)]
-    n_vals = int(len(y_vals)/2)
-    f = scipy.interpolate.interp1d(x_vals[0:n_vals], y_vals[0:n_vals],
-                                   bounds_error=False, fill_value="extrapolate")
+    x_vals = snr_grid[0 : len(y_vals)]
+    n_vals = int(len(y_vals) / 2)
+    f = scipy.interpolate.interp1d(
+        x_vals[0:n_vals],
+        y_vals[0:n_vals],
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
     ax.plot(snr_grid, f(snr_grid), style)
 
 
@@ -157,13 +168,16 @@ parser.add_argument("--found-missed-file",
                     help="The hdf injection results file", required=False)
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_file = os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
+found_file = (
+    os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
+)
 zoom_in = opts.zoom_in
 ifo = opts.ifo
 if ifo is None:
@@ -173,18 +187,20 @@ if ifo is None:
 if opts.plot_title is None:
     opts.plot_title = '%s SNR vs Coherent SNR' % ifo
 if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: background triggers.  ")
+    opts.plot_caption = "Blue crosses: background triggers.  "
     if found_file:
-        opts.plot_caption += ("Red crosses: injections triggers.  ")
-    opts.plot_caption = opts.plot_caption +\
-                         "Black line: veto line.  " +\
-                         "Gray shaded region: vetoed area - The cut is " +\
-                         "applied only to the two most sensitive detectors, " +\
-                         "which can vary with mass and sky location.  " +\
-                         "Green lines: the expected SNR for optimally " +\
-                         "oriented injections (mean, min, and max).  " +\
-                         "Magenta lines: 2 sigma errors.  " +\
-                         "Cyan lines: 3 sigma errors."
+        opts.plot_caption += "Red crosses: injections triggers.  "
+    opts.plot_caption = (
+        opts.plot_caption
+        + "Black line: veto line.  "
+        + "Gray shaded region: vetoed area - The cut is "
+        + "applied only to the two most sensitive detectors, "
+        + "which can vary with mass and sky location.  "
+        + "Green lines: the expected SNR for optimally "
+        + "oriented injections (mean, min, and max).  "
+        + "Magenta lines: 2 sigma errors.  "
+        + "Cyan lines: 3 sigma errors."
+    )
 
 logging.info("Imported and ready to go.")
 
@@ -194,14 +210,15 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
-                                           opts.veto_category)
+ifos, vetoes = ppu.extract_ifos_and_vetoes(
+    trig_file, opts.veto_files, opts.veto_category
+)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, ifos, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_file, ifos, vetoes, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")
@@ -209,21 +226,25 @@ logging.info("Plotting...")
 # Order the IFOs by sensitivity
 ifo_senstvty = {}
 for i_ifo in ifos:
-    senstvty = trig_data['f_resp_mean'][i_ifo]*trig_data['sigma_mean'][i_ifo]
+    senstvty = trig_data['f_resp_mean'][i_ifo] * trig_data['sigma_mean'][i_ifo]
     ifo_senstvty.update({i_ifo: senstvty})
-ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
-                                              key=operator.itemgetter(1),
-                                              reverse=True))
+ifo_senstvty = collections.OrderedDict(
+    sorted(ifo_senstvty.items(), key=operator.itemgetter(1), reverse=True)
+)
 loudness_labels = ['Loudest', 'Second loudest', 'Third loudest']
 
 # Determine the maximum coherent SNR value we are dealing with
-x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'], found_file)
+x_max = plu.axis_max_value(
+    trig_data['coherent'], inj_data['coherent'], found_file
+)
 max_snr = x_max
-if x_max < 50.:
-    max_snr = 50.
+if x_max < 50.0:
+    max_snr = 50.0
 
 # Determine the maximum auto veto value we are dealing with
-y_max = plu.axis_max_value(trig_data['single'][opts.ifo], inj_data['single'][opts.ifo], found_file)
+y_max = plu.axis_max_value(
+    trig_data['single'][opts.ifo], inj_data['single'][opts.ifo], found_file
+)
 
 # Setup the plots
 x_label = "Coherent SNR"
@@ -237,28 +258,33 @@ ax.grid()
 if found_file:
     ax.plot(inj_data['coherent'], inj_data['single'][opts.ifo], 'r+')
 # Sigma-mean, min, max
-y_data = {'mean': trig_data['sigma_mean'][ifo],
-          'min': trig_data['sigma_min'],
-          'max': trig_data['sigma_max']}
+y_data = {
+    'mean': trig_data['sigma_mean'][ifo],
+    'min': trig_data['sigma_min'],
+    'max': trig_data['sigma_max'],
+}
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
-#snr_grid = numpy.arange(0.01, max_snr, 0.01)
+# snr_grid = numpy.arange(0.01, max_snr, 0.01)
 snr_grid = numpy.arange(0.01, max_snr, 1)
-#y_data = [snr_grid*(trig_data['f_resp_mean'][ifo]*x)**0.5 for x in y_data]
-y_data = dict((key, snr_grid*(trig_data['f_resp_mean'][ifo]*y_data[key])**0.5) for key in y_data)
+# y_data = [snr_grid*(trig_data['f_resp_mean'][ifo]*x)**0.5 for x in y_data]
+y_data = dict(
+    (key, snr_grid * (trig_data['f_resp_mean'][ifo] * y_data[key]) ** 0.5)
+    for key in y_data
+)
 for key in y_data:
     ax.plot(snr_grid, y_data[key], 'g-')
 # 2 sigma (0.9545)
 plot_deviation(0.02275, snr_grid, y_data['min'], ax, 'm-')
-plot_deviation(1-0.02275, snr_grid, y_data['max'], ax, 'm-')
+plot_deviation(1 - 0.02275, snr_grid, y_data['max'], ax, 'm-')
 # 3 sigma (0.9973)
 plot_deviation(0.00135, snr_grid, y_data['min'], ax, 'c-')
-plot_deviation(1-0.00135, snr_grid, y_data['max'], ax, 'c-')
+plot_deviation(1 - 0.00135, snr_grid, y_data['max'], ax, 'c-')
 # Non-zoomed plot
 ax.plot([0, max_snr], [4, 4], 'k-')
 ax.set_xlabel(x_label)
 ax.set_ylabel(y_label)
-ax.set_xlim([0, 1.01*x_max])
-ax.set_ylim([0, 1.20*y_max])
+ax.set_xlim([0, 1.01 * x_max])
+ax.set_ylim([0, 1.20 * y_max])
 # Veto applies to the two most sensitive IFOs, so shade them
 loudness_index = list(ifo_senstvty.keys()).index(ifo)
 if loudness_index < 2:
@@ -268,12 +294,19 @@ if loudness_index < 2:
     polyx.extend([max_snr, 0])
     polyy.extend([limy, limy])
     ax.fill(polyx, polyy, color='#dddddd')
-opts.plot_title = opts.plot_title + " (%s SNR)" % loudness_labels[loudness_index]
+opts.plot_title = (
+    opts.plot_title + " (%s SNR)" % loudness_labels[loudness_index]
+)
 # Zoom in if asked to do so
 if opts.zoom_in:
     ax.set_xlim([6, 50])
     ax.set_ylim([0, 20])
 # Save plot
-save_fig_with_metadata(fig, opts.output_file, cmd=' '.join(sys.argv),
-                       title=opts.plot_title, caption=opts.plot_caption)
+save_fig_with_metadata(
+    fig,
+    opts.output_file,
+    cmd=' '.join(sys.argv),
+    title=opts.plot_title,
+    caption=opts.plot_caption,
+)
 plt.close()

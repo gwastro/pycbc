@@ -31,8 +31,8 @@ import numpy as np
 import scipy
 from scipy import stats
 import pycbc.version
-from pycbc.detector import Detector
 from pycbc import init_logging
+from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.conversions import mchirp_from_mass1_mass2
@@ -117,7 +117,7 @@ parser.add_argument("-C", "--cluster-window", action="store", type=float,
 parser.add_argument("--bank-file", action="store", type=str,
                     help="Location of the full template bank used.")
 ppu.pygrb_add_injmc_opts(parser)
-ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -128,17 +128,12 @@ bank_file = h5py.File(opts.bank_file, 'r')
 # Check options
 do_injections = opts.found_missed_file is not None
 
-if not opts.newsnr_threshold:
-    opts.newsnr_threshold = opts.snr_threshold
-
 # Store options used multiple times in local variables
 outdir = os.path.split(os.path.abspath(opts.background_output_file))[0]
 trig_file = opts.trig_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
 inj_set_name = opts.injection_set_name
-chisq_index = opts.chisq_index
-chisq_nhigh = opts.chisq_nhigh
 wf_err = opts.waveform_error
 cal_errs = {}
 cal_errs['G1'] = opts.g1_cal_error
@@ -152,12 +147,8 @@ cal_dc_errs['H1'] = opts.h1_dc_cal_error
 cal_dc_errs['K1'] = opts.k1_dc_cal_error
 cal_dc_errs['L1'] = opts.l1_dc_cal_error
 cal_dc_errs['V1'] = opts.v1_dc_cal_error
-snr_thresh = opts.snr_threshold
-sngl_snr_thresh = opts.sngl_snr_threshold
+# pycbc_multi_inspiral already applies sngl, coinc and null SNR cuts
 new_snr_thresh = opts.newsnr_threshold
-null_grad_thresh = opts.null_grad_thresh
-null_grad_val = opts.null_grad_val
-null_thresh = list(map(float, opts.null_snr_threshold.split(',')))
 upper_dist = opts.upper_inj_dist
 lower_dist = opts.lower_inj_dist
 num_bins = opts.num_bins
@@ -178,10 +169,12 @@ if not os.path.isdir(outdir):
 ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
-# Load triggers, time-slides, and segment dictionary
+# Load triggers (apply reweighted SNR cut), time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trigs = ppu.load_triggers(trig_file, vetoes)
-logging.info("%d triggers loaded.", trigs['network/event_id'].len())
+trigs = ppu.load_triggers(trig_file, ifos, vetoes,
+                          rw_snr_threshold=opts.newsnr_threshold)
+logging.info("%d offsource triggers surviving reweighted SNR cut.",
+    len(trigs['network/event_id']))
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(trig_file)
 logging.info("Loading segments.")
@@ -252,9 +245,10 @@ with h5py.File(opts.bank_file, 'r') as bank_file:
 # =======================
 if onsource_file:
 
-    # Get trigs
-    on_trigs = ppu.load_triggers(onsource_file, vetoes)
-    logging.info("%d onsource triggers loaded.", on_trigs['network/event_id'].len())
+    logging.info("Processing onsource.")
+    # Get onsouce_triggers (apply reweighted SNR cut)
+    on_trigs = ppu.load_triggers(onsource_file, ifos, vetoes,
+                                 rw_snr_threshold=opts.newsnr_threshold)
 
     # Calculate chirp mass values
     on_mchirp = template_mchirps[on_trigs['network/template_id']]
@@ -264,7 +258,7 @@ if onsource_file:
 
     # Retrieve BestNRs and record loudest trig by BestNR.
     # Get indices of loudest triggers and pick the loudest.
-    if on_trigs:
+    if on_trigs and on_trigs['network/reweighted_snr'].size > 0:
         loud_on_bestnr_idx = np.argmax(on_trigs['network/reweighted_snr'])
         loud_on_bestnr = np.max(on_trigs['network/reweighted_snr'])
 
@@ -304,9 +298,11 @@ if do_injections:
 
     sites = [ifo[0] for ifo in ifos]
 
-    # Triggers and injections recovered in some form: discard ones at vetoed times
-    # This injs object contains the information about found/missed injections AND triggers
-    injs = ppu.load_triggers(found_missed_file, vetoes)
+    # injs contains the information about found/missed injections AND triggers
+    # Triggers and injections are discared if at vetoed times and/or below
+    # Reweighted SNR thrshold
+    injs = ppu.load_triggers(found_missed_file, ifos, vetoes,
+                             rw_snr_threshold=opts.newsnr_threshold)
 
     logging.info("Missed/found injections/triggers loaded.")
 
@@ -372,7 +368,6 @@ if do_injections:
     logging.info("%d found injections analysed.", len(injs['found/tc']))
 
     # Process missed injections (injs['missed'])
-
     logging.info("%d missed injections analysed.", len(injs['missed/tc']))
 
     # Create new set of injections for efficiency calculations
@@ -605,9 +600,12 @@ if do_injections:
             excl_dist = d + (e - (percentile / 100.)) * (d - d_low) /\
                     (e_low - e)
         else:
+            # Warn the user if the exclusion distance cannot be established,
+            # but let the workflow continue: the user will see the plot(s) and
+            # repeat with more injections
             excl_dist = 0
-            err_msg = "Efficiency below %d%% in first bin!" % (percentile)
-            logging.error(err_msg)
+            msg = "Efficiency below %d%% in first bin!" % (percentile)
+            logging.warning(msg)
         # TODO: include percentile, excl_dist on output pages
 
     # Plot efficiency using loudest foreground

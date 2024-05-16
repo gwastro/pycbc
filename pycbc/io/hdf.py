@@ -116,6 +116,8 @@ class HFile(h5py.File):
             mask = new_mask
 
         if not mask.size == size:
+            # You get here if you are using a boolean premask which
+            # isn't the same size as the arrays
             raise RuntimeError(f"Using premask of size {mask.size} which "
                                f"does not match the input datasets ({size}).")
 
@@ -641,9 +643,17 @@ class SingleDetTriggers(object):
             self.mask = np.zeros(self.ntriggers, dtype=bool)
             self.mask[logic_mask] = True
         elif hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
-            orig_indices = np.flatnonzero(self.mask)[logic_mask]
-            self.mask[:] = False
-            self.mask[orig_indices] = True
+            if hasattr(logic_mask, 'dtype') and (logic_mask.dtype == 'bool'):
+                # So both new and old masks are boolean, numpy slice assignment
+                # can be used directly, with no additional memory.
+                self.mask[self.mask] = logic_mask
+            else:
+                # So logic_mask is either an array, or list, of integers.
+                # This case is a little tricksy, so we begin by converting the
+                # list/array to a boolean, and then do what we did above.
+                new_logic_mask = np.zeros(np.sum(self.mask), dtype=bool)
+                new_logic_mask[logic_mask] = True
+                self.mask[self.mask] = new_logic_mask
         else:
             self.mask = list(np.array(self.mask)[logic_mask])
 

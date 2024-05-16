@@ -188,10 +188,6 @@ parser.add_argument("--onsource-file", action="store",
 parser.add_argument("--found-missed-file", action="store",
                     help="HDF format file with injections to output " +
                     "details about.")
-parser.add_argument("--newsnr-threshold", action="store", type=float,
-                    default=0., help="NewSNR threshold to " +
-                    "dicriminate events with SNR < threshold." +
-                    "Default 0: all the events are considered.")
 parser.add_argument("--num-loudest-off-trigs", action="store",
                     type=int, default=30, help="Number of loudest " +
                     "offsouce triggers to output details about.")
@@ -219,6 +215,7 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -266,7 +263,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(offsource_file, opts.veto_files,
 
 # Load triggers, time-slides, and segment dictionary
 logging.info("Loading triggers.")
-trig_data = ppu.load_triggers(offsource_file, None)
+trig_data = ppu.load_triggers(offsource_file, ifos, None,
+                              rw_snr_threshold=opts.newsnr_threshold)
+logging.info("%d offsource triggers surviving reweighted SNR cut.",
+             len(trig_data['network/event_id']))
 logging.info("Loading timeslides.")
 slide_dict = ppu.load_time_slides(offsource_file)
 logging.info("Loading segments.")
@@ -451,15 +451,13 @@ if lofft_outfile:
 if onsource_file:
 
     # Get trigs
-    on_trigs = ppu.load_triggers(onsource_file, None)
-    logging.info("%d onsource triggers loaded.",
-                 len(on_trigs['network/event_id']))
+    on_trigs = ppu.load_triggers(onsource_file, ifos, None,
+                                 rw_snr_threshold=opts.newsnr_threshold)
 
     # Record loudest trig by BestNR
     loud_on_bestnr = 0
     if on_trigs:
-        on_trigs_bestnrs = reweightedsnr_cut(
-            on_trigs['network/reweighted_snr'][...], opts.newsnr_threshold)
+        on_trigs_bestnrs = on_trigs['network/reweighted_snr'][...]
 
         # Gather bestNR index
         bestNR_event = np.argmax(on_trigs_bestnrs)
@@ -548,8 +546,6 @@ if onsource_file:
     pycbc.results.save_fig_with_metadata(str(html_table), lont_outfile,
                                          **kwds)
 
-    # Close the onsource file
-    on_trigs.close()
 else:
     tot_off_snr = np.array([])
     for slide_id in slide_dict:
@@ -684,7 +680,5 @@ if found_missed_file is not None:
 
 # Close the bank file
 bank_data.close()
-# Close the trig file
-trig_data.close()
 
 # Post-processing of injections ends here

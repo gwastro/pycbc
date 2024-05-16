@@ -227,6 +227,7 @@ class TestParams(unittest.TestCase):
             # set parameters
             params = {}
             YRSID_SI = 31558149.763545603
+            params['tdi'] = '1.5'
             params['ref_frame'] = 'SSB'
             params['approximant'] = 'BBHX_PhenomD'
             params['base_approximant'] = 'BBHX_PhenomD'

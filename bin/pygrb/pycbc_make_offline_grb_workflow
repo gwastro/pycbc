@@ -298,7 +298,7 @@ if wflow.cp.has_section("workflow-injections"):
     # Generate injection files
     if IPN:
         # TODO: we used to pass this file to setup_injection_workflow as
-        # exttrig_file = sim_pts_file to then use it in lalapps_insping.
+        # exttrig_file = sim_pts_file to then use it in lalapps_inspinj.
         # The code below picks it up but does not pass it: get
         # setup_injection_workflow or pycbc_create_injections handle it
         # directly via configparser_value_to_file
