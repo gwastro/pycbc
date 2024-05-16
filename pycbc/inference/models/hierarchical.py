@@ -769,9 +769,38 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 sh_others = numpy.full(nums, sh_others_max)
                 hh_others = numpy.full(nums, hh_others_max)
 
-        # add the effect of inclination back to amplitude of waveform
-        sh_others *= self.primary_model.htf
-        hh_others *= numpy.abs(self.primary_model.htf)**2
+        if self.accelerate_loglr:
+            # add the effect of inclination back to amplitude of waveform
+            ic = numpy.cos(self.primary_model.current_params['inclination'])
+            ip = 0.5 * (1.0 + ic**2)
+            ic_others = numpy.cos(margin_params['inclination'])
+            ip_others = 0.5 * (1.0 + ic_others**2)
+            # we assume F+^2 ~= Fx^2 ~= <F+^2> = <Fx^2> = 1/5 in other models
+            # for amplitude_factor
+            amplitude_factor = numpy.sqrt((ip**2 + ic**2) /
+                                          (ip_others**2 + ic_others**2))
+            sh_others *= amplitude_factor
+            hh_others *= amplitude_factor**2
+
+            def sh_phase_shift_factor(theta, phi, psi, iota):
+                sky_factor = 0.5 * (1./numpy.cos(theta) + numpy.cos(theta)) *\
+                                numpy.tan(2*phi)**(-1)
+                a = (sky_factor * numpy.sin(2*psi) + numpy.cos(2*psi)) *\
+                        2*numpy.cos(iota)
+                b = (sky_factor * numpy.cos(2*psi) - numpy.sin(2*psi)) *\
+                        (1+numpy.cos(iota)**2)
+                return numpy.mod(-numpy.arctan2(a, b), 2*numpy.pi)
+
+            phase_diff_fast = sh_phase_shift_factor(
+                                margin_params['ra'], margin_params['dec'],
+                                margin_params['polarization'],
+                                margin_params['inclination']) - \
+                              sh_phase_shift_factor(
+                                margin_params['ra'], margin_params['dec'],
+                                margin_params['polarization'],
+                                margin_params['inclination'])[i_max_extrinsic]
+            phase_diff_fast = numpy.mod(phase_diff_fast, 2*numpy.pi)
+            sh_others *= numpy.exp(1j*phase_diff_fast)            
 
         if nums == 1:
             # the type of the original sh/hh_others are numpy.array,
