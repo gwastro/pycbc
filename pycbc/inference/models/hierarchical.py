@@ -791,16 +791,15 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                         (1+numpy.cos(iota)**2)
                 return numpy.mod(-numpy.arctan2(a, b), 2*numpy.pi)
 
-            phase_diff_fast = sh_phase_shift_factor(
+            phase_factor = sh_phase_shift_factor(
                                 margin_params['ra'], margin_params['dec'],
                                 margin_params['polarization'],
                                 margin_params['inclination']) - \
-                              sh_phase_shift_factor(
+                            sh_phase_shift_factor(
                                 margin_params['ra'], margin_params['dec'],
                                 margin_params['polarization'],
                                 margin_params['inclination'])[i_max_extrinsic]
-            phase_diff_fast = numpy.mod(phase_diff_fast, 2*numpy.pi)
-            sh_others *= numpy.exp(1j*phase_diff_fast)            
+            sh_others *= numpy.exp(1j*phase_factor)            
 
         if nums == 1:
             # the type of the original sh/hh_others are numpy.array,
