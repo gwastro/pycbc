@@ -1080,14 +1080,14 @@ class PycbcCreateInjectionsExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
     extension = '.hdf'
 
-    def create_node(self, config_file=None, seed=None, tags=None):
+    def create_node(self, config_files=None, seed=None, tags=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
 
         Parameters
         ----------
-        config_file : pycbc.workflow.core.File
-            A ``pycbc.workflow.core.File`` for inference configuration file
-            to be used with ``--config-files`` option.
+        config_files : pycbc.workflow.core.FileList
+            A ``pycbc.workflow.core.FileList`` for injection configuration
+            files to be used with ``--config-files`` option.
         seed : int
             Seed to use for generating injections.
         tags : list
@@ -1109,8 +1109,8 @@ class PycbcCreateInjectionsExecutable(Executable):
 
         # make node for running executable
         node = Node(self)
-        if config_file is not None:
-            node.add_input_opt("--config-files", config_file)
+        if config_files is not None:
+            node.add_input_list_opt("--config-files", config_files)
         if seed:
             node.add_opt("--seed", seed)
         injection_file = node.new_output_file_opt(analysis_time,

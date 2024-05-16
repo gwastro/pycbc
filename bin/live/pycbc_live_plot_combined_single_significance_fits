@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright 2020 Gareth S. Davies
+# Copyright 2020 Gareth S. Cabourn Davies
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -105,8 +105,10 @@ max_end = max([separate_ends[ifo].max() for ifo in ifos])
 
 xtix = []
 xtix_labels = []
+# start ticks at the midnight before the first datapoint
 t = min_start
-while t < max_end:
+# Last tick will be the midnight after the last datapoint
+while t < max_end + 86400:
     # Strip off the time information, ticks are at midnight
     time_dt = gpstime.gps_to_utc(t).date()
     xtix_labels.append(time_dt.strftime("%Y-%m-%d"))
@@ -114,6 +116,7 @@ while t < max_end:
     t += 86400
 
 logging.info("Plotting fits information")
+
 for ifo in ifos:
     logging.info(ifo)
 
@@ -192,8 +195,11 @@ for ifo in ifos:
     for ax in [ax_count, ax_alpha]:
         ax.set_xticks(xtix)
         ax.set_xticklabels(xtix_labels, rotation=90)
-        # Add 1/4 day padding either side
-        ax.set_xlim(xtix[0] - 21600, xtix[-1] + 21600)
+        # Add 1/4 day padding either side of the lines
+        ax.set_xlim(
+            min(separate_starts[ifo]) - 21600,
+            max(separate_starts[ifo]) + 21600
+        )
         ax.grid(zorder=-30)
 
     fig_count.tight_layout()

@@ -85,10 +85,6 @@ class NessaiSampler(BaseSampler):
 
     def run(self, **kwargs):
         """Run the sampler"""
-        out_dir = os.path.join(
-            os.path.dirname(os.path.abspath(self.checkpoint_file)),
-            "outdir_nessai",
-        )
         default_kwds, default_run_kwds = self.get_default_kwds(
             importance_nested_sampler=self.extra_kwds.get(
                 "importance_nested_sampler", False
@@ -97,6 +93,15 @@ class NessaiSampler(BaseSampler):
 
         extra_kwds = self.extra_kwds.copy()
         run_kwds = self.run_kwds.copy()
+
+        # Output in kwargs takes priority of extra kwds.
+        output = kwargs.pop("output", extra_kwds.pop("output", None))
+        # If neither have been specified, use the path from the checkpoint file
+        if output is None:
+            output = os.path.join(
+                os.path.dirname(os.path.abspath(self.checkpoint_file)),
+                "outdir_nessai",
+            )
 
         if kwargs is not None:
             logging.info("Updating keyword arguments with %s", kwargs)
@@ -111,7 +116,7 @@ class NessaiSampler(BaseSampler):
             logging.info("Initialising nessai FlowSampler")
             self._sampler = nessai.flowsampler.FlowSampler(
                 self.model_call,
-                output=out_dir,
+                output=output,
                 pool=self.pool,
                 n_pool=self.nprocesses,
                 close_pool=False,
@@ -194,7 +199,13 @@ class NessaiSampler(BaseSampler):
         ):
             for k in d_defaults.keys():
                 if cp.has_option(section, k):
-                    d_out[k] = ast.literal_eval(cp.get(section, k))
+                    option = cp.get(section, k)
+                    try:
+                        # This will fail for e.g. a string with an underscore
+                        option = ast.literal_eval(option)
+                    except ValueError:
+                        pass
+                    d_out[k] = option
 
         # Specified kwds
         ignore_kwds = {"nlive", "name"}

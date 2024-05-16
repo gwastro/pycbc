@@ -256,7 +256,7 @@ for num_inj in range(n_injections):
             sub_workflow.cp, "create_injections", ifos=sub_workflow.ifos,
             out_dir=injection_file_dir)
         node, injection_file = create_injections_exe.create_node(
-            config_file, seed=seed, tags=opts.tags+[event])
+            [config_file], seed=seed, tags=opts.tags+[event])
         node.add_opt("--ninjections", 1)
         sub_workflow += node
         seed = seed + 1

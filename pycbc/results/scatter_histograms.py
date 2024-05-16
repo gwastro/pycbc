@@ -652,7 +652,7 @@ def create_multidim_plot(parameters, samples, labels=None,
     # set up the figure with a grid of axes
     # if only plotting 2 parameters, make the marginal plots smaller
     nparams = len(parameters)
-    if nparams == 2:
+    if nparams == 2 and plot_marginal:
         width_ratios = [3, 1]
         height_ratios = [1, 3]
     else:

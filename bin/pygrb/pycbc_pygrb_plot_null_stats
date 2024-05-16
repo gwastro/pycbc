@@ -48,7 +48,7 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, vetoes, ifos, opts, injections=False):
+def load_data(input_file, ifos, vetoes, opts, injections=False):
     """Load data from a trigger/injection file"""
 
     null_stat_type = opts.y_variable
@@ -62,28 +62,30 @@ def load_data(input_file, vetoes, ifos, opts, injections=False):
         if injections:
             logging.info("Loading injections...")
             # This will eventually become ppu.load_injections()
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            trigs_or_injs = \
+                ppu.load_triggers(input_file, ifos, vetoes,
+                                  rw_snr_threshold=opts.newsnr_threshold)
         else:
             logging.info("Loading triggers...")
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-            
-        num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
+            trigs_or_injs = \
+                ppu.load_triggers(input_file, ifos, vetoes,
+                                  rw_snr_threshold=opts.newsnr_threshold)
 
         # Coherent SNR is always used
-        data['coherent'] = trigs_or_injs['network/coherent_snr'][:]
+        data['coherent'] = trigs_or_injs['network/coherent_snr']
 
+        # The other SNR may vary
         if null_stat_type == 'null':
-            data[null_stat_type] = trigs_or_injs['network/%s_snr' % null_stat_type][:]
+            data[null_stat_type] = \
+                trigs_or_injs['network/%s_snr' % null_stat_type][:]
         elif null_stat_type == 'single':
-            key = opts.ifo + '/snr_' + opts.ifo.lower()
-            # TODO: Undoes current L710 in EventManagerCoherent.write_to_hdf
-            # and is ugly hardcoded!
-            if opts.ifo.lower() != 'h1':
-                key = key[:-1]
+            key = opts.ifo + '/snr'
             data[null_stat_type] = trigs_or_injs[key][:]
         elif null_stat_type == 'coincident':
-            data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs, ifos)
+            data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs)
 
+        # Count surviving points
+        num_trigs_or_injs = len(trigs_or_injs['network/reweighted_snr'])
         if injections:
             logging.info("%d injections found.", num_trigs_or_injs)
         else:
@@ -140,7 +142,8 @@ parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
 parser.add_argument("-y", "--y-variable", default=None,
                     choices=['coincident', 'null'], #TODO: overwhitened?
                     help="Quantity to plot on the vertical axis.")
-ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_null_snr_opts(parser)
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
@@ -184,10 +187,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                         opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data(trig_file, vetoes, ifos, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_missed_file, vetoes, ifos, opts, injections=True)
+inj_data = load_data(found_missed_file, ifos, vetoes, opts, injections=True)
 
 # Generate plots
 logging.info("Plotting...")

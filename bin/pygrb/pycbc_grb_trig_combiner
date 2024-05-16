@@ -507,10 +507,20 @@ numpy.random.seed(args.seed)
 offtrials = numpy.random.choice(range(sum(offsource_ntrials)), args.num_trials, replace=False)
 offtrials.sort()
 for i, j in enumerate(offtrials):
-    _ts = bins["OFFSOURCE"][0][0] if j < offsource_ntrials[0] else bins["OFFSOURCE"][1][0]
+    if j < offsource_ntrials[0]:
+        _ts = bins["OFFSOURCE"][0][0]
+    else:
+        _ts = bins["OFFSOURCE"][1][0]
+        # if the offtrial is in the second offsource segment,
+        # subtract the number of trials in the first offsource segment.
+        # This avoids the offtrials overflowing out of the offsource segments.
+        j -= offsource_ntrials[0]
     _ts += j * trialtime
     _te = _ts + trialtime
     bins["OFFTRIAL_{}".format(i+1)] = seg = segments.segment(_ts, _te)
+    if seg not in bins["OFFSOURCE"]:
+        raise ValueError(f"off-trial {i+1} not in off-source segments\n"
+                         f"off-trial {i+1} : {seg}\n")
     vprint("          off-trial {} : {}".format(i+1, seg))
 
 # -- read triggers ------------------------------

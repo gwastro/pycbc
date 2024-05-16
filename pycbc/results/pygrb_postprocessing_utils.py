@@ -31,17 +31,14 @@ import copy
 import numpy
 import h5py
 from scipy import stats
-from ligo import segments
-from pycbc.detector import Detector
+import ligo.segments as segments
+from pycbc.events.coherent import reweightedsnr_cut
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
-    from ligo.lw import utils, lsctables
+    from ligo.lw import utils
     from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
-    # Handle MultiInspiral xml-tables with glue,
-    # as ligo.lw no longer supports them
     from glue.ligolw import lsctables as glsctables
-    # from glue.ligolw.ilwd import ilwdchar as gilwdchar
     from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
@@ -129,25 +126,20 @@ def pygrb_add_injmc_opts(parser):
 
 
 def pygrb_add_bestnr_opts(parser):
-    """Add to the parser object the arguments used for BestNR calculation."""
+    """Add to the parser object the arguments used for BestNR calculation"""
     if parser is None:
         parser = argparse.ArgumentParser()
     parser.add_argument("-Q", "--chisq-index", action="store", type=float,
-                        default=6.0, help="chisq_index for newSNR calculation")
+                        default=6.0, help="chisq_index for newSNR " +
+                        "calculation (default: 6)")
     parser.add_argument("-N", "--chisq-nhigh", action="store", type=float,
-                        default=2.0, help="nhigh for newSNR calculation")
-    parser.add_argument("-B", "--sngl-snr-threshold", action="store",
-                        type=float, default=4.0, help="Single detector SNR " +
-                        "threshold, the two most sensitive detectors " +
-                        "should have SNR above this.")
-    parser.add_argument("-d", "--snr-threshold", action="store", type=float,
-                        default=6.0, help="SNR threshold for recording " +
-                        "triggers.")
-    parser.add_argument("-c", "--newsnr-threshold", action="store", type=float,
-                        default=6.0, help="NewSNR threshold for " +
-                        "calculating the chisq of triggers (based on value " +
-                        "of auto and bank chisq  values. By default will " +
-                        "take the same value as snr-threshold.")
+                        default=2.0, help="chisq_nhigh for newSNR " +
+                        "calculation (default: 2")
+
+
+def pygrb_add_null_snr_opts(parser):
+    """Add to the parser object the arguments used for null SNR calculation
+    and null SNR cut."""
     parser.add_argument("-A", "--null-snr-threshold", action="store",
                         default="3.5,5.25",
                         help="Comma separated lower,higher null SNR " +
@@ -160,13 +152,32 @@ def pygrb_add_bestnr_opts(parser):
                         "increase above the threshold")
 
 
+def pygrb_add_single_snr_cut_opt(parser):
+    """Add to the parser object an argument to place a threshold on single
+    detector SNR."""
+    parser.add_argument("-B", "--sngl-snr-threshold", action="store",
+                        type=float, default=4.0, help="Single detector SNR " +
+                        "threshold, the two most sensitive detectors " +
+                        "should have SNR above this.")
+
+
+def pygrb_add_bestnr_cut_opt(parser):
+    """Add to the parser object an argument to place a threshold on BestNR."""
+    if parser is None:
+        parser = argparse.ArgumentParser()
+    parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
+                        default=0.,
+                        help="Cut triggers with NewSNR less than THRESHOLD" +
+                        "Default 0: all events are considered.")
+
+
 # =============================================================================
 # Wrapper to read segments files
 # =============================================================================
 def _read_seg_files(seg_files):
     """Read segments txt files"""
 
-    if len(seg_files) != 3:
+    if len(seg_files) != 3 or seg_files is None:
         err_msg = "The location of three segment files is necessary."
         err_msg += "[bufferSeg.txt, offSourceSeg.txt, onSourceSeg.txt]"
         raise RuntimeError(err_msg)
@@ -198,9 +209,9 @@ def load_xml_table(file_name, table_name):
     return Table.get_table(xml_doc, table_name)
 
 
-# ==============================================================================
+# =============================================================================
 # Function to load segments from an xml file
-# ==============================================================================
+# =============================================================================
 def _load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
     """Read a ligo.segments.segmentlist from the file object file containing an
     xml segment table.
@@ -330,18 +341,72 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
 #
 
 # =============================================================================
-# Function to load triggers
+# Functions to load triggers
 # =============================================================================
-def load_triggers(input_file, vetoes):
-    """Loads triggers from PyGRB output file"""
+def dataset_iterator(g, prefix=''):
+    """Reach all datasets in and HDF file"""
+
+    for key, item in g.items():
+        # Avoid slash as first character
+        path = prefix[1:] + '/' + key
+        if isinstance(item, h5py.Dataset):
+            yield (path, item)
+        elif isinstance(item, h5py.Group):
+            yield from dataset_iterator(item, path)
+
+
+def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
+    """Loads triggers from PyGRB output file, returning a dictionary"""
 
     trigs = h5py.File(input_file, 'r')
+    rw_snr = trigs['network/reweighted_snr'][:]
+    net_ids = trigs['network/event_id'][:]
+    ifo_ids = {}
+    for ifo in ifos:
+        ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
+    trigs.close()
 
     if vetoes is not None:
         # Developers: see PR 3972 for previous implementation
         raise NotImplementedError
 
-    return trigs
+    # Apply the reweighted SNR cut on the reweighted SNR
+    if rw_snr_threshold is not None:
+        rw_snr = reweightedsnr_cut(rw_snr, rw_snr_threshold)
+
+    # Establish the indices of data not surviving the cut
+    above_thresh = rw_snr > 0
+    num_orig_pts = len(above_thresh)
+
+    # Do not assume that IFO and network datasets are sorted the same way:
+    # find where each surviving network/event_id is placed in the IFO/event_id
+    ifo_ids_above_thresh_locations = {}
+    for ifo in ifos:
+        ifo_ids_above_thresh_locations[ifo] = \
+            numpy.array([numpy.where(ifo_ids[ifo] == net_id)[0][0]
+                         for net_id in net_ids[above_thresh]])
+
+    # Apply the cut on all the data by remove points with reweighted SNR = 0
+    trigs_dict = {}
+    with h5py.File(input_file, "r") as trigs:
+        for (path, dset) in dataset_iterator(trigs):
+            # The dataset contains information other than trig/inj properties:
+            # just copy it
+            if len(dset) != num_orig_pts:
+                trigs_dict[path] = dset[:]
+            # The dataset is relative to an IFO: cut with the correct index
+            elif path[:2] in ifos:
+                ifo = path[:2]
+                if ifo_ids_above_thresh_locations[ifo].size != 0:
+                    trigs_dict[path] = \
+                        dset[:][ifo_ids_above_thresh_locations[ifo]]
+                else:
+                    trigs_dict[path] = numpy.array([])
+            # The dataset is relative to the network: cut it before copying
+            else:
+                trigs_dict[path] = dset[above_thresh]
+
+    return trigs_dict
 
 
 # =============================================================================
@@ -372,85 +437,6 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
     fp, fc = antenna.antenna_pattern(ra, dec, 0, geocent_time)
 
     return numpy.sqrt(fp ** 2 * (1 + numpy.cos(inc)) ** 2 / 4 + fc ** 2)
-
-
-# =============================================================================
-# Function to calculate the detection statistic of a list of triggers
-# =============================================================================
-def get_bestnrs(trigs, q=4.0, n=3.0, null_thresh=(4.25, 6), snr_threshold=6.,
-                sngl_snr_threshold=4., chisq_threshold=None,
-                null_grad_thresh=20., null_grad_val=0.2):
-    """Calculate BestNR (coh_PTF detection statistic) of triggers through
-    signal based vetoes.  The (default) signal based vetoes are:
-    * Coherent SNR < 6
-    * Bank chi-squared reduced (new) SNR < 6
-    * Auto veto reduced (new) SNR < 6
-    * Single-detector SNR (from two most sensitive IFOs) < 4
-    * Null SNR (CoincSNR^2 - CohSNR^2)^(1/2) < null_thresh
-
-    Returns Numpy array of BestNR values.
-    """
-
-    if not trigs:
-        return numpy.array([])
-
-    # Grab sky position and timing
-    ra = trigs.get_column('ra')
-    dec = trigs.get_column('dec')
-    time = trigs.get_end()
-
-    # Initialize BestNRs
-    snr = trigs.get_column('snr')
-    bestnr = numpy.ones(len(snr))
-
-    # Coherent SNR cut
-    bestnr[numpy.asarray(snr) < snr_threshold] = 0
-
-    # Bank and auto chi-squared cuts
-    if not chisq_threshold:
-        chisq_threshold = snr_threshold
-    for chisq in ['bank_chisq', 'cont_chisq']:
-        bestnr[numpy.asarray(trigs.get_new_snr(index=q, nhigh=n,
-                                               column=chisq))
-               < chisq_threshold] = 0
-
-    # Define IFOs for sngl cut
-    ifos = list(map(str, trigs[0].get_ifos()))
-
-    # Single detector SNR cut
-    sens = {}
-    sigmasqs = trigs.get_sigmasqs()
-    ifo_snr = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
-    for ifo in ifos:
-        antenna = Detector(ifo)
-        sens[ifo] = sigmasqs[ifo] * get_antenna_responses(antenna, ra,
-                                                          dec, time)
-    # Apply this cut only if there is more than 1 IFO
-    if len(ifos) > 1:
-        for i_trig, _ in enumerate(trigs):
-            # Apply only to triggers that were not already cut previously
-            if bestnr[i_trig] != 0:
-                ifos.sort(key=lambda ifo, j=i_trig: sens[ifo][j], reverse=True)
-                if (ifo_snr[ifos[0]][i_trig] < sngl_snr_threshold or
-                        ifo_snr[ifos[1]][i_trig] < sngl_snr_threshold):
-                    bestnr[i_trig] = 0
-    for i_trig, trig in enumerate(trigs):
-        # Get chisq reduced (new) SNR for triggers that were not cut so far
-        # NOTE: .get_bestnr is in glue.ligolw.lsctables.MultiInspiralTable
-        if bestnr[i_trig] != 0:
-            bestnr[i_trig] = trig.get_bestnr(index=q, nhigh=n,
-                                             null_snr_threshold=null_thresh[0],
-                                             null_grad_thresh=null_grad_thresh,
-                                             null_grad_val=null_grad_val)
-            # If we got this far and the bestNR is non-zero, verify that chisq
-            # was actually calculated for the trigger, otherwise raise an
-            # error with info useful to figure out why this happened.
-            if bestnr[i_trig] != 0 and trig.chisq == 0:
-                err_msg = "Chisq not calculated for trigger with end time "
-                err_msg += f"{trig.get_end()} and SNR {trig.snr}."
-                raise RuntimeError(err_msg)
-
-    return bestnr
 
 
 # =============================================================================
@@ -502,7 +488,8 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
 # =============================================================================
 # Extract basic trigger properties and store them as dictionaries
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
+def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
+                                  opts):
     """Extract and store as dictionaries time, SNR, and BestNR of
     time-slid triggers"""
 
@@ -516,13 +503,20 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict):
     trig_bestnr = {}
     for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
+        indices = numpy.nonzero(
+            numpy.isin(trigs['network/event_id'], slide_trigs))[0]
         if slide_trigs:
-            trig_time[slide_id] = trigs['network/end_time_gc'][slide_trigs]
-            trig_snr[slide_id] = trigs['network/coherent_snr'][slide_trigs]
+            trig_time[slide_id] = trigs['network/end_time_gc'][
+                indices]
+            trig_snr[slide_id] = trigs['network/coherent_snr'][
+                indices]
         else:
             trig_time[slide_id] = numpy.asarray([])
             trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = trigs['network/reweighted_snr'][slide_trigs]
+        trig_bestnr[slide_id] = reweightedsnr_cut(
+            trigs['network/reweighted_snr'][indices],
+            opts.newsnr_threshold)
+
     logging.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
@@ -565,36 +559,6 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
         vetoes = None
 
     return ifos, vetoes
-
-
-# =============================================================================
-# Function to load injections
-# =============================================================================
-def load_injections(inj_file, vetoes, sim_table=False, label=None):
-    """Loads injections from PyGRB output file"""
-
-    if label is None:
-        logging.info("Loading injections...")
-    else:
-        logging.info("Loading %s...", label)
-
-    insp_table = glsctables.MultiInspiralTable
-    if sim_table:
-        insp_table = glsctables.SimInspiralTable
-
-    # Load injections in injection file
-    inj_table = load_xml_table(inj_file, insp_table.tableName)
-
-    # Extract injections in time-slid non-vetoed data
-    injs = lsctables.New(insp_table, columns=insp_table.loadcolumns)
-    injs.extend(inj for inj in inj_table if inj.get_end() not in vetoes)
-
-    if label is None:
-        logging.info("%d injections found.", len(injs))
-    else:
-        logging.info("%d %s found.", len(injs), label)
-
-    return injs
 
 
 # =============================================================================
@@ -767,25 +731,12 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
 # =============================================================================
 # Function to calculate the coincident SNR
 # =============================================================================
-def get_coinc_snr(trigs_or_injs, ifos):
-    """ Calculate coincident SNR using single IFO SNRs"""
+def get_coinc_snr(trigs_or_injs):
+    """ Calculate coincident SNR using coherent and null SNRs"""
 
-    num_trigs_or_injs = len(trigs_or_injs['network/end_time_gc'][:])
-
-    # Calculate coincident SNR
-    single_snr_sq = dict((ifo, None) for ifo in ifos)
-    snr_sum_square = numpy.zeros(num_trigs_or_injs)
-    for ifo in ifos:
-        key = ifo + '/snr_' + ifo.lower()
-        if ifo.lower() != 'h1':
-            key = key[:-1]
-        # Square the individual SNRs
-        single_snr_sq[ifo] = numpy.square(
-            trigs_or_injs[key][:])
-        # Add them
-        snr_sum_square = numpy.add(snr_sum_square, single_snr_sq[ifo])
-    # Obtain the square root
-    coinc_snr = numpy.sqrt(snr_sum_square)
+    coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
+    null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
+    coinc_snr = numpy.sqrt(coh_snr_sq + null_snr_sq)
 
     return coinc_snr
 

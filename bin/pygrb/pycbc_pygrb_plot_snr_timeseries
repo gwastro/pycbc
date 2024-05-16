@@ -28,11 +28,11 @@ import sys
 import os
 import logging
 import numpy
-import h5py
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import pycbc.version
 from pycbc import init_logging
+from pycbc.events.coherent import reweightedsnr_cut
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.results import pygrb_plotting_utils as plu
 
@@ -49,19 +49,24 @@ __program__ = "pycbc_pygrb_plot_snr_timeseries"
 # Functions
 # =============================================================================
 # Load trigger data
-def load_data(input_file, vetoes, injections=False):
+def load_data(input_file, ifos, vetoes, rw_snr_threshold=None,
+              injections=False):
     """Load data from a trigger/injection file"""
-    
+
     trigs_or_injs = None
     if input_file:
         if injections:
             logging.info("Loading injections...")
             # This will eventually become load_injections
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
+            trigs_or_injs = \
+                ppu.load_triggers(input_file, ifos, vetoes,
+                                  rw_snr_threshold=rw_snr_threshold)
         else:
             logging.info("Loading triggers...")
-            trigs_or_injs = ppu.load_triggers(input_file, vetoes)
-        
+            trigs_or_injs = \
+                ppu.load_triggers(input_file, ifos, vetoes,
+                                  rw_snr_threshold=rw_snr_threshold)
+
     return trigs_or_injs
 
 
@@ -80,9 +85,8 @@ def get_start_end_times(data_time, central_time):
 
 # Reset times so that t=0 is corresponds to the given trigger time
 def reset_times(data_time, trig_time):
-    """Reset times in data so that t=0 corresponds to the trigger time provided"""
+    """Reset times so that t=0 corresponds to the trigger time provided"""
 
-    #data.time = [t-trig_time for t in data.time]
     data_time = [t-trig_time for t in data_time]
 
     return data_time
@@ -103,14 +107,15 @@ parser.add_argument("--trigger-time", type=float, default=0,
 parser.add_argument("-y", "--y-variable", default=None,
                     choices=['coherent', 'single', 'reweighted', 'null'],
                     help="Quantity to plot on the vertical axis.")
-ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-inj_file = os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
+inj_file = \
+    os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
 snr_type = opts.y_variable
 ifo = opts.ifo
 if snr_type == 'single' and ifo is None:
@@ -126,22 +131,32 @@ if not os.path.isdir(outdir):
 
 # Extract IFOs and vetoes
 ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
-                                        opts.veto_category)
+                                           opts.veto_category)
 
-# Load trigger data
-trig_data = load_data(trig_file, vetoes)
-
-# Load (or initialize) injection data
-inj_data = load_data(inj_file, vetoes, injections=True)
+# Load trigger and injections data: when plotting reweighted SNR, keep all
+# points to show the impact of the cut, otherwise remove points with
+# reweighted SNR below threshold
+if snr_type == 'reweighted':
+    trig_data = load_data(trig_file, ifos, vetoes)
+    trig_data['network/reweighted_snr'] = \
+        reweightedsnr_cut(trig_data['network/reweighted_snr'],
+                          opts.newsnr_threshold)
+    inj_data = load_data(inj_file, ifos, vetoes, injections=True)
+    if inj_data is not None:
+        inj_data['network/reweighted_snr'] = \
+            reweightedsnr_cut(inj_data['network/reweighted_snr'],
+                              opts.newsnr_threshold)
+else:
+    trig_data = load_data(trig_file, ifos, vetoes,
+                          rw_snr_threshold=opts.newsnr_threshold)
+    inj_data = load_data(inj_file, ifos, vetoes,
+                         rw_snr_threshold=opts.newsnr_threshold,
+                         injections=True)
 
 # Specify HDF file keys for x quantity (time) and y quantity (SNR)
 if snr_type == 'single':
     x_key = opts.ifo + '/end_time'
-    y_key = opts.ifo + '/snr_' + opts.ifo.lower()
-    # TODO: Undoes current L710 in EventManagerCoherent.write_to_hdf
-    # and is ugly hardcoded!
-    if opts.ifo.lower() != 'h1':
-        y_key = y_key[:-1]
+    y_key = opts.ifo + '/snr'
 else:
     x_key = 'network/end_time_gc'
     y_key = 'network/' + snr_type + '_snr'
