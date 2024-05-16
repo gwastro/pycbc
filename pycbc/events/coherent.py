@@ -29,7 +29,8 @@ import numpy as np
 
 
 def get_coinc_indexes(idx_dict, time_delay_idx):
-    """Return the indexes corresponding to coincident triggers
+    """Return the indexes corresponding to coincident triggers, requiring
+    they are seen in at least two detectors in the network
 
     Parameters
     ----------
