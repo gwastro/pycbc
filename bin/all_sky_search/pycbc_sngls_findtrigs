@@ -205,7 +205,6 @@ for i, tnum in enumerate(template_ids):
     stat_all += list(stat_t)
 
 # Perform decimation
-
 dec_facs = np.ones_like(template_ids_all)
 stat_all = np.array(stat_all)
 template_ids_all = np.array(template_ids_all)
@@ -216,16 +215,13 @@ logging.info("%d events", dec_facs.size)
 for t, f in zip(threshes, factors):
     # Find the events with statistic above the threshold - these will be kept:
     abovethresh = stat_all >= t
-    # Any events below threshold, multiply total decimation factor by the
-    # current factor
+    # Any events below threshold, change decimation factor to the current one
     belowthresh = np.logical_not(abovethresh)
     dec_facs[belowthresh] = f
 
     # Also keep events with trigger id as an integer multiple of the factor
     # Work out which events would be kept whatever happens
     factor_idx = trigger_ids_all % f == 0
-    # Find the events which are below this threshold
-    kept_decimated = np.logical_and(factor_idx, belowthresh)
     # Keep events which are above threshold or a trigger_id multiple of
     # the factor
     keep = np.logical_or(abovethresh, factor_idx)
