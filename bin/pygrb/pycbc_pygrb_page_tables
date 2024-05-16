@@ -27,7 +27,6 @@ import sys
 import os
 import logging
 import numpy as np
-from scipy import stats
 import h5py
 import pycbc.version
 from pycbc.conversions import mchirp_from_mass1_mass2
@@ -125,10 +124,6 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         found_data[param] = inj_data['network/%s' % param][...]
     found_data['chisq'] = inj_data['network/my_network_chisq'][...]
     found_data['nifos'] = inj_data['network/nifo'][...].astype(int)
-    # Calibration errors:
-    # Get the relative detector sensitivities averaged over the
-    # parameters. This is used to marginalize over calibration errors.
-    # also save the snr per ifo
     for ifo in ifos:
         if np.all(inj_data['network/event_id'][...] ==
                   inj_data['%s/event_id' % ifo][...]):
@@ -220,7 +215,6 @@ parser.add_argument("-g", "--glitch-check-factor", action="store",
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
-ppu.pygrb_add_injmc_opts(parser)
 ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
@@ -230,25 +224,6 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 offsource_file = opts.offsource_file
 onsource_file = opts.onsource_file
 found_missed_file = opts.found_missed_file
-cal_errs = {
-        'G1': opts.g1_cal_error,
-        'H1': opts.h1_cal_error,
-        'K1': opts.k1_cal_error,
-        'L1': opts.l1_cal_error,
-        'V1': opts.v1_cal_error
-        }
-cal_dc_errs = {
-        'G1': opts.g1_dc_cal_error,
-        'H1': opts.h1_dc_cal_error,
-        'K1': opts.k1_dc_cal_error,
-        'L1': opts.l1_dc_cal_error,
-        'V1': opts.v1_dc_cal_error
-        }
-upper_dist = opts.upper_inj_dist
-lower_dist = opts.lower_inj_dist
-num_bins = opts.num_bins
-wav_err = opts.waveform_error
-num_mc_injs = opts.num_mc_injections
 lofft_outfile = opts.loudest_offsource_trigs_output_file
 lofft_h5_outfile = opts.loudest_offsource_trigs_h5_output_file
 lont_outfile = opts.loudest_onsource_trig_output_file
@@ -281,10 +256,6 @@ for output_file in output_files:
         outdir = os.path.split(os.path.abspath(output_file))[0]
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
-
-# Initialize random number generator
-np.random.seed(opts.seed)
-logging.info("Setting random seed to %d.", opts.seed)
 
 # Extract IFOs and vetoes
 ifos, vetoes = ppu.extract_ifos_and_vetoes(offsource_file, opts.veto_files,
@@ -611,140 +582,6 @@ if found_missed_file is not None:
     missed_na = [-0] * len(missed_injs['mchirp'])
 
     logging.info("%d missed injections analysed.", len(missed_injs['mchirp']))
-
-    # Efficiency marginalization starts here
-    # Create new set of injections for efficiency calculations
-    total_injs = len(found_injs['mchirp']) + len(missed_injs['mchirp'])
-    long_inj = {}
-    long_inj['dist'] = stats.uniform.rvs(size=total_injs) * \
-        (upper_dist-lower_dist) + upper_dist
-
-    logging.info("%d long distance injections created.", total_injs)
-
-    # Set distance bins and data arrays
-    dist_bins = zip(np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),
-                              (upper_dist-lower_dist)/num_bins),
-                    np.arange(lower_dist, upper_dist + (upper_dist-lower_dist),
-                              (upper_dist-lower_dist)/num_bins) +
-                    (upper_dist-lower_dist)/num_bins)
-    dist_bins = list(dist_bins)
-
-    num_dist_bins_plus_one = len(dist_bins) + 1
-    num_injections = {}
-    found_max_bestnr = {}
-    found_on_bestnr = {}
-    for key in ['mc', 'no_mc']:
-        num_injections[key] = np.zeros(num_dist_bins_plus_one)
-        found_max_bestnr[key] = np.zeros(num_dist_bins_plus_one)
-        found_on_bestnr[key] = np.zeros(num_dist_bins_plus_one)
-
-    # Calculate the amplitude error
-    # Begin by calculating the components from each detector
-    cal_error = 0
-    for ifo in ifos:
-        cal_error += cal_errs[ifo]**2 * \
-            found_injs['inj_sigma_mean_%s' % ifo]**2
-    cal_error = cal_error**0.5
-
-    max_dc_cal_error = max(cal_dc_errs.values())
-
-    # Calibration phase uncertainties are neglected
-    logging.info("Calibration amplitude uncertainty calculated.")
-
-    # Create the numbers for the efficiency plots.  These include calibration
-    # and waveform errors incorporated by running over each injection
-    # num_mc_injs times, where a random value of distance is drawn each time.
-
-    # Distribute injections
-    found_injs['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs,
-                                               found_injs['distance'],
-                                               cal_error, wav_err,
-                                               max_dc_cal_error)
-    missed_injs['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs,
-                                                missed_injs['distance'],
-                                                cal_error, wav_err,
-                                                max_dc_cal_error)
-    long_inj['dist_mc'] = ppu.mc_cal_wf_errs(num_mc_injs, long_inj['dist'],
-                                             cal_error, wav_err,
-                                             max_dc_cal_error)
-    logging.info("MC injection set distributed with %d iterations.",
-                 num_mc_injs)
-
-    # Check injections against on source
-    if onsource_file:
-        more_sig_than_onsource = (found_injs['fap'] <= loud_on_fap)
-    else:
-        more_sig_than_onsource = (found_injs['fap'] <= 0.5)
-    more_sig_than_onsource = more_sig_than_onsource.all(0)
-
-    distance_count = np.zeros(len(dist_bins))
-
-    max_bestnr_cut = (found_injs['bestnr'] > max_bestnr)
-
-    # Check louder than on source
-    if onsource_file:
-        on_bestnr_cut = found_injs['bestnr'] > loud_on_bestnr
-    else:
-        on_bestnr_cut = found_injs['bestnr'] > med_snr
-
-    # Check whether injection is found for the purposes of exclusion
-    # distance calculation.
-    # Found: if louder than all on source
-    # Missed: if not louder than loudest on source
-    found_excl = on_bestnr_cut & (more_sig_than_onsource) & \
-        (found_injs['bestnr'] != 0)
-    # If not missed, double check bestnr against nearby triggers
-    near_test = np.zeros((found_excl).sum()).astype(bool)
-    for j, (t, bestnr) in enumerate(zip(found_injs['tc'][found_excl],
-                                        found_injs['bestnr'][found_excl])):
-        # 0 is the zero-lag timeslide
-        near_bestnr = trig_bestnr[0]\
-                      [np.abs(trig_time[0]-t) < opts.cluster_window]
-        near_test[j] = ~((near_bestnr * opts.glitch_check_factor >
-                          bestnr).any())
-    # Apply the local test
-    c = 0
-    for z, b in enumerate(found_excl):
-        if found_excl[z]:
-            found_excl[z] = near_test[c]
-            c += 1
-
-    # Loop over each random instance of the injection set
-    for k in range(num_mc_injs+1):
-        # Loop over the distance bins
-        for j, dist_bin in enumerate(dist_bins):
-            # Construct distance cut
-            found_dist_cut = (dist_bin[0] <= found_injs['dist_mc'][k, :]) &\
-                             (found_injs['dist_mc'][k, :] < dist_bin[1])
-            missed_dist_cut = (dist_bin[0] <= missed_injs['dist_mc'][k, :]) &\
-                              (missed_injs['dist_mc'][k, :] < dist_bin[1])
-            long_dist_cut = (dist_bin[0] <= long_inj['dist_mc'][k, :]) &\
-                            (long_inj['dist_mc'][k, :] < dist_bin[1])
-
-            # Count all injections in this distance bin
-            num_found_pass = (found_dist_cut).sum()
-            num_missed_pass = (missed_dist_cut).sum()
-            num_long_pass = long_dist_cut.sum() or 0
-            # Count only zero FAR injections
-            num_zero_far = (found_dist_cut & max_bestnr_cut).sum()
-            # Count number found for exclusion
-            num_excl = (found_dist_cut & found_excl).sum()
-
-            # Record number of injections, number found for exclusion
-            # and number of zero FAR
-            if k == 0:
-                key = 'no_mc'
-            else:
-                key = 'mc'
-            num_pass = num_found_pass + num_missed_pass + num_long_pass
-            num_injections[key][j] += num_pass
-            num_injections[key][-1] += num_pass
-            found_max_bestnr[key][j] += num_zero_far
-            found_max_bestnr[key][-1] += num_zero_far
-            found_on_bestnr[key][j] += num_excl
-            found_on_bestnr[key][-1] += num_excl
-
-    logging.info("Found/missed injection efficiency calculations completed.")
 
     # Write quiet triggers to file
     sites = [ifo[0] for ifo in ifos]
