@@ -85,6 +85,8 @@ sciSegs = {}
 for ifo in wflow.ifos:
     sciSegs[ifo] = sciSegsFile.segment_dict[ifo+':science']
 
+# This block of code and PyCBCMultiInspiralExecutable.get_valid_times()
+# must be consistent
 if wflow.cp.has_option("inspiral", "segment-start-pad"):
     pad_data = int(wflow.cp.get("inspiral", "pad-data"))
     start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
@@ -294,6 +296,35 @@ if wflow.cp.has_section("workflow-injections"):
     inj_dir = os.path.join(curr_dir, "injections")
     inj_caches = _workflow.FileList([])
     inj_insp_caches = _workflow.FileList([])
+
+    # Given the stretch of time this workflow will analyse, generate
+    # the configuration file with the prior for the injections times
+    inj_method = wflow.cp.get("workflow-injections",
+                              "injections-method")
+    if inj_method == "IN_WORKFLOW" and \
+        wflow.cp.has_option("workflow-injections", "tc-prior-at-runtime"):
+        tc_path = os.path.join(base_dir, "tc_prior.ini")
+        # Write the tc-prior configuration file
+        if os.path.exists(tc_path):
+            raise ValueError("Refusing to overwrite %s." % tc_path)
+        tc_file = open(tc_path, "w")
+        tc_file.write("[prior-tc]\n")
+        tc_file.write("name = uniform\n")
+        tc_file.write("min-tc = %s\n" % wflow.analysis_time[0])
+        tc_file.write("max-tc = %s\n" % wflow.analysis_time[1])
+        tc_file.close()
+        # Add the tc-prior configuration file url to wflow.cp if necessary
+        tc_file_path = "file://"+tc_path
+        for inj_sec in wflow.cp.get_subsections("injections"):
+            config_urls = wflow.cp.get("workflow-injections",
+                                       inj_sec+"-config-files")
+            config_urls = [url.strip() for url in config_urls.split(",")]
+            if tc_file_path not in config_urls:
+                config_urls += [tc_file_path]
+            config_urls = ', '.join([str(item) for item in config_urls])
+            wflow.cp.set("workflow-injections",
+                         inj_sec+"-config-files",
+                         config_urls)
 
     # Generate injection files
     if IPN:
