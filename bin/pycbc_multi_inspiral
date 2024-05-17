@@ -492,7 +492,8 @@ with ctx:
         'chisq_dof': int,
         'bank_chisq': float32,
         'bank_chisq_dof': int,
-        'cont_chisq': float32,
+        'auto_chisq': float32,
+        'auto_chisq_dof': int,
         'slide_id': int,
     }
     ifo_out_vals = {
@@ -503,7 +504,8 @@ with ctx:
         'chisq_dof': None,
         'bank_chisq': None,
         'bank_chisq_dof': None,
-        'cont_chisq': None,
+        'auto_chisq': None,
+        'auto_chisq_dof': int,
         'slide_id': None,
     }
     ifo_names = sorted(ifo_out_vals.keys())
@@ -972,7 +974,10 @@ with ctx:
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
                             )
-                            ifo_out_vals['cont_chisq'] = autochisq.values(
+                            (
+                                ifo_out_vals['auto_chisq'],
+                                ifo_out_vals['auto_chisq_dof'],
+                            ) = autochisq.values(
                                 snr_dict[ifo] / norm_dict[ifo],
                                 coinc_idx_det_frame[ifo],
                                 template,

@@ -283,7 +283,7 @@ def template_triggers(t_num):
                                       out_vals['chisq_dof'],
                                       idx+stilde.analyze.start)
 
-        out_vals['cont_chisq'] = \
+        out_vals['cont_chisq'], _ = \
               autochisq.values(snr, idx+stilde.analyze.start, template,
                                stilde.psd, norm, stilde=stilde,
                                low_frequency_cutoff=flow)

@@ -761,7 +761,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 f['chisq'] = ifo_events['chisq']
                 f['bank_chisq'] = ifo_events['bank_chisq']
                 f['bank_chisq_dof'] = ifo_events['bank_chisq_dof']
-                f['cont_chisq'] = ifo_events['cont_chisq']
+                f['auto_chisq'] = ifo_events['auto_chisq']
+                f['auto_chisq_dof'] = ifo_events['auto_chisq_dof']
                 f['end_time'] = ifo_events['time_index'] / \
                         float(self.opt.sample_rate[ifo]) + \
                         self.opt.gps_start_time[ifo]

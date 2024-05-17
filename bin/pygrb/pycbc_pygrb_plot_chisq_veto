@@ -91,7 +91,7 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
         # Tags to find vetoes in HDF files
         veto_tags = {'standard': 'chisq',
                      'bank': 'bank_chisq',
-                     'auto': 'cont_chisq'}
+                     'auto': 'auto_chisq'}
 
         # FIXME: network data contains my_network_chisq
         chisq_key = 'network/my_network_chisq' if injections \

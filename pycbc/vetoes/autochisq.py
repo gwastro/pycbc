@@ -223,6 +223,14 @@ class SingleDetAutoChisq(object):
             The lower frequency to consider in matched-filters
         high_frequency_cutoff : float
             The upper frequency to consider in matched-filters
+
+        Returns
+        -------
+        achi_list : TimeSeries of auto veto values - if indices
+        is None then evaluated at all time samples, if not then only at
+        requested sample indices
+
+        dof: int, approx number of statistical degrees of freedom
         """
         if self.do and (len(indices) > 0):
             htilde = make_frequency_series(template)
@@ -274,7 +282,7 @@ class SingleDetAutoChisq(object):
                                oneside=self.one_sided, twophase=self.two_phase,
                                maxvalued=self.take_maximum_value)
             self.dof = dof
-            return achi_list
+            return achi_list, dof
 
 class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
     """Stub for precessing auto chisq if anyone ever wants to code it up.
