@@ -141,9 +141,10 @@ def pygrb_add_null_snr_opts(parser):
     """Add to the parser object the arguments used for null SNR calculation
     and null SNR cut."""
     parser.add_argument("-A", "--null-snr-threshold", action="store",
-                        default="3.5,5.25",
-                        help="Comma separated lower,higher null SNR " +
-                        "threshold for null SNR cut")
+                        default=5.25,
+                        type=float,
+                        help="Null SNR threshold for null SNR cut "
+                        "(default: 5.25)")
     parser.add_argument("-T", "--null-grad-thresh", action="store", type=float,
                         default=20., help="Threshold above which to " +
                         "increase the values of the null SNR cut")

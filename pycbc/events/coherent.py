@@ -29,7 +29,8 @@ import numpy as np
 
 
 def get_coinc_indexes(idx_dict, time_delay_idx):
-    """Return the indexes corresponding to coincident triggers
+    """Return the indexes corresponding to coincident triggers, requiring
+    they are seen in at least two detectors in the network
 
     Parameters
     ----------
@@ -340,7 +341,7 @@ def null_snr(
         keep = (
             ((null < null_min) & (rho_coh <= null_step))
             | (
-                (null < (rho_coh * null_grad + null_min))
+                (null < ((rho_coh - null_step) * null_grad + null_min))
                 & (rho_coh > null_step)
                 )
             )
