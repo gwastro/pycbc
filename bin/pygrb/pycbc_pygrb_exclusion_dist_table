@@ -77,15 +77,12 @@ for file_content in file_contents:
 
 # Table data
 data = []
-for trial in trials:
-    for percent in ('50%', '90%'):
+for percent in ('50%', '90%'):
+    for trial in trials:
         row = [f"{trial} ({percent})"]
         for injection_set in injection_sets:
             row.append(exclusion_distances[trial][injection_set][percent])
         data.append(row)
-
-# Sort by trial name
-data.sort(key=lambda x: x[0])
 
 # Write table
 html = str(pycbc.results.static_table(data, headers))
