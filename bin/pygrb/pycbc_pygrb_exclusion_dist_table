@@ -88,7 +88,7 @@ for trial in trials:
 data.sort(key=lambda x: x[0])
 
 # Write table
-html = str(pycbc.results.static_table(headers, data))
+html = str(pycbc.results.static_table(data, headers))
 
 title = "Exclusion Distances"
 caption = "Table of exclusion distances for each trial and injection set."
