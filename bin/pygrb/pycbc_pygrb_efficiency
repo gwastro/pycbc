@@ -620,8 +620,8 @@ if do_injections:
         excl_dist_dict = {}
         excl_dist_dict['injection_set_name'] = inj_set_name
         excl_dist_dict['trial_name'] = opts.trial_name
-        excl_dist_dict['50% distance'] = sens_dist
-        excl_dist_dict['90% distance'] = excl_dist
+        excl_dist_dict['50%'] = sens_dist
+        excl_dist_dict['90%'] = excl_dist
         with open(opts.exclusion_dist_output_file, 'w') as excl_dist_file:
             json.dump(excl_dist_dict, excl_dist_file)
 
