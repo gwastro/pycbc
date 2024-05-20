@@ -28,7 +28,7 @@ chmod +x $p
 
 # LAL extra data files
 # FIXME, should be a way to make reduced package (with subset of data files)
-GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
+GIT_CLONE_PROTECTION_ACTIVE=false GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
 cd lalsuite-extra
 git lfs pull -I "data/lalsimulation/SEOBNRv2ROM_*.dat"
 git lfs pull -I "data/lalsimulation/*ChirpTime*.dat"
