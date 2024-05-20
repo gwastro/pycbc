@@ -311,7 +311,11 @@ if wflow.cp.has_section("workflow-injections"):
         tc_file.write("[prior-tc]\n")
         tc_file.write("name = uniform\n")
         tc_file.write("min-tc = %s\n" % wflow.analysis_time[0])
-        tc_file.write("max-tc = %s\n" % wflow.analysis_time[1])
+        tc_file.write("max-tc = %s\n\n" % wflow.analysis_time[1])
+        tc_file.write("[constraint-tc]\n")
+        tc_file.write("name = custom\n")
+        tc_file.write("constraint_arg = (tc < %s) | (tc > %s)\n" %
+                      (bufferSeg[0], bufferSeg[1]))
         tc_file.close()
         # Add the tc-prior configuration file url to wflow.cp if necessary
         tc_file_path = "file://"+tc_path

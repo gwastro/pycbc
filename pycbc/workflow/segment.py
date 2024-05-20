@@ -381,7 +381,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             segmentsUtils.tosegwizard(open(bufferSegfile, "w"),
                                       segments.segmentlist([bufferSegment]))
 
-            return onsource[best_comb], offsource[best_comb]
+            return onsource[best_comb], offsource[best_comb], bufferSegment
 
         num_ifos -= 1
 
