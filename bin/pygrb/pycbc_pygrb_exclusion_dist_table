@@ -72,7 +72,7 @@ for file_content in file_contents:
     exclusion_distances[file_content["trial_name"]][file_content["injection_set"]] = {}
     for percent in ('50%', '90%'):
         exclusion_distances[file_content["trial_name"]][file_content["injection_set"]][percent] = \
-            file_content["exclusion_distance"][percent]
+            file_content[percent]
 
 
 # Table data
