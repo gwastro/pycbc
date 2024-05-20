@@ -101,7 +101,7 @@ parser.add_argument("--background-output-file", default=None, required=True,
                     help="Detection efficiency output file.")
 parser.add_argument("--onsource-output-file", default=None, required=True,
                     help="Exclusion distance output file.")
-parser.add_argument("--exclusion-dist-output-file", default=None, required=True,
+parser.add_argument("--exclusion-dist-output-file", default=None,
                     help="JSON file containing exclusion distances.")
 parser.add_argument("-g", "--glitch-check-factor", action="store",
                     type=float, default=1.0, help="When deciding " +
@@ -120,7 +120,7 @@ parser.add_argument("--trial-name", action="store", type=str,
 parser.add_argument("-C", "--cluster-window", action="store", type=float,
                     default=0.1, help="The cluster window used " +
                     "to cluster triggers in time.")
-parser.add_argument("--bank-file", action="store", type=str,
+parser.add_argument("--bank-file", action="store", type=str, required=True,
                     help="Location of the full template bank used.")
 ppu.pygrb_add_injmc_opts(parser)
 ppu.pygrb_add_bestnr_cut_opt(parser)
@@ -616,13 +616,14 @@ if do_injections:
 
     # Write 50% and 90% exclusion distances to JSON file
     # Also include injection set name and trial name
-    excl_dist_dict = {}
-    excl_dist_dict['injection_set_name'] = inj_set_name
-    excl_dist_dict['trial_name'] = opts.trial_name
-    excl_dist_dict['50% distance'] = sens_dist
-    excl_dist_dict['90% distance'] = excl_dist
-    with open(opts.exclusion_dist_output_file, 'w') as excl_dist_file:
-        json.dump(excl_dist_dict, excl_dist_file)
+    if opts.exclusion_dist_output_file:
+        excl_dist_dict = {}
+        excl_dist_dict['injection_set_name'] = inj_set_name
+        excl_dist_dict['trial_name'] = opts.trial_name
+        excl_dist_dict['50% distance'] = sens_dist
+        excl_dist_dict['90% distance'] = excl_dist
+        with open(opts.exclusion_dist_output_file, 'w') as excl_dist_file:
+            json.dump(excl_dist_dict, excl_dist_file)
 
     # Plot efficiency using loudest foreground
     fig = plt.figure()
