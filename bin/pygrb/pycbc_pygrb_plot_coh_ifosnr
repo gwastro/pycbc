@@ -223,7 +223,7 @@ for i_ifo in ifos:
 ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
                                               key=operator.itemgetter(1),
                                               reverse=True))
-loudness_labels = ['Loudest', 'Second loudest', 'Third loudest']
+loudness_labels = ['first', 'second', 'third']
 
 # Determine the maximum coherent SNR value we are dealing with
 x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'],
@@ -280,7 +280,7 @@ if loudness_index < 2:
     polyx.extend([max_snr, 0])
     polyy.extend([limy, limy])
     ax.fill(polyx, polyy, color='#dddddd')
-opts.plot_title += " (%s SNR)" % loudness_labels[loudness_index]
+opts.plot_title += " (%s average sensitivity)" % loudness_labels[loudness_index]
 # Zoom in if asked to do so
 if opts.zoom_in:
     ax.set_xlim([6, 50])
