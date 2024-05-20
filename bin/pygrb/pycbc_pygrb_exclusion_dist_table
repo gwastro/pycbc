@@ -63,7 +63,7 @@ injection_sets = list(set(injection_sets))
 # Headers
 headers = ["Trial Name (percent)"]
 for injection_set in injection_sets:
-    headers.append(injection_set)
+    headers.append(f"{injection_set} (Mpc)")
 
 exclusion_distances = {}
 for file_content in file_contents:
