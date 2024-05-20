@@ -50,14 +50,14 @@ for file_name in opts.input_files:
 # Get sorted list of trials
 trials = []
 for file_content in file_contents:
-    trials.extend(file_content["trial_name"])
+    trials.append(file_content["trial_name"])
 trials = list(set(trials))
 trials.sort()
 
 # Get names of injection sets
 injection_sets = []
 for file_content in file_contents:
-    injection_sets.extend(file_content["injection_set"])
+    injection_sets.append(file_content["injection_set"])
 injection_sets = list(set(injection_sets))
 
 # Headers
