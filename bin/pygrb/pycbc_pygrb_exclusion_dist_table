@@ -49,15 +49,15 @@ for file_name in opts.input_files:
 
 # Get sorted list of trials
 trials = []
-for file_content in file_contents:
-    trials.append(file_content["trial_name"])
+for fc in file_contents:
+    trials.append(fc["trial_name"])
 trials = list(set(trials))
 trials.sort()
 
 # Get names of injection sets
 injection_sets = []
-for file_content in file_contents:
-    injection_sets.append(file_content["injection_set"])
+for fc in file_contents:
+    injection_sets.append(fc["inj_set"])
 injection_sets = list(set(injection_sets))
 
 # Headers
@@ -65,14 +65,14 @@ headers = ["Trial Name (percent)"]
 for injection_set in injection_sets:
     headers.append(f"{injection_set} (Mpc)")
 
-exclusion_distances = {}
-for file_content in file_contents:
-    if file_content["trial_name"] not in exclusion_distances:
-        exclusion_distances[file_content["trial_name"]] = {}
-    exclusion_distances[file_content["trial_name"]][file_content["injection_set"]] = {}
+# Prepare data
+results = {}
+for fc in file_contents:
+    if fc["trial_name"] not in results:
+        results[fc["trial_name"]] = {}
+    results[fc["trial_name"]][fc["inj_set"]] = {}
     for percent in ('50%', '90%'):
-        exclusion_distances[file_content["trial_name"]][file_content["injection_set"]][percent] = \
-            file_content[percent]
+        results[fc["trial_name"]][fc["inj_set"]][percent] = fc[percent]
 
 
 # Table data
@@ -81,7 +81,7 @@ for percent in ('50%', '90%'):
     for trial in trials:
         row = [f"{trial} ({percent})"]
         for injection_set in injection_sets:
-            row.append(exclusion_distances[trial][injection_set][percent])
+            row.append(results[trial][injection_set][percent])
         data.append(row)
 
 # Write table

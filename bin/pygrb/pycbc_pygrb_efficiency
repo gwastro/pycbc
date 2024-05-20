@@ -618,7 +618,7 @@ if do_injections:
     # Also include injection set name and trial name
     if opts.exclusion_dist_output_file:
         excl_dist_dict = {}
-        excl_dist_dict['injection_set'] = inj_set_name
+        excl_dist_dict['inj_set'] = inj_set_name
         excl_dist_dict['trial_name'] = opts.trial_name
         excl_dist_dict['50%'] = sens_dist
         excl_dist_dict['90%'] = excl_dist
