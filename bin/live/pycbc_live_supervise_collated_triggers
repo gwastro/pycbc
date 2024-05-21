@@ -53,6 +53,8 @@ trigger_collation_options = [
     'file-identifier',
     'verbose',
     'date-directories',
+    'trigger-cuts',
+    'template-cuts',
 ]
 
 # These options are for the fit_by_template code
