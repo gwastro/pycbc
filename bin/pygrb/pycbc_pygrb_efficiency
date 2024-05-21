@@ -95,7 +95,8 @@ parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
 parser.add_argument("-F", "--trig-file", action="store", required=True,
                     default=None, help="Location of off-source trigger file.")
 parser.add_argument("--onsource-file", action="store", default=None,
-                    help="Location of on-source trigger file.")
+                    help="Location of on-source trigger file (or a " +
+                    "background trigger file to be treated as such).")
 parser.add_argument("--background-output-file", default=None, required=True,
                     help="Detection efficiency output file.")
 parser.add_argument("--onsource-output-file", default=None, required=True,
