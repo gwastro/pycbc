@@ -612,7 +612,6 @@ if do_injections:
             excl_dist = 0
             msg = "Efficiency below %d%% in first bin!" % (percentile)
             logging.warning(msg)
-        # TODO: include percentile, excl_dist on output pages
 
     # Write 50% and 90% exclusion distances to JSON file
     # Also include injection set name and trial name

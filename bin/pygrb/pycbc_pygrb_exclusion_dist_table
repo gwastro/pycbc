@@ -38,7 +38,7 @@ parser.add_argument("--input-files", nargs="+", required=True,
                     " output by pycbc_pygrb_efficiency" +
                     " containing exclusion distances.")
 parser.add_argument("--output-file", required=True,
-                    help="Output file containing table" +
+                    help="HTML output file containing table" +
                     " of exclusion distances.")
 opts = parser.parse_args()
 
@@ -48,7 +48,7 @@ for file_name in opts.input_files:
     with open(file_name, "r") as file:
         file_contents.append(json.load(file))
 
-# Get list of trials (i.e OFFTRIAL_i, ONSOURCE, etc.)
+# Get list of trials (i.e. OFFTRIAL_i, ONSOURCE, etc.)
 trials = []
 for fc in file_contents:
     trials.append(fc["trial_name"])
