@@ -48,6 +48,7 @@ control_options = [
 
 # These options are for the collection of triggers into a merged file
 trigger_collation_options = [
+    'bank-file',
     'ifos',
     'file-identifier',
     'verbose',
@@ -102,8 +103,7 @@ plot_bank_corner_options = [
 
 # These options are for the bin_trigger_rates_dq code
 #bin_dq_options = [
-#    'flag-file',
-#    'flag-name',
+#    'template-bins-file',
 #    'stat-threshold',
 #    'sngl-ranking',
 #    'verbose',
@@ -190,7 +190,8 @@ def collate_triggers(args, day_dt, day_str, option_values):
     # Collate the triggers into a single hdf file for input into
     # fit_by_template and bin_dq
     collate_args = [
-        './pycbc_live_collate_triggers', #FIXME - remove the ./ once this script is merged
+        '/home/gareth.cabourndavies/test_codes/pycbclive/collate_trigs/env_collate_trigs/bin/python',
+        '/home/gareth.cabourndavies/test_codes/pycbclive/collate_trigs/env_collate_trigs/src/pycbc/bin/live/pycbc_live_collate_triggers',  #FIXME - remove the fullpath etc. once this script is merged
     ]
     collate_args += sv.dict_to_args(
         {opt: v for opt, v in option_values.items() if opt in trigger_collation_options}
@@ -200,11 +201,10 @@ def collate_triggers(args, day_dt, day_str, option_values):
     gps_end = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
     collate_args += [
         '--trigger-dir', option_values['top-directory'],
-        '--trigger-file-method', 'start-num-days',
-        '--start-date', day_str,
-        '--num-days', '1',
-        '--output-file-name', option_values['collated-triggers-format'].format(date=day_str),
-        '--output-dir', output_dir
+        '--gps-start-time', f'{gps_start:d}',
+        '--gps-end-time', f'{gps_end:d}',
+        '--date-directories',
+        '--output-file', trig_merge_file,
     ]
 
     logging.info(collate_args)
@@ -351,76 +351,16 @@ def fit_over_multiparam(option_values, ifo, day_dt, day_str):
     fit_over_args += ['--output', os.path.join(output_dir, out_fname + '.hdf')]
     logging.info(fit_over_args)
     sv.run_and_error(fit_over_args, option_values)
-#
-#    if not trfits_files:
-#        raise ValueError("No files meet the criteria")
-#
-#    combined_options['trfits-files'] = ' '.join(trfits_files)
-#
-#    combined_args = ['pycbc_live_combine_single_significance_fits']
-#    combined_args += sv.dict_to_args(combined_options)
-#
-#    sv.run_and_error(combined_args, option_values)
-#
-#    logging.info('Copying combined fits file to local filesystem')
-#    try:
-#        shutil.copyfile(
-#            combined_options['output'],
-#            option_values['variable-trigger-fits']
-#        )
-#    except Exception as e:
-#        sv.mail_volunteers_error(
-#            option_values,
-#            [str(e)],
-#            "PyCBC live could not copy to variable trigger fits file"
-#        )
-#        raise e
 
-#
-#    logging.info(
-#        "%s updated to link to %s",
-#        option_values['variable-trigger-fits'],
-#        combined_options['output']
-#    )
-#
-#    logging.info("Plotting combined fits")
-#    # Add plotting for combined fits, and linking to the public directory
-#    combined_plot_output = os.path.join(output_dir,
-#                                        f"{{ifo}}-{out_fname}-{{type}}.png")
-#    combined_plot_arguments = [
-#        'pycbc_live_plot_combined_single_significance_fits',
-#        '--combined-fits-file',
-#        combined_options['output'],
-#        '--output-plot-name-format',
-#        combined_plot_output,
-#        '--log-colormap'
-#    ]
-#
-#    print(combined_plot_arguments)
-#
-#    combined_plot_outputs = [
-#        combined_plot_output.format(ifo=ifo, type='fit_coeffs') for ifo in
-#        combined_options['ifos'].split()
-#    ]
-#    combined_plot_outputs += [
-#        combined_plot_output.format(ifo=ifo, type='counts') for ifo in
-#        combined_options['ifos'].split()
-#    ]
-#
-#    # Link the plots to the public-dir if wanted
-#    if 'public-dir' in option_values:
-#        logging.info("Linking combined fits")
-#        for cpo in combined_plot_outputs:
-#             sv.symlink(cpo, public_dir)
 
 def do_collation_fits_dq(args, option_values, day_dt, day_str):
     ensure_directories(option_values, day_str)
     merged_triggers = collate_triggers(args, day_dt, day_str, option_values)
     for ifo in option_values['ifos']:
-        if args.fit_by_template is not None:
+        if args.fit_by_template:
             fbt_file = fit_by_template(merged_triggers, day_str, option_values, ifo)
             fits_plot(fbt_file, option_values, ifo)
-        if args.fit_over_multiparam is not None:
+        if args.fit_over_multiparam:
             fom_file = fit_over_multiparam(option_values, ifo, day_dt, day_str)
             fits_plot(fom_file, option_values, ifo)
     logging.info('Done')
