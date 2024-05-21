@@ -52,6 +52,9 @@ for file_name in opts.input_files:
 trials = []
 for fc in file_contents:
     trials.append(fc["trial_name"])
+# Check that at least one trial exists
+if len(trials) == 0:
+    raise ValueError("No trials found in input files.")
 # Remove duplicates and sort
 trials = list(set(trials))
 trials.sort()
@@ -60,6 +63,9 @@ trials.sort()
 injection_sets = []
 for fc in file_contents:
     injection_sets.append(fc["inj_set"])
+# Check that at least one injection set exists
+if len(injection_sets) == 0:
+    raise ValueError("No injection sets found in input files.")
 # Remove duplicates and sort
 injection_sets = list(set(injection_sets))
 injection_sets.sort()
