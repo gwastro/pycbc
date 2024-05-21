@@ -52,6 +52,7 @@ trigger_collation_options = [
     'ifos',
     'file-identifier',
     'verbose',
+    'date-directories',
 ]
 
 # These options are for the fit_by_template code
@@ -171,7 +172,7 @@ def ensure_directories(option_values, day_str):
             option_values['public-dir'],
             *day_str.split('_')
         )
-        #sv.run_and_error(['mkdir', '-p', public_dir], option_values)
+        sv.run_and_error(['mkdir', '-p', public_dir], option_values)
 
 
 def collate_triggers(args, day_dt, day_str, option_values):
@@ -183,10 +184,6 @@ def collate_triggers(args, day_dt, day_str, option_values):
     # The main output directory will have a date subdirectory which we
     # put the output into
     output_dir = os.path.join(option_values['output-directory'], day_str)
-    trig_merge_file = os.path.join(
-        output_dir,
-        option_values['collated-triggers-format'].format(date=day_str)
-    )
     # Collate the triggers into a single hdf file for input into
     # fit_by_template and bin_dq
     collate_args = [
@@ -199,11 +196,20 @@ def collate_triggers(args, day_dt, day_str, option_values):
     # FIXME: The following will depend on how the trigger finding actually happens
     gps_start = gpstime.utc_to_gps(day_dt).gpsSeconds
     gps_end = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
+    ifos_str = ''.join(option_values['ifos'])
+
+    trig_merge_file = os.path.join(
+        output_dir,
+        option_values['collated-triggers-format'].format(
+            ifos=ifos_str,
+            start=gps_start,
+            duration=(gps_end - gps_start)
+        )
+    )
     collate_args += [
         '--trigger-dir', option_values['top-directory'],
         '--gps-start-time', f'{gps_start:d}',
         '--gps-end-time', f'{gps_end:d}',
-        '--date-directories',
         '--output-file', trig_merge_file,
     ]
 
@@ -216,13 +222,12 @@ def collate_triggers(args, day_dt, day_str, option_values):
 
 def fits_plot(fits_file, option_values, ifo):
     # Add plotting for daily fits, and linking to the public directory
-    output_dir = os.path.join(option_values['output-directory'], day_str)
     fits_plot_output = fits_file[:-3] + 'png'
     logging.info("Plotting daily fits %s to %s", fits_file, fits_plot_output)
     fits_plot_arguments = [
         'pycbc_plot_bank_corner',
         '--fits-file',
-        option_values['output'],
+        fits_file,
         '--output-plot-file',
         fits_plot_output,
     ]
@@ -348,9 +353,11 @@ def fit_over_multiparam(option_values, ifo, day_dt, day_str):
             day_str,
         )
     )
-    fit_over_args += ['--output', os.path.join(output_dir, out_fname + '.hdf')]
+    fit_over_full = os.path.join(output_dir, out_fname + '.hdf')
+    fit_over_args += ['--output', fit_over_full]
     logging.info(fit_over_args)
     sv.run_and_error(fit_over_args, option_values)
+    return fit_over_full
 
 
 def do_collation_fits_dq(args, option_values, day_dt, day_str):
