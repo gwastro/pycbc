@@ -484,10 +484,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     node = PlotExecutable(workflow.cp, exec_name, ifos=workflow.ifos,
                           out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
-    # Pass the trigger file as an input File instance
-    # if exec_name in ['pygrb_plot_chisq_veto', 'pygrb_plot_coh_ifosnr',
-    #                  'pygrb_plot_null_stats', 'pygrb_plot_skygrid',
-    #                  'pygrb_plot_snr_timeseries']:
     if trig_file is not None:
         node.add_input_opt('--trig-file', resolve_url_to_file(trig_file))
     # Pass the veto and segment files and options
@@ -512,10 +508,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # IFO option
     if ifo:
         node.add_opt('--ifo', ifo)
-    # Additional input files (passed as File instances)
-    # if exec_name in ['pygrb_plot_injs_results', 'pygrb_efficiency']:
-    #     missed_file = inj_file
-    #     node.add_input_opt('--missed-file', missed_file)
     # Output files and final input file (passed as a File instance)
     if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
