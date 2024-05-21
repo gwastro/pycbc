@@ -278,7 +278,7 @@ x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type],
                                found_missed_file)
 
 # Determine the minimum and maximum chi-square value we are dealing with
-y_min = 0.9*plu.axis_min_value(trig_data[snr_type], inj_data[snr_type],
+y_min = 0.9*plu.axis_min_value(trig_data[veto_type], inj_data[veto_type],
                                found_missed_file)
 y_max = 1.1*plu.axis_max_value(trig_data[veto_type], inj_data[veto_type],
                                found_missed_file)
