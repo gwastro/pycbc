@@ -359,6 +359,10 @@ def fit_over_multiparam(option_values, ifo, day_dt, day_str):
     fit_over_args += ['--output', fit_over_full]
     logging.info(fit_over_args)
     sv.run_and_error(fit_over_args, option_values)
+    if 'variable-fit-over-param' in option_values:
+        variable_fits = option_values['variable-fit-over-param'].format(ifo=ifo)
+        sv.symlink(fit_over_full, variable_fits)
+
     return fit_over_full
 
 
