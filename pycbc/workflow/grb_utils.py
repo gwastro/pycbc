@@ -37,7 +37,7 @@ from gwdatafind.utils import filename_metadata
 
 from pycbc import makedir
 from pycbc.workflow.core import \
-    File, FileList, configparser_value_to_file, resolve_url_to_file,\
+    File, FileList, configparser_value_to_file, resolve_url_to_file, \
     Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
@@ -237,6 +237,48 @@ def get_sky_grid_scale(
         if upscale:
             out *= rayleigh.interval(2 * containment - 1)[-1]
     return out
+
+
+def generate_tc_prior(wflow, tc_path, buffer_seg):
+    """
+    Generate the configuration file for the prior on the coalescence
+    time of injections, ensuring that these times fall in the analysis
+    time and avoid the onsource and its buffer.
+
+    Parameters
+    ----------
+    tc_path : str
+        Path where the configuration file for the prior needs to be written.
+    buffer_seg : segmentlist
+        Start and end times of the buffer segment encapsulating the onsource.
+    """
+
+    # Write the tc-prior configuration file if it does not exist
+    if os.path.exists(tc_path):
+        raise ValueError("Refusing to overwrite %s." % tc_path)
+    tc_file = open(tc_path, "w")
+    tc_file.write("[prior-tc]\n")
+    tc_file.write("name = uniform\n")
+    tc_file.write("min-tc = %s\n" % wflow.analysis_time[0])
+    tc_file.write("max-tc = %s\n\n" % wflow.analysis_time[1])
+    tc_file.write("[constraint-tc]\n")
+    tc_file.write("name = custom\n")
+    tc_file.write("constraint_arg = (tc < %s) | (tc > %s)\n" %
+                  (buffer_seg[0], buffer_seg[1]))
+    tc_file.close()
+
+    # Add the tc-prior configuration file url to wflow.cp if necessary
+    tc_file_path = "file://"+tc_path
+    for inj_sec in wflow.cp.get_subsections("injections"):
+        config_urls = wflow.cp.get("workflow-injections",
+                                   inj_sec+"-config-files")
+        config_urls = [url.strip() for url in config_urls.split(",")]
+        if tc_file_path not in config_urls:
+            config_urls += [tc_file_path]
+        config_urls = ', '.join([str(item) for item in config_urls])
+        wflow.cp.set("workflow-injections",
+                     inj_sec+"-config-files",
+                     config_urls)
 
 
 def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
