@@ -28,7 +28,7 @@ jobs:
         pip install "tox<4.0.0" pip setuptools --upgrade
     - name: installing auxiliary data files
       run: |
-        GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
+        GIT_CLONE_PROTECTION_ACTIVE=false GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
         cd lalsuite-extra
         git lfs pull -I "data/lalsimulation/SEOBNRv2ROM_*.dat"
         git lfs pull -I "data/lalsimulation/*ChirpTime*.dat"
