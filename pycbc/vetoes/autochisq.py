@@ -283,6 +283,8 @@ class SingleDetAutoChisq(object):
                                maxvalued=self.take_maximum_value)
             self.dof = dof
             return achi_list, dof
+        else:
+            return None, None
 
 class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
     """Stub for precessing auto chisq if anyone ever wants to code it up.
