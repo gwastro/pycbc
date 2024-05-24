@@ -261,7 +261,7 @@ if x_max < 50.0:
 
 # Determine the maximum auto veto value we are dealing with
 y_max = plu.axis_max_value(
-    trig_data['single'][opts.ifo], inj_data['single'][opts.ifo], found_file
+    trig_data['single'][ifo], inj_data['single'][ifo], found_file
 )
 
 # Setup the plots
@@ -270,11 +270,11 @@ y_label = "%s sngl SNR" % ifo
 fig = plt.figure()
 ax = fig.gca()
 # Plot trigger data
-ax.plot(trig_data['coherent'], trig_data['single'][opts.ifo], 'bx')
+ax.plot(trig_data['coherent'], trig_data['single'][ifo], 'bx')
 ax.grid()
 # Plot injection data
 if found_file:
-    ax.plot(inj_data['coherent'], inj_data['single'][opts.ifo], 'r+')
+    ax.plot(inj_data['coherent'], inj_data['single'][ifo], 'r+')
 # Sigma-mean, min, max
 y_data = {
     'mean': trig_data['sigma_mean'][ifo],
