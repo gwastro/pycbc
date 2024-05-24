@@ -69,12 +69,20 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
         if injections:
             logging.info("Loading injections...")
             # TODO: This will eventually become load_injections
-            trigs = ppu.load_triggers(input_file, ifos, vetoes,
-                                      rw_snr_threshold=opts.newsnr_threshold)
+            trigs = ppu.load_triggers(
+                input_file,
+                ifos,
+                vetoes,
+                rw_snr_threshold=opts.newsnr_threshold,
+            )
         else:
             logging.info("Loading triggers...")
-            trigs = ppu.load_triggers(input_file, ifos, vetoes,
-                                      rw_snr_threshold=opts.newsnr_threshold)
+            trigs = ppu.load_triggers(
+                input_file,
+                ifos,
+                vetoes,
+                rw_snr_threshold=opts.newsnr_threshold,
+            )
 
         # Load SNR data
         data['coherent'] = trigs['network/coherent_snr']
@@ -143,25 +151,41 @@ def plot_deviation(percentile, snr_grid, y, ax, style):
     y_vals = numpy.unique(y_vals)
     x_vals = snr_grid[0:len(y_vals)]
     n_vals = int(len(y_vals) / 2)
-    f = scipy.interpolate.interp1d(x_vals[0:n_vals],
-                                   y_vals[0:n_vals],
-                                   bounds_error=False,
-                                   fill_value="extrapolate")
+    f = scipy.interpolate.interp1d(
+        x_vals[0:n_vals],
+        y_vals[0:n_vals],
+        bounds_error=False,
+        fill_value="extrapolate",
+    )
     ax.plot(snr_grid, f(snr_grid), style)
 
 
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
-                                          version=__version__)
-parser.add_argument("-t", "--trig-file", action="store",
-                    default=None, required=True,
-                    help="The location of the trigger file")
-parser.add_argument("--found-missed-file",
-                    help="The hdf injection results file", required=False)
-parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
-                    help="Output file a zoomed in version of the plot.")
+parser = ppu.pygrb_initialize_plot_parser(
+    description=__doc__, version=__version__
+)
+parser.add_argument(
+    "-t",
+    "--trig-file",
+    action="store",
+    default=None,
+    required=True,
+    help="The location of the trigger file",
+)
+parser.add_argument(
+    "--found-missed-file",
+    help="The hdf injection results file",
+    required=False,
+)
+parser.add_argument(
+    "-z",
+    "--zoom-in",
+    default=False,
+    action="store_true",
+    help="Output file a zoomed in version of the plot.",
+)
 ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
@@ -169,8 +193,9 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_file = os.path.abspath(opts.found_missed_file)\
-    if opts.found_missed_file else None
+found_file = (
+    os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
+)
 zoom_in = opts.zoom_in
 ifo = opts.ifo
 if ifo is None:
@@ -188,7 +213,7 @@ if opts.plot_caption is None:
         + "Black line: veto line.  "
         + "Gray shaded region: vetoed area - The cut is "
         + "applied only to the two most sensitive detectors, "
-        + "which can vary with mass and sky location.  "
+        + "which can vary with template parameters and sky location. "
         + "Green lines: the expected SNR for optimally "
         + "oriented injections (mean, min, and max).  "
         + "Magenta lines: 2 sigma errors.  "
@@ -203,8 +228,9 @@ if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
 # Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
-                                           opts.veto_category)
+ifos, vetoes = ppu.extract_ifos_and_vetoes(
+    trig_file, opts.veto_files, opts.veto_category
+)
 
 # Extract trigger data
 trig_data = load_data(trig_file, ifos, vetoes, opts)
@@ -220,21 +246,23 @@ ifo_senstvty = {}
 for i_ifo in ifos:
     senstvty = trig_data['f_resp_mean'][i_ifo] * trig_data['sigma_mean'][i_ifo]
     ifo_senstvty.update({i_ifo: senstvty})
-ifo_senstvty = collections.OrderedDict(sorted(ifo_senstvty.items(),
-                                              key=operator.itemgetter(1),
-                                              reverse=True))
+ifo_senstvty = collections.OrderedDict(
+    sorted(ifo_senstvty.items(), key=operator.itemgetter(1), reverse=True)
+)
 loudness_labels = ['first', 'second', 'third']
 
 # Determine the maximum coherent SNR value we are dealing with
-x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'],
-                           found_file)
+x_max = plu.axis_max_value(
+    trig_data['coherent'], inj_data['coherent'], found_file
+)
 max_snr = x_max
 if x_max < 50.0:
     max_snr = 50.0
 
 # Determine the maximum auto veto value we are dealing with
-y_max = plu.axis_max_value(trig_data['single'][opts.ifo],
-                           inj_data['single'][opts.ifo], found_file)
+y_max = plu.axis_max_value(
+    trig_data['single'][opts.ifo], inj_data['single'][opts.ifo], found_file
+)
 
 # Setup the plots
 x_label = "Coherent SNR"
@@ -248,9 +276,11 @@ ax.grid()
 if found_file:
     ax.plot(inj_data['coherent'], inj_data['single'][opts.ifo], 'r+')
 # Sigma-mean, min, max
-y_data = {'mean': trig_data['sigma_mean'][ifo],
-          'min': trig_data['sigma_min'],
-          'max': trig_data['sigma_max']}
+y_data = {
+    'mean': trig_data['sigma_mean'][ifo],
+    'min': trig_data['sigma_min'],
+    'max': trig_data['sigma_max'],
+}
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
 snr_grid = numpy.arange(0.01, max_snr, 1)
 y_data = dict(
@@ -280,12 +310,19 @@ if loudness_index < 2:
     polyx.extend([max_snr, 0])
     polyy.extend([limy, limy])
     ax.fill(polyx, polyy, color='#dddddd')
-opts.plot_title += " (%s average sensitivity)" % loudness_labels[loudness_index]
+opts.plot_title += (
+    " (%s average sensitivity)" % loudness_labels[loudness_index]
+)
 # Zoom in if asked to do so
 if opts.zoom_in:
     ax.set_xlim([6, 50])
     ax.set_ylim([0, 20])
 # Save plot
-save_fig_with_metadata(fig, opts.output_file, cmd=' '.join(sys.argv),
-                       title=opts.plot_title, caption=opts.plot_caption)
+save_fig_with_metadata(
+    fig,
+    opts.output_file,
+    cmd=' '.join(sys.argv),
+    title=opts.plot_title,
+    caption=opts.plot_caption,
+)
 plt.close()
