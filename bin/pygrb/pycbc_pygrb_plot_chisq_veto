@@ -61,18 +61,22 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
     data[veto_type] = None
     data['dof'] = None
 
+    # Ensure that newtwork power chi-square plots show all the data to see
+    # the impact of the reweighted SNR cut
+    rw_snr_threshold = 0. if veto_type=='network' else opts.newsnr_threshold
+
     if input_file:
         if injections:
             logging.info("Loading injections...")
             # This will eventually become load_injections
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=opts.newsnr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold)
         else:
             logging.info("Loading triggers...")
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=opts.newsnr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold)
 
         # Count surviving points
         num_trigs_or_injs = len(trigs_or_injs['network/reweighted_snr'])
@@ -227,8 +231,10 @@ if opts.plot_title is None:
 if opts.plot_caption is None:
     opts.plot_caption = ("Blue crosses: background triggers.  " +
                          "Black line: veto line.  " +
-                         "Gray shaded region: Vetoed area.  " +
-                         "Yellow lines: contours of new SNR.")
+                         "Yellow lines: contours of constant rewighted SNR.  ")
+    if veto_type == 'network':
+        opts.plot_caption += ("Gray shaded region: area cut by the " +
+                              "reweighted SNR threshold.")
     if found_missed_file:
         opts.plot_caption = ("Red crosses: injections triggers.  ") +\
                             opts.plot_caption
