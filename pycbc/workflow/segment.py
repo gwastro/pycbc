@@ -387,9 +387,9 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
 
     logger.warning("No suitable science segments available.")
     try:
-        return None, offsource[best_comb]
+        return None, offsource[best_comb], None
     except UnboundLocalError:
-        return None, min_seg
+        return None, min_seg, None
 
 def get_flag_segments_file(workflow, name, option_name, out_dir, tags=None):
     """Get segments from option name syntax for each ifo for indivudal flags.
