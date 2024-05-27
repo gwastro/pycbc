@@ -545,6 +545,18 @@ dbeta2 = Parameter("dbeta2",
 dbeta3 = Parameter("dbeta3",
                 dtype=float, default=0., label=r"$d\beta_3$",
                 description="Intermediate testingGR parameter.")
+
+## Specific waveform parameters
+
+dchi0 = Parameter("ThresholdMband",
+                dtype=float, default=None, label="ThresholdMband",
+                description="PhenomXHM Multibanding")
+
+dchi0 = Parameter("PrecThresholdMband",
+                dtype=float, default=None, label="PrecThresholdMband",
+                description="PhenomXPHM Multibanding")
+
+
 #
 # =============================================================================
 #
