@@ -170,6 +170,16 @@ def _check_lal_pars(p):
         lalsimulation.SimInspiralWaveformParamsInsertNonGRDBeta2(lal_pars,p['dbeta2'])
     if p['dbeta3'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertNonGRDBeta3(lal_pars,p['dbeta3'])
+    if p['PrecThresholdMband'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(
+            lal_pars,
+            p['PrecThresholdMband'],
+        )
+    if p['ThresholdMband'] is not None:
+        lalsimulation.SimInspiralWaveformParamsInsertPhenomXHMThresholdMband(
+            lal_pars,
+            p['ThresholdMband'],
+        )
     return lal_pars
 
 def _lalsim_td_waveform(**p):

@@ -545,6 +545,18 @@ dbeta2 = Parameter("dbeta2",
 dbeta3 = Parameter("dbeta3",
                 dtype=float, default=0., label=r"$d\beta_3$",
                 description="Intermediate testingGR parameter.")
+
+## Specific waveform parameters
+
+threshmband = Parameter("ThresholdMband",
+                dtype=float, default=None, label="ThresholdMband",
+                description="PhenomXHM Multibanding")
+
+precthreshmband = Parameter("PrecThresholdMband",
+                dtype=float, default=None, label="PrecThresholdMband",
+                description="PhenomXPHM Multibanding")
+
+
 #
 # =============================================================================
 #
@@ -575,7 +587,7 @@ extrinsic_params = orientation_params + location_params
 testingGR_params = ParameterList\
     ([dchi0, dchi1, dchi2, dchi3, dchi4, dchi5, dchi5l, dchi6, dchi6l,
       dchi7, dalpha1, dalpha2, dalpha3, dalpha4, dalpha5,
-      dbeta1, dbeta2, dbeta3])
+      dbeta1, dbeta2, dbeta3, precthreshmband, threshmband])
 
 # intrinsic parameters of a CBC waveform. Some of these are not recognized
 # by every waveform model
