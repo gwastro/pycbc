@@ -95,7 +95,7 @@ parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
                                           version=__version__)
 parser.add_argument("-F", "--trig-file", action="store", required=True,
                     help="Location of off-source trigger file.")
-parser.add_argument("--onsource-file", action="store", required=True,
+parser.add_argument("--onsource-file", action="store",
                     help="Location of on-source trigger file.")
 parser.add_argument("--background-output-file", required=True,
                     help="Detection efficiency output file.")
@@ -244,43 +244,52 @@ with h5py.File(opts.bank_file, 'r') as bank_file:
 # =======================
 # Load on source triggers
 # =======================
-logging.info("Processing onsource.")
-# Get onsouce_triggers (apply reweighted SNR cut)
-on_trigs = ppu.load_triggers(onsource_file, ifos, vetoes,
-                             rw_snr_threshold=opts.newsnr_threshold)
+if onsource_file:
 
-# Calculate chirp mass values
-on_mchirp = template_mchirps[on_trigs['network/template_id']]
+    logging.info("Processing onsource.")
+    # Get onsouce_triggers (apply reweighted SNR cut)
+    on_trigs = ppu.load_triggers(onsource_file, ifos, vetoes,
+                                 rw_snr_threshold=opts.newsnr_threshold)
 
-# Set loudest event arrays
-loud_on_bestnr = 0
+    # Calculate chirp mass values
+    on_mchirp = template_mchirps[on_trigs['network/template_id']]
 
-# Retrieve BestNRs and record loudest trig by BestNR.
-# Get indices of loudest triggers and pick the loudest.
-if on_trigs and on_trigs['network/reweighted_snr'].size > 0:
-    loud_on_bestnr_idx = np.argmax(on_trigs['network/reweighted_snr'])
-    loud_on_bestnr = np.max(on_trigs['network/reweighted_snr'])
+    # Set loudest event arrays
+    loud_on_bestnr = 0
 
-# Convert to float for output
-loud_on_bestnr = float(loud_on_bestnr)
+    # Retrieve BestNRs and record loudest trig by BestNR.
+    # Get indices of loudest triggers and pick the loudest.
+    if on_trigs and on_trigs['network/reweighted_snr'].size > 0:
+        loud_on_bestnr_idx = np.argmax(on_trigs['network/reweighted_snr'])
+        loud_on_bestnr = np.max(on_trigs['network/reweighted_snr'])
 
-# If the loudest event has bestnr = 0, there is no event at all!
-if loud_on_bestnr == 0:
-    loud_on_bestnr_idx = None
-    loud_on_fap = 1
+    # Convert to float for output
+    loud_on_bestnr = float(loud_on_bestnr)
 
-logging.info("Onsource analysed.")
+    # If the loudest event has bestnr = 0, there is no event at all!
+    if loud_on_bestnr == 0:
+        loud_on_bestnr_idx = None
+        loud_on_fap = 1
 
-if loud_on_bestnr_idx is not None:
-    num_trials_louder = 0
+    logging.info("Onsource analysed.")
+
+    if loud_on_bestnr_idx is not None:
+        num_trials_louder = 0
+        tot_off_snr = np.array([])
+        for slide_id in slide_dict:
+            num_trials_louder += sum(time_veto_max_bestnr[slide_id] >
+                                     loud_on_bestnr)
+            tot_off_snr = np.concatenate([tot_off_snr,
+                                          time_veto_max_bestnr[slide_id]])
+        #fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
+        loud_on_fap = num_trials_louder/total_trials
+else:
     tot_off_snr = np.array([])
     for slide_id in slide_dict:
-        num_trials_louder += sum(time_veto_max_bestnr[slide_id] >
-                                 loud_on_bestnr)
         tot_off_snr = np.concatenate([tot_off_snr,
                                       time_veto_max_bestnr[slide_id]])
-    #fap_test = sum(tot_off_snr > loud_on_bestnr)/total_trials
-    loud_on_fap = num_trials_louder/total_trials
+    med_snr = np.median(tot_off_snr)
+    #loud_on_fap = sum(tot_off_snr > med_snr)/total_trials
 
 # =======================
 # Post-process injections
@@ -434,7 +443,10 @@ max_bestnr_cut = (injs['network/reweighted_snr'] > found_trig_max_bestnr)
 
 # Check louder than on source
 found_trig_loud_on_bestnr = np.empty(len(injs['network/event_id']))
-found_trig_loud_on_bestnr.fill(loud_on_bestnr)
+if onsource_file:
+    found_trig_loud_on_bestnr.fill(loud_on_bestnr)
+else:
+    found_trig_loud_on_bestnr.fill(med_snr)
 on_bestnr_cut = injs['network/reweighted_snr'] > found_trig_loud_on_bestnr
 
 # Check whether injection is found for the purposes of exclusion
