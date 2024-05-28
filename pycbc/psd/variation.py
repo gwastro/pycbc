@@ -168,7 +168,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
         fweight = norm * fweight
         fwhiten = numpy.sqrt(2. / srate) / numpy.sqrt(plong)
         fwhiten[0] = 0.
-        full_filt = sig.hann(int(psd_duration * srate)) * numpy.roll(
+        full_filt = sig.windows.hann(int(psd_duration * srate)) * numpy.roll(
             irfft(fwhiten * fweight), int(psd_duration / 2) * srate)
         # Convolve the filter with long segment of data
         wstrain = sig.fftconvolve(astrain, full_filt, mode='same')
