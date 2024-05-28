@@ -72,7 +72,7 @@ if args.production_server:
 else:
     gracedb = GraceDb(service_url='https://gracedb-playground.ligo.org/api/')
 
-labels = [l.upper() for l in args.labels]
+labels = [l.upper() for l in (args.labels or [])]
 allowed_labels = gracedb.allowed_labels
 
 if set(labels) - set(allowed_labels):

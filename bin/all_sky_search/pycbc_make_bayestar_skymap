@@ -23,8 +23,14 @@ import glob
 import sys
 import random
 import tempfile
+
+from ligo.lw import lsctables, utils as ligolw_utils
+
 import pycbc.version
 from pycbc import init_logging
+from pycbc.waveform import bank as wavebank
+from pycbc.io import WaveformArray
+from pycbc.io.ligolw import LIGOLWContentHandler
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action="version",
@@ -38,14 +44,12 @@ parser.add_argument('--bayestar-executable',
 parser.add_argument('--event-xml', required=True,
                     help="XML file containing event information, SNR "
                          "timeseries and PSD to pass to bayestar")
-parser.add_argument('--waveform', default='TaylorF2',
-                    help="Waveform used in the matched-filtering "
-                         "to generate the SNR timeseries.")
 parser.add_argument('--low-frequency-cutoff', type=float, default=20,
                     help="Low-frequency cutoff used in the matched-filtering "
                          "to generate the SNR timeseries")
 parser.add_argument('--output-file', required=True,
                     help="Filename to output the fits file to.")
+wavebank.add_approximant_arg(parser)
 args, unknown = parser.parse_known_args()
 
 # Default logging is set higher than normal for this job
@@ -57,12 +61,36 @@ bayestar_exe = args.bayestar_executable or 'bayestar-localize-coincs'
 
 tmpdir = tempfile.mkdtemp()
 
+# Work out which approximant is being used
+# Load the file
+xmldoc = ligolw_utils.load_filename(
+    args.event_xml,
+    contenthandler=LIGOLWContentHandler
+)
+
+# Grab the single inspiral table(s) which contain the template information
+sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
+
+# turn this into a waveform array
+row = WaveformArray.from_ligolw_table(
+    sngl_inspiral_table,
+)
+
+# Work out which waveform is used based on the template information
+# Note that as there are multiple single inspiral tables (one per ifo)
+# with the same information, we use [0] here
+waveform = wavebank.parse_approximant_arg(args.approximant, row)[0]
+
+# BAYESTAR uses TaylorF2 instead of SPAtmplt
+if waveform == 'SPAtmplt':
+    waveform = 'TaylorF2'
+
 # Set up the command to pass to bayestar.
 # The XML file path being passed twice is a legacy requirement, not a mistake.
 cmd = [bayestar_exe,
        args.event_xml,
        args.event_xml,
-       '--waveform', args.waveform,
+       '--waveform', waveform,
        '--f-low', str(args.low_frequency_cutoff),
        '-o', tmpdir]
 
