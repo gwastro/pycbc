@@ -69,8 +69,7 @@ def _select_grb_pp_class(wflow, curr_exe):
     exe_to_class_map = {
         'pycbc_grb_trig_combiner': PycbcGrbTrigCombinerExecutable,
         'pycbc_grb_trig_cluster': PycbcGrbTrigClusterExecutable,
-        'pycbc_grb_inj_finder': PycbcGrbInjFinderExecutable,
-        'pycbc_grb_inj_combiner': PycbcGrbInjCombinerExecutable
+        'pycbc_grb_inj_finder': PycbcGrbInjFinderExecutable
     }
     if exe_name not in exe_to_class_map:
         raise ValueError(f"No job class exists for executable {curr_exe}")
@@ -267,10 +266,6 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
         Contains triggers after clustering
     inj_find_files : FileList
         FOUNDMISSED FileList covering all injection sets
-    inj_comb_files : FileList
-        FOUNDMISSED-FILTERED FileList covering all injection sets
-        in the same order as inj_find_files
-        These are filtered by inclination
     """
     # Begin setting up trig combiner job(s)
     # Select executable class and initialize
@@ -309,20 +304,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
         wf.add_node(node)
         inj_find_files.append(inj_find_file)
 
-    # Combine injections
-    exe_class = _select_grb_pp_class(wf, "inj_combiner")
-    job_instance = exe_class(wf.cp, "inj_combiner")
-    inj_comb_files = FileList([])
-    for in_file in inj_find_files:
-        if 'DETECTION' not in in_file.tags:
-            node, inj_comb_file = job_instance.create_node(in_file,
-                                                           pp_dir,
-                                                           in_file.tags,
-                                                           segment)
-            wf.add_node(node)
-            inj_comb_files.append(inj_comb_file)
-
-    return trig_files, clustered_files, inj_find_files, inj_comb_files
+    return trig_files, clustered_files, inj_find_files
 
 
 class PycbcGrbTrigCombinerExecutable(Executable):
@@ -419,26 +401,6 @@ class PycbcGrbInjFinderExecutable(Executable):
         out_file = File(ifo_tag, 'inj_finder', segment,
                         os.path.join(out_dir, out_name), tags=tags)
         node.add_output(out_file)
-        return node, out_file
-
-
-class PycbcGrbInjCombinerExecutable(Executable):
-    """The class responsible for creating jobs ``pycbc_grb_inj_combiner``
-    """
-    current_retention_level = Executable.ALL_TRIGGERS
-
-    def __init__(self, cp, exe_name):
-        super().__init__(cp=cp, name=exe_name)
-
-    def create_node(self, input_file, out_dir, ifo_tag, segment, tags=None):
-        if tags is None:
-            tags = []
-        node = Node(self)
-        node.add_input_opt('--input-files', input_file)
-        out_name = input_file.name.replace('.h5', '-FILTERED.h5')
-        out_file = File(ifo_tag, 'inj_combiner', segment,
-                        os.path.join(out_dir, out_name), tags=tags)
-        node.add_output_opt('--output-file', out_file)
         return node, out_file
 
 
