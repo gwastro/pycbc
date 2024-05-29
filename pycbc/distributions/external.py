@@ -119,7 +119,7 @@ class External(object):
 
 
 class DistributionFunctionFromFile(External):
-    """Evaluating PDF, logPDF, CDF and inverse CDF from the external
+    r"""Evaluating PDF, logPDF, CDF and inverse CDF from the external
         density function.
 
     To add to an inference configuration file:
