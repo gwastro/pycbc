@@ -60,15 +60,15 @@ class NetBank(DummySampler):
         self.reconstruct = bool(reconstruct)
         self.loglr_region = float(loglr_region)
 
-    def sample_round(self, weight, node_loglrs, dmap, lengths, passed):
+    def sample_round(self, weight, node_idx, node_loglrs, dmap, lengths):
         logging.info("...draw template bins")
         drawcount = (weight * self.target_likelihood_calls).astype(int)
 
-        dorder = node_loglrs[passed].argsort()[::-1]
+        dorder = node_loglrs.argsort()[::-1]
         remainder = 0
         for i in dorder:
             c = drawcount[i]
-            l = lengths[passed][i]
+            l = lengths[i]
             if c > l:
                 drawcount[i] = l
                 remainder += c - l
@@ -83,14 +83,14 @@ class NetBank(DummySampler):
         psamp = FieldArray(total_draw, dtype=self.dtype)
         pweight = numpy.zeros(total_draw, dtype=float)
         j = 0
-        for i, c, w in zip(passed, drawcount, drawweight):
-            bdraw = choice(dmap[i], size=c, replace=False)
+        for i, (c, w) in enumerate(zip(drawcount, drawweight)):
+            bdraw = choice(dmap[node_idx[i]], size=c, replace=False)
             psamp[j:j+len(bdraw)] = FieldArray.from_records(bdraw, dtype=self.dtype)
             pweight[j:j+len(bdraw)] = - node_loglrs[i] + numpy.log(w)
             j += len(bdraw)
 
-        logging.info("Possible unique values %s", lengths[passed].sum())
-        logging.info("Templates drawn from %s", len(passed))
+        logging.info("Possible unique values %s", lengths.sum())
+        logging.info("Templates drawn from %s", len(lengths))
         logging.info("Unique values first draw %s", len(psamp))
 
         # Calculate the likelihood values for the unique parameter space
@@ -136,6 +136,7 @@ class NetBank(DummySampler):
         logw2 = logw[passed]
         logw2 -= logsumexp(logw2)
         weight = numpy.exp(logw2)
+        node_loglrsp = node_loglrs[passed]
 
         logging.info("...reading template bins")
         with h5py.File(self.mapfile, 'r') as f:
@@ -143,9 +144,10 @@ class NetBank(DummySampler):
                 dmap[i] = f['map'][str(i)][:]
 
         # Sample from posterior
-        psamp, loglr_samp, weight2 = self.sample_round(weight, node_loglrs, dmap, lengths, passed)
-        ess = 1.0 / (weight2 ** 2.0).sum()
-        logging.info("ESS = %s", ess)
+        for i in range(2):
+            psamp, loglr_samp, weight2 = self.sample_round(weight, passed, node_loglrsp, dmap, lengths[passed])
+            ess = 1.0 / (weight2 ** 2.0).sum()
+            logging.info("ESS = %s", ess)
 
         # Prepare the equally weighted output samples
         draw2 = choice(len(psamp), size=int(ess * 5),
