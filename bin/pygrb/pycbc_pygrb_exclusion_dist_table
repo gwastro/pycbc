@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2024 Jacob Buchanan
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Create table of exclusion distances."""
+
+import sys
+import argparse
+import json
+import pycbc.version
+import pycbc.results
+
+
+__author__ = "Jacob Buchanan <jacob.buchanan@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__ = pycbc.version.date
+__program__ = "pycbc_pygrb_exclusion_dist_table"
+
+parser = argparse.ArgumentParser(description=__doc__, formatter_class=
+                                 argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument("--input-files", nargs="+", required=True,
+                    help="List of JSON input files" +
+                    " output by pycbc_pygrb_efficiency" +
+                    " containing exclusion distances.")
+parser.add_argument("--output-file", required=True,
+                    help="HTML output file containing table" +
+                    " of exclusion distances.")
+opts = parser.parse_args()
+
+# Load JSON files as a list of dictionaries
+file_contents = []
+for file_name in opts.input_files:
+    with open(file_name, "r") as file:
+        file_contents.append(json.load(file))
+
+# Get list of trials (i.e. OFFTRIAL_i, ONSOURCE, etc.)
+trials = []
+for fc in file_contents:
+    trials.append(fc["trial_name"])
+# Check that at least one trial exists
+if len(trials) == 0:
+    raise ValueError("No trials found in input files.")
+# Remove duplicates and sort
+trials = list(set(trials))
+trials.sort()
+
+# Get names of injection sets
+injection_sets = []
+for fc in file_contents:
+    injection_sets.append(fc["inj_set"])
+# Check that at least one injection set exists
+if len(injection_sets) == 0:
+    raise ValueError("No injection sets found in input files.")
+# Remove duplicates and sort
+injection_sets = list(set(injection_sets))
+injection_sets.sort()
+
+# Prepare headers
+headers = ["Trial Name (percent)"]
+for injection_set in injection_sets:
+    headers.append(f"{injection_set} (Mpc)")
+
+# Organize data into a dictionary
+# trial_name -> injection_set -> percent -> exclusion distance
+results = {}
+for fc in file_contents:
+    # Don't duplicate trial names
+    if fc["trial_name"] not in results:
+        results[fc["trial_name"]] = {}
+    # Prepare dictionary for each trial + injection set
+    results[fc["trial_name"]][fc["inj_set"]] = {}
+    # Add exclusion distances to dictionary
+    for percent in ('50%', '90%'):
+        results[fc["trial_name"]][fc["inj_set"]][percent] = fc[percent]
+
+
+# Set up rows for table
+data = []
+for percent in ('50%', '90%'):
+    for trial in trials:
+        row = [f"{trial} ({percent})"]
+        for injection_set in injection_sets:
+            row.append(results[trial][injection_set][percent])
+        data.append(row)
+
+# Create static table
+html = str(pycbc.results.static_table(data, headers))
+
+# Write as figure
+title = "Exclusion Distances"
+caption = "Table of exclusion distances for each trial and injection set."
+pycbc.results.save_fig_with_metadata(html, opts.output_file,
+                                     cmd=' '.join(sys.argv),
+                                     title=title, caption=caption)
