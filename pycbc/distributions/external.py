@@ -119,11 +119,9 @@ class External(object):
 
 
 class DistributionFunctionFromFile(External):
-    r"""Evaluating PDF, logPDF, CDF and inverse CDF from the external
+    """Evaluating PDF, logPDF, CDF and inverse CDF from the external
         density function.
 
-    Instances of this class can be called like a distribution in the .ini file.
-    
     To add to an inference configuration file:
 
     .. code-block:: ini
@@ -137,10 +135,10 @@ class DistributionFunctionFromFile(External):
     ----------
     params : list
         list of parameter names
-   file_path: str
-        The path of the external density function's .txt file. 
-   column_index: int
-        The column index of the density distribution. By default, the first column
+    file_path: str
+        The path of the external density function's .txt file.
+    column_index: int
+        The column index of the density distribution. By default, the first
         should be the values of a certain parameter, such as "mass", other
         columns should be the corresponding density values (as a function of
         that parameter). If you add the name of the parameter in the first
@@ -227,7 +225,7 @@ class DistributionFunctionFromFile(External):
         file_path = cp.get_opt_tag(section, 'file_path', tag)
         column_index = cp.get_opt_tag(section, 'column_index', tag)
         return cls(params=params, file_path=file_path,
-                                  column_index=column_index)
+                   column_index=column_index)
 
 
 __all__ = ['External', 'DistributionFunctionFromFile']
