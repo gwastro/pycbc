@@ -41,18 +41,6 @@ class External(object):
         logpdf = custom_function_name
         cdfinv = custom_function_name2
 
-    Or call `DistributionFunctionFromFile` in the .ini file:
-
-    .. code-block:: ini
-
-        [prior-param]
-        name = external_func_fromfile
-        module = pycbc.distributions.external
-        file_path = path
-        column_index = index
-        logpdf = _logpdf
-        cdfinv = _cdfinv
-
     Parameters
     ----------
     params : list
@@ -113,14 +101,7 @@ class External(object):
         tag = variable_args
         params = variable_args.split(VARARGS_DELIM)
         modulestr = cp.get_opt_tag(section, 'module', tag)
-
-        if modulestr == "pycbc.distributions.external":
-            file_path = cp.get_opt_tag(section, 'file_path', tag)
-            mod = DistributionFunctionFromFile(
-                file_path=file_path,
-                column_index=cp.get_opt_tag(section, 'column_index', tag))
-        else:
-            mod = importlib.import_module(modulestr)
+        mod = importlib.import_module(modulestr)
 
         logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
         logpdf = getattr(mod, logpdfstr)
@@ -134,9 +115,6 @@ class External(object):
             rvsstr = cp.get_opt_tag(section, 'rvs', tag)
             rvs = getattr(mod, rvsstr)
 
-        if modulestr == "pycbc.distributions.external":
-            return cls(params=params, file_path=file_path,
-                       column_index=mod.column_index, rvs=rvs, cdfinv=cdfinv)
         return cls(params=params, logpdf=logpdf, rvs=rvs, cdfinv=cdfinv)
 
 
@@ -144,15 +122,25 @@ class DistributionFunctionFromFile(External):
     r"""Evaluating PDF, logPDF, CDF and inverse CDF from the external
         density function.
 
-    Instances of this class can be called like a distribution in the .ini file,
-    when used with `pycbc.distributions.external.External`. Please see the
-    example in the `External` class.
+    Instances of this class can be called like a distribution in the .ini file.
+    
+    To add to an inference configuration file:
+
+    .. code-block:: ini
+
+        [prior-param1]
+        name = external_func_fromfile
+        file_path = spin.txt
+        column_index = 1
 
     Parameters
     ----------
-    parameter : {'file_path', 'column_index'}
-        The path of the external density function's .txt file, and the
-        column index of the density distribution. By default, the first column
+    params : list
+        list of parameter names
+   file_path: str
+        The path of the external density function's .txt file. 
+   column_index: int
+        The column index of the density distribution. By default, the first column
         should be the values of a certain parameter, such as "mass", other
         columns should be the corresponding density values (as a function of
         that parameter). If you add the name of the parameter in the first
@@ -172,11 +160,10 @@ class DistributionFunctionFromFile(External):
 
     def __init__(self, params=None, file_path=None,
                  column_index=None, **kwargs):
-        if kwargs.__contains__('cdfinv'):
-            super().__init__(cdfinv=kwargs['cdfinv'])
-        else:
-            super().__init__(cdfinv=not None)
+        super().__init__(cdfinv=self._cdfinv, logpdf=self._logpdf)
         self.params = params
+        print("from file", params)
+        print(self.params)
         self.data = np.loadtxt(fname=file_path, unpack=True, comments='#')
         self.column_index = int(column_index)
         self.epsabs = kwargs.get('epsabs', 1.49e-05)
@@ -229,9 +216,18 @@ class DistributionFunctionFromFile(External):
                 cdf_list.append(self._cdf(x_value))
             self.interp['cdfinv'] = \
                 scipy_interpolate.interp1d(cdf_list, self.x_list)
-        cdfinv_val = {list(kwargs.keys())[0]: np.float64(
-            self.interp['cdfinv'](list(kwargs.values())[0]))}
+        cdfinv_val = {self.params[0]: np.float64(
+            self.interp['cdfinv'](kwargs[self.params[0]]))}
         return cdfinv_val
+
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        tag = variable_args
+        params = variable_args.split(VARARGS_DELIM)
+        file_path = cp.get_opt_tag(section, 'file_path', tag)
+        column_index = cp.get_opt_tag(section, 'column_index', tag)
+        return cls(params=params, file_path=file_path,
+                                  column_index=column_index)
 
 
 __all__ = ['External', 'DistributionFunctionFromFile']
