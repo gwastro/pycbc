@@ -106,7 +106,7 @@ def slide_limiter(args):
     if args.do_shortslides:
         n_ifos = len(args.instruments)
         stride_dur = args.segment_length[args.instruments[0]]/2
-        num_slides = np.int32(1 + n_ifos *\
+        num_slides = np.int32(1 + \
                 np.floor(stride_dur / (args.slide_shift*(n_ifos-1))))
         assert  np.logical_and(num_slides>=low,num_slides<=upp),\
                 "the combination (slideshift, segment_dur)"\
@@ -297,12 +297,7 @@ parser.add_argument(
     help="Choice of projection matrix. 'left' and 'right' "
     "correspond to face-away and face-on.",
 )
-parser.add_argument(
-    "--num-slides",
-    type=int,
-    default=0,
-    help="Number of time slides to perform.",
-)
+
 parser.add_argument(
     "--slide-shift",
     type=float,
