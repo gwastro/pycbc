@@ -268,9 +268,9 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         # read triggers
         triggers = read_hdf5_triggers(trigfiles)
         time = triggers['network/end_time_gc']
-        snr = triggers['network/'+args.rank_column]
-        event_id = triggers['network/event_id']
         time_sorting = time.argsort()
+        snr = triggers['network/'+args.rank_column][time_sorting]
+        event_id = triggers['network/event_id'][time_sorting]
 
         # determine found or missed
         _left = numpy.searchsorted(
