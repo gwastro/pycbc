@@ -1383,6 +1383,7 @@ def execute_cached_fft(invec_data, normalize_by_rate=True, ifft=False,
             outvec._data *= invec._delta_t
     if copy_output:
         outvec = outvec.copy()
+    outvec._epoch = invec_data._epoch
     return outvec
 
 
