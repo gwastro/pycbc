@@ -158,7 +158,7 @@ class DistributionFunctionFromFile(External):
 
     def __init__(self, params=None, file_path=None,
                  column_index=None, **kwargs):
-        super().__init__(cdfinv=self._cdfinv, logpdf=self._logpdf)
+        super().__init__(cdfinv=self._cdfinv, logpdf=self.logpdf)
         self.params = params
         self.data = np.loadtxt(fname=file_path, unpack=True, comments='#')
         self.column_index = int(column_index)
@@ -169,10 +169,13 @@ class DistributionFunctionFromFile(External):
         if not file_path:
             raise ValueError("Must provide the path to density function file.")
 
-    def _pdf(self, **kwargs):
+    def logpdf(self, **kwargs):
+        x = kwargs.pop(self.params[0])
+        return self._logpdf(x, **kwargs)
+
+    def _pdf(self, x010, **kwargs):
         """Calculate and interpolate the PDF by using the given density
         function, then return the corresponding value at the given x."""
-        x = kwargs[self.params[0]])
         if self.interp['pdf'] == callable:
             func_unnorm = scipy_interpolate.interp1d(
                 self.data[0], self.data[self.column_index])
@@ -181,18 +184,19 @@ class DistributionFunctionFromFile(External):
                 epsabs=self.epsabs, epsrel=self.epsrel, limit=500,
                 **kwargs)[0]
             self.interp['pdf'] = scipy_interpolate.interp1d(
-                self.data[0], self.data[self.column_index]/norm_const)
-        pdf_val = np.float64(self.interp['pdf'](x))
+                self.data[0], self.data[self.column_index]/norm_const,
+                bounds_error=False, fill_value=0)
+        pdf_val = np.float64(self.interp['pdf'](x010))
         return pdf_val
 
-    def _logpdf(self, **kwargs):
+    def _logpdf(self, x010, **kwargs):
         """Calculate the logPDF by calling `pdf` function."""
-        return np.log(self._pdf(x, **kwargs))
+        z = np.log(self._pdf(x010, **kwargs))
+        return z
 
-    def _cdf(self, **kwargs):
+    def _cdf(self, x, **kwargs):
         """Calculate and interpolate the CDF, then return the corresponding
         value at the given x."""
-        x = kwargs[self.params[0]])
         if self.interp['cdf'] == callable:
             cdf_list = []
             for x_val in self.x_list:
@@ -208,7 +212,6 @@ class DistributionFunctionFromFile(External):
     def _cdfinv(self, **kwargs):
         """Calculate and interpolate the inverse CDF, then return the
         corresponding parameter value at the given CDF value."""
-        xval = kwargs[self.params[0]])
         if self.interp['cdfinv'] == callable:
             cdf_list = []
             for x_value in self.x_list:
@@ -216,7 +219,7 @@ class DistributionFunctionFromFile(External):
             self.interp['cdfinv'] = \
                 scipy_interpolate.interp1d(cdf_list, self.x_list)
         cdfinv_val = {self.params[0]: np.float64(
-            self.interp['cdfinv'](xval)}
+            self.interp['cdfinv'](kwargs[self.params[0]]))}
         return cdfinv_val
 
     @classmethod
