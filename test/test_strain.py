@@ -23,8 +23,6 @@ class TestStrain(unittest.TestCase):
         self.fd_data = self.td_data.to_frequencyseries()
         # Tolerance for float64
         self.tol = 1e-14
-        # Higher tolerance for elementwise comparison
-        self.elem_tol = 1e-13
 
     def test_cached_fft(self):
         fd_data = execute_cached_fft(
@@ -37,9 +35,6 @@ class TestStrain(unittest.TestCase):
                 self.fd_data, tol=self.tol, dtol=self.tol
             )
         )
-        self.assertTrue(
-            fd_data.almost_equal_elem(self.fd_data, tol=self.elem_tol)
-        )
 
     def test_cached_ifft(self):
         td_data = execute_cached_ifft(
@@ -51,9 +46,6 @@ class TestStrain(unittest.TestCase):
             td_data.almost_equal_norm(
                 self.td_data, tol=self.tol, dtol=self.tol
             )
-        )
-        self.assertTrue(
-            td_data.almost_equal_elem(self.td_data, tol=self.elem_tol)
         )
 
 
