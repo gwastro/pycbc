@@ -35,6 +35,7 @@ import subprocess
 from shutil import which
 import urllib.parse
 from urllib.parse import urlparse
+import hashlib
 
 from pycbc.types.config import InterpolatingConfigParser
 
@@ -46,8 +47,34 @@ logger = logging.getLogger('pycbc.workflow.configuration')
 urllib.parse.uses_relative.append('osdf')
 urllib.parse.uses_netloc.append('osdf')
 
+def hash_file(filename, read_only_bytes=int(1e7)):
+    """
+    Calculate the sha1 hash of a file, or of part of a file
 
-def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
+    Parameters
+    ----------
+    filename : string or path
+        the file to be hashed
+    read_only_bytes : integer, optional
+        The number of bytes to be read - this is useful for very large
+        files which we expect to be distinguishable from only part of
+        it. Otherwise the whole file is read. Default ~10Mb
+
+    Returns
+    -------
+    hash : string
+        The hexdigest() after a sha1 hash of (part of) the file
+    """
+    with open(filename, 'rb') as f:
+        return hashlib.sha1(f.read(read_only_bytes)).hexdigest()
+
+def resolve_url(
+    url,
+    directory=None,
+    permissions=None,
+    copy_to_cwd=True,
+    hash_bytes=None
+):
     """Resolves a URL to a local file, and returns the path to that file.
 
     If a URL is given, the file will be copied to the current working
@@ -78,9 +105,9 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         elif copy_to_cwd:
             if os.path.isfile(filename):
                 # check to see if src and dest are the same file
-                src_inode = os.stat(u.path)[stat.ST_INO]
-                dst_inode = os.stat(filename)[stat.ST_INO]
-                if src_inode != dst_inode:
+                src_hash = hash_file(u.path, hash_bytes)
+                dst_hash = hash_file(filename, hash_bytes)
+                if src_hash != dst_hash:
                     shutil.copy(u.path, filename)
             else:
                 shutil.copy(u.path, filename)

@@ -2080,7 +2080,7 @@ class CalledProcessErrorMod(Exception):
         return msg
 
 
-def resolve_url_to_file(curr_pfn, attrs=None):
+def resolve_url_to_file(curr_pfn, attrs=None, hash_bytes=None):
     """
     Resolves a PFN into a workflow.File object.
 
@@ -2122,7 +2122,7 @@ def resolve_url_to_file(curr_pfn, attrs=None):
         curr_file = file_input_from_config_dict[curr_lfn][1]
     else:
         # Use resolve_url to download file/symlink as appropriate
-        local_file_path = resolve_url(curr_pfn)
+        local_file_path = resolve_url(curr_pfn, hash_bytes=hash_bytes)
         # Create File object with default local path
         curr_file = File.from_path(local_file_path, attrs=attrs)
 
