@@ -662,51 +662,41 @@ try:
 except ImportError:
     cupy = None
 
+try:
+    from lisatools.detector import ESAOrbits
+except ImportError:
+    ESAOrbits = None
+
 class LISA_detector(object):
     """
     LISA-like GW detector. Applies detector response from FastLISAResponse.
     """
-    def __init__(self, orbit_kwargs, use_gpu=False):
+    def __init__(self, orbits=ESAOrbits(), use_gpu=False):
         """
         Parameters
         ----------
-        orbit_kwargs : dict
-            List of keywords for generating LISA orbital data. Passed into pyResponseTDI
-            instance.
-
-            Either an orbit file or orbit module is required for projection. 
-            If both a file and module are provided, the file will take priority.
-            If neither are provided, a ValueError is raised.
+        orbits: lisatools.detector.Orbits, optional
+            Orbital information to pass into pyResponseTDI. Accepts LISA Analysis Tools 
+            format. Default ESAOrbits.
         
         use_gpu : bool (optional)
             Specify whether to run class on GPU support. Default False.
         """
-        # intialize orbit kwargs to FLR defaults
-        self.orbit_kwargs = {'orbit_module': None, 'orbit_file': None}
-
-        # get kwargs from class input
-        for key, val in orbit_kwargs.items():
-            self.orbit_kwargs[key] = val
-
-        # handle if both/neither module and file are specified
-        if self.orbit_kwargs['orbit_module'] is not None:
-            if self.orbit_kwargs['orbit_file'] is not None:
-                # FLR defaults to the module; override this and default to the file
-                self.orbit_kwargs['orbit_module'] = None
-        else:
-            if self.orbit_kwargs['orbit_file'] is None:
-                raise ValueError('Either orbit file or orbit module required to initialize LISA detector')
+        # intialize orbit information
+        if orbits is None:
+            raise ImportError('LISAanalysistools required for inputting orbital data')
+        self.orbits = orbits
 
         # cache the FLR instance along with dt and n
         self.dt = None
         self.n = None
         self.response_init = None
-        self.t0 = 10000
-        
+        self.t0 = 10000.
+
         # initialize whether to use gpu; FLR has handles if this cannot be done
         self.use_gpu = use_gpu
 
-    def project_wf(self, hp, hc, lamb, beta, t0=None, use_gpu=None):
+    def project_wf(self, hp, hc, lamb, beta, t0=10000., use_gpu=None):
         """
         Project a radiation frame (SSB) waveform to the LISA constellation.
         This *does not* perform TDI; this only produces a detector frame
@@ -727,8 +717,8 @@ class LISA_detector(object):
             The ecleptic longitude in the SSB frame.
 
         t0 : float (optional)
-            Number of seconds to omit from start and end of waveform. Default
-            to FLR default of 10000 s.
+            Number of seconds to omit from start and end of waveform. Defaults
+            to FastLISAResponse preset of 10000 s.
 
         use_gpu : bool (optional)
             Flag whether to use GPU support. Default to class input.
@@ -742,8 +732,15 @@ class LISA_detector(object):
         """
         from fastlisaresponse import pyResponseTDI
 
+        # get dt and n from waveform data
         dt = hp.delta_t # timestep (s)
         n = len(hp) # number of points
+
+        # configure the orbits file according to wf times
+        ### FIXME: This currently doesn't work. There seems to be a bug in 
+        ### LISAanalysistools that breaks the code when specifying a time array.
+        # self.sample_times = hp.sample_times.numpy()
+        # self.orbits.configure(t_arr=self.sample_times)
 
         # format wf to FLR standard hp + i*hc as ndarray
         hp = hp.numpy()
@@ -760,24 +757,33 @@ class LISA_detector(object):
                 raise ImportError('CuPy not imported but is required for GPU usage')
             else:
                 wf = cupy.asarray(wf)
-                
-        # initialize the FLR class
-        response_init = pyResponseTDI(1/dt, n, self.orbit_kwargs, use_gpu=use_gpu)
 
-        # cache response init
+        if self.response_init is None:
+            # initialize the class
+            ### TDI is set to '2nd generation' here to match default value in get_tdi()
+            # see FIXME in get_tdi()
+            response_init = pyResponseTDI(1/dt, n, orbits=self.orbits, use_gpu=use_gpu, tdi='2nd generation')
+            self.response_init = response_init
+        else:
+            # update params in the initialized class
+            self.response_init.sampling_frequency = 1/dt
+            self.response_init.num_pts = n
+            self.response_init.orbits = self.orbits
+            self.response_init.use_gpu = use_gpu
+
+        # cache n, dt, response class
         self.dt = dt
         self.n = n
-        self.response_init = response_init
-        if t0 is not None:
-            self.t0 = t0
+        self.t0 = t0
 
         # project the signal
-        response_init.get_projections(wf, lamb, beta, self.t0)
-        wf_proj = response_init.y_gw
-        
+        self.response_init.get_projections(wf, lamb, beta, t0)
+        wf_proj = self.response_init.y_gw
+
         return wf_proj
 
-    def get_tdi(self, hp, hc, lamb, beta, t0=None, tdi='XYZ', tdi_orbit_kwargs=None, use_gpu=None):
+    def get_tdi(self, hp, hc, lamb, beta, tdi='2nd generation', tdi_chan='XYZ', tdi_orbits=None, 
+                use_gpu=None, remove_garbage=True):
         """
         Calculate the TDI variables given a waveform and LISA orbit data.
 
@@ -789,26 +795,30 @@ class LISA_detector(object):
         hc : pycbc.types.TimeSeries
             The cross polarization of the GW in the radiation frame.
 
-        lambda : float
+        lamb : float
             The ecleptic latitude in the SSB frame.
 
         beta : float
             The ecleptic longitude in the SSB frame.
-            
-        t0 : float (optional)
-            Number of seconds to omit from start and end of waveform. Default
-            to FLR default of 10000 s.
 
-        tdi : str (optional)
+        tdi : string (optional)
+            TDI channel configuration. Accepts "1st generation" or "2nd generation" 
+            as inputs. Default "2nd generation".
+
+        tdi_chan : str (optional)
             The TDI observables to calculate. Accepts 'XYZ', 'AET', or 'AE'.
             Default 'XYZ'.
 
-        tdi_orbit_kwargs : dict (optional)
-            Orbit keywords specifically for TDI generation. If None, use
-            orbit_kwargs provided on class initialization. Default None.
+        tdi_orbits : lisatools.detector.Orbits (optional)
+            Orbit keywords specifically for TDI generation. Default to class input.
 
         use_gpu : bool (optional)
             Flag whether to use GPU support. Default to class input.
+
+        remove_garbage : bool (optional)
+            Flag whether to excise data from start and end of TDI projections.
+            This will remove erroneous ringing at start and end by excising
+            time length t0. Default True.
 
         Returns
         -------
@@ -819,31 +829,46 @@ class LISA_detector(object):
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
-            
-        # update t0 if provided
-        if t0 is not None:
-            self.t0 = t0
-        
-        # generate the Doppler time series
-        links = self.project_wf(hp, hc, lamb, beta, t0=self.t0, use_gpu=use_gpu)
 
-        # if TDI kwargs are provided, update the response_init
-        if type(tdi_orbit_kwargs) == dict:
-            self.response_init.tdi_orbit_kwargs = tdi_orbit_kwargs
+        tdi_args = {}
+
+        # set TDI configuration
+        if tdi in ['1st generation', '2nd generation']:
+            original_tdi = self.response_init.tdi
+            self.response_init.tdi = tdi
+        else:
+            raise ValueError('TDI configuration must be either "1st generation" or "2nd generation"')
 
         # set TDI channels
-        if tdi in ['XYZ', 'AET', 'AE']:
-            self.response_init.tdi_chan = tdi
+        if tdi_chan in ['XYZ', 'AET', 'AE']:
+            self.response_init.tdi_chan = tdi_chan
         else:
             raise ValueError('TDI channels must be one of: XYZ, AET, AE')
 
+        # if TDI orbit class is provided, update the response_init
+        # tdi_orbits are set to class input automatically by FLR otherwise
+        if tdi_orbits is not None:
+            ### FIXME: bug in LISAanalysistools when specifying time array
+            # tdi_orbits.configure(t_arr=self.sample_times)
+            self.response_init.tdi_orbits = tdi_orbits
+
+        ### the TDI config is not automatically updated by setting tdi attributes
+        ### for now, update the TDI config manually if different from default
+        ### FIXME: find a better, faster way to do this
+        if self.response_init.tdi != original_tdi:
+            self.response_init._init_tdi_delays()
+
+        # generate the Doppler time series
+        links = self.project_wf(hp, hc, lamb, beta, t0=self.t0, use_gpu=use_gpu)
+
+        # generate the TDI channels
         tdi_obs = self.response_init.get_tdi_delays()
-        
+
         # convert to dict
         tdi_dict = {}
-        for i in range(len(tdi)):
-            tdi_dict[tdi[i]] = tdi_obs[i]
-        
+        for i in range(len(tdi_chan)):
+            tdi_dict[tdi_chan[i]] = tdi_obs[i]
+
         return tdi_dict
 
 
