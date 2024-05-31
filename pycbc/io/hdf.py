@@ -42,7 +42,7 @@ class HFile(h5py.File):
             # Check the pycbc version in the file matches the current one
             if 'pycbc_version' in self.attrs:
                 if not self.attrs['pycbc_version'] == pycbc_version:
-                    logging.warning(
+                    logging.info(
                         "PyCBC version of the file (%s) does not match the "
                         "one currently being used (%s). Results may not be "
                         "as expected.",
