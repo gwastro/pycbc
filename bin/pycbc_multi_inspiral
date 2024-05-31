@@ -99,15 +99,15 @@ def slide_limiter(args):
     matched filter statistic to obtain as most background triggers as 
     possible.
 
-    It it bounds the amount of slides to avoid counting triggers more 
-    than once.
+    It bounds the number of slides to avoid counting triggers more than once.
+    If the data is not time slid, there is a single slide for the zero-lag.
     '''
     low, upp = 1, args.segment_length[args.instruments[0]]
     if args.do_shortslides:
         n_ifos = len(args.instruments)
         stride_dur = args.segment_length[args.instruments[0]]/2
-        num_slides = np.int32(1 + \
-                np.floor(stride_dur / (args.slide_shift*(n_ifos-1))))
+        num_slides = np.int32(1 +
+            np.floor(stride_dur / (args.slide_shift*(n_ifos-1))))
         assert  np.logical_and(num_slides>=low,num_slides<=upp),\
                 "the combination (slideshift, segment_dur)"\
                 f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
