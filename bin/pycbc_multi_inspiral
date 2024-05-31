@@ -297,7 +297,6 @@ parser.add_argument(
     help="Choice of projection matrix. 'left' and 'right' "
     "correspond to face-away and face-on.",
 )
-
 parser.add_argument(
     "--slide-shift",
     type=float,
