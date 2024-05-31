@@ -47,14 +47,18 @@ logger = logging.getLogger('pycbc.workflow.configuration')
 urllib.parse.uses_relative.append('osdf')
 urllib.parse.uses_netloc.append('osdf')
 
-def hash_file(filename, read_only_bytes=int(1e7)):
+def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
     """
     Calculate the sha1 hash of a file, or of part of a file
 
     Parameters
     ----------
-    filename : string or path
-        the file to be hashed
+    filename_1 : string or path
+        the first file to be hashed / compared
+    filename_2 : string or path
+        the second file to be hashed / compared
+    chunk_size : integer
+        This size of chunks to be read in and hashed
     read_only_bytes : integer, optional
         The number of bytes to be read - this is useful for very large
         files which we expect to be distinguishable from only part of
@@ -65,15 +69,24 @@ def hash_file(filename, read_only_bytes=int(1e7)):
     hash : string
         The hexdigest() after a sha1 hash of (part of) the file
     """
-    with open(filename, 'rb') as f:
-        return hashlib.sha1(f.read(read_only_bytes)).hexdigest()
+    with open(filename_1, 'rb') as f1:
+        with open(filename_2, 'rb') as f2:
+            for c in range(max_chunks):
+                h1 = hashlib.sha1(f1.read(chunk_size)).hexdigest()
+                h2 = hashlib.sha1(f2.read(chunk_size)).hexdigest()
+                print(h1)
+                print(h2)
+                if not h1 == h2:
+                    return False
+    return True
 
 def resolve_url(
     url,
     directory=None,
     permissions=None,
     copy_to_cwd=True,
-    hash_bytes=None
+    hash_max_chunks=None,
+    hash_chunk_size=None,
 ):
     """Resolves a URL to a local file, and returns the path to that file.
 
@@ -105,9 +118,13 @@ def resolve_url(
         elif copy_to_cwd:
             if os.path.isfile(filename):
                 # check to see if src and dest are the same file
-                src_hash = hash_file(u.path, hash_bytes)
-                dst_hash = hash_file(filename, hash_bytes)
-                if src_hash != dst_hash:
+                same_file = hash_compare(
+                    u.path,
+                    filename,
+                    chunk_size=hash_chunk_size,
+                    max_chunks=hash_max_chunks
+                )
+                if not same_file:
                     shutil.copy(u.path, filename)
             else:
                 shutil.copy(u.path, filename)

@@ -98,7 +98,6 @@ for ifo in args.single_detector_triggers:
     strig_file = resolve_url_to_file(
         os.path.abspath(strig_fname),
         attrs={'ifos': ifo},
-        hash_bytes=int(1e6)
     )
     single_triggers.append(strig_file)
 
@@ -106,7 +105,6 @@ for ifo in args.single_detector_triggers:
     psd_file = resolve_url_to_file(
         os.path.abspath(psd_fname),
         attrs={'ifos': ifo},
-        hash_bytes=int(1e6)
     )
     psd_files.append(psd_file)
 
