@@ -31,12 +31,12 @@ class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
     def __init__(
-            self,
-            filename,
-            permission='r',
-            check_pycbc_version=True,
-            **kwargs
-        ):
+        self,
+        filename,
+        permission='r',
+        check_pycbc_version=True,
+        **kwargs
+    ):
         h5py.File.__init__(self, filename, permission, **kwargs)
         if permission in ['r','r+', 'a'] and check_pycbc_version:
             # Check the pycbc version in the file matches the current one
@@ -54,17 +54,16 @@ class HFile(h5py.File):
                 original_version = self.attrs['pycbc_version'] \
                     if 'pycbc_version' in self.attrs else 'None'
                 if original_version != 'None' and not \
-                    original_version == pycbc_version:
-                        # Read/write on the file - update the pycbc version,
-                        # but warn
-                        logging.warning(
-                            "File opened with read and write permissions, "
-                            "updating pycbc_version from %s to %s.",
-                            original_version,
-                            pycbc_version
-                        )
+                        original_version == pycbc_version:
+                    # Read/write on the file - update the pycbc version,
+                    # but warn
+                    logging.warning(
+                        "File opened with read and write permissions, "
+                        "updating pycbc_version from %s to %s.",
+                        original_version,
+                        pycbc_version
+                    )
             self.attrs['pycbc_version'] = pycbc_version
-
 
     def select(self, fcn, *args, chunksize=10**6, derived=None, group='',
                return_data=True, premask=None):
