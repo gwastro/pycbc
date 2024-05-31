@@ -1001,21 +1001,29 @@ class ForegroundTriggers(object):
         return_dict = {}
         for ifo in self.ifos:
             try:
-                tid = self.trig_id[ifo]
-                lgc = tid == -1
+                # Make sure we don't change the internal cached trig_id array
+                tid = np.copy(self.trig_id[ifo])
                 # Put in *some* value for the invalid points to avoid failure
-                # Make sure this doesn't change the cached internal array!
-                tid = np.copy(tid)
+                lgc = tid == -1
                 tid[lgc] = 0
-                # If small number of points don't read the full file
-                if len(tid) < 1000:
-                    curr = []
-                    hdf_dataset = self.sngl_files[ifo].group[variable]
-                    for idx in tid:
-                        curr.append(hdf_dataset[idx])
-                    curr = np.array(curr)
-                else:
-                    curr = self.sngl_files[ifo].get_column(variable)[tid]
+                # Get the appropriate variable dataset
+                group = self.sngl_files[ifo].group
+                if not len(group.keys()):
+                    # There are no groups to consider - move on to next IFO
+                    continue
+                dataset = group[variable]
+                # Convert the trigger ids into a boolean aray so that we can
+                # read only the triggers we want directly from the file
+                mask = np.zeros(dataset.size, dtype=bool)
+                mask[tid] = True
+                needed_data = dataset[mask]
+                # Get order and duplicate information back that was lost in
+                # the boolean mask assignment
+                _, order_duplicate_index = np.unique(
+                    tid,
+                    return_inverse=True
+                )
+                curr = needed_data[order_duplicate_index]
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
                     curr = np.array([])
