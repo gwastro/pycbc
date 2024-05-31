@@ -24,11 +24,48 @@ from pycbc.io.ligolw import (
 from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero
+from pycbc.version import version as pycbc_version
 
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
+    def __init__(
+            self,
+            filename,
+            permission='r',
+            check_pycbc_version=True,
+            **kwargs
+        ):
+        h5py.File.__init__(self, filename, permission, **kwargs)
+        if permission in ['r','r+', 'a'] and check_pycbc_version:
+            # Check the pycbc version in the file matches the current one
+            if 'pycbc_version' in self.attrs:
+                if not self.attrs['pycbc_version'] == pycbc_version:
+                    logging.warning(
+                        "PyCBC version of the file (%s) does not match the "
+                        "one currently being used (%s). Results may not be "
+                        "as expected.",
+                        self.attrs['pycbc_version'],
+                        pycbc_version
+                    )
+        if permission in ['w', 'x', 'w-', 'r+', 'a'] and check_pycbc_version:
+            if permission in ['r+','a']:
+                original_version = self.attrs['pycbc_version'] \
+                    if 'pycbc_version' in self.attrs else 'None'
+                if original_version != 'None' and not \
+                    original_version == pycbc_version:
+                        # Read/write on the file - update the pycbc version,
+                        # but warn
+                        logging.warning(
+                            "File opened with read and write permissions, "
+                            "updating pycbc_version from %s to %s.",
+                            original_version,
+                            pycbc_version
+                        )
+            self.attrs['pycbc_version'] = pycbc_version
+
+
     def select(self, fcn, *args, chunksize=10**6, derived=None, group='',
                return_data=True, premask=None):
         """ Return arrays from an hdf5 file that satisfy the given function
