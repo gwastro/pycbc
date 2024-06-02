@@ -113,7 +113,7 @@ def slide_limiter(args):
                 f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
                 f" goes over the allowed upper bound {upp}"
     else:
-        num_slides = 0
+        num_slides = 1
     return num_slides
 
 # The following block of lines sets up the command-line interface (CLI) for the
@@ -406,7 +406,7 @@ with ctx:
 
     logging.info("Determining time slide shifts and time delays")
     # Create a dictionary of time slide shifts; IFO 0 is unshifted
-    slide_ids = np.arange(1 + num_slides)
+    slide_ids = np.arange(num_slides)
     time_slides = {
         ifo: args.slide_shift * slide_ids * ifo_idx
         for ifo_idx, ifo in enumerate(args.instruments)
@@ -670,7 +670,7 @@ with ctx:
                 continue
 
             # Loop over (short) time-slides, staring with the zero-lag
-            for slide in range(num_slides + 1):
+            for slide in range(num_slides):
                 logging.info("Analyzing slide %d/%d", slide, num_slides)
                 # Loop over sky positions
                 for position_index in sky_pos_indices:
