@@ -109,9 +109,7 @@ wf.makedir(args.output_dir)
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = resolve_url_to_file(
-    os.path.abspath(args.bank_file),
-)
+tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
 sngl_file = resolve_url_to_file(
     os.path.abspath(args.single_detector_file),
     attrs={'ifos': args.instrument}
@@ -120,11 +118,7 @@ sngl_file = resolve_url_to_file(
 # Flatten the statistic_files option:
 statfiles = []
 for f in sum(args.statistic_files, []):
-    statfiles.append(
-        resolve_url_to_file(
-            os.path.abspath(f),
-        )
-    )
+    statfiles.append(resolve_url_to_file(os.path.abspath(f)))
 statfiles = wf.FileList(statfiles) if statfiles is not [] else None
 
 if args.veto_file is not None:
