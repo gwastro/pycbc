@@ -83,7 +83,9 @@ for ifo in workflow.ifos:
 
 # create a FileList that will contain all output files
 layouts = []
-
+logging.info(
+    "Grabbing inputs: template bank, insp segs and XML with all events"
+)
 tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
 insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 xml_all = resolve_url_to_file(os.path.abspath(args.xml_all_file))
@@ -95,16 +97,19 @@ insp_data_seglists = {}
 insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     strig_fname = args.single_detector_triggers[ifo]
+    logging.info("Getting %s single-detector trigger file", ifo)
     strig_file = resolve_url_to_file(os.path.abspath(strig_fname),
                                      attrs={'ifos': ifo})
     single_triggers.append(strig_file)
 
+    logging.info("Getting %s PSD file", ifo)
     psd_fname = args.psd_files[ifo]
     psd_file = resolve_url_to_file(os.path.abspath(psd_fname),
                                      attrs={'ifos': ifo})
     psd_files.append(psd_file)
 
     fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
+    logging.info("Loading inspiral segments information")
     insp_data_seglists[ifo] = select_segments_by_definer(
         args.inspiral_segments,
         segment_name=args.inspiral_data_read_name,
@@ -125,6 +130,11 @@ ifar_limit = args.ifar_thresh
 # Get indices of all events which pass the IFAR threshold
 event_ifars = f['foreground/ifar'][:]
 events_to_read = np.count_nonzero(event_ifars > ifar_limit)
+logging.info(
+    "%d events exceed the IFAR threshold of %.3f years",
+    events_to_read,
+    ifar_limit
+)
 # Sort by IFAR, descending
 event_idx = event_ifars.argsort()[::-1][:events_to_read]
 # Times and tids need to be reset for this set of events:
@@ -132,13 +142,18 @@ times = {}
 tids = {}
 bank_ids = {}
 
+logging.info("Getting event information")
 ifo_list = f.attrs['ifos'].split(' ')
 for ifo in ifo_list:
     times[ifo] = f[f'foreground/{ifo}/time'][:][event_idx]
     tids[ifo] = f[f'foreground/{ifo}/trigger_id'][:][event_idx]
 bank_ids = f['foreground/template_id'][:][event_idx]
 
+f.close()
+
 for curr_idx in range(event_idx.size):
+    logging.info("Event number %d", curr_idx)
+    logging.info("Getting template parameters")
     params = mini.get_single_template_params(
         curr_idx,
         times,
@@ -169,7 +184,9 @@ for curr_idx in range(event_idx.size):
             logging.info("Mean time %.3f not in segment list",
                          params['mean_time'])
             continue
-        # Make single-template files to put into the XML file for upload
+        logging.info(
+            "Making single-template files"
+        )
         single_temp_files += mini.make_single_template_files(
             workflow,
             insp_segs,
