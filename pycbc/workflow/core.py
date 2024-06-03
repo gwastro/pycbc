@@ -2080,7 +2080,12 @@ class CalledProcessErrorMod(Exception):
         return msg
 
 
-def resolve_url_to_file(curr_pfn, attrs=None, hash_max_chunks=10, hash_chunk_size=int(1e6)):
+def resolve_url_to_file(
+    curr_pfn,
+    attrs=None,
+    hash_max_chunks=10,
+    hash_chunk_size=int(1e6)
+):
     """
     Resolves a PFN into a workflow.File object.
 
@@ -2104,6 +2109,9 @@ def resolve_url_to_file(curr_pfn, attrs=None, hash_max_chunks=10, hash_chunk_siz
     not important with input files. Exceptions include things like input
     template banks, where ifos and valid times will be checked in the workflow
     and used in the naming of child job output files.
+
+    hash_max_chunks and hash_chunk_size are used to decide how much of the
+    files to check before they are considered the same, and not copied.
     """
     cvmfsstr1 = 'file:///cvmfs/'
     cvmfsstr2 = 'file://localhost/cvmfs/'

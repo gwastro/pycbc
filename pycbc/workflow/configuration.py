@@ -47,6 +47,7 @@ logger = logging.getLogger('pycbc.workflow.configuration')
 urllib.parse.uses_relative.append('osdf')
 urllib.parse.uses_netloc.append('osdf')
 
+
 def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
     """
     Calculate the sha1 hash of a file, or of part of a file
@@ -77,14 +78,15 @@ def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
 
     with open(filename_1, 'rb') as f1:
         with open(filename_2, 'rb') as f2:
-            for c in range(max_chunks):
+            for _ in range(max_chunks):
                 h1 = hashlib.sha1(f1.read(chunk_size)).hexdigest()
                 h2 = hashlib.sha1(f2.read(chunk_size)).hexdigest()
                 print(h1)
                 print(h2)
-                if not h1 == h2:
+                if h1 != h2:
                     return False
     return True
+
 
 def resolve_url(
     url,
