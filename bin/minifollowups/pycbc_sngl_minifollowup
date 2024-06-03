@@ -111,12 +111,10 @@ layouts = []
 
 tmpltbank_file = resolve_url_to_file(
     os.path.abspath(args.bank_file),
-    chunk_size=int(1e6),
 )
 sngl_file = resolve_url_to_file(
     os.path.abspath(args.single_detector_file),
     attrs={'ifos': args.instrument}
-    chunk_size=int(1e6),
 )
 
 # Flatten the statistic_files option:
@@ -125,7 +123,6 @@ for f in sum(args.statistic_files, []):
     statfiles.append(
         resolve_url_to_file(
             os.path.abspath(f),
-            chunk_size=int(1e6),
         )
     )
 statfiles = wf.FileList(statfiles) if statfiles is not [] else None

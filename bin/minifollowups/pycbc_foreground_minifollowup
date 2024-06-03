@@ -81,11 +81,9 @@ layouts = []
 
 tmpltbank_file = resolve_url_to_file(
     os.path.abspath(args.bank_file),
-    chunk_size=int(1e6),
 )
 coinc_file = resolve_url_to_file(
     os.path.abspath(args.statmap_file),
-    chunk_size=int(1e6),
 )
 insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
 
@@ -97,7 +95,6 @@ for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     strig_file = resolve_url_to_file(
         os.path.abspath(fname),
-        chunk_size=int(1e6),
         attrs={'ifos': ifo}
     )
     single_triggers.append(strig_file)
