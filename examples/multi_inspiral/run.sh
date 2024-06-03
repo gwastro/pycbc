@@ -10,15 +10,16 @@ L1_CHANNEL=DCH-CLEAN_STRAIN_C02_T1700406_v3
 V1_FRAME=https://www.gwosc.org/eventapi/html/GWTC-1-confident/GW170817/v3/V-V1_GWOSC_4KHZ_R1-1187006835-4096.gwf
 V1_CHANNEL=GWOSC-4KHZ_R1_STRAIN
 
-echo -e "\\n\\n>> [`date`] Getting template bank"
-wget -nv -nc ${CONFIG_URL}/${BANK_FILE}
-echo -e "\\n\\n>> [`date`] Bank veto bank"
-wget -nv -nc ${CONFIG_URL}/${BANK_VETO_FILE}
 for IFO in H1 L1 V1; do
     echo -e "\\n\\n>> [`date`] Getting ${IFO} frame"
     FRAME=${IFO}_FRAME
     wget -nv -nc ${!FRAME}
 done
+
+echo -e "\\n\\n>> [`date`] Getting template bank"
+wget -nv -nc ${CONFIG_URL}/${BANK_FILE}
+echo -e "\\n\\n>> [`date`] Bank veto bank"
+wget -nv -nc ${CONFIG_URL}/${BANK_VETO_FILE}
 
 EVENT=1187008882
 PAD=8
@@ -65,7 +66,7 @@ pycbc_multi_inspiral \
     --psd-segment-length 32 \
     --psd-segment-stride 8 \
     --psd-num-segments 29 \
-    --num-slides 1 \
+    --do-shortslides \
     --slide-shift 1 \
     --output ${OUTPUT}
 

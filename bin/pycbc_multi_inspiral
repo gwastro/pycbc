@@ -93,6 +93,28 @@ def calculate_antenna_pattern(args, sky_pos_indices):
             )
     return antenna_pattern
 
+def slide_limiter(args):
+    '''
+    This function computes the number of shortslides used by the coherent
+    matched filter statistic to obtain as most background triggers as 
+    possible.
+
+    It bounds the number of slides to avoid counting triggers more than once.
+    If the data is not time slid, there is a single slide for the zero-lag.
+    '''
+    low, upp = 1, args.segment_length[args.instruments[0]]
+    if args.do_shortslides:
+        n_ifos = len(args.instruments)
+        stride_dur = args.segment_length[args.instruments[0]]/2
+        num_slides = np.int32(1 +
+            np.floor(stride_dur / (args.slide_shift*(n_ifos-1))))
+        assert  np.logical_and(num_slides>=low,num_slides<=upp),\
+                "the combination (slideshift, segment_dur)"\
+                f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
+                f" goes over the allowed upper bound {upp}"
+    else:
+        num_slides = 1
+    return num_slides
 
 # The following block of lines sets up the command-line interface (CLI) for the
 # pycbc_multi_inspiral executable.
@@ -276,16 +298,14 @@ parser.add_argument(
     "correspond to face-away and face-on.",
 )
 parser.add_argument(
-    "--num-slides",
-    type=int,
-    default=0,
-    help="Number of time slides to perform.",
-)
-parser.add_argument(
     "--slide-shift",
     type=float,
     default=1.0,
     help="Size of each time slide shift.",
+)
+parser.add_argument(
+        "--do-shortslides",
+        action="store_true"
 )
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
@@ -298,6 +318,8 @@ inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 sgchisq.SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
 init_logging(args.verbose)
+# Setting the number of Shortslides
+num_slides = slide_limiter(args)
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
 # Use class verification methods to check whether input CLI options provided
@@ -384,7 +406,7 @@ with ctx:
 
     logging.info("Determining time slide shifts and time delays")
     # Create a dictionary of time slide shifts; IFO 0 is unshifted
-    slide_ids = np.arange(1 + args.num_slides)
+    slide_ids = np.arange(num_slides)
     time_slides = {
         ifo: args.slide_shift * slide_ids * ifo_idx
         for ifo_idx, ifo in enumerate(args.instruments)
@@ -648,8 +670,8 @@ with ctx:
                 continue
 
             # Loop over (short) time-slides, staring with the zero-lag
-            for slide in range(args.num_slides + 1):
-                logging.info("Analyzing slide %d/%d", slide, args.num_slides)
+            for slide in range(num_slides):
+                logging.info("Analyzing slide %d/%d", slide, num_slides)
                 # Loop over sky positions
                 for position_index in sky_pos_indices:
                     logging.info(
@@ -1037,7 +1059,7 @@ with ctx:
             elif args.cluster_method == "template":
                 cluster_window = int(template.chirp_length * sample_rate)
             # Cluster template events by slide
-            for slide in range(args.num_slides + 1):
+            for slide in range(num_slides):
                 logging.info("Clustering slide %d", slide)
                 event_mgr.cluster_template_network_events(
                     'time_index', 'reweighted_snr', cluster_window, slide=slide
