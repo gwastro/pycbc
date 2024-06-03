@@ -696,7 +696,7 @@ class LISA_detector(object):
         # initialize whether to use gpu; FLR has handles if this cannot be done
         self.use_gpu = use_gpu
 
-    def project_wf(self, hp, hc, lamb, beta, t0=10000., use_gpu=None):
+    def get_links(self, hp, hc, lamb, beta, t0=10000., use_gpu=None, reference_time=None):
         """
         Project a radiation frame (SSB) waveform to the LISA constellation.
         This *does not* perform TDI; this only produces a detector frame
@@ -724,6 +724,10 @@ class LISA_detector(object):
             Flag whether to use GPU support. Default to class input.
             CuPy is required if use_gpu == True; an ImportError will be raised 
             if CuPy could not be imported.
+            
+        reference_time : float (optional)
+            The GPS start time of the GW signal in the SSB frame. Default to 
+            value in input signals hp and hc.
 
         Returns
         -------
@@ -737,9 +741,12 @@ class LISA_detector(object):
         n = len(hp) # number of points
 
         # configure the orbits file according to wf times
+        if reference_time is not None:
+            hp.start_time = reference_time
+        self.sample_times = hp.sample_times.numpy()
+
         ### FIXME: This currently doesn't work. There seems to be a bug in 
         ### LISAanalysistools that breaks the code when specifying a time array.
-        # self.sample_times = hp.sample_times.numpy()
         # self.orbits.configure(t_arr=self.sample_times)
 
         # format wf to FLR standard hp + i*hc as ndarray
@@ -761,7 +768,7 @@ class LISA_detector(object):
         if self.response_init is None:
             # initialize the class
             ### TDI is set to '2nd generation' here to match default value in get_tdi()
-            # see FIXME in get_tdi()
+            ### see FIXME in get_tdi()
             response_init = pyResponseTDI(1/dt, n, orbits=self.orbits, use_gpu=use_gpu, tdi='2nd generation')
             self.response_init = response_init
         else:
@@ -782,10 +789,10 @@ class LISA_detector(object):
 
         return wf_proj
 
-    def get_tdi(self, hp, hc, lamb, beta, tdi='2nd generation', tdi_chan='XYZ', tdi_orbits=None, 
+    def project_wave(self, hp, hc, lamb, beta, reference_time=None, tdi='2nd generation', tdi_chan='XYZ', tdi_orbits=None, 
                 use_gpu=None, remove_garbage=True):
         """
-        Calculate the TDI variables given a waveform and LISA orbit data.
+        Evaluate the TDI observables 
 
         Parameters
         ----------
@@ -800,7 +807,11 @@ class LISA_detector(object):
 
         beta : float
             The ecleptic longitude in the SSB frame.
-
+            
+        reference_time : float (optional)
+            The GPS start time of the GW signal in the SSB frame. Default to 
+            value in input signals hp and hc.
+            
         tdi : string (optional)
             TDI channel configuration. Accepts "1st generation" or "2nd generation" 
             as inputs. Default "2nd generation".
@@ -859,7 +870,7 @@ class LISA_detector(object):
             self.response_init._init_tdi_delays()
 
         # generate the Doppler time series
-        links = self.project_wf(hp, hc, lamb, beta, t0=self.t0, use_gpu=use_gpu)
+        links = self.get_links(hp, hc, lamb, beta, t0=self.t0, use_gpu=use_gpu, reference_time=reference_time)
 
         # generate the TDI channels
         tdi_obs = self.response_init.get_tdi_delays()
