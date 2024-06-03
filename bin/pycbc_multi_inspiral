@@ -1059,7 +1059,7 @@ with ctx:
             elif args.cluster_method == "template":
                 cluster_window = int(template.chirp_length * sample_rate)
             # Cluster template events by slide
-            for slide in range(num_slides + 1):
+            for slide in range(num_slides):
                 logging.info("Clustering slide %d", slide)
                 event_mgr.cluster_template_network_events(
                     'time_index', 'reweighted_snr', cluster_window, slide=slide
