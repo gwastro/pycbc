@@ -175,7 +175,6 @@ layouts = []
 
 tmpltbank_file = resolve_url_to_file(
     os.path.abspath(args.bank_file),
-    chunk_size=int(1e6),
 )
 injection_file = resolve_url_to_file(os.path.abspath(args.injection_file))
 injection_xml_file = resolve_url_to_file(os.path.abspath(args.injection_xml_file))
@@ -188,8 +187,7 @@ for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     strig_file = resolve_url_to_file(
         os.path.abspath(fname),
-        attrs={'ifos': ifo}
-        chunk_size=int(1e6),
+        attrs={'ifos': ifo},
     )
     single_triggers.append(strig_file)
     insp_data_seglists[ifo] = select_segments_by_definer(
