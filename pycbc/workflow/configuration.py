@@ -81,8 +81,6 @@ def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
             for _ in range(max_chunks):
                 h1 = hashlib.sha1(f1.read(chunk_size)).hexdigest()
                 h2 = hashlib.sha1(f2.read(chunk_size)).hexdigest()
-                print(h1)
-                print(h2)
                 if h1 != h2:
                     return False
     return True
