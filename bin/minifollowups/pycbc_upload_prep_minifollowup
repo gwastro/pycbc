@@ -84,9 +84,15 @@ for ifo in workflow.ifos:
 # create a FileList that will contain all output files
 layouts = []
 
-tmpltbank_file = resolve_url_to_file(os.path.abspath(args.bank_file))
+tmpltbank_file = resolve_url_to_file(
+    os.path.abspath(args.bank_file),
+    chunk_size=int(1e6),
+)
 insp_segs = resolve_url_to_file(os.path.abspath(args.inspiral_segments))
-xml_all = resolve_url_to_file(os.path.abspath(args.xml_all_file))
+xml_all = resolve_url_to_file(
+    os.path.abspath(args.xml_all_file),
+    chunk_size=int(1e6),
+)
 
 single_triggers = []
 psd_files = []
@@ -98,6 +104,7 @@ for ifo in args.single_detector_triggers:
     strig_file = resolve_url_to_file(
         os.path.abspath(strig_fname),
         attrs={'ifos': ifo},
+        chunk_size=int(1e6),
     )
     single_triggers.append(strig_file)
 
@@ -105,6 +112,7 @@ for ifo in args.single_detector_triggers:
     psd_file = resolve_url_to_file(
         os.path.abspath(psd_fname),
         attrs={'ifos': ifo},
+        chunk_size=int(1e6),
     )
     psd_files.append(psd_file)
 

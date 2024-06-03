@@ -58,17 +58,23 @@ def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
     filename_2 : string or path
         the second file to be hashed / compared
     chunk_size : integer
-        This size of chunks to be read in and hashed
-    read_only_bytes : integer, optional
-        The number of bytes to be read - this is useful for very large
-        files which we expect to be distinguishable from only part of
-        it. Otherwise the whole file is read. Default ~10Mb
+        This size of chunks to be read in and hashed. If not given, will read
+        the whole file (may be slow for large files).
+    max_chunks: integer
+        This many chunks to be compared. If all chunks so far have been the
+        same, then just assume its the same file. Default 10
 
     Returns
     -------
     hash : string
         The hexdigest() after a sha1 hash of (part of) the file
     """
+
+    if max_chunks is None and chunk_size is not None:
+        max_chunks = 10
+    elif chunk_size is None:
+        max_chunks = 1
+
     with open(filename_1, 'rb') as f1:
         with open(filename_2, 'rb') as f2:
             for c in range(max_chunks):
