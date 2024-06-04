@@ -36,7 +36,7 @@ import pycbc.events
 import pycbc.results.pygrb_postprocessing_utils as ppu
 from pycbc.results import layout
 from pycbc.workflow.plotting import PlotExecutable
-from pycbc.workflow.grb_utils import build_veto_filelist, build_segment_filelist
+from pycbc.workflow.grb_utils import build_veto_filelist
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -72,16 +72,9 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
                           tags=tags+extra_tags).create_node()
     node.add_input_opt('--trig-file', trig_file)
     # Pass the veto files
-    veto_files = build_veto_filelist(workflow)
-    node.add_input_list_opt('--veto-files', veto_files)
-    # Pass the segment files
-    seg_files = build_segment_filelist(workflow)
-    node.add_input_list_opt('--seg-files', seg_files)
-    # Other shared tuning values
-    for opt in ['chisq-index', 'chisq-nhigh', 'null-snr-threshold',
-                'veto-category', 'snr-threshold', 'newsnr-threshold',
-                'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
-        node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
+    if workflow.cp.has_option('workflow', 'veto-files'):
+        veto_files = build_veto_filelist(workflow)
+        node.add_input_list_opt('--veto-files', veto_files)
     node.new_output_file_opt(workflow.analysis_time, '.png',
                              '--output-file', tags=extra_tags)
     # Quantity to be displayed on the y-axis of the plot
@@ -94,11 +87,11 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
     node.add_opt('--x-lims='+x_lims)
     # Plot title
     if ifo is not None:
-        title_str = "'%s SNR at %.3f (s)'" %(ifo, central_time)
-        node.add_opt('--central-time', central_time)
+        title_str = f"'{ifo} SNR at {central_time:.3f} (s)'"
     else:
-        title_str = "'%s SNR at %.3f (s)'" %(snr_type.capitalize(), central_time)
-        node.add_opt('--central-time', central_time)
+        title_str = "'%s SNR at %.3f (s)'" % (snr_type.capitalize(),
+                                              central_time)
+    node.add_opt('--trigger-time', central_time)
     node.add_opt('--plot-title', title_str)
 
     # Add job node to workflow
@@ -124,9 +117,6 @@ parser.add_argument('--wiki-file',
 parser.add_argument('--veto-files', nargs='+', action="store",
                     default=None, help="The location of the CATX veto " +
                     "files provided as a list of space-separated values.")
-parser.add_argument("-a", "--seg-files", nargs="+", action="store",
-                    default=None, help="The location of the buffer, " +
-                    "onsource and offsource segment files.")
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 ppu.pygrb_add_bestnr_cut_opt(parser)
