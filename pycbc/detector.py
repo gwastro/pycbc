@@ -671,21 +671,39 @@ class LISA_detector(object):
     """
     LISA-like GW detector. Applies detector response from FastLISAResponse.
     """
-    def __init__(self, orbits=ESAOrbits(), use_gpu=False):
+    def __init__(self, detector='LISA', reference_time=None, orbits=ESAOrbits(), use_gpu=False):
         """
         Parameters
         ----------
-        orbits: lisatools.detector.Orbits, optional
-            Orbital information to pass into pyResponseTDI. Accepts LISA Analysis Tools 
-            format. Default ESAOrbits.
+        detector: str (optional)
+            String specifying space-borne detector. Currently only accepts 'LISA', 
+            which is the default setting.
+            
+        reference_time: float (optional)
+            The GPS start time of signal in the SSB frame. Default to start time of 
+            orbits input.
+        
+        orbits: lisatools.detector.Orbits (optional)
+            Orbital information to pass into pyResponseTDI. Default 
+            lisatools.detector.ESAOrbits.
         
         use_gpu : bool (optional)
-            Specify whether to run class on GPU support. Default False.
+            Specify whether to run class on GPU support via CuPy. Default False.
         """
+        # initialize detector; for now we only accept LISA
+        assert (detector=='LISA'), 'Currently only supports LISA detector'
+        
         # intialize orbit information
         if orbits is None:
             raise ImportError('LISAanalysistools required for inputting orbital data')
+        orbits.configure(linear_interp_setup=True)
         self.orbits = orbits
+        
+        # specify and cache the start time and orbital time series
+        if reference_time is None:
+            reference_time = self.orbits.t_base[0]
+        self.ref_time = reference_time
+        self.sample_times = None
 
         # cache the FLR instance along with dt and n
         self.dt = None
@@ -727,7 +745,7 @@ class LISA_detector(object):
             
         reference_time : float (optional)
             The GPS start time of the GW signal in the SSB frame. Default to 
-            value in input signals hp and hc.
+            input on class initialization.
 
         Returns
         -------
@@ -740,11 +758,18 @@ class LISA_detector(object):
         dt = hp.delta_t # timestep (s)
         n = len(hp) # number of points
 
-        # configure the orbits file according to wf times
-        if reference_time is not None:
-            hp.start_time = reference_time
-        self.sample_times = hp.sample_times.numpy()
+        # cache n, dt
+        self.dt = dt
+        self.n = n
+        self.t0 = t0
 
+        # set waveform start time and cache the resultant time series
+        if reference_time is not None:
+            self.ref_time = reference_time
+        hp.start_time = self.ref_time
+        self.sample_times = hp.sample_times.numpy()
+        
+        # rescale the orbital time series to match waveform
         ### FIXME: This currently doesn't work. There seems to be a bug in 
         ### LISAanalysistools that breaks the code when specifying a time array.
         # self.orbits.configure(t_arr=self.sample_times)
@@ -767,8 +792,8 @@ class LISA_detector(object):
 
         if self.response_init is None:
             # initialize the class
-            ### TDI is set to '2nd generation' here to match default value in get_tdi()
-            ### see FIXME in get_tdi()
+            ### TDI is set to '2nd generation' here to match default value in project_wave()
+            ### see FIXME in project_wave()
             response_init = pyResponseTDI(1/dt, n, orbits=self.orbits, use_gpu=use_gpu, tdi='2nd generation')
             self.response_init = response_init
         else:
@@ -777,11 +802,6 @@ class LISA_detector(object):
             self.response_init.num_pts = n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
-
-        # cache n, dt, response class
-        self.dt = dt
-        self.n = n
-        self.t0 = t0
 
         # project the signal
         self.response_init.get_projections(wf, lamb, beta, t0)
@@ -836,12 +856,12 @@ class LISA_detector(object):
         dict
             The TDI observables keyed by their corresponding TDI channel.
         """
-
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
-
-        tdi_args = {}
+        
+        # generate the Doppler time series
+        links = self.get_links(hp, hc, lamb, beta, t0=self.t0, use_gpu=use_gpu, reference_time=reference_time)
 
         # set TDI configuration
         if tdi in ['1st generation', '2nd generation']:
@@ -868,9 +888,6 @@ class LISA_detector(object):
         ### FIXME: find a better, faster way to do this
         if self.response_init.tdi != original_tdi:
             self.response_init._init_tdi_delays()
-
-        # generate the Doppler time series
-        links = self.get_links(hp, hc, lamb, beta, t0=self.t0, use_gpu=use_gpu, reference_time=reference_time)
 
         # generate the TDI channels
         tdi_obs = self.response_init.get_tdi_delays()
