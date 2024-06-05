@@ -61,9 +61,10 @@ def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
 
     Returns
     -------
-    autochisq: [tuple]
-        returns autochisq values and snr corresponding to the instances
-        of time defined by indices
+    dof: int
+        number of degrees of freedom
+    autochisq: Array[float]
+        autochisq values corresponding to the time instances defined by indices
     """
     Nsnr = len(sn)
 
@@ -133,7 +134,7 @@ def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
     if twophase:
         dof = dof * 2
 
-    return dof, achisq, indices
+    return dof, achisq
 
 class SingleDetAutoChisq(object):
     """Class that handles precomputation and memory management for efficiently
@@ -223,6 +224,14 @@ class SingleDetAutoChisq(object):
             The lower frequency to consider in matched-filters
         high_frequency_cutoff : float
             The upper frequency to consider in matched-filters
+
+        Returns
+        -------
+        achi_list : TimeSeries of auto veto values - if indices
+        is None then evaluated at all time samples, if not then only at
+        requested sample indices
+
+        dof: int, approx number of statistical degrees of freedom
         """
         if self.do and (len(indices) > 0):
             htilde = make_frequency_series(template)
@@ -268,13 +277,15 @@ class SingleDetAutoChisq(object):
 
             achi_list = np.array([])
             index_list = np.array(indices)
-            dof, achi_list, _ = autochisq_from_precomputed(sn, correlation_snr,
-                               self._autocor, index_list, stride=self.stride,
-                               num_points=self.num_points,
-                               oneside=self.one_sided, twophase=self.two_phase,
-                               maxvalued=self.take_maximum_value)
+            dof, achi_list = autochisq_from_precomputed(sn, correlation_snr,
+                             self._autocor, index_list, stride=self.stride,
+                             num_points=self.num_points,
+                             oneside=self.one_sided, twophase=self.two_phase,
+                             maxvalued=self.take_maximum_value)
             self.dof = dof
-            return achi_list
+            return achi_list, dof
+        else:
+            return None, None
 
 class SingleDetSkyMaxAutoChisq(SingleDetAutoChisq):
     """Stub for precessing auto chisq if anyone ever wants to code it up.
