@@ -35,6 +35,7 @@ import subprocess
 from shutil import which
 import urllib.parse
 from urllib.parse import urlparse
+import hashlib
 
 from pycbc.types.config import InterpolatingConfigParser
 
@@ -47,7 +48,52 @@ urllib.parse.uses_relative.append('osdf')
 urllib.parse.uses_netloc.append('osdf')
 
 
-def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
+def hash_compare(filename_1, filename_2, chunk_size=None, max_chunks=None):
+    """
+    Calculate the sha1 hash of a file, or of part of a file
+
+    Parameters
+    ----------
+    filename_1 : string or path
+        the first file to be hashed / compared
+    filename_2 : string or path
+        the second file to be hashed / compared
+    chunk_size : integer
+        This size of chunks to be read in and hashed. If not given, will read
+        the whole file (may be slow for large files).
+    max_chunks: integer
+        This many chunks to be compared. If all chunks so far have been the
+        same, then just assume its the same file. Default 10
+
+    Returns
+    -------
+    hash : string
+        The hexdigest() after a sha1 hash of (part of) the file
+    """
+
+    if max_chunks is None and chunk_size is not None:
+        max_chunks = 10
+    elif chunk_size is None:
+        max_chunks = 1
+
+    with open(filename_1, 'rb') as f1:
+        with open(filename_2, 'rb') as f2:
+            for _ in range(max_chunks):
+                h1 = hashlib.sha1(f1.read(chunk_size)).hexdigest()
+                h2 = hashlib.sha1(f2.read(chunk_size)).hexdigest()
+                if h1 != h2:
+                    return False
+    return True
+
+
+def resolve_url(
+    url,
+    directory=None,
+    permissions=None,
+    copy_to_cwd=True,
+    hash_max_chunks=None,
+    hash_chunk_size=None,
+):
     """Resolves a URL to a local file, and returns the path to that file.
 
     If a URL is given, the file will be copied to the current working
@@ -78,9 +124,13 @@ def resolve_url(url, directory=None, permissions=None, copy_to_cwd=True):
         elif copy_to_cwd:
             if os.path.isfile(filename):
                 # check to see if src and dest are the same file
-                src_inode = os.stat(u.path)[stat.ST_INO]
-                dst_inode = os.stat(filename)[stat.ST_INO]
-                if src_inode != dst_inode:
+                same_file = hash_compare(
+                    u.path,
+                    filename,
+                    chunk_size=hash_chunk_size,
+                    max_chunks=hash_max_chunks
+                )
+                if not same_file:
                     shutil.copy(u.path, filename)
             else:
                 shutil.copy(u.path, filename)
