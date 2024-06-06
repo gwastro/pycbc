@@ -97,19 +97,17 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
                      'auto': 'auto_chisq',
                      'network': 'my_network_chisq'}
 
+        # This chi-square is already normalized
         if veto_type == 'network':
             chisq_key = 'network/my_network_chisq'
-            data['dof'] = numpy.ones(len(data[snr_type][:]))
+            data['dof'] = 1.
         else:
             chisq_key = opts.ifo + '/' + veto_tags[veto_type]
             dof_key = '%s/%s_dof' % (opts.ifo, veto_tags[veto_type])
             data['dof'] = trigs_or_injs[dof_key][:]
-            if veto_type != 'power':
-                data['dof'] = numpy.unique(data['dof'])
 
         # Normalize
         data[veto_type] = trigs_or_injs[chisq_key][:]/data['dof']
-        data['dof'] = numpy.ones(len(data[snr_type][:]))
 
         # Floor single IFO chi-square at 0.005
         numpy.putmask(data[veto_type], data[veto_type] == 0, 0.005)
@@ -122,22 +120,19 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
 
 
 # Function to calculate chi-square weight for the reweighted SNR
-def new_snr_chisq(snr, new_snr, chisq_dof, chisq_index=4.0, chisq_nhigh=3.0):
+def new_snr_chisq(snr, new_snr, chisq_index=4.0, chisq_nhigh=3.0):
     """Returns the chi-square value needed to weight SNR into new SNR"""
 
     chisqnorm = (snr/new_snr)**chisq_index
     if chisqnorm <= 1:
         return 1E-20
 
-    return chisq_dof * (2*chisqnorm - 1)**(chisq_nhigh/chisq_index)
+    return (2*chisqnorm - 1)**(chisq_nhigh/chisq_index)
 
 
 # Function that produces the contours to be plotted
-def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
+def calculate_contours(trig_data, opts, new_snrs=None):
     """Generate the contours for the veto plots"""
-
-    # Read off the degrees of freedom
-    dof = trig_data['dof'][0]
 
     # Add the new SNR threshold contour to the list if necessary
     # and keep track of where it is
@@ -161,7 +156,7 @@ def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
     # Loop over SNR values and calculate chisq variable needed
     for j, snr in enumerate(snr_vals):
         for i, new_snr in enumerate(new_snrs):
-            contours[i][j] = new_snr_chisq(snr, new_snr, dof,
+            contours[i][j] = new_snr_chisq(snr, new_snr,
                                            opts.chisq_index,
                                            opts.chisq_nhigh)
 
@@ -302,7 +297,6 @@ colors = None
 if snr_type == 'coherent':
     conts, snr_vals, cont_value, colors = calculate_contours(trig_data,
                                                              opts,
-                                                             veto_type,
                                                              new_snrs=None)
 # The cut in reweighted SNR involves only the network power chi-square
 if veto_type != 'network':
