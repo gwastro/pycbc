@@ -93,6 +93,28 @@ def calculate_antenna_pattern(args, sky_pos_indices):
             )
     return antenna_pattern
 
+def slide_limiter(args):
+    '''
+    This function computes the number of shortslides used by the coherent
+    matched filter statistic to obtain as most background triggers as 
+    possible.
+
+    It bounds the number of slides to avoid counting triggers more than once.
+    If the data is not time slid, there is a single slide for the zero-lag.
+    '''
+    low, upp = 1, args.segment_length[args.instruments[0]]
+    if args.do_shortslides:
+        n_ifos = len(args.instruments)
+        stride_dur = args.segment_length[args.instruments[0]]/2
+        num_slides = np.int32(1 +
+            np.floor(stride_dur / (args.slide_shift*(n_ifos-1))))
+        assert  np.logical_and(num_slides>=low,num_slides<=upp),\
+                "the combination (slideshift, segment_dur)"\
+                f" = ({args.slide_shift:.2f},{stride_dur*2:.2f})"\
+                f" goes over the allowed upper bound {upp}"
+    else:
+        num_slides = 1
+    return num_slides
 
 # The following block of lines sets up the command-line interface (CLI) for the
 # pycbc_multi_inspiral executable.
@@ -153,9 +175,45 @@ parser.add_argument("--chisq-bins", default=0)
 # Commenting out unused options: remove if they remain unused
 # parser.add_argument("--chisq-threshold", type=float, default=0)
 # parser.add_argument("--chisq-delta", type=float, default=0)
-parser.add_argument("--autochi-number-points", type=int, default=0)
-parser.add_argument("--autochi-stride", type=int, default=0)
-parser.add_argument("--autochi-onesided", action='store_true', default=False)
+parser.add_argument("--autochi-number-points", type=int, default=0,
+                    help="The number of points to use, in both directions if"
+                         "doing a two-sided auto-chisq, to calculate the"
+                         "auto-chisq statistic.")
+parser.add_argument("--autochi-stride", type=int, default=0,
+                    help="The gap, in sample points, between the points at"
+                         "which to calculate auto-chisq.")
+parser.add_argument("--autochi-two-phase", action="store_true",
+                    default=False,
+                    help="If given auto-chisq will be calculated by testing "
+                         "against both phases of the SNR time-series. "
+                         "If not given, only the phase matching the trigger "
+                         "will be used.")
+parser.add_argument("--autochi-onesided", action='store',
+                    choices=['left','right'],
+                    help="Decide whether to calculate auto-chisq using"
+                         "points on both sides of the trigger or only on one"
+                         "side. If not given points on both sides will be"
+                         "used. If given, with either 'left' or 'right',"
+                         "only points on that side (right = forward in time,"
+                         "left = back in time) will be used.")
+parser.add_argument("--autochi-reverse-template", action="store_true",
+                    default=False,
+                    help="If given, time-reverse the template before"
+                         "calculating the auto-chisq statistic. This will"
+                         "come at additional computational cost as the SNR"
+                         "time-series will need recomputing for the time-"
+                         "reversed template.")
+parser.add_argument("--autochi-max-valued", action="store_true",
+                    default=False,
+                    help="If given, store only the maximum value of the auto-"
+                         "chisq over all points tested. A disadvantage of this "
+                         "is that the mean value will not be known "
+                         "analytically.")
+parser.add_argument("--autochi-max-valued-dof", action="store", metavar="INT",
+                    type=int,
+                    help="If using --autochi-max-valued this value denotes "
+                         "the pre-calculated mean value that will be stored "
+                         "as the auto-chisq degrees-of-freedom value.")
 parser.add_argument(
     "--downsample-factor",
     type=int,
@@ -276,16 +334,14 @@ parser.add_argument(
     "correspond to face-away and face-on.",
 )
 parser.add_argument(
-    "--num-slides",
-    type=int,
-    default=0,
-    help="Number of time slides to perform.",
-)
-parser.add_argument(
     "--slide-shift",
     type=float,
     default=1.0,
     help="Size of each time slide shift.",
+)
+parser.add_argument(
+        "--do-shortslides",
+        action="store_true"
 )
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
@@ -298,6 +354,8 @@ inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 sgchisq.SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
 init_logging(args.verbose)
+# Setting the number of Shortslides
+num_slides = slide_limiter(args)
 # Arrange detectors alphabetically so they are always called in the same order
 args.instruments.sort()
 # Use class verification methods to check whether input CLI options provided
@@ -384,7 +442,7 @@ with ctx:
 
     logging.info("Determining time slide shifts and time delays")
     # Create a dictionary of time slide shifts; IFO 0 is unshifted
-    slide_ids = np.arange(1 + args.num_slides)
+    slide_ids = np.arange(num_slides)
     time_slides = {
         ifo: args.slide_shift * slide_ids * ifo_idx
         for ifo_idx, ifo in enumerate(args.instruments)
@@ -474,6 +532,10 @@ with ctx:
         args.autochi_stride,
         args.autochi_number_points,
         onesided=args.autochi_onesided,
+        twophase=args.autochi_two_phase,
+        reverse_template=args.autochi_reverse_template,
+        take_maximum_value=args.autochi_max_valued,
+        maximal_value_dof=args.autochi_max_valued_dof
     )
 
     # Overwhiten all frequency-domain segments by dividing by the PSD estimate
@@ -492,7 +554,8 @@ with ctx:
         'chisq_dof': int,
         'bank_chisq': float32,
         'bank_chisq_dof': int,
-        'cont_chisq': float32,
+        'auto_chisq': float32,
+        'auto_chisq_dof': int,
         'slide_id': int,
     }
     ifo_out_vals = {
@@ -503,7 +566,8 @@ with ctx:
         'chisq_dof': None,
         'bank_chisq': None,
         'bank_chisq_dof': None,
-        'cont_chisq': None,
+        'auto_chisq': None,
+        'auto_chisq_dof': int,
         'slide_id': None,
     }
     ifo_names = sorted(ifo_out_vals.keys())
@@ -648,8 +712,8 @@ with ctx:
                 continue
 
             # Loop over (short) time-slides, staring with the zero-lag
-            for slide in range(args.num_slides + 1):
-                logging.info("Analyzing slide %d/%d", slide, args.num_slides)
+            for slide in range(num_slides):
+                logging.info("Analyzing slide %d/%d", slide, num_slides)
                 # Loop over sky positions
                 for position_index in sky_pos_indices:
                     logging.info(
@@ -972,7 +1036,10 @@ with ctx:
                                 coinc_idx_det_frame[ifo]
                                 + stilde[ifo].analyze.start,
                             )
-                            ifo_out_vals['cont_chisq'] = autochisq.values(
+                            (
+                                ifo_out_vals['auto_chisq'],
+                                ifo_out_vals['auto_chisq_dof'],
+                            ) = autochisq.values(
                                 snr_dict[ifo] / norm_dict[ifo],
                                 coinc_idx_det_frame[ifo],
                                 template,
@@ -1037,7 +1104,7 @@ with ctx:
             elif args.cluster_method == "template":
                 cluster_window = int(template.chirp_length * sample_rate)
             # Cluster template events by slide
-            for slide in range(args.num_slides + 1):
+            for slide in range(num_slides):
                 logging.info("Clustering slide %d", slide)
                 event_mgr.cluster_template_network_events(
                     'time_index', 'reweighted_snr', cluster_window, slide=slide

@@ -33,7 +33,6 @@ from matplotlib import pyplot as plt
 from matplotlib import rc
 import numpy
 import scipy
-import h5py
 import pycbc.version
 from pycbc import init_logging
 from pycbc.detector import Detector
@@ -70,12 +69,20 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
         if injections:
             logging.info("Loading injections...")
             # TODO: This will eventually become load_injections
-            trigs = ppu.load_triggers(input_file, ifos, vetoes,
-                                      rw_snr_threshold=opts.newsnr_threshold)
+            trigs = ppu.load_triggers(
+                input_file,
+                ifos,
+                vetoes,
+                rw_snr_threshold=opts.newsnr_threshold,
+            )
         else:
             logging.info("Loading triggers...")
-            trigs = ppu.load_triggers(input_file, ifos, vetoes,
-                                      rw_snr_threshold=opts.newsnr_threshold)
+            trigs = ppu.load_triggers(
+                input_file,
+                ifos,
+                vetoes,
+                rw_snr_threshold=opts.newsnr_threshold,
+            )
 
         # Load SNR data
         data['coherent'] = trigs['network/coherent_snr']
@@ -108,10 +115,7 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
         # Get antenna response based parameters
         for ifo in ifos:
             antenna = Detector(ifo)
-            ifo_f_resp = \
-                ppu.get_antenna_responses(antenna, ra,
-                                          dec, time)
-
+            ifo_f_resp = ppu.get_antenna_responses(antenna, ra, dec, time)
             # Get the average for f_resp_mean and calculate sigma_tot
             data['f_resp_mean'][ifo] = ifo_f_resp.mean()
             sigma_tot += sigma[ifo] * ifo_f_resp
@@ -145,7 +149,7 @@ def plot_deviation(percentile, snr_grid, y, ax, style):
     # original code line (commented out above)
     y_vals = scipy.stats.ncx2.ppf(percentile, 2, y * y) ** 0.5
     y_vals = numpy.unique(y_vals)
-    x_vals = snr_grid[0 : len(y_vals)]
+    x_vals = snr_grid[0:len(y_vals)]
     n_vals = int(len(y_vals) / 2)
     f = scipy.interpolate.interp1d(
         x_vals[0:n_vals],
@@ -159,15 +163,29 @@ def plot_deviation(percentile, snr_grid, y, ax, style):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
-                                          version=__version__)
-parser.add_argument("-t", "--trig-file", action="store",
-                    default=None, required=True,
-                    help="The location of the trigger file")
-parser.add_argument("--found-missed-file",
-                    help="The hdf injection results file", required=False)
-parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
-                    help="Output file a zoomed in version of the plot.")
+parser = ppu.pygrb_initialize_plot_parser(
+    description=__doc__, version=__version__
+)
+parser.add_argument(
+    "-t",
+    "--trig-file",
+    action="store",
+    default=None,
+    required=True,
+    help="The location of the trigger file",
+)
+parser.add_argument(
+    "--found-missed-file",
+    help="The hdf injection results file",
+    required=False,
+)
+parser.add_argument(
+    "-z",
+    "--zoom-in",
+    default=False,
+    action="store_true",
+    help="Output file a zoomed in version of the plot.",
+)
 ppu.pygrb_add_bestnr_cut_opt(parser)
 opts = parser.parse_args()
 
@@ -195,7 +213,7 @@ if opts.plot_caption is None:
         + "Black line: veto line.  "
         + "Gray shaded region: vetoed area - The cut is "
         + "applied only to the two most sensitive detectors, "
-        + "which can vary with mass and sky location.  "
+        + "which can vary with template parameters and sky location. "
         + "Green lines: the expected SNR for optimally "
         + "oriented injections (mean, min, and max).  "
         + "Magenta lines: 2 sigma errors.  "
@@ -231,7 +249,7 @@ for i_ifo in ifos:
 ifo_senstvty = collections.OrderedDict(
     sorted(ifo_senstvty.items(), key=operator.itemgetter(1), reverse=True)
 )
-loudness_labels = ['Loudest', 'Second loudest', 'Third loudest']
+loudness_labels = ['first', 'second', 'third']
 
 # Determine the maximum coherent SNR value we are dealing with
 x_max = plu.axis_max_value(
@@ -243,7 +261,7 @@ if x_max < 50.0:
 
 # Determine the maximum auto veto value we are dealing with
 y_max = plu.axis_max_value(
-    trig_data['single'][opts.ifo], inj_data['single'][opts.ifo], found_file
+    trig_data['single'][ifo], inj_data['single'][ifo], found_file
 )
 
 # Setup the plots
@@ -252,11 +270,11 @@ y_label = "%s sngl SNR" % ifo
 fig = plt.figure()
 ax = fig.gca()
 # Plot trigger data
-ax.plot(trig_data['coherent'], trig_data['single'][opts.ifo], 'bx')
+ax.plot(trig_data['coherent'], trig_data['single'][ifo], 'bx')
 ax.grid()
 # Plot injection data
 if found_file:
-    ax.plot(inj_data['coherent'], inj_data['single'][opts.ifo], 'r+')
+    ax.plot(inj_data['coherent'], inj_data['single'][ifo], 'r+')
 # Sigma-mean, min, max
 y_data = {
     'mean': trig_data['sigma_mean'][ifo],
@@ -264,9 +282,7 @@ y_data = {
     'max': trig_data['sigma_max'],
 }
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
-# snr_grid = numpy.arange(0.01, max_snr, 0.01)
 snr_grid = numpy.arange(0.01, max_snr, 1)
-# y_data = [snr_grid*(trig_data['f_resp_mean'][ifo]*x)**0.5 for x in y_data]
 y_data = dict(
     (key, snr_grid * (trig_data['f_resp_mean'][ifo] * y_data[key]) ** 0.5)
     for key in y_data
@@ -294,8 +310,8 @@ if loudness_index < 2:
     polyx.extend([max_snr, 0])
     polyy.extend([limy, limy])
     ax.fill(polyx, polyy, color='#dddddd')
-opts.plot_title = (
-    opts.plot_title + " (%s SNR)" % loudness_labels[loudness_index]
+opts.plot_title += (
+    " (%s average sensitivity)" % loudness_labels[loudness_index]
 )
 # Zoom in if asked to do so
 if opts.zoom_in:

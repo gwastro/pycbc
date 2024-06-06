@@ -112,11 +112,11 @@ class TestAutochisquare(unittest.TestCase):
 
 
         with _context:
-           dof, achisq, indices= \
+           dof, achisq = \
                autochisq_from_precomputed(snr, snr, hacor, indx, stride=3,
                                           num_points=20)
 
-        obt_snr = abs(snr[indices[1]])
+        obt_snr = abs(snr[indx[1]])
         obt_ach = achisq[1]
         self.assertTrue(obt_snr > 10.0 and obt_snr < 12.0)
         self.assertTrue(obt_ach < 3.e-3)
@@ -162,11 +162,11 @@ class TestAutochisquare(unittest.TestCase):
         snr = snr*nrm
 
         with _context:
-           dof, achisq, indices= \
+           dof, achisq = \
                autochisq_from_precomputed(snr, snr, hacor, indx, stride=3,
                                           num_points=20)
 
-        obt_snr = abs(snr[indices[1]])
+        obt_snr = abs(snr[indx[1]])
         obt_ach = achisq[1]
         self.assertTrue(obt_snr > 12.0 and obt_snr < 15.0)
         self.assertTrue(obt_ach > 6.8e3)

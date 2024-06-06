@@ -5,7 +5,9 @@ import numpy, h5py, argparse, matplotlib
 from matplotlib import colors
 matplotlib.use('Agg')
 import pylab, pycbc.results
-from pycbc.io import get_chisq_from_file_choice, chisq_choices
+from pycbc.io import (
+    get_chisq_from_file_choice, chisq_choices, SingleDetTriggers
+)
 from pycbc import conversions
 from pycbc.detector import Detector
 import pycbc.version
@@ -45,20 +47,34 @@ parser.add_argument('--chisq-choice', choices=chisq_choices,
 parser.add_argument('--output-file', required=True)
 args = parser.parse_args()
 
+# First - check the IFO being used
+with h5py.File(args.single_trigger_file, 'r') as stf:
+    ifo = tuple(stf.keys())[0]
+
 # Add the background triggers
-f = h5py.File(args.coinc_statistic_file, 'r')
-b_tids = {}
-ifos = f.attrs['ifos'].split(' ')
-for tmpifo in ifos:
-    b_tids[tmpifo] = f['background_exc/{}/trigger_id'.format(tmpifo)]
+with h5py.File(args.coinc_statistic_file, 'r') as csf:
+    b_tids = csf['background_exc'][ifo]['trigger_id'][:]
+    # Remove trigger ids == -1, as this indicates that it was found in
+    # other detector(s)
+    b_tids = b_tids[b_tids >= 0]
+    ifos = csf.attrs['ifos'].split(' ')
 
-f = h5py.File(args.single_trigger_file, 'r')
-ifo = tuple(f.keys())[0]
-f = f[ifo]
-tid = b_tids[ifo][:]
-bkg_snr = f['snr'][:][tid]
+trigs = SingleDetTriggers(
+    args.single_trigger_file,
+    ifo,
+    premask=b_tids
+)
 
-bkg_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
+bkg_snr = trigs.snr
+bkg_chisq = get_chisq_from_file_choice(trigs, args.chisq_choice)
+
+# SingleDetTriggers will have discarded the ordering of the tids, and any
+# duplicates, so we need to do a bit of index juggling to get this back.
+# Numpy's unique() function also removes ordering and duplicates, and
+# the return_inverse gives us the array to convert it back!:
+_, bkg_tid_idx_inverse = numpy.unique(b_tids, return_inverse=True)
+bkg_snr = bkg_snr[bkg_tid_idx_inverse]
+bkg_chisq = bkg_chisq[bkg_tid_idx_inverse]
 
 # don't plot if chisq is not calculated
 bkg_pos = bkg_chisq > 0
@@ -71,9 +87,11 @@ pylab.scatter(bkg_snr, bkg_chisq, marker='o', color='black',
 
 # Add the found injection points
 f = h5py.File(args.found_injection_file, 'r')
-inj_tids = {}
-for tmpifo in ifos:
-    inj_tids[tmpifo] = f['found_after_vetoes/{}/trigger_id'.format(tmpifo)]
+inj_tid = f['found_after_vetoes'][ifo]['trigger_id'][:]
+# Remove trigger ids == -1, as this indicates that it was found in
+# other detector(s)
+valid_inj = inj_tid >= 0
+inj_tid = inj_tid[valid_inj]
 
 eff_dists = Detector(ifo).effective_distance(f['injections/distance'][:],
                                              f['injections/ra'][:],
@@ -82,7 +100,7 @@ eff_dists = Detector(ifo).effective_distance(f['injections/distance'][:],
                                              f['injections/tc'][:],
                                              f['injections/inclination'][:])
 
-inj_idx = f['found_after_vetoes/injection_index'][:]
+inj_idx = f['found_after_vetoes/injection_index'][valid_inj]
 eff_dist = eff_dists[inj_idx]
 m1, m2 = f['injections/mass1'][:][inj_idx], f['injections/mass2'][:][inj_idx]
 s1, s2 = f['injections/spin1z'][:][inj_idx], f['injections/spin2z'][:][inj_idx]
@@ -108,10 +126,24 @@ if 'optimal_snr_{}'.format(ifo) in f['injections']:
     coloring['optimal_snr'] = (opt_snr, 'Optimal SNR', colors.LogNorm())
 
 f = h5py.File(args.single_injection_file, 'r')[ifo]
-tid = inj_tids[ifo][:]
-if len(tid):
-    inj_snr = f['snr'][:][tid]
-    inj_chisq = get_chisq_from_file_choice(f, args.chisq_choice)[tid]
+if len(inj_tid):
+    inj_trigs = SingleDetTriggers(
+        args.single_injection_file,
+        ifo,
+        premask=inj_tid,
+    )
+    inj_snr = inj_trigs.snr
+    inj_chisq = get_chisq_from_file_choice(inj_trigs, args.chisq_choice)
+
+    # Again, the SingleDetTriggers will have discarded order etc. of tids,
+    # so we need to do index juggling
+    _, inj_tid_idx_inverse = numpy.unique(
+        inj_tid,
+        return_inverse=True
+    )
+    inj_snr = inj_snr[inj_tid_idx_inverse]
+    inj_chisq = inj_chisq[inj_tid_idx_inverse]
+
 else:
     inj_snr = numpy.array([])
     inj_chisq = numpy.array([])
