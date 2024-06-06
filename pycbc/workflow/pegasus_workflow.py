@@ -242,40 +242,57 @@ class Node(ProfileShortcuts):
         """
         self._add_output(inp)
 
-    def add_input_opt(self, opt, inp):
+    def add_input_opt(self, opt, inp, **kwargs):
         """ Add an option that determines an input
         """
-        self.add_opt(opt, inp._dax_repr())
+        self.add_opt(opt, inp._dax_repr(), **kwargs)
         self._add_input(inp)
 
-    def add_output_opt(self, opt, out):
+    def add_output_opt(self, opt, out, **kwargs):
         """ Add an option that determines an output
         """
-        self.add_opt(opt, out._dax_repr())
+        self.add_opt(opt, out._dax_repr(), **kwargs)
         self._add_output(out)
 
-    def add_output_list_opt(self, opt, outputs):
+    def add_output_list_opt(self, opt, outputs, **kwargs):
         """ Add an option that determines a list of outputs
         """
-        self.add_opt(opt)
+        self.add_opt(opt, **kwargs)
+        # Never check existing options for list option values
+        if 'check_existing_options' in kwargs:
+            kwargs['check_existing_options'] = False
         for out in outputs:
-            self.add_opt(out)
+            self.add_opt(out, **kwargs)
             self._add_output(out)
 
-    def add_input_list_opt(self, opt, inputs):
+    def add_input_list_opt(self, opt, inputs, **kwargs):
         """ Add an option that determines a list of inputs
         """
-        self.add_opt(opt)
+        self.add_opt(opt, **kwargs)
+        # Never check existing options for list option values
+        if 'check_existing_options' in kwargs:
+            del kwargs['check_existing_options']
         for inp in inputs:
-            self.add_opt(inp)
+            self.add_opt(
+                inp,
+                check_existing_options=False,
+                **kwargs
+            )
             self._add_input(inp)
 
-    def add_list_opt(self, opt, values):
+    def add_list_opt(self, opt, values, **kwargs):
         """ Add an option with a list of non-file parameters.
         """
-        self.add_opt(opt)
+        self.add_opt(opt, **kwargs)
+        # Never check existing options for list option values
+        if 'check_existing_options' in kwargs:
+            del kwargs['check_existing_options']
         for val in values:
-            self.add_opt(val)
+            self.add_opt(
+                val,
+                check_existing_options=False,
+                **kwargs
+            )
 
     def add_input_arg(self, inp):
         """ Add an input as an argument

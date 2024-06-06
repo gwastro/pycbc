@@ -210,7 +210,11 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         node.add_input_opt('--foreground-censor-file', fg_file)
         node.add_opt('--foreground-segment-name', fg_name)
     if statfiles:
-        node.add_input_list_opt('--statistic-files', statfiles)
+        node.add_input_list_opt(
+            '--statistic-files',
+            statfiles,
+            check_existing_options=False,
+        )
     if tags:
         node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--dax-file')
@@ -749,7 +753,11 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
     node.add_opt('--trigger-id', str(trigger_id))
     node.add_opt('--instrument', ifo)
     if statfiles is not None:
-        node.add_input_list_opt('--statistic-files', statfiles)
+        node.add_input_list_opt(
+            '--statistic-files',
+            statfiles,
+            check_existing_options=False,
+        )
     if title is not None:
         node.add_opt('--title', f'"{title}"')
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
