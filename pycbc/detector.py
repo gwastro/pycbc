@@ -713,12 +713,41 @@ class LISA_detector(object):
 
         # initialize whether to use gpu; FLR has handles if this cannot be done
         self.use_gpu = use_gpu
-
-    def get_links(self, hp, hc, lamb, beta, t0=10000., use_gpu=None, reference_time=None):
+        
+    def source_to_ssb(self, hp, hc, polarization):
         """
-        Project a radiation frame (SSB) waveform to the LISA constellation.
-        This *does not* perform TDI; this only produces a detector frame
-        representation of the SSB frame signal.
+        Project a source-frame signal to SSB coordinates.
+        
+        Parameters
+        ----------
+        hp : pycbc.types.TimeSeries
+            The plus polarization of the GW in the radiation frame.
+
+        hc : pycbc.types.TimeSeries
+            The cross polarization of the GW in the radiation frame.
+            
+        polarization : float
+            The polarization angle of the GW in radians.
+            
+        Returns
+        -------
+        (pycbc.types.TimeSeries, pycbc.types.TimeSeries)
+            The plus and cross polarizations of the GW in the SSB frame.
+        """
+        cphi = cos(2*polarization)
+        sphi = sin(2*polarization)
+        
+        hp_ssb = hp*cphi - hc*sphi
+        hc_ssb = hp*sphi + hc*cphi
+        
+        return hp_ssb, hc_ssb
+
+    def get_links(self, hp, hc, lamb, beta, polarization=0, reference_time=None, 
+                  t0=10000., use_gpu=None, tdi=2):
+        """
+        Project a radiation frame waveform to the LISA constellation.
+        This does not perform TDI; this only produces a detector frame
+        representation of the signal.
 
         Parameters
         ----------
@@ -728,11 +757,20 @@ class LISA_detector(object):
         hc : pycbc.types.TimeSeries
             The cross polarization of the GW in the radiation frame.
 
-        lambda : float
-            The ecleptic latitude in the SSB frame.
+        lamb : float
+            The ecleptic latitude of the source in the SSB frame.
 
         beta : float
-            The ecleptic longitude in the SSB frame.
+            The ecleptic longitude of the source in the SSB frame.
+            
+        polarization : float (optional)
+            The polarization angle of the GW in radians. If polarization is 
+            0, the hp and hc inputs are treated as SSB frame projections.
+            Default 0.
+            
+        reference_time : float (optional)
+            The GPS start time of the GW signal in the SSB frame. Default to 
+            input on class initialization.
 
         t0 : float (optional)
             Number of seconds to omit from start and end of waveform. Defaults
@@ -743,9 +781,9 @@ class LISA_detector(object):
             CuPy is required if use_gpu == True; an ImportError will be raised 
             if CuPy could not be imported.
             
-        reference_time : float (optional)
-            The GPS start time of the GW signal in the SSB frame. Default to 
-            input on class initialization.
+        tdi : int (optional)
+            TDI channel configuration. Accepts 1 for 1st generation TDI or
+            2 for 2nd generation TDI. Default 2.
 
         Returns
         -------
@@ -767,12 +805,15 @@ class LISA_detector(object):
         if reference_time is not None:
             self.ref_time = reference_time
         hp.start_time = self.ref_time
+        hc.start_time = self.ref_time
         self.sample_times = hp.sample_times.numpy()
         
         # rescale the orbital time series to match waveform
-        ### FIXME: This currently doesn't work. There seems to be a bug in 
-        ### LISAanalysistools that breaks the code when specifying a time array.
-        # self.orbits.configure(t_arr=self.sample_times)
+        self.orbits.configure(t_arr=self.sample_times)
+        
+        # convert to SSB frame (if pol = 0, the signal is already in SSB frame)
+        if polarization != 0.:
+            hp, hc = self.source_to_ssb(hp, hc, polarization)
 
         # format wf to FLR standard hp + i*hc as ndarray
         hp = hp.numpy()
@@ -789,12 +830,18 @@ class LISA_detector(object):
                 raise ImportError('CuPy not imported but is required for GPU usage')
             else:
                 wf = cupy.asarray(wf)
+                
+        # set TDI configuration
+        if tdi == 1:
+            tdi_opt = '1st generation'
+        if tdi == 2:
+            tdi_opt = '2nd generation'
 
         if self.response_init is None:
             # initialize the class
-            ### TDI is set to '2nd generation' here to match default value in project_wave()
-            ### see FIXME in project_wave()
-            response_init = pyResponseTDI(1/dt, n, orbits=self.orbits, use_gpu=use_gpu, tdi='2nd generation')
+            print(self.orbits.pycppdetector_args)
+            response_init = pyResponseTDI(1/dt, n, orbits=self.orbits, 
+                                          use_gpu=use_gpu, tdi=tdi_opt)
             self.response_init = response_init
         else:
             # update params in the initialized class
@@ -802,6 +849,10 @@ class LISA_detector(object):
             self.response_init.num_pts = n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
+            if tdi_opt != self.response_init.tdi:
+                # re-initialize TDI in existing response_init class
+                self.response_init.tdi = tdi_opt
+                self.response_init._init_TDI_delays()
 
         # project the signal
         self.response_init.get_projections(wf, lamb, beta, t0)
@@ -809,10 +860,10 @@ class LISA_detector(object):
 
         return wf_proj
 
-    def project_wave(self, hp, hc, lamb, beta, reference_time=None, tdi='2nd generation', tdi_chan='XYZ', tdi_orbits=None, 
-                use_gpu=None, remove_garbage=True):
+    def project_wave(self, hp, hc, lamb, beta, polarization=0, reference_time=None, tdi=2, 
+                     tdi_chan='AET', tdi_orbits=None, use_gpu=None, remove_garbage=True):
         """
-        Evaluate the TDI observables 
+        Evaluate the TDI observables.
 
         Parameters
         ----------
@@ -828,17 +879,22 @@ class LISA_detector(object):
         beta : float
             The ecleptic longitude in the SSB frame.
             
+        polarization : float (optional)
+            The polarization angle of the GW in radians. If polarization is 
+            0, the hp and hc inputs are treated as SSB frame projections.
+            Default 0.
+            
         reference_time : float (optional)
             The GPS start time of the GW signal in the SSB frame. Default to 
             value in input signals hp and hc.
             
-        tdi : string (optional)
-            TDI channel configuration. Accepts "1st generation" or "2nd generation" 
-            as inputs. Default "2nd generation".
+        tdi : int (optional)
+            TDI channel configuration. Accepts 1 for 1st generation TDI or
+            2 for 2nd generation TDI. Default 2.
 
         tdi_chan : str (optional)
             The TDI observables to calculate. Accepts 'XYZ', 'AET', or 'AE'.
-            Default 'XYZ'.
+            Default 'AET'.
 
         tdi_orbits : lisatools.detector.Orbits (optional)
             Orbit keywords specifically for TDI generation. Default to class input.
@@ -861,14 +917,8 @@ class LISA_detector(object):
             use_gpu = self.use_gpu
         
         # generate the Doppler time series
-        links = self.get_links(hp, hc, lamb, beta, t0=self.t0, use_gpu=use_gpu, reference_time=reference_time)
-
-        # set TDI configuration
-        if tdi in ['1st generation', '2nd generation']:
-            original_tdi = self.response_init.tdi
-            self.response_init.tdi = tdi
-        else:
-            raise ValueError('TDI configuration must be either "1st generation" or "2nd generation"')
+        self.get_links(hp, hc, lamb, beta, polarization=polarization, reference_time=reference_time, 
+                       t0=self.t0, use_gpu=use_gpu, tdi=tdi)
 
         # set TDI channels
         if tdi_chan in ['XYZ', 'AET', 'AE']:
@@ -879,15 +929,8 @@ class LISA_detector(object):
         # if TDI orbit class is provided, update the response_init
         # tdi_orbits are set to class input automatically by FLR otherwise
         if tdi_orbits is not None:
-            ### FIXME: bug in LISAanalysistools when specifying time array
-            # tdi_orbits.configure(t_arr=self.sample_times)
+            tdi_orbits.configure(t_arr=self.sample_times)
             self.response_init.tdi_orbits = tdi_orbits
-
-        ### the TDI config is not automatically updated by setting tdi attributes
-        ### for now, update the TDI config manually if different from default
-        ### FIXME: find a better, faster way to do this
-        if self.response_init.tdi != original_tdi:
-            self.response_init._init_tdi_delays()
 
         # generate the TDI channels
         tdi_obs = self.response_init.get_tdi_delays()
