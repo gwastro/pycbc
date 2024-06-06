@@ -38,7 +38,7 @@ from .single_template import SingleTemplate
 from .relbin import Relative, RelativeTime, RelativeTimeDom
 from .hierarchical import (HierarchicalModel, MultiSignalModel,
                            JointPrimaryMarginalizedModel)
-from .lisa_ew import LISAEarlyWarningModel
+from .lisa_pre_merger import LISAPreMergerModel
 
 
 # Used to manage a model instance across multiple cores or MPI
@@ -209,11 +209,8 @@ _models = {_cls.name: _cls for _cls in (
     HierarchicalModel,
     MultiSignalModel,
     RelativeTimeDom,
-<<<<<<< HEAD
+    LISAPreMergerModel,
     JointPrimaryMarginalizedModel,
-=======
-    LISAEarlyWarningModel,
->>>>>>> 316d6200 (Some more hacks to do LISA EW PE)
 )}
 
 

@@ -709,45 +709,6 @@ class FDomainDetFrameGenerator(BaseFDomainDetFrameGenerator):
         return select_waveform_generator(approximant, domain)
 
 
-from .early_warning_wform import PSDFirKernel, generate_early_warning_psds, generate_data_lisa_ew, generate_waveform_lisa_ew
-
-class FDomainLISAEWGenerator(BaseFDomainDetFrameGenerator):
-    def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-                 variable_args=(), recalib=None, gates=None, **frozen_params):
-        super().__init__(rFrameGeneratorClass, epoch, detectors=detectors,
-                         variable_args=variable_args, recalib=recalib,
-                         gates=gates, **frozen_params)
-        # Need to define:
-        psds_outs = generate_early_warning_psds()
-        self.whitening_psds = {}
-        self.whitening_psds['LISA_A'] = psds_outs[0][0]
-        self.whitening_psds['LISA_E'] = psds_outs[1][0]
-        self.kernel_length = 10000 # Hardcoded for now
-        self.window_length = 10000 # Hardcoded also
-        #LISA_A_PSD = pycbc.psd.from_txt('A_psd_4_smooth.txt', flen, 1./tlen, 1./tlen, is_asd_file=False)
-        #LISA_E_PSD = pycbc.psd.from_txt('E_psd_4_smooth.txt', flen, 1./tlen, 1./tlen, is_asd_file=False)
-
-    def generate(self, **kwargs):
-        """Generates a waveform, applies a time shift and the detector response
-        function from the given kwargs.
-        """
-        self.current_params.update(kwargs)
-        start_time = self.current_params['ew_end_time']
-        cparams = {param: self.current_params[param]
-            for param in kwargs if not param=='ew_end_time'}
-
-        print(cparams)
-        assert(delta_f in cparams)
-        assert(f_lower in cparams)
-
-        # Remove cutoff time before merger. So need to know when merger is!
-        cutoff_time = self.cutoff_time + (cparams['t_obs_start'] - cparams['tc'])
-
-        ws = generate_waveform_lisa_ew(cparams, self.whitening_psds, self.window_length, cutoff_time, self.kernel_length) 
-
-        return ws
-
-
 class FDomainDetFrameTwoPolGenerator(BaseFDomainDetFrameGenerator):
     """Generates frequency-domain waveform in a specific frame.
 
