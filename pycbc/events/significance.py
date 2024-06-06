@@ -367,7 +367,7 @@ def ifar_opt_to_far_limit(ifar_str):
     """
     ifar_float = positive_float(ifar_str)
 
-    far_hz = 0. if (ifar_float == 0.) else 1. / (lal.YRJUL_SI * ifar_float)
+    far_hz = 0. if (ifar_float == 0.) else conv.sec_to_year(1. / ifar_float)
 
     return far_hz
 

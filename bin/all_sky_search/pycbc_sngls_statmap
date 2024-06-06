@@ -6,7 +6,7 @@ with producing the combined foreground and background triggers.
 """
 
 import argparse, h5py, itertools
-import lal, logging, numpy, copy
+import logging, numpy, copy
 from pycbc.events import veto, coinc
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import significance
@@ -271,7 +271,8 @@ else :
 #          above the set threshold, or a set maximum.
 
 # Convert threshold into seconds
-hier_ifar_thresh_s = args.hierarchical_removal_ifar_threshold * lal.YRJUL_SI
+hier_ifar_thresh_s = args.hierarchical_removal_ifar_threshold \
+    conv.sec_to_year(1)
 
 while numpy.any(ifar_louder > hier_ifar_thresh_s):
     # If the user wants to stop doing hierarchical removals after a set

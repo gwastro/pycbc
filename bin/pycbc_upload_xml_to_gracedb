@@ -41,6 +41,7 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries
 from pycbc.results import generate_asd_plot
+from pycbc import conversions as conv
 
 
 def check_gracedb_for_event(gdb_handle, query, far):
@@ -49,7 +50,7 @@ def check_gracedb_for_event(gdb_handle, query, far):
     which matches the FAR given
     """
     gdb_events_match_query = list(gdb_handle.events(query=query))
-    ifar = 1. / lal.YRJUL_SI / far
+    ifar = conv.sec_to_year(1. / far)
     for gdb_event in gdb_events_match_query:
         # Test each gracedb event to see if the FAR matches this event
         if np.abs(gdb_event['far'] - far) < 1e-16:
@@ -158,7 +159,7 @@ for event in coinc_table:
             coinc_inspiral_table_curr.append(coinc_insp)
 
     if args.min_ifar is not None and \
-            coinc_inspiral_table_curr[0].combined_far > 1./args.min_ifar/lal.YRJUL_SI:
+            coinc_inspiral_table_curr[0].combined_far > conv.sec_to_year(1. / args.min_ifar):
         continue
 
     time = coinc_inspiral_table_curr[0].end_time

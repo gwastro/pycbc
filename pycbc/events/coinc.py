@@ -25,7 +25,7 @@
 coincident triggers.
 """
 
-import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
+import numpy, logging, pycbc.pnutils, pycbc.conversions, copy
 from pycbc.detector import Detector, ppdets
 from pycbc.conversions import mchirp_from_mass1_mass2
 from .eventmgr_cython import coincbuffer_expireelements
@@ -878,7 +878,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if len(self.ifos) != 2:
             raise ValueError("Only a two ifo analysis is supported at this time")
 
-        self.lookback_time = (ifar_limit * lal.YRJUL_SI * timeslide_interval) ** 0.5
+        self.lookback_time = (ifar_limit / conv.sec_to_year(1.) * timeslide_interval) ** 0.5
         self.buffer_size = int(numpy.ceil(self.lookback_time / analysis_block))
 
         self.dets = {ifo: Detector(ifo) for ifo in ifos}
@@ -1034,7 +1034,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             in which case `ifar` is to be considered an upper limit.
         """
         n = self.coincs.num_greater(coinc_stat)
-        ifar = self.background_time / lal.YRJUL_SI / (n + 1)
+        ifar = conv.sec_to_year(self.background_time) / (n + 1)
         return ifar, n == 0
 
     def set_singles_buffer(self, results):
