@@ -15,7 +15,7 @@ logger = logging.getLogger('pycbc.events.single')
 
 class LiveSingle(object):
     def __init__(self, ifo,
-                 newsnr_threshold=10.0,
+                 ranking_threshold=10.0,
                  reduced_chisq_threshold=5,
                  duration_threshold=0,
                  fit_file=None,
@@ -41,24 +41,25 @@ class LiveSingle(object):
         )
 
         self.thresholds = {
-            "newsnr": newsnr_threshold,
+            "ranking": ranking_threshold,
             "reduced_chisq": reduced_chisq_threshold,
             "duration": duration_threshold}
 
     @staticmethod
     def insert_args(parser):
-        parser.add_argument('--single-newsnr-threshold', nargs='+',
+        parser.add_argument('--single-ranking-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction,
-                            help='Reweighted SNR min threshold for '
+                            help='Single ranking threshold for '
                                  'single-detector events. Can be given '
                                  'as a single value or as detector-value '
                                  'pairs, e.g. H1:6 L1:7 V1:6.5')
         parser.add_argument('--single-reduced-chisq-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction,
                             help='Maximum reduced chi-squared threshold for '
-                                 'single triggers. Can be given as a single '
-                                 'value or as detector-value pairs, e.g. '
-                                 'H1:2 L1:2 V1:3')
+                                 'single triggers. Calcuated after any PSD '
+                                 'variation reweighting is applied. Can be '
+                                 'given as a single value or as '
+                                 'detector-value pairs, e.g. H1:2 L1:2 V1:3')
         parser.add_argument('--single-duration-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction,
                             help='Minimum duration threshold for single '
@@ -93,12 +94,12 @@ class LiveSingle(object):
     def verify_args(args, parser, ifos):
         sngl_opts = [args.single_reduced_chisq_threshold,
                      args.single_duration_threshold,
-                     args.single_newsnr_threshold,
+                     args.single_ranking_threshold,
                      args.sngl_ifar_est_dist]
 
         sngl_opts_str = ("--single-reduced-chisq-threshold, "
                          "--single-duration-threshold, "
-                         "--single-newsnr-threshold, "
+                         "--single-ranking-threshold, "
                          "--sngl-ifar-est-dist")
 
         if any(sngl_opts) and not all(sngl_opts):
@@ -177,7 +178,7 @@ class LiveSingle(object):
 
         kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
         return cls(
-           ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
+           ifo, ranking_threshold=args.single_ranking_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
            duration_threshold=args.single_duration_threshold[ifo],
            fixed_ifar=args.single_fixed_ifar,
@@ -196,8 +197,8 @@ class LiveSingle(object):
         """
 
         # Apply cuts to trigs before clustering
-        # Cut on snr so that triggers which could not reach newsnr
-        # threshold do not have newsnr calculated
+        # Cut on snr so that triggers which could not reach the ranking
+        # threshold do not have ranking calculated
         if 'psd_var_val' in trigs:
             # We should apply the PSD variation rescaling, as this can
             # re-weight the SNR to be above SNR
@@ -212,7 +213,7 @@ class LiveSingle(object):
                     (trig_chisq <
                      self.thresholds['reduced_chisq']) & \
                     (trig_snr >
-                     self.thresholds['newsnr'])
+                     self.thresholds['ranking'])
         if not np.any(valid_idx):
             return None
 
@@ -227,7 +228,7 @@ class LiveSingle(object):
 
         # Calculate the ranking reweighted SNR for cutting
         single_rank = self.stat_calculator.get_sngl_ranking(trigsc)
-        sngl_idx = single_rank > self.thresholds['newsnr']
+        sngl_idx = single_rank > self.thresholds['ranking']
         if not np.any(sngl_idx):
             return None
 
