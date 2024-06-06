@@ -147,10 +147,21 @@ for ifo in all_ifos:
 
         # Skip if there are no triggers in this bin in this IFO
         if not any(inbin) or alphas[ifo][bin_num] == -1:
-            ax.plot([],[], linewidth=2,
-                color=bin_colour, label=binlabel, alpha=0.6)
-            ax.plot([],[], "--", color=bin_colour,
-                label="No triggers")
+            ax.plot(
+                [],
+                [],
+                linewidth=2,
+                color=bin_colour,
+                label=binlabel,
+                alpha=0.6
+            )
+            ax.plot(
+                [],
+                [],
+                "--",
+                color=bin_colour,
+                label="No triggers"
+            )
             continue
         binned_sngl_stats = stats[ifo][event_bin == bin_num]
 

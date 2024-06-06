@@ -419,20 +419,19 @@ for ifo in events:
 logging.info("Writing results")
 with h5py.File(args.output, 'w') as fout:
     for ifo in args.ifos:
+        fout_ifo = fout.create_group(ifo)
+        fout_ifo.attrs['fit_function'] = args.fit_function[ifo]
+        fout_ifo.attrs['fit_threshold'] = args.fit_threshold[ifo]
         if ifo not in events:
             # There were no triggers, but we should still produce some
             # information
-            fout_ifo = fout.create_group(ifo)
             fout_ifo['fit_coeff'] = -1 * np.zeros(n_bins)
             fout_ifo['counts'] = np.zeros(n_bins)
             fout_ifo.attrs['live_time'] = live_time[ifo]
             fout_ifo.attrs['pruned_times'] = []
             fout_ifo.attrs['n_pruned'] = 0
-            fout_ifo.attrs['fit_function'] = args.fit_function[ifo]
-            fout_ifo.attrs['fit_threshold'] = args.fit_threshold[ifo]
             continue
 
-        fout_ifo = fout.create_group(ifo)
         # Save the triggers we have used for the fits
         fout_ifo_trigs = fout_ifo.create_group('triggers')
         for key in events[ifo].data:
@@ -445,8 +444,6 @@ with h5py.File(args.output, 'w') as fout:
         fout_ifo.attrs['live_time'] = live_time[ifo]
         fout_ifo.attrs['pruned_times'] = times_to_prune[ifo]
         fout_ifo.attrs['n_pruned'] = n_pruned[ifo]
-        fout_ifo.attrs['fit_function'] = args.fit_function[ifo]
-        fout_ifo.attrs['fit_threshold'] = args.fit_threshold[ifo]
 
     fout['bins_upper'] = tbins.upper()
     fout['bins_lower'] = tbins.lower()

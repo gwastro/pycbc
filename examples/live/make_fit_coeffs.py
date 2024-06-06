@@ -1,3 +1,9 @@
+"""
+Makes files which can be used as the fit_coeffs statistic.
+These are not of any scientific use, but the code will accept them
+and run properly
+"""
+
 import h5py
 import numpy as np
 
