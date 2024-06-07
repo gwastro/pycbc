@@ -28,9 +28,9 @@ read in the associated options to do so.
 """
 import logging
 import copy
-import lal
 import numpy as np
 from pycbc.events import trigger_fits as trstats
+from pycbc import conversions as conv
 
 logger = logging.getLogger('pycbc.events.significance')
 
