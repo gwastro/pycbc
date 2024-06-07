@@ -324,10 +324,20 @@ class TestLALSimulation(unittest.TestCase):
         #"""
 
         hp, hc = get_waveform(self.p)
-        hpswap, hcswap = get_waveform(self.p, mass1=self.p.mass2, mass2=self.p.mass1,
-                spin1x=self.p.spin2x, spin1y=self.p.spin2y, spin1z=self.p.spin2z,
-                spin2x=self.p.spin1x, spin2y=self.p.spin1y, spin2z=self.p.spin1z,
-                lambda1=self.p.lambda2, lambda2=self.p.lambda1)
+        hpswap, hcswap = get_waveform(
+            self.p,
+            mass1=self.p.mass2,
+            mass2=self.p.mass1,
+            spin1x=self.p.spin2x,
+            spin1y=self.p.spin2y,
+            spin1z=self.p.spin2z,
+            spin2x=self.p.spin1x,
+            spin2y=self.p.spin1y,
+            spin2z=self.p.spin1z,
+            lambda1=self.p.lambda2,
+            lambda2=self.p.lambda1,
+            coa_phase=self.p.coa_phase + lal.PI
+        )
         op = overlap(hp, hpswap)
         self.assertAlmostEqual(1, op, places=7)
         oc = overlap(hc, hcswap)
