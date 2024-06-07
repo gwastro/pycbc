@@ -215,7 +215,7 @@ python -m mpi4py `which pycbc_live` \
     --snr-opt-di-popsize 100 \
     --snr-opt-include-candidate " \
 --sngl-ifar-est-dist conservative \
---single-newsnr-threshold ranking \
+--single-ranking-threshold 9 \
 --single-duration-threshold 7 \
 --single-reduced-chisq-threshold 2 \
 --single-fit-file single_significance_fits.hdf \
