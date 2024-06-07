@@ -33,27 +33,8 @@ from pycbc.waveform.pre_merger_waveform import (
 )
 from pycbc.psd.lisa_pre_merger import generate_pre_merger_psds
 from pycbc.waveform.waveform import parse_mode_array
-from pycbc.waveform.utils import apply_fd_time_shift
+from pycbc.waveform.utils import apply_fseries_time_shift
 from .tools import marginalize_likelihood
-
-
-# As per https://stackoverflow.com/questions/715417 this is
-# distutils.util.strtobool, but it's being removed in python3.12 so recommend
-# to copy source code as we've done here.
-def strtobool(val):
-    """Convert a string representation of truth to true (1) or false (0).
-    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
-    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
-    'val' is anything else.
-    """
-    val = val.lower()
-    if val in ('y', 'yes', 't', 'true', 'on', '1'):
-        return 1
-    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
-        return 0
-    else:
-        raise ValueError("invalid truth value %r" % (val,))
-
 
 
 class LISAPreMergerModel(BaseModel):
@@ -82,7 +63,6 @@ class LISAPreMergerModel(BaseModel):
     ):
         # Pop relevant values from kwargs
         cutoff_time = int(kwargs.pop('cutoff_time'))
-        seed = int(kwargs.pop('seed'))
         kernel_length = int(kwargs.pop('kernel_length'))
         psd_kernel_length = int(kwargs.pop('psd_kernel_length'))
         window_length = int(kwargs.pop('window_length'))
@@ -158,17 +138,19 @@ class LISAPreMergerModel(BaseModel):
             copy_output=True,
             uid=3223967
         )
+        # Data epoch
+        self._epoch = self.lisa_a_strain_fd._epoch
 
-    def _loglikelihood(self):
-        """Compute the pre-merger log-likelihood."""
-        cparams = copy.deepcopy(self.static_params)
-        cparams.update(self.current_params)
-
+    def get_waveforms(self, params):
+        """Generate the waveforms given the parameters.
+        
+        Note: `params` should already include the static parameters.
+        """
         # Generate the pre-merger waveform
         # These waveforms are whitened
         # Uses UIDs: 1234(0), 1235(0), 1236(0), 1237(0)
         ws = generate_waveform_lisa_pre_merger(
-            cparams,
+            params,
             psds_for_whitening=self.whitening_psds,
             window_length=self.window_length,
             sample_rate=self.sample_rate,
@@ -176,28 +158,40 @@ class LISAPreMergerModel(BaseModel):
             extra_forward_zeroes=self.extra_forward_zeroes,
         )
 
-        # Apply a time shift to ensure the data has the correct epoch
-        wform_lisa_a = apply_fd_time_shift(
-            ws['LISA_A'], cparams["tc"], copy=True
-        )
-        wform_lisa_e = apply_fd_time_shift(
-            ws['LISA_E'], cparams["tc"], copy=True
-        )
+        wf = {}
+        # Adjust epoch to match data and shift merger to the
+        # correct time.
+        # Can safely set copy=False since ws won't be used again.
+        dt = params["tc"] - self._epoch
+        for channel in ws.keys():
+            wf[channel] = apply_fseries_time_shift(
+                ws[channel], dt, copy=False,
+            )
+            wf[channel]._epoch = self._epoch
+        return wf
+
+    def _loglikelihood(self):
+        """Compute the pre-merger log-likelihood."""
+        cparams = copy.deepcopy(self.static_params)
+        cparams.update(self.current_params)
+
+        # Generate the waveforms
+        wforms = self.get_waveforms(cparams)
 
         # Compute <h|d> for each channel
         snr_A = pycbc.filter.overlap_cplx(
-            wform_lisa_a,
+            wforms["LISA_A"],
             self.lisa_a_strain_fd,
             normalized=False,
         )
         snr_E = pycbc.filter.overlap_cplx(
-            wform_lisa_e,
+            wforms["LISA_E"],
             self.lisa_e_strain_fd,
             normalized=False,
         )
         # Compute <h|h> for each channel
-        a_norm = pycbc.filter.sigmasq(wform_lisa_a)
-        e_norm = pycbc.filter.sigmasq(wform_lisa_e)
+        a_norm = pycbc.filter.sigmasq(wforms["LISA_A"])
+        e_norm = pycbc.filter.sigmasq(wforms["LISA_E"])
 
         hs = snr_A + snr_E
         hh = (a_norm + e_norm)
