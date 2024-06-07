@@ -271,7 +271,7 @@ else :
 #          above the set threshold, or a set maximum.
 
 # Convert threshold into seconds
-hier_ifar_thresh_s = args.hierarchical_removal_ifar_threshold \
+hier_ifar_thresh_s = args.hierarchical_removal_ifar_threshold /  \
     conv.sec_to_year(1)
 
 while numpy.any(ifar_louder > hier_ifar_thresh_s):
