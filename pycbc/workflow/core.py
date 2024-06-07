@@ -930,12 +930,14 @@ class Node(pegasus_workflow.Node):
         Wrapper around add_opt to ensure that the option has not been
         defined both in the workflow generator and in the config files
         """
-        if check_existing_options and (opt in self.executable.common_options \
+        if check_existing_options and (opt in self.executable.common_options
                 or opt in self.executable.common_raw_options):
-            err_msg = ("Trying to set option %s with value %s, but it "
+            err_msg = (
+                "Trying to set option %s with value %s, but it "
                 "has already been provided by the configuration file. "
                 "Usually this should not be given in the config file, "
-                "but contact developers to check") % (opt, value)
+                "but contact developers to check"
+            ) % (opt, value)
             raise ValueError(err_msg)
         pegasus_workflow.Node.add_opt(self, opt, value)
 

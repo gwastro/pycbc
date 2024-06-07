@@ -206,7 +206,7 @@ class Node(ProfileShortcuts):
 
         self._raw_options += [arg]
 
-    def add_opt(self, opt, value=None):
+    def add_opt(self, opt, value=None, **kwargs): # pylint:disable=unused-argument
         """ Add a option
         """
         if value is not None:
