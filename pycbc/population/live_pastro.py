@@ -1,6 +1,7 @@
 import logging
 import h5py
 import numpy
+from pycbc import conversions as conv
 from pycbc.tmpltbank import bank_conversions as bankconv
 from pycbc.events import triggers
 from . import fgmc_functions as fgmcfun
