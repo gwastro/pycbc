@@ -773,7 +773,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # add the effect of inclination back to amplitude of waveform
             ic = numpy.cos(self.primary_model.current_params['inclination'])
             ip = 0.5 * (1.0 + ic**2)
-            ic_others = numpy.cos(margin_params['inclination'])
+            ic_others = numpy.cos(
+                self.other_models[0].current_params['inclination'])
             ip_others = 0.5 * (1.0 + ic_others**2)
             # we assume F+^2 ~= Fx^2 ~= <F+^2> = <Fx^2> = 1/5 in other models
             # for amplitude_factor
@@ -791,14 +792,13 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     (1+numpy.cos(iota)**2)
                 return numpy.mod(-numpy.arctan2(a, b), 2*numpy.pi)
 
-            phase_factor = sh_phase_shift_factor(
-                                margin_params['ra'], margin_params['dec'],
-                                margin_params['polarization'],
-                                margin_params['inclination']) - \
-                           sh_phase_shift_factor(
-                                margin_params['ra'], margin_params['dec'],
-                                margin_params['polarization'],
-                                margin_params['inclination'])[i_max_extrinsic]
+            sh_phase = sh_phase_shift_factor(
+                self.primary_model.current_params['ra'],
+                self.primary_model.current_params['dec'],
+                self.primary_model.current_params['polarization'],
+                self.primary_model.current_params['inclination'])
+
+            phase_factor = sh_phase - sh_phase[i_max_extrinsic]
             sh_others *= numpy.exp(1j*phase_factor)
 
         if nums == 1:
