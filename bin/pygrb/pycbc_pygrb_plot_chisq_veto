@@ -211,12 +211,12 @@ if snr_type == 'single':
 # TODO: fix vetoes
 
 # Prepare plot title and caption
-veto_labels = {'network': "Power Veto",
-               'bank': "Bank Veto",
-               'auto': "Auto Veto",
-               'power': "Chi Square Veto"}
+veto_labels = {'network': "Network Power",
+               'bank': "Bank",
+               'auto': "Auto",
+               'power': "Power"}
 if opts.plot_title is None:
-    opts.plot_title = " %s" % veto_labels[veto_type]
+    opts.plot_title = " %s Chi Square" % veto_labels[veto_type]
     if veto_type != 'network':
         opts.plot_title = ifo + opts.plot_title
     if snr_type == 'single':
@@ -224,15 +224,14 @@ if opts.plot_title is None:
     else:
         opts.plot_title += " vs %s SNR" % snr_type.capitalize()
 if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: background triggers.  " +
-                         "Black line: veto line.  " +
-                         "Yellow lines: contours of constant rewighted SNR.  ")
+    opts.plot_caption = ("Blue crosses: background triggers. ")
+    if found_missed_file:
+        opts.plot_caption += "Red crosses: injections triggers. "
     if veto_type == 'network':
         opts.plot_caption += ("Gray shaded region: area cut by the " +
-                              "reweighted SNR threshold.")
-    if found_missed_file:
-        opts.plot_caption = ("Red crosses: injections triggers.  ") +\
-                            opts.plot_caption
+                              "reweighted SNR threshold. " +
+                              "Black line: reweighted SNR threshold. Yellow " +
+                              "lines: contours of constant rewighted SNR.")
 
 logging.info("Imported and ready to go.")
 
@@ -286,7 +285,7 @@ y_max = 1.1*plu.axis_max_value(trig_data[veto_type], inj_data[veto_type],
 
 # Determine y-axis minimum value and label
 y_label = "Network power chi-square" if veto_type == 'network' \
-    else "%s Single %s" % (ifo, veto_labels[veto_type])
+    else "%s Single %s chi-square" % (ifo, veto_labels[veto_type].lower())
 
 # Determine contours for plots
 conts = None
