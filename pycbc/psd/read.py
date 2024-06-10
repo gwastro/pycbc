@@ -49,7 +49,7 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
         raise ValueError('Lowest frequency in input data '
           ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
 
-    kmin = int(low_freq_cutoff / delta_f)
+    kmin = round(low_freq_cutoff / delta_f)
     flow = kmin * delta_f
 
     data_start = (0 if freq_data[0]==low_freq_cutoff else numpy.searchsorted(freq_data, flow) - 1)
