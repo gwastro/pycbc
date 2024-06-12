@@ -23,8 +23,9 @@ import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import sys
 
-from pycbc import results, init_logging, add_common_pycbc_options
-from pycbc import __version__, add_common_pycbc_options, init_logging
+from pycbc import (
+    __version__, results, init_logging, add_common_pycbc_options
+)
 from pycbc.inference import (gelman_rubin, io, option_utils)
 
 # add options to command line
