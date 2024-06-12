@@ -187,6 +187,7 @@ def check_found_events(args):
 
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--gps-start', type=float, required=True)
 parser.add_argument('--gps-end', type=float, required=True)
 parser.add_argument('--f-min', type=float, required=True)
@@ -195,7 +196,7 @@ parser.add_argument('--injections', type=str, required=True)
 parser.add_argument('--detectors', type=str, required=True, nargs='+')
 args = parser.parse_args()
 
-pycbc.init_logging(1)
+pycbc.init_logging(args.verbose, default_level=1)
 
 single_fail = check_single_results(args)
 found_fail = check_found_events(args)

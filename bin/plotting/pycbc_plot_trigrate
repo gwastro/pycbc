@@ -24,6 +24,7 @@ import copy
 import numpy as np
 from scipy import stats as scistats
 
+import pycbc
 from pycbc import io, events, bin_utils, results
 from pycbc.events import triggers
 from pycbc.events import ranking

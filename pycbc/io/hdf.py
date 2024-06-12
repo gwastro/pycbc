@@ -249,7 +249,7 @@ class DictArray(object):
             try:
                 data[k] = np.concatenate([self.data[k], other.data[k]])
             except KeyError:
-                logger.info('%s does not exist in other data' % k)
+                logger.info('%s does not exist in other data', k)
         return self._return(data=data)
 
     def select(self, idx):

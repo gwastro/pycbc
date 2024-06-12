@@ -110,7 +110,7 @@ parser.add_argument('--generate-plots', action='store_true',
 
 args = parser.parse_args()
 
-pycbc.init_logging(args.verbose)
+pycbc.init_logging(args.verbose, default_level=1)
 
 if args.production_server:
     gracedb = GraceDb()

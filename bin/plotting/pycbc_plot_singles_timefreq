@@ -32,6 +32,7 @@ import matplotlib.mlab as mlab
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
 
+import pycbc
 from pycbc.io import HFile
 import pycbc.events
 import pycbc.pnutils

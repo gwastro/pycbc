@@ -10,6 +10,7 @@ import pylab as pl
 
 from scipy.stats import hmean
 
+import pycbc
 from pycbc.results.color import ifo_color
 import pycbc.version
 

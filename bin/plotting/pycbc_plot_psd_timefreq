@@ -31,6 +31,7 @@ matplotlib.use('agg')
 import pylab
 from matplotlib.colors import LogNorm
 
+import pycbc
 import pycbc.results
 
 parser = argparse.ArgumentParser(description=__doc__)

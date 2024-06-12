@@ -57,7 +57,7 @@ _strain.insert_strain_option_group(parser)
 # parse command line
 opts = parser.parse_args()
 
-# Default logging level is info: --verbose adds to this
+# Default logging level is debug: --verbose adds to this
 init_logging(opts.verbose, default_level=2)
 
 # get strain

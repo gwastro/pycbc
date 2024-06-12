@@ -28,6 +28,7 @@ import argparse
 import logging
 from textwrap import wrap
 
+import pycbc
 import pycbc.version
 from pycbc import __version__
 from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)

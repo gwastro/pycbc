@@ -3,8 +3,14 @@
 """
 import matplotlib
 matplotlib.use('Agg')
-import h5py, numpy, argparse, pylab, pycbc.results, sys
+import h5py
+import numpy
+import argparse
+import pylab
+import sys
 
+import pycbc
+import pycbc.results
 import pycbc.psd
 import pycbc.version
 

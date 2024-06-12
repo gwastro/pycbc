@@ -29,11 +29,13 @@ import pylab as pl
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
 import h5py
+import sys
+
+import pycbc
 import pycbc.pnutils
 import pycbc.events
 import pycbc.results
 import pycbc.io
-import sys
 import pycbc.version
 from pycbc.events import ranking
 

@@ -83,7 +83,7 @@ parser.add_argument("--sample-rate", type=int, required=True,
 opts = parser.parse_args()
 
 # setup log
-pycbc.init_logging(args.verbose, default_level=1)
+pycbc.init_logging(args.verbose, default_level=2)
 
 # read data file with time series
 data = numpy.loadtxt(opts.data_file)

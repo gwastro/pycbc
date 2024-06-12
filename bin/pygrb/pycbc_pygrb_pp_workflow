@@ -30,6 +30,7 @@ import logging
 import argparse
 import os
 
+import pycbc
 import pycbc.version
 import pycbc.workflow as _workflow
 from pycbc.results import layout

@@ -12,6 +12,7 @@ from matplotlib import use
 use('Agg')
 from matplotlib import pyplot
 
+import pycbc
 import pycbc.version
 import pycbc.results
 import pycbc.io
