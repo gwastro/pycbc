@@ -29,6 +29,7 @@ import shlex
 import logging
 import numpy
 from pycbc import transforms
+from pycbc.coordinates.space import geo_to_lisa
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
 
@@ -702,6 +703,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             margin_names_vector.remove('logw_partial')
         margin_params = {}
 
+        print("self.primary_model.current_params: ", self.primary_model.current_params)
+
         if self.accelerate_loglr:
             # Due to the high precision of extrinsic parameters constrined
             # by the primary model, the mismatch of wavefroms in others by
@@ -749,12 +752,14 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # not using self.primary_model.current_params, because others_model
             # may have its own static parameters
             current_params_other = other_model.current_params.copy()
+            print("[total_loglr] current_params_other 1: ", current_params_other)
             if not self.accelerate_loglr:
                 for i in range(nums):
                     current_params_other.update(
                         {key: value[i] if isinstance(value, numpy.ndarray)
                          else value for key, value in margin_params.items()})
                     other_model.update(**current_params_other)
+                    print("[total_loglr] current_params_other 2: ", current_params_other)
                     other_model.return_sh_hh = True
                     sh_others[i], hh_others[i] = other_model.loglr
                     other_model.return_sh_hh = False
@@ -763,43 +768,76 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     {key: value[0] if isinstance(value, numpy.ndarray)
                      else value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
-                other_model.return_sh_hh = True
-                sh_others_max, hh_others_max = other_model.loglr
-                other_model.return_sh_hh = False
-                sh_others = numpy.full(nums, sh_others_max)
-                hh_others = numpy.full(nums, hh_others_max)
+                other_model.return_sh_hh_each_ifo = True
+                sh_other_max_dict, hh_other_max_dict = other_model.loglr
+                other_model.return_sh_hh_each_ifo = False
+                sh_others_A = numpy.full(nums, sh_other_max_dict['LISA_A'])
+                hh_others_A = numpy.full(nums, hh_other_max_dict['LISA_A'])
+                sh_others_E = numpy.full(nums, sh_other_max_dict['LISA_E'])
+                hh_others_E = numpy.full(nums, hh_other_max_dict['LISA_E'])
+                sh_others_T = numpy.full(nums, sh_other_max_dict['LISA_T'])
+                hh_others_T = numpy.full(nums, hh_other_max_dict['LISA_T'])
 
         if self.accelerate_loglr:
-            # add the effect of inclination back to amplitude of waveform
-            ic = numpy.cos(self.primary_model.current_params['inclination'])
+            _, longitude_lisa, latitude_lisa, polarization_lisa = \
+                geo_to_lisa(self.primary_model.current_params['tc'],
+                            self.primary_model.current_params['ra'],
+                            self.primary_model.current_params['dec'],
+                            self.primary_model.current_params['polarization'],
+                            current_params_other['t_offset'])
+            inclination_lisa = self.primary_model.current_params['inclination']
+            F_ap_nopsi = 0.5 * (1 + numpy.sin(latitude_lisa)**2) *\
+                numpy.cos(2*longitude_lisa - numpy.pi/3)
+            F_ac_nopsi = numpy.sin(latitude_lisa) *\
+                numpy.sin(2*longitude_lisa - numpy.pi/3)
+            F_ep_nopsi = 0.5 * (1 + numpy.sin(latitude_lisa)**2) *\
+                numpy.cos(2*longitude_lisa + numpy.pi/6)
+            F_ec_nopsi = numpy.sin(latitude_lisa) *\
+                numpy.sin(2*longitude_lisa + numpy.pi/6)
+            F_ap = numpy.cos(2*polarization_lisa) * F_ap_nopsi +\
+                numpy.sin(2*polarization_lisa) * F_ac_nopsi
+            F_ac = -numpy.sin(2*polarization_lisa) * F_ap_nopsi +\
+                numpy.cos(2*polarization_lisa) * F_ac_nopsi
+            F_ep = numpy.cos(2*polarization_lisa) * F_ep_nopsi +\
+                numpy.sin(2*polarization_lisa) * F_ec_nopsi
+            F_ec = -numpy.sin(2*polarization_lisa) * F_ep_nopsi +\
+                numpy.cos(2*polarization_lisa) * F_ec_nopsi
+
+            # add the effect of inclination and psi back to amplitude
+            ic = numpy.cos(inclination_lisa)
             ip = 0.5 * (1.0 + ic**2)
             ic_others = numpy.cos(
                 self.other_models[0].current_params['inclination'])
             ip_others = 0.5 * (1.0 + ic_others**2)
-            # we assume F+^2 ~= Fx^2 ~= <F+^2> = <Fx^2> = 1/5 in other models
-            # for amplitude_factor
-            amplitude_factor = numpy.sqrt((ip**2 + ic**2) /
-                                          (ip_others**2 + ic_others**2))
-            sh_others *= amplitude_factor
-            hh_others *= amplitude_factor**2
+            # we hard code the channel name atm, need to be more flexible
+            amplitude_factor_A = numpy.sqrt(((F_ap*ip_others)**2 +\
+                                             (F_ac*ic_others)**2) /
+                                            ((F_ap*ip)**2 + (F_ac*ic)**2))
+            amplitude_factor_E = numpy.sqrt(((F_ep*ip_others)**2 +\
+                                             (F_ec*ic_others)**2) /
+                                            ((F_ep*ip)**2 + (F_ec*ic)**2))
+            sh_others_A *= amplitude_factor_A
+            hh_others_A *= amplitude_factor_A**2
+            sh_others_E *= amplitude_factor_E
+            hh_others_E *= amplitude_factor_E**2
 
-            def sh_phase_shift_factor(theta, phi, psi, iota):
-                sky_factor = 0.5 * (1./numpy.cos(theta) + numpy.cos(theta)) *\
-                                numpy.tan(2*phi)**(-1)
-                a = (sky_factor * numpy.sin(2*psi) + numpy.cos(2*psi)) *\
-                    2*numpy.cos(iota)
-                b = (sky_factor * numpy.cos(2*psi) - numpy.sin(2*psi)) *\
-                    (1+numpy.cos(iota)**2)
+            # add the effect of inclination and psi back to phase
+            def sh_phase_shift_factor(fp, fc, ip, ic):
+                a = fc * ic
+                b = fp * ip
                 return numpy.mod(-numpy.arctan2(a, b), 2*numpy.pi)
 
-            sh_phase = sh_phase_shift_factor(
-                self.primary_model.current_params['ra'],
-                self.primary_model.current_params['dec'],
-                self.primary_model.current_params['polarization'],
-                self.primary_model.current_params['inclination'])
+            sh_phase_A = sh_phase_shift_factor(F_ap, F_ac, ic, ip)
+            phase_factor_A =  sh_phase_A - sh_phase_A[i_max_extrinsic]
+            sh_others_A *= numpy.exp(1j*phase_factor_A)
 
-            phase_factor = sh_phase - sh_phase[i_max_extrinsic]
-            sh_others *= numpy.exp(1j*phase_factor)
+            sh_phase_E = sh_phase_shift_factor(F_ep, F_ec, ic, ip)
+            phase_factor_E =  sh_phase_E - sh_phase_E[i_max_extrinsic]
+            sh_others_E *= numpy.exp(1j*phase_factor_E)
+
+            # after applying amp & phase correction for each channel, combine
+            sh_others = sh_others_A + sh_others_E + sh_others_T
+            hh_others = hh_others_A + hh_others_E + hh_others_T
 
         if nums == 1:
             # the type of the original sh/hh_others are numpy.array,
@@ -814,6 +852,11 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.primary_model.marginalize_vector_weights = \
             - numpy.log(self.primary_model.vsamples)
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
+
+        print("sh_others: ", sh_others)
+        print("hh_others: ", hh_others)
+        print("sh_total: ", sh_total)
+        print("hh_total: ", hh_total)
 
         return loglr
 

@@ -214,6 +214,7 @@ class Relative(DistMarg, BaseGaussianNoise):
 
         # the flag used in `_loglr`
         self.return_sh_hh = False
+        self.return_sh_hh_each_ifo = False
 
         for k in self.static_params:
             if self.fid_params[k] == 'REPLACE':
@@ -525,7 +526,8 @@ class Relative(DistMarg, BaseGaussianNoise):
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
-        or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
+        or inner product <s|h> and <h|h> if `self.return_sh_hh` is True,
+        or inner product dict {ifo: <s|h>} and {ifo: <h|h>} if `self.return_sh_hh_each_ifo` is True.
 
         .. math::
 
@@ -549,6 +551,8 @@ class Relative(DistMarg, BaseGaussianNoise):
         lik = self.likelihood_function
         norm = 0.0
         filt = 0j
+        dict_norm = {}
+        dict_filt = {}
         self._current_wf_parts = {}
         pol_phase = numpy.exp(-2.0j * p['polarization'])
 
@@ -595,9 +599,13 @@ class Relative(DistMarg, BaseGaussianNoise):
 
             filt += filter_i
             norm += norm_i
+            dict_filt[ifo] = filter_i
+            dict_norm[ifo] = norm_i
 
         if self.return_sh_hh:
             results = (filt, norm)
+        elif self.return_sh_hh_each_ifo:
+            results = (dict_filt, dict_norm)
         else:
             results = self.marginalize_loglr(filt, norm)
         return results
