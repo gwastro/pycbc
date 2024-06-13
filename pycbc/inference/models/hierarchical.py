@@ -847,21 +847,21 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             hh_others_E *= amplitude_factor_E**2
 
             # add the effect of inclination and psi back to phase
-            def sh_phase_shift_factor(fp, fc, ip, ic):
+            def strain_phase_shift_extrinsic(fp, fc, ip, ic):
                 a = fc * ic
                 b = fp * ip
                 return numpy.mod(-numpy.arctan2(a, b), 2*numpy.pi)
 
-            sh_phase_A = sh_phase_shift_factor(F_ap, F_ac, ip, ic)
-            sh_phase_A_others = sh_phase_shift_factor(
+            phase_shift_A = strain_phase_shift_extrinsic(F_ap, F_ac, ip, ic)
+            phase_shift_A_others = strain_phase_shift_extrinsic(
                 F_ap_others, F_ac_others, ip_others, ic_others)
-            phase_factor_A = sh_phase_A_others - sh_phase_A
+            phase_factor_A = phase_shift_A_others - phase_shift_A
             sh_others_A *= numpy.exp(1j*phase_factor_A)
 
-            sh_phase_E = sh_phase_shift_factor(F_ep, F_ec, ip, ic)
-            sh_phase_E_others = sh_phase_shift_factor(
+            phase_shift_E = strain_phase_shift_extrinsic(F_ep, F_ec, ip, ic)
+            phase_shift_E_others = strain_phase_shift_extrinsic(
                 F_ep_others, F_ec_others, ip_others, ic_others)
-            phase_factor_E = sh_phase_E_others - sh_phase_E
+            phase_factor_E = phase_shift_E_others - phase_shift_E
             sh_others_E *= numpy.exp(1j*phase_factor_E)
 
             # after applying amp & phase correction for each channel,
