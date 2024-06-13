@@ -780,41 +780,66 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
         if self.accelerate_loglr:
             _, longitude_lisa, latitude_lisa, polarization_lisa = \
+                geo_to_lisa(self.other_models[0].current_params['tc'],
+                            self.other_models[0].current_params['ra'],
+                            self.other_models[0].current_params['dec'],
+                            self.other_models[0].current_params['polarization'],
+                            self.other_models[0].current_params['t_offset'])
+            inclination_lisa =\
+                self.other_models[0].current_params['inclination']
+            _, longitude_lisa_others, latitude_lisa_others, \
+                polarization_lisa_others = \
                 geo_to_lisa(self.primary_model.current_params['tc'],
                             self.primary_model.current_params['ra'],
                             self.primary_model.current_params['dec'],
                             self.primary_model.current_params['polarization'],
-                            current_params_other['t_offset'])
-            inclination_lisa = self.primary_model.current_params['inclination']
-            F_ap_nopsi = 0.5 * (1 + numpy.sin(latitude_lisa)**2) *\
-                numpy.cos(2*longitude_lisa - numpy.pi/3)
-            F_ac_nopsi = numpy.sin(latitude_lisa) *\
-                numpy.sin(2*longitude_lisa - numpy.pi/3)
-            F_ep_nopsi = 0.5 * (1 + numpy.sin(latitude_lisa)**2) *\
-                numpy.cos(2*longitude_lisa + numpy.pi/6)
-            F_ec_nopsi = numpy.sin(latitude_lisa) *\
-                numpy.sin(2*longitude_lisa + numpy.pi/6)
-            F_ap = numpy.cos(2*polarization_lisa) * F_ap_nopsi +\
-                numpy.sin(2*polarization_lisa) * F_ac_nopsi
-            F_ac = -numpy.sin(2*polarization_lisa) * F_ap_nopsi +\
-                numpy.cos(2*polarization_lisa) * F_ac_nopsi
-            F_ep = numpy.cos(2*polarization_lisa) * F_ep_nopsi +\
-                numpy.sin(2*polarization_lisa) * F_ec_nopsi
-            F_ec = -numpy.sin(2*polarization_lisa) * F_ep_nopsi +\
-                numpy.cos(2*polarization_lisa) * F_ec_nopsi
+                            self.primary_model.current_params['t_offset'])
+            inclination_lisa_others =\
+                self.primary_model.current_params['inclination']
+
+            # antenna pattern fuction for TDI-A/E,
+            # uses Eq.(43-46) from <10.1103/PhysRevD.103.083011>
+            def get_antenna_pattern(lon, lat, psi):
+                f_ap_nopsi = 0.5 * (1 + numpy.sin(lat)**2) *\
+                    numpy.cos(2*lon - numpy.pi/3)
+                f_ac_nopsi = numpy.sin(lat) *\
+                    numpy.sin(2*lon - numpy.pi/3)
+                f_ep_nopsi = 0.5 * (1 + numpy.sin(lat)**2) *\
+                    numpy.cos(2*lon + numpy.pi/6)
+                f_ec_nopsi = numpy.sin(lat) *\
+                    numpy.sin(2*lon + numpy.pi/6)
+                f_ap = numpy.cos(2*psi) * f_ap_nopsi +\
+                    numpy.sin(2*psi) * f_ac_nopsi
+                f_ac = -numpy.sin(2*psi) * f_ap_nopsi +\
+                    numpy.cos(2*psi) * f_ac_nopsi
+                f_ep = numpy.cos(2*psi) * f_ep_nopsi +\
+                    numpy.sin(2*psi) * f_ec_nopsi
+                f_ec = -numpy.sin(2*psi) * f_ep_nopsi +\
+                    numpy.cos(2*psi) * f_ec_nopsi
+                return (f_ap, f_ac, f_ep, f_ec)
+
+            F_ap, F_ac, F_ep, F_ec =\
+                get_antenna_pattern(
+                    lon=longitude_lisa, lat=latitude_lisa,
+                    psi=polarization_lisa
+                )
+            F_ap_others, F_ac_others, F_ep_others, F_ec_others =\
+                get_antenna_pattern(
+                    lon=longitude_lisa_others, lat=latitude_lisa_others,
+                    psi=polarization_lisa_others
+                )
 
             # add the effect of inclination and psi back to amplitude
             ic = numpy.cos(inclination_lisa)
             ip = 0.5 * (1.0 + ic**2)
-            ic_others = numpy.cos(
-                self.other_models[0].current_params['inclination'])
+            ic_others = numpy.cos(inclination_lisa_others)
             ip_others = 0.5 * (1.0 + ic_others**2)
             # we hard code the channel name atm, need to be more flexible
-            amplitude_factor_A = numpy.sqrt(((F_ap*ip_others)**2 +\
-                                             (F_ac*ic_others)**2) /
+            amplitude_factor_A = numpy.sqrt(((F_ap_others*ip_others)**2 +\
+                                             (F_ac_others*ic_others)**2) /
                                             ((F_ap*ip)**2 + (F_ac*ic)**2))
-            amplitude_factor_E = numpy.sqrt(((F_ep*ip_others)**2 +\
-                                             (F_ec*ic_others)**2) /
+            amplitude_factor_E = numpy.sqrt(((F_ep_others*ip_others)**2 +\
+                                             (F_ec_others*ic_others)**2) /
                                             ((F_ep*ip)**2 + (F_ec*ic)**2))
             sh_others_A *= amplitude_factor_A
             hh_others_A *= amplitude_factor_A**2
@@ -827,15 +852,20 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 b = fp * ip
                 return numpy.mod(-numpy.arctan2(a, b), 2*numpy.pi)
 
-            sh_phase_A = sh_phase_shift_factor(F_ap, F_ac, ic, ip)
-            phase_factor_A =  sh_phase_A - sh_phase_A[i_max_extrinsic]
+            sh_phase_A = sh_phase_shift_factor(F_ap, F_ac, ip, ic)
+            sh_phase_A_others = sh_phase_shift_factor(
+                F_ap_others, F_ac_others, ip_others, ic_others)
+            phase_factor_A = sh_phase_A_others - sh_phase_A
             sh_others_A *= numpy.exp(1j*phase_factor_A)
 
-            sh_phase_E = sh_phase_shift_factor(F_ep, F_ec, ic, ip)
-            phase_factor_E =  sh_phase_E - sh_phase_E[i_max_extrinsic]
+            sh_phase_E = sh_phase_shift_factor(F_ep, F_ec, ip, ic)
+            sh_phase_E_others = sh_phase_shift_factor(
+                F_ep_others, F_ec_others, ip_others, ic_others)
+            phase_factor_E = sh_phase_E_others - sh_phase_E
             sh_others_E *= numpy.exp(1j*phase_factor_E)
 
-            # after applying amp & phase correction for each channel, combine
+            # after applying amp & phase correction for each channel,
+            # combine all channels
             sh_others = sh_others_A + sh_others_E + sh_others_T
             hh_others = hh_others_A + hh_others_E + hh_others_T
 
