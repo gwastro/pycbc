@@ -708,6 +708,7 @@ class LISA_detector(object):
         # cache the FLR instance along with dt and n
         self.dt = None
         self.n = None
+        self.pad_idx = None
         self.response_init = None
         self.t0 = 10000.
 
@@ -716,7 +717,7 @@ class LISA_detector(object):
         
     def source_to_ssb(self, hp, hc, polarization):
         """
-        Project a source-frame signal to SSB coordinates.
+        Project a source-frame signal to SSB.
         
         Parameters
         ----------
@@ -743,7 +744,7 @@ class LISA_detector(object):
         return hp_ssb, hc_ssb
 
     def get_links(self, hp, hc, lamb, beta, polarization=0, reference_time=None, 
-                  t0=10000., use_gpu=None, tdi=2):
+                  use_gpu=None, tdi=2):
         """
         Project a radiation frame waveform to the LISA constellation.
         This does not perform TDI; this only produces a detector frame
@@ -772,13 +773,9 @@ class LISA_detector(object):
             The GPS start time of the GW signal in the SSB frame. Default to 
             input on class initialization.
 
-        t0 : float (optional)
-            Number of seconds to omit from start and end of waveform. Defaults
-            to FastLISAResponse preset of 10000 s.
-
         use_gpu : bool (optional)
             Flag whether to use GPU support. Default to class input.
-            CuPy is required if use_gpu == True; an ImportError will be raised 
+            CuPy is required if use_gpu is True; an ImportError will be raised 
             if CuPy could not be imported.
             
         tdi : int (optional)
@@ -791,17 +788,17 @@ class LISA_detector(object):
             The waveform projected to the LISA laser links.
         """
         from fastlisaresponse import pyResponseTDI
-
+        
         # get dt and n from waveform data
         dt = hp.delta_t # timestep (s)
         n = len(hp) # number of points
 
-        # cache n, dt
+        # cache n, dt, pad length
         self.dt = dt
         self.n = n
-        self.t0 = t0
+        self.pad_idx = int(self.t0/self.dt)
 
-        # set waveform start time and cache the resultant time series
+        # set waveform start time and cache time series
         if reference_time is not None:
             self.ref_time = reference_time
         hp.start_time = self.ref_time
@@ -809,6 +806,8 @@ class LISA_detector(object):
         self.sample_times = hp.sample_times.numpy()
         
         # rescale the orbital time series to match waveform
+        ### requires bugfix in LISAanalysistools to function
+        ### awaiting response from dev team for formal release
         self.orbits.configure(t_arr=self.sample_times)
         
         # convert to SSB frame (if pol = 0, the signal is already in SSB frame)
@@ -831,15 +830,16 @@ class LISA_detector(object):
             else:
                 wf = cupy.asarray(wf)
                 
-        # set TDI configuration
+        # set TDI configuration (let FLR handle if not 1 or 2)
         if tdi == 1:
             tdi_opt = '1st generation'
-        if tdi == 2:
+        elif tdi == 2:
             tdi_opt = '2nd generation'
+        else:
+            tdi_opt = tdi
 
         if self.response_init is None:
             # initialize the class
-            print(self.orbits.pycppdetector_args)
             response_init = pyResponseTDI(1/dt, n, orbits=self.orbits, 
                                           use_gpu=use_gpu, tdi=tdi_opt)
             self.response_init = response_init
@@ -849,13 +849,14 @@ class LISA_detector(object):
             self.response_init.num_pts = n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
+            
             if tdi_opt != self.response_init.tdi:
-                # re-initialize TDI in existing response_init class
+                # update TDI in existing response_init class
                 self.response_init.tdi = tdi_opt
                 self.response_init._init_TDI_delays()
 
         # project the signal
-        self.response_init.get_projections(wf, lamb, beta, t0)
+        self.response_init.get_projections(wf, lamb, beta, t0=self.t0)
         wf_proj = self.response_init.y_gw
 
         return wf_proj
@@ -897,28 +898,32 @@ class LISA_detector(object):
             Default 'AET'.
 
         tdi_orbits : lisatools.detector.Orbits (optional)
-            Orbit keywords specifically for TDI generation. Default to class input.
+            Orbit keywords specifically for TDI generation. Default to class 
+            input.
 
         use_gpu : bool (optional)
             Flag whether to use GPU support. Default to class input.
-
-        remove_garbage : bool (optional)
-            Flag whether to excise data from start and end of TDI projections.
-            This will remove erroneous ringing at start and end by excising
-            time length t0. Default True.
+            
+        remove_garbage : bool, str (optional)
+            Flag whether to remove gaps in TDI from start and end. If True,
+            edge data will be cut from TDI channels. If 'zero', edge data
+            will be zeroed. If False, TDI channels will not be modified.
+            Default True.
 
         Returns
         -------
         dict
             The TDI observables keyed by their corresponding TDI channel.
         """
+        start_time = time.time()
+        
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
         
         # generate the Doppler time series
         self.get_links(hp, hc, lamb, beta, polarization=polarization, reference_time=reference_time, 
-                       t0=self.t0, use_gpu=use_gpu, tdi=tdi)
+                       use_gpu=use_gpu, tdi=tdi)
 
         # set TDI channels
         if tdi_chan in ['XYZ', 'AET', 'AE']:
@@ -929,16 +934,37 @@ class LISA_detector(object):
         # if TDI orbit class is provided, update the response_init
         # tdi_orbits are set to class input automatically by FLR otherwise
         if tdi_orbits is not None:
+            ### requires bugfix in LISAanalysistools to function
+            ### awaiting response from dev team for formal release
             tdi_orbits.configure(t_arr=self.sample_times)
             self.response_init.tdi_orbits = tdi_orbits
 
         # generate the TDI channels
         tdi_obs = self.response_init.get_tdi_delays()
-
-        # convert to dict
+        
+        # processing
         tdi_dict = {}
+        slc = slice(self.pad_idx, -self.pad_idx)
+        
         for i in range(len(tdi_chan)):
+            # add to dict
             tdi_dict[tdi_chan[i]] = tdi_obs[i]
+            
+            # treat start and end gaps (if remove_garbage is not False)
+            if remove_garbage:
+                if remove_garbage == 'zero':
+                    # zero the edge data
+                    tdi_dict[tdi_chan[i]][self.pad_idx:] = 0
+                    tdi_dict[tdi_chan[i]][:-self.pad_idx] = 0
+                elif type(remove_garbage) == bool:
+                    # cut the edge data
+                    tdi_dict[tdi_chan[i]] = tdi_dict[tdi_chan[i]][slc]
+                    if i == 0:
+                        # cut the sample times (only do once)
+                        self.sample_times = self.sample_times[slc]
+                else:
+                    # raise error
+                    raise ValueError('remove_garbage arg must be a bool or "zero"')
 
         return tdi_dict
 
