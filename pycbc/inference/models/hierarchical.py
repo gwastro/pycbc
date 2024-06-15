@@ -716,6 +716,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # waveform. Using SNR will cancel out the effect of amplitude.
             i_max_extrinsic = numpy.argmax(
                 numpy.abs(sh_primary) / hh_primary**0.5)
+            print("i_max_extrinsic: ", i_max_extrinsic)
             for p in margin_names_vector:
                 if isinstance(self.primary_model.current_params[p],
                               numpy.ndarray):
@@ -793,7 +794,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                             self.primary_model.current_params['ra'],
                             self.primary_model.current_params['dec'],
                             self.primary_model.current_params['polarization'],
-                            self.primary_model.current_params['t_offset'])
+                            self.other_models[0].current_params['t_offset'])
             inclination_lisa_others =\
                 self.primary_model.current_params['inclination']
 
@@ -823,9 +824,14 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     lon=longitude_lisa, lat=latitude_lisa,
                     psi=polarization_lisa
                 )
+            # F_ap_others, F_ac_others, F_ep_others, F_ec_others =\
+            #     get_antenna_pattern(
+            #         lon=longitude_lisa_others, lat=latitude_lisa_others,
+            #         psi=polarization_lisa_others
+            #     )
             F_ap_others, F_ac_others, F_ep_others, F_ec_others =\
                 get_antenna_pattern(
-                    lon=longitude_lisa_others, lat=latitude_lisa_others,
+                    lon=longitude_lisa, lat=latitude_lisa,
                     psi=polarization_lisa_others
                 )
 
@@ -883,10 +889,11 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             - numpy.log(self.primary_model.vsamples)
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
 
-        print("sh_others: ", sh_others)
-        print("hh_others: ", hh_others)
-        print("sh_total: ", sh_total)
-        print("hh_total: ", hh_total)
+        inner_dict = {'sh_others': sh_others,
+                      'hh_others': hh_others,
+                      'sh_total': sh_total,
+                      'hh_total': hh_total}
+        print(inner_dict)
 
         return loglr
 
