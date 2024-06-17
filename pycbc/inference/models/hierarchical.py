@@ -745,8 +745,16 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
         # add likelihood contribution from space-borne detectors, we
         # calculate sh/hh for each marginalized parameter point
-        sh_others = numpy.full(nums, 0 + 0.0j)
-        hh_others = numpy.zeros(nums)
+        if not self.accelerate_loglr:
+            sh_others = numpy.full(nums, 0 + 0.0j)
+            hh_others = numpy.zeros(nums)
+        else:
+            sh_others_A = numpy.full(nums, 0 + 0.0j)
+            hh_others_A = numpy.zeros(nums)
+            sh_others_E = numpy.full(nums, 0 + 0.0j)
+            hh_others_E = numpy.zeros(nums)
+            sh_others_T = numpy.full(nums, 0 + 0.0j)
+            hh_others_T = numpy.zeros(nums)        
 
         # update parameters in other_models
         for _, other_model in enumerate(self.other_models):
@@ -762,7 +770,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     other_model.update(**current_params_other)
                     print("[total_loglr] current_params_other 2: ", current_params_other)
                     other_model.return_sh_hh = True
-                    sh_others[i], hh_others[i] = other_model.loglr
+                    sh, hh = other_model.loglr
+                    sh_others[i] += sh
+                    hh_others[i] += hh
                     other_model.return_sh_hh = False
             else:
                 current_params_other.update(
@@ -772,12 +782,14 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 other_model.return_sh_hh_each_ifo = True
                 sh_other_max_dict, hh_other_max_dict = other_model.loglr
                 other_model.return_sh_hh_each_ifo = False
-                sh_others_A = numpy.full(nums, sh_other_max_dict['LISA_A'])
-                hh_others_A = numpy.full(nums, hh_other_max_dict['LISA_A'])
-                sh_others_E = numpy.full(nums, sh_other_max_dict['LISA_E'])
-                hh_others_E = numpy.full(nums, hh_other_max_dict['LISA_E'])
-                sh_others_T = numpy.full(nums, sh_other_max_dict['LISA_T'])
-                hh_others_T = numpy.full(nums, hh_other_max_dict['LISA_T'])
+                print("sh_other_max_dict: ", sh_other_max_dict)
+                print("hh_other_max_dict: ", hh_other_max_dict)
+                sh_others_A += sh_other_max_dict['LISA_A']
+                hh_others_A += hh_other_max_dict['LISA_A']
+                sh_others_E += sh_other_max_dict['LISA_E']
+                hh_others_E += hh_other_max_dict['LISA_E']
+                sh_others_T += sh_other_max_dict['LISA_T']
+                hh_others_T += hh_other_max_dict['LISA_T']
 
         if self.accelerate_loglr:
             _, longitude_lisa, latitude_lisa, polarization_lisa = \
@@ -824,16 +836,16 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     lon=longitude_lisa, lat=latitude_lisa,
                     psi=polarization_lisa
                 )
-            # F_ap_others, F_ac_others, F_ep_others, F_ec_others =\
-            #     get_antenna_pattern(
-            #         lon=longitude_lisa_others, lat=latitude_lisa_others,
-            #         psi=polarization_lisa_others
-            #     )
             F_ap_others, F_ac_others, F_ep_others, F_ec_others =\
                 get_antenna_pattern(
-                    lon=longitude_lisa, lat=latitude_lisa,
+                    lon=longitude_lisa_others, lat=latitude_lisa_others,
                     psi=polarization_lisa_others
                 )
+            # F_ap_others, F_ac_others, F_ep_others, F_ec_others =\
+            #     get_antenna_pattern(
+            #         lon=longitude_lisa, lat=latitude_lisa,
+            #         psi=polarization_lisa_others
+            #     )
 
             # add the effect of inclination and psi back to amplitude
             ic = numpy.cos(inclination_lisa)
@@ -889,10 +901,18 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             - numpy.log(self.primary_model.vsamples)
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
 
-        inner_dict = {'sh_others': sh_others,
+        factor_dict = {'amplitude_factor_A': amplitude_factor_A,
+                       'amplitude_factor_E': amplitude_factor_E,
+                       'phase_factor_A': phase_factor_A,
+                       'phase_factor_E': phase_factor_E}
+        inner_dict = {'sh_others_A': sh_others_A,
+                      'sh_others_E': sh_others_E,
+                      'sh_others_T': sh_others_T,
+                      'sh_others': sh_others,
                       'hh_others': hh_others,
                       'sh_total': sh_total,
                       'hh_total': hh_total}
+        print(factor_dict)
         print(inner_dict)
 
         return loglr
