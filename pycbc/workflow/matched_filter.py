@@ -31,7 +31,6 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 
 import os
 import logging
-from math import radians
 
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (select_matchedfilter_class,
@@ -243,12 +242,11 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     if match_fltr_exe == 'pycbc_multi_inspiral':
         exe_class = select_matchedfilter_class(match_fltr_exe)
-        # Right ascension + declination provided in degrees,
-        # so convert to radians
+        # Right ascension + declination must be provided in radians
         cp.set('inspiral', 'ra',
-               str(radians(float(cp.get('workflow', 'ra')))))
+               cp.get('workflow', 'ra'))
         cp.set('inspiral', 'dec',
-               str(radians(float(cp.get('workflow', 'dec')))))
+               cp.get('workflow', 'dec'))
         # At the moment we aren't using sky grids, but when we do this code
         # might be used then. 
         # from pycbc.workflow.grb_utils import get_sky_grid_scale
