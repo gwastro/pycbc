@@ -60,11 +60,11 @@ class NetBank(DummySampler):
         self.reconstruct = bool(reconstruct)
         self.loglr_region = float(loglr_region)
 
-    def sample_round(self, weight, node_idx, node_loglrs, dmap, lengths):
+    def sample_round(self, bin_weight, node_idx, dmap, lengths):
         logging.info("...draw template bins")
-        drawcount = (weight * self.target_likelihood_calls).astype(int)
+        drawcount = (bin_weight * self.target_likelihood_calls).astype(int)
 
-        dorder = node_loglrs.argsort()[::-1]
+        dorder = bin_weight.argsort()[::-1]
         remainder = 0
         for i in dorder:
             c = drawcount[i]
@@ -76,17 +76,19 @@ class NetBank(DummySampler):
                 asize = min(l - c, remainder)
                 drawcount[i] += asize
                 remainder -= asize
-        drawweight = weight / drawcount
+        drawweight = bin_weight / drawcount
         total_draw = drawcount.sum()
 
         logging.info('...drawn random points within bins')
         psamp = FieldArray(total_draw, dtype=self.dtype)
         pweight = numpy.zeros(total_draw, dtype=float)
+        bin_id = numpy.zeros(total_draw, dtype=int)
         j = 0
         for i, (c, w) in enumerate(zip(drawcount, drawweight)):
             bdraw = choice(dmap[node_idx[i]], size=c, replace=False)
             psamp[j:j+len(bdraw)] = FieldArray.from_records(bdraw, dtype=self.dtype)
-            pweight[j:j+len(bdraw)] = - node_loglrs[i] + numpy.log(w)
+            pweight[j:j+len(bdraw)] = numpy.log(bin_weight[i]) - numpy.log(w)
+            bin_id[j:j+len(bdraw)] = i
             j += len(bdraw)
 
         logging.info("Possible unique values %s", lengths.sum())
@@ -105,10 +107,10 @@ class NetBank(DummySampler):
 
         # Calculate the weights from the actual likelihood relative to the
         # initial weights
-        logw3 = loglr_samp + pweight
+        logw3 = loglr_samp + numpy.log(lengths[bin_id]) - pweight
         logw3 -= logsumexp(logw3)
         weight2 = numpy.exp(logw3)
-        return psamp, loglr_samp, weight2
+        return psamp, loglr_samp, weight2, bin_id
 
     def run(self):
         logging.info('Retrieving params of parameter space nodes')
@@ -145,9 +147,15 @@ class NetBank(DummySampler):
 
         # Sample from posterior
         for i in range(2):
-            psamp, loglr_samp, weight2 = self.sample_round(weight, passed, node_loglrsp, dmap, lengths[passed])
+            psamp, loglr_samp, weight2, bin_id = self.sample_round(weight, passed, dmap, lengths[passed])
             ess = 1.0 / (weight2 ** 2.0).sum()
             logging.info("ESS = %s", ess)
+            
+            weight /= 16
+            for i, v in zip(bin_id, weight2):
+                weight[bin_id] += v
+            weight /= weight.sum()
+            
 
         # Prepare the equally weighted output samples
         draw2 = choice(len(psamp), size=int(ess * 5),
