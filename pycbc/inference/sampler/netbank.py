@@ -146,7 +146,7 @@ class NetBank(DummySampler):
                 dmap[i] = f['map'][str(i)][:]
 
         # Sample from posterior
-        for i in range(2):
+        for i in range(1):
             psamp, loglr_samp, weight2, bin_id = self.sample_round(weight, passed, dmap, lengths[passed])
             ess = 1.0 / (weight2 ** 2.0).sum()
             logging.info("ESS = %s", ess)
