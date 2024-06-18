@@ -367,7 +367,11 @@ def ssb_to_lisa(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
         latitude_ssb = np.array([latitude_ssb])
     if not isinstance(polarization_ssb, np.ndarray):
         polarization_ssb = np.array([polarization_ssb])
-    num = len(t_ssb)
+    if t_ssb.shape == longitude_ssb.shape ==\
+        latitude_ssb.shape == polarization_ssb.shape:
+        num = len(t_ssb)
+    else:
+        raise ValueError("Inputs must have the same length.")
     t_lisa, longitude_lisa = np.zeros(num), np.zeros(num)
     latitude_lisa, polarization_lisa = np.zeros(num), np.zeros(num)
 
@@ -450,7 +454,11 @@ def lisa_to_ssb(t_lisa, longitude_lisa, latitude_lisa, polarization_lisa,
         latitude_lisa = np.array([latitude_lisa])
     if not isinstance(polarization_lisa, np.ndarray):
         polarization_lisa = np.array([polarization_lisa])
-    num = len(t_lisa)
+    if t_lisa.shape == longitude_lisa.shape ==\
+        latitude_lisa.shape == polarization_lisa.shape:
+        num = len(t_lisa)
+    else:
+        raise ValueError("Inputs must have the same length.")
     t_ssb, longitude_ssb = np.zeros(num), np.zeros(num)
     latitude_ssb, polarization_ssb = np.zeros(num), np.zeros(num)
 
@@ -656,7 +664,11 @@ def ssb_to_geo(t_ssb, longitude_ssb, latitude_ssb, polarization_ssb,
         latitude_ssb = np.array([latitude_ssb])
     if not isinstance(polarization_ssb, np.ndarray):
         polarization_ssb = np.array([polarization_ssb])
-    num = len(t_ssb)
+    if t_ssb.shape == longitude_ssb.shape ==\
+        latitude_ssb.shape == polarization_ssb.shape:
+        num = len(t_ssb)
+    else:
+        raise ValueError("Inputs must have the same length.")
     t_geo = np.full(num, np.nan)
     longitude_geo = np.full(num, np.nan)
     latitude_geo = np.full(num, np.nan)
@@ -772,7 +784,11 @@ def geo_to_ssb(t_geo, longitude_geo, latitude_geo, polarization_geo,
         latitude_geo = np.array([latitude_geo])
     if not isinstance(polarization_geo, np.ndarray):
         polarization_geo = np.array([polarization_geo])
-    num = len(t_geo)
+    if t_geo.shape == longitude_geo.shape ==\
+        latitude_geo.shape == polarization_geo.shape:
+        num = len(t_geo)
+    else:
+        raise ValueError("Inputs must have the same length.")
     t_ssb = np.full(num, np.nan)
     longitude_ssb = np.full(num, np.nan)
     latitude_ssb = np.full(num, np.nan)

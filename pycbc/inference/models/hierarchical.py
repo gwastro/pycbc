@@ -841,11 +841,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     lon=longitude_lisa_others, lat=latitude_lisa_others,
                     psi=polarization_lisa_others
                 )
-            # F_ap_others, F_ac_others, F_ep_others, F_ec_others =\
-            #     get_antenna_pattern(
-            #         lon=longitude_lisa, lat=latitude_lisa,
-            #         psi=polarization_lisa_others
-            #     )
 
             # add the effect of inclination and psi back to amplitude
             ic = numpy.cos(inclination_lisa)
@@ -908,6 +903,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         inner_dict = {'sh_others_A': sh_others_A,
                       'sh_others_E': sh_others_E,
                       'sh_others_T': sh_others_T,
+                      'hh_others_A': hh_others_A,
+                      'hh_others_E': hh_others_E,
+                      'hh_others_T': hh_others_T,
                       'sh_others': sh_others,
                       'hh_others': hh_others,
                       'sh_total': sh_total,
