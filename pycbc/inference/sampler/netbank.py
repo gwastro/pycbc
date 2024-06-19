@@ -46,10 +46,12 @@ class NetBank(DummySampler):
                  loglr_region=25,
                  target_likelihood_calls=1e5,
                  reconstruct = False,
+                 rounds = 1,
                  **kwargs):
         super().__init__(model, *args)
 
         self.mapfile = mapfile
+        self.rounds = int(rounds)
 
         models._global_instance = model
         self.model = model
@@ -146,16 +148,33 @@ class NetBank(DummySampler):
                 dmap[i] = f['map'][str(i)][:]
 
         # Sample from posterior
-        for i in range(1):
-            psamp, loglr_samp, weight2, bin_id = self.sample_round(weight, passed, dmap, lengths[passed])
-            ess = 1.0 / (weight2 ** 2.0).sum()
-            logging.info("ESS = %s", ess)
-            
-            weight /= 16
-            for i, v in zip(bin_id, weight2):
+        
+        psamp = None
+        loglr_samp = None
+        weight2 = None
+        
+        for i in range(self.rounds):
+            psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(weight, passed, dmap, lengths[passed])
+                        
+            weight /= 2
+            for i, v in zip(bin_id, weight2_v):
                 weight[bin_id] += v
             weight /= weight.sum()
+    
+            if psamp is None:
+                psamp = psamp_v
+                loglr_samp = loglr_samp_v
+                weight2 = weight2_v
+            else:
+                psamp = numpy.concatenate([psamp_v, psamp])
+                loglr_samp = numpy.concatenate([loglr_samp_v, loglr_samp])
+                weight2 = numpy.concatenate([weight2_v, weight2])
+                weight2 /= weight2.sum()
+            uniq = numpy.unique(psamp)
+            print(len(uniq), len(psamp))
             
+            ess = 1.0 / (weight2 ** 2.0).sum()
+            logging.info("ESS = %s", ess)
 
         # Prepare the equally weighted output samples
         draw2 = choice(len(psamp), size=int(ess * 5),
