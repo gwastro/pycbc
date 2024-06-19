@@ -1,7 +1,6 @@
 name: basic tests
 
 on: [push, pull_request]
-if: always()
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
