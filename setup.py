@@ -74,6 +74,10 @@ class cbuild_ext(_build_ext):
     def run(self):
         # At this point we can be sure pip has already installed numpy
         import numpy
+        import numpy.version
+        print("NUMPY VERSION!!!!!!!!!!!!", numpy.version.version)
+        print(numpy)
+        print(numpy.get_include())
         numpy_incl = numpy.get_include()
 
         for ext in self.extensions:
