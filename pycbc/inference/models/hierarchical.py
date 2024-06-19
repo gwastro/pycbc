@@ -794,23 +794,25 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
         if self.accelerate_loglr:
             print("self.other_models[0].current_params: ", self.other_models[0].current_params)
-            # _, longitude_lisa, latitude_lisa, polarization_lisa = \
-            #     geo_to_lisa(self.other_models[0].current_params['tc'],
-            #                 self.other_models[0].current_params['ra'],
-            #                 self.other_models[0].current_params['dec'],
-            #                 self.other_models[0].current_params['polarization'],
-            #                 self.other_models[0].current_params['t_offset'])
 
             # after update, the self.other_model.current_params have been transformed,
             # tc and polarization have been overwritten
+            params_geo = []
+            for p in ['tc', 'ra', 'dec', 'polarization', 'inclination']:
+                if isinstance(self.primary_model.current_params[p],
+                              numpy.ndarray):
+                    params_geo.append(
+                        self.primary_model.current_params[p][i_max_extrinsic]
+                    )
+                else:
+                    params_geo.append(
+                        self.primary_model.current_params[p]
+                    )
             _, longitude_lisa, latitude_lisa, polarization_lisa =\
-                geo_to_lisa(self.primary_model.current_params['tc'][i_max_extrinsic],
-                            self.primary_model.current_params['ra'][i_max_extrinsic],
-                            self.primary_model.current_params['dec'][i_max_extrinsic],
-                            self.primary_model.current_params['polarization'][i_max_extrinsic],
+                geo_to_lisa(params_geo[0], params_geo[1],
+                            params_geo[2], params_geo[3],
                             self.other_models[0].current_params['t_offset'])
-            inclination_lisa =\
-                self.primary_model.current_params['inclination'][i_max_extrinsic]
+            inclination_lisa = params_geo[4]
             _, longitude_lisa_others, latitude_lisa_others, \
                 polarization_lisa_others =\
                 geo_to_lisa(self.primary_model.current_params['tc'],
