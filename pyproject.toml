@@ -2,10 +2,5 @@
 requires = ["setuptools",
             "wheel",
             "cython>=0.29.21",
-            "oldest-supported-numpy",
+            "numpy>=2.0",
             ]
-
-# To ensure the best compatibility, try to match the numpy reqs
-# where possible to the following used by scipy and the minimum
-# of our normal numpy requirements in setup.py
-# https://github.com/scipy/oldest-supported-numpy/blob/master/setup.cfg
