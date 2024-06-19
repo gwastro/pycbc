@@ -779,7 +779,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     {key: value[0] if isinstance(value, numpy.ndarray)
                      else value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
-                print("self.other_model.current_params: ", self.other_model.current_params)
+                print("other_model.current_params: ", other_model.current_params)
                 other_model.return_sh_hh_each_ifo = True
                 sh_other_max_dict, hh_other_max_dict = other_model.loglr
                 other_model.return_sh_hh_each_ifo = False
@@ -803,14 +803,16 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
             # after update, the self.other_model.current_params have been transformed,
             # tc and polarization have been overwritten
-            _, longitude_lisa, latitude_lisa, polarization_lisa = \
-                geo_to_lisa(margin_params['tc'], margin_params['ra'],
-                            margin_params['dec'], margin_params['polarization'],
+            _, longitude_lisa, latitude_lisa, polarization_lisa =\
+                geo_to_lisa(self.primary_model.current_params['tc'][i_max_extrinsic],
+                            self.primary_model.current_params['ra'][i_max_extrinsic],
+                            self.primary_model.current_params['dec'][i_max_extrinsic],
+                            self.primary_model.current_params['polarization'][i_max_extrinsic],
                             self.other_models[0].current_params['t_offset'])
             inclination_lisa =\
                 self.other_models[0].current_params['inclination']
             _, longitude_lisa_others, latitude_lisa_others, \
-                polarization_lisa_others = \
+                polarization_lisa_others =\
                 geo_to_lisa(self.primary_model.current_params['tc'],
                             self.primary_model.current_params['ra'],
                             self.primary_model.current_params['dec'],
