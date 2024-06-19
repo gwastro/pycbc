@@ -810,7 +810,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                             self.primary_model.current_params['polarization'][i_max_extrinsic],
                             self.other_models[0].current_params['t_offset'])
             inclination_lisa =\
-                self.other_models[0].current_params['inclination']
+                self.primary_model.current_params['inclination'][i_max_extrinsic]
             _, longitude_lisa_others, latitude_lisa_others, \
                 polarization_lisa_others =\
                 geo_to_lisa(self.primary_model.current_params['tc'],
