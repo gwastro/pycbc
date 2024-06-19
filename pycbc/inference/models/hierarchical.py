@@ -779,6 +779,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     {key: value[0] if isinstance(value, numpy.ndarray)
                      else value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
+                print("self.other_model.current_params: ", self.other_model.current_params)
                 other_model.return_sh_hh_each_ifo = True
                 sh_other_max_dict, hh_other_max_dict = other_model.loglr
                 other_model.return_sh_hh_each_ifo = False
@@ -792,11 +793,19 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 hh_others_T += hh_other_max_dict['LISA_T']
 
         if self.accelerate_loglr:
+            print("self.other_models[0].current_params: ", self.other_models[0].current_params)
+            # _, longitude_lisa, latitude_lisa, polarization_lisa = \
+            #     geo_to_lisa(self.other_models[0].current_params['tc'],
+            #                 self.other_models[0].current_params['ra'],
+            #                 self.other_models[0].current_params['dec'],
+            #                 self.other_models[0].current_params['polarization'],
+            #                 self.other_models[0].current_params['t_offset'])
+
+            # after update, the self.other_model.current_params have been transformed,
+            # tc and polarization have been overwritten
             _, longitude_lisa, latitude_lisa, polarization_lisa = \
-                geo_to_lisa(self.other_models[0].current_params['tc'],
-                            self.other_models[0].current_params['ra'],
-                            self.other_models[0].current_params['dec'],
-                            self.other_models[0].current_params['polarization'],
+                geo_to_lisa(margin_params['tc'], margin_params['ra'],
+                            margin_params['dec'], margin_params['polarization'],
                             self.other_models[0].current_params['t_offset'])
             inclination_lisa =\
                 self.other_models[0].current_params['inclination']
