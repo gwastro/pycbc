@@ -294,9 +294,9 @@ setup(
         'pycbc.types': find_files('pycbc/types'),
         'pycbc.filter': find_files('pycbc/filter'),
         'pycbc.vetoes': find_files('pycbc/vetoes'),
-        'pycbc.fft', find_files('pycbc/fft'),
-        'pycbc.events', find_files('pycbc/events'),
-        'pycbc.inference.modes', find_files('pycbc/inference/models'),
+        'pycbc.fft': find_files('pycbc/fft'),
+        'pycbc.events': find_files('pycbc/events'),
+        'pycbc.inference.modes': find_files('pycbc/inference/models'),
     },
     ext_modules = cythonize(
         ext,
