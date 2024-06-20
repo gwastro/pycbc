@@ -80,8 +80,10 @@ class NetBank(DummySampler):
                 remainder -= asize
         
         print("DRAW COUNT CHECK")
-        print(drawcount[dorder])
-        print(lengths[dorder])
+        print(drawcount[dorder][0:5])
+        print(lengths[dorder][0:5])
+        print(node_idx[dorder][0:5])
+        print(bin_weight[dorder][0:5])
         drawweight = bin_weight / drawcount
         total_draw = drawcount.sum()
 
@@ -161,14 +163,29 @@ class NetBank(DummySampler):
             psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(weight, passed, dmap, lengths[passed])
                         
                        
-            val, con = numpy.unique(bin_id, return_counts=True) 
+            val, con = numpy.unique(bin_id, return_counts=True)
+            l = numpy.argsort(con)[::-1]
             print("drawn from which bin")
-            print(val, con)
-                        
-            weight /= 2
+            lk = loglr_samp_v.argmax()
+            print(loglr_samp_v[lk], passed[bin_id[lk]])
+            print(passed[val][l][0:5], con[l][0:5])
+            
+                    
+            w = weight * 0
             for i, v in zip(bin_id, weight2_v):
-                weight[bin_id] += v
-            weight /= weight.sum()
+                w[i] += v
+                
+            logw = numpy.log(w) #+ numpy.log(weight)
+            logw -= logsumexp(logw)
+            print(logsumexp(logw))
+            print(w[val][l][0:5])
+            
+            j = logw.argmax()
+            print(logw[j], passed[j])
+            
+            weight = numpy.exp(logw)
+            
+            print(weight[val][l][0:5])
     
             if psamp is None:
                 psamp = psamp_v
@@ -178,14 +195,15 @@ class NetBank(DummySampler):
                 psamp = numpy.concatenate([psamp_v, psamp])
                 loglr_samp = numpy.concatenate([loglr_samp_v, loglr_samp])
                 weight2 = numpy.concatenate([weight2_v, weight2])
-                weight2 /= weight2.sum()
+                
             uniq = numpy.unique(psamp)
             print(len(uniq), len(psamp))
             
-            ess = 1.0 / (weight2 ** 2.0).sum()
+            ess = 1.0 / ((weight2/weight2.sum()) ** 2.0).sum()
             logging.info("ESS = %s", ess)
 
         # Prepare the equally weighted output samples
+        weight2 /= weight2.sum()
         draw2 = choice(len(psamp), size=int(ess * 5),
                        replace=True, p=weight2)
         logging.info("Unique values second draw %s",
