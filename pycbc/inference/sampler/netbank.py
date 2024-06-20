@@ -78,6 +78,10 @@ class NetBank(DummySampler):
                 asize = min(l - c, remainder)
                 drawcount[i] += asize
                 remainder -= asize
+        
+        print("DRAW COUNT CHECK")
+        print(drawcount[dorder])
+        print(lengths[dorder])
         drawweight = bin_weight / drawcount
         total_draw = drawcount.sum()
 
@@ -155,6 +159,11 @@ class NetBank(DummySampler):
         
         for i in range(self.rounds):
             psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(weight, passed, dmap, lengths[passed])
+                        
+                       
+            val, con = numpy.unique(bin_id, return_counts=True) 
+            print("drawn from which bin")
+            print(val, con)
                         
             weight /= 2
             for i, v in zip(bin_id, weight2_v):
