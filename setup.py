@@ -204,7 +204,7 @@ shared_cython_kwargs = {
 
 try:
     import numpy
-    shared_cython_kwargs['include_dirs'] = numpy.get_include()
+    shared_cython_kwargs['include_dirs'] = [numpy.get_include()]
 except ModuleNotFoundError:
     # This is going to fail, but hopefully with a meaningful error later
     pass
