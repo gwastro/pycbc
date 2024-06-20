@@ -205,6 +205,10 @@ shared_cython_kwargs = {
 try:
     import numpy
     shared_cython_kwargs['include_dirs'] = [numpy.get_include()]
+    print("HELLO, I'M HERE", numpy.get_include())
+    from os import walk
+    for (dirpath, dirnames, filenames) in walk(numpy.get_include()):
+        print(dirpath, dirnames, filenames)
 except ModuleNotFoundError:
     # This is going to fail, but hopefully with a meaningful error later
     pass
@@ -285,7 +289,14 @@ setup(
     package_data = {
         'pycbc.workflow': find_files('pycbc/workflow'),
         'pycbc.results': find_files('pycbc/results'),
-        'pycbc.neutron_stars': find_files('pycbc/neutron_stars')
+        'pycbc.neutron_stars': find_files('pycbc/neutron_stars'),
+        'pycbc.waveform': find_files('pycbc/waveform'),
+        'pycbc.types': find_files('pycbc/types'),
+        'pycbc.filter': find_files('pycbc/filter'),
+        'pycbc.vetoes': find_files('pycbc/vetoes'),
+        'pycbc.fft', find_files('pycbc/fft'),
+        'pycbc.events', find_files('pycbc/events'),
+        'pycbc.inference.modes', find_files('pycbc/inference/models'),
     },
     ext_modules = cythonize(
         ext,
