@@ -64,7 +64,6 @@ class LISAPreMergerModel(BaseModel):
         # Pop relevant values from kwargs
         cutoff_time = int(kwargs.pop('cutoff_time'))
         kernel_length = int(kwargs.pop('kernel_length'))
-        psd_kernel_length = int(kwargs.pop('psd_kernel_length'))
         window_length = int(kwargs.pop('window_length'))
         extra_forward_zeroes = int(kwargs.pop('extra_forward_zeroes'))
         tlen = int(kwargs.pop('tlen'))
@@ -87,13 +86,13 @@ class LISAPreMergerModel(BaseModel):
             psd_file,
             sample_rate=sample_rate,
             duration=tlen,
-            kernel_length=psd_kernel_length,
+            kernel_length=kernel_length,
         )["FD"]
         self.whitening_psds['LISA_E'] = generate_pre_merger_psds(
             psd_file,
             sample_rate=sample_rate,
             duration=tlen,
-            kernel_length=psd_kernel_length,
+            kernel_length=kernel_length,
         )["FD"]
 
         # Store data for doing likelihoods.
@@ -101,6 +100,7 @@ class LISAPreMergerModel(BaseModel):
         self.window_length = window_length
         self.sample_rate = sample_rate
         self.cutoff_time = cutoff_time
+        # TODO: this now samples
         self.extra_forward_zeroes = extra_forward_zeroes
 
         # Load the data from the file
@@ -119,9 +119,9 @@ class LISAPreMergerModel(BaseModel):
             data,
             sample_rate=sample_rate,
             psds_for_whitening=self.whitening_psds,
-            window_length=self.window_length, 
+            window_length=0, 
             cutoff_time=self.cutoff_time,
-            extra_forward_zeroes=self.extra_forward_zeroes,
+            forward_zeroes=self.kernel_length,
         )
 
         self.lisa_a_strain = pre_merger_data["LISA_A"]
@@ -155,7 +155,7 @@ class LISAPreMergerModel(BaseModel):
             window_length=self.window_length,
             sample_rate=self.sample_rate,
             cutoff_time=self.cutoff_time,
-            extra_forward_zeroes=self.extra_forward_zeroes,
+            forward_zeroes=self.extra_forward_zeroes + self.kernel_length,
         )
 
         wf = {}
