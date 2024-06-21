@@ -100,7 +100,6 @@ class LISAPreMergerModel(BaseModel):
         self.window_length = window_length
         self.sample_rate = sample_rate
         self.cutoff_time = cutoff_time
-        # TODO: this now samples
         self.extra_forward_zeroes = extra_forward_zeroes
 
         # Load the data from the file
@@ -113,7 +112,7 @@ class LISAPreMergerModel(BaseModel):
 
         # Pre-process the pre-merger data
         # Returns time-domain data
-        # Uses UIDs: 4235(0), 4236(0)
+        # Uses UIDs: 4235, 4236
         logging.info("Pre-processing pre-merger data")
         pre_merger_data = pre_process_data_lisa_pre_merger(
             data,
@@ -148,7 +147,7 @@ class LISAPreMergerModel(BaseModel):
         """
         # Generate the pre-merger waveform
         # These waveforms are whitened
-        # Uses UIDs: 1234(0), 1235(0), 1236(0), 1237(0)
+        # Uses UIDs: 1235(0), 1236(0)
         ws = generate_waveform_lisa_pre_merger(
             params,
             psds_for_whitening=self.whitening_psds,
