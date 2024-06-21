@@ -23,11 +23,11 @@ import sys
 import os, subprocess, shutil
 import platform
 
-from distutils.command.clean import clean as _clean
-
 from setuptools import Extension, setup, Command
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools import find_packages
+
+from Cython.Build import cythonize
 
 
 requires = []
@@ -69,40 +69,6 @@ def find_files(dirname, relpath=None):
     if relpath is None:
         relpath = dirname
     return [os.path.relpath(path, relpath) for path in items]
-
-class cbuild_ext(_build_ext):
-    def run(self):
-        # At this point we can be sure pip has already installed numpy
-        import numpy
-        numpy_incl = numpy.get_include()
-
-        for ext in self.extensions:
-            if (hasattr(ext, 'include_dirs') and
-                    numpy_incl not in ext.include_dirs):
-                ext.include_dirs.append(numpy_incl)
-
-        _build_ext.run(self)
-
-
-# Add swig-generated files to the list of things to clean, so they
-# get regenerated each time.
-class clean(_clean):
-    def finalize_options (self):
-        _clean.finalize_options(self)
-        self.clean_files = []
-        self.clean_folders = ['docs/_build']
-    def run(self):
-        _clean.run(self)
-        for f in self.clean_files:
-            try:
-                os.unlink(f)
-                print('removed ' + f)
-            except:
-                pass
-
-        for fol in self.clean_folders:
-            shutil.rmtree(fol, ignore_errors=True)
-            print('removed ' + fol)
 
 def get_version_info():
     """Get VCS info and write version info to version.py.
@@ -192,8 +158,6 @@ class build_gh_pages(Command):
 cmdclass = {
     'build_docs': build_docs,
     'build_gh_pages': build_gh_pages,
-    'clean': clean,
-    'build_ext': cbuild_ext
 }
 
 extras_require = {
@@ -233,56 +197,71 @@ else:
     cython_compile_args += ["-stdlib=libc++"]
     cython_link_args += ["-stdlib=libc++"]
 
+shared_cython_kwargs = {
+    'extra_compile_args': cython_compile_args,
+    'extra_link_args': cython_link_args
+}
+
+try:
+    import numpy
+    shared_cython_kwargs['include_dirs'] = [numpy.get_include()]
+    print("HELLO, I'M HERE", numpy.get_include())
+    from os import walk
+    for (dirpath, dirnames, filenames) in walk(numpy.get_include()):
+        print(dirpath, dirnames, filenames)
+except ModuleNotFoundError:
+    # This is going to fail, but hopefully with a meaningful error later
+    pass
+
 for name in cythonext:
-    e = Extension("pycbc.%s_cpu" % name,
-                  ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
-                  extra_compile_args=cython_compile_args,
-                  extra_link_args=cython_link_args,
-                  compiler_directives={'embedsignature': True})
+    e = Extension(
+        "pycbc.%s_cpu" % name,
+        ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
+        **shared_cython_kwargs
+    )
     ext.append(e)
 
 # Not all modules work like this:
-e = Extension("pycbc.fft.fftw_pruned_cython",
-              ["pycbc/fft/fftw_pruned_cython.pyx"],
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
+e = Extension(
+    "pycbc.fft.fftw_pruned_cython",
+    ["pycbc/fft/fftw_pruned_cython.pyx"],
+    **shared_cython_kwargs
+)
 ext.append(e)
-e = Extension("pycbc.events.eventmgr_cython",
-              ["pycbc/events/eventmgr_cython.pyx"],
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
+e = Extension(
+    "pycbc.events.eventmgr_cython",
+    ["pycbc/events/eventmgr_cython.pyx"],
+    **shared_cython_kwargs
+)
 ext.append(e)
-e = Extension("pycbc.events.simd_threshold_cython",
-              ["pycbc/events/simd_threshold_cython.pyx"],
-              language='c++',
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
+e = Extension(
+    "pycbc.events.simd_threshold_cython",
+    ["pycbc/events/simd_threshold_cython.pyx"],
+    language='c++',
+    **shared_cython_kwargs
+)
 ext.append(e)
-e = Extension("pycbc.filter.simd_correlate_cython",
-              ["pycbc/filter/simd_correlate_cython.pyx"],
-              language='c++',
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
+e = Extension(
+    "pycbc.filter.simd_correlate_cython",
+    ["pycbc/filter/simd_correlate_cython.pyx"],
+    language='c++',
+    **shared_cython_kwargs
+)
 ext.append(e)
-e = Extension("pycbc.waveform.decompress_cpu_cython",
-              ["pycbc/waveform/decompress_cpu_cython.pyx"],
-              language='c++',
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
+e = Extension(
+    "pycbc.waveform.decompress_cpu_cython",
+    ["pycbc/waveform/decompress_cpu_cython.pyx"],
+    language='c++',
+    **shared_cython_kwargs
+)
 ext.append(e)
-e = Extension("pycbc.inference.models.relbin_cpu",
-              ["pycbc/inference/models/relbin_cpu.pyx"],
-              language='c++',
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
+e = Extension(
+    "pycbc.inference.models.relbin_cpu",
+    ["pycbc/inference/models/relbin_cpu.pyx"],
+    language='c++',
+    **shared_cython_kwargs
+)
 ext.append(e)
-
 
 setup(
     name = 'PyCBC',
@@ -310,17 +289,26 @@ setup(
     package_data = {
         'pycbc.workflow': find_files('pycbc/workflow'),
         'pycbc.results': find_files('pycbc/results'),
-        'pycbc.neutron_stars': find_files('pycbc/neutron_stars')
+        'pycbc.neutron_stars': find_files('pycbc/neutron_stars'),
+        'pycbc.waveform': find_files('pycbc/waveform'),
+        'pycbc.types': find_files('pycbc/types'),
+        'pycbc.filter': find_files('pycbc/filter'),
+        'pycbc.vetoes': find_files('pycbc/vetoes'),
+        'pycbc.fft': find_files('pycbc/fft'),
+        'pycbc.events': find_files('pycbc/events'),
+        'pycbc.inference.models': find_files('pycbc/inference/models'),
     },
-    ext_modules = ext,
-    python_requires='>=3.7',
+    ext_modules = cythonize(
+        ext,
+        compiler_directives={'embedsignature': True}
+    ),
+    python_requires='>=3.9',
     classifiers=[
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
         'Topic :: Scientific/Engineering',
