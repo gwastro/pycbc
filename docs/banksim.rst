@@ -43,12 +43,14 @@ and [banksim].
 
     If you want to use another method to create injections (Eg. ``pycbc_create_injections``), 
     instead of using [inspinj], you can name the section [external_injection] and specify the 
-    path of the injection file. The injection file should be in the sim_inspiral table (.xml) format.
+    path of the injection file. 
 
-.. code-block:: bash
+    .. code-block:: bash
 
-    [external_injection]
-    inj-file = /path/to/inj.xml
+        [external_injection]
+        inj-file = /path/to/inj.xml
+
+    Note: The injection file should be in the sim_inspiral table (.xml) format.
 
  #. executables
 
