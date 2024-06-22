@@ -42,16 +42,24 @@ else
     echo -e "\\n\\n>> [`date`] Pre-existing template bank found"
 fi
 
-
 # test if there is a single fits file. If not, make a representative one
-if [[ ! -f single_trigger_fits.hdf ]]
+if [[ ! -f single_significance_fits.hdf ]]
 then
-    echo -e "\\n\\n>> [`date`] Making single fits file"
-    python make_singles_fits_file.py
+    echo -e "\\n\\n>> [`date`] Making single significance fits file"
+    python make_singles_significance_fits.py
 else
-    echo -e "\\n\\n>> [`date`] Pre-existing single fits file found"
+    echo -e "\\n\\n>> [`date`] Pre-existing single significance fits file found"
 fi
 
+# test if there are fit_coeffs files for each detector.
+# If not, make some representative ones
+if [[ `ls -1 H1-fit_coeffs.hdf L1-fit_coeffs.hdf V1-fit_coeffs.hdf 2> /dev/null | wc -l` -lt 3 ]]
+then
+    echo -e "\\n\\n>> [`date`] Making fit coefficient files"
+    python make_fit_coeffs.py
+else
+    echo -e "\\n\\n>> [`date`] All needed fit coeffs files found"
+fi
 
 # test if there is a injection file.
 # If not, make one and delete any existing strain
@@ -178,8 +186,14 @@ python -m mpi4py `which pycbc_live` \
 --output-path output \
 --day-hour-output-prefix \
 --sngl-ranking newsnr_sgveto_psdvar_threshold \
---ranking-statistic phasetd \
---statistic-files statHL.hdf statHV.hdf statLV.hdf \
+--ranking-statistic phasetd_exp_fit_fgbg_norm \
+--statistic-files \
+  statHL.hdf \
+  statHV.hdf \
+  statLV.hdf \
+  H1-fit_coeffs.hdf \
+  L1-fit_coeffs.hdf \
+  V1-fit_coeffs.hdf \
 --sgchisq-snr-threshold 4 \
 --sgchisq-locations "mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120" \
 --enable-background-estimation \
@@ -201,10 +215,11 @@ python -m mpi4py `which pycbc_live` \
     --snr-opt-di-popsize 100 \
     --snr-opt-include-candidate " \
 --sngl-ifar-est-dist conservative \
---single-newsnr-threshold 9 \
+--single-ranking-threshold 9 \
 --single-duration-threshold 7 \
 --single-reduced-chisq-threshold 2 \
---single-fit-file single_trigger_fits.hdf \
+--single-fit-file single_significance_fits.hdf \
+--single-maximum-ifar 100 \
 --psd-variation \
 --verbose
 

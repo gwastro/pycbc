@@ -117,8 +117,8 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         found_data['rec_mass1'],
         found_data['rec_mass2'])
     # Recovered RA and Dec
-    found_data['rec_ra'] = np.degrees(inj_data['network/ra'][...])
-    found_data['rec_dec'] = np.degrees(inj_data['network/dec'][...])
+    found_data['rec_ra'] = inj_data['network/ra'][...]
+    found_data['rec_dec'] = inj_data['network/dec'][...]
     # Statistics values
     for param in ['coherent_snr', 'reweighted_snr', 'null_snr']:
         found_data[param] = inj_data['network/%s' % param][...]
@@ -375,8 +375,8 @@ if lofft_outfile:
              mchirps[trig_index],
              bank_data['spin1z'][trig_data['network/template_id'][trig_index]],
              bank_data['spin2z'][trig_data['network/template_id'][trig_index]],
-             np.degrees(trig_data['network/ra'][trig_index]),
-             np.degrees(trig_data['network/dec'][trig_index]),
+             trig_data['network/ra'][trig_index],
+             trig_data['network/dec'][trig_index],
              trig_data['network/coherent_snr'][trig_index],
              trig_data['network/my_network_chisq'][trig_index],
              trig_data['network/null_snr'][trig_index]]
@@ -500,8 +500,8 @@ if onsource_file:
              mchirps[on_trigs['network/template_id'][trig_index]],
              bank_data['spin1z'][on_trigs['network/template_id'][trig_index]],
              bank_data['spin2z'][on_trigs['network/template_id'][trig_index]],
-             np.degrees(on_trigs['network/ra'][trig_index]),
-             np.degrees(on_trigs['network/dec'][trig_index]),
+             on_trigs['network/ra'][trig_index],
+             on_trigs['network/dec'][trig_index],
              on_trigs['network/coherent_snr'][trig_index],
              on_trigs['network/my_network_chisq'][trig_index],
              on_trigs['network/null_snr'][trig_index]] + \

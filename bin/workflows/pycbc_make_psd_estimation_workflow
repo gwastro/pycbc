@@ -189,6 +189,15 @@ result_plots += [(seg_summ_table,)]
 
 two_column_layout('plots', result_plots)
 
+
+# Create versioning information
+pycbc.workflow.make_versioning_page(
+    workflow,
+    container.cp,
+    rdir['workflow/version'],
+)
+
+
 pycbc.workflow.make_results_web_page(finalize_workflow,
                                      os.path.join(os.getcwd(),
                                      'plots'))

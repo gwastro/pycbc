@@ -142,7 +142,7 @@ for ifo in ifos:
             continue
 
         l_times = separate_times[ifo]
-        with np.errstate(divide='ignore'):
+        with np.errstate(divide='ignore', invalid='ignore'):
             rate = counts / l_times
 
         ma = mean_alpha[ifo][i]

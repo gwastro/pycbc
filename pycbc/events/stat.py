@@ -682,7 +682,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         numpy.ndarray
             The array of single detector statistics
         """
-        return single_info[1]
+        return single_info[1]['snglstat']
 
     def rank_stat_coinc(self, sngls_list, slide, step, to_shift,
                         **kwargs):  # pylint:disable=unused-argument
@@ -711,8 +711,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if not self.has_hist:
             self.get_hist()
 
-        lim_stat = [b['snglstat'] for a, b in sngls_list if a == limifo][0]
-        s1 = thresh ** 2. - lim_stat ** 2.
+        fixed_statsq = sum([b['snglstat'] ** 2 for a, b in sngls_list])
+        s1 = thresh ** 2. - fixed_statsq
         # Assume best case scenario and use maximum signal rate
         s1 -= 2. * self.hist_max
         s1[s1 < 0] = 0
@@ -1015,6 +1015,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
         self.single_increasing = True
+        self.single_dtype = numpy.float32
 
     def use_alphamax(self):
         """
@@ -1065,9 +1066,9 @@ class ExpFitCombinedSNR(ExpFitStatistic):
             The array of single detector statistics
         """
         if self.single_increasing:
-            sngl_multiifo = single_info[1]['snglstat']
+            sngl_multiifo = single_info[1]
         else:
-            sngl_multiifo = -1. * single_info[1]['snglstat']
+            sngl_multiifo = -1. * single_info[1]
         return sngl_multiifo
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
@@ -2435,7 +2436,10 @@ def get_statistic_from_opts(opts, ifos):
         opts.statistic_keywords = []
 
     # flatten the list of lists of filenames to a single list (may be empty)
-    opts.statistic_files = sum(opts.statistic_files, [])
+    # if needed (e.g. not calling get_statistic_from_opts in a loop)
+    if len(opts.statistic_files) > 0 and \
+            isinstance(opts.statistic_files[0], list):
+        opts.statistic_files = sum(opts.statistic_files, [])
 
     extra_kwargs = parse_statistic_keywords_opt(opts.statistic_keywords)
 

@@ -62,8 +62,10 @@ for f in args.trfits_files:
             bl = fit_f['bins_lower'][:]
             bu = fit_f['bins_upper'][:]
             sngl_rank = fit_f.attrs['sngl_ranking']
-            fit_thresh = fit_f.attrs['fit_threshold']
-            fit_func = fit_f.attrs['fit_function']
+            fit_thresh = {ifo: fit_f[ifo].attrs['fit_threshold']
+                          for ifo in args.ifos}
+            fit_func = {ifo: fit_f[ifo].attrs['fit_function']
+                        for ifo in args.ifos}
 
 # Now go back through the fit files and read the actual information.  Skip the
 # files that have fit parameters inconsistent with what we found earlier.
@@ -80,9 +82,13 @@ for f in args.trfits_files:
     with h5py.File(f, 'r') as fits_f:
         # Check that the file uses the same setup as file 0, to make sure
         # all coefficients are comparable
+        new_fit_func = {ifo: fits_f[ifo].attrs['fit_function']
+                        for ifo in args.ifos}
+        new_fit_thresh = {ifo: fits_f[ifo].attrs['fit_threshold']
+                          for ifo in args.ifos}
         same_conf = (fits_f.attrs['sngl_ranking'] == sngl_rank
-                     and fits_f.attrs['fit_threshold'] == fit_thresh
-                     and fits_f.attrs['fit_function'] == fit_func
+                     and new_fit_thresh == fit_thresh
+                     and new_fit_func == fit_func
                      and fits_f['bins_lower'].size == bl.size
                      and all(fits_f['bins_lower'][:] == bl)
                      and all(fits_f['bins_upper'][:] == bu))
@@ -99,7 +105,7 @@ for f in args.trfits_files:
         gps_last = 0
         gps_first = np.inf
         for ifo in args.ifos:
-            if ifo not in fits_f:
+            if ifo not in fits_f or 'triggers' not in fits_f[ifo]:
                 continue
             trig_times = fits_f[ifo]['triggers']['end_time'][:]
             gps_last = max(gps_last, trig_times.max())
@@ -143,7 +149,6 @@ cons_counts_out = {ifo: np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.i
 logging.info("Writing results")
 
 fout = h5py.File(args.output, 'w')
-fout.attrs['fit_threshold'] = fit_thresh
 fout.attrs['conservative_percentile'] = args.conservative_percentile
 fout.attrs['ifos'] = args.ifos
 fout['bins_edges'] = list(bl) + [bu[-1]]
@@ -152,6 +157,8 @@ fout['fits_dates'] = ad + start_time_n
 for ifo in args.ifos:
     logging.info(ifo)
     fout_ifo = fout.create_group(ifo)
+    fout_ifo.attrs['fit_threshold'] = fit_thresh[ifo]
+    fout_ifo.attrs['fit_function'] = fit_func[ifo]
     l_times = np.array(live_times[ifo])
     total_time = l_times.sum()
     fout_ifo.attrs['live_time'] = total_time

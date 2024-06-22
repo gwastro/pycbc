@@ -384,4 +384,11 @@ for cycle_idx in range(num_cycles):
     seed_file = h5add_node.output_files[0]
     bins_inp_file = seed_file
 
+# Create versioning information
+wf.make_versioning_page(
+    workflow,
+    workflow.cp,
+    args.output_dir,
+)
+
 workflow.save()
