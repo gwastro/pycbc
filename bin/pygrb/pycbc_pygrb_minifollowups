@@ -26,7 +26,6 @@ Set up qscans and SNR timeseries plots of loudest triggers/missed injections
 import os
 import argparse
 import logging
-import h5py
 
 from pycbc import init_logging
 import pycbc.workflow as wf
@@ -38,6 +37,7 @@ import pycbc.results.pygrb_postprocessing_utils as ppu
 from pycbc.results import layout
 from pycbc.workflow.plotting import PlotExecutable
 from pycbc.workflow.grb_utils import build_veto_filelist
+from pycbc.io.hdf import HFile
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -133,7 +133,7 @@ layouts = []
 
 # Read the file with the triggers/injections to follow up
 logging.info('Reading list of triggers/injections to followup')
-fp = h5py.File(args.followups_file, "r")
+fp = HFile(args.followups_file, "r")
 
 # Initialize a wiki table and add the column headers
 if args.wiki_file:
