@@ -17,8 +17,9 @@
 """
 Provides a class representing a frequency series.
 """
-import os as _os, h5py
+import os as _os
 from pycbc.types.array import Array, _convert, zeros, _noreal
+from pycbc.io.hdf import HFile
 import lal as _lal
 import numpy as _numpy
 
@@ -420,7 +421,7 @@ class FrequencySeries(Array):
             )
         elif ext == '.hdf':
             key = 'data' if group is None else group
-            with h5py.File(path, 'a') as f:
+            with HFile(path, 'a') as f:
                 ds = f.create_dataset(key, data=self.numpy(),
                                       compression='gzip',
                                       compression_opts=9, shuffle=True)
@@ -610,7 +611,7 @@ def load_frequencyseries(path, group=None):
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        with h5py.File(path, 'r') as f:
+        with HFile(path, 'r') as f:
             data = f[key][:]
             delta_f = f[key].attrs['delta_f']
             epoch = f[key].attrs['epoch'] if 'epoch' in f[key].attrs else None

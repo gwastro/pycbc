@@ -28,7 +28,6 @@ This modules provides a device independent Array class based on PyCUDA and Numpy
 
 BACKEND_PREFIX="pycbc.types.array_"
 
-import h5py
 import os as _os
 
 from functools import wraps
@@ -41,6 +40,7 @@ from numpy.linalg import norm
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 from pycbc.opt import LimitedSizeDict
+from pycbc.io.hdf import HFile
 
 #! FIXME: the uint32 datatype has not been fully tested,
 # we should restrict any functions that do not allow an
@@ -1017,7 +1017,7 @@ class Array(object):
                 _numpy.savetxt(path, output)
         elif ext == '.hdf':
             key = 'data' if group is None else group
-            with h5py.File(path, 'a') as f:
+            with HFile(path, 'a') as f:
                 f.create_dataset(key, data=self.numpy(), compression='gzip',
                                  compression_opts=9, shuffle=True)
         else:
@@ -1136,7 +1136,7 @@ def load_array(path, group=None):
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        with h5py.File(path, 'r') as f:
+        with HFile(path, 'r') as f:
             array = Array(f[key])
         return array
     else:

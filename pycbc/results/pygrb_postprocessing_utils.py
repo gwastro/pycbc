@@ -34,6 +34,7 @@ from scipy import stats
 import ligo.segments as segments
 from pycbc.events.coherent import reweightedsnr_cut
 from pycbc import add_common_pycbc_options
+from pycbc.io.hdf import HFile
 
 logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
 
@@ -362,7 +363,7 @@ def dataset_iterator(g, prefix=''):
 def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
     """Loads triggers from PyGRB output file, returning a dictionary"""
 
-    trigs = h5py.File(input_file, 'r')
+    trigs = HFile(input_file, 'r')
     rw_snr = trigs['network/reweighted_snr'][:]
     net_ids = trigs['network/event_id'][:]
     ifo_ids = {}
@@ -392,7 +393,7 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
 
     # Apply the cut on all the data by remove points with reweighted SNR = 0
     trigs_dict = {}
-    with h5py.File(input_file, "r") as trigs:
+    with HFile(input_file, "r") as trigs:
         for (path, dset) in dataset_iterator(trigs):
             # The dataset contains information other than trig/inj properties:
             # just copy it
@@ -533,7 +534,7 @@ def extract_ifos(trig_file):
     """Extracts IFOs from hdf file"""
 
     # Load hdf file
-    hdf_file = h5py.File(trig_file, 'r')
+    hdf_file = HFile(trig_file, 'r')
 
     # Extract IFOs
     ifos = sorted(list(hdf_file.keys()))
@@ -570,7 +571,7 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
 # =============================================================================
 def load_time_slides(hdf_file_path):
     """Loads timeslides from PyGRB output file as a dictionary"""
-    hdf_file = h5py.File(hdf_file_path, 'r')
+    hdf_file = HFile(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
     ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
     time_slide_dict = {
@@ -604,7 +605,7 @@ def load_segment_dict(hdf_file_path):
     """
 
     # Long time slides will require mapping between slides and segments
-    hdf_file = h5py.File(hdf_file_path, 'r')
+    hdf_file = HFile(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
     # Get slide IDs
     slide_ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
@@ -752,10 +753,10 @@ def template_hash_to_id(trigger_file, bank_path):
     templates within the bank.
     Parameters
     ----------
-    trigger_file: h5py File object for trigger file
+    trigger_file: HFile object for trigger file
     bank_file: filepath for template bank
     """
-    with h5py.File(bank_path, "r") as bank:
+    with HFile(bank_path, "r") as bank:
         hashes = bank['template_hash'][:]
     ifos = [k for k in trigger_file.keys() if k != 'network']
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]
