@@ -22,13 +22,13 @@ or the LIGO HDF format) into a PyCBC hdf injection format
 
 import argparse
 import numpy
-import h5py
 import shutil
 
 import pycbc
 from pycbc.inject import InjectionSet, CBCHDFInjectionSet
 from pycbc.types import float64, float32
 from pycbc.io.record import FieldArray
+from pycbc.io.hdf import HFile
 
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw import utils as ligolw_utils, lsctables
@@ -125,7 +125,7 @@ class LVKNewStyleInjectionSet(object):
     subdir = 'cbc_waveform_params'
     
     def __init__(self, sim_file):
-        self.inj_file = h5py.File(sim_file, 'r')
+        self.inj_file = HFile(sim_file, 'r')
 
     def columns_in_pycbc_format(self):
         # Loop over columns in input file
@@ -177,7 +177,7 @@ if args.injection_file.endswith(('.xml', '.xml.gz', '.xmlgz')):
     injclass = XMLInjectionSet(args.injection_file)
 else:
     # Assume a HDF file - check if new LVK format first
-    inj_file = h5py.File(args.injection_file, 'r')
+    inj_file = HFile(args.injection_file, 'r')
     if 'file_format' in inj_file.attrs or b'file_format' in inj_file.attrs:
         # Assume LVK as PyCBC doesn't have this attribute
         injclass = LVKNewStyleInjectionSet(args.injection_file)
