@@ -1,5 +1,5 @@
 #!/bin/env python
-import h5py, argparse, numpy, pycbc.events, logging, pycbc.events, pycbc.io
+import argparse, numpy, pycbc.events, logging, pycbc.events, pycbc.io
 import pycbc.version
 
 parser = argparse.ArgumentParser()
@@ -31,7 +31,7 @@ pycbc.init_logging(args.verbose)
 if len(args.output_files) != len(args.background_bins):
     raise ValueError("Number of mass bins and output files does not match")
 
-f = h5py.File(args.bank_file)
+f = pycbc.io.HFile(args.bank_file)
 data = {'mass1':f['mass1'][:], 'mass2':f['mass2'][:],
         'spin1z':f['spin1z'][:], 'spin2z':f['spin2z'][:]}
 if args.f_lower:
@@ -48,5 +48,5 @@ for name, outname in zip(names, args.output_files):
     e = d.select(numpy.in1d(d.template_id, locs))
     logging.info('%s coincs in mass bin: %s' % (len(e), name))
     e.save(outname)
-    f = h5py.File(outname)
+    f = pycbc.io.HFile(outname)
     f.attrs['name'] = name
