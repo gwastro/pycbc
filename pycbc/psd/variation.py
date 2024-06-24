@@ -284,7 +284,7 @@ def live_create_filter(psd_estimated,
                       [low_freq, high_freq],
                       pass_zero=False,
                       window='hann',
-                      nyq=sample_rate / 2)
+                      fs=sample_rate)
     filt.resize(int(psd_duration * sample_rate))
 
     # Fourier transform the filter and take the absolute value to get
