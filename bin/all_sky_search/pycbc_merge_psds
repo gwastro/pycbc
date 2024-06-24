@@ -17,8 +17,9 @@
 
 """ Merge hdf psd files
 """
-import logging, argparse, numpy, h5py, pycbc.types
+import logging, argparse, numpy, pycbc.types
 from pycbc.version import git_verbose_msg as version
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -29,11 +30,11 @@ parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-outf = h5py.File(args.output_file, 'w')
+outf = HFile(args.output_file, 'w')
 inc = {}
 start, end = {}, {}
 for psd_file in args.psd_files:
-    f = h5py.File(psd_file, 'r')
+    f = HFile(psd_file, 'r')
     ifo = tuple(f.keys())[0]
     if ifo not in inc:
         inc[ifo] = 0
