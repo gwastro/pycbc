@@ -14,7 +14,7 @@ Script to install software on Debian 4 required for buiding PyCBC (gcc 4.8.5, Py
   pycbc_build_lenny-wheezy.sh
 
 Script to check a result HDF file for a GW150914 event
-  check_GW150914_detection.py
+  (moved to examples/inspiral/check_GW150914_detection.py)
 
 Tool for running a Cygwin application under BOINC
   fstab.c

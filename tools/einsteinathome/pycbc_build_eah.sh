@@ -1502,7 +1502,7 @@ done
 
 # test for GW150914
 echo -e "\\n\\n>> [`date`] test for GW150914"
-python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
+python $SOURCE/pycbc/examples/inspiral/check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
 
 # run a set of injections
 echo -e "\\n\\n>> [`date`] running pycbc_inspiral with injections"
