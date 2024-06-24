@@ -20,7 +20,6 @@
 """Generate a bank of templates using a brute force stochastic method.
 """
 import numpy
-import h5py
 import logging
 import argparse
 import pickle
@@ -32,6 +31,7 @@ from pycbc import transforms
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc.distributions import read_params_from_config
 from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -338,7 +338,7 @@ gen = GenUniformWaveform(args.buffer_length,
 bank = TriangleBank()
 
 if args.input_file:
-    f = h5py.File(args.input_file, 'r')
+    f = HFile(args.input_file, 'r')
     params = {k: f[k][:] for k in f}
     bank, _ = bank.check_params(gen, params, args.minimal_match)
 
@@ -500,7 +500,7 @@ while tau0s < args.tau0_end:
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2
 
-o = h5py.File(args.output_file, 'w')
+o = HFile(args.output_file, 'w')
 o.attrs['minimal_match'] = args.minimal_match
 for k in bank.keys():
     val = bank.key(k)
