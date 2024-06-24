@@ -759,10 +759,10 @@ class TimeSeries(Array):
         # Interpolate if requested
         if delta_f or delta_t or logfsteps:
             if return_complex:
-                interp_amp = interp2d(times, freqs, abs(q_plane))
-                interp_phase = interp2d(times, freqs, _numpy.angle(q_plane))
+                interp_amp = interp2d(times, freqs, abs(q_plane.T))
+                interp_phase = interp2d(times, freqs, _numpy.angle(q_plane.T))
             else:
-                interp = interp2d(times, freqs, q_plane)
+                interp = interp2d(times, freqs, q_plane.T)
 
         if delta_t:
             times = _numpy.arange(float(self.start_time),
@@ -781,7 +781,7 @@ class TimeSeries(Array):
             else:
                 q_plane = interp(times, freqs)
 
-        return times, freqs, q_plane
+        return times, freqs, q_plane.T
 
     def notch_fir(self, f1, f2, order, beta=5.0, remove_corrupted=True):
         """ notch filter the time series using an FIR filtered generated from
