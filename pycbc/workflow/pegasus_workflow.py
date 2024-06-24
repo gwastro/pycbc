@@ -211,10 +211,12 @@ class Node(ProfileShortcuts):
         """
         if check_existing_options and (opt in self.options \
                 or opt in self.raw_options):
-            err_msg = ("Trying to set option %s with value %s, but it "
+            err_msg = (
+                "Trying to set option %s with value %s, but it "
                 "has already been provided by the configuration file. "
                 "Usually this should not be given in the config file, "
-                "but contact developers to check") % (opt, value)
+                "but contact developers to check"
+            ) % (opt, value)
             raise ValueError(err_msg)
         if value is not None:
             if not isinstance(value, File):
