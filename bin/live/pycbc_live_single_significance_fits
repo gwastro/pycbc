@@ -21,12 +21,11 @@ import sys
 import argparse
 import logging
 import numpy as np
-import h5py
 
 import pycbc
 from pycbc.bin_utils import IrregularBins
 from pycbc.events import cuts, trigger_fits as trstats, stat
-from pycbc.io import DictArray
+from pycbc.io import DictArray, HFile
 from pycbc.io import live as liveio
 from pycbc.live import significance_fits as sngls_io
 from pycbc.events import ranking
@@ -139,14 +138,14 @@ for counter, filename in enumerate(files):
 
     # If there is an IOerror with the file, don't fail, just carry on
     try:
-        h5py.File(filename, 'r')
+        HFile(filename, 'r')
     except IOError:
         logging.warning('IOError with file %s', f)
         continue
 
     # Triggers for this file
     triggers = {}
-    with h5py.File(filename, 'r') as fin:
+    with HFile(filename, 'r') as fin:
         # Open the file: does it have the ifo group and snr dataset?
         for ifo in args.ifos:
             if not (ifo in fin and 'snr' in fin[ifo]):
@@ -323,7 +322,7 @@ for ifo in events:
         )
 
 logging.info("Writing results")
-with h5py.File(args.output, 'w') as fout:
+with HFile(args.output, 'w') as fout:
     for ifo in args.ifos:
         fout_ifo = fout.create_group(ifo)
         fout_ifo.attrs['fit_function'] = args.fit_function[ifo]
