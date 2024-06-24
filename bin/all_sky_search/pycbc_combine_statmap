@@ -4,7 +4,7 @@ combinations at the time of coincidence. This clusters to find the most
 significant foreground, but leaves the background triggers alone.
 """
 
-import h5py, numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
+import numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
 import pycbc.version
 from ligo import segments
 
@@ -24,9 +24,9 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-files = [h5py.File(n, 'r') for n in args.statmap_files]
+files = [pycbc.io.HFile(n, 'r') for n in args.statmap_files]
 
-f = h5py.File(args.output_file, "w")
+f = pycbc.io.HFile(args.output_file, "w")
 
 logging.info('Copying segments and attributes to %s' % args.output_file)
 # Move segments information into the final file - remove some duplication
