@@ -745,7 +745,7 @@ class TimeSeries(Array):
             The two dimensional interpolated qtransform of this time series.
         """
         from pycbc.filter.qtransform import qtiling, qplane
-        from scipy.interpolate import interp2d
+        from scipy.interpolate import RectBivariateSpline as interp2d
 
         if frange is None:
             frange = (30, int(self.sample_rate / 2 * 8))
