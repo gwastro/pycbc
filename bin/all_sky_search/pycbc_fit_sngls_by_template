@@ -18,11 +18,12 @@ import argparse, logging
 
 import copy, numpy as np
 
-from pycbc import io, events, init_logging
+from pycbc import events, init_logging
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import stat as statsmod
 from pycbc.types.optparse import MultiDetOptionAction
 import pycbc.version
+from pycbc.io import HFile
 
 #### DEFINITIONS AND FUNCTIONS ####
 
@@ -138,9 +139,9 @@ if (args.prune_param or args.prune_bins or args.prune_number) and not \
 logging.info('Fitting above threshold %f' % args.stat_threshold)
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
-trigf = h5py.File(args.trigger_file, 'r')
+trigf = HFile(args.trigger_file, 'r')
 logging.info('Opening template file: %s' % args.bank_file)
-templatef = h5py.File(args.bank_file, 'r')
+templatef = HFile(args.bank_file, 'r')
 
 logging.info('Counting number of triggers in each template')
 # template boundaries dataset is in order of template_id
@@ -354,7 +355,7 @@ for reg in sigma_regions:
     strigs = trigf[args.ifo + '/sigmasq'][reg]
     median_sigma.append(np.median(strigs) ** 0.5)
 
-outfile = h5py.File(args.output, 'w')
+outfile = HFile(args.output, 'w')
 outfile.create_dataset("template_id", data=trange)
 outfile.create_dataset("count_above_thresh", data=counts_above)
 outfile.create_dataset("fit_coeff", data=fits)
