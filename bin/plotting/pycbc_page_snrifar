@@ -9,6 +9,7 @@ matplotlib.use('Agg')
 import pylab
 
 from scipy.special import erfc, erfinv
+from pycbc.io.hdf import HFile
 
 import pycbc.results
 import pycbc.version
@@ -87,7 +88,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 logging.info('Read in the data')
-f = h5py.File(args.trigger_file, 'r')
+f = HFile(args.trigger_file, 'r')
 
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = args.use_hierarchical_level

@@ -16,13 +16,13 @@
 Plot histograms of triggers around gated times.
 """
 
-import h5py
 import numpy
 import logging
 import argparse
 from matplotlib import use
 use('Agg')
 import matplotlib.pyplot as plt
+from pycbc.io.hdf import HFile
 
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.events import ranking
@@ -86,7 +86,7 @@ n_gates = 0
 
 for single_file in args.single_trigger_files:
     logging.info("Reading trigger file %s...", single_file.split('/')[-1])
-    file_ = h5py.File(single_file, "r")
+    file_ = HFile(single_file, "r")
     ifo = str(list(file_.keys())[0])
     data = file_[ifo]
 

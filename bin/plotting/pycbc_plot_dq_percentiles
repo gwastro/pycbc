@@ -6,13 +6,13 @@ import sys
 import argparse
 import numpy
 import pycbc
-import h5py
 from matplotlib import use
 use('Agg')
 from matplotlib import pyplot
 
 from pycbc.version import git_verbose_msg as version
 import pycbc.results
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -30,7 +30,7 @@ pycbc.init_logging(args.verbose)
 
 ifo = args.ifo
 
-f = h5py.File(args.dq_file, 'r')
+f = HFile(args.dq_file, 'r')
 
 bin_name = args.background_bin
 

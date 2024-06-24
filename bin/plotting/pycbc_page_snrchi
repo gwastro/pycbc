@@ -12,7 +12,7 @@ import pycbc.results
 import pycbc.version
 from pycbc.events import veto
 from pycbc.io import (
-    get_chisq_from_file_choice, chisq_choices, SingleDetTriggers
+    get_chisq_from_file_choice, chisq_choices, SingleDetTriggers, HFile
 )
 
 parser = argparse.ArgumentParser()
@@ -52,7 +52,7 @@ args.newsnr_contours = \
     args.newsnr_contours if args.newsnr_contours is not None else []
 
 # First - get the IFO from the file
-with h5py.File(args.trigger_file, 'r') as f:
+with HFile(args.trigger_file, 'r') as f:
     ifo = tuple(f.keys())[0]
     n_triggers = f[ifo]['snr'].size
 
