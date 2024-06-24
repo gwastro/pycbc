@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
-import numpy, h5py, argparse
+import numpy, argparse
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from pycbc import init_logging, add_common_pycbc_options
+from pycbc.io import HFile
 import logging
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -38,9 +39,9 @@ if len(args.param) != len(args.log_axis):
     parser.error('Must specify either log (True) or non-log (False) for each parameter')
 
 if args.signal_file:
-    signal_data = h5py.File(args.signal_file, 'r')
+    signal_data = HFile(args.signal_file, 'r')
     signal_kde = signal_data['data_kde'][:]
-template_data = h5py.File(args.template_file, 'r')
+template_data = HFile(args.template_file, 'r')
 template_kde = template_data['data_kde'][:]
 param_arrays = [template_data[param][:] for param in args.param]
 
