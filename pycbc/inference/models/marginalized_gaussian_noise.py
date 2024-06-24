@@ -325,14 +325,18 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            fp, fc = self.dets[det].antenna_pattern(
-                                    params['ra'],
-                                    params['dec'],
-                                    params['polarization'],
-                                    params['tc'])
-            dt = self.dets[det].time_delay_from_earth_center(params['ra'],
-                                                             params['dec'],
-                                                             params['tc'])
+                
+            if self.precalc_antenna_factors:
+                fp, fc, dt = self.get_precalc_antenna_factors(det)
+            else:
+                fp, fc = self.dets[det].antenna_pattern(
+                                        params['ra'],
+                                        params['dec'],
+                                        params['polarization'],
+                                        params['tc'])
+                dt = self.dets[det].time_delay_from_earth_center(params['ra'],
+                                                                 params['dec'],
+                                                                 params['tc'])
             dtc = params['tc'] + dt
             cplx_hd = fp * cplx_hpd[det].at_time(dtc,
                                                  interpolate='quadratic')

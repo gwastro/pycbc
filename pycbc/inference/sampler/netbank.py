@@ -2,7 +2,7 @@
 encode the intrinsic parameter space.
 """
 import numpy, h5py, logging, tqdm
-from numpy.random import choice
+import numpy.random
 from scipy.special import logsumexp
 from pycbc.io import FieldArray
 
@@ -52,6 +52,8 @@ class NetBank(DummySampler):
 
         self.mapfile = mapfile
         self.rounds = int(rounds)
+        self.dmap = {}
+        self.draw = {}
 
         models._global_instance = model
         self.model = model
@@ -62,7 +64,21 @@ class NetBank(DummySampler):
         self.reconstruct = bool(reconstruct)
         self.loglr_region = float(loglr_region)
 
-    def sample_round(self, bin_weight, node_idx, dmap, lengths):
+    def draw_samples_from_bin(self, i, size):
+        if i not in self.draw:
+            self.draw[i] = numpy.arange(0, len(self.dmap[i]))
+     
+        numpy.random.shuffle(self.draw[i])
+        selected = self.draw[i][:size]
+        self.draw[i] = self.draw[i][size:]   
+        
+        if size > 0:
+            remain = len(self.draw[i])
+            logging.info(f'Drew {size}, {remain} remains in bin {i}')
+        
+        return self.dmap[i][selected]
+
+    def sample_round(self, bin_weight, node_idx, lengths):
         logging.info("...draw template bins")
         drawcount = (bin_weight * self.target_likelihood_calls).astype(int)
 
@@ -93,7 +109,7 @@ class NetBank(DummySampler):
         bin_id = numpy.zeros(total_draw, dtype=int)
         j = 0
         for i, (c, w) in enumerate(zip(drawcount, drawweight)):
-            bdraw = choice(dmap[node_idx[i]], size=c, replace=False)
+            bdraw = self.draw_samples_from_bin(node_idx[i], c)
             psamp[j:j+len(bdraw)] = FieldArray.from_records(bdraw, dtype=self.dtype)
             pweight[j:j+len(bdraw)] = numpy.log(bin_weight[i]) - numpy.log(w)
             bin_id[j:j+len(bdraw)] = i
@@ -124,7 +140,6 @@ class NetBank(DummySampler):
         logging.info('Retrieving params of parameter space nodes')
         with h5py.File(self.mapfile, 'r') as f:
             bparams = {p: f['bank'][p][:] for p in self.variable_params}
-            dmap = {}
             num_nodes = len(bparams[list(bparams.keys())[0]])
             lengths = numpy.array([len(f['map'][str(x)]) for x in range(num_nodes)])
             self.dtype = f['map']['0'].dtype
@@ -151,7 +166,7 @@ class NetBank(DummySampler):
         logging.info("...reading template bins")
         with h5py.File(self.mapfile, 'r') as f:
             for i in passed:
-                dmap[i] = f['map'][str(i)][:]
+                self.dmap[i] = f['map'][str(i)][:]
 
         # Sample from posterior
         
@@ -160,7 +175,7 @@ class NetBank(DummySampler):
         weight2 = None
         
         for i in range(self.rounds):
-            psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(weight, passed, dmap, lengths[passed])
+            psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(weight/weight.sum(), passed, lengths[passed])
                         
                        
             val, con = numpy.unique(bin_id, return_counts=True)
@@ -171,12 +186,12 @@ class NetBank(DummySampler):
             print(passed[val][l][0:5], con[l][0:5])
             
                     
-            w = weight * 0
+            w = weight * 1
             for i, v in zip(bin_id, weight2_v):
                 w[i] += v
                 
             logw = numpy.log(w) #+ numpy.log(weight)
-            logw -= logsumexp(logw)
+            #logw -= logsumexp(logw)
             print(logsumexp(logw))
             print(w[val][l][0:5])
             
@@ -204,7 +219,7 @@ class NetBank(DummySampler):
 
         # Prepare the equally weighted output samples
         weight2 /= weight2.sum()
-        draw2 = choice(len(psamp), size=int(ess * 5),
+        draw2 = numpy.random.choice(len(psamp), size=int(ess * 5),
                        replace=True, p=weight2)
         logging.info("Unique values second draw %s",
                      len(numpy.unique(psamp[draw2])))
