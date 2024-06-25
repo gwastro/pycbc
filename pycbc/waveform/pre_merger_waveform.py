@@ -42,7 +42,7 @@ def apply_pre_merger_kernel(
     nctf : int
         Number of samples to zero at the end of the data.
     uid : int
-        UIDs for computing the iFFTs.
+        UID for computing the iFFTs.
 
     Returns
     -------
