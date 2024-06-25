@@ -71,9 +71,12 @@ with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
     ifos = [k for k in trfit_f.keys() if not k.startswith('bins')]
 
     # Grab some info from the attributes
-    sngl_ranking = trfit_f.attrs['sngl_ranking']
-    fit_threshold = trfit_f.attrs['fit_threshold']
-    fit_function = trfit_f.attrs['fit_function']
+    if trfit_f.attrs['ranking_statistic'] in ['quadsum','single_ranking_only']:
+        x_label = trfit_f.attrs['sngl_ranking']
+    else:
+        x_label = "Ranking statistic"
+    fit_threshold = {ifo: trfit_f[ifo].attrs['fit_threshold'] for ifo in ifos}
+    fit_function = {ifo: trfit_f[ifo].attrs['fit_function'] for ifo in ifos}
     analysis_date = trfit_f.attrs['analysis_date']
 
     # Get the triggers for each detector
@@ -81,7 +84,9 @@ with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
     stats = {ifo: {} for ifo in ifos}
     durations = {ifo: {} for ifo in ifos}
     for ifo in ifos:
-        stats[ifo] = trfit_f[ifo]['triggers'][sngl_ranking][:]
+        if 'triggers' not in trfit_f[ifo]:
+            continue
+        stats[ifo] = trfit_f[ifo]['triggers']['stat'][:]
         durations[ifo] = trfit_f[ifo]['triggers']['template_duration'][:]
     live_time = {ifo: trfit_f[ifo].attrs['live_time'] for ifo in ifos}
     alphas = {ifo: trfit_f[ifo]['fit_coeff'][:] for ifo in ifos}
@@ -124,7 +129,10 @@ for ifo in all_ifos:
     maxstat = stats[ifo].max()
     max_rate = 0
 
-    plotbins = np.linspace(fit_threshold, 1.05 * maxstat, 400)
+    statrange = maxstat - max(stats[ifo].min(), fit_threshold[ifo])
+    plotmax = maxstat + statrange * 0.05
+
+    plotbins = np.linspace(fit_threshold[ifo], plotmax, 400)
 
     logging.info("Putting events into bins")
     event_bin = np.array([tbins[d] for d in durations[ifo]])
@@ -134,8 +142,26 @@ for ifo in all_ifos:
         binlabel = f"{lower:.3g} - {upper:.3g}"
 
         inbin = event_bin == bin_num
+        bin_prop = bin_num / len(tbins)
+        bin_colour = plt.get_cmap(args.colormap)(bin_prop)
+
         # Skip if there are no triggers in this bin in this IFO
-        if not any(inbin):
+        if not any(inbin) or alphas[ifo][bin_num] == -1:
+            ax.plot(
+                [],
+                [],
+                linewidth=2,
+                color=bin_colour,
+                label=binlabel,
+                alpha=0.6
+            )
+            ax.plot(
+                [],
+                [],
+                "--",
+                color=bin_colour,
+                label="No triggers"
+            )
             continue
         binned_sngl_stats = stats[ifo][event_bin == bin_num]
 
@@ -147,15 +173,13 @@ for ifo in all_ifos:
         max_rate = max(max_rate, cum_rate[0])
 
         ecf = eval_cum_fit(
-            fit_function,
+            fit_function[ifo],
             plotbins,
             alphas[ifo][bin_num],
-            fit_threshold
+            fit_threshold[ifo]
         )
         cum_fit = counts[ifo][bin_num] / live_time[ifo] * ecf
 
-        bin_prop = bin_num / len(tbins)
-        bin_colour = plt.get_cmap(args.colormap)(bin_prop)
         ax.plot(edges[:-1], cum_rate, linewidth=2,
                 color=bin_colour, label=binlabel, alpha=0.6)
         ax.plot(plotbins, cum_fit, "--", color=bin_colour,
@@ -163,14 +187,14 @@ for ifo in all_ifos:
     ax.semilogy()
     ax.grid()
     ax.set_xlim(
-        fit_threshold if args.x_lim_lower is None else args.x_lim_lower,
-        1.05 * maxstat if args.x_lim_upper is None else args.x_lim_upper
+        fit_threshold[ifo] if args.x_lim_lower is None else args.x_lim_lower,
+        plotmax if args.x_lim_upper is None else args.x_lim_upper
     )
     ax.set_ylim(
         0.5 / live_time[ifo] if args.y_lim_lower is None else args.y_lim_lower,
         1.5 * max_rate if args.y_lim_upper is None else args.y_lim_upper
     )
-    ax.set_xlabel(sngl_ranking)
+    ax.set_xlabel(x_label)
     ax.set_ylabel("Number of louder triggers per live time")
     title = f"{ifo} {analysis_date} trigger fits"
     ax.set_title(title)

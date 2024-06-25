@@ -271,7 +271,6 @@ def network_chisq(chisq, chisq_dof, snr_dict):
     chisq_per_dof = dict.fromkeys(ifos)
     for ifo in ifos:
         chisq_per_dof[ifo] = chisq[ifo] / chisq_dof[ifo]
-        chisq_per_dof[ifo][chisq_per_dof[ifo] < 1] = 1
     snr2 = {
         ifo: np.real(np.array(snr_dict[ifo]) * np.array(snr_dict[ifo]).conj())
         for ifo in ifos

@@ -25,10 +25,11 @@ import h5py
 
 import pycbc
 from pycbc.bin_utils import IrregularBins
-from pycbc.events import cuts, trigger_fits as trstats
+from pycbc.events import cuts, trigger_fits as trstats, stat
 from pycbc.io import DictArray
 from pycbc.events import ranking
 from pycbc.events.coinc import cluster_over_time
+from pycbc.types import MultiDetOptionAction
 
 
 def duration_bins_from_cli(args):
@@ -75,6 +76,7 @@ parser.add_argument("--file-identifier", default="H1L1V1-Live",
                     help="String required in filename to be considered for "
                          "analysis. Default: 'H1L1V1-Live'.")
 parser.add_argument("--fit-function", default="exponential",
+                    action=MultiDetOptionAction,
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit. "
                          "Choose from exponential, rayleigh or power. "
@@ -112,18 +114,20 @@ parser.add_argument("--prune-stat-threshold", type=float,
                     help="Minimum --sngl-ranking value to consider a "
                          "trigger for pruning.")
 parser.add_argument("--fit-threshold", type=float, default=5,
+                    action=MultiDetOptionAction,
                     help="Lower threshold used in fitting the triggers."
-                         "Default 5.")
+                         "Default 5. Can be supplied as a single value, "
+                         "or as a set of IFO:value pairs, e.g. H1:0:, L1:-1")
 parser.add_argument("--cluster", action='store_true',
                     help="Only use maximum of the --sngl-ranking value "
                          "from each file.")
 parser.add_argument("--output", required=True,
                     help="File in which to save the output trigger fit "
                          "parameters.")
-parser.add_argument("--sngl-ranking", default="newsnr",
-                    choices=ranking.sngls_ranking_function_dict.keys(),
-                    help="The single-detector trigger ranking to use.")
-
+stat.insert_statistic_option_group(
+    parser,
+    default_ranking_statistic='single_ranking_only'
+)
 cuts.insert_cuts_option_group(parser)
 
 args = parser.parse_args()
@@ -133,8 +137,11 @@ pycbc.init_logging(args.verbose)
 # Check input options
 
 # Pruning options are mutually required or not needed
-prune_options = [args.prune_loudest, args.prune_window,
-                 args.prune_stat_threshold]
+prune_options = [
+    args.prune_loudest is not None,
+    args.prune_window is not None,
+    args.prune_stat_threshold is not None
+]
 
 if any(prune_options) and not all(prune_options):
     parser.error("Require all or none of --prune-loudest, "
@@ -162,6 +169,9 @@ if args.duration_bin_end and \
                  "--duration-bin-start, got "
                  f"{args.duration_bin_end} and {args.duration_bin_start}")
 
+
+stat_kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
+
 duration_bin_edges = duration_bins_from_cli(args)
 logging.info("Duration bin edges: %s", duration_bin_edges)
 
@@ -177,13 +187,7 @@ args.template_cuts = args.template_cuts or []
 args.template_cuts.append(f"template_duration:{min(duration_bin_edges)}:lower")
 args.template_cuts.append(f"template_duration:{max(duration_bin_edges)}:upper_inc")
 
-# Efficiency saving: add SNR cut before any others as sngl_ranking can
-# only be less than SNR.
 args.trigger_cuts = args.trigger_cuts or []
-args.trigger_cuts.insert(0, f"snr:{args.fit_threshold}:lower_inc")
-
-# Cut triggers with sngl-ranking below threshold
-args.trigger_cuts.append(f"{args.sngl_ranking}:{args.fit_threshold}:lower_inc")
 
 logging.info("Setting up the cut dictionaries")
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
@@ -211,6 +215,9 @@ files = [f for f in os.listdir(date_directory)
 
 events = {}
 
+rank_method = {ifo: stat.get_statistic_from_opts(args, [ifo]) for ifo in args.ifos}
+
+logging.info("Processing %d files", len(files))
 for counter, filename in enumerate(files):
     if counter and counter % 1000 == 0:
         logging.info("Processed %d/%d files", counter, len(files))
@@ -284,10 +291,13 @@ for counter, filename in enumerate(files):
                         for k in trigs_ifo.keys()}
 
         # Calculate the sngl_ranking values
-        sngls_value = ranking.get_sngls_ranking_from_trigs(
-                          triggers_cut, args.sngl_ranking)
+        sds = rank_method[ifo].single(triggers_cut)
+        sngls_value = rank_method[ifo].rank_stat_single(
+            (ifo, sds),
+            **stat_kwargs
+        )
 
-        triggers_cut[args.sngl_ranking] = sngls_value
+        triggers_cut['stat'] = sngls_value
 
         triggers_da = DictArray(data=triggers_cut)
 
@@ -330,7 +340,7 @@ for ifo in events:
         for bin_num in range(n_bins):
             inbin = event_bins[ifo] == bin_num
 
-            binned_events = events[ifo].data[args.sngl_ranking][inbin]
+            binned_events = events[ifo].data['stat'][inbin]
             binned_event_times = events[ifo].data['end_time'][inbin]
 
             # Cluster triggers in time with the pruning window to ensure
@@ -396,17 +406,32 @@ for ifo in events:
             alphas[ifo][bin_num] = -1
             continue
 
-        counts[ifo][bin_num] = np.count_nonzero(inbin)
+        stat_inbin = events[ifo].data['stat'][inbin]
+        counts[ifo][bin_num] = \
+            np.count_nonzero(stat_inbin > args.fit_threshold[ifo])
+
         alphas[ifo][bin_num], _ = trstats.fit_above_thresh(
-            args.fit_function,
-            events[ifo].data[args.sngl_ranking][inbin],
-            args.fit_threshold
+            args.fit_function[ifo],
+            stat_inbin,
+            args.fit_threshold[ifo]
         )
 
 logging.info("Writing results")
 with h5py.File(args.output, 'w') as fout:
-    for ifo in events:
+    for ifo in args.ifos:
         fout_ifo = fout.create_group(ifo)
+        fout_ifo.attrs['fit_function'] = args.fit_function[ifo]
+        fout_ifo.attrs['fit_threshold'] = args.fit_threshold[ifo]
+        if ifo not in events:
+            # There were no triggers, but we should still produce some
+            # information
+            fout_ifo['fit_coeff'] = -1 * np.zeros(n_bins)
+            fout_ifo['counts'] = np.zeros(n_bins)
+            fout_ifo.attrs['live_time'] = live_time[ifo]
+            fout_ifo.attrs['pruned_times'] = []
+            fout_ifo.attrs['n_pruned'] = 0
+            continue
+
         # Save the triggers we have used for the fits
         fout_ifo_trigs = fout_ifo.create_group('triggers')
         for key in events[ifo].data:
@@ -427,8 +452,7 @@ with h5py.File(args.output, 'w') as fout:
     fout.attrs['analysis_date'] = args.analysis_date
     fout.attrs['input'] = sys.argv
     fout.attrs['cuts'] = args.template_cuts + args.trigger_cuts
-    fout.attrs['fit_function'] = args.fit_function
-    fout.attrs['fit_threshold'] = args.fit_threshold
     fout.attrs['sngl_ranking'] = args.sngl_ranking
+    fout.attrs['ranking_statistic'] = args.ranking_statistic
 
 logging.info("Done")
