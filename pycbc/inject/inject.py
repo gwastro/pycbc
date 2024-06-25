@@ -30,7 +30,6 @@ import numpy as np
 import copy
 import logging
 from abc import ABCMeta, abstractmethod
-import h5py
 
 import lal
 from ligo.lw import utils as ligolw_utils, ligolw, lsctables

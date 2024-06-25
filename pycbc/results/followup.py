@@ -24,7 +24,7 @@
 """ This module provides functions to generate followup plots and trigger
 time series.
 """
-import h5py, numpy, matplotlib
+import numpy, matplotlib
 # Only if a backend is not already set ... This should really *not* be done
 # here, but in the executables you should set matplotlib.use()
 # This matches the check that matplotlib does internally, but this *may* be
