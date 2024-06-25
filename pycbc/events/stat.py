@@ -27,11 +27,11 @@ values.
 """
 import logging
 import numpy
+import h5py
 from . import ranking
 from . import coinc_rate
 from .eventmgr_cython import logsignalrateinternals_computepsignalbins
 from .eventmgr_cython import logsignalrateinternals_compute2detrate
-from pycbc.io.hdf import HFile
 
 logger = logging.getLogger('pycbc.events.stat')
 
@@ -59,7 +59,7 @@ class Stat(object):
         self.files = {}
         files = files or []
         for filename in files:
-            with HFile(filename, 'r') as f:
+            with h5py.File(filename, 'r') as f:
                 stat = f.attrs['stat']
             if hasattr(stat, 'decode'):
                 stat = stat.decode()
@@ -387,7 +387,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         weights = {}
         param = {}
 
-        with HFile(self.files[selected], 'r') as histfile:
+        with h5py.File(self.files[selected], 'r') as histfile:
             self.hist_ifos = histfile.attrs['ifos']
 
             # Patch for pre-hdf5=3.0 histogram files
@@ -778,7 +778,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
             A dictionary containing the fit information in the `alpha`, `rate`
             and `thresh` keys.
         """
-        coeff_file = HFile(self.files[f'{ifo}-fit_coeffs'], 'r')
+        coeff_file = h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r')
         template_id = coeff_file['template_id'][:]
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
@@ -1288,7 +1288,7 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
         ifo: str
             The ifo to consider.
         """
-        with HFile(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
+        with h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
             analysis_time = float(coeff_file.attrs['analysis_time'])
             fbt = 'fit_by_template' in coeff_file
 
@@ -1419,7 +1419,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             The ifo to consider.
         """
 
-        with HFile(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
+        with h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
             template_id = coeff_file['template_id'][:]
             tid_sort = numpy.argsort(template_id)
             self.fits_by_tid[ifo]['median_sigma'] = \
@@ -1931,7 +1931,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
         kname: str
             Used to label the kde files.
         """
-        with HFile(self.files[kname + '-kde_file'], 'r') as kde_file:
+        with h5py.File(self.files[kname + '-kde_file'], 'r') as kde_file:
             self.kde_by_tid[kname + '_kdevals'] = kde_file['data_kde'][:]
 
     def kde_ratio(self):
@@ -2079,7 +2079,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             Dictionary containing the bin name for each template id
         """
         ifo = key.split('-')[0]
-        with HFile(self.files[key], 'r') as dq_file:
+        with h5py.File(self.files[key], 'r') as dq_file:
             tids = []
             bin_nums = []
             bin_grp = dq_file[f'{ifo}/bins']
@@ -2109,7 +2109,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         """
         ifo = key.split('-')[0]
-        with HFile(self.files[key], 'r') as dq_file:
+        with h5py.File(self.files[key], 'r') as dq_file:
             bin_grp = dq_file[f'{ifo}/bins']
             dq_dict = {}
             for bin_name in bin_grp.keys():
@@ -2124,7 +2124,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         If they aren't, we are running online
         """
         ifo = key.split('-')[0]
-        with HFile(self.files[key], 'r') as dq_file:
+        with h5py.File(self.files[key], 'r') as dq_file:
             ifo_grp = dq_file[ifo]
             dq_state_segs_dict = {}
             for k in ifo_grp['dq_segments'].keys():
