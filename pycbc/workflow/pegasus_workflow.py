@@ -209,8 +209,8 @@ class Node(ProfileShortcuts):
     def add_opt(self, opt, value=None, check_existing_options=True, **kwargs): #  pylint:disable=unused-argument
         """ Add an option
         """
-        if check_existing_options and (opt in self.options \
-                or opt in self.raw_options):
+        if check_existing_options and (opt in self._options \
+                or opt in self._raw_options):
             err_msg = (
                 "Trying to set option %s with value %s, but it "
                 "has already been provided by the configuration file. "
