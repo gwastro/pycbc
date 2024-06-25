@@ -18,10 +18,10 @@
 Provides a class representing a time series.
 """
 import os as _os
+import h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
-from pycbc.io.hdf import HFile
 import lal as _lal
 import numpy as _numpy
 from scipy.io.wavfile import write as write_wav
@@ -934,7 +934,7 @@ class TimeSeries(Array):
             _numpy.savetxt(path, output)
         elif ext =='.hdf':
             key = 'data' if group is None else group
-            with HFile(path, 'a') as f:
+            with h5py.File(path, 'a') as f:
                 ds = f.create_dataset(key, data=self.numpy(),
                                       compression='gzip',
                                       compression_opts=9, shuffle=True)
@@ -1170,7 +1170,7 @@ def load_timeseries(path, group=None):
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        with HFile(path, 'r') as f:
+        with h5py.File(path, 'r') as f:
             data = f[key][:]
             series = TimeSeries(data, delta_t=f[key].attrs['delta_t'],
                                 epoch=f[key].attrs['start_time'])
