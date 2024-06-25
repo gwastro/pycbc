@@ -34,7 +34,7 @@ requires = []
 setup_requires = ['numpy>=1.16.0']
 install_requires = setup_requires + [
     'cython>=0.29',
-    'numpy>=1.16.0,!=1.19.0',
+    'numpy>=1.16.0,!=1.19.0,<2.0.0',
     'scipy>=0.16.0',
     'astropy>=2.0.3,!=4.2.1,!=4.0.5',
     'matplotlib>=1.5.1',
@@ -118,7 +118,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '2.4.dev1'
+        vinfo.version = '2.4.dev2'
         vinfo.release = 'False'
 
     version_script = f"""# coding: utf-8
