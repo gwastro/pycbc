@@ -29,7 +29,7 @@ import numpy as np
 
 import pycbc
 import lal
-from pycbc.io.live import gracedb_tag_with_version
+from pycbc.io.gracedb import gracedb_tag_with_version
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--xml-file-for-upload', required=True, type=str,
