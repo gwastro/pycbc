@@ -29,6 +29,9 @@ def call_rlikelihood(params):
     models._global_instance.update(**params)
     rec = models._global_instance.reconstruct()
     return logl, rec
+    
+class OutOfSamples(Exception):
+    pass
 
 class NetBank(DummySampler):
     """Direct monte-carlo sampler using a preconstructed parameter space
@@ -67,6 +70,9 @@ class NetBank(DummySampler):
     def draw_samples_from_bin(self, i, size):
         if i not in self.draw:
             self.draw[i] = numpy.arange(0, len(self.dmap[i]))
+
+        if size > len(self.draw[i]):
+            raise OutOfSamples
      
         numpy.random.shuffle(self.draw[i])
         selected = self.draw[i][:size]
@@ -94,12 +100,7 @@ class NetBank(DummySampler):
                 asize = min(l - c, remainder)
                 drawcount[i] += asize
                 remainder -= asize
-        
-        print("DRAW COUNT CHECK")
-        print(drawcount[dorder][0:5])
-        print(lengths[dorder][0:5])
-        print(node_idx[dorder][0:5])
-        print(bin_weight[dorder][0:5])
+
         drawweight = bin_weight / drawcount
         total_draw = drawcount.sum()
 
@@ -135,6 +136,21 @@ class NetBank(DummySampler):
         logw3 -= logsumexp(logw3)
         weight2 = numpy.exp(logw3)
         return psamp, loglr_samp, weight2, bin_id
+
+    def calculate_evidence(self, node_loglrs, node_lengths, loglrsamp, bin_id):
+        logz = node_loglrs * 1
+
+        #s = bin_id.argsort()
+        #bin_id = bin_id[s]
+        #loglrsamp = loglrsamp[s]
+        
+        bid = numpy.unique(bin_id)
+        for i in bid:
+            x = numpy.where(i == bin_id)[0]
+            logz[i] = logsumexp(loglrsamp[x]) - numpy.log(len(x))
+        
+        logz = (logz + numpy.log(node_lengths) - numpy.log(node_lengths.sum()))
+        return logsumexp(logz)
 
     def run(self):
         logging.info('Retrieving params of parameter space nodes')
@@ -173,49 +189,39 @@ class NetBank(DummySampler):
         psamp = None
         loglr_samp = None
         weight2 = None
+        bin_ids = None
+        
+        weight = lengths[passed] / lengths[passed].sum() * 160
         
         for i in range(self.rounds):
-            psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(weight/weight.sum(), passed, lengths[passed])
-                        
-                       
-            val, con = numpy.unique(bin_id, return_counts=True)
-            l = numpy.argsort(con)[::-1]
-            print("drawn from which bin")
-            lk = loglr_samp_v.argmax()
-            print(loglr_samp_v[lk], passed[bin_id[lk]])
-            print(passed[val][l][0:5], con[l][0:5])
-            
-                    
-            w = weight * 1
+            try:
+                psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(weight/weight.sum(), passed, lengths[passed])
+            except OutOfSamples:
+                logging.info("No more samples to draw from")
+                break             
+                             
             for i, v in zip(bin_id, weight2_v):
-                w[i] += v
-                
-            logw = numpy.log(w) #+ numpy.log(weight)
-            #logw -= logsumexp(logw)
-            print(logsumexp(logw))
-            print(w[val][l][0:5])
-            
-            j = logw.argmax()
-            print(logw[j], passed[j])
-            
-            weight = numpy.exp(logw)
-            
-            print(weight[val][l][0:5])
-    
+                weight[i] += v
+
             if psamp is None:
                 psamp = psamp_v
                 loglr_samp = loglr_samp_v
                 weight2 = weight2_v
+                bin_ids = bin_id
             else:
                 psamp = numpy.concatenate([psamp_v, psamp])
                 loglr_samp = numpy.concatenate([loglr_samp_v, loglr_samp])
                 weight2 = numpy.concatenate([weight2_v, weight2])
+                bin_ids = numpy.concatenate([bin_id, bin_ids])
                 
             uniq = numpy.unique(psamp)
-            print(len(uniq), len(psamp))
             
             ess = 1.0 / ((weight2/weight2.sum()) ** 2.0).sum()
             logging.info("ESS = %s", ess)
+            
+            logz = self.calculate_evidence(node_loglrs, lengths, loglr_samp, bin_ids)
+            dlogz = (loglr_samp * weight2).sum() / weight2.sum() + numpy.log(len(bin_id)) - numpy.log(lengths.sum())
+            logging.info("dlogz = %s, %s", dlogz, logz)
 
         # Prepare the equally weighted output samples
         weight2 /= weight2.sum()
