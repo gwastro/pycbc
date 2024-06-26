@@ -120,7 +120,7 @@ class DistMarg():
         self.reconstruct_phase = False
         self.reconstruct_distance = False
         self.reconstruct_vector = False
-        self.precalc_antennna_factors = False
+        self.precalc_antenna_factors = False
 
         # Handle any requested parameter vector / brute force marginalizations
         self.marginalize_vector_params = {}
