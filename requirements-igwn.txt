@@ -1,4 +1,5 @@
 # For LDG service access
+ligo-proxy-utils
 ciecplib[kerberos] >= 0.7.0
 dqsegdb2 >= 1.1.4
 amqplib
