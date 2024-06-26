@@ -22,6 +22,7 @@ from abc import (ABCMeta, abstractmethod)
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 from pycbc.types import FrequencySeries
+from pycbc.io import get_file
 
 
 class Recalibrate(metaclass=ABCMeta):
@@ -512,3 +513,82 @@ class PhysicalModel(object):
                               kappa_pu_re=calib_args[6],
                               kappa_pu_im=calib_args[7])
         return strain_adjusted
+
+class ReadCalibrationEnvelop(object):
+    def __init__(self, envelope_file_path,  minimum_frequency=20, 
+                 maximum_frequency=2048, n_nodes=10):
+        self.envelope_file_path = envelop_file_path
+        self.minimum_frequency = minimum_frequency
+        self.maximum_frequency = maximum_frequency
+        self.n_nodes = n_nodes
+        
+        # Hardcoded
+        self.public_url = 'https://dcc.ligo.org/T2100313/public'
+        # Get the filelist
+        self.filelist_H1 = glob.glob('%s/H1/*txt'%self.envelope_file_path)
+        if len(self.filelist_H1)==0:
+            self.download_calibration_files('%s/LIGO_O1_cal_uncertainty.tgz')
+        self.filelist_L1 = glob.glob('%s/L1/*txt'%self.envelope_file_path)
+        self.filelist_V1 = glob.glob('%s/V1/*txt'%self.envelope_file_path)
+        
+
+
+        self.gps_times_H1,self.gps_times_L1 = [],[]
+        for file in self.filelist_H1:
+            # Hardcoded, Check for future changes in filename
+            self.gps_times_H1.append(int(file.split('/')[-1].split('_')[4]))
+            
+        for file in self.filelist_L1:
+            # Hardcoded, Check for future changes in filename
+            self.gps_times_L1.append(int(file.split('/')[-1].split('_')[4]))
+            
+        
+    def find_calibration_file_HL(self, gps_time):
+        index_closest_time_H1 = np.argmin(gps_time-np.array(self.gps_times_H1))
+        index_closest_time_L1 = np.argmin(gps_time-np.array(self.gps_times_L1))
+            
+        calibration_file_H1 = self.filelist_H1[index_closest_time_H1]
+        calibration_file_L1 = self.filelist_L1[index_closest_time_L1]
+        
+        return calibration_file_H1, calibration_file_L1
+        
+    def download_calibration_files(self):
+        try
+            get_file('')
+
+    def read_from_envelop_file(self, calibration_file):
+        calibration_data = numpy.loadtxt(calibration_file).T
+        log_frequency_array = np.log(calibration_data[0])
+        amplitude_median = calibration_data[1] - 1
+        phase_median = calibration_data[2]
+        amplitude_sigma = (calibration_data[5] - calibration_data[3]) / 2
+        phase_sigma = (calibration_data[6] - calibration_data[4]) / 2
+        log_nodes = np.linspace(np.log(self.minimum_frequency),
+                            np.log(self.maximum_frequency), self.n_nodes)
+        # Some sanity checks
+        if calibration_data[0][-1] < maximum_frequency:
+            if self.maximum_frequency - calibration_data[0][-1] < 0.5:
+                self.maximum_frequency = calibration_data[0][-1]
+            else:
+                raise ValueError("Maximum frequency (=%d) for tc=%s is more than"
+                         "maximum frequency in calibration envelop (=%.3g)"%(self.maximum_frequency,gps_time,calibration_data[0][-1]))
+        else:
+            pass
+
+        if calibration_data[0][0] > self.minimum_frequency:
+            raise ValueError("Minimum frequency (=%d) for tc=%s is less than"
+                         "minimum frequency in calibration envelop (=%.3g)"%(self.minimum_frequency,gps_time,calibration_data[0][0]))
+        else:
+            pass
+
+        amplitude_mean_nodes = \
+                InterpolatedUnivariateSpline(log_frequency_array, amplitude_median)(self.log_nodes)
+        amplitude_sigma_nodes = \
+                InterpolatedUnivariateSpline(log_frequency_array, amplitude_sigma)(self.log_nodes)
+        phase_mean_nodes = \
+                InterpolatedUnivariateSpline(log_frequency_array, phase_median)(self.log_nodes)
+        phase_sigma_nodes = \
+                InterpolatedUnivariateSpline(log_frequency_array, phase_sigma)(self.log_nodes)
+
+        return log_nodes, amplitude_mean_nodes, amplitude_sigma_nodes, phase_mean_nodes, phase_sigma_nodes
+
