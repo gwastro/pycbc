@@ -20,7 +20,7 @@ setup.py file for PyCBC package
 """
 
 import sys
-import os, subprocess, shutil
+import os, subprocess
 import platform
 
 from setuptools import Extension, setup, Command
