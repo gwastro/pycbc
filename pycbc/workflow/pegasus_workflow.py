@@ -350,9 +350,10 @@ class Workflow(object):
         # This sets the logger to one level less verbose than the root
         # (pycbc) logger
 
+        curr_level = logging.getLogger().level
         # Get the logger associated with the Pegasus workflow import
         pegasus_logger = logging.getLogger('Pegasus')
-        pegasus_logger.setLevel(logger.level + 10)
+        pegasus_logger.setLevel(curr_level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()

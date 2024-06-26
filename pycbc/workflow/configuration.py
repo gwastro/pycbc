@@ -142,7 +142,8 @@ def resolve_url(
         import ciecplib
         # Make the scitokens logger a little quieter
         # (it is called through ciecpclib)
-        logging.getLogger('scitokens').setLevel(logger.level + 10)
+        curr_level = logging.getLogger().level
+        logging.getLogger('scitokens').setLevel(curr_level + 10)
         with ciecplib.Session() as s:
             if u.netloc in ("git.ligo.org", "code.pycbc.phy.syr.edu"):
                 # authenticate with git.ligo.org using callback
