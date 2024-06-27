@@ -464,11 +464,14 @@ class DistMarg():
                 if t not in dmap:
                     dmap[t] = []
                 dmap[t].append(i)
+            
+            # Sky prior by bin
+            bin_prior = {t:len(dmap[t]) / size for t in dmap}          
 
             if len(ifos) == 1:
                 dmap[()] = numpy.arange(0, size, 1).astype(int)
 
-            return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc
+            return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, bin_prior
 
         if not hasattr(self, 'tinfo'):
             self.tinfo = {}
@@ -477,7 +480,7 @@ class DistMarg():
             logging.info('pregenerating sky pointings')
             self.tinfo[ikey] = make_init()
 
-        dmap, tcmin, tcmax, fp, fc, ra, dec, dtc = self.tinfo[ikey]
+        dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, bin_prior = self.tinfo[ikey]
 
         vsamples = size if size is not None else self.vsamples
 
@@ -504,16 +507,17 @@ class DistMarg():
             i = draw_sample(w, size=vsamples)
 
             if sref is not None:
-                mcweight -= w[i]
+                mcweight += w[i]
                 delt = float(snr.start_time - sref.start_time)
                 i += round(delt / sref.delta_t)
                 dx.append(iref - i)
             else:
                 sref = snr
                 iref = i
-                mcweight = -w[i]
+                mcweight = w[i]
 
             idx.append(i)
+        mcweight -= logsumexp(mcweight)
 
         # check if delay is in dict, if not, throw out
         ti = []
@@ -525,7 +529,7 @@ class DistMarg():
             if t in dmap:
                 randi = int(rand[i] * (len(dmap[t])))
                 ix.append(dmap[t][randi])
-                wi.append(len(dmap[t]))
+                wi.append(bin_prior[t])
                 ti.append(i)
 
         # If we had really poor efficiency at finding a point, we should
@@ -538,6 +542,7 @@ class DistMarg():
         ix = numpy.resize(numpy.array(ix, dtype=int), vsamples)
         self.sample_idx = ix
         self.precalc_antenna_factors = fp, fc, dtc
+        resize_factor = len(ti) / vsamples
 
         ra = ra[ix]
         dec = dec[ix]
@@ -554,7 +559,10 @@ class DistMarg():
         tc = tct + iref[ti] * snr.delta_t + float(sref.start_time) - dtc[ifos[0]]
 
         # Update the current proposed times and the marginalization values
-        logw_sky = mcweight[ti] + numpy.log(wi)
+        # There's an overall normalization here which may introduce a constant
+        # factor at the moment.
+        logw_sky = -mcweight[ti] + numpy.log(wi) - numpy.log(resize_factor)
+
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['ra'] = ra
         self.marginalize_vector_params['dec'] = dec
@@ -562,9 +570,8 @@ class DistMarg():
 
         if self._current_params is not None:
             # Update the importance weights for each vector sample
-            logw = self.marginalize_vector_weights + logw_sky
             self._current_params.update(self.marginalize_vector_params)
-            self.marginalize_vector_weights = logw - logsumexp(logw)
+            self.marginalize_vector_weights += logw_sky
 
         return self.marginalize_vector_params
 
