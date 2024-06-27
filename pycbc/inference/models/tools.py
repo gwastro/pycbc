@@ -49,7 +49,6 @@ def draw_sample(loglr, size=None):
     loglr = loglr - logsumexp(loglr)
     w = numpy.exp(loglr)
     xl = numpy.random.choice(range(len(loglr)), p=w, size=size)
-    print(len(xl))
     return xl
 
 
@@ -398,13 +397,6 @@ class DistMarg():
                                         mode='nearest')
             logweight += snrv.squared_norm().numpy()
         logweight /= 2.0
-        #logweight[logweight > 40] = 43
-        #logweight[logweight < 50] = 50
-        #logweight = logweight - logweight.max() + 40
-        #logweight[logweight<0] = 0
-        #logweight[:] = 0
-        print(logweight, logweight.max())
-        print("SNR MAX", snr.squared_norm().max())
         logweight -= logsumexp(logweight) # Normalize to PDF
 
         # Draw proportional to the incoherent likelihood
@@ -414,9 +406,7 @@ class DistMarg():
         tct = numpy.random.uniform(-snr.delta_t / 2.0,
                                    snr.delta_t / 2.0,
                                    size=vsamples)
-        tct = 0
         tc = tct + tci * snr.delta_t + float(snr.start_time) - dt
-        #print("HERE", snr.delta_t, tcmin, tcmax, tcave, tmin, tmax, start, end)
 
         # Update the current proposed times and the marginalization values
         logw = - logweight[tci] # + prior term here
@@ -425,10 +415,8 @@ class DistMarg():
 
         if self._current_params is not None:
             # Update the importance weights for each vector sample
-            logw = self.marginalize_vector_weights + logw
-            #logw = logw - logsumexp(logw)
             self._current_params.update(self.marginalize_vector_params)
-            self.marginalize_vector_weights = logw
+            self.marginalize_vector_weights += logw
 
         return self.marginalize_vector_params
 

@@ -245,7 +245,6 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         
         if sample_rate is not None:
             logging.info("Using %s sample rate for marginalization", sample_rate)
-            print(sample_rate)
             for det in self._whitened_data:
                 tlen = int(round(float(sample_rate) * self.whitened_data[det].duration))
                 flen = tlen // 2 + 1
@@ -349,54 +348,6 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                                                                  params['tc'])
             dtc = params['tc'] + dt
             
-            
-            if True:
-                from matplotlib import pyplot as plt
-                import numpy
-                plt.figure()
-                ax1 = plt.gca()
-                ax2 = ax1.twinx()
-                ax1.hist(dtc, bins=100)
- 
-                #ax1.scatter(dtc, 1 / numpy.exp(self.marginalize_vector_weights))
- 
-                #print(dtc)
-                
-                #plt.sca(ax2)
-                #print(dtc.min(), dtc.max())
-                #z =  abs(cplx_hpd[det].time_slice(dtc.min()-.01, dtc.max()+.01))
-                #z.plot(color='red', label=det)
-                #plt.xlim(dtc.min()-.01, dtc.max() + .01)
-                #plt.axvline(numpy.median(dtc))
-                #plt.axvline(dtc.min())
-                #plt.axvline(dtc.max())
-                
-                plt.sca(ax2)
-                z2 = abs(snr_estimate[det]).time_slice(dtc.min()-.001, dtc.max()+.001)
-                numpy.exp(z2**2.0 / 2.0).plot(color='black', label=det)
-                ax1.set_ylim(ymin=0)
-                ax2.set_ylim(ymin=0)
-                #print(numpy.mean(dtc))
-                #i = z.numpy().argmax()
-                #print(z.sample_times[i], z[i-1], z[i], z[i+1])
-                #i = z2.numpy().argmax()
-                #print(z2.sample_times[i], z2[i-1], z2[i], z2[i+1])
-                
-                
-                
-                plt.legend()
-                plt.show()       
-            
-                m = numpy.exp(z2**2.0 / 2.0)
-                m1 = m.at_time(dtc, interpolate='quadratic')
-                m1 = m1 * numpy.exp(self.marginalize_vector_weights)
-                #print(self.marginalize_vector_weights)
-                print("MEAN FROM SNR PRED", numpy.sum(m1))
-                
-                m1 = m.at_time(dtc, interpolate='quadratic')
-                m1 = m1 * 1 / len(self.marginalize_vector_weights)
-                print("MEAN FROM SNR PRED", numpy.sum(m1))
-            
             cplx_hd = fp * cplx_hpd[det].at_time(dtc,
                                                  interpolate='quadratic')
             cplx_hd += fc * cplx_hcd[det].at_time(dtc,
@@ -407,17 +358,8 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
             sh_total += cplx_hd
             hh_total += hh
-    
-        from scipy.special import logsumexp
-        #print(abs(sh_total) - 0.5 * hh_total)
-        loglr = abs(sh_total) - 0.5 * hh_total
-        m2 = numpy.exp(loglr) * numpy.exp(self.marginalize_vector_weights)
-        print(self.marginalize_vector_weights.sum())
-        print(logsumexp(self.marginalize_vector_weights))
-        print("MEAN FROM LOGLR", numpy.sum(m2))
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
-        print(loglr)
         return loglr
 
 
