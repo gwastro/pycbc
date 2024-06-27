@@ -465,11 +465,11 @@ class DistMarg():
                     dmap[t] = []
                 dmap[t].append(i)
             
-            # Sky prior by bin
-            bin_prior = {t:len(dmap[t]) / size for t in dmap}          
-
             if len(ifos) == 1:
                 dmap[()] = numpy.arange(0, size, 1).astype(int)
+
+            # Sky prior by bin
+            bin_prior = {t:len(dmap[t]) / size for t in dmap}          
 
             return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, bin_prior
 

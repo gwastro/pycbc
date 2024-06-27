@@ -191,7 +191,7 @@ class NetBank(DummySampler):
         weight2 = None
         bin_ids = None
         
-        weight = lengths[passed] / lengths[passed].sum() * 160
+        weight = lengths[passed] / lengths[passed].sum() * 4
         
         for i in range(self.rounds):
             try:
