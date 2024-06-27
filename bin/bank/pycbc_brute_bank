@@ -76,7 +76,7 @@ parser.add_argument('--tau0-crawl', type=float)
 parser.add_argument('--tau0-start', type=float)
 parser.add_argument('--tau0-end', type=float)
 parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
-parser.add_argument('--num_cores', type=int, default=1, help='number of cores for parallelization.')
+parser.add_argument('--num_cores', type=int, default=1, help='number of cores for waveform generation parallelization.')
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
 
