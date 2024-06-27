@@ -45,6 +45,11 @@ def draw_sample(loglr, size=None):
     cdf = numpy.exp(loglr).cumsum()
     cdf /= cdf[-1]
     xl = numpy.searchsorted(cdf, x)
+    
+    loglr = loglr - logsumexp(loglr)
+    w = numpy.exp(loglr)
+    xl = numpy.random.choice(range(len(loglr)), p=w, size=size)
+    print(len(xl))
     return xl
 
 
@@ -116,7 +121,7 @@ class DistMarg():
         self.reconstruct_phase = False
         self.reconstruct_distance = False
         self.reconstruct_vector = False
-        self.precalc_antennna_factors = False
+        self.precalc_antenna_factors = False
 
         # Handle any requested parameter vector / brute force marginalizations
         self.marginalize_vector_params = {}
@@ -337,7 +342,8 @@ class DistMarg():
         """
         if not hasattr(self, 'tinfo'):
             # determine the rough time offsets for this sky location
-            tcmin, tcmax = self.marginalized_vector_priors['tc'].bounds['tc']
+            tcprior = self.marginalized_vector_priors['tc']
+            tcmin, tcmax = tcprior.bounds['tc']
             tcave = (tcmax + tcmin) / 2.0
             ifos = list(snrs.keys())
             if hasattr(self, 'keep_ifos'):
@@ -361,7 +367,7 @@ class DistMarg():
         starts = []
         ends = []
 
-        tmin, tmax = tcmin - dt, tcmax + dt
+        tmin, tmax = tcmin + dt - snrs[iref].delta_t, tcmax + dt + snrs[iref].delta_t
         if hasattr(self, 'tstart'):
             tmin = self.tstart[iref]
             tmax = self.tend[iref]
@@ -392,6 +398,14 @@ class DistMarg():
                                         mode='nearest')
             logweight += snrv.squared_norm().numpy()
         logweight /= 2.0
+        #logweight[logweight > 40] = 43
+        #logweight[logweight < 50] = 50
+        #logweight = logweight - logweight.max() + 40
+        #logweight[logweight<0] = 0
+        #logweight[:] = 0
+        print(logweight, logweight.max())
+        print("SNR MAX", snr.squared_norm().max())
+        logweight -= logsumexp(logweight) # Normalize to PDF
 
         # Draw proportional to the incoherent likelihood
         # Draw first which time sample
@@ -400,18 +414,21 @@ class DistMarg():
         tct = numpy.random.uniform(-snr.delta_t / 2.0,
                                    snr.delta_t / 2.0,
                                    size=vsamples)
+        tct = 0
         tc = tct + tci * snr.delta_t + float(snr.start_time) - dt
+        #print("HERE", snr.delta_t, tcmin, tcmax, tcave, tmin, tmax, start, end)
 
         # Update the current proposed times and the marginalization values
-        logw = - logweight[tci]
+        logw = - logweight[tci] # + prior term here
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['logw_partial'] = logw
 
         if self._current_params is not None:
             # Update the importance weights for each vector sample
             logw = self.marginalize_vector_weights + logw
+            #logw = logw - logsumexp(logw)
             self._current_params.update(self.marginalize_vector_params)
-            self.marginalize_vector_weights = logw - logsumexp(logw)
+            self.marginalize_vector_weights = logw
 
         return self.marginalize_vector_params
 
