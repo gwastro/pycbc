@@ -29,6 +29,7 @@ import subprocess, os, sys, signal, warnings
 # Filter annoying Cython warnings that serve no good purpose.
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
+warnings.filterwarnings("ignore", "Wswiglal-redir-stdio")
 import logging
 import random
 import string
