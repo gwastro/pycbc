@@ -253,25 +253,24 @@ class TriangleBank(object):
         total_num = len(tuple(params.values())[0])
         waveform_cache = []
 
-        with multiprocessing.Pool(args.nprocesses) as pool:
-            for return_wf in pool.imap_unordered(
+        pool = pycbc.pool.choose_pool(args.nprocesses)
+        for return_wf in pool.imap_unordered(
                 wf_wrapper, 
                 ({k: params[k][idx] for k in params} for idx in range(total_num))
             ):
-                waveform_cache += [return_wf]
-        
+            waveform_cache += [return_wf]
+        del pool
+
         for hp in waveform_cache:
-            if isinstance(hp, pycbc.types.FrequencySeries):
+            if hp is not None:
                 hp.gen = gen
                 hp.threshold = threshold 
                 if hp not in self:
                     num_added += 1
                     self.insert(hp)
-            elif hp is None:
+            else:
                 logging.info("Waveform generation failed!")
                 continue
-            else:
-                raise ValueError("Waveform generation wrapper problem!")
 
         return bank, num_added / total_num
 
