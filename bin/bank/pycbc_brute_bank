@@ -48,8 +48,8 @@ parser.add_argument('--min',
     help='list of the minimum parameter values', nargs='+', type=float)
 parser.add_argument('--max',
     help='list of the maximum parameter values', nargs='+', type=float)
-parser.add_argument('--approximant',  required=True,
-    help='The waveform approximant to place')
+parser.add_argument('--approximant',  required=False,
+    help='The waveform approximant to place.')
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
@@ -71,6 +71,7 @@ parser.add_argument('--min-mchirp', type=float)
 parser.add_argument('--max-mchirp', type=float)
 parser.add_argument('--fixed-params', type=str, nargs='*')
 parser.add_argument('--fixed-values', type=float, nargs='*')
+parser.add_argument('--use-cross', action='store_true')
 parser.add_argument('--max-q', type=float)
 parser.add_argument('--tau0-crawl', type=float)
 parser.add_argument('--tau0-start', type=float)
@@ -301,12 +302,13 @@ class GenUniformWaveform(object):
         else:
                 f = self.f_lower
 
-        kwds['f_lower'] = f
-
+        kwds['approximant'] = kwds['approximant'].decode()
+        
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
             hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
                                                     f_ref=10.0, **kwds)
-
+            if  args.use_cross:
+                hp = hc
 
             if 'fratio' in kwds:
                 hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
@@ -399,7 +401,8 @@ def draw(rtype):
         if args.input_config is not None and waveform_transforms is not None:
             params = transforms.apply_transforms(params, waveform_transforms)
 
-    params['approximant'] = numpy.array([args.approximant]*size)
+    if args.approximant is not None:
+        params['approximant'] = numpy.array([args.approximant]*size)
 
     # Filter out stuff (kde method may also generate samples outside boundaries).
     l = None
