@@ -46,7 +46,7 @@ parser.add_argument('--output-file', type=str,
 opts = parser.parse_args()
 
 # setup log
-pycbc.init_logging(opts.verbose)
+pycbc.init_logging(opts.verbose, default_level=1)
 
 # set column names
 columns = (('Category', []),
