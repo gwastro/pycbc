@@ -608,26 +608,12 @@ class MultiSignalModel(HierarchicalModel):
 
 
 class JointPrimaryMarginalizedModel(HierarchicalModel):
-    """ Hierarchical heterodyne likelihood for coherent multiband
-    parameter estimation which combines data from space-borne and
-    ground-based GW detectors coherently. Currently, this only
-    supports LISA as the space-borne GW detector.
-
-    Sub models are treated as if the same GW source (such as a GW
-    from stellar-mass BBH) is observed in different frequency bands by
-    space-borne and ground-based GW detectors, then transform all
-    the parameters into the same frame in the sub model level, use
-    `HierarchicalModel` to get the joint likelihood, and marginalize
-    over all the extrinsic parameters supported by `RelativeTimeDom`
-    or its variants. Note that LISA submodel only supports the `Relative`
-    for now, for ground-based detectors, please use `RelativeTimeDom`
-    or its variants.
-
-    Although this likelihood model is used for multiband parameter
-    estimation, users can still use it for other purposes, such as
-    GW + EM parameter estimation, in this case, please use `RelativeTimeDom`
-    or its variants for the GW data, for the likelihood of EM data,
-    there is no restrictions.
+    """This likelihood model can be used for cases when one of the submodels
+    can be marginalized to accelerate the total likelihood. This model
+    likelihood also allows for further acceleration of other models during
+    marginalization if some extrinsic parameters can be tightly constrained.
+    More specifically, such as the EM + GW parameter estimation, the sky
+    localization can be well measured.
     """
     name = 'joint_primary_marginalized'
 
@@ -691,8 +677,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
 
-        # note that for SOBHB signals, ground-based detectors dominant SNR
-        # and accuracy of (tc, ra, dec)
         self.primary_model.return_sh_hh = True
         sh_primary, hh_primary = self.primary_model.loglr
         self.primary_model.return_sh_hh = False
@@ -703,8 +687,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             margin_names_vector.remove('logw_partial')
         margin_params = {}
 
-        print("self.primary_model.current_params: ", self.primary_model.current_params)
-
         if self.accelerate_loglr:
             # Due to the high precision of extrinsic parameters constrined
             # by the primary model, the mismatch of wavefroms in others by
@@ -713,10 +695,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # SNR instead of lilkelihood, because luminosity distance and
             # inclination has a very strong degeneracy, change of inclination
             # will change best match distance, so change the amplitude of
-            # waveform. Using SNR will cancel out the effect of amplitude.
+            # waveform. Using SNR will cancel out the effect of amplitude.err
             i_max_extrinsic = numpy.argmax(
                 numpy.abs(sh_primary) / hh_primary**0.5)
-            print("i_max_extrinsic: ", i_max_extrinsic)
             for p in margin_names_vector:
                 if isinstance(self.primary_model.current_params[p],
                               numpy.ndarray):
@@ -743,157 +724,38 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             margin_params['distance'] = numpy.full(
                 nums, self.primary_model.current_params['distance'])
 
-        # add likelihood contribution from space-borne detectors, we
+        # add likelihood contribution from other_models, we
         # calculate sh/hh for each marginalized parameter point
-        if not self.accelerate_loglr:
-            sh_others = numpy.full(nums, 0 + 0.0j)
-            hh_others = numpy.zeros(nums)
-        else:
-            sh_others_A = numpy.full(nums, 0 + 0.0j)
-            hh_others_A = numpy.zeros(nums)
-            sh_others_E = numpy.full(nums, 0 + 0.0j)
-            hh_others_E = numpy.zeros(nums)
-            sh_others_T = numpy.full(nums, 0 + 0.0j)
-            hh_others_T = numpy.zeros(nums)        
-
+        sh_others = numpy.full(nums, 0 + 0.0j)
+        hh_others = numpy.zeros(nums)
+      
         # update parameters in other_models
         for _, other_model in enumerate(self.other_models):
             # not using self.primary_model.current_params, because others_model
             # may have its own static parameters
             current_params_other = other_model.current_params.copy()
-            print("[total_loglr] current_params_other 1: ", current_params_other)
             if not self.accelerate_loglr:
                 for i in range(nums):
                     current_params_other.update(
                         {key: value[i] if isinstance(value, numpy.ndarray)
                          else value for key, value in margin_params.items()})
                     other_model.update(**current_params_other)
-                    print("[total_loglr] current_params_other 2: ", current_params_other)
                     other_model.return_sh_hh = True
-                    sh, hh = other_model.loglr
-                    sh_others[i] += sh
-                    hh_others[i] += hh
+                    sh_other, hh_other = other_model.loglr
+                    sh_others[i] += sh_other
+                    hh_others[i] += hh_other
                     other_model.return_sh_hh = False
             else:
+                # use one margin point set to approximate all the others
                 current_params_other.update(
                     {key: value[0] if isinstance(value, numpy.ndarray)
                      else value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
-                print("other_model.current_params: ", other_model.current_params)
-                other_model.return_sh_hh_each_ifo = True
-                sh_other_max_dict, hh_other_max_dict = other_model.loglr
-                other_model.return_sh_hh_each_ifo = False
-                print("sh_other_max_dict: ", sh_other_max_dict)
-                print("hh_other_max_dict: ", hh_other_max_dict)
-                sh_others_A += sh_other_max_dict['LISA_A']
-                hh_others_A += hh_other_max_dict['LISA_A']
-                sh_others_E += sh_other_max_dict['LISA_E']
-                hh_others_E += hh_other_max_dict['LISA_E']
-                sh_others_T += sh_other_max_dict['LISA_T']
-                hh_others_T += hh_other_max_dict['LISA_T']
-
-        if self.accelerate_loglr:
-            print("self.other_models[0].current_params: ", self.other_models[0].current_params)
-
-            # after update, the self.other_model.current_params have been transformed,
-            # tc and polarization have been overwritten
-            params_geo = []
-            for p in ['tc', 'ra', 'dec', 'polarization', 'inclination']:
-                if isinstance(self.primary_model.current_params[p],
-                              numpy.ndarray):
-                    params_geo.append(
-                        self.primary_model.current_params[p][i_max_extrinsic]
-                    )
-                else:
-                    params_geo.append(
-                        self.primary_model.current_params[p]
-                    )
-            _, longitude_lisa, latitude_lisa, polarization_lisa =\
-                geo_to_lisa(params_geo[0], params_geo[1],
-                            params_geo[2], params_geo[3],
-                            self.other_models[0].current_params['t_offset'])
-            inclination_lisa = params_geo[4]
-            _, longitude_lisa_others, latitude_lisa_others, \
-                polarization_lisa_others =\
-                geo_to_lisa(self.primary_model.current_params['tc'],
-                            self.primary_model.current_params['ra'],
-                            self.primary_model.current_params['dec'],
-                            self.primary_model.current_params['polarization'],
-                            self.other_models[0].current_params['t_offset'])
-            inclination_lisa_others =\
-                self.primary_model.current_params['inclination']
-
-            # antenna pattern fuction for TDI-A/E,
-            # uses Eq.(43-46) from <10.1103/PhysRevD.103.083011>
-            def get_antenna_pattern(lon, lat, psi):
-                f_ap_nopsi = 0.5 * (1 + numpy.sin(lat)**2) *\
-                    numpy.cos(2*lon - numpy.pi/3)
-                f_ac_nopsi = numpy.sin(lat) *\
-                    numpy.sin(2*lon - numpy.pi/3)
-                f_ep_nopsi = 0.5 * (1 + numpy.sin(lat)**2) *\
-                    numpy.cos(2*lon + numpy.pi/6)
-                f_ec_nopsi = numpy.sin(lat) *\
-                    numpy.sin(2*lon + numpy.pi/6)
-                f_ap = numpy.cos(2*psi) * f_ap_nopsi +\
-                    numpy.sin(2*psi) * f_ac_nopsi
-                f_ac = -numpy.sin(2*psi) * f_ap_nopsi +\
-                    numpy.cos(2*psi) * f_ac_nopsi
-                f_ep = numpy.cos(2*psi) * f_ep_nopsi +\
-                    numpy.sin(2*psi) * f_ec_nopsi
-                f_ec = -numpy.sin(2*psi) * f_ep_nopsi +\
-                    numpy.cos(2*psi) * f_ec_nopsi
-                return (f_ap, f_ac, f_ep, f_ec)
-
-            F_ap, F_ac, F_ep, F_ec =\
-                get_antenna_pattern(
-                    lon=longitude_lisa, lat=latitude_lisa,
-                    psi=polarization_lisa
-                )
-            F_ap_others, F_ac_others, F_ep_others, F_ec_others =\
-                get_antenna_pattern(
-                    lon=longitude_lisa_others, lat=latitude_lisa_others,
-                    psi=polarization_lisa_others
-                )
-
-            # add the effect of inclination and psi back to amplitude
-            ic = numpy.cos(inclination_lisa)
-            ip = 0.5 * (1.0 + ic**2)
-            ic_others = numpy.cos(inclination_lisa_others)
-            ip_others = 0.5 * (1.0 + ic_others**2)
-            # we hard code the channel name atm, need to be more flexible
-            amplitude_factor_A = numpy.sqrt(((F_ap_others*ip_others)**2 +\
-                                             (F_ac_others*ic_others)**2) /
-                                            ((F_ap*ip)**2 + (F_ac*ic)**2))
-            amplitude_factor_E = numpy.sqrt(((F_ep_others*ip_others)**2 +\
-                                             (F_ec_others*ic_others)**2) /
-                                            ((F_ep*ip)**2 + (F_ec*ic)**2))
-            sh_others_A *= amplitude_factor_A
-            hh_others_A *= amplitude_factor_A**2
-            sh_others_E *= amplitude_factor_E
-            hh_others_E *= amplitude_factor_E**2
-
-            # add the effect of inclination and psi back to phase
-            def strain_phase_shift_extrinsic(fp, fc, ip, ic):
-                a = fc * ic
-                b = fp * ip
-                return numpy.mod(-numpy.arctan2(a, b), 2*numpy.pi)
-
-            phase_shift_A = strain_phase_shift_extrinsic(F_ap, F_ac, ip, ic)
-            phase_shift_A_others = strain_phase_shift_extrinsic(
-                F_ap_others, F_ac_others, ip_others, ic_others)
-            phase_factor_A = phase_shift_A_others - phase_shift_A
-            sh_others_A *= numpy.exp(1j*phase_factor_A)
-
-            phase_shift_E = strain_phase_shift_extrinsic(F_ep, F_ec, ip, ic)
-            phase_shift_E_others = strain_phase_shift_extrinsic(
-                F_ep_others, F_ec_others, ip_others, ic_others)
-            phase_factor_E = phase_shift_E_others - phase_shift_E
-            sh_others_E *= numpy.exp(1j*phase_factor_E)
-
-            # after applying amp & phase correction for each channel,
-            # combine all channels
-            sh_others = sh_others_A + sh_others_E + sh_others_T
-            hh_others = hh_others_A + hh_others_E + hh_others_T
+                other_model.return_sh_hh = True
+                sh_other, hh_other = other_model.loglr
+                other_model.return_sh_hh = False
+                sh_others += sh_other
+                hh_others += hh_other
 
         if nums == 1:
             # the type of the original sh/hh_others are numpy.array,
@@ -908,23 +770,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.primary_model.marginalize_vector_weights = \
             - numpy.log(self.primary_model.vsamples)
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
-
-        factor_dict = {'amplitude_factor_A': amplitude_factor_A,
-                       'amplitude_factor_E': amplitude_factor_E,
-                       'phase_factor_A': phase_factor_A,
-                       'phase_factor_E': phase_factor_E}
-        inner_dict = {'sh_others_A': sh_others_A,
-                      'sh_others_E': sh_others_E,
-                      'sh_others_T': sh_others_T,
-                      'hh_others_A': hh_others_A,
-                      'hh_others_E': hh_others_E,
-                      'hh_others_T': hh_others_T,
-                      'sh_others': sh_others,
-                      'hh_others': hh_others,
-                      'sh_total': sh_total,
-                      'hh_total': hh_total}
-        print(factor_dict)
-        print(inner_dict)
 
         return loglr
 
