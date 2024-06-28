@@ -782,9 +782,9 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
                 # These weren't in our histogram so give them max penalty
                 # instead of random value
-                missed = numpy.where(self.param_bin[ref_ifo][loc] != nbinned)[
-                    0
-                ]
+                missed = numpy.where(
+                    self.param_bin[ref_ifo][loc] != nbinned
+                )[0]
                 rate[rtype[missed]] = self.max_penalty
                 # Scale by signal population SNR
                 rate[rtype] *= (sref[rtype] / self.ref_snr) ** -4.0
@@ -867,10 +867,10 @@ class PhaseTDStatistic(QuadratureSumStatistic):
         if not self.has_hist:
             self.get_hist()
 
-        fixed_statsq = sum(
-            [b['snglstat'] ** 2 for a, b in sngls_list if a != limifo]
+        fixed_stat_sq = sum(
+            [b["snglstat"] ** 2 for a, b in sngls_list if a != limifo]
         )
-        s1 = thresh ** 2. - fixed_statsq
+        s1 = thresh ** 2. - fixed_stat_sq
         # Assume best case scenario and use maximum signal rate
         s1 -= 2.0 * self.hist_max
         s1[s1 < 0] = 0
