@@ -26,7 +26,6 @@ import argparse
 import pickle
 import numpy.random
 from scipy.stats import gaussian_kde
-import multiprocessing
 
 import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.conversions
 import pycbc.pool
