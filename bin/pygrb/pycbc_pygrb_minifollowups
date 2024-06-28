@@ -27,7 +27,6 @@ import os
 import argparse
 import logging
 import h5py
-import numpy as np
 
 from pycbc import init_logging
 import pycbc.workflow as wf
