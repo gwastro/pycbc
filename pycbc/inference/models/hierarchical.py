@@ -628,7 +628,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
         # determine whether to accelerate total_loglr
         from pycbc.inference.models.tools import str_to_bool
-        self.accelerate_loglr = str_to_bool(kwargs['acclerate_loglr'][0])
+        self.static_margin_params_in_other_models = \
+            str_to_bool(kwargs['acclerate_loglr'][0])
 
     def write_metadata(self, fp, group=None):
         """Adds metadata to the output files
@@ -686,7 +687,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             margin_names_vector.remove('logw_partial')
         margin_params = {}
 
-        if self.accelerate_loglr:
+        if self.static_margin_params_in_other_models:
             # Due to the high precision of extrinsic parameters constrined
             # by the primary model, the mismatch of wavefroms in others by
             # varing those parameters is pretty small, so we can keep them
@@ -733,7 +734,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # not using self.primary_model.current_params, because others_model
             # may have its own static parameters
             current_params_other = other_model.current_params.copy()
-            if not self.accelerate_loglr:
+            if not self.static_margin_params_in_other_models:
                 for i in range(nums):
                     current_params_other.update(
                         {key: value[i] if isinstance(value, numpy.ndarray)
