@@ -3,10 +3,11 @@
     ranking statistic, or make statistical significance vs ranking statistic
     cumulative histograms. 
 """
-import argparse, h5py, numpy, logging, sys, lal
+import argparse, h5py, numpy, logging, sys
 import matplotlib
 matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
+from pycbc import conversions as conv
 from scipy.special import erfc, erfinv
 
 def sigma_from_p(p):
@@ -126,13 +127,13 @@ if h_inc_back_num > h_iterations:
 
 args.cumulative = not args.not_cumulative
 
-foreground_livetime = f.attrs['foreground_time'] / lal.YRJUL_SI
+foreground_livetime = conv.sec_to_year(f.attrs['foreground_time'])
 try:
     
     if args.cumulative:
         cstat_fore = f['foreground/stat'][:]
         cstat_fore.sort()
-        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / f.attrs['foreground_time'] * lal.YRJUL_SI
+        cstat_rate = numpy.arange(len(cstat_fore), 0, -1) / foreground_livetime
         fap_end = f['foreground/fap'][:].min() * args.trials_factor
     else:
         cstat_fore = f['foreground/stat'][:]

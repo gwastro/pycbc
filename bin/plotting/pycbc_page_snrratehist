@@ -3,10 +3,11 @@
     Also has the ability to plot inclusive backgrounds from different stages
     of hierarchical removal.
 """
-import argparse, h5py, numpy, logging, sys, lal
+import argparse, h5py, numpy, logging, sys
 import matplotlib
 matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
+from pycbc import conversions as conv
 from scipy.special import erf, erfinv
 
 def sigma_from_p(p):
@@ -98,11 +99,11 @@ else:
 
 if h_inc_back_num == 0:
     bstat = f['background/stat'][:]
-    fap = 1 - numpy.exp(- f.attrs['foreground_time'] / f['background/ifar'][:] / lal.YRJUL_SI)
+    fap = 1 - numpy.exp(- conv.sec_to_year(f.attrs['foreground_time']) / f['background/ifar'][:])
     dec = f['background/decimation_factor'][:]
 else :
     bstat = f['background_h%s/stat' % h_inc_back_num][:]
-    fap = 1 - numpy.exp(- f.attrs['foreground_time_h%s' % h_inc_back_num] / f['background_h%s/ifar' % h_inc_back_num][:] / lal.YRJUL_SI)
+    fap = 1 - numpy.exp(- conv.sec_to_year(f.attrs['foreground_time_h%s' % h_inc_back_num]) / f['background_h%s/ifar' % h_inc_back_num][:])
     dec = f['background_h%s/decimation_factor' % h_inc_back_num][:]
 
 s = bstat.argsort()
@@ -133,7 +134,7 @@ bin_size = args.bin_size if args.bin_size else (maximum - minimum) / 100.
 bins = numpy.arange(minimum, maximum + bin_size, bin_size)
 
 # plot background minus foreground
-exc_binweights = dec_exc / f.attrs['background_time_exc'] * lal.YRJUL_SI
+exc_binweights = dec_exc / conv.sec_to_year(f.attrs['background_time_exc'])
 exc_binvals = pylab.hist(bstat_exc, bins=bins, histtype='step',
                          linewidth=2,
                          color='grey', log=True,
@@ -144,18 +145,19 @@ histpeak = bins[exc_binvals[0].argmax()]
 
 # plot full background
 if not args.closed_box:
-    if h_inc_back_num == 0:
-        pylab.hist(bstat, bins=bins, histtype='step',
-                   linewidth=2,
-                   color='black', log=True,
-                   label='Full Background',
-                   weights=dec / f.attrs['background_time'] * lal.YRJUL_SI)
-    else :
-        pylab.hist(bstat, bins=bins, histtype='step',
-                   linewidth=2,
-                   color='black', log=True,
-                   label='Full Background',
-                   weights=dec / f.attrs['background_time_h%s' % h_inc_back_num] * lal.YRJUL_SI)
+    bg_key = 'background_time' if h_inc_back_num == 0 \
+        else 'background_time_h%s' % h_inc_back_num
+    binweights = dec / conv.sec_to_year(f.attrs[bg_key])
+    pylab.hist(
+        bstat,
+        bins=bins,
+        histtype='step',
+        linewidth=2,
+        color='black',
+        log=True,
+        label='Full Background',
+        weights=binweights
+    )
 
 if fstat is not None and not args.closed_box:
     le, re = bins[:-1], bins[1:]
@@ -184,13 +186,12 @@ if fstat is not None and not args.closed_box:
         # before h-removal.
         if h_inc_back_num == 0:
             count_h_rm = (right_h_rm - left_h_rm) / \
-                         f.attrs['foreground_time'] * lal.YRJUL_SI
+                         conv.sec_to_year(f.attrs['foreground_time'])
 
         # Or use the foreground time after h-removal
         else:
             count_h_rm = (right_h_rm - left_h_rm) / \
-                         f.attrs['foreground_time_h%s' % h_inc_back_num] * \
-                         lal.YRJUL_SI
+                         conv.sec_to_year(f.attrs['foreground_time_h%s' % h_inc_back_num])
 
         pylab.errorbar(bins[:-1] + bin_size / 2, count_h_rm,
                        xerr=bin_size/2,
@@ -200,7 +201,7 @@ if fstat is not None and not args.closed_box:
 
     left = numpy.searchsorted(fstat, le)
     right = numpy.searchsorted(fstat, re)
-    count = (right - left) / f.attrs['foreground_time'] * lal.YRJUL_SI
+    count = (right - left) / conv.sec_to_year(f.attrs['foreground_time'])
     pylab.errorbar(bins[:-1] + bin_size / 2, count, xerr=bin_size/2,
                    label='Foreground', mec='none', fmt='o', ms=1, capthick=0,
                    elinewidth=4,  color='#ff6600')
@@ -211,7 +212,7 @@ if args.x_min is not None:
     pylab.xlim(xmin=args.x_min)
 else:
     pylab.xlim(xmin=numpy.floor(histpeak))
-pylab.ylim(ymin=0.5 / f.attrs['background_time_exc'] * lal.YRJUL_SI)
+pylab.ylim(ymin=0.5 / conv.sec_to_year(f.attrs['background_time_exc']))
 pylab.grid()
 leg = pylab.legend(fontsize=9)
 
@@ -254,9 +255,9 @@ ax1 =  pylab.gca()
 ax2 = ax1.twinx()
 
 if h_inc_back_num == 0:
-    fac = f.attrs['foreground_time'] / lal.YRJUL_SI
+    fac = conv.sec_to_year(f.attrs['foreground_time'])
 else :
-    fac = f.attrs['foreground_time_h%s' % h_inc_back_num] / lal.YRJUL_SI
+    fac = conv.sec_to_year(f.attrs['foreground_time_h%s' % h_inc_back_num])
 
 ymin = ax1.get_ylim()[0] * fac
 ymax =  ax1.get_ylim()[1] * fac
