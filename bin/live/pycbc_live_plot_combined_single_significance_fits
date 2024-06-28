@@ -169,6 +169,10 @@ for ifo in ifos:
                                             c=bin_colour, linestyle=':',
                                             label=alpha_lab))
 
+        # Invalid counts
+        inv_counts = rate <= 0
+        rate[inv_counts] = None
+
         count_lines += ax_count.plot(separate_starts[ifo], rate, c=bin_colour,
                                      label=bin_label, marker='.',
                                      markersize=10)
