@@ -49,6 +49,11 @@ parser.add_argument("--colormap", default="rainbow_r", choices=plt.colormaps(),
 parser.add_argument("--log-colormap", action='store_true',
                     help="Use log spacing for choosing colormap values "
                          "based on duration bins.")
+parser.add_argument(
+    '--log-counts',
+    action='store_true',
+    help="Plot the trigger rate above threshold on a log scale."
+)
 args = parser.parse_args()
 
 if '{ifo}' not in args.output_plot_name_format or \
@@ -164,6 +169,10 @@ for ifo in ifos:
                                             c=bin_colour, linestyle=':',
                                             label=alpha_lab))
 
+        # Invalid counts
+        inv_counts = rate <= 0
+        rate[inv_counts] = None
+
         count_lines += ax_count.plot(separate_starts[ifo], rate, c=bin_colour,
                                      label=bin_label, marker='.',
                                      markersize=10)
@@ -188,6 +197,8 @@ for ifo in ifos:
     ax_alpha.set_ylabel('Fit coefficient')
 
     count_labels = [l.get_label() for l in count_lines]
+    if args.log_counts:
+        ax_count.semilogy()
     ax_count.legend(count_lines, count_labels, loc='lower center',
                     ncol=5, bbox_to_anchor=(0.5, 1.01))
     ax_count.set_ylabel('Rate of triggers above fit threshold [s$^{-1}$]')
