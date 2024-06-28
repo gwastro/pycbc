@@ -158,6 +158,7 @@ if opts.open_box:
 
 # get expected foreground IFAR values and cumulative number for each IFAR value
 expected_ifar = numpy.logspace(-8, 2, num=100, endpoint=True, base=10.0)
+expected_cumnum = conv.sec_to_year(fp.attrs['foreground_time'] / expected_ifar)
 
 # get background timeslide IDs and IFAR values
 
