@@ -29,7 +29,6 @@ import shlex
 import logging
 import numpy
 from pycbc import transforms
-from pycbc.coordinates.space import geo_to_lisa
 from pycbc.workflow import WorkflowConfigParser
 from .base import BaseModel
 
@@ -728,7 +727,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # calculate sh/hh for each marginalized parameter point
         sh_others = numpy.full(nums, 0 + 0.0j)
         hh_others = numpy.zeros(nums)
-      
+
         # update parameters in other_models
         for _, other_model in enumerate(self.other_models):
             # not using self.primary_model.current_params, because others_model
