@@ -2496,8 +2496,8 @@ class CartesianSpin2ToSphericalSpin2(CartesianToSpherical):
 
     def __init__(self):
         logger.warning(
-            "Deprecation warning: the {} transform will be "
-            "removed in a future update. Please use {} instead, "
+            "Deprecation warning: the %s transform will be "
+            "removed in a future update. Please use %s instead, "
             "passing spin2x, spin2y, spin2z, spin2_a, "
             "spin2_azimuthal, spin2_polar as arguments.",
             self.name, CartesianToSpherical.name
