@@ -115,7 +115,7 @@ parser.add_argument('--spin2z', type=float, default=0,
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
-pycbc.init_logging(opts.verbose)
+pycbc.init_logging(opts.verbose, default_level=1)
 
 if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
