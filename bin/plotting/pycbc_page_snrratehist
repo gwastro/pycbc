@@ -145,31 +145,19 @@ histpeak = bins[exc_binvals[0].argmax()]
 
 # plot full background
 if not args.closed_box:
-    if h_inc_back_num == 0:
-        binweights = dec / conv.sec_to_year(f.attrs['background_time'])
-        pylab.hist(
-            bstat,
-            bins=bins,
-            histtype='step',
-            linewidth=2,
-            color='black',
-            log=True,
-            label='Full Background',
-            weights=binweights
-        )
-    else :
-        bg_time_sec = f.attrs['background_time_h%s' % h_inc_back_num]
-        binweights = dec / conv.sec_to_year(bg_time_sec)
-        pylab.hist(
-            bstat,
-            bins=bins,
-            histtype='step',
-            linewidth=2,
-            color='black',
-            log=True,
-            label='Full Background',
-            weights=binweights
-        )
+    bg_key = 'background_time' if h_inc_back_num == 0 \
+        else 'background_time_h%s' % h_inc_back_num
+    binweights = dec / conv.sec_to_year(f.attrs[bg_key])
+    pylab.hist(
+        bstat,
+        bins=bins,
+        histtype='step',
+        linewidth=2,
+        color='black',
+        log=True,
+        label='Full Background',
+        weights=binweights
+    )
 
 if fstat is not None and not args.closed_box:
     le, re = bins[:-1], bins[1:]
