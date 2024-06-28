@@ -627,9 +627,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.other_models = list(self.other_models.values())
 
         # determine whether to accelerate total_loglr
-        from pycbc.inference.models.tools import str_to_bool
         self.static_margin_params_in_other_models = \
-            str_to_bool(kwargs['acclerate_loglr'][0])
+            'static_margin_params_in_other_models' in kwargs
 
     def write_metadata(self, fp, group=None):
         """Adds metadata to the output files
@@ -835,8 +834,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sparam_map = map_params(hpiter(cp.options('static_params'),
                                        submodel_lbls))
         # get the acceleration label
-        kwargs['acclerate_loglr'] = shlex.split(
-            cp.get('model', 'accelerate_others_in_total_loglr'))
+        kwargs['static_margin_params_in_other_models'] = shlex.split(
+            cp.get('model', 'static_margin_params_in_other_models'))
 
         # we'll need any waveform transforms for the initializing sub-models,
         # as the underlying models will receive the output of those transforms
