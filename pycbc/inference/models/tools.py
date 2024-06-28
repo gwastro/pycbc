@@ -534,8 +534,8 @@ class DistMarg():
 
         # If we had really poor efficiency at finding a point, we should
         # give up and just use the original random draws
-        if len(ra) < 0.05 * vsamples:
-            return
+        if len(ix) < 10:
+            return False
 
         # fill back to fixed size with repeat samples
         # sample order is random, so this should be OK statistically
