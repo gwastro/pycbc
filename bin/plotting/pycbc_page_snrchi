@@ -38,7 +38,7 @@ parser.add_argument('--chisq-choice', choices=chisq_choices,
                     help='Which chisquared to plot. Default=traditional')
 args = parser.parse_args()
 
-pycbc.init_logging(args.verbose)
+pycbc.init_logging(args.verbose, default_level=1)
 
 
 if args.newsnr_contours is not None and not args.chisq_choice == 'traditional':
