@@ -19,13 +19,13 @@ import argparse
 import h5py
 import numpy
 import sys
-import lal
 import matplotlib as mpl; mpl.use('Agg')
 import pylab
 import pycbc.results
 import pycbc.version
 import copy
 from pycbc.events import veto
+from pycbc import conversions as conv
 from ligo import segments
 
 def calculate_time_slide_duration(pifo_segments, fifo_segments, offset=0):
@@ -151,7 +151,7 @@ if opts.open_box:
 
 # get expected foreground IFAR values and cumulative number for each IFAR value
 expected_ifar = numpy.logspace(-8, 2, num=100, endpoint=True, base=10.0)
-expected_cumnum = fp.attrs['foreground_time'] / expected_ifar / lal.YRJUL_SI 
+expected_cumnum = conv.sec_to_year(fp.attrs['foreground_time'] / expected_ifar)
 
 # get background timeslide IDs and IFAR values
 

@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 from matplotlib.pyplot import cm
 import pylab, pycbc.pnutils, pycbc.results, pycbc, pycbc.version
 from pycbc import sensitivity
-from lal import YRJUL_SI as lal_YRJUL_SI
+from pycbc import conversions as conv
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
@@ -185,7 +185,7 @@ for fi in args.injection_file:
 
         # Time in years
         if args.dist_type == 'vt':
-            t += f.attrs['foreground_time_exc'] / lal_YRJUL_SI
+            t += conv.sec_to_year(f.attrs['foreground_time_exc'])
 
 # Parameter bin legend labels
 labels = {

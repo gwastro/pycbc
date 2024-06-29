@@ -10,7 +10,7 @@ import pickle
 
 from itertools import chain
 from io import BytesIO
-from lal import LIGOTimeGPS, YRJUL_SI
+from lal import LIGOTimeGPS
 
 from ligo.lw import ligolw
 from ligo.lw import lsctables
@@ -1228,7 +1228,7 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
             # Transform to Hz
             coinc_inspiral_row.combined_far = \
-                                    coinc_inspiral_row.combined_far / YRJUL_SI
+                conversions.sec_to_year(coinc_inspiral_row.combined_far)
             coinc_event_row.likelihood = coinc_event_vals['stat'][idx]
             coinc_inspiral_row.minimum_duration = 0.
             coinc_event_table.append(coinc_event_row)

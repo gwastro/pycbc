@@ -2,13 +2,6 @@
 Documentation for Developers
 =============================
 
-Documentation on building stand-alone bundled executables with PyInstaller is available at:
-
-.. toctree::
-   :maxdepth: 1
-
-   building_bundled_executables
-
 PyCBC developers should read the pages below which explain how to write
 documentation, develop the code, and create releases:
 

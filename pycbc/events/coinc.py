@@ -25,9 +25,9 @@
 coincident triggers.
 """
 
-import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
+import numpy, logging, pycbc.pnutils, copy
 from pycbc.detector import Detector, ppdets
-from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc import conversions as conv
 from .eventmgr_cython import coincbuffer_expireelements
 from .eventmgr_cython import coincbuffer_numgreater
 from .eventmgr_cython import timecoincidence_constructidxs
@@ -91,14 +91,19 @@ def background_bin_from_string(background_bins, data):
                 vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
                                                    data['mass1'], data['mass2'])[0]
             elif bin_type == 'ratio':
-                vals = pycbc.conversions.q_from_mass1_mass2(
-                                                   data['mass1'], data['mass2'])
+                vals = conv.q_from_mass1_mass2(data['mass1'], data['mass2'])
             elif bin_type == 'eta':
                 vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-                                                   data['mass1'], data['mass2'])[1]
+                    data['mass1'],
+                    data['mass2']
+                )[1]
             elif bin_type == 'chi_eff':
-                vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
-                                                 data['spin1z'], data['spin2z'])
+                vals = conv.chi_eff(
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z']
+                )
             elif bin_type.endswith('Peak'):
                 vals = pycbc.pnutils.get_freq(
                     'f' + bin_type,
@@ -878,7 +883,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if len(self.ifos) != 2:
             raise ValueError("Only a two ifo analysis is supported at this time")
 
-        self.lookback_time = (ifar_limit * lal.YRJUL_SI * timeslide_interval) ** 0.5
+        self.lookback_time = (ifar_limit / conv.sec_to_year(1.) * timeslide_interval) ** 0.5
         self.buffer_size = int(numpy.ceil(self.lookback_time / analysis_block))
 
         self.dets = {ifo: Detector(ifo) for ifo in ifos}
@@ -1034,7 +1039,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             in which case `ifar` is to be considered an upper limit.
         """
         n = self.coincs.num_greater(coinc_stat)
-        ifar = self.background_time / lal.YRJUL_SI / (n + 1)
+        ifar = conv.sec_to_year(self.background_time) / (n + 1)
         return ifar, n == 0
 
     def set_singles_buffer(self, results):
@@ -1175,7 +1180,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             # Find newly added triggers in fixed_ifo
             trigs = results[fixed_ifo]
             # Calculate mchirp as a vectorized operation
-            mchirps = mchirp_from_mass1_mass2(
+            mchirps = conv.mchirp_from_mass1_mass2(
                 trigs['mass1'], trigs['mass2']
             )
             # Loop over them one trigger at a time

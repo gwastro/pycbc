@@ -31,7 +31,7 @@ from pycbc.strain import StrainBuffer
 from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingle
-from pycbc.io.live import CandidateForGraceDB
+from pycbc.io.gracedb import CandidateForGraceDB
 from pycbc.io.hdf import recursively_save_dict_contents_to_group
 from pycbc.types import positive_int
 import pycbc.waveform.bank
@@ -44,6 +44,7 @@ from pycbc.filter import resample
 from pycbc.psd import estimate
 from pycbc.psd import variation
 from pycbc.live import snr_optimizer
+from pycbc import conversions as conv
 
 # Use cached class-based FFTs in the resample and estimate module
 resample.USE_CACHING_FOR_LFILTER = True
@@ -1194,7 +1195,7 @@ with ctx:
 
         def output_background(_):
             estim = estimators[my_coinc_id]
-            bg_time = estim.background_time / lal.YRJUL_SI
+            bg_time = conv.sec_to_year(estim.background_time)
             return estim.ifos, estim.coincs.data, bg_time
 
         coinc_pool = BroadcastPool(len(estimators))

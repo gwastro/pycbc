@@ -23,7 +23,7 @@ import itertools
 import numpy as np
 from utils import parse_args_cpu_only, simple_exit
 from pycbc.types import TimeSeries, FrequencySeries
-from pycbc.io.live import CandidateForGraceDB
+from pycbc.io.gracedb import CandidateForGraceDB
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils

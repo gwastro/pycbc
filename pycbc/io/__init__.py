@@ -2,6 +2,7 @@ import logging
 from astropy.utils.data import download_file
 from .hdf import *
 from .record import *
+from .gracedb import *
 
 
 def get_file(url, retry=5, **args):
