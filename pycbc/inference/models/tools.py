@@ -287,7 +287,7 @@ class DistMarg():
             choice = slice(None, None)
         else:
             choice = numpy.random.choice(len(logw), size=self.vsamples,
-                                     replace=False)
+                                         replace=False)
 
         for k in self.snr_params:
             self.marginalize_vector_params[k] = self.premarg[k][choice]
@@ -364,7 +364,8 @@ class DistMarg():
         starts = []
         ends = []
 
-        tmin, tmax = tcmin + dt - snrs[iref].delta_t, tcmax + dt + snrs[iref].delta_t
+        tmin = tcmin + dt - snrs[iref].delta_t
+        tmax = tcmax + dt + snrs[iref].delta_t
         if hasattr(self, 'tstart'):
             tmin = self.tstart[iref]
             tmax = self.tend[iref]
@@ -395,7 +396,7 @@ class DistMarg():
                                         mode='nearest')
             logweight += snrv.squared_norm().numpy()
         logweight /= 2.0
-        logweight -= logsumexp(logweight) # Normalize to PDF
+        logweight -= logsumexp(logweight)  # Normalize to PDF
 
         # Draw proportional to the incoherent likelihood
         # Draw first which time sample
@@ -407,7 +408,8 @@ class DistMarg():
         tc = tct + tci * snr.delta_t + float(snr.start_time) - dt
 
         # Update the current proposed times and the marginalization values
-        logw = - logweight[tci] + numpy.log(1.0 / len(logweight)) # assumes uniform prior!
+        # assumes uniform prior!
+        logw = - logweight[tci] + numpy.log(1.0 / len(logweight)) 
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['logw_partial'] = logw
 
@@ -462,12 +464,12 @@ class DistMarg():
                 if t not in dmap:
                     dmap[t] = []
                 dmap[t].append(i)
-            
+
             if len(ifos) == 1:
                 dmap[()] = numpy.arange(0, size, 1).astype(int)
 
             # Sky prior by bin
-            bin_prior = {t:len(dmap[t]) / size for t in dmap}          
+            bin_prior = {t: len(dmap[t]) / size for t in dmap}
 
             return dmap, tcmin, tcmax, fp, fc, ra, dec, dtc, bin_prior
 
