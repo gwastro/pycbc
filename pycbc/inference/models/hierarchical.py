@@ -608,11 +608,13 @@ class MultiSignalModel(HierarchicalModel):
 
 class JointPrimaryMarginalizedModel(HierarchicalModel):
     """This likelihood model can be used for cases when one of the submodels
-    can be marginalized to accelerate the total likelihood. This model
-    likelihood also allows for further acceleration of other models during
-    marginalization if some extrinsic parameters can be tightly constrained.
-    More specifically, such as the EM + GW parameter estimation, the sky
-    localization can be well measured.
+    can be marginalized to accelerate the total likelihood. This likelihood
+    model also allows for further acceleration of other models during
+    marginalization, if some extrinsic parameters can be tightly constrained
+    by the primary model. More specifically, such as the EM + GW parameter
+    estimation, the sky localization can be well measured. For LISA + 3G
+    multiband observation, SOBHB signals' (tc, ra, dec) can be tightly
+    constrained by 3G network, so this model is also useful for this case.
     """
     name = 'joint_primary_marginalized'
 
