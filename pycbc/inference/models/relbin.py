@@ -868,7 +868,9 @@ class RelativeTimeDom(RelativeTime):
             # Note, this includes complex conjugation already
             # as our stored inner products were hp* x data
             htf = (f.real * ip + 1.0j * f.imag * ic)
-            sh = self.sh[ifo].at_time(dts, interpolate='quadratic')
+            sh = self.sh[ifo].at_time(dts, 
+                                      interpolate='quadratic',
+                                      extrapolate=0.0j)
             sh_total += sh * htf
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
