@@ -282,4 +282,11 @@ dax_job.set_subworkflow_properties(map_file,
 dax_job.add_inputs(*seed_files)
 dax_job.add_into_workflow(workflow)
 
+# Create versioning information
+wf.make_versioning_page(
+    workflow,
+    workflow.cp,
+    args.output_dir,
+)
+
 workflow.save()

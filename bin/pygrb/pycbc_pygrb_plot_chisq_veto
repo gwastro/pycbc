@@ -18,8 +18,8 @@
 
 
 """
-Produces signal consistency plots of the form standard/bank/auto
-chi-square vs single IFO/coherent/reweighted/null/coinc SNR.
+Produces signal consistency plots of the form network power/bank/auto or
+single detector chi-square vs single IFO/coherent/reweighted/null/coinc SNR.
 """
 
 # =============================================================================
@@ -29,7 +29,6 @@ import sys
 import os
 import logging
 import numpy
-import h5py
 from matplotlib import pyplot as plt
 from matplotlib import rc
 import pycbc.version
@@ -52,7 +51,7 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 # Function to load trigger data: includes applying cut in reweighted SNR
 def load_data(input_file, ifos, vetoes, opts, injections=False):
     """Load data from a trigger/injection file"""
-    
+
     snr_type = opts.snr_type
     veto_type = opts.y_variable
 
@@ -62,22 +61,26 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
     data[veto_type] = None
     data['dof'] = None
 
+    # Ensure that newtwork power chi-square plots show all the data to see
+    # the impact of the reweighted SNR cut
+    rw_snr_threshold = 0. if veto_type=='network' else opts.newsnr_threshold
+
     if input_file:
         if injections:
             logging.info("Loading injections...")
             # This will eventually become load_injections
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=opts.newsnr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold)
         else:
             logging.info("Loading triggers...")
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=opts.newsnr_threshold)
-        
+                                  rw_snr_threshold=rw_snr_threshold)
+
         # Count surviving points
         num_trigs_or_injs = len(trigs_or_injs['network/reweighted_snr'])
-        
+
         if snr_type in ['coherent', 'null', 'reweighted']:
             data[snr_type] = trigs_or_injs['network/%s_snr' % snr_type][:]
         elif snr_type == 'single':
@@ -89,48 +92,47 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
             data[snr_type] = ppu.get_coinc_snr(trigs_or_injs)
 
         # Tags to find vetoes in HDF files
-        veto_tags = {'standard': 'chisq',
+        veto_tags = {'power': 'chisq',
                      'bank': 'bank_chisq',
-                     'auto': 'cont_chisq'}
+                     'auto': 'auto_chisq',
+                     'network': 'my_network_chisq'}
 
-        # FIXME: network data contains my_network_chisq
-        chisq_key = 'network/my_network_chisq' if injections \
-            else opts.ifo + '/' + veto_tags[veto_type]
-        # Will not work until single IFO data is in found_missed_file
-        data[veto_type] = trigs_or_injs[chisq_key][:]
+        # This chi-square is already normalized
+        if veto_type == 'network':
+            chisq_key = 'network/my_network_chisq'
+            data['dof'] = 1.
+        else:
+            chisq_key = opts.ifo + '/' + veto_tags[veto_type]
+            dof_key = '%s/%s_dof' % (opts.ifo, veto_tags[veto_type])
+            data['dof'] = trigs_or_injs[dof_key][:]
+
+        # Normalize
+        data[veto_type] = trigs_or_injs[chisq_key][:]/data['dof']
 
         # Floor single IFO chi-square at 0.005
         numpy.putmask(data[veto_type], data[veto_type] == 0, 0.005)
 
-        if not injections:
-            dof_key = '%s/%s_dof' % (opts.ifo, veto_tags[veto_type])
-            data['dof'] = numpy.unique(
-                trigs_or_injs[dof_key][:])
-
         label = "injections" if injections else "triggers"
-           
+
         logging.info("{0} {1} found.".format(num_trigs_or_injs, label))
 
     return data
 
 
 # Function to calculate chi-square weight for the reweighted SNR
-def new_snr_chisq(snr, new_snr, chisq_dof, chisq_index=4.0, chisq_nhigh=3.0):
+def new_snr_chisq(snr, new_snr, chisq_index=4.0, chisq_nhigh=3.0):
     """Returns the chi-square value needed to weight SNR into new SNR"""
 
     chisqnorm = (snr/new_snr)**chisq_index
     if chisqnorm <= 1:
         return 1E-20
 
-    return chisq_dof * (2*chisqnorm - 1)**(chisq_nhigh/chisq_index)
+    return (2*chisqnorm - 1)**(chisq_nhigh/chisq_index)
 
 
-# Function that produces the contrours to be plotted
-def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
+# Function that produces the contours to be plotted
+def calculate_contours(trig_data, opts, new_snrs=None):
     """Generate the contours for the veto plots"""
-
-    # Read off the degrees of freedom
-    dof = trig_data['dof'][0]
 
     # Add the new SNR threshold contour to the list if necessary
     # and keep track of where it is
@@ -143,36 +145,27 @@ def calculate_contours(trig_data, opts, veto_type, new_snrs=None):
         cont_value = -1
 
     # Get SNR values for contours
-    snr_low_vals = numpy.arange(4, 30, 0.1)
+    snr_low_vals = numpy.arange(1, 30, 0.1)
     snr_high_vals = numpy.arange(30, 500, 1)
     snr_vals = numpy.asarray(list(snr_low_vals) + list(snr_high_vals))
 
     # Initialise contours
     contours = numpy.zeros([len(new_snrs), len(snr_vals)],
                            dtype=numpy.float64)
+
     # Loop over SNR values and calculate chisq variable needed
     for j, snr in enumerate(snr_vals):
         for i, new_snr in enumerate(new_snrs):
-            contours[i][j] = new_snr_chisq(snr, new_snr, dof,
+            contours[i][j] = new_snr_chisq(snr, new_snr,
                                            opts.chisq_index,
                                            opts.chisq_nhigh)
 
-    return contours, snr_vals, cont_value
-
-
-# Function that produces the contrours to be plotted
-def contour_colors(opts, new_snrs=None):
-    """Define the colours with which contours are plotted"""
-
-    # Add the new SNR threshold contour to the list if necessary
-    # and keep track of where it is
-    if new_snrs is None:
-        new_snrs = [5.5, 6, 6.5, 7, 8, 9, 10, 11]
+    # Colors and styles of the contours
     colors = ["k-" if snr == opts.newsnr_threshold else
               "y-" if snr == int(snr) else
               "y--" for snr in new_snrs]
 
-    return colors
+    return contours, snr_vals, cont_value, colors
 
 
 # =============================================================================
@@ -188,14 +181,12 @@ parser.add_argument("--found-missed-file",
 parser.add_argument("-z", "--zoom-in", default=False, action="store_true",
                     help="Output file a zoomed in version of the plot.")
 parser.add_argument("-y", "--y-variable", required=True,
-                    choices=['standard', 'bank', 'auto'],
+                    choices=['network', 'bank', 'auto', 'power'],
                     help="Quantity to plot on the vertical axis.")
 parser.add_argument("--snr-type", default='coherent',
                     choices=['coherent', 'coincident', 'null', 'reweighted',
-                    'single'], help="SNR value to plot on x-axis. Can be " +
-                    "coherent, coincident, null, reweighted, or single IFO SNR")
+                             'single'], help="SNR value to plot on x-axis.")
 ppu.pygrb_add_bestnr_cut_opt(parser)
-ppu.pygrb_add_single_snr_cut_opt(parser)
 ppu.pygrb_add_bestnr_opts(parser)
 opts = parser.parse_args()
 
@@ -203,7 +194,8 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_missed_file = os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
+found_missed_file = os.path.abspath(opts.found_missed_file) \
+    if opts.found_missed_file else None
 zoom_in = opts.zoom_in
 veto_type = opts.y_variable
 ifo = opts.ifo
@@ -217,30 +209,29 @@ if snr_type == 'single':
 
 # Veto is intended as a single IFO quantity. Network chisq will be obsolete.
 # TODO: fix vetoes
-#if ifo is None:
-#    err_msg = "--ifo must be given to plot single IFO SNR veto"
-#    parser.error(err_msg)
 
 # Prepare plot title and caption
-veto_labels = {'standard': "Chi Square Veto",
-               'bank': "Bank Veto",
-               'auto': "Auto Veto"}
+veto_labels = {'network': "Network Power",
+               'bank': "Bank",
+               'auto': "Auto",
+               'power': "Power"}
 if opts.plot_title is None:
-    opts.plot_title = "%s %s" %(ifo, veto_labels[veto_type])
+    opts.plot_title = " %s Chi Square" % veto_labels[veto_type]
+    if veto_type != 'network':
+        opts.plot_title = ifo + opts.plot_title
     if snr_type == 'single':
-        opts.plot_title += " vs %s SNR" %(ifo)
-    elif snr_type == 'coincident':
-        opts.plot_title += " vs Coincident SNR"
+        opts.plot_title += " vs %s SNR" % (ifo)
     else:
-        opts.plot_title += " vs Coherent SNR"
+        opts.plot_title += " vs %s SNR" % snr_type.capitalize()
 if opts.plot_caption is None:
-    opts.plot_caption = ("Blue crosses: background triggers.  " +
-                         "Black line: veto line.  " +
-                         "Gray shaded region: Vetoed area.  " +
-                         "Yellow lines: contours of new SNR.")
+    opts.plot_caption = ("Blue crosses: background triggers. ")
     if found_missed_file:
-        opts.plot_caption = ("Red crosses: injections triggers.  ") +\
-                            opts.plot_caption
+        opts.plot_caption += "Red crosses: injections triggers. "
+    if veto_type == 'network':
+        opts.plot_caption += ("Gray shaded region: area cut by the " +
+                              "reweighted SNR threshold. " +
+                              "Black line: reweighted SNR threshold. Yellow " +
+                              "lines: contours of constant rewighted SNR.")
 
 logging.info("Imported and ready to go.")
 
@@ -277,32 +268,38 @@ logging.info("Plotting...")
 
 # Determine x-axis values of triggers and injections
 # Default is coherent SNR
-x_label = "Coherent SNR"
-# Case with single SNR
-if snr_type == 'single':
-    x_label = "%s SNR" % ifo
-if snr_type == 'coincident':
-    x_label = "Coincident SNR"
+x_label = ifo if snr_type == 'single' else snr_type.capitalize()
+x_label = "%s SNR" % x_label
 
 # Determine the minumum and maximum SNR value we are dealing with
-x_min = opts.sngl_snr_threshold
-x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type], found_missed_file)
+x_min = 0.9*plu.axis_min_value(trig_data[snr_type], inj_data[snr_type],
+                               found_missed_file)
+x_max = 1.1*plu.axis_max_value(trig_data[snr_type], inj_data[snr_type],
+                               found_missed_file)
+
+# Determine the minimum and maximum chi-square value we are dealing with
+y_min = 0.9*plu.axis_min_value(trig_data[veto_type], inj_data[veto_type],
+                               found_missed_file)
+y_max = 1.1*plu.axis_max_value(trig_data[veto_type], inj_data[veto_type],
+                               found_missed_file)
 
 # Determine y-axis minimum value and label
-y_label = "%s Single %s" % (ifo, veto_labels[veto_type])
-y_min = 1
-
-# Determine the maximum bank veto value we are dealing with
-y_max = plu.axis_max_value(trig_data[veto_type], inj_data[veto_type], found_missed_file)
+y_label = "Network power chi-square" if veto_type == 'network' \
+    else "%s Single %s chi-square" % (ifo, veto_labels[veto_type].lower())
 
 # Determine contours for plots
 conts = None
+snr_vals = None
 cont_value = None
-conts, snr_vals, cont_value = calculate_contours(trig_data, opts,
-                                                 veto_type, new_snrs=None)
-
-# Initialise chisq contour values and colours
-colors = contour_colors(opts, new_snrs=None)
+colors = None
+# Enable countours of constant reweighted SNR as a function of coherent SNR
+if snr_type == 'coherent':
+    conts, snr_vals, cont_value, colors = calculate_contours(trig_data,
+                                                             opts,
+                                                             new_snrs=None)
+# The cut in reweighted SNR involves only the network power chi-square
+if veto_type != 'network':
+    cont_value = None
 
 # Produce the veto vs. SNR plot
 if not opts.x_lims:

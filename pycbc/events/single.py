@@ -1,9 +1,11 @@
 """ utilities for assigning FAR to single detector triggers
 """
 import logging
+import copy
 import h5py
 import numpy as np
-from pycbc.events import ranking, trigger_fits as fits
+
+from pycbc.events import trigger_fits as fits, stat
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
 from pycbc import bin_utils
@@ -13,35 +15,51 @@ logger = logging.getLogger('pycbc.events.single')
 
 class LiveSingle(object):
     def __init__(self, ifo,
-                 newsnr_threshold=10.0,
+                 ranking_threshold=10.0,
                  reduced_chisq_threshold=5,
                  duration_threshold=0,
                  fit_file=None,
                  sngl_ifar_est_dist=None,
-                 fixed_ifar=None):
+                 fixed_ifar=None,
+                 maximum_ifar=None,
+                 statistic=None,
+                 sngl_ranking=None,
+                 stat_files=None,
+                 **kwargs):
         self.ifo = ifo
         self.fit_file = fit_file
         self.sngl_ifar_est_dist = sngl_ifar_est_dist
         self.fixed_ifar = fixed_ifar
+        self.maximum_ifar = maximum_ifar
+
+        stat_class = stat.get_statistic(statistic)
+        self.stat_calculator = stat_class(
+            sngl_ranking,
+            stat_files,
+            ifos=[ifo],
+            **kwargs
+        )
 
         self.thresholds = {
-            "newsnr": newsnr_threshold,
+            "ranking": ranking_threshold,
             "reduced_chisq": reduced_chisq_threshold,
             "duration": duration_threshold}
 
     @staticmethod
     def insert_args(parser):
-        parser.add_argument('--single-newsnr-threshold', nargs='+',
+        parser.add_argument('--single-ranking-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction,
-                            help='Newsnr min threshold for single triggers. '
-                                 'Can be given as a single value or as '
-                                 'detector-value pairs, e.g. H1:6 L1:7 V1:6.5')
+                            help='Single ranking threshold for '
+                                 'single-detector events. Can be given '
+                                 'as a single value or as detector-value '
+                                 'pairs, e.g. H1:6 L1:7 V1:6.5')
         parser.add_argument('--single-reduced-chisq-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction,
                             help='Maximum reduced chi-squared threshold for '
-                                 'single triggers. Can be given as a single '
-                                 'value or as detector-value pairs, e.g. '
-                                 'H1:2 L1:2 V1:3')
+                                 'single triggers. Calcuated after any PSD '
+                                 'variation reweighting is applied. Can be '
+                                 'given as a single value or as '
+                                 'detector-value pairs, e.g. H1:2 L1:2 V1:3')
         parser.add_argument('--single-duration-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction,
                             help='Minimum duration threshold for single '
@@ -54,6 +72,12 @@ class LiveSingle(object):
                                  'defined by command line. Can be given as '
                                  'a single value or as detector-value pairs, '
                                  'e.g. H1:0.001 L1:0.001 V1:0.0005')
+        parser.add_argument('--single-maximum-ifar', nargs='+',
+                            type=float, action=MultiDetOptionAction,
+                            help='A maximum possible value for IFAR for '
+                                 'single-detector events. Can be given as '
+                                 'a single value or as detector-value pairs, '
+                                 'e.g. H1:100 L1:1000 V1:50')
         parser.add_argument('--single-fit-file',
                             help='File which contains definitons of fit '
                                  'coefficients and counts for specific '
@@ -70,11 +94,12 @@ class LiveSingle(object):
     def verify_args(args, parser, ifos):
         sngl_opts = [args.single_reduced_chisq_threshold,
                      args.single_duration_threshold,
-                     args.single_newsnr_threshold,
+                     args.single_ranking_threshold,
                      args.sngl_ifar_est_dist]
+
         sngl_opts_str = ("--single-reduced-chisq-threshold, "
                          "--single-duration-threshold, "
-                         "--single-newsnr-threshold, "
+                         "--single-ranking-threshold, "
                          "--sngl-ifar-est-dist")
 
         if any(sngl_opts) and not all(sngl_opts):
@@ -87,12 +112,14 @@ class LiveSingle(object):
                          "--enable-gracedb-upload to be set.")
 
         sngl_optional_opts = [args.single_fixed_ifar,
-                              args.single_fit_file]
+                              args.single_fit_file,
+                              args.single_maximum_ifar]
         sngl_optional_opts_str = ("--single-fixed-ifar, "
-                                  "--single-fit-file")
+                                  "--single-fit-file,"
+                                  "--single-maximum-ifar")
         if any(sngl_optional_opts) and not all(sngl_opts):
             parser.error("Optional singles options "
-                         f"({sngl_optional_opts_str}) given but no "
+                         f"({sngl_optional_opts_str}) given but not all "
                          f"required options ({sngl_opts_str}) are.")
 
         for ifo in ifos:
@@ -141,13 +168,27 @@ class LiveSingle(object):
 
     @classmethod
     def from_cli(cls, args, ifo):
+        # Allow None inputs
+        stat_files = args.statistic_files or []
+        stat_keywords = args.statistic_keywords or []
+
+        # flatten the list of lists of filenames to a single list
+        # (may be empty)
+        stat_files = sum(stat_files, [])
+
+        kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
         return cls(
-           ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
+           ifo, ranking_threshold=args.single_ranking_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
            duration_threshold=args.single_duration_threshold[ifo],
            fixed_ifar=args.single_fixed_ifar,
+           maximum_ifar=args.single_maximum_ifar[ifo],
            fit_file=args.single_fit_file,
-           sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo]
+           sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo],
+           statistic=args.ranking_statistic,
+           sngl_ranking=args.sngl_ranking,
+           stat_files=stat_files,
+           **kwargs
            )
 
     def check(self, trigs, data_reader):
@@ -156,37 +197,56 @@ class LiveSingle(object):
         """
 
         # Apply cuts to trigs before clustering
-        # Cut on snr so that triggers which could not reach newsnr
-        # threshold do not have newsnr calculated
+        # Cut on snr so that triggers which could not reach the ranking
+        # threshold do not have ranking calculated
+        if 'psd_var_val' in trigs:
+            # We should apply the PSD variation rescaling, as this can
+            # re-weight the SNR to be above SNR
+            trig_chisq = trigs['chisq'] / trigs['psd_var_val']
+            trig_snr = trigs['snr'] / (trigs['psd_var_val'] ** 0.5)
+        else:
+            trig_chisq = trigs['chisq']
+            trig_snr = trigs['snr']
+
         valid_idx = (trigs['template_duration'] >
                      self.thresholds['duration']) & \
-                    (trigs['chisq'] <
+                    (trig_chisq <
                      self.thresholds['reduced_chisq']) & \
-                    (trigs['snr'] >
-                     self.thresholds['newsnr'])
+                    (trig_snr >
+                     self.thresholds['ranking'])
         if not np.any(valid_idx):
             return None
 
-        cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
+        cut_trigs = {k: trigs[k][valid_idx] for k in trigs}
 
-        # This uses the pycbc live convention of chisq always meaning the
-        # reduced chisq.
-        nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
-                                  cutdurchi_trigs['chisq'])
-        nsnr_idx = nsnr_all > self.thresholds['newsnr']
-        if not np.any(nsnr_idx):
+        # Convert back from the pycbc live convention of chisq always
+        # meaning the reduced chisq.
+        trigsc = copy.copy(cut_trigs)
+        trigsc['ifo'] = self.ifo
+        trigsc['chisq'] = cut_trigs['chisq'] * cut_trigs['chisq_dof']
+        trigsc['chisq_dof'] = (cut_trigs['chisq_dof'] + 2) / 2
+
+        # Calculate the ranking reweighted SNR for cutting
+        single_rank = self.stat_calculator.get_sngl_ranking(trigsc)
+        sngl_idx = single_rank > self.thresholds['ranking']
+        if not np.any(sngl_idx):
             return None
 
-        cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
+        cutall_trigs = {k: trigsc[k][sngl_idx]
                         for k in trigs}
 
-        # 'cluster' by taking the maximal newsnr value over the trigger set
-        i = nsnr_all[nsnr_idx].argmax()
+        # Calculate the ranking statistic
+        sngl_stat = self.stat_calculator.single(cutall_trigs)
+        rank = self.stat_calculator.rank_stat_single((self.ifo, sngl_stat))
+
+        # 'cluster' by taking the maximal statistic value over the trigger set
+        i = rank.argmax()
 
         # calculate the (inverse) false-alarm rate
-        nsnr = nsnr_all[nsnr_idx][i]
-        dur = cutall_trigs['template_duration'][i]
-        ifar = self.calculate_ifar(nsnr, dur)
+        ifar = self.calculate_ifar(
+            rank[i],
+            trigsc['template_duration'][i]
+        )
         if ifar is None:
             return None
 
@@ -194,7 +254,7 @@ class LiveSingle(object):
         candidate = {
             f'foreground/{self.ifo}/{k}': cutall_trigs[k][i] for k in trigs
         }
-        candidate['foreground/stat'] = nsnr
+        candidate['foreground/stat'] = rank[i]
         candidate['foreground/ifar'] = ifar
         candidate['HWINJ'] = data_reader.near_hwinj()
         return candidate
@@ -232,10 +292,14 @@ class LiveSingle(object):
             )
             return None
 
-        rate_louder = rate * fits.cum_fit('exponential', [sngl_ranking],
-                                          coeff, thresh)[0]
+        rate_louder = rate * fits.cum_fit(
+            'exponential',
+            [sngl_ranking],
+            coeff,
+            thresh
+        )[0]
 
         # apply a trials factor of the number of duration bins
         rate_louder *= len(rates)
 
-        return conv.sec_to_year(1. / rate_louder)
+        return min(conv.sec_to_year(1. / rate_louder), self.maximum_ifar)

@@ -171,6 +171,19 @@ def axis_max_value(trig_values, inj_values, inj_file):
 
 
 # =============================================================================
+# Given the trigger and injection values of a quantity, determine the minimum
+# =============================================================================
+def axis_min_value(trig_values, inj_values, inj_file):
+    """Deterime the minimum of a quantity in the trigger and injection data"""
+
+    axis_min = trig_values.min()
+    if inj_file and inj_values.size and inj_values.min() < axis_min:
+        axis_min = inj_values.min()
+
+    return axis_min
+
+
+# =============================================================================
 # Master plotting function: fits all plotting needs in for PyGRB results
 # =============================================================================
 def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,

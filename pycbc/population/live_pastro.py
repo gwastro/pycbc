@@ -1,10 +1,12 @@
 import logging
 import h5py
 import numpy
-from lal import YRJUL_SI as lal_s_per_yr
+from pycbc import conversions as conv
 from pycbc.tmpltbank import bank_conversions as bankconv
 from pycbc.events import triggers
 from . import fgmc_functions as fgmcfun
+
+_s_per_yr = 1. / conv.sec_to_year(1.)
 
 
 def check_template_param_bin_data(spec_json):
@@ -177,7 +179,7 @@ def template_param_bin_pa(padata, trdata, horizons):
         expfac = padata.spec['bg_fac']
 
     # FAR is in Hz, therefore convert to rate per year (per SNR)
-    dnoise = noise_density_from_far(trdata['far'], expfac) * lal_s_per_yr
+    dnoise = noise_density_from_far(trdata['far'], expfac) * _s_per_yr
     logging.debug('FAR %.3g, noise density per yr per SNR %.3g',
                   trdata['far'], dnoise)
     # Scale by fraction of templates in bin
@@ -231,7 +233,7 @@ def template_param_bin_types_pa(padata, trdata, horizons):
     tr_ifos = trdata['triggered']
 
     # FAR is in Hz, therefore convert to rate per year (per SNR)
-    dnoise = noise_density_from_far(trdata['far'], expfac) * lal_s_per_yr
+    dnoise = noise_density_from_far(trdata['far'], expfac) * _s_per_yr
     logging.debug('FAR %.3g, noise density per yr per SNR %.3g',
                   trdata['far'], dnoise)
     # Scale by fraction of templates in bin
