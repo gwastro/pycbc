@@ -644,132 +644,316 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 
 """     LISA class      """
 
+try:
+    import cupy
+except ImportError:
+    cupy = None
 
-class LISA(object):
-    """For LISA detector
+try:
+    from lisatools.detector import ESAOrbits
+except ImportError:
+    ESAOrbits = None
+
+class LISA_detector(object):
     """
-    def __init__(self):
-        None
-
-    def get_pos(self, ref_time):
-        """Return the position of LISA detector for a given reference time
+    LISA-like GW detector. Applies detector response from FastLISAResponse.
+    """
+    def __init__(self, detector='LISA', reference_time=None, orbits=ESAOrbits(), use_gpu=False):
+        """
         Parameters
         ----------
-        ref_time : numpy.ScalarType
+        detector: str (optional)
+            String specifying space-borne detector. Currently only accepts 'LISA', 
+            which is the default setting.
+            
+        reference_time: float (optional)
+            The GPS start time of signal in the SSB frame. Default to start time of 
+            orbits input.
+        
+        orbits: lisatools.detector.Orbits (optional)
+            Orbital information to pass into pyResponseTDI. Default 
+            lisatools.detector.ESAOrbits.
+        
+        use_gpu : bool (optional)
+            Specify whether to run class on GPU support via CuPy. Default False.
+        """
+        # initialize detector; for now we only accept LISA
+        assert (detector=='LISA'), 'Currently only supports LISA detector'
+        
+        # intialize orbit information
+        if orbits is None:
+            raise ImportError('LISAanalysistools required for inputting orbital data')
+        orbits.configure(linear_interp_setup=True)
+        self.orbits = orbits
+        
+        # specify and cache the start time and orbital time series
+        if reference_time is None:
+            reference_time = self.orbits.t_base[0]
+        self.ref_time = reference_time
+        self.sample_times = None
+
+        # cache the FLR instance along with dt and n
+        self.dt = None
+        self.n = None
+        self.pad_idx = None
+        self.response_init = None
+        self.t0 = 10000.
+
+        # initialize whether to use gpu; FLR has handles if this cannot be done
+        self.use_gpu = use_gpu
+        
+    def source_to_ssb(self, hp, hc, polarization):
+        """
+        Project a source-frame signal to SSB.
+        
+        Parameters
+        ----------
+        hp : pycbc.types.TimeSeries
+            The plus polarization of the GW in the radiation frame.
+
+        hc : pycbc.types.TimeSeries
+            The cross polarization of the GW in the radiation frame.
+            
+        polarization : float
+            The polarization angle of the GW in radians.
+            
+        Returns
+        -------
+        (pycbc.types.TimeSeries, pycbc.types.TimeSeries)
+            The plus and cross polarizations of the GW in the SSB frame.
+        """
+        cphi = cos(2*polarization)
+        sphi = sin(2*polarization)
+        
+        hp_ssb = hp*cphi - hc*sphi
+        hc_ssb = hp*sphi + hc*cphi
+        
+        return hp_ssb, hc_ssb
+
+    def get_links(self, hp, hc, lamb, beta, polarization=0, reference_time=None, 
+                  use_gpu=None, tdi=2):
+        """
+        Project a radiation frame waveform to the LISA constellation.
+        This does not perform TDI; this only produces a detector frame
+        representation of the signal.
+
+        Parameters
+        ----------
+        hp : pycbc.types.TimeSeries
+            The plus polarization of the GW in the radiation frame.
+
+        hc : pycbc.types.TimeSeries
+            The cross polarization of the GW in the radiation frame.
+
+        lamb : float
+            The ecleptic latitude of the source in the SSB frame.
+
+        beta : float
+            The ecleptic longitude of the source in the SSB frame.
+            
+        polarization : float (optional)
+            The polarization angle of the GW in radians. If polarization is 
+            0, the hp and hc inputs are treated as SSB frame projections.
+            Default 0.
+            
+        reference_time : float (optional)
+            The GPS start time of the GW signal in the SSB frame. Default to 
+            input on class initialization.
+
+        use_gpu : bool (optional)
+            Flag whether to use GPU support. Default to class input.
+            CuPy is required if use_gpu is True; an ImportError will be raised 
+            if CuPy could not be imported.
+            
+        tdi : int (optional)
+            TDI channel configuration. Accepts 1 for 1st generation TDI or
+            2 for 2nd generation TDI. Default 2.
 
         Returns
         -------
-        location : numpy.ndarray of shape (3,3)
-               Returns the position of all 3 sattelites with each row
-               correspoding to a single axis.
+        ndarray
+            The waveform projected to the LISA laser links.
         """
-        ref_time = Time(val=ref_time, format='gps', scale='utc').jyear
-        n = np.array(range(1, 4))
-        kappa, _lambda_ = 0, 0
-        alpha = 2. * np.pi * ref_time/1 + kappa
-        beta_n = (n - 1) * 2.0 * pi / 3.0 + _lambda_
-        a, L = 1., 0.03342293561
-        e = L/(2. * a * np.sqrt(3))
+        from fastlisaresponse import pyResponseTDI
+        
+        # get dt and n from waveform data
+        dt = hp.delta_t # timestep (s)
+        n = len(hp) # number of points
 
-        x = a*cos(alpha) + a*e*(sin(alpha)*cos(alpha)*sin(beta_n) - (1 + sin(alpha)**2)*cos(beta_n))
-        y = a*sin(alpha) + a*e*(sin(alpha)*cos(alpha)*cos(beta_n) - (1 + cos(alpha)**2)*sin(beta_n))
-        z = -np.sqrt(3)*a*e*cos(alpha - beta_n)
-        self.location = np.array([x, y, z])
+        # cache n, dt, pad length
+        self.dt = dt
+        self.n = n
+        self.pad_idx = int(self.t0/self.dt)
 
-        return self.location
+        # set waveform start time and cache time series
+        if reference_time is not None:
+            self.ref_time = reference_time
+        hp.start_time = self.ref_time
+        hc.start_time = self.ref_time
+        self.sample_times = hp.sample_times.numpy()
+        
+        # rescale the orbital time series to match waveform
+        ### requires bugfix in LISAanalysistools to function
+        ### awaiting response from dev team for formal release
+        self.orbits.configure(t_arr=self.sample_times)
+        
+        # convert to SSB frame (if pol = 0, the signal is already in SSB frame)
+        if polarization != 0.:
+            hp, hc = self.source_to_ssb(hp, hc, polarization)
 
-    def get_gcrs_pos(self, location):
-        """ Transforms ICRS frame to GCRS frame
+        # format wf to FLR standard hp + i*hc as ndarray
+        hp = hp.numpy()
+        hc = hc.numpy()
+        wf = hp + 1j*hc
+
+        # set use_gpu to class input if not specified
+        if use_gpu is None:
+            use_gpu = self.use_gpu
+
+        # convert to cupy if needed
+        if use_gpu:
+            if cupy is None:
+                raise ImportError('CuPy not imported but is required for GPU usage')
+            else:
+                wf = cupy.asarray(wf)
+                
+        # set TDI configuration (let FLR handle if not 1 or 2)
+        if tdi == 1:
+            tdi_opt = '1st generation'
+        elif tdi == 2:
+            tdi_opt = '2nd generation'
+        else:
+            tdi_opt = tdi
+
+        if self.response_init is None:
+            # initialize the class
+            response_init = pyResponseTDI(1/dt, n, orbits=self.orbits, 
+                                          use_gpu=use_gpu, tdi=tdi_opt)
+            self.response_init = response_init
+        else:
+            # update params in the initialized class
+            self.response_init.sampling_frequency = 1/dt
+            self.response_init.num_pts = n
+            self.response_init.orbits = self.orbits
+            self.response_init.use_gpu = use_gpu
+            
+            if tdi_opt != self.response_init.tdi:
+                # update TDI in existing response_init class
+                self.response_init.tdi = tdi_opt
+                self.response_init._init_TDI_delays()
+
+        # project the signal
+        self.response_init.get_projections(wf, lamb, beta, t0=self.t0)
+        wf_proj = self.response_init.y_gw
+
+        return wf_proj
+
+    def project_wave(self, hp, hc, lamb, beta, polarization=0, reference_time=None, tdi=2, 
+                     tdi_chan='AET', tdi_orbits=None, use_gpu=None, remove_garbage=True):
+        """
+        Evaluate the TDI observables.
 
         Parameters
         ----------
-        loc : numpy.ndarray shape (3,1) units: AU
-              Cartesian Coordinates of the location
-              in ICRS frame
+        hp : pycbc.types.TimeSeries
+            The plus polarization of the GW in the radiation frame.
 
-        Returns
-        ----------
-        loc : numpy.ndarray shape (3,1) units: meters
-              GCRS coordinates in cartesian system
-        """
-        loc = location
-        loc = coordinates.SkyCoord(x=loc[0], y=loc[1], z=loc[2], unit=units.AU,
-                frame='icrs', representation_type='cartesian').transform_to('gcrs')
-        loc.representation_type = 'cartesian'
-        conv = np.float32(((loc.x.unit/units.m).decompose()).to_string())
-        loc = np.array([np.float32(loc.x), np.float32(loc.y),
-                        np.float32(loc.z)])*conv
-        return loc
+        hc : pycbc.types.TimeSeries
+            The cross polarization of the GW in the radiation frame.
 
-    def time_delay_from_location(self, other_location, right_ascension,
-                                 declination, t_gps):
-        """Return the time delay from the LISA detector to detector for
-        a signal with the given sky location. In other words return
-        `t1 - t2` where `t1` is the arrival time in this detector and
-        `t2` is the arrival time in the other location. Units(AU)
+        lamb : float
+            The ecleptic latitude in the SSB frame.
 
-        Parameters
-        ----------
-        other_location : numpy.ndarray of coordinates in ICRS frame
-            A detector instance.
-        right_ascension : float
-            The right ascension (in rad) of the signal.
-        declination : float
-            The declination (in rad) of the signal.
-        t_gps : float
-            The GPS time (in s) of the signal.
+        beta : float
+            The ecleptic longitude in the SSB frame.
+            
+        polarization : float (optional)
+            The polarization angle of the GW in radians. If polarization is 
+            0, the hp and hc inputs are treated as SSB frame projections.
+            Default 0.
+            
+        reference_time : float (optional)
+            The GPS start time of the GW signal in the SSB frame. Default to 
+            value in input signals hp and hc.
+            
+        tdi : int (optional)
+            TDI channel configuration. Accepts 1 for 1st generation TDI or
+            2 for 2nd generation TDI. Default 2.
+
+        tdi_chan : str (optional)
+            The TDI observables to calculate. Accepts 'XYZ', 'AET', or 'AE'.
+            Default 'AET'.
+
+        tdi_orbits : lisatools.detector.Orbits (optional)
+            Orbit keywords specifically for TDI generation. Default to class 
+            input.
+
+        use_gpu : bool (optional)
+            Flag whether to use GPU support. Default to class input.
+            
+        remove_garbage : bool, str (optional)
+            Flag whether to remove gaps in TDI from start and end. If True,
+            edge data will be cut from TDI channels. If 'zero', edge data
+            will be zeroed. If False, TDI channels will not be modified.
+            Default True.
 
         Returns
         -------
-        numpy.ndarray
-            The arrival time difference between the detectors.
+        dict
+            The TDI observables keyed by their corresponding TDI channel.
         """
-        dx = self.location - other_location
-        cosd = cos(declination)
-        e0 = cosd * cos(right_ascension)
-        e1 = cosd * -sin(right_ascension)
-        e2 = sin(declination)
-        ehat = np.array([e0, e1, e2])
-        return dx.dot(ehat) / constants.c.value
+        start_time = time.time()
+        
+        # set use_gpu
+        if use_gpu is None:
+            use_gpu = self.use_gpu
+        
+        # generate the Doppler time series
+        self.get_links(hp, hc, lamb, beta, polarization=polarization, reference_time=reference_time, 
+                       use_gpu=use_gpu, tdi=tdi)
 
-    def time_delay_from_detector(self, det, right_ascension,
-                                 declination, t_gps):
-        """Return the time delay from the LISA detector for a signal with
-        the given sky location in ICRS frame; i.e. return `t1 - t2` where
-        `t1` is the arrival time in this detector and `t2` is the arrival
-        time in the other detector.
+        # set TDI channels
+        if tdi_chan in ['XYZ', 'AET', 'AE']:
+            self.response_init.tdi_chan = tdi_chan
+        else:
+            raise ValueError('TDI channels must be one of: XYZ, AET, AE')
 
-        Parameters
-        ----------
-        other_detector : detector.Detector
-            A detector instance.
-        right_ascension : float
-            The right ascension (in rad) of the signal.
-        declination : float
-            The declination (in rad) of the signal.
-        t_gps : float
-            The GPS time (in s) of the signal.
+        # if TDI orbit class is provided, update the response_init
+        # tdi_orbits are set to class input automatically by FLR otherwise
+        if tdi_orbits is not None:
+            ### requires bugfix in LISAanalysistools to function
+            ### awaiting response from dev team for formal release
+            tdi_orbits.configure(t_arr=self.sample_times)
+            self.response_init.tdi_orbits = tdi_orbits
 
-        Returns
-        -------
-        numpy.ndarray
-            The arrival time difference between the detectors.
-        """
-        loc = Detector(det, t_gps).get_icrs_pos()
-        return self.time_delay_from_location(loc, right_ascension,
-                                             declination, t_gps)
+        # generate the TDI channels
+        tdi_obs = self.response_init.get_tdi_delays()
+        
+        # processing
+        tdi_dict = {}
+        slc = slice(self.pad_idx, -self.pad_idx)
+        
+        for i in range(len(tdi_chan)):
+            # add to dict
+            tdi_dict[tdi_chan[i]] = tdi_obs[i]
+            
+            # treat start and end gaps (if remove_garbage is not False)
+            if remove_garbage:
+                if remove_garbage == 'zero':
+                    # zero the edge data
+                    tdi_dict[tdi_chan[i]][self.pad_idx:] = 0
+                    tdi_dict[tdi_chan[i]][:-self.pad_idx] = 0
+                elif type(remove_garbage) == bool:
+                    # cut the edge data
+                    tdi_dict[tdi_chan[i]] = tdi_dict[tdi_chan[i]][slc]
+                    if i == 0:
+                        # cut the sample times (only do once)
+                        self.sample_times = self.sample_times[slc]
+                else:
+                    # raise error
+                    raise ValueError('remove_garbage arg must be a bool or "zero"')
 
-    def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
-        """Return the time delay from the earth center in ICRS frame
-        """
-        t_gps = Time(val=t_gps, format='gps', scale='utc')
-        earth = coordinates.get_body('earth', t_gps,
-                                     location=None).transform_to('icrs')
-        earth.representation_type = 'cartesian'
-        return self.time_delay_from_location(
-            np.array([np.float32(earth.x), np.float32(earth.y),
-                      np.float32(earth.z)]), right_ascension,
-            declination, t_gps)
+        return tdi_dict
 
 
 def ppdets(ifos, separator=', '):
