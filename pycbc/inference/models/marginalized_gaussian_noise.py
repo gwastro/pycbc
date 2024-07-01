@@ -19,6 +19,7 @@ distance.
 """
 
 import itertools
+import logging
 import numpy
 from scipy import special
 
@@ -207,6 +208,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
     def __init__(self, variable_params,
                  data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
+                 sample_rate=None,
                  **kwargs):
 
         self.kwargs = kwargs
@@ -240,6 +242,13 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                     gates=self.gates, **kwargs['static_params'])
 
         self.dets = {}
+        
+        if sample_rate is not None:
+            logging.info("Using %s sample rate for marginalization", sample_rate)
+            for det in self._whitened_data:
+                tlen = int(round(float(sample_rate) * self.whitened_data[det].duration))
+                flen = tlen // 2 + 1
+                self._whitened_data[det].resize(flen)    
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
@@ -325,15 +334,20 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            fp, fc = self.dets[det].antenna_pattern(
-                                    params['ra'],
-                                    params['dec'],
-                                    params['polarization'],
-                                    params['tc'])
-            dt = self.dets[det].time_delay_from_earth_center(params['ra'],
-                                                             params['dec'],
-                                                             params['tc'])
+                
+            if self.precalc_antenna_factors:
+                fp, fc, dt = self.get_precalc_antenna_factors(det)
+            else:
+                fp, fc = self.dets[det].antenna_pattern(
+                                        params['ra'],
+                                        params['dec'],
+                                        params['polarization'],
+                                        params['tc'])
+                dt = self.dets[det].time_delay_from_earth_center(params['ra'],
+                                                                 params['dec'],
+                                                                 params['tc'])
             dtc = params['tc'] + dt
+            
             cplx_hd = fp * cplx_hpd[det].at_time(dtc,
                                                  interpolate='quadratic')
             cplx_hd += fc * cplx_hcd[det].at_time(dtc,
