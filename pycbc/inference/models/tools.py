@@ -409,7 +409,7 @@ class DistMarg():
 
         # Update the current proposed times and the marginalization values
         # assumes uniform prior!
-        logw = - logweight[tci] + numpy.log(1.0 / len(logweight)) 
+        logw = - logweight[tci] + numpy.log(1.0 / len(logweight))
         self.marginalize_vector_params['tc'] = tc
         self.marginalize_vector_params['logw_partial'] = logw
 
