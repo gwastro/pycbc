@@ -45,10 +45,6 @@ def draw_sample(loglr, size=None):
     cdf = numpy.exp(loglr).cumsum()
     cdf /= cdf[-1]
     xl = numpy.searchsorted(cdf, x)
-    
-    loglr = loglr - logsumexp(loglr)
-    w = numpy.exp(loglr)
-    xl = numpy.random.choice(range(len(loglr)), p=w, size=size)
     return xl
 
 
