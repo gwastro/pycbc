@@ -364,14 +364,17 @@ class DistMarg():
         starts = []
         ends = []
 
-        tmin = tcmin + dt - snrs[iref].delta_t
-        tmax = tcmax + dt + snrs[iref].delta_t
+        delt = snrs[iref].delta_t
+        tmin = tcmin + dt - delt
+        tmax = tcmax + dt + delt
         if hasattr(self, 'tstart'):
             tmin = self.tstart[iref]
             tmax = self.tend[iref]
 
-        starts.append(max(tmin, snrs[iref].start_time))
-        ends.append(min(tmax, snrs[iref].end_time))
+        # Make sure we draw from times within prior and that have enough
+        # SNR calculated to do later interpolation
+        starts.append(max(tmin, snrs[iref].start_time + delt))
+        ends.append(min(tmax, snrs[iref].end_time - delt * 2))
 
         idels = {}
         for ifo in ifos[1:]:
@@ -498,9 +501,8 @@ class DistMarg():
                 tmin = self.tstart[ifo]
                 tmax = self.tend[ifo]
 
-            start = max(tmin, snrs[ifo].start_time)
-            end = min(tmax, snrs[ifo].end_time)
-
+            start = max(tmin, snr.start_time + snr.delta_t)
+            end = min(tmax, snr.end_time - snr.delta_t * 2)
             snr = snr.time_slice(start, end, mode='nearest')
 
             w = snr.squared_norm().numpy() / 2.0
