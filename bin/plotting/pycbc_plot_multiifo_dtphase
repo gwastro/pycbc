@@ -15,12 +15,19 @@
 Script to plot the output of pycbc_multiifo_dtphase in a corner plot
 """
 
-import matplotlib, h5py, numpy as np, copy
-import itertools, sys, logging, argparse
+import matplotlib
+import h5py
+import numpy as np
+import copy
+import itertools
+import sys
+import logging
+import argparse
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
+
 from pycbc.events import coinc_rate
-from pycbc import init_logging, version
+from pycbc import init_logging, version, add_common_pycbc_options
 from pycbc.results import save_fig_with_metadata
 
 def marginalise_pdf(pdf, dimensions_to_keep):
@@ -35,9 +42,9 @@ def marginalise_pdf(pdf, dimensions_to_keep):
     return mrg_pdf
 
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument('--version', action="version",
                     version=version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--input-file', required=True,
                     help="Input phasetd histogram file, made using "
                          "pycbc_multiifo_dtphase")

@@ -1,16 +1,27 @@
 #!/usr/bin/python
 """ Plot search sensitivity as a function of significance.
 """
-import argparse, h5py, numpy, logging, matplotlib, sys
+import argparse
+import h5py
+import numpy
+import logging
+import matplotlib
+import sys
 matplotlib.use('Agg')
 from matplotlib.pyplot import cm
-import pylab, pycbc.pnutils, pycbc.results, pycbc, pycbc.version
+import pylab
+
+import pycbc.pnutils
+import pycbc.results
+import pycbc
+import pycbc.version
 from pycbc import sensitivity
 from pycbc import conversions as conv
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='count')
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file', nargs='+',
                     help="Required. HDF format injection result file or space "
                     "separated list of files")
@@ -86,9 +97,7 @@ if args.integration_method == 'mc' and (args.distance_param is None or \
 if args.integration_method == 'mc' and args.limits_param is None:
     args.limits_param = args.distance_param
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
 logging.info('Read in the data')
 

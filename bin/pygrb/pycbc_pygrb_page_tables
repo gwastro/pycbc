@@ -28,6 +28,7 @@ import os
 import logging
 import numpy as np
 import h5py
+
 import pycbc.version
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.detector import Detector

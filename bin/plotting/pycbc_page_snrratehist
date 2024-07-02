@@ -3,12 +3,20 @@
     Also has the ability to plot inclusive backgrounds from different stages
     of hierarchical removal.
 """
-import argparse, h5py, numpy, logging, sys
+import argparse
+import h5py
+import numpy
+import logging
+import sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab, pycbc.results, pycbc.version
-from pycbc import conversions as conv
+import pylab
+
 from scipy.special import erf, erfinv
+
+import pycbc.results
+import pycbc.version
+from pycbc import conversions as conv
 
 def sigma_from_p(p):
     return - erfinv(1 - (1 - p) * 2) * 2**0.5
@@ -19,9 +27,10 @@ def p_from_sigma(sig):
 
 parser = argparse.ArgumentParser()
 # General required options
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file')
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 parser.add_argument('--bin-size', type=float)
 parser.add_argument('--x-min', type=float)
@@ -42,6 +51,8 @@ parser.add_argument('--closed-box', action='store_true',
                     help='Make a closed box version that excludes '
                          'foreground triggers')
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 logging.info('Read in the data')
 f = h5py.File(args.trigger_file, 'r')
@@ -81,10 +92,6 @@ if h_inc_back_num > h_iterations:
 
     # Exit the code successfully and bypass the rest of the plotting code.
     sys.exit(0)
-
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 if args.closed_box:
     fstat = None

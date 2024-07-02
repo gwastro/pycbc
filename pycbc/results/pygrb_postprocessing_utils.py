@@ -27,12 +27,16 @@ import os
 import logging
 import argparse
 import copy
-
 import numpy
 import h5py
+
 from scipy import stats
 import ligo.segments as segments
 from pycbc.events.coherent import reweightedsnr_cut
+from pycbc import add_common_pycbc_options
+
+logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
+
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo.lw import utils
@@ -57,9 +61,8 @@ def pygrb_initialize_plot_parser(description=None, version=None):
     formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=formatter_class)
+    add_common_pycbc_options(parser)
     parser.add_argument("--version", action="version", version=version)
-    parser.add_argument("-v", "--verbose", default=False, action="store_true",
-                        help="Verbose output")
     parser.add_argument("-o", "--output-file", default=None,
                         help="Output file.")
     parser.add_argument("--x-lims", action="store", default=None,
@@ -496,7 +499,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
-    logging.info("Triggers sorted.")
+    logger.info("Triggers sorted.")
 
     # Build the 3 dictionaries
     trig_time = {}
@@ -518,7 +521,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
             trigs['network/reweighted_snr'][indices],
             opts.newsnr_threshold)
 
-    logging.info("Time, SNR, and BestNR of triggers extracted.")
+    logger.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
 
@@ -548,7 +551,7 @@ def extract_ifos(trig_file):
 def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     """Extracts IFOs from HDF files and vetoes from a directory"""
 
-    logging.info("Extracting IFOs and vetoes.")
+    logger.info("Extracting IFOs and vetoes.")
 
     # Extract IFOs
     ifos = extract_ifos(trig_file)

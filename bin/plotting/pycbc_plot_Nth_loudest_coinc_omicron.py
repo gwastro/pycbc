@@ -9,18 +9,22 @@ import h5py
 import numpy as np
 import argparse
 import glob
-from ligo.lw import lsctables, utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+from ligo.lw import lsctables, utils
+
 import pycbc.events
-from pycbc.waveform import get_td_waveform, frequency_from_polarizations, amplitude_from_polarizations
+from pycbc.waveform import (
+    get_td_waveform, frequency_from_polarizations,
+    amplitude_from_polarizations
+)
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--coinc-file', type=str, required=True,
                     help='HDF file containing coincident CBC triggers')
 parser.add_argument('--single-ifo-trigs', type=str, required=True,
@@ -45,6 +49,8 @@ parser.add_argument('--analysis-level', type=str, required=False, default='foreg
                     choices = ['foreground','background','background_exc'],
                     help='Designates which level of the analysis output to search')
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 logging.info('Reading HDF files')
 

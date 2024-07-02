@@ -19,14 +19,18 @@ import argparse
 import h5py
 import numpy
 import sys
-import matplotlib as mpl; mpl.use('Agg')
+import copy
 import pylab
+import matplotlib as mpl
+mpl.use('Agg')
+
+from ligo import segments
+
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.results
 import pycbc.version
-import copy
 from pycbc.events import veto
 from pycbc import conversions as conv
-from ligo import segments
 
 def calculate_time_slide_duration(pifo_segments, fifo_segments, offset=0):
    ''' Returns the amount of coincident time between two segmentlists.
@@ -47,6 +51,7 @@ parser = argparse.ArgumentParser(usage='pycbc_page_ifar [--options]',
                     description='Plots a cumulative histogram of IFAR for'
                           'coincident foreground triggers and a subset of' 
                           'the coincident time slide triggers.')
+add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file', type=str, required=True,
@@ -87,6 +92,8 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
 parser.add_argument('--open-box', action='store_true', default=False,
                     help='Show the foreground triggers on the output plot. ')
 opts = parser.parse_args()
+
+init_logging(opts.verbose)
 
 # read file
 fp = h5py.File(opts.trigger_file, 'r')

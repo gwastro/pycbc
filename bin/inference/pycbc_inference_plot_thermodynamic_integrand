@@ -31,10 +31,13 @@ matplotlib.use("agg")
 from matplotlib import rc
 import matplotlib.pyplot as plt
 import numpy
+
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.inference import io
 import pycbc.version
 
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument("--inference-file", type=str,
                     help="The PyCBC multi-temper inference file.")
 parser.add_argument("--thin-start", type=int, default=None,
@@ -51,6 +54,8 @@ parser.add_argument("--integrand-logarithmic", action="store_true",
                     help="Plot the integrand as integrated in log beta.")
 parser.add_argument("--output-file", type=str)
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 # Read in the necessary data
 fp = io.loadfile(args.inference_file, "r")

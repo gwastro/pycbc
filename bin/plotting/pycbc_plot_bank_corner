@@ -28,7 +28,7 @@ import argparse
 import logging
 from textwrap import wrap
 
-from pycbc import init_logging
+import pycbc
 import pycbc.version
 from pycbc import __version__
 from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)
@@ -51,13 +51,11 @@ parameter_options = conversion_options + _fit_parameters
 
 parser = argparse.ArgumentParser(usage='pycbc_plot_bank_corner [--options]',
                     description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version",
     action="version",
     version=__version__,
     help="Prints version information.")
-parser.add_argument("--verbose",
-    action='count',
-    help="Output progress and information to stderr")
 parser.add_argument("--bank-file",
     required=True,
     help="The bank file to read in and plot")
@@ -129,7 +127,7 @@ parser.add_argument('--title',
 add_style_opt_to_parser(parser)
 args = parser.parse_args()
 
-init_logging(args.verbose)
+pycbc.init_logging(args.verbose)
 set_style_from_cli(args)
 
 mins, maxs = option_utils.plot_ranges_from_cli(args)

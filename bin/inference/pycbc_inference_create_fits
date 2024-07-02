@@ -35,9 +35,11 @@ import numpy
 import argparse
 import subprocess
 
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.inference import io
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--input-file', required=True,
                     help='The inference or posterior hdf file to load.')
 parser.add_argument('--output-file', required=True,
@@ -67,6 +69,8 @@ parser.add_argument('--tc', default='tc',
                          'operations on multiple parameters. Default is '
                          '"tc".')
 opts = parser.parse_args()
+
+init_logging(opts.verbose)
 
 fp = io.loadfile(opts.input_file, 'r')
 samples = fp.read_samples([opts.ra, opts.dec, opts.distance, opts.tc])

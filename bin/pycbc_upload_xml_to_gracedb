@@ -67,9 +67,6 @@ def check_gracedb_for_event(gdb_handle, query, far):
     return False
 
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    level=logging.INFO)
-
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--psd-files", nargs='+', required=True,
@@ -113,7 +110,7 @@ parser.add_argument('--generate-plots', action='store_true',
 
 args = parser.parse_args()
 
-pycbc.init_logging(args.verbose)
+pycbc.init_logging(args.verbose, default_level=1)
 
 if args.production_server:
     gracedb = GraceDb()

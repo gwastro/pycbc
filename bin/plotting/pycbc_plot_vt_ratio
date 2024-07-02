@@ -14,10 +14,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import save_fig_with_metadata
 
-
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--vt-files-one', nargs='+',
                     help='HDF files containing VT curves, data for '
                          'the numerator (top) of the ratio')
@@ -41,6 +43,8 @@ parser.add_argument('--log-x', action='store_true',
 parser.add_argument('--log-y', action='store_true',
                     help='Use logarithmic y-axis')
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 # Warn user if different numbers of files in numerator vs denominator
 if len(args.vt_files_one) != len(args.vt_files_two):
