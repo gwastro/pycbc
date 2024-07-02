@@ -75,3 +75,23 @@ jobs:
         BRANCH: gh-pages
         FOLDER: _gh-pages
         SINGLE_COMMIT: true
+  deploy_documentation_release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/head/master' && github.event_name == 'release'
+    steps:
+    - name: retrieve built documentation
+      uses: actions/download-artifact@v2
+      with:
+        name: documentation-page
+    - name: debug
+      run: |
+        mkdir _gh-pages
+        mv latest _gh-pages/${GITHUB_REF#refs/tags/}
+    - name: deploying tag ${GITHUB_REF#refs/tags/} to gh-pages
+      uses: JamesIves/github-pages-deploy-action@3.7.1
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: _gh-pages
+        SINGLE_COMMIT: true
