@@ -242,13 +242,15 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                     gates=self.gates, **kwargs['static_params'])
 
         self.dets = {}
-        
+
         if sample_rate is not None:
-            logging.info("Using %s sample rate for marginalization", sample_rate)
+            logging.info("Using %s sample rate for marginalization",
+                         sample_rate)
             for det in self._whitened_data:
-                tlen = int(round(float(sample_rate) * self.whitened_data[det].duration))
+                tlen = int(round(float(sample_rate) *
+                           self.whitened_data[det].duration))
                 flen = tlen // 2 + 1
-                self._whitened_data[det].resize(flen)    
+                self._whitened_data[det].resize(flen)
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
@@ -334,7 +336,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-                
+
             if self.precalc_antenna_factors:
                 fp, fc, dt = self.get_precalc_antenna_factors(det)
             else:
@@ -347,7 +349,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                                                                  params['dec'],
                                                                  params['tc'])
             dtc = params['tc'] + dt
-            
+
             cplx_hd = fp * cplx_hpd[det].at_time(dtc,
                                                  interpolate='quadratic')
             cplx_hd += fc * cplx_hcd[det].at_time(dtc,
