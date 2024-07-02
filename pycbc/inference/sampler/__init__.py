@@ -14,7 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-This module provides a list of implemented samplers for parameter estimation.
+This modules provides a list of implemented samplers for parameter estimation.
 """
 
 import logging
@@ -26,6 +26,7 @@ from .ultranest import UltranestSampler
 from .dummy import DummySampler
 from .refine import RefineSampler
 from .snowline import SnowlineSampler
+from .netbank import NetBank
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
@@ -34,6 +35,7 @@ samplers = {cls.name: cls for cls in (
     DummySampler,
     RefineSampler,
     SnowlineSampler,
+    NetBank,
 )}
 
 try:
@@ -87,7 +89,7 @@ def load_from_config(cp, model, **kwargs):
         Config parser to read from.
     model : pycbc.inference.model
         Which model to pass to the sampler.
-    **kwargs :
+    \**kwargs :
         All other keyword arguments are passed directly to the sampler's
         ``from_config`` file.
 
@@ -101,12 +103,4 @@ def load_from_config(cp, model, **kwargs):
         return DummySampler.from_config(cp, model, **kwargs)
 
     name = cp.get('sampler', 'name')
-    try:
-        return samplers[name].from_config(cp, model, **kwargs)
-    except KeyError:
-        raise ImportError(
-            f"No available sampler named {name}. Please check "
-            "if the name is correct or the required package "
-            "for this sampler is installed correctly. "
-            f"Available samplers: {', '.join(list(samplers.keys()))}"
-        )
+    return samplers[name].from_config(cp, model, **kwargs)
