@@ -188,12 +188,14 @@ def axis_min_value(trig_values, inj_values, inj_file):
 # =============================================================================
 def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
                   snr_vals=None, conts=None, shade_cont_value=None,
-                  colors=None, vert_spike=False, cmd=None):
+                  colors=None, vert_spike=False, cmd=None, fig=None):
     """Master function to plot PyGRB results"""
     from matplotlib import pyplot as plt
 
     # Set up plot
-    fig = plt.figure()
+    if fig is None:
+        fig = plt.figure()
+
     cax = fig.gca()
     # Plot trigger-related and (if present) injection-related quantities
     cax_plotter = cax.loglog if opts.use_logs else cax.plot
