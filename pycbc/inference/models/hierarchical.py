@@ -607,26 +607,14 @@ class MultiSignalModel(HierarchicalModel):
 
 
 class JointPrimaryMarginalizedModel(HierarchicalModel):
-    """ Hierarchical heterodyne likelihood for coherent multiband
-    parameter estimation which combines data from space-borne and
-    ground-based GW detectors coherently. Currently, this only
-    supports LISA as the space-borne GW detector.
-
-    Sub models are treated as if the same GW source (such as a GW
-    from stellar-mass BBH) is observed in different frequency bands by
-    space-borne and ground-based GW detectors, then transform all
-    the parameters into the same frame in the sub model level, use
-    `HierarchicalModel` to get the joint likelihood, and marginalize
-    over all the extrinsic parameters supported by `RelativeTimeDom`
-    or its variants. Note that LISA submodel only supports the `Relative`
-    for now, for ground-based detectors, please use `RelativeTimeDom`
-    or its variants.
-
-    Although this likelihood model is used for multiband parameter
-    estimation, users can still use it for other purposes, such as
-    GW + EM parameter estimation, in this case, please use `RelativeTimeDom`
-    or its variants for the GW data, for the likelihood of EM data,
-    there is no restrictions.
+    """This likelihood model can be used for cases when one of the submodels
+    can be marginalized to accelerate the total likelihood. This likelihood
+    model also allows for further acceleration of other models during
+    marginalization, if some extrinsic parameters can be tightly constrained
+    by the primary model. More specifically, such as the EM + GW parameter
+    estimation, the sky localization can be well measured. For LISA + 3G
+    multiband observation, SOBHB signals' (tc, ra, dec) can be tightly
+    constrained by 3G network, so this model is also useful for this case.
     """
     name = 'joint_primary_marginalized'
 
@@ -639,6 +627,10 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.other_models = self.submodels.copy()
         self.other_models.pop(kwargs['primary_lbl'][0])
         self.other_models = list(self.other_models.values())
+
+        # determine whether to accelerate total_loglr
+        self.static_margin_params_in_other_models = \
+            'static_margin_params_in_other_models' in kwargs
 
     def write_metadata(self, fp, group=None):
         """Adds metadata to the output files
@@ -686,8 +678,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
 
-        # note that for SOBHB signals, ground-based detectors dominant SNR
-        # and accuracy of (tc, ra, dec)
         self.primary_model.return_sh_hh = True
         sh_primary, hh_primary = self.primary_model.loglr
         self.primary_model.return_sh_hh = False
@@ -696,15 +686,37 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             self.primary_model.marginalize_vector_params.keys())
         if 'logw_partial' in margin_names_vector:
             margin_names_vector.remove('logw_partial')
-
         margin_params = {}
-        nums = 1
-        for key, value in self.primary_model.current_params.items():
-            # add marginalize_vector_params
-            if key in margin_names_vector:
-                margin_params[key] = value
-                if isinstance(value, numpy.ndarray):
-                    nums = len(value)
+
+        if self.static_margin_params_in_other_models:
+            # Due to the high precision of extrinsic parameters constrined
+            # by the primary model, the mismatch of wavefroms in others by
+            # varing those parameters is pretty small, so we can keep them
+            # static to accelerate total_loglr. Here, we use matched-filering
+            # SNR instead of lilkelihood, because luminosity distance and
+            # inclination has a very strong degeneracy, change of inclination
+            # will change best match distance, so change the amplitude of
+            # waveform. Using SNR will cancel out the effect of amplitude.err
+            i_max_extrinsic = numpy.argmax(
+                numpy.abs(sh_primary) / hh_primary**0.5)
+            for p in margin_names_vector:
+                if isinstance(self.primary_model.current_params[p],
+                              numpy.ndarray):
+                    margin_params[p] = \
+                        self.primary_model.current_params[p][i_max_extrinsic]
+                    nums = len(self.primary_model.current_params[p])
+                else:
+                    margin_params[p] = self.primary_model.current_params[p]
+                    nums = 1
+        else:
+            for key, value in self.primary_model.current_params.items():
+                # add marginalize_vector_params
+                if key in margin_names_vector:
+                    margin_params[key] = value
+                    if isinstance(value, numpy.ndarray):
+                        nums = len(value)
+                    else:
+                        nums = 1
         # add distance if it has been marginalized,
         # use numpy array for it is just let it has the same
         # shape as marginalize_vector_params, here we assume
@@ -713,7 +725,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             margin_params['distance'] = numpy.full(
                 nums, self.primary_model.current_params['distance'])
 
-        # add likelihood contribution from space-borne detectors, we
+        # add likelihood contribution from other_models, we
         # calculate sh/hh for each marginalized parameter point
         sh_others = numpy.full(nums, 0 + 0.0j)
         hh_others = numpy.zeros(nums)
@@ -723,17 +735,35 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # not using self.primary_model.current_params, because others_model
             # may have its own static parameters
             current_params_other = other_model.current_params.copy()
-            for i in range(nums):
+            if not self.static_margin_params_in_other_models:
+                for i in range(nums):
+                    current_params_other.update(
+                        {key: value[i] if isinstance(value, numpy.ndarray)
+                         else value for key, value in margin_params.items()})
+                    other_model.update(**current_params_other)
+                    other_model.return_sh_hh = True
+                    sh_other, hh_other = other_model.loglr
+                    sh_others[i] += sh_other
+                    hh_others[i] += hh_other
+                    other_model.return_sh_hh = False
+            else:
+                # use one margin point set to approximate all the others
                 current_params_other.update(
-                    {key: value[i] if isinstance(value, numpy.ndarray) else
-                        value for key, value in margin_params.items()})
+                    {key: value[0] if isinstance(value, numpy.ndarray)
+                     else value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
                 other_model.return_sh_hh = True
-                sh_others[i], hh_others[i] = other_model.loglr
+                sh_other, hh_other = other_model.loglr
                 other_model.return_sh_hh = False
+                sh_others += sh_other
+                hh_others += hh_other
 
         if nums == 1:
+            # the type of the original sh/hh_others are numpy.array,
+            # might not the same as sh/hh_primary during reconstruct,
+            # during reconstruct of distance, sh/hh_others need to be scalar
             sh_others = sh_others[0]
+            hh_others = hh_others[0]
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
 
@@ -741,6 +771,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.primary_model.marginalize_vector_weights = \
             - numpy.log(self.primary_model.vsamples)
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
+
         return loglr
 
     def others_lognl(self):
@@ -804,6 +835,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                                        submodel_lbls))
         sparam_map = map_params(hpiter(cp.options('static_params'),
                                        submodel_lbls))
+        # get the acceleration label
+        kwargs['static_margin_params_in_other_models'] = shlex.split(
+            cp.get('model', 'static_margin_params_in_other_models'))
 
         # we'll need any waveform transforms for the initializing sub-models,
         # as the underlying models will receive the output of those transforms
