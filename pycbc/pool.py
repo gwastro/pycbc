@@ -128,6 +128,7 @@ class SinglePool(object):
     # so that the general pool interfaces can use
     # imap irrespective of the pool type. 
     imap = map
+    imap_unordered = map
 
 def use_mpi(require_mpi=False, log=True):
     """ Get whether MPI is enabled and if so the current size and rank
