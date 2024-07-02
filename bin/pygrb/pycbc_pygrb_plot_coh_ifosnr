@@ -53,7 +53,7 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, ifos, vetoes, opts, injections=False):
+def load_data(input_file, ifos, vetoes, opts, injections=False, slide_id=None):
     """Load data from a trigger/injection file"""
 
     # Initialize the dictionary
@@ -74,6 +74,7 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
                 ifos,
                 vetoes,
                 rw_snr_threshold=opts.newsnr_threshold,
+                slide_id=slide_id
             )
         else:
             logging.info("Loading triggers...")
@@ -82,6 +83,7 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
                 ifos,
                 vetoes,
                 rw_snr_threshold=opts.newsnr_threshold,
+                slide_id=slide_id
             )
 
         # Load SNR data
@@ -233,10 +235,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(
 )
 
 # Extract trigger data
-trig_data = load_data(trig_file, ifos, vetoes, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts, slide_id=0)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, ifos, vetoes, opts, injections=True)
+inj_data = load_data(found_file, ifos, vetoes, opts, injections=True, slide_id=0)
 
 # Generate plots
 logging.info("Plotting...")
