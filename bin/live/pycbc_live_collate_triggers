@@ -103,8 +103,7 @@ with h5py.File(args.output_file, 'w') as destination:
         if ifo not in destination:
             destination.create_group(ifo)
 
-    for source_file in trigger_files:
-        file_count += 1
+    for file_count, source_file in enumerate(trigger_files):
         trigger_file = os.path.basename(source_file)
 
         start_time = float(trigger_file.split('-')[2])
@@ -161,7 +160,7 @@ with h5py.File(args.output_file, 'w') as destination:
                 }
 
                 if ('approximant' not in triggers) or (len(triggers['approximant']) == 0):
-                        continue
+                    continue
 
                 for name, dataset in triggers.items():
                     if name in destination[ifo]:
