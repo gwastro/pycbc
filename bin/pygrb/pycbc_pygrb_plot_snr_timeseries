@@ -44,13 +44,12 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_snr_timeseries"
 
-
 # =============================================================================
 # Functions
 # =============================================================================
 # Load trigger data
 def load_data(input_file, ifos, vetoes, rw_snr_threshold=None,
-              injections=False):
+              injections=False, slide_id=None):
     """Load data from a trigger/injection file"""
 
     trigs_or_injs = None
@@ -60,13 +59,12 @@ def load_data(input_file, ifos, vetoes, rw_snr_threshold=None,
             # This will eventually become load_injections
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=rw_snr_threshold)
+                        rw_snr_threshold=rw_snr_threshold,slide_id=slide_id)
         else:
             logging.info("Loading triggers...")
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=rw_snr_threshold)
-
+                        rw_snr_threshold=rw_snr_threshold,slide_id=slide_id)
     return trigs_or_injs
 
 
@@ -137,21 +135,21 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 # points to show the impact of the cut, otherwise remove points with
 # reweighted SNR below threshold
 if snr_type == 'reweighted':
-    trig_data = load_data(trig_file, ifos, vetoes)
+    trig_data = load_data(trig_file, ifos, vetoes, slide_id=0)
     trig_data['network/reweighted_snr'] = \
         reweightedsnr_cut(trig_data['network/reweighted_snr'],
                           opts.newsnr_threshold)
-    inj_data = load_data(inj_file, ifos, vetoes, injections=True)
+    inj_data = load_data(inj_file, ifos, vetoes, injections=True,slide_id=0)
     if inj_data is not None:
         inj_data['network/reweighted_snr'] = \
             reweightedsnr_cut(inj_data['network/reweighted_snr'],
                               opts.newsnr_threshold)
 else:
     trig_data = load_data(trig_file, ifos, vetoes,
-                          rw_snr_threshold=opts.newsnr_threshold)
+                   rw_snr_threshold=opts.newsnr_threshold, slide_id=0)
     inj_data = load_data(inj_file, ifos, vetoes,
                          rw_snr_threshold=opts.newsnr_threshold,
-                         injections=True)
+                         injections=True, slide_id=0)
 
 # Specify HDF file keys for x quantity (time) and y quantity (SNR)
 if snr_type == 'single':
@@ -166,8 +164,9 @@ trig_data_time = trig_data[x_key][:]
 inj_data_time = inj_data[x_key][:] if inj_file else None
 
 # Obtain SNRs
+
 trig_data_snr = trig_data[y_key][:]
-inj_data_snr = inj_data[y_key][:] if inj_file else None
+inj_data_snr = inj_data[y_key][:]  if inj_file else None
 
 # Determine the central time (t=0) for the plot
 central_time = opts.trigger_time
@@ -203,7 +202,8 @@ xlims = [start, end]
 if opts.x_lims:
     xlims = opts.x_lims
     xlims = map(float, xlims.split(','))
+
 plu.pygrb_plotter([trig_data_time, trig_data_snr],
                   [inj_data_time, inj_data_snr],
                   "Time since %.3f (s)" % (central_time), y_label,
-                  opts, cmd=' '.join(sys.argv))
+                  opts, cmd=' '.join(sys.argv), fig=plt.figure())
