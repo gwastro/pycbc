@@ -43,7 +43,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   yum clean all
   yum makecache
   yum -y install openssl-devel
-  yum -y install ligo-proxy-utils
   yum -y install python3-virtualenv
   yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static swig fftw-static gsl-static --skip-broken
 
