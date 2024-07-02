@@ -1,11 +1,12 @@
 #!/usr/bin/python
 """ Histogram of templates where injections are found.
 """
-import logging, h5py, argparse, numpy as np
+import logging, argparse, numpy as np
 from matplotlib import use
 use('Agg')
 from matplotlib import pyplot as plt
 from pycbc.events import triggers
+from pycbc.io import HFile
 from pycbc import init_logging, add_common_pycbc_options
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -54,9 +55,9 @@ foundparam = np.array([])
 # cycle over injection files
 for f, b, t in zip(args.found, args.bank_files, args.trig):
     logging.info('Processing %s, %s, %s' % (f, b, t))
-    f = h5py.File(f, 'r')
-    t = h5py.File(t, 'r') if t else None
-    b = h5py.File(b, 'r') if b else None
+    f = HFile(f, 'r')
+    t = HFile(t, 'r') if t else None
+    b = HFile(b, 'r') if b else None
     foundstat = np.concatenate((foundstat, f['found_after_vetoes/stat'][:]))
     foundifar = np.concatenate((foundifar, f['found_after_vetoes/ifar'][:]))
     # acrobatics to find right ifo

@@ -8,7 +8,7 @@ import numpy
 import h5py
 
 import pycbc
-from pycbc.io import SingleDetTriggers
+from pycbc.io import SingleDetTriggers, HFile
 from pycbc.events import stat, coinc, veto
 
 
@@ -78,7 +78,7 @@ stat = rank_method.rank_stat_single(sngl_info)[sngls.mask]
 
 logging.info('%i stat values found', len(stat))
 
-outfile = h5py.File(args.output_file, 'w')
+outfile = HFile(args.output_file, 'w')
 outgroup = outfile.create_group(args.detector)
 
 if args.cluster_window is not None:
@@ -93,7 +93,7 @@ else:
 logging.info('Writing %i triggers', len(out_idx))
 
 # get the columns to copy over
-with h5py.File(args.single_trig_file, 'r') as trigfile:
+with HFile(args.single_trig_file, 'r') as trigfile:
     cnames = []
     # only keep datasets parallel to the original trigger list
     for n, col in trigfile[args.detector].items():

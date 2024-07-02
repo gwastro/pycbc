@@ -2,7 +2,6 @@
 """ Plot search sensitivity as a function of significance.
 """
 import argparse
-import h5py
 import numpy
 import logging
 import matplotlib
@@ -17,6 +16,7 @@ import pycbc
 import pycbc.version
 from pycbc import sensitivity
 from pycbc import conversions as conv
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -129,7 +129,7 @@ found = {
 t = 0.
 
 for fi in args.injection_file:
-    with h5py.File(fi, 'r') as f:
+    with HFile(fi, 'r') as f:
 
         # Get the found (at any FAR)/missed injection indices
         foundi = f['found_after_vetoes/injection_index'][:]
@@ -346,7 +346,7 @@ for j in range(len(args.bins)-1):
             plotdict['errorlow/%s' % label] = elow
 
 if args.hdf_out:
-    outfile = h5py.File(args.hdf_out,'w')
+    outfile = HFile(args.hdf_out,'w')
     for key in plotdict.keys():
         outfile.create_dataset(key, data=plotdict[key])
 

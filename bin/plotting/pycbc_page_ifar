@@ -16,7 +16,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import h5py
 import numpy
 import sys
 import copy
@@ -31,6 +30,7 @@ import pycbc.results
 import pycbc.version
 from pycbc.events import veto
 from pycbc import conversions as conv
+from pycbc.io import HFile
 
 def calculate_time_slide_duration(pifo_segments, fifo_segments, offset=0):
    ''' Returns the amount of coincident time between two segmentlists.
@@ -96,7 +96,7 @@ opts = parser.parse_args()
 init_logging(opts.verbose)
 
 # read file
-fp = h5py.File(opts.trigger_file, 'r')
+fp = HFile(opts.trigger_file, 'r')
 
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = opts.use_hierarchical_level

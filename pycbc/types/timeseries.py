@@ -17,7 +17,8 @@
 """
 Provides a class representing a time series.
 """
-import os as _os, h5py
+import os as _os
+import h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries

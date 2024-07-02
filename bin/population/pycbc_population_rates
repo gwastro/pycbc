@@ -34,7 +34,6 @@ __date__ = "31.10.2017"
 
 import logging
 import argparse
-import h5py
 import numpy as np
 import scipy.stats as ss
 from numpy import logaddexp, log, newaxis, expm1
@@ -42,6 +41,7 @@ from numpy import logaddexp, log, newaxis, expm1
 import pycbc
 from pycbc.population import scale_injections as si
 from pycbc.population import rates_functions as rf
+from pycbc.io.hdf import HFile
 import pycbc.version
 
 
@@ -142,7 +142,7 @@ log_fg_ratios = rf.log_rho_fgmc(coincs, fg_stats, fg_bins)
 log_fg_ratios -= rf.log_rho_bg(coincs, bg_bins, bg_counts)
 
 #Load prior samples and fit a skew-log-normal to it
-with h5py.File(opts.prior_samples, "r") as f:
+with HFile(opts.prior_samples, "r") as f:
     R = np.array(f[opts.population_model+'/Rf'])
 
 alpha, mu, sigma = rf.fit(R)
@@ -160,7 +160,7 @@ rate_post = rate_samples['Rf']
 r50, r95, r05 = np.percentile(rate_post, [50, 95, 5])
 
 #Save rate posteriors
-with h5py.File(opts.output_file, 'w') as out:
+with HFile(opts.output_file, 'w') as out:
 
     pl = out.create_group(opts.population_model)
     pl.create_dataset('Lf', data=rate_samples['Lf'], compression='gzip')

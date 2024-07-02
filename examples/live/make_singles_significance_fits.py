@@ -3,10 +3,10 @@ This script will make a valid singles-fits file for use in the
 pycbc_live CI tests. It doesn't have much physical meaning,
 but will give broadly representative numbers for singles.
 """
-import h5py
 import numpy as np
+from pycbc.io.hdf import HFile
 
-f = h5py.File('single_significance_fits.hdf','w')
+f = HFile('single_significance_fits.hdf','w')
 
 # Some numbers to design the output
 # These are loosely based on the O3a trigger fits file

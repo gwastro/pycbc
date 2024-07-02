@@ -24,7 +24,6 @@ import os
 import argparse
 import logging
 import numpy as np
-import h5py
 import matplotlib
 matplotlib.use('agg')
 
@@ -38,6 +37,7 @@ from ligo.segments import segment, segmentlist
 import pycbc
 from pycbc.io.gracedb import gracedb_tag_with_version
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.hdf import HFile
 from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries
 from pycbc.results import generate_asd_plot
@@ -128,7 +128,7 @@ class psd_segment(segment):
 
 psds = {}
 for psd_file in args.psd_files:
-    (ifo, group), = h5py.File(psd_file, "r").items()
+    (ifo, group), = HFile(psd_file, "r").items()
     psd = [group["psds"][str(i)] for i in range(len(group["psds"].keys()))]
     psds[ifo] = segmentlist(psd_segment(*segargs) for segargs in zip(
         psd, group["start_time"], group["end_time"]))

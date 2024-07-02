@@ -21,11 +21,10 @@ import sys
 import logging
 import argparse
 import numpy
-import h5py
 
 import pycbc
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, filter
-from pycbc.io import WaveformArray
+from pycbc.io import WaveformArray, HFile
 from pycbc import events
 from pycbc.filter import resample_to_delta_t
 from pycbc.types import zeros, complex64
@@ -193,7 +192,7 @@ pycbc.init_logging(opt.verbose)
 if opt.window and opt.trigger_time is None:
     raise RuntimeError("Can't use --window option without a valid trigger time!")
 
-f = h5py.File(opt.output_file, 'w')
+f = HFile(opt.output_file, 'w')
 ifo = opt.channel_name[0:2]
 
 # If we are choosing start/end times from XML file ############################

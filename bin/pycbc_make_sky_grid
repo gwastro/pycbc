@@ -8,13 +8,13 @@ coherent SNRs and related statistics.
 The grid is constructed following the method described in Section V of https://arxiv.org/abs/1410.6042"""
 
 import numpy as np
-import h5py
 import argparse
 import itertools
 from scipy.spatial.transform import Rotation as R
 
 import pycbc
 from pycbc.detector import Detector
+from pycbc.io.hdf import HFile
 
 
 def spher_to_cart(sky_points):
@@ -116,7 +116,7 @@ spher = cart_to_spher(rota)
 time_delays = [[detectors[i].time_delay_from_earth_center(
                spher[j][0], spher[j][1], args.trigger_time) for j in range(len(spher))] for i in range(len(detectors))]
 
-with h5py.File(args.output, 'w') as hf:
+with HFile(args.output, 'w') as hf:
     hf['ra'] = spher[:,0]
     hf['dec'] = spher[:,1]
     hf['trigger_ra'] = [args.ra]

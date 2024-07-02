@@ -18,7 +18,6 @@
 """
 
 import sys
-import h5py
 import argparse
 import numpy
 import logging
@@ -28,6 +27,7 @@ import matplotlib.pyplot as plt
 
 import pycbc.version
 from pycbc import results
+from pycbc.io.hdf import HFile
 
 __author__ = "Alex Nielsen <alex.nielsen@ligo.org>, "
 __author__  += "Ian Harry <ian.harry@ligo.org>"
@@ -58,7 +58,7 @@ opt = parser.parse_args()
 
 pycbc.init_logging(opt.verbose)
 
-curr_fp = h5py.File(opt.input_file, 'r')
+curr_fp = HFile(opt.input_file, 'r')
 m1 = curr_fp['inj_params/mass1'][:]
 m2 = curr_fp['inj_params/mass2'][:]
 s1z = curr_fp['inj_params/spin1z'][:]

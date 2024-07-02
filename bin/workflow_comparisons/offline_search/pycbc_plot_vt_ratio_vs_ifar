@@ -20,7 +20,6 @@ Plot ratios of VTs calculated at various IFARs using pycbc_page_sensitivity
 (run with --hdf-out option) for two comparable analyses
 """
 
-import h5py
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -30,6 +29,7 @@ from matplotlib.pyplot import cm
 from math import ceil
 
 from pycbc import add_common_pycbc_options, init_logging
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
@@ -52,8 +52,8 @@ args = parser.parse_args()
 init_logging(args.verbose)
 
 # Load in the two datasets
-f1 = h5py.File(args.vt_file_one)
-f2 = h5py.File(args.vt_file_two)
+f1 = HFile(args.vt_file_one)
+f2 = HFile(args.vt_file_two)
 
 x1 = f1['xvals'][:]
 x2 = f2['xvals'][:]

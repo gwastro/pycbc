@@ -9,7 +9,6 @@ sets of injections. It reads two HDF files produced by pycbc_page_sensitivity's
 import sys
 import argparse
 import logging
-import h5py
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -17,6 +16,7 @@ import numpy as np
 
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import save_fig_with_metadata
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
@@ -53,7 +53,7 @@ if len(args.vt_files_one) != len(args.vt_files_two):
 
 
 # Load in the first numerator file
-with h5py.File(args.vt_files_one[0], 'r') as ftop_init:
+with HFile(args.vt_files_one[0], 'r') as ftop_init:
     # Find the index closest to the given IFAR value
     idxs = [np.argmin(np.abs(ftop_init['xvals'][:] - ifv))
             for ifv in args.ifars]
@@ -71,7 +71,7 @@ vt_bot_errsqlow = {k: np.zeros_like(plot_ifars) for k in keys}
 
 # Cycle over inputs for numerator
 for ftop in args.vt_files_one:
-    with h5py.File(ftop, 'r') as f:
+    with HFile(ftop, 'r') as f:
         # Check the input bins
         if list(f['data'].keys()) != keys:
             raise ValueError(
@@ -86,7 +86,7 @@ for ftop in args.vt_files_one:
 
 # Same for denominator
 for fbot in args.vt_files_two:
-    with h5py.File(fbot, 'r') as f:
+    with HFile(fbot, 'r') as f:
         if list(f['data'].keys()) != keys:
             raise ValueError(
                 f'keys do not match for the given input files - '

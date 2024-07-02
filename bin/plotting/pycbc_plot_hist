@@ -4,7 +4,6 @@
 
 import numpy
 import argparse
-import h5py
 import logging
 import sys
 from itertools import cycle
@@ -52,7 +51,7 @@ if args.special_time and args.background_bins:
 pycbc.init_logging(args.verbose)
 
 # read trigger file to determine IFO
-f = h5py.File(args.trigger_file, 'r')
+f = pycbc.io.HFile(args.trigger_file, 'r')
 ifo = tuple(f.keys())[0]
 
 # Apply presort if we can; if we can't, load everything but it may be

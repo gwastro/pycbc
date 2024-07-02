@@ -6,11 +6,11 @@ Split sets are organized to maximize time between injections.
 """
 
 import argparse
-import h5py
 import numpy as np
 
 from pycbc.inject import InjectionSet
 import pycbc.version
+from pycbc.io.hdf import HFile
 
 
 # Parse command line
@@ -28,7 +28,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # Read in input file as both an hdf file and an InjectionSet object
-inj_file = h5py.File(args.input_file, 'r')
+inj_file = HFile(args.input_file, 'r')
 inj_set = InjectionSet(args.input_file)
 
 # Define table of injection info

@@ -26,7 +26,6 @@ import logging
 import argparse
 import multiprocessing
 import numpy as np
-import h5py
 
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
@@ -39,6 +38,7 @@ from pycbc.filter import sigma, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
                         MultiDetOptionAction, load_frequencyseries
 from pycbc.io.ligolw import get_table_columns
+from pycbc.io.hdf import HFile
 
 
 class TimeIndependentPSD(object):
@@ -50,7 +50,7 @@ class TimeIndependentPSD(object):
 
 class TimeVaryingPSD(object):
     def __init__(self, file_name, length=None, delta_f=None, f_low=None):
-        with h5py.File(file_name, 'r') as f:
+        with HFile(file_name, 'r') as f:
             self.file_name = file_name
             detector = tuple(f.keys())[0]
             self.start_times = f[detector + '/start_time'][:]

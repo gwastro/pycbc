@@ -4,7 +4,6 @@
     of hierarchical removal.
 """
 import argparse
-import h5py
 import numpy
 import logging
 import sys
@@ -13,6 +12,7 @@ matplotlib.use('Agg')
 import pylab
 
 from scipy.special import erf, erfinv
+from pycbc.io.hdf import HFile
 
 import pycbc.results
 import pycbc.version
@@ -55,7 +55,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 logging.info('Read in the data')
-f = h5py.File(args.trigger_file, 'r')
+f = HFile(args.trigger_file, 'r')
 
 # Determine which inclusive background to plot.
 h_inc_back_num = args.use_hierarchical_level

@@ -13,12 +13,13 @@
 # Public License for more details.
 
 
-import sys, h5py
+import sys
 import argparse, logging
 
 import numpy as np
 
 from pycbc import init_logging
+from pycbc.io import HFile
 from pycbc.events import triggers
 import pycbc.version
 
@@ -80,7 +81,7 @@ if args.regression_method == 'nn' and args.num_neighbors < 1:
 
 init_logging(args.verbose)
 
-fits = h5py.File(args.template_fit_file, 'r')
+fits = HFile(args.template_fit_file, 'r')
 
 # get the ifo from the template-level fit
 ifo = fits.attrs['ifo']
@@ -96,7 +97,7 @@ if args.use_template_fit_param:
 
 else:
     logging.info('Calculating template parameter values')
-    bank = h5py.File(args.bank_file, 'r')
+    bank = HFile(args.bank_file, 'r')
     m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
     parvals = triggers.get_param(args.fit_param, args, m1, m2, s1z, s2z) 
 
@@ -183,7 +184,7 @@ elif args.regression_method == 'tricube':
         ntotal_smoothed.append(nt_sm)
 
 # store template-dependent fit output
-outfile = h5py.File(args.output, 'w')
+outfile = HFile(args.output, 'w')
 outfile.create_dataset('template_id', data=tid)
 outfile.create_dataset('count_above_thresh', data=nabove_smoothed)
 if tcount: outfile.create_dataset('count_in_template', data=ntotal_smoothed)

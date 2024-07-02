@@ -19,7 +19,6 @@ the corresponding fits.
 import argparse
 import logging
 import numpy as np
-import h5py
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
@@ -29,6 +28,7 @@ from lal import gpstime
 import pycbc
 from pycbc.bin_utils import IrregularBins
 from pycbc.events.trigger_fits import cum_fit as eval_cum_fit
+from pycbc.io.hdf import HFile
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -66,7 +66,7 @@ if '{ifo}' not in args.output_plot_name_format:
 pycbc.init_logging(args.verbose)
 
 logging.info("Getting trigger fits file information")
-with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
+with HFile(args.trigger_fits_file, 'r') as trfit_f:
     # Get the ifos to plot from the file
     # Check that all the ifos we want to plot are in the file
     all_ifos = trfit_f.attrs['ifos'].split(',')

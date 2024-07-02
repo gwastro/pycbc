@@ -5,9 +5,8 @@ import argparse
 import glob
 import logging as log
 import numpy as np
-import h5py
 import pycbc
-from pycbc.io import FieldArray
+from pycbc.io import FieldArray, HFile
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw.utils import load_filename as load_xml_doc
 from ligo.lw import lsctables
@@ -19,7 +18,7 @@ def close(a, b, c):
 
 def check_single_results(args):
     single_fail = False
-    with h5py.File(args.bank, 'r') as bankf:
+    with HFile(args.bank, 'r') as bankf:
         temp_mass1 = bankf['mass1'][:]
         temp_mass2 = bankf['mass2'][:]
         temp_s1z = bankf['spin1z'][:]
@@ -30,7 +29,7 @@ def check_single_results(args):
 
     trig_paths = sorted(glob.glob('output/????_??_??/*.hdf'))
     for trigfp in trig_paths:
-        with h5py.File(trigfp, 'r') as trigf:
+        with HFile(trigfp, 'r') as trigf:
             for detector in detectors:
                 if detector not in trigf:
                     continue
@@ -109,7 +108,7 @@ def check_found_events(args):
     found_fail = False
 
     # read injections
-    with h5py.File(args.injections, 'r') as injfile:
+    with HFile(args.injections, 'r') as injfile:
         inj_mass1 = injfile['mass1'][:]
         inj_mass2 = injfile['mass2'][:]
         inj_spin1z = injfile['spin1z'][:]

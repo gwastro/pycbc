@@ -2,7 +2,8 @@
 """Generate the standardized file detailing the candidates/background to
 follow-up.
 """
-import h5py, numpy, argparse, logging, pycbc
+import numpy, argparse, logging, pycbc
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
@@ -23,8 +24,8 @@ pycbc.init_logging(args.verbose)
 
 # Currently this expects the 2-ifo format, but the output file format
 # should be ok for multi-ifo as well
-bank = h5py.File(args.bank_file, 'r')
-sfile = h5py.File(args.statmap_file, 'r')
+bank = HFile(args.bank_file, 'r')
+sfile = HFile(args.statmap_file, 'r')
 
 if 'detector_1' in sfile.attrs:
     pivot = sfile.attrs['detector_1']
@@ -86,7 +87,7 @@ values = numpy.concatenate(values)
 values, invmap = numpy.unique(values, return_inverse=True)
 logging.info('%s triggers to follow up', len(values))
 
-f = h5py.File(args.output_file, 'w')
+f = HFile(args.output_file, 'w')
 f['inverse'] = invmap
 f.attrs['sections'] = sections
 f['time'] = values['time']

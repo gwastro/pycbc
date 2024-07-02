@@ -17,12 +17,12 @@ This modules provides classes for evaluating arbitrary distributions from
 a file.
 """
 import logging
-import h5py
 import numpy
 import scipy.stats
 
 from pycbc.distributions import bounded
 import pycbc.transforms
+from pycbc.io.hdf import HFile
 
 logger = logging.getLogger('pycbc.distributions.arbitrary')
 
@@ -271,7 +271,7 @@ class FromFile(Arbitrary):
             A dictionary of the parameters mapping `param_name -> array`.
         """
         try:
-            f = h5py.File(params_file, 'r')
+            f = HFile(params_file, 'r')
         except:
             raise ValueError('File not found.')
         if self.datagroup is not None:

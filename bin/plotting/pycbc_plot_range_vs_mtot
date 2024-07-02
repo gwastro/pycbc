@@ -4,7 +4,6 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import h5py
 import numpy
 import argparse
 import sys
@@ -15,6 +14,7 @@ import pycbc.types
 import pycbc.version
 import pycbc.waveform
 import pycbc.filter
+from pycbc.io.hdf import HFile
 
 from pycbc.fft.fftw import set_measure_level
 set_measure_level(0)
@@ -46,7 +46,7 @@ plt.ylabel('Inspiral Range (Mpc)')
 plt.grid() 
 
 for psd_file in args.psd_files:
-    f = h5py.File(psd_file, 'r')
+    f = HFile(psd_file, 'r')
     ifo = tuple(f.keys())[0]
     flow = f.attrs['low_frequency_cutoff']
     keys = f[ifo + '/psds'].keys()

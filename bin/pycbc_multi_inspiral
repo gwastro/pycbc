@@ -29,7 +29,6 @@ import logging
 import time
 import argparse
 import numpy as np
-import h5py
 
 import pycbc.version
 from pycbc import (
@@ -47,6 +46,7 @@ from pycbc import (
     add_common_pycbc_options,
 )
 from pycbc.events import ranking, coherent as coh, EventManagerCoherent
+from pycbc.io.hdf import HFile
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import zeros, float32, complex64
 from pycbc.vetoes import sgchisq
@@ -62,7 +62,7 @@ def sky_grid_from_cli(parser, args):
             'single sky position via --ra and --dec, not both'
         )
     if args.sky_grid is not None:
-        with h5py.File(args.sky_grid, 'r') as sky_grid_file:
+        with HFile(args.sky_grid, 'r') as sky_grid_file:
             ra = sky_grid_file['ra'][:]
             dec = sky_grid_file['dec'][:]
     elif args.ra is not None and args.dec is not None:

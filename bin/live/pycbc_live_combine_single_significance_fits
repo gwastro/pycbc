@@ -18,11 +18,11 @@ different files."""
 import argparse
 import logging
 import numpy as np
-import h5py
 
 from ligo.segments import segment, segmentlist
 
 import pycbc
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -58,7 +58,7 @@ logging.info("Determining the most recent configuration parameters")
 
 latest_date = None
 for f in args.trfits_files:
-    with h5py.File(f, 'r') as fit_f:
+    with HFile(f, 'r') as fit_f:
         if latest_date is None or fit_f.attrs['fit_end_gps_time'] > latest_date:
             latest_date = fit_f.attrs['fit_end_gps_time']
             bl = fit_f['bins_lower'][:]
@@ -83,7 +83,7 @@ alphas_all = {ifo: [] for ifo in args.ifos}
 # Check whether the fit files overlap one another
 seg_all = segmentlist([])
 for f in args.trfits_files:
-    with h5py.File(f, 'r') as fits_f:
+    with HFile(f, 'r') as fits_f:
         # Check that the file uses the same setup as file 0, to make sure
         # all coefficients are comparable
         new_fit_func = {ifo: fits_f[ifo].attrs['fit_function']
@@ -153,7 +153,7 @@ cons_counts_out = {ifo: np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.i
 
 logging.info("Writing results")
 
-fout = h5py.File(args.output, 'w')
+fout = HFile(args.output, 'w')
 fout.attrs['conservative_percentile'] = args.conservative_percentile
 fout.attrs['ifos'] = args.ifos
 fout['bins_edges'] = list(bl) + [bu[-1]]

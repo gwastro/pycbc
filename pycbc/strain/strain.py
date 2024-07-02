@@ -382,8 +382,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
     if hasattr(opt, 'witness_frame_type') and opt.witness_frame_type:
         stilde = strain.to_frequencyseries()
-        import h5py
-        tf_file = h5py.File(opt.witness_tf_file)
+        from pycbc.io.hdf import HFile
+        tf_file = HFile(opt.witness_tf_file)
         for key in tf_file:
             witness = pycbc.frame.query_and_read_frame(opt.witness_frame_type,
                    str(key),

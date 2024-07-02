@@ -5,7 +5,6 @@ Omicron triggers.
 """
 
 import logging
-import h5py
 import numpy as np
 import argparse
 import glob
@@ -21,6 +20,7 @@ from pycbc.waveform import (
     amplitude_from_polarizations
 )
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.hdf import HFile
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -54,9 +54,9 @@ pycbc.init_logging(args.verbose)
 
 logging.info('Reading HDF files')
 
-coinc_trig_file = h5py.File(args.coinc_file,'r')
-single_trig_file = h5py.File(args.single_ifo_trigs,'r')
-template_file = h5py.File(args.tmpltbank_file,'r')
+coinc_trig_file = HFile(args.coinc_file,'r')
+single_trig_file = HFile(args.single_ifo_trigs,'r')
+template_file = HFile(args.tmpltbank_file,'r')
 
 logging.info('Parsing HDF files')
 

@@ -4,7 +4,6 @@
 import logging
 import argparse
 import numpy
-import h5py
 
 import pycbc
 import pycbc.strain
@@ -12,6 +11,7 @@ import pycbc.dq
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
 from pycbc.events.veto import segments_to_start_end
+from pycbc.io.hdf import HFile
 
 set_measure_level(0)
 
@@ -37,7 +37,7 @@ segs = pycbc.dq.query_str(args.instrument,
                           veto_definer=args.veto_definer_file)
 logging.info('Found %s segments, %ss total', len(segs), abs(segs))
 
-f = h5py.File(args.output_file, 'w')
+f = HFile(args.output_file, 'w')
 starts, ends = segments_to_start_end(segs)
 pad = 0 if args.pad_data is None else args.pad_data
 f['{}/segments/start'.format(args.channel_name)] = starts + pad

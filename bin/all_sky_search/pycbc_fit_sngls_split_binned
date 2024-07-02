@@ -13,7 +13,7 @@
 # Public License for more details.
 
 
-import sys, h5py
+import sys
 import argparse, logging
 
 from matplotlib import use
@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from pycbc import events, bin_utils, results
-from pycbc.io import SingleDetTriggers
+from pycbc.io import SingleDetTriggers, HFile
 from pycbc.events import triggers as trigs
 from pycbc.events import trigger_fits as trstats
 from pycbc.events import stat as pystat
@@ -110,10 +110,10 @@ assert(args.stat_fit_threshold >= args.plot_lower_stat_limit)
 pycbc.init_logging(args.verbose)
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
-trigf = h5py.File(args.trigger_file, 'r')
+trigf = HFile(args.trigger_file, 'r')
 
 logging.info('Opening template file: %s' % args.bank_file)
-bank = h5py.File(args.bank_file, 'r')
+bank = HFile(args.bank_file, 'r')
 logging.info('Getting template bank parameters')
 
 # Calculate params needed
