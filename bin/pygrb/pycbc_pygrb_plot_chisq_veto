@@ -49,7 +49,7 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 # Functions
 # =============================================================================
 # Function to load trigger data: includes applying cut in reweighted SNR
-def load_data(input_file, ifos, vetoes, opts, injections=False):
+def load_data(input_file, ifos, vetoes, opts, injections=False, slide_id=None):
     """Load data from a trigger/injection file"""
 
     snr_type = opts.snr_type
@@ -71,12 +71,14 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
             # This will eventually become load_injections
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=rw_snr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold,
+                                  slide_id=slide_id)
         else:
             logging.info("Loading triggers...")
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=rw_snr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold,
+                                  slide_id=slide_id)
 
         # Count surviving points
         num_trigs_or_injs = len(trigs_or_injs['network/reweighted_snr'])
@@ -194,6 +196,7 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
+print(trig_file)
 found_missed_file = os.path.abspath(opts.found_missed_file) \
     if opts.found_missed_file else None
 zoom_in = opts.zoom_in
@@ -250,10 +253,11 @@ if ifo and ifo not in ifos:
     raise RuntimeError(err_msg)
 
 # Extract trigger data
-trig_data = load_data(trig_file, ifos, vetoes, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts, slide_id=0)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_missed_file, ifos, vetoes, opts, injections=True)
+inj_data = load_data(found_missed_file, ifos, vetoes, opts,
+                     injections=True, slide_id=0)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:
@@ -315,3 +319,4 @@ plu.pygrb_plotter(trigs, injs, x_label, y_label, opts,
                   snr_vals=snr_vals, conts=conts, colors=colors,
                   shade_cont_value=cont_value, vert_spike=True,
                   cmd=' '.join(sys.argv))
+                                                                                                                                                                                                                                                                                                                                                                                                                                                         321,41        Bot
