@@ -47,7 +47,7 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, ifos, vetoes, opts, injections=False):
+def load_data(input_file, ifos, vetoes, opts, injections=False, slide_id=None):
     """Load data from a trigger/injection file"""
 
     null_stat_type = opts.y_variable
@@ -63,12 +63,14 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
             # This will eventually become ppu.load_injections()
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=opts.newsnr_threshold)
+                                  rw_snr_threshold=opts.newsnr_threshold,
+                                  slide_id=slide_id)
         else:
             logging.info("Loading triggers...")
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=opts.newsnr_threshold)
+                                  rw_snr_threshold=opts.newsnr_threshold,
+                                  slide_id=slide_id)
 
         # Coherent SNR is always used
         data['coherent'] = trigs_or_injs['network/coherent_snr']
@@ -183,10 +185,11 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
                                            opts.veto_category)
 
 # Extract trigger data
-trig_data = load_data(trig_file, ifos, vetoes, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts, slide_id=0)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_missed_file, ifos, vetoes, opts, injections=True)
+inj_data = load_data(found_missed_file, ifos, vetoes, opts,
+                     injections=True, slide_id=0)
 
 # Generate plots
 logging.info("Plotting...")
