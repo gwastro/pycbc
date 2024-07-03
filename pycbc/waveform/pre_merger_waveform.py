@@ -267,7 +267,7 @@ def generate_waveform_lisa_pre_merger(
         the window will be applied starting after the zeroes.
     """
     window = get_window(window_length)
-    nctf = int((cutoff_time + waveform_params["cutoff_deltat"]) * sample_rate)
+    nctf = int((cutoff_time + waveform_params.get("cutoff_deltat", 0.0)) * sample_rate)
 
     outs = pycbc.waveform.get_fd_det_waveform(
         ifos=['LISA_A','LISA_E'], **waveform_params
