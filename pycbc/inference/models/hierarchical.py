@@ -767,9 +767,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
 
-        # calculate marginalize_vector_weights
-        self.primary_model.marginalize_vector_weights = \
-            - numpy.log(self.primary_model.vsamples)
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
 
         return loglr
@@ -890,11 +887,11 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                           cp.get('static_params', param.fullname))
 
             # set the variable params: different from the standard
-            # hierarchical model, in this multiband model, all sub-models
-            # has the same variable parameters, so we don't need to worry
-            # about the unique variable issue. Besides, the primary model
-            # needs to do marginalization, so we must set variable_params
-            # and prior section before initializing it.
+            # hierarchical model, in this JointPrimaryMarginalizedModel model,
+            # all sub-models has the same variable parameters, so we don't
+            # need to worry about the unique variable issue. Besides,
+            # the primary model needs to do marginalization, so we must set
+            # variable_params and prior section before initializing it.
 
             subcp.add_section('variable_params')
             for param in vparam_map[lbl]:
@@ -953,14 +950,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # it will not be listed in `variable_params` and `prior` sections
         primary_model = submodels[kwargs['primary_lbl'][0]]
         marginalized_params = primary_model.marginalize_vector_params.copy()
-        if 'logw_partial' in marginalized_params:
-            marginalized_params.pop('logw_partial')
-            marginalized_params = list(marginalized_params.keys())
-        else:
-            marginalized_params = []
-        # this may also include 'f_ref', 'f_lower', 'approximant',
-        # but doesn't matter
-        marginalized_params += list(primary_model.static_params.keys())
+        marginalized_params = list(marginalized_params.keys())
+
         for p in primary_model.static_params.keys():
             p_full = '%s__%s' % (kwargs['primary_lbl'][0], p)
             if p_full not in cp['static_params']:
@@ -973,6 +964,10 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 if p in marginalized_params:
                     cp['variable_params'].pop(p)
                     cp.pop(section)
+
+        # save the vitual config file to disk for later check
+        with open('top_level.ini', 'w', encoding='utf-8') as file:
+            cp.write(file)
 
         # now load the model
         logging.info("Loading joint_primary_marginalized model")
