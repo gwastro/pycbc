@@ -896,9 +896,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             subcp.add_section('variable_params')
             for param in vparam_map[lbl]:
                 if lbl in kwargs['primary_lbl']:
+                    # set variable_params for the primary model
                     subcp.set('variable_params', param.subname,
                               cp.get('variable_params', param.fullname))
                 else:
+                    # all variable_params in other models will come
+                    # from the primary model during sampling
                     subcp.set('static_params', param.subname, 'REPLACE')
 
             for section in cp.sections():
