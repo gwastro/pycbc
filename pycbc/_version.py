@@ -89,6 +89,7 @@ class PyCBCVersionAction(argparse._StoreAction):
         'information; 3 provides information about PyCBC, '
         'LAL and LALSimulation packages (if installed)'
     )
+
     def __init__(self,
                  option_strings,
                  dest,
@@ -115,7 +116,7 @@ class PyCBCVersionAction(argparse._StoreAction):
         if version_no > 1:
             # --version with flag above 1 - return the verbose version string
             version_str = (
-                "--- PyCBC Version --------------------------\n" + 
+                "--- PyCBC Version --------------------------\n" +
                 pycbc.version.git_verbose_msg
             )
         if version_no > 2:
@@ -133,7 +134,10 @@ class PyCBCVersionAction(argparse._StoreAction):
             except ImportError:
                 version_str += "\nLAL not installed in environment\n"
             else:
-                version_str += get_lal_info(lal, '_lal*.so')
+                version_str += get_lal_info(
+                    lal,
+                    '_lal*.so'
+                )
 
             version_str += "\n\n--- LALSimulation Version-------------------\n"
             try:
@@ -141,7 +145,10 @@ class PyCBCVersionAction(argparse._StoreAction):
             except ImportError:
                 version_str += "\nLALSimulation not installed in environment\n"
             else:
-                version_str += get_lal_info(lalsimulation, '_lalsimulation*.so')
+                version_str += get_lal_info(
+                    lalsimulation,
+                    '_lalsimulation*.so'
+                )
 
         print(version_str)
         sys.exit(0)
