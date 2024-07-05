@@ -2,13 +2,13 @@
 """ Plot PyCBC's background coinc triggers
 """
 import numpy
-import h5py
 import argparse
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
 import pylab
+from pycbc.io.hdf import HFile
 
 from pycbc import add_common_pycbc_options, init_logging
 
@@ -36,7 +36,7 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-f = h5py.File(args.coinc_file)
+f = HFile(args.coinc_file)
 bdata = f['background_exc']
 x = get_var(bdata, args.x_var)
 y = get_var(bdata, args.y_var)

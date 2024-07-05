@@ -16,7 +16,6 @@ Script to plot the output of pycbc_multiifo_dtphase in a corner plot
 """
 
 import matplotlib
-import h5py
 import numpy as np
 import copy
 import itertools
@@ -29,6 +28,7 @@ from matplotlib import pyplot as plt
 from pycbc.events import coinc_rate
 from pycbc import init_logging, version, add_common_pycbc_options
 from pycbc.results import save_fig_with_metadata
+from pycbc.io.hdf import HFile
 
 def marginalise_pdf(pdf, dimensions_to_keep):
     ndims = len(pdf.shape)
@@ -65,7 +65,7 @@ parser.add_argument('--output-file', required=True,
 args = parser.parse_args()
 init_logging(args.verbose)
 
-f = h5py.File(args.input_file, 'r')
+f = HFile(args.input_file, 'r')
 
 # Hard-code some lists to refer to later
 width_names = ['twidth', 'pwidth', 'swidth']

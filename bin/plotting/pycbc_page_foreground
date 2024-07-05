@@ -8,7 +8,6 @@ import sys
 import argparse
 import logging
 import numpy
-import h5py
 
 import pycbc
 import pycbc.results
@@ -41,7 +40,7 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-with h5py.File(args.trigger_file, 'r') as f:
+with hdf.HFile(args.trigger_file, 'r') as f:
     try:
         h_iterations = f.attrs['hierarchical_removal_iterations']
     except KeyError:

@@ -3,7 +3,6 @@
 """
 import matplotlib
 matplotlib.use('Agg')
-import h5py
 import numpy
 import argparse
 import pylab
@@ -13,6 +12,7 @@ import pycbc
 import pycbc.results
 import pycbc.psd
 import pycbc.version
+from pycbc.io.hdf import HFile
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -62,7 +62,7 @@ ax.set_xlabel('Frequency (Hz)')
 y_min = None
 
 for psd_file in args.psd_files:
-    f = h5py.File(psd_file, 'r')
+    f = HFile(psd_file, 'r')
     if args.hdf_group is not None:
         f = f[args.hdf_group]
     if args.ifos is not None:
@@ -79,7 +79,7 @@ for psd_file in args.psd_files:
             flow = f.attrs['low_frequency_cutoff']
         else:
             try:
-                with h5py.File(psd_file, 'r') as base_file:
+                with HFile(psd_file, 'r') as base_file:
                     flow = base_file.attrs[
                                '{}_likelihood_low_freq'.format(ifo)]
             except KeyError:

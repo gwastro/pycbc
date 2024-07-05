@@ -3,7 +3,7 @@
 with more than one ifo combination available. Cluster to keep foreground
 coincs with the highest stat value.
 """
-import h5py, numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io
+import numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io
 import pycbc.version
 import pycbc.conversions as conv
 from pycbc.events import coinc, significance
@@ -91,9 +91,9 @@ else :
 
 pycbc.init_logging(args.verbose)
 
-files = [h5py.File(n, 'r') for n in args.statmap_files]
+files = [pycbc.io.HFile(n, 'r') for n in args.statmap_files]
 
-f = h5py.File(args.output_file, "w")
+f = pycbc.io.HFile(args.output_file, "w")
 
 # Work out the combinations of detectors used by each input file
 all_ifo_combos = []
@@ -308,7 +308,7 @@ if injection_style:
     # if background files are provided, this is being used for injections
     # use provided background files to calculate the FARs
     for bg_fname in args.background_files:
-        bg_f = h5py.File(bg_fname, 'r')
+        bg_f = pycbc.io.HFile(bg_fname, 'r')
         ifo_combo_key = bg_f.attrs['ifos'].replace(' ','')
         _, far[ifo_combo_key] = significance.get_far(
                 bg_f['background/stat'][:],
@@ -324,6 +324,7 @@ if injection_style:
                 bg_f['background_exc/decimation_factor'][:],
                 bg_f.attrs['background_time_exc'],
                 **significance_dict[ifo_combo_key])
+        bg_f.close()
 else:
     # if not injection style input files, then the input files will have the
     # background included

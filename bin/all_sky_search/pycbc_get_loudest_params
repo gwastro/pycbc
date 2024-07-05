@@ -6,12 +6,12 @@ parameters of the template, and writes them to an hdf and/or stdout.
 
 import lal
 import numpy as np
-import h5py
 import argparse
 import logging
 from pycbc import init_logging
 import pycbc.events
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -36,11 +36,11 @@ args = parser.parse_args()
 init_logging(args.verbose)
 
 logging.info('Reading in HDF files')
-trigs = h5py.File(args.single_ifo_trigs,'r')
-template_file = h5py.File(args.tmpltbank_file,'r')
+trigs = HFile(args.single_ifo_trigs,'r')
+template_file = HFile(args.tmpltbank_file,'r')
 
 if args.output_file:
-    outfile = h5py.File(args.output_file,'w')
+    outfile = HFile(args.output_file,'w')
 
 t_low = args.central_time - args.window
 t_high = args.central_time + args.window

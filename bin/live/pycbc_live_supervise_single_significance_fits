@@ -15,9 +15,11 @@ import os
 import shutil
 import subprocess
 import numpy as np
+
 from lal import gpstime
+
 import pycbc
-import h5py
+from pycbc.io.hdf import HFile
 
 
 def symlink(target, link_name):
@@ -90,7 +92,7 @@ def check_trigger_files(filenames, test_options, controls):
     warning_files = []
     for filename in filenames:
         warnings_thisfile = []
-        with h5py.File(filename, 'r') as trff:
+        with HFile(filename, 'r') as trff:
             ifos = [k for k in trff.keys() if not k.startswith('bins')]
             fit_coeffs = {ifo: trff[ifo]['fit_coeff'][:] for ifo in ifos}
             bins_upper = trff['bins_upper'][:]

@@ -3,7 +3,8 @@
 """
 import matplotlib
 matplotlib.use('Agg')
-import numpy, argparse, h5py, os, pylab, pycbc.pnutils
+import numpy, argparse, os, pylab, pycbc.pnutils
+from pycbc.io.hdf import HFile
 
 from pycbc import init_logging, add_common_pycbc_options
 
@@ -17,7 +18,7 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-bf = h5py.File(args.bank_file)
+bf = HFile(args.bank_file)
 m1 = bf['mass1'][:]
 m2 = bf['mass2'][:]
 
@@ -32,7 +33,7 @@ snrs = []
 chisqs = []
 
 for trig_filename in args.trigger_files:
-    f = h5py.File(trig_filename)
+    f = HFile(trig_filename)
     tid = f['template_id'][:]
     
     # Count triggers produced by each template

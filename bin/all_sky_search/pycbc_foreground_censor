@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """Make segment file to blind the results from foreground related triggers """
 
-import os, argparse, logging, pycbc.version, h5py
+import os, argparse, logging, pycbc.version
 from urllib.parse import urlunparse
 import pycbc.events
 from pycbc.workflow import SegFile
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -26,7 +27,7 @@ pycbc.init_logging(args.verbose)
 
 logging.info('Start')
 
-f = h5py.File(args.foreground_triggers, 'r')
+f = HFile(args.foreground_triggers, 'r')
 
 start = f['segments/foreground_veto/start'][:]
 end = f['segments/foreground_veto/end'][:]

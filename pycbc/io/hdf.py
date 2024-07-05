@@ -1246,7 +1246,7 @@ class ForegroundTriggers(object):
         ligolw_utils.write_filename(outdoc, file_name)
 
     def to_coinc_hdf_object(self, file_name):
-        ofd = h5py.File(file_name,'w')
+        ofd = HFile(file_name,'w')
 
         # Some fields are special cases
         logger.info("Outputting search results")
@@ -1347,10 +1347,10 @@ class ReadByTemplate(object):
     def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
                  gating_veto_windows={}):
         self.filename = filename
-        self.file = h5py.File(filename, 'r')
+        self.file = HFile(filename, 'r')
         self.ifo = tuple(self.file.keys())[0]
         self.valid = None
-        self.bank = h5py.File(bank, 'r') if bank else {}
+        self.bank = HFile(bank, 'r') if bank else {}
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
@@ -1520,7 +1520,7 @@ def save_dict_to_hdf5(dic, filename):
     filename:
         desired name of hdf5 file
     """
-    with h5py.File(filename, 'w') as h5file:
+    with HFile(filename, 'w') as h5file:
         recursively_save_dict_contents_to_group(h5file, '/', dic)
 
 def recursively_save_dict_contents_to_group(h5file, path, dic):

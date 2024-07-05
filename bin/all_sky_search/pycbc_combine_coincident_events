@@ -6,9 +6,9 @@ The resulting file would contain triggers from the full set of input files
 import numpy
 import argparse
 import logging
-import h5py
 
 import pycbc
+from pycbc.io import HFile
 import pycbc.version
 
 def com(f, files, group):
@@ -64,10 +64,10 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-files = [h5py.File(n) for n in args.statmap_files]
+files = [HFile(n) for n in args.statmap_files]
 
 # Start setting some of the attributes
-f = h5py.File(args.output_file, "w")
+f = HFile(args.output_file, "w")
 # It's not guaranteed that all files will follow this, so be careful later!
 f.attrs['detector_1'] = files[0].attrs['detector_1']
 f.attrs['detector_2'] = files[0].attrs['detector_2']

@@ -1,11 +1,12 @@
 import numpy as np
 from numpy import log
-import copy, h5py
+import copy
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from astropy.cosmology import WMAP9 as cosmo
 
 from pycbc.conversions import mchirp_from_mass1_mass2 as m1m2tomch
+from pycbc.io.hdf import HFile
 
 _mch_BNS = 1.4/2**.2
 _redshifts, _d_lum, _I = np.arange(0., 5., 0.01), [], []
@@ -251,7 +252,7 @@ def process_injections(hdffile):
     """
     data = {}
 
-    with h5py.File(hdffile, 'r') as inp:
+    with HFile(hdffile, 'r') as inp:
         found_index = inp['found_after_vetoes/injection_index'][:]
 
         for param in _save_params:

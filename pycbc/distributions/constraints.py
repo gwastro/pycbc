@@ -19,10 +19,9 @@ import logging
 import re
 import scipy.spatial
 import numpy
-import h5py
 
 from pycbc import transforms
-from pycbc.io import record
+from pycbc.io import record, HFile
 
 logger = logging.getLogger('pycbc.distributions.constraints')
 
@@ -100,7 +99,7 @@ class SupernovaeConvexHull(Constraint):
             pc_filename = kwargs['principal_components_file']
             hull_dimention = numpy.array(kwargs['hull_dimention'])
             self.hull_dimention = int(hull_dimention)
-            pc_file = h5py.File(pc_filename, 'r')
+            pc_file = HFile(pc_filename, 'r')
             pc_coefficients = numpy.array(pc_file.get('coefficients'))
             pc_file.close()
             hull_points = []

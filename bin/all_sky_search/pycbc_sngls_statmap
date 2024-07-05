@@ -5,7 +5,7 @@ by pycbc_sngls_findtrigs to generate a mapping between SNR and FAP/FAR, along
 with producing the combined foreground and background triggers.
 """
 
-import argparse, h5py, itertools
+import argparse, itertools
 import logging, numpy, copy
 from pycbc.events import veto, coinc
 from pycbc.events import triggers, trigger_fits as trstats
@@ -16,7 +16,7 @@ import pycbc.conversions as conv
 
 class fw(object):
     def __init__(self, name):
-        self.f = h5py.File(name, 'w')
+        self.f = pycbc.io.HFile(name, 'w')
         self.attrs = self.f.attrs
 
     def __setitem__(self, name, data):
