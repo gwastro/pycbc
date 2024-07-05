@@ -9,6 +9,7 @@ pycbc results pages
 import argparse
 import logging
 
+import pycbc
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import (save_fig_with_metadata, html_escape,
     get_library_version_info, get_code_version_numbers)
