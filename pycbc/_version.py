@@ -83,7 +83,7 @@ class PyCBCVersionAction(argparse._StoreAction):
     """
     default_help = (
         'Display PyCBC version information and exit. '
-        'Can be supplied a modifier integer to control the '
+        'Can optionally supply a modifier integer to control the '
         'verbosity of the version information. 0 and 1 are the '
         'same as --version; 2 provides more detailed PyCBC library '
         'information; 3 provides information about PyCBC, '
