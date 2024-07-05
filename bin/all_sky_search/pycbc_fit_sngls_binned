@@ -22,6 +22,7 @@ from matplotlib import pyplot as plt
 
 import copy, numpy as np
 
+import pycbc
 from pycbc import events, bin_utils, results
 from pycbc.events import triggers
 from pycbc.events import trigger_fits as trstats

@@ -6,6 +6,8 @@ from dqsegdb.apicalls import dqsegdbQueryTimes as query
 
 import ligo.segments
 
+import pycbc
+
 def sane(seg_list):
     """ Convert list of len two lists containing strs to segment list """
     segs = ligo.segments.segmentlist([])
