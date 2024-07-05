@@ -16,11 +16,9 @@ from pycbc.events.veto import (select_segments_by_definer,
                                segments_to_start_end)
 from pycbc.types.optparse import MultiDetOptionAction
 from pycbc.io.hdf import SingleDetTriggers
-from pycbc.version import git_verbose_msg as version
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=version)
 parser.add_argument("--template-bins-file", required=True)
 parser.add_argument("--trig-file", required=True)
 parser.add_argument("--flag-file", required=True)

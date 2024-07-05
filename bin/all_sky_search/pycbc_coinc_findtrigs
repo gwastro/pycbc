@@ -3,7 +3,6 @@ import copy, argparse, logging, numpy, numpy.random
 import shutil, uuid, os.path, atexit
 from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat, ranking, cuts
-import pycbc.version
 from pycbc.io import HFile
 from pycbc import pool, init_logging
 from numpy.random import seed, shuffle
@@ -12,7 +11,6 @@ from pycbc.types.optparse import MultiDetOptionAction
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     help="Optional veto file. Triggers within veto segments "
                          "contained in the file are ignored")

@@ -85,6 +85,11 @@ def add_common_pycbc_options(parser):
                             'more verbose, e.g. --verbose or -v provides '
                             'logging at the info level, but -vv or '
                             '--verbose --verbose provides debug logging.')
+    group.add_argument(
+        '--version',
+        action="version",
+        version=pycbc_version.git_verbose_msg
+    )
 
 
 def init_logging(verbose=False, default_level=0, to_file=None,

@@ -11,7 +11,6 @@ from pycbc.events import indices_within_segments
 from pycbc.types import MultiDetOptionAction
 from pycbc.inject import CBCHDFInjectionSet
 from pycbc.io import HFile
-import pycbc.version
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
@@ -57,8 +56,6 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+', required=True)
 parser.add_argument('--injection-files', nargs='+', required=True)
 parser.add_argument('--veto-file')

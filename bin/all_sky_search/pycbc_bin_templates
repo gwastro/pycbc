@@ -8,12 +8,10 @@ import numpy as np
 
 import pycbc
 import pycbc.pnutils
-from pycbc.version import git_verbose_msg as version
 from pycbc.events import background_bin_from_string
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=version)
 parser.add_argument("--ifo", type=str, required=True)
 parser.add_argument("--f-lower", type=float, default=15.,
                     help='Enforce a uniform low frequency cutoff to '

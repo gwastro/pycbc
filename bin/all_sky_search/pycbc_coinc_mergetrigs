@@ -4,7 +4,6 @@
 """
 
 import numpy, argparse, h5py, logging
-import pycbc.version
 from pycbc.io import HFile
 from pycbc import init_logging
 
@@ -32,8 +31,6 @@ def region(f, key, boundaries, ids):
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--bank-file', required=True)
