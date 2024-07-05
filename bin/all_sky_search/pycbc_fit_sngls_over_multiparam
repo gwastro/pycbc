@@ -13,7 +13,7 @@
 # Public License for more details.
 
 
-import sys, argparse, logging, pycbc.version, numpy
+import sys, argparse, logging, numpy
 from scipy.stats import norm
 from pycbc.events import triggers
 from pycbc.io import HFile
@@ -177,7 +177,6 @@ parser = argparse.ArgumentParser(usage="",
                 "background model.")
 
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("--template-fit-file", required=True, nargs='+',
                     help="hdf5 file(s) containing fit coefficients for each "
                          "individual template. Can smooth over multiple "

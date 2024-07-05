@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Make segment file to blind the results from foreground related triggers """
 
-import os, argparse, logging, pycbc.version
+import os, argparse, logging
 from urllib.parse import urlunparse
 import pycbc.events
 from pycbc.workflow import SegFile
@@ -9,7 +9,6 @@ from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--foreground-triggers',
                     help="HDF file containing the zerolag foreground triggers "
                          "from the analysis")

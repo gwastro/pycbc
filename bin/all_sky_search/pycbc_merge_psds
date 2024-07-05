@@ -18,12 +18,10 @@
 """ Merge hdf psd files
 """
 import logging, argparse, numpy, pycbc.types
-from pycbc.version import git_verbose_msg as version
 from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--psd-files', nargs='+')
 parser.add_argument("--output-file", required=True)
 
