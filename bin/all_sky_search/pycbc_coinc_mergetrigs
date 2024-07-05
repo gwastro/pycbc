@@ -5,7 +5,7 @@
 
 import numpy, argparse, h5py, logging
 from pycbc.io import HFile
-from pycbc import init_logging
+from pycbc import add_common_pycbc_options, init_logging
 
 def changes(arr):
     l = numpy.where(arr[:-1] != arr[1:])[0]
@@ -30,7 +30,7 @@ def region(f, key, boundaries, ids):
                      dtype=h5py.special_dtype(ref=h5py.RegionReference))
 
 parser = argparse.ArgumentParser()
-pycbc.add_common_pycbc_options(parser)
+add_common_pycbc_options(parser)
 parser.add_argument('--trigger-files', nargs='+')
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--bank-file', required=True)

@@ -18,6 +18,7 @@ import argparse, logging
 
 import numpy as np
 
+import pycbc
 from pycbc import init_logging
 from pycbc.io import HFile
 from pycbc.events import triggers

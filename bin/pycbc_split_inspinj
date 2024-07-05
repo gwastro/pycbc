@@ -6,6 +6,7 @@ from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
 from itertools import cycle
 
+import pycbc
 from pycbc.io.ligolw import LIGOLWContentHandler, get_table_columns
 
 # Parse command line

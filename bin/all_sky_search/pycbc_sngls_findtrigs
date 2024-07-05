@@ -2,6 +2,8 @@
 import argparse, logging, h5py, numpy as np
 from ligo.segments import infinity
 from numpy.random import seed, shuffle
+
+import pycbc
 from pycbc.events import veto, coinc, stat
 import pycbc.conversions as conv
 from pycbc import io

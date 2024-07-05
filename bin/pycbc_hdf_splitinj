@@ -8,6 +8,7 @@ Split sets are organized to maximize time between injections.
 import argparse
 import numpy as np
 
+import pycbc
 from pycbc.inject import InjectionSet
 from pycbc.io.hdf import HFile
 

@@ -20,6 +20,7 @@ use('Agg')
 from matplotlib import pyplot as plt
 import numpy as np
 
+import pycbc
 from pycbc import io, events, bin_utils
 from pycbc.events import ranking
 from pycbc.events import trigger_fits as trstats

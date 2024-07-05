@@ -18,6 +18,7 @@ import argparse, logging
 
 import copy, numpy as np
 
+import pycbc
 from pycbc import events, init_logging
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import stat as statsmod

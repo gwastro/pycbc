@@ -26,6 +26,7 @@ import tempfile
 
 from ligo.lw import lsctables, utils as ligolw_utils
 
+import pycbc
 from pycbc import init_logging
 from pycbc.waveform import bank as wavebank
 from pycbc.io import WaveformArray
