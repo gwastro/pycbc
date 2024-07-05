@@ -44,7 +44,6 @@ __program__ = "pycbc_banksim_match_combine"
 # Read command line options
 parser = argparse.ArgumentParser(description=__doc__)
 
-parser.add_argument("--version", action="version", version=__version__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--match-files", nargs='+',
                     help="Explicit list of match files.")

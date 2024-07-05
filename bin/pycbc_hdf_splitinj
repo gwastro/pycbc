@@ -9,15 +9,12 @@ import argparse
 import numpy as np
 
 from pycbc.inject import InjectionSet
-import pycbc.version
 from pycbc.io.hdf import HFile
 
 
 # Parse command line
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("-f", "--output-files", nargs='*', required=True,
                     help="Names of output files")
 parser.add_argument("-i", "--input-file", required=True,

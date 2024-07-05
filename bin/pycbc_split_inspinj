@@ -6,15 +6,11 @@ from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
 from itertools import cycle
 
-import pycbc.version
 from pycbc.io.ligolw import LIGOLWContentHandler, get_table_columns
-
 
 # Parse command line
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("-n", "--num-splits", type=int,
                    help="Number of files to be generated")

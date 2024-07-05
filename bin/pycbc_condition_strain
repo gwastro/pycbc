@@ -28,7 +28,6 @@ import logging
 import argparse
 
 import pycbc.strain
-import pycbc.version
 import pycbc.frame
 import pycbc.fft
 from pycbc.types import float32, float64
@@ -47,8 +46,6 @@ def write_strain(file_name, channel, data):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--output-strain-file', required=True,
                     help='Name of output frame file. The file format is '
                          'selected based on the extension (.gwf, .npy, .hdf '

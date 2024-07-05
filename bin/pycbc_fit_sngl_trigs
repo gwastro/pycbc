@@ -23,7 +23,6 @@ import numpy as np
 from pycbc import io, events, bin_utils
 from pycbc.events import ranking
 from pycbc.events import trigger_fits as trstats
-import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
@@ -56,7 +55,6 @@ parser = argparse.ArgumentParser(usage="",
     description="Perform maximum-likelihood fits of single inspiral trigger"
                 "distributions to various functions")
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("--inputs", nargs="+",
                     help="Input file or space-separated list of input files "
                     "containing single triggers.  Currently .xml(.gz) "

@@ -39,11 +39,11 @@ try:
     # before version.py has been generated.
     from .version import git_hash
     from .version import version as pycbc_version
-    from .version import git_verbose_msg
+    from .version import Version
 except:
     git_hash = 'none'
     pycbc_version = 'none'
-    git_verbose_msg = 'none'
+    Version = None
 
 __version__ = pycbc_version
 
@@ -96,8 +96,7 @@ def add_common_pycbc_options(parser):
     )
     group.add_argument(
         '--version',
-        action="version",
-        version=git_verbose_msg,
+        action=Version,
         help=(
             'Display version information and exit.'
         )

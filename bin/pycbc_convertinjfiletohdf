@@ -161,8 +161,6 @@ class LVKNewStyleInjectionSet(object):
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file', required=True,
                     help="The injection file to load. Must end in '.xml[.gz]' "
                          "and must contain a SimInspiral table")
