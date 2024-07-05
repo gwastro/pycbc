@@ -26,13 +26,10 @@ import argparse
 import numpy
 import h5py
 import pycbc
-import pycbc.version
 from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("--input-file", required=True,
                     help="Input merge triggers HDF file.")
 parser.add_argument("--output-file", required=True,

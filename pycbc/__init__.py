@@ -39,9 +39,11 @@ try:
     # before version.py has been generated.
     from .version import git_hash
     from .version import version as pycbc_version
+    from .version import git_verbose_msg
 except:
     git_hash = 'none'
     pycbc_version = 'none'
+    git_verbose_msg = 'none'
 
 __version__ = pycbc_version
 
@@ -79,16 +81,26 @@ def add_common_pycbc_options(parser):
         title="PyCBC common options",
         description="Common options for PyCBC executables.",
     )
-    group.add_argument('-v', '--verbose', action='count', default=0,
-                       help='Add verbosity to logging. Adding the option '
-                            'multiple times makes logging progressively '
-                            'more verbose, e.g. --verbose or -v provides '
-                            'logging at the info level, but -vv or '
-                            '--verbose --verbose provides debug logging.')
+    group.add_argument(
+        '-v',
+        '--verbose',
+        action='count',
+        default=0,
+        help=(
+            'Add verbosity to logging. Adding the option '
+            'multiple times makes logging progressively '
+            'more verbose, e.g. --verbose or -v provides '
+            'logging at the info level, but -vv or '
+            '--verbose --verbose provides debug logging.'
+        )
+    )
     group.add_argument(
         '--version',
         action="version",
-        version=pycbc_version.git_verbose_msg
+        version=git_verbose_msg,
+        help=(
+            'Display version information and exit.'
+        )
     )
 
 
