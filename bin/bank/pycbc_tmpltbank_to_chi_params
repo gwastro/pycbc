@@ -45,7 +45,6 @@ parser = argparse.ArgumentParser(description=__doc__,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
-parser.add_argument("--version", action="version", version=__version__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-bank", action="store", required=True,
                     help="The template bank to use an input.")

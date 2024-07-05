@@ -48,7 +48,6 @@ parser = argparse.ArgumentParser(
     formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
-parser.add_argument('--version', action='version', version=__version__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--random-seed", action="store", type=int,
                     default=None,

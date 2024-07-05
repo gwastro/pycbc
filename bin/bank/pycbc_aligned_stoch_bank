@@ -45,7 +45,6 @@ parser = argparse.ArgumentParser(description=_desc,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
-parser.add_argument("--version", action="version", version=__version__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
                     help="Use a variable upper frequency cutoff in laying "

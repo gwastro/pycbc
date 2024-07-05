@@ -28,7 +28,6 @@ use('agg')
 from matplotlib import pyplot as plt
 
 import pycbc
-from pycbc import __version__
 from pycbc import (distributions, results, waveform)
 from pycbc.inference.option_utils import ParseParametersArg
 from pycbc.distributions.utils import prior_from_config
@@ -76,8 +75,6 @@ parser.add_argument("--nsamples", type=int, default=10000,
                          "plotting. Default is 10000.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")
-parser.add_argument("--version", action="version", version=__version__,
-                    help="show version number and exit")
 
 # parse the command line
 opts = parser.parse_args()

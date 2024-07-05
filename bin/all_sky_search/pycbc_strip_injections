@@ -1,5 +1,5 @@
 #!/bin/env python
-import numpy, argparse, pycbc.version, pycbc.pnutils, logging
+import numpy, argparse, pycbc.pnutils, logging
 from pycbc.events import veto
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw import ligolw, table, utils as ligolw_utils
@@ -13,7 +13,6 @@ def remove(l, i):
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file')
 parser.add_argument('--veto-file', 
                       help="File containing segments used to veto injections")

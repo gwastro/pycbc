@@ -178,7 +178,6 @@ parser = argparse.ArgumentParser(description=_desc,
 
 # Begin with code specific options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-s", "--stack-distance", action="store", type=float,\
                   default=0.2, help="Minimum metric spacing before we "+\
                                "stack.")

@@ -4,7 +4,6 @@ from ligo.segments import infinity
 from numpy.random import seed, shuffle
 from pycbc.events import veto, coinc, stat
 import pycbc.conversions as conv
-import pycbc.version
 from pycbc import io
 from pycbc.events import cuts, trigger_fits as trfits
 from pycbc.events.veto import indices_outside_times
@@ -13,8 +12,6 @@ from pycbc import init_logging
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action='version',
-                    version=pycbc.version.git_verbose_msg)
 # Basic file input options
 parser.add_argument("--trigger-files", type=str, nargs=1,
                     help="File containing single-detector triggers")
