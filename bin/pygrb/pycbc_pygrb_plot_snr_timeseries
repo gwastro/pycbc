@@ -95,8 +95,7 @@ def reset_times(data_time, trig_time):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
-                                          version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("-t", "--trig-file", action="store",
                     default=None, required=True,
                     help="The location of the trigger file")

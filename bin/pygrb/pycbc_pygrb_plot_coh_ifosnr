@@ -164,9 +164,7 @@ def plot_deviation(percentile, snr_grid, y, ax, style):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(
-    description=__doc__, version=__version__
-)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument(
     "-t",
     "--trig-file",

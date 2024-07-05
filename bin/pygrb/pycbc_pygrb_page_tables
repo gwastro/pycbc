@@ -180,8 +180,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
-                                          version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("-F", "--offsource-file", action="store", required=True,
                     help="Location of off-source trigger file")
 parser.add_argument("--onsource-file", action="store",
