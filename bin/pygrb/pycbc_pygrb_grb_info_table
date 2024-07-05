@@ -45,7 +45,6 @@ __program__ = "pycbc_pygrb_grb_info_table"
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=
                                  argparse.ArgumentDefaultsHelpFormatter)
 add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument("--trigger-time", type=int,
                     required=True,
                     help="GPS time of the GRB.")

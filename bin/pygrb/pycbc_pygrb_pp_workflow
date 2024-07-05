@@ -49,7 +49,6 @@ __program__ = "pycbc_pygrb_pp_workflow"
 # Use the standard workflow command-line parsing routines.
 parser = argparse.ArgumentParser(description=__doc__[1:])
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument("-t", "--trig-files", action="store",
                     required=True, nargs="+",
                     help="The locations of the trigger files "

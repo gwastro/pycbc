@@ -32,7 +32,6 @@ __program__ = "pycbc_pygrb_exclusion_dist_table"
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=
                                  argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument("--input-files", nargs="+", required=True,
                     help="List of JSON input files" +
                     " output by pycbc_pygrb_efficiency" +

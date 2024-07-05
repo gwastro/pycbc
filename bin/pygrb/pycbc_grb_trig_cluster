@@ -34,7 +34,6 @@ import h5py
 
 from gwdatafind.utils import filename_metadata
 
-from pycbc import __version__
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.io.hdf import HFile
 
@@ -121,13 +120,6 @@ parser = argparse.ArgumentParser(
 )
 
 add_common_pycbc_options(parser)
-parser.add_argument(
-    "-V",
-    "--version",
-    action="version",
-    version=__version__,
-    help="show version number and exit",
-)
 
 # clustering
 parser.add_argument(

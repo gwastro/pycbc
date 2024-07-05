@@ -35,7 +35,7 @@ from gwdatafind.utils import (file_segment, filename_metadata)
 from ligo import segments
 from ligo.segments.utils import fromsegwizard
 
-from pycbc import __version__, add_common_pycbc_options, init_logging
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
 from pycbc.io.hdf import HFile
 
@@ -342,13 +342,6 @@ parser = argparse.ArgumentParser(
 )
 
 add_common_pycbc_options(parser)
-parser.add_argument(
-    "-V",
-    "--version",
-    action="version",
-    version=__version__,
-    help="show version number and exit",
-)
 
 # tags
 parser.add_argument(

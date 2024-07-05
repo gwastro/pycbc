@@ -46,7 +46,6 @@ workflow_name = "pygrb_offline"
 # Parse command line options and instantiate pycbc workflow object
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__)
 _workflow.add_workflow_command_line_group(parser)
 _workflow.add_workflow_settings_cli(parser)
 args = parser.parse_args()
