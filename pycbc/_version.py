@@ -81,15 +81,25 @@ class PyCBCVersionAction(argparse._StoreAction):
     PyCBC, and for LAL and LALSimulation depending on an integer variable.
     Can be supplied without the option
     """
+    default_help = (
+        'Display PyCBC version information and exit. '
+        'Can be supplied a modifier integer to control the '
+        'verbosity of the version information. 0 and 1 are the '
+        'same as --version; 2 provides more detailed PyCBC library '
+        'information; 3 provides information about PyCBC, '
+        'LAL and LALSimulation packages (if installed)'
+    )
     def __init__(self,
                  option_strings,
                  dest,
+                 help=default_help,
                  **kw):
         argparse._StoreAction.__init__(
             self,
             option_strings,
             dest=dest,
             nargs='?',
+            help=help,
             type=int,
             **kw,
         )
@@ -98,7 +108,6 @@ class PyCBCVersionAction(argparse._StoreAction):
         version_no = 0 if values is None else values
         import pycbc
         setattr(namespace, self.dest, version_no)
-        print(namespace)
         if version_no <= 1:
             # --version called with zero or default - return the
             # simple version string

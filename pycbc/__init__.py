@@ -97,14 +97,6 @@ def add_common_pycbc_options(parser):
     group.add_argument(
         '--version',
         action=PyCBCVersionAction,
-        help=(
-            'Display PyCBC version information and exit. '
-            'Can be supplied a modifier integer to control the '
-            'verbosity of the version information. 0 and 1 are the '
-            'same as --version; 2 provides more detailed PyCBC library '
-            'information; 3 provides information about PyCBC, '
-            'LAL and LALSimulation packages (if installed)'
-        )
     )
 
 
