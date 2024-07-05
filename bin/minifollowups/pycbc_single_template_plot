@@ -29,8 +29,6 @@ from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--single-template-file', required=True,
     help="HDF file containing the SNR and CHISQ timeseries. "
          " The output of pycbc_single_template")
