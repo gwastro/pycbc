@@ -29,7 +29,7 @@ def call_rlikelihood(params):
     models._global_instance.update(**params)
     rec = models._global_instance.reconstruct()
     return logl, rec
-    
+
 class OutOfSamples(Exception):
     pass
 
@@ -53,6 +53,7 @@ class NetBank(DummySampler):
                  **kwargs):
         super().__init__(model, *args)
 
+        self.meta = {}
         self.mapfile = mapfile
         self.rounds = int(rounds)
         self.dmap = {}
@@ -73,15 +74,15 @@ class NetBank(DummySampler):
 
         if size > len(self.draw[i]):
             raise OutOfSamples
-     
+
         numpy.random.shuffle(self.draw[i])
         selected = self.draw[i][:size]
-        self.draw[i] = self.draw[i][size:]   
-        
+        self.draw[i] = self.draw[i][size:]
+
         if size > 0:
             remain = len(self.draw[i])
             logging.info(f'Drew {size}, {remain} remains in bin {i}')
-        
+
         return self.dmap[i][selected]
 
     def sample_round(self, bin_weight, node_idx, lengths):
@@ -143,12 +144,12 @@ class NetBank(DummySampler):
         #s = bin_id.argsort()
         #bin_id = bin_id[s]
         #loglrsamp = loglrsamp[s]
-        
+
         bid = numpy.unique(bin_id)
         for i in bid:
             x = numpy.where(i == bin_id)[0]
             logz[i] = logsumexp(loglrsamp[x]) - numpy.log(len(x))
-        
+
         logz = (logz + numpy.log(node_lengths) - numpy.log(node_lengths.sum()))
         return logsumexp(logz)
 
@@ -185,21 +186,21 @@ class NetBank(DummySampler):
                 self.dmap[i] = f['map'][str(i)][:]
 
         # Sample from posterior
-        
+
         psamp = None
         loglr_samp = None
         weight2 = None
         bin_ids = None
-        
-        weight = lengths[passed] / lengths[passed].sum() * 4
-        
+
+        weight = lengths[passed] / lengths[passed].sum()
+
         for i in range(self.rounds):
             try:
                 psamp_v, loglr_samp_v, weight2_v, bin_id = self.sample_round(weight/weight.sum(), passed, lengths[passed])
             except OutOfSamples:
                 logging.info("No more samples to draw from")
-                break             
-                             
+                break
+
             for i, v in zip(bin_id, weight2_v):
                 weight[i] += v
 
@@ -213,19 +214,22 @@ class NetBank(DummySampler):
                 loglr_samp = numpy.concatenate([loglr_samp_v, loglr_samp])
                 weight2 = numpy.concatenate([weight2_v, weight2])
                 bin_ids = numpy.concatenate([bin_id, bin_ids])
-                
+
             uniq = numpy.unique(psamp)
-            
+
             ess = 1.0 / ((weight2/weight2.sum()) ** 2.0).sum()
             logging.info("ESS = %s", ess)
-            
+
             logz = self.calculate_evidence(node_loglrs, lengths, loglr_samp, bin_ids)
             dlogz = (loglr_samp * weight2).sum() / weight2.sum() + numpy.log(len(bin_id)) - numpy.log(lengths.sum())
             logging.info("dlogz = %s, %s", dlogz, logz)
 
         # Prepare the equally weighted output samples
+        self.meta['ncalls'] = len(weight2)
+        self.meta['ess'] = ess
+
         weight2 /= weight2.sum()
-        draw2 = numpy.random.choice(len(psamp), size=int(ess * 5),
+        draw2 = numpy.random.choice(len(psamp), size=int(ess * 1),
                        replace=True, p=weight2)
         logging.info("Unique values second draw %s",
                      len(numpy.unique(psamp[draw2])))
