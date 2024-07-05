@@ -622,7 +622,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         super().__init__(variable_params, submodels, **kwargs)
 
         # store the original config to self
-        self.original_config = kwargs['original_config'][0]
+        self.original_config = kwargs['original_config']
         # assume the ground-based submodel as the primary model
         self.primary_model = self.submodels[kwargs['primary_lbl'][0]]
         self.primary_lbl = kwargs['primary_lbl'][0]
