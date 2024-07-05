@@ -621,6 +621,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
     def __init__(self, variable_params, submodels, **kwargs):
         super().__init__(variable_params, submodels, **kwargs)
 
+        # store the original config to self
+        self.original_config = kwargs['original_config'][0]
         # assume the ground-based submodel as the primary model
         self.primary_model = self.submodels[kwargs['primary_lbl'][0]]
         self.primary_lbl = kwargs['primary_lbl'][0]
@@ -644,6 +646,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
         """
+        # replace the internal config for top-level model with
+        # the original config
+        fp.write_config_file(self.original_config)
         super().write_metadata(fp, group=group)
         sampattrs = fp.getattrs(group=fp.samples_group)
         # if a group is specified, prepend the lognl names with it
@@ -823,6 +828,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # we need the read from config function from the init; to prevent
         # circular imports, we import it here
         from pycbc.inference.models import read_from_config
+        # store the original config file
+        kwargs['original_config'] = cp
         # get the submodels
         kwargs['primary_lbl'] = shlex.split(cp.get('model', 'primary_model'))
         kwargs['others_lbls'] = shlex.split(cp.get('model', 'other_models'))
@@ -832,6 +839,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                                        submodel_lbls))
         sparam_map = map_params(hpiter(cp.options('static_params'),
                                        submodel_lbls))
+        print("cp: ", cp)
+        print("vparam_map: ", vparam_map)
+        print("sparam_map: ", sparam_map)
         # get the acceleration label
         kwargs['static_margin_params_in_other_models'] = shlex.split(
             cp.get('model', 'static_margin_params_in_other_models'))
@@ -883,6 +893,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # set the static params
             subcp.add_section('static_params')
             for param in sparam_map[lbl]:
+                print("[set the static params] param: ", param)
                 subcp.set('static_params', param.subname,
                           cp.get('static_params', param.fullname))
 
@@ -896,6 +907,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             subcp.add_section('variable_params')
             for param in vparam_map[lbl]:
                 if lbl in kwargs['primary_lbl']:
+                    print("[set the variable params] param: ", param)
                     # set variable_params for the primary model
                     subcp.set('variable_params', param.subname,
                               cp.get('variable_params', param.fullname))
@@ -954,10 +966,17 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         primary_model = submodels[kwargs['primary_lbl'][0]]
         marginalized_params = primary_model.marginalize_vector_params.copy()
         marginalized_params = list(marginalized_params.keys())
+        # add distance or phase if they are marginalized
+        if primary_model.distance_marginalization:
+            marginalized_params.append('distance')
+        if primary_model.marginalize_phase:
+            marginalized_params.append('coa_phase')
+        print("marginalized_params: ", marginalized_params)
 
         for p in primary_model.static_params.keys():
             p_full = '%s__%s' % (kwargs['primary_lbl'][0], p)
             if p_full not in cp['static_params']:
+                print("p_full: ", p_full)
                 cp['static_params'][p_full] = "%s" % \
                     primary_model.static_params[p]
 
@@ -969,7 +988,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     cp.pop(section)
 
         # save the vitual config file to disk for later check
-        with open('top_level.ini', 'w', encoding='utf-8') as file:
+        with open('internal_top.ini', 'w', encoding='utf-8') as file:
             cp.write(file)
 
         # now load the model
