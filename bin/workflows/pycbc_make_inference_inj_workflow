@@ -23,11 +23,9 @@ import logging
 import os
 import shlex
 import numpy
-import pycbc.version
 import socket
 import sys
 
-from pycbc import __version__
 from pycbc import results, init_logging, add_common_pycbc_options
 from pycbc.results import layout
 from pycbc.results import metadata
@@ -91,9 +89,6 @@ core.add_workflow_settings_cli(parser, include_subdax_opts=True)
 parser.add_argument("--seed", type=int, default=0,
                     help="Starting to seed to use. This will be incremented "
                          "one for each injection analyzed. Default is 0.")
-# version option
-parser.add_argument("--version", action="version", version=__version__,
-                    help="Prints version information.")
 
 # parser command line
 opts = parser.parse_args()

@@ -171,7 +171,6 @@ class CombineHDFBanksExecutable(wf.Executable):
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("--output-file", type=str, default=None,
                     help="Specify the output file name. Either a name can be "
                          "provided or a full path to file. Is this is not "

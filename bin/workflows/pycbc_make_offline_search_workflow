@@ -153,7 +153,6 @@ def check_stop(job_name, container, workflow, finalize_workflow):
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
