@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import argparse, pycbc.version
+import argparse
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
@@ -30,12 +30,10 @@ from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results.color import ifo_color
 from pycbc.results.mpld3_utils import MPLSlide, LineTooltip
 from pycbc.workflow import SegFile
-import pycbc.version
 
 # parse command line
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--segment-files', type=str, nargs="+",
                         help='XML files with a segment definer table to read.')
 parser.add_argument('--segment-names', type=str, nargs="+", required=False,

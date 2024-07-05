@@ -10,7 +10,6 @@ from pycbc.io import (
 )
 from pycbc import conversions, init_logging, add_common_pycbc_options
 from pycbc.detector import Detector
-import pycbc.version
 
 def snr_from_chisq(chisq, newsnr, q=6.):
     snr = numpy.zeros(len(chisq)) + float(newsnr)
@@ -20,8 +19,6 @@ def snr_from_chisq(chisq, newsnr, q=6.):
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--found-injection-file', required=True,
                     help='HDF format found injection file. Required')
 parser.add_argument('--single-injection-file', required=True,

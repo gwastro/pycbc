@@ -34,7 +34,6 @@ __program__ = "pycbc_banksim_table_point_injs"
 parser = argparse.ArgumentParser(usage='',
     description="Plot effective fitting factor vs mass1 and mass2.")
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument('--input-files', nargs='+', default=None, required=True,
                     help="List of input files.")
 parser.add_argument('--directory-links', nargs='+', default=None,

@@ -26,7 +26,6 @@ import pycbc.results
 # parse command line
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
 parser.add_argument('--html-text', type=str,

@@ -5,15 +5,13 @@ import numpy, logging, argparse, sys, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plot
 
-import pycbc.version, pycbc.detector
+import pycbc.detector
 from pycbc import pnutils, results
 from pycbc.events import triggers
 from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("--injection-file", required=True,
                     help="hdf injection file containing found injections. "
                          "Required")

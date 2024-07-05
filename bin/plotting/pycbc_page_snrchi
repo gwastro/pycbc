@@ -9,7 +9,6 @@ matplotlib.use('Agg')
 import pylab
 
 import pycbc.results
-import pycbc.version
 from pycbc.events import veto
 from pycbc.io import (
     get_chisq_from_file_choice, chisq_choices, SingleDetTriggers, HFile
@@ -18,8 +17,6 @@ from pycbc.io import (
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--trigger-file', help='Single ifo trigger file')
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--veto-file',
                     help='Optional, file of veto segments to remove triggers')
 parser.add_argument('--segment-name', default=None, type=str,

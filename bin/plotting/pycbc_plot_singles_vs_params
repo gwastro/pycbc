@@ -36,13 +36,10 @@ import pycbc.pnutils
 import pycbc.events
 import pycbc.results
 import pycbc.io
-import pycbc.version
 from pycbc.events import ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--single-trig-file', required=True,
                     help='Path to file containing single-detector triggers in '
                          'HDF5 format. Required')

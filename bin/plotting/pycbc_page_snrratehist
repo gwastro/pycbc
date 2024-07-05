@@ -15,7 +15,6 @@ from scipy.special import erf, erfinv
 from pycbc.io.hdf import HFile
 
 import pycbc.results
-import pycbc.version
 from pycbc import conversions as conv
 
 def sigma_from_p(p):
@@ -28,8 +27,6 @@ def p_from_sigma(sig):
 parser = argparse.ArgumentParser()
 # General required options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file')
 parser.add_argument('--output-file')
 parser.add_argument('--bin-size', type=float)

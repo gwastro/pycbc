@@ -9,15 +9,12 @@ pycbc results pages
 import argparse
 import logging
 
-import pycbc.version
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import (save_fig_with_metadata, html_escape,
     get_library_version_info, get_code_version_numbers)
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--executables', nargs='+', required=True,
                     help="List of executables to provide version "
                          "information for")

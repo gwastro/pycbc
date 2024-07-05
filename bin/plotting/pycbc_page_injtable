@@ -10,7 +10,6 @@ import pycbc.results
 import pycbc.detector
 import pycbc.pnutils
 import pycbc.events
-import pycbc.version
 from pycbc.io.hdf import HFile
 from pycbc import add_common_pycbc_options, init_logging
 from pycbc.types import MultiDetOptionAction
@@ -18,8 +17,6 @@ from pycbc.types import MultiDetOptionAction
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file',
                     help='HDF File containing the matched injections')
 parser.add_argument('--single-trigger-files', nargs='*',

@@ -28,7 +28,6 @@ from ligo.lw import utils
 
 import pycbc.results
 from pycbc.results import save_fig_with_metadata
-import pycbc.version
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
@@ -36,7 +35,6 @@ parser = argparse.ArgumentParser(description=__doc__)
 
 # add command line options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--veto-definer-file', type=str,
                         help='XML files with a veto_definer table to read.')
 parser.add_argument('--output-file', type=str,

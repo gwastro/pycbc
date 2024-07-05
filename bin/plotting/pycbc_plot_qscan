@@ -34,7 +34,6 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 
 import pycbc.strain
-import pycbc.version
 import pycbc.results
 
 # https://stackoverflow.com/questions/9978880/python-argument-parser-list-of-list-or-tuple-of-tuples
@@ -47,8 +46,6 @@ def t_window(s):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--output-file', required=True, help='Output plot')
 parser.add_argument('--center-time', type=float,
                     help='Center plot on the given GPS time. If omitted, use '
