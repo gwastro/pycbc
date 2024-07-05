@@ -39,11 +39,11 @@ try:
     # before version.py has been generated.
     from .version import git_hash
     from .version import version as pycbc_version
-    from .version import Version
+    from .version import PyCBCVersionAction
 except:
     git_hash = 'none'
     pycbc_version = 'none'
-    Version = None
+    PyCBCVersionAction = None
 
 __version__ = pycbc_version
 
@@ -96,9 +96,14 @@ def add_common_pycbc_options(parser):
     )
     group.add_argument(
         '--version',
-        action=Version,
+        action=PyCBCVersionAction,
         help=(
-            'Display version information and exit.'
+            'Display PyCBC version information and exit. '
+            'Can be supplied a modifier integer to control the '
+            'verbosity of the version information. 0 and 1 are the '
+            'same as --version; 2 provides more detailed PyCBC library '
+            'information; 3 provides information about PyCBC, '
+            'LAL and LALSimulation packages (if installed)'
         )
     )
 
