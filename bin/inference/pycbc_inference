@@ -141,7 +141,12 @@ with ctx:
     if pool.is_main_process():
         for fn in [sampler.checkpoint_file, sampler.backup_file]:
             with loadfile(fn, 'a') as fp:
-                fp.write_config_file(cp)
+                # some models will interally modify original cp for sampling,
+                # such as joint_primary_marginalized, we need to save original
+                if hasattr(model, 'original_config'):
+                    fp.write_config_file(model.original_config)
+                else:
+                    fp.write_config_file(cp)
 
     # Run the sampler
     sampler.run()
