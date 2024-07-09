@@ -42,12 +42,6 @@ parser.add_argument(
     help="The list of detectors to include triggers in the merged file"
 )
 
-# Option to output list of trigger files
-parser.add_argument(
-    '--output-trigger-file-list',
-    help='Name of the output file to save the list of trigger files.'
-)
-
 parser.add_argument(
     '--output-file',
     required=True,
@@ -66,15 +60,6 @@ pycbc.init_logging(args.verbose)
 logging.info("Finding trigger files")
 trigger_files = liveio.find_trigger_files_from_cli(args)
 logging.info("%s files found", len(trigger_files))
-
-if args.output_trigger_file_list:
-    logging.info(
-        'Writing list of trigger files to %s ',
-        args.output_trigger_file_list
-    )
-    with open(args.output_trigger_file_list, 'w') as f:
-        for item in trigger_files:
-            f.write("%s\n" % item)
 
 ###########################
 # COLLATE THE TRIGGER FILES
@@ -96,6 +81,10 @@ file_count = 0
 n_triggers = {ifo: 0 for ifo in args.ifos}
 n_triggers_cut = {ifo: 0 for ifo in args.ifos}
 segs = {ifo: segmentlist([]) for ifo in args.ifos}
+
+with h5py.File(args.bank_file,'r') as bank_file:
+    # Count the number of templates
+    n_templates = bank_file['template_hash'].size
 
 with h5py.File(args.output_file, 'w') as destination:
     # Create the ifo groups in the trigger file
@@ -171,7 +160,7 @@ with h5py.File(args.output_file, 'w') as destination:
                             n_triggers_cut[ifo],
                             axis=0
                         )
-                        destination[ifo][name][-keep_idx.size:] = triggers[name]
+                        destination[ifo][name][-keep_idx.size:] = dataset
                     else:
                         destination[ifo].create_dataset(
                             name,
@@ -208,15 +197,10 @@ with h5py.File(args.output_file, 'w') as destination:
                 n_triggers_cut[ifo],
             )
 
-with h5py.File(args.bank_file,'r') as bank_file:
-    # Count the number of templates
-    n_templates = bank_file['template_hash'].size
-
-# Add all the template boundaries
-with h5py.File(args.output_file, 'a') as output:
+    # Add all the template boundaries
     for ifo in args.ifos:
         logging.info("Processing %s", ifo)
-        triggers = output[ifo]
+        triggers = destination[ifo]
         try:
             template_ids = triggers['template_id'][:]
         except KeyError:
