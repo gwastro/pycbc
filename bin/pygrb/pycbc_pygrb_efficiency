@@ -551,7 +551,7 @@ ax.plot(dist_plot_vals, (fraction_no_mc), 'g-',
 ax.errorbar(dist_plot_vals, (fraction_no_mc),
             yerr=[yerr_low_no_mc, yerr_high_no_mc], c='green')
 marg_eff = fraction_mc
-if not np.isnan(marg_eff.sum()):
+if np.nansum(marg_eff) > 0:
     ax.plot(dist_plot_vals, marg_eff, 'r-', label='Marginalised')
     ax.errorbar(dist_plot_vals, marg_eff, yerr=[yerr_low_mc, yerr_high_mc],
                 c='red')
@@ -624,10 +624,10 @@ ax.plot(dist_plot_vals, (fraction_no_mc), 'g-',
 ax.errorbar(dist_plot_vals, (fraction_no_mc),
             yerr=[yerr_low_no_mc, yerr_high_no_mc], c='green')
 marg_eff = fraction_mc
-if not np.isnan(marg_eff.sum()):
+if not np.nansum(marg_eff) > 0:
     ax.plot(dist_plot_vals, marg_eff, 'r-', label='Marginalised')
     ax.errorbar(dist_plot_vals, marg_eff, yerr=[yerr_low, yerr_high], c='red')
-if not np.isnan(red_efficiency.sum()):
+if not np.nansum(red_efficiency) > 0:
     ax.plot(dist_plot_vals, red_efficiency, 'm-',
             label='Inc. counting errors')
 ax.set_ylim([0, 1])
