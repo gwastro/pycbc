@@ -30,16 +30,22 @@ one parameter given a set of inputs.
 
 import copy
 import numpy
+import logging
+
 import lal
+
 from pycbc.detector import Detector
 import pycbc.cosmology
+from pycbc import neutron_stars as ns
+
 from .coordinates import (
     spherical_to_cartesian as _spherical_to_cartesian,
     cartesian_to_spherical as _cartesian_to_spherical)
-from pycbc import neutron_stars as ns
 
 pykerr = pycbc.libutils.import_optional('pykerr')
 lalsim = pycbc.libutils.import_optional('lalsimulation')
+
+logger = logging.getLogger('pycbc.conversions')
 
 #
 # =============================================================================

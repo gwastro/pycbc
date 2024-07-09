@@ -35,8 +35,9 @@ from gwdatafind.utils import (file_segment, filename_metadata)
 from ligo import segments
 from ligo.segments.utils import fromsegwizard
 
-from pycbc import __version__
+from pycbc import __version__, add_common_pycbc_options, init_logging
 from pycbc.results.pygrb_postprocessing_utils import template_hash_to_id
+from pycbc.io.hdf import HFile
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -150,7 +151,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     for filename in tqdm.tqdm(inputfiles, desc="Scanning trigger files",
                               disable=not verbose, total=nfiles, unit="files",
                               **TQDM_KW):
-        with h5py.File(filename, 'r') as h5f:
+        with HFile(filename, 'r') as h5f:
             # note: attributes are only recorded from the last file,
             #       since we presume all files have the same attributes
             attributes = dict(h5f.attrs)
@@ -193,14 +194,14 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     # record where we are in the global dataset
     position = defaultdict(int)
 
-    with h5py.File(outputfile, 'w') as h5out:
+    with HFile(outputfile, 'w') as h5out:
         _init_combined_file(h5out, attributes, datasets, **compression_kw)
 
         # copy dataset contents
         for filename in tqdm.tqdm(inputfiles, desc="Merging trigger files",
                                   disable=not verbose, total=nfiles,
                                   unit="files", **TQDM_KW):
-            with h5py.File(filename, 'r') as h5in:
+            with HFile(filename, 'r') as h5in:
                 if len(h5in['network']['event_id']) == 0:
                     continue
                 for dset in dataset_names:
@@ -243,7 +244,7 @@ def bin_events(inputfile, bins, outdir, filetag,
     """
     ifotag, _, seg = filename_metadata(inputfile)
 
-    with h5py.File(inputfile, "r") as h5in:
+    with HFile(inputfile, "r") as h5in:
         ifos = [k for k in h5in.keys() if k != "network"]
         times = h5in[column][()]
 
@@ -283,7 +284,7 @@ def bin_events(inputfile, bins, outdir, filetag,
             )
             bar = tqdm.tqdm(total=nsets, desc=msg, disable=not verbose,
                             unit="datasets", **TQDM_KW)
-            with h5py.File(outf, "w") as h5out:
+            with HFile(outf, "w") as h5out:
                 for old in h5in["network"].values():
                     if isinstance(old, h5py.Dataset):
                         h5out.create_dataset(
@@ -340,13 +341,7 @@ parser = argparse.ArgumentParser(
     description=__doc__,
 )
 
-parser.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",
-    default=False,
-    help="verbose output with microsecond timer (default: %(default)s)",
-)
+add_common_pycbc_options(parser)
 parser.add_argument(
     "-V",
     "--version",
@@ -457,6 +452,8 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 vprint = print if args.verbose else str
 

@@ -24,8 +24,8 @@ the harmonic mean."""
 import logging
 import argparse
 import numpy as np
-import h5py
 import pycbc
+from pycbc.io import HFile
 from pycbc.version import git_verbose_msg as version
 from pycbc.types import MultiDetOptionAction, FrequencySeries
 
@@ -54,7 +54,7 @@ delta_f = None
 
 for input_file in args.input_files:
     logging.info('Reading %s', input_file)
-    f = h5py.File(input_file, 'r')
+    f = HFile(input_file, 'r')
     ifo = tuple(f.keys())[0]
     df = f[ifo + '/psds/0'].attrs['delta_f']
     if delta_f is None:

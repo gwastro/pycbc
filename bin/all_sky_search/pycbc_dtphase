@@ -13,10 +13,11 @@ To get the signal rate this weight should be scaled by the local sensitivity
 value and by the SNR of the event in the reference detector.
 """
 
-import argparse, h5py, numpy as np, pycbc.detector, logging
+import argparse, numpy as np, pycbc.detector, logging
 from numpy.random import uniform
 from scipy.stats import norm
 from copy import deepcopy
+from pycbc.io import HFile
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -147,7 +148,7 @@ if max_td < 0.0425:
 # ifo which gets the smallest amplitude. This allows us to get the correct
 # symmetries handled under ifo switch and apply more consistent treatment
 # of error uncertainties.
-f = h5py.File(args.output_file, 'w')
+f = HFile(args.output_file, 'w')
 for ifo0 in args.ifos:
     logging.info('Storing results using %s as a reference', ifo0)
     other_ifos = deepcopy(args.ifos)

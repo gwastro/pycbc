@@ -5,6 +5,7 @@
 
 import numpy, argparse, h5py, logging
 import pycbc.version
+from pycbc.io import HFile
 from pycbc import init_logging
 
 def changes(arr):
@@ -15,7 +16,7 @@ def changes(arr):
 def collect(key, files):
     data = []
     for fname in files:
-        with h5py.File(fname, 'r') as fin:
+        with HFile(fname, 'r') as fin:
             if key in fin:
                 data += [fin[key][:]]
     return numpy.concatenate(data)
@@ -43,13 +44,13 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-f = h5py.File(args.output_file, 'w')
+f = HFile(args.output_file, 'w')
 
 logging.info("getting the list of columns from a representative file")
 trigger_columns = []
 for fname in args.trigger_files:
     try:
-        f2 = h5py.File(fname, 'r')
+        f2 = HFile(fname, 'r')
     except IOError as e:
         logging.error("Cannot open %s" % fname)
         raise e
@@ -83,7 +84,7 @@ ends = numpy.array([], dtype=numpy.float64)
 gating = {}
 for filename in args.trigger_files:
     try:
-        data = h5py.File(filename, 'r')
+        data = HFile(filename, 'r')
     except IOError as e:
         logging.error('Cannot open %s', filename)
         raise e
@@ -134,7 +135,7 @@ for gk, gv in gating.items():
 
 logging.info('set up sorting of triggers and template ids')
 # For fast lookup we need the templates in hash order
-hashes = h5py.File(args.bank_file, 'r')['template_hash'][:]
+hashes = HFile(args.bank_file, 'r')['template_hash'][:]
 bank_tids = hashes.argsort()
 unsort = bank_tids.argsort()
 hashes = hashes[bank_tids]

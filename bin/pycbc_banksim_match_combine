@@ -25,7 +25,6 @@ bank files, and the number of injections in each must correspond one-to-one.
 import imp
 import argparse
 import numpy as np
-import h5py
 
 from ligo.lw import utils, table
 
@@ -33,6 +32,7 @@ import pycbc
 from pycbc import pnutils
 from pycbc.waveform import TemplateBank
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.hdf import HFile
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -80,7 +80,7 @@ for fil in options.match_files:
 btables = {}
 itables = {}     
 
-f = h5py.File(options.output_file, "w")
+f = HFile(options.output_file, "w")
 
 # If we more these over to HDF we can decide column names dynamically. This is
 # why I'm using a dictionary now.

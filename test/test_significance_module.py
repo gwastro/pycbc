@@ -4,10 +4,10 @@ import unittest
 import argparse
 import itertools
 import copy
-import lal
 import numpy as np
 from utils import simple_exit
 from pycbc.events import significance
+from pycbc import conversions as conv
 
 def parse_args(args):
     # Helper function to convert a list of flags/options into
@@ -122,7 +122,7 @@ test_dict['H1L1']['fit_threshold'] = 6
 test_dict['H1']['fit_threshold'] = 5.5
 test_dict['L1']['fit_threshold'] = 5
 test_dict['H1L1']['far_limit'] = 0
-test_dict['H1']['far_limit'] = 1. / lal.YRJUL_SI
+test_dict['H1']['far_limit'] = conv.sec_to_year(1.)
 test_dict['L1']['far_limit'] = 0
 
 calc_methods = ['H1L1:trigger_fit', 'H1:trigger_fit', 'L1:trigger_fit']

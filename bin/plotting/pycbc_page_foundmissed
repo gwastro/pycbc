@@ -1,13 +1,20 @@
 #!/usr/bin/env python
 """ Plot found and missed injections.
 """
-import h5py, numpy, logging, os.path, argparse, sys
-import matplotlib; matplotlib.use('Agg')
+import numpy
+import logging
+import os.path
+import argparse
+import sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plot
+
 import pycbc.results.followup, pycbc.pnutils, pycbc.results, pycbc.version
 import pycbc.pnutils
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.detector import Detector
+from pycbc.io.hdf import HFile
 
 labels={'mchirp': 'Chirp Mass',
         'mtotal': 'Total Mass',
@@ -26,6 +33,7 @@ labels={'mchirp': 'Chirp Mass',
        }
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--injection-file',
                     help="The hdf injection file to plot", required=True)
 parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
@@ -41,7 +49,6 @@ parser.add_argument('--plot-all-distance', action='store_true', default=False,
                          "the plot will be truncated below 1")
 parser.add_argument('--colormap',default='cividis_r',
                    help="Type of colormap to be used for the plots.")
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--log-distance', action='store_true', default=False)
 parser.add_argument('--dynamic', action='store_true', default=False)
 parser.add_argument('--gradient-far', action='store_true',
@@ -64,7 +71,7 @@ args = parser.parse_args()
 init_logging(args.verbose)
 
 logging.info('Read in the data')
-f = h5py.File(args.injection_file, 'r')
+f = HFile(args.injection_file, 'r')
 time = f['injections/tc'][:]
 found = f['found_after_vetoes/injection_index'][:]
 missed = f['missed/after_vetoes'][:]

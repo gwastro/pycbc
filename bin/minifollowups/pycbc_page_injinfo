@@ -15,7 +15,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Make tables describing a missed injection"""
-import h5py
 import argparse
 import sys
 import numpy
@@ -25,6 +24,7 @@ import pycbc.results
 import pycbc.pnutils
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.detector import Detector
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
@@ -42,7 +42,7 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-f = h5py.File(args.injection_file, 'r')
+f = HFile(args.injection_file, 'r')
 iidx = args.injection_index
 
 # make a table for the coincident information #################################

@@ -29,6 +29,7 @@ import shutil
 
 from ligo import segments
 
+from pycbc import add_common_pycbc_options, init_logging
 import pycbc.version
 import pycbc.workflow as wf
 from pycbc.results import (static_table, layout)
@@ -154,10 +155,13 @@ class BanksimTablePointInjsExecutable(wf.Executable):
 # so run this with --help to see what options are added.
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
+add_common_pycbc_options(parser)
 parser.add_argument('--version', action='version', version=__version__)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 # FIXME: opts.tags is currently unused here.
 

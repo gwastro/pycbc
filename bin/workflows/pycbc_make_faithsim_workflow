@@ -13,6 +13,8 @@ import configparser as ConfigParser
 import numpy as np
 import logging
 import argparse
+
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.workflow.plotting import PlotExecutable
 from pycbc.workflow import setup_splittable_dax_generated
 
@@ -97,10 +99,13 @@ class CollectResultsExecutable(wf.Executable):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=__version__)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 workflow = wf.Workflow(args)
 

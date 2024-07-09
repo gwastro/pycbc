@@ -13,9 +13,10 @@
 # Public License for more details.
 
 
-import sys, h5py, argparse, logging, pycbc.version, numpy
+import sys, argparse, logging, pycbc.version, numpy
 from scipy.stats import norm
 from pycbc.events import triggers
+from pycbc.io import HFile
 from pycbc import init_logging
 
 def dist(i1, i2, parvals, smoothing_width):
@@ -266,7 +267,7 @@ logging.info("Loading input template fits")
 # they use the same bank
 num_templates = None
 for filename in args.template_fit_file:
-    with h5py.File(filename, 'r') as fits:
+    with HFile(filename, 'r') as fits:
         if num_templates is None:
             num_templates = fits['template_id'].size
         elif not num_templates == fits['template_id'].size:
@@ -377,7 +378,7 @@ if args.smoothing_method == 'n_closest' and n_required > nabove.sum():
     )
 
 logging.info('Calculating template parameter values')
-bank = h5py.File(args.bank_file, 'r')
+bank = HFile(args.bank_file, 'r')
 m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 
 parvals = []
@@ -485,7 +486,7 @@ else:
         ntotal_smoothed.append(smoothed_tuple[2])
 
 logging.info("Writing output")
-outfile = h5py.File(args.output, 'w')
+outfile = HFile(args.output, 'w')
 outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed

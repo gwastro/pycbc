@@ -1,0 +1,3 @@
+[BASIC]
+# Allow certain names for variables
+good-names=logger,Run,i,j,k,v,_

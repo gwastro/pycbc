@@ -24,19 +24,20 @@
 import sys
 import os
 import logging
-import h5py
 import json
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
 import scipy
 from scipy import stats
+
 import pycbc.version
 from pycbc import init_logging
 from pycbc.detector import Detector
 from pycbc.results import save_fig_with_metadata
 from pycbc.results import pygrb_postprocessing_utils as ppu
 from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc.io.hdf import HFile
 
 plt.switch_backend('Agg')
 rc("image")
@@ -130,7 +131,7 @@ opts = parser.parse_args()
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Load bank file
-bank_file = h5py.File(opts.bank_file, 'r')
+bank_file = HFile(opts.bank_file, 'r')
 
 # Store options used multiple times in local variables
 outdir = os.path.split(os.path.abspath(opts.background_output_file))[0]
@@ -236,7 +237,7 @@ max_bestnr, _, full_time_veto_max_bestnr =\
 # Calculate template chirp masses from bank
 # ==========================
 logging.info('Reading template chirp masses')
-with h5py.File(opts.bank_file, 'r') as bank_file:
+with HFile(opts.bank_file, 'r') as bank_file:
     template_mchirps = mchirp_from_mass1_mass2(
         bank_file['mass1'][:],
         bank_file['mass2'][:]

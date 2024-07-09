@@ -28,7 +28,6 @@ __date__ = "31.10.2017"
 import logging
 import argparse
 from numpy import logaddexp, log, newaxis, expm1
-import h5py
 import numpy as np
 from matplotlib import cm
 import pylab
@@ -37,6 +36,7 @@ import scipy.stats as ss
 
 import pycbc
 import pycbc.version
+from pycbc.io.hdf import HFile
 from pycbc.population import rates_functions as rf
 
 # Parse command line
@@ -66,10 +66,10 @@ assert len(opts.posterior_samples) == len(opts.population_models), \
               "Unequal number of posterior files and population models!"
 
 #Save rate posteriors in one file
-with h5py.File(opts.rate_file, 'w') as out:
+with HFile(opts.rate_file, 'w') as out:
     for fname, model in zip(opts.posterior_samples, opts.population_models):
 
-        f = h5py.File(fname, "r")
+        f = HFile(fname, "r")
         Rf = f[model + '/Rf'][:]
         Lf = f[model + '/Lf'][:]
 
@@ -85,12 +85,12 @@ pylab.figure()
 color=iter(cm.rainbow(np.linspace(0, 1, len(opts.population_models))))
 mods = zip(opts.posterior_samples, opts.population_models, opts.plot_labels)
 
-f = h5py.File(opts.prior_samples, "r")
+f = HFile(opts.prior_samples, "r")
 for fpost, model, lbl in mods:
 
     c = next(color)
 
-    fpo = h5py.File(fpost, "r")
+    fpo = HFile(fpost, "r")
     Rfpr, Rfpo = f[model + '/Rf'][:], fpo[model + '/Rf'][:]
     prior_alpha, prior_mu, prior_sigma = rf.fit(Rfpr)
     post_alpha, post_mu, post_sigma = rf.fit(Rfpo)

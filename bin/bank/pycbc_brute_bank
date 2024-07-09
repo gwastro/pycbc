@@ -20,7 +20,6 @@
 """Generate a bank of templates using a brute force stochastic method.
 """
 import numpy
-import h5py
 import logging
 import argparse
 import pickle
@@ -28,10 +27,12 @@ import numpy.random
 from scipy.stats import gaussian_kde
 
 import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.conversions
+import pycbc.pool
 from pycbc import transforms
 from pycbc.waveform.spa_tmplt import spa_length_in_time
 from pycbc.distributions import read_params_from_config
 from pycbc.distributions.utils import draw_samples_from_config, prior_from_config
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -47,8 +48,8 @@ parser.add_argument('--min',
     help='list of the minimum parameter values', nargs='+', type=float)
 parser.add_argument('--max',
     help='list of the maximum parameter values', nargs='+', type=float)
-parser.add_argument('--approximant',  required=True,
-    help='The waveform approximant to place')
+parser.add_argument('--approximant',  required=False,
+    help='The waveform approximant to place.')
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
@@ -70,11 +71,14 @@ parser.add_argument('--min-mchirp', type=float)
 parser.add_argument('--max-mchirp', type=float)
 parser.add_argument('--fixed-params', type=str, nargs='*')
 parser.add_argument('--fixed-values', type=float, nargs='*')
+parser.add_argument('--use-cross', action='store_true')
 parser.add_argument('--max-q', type=float)
 parser.add_argument('--tau0-crawl', type=float)
 parser.add_argument('--tau0-start', type=float)
 parser.add_argument('--tau0-end', type=float)
 parser.add_argument('--tau0-cutoff-frequency', type=float, default=15.0)
+parser.add_argument('--nprocesses', type=int, default=1,
+    help='Number of processes to use for waveform generation parallelization. If not given then only a single core will be used.')
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
 
@@ -245,24 +249,30 @@ class TriangleBank(object):
                 mmax = m
 
     def check_params(self, gen, params, threshold):
-        num_tried = 0
         num_added = 0
-        for i in range(len(tuple(params.values())[0])):
-            num_tried += 1.0
+        total_num = len(tuple(params.values())[0])
+        waveform_cache = []
 
-            try:
-                hp = gen.generate(**{key:params[key][i] for key in params})
-            except Exception as err:
-                print(err)
+        pool = pycbc.pool.choose_pool(args.nprocesses)
+        for return_wf in pool.imap_unordered(
+                wf_wrapper,
+                ({k: params[k][idx] for k in params} for idx in range(total_num))
+            ):
+            waveform_cache += [return_wf]
+        del pool
+
+        for hp in waveform_cache:
+            if hp is not None:
+                hp.gen = gen
+                hp.threshold = threshold
+                if hp not in self:
+                    num_added += 1
+                    self.insert(hp)
+            else:
+                logging.info("Waveform generation failed!")
                 continue
 
-            hp.gen = gen
-            hp.threshold = threshold
-            if hp not in self:
-                num_added += 1
-                self.insert(hp)
-
-        return bank, num_added / float(num_tried)
+        return bank, num_added / total_num
 
 class GenUniformWaveform(object):
     def __init__(self, buffer_length, sample_rate, f_lower):
@@ -293,11 +303,14 @@ class GenUniformWaveform(object):
                 f = self.f_lower
 
         kwds['f_lower'] = f
+        if hasattr(kwds['approximant'], 'decode'):
+            kwds['approximant'] = kwds['approximant'].decode()
 
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
             hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
-                                                    f_ref=10.0, **kwds)
-
+                                                    **kwds)
+            if  args.use_cross:
+                hp = hc
 
             if 'fratio' in kwds:
                 hp = hc * kwds['fratio'] + hp * (1 - kwds['fratio'])
@@ -307,12 +320,13 @@ class GenUniformWaveform(object):
             hp = pycbc.waveform.get_waveform_filter(
                         pycbc.types.zeros(self.flen, dtype=numpy.complex64),
                         delta_f=self.delta_f, delta_t=dt,
-                        f_lower=self.f_lower, **kwds)
+                        **kwds)
 
         hp.resize(self.flen)
         hp = hp.astype(numpy.complex64)
         hp[self.kmin:-1] *= self.w
-        s = float(1.0 / pycbc.filter.sigmasq(hp, low_frequency_cutoff=self.f_lower) ** 0.5)
+        s = float(1.0 / pycbc.filter.sigmasq(hp,
+                                             low_frequency_cutoff=f) ** 0.5)
         hp *= s
         hp.params = kwds
         hp.view = hp[self.kmin:-1]
@@ -337,8 +351,16 @@ gen = GenUniformWaveform(args.buffer_length,
     args.sample_rate, args.low_frequency_cutoff)
 bank = TriangleBank()
 
+def wf_wrapper(p):
+    try:
+        hp = gen.generate(**p)
+        return hp
+    except Exception as e:
+        print(e)
+        return None
+
 if args.input_file:
-    f = h5py.File(args.input_file, 'r')
+    f = HFile(args.input_file, 'r')
     params = {k: f[k][:] for k in f}
     bank, _ = bank.check_params(gen, params, args.minimal_match)
 
@@ -383,7 +405,8 @@ def draw(rtype):
         if args.input_config is not None and waveform_transforms is not None:
             params = transforms.apply_transforms(params, waveform_transforms)
 
-    params['approximant'] = numpy.array([args.approximant]*size)
+    if args.approximant is not None:
+        params['approximant'] = numpy.array([args.approximant]*size)
 
     # Filter out stuff (kde method may also generate samples outside boundaries).
     l = None
@@ -413,7 +436,6 @@ def draw(rtype):
         l = dists_joint.contains(params)
 
     params = {k: params[k][l] for k in params}
-
     return params
 
 def cdraw(rtype, ts, te):
@@ -500,7 +522,7 @@ while tau0s < args.tau0_end:
     tau0s += args.tau0_crawl / 2
     tau0e += args.tau0_crawl / 2
 
-o = h5py.File(args.output_file, 'w')
+o = HFile(args.output_file, 'w')
 o.attrs['minimal_match'] = args.minimal_match
 for k in bank.keys():
     val = bank.key(k)

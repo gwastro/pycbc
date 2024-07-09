@@ -8,6 +8,8 @@ import signal
 import atexit
 import logging
 
+logger = logging.getLogger('pycbc.pool')
+
 def is_main_process():
     """ Check if this is the main control process and may handle one time tasks
     """
@@ -126,6 +128,7 @@ class SinglePool(object):
     # so that the general pool interfaces can use
     # imap irrespective of the pool type. 
     imap = map
+    imap_unordered = map
 
 def use_mpi(require_mpi=False, log=True):
     """ Get whether MPI is enabled and if so the current size and rank
@@ -139,8 +142,10 @@ def use_mpi(require_mpi=False, log=True):
         if size > 1:
             use_mpi = True
             if log:
-                logging.info('Running under mpi with size: %s, rank: %s',
-                             size, rank)
+                logger.info(
+                    'Running under mpi with size: %s, rank: %s',
+                    size, rank
+                )
     except ImportError as e:
         if require_mpi:
             print(e)
@@ -162,12 +167,12 @@ def choose_pool(processes, mpi=False):
             atexit.register(pool.close)
 
             if processes:
-                logging.info('NOTE: that for MPI process size determined by '
-                             'MPI launch size, not the processes argument')
+                logger.info('NOTE: that for MPI process size determined by '
+                            'MPI launch size, not the processes argument')
 
             if do_mpi and not mpi:
-                logging.info('NOTE: using MPI as this process was launched'
-                             'under MPI')
+                logger.info('NOTE: using MPI as this process was launched'
+                            'under MPI')
         except ImportError:
             raise ValueError("Failed to start up an MPI pool, "
                              "install mpi4py / schwimmbad")

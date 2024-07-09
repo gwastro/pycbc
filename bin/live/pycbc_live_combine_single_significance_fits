@@ -18,9 +18,11 @@ different files."""
 import argparse
 import logging
 import numpy as np
-import h5py
+
+from ligo.segments import segment, segmentlist
 
 import pycbc
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -56,9 +58,9 @@ logging.info("Determining the most recent configuration parameters")
 
 latest_date = None
 for f in args.trfits_files:
-    with h5py.File(f, 'r') as fit_f:
-        if latest_date is None or fit_f.attrs['analysis_date'] > latest_date:
-            latest_date = fit_f.attrs['analysis_date']
+    with HFile(f, 'r') as fit_f:
+        if latest_date is None or fit_f.attrs['fit_end_gps_time'] > latest_date:
+            latest_date = fit_f.attrs['fit_end_gps_time']
             bl = fit_f['bins_lower'][:]
             bu = fit_f['bins_upper'][:]
             sngl_rank = fit_f.attrs['sngl_ranking']
@@ -78,8 +80,10 @@ trigger_file_ends = []
 counts_all = {ifo: [] for ifo in args.ifos}
 alphas_all = {ifo: [] for ifo in args.ifos}
 
+# Check whether the fit files overlap one another
+seg_all = segmentlist([])
 for f in args.trfits_files:
-    with h5py.File(f, 'r') as fits_f:
+    with HFile(f, 'r') as fits_f:
         # Check that the file uses the same setup as file 0, to make sure
         # all coefficients are comparable
         new_fit_func = {ifo: fits_f[ifo].attrs['fit_function']
@@ -99,19 +103,20 @@ for f in args.trfits_files:
             )
             continue
 
-        # We now determine the (approximate) start/end times of the
-        # trigger_fits file via the time of the first/last triggers in it.
-        # Ideally this would be recorded exactly in the file.
-        gps_last = 0
-        gps_first = np.inf
-        for ifo in args.ifos:
-            if ifo not in fits_f or 'triggers' not in fits_f[ifo]:
-                continue
-            trig_times = fits_f[ifo]['triggers']['end_time'][:]
-            gps_last = max(gps_last, trig_times.max())
-            gps_first = min(gps_first, trig_times.min())
-        trigger_file_starts.append(gps_first)
-        trigger_file_ends.append(gps_last)
+        # Get the start/end times of the trigger_fits file
+        fit_start = fits_f.attrs['fit_start_gps_time']
+        fit_end = fits_f.attrs['fit_end_gps_time']
+        trigger_file_starts.append(fit_start)
+        trigger_file_ends.append(fit_end)
+        seg = segmentlist([segment(fit_start, fit_end)])
+        if seg.intersects(seg_all):
+            logging.warning(
+                "File %s fit time %d-%d overlaps with other file(s)",
+                f,
+                fit_start,
+                fit_end,
+            )
+        seg_all |= seg
 
         # Read the fitting parameters
         for ifo in args.ifos:
@@ -148,7 +153,7 @@ cons_counts_out = {ifo: np.inf * np.ones(len(alphas_bin[ifo])) for ifo in args.i
 
 logging.info("Writing results")
 
-fout = h5py.File(args.output, 'w')
+fout = HFile(args.output, 'w')
 fout.attrs['conservative_percentile'] = args.conservative_percentile
 fout.attrs['ifos'] = args.ifos
 fout['bins_edges'] = list(bl) + [bu[-1]]

@@ -5,8 +5,8 @@ by pycbc_sngls_findtrigs to generate a mapping between SNR and FAP/FAR, along
 with producing the combined foreground and background triggers.
 """
 
-import argparse, h5py, itertools
-import lal, logging, numpy, copy
+import argparse, itertools
+import logging, numpy, copy
 from pycbc.events import veto, coinc
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import significance
@@ -16,7 +16,7 @@ import pycbc.conversions as conv
 
 class fw(object):
     def __init__(self, name):
-        self.f = h5py.File(name, 'w')
+        self.f = pycbc.io.HFile(name, 'w')
         self.attrs = self.f.attrs
 
     def __setitem__(self, name, data):
@@ -271,7 +271,8 @@ else :
 #          above the set threshold, or a set maximum.
 
 # Convert threshold into seconds
-hier_ifar_thresh_s = args.hierarchical_removal_ifar_threshold * lal.YRJUL_SI
+hier_ifar_thresh_s = args.hierarchical_removal_ifar_threshold /  \
+    conv.sec_to_year(1)
 
 while numpy.any(ifar_louder > hier_ifar_thresh_s):
     # If the user wants to stop doing hierarchical removals after a set
@@ -341,11 +342,12 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
 
     logging.info("Calculating FAN from background statistic values")
     back_stat = fore_stat = all_trigs.stat
+    bkg_dec_facs = all_trigs.decimation_factor
 
     bg_far, fg_far = significance.get_far(
         back_stat,
         fore_stat,
-        numpy.ones_like(back_stat),
+        bkg_dec_facs,
         fg_time,
         **significance_dict[ifo])
 
@@ -375,7 +377,7 @@ while numpy.any(ifar_louder > hier_ifar_thresh_s):
         _, fg_far_exc = significance.get_far(
             back_stat_exc,
             fore_stat,
-            numpy.ones_like(back_stat_exc),
+            bkg_exc_dec_facs,
             fg_time_exc,
             **significance_dict[ifo])
 

@@ -22,7 +22,6 @@ import argparse
 import logging
 import copy
 import numpy
-import h5py
 
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.workflow as wf
@@ -163,8 +162,7 @@ args = parser.parse_args()
 
 
 # Default logging level is info: --verbose adds to this
-log_level = 1 if args.verbose is None else args.verbose + 1
-init_logging(log_level)
+init_logging(args.verbose, default_level=1)
 
 workflow = wf.Workflow(args)
 
@@ -202,7 +200,7 @@ for ifo in args.single_detector_triggers:
     insp_data_seglists[ifo].coalesce()
     insp_analysed_seglists[ifo].coalesce()
 
-f = h5py.File(args.injection_file, 'r')
+f = HFile(args.injection_file, 'r')
 inj_def = f['injections']
 missed = f['missed/after_vetoes'][:]
 if args.ifar_threshold is not None:

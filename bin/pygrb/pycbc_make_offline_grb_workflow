@@ -31,23 +31,28 @@ import sys
 import os
 import argparse
 import logging
-import pycbc.workflow as _workflow
-from pycbc.workflow.core import configparser_value_to_file
-from ligo.segments import segment, segmentlistdict
 import matplotlib
 matplotlib.use('agg')
+
+from ligo.segments import segment, segmentlistdict
+
+from pycbc import init_logging, add_common_pycbc_options
+import pycbc.workflow as _workflow
+from pycbc.workflow.core import configparser_value_to_file
 from pycbc.results.pygrb_plotting_utils import make_grb_segments_plot
 
 workflow_name = "pygrb_offline"
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    level=logging.INFO)
 
 # Parse command line options and instantiate pycbc workflow object
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=__version__)
 _workflow.add_workflow_command_line_group(parser)
 _workflow.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+init_logging(args.verbose, default_level=1)
+
 wflow = _workflow.Workflow(args, workflow_name)
 all_files = _workflow.FileList([])
 tags = []

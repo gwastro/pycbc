@@ -40,6 +40,8 @@ import pycbc.waveform.bank
 from pycbc.filter import matched_filter_core
 import pycbc.conversions as cv
 
+logger = logging.getLogger('pycbc.live.snr_optimizer')
+
 try:
     import pyswarms as ps
 except:
@@ -58,7 +60,7 @@ start_time = time.time()
 
 def callback_func(Xi, convergence=0):
     global Nfeval
-    logging.info("Currently at %d %s", Nfeval, convergence)
+    logger.info("Currently at %d %s", Nfeval, convergence)
     # Time out if the optimization takes longer than 6 minutes
     if (time.time() - start_time) > 360:
         return True
@@ -166,7 +168,7 @@ def compute_minus_network_snr(v, *argv):
     if len(argv) == 1:
         argv = argv[0]
     nsnr, _ = compute_network_snr_core(v, *argv)
-    logging.debug('snr: %s', nsnr)
+    logger.debug('snr: %s', nsnr)
     return -nsnr
 
 
@@ -196,7 +198,7 @@ def optimize_di(bounds, cli_args, extra_args, initial_point):
         # add the initial point to the population
         population = numpy.concatenate((population[:-1],
                                         initial_point))
-    logging.debug('Initial population: %s', population)
+    logger.debug('Initial population: %s', population)
 
     results = differential_evolution(
         compute_minus_network_snr,
@@ -261,7 +263,7 @@ def optimize_pso(bounds, cli_args, extra_args, initial_point):
         # add the initial point to the population
         population = numpy.concatenate((population[:-1],
                                         initial_point))
-    logging.debug('Initial population: %s', population)
+    logger.debug('Initial population: %s', population)
 
     optimizer = ps.single.GlobalBestPSO(
         n_particles=int(cli_args.snr_opt_pso_particles),

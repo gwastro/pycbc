@@ -13,7 +13,7 @@
 # Public License for more details.
 
 
-import sys, h5py
+import sys
 import argparse, logging
 
 from matplotlib import use
@@ -26,6 +26,7 @@ from pycbc import events, bin_utils, results
 from pycbc.events import triggers
 from pycbc.events import trigger_fits as trstats
 from pycbc.events import stat as pystat
+from pycbc.io import HFile
 import pycbc.version
 
 #### MAIN ####
@@ -126,11 +127,7 @@ if args.output_file is not None and len(args.stat_threshold) > 1:
     raise RuntimeError("Cannot plot more than one threshold in a single "
                        "output file!")
 
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
 statname = "reweighted SNR" if args.sngl_ranking == "new_snr" else \
            args.sngl_ranking.replace("_", " ").replace("snr", "SNR")
@@ -149,9 +146,9 @@ if args.bin_spacing == "irregular":
         args.bin_edges = [float(b) for b in args.irregular_bins.split(',')]
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
-trigf = h5py.File(args.trigger_file, 'r')
+trigf = HFile(args.trigger_file, 'r')
 logging.info('Opening template file: %s' % args.bank_file)
-templatef = h5py.File(args.bank_file, 'r')
+templatef = HFile(args.bank_file, 'r')
 
 # get the stat values
 rank_method = pystat.get_statistic_from_opts(args, [args.ifo])

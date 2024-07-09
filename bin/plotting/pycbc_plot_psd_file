@@ -3,12 +3,20 @@
 """
 import matplotlib
 matplotlib.use('Agg')
-import h5py, numpy, argparse, pylab, pycbc.results, sys
+import numpy
+import argparse
+import pylab
+import sys
+
+import pycbc
+import pycbc.results
 import pycbc.psd
 import pycbc.version
+from pycbc.io.hdf import HFile
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("--psd-files", nargs='+', required=True,
@@ -40,6 +48,8 @@ pycbc.psd.insert_psd_option_group(parser, output=False)
 pycbc.results.add_style_opt_to_parser(parser)
 args = parser.parse_args()
 
+pycbc.init_logging(args.verbose)
+
 # set the matplotlib style
 pycbc.results.set_style_from_cli(args)
 
@@ -52,7 +62,7 @@ ax.set_xlabel('Frequency (Hz)')
 y_min = None
 
 for psd_file in args.psd_files:
-    f = h5py.File(psd_file, 'r')
+    f = HFile(psd_file, 'r')
     if args.hdf_group is not None:
         f = f[args.hdf_group]
     if args.ifos is not None:
@@ -69,7 +79,7 @@ for psd_file in args.psd_files:
             flow = f.attrs['low_frequency_cutoff']
         else:
             try:
-                with h5py.File(psd_file, 'r') as base_file:
+                with HFile(psd_file, 'r') as base_file:
                     flow = base_file.attrs[
                                '{}_likelihood_low_freq'.format(ifo)]
             except KeyError:

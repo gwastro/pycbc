@@ -21,7 +21,6 @@ import sys
 import argparse
 import logging
 import re
-import h5py
 import numpy as np
 
 from ligo import segments
@@ -31,7 +30,7 @@ import pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
-from pycbc.io import get_all_subkeys
+from pycbc.io import get_all_subkeys, HFile
 import pycbc.workflow.minifollowups as mini
 from pycbc.workflow.core import resolve_url_to_file, resolve_td_option
 import pycbc.version
@@ -66,8 +65,7 @@ wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
 
 # Default logging level is info: --verbose adds to this
-log_level = 1 if args.verbose is None else args.verbose + 1
-init_logging(log_level)
+init_logging(args.verbose, default_level=1)
 
 workflow = wf.Workflow(args)
 
@@ -108,7 +106,7 @@ for ifo in args.single_detector_triggers:
                                      attrs={'ifos': ifo})
     psd_files.append(psd_file)
 
-    fsdt[ifo] = h5py.File(args.single_detector_triggers[ifo], 'r')
+    fsdt[ifo] = HFile(args.single_detector_triggers[ifo], 'r')
     logging.info("Loading inspiral segments information")
     insp_data_seglists[ifo] = select_segments_by_definer(
         args.inspiral_segments,
@@ -121,10 +119,10 @@ for ifo in args.single_detector_triggers:
     insp_data_seglists[ifo].coalesce()
     insp_analysed_seglists[ifo].coalesce()
 
-f = h5py.File(args.statmap_file, 'r')
+f = HFile(args.statmap_file, 'r')
 stat = f['foreground/stat'][:]
 
-bank_data = h5py.File(args.bank_file, 'r')
+bank_data = HFile(args.bank_file, 'r')
 
 ifar_limit = args.ifar_thresh
 # Get indices of all events which pass the IFAR threshold

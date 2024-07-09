@@ -23,12 +23,14 @@ import h5py
 import logging
 import os
 import shlex
-import pycbc
-import pycbc.workflow.minifollowups as mini
 import socket
 import sys
 import numpy
+
 from ligo import segments
+
+import pycbc
+import pycbc.workflow.minifollowups as mini
 from pycbc import results
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
@@ -151,6 +153,7 @@ def symlink_path(f, path):
 
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
+pycbc.add_common_pycbc_options(parser)
 # add option groups
 configuration.add_workflow_command_line_group(parser)
 # workflow options
@@ -167,6 +170,9 @@ parser.add_argument("--version", action="version", version=__version__,
 # parser command line
 opts = parser.parse_args()
 
+# log to terminal until we know where the path to log output file
+pycbc.init_logging(opts.verbose, default_level=1)
+
 # configuration files
 config_file_tmplt = 'inference-{}.ini'
 config_file_dir = 'config_files'
@@ -181,10 +187,6 @@ if opts.output_dir is None:
 core.makedir(opts.output_dir)
 core.makedir('{}/{}'.format(opts.output_dir, config_file_dir))
 core.makedir('{}/{}'.format(opts.output_dir, posterior_file_dir))
-
-# log to terminal until we know where the path to log output file
-log_format = "%(asctime)s:%(levelname)s : %(message)s"
-logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
 container = core.Workflow(opts, opts.workflow_name)
@@ -219,14 +221,8 @@ log_file_html = core.File(workflow.ifos, "WORKFLOW-LOG",
                           workflow.analysis_time,
                           extension=".html", directory=rdir["workflow"])
 
-# switch saving log to file
-logging.basicConfig(format=log_format, level=logging.INFO,
-                    filename=log_file_txt.storage_path, filemode="w")
-log_file = logging.FileHandler(filename=log_file_txt.storage_path, mode="w")
-log_file.setLevel(logging.INFO)
-formatter = logging.Formatter(log_format)
-log_file.setFormatter(formatter)
-logging.getLogger("").addHandler(log_file)
+# Save log to file
+pycbc.init_logging(opts.verbose, default_level=1, to_file=log_file_txt.storage_path)
 logging.info("Created log file %s" % log_file_txt.storage_path)
 
 config_files = {}

@@ -147,8 +147,7 @@ class BaseGenerator(object):
             return new_waveform
         except RuntimeError as e:
             if self.record_failures:
-                import h5py
-                from pycbc.io.hdf import dump_state
+                from pycbc.io.hdf import dump_state, HFile
 
                 global failed_counter
 
@@ -160,7 +159,7 @@ class BaseGenerator(object):
                 if not os.path.exists('failed'):
                     os.makedirs('failed')
 
-                with h5py.File(outname) as f:
+                with HFile(outname) as f:
                     dump_state(self.current_params, f,
                                dsetname=str(failed_counter))
                     failed_counter += 1

@@ -21,10 +21,13 @@
 #
 # =============================================================================
 #
+import logging
 import numpy
 from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
 from .eventmgr import _BaseThresholdCluster
 from .. import opt
+
+logger = logging.getLogger('pycbc.events.threshold_cpu')
 
 if opt.HAVE_GETCONF:
     default_segsize = opt.LEVEL2_CACHE_SIZE / numpy.dtype('complex64').itemsize

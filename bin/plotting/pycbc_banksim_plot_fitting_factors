@@ -18,15 +18,16 @@
 """
 
 import sys
-import h5py
 import argparse
 import numpy
+import logging
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import pycbc.version
 from pycbc import results
+from pycbc.io.hdf import HFile
 
 __author__ = "Alex Nielsen <alex.nielsen@ligo.org>, "
 __author__  += "Ian Harry <ian.harry@ligo.org>"
@@ -36,6 +37,7 @@ __program__ = "pycbc_banksim_plot_fitting_factors"
 
 parser = argparse.ArgumentParser(usage='',
     description="Plot fitting factor distribution.")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument('--input-file', default=None, required=True,
                     help="List of input files.")
@@ -54,7 +56,9 @@ parser.add_argument('--plot-caption',
  
 opt = parser.parse_args()
 
-curr_fp = h5py.File(opt.input_file, 'r')
+pycbc.init_logging(opt.verbose)
+
+curr_fp = HFile(opt.input_file, 'r')
 m1 = curr_fp['inj_params/mass1'][:]
 m2 = curr_fp['inj_params/mass2'][:]
 s1z = curr_fp['inj_params/spin1z'][:]

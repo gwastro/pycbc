@@ -1,16 +1,27 @@
 #!/usr/bin/python
 """ Plot search sensitivity as a function of significance.
 """
-import argparse, h5py, numpy, logging, matplotlib, sys
+import argparse
+import numpy
+import logging
+import matplotlib
+import sys
 matplotlib.use('Agg')
 from matplotlib.pyplot import cm
-import pylab, pycbc.pnutils, pycbc.results, pycbc, pycbc.version
+import pylab
+
+import pycbc.pnutils
+import pycbc.results
+import pycbc
+import pycbc.version
 from pycbc import sensitivity
-from lal import YRJUL_SI as lal_YRJUL_SI
+from pycbc import conversions as conv
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='count')
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--injection-file', nargs='+',
                     help="Required. HDF format injection result file or space "
                     "separated list of files")
@@ -86,9 +97,7 @@ if args.integration_method == 'mc' and (args.distance_param is None or \
 if args.integration_method == 'mc' and args.limits_param is None:
     args.limits_param = args.distance_param
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
 logging.info('Read in the data')
 
@@ -120,7 +129,7 @@ found = {
 t = 0.
 
 for fi in args.injection_file:
-    with h5py.File(fi, 'r') as f:
+    with HFile(fi, 'r') as f:
 
         # Get the found (at any FAR)/missed injection indices
         foundi = f['found_after_vetoes/injection_index'][:]
@@ -185,7 +194,7 @@ for fi in args.injection_file:
 
         # Time in years
         if args.dist_type == 'vt':
-            t += f.attrs['foreground_time_exc'] / lal_YRJUL_SI
+            t += conv.sec_to_year(f.attrs['foreground_time_exc'])
 
 # Parameter bin legend labels
 labels = {
@@ -337,7 +346,7 @@ for j in range(len(args.bins)-1):
             plotdict['errorlow/%s' % label] = elow
 
 if args.hdf_out:
-    outfile = h5py.File(args.hdf_out,'w')
+    outfile = HFile(args.hdf_out,'w')
     for key in plotdict.keys():
         outfile.create_dataset(key, data=plotdict[key])
 

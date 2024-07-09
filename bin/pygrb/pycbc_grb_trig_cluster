@@ -35,7 +35,8 @@ import h5py
 from gwdatafind.utils import filename_metadata
 
 from pycbc import __version__
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
+from pycbc.io.hdf import HFile
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -62,7 +63,7 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
     else:
         nevents = include.size
 
-    with h5py.File(inputfile, "r") as h5in:
+    with HFile(inputfile, "r") as h5in:
         ifos = [k for k in h5in.keys() if k != "network"]
 
         # find which single-ifo events to keep
@@ -79,7 +80,7 @@ def slice_hdf5(inputfile, outfile, include, verbose=False):
         msg = "Slicing {} network events into new file".format(nevents)
         bar = tqdm.tqdm(total=nsets, desc=msg, disable=not verbose,
                         unit="datasets", **TQDM_KW)
-        with h5py.File(outfile, "w") as h5out:
+        with HFile(outfile, "w") as h5out:
             for old in h5in["network"].values():
                 if isinstance(old, h5py.Dataset):
                     h5out.create_dataset(
@@ -119,13 +120,7 @@ parser = argparse.ArgumentParser(
     description=__doc__,
 )
 
-parser.add_argument(
-    "-v",
-    "--verbose",
-    action="store_true",
-    default=False,
-    help="verbose output with microsecond timer (default: %(default)s)",
-)
+add_common_pycbc_options(parser)
 parser.add_argument(
     "-V",
     "--version",
@@ -191,7 +186,7 @@ clusters = []
 
 # -- cluster ------------------------------------
 
-with h5py.File(args.trig_file, "r") as h5f:
+with HFile(args.trig_file, "r") as h5f:
     time = h5f["network"]["end_time_gc"][()]
     snr = h5f["network"][args.rank_column][()]
 

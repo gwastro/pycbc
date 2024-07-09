@@ -27,7 +27,7 @@ import sys
 import os
 import logging
 import numpy as np
-import h5py
+
 import pycbc.version
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.detector import Detector
@@ -35,6 +35,7 @@ from pycbc.events.coherent import reweightedsnr_cut
 from pycbc import init_logging
 import pycbc.results
 from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.io.hdf import HFile
 
 __author__ = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -78,7 +79,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
     ifos: list
     snr_threshold: float
         NewSNR threshold
-    bank_file: h5py.File object
+    bank_file: HFile object
     background_bestnrs: numpy.array, optional
         Used to compute FAP of quiet injections.
 
@@ -88,7 +89,7 @@ def load_missed_found_injections(hdf_file, ifos, snr_threshold, bank_file,
         Found and missed injection parameter dictionaries.
     """
 
-    inj_data = h5py.File(hdf_file, 'r')
+    inj_data = HFile(hdf_file, 'r')
     inj_params = ['mass1', 'mass2', 'distance', 'inclination', 'ra', 'dec',
                   'polarization', 'spin1x', 'spin1y', 'spin1z', 'spin2x',
                   'spin2y', 'spin2z', 'tc']
@@ -274,7 +275,7 @@ segment_dict = ppu.load_segment_dict(offsource_file)
 
 # Calculate chirp masses of templates
 logging.info('Loading triggers template masses')
-bank_data = h5py.File(opts.bank_file, 'r')
+bank_data = HFile(opts.bank_file, 'r')
 mchirps = mchirp_from_mass1_mass2(
         bank_data['mass1'][...],
         bank_data['mass2'][...]
@@ -401,7 +402,7 @@ if lofft_outfile:
     # Write to h5 file
     logging.info("Writing %d loudest offsource triggers to h5 file.",
                  len(td))
-    lofft_h5_fp = h5py.File(lofft_h5_outfile, 'w')
+    lofft_h5_fp = HFile(lofft_h5_outfile, 'w')
     for i, key in enumerate(th):
         lofft_h5_fp.create_dataset(key, data=td[i])
     lofft_h5_fp.close()
@@ -521,7 +522,7 @@ if onsource_file:
 
     # Write to h5 file
     logging.info("Writing loudest onsource trigger to h5 file.")
-    with h5py.File(lont_h5_outfile, 'w') as lont_h5_fp:
+    with HFile(lont_h5_outfile, 'w') as lont_h5_fp:
         for i, key in enumerate(th):
             lont_h5_fp.create_dataset(key, data=td[i])
 
@@ -638,7 +639,7 @@ if found_missed_file is not None:
 
     # Write to h5 file
     logging.info("Writing %d quiet-found injections to h5 file.", len(td))
-    with h5py.File(qf_h5_outfile, 'w') as qf_h5_fp:
+    with HFile(qf_h5_outfile, 'w') as qf_h5_fp:
         for i, key in enumerate(th):
             qf_h5_fp.create_dataset(key, data=td[i])
 

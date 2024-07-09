@@ -26,7 +26,6 @@ import glob
 import argparse
 import numpy
 import pycbc.version
-import h5py
 from ligo.lw import utils
 from pycbc import tmpltbank
 # Old ligolw output functions no longer imported at package level
@@ -37,6 +36,7 @@ import pycbc.strain
 import pycbc.version
 from pycbc.waveform import get_waveform_filter_length_in_time
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.hdf import HFile
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -137,7 +137,7 @@ mass2 = []
 spin1z = []
 spin2z = []
 for inp_file in input_files:
-    inp_fp = h5py.File(inp_file, 'r')
+    inp_fp = HFile(inp_file, 'r')
     data = inp_fp['accepted_templates'][:]
     if len(data) == 0:
         continue
