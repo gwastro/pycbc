@@ -656,7 +656,6 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 
 
 """     LISA class      """
-
 try:
     import cupy
 except ImportError:
@@ -702,7 +701,7 @@ class LISA_detector(object):
         # specify and cache the start time and orbital time series
         if reference_time is None:
             reference_time = self.orbits.t_base[0]
-        self.ref_time = reference_time
+        self.com_ref_time = reference_time
         self.sample_times = None
 
         # cache the FLR instance along with dt and n
@@ -715,25 +714,28 @@ class LISA_detector(object):
         # initialize whether to use gpu; FLR has handles if this cannot be done
         self.use_gpu = use_gpu
         
-    def source_to_ssb(self, hp, hc, polarization):
+    def apply_polarization(self, hp, hc, polarization):
         """
-        Project a source-frame signal to SSB.
+        Apply polarization rotation matrix.
+        
+        .. math::
+            \bmatrix{}
         
         Parameters
         ----------
-        hp : pycbc.types.TimeSeries
-            The plus polarization of the GW in the radiation frame.
+        hp : array
+            The plus polarization of the GW.
 
-        hc : pycbc.types.TimeSeries
-            The cross polarization of the GW in the radiation frame.
+        hc : array
+            The cross polarization of the GW.
             
         polarization : float
             The polarization angle of the GW in radians.
             
         Returns
         -------
-        (pycbc.types.TimeSeries, pycbc.types.TimeSeries)
-            The plus and cross polarizations of the GW in the SSB frame.
+        (array, array)
+            The plus and cross polarizations of the GW rotated by the polarization angle.
         """
         cphi = cos(2*polarization)
         sphi = sin(2*polarization)
@@ -742,6 +744,44 @@ class LISA_detector(object):
         hc_ssb = hp*sphi + hc*cphi
         
         return hp_ssb, hc_ssb
+    
+    def time_delay_from_ssb(self, orbits, reference_time):
+        """
+        Calculate the time delay from the SSB frame to the LISA COM frame.
+        
+        Parameters
+        ----------
+        orbits: lisatools.detector.Orbits
+            The orbital information of the satellites.
+            
+        reference_time: float
+            The time in seconds in the SSB frame.
+            
+        Returns
+        -------
+        float
+            The additive time delay factor between the SSB and LISA COM frame
+            at the given time.
+        """
+        C_SI = constants.c.value
+        
+        # configure orbits if not already
+        try:
+            orbits.t
+        except ValueError:
+            orbits.configure(linear_interp_setup=True)
+            
+        # get positions of spacecraft at reference time
+        sc_x = []
+        for i in [1, 2, 3]:
+            sc_x.append(orbits.get_pos(reference_time, i))
+            
+        # average sc positions to get COM position
+        com_vec = sum(sc_x)/len(sc_x)
+        com_dist = sum(com_vec*com_vec)**0.5
+        
+        # time delay from SSB to LISA COM is distance/c
+        return com_dist/C_SI
 
     def get_links(self, hp, hc, lamb, beta, polarization=0, reference_time=None, 
                   use_gpu=None, tdi=2):
@@ -765,9 +805,7 @@ class LISA_detector(object):
             The ecleptic longitude of the source in the SSB frame.
             
         polarization : float (optional)
-            The polarization angle of the GW in radians. If polarization is 
-            0, the hp and hc inputs are treated as SSB frame projections.
-            Default 0.
+            The polarization angle of the GW in radians. Default 0.
             
         reference_time : float (optional)
             The GPS start time of the GW signal in the SSB frame. Default to 
@@ -789,35 +827,35 @@ class LISA_detector(object):
         """
         from fastlisaresponse import pyResponseTDI
         
-        # get dt and n from waveform data
-        dt = hp.delta_t # timestep (s)
-        n = len(hp) # number of points
-
-        # cache n, dt, pad length
+        # get dt from waveform data
+        dt = hp.delta_t
         self.dt = dt
-        self.n = n
         self.pad_idx = int(self.t0/self.dt)
 
         # set waveform start time and cache time series
         if reference_time is not None:
-            self.ref_time = reference_time
-        hp.start_time = self.ref_time
-        hc.start_time = self.ref_time
+            frame_delay = self.time_delay_from_ssb(self.orbits, reference_time)
+            self.com_ref_time = reference_time + frame_delay
+        hp.start_time = self.com_ref_time
+        hc.start_time = self.com_ref_time
         self.sample_times = hp.sample_times.numpy()
-        
+              
         # rescale the orbital time series to match waveform
         ### requires bugfix in LISAanalysistools to function
         ### awaiting response from dev team for formal release
         self.orbits.configure(t_arr=self.sample_times)
         
-        # convert to SSB frame (if pol = 0, the signal is already in SSB frame)
-        if polarization != 0.:
-            hp, hc = self.source_to_ssb(hp, hc, polarization)
+        # rotate GW from radiation frame to SSB using polarization angle
+        hp, hc = self.apply_polarization(hp, hc, polarization)
 
         # format wf to FLR standard hp + i*hc as ndarray
         hp = hp.numpy()
         hc = hc.numpy()
         wf = hp + 1j*hc
+        
+        # get n from waveform data
+        n = len(wf)
+        self.n = n
 
         # set use_gpu to class input if not specified
         if use_gpu is None:
@@ -861,8 +899,8 @@ class LISA_detector(object):
 
         return wf_proj
 
-    def project_wave(self, hp, hc, lamb, beta, polarization=0, reference_time=None, tdi=2, 
-                     tdi_chan='AET', tdi_orbits=None, use_gpu=None, remove_garbage=True):
+    def project_wave(self, hp, hc, lamb, beta, polarization, reference_time=None, tdi=2, 
+                     tdi_chan='AET', tdi_orbits=None, use_gpu=None, remove_garbage=False):
         """
         Evaluate the TDI observables.
 
@@ -880,10 +918,8 @@ class LISA_detector(object):
         beta : float
             The ecleptic longitude in the SSB frame.
             
-        polarization : float (optional)
-            The polarization angle of the GW in radians. If polarization is 
-            0, the hp and hc inputs are treated as SSB frame projections.
-            Default 0.
+        polarization : float
+            The polarization angle of the GW in radians.
             
         reference_time : float (optional)
             The GPS start time of the GW signal in the SSB frame. Default to 
@@ -915,8 +951,6 @@ class LISA_detector(object):
         dict
             The TDI observables keyed by their corresponding TDI channel.
         """
-        start_time = time.time()
-        
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
@@ -924,6 +958,9 @@ class LISA_detector(object):
         # generate the Doppler time series
         self.get_links(hp, hc, lamb, beta, polarization=polarization, reference_time=reference_time, 
                        use_gpu=use_gpu, tdi=tdi)
+        
+        print(len(self.response_init.y_gw[0]))
+        print(len(self.sample_times))
 
         # set TDI channels
         if tdi_chan in ['XYZ', 'AET', 'AE']:
@@ -954,14 +991,15 @@ class LISA_detector(object):
             if remove_garbage:
                 if remove_garbage == 'zero':
                     # zero the edge data
-                    tdi_dict[tdi_chan[i]][self.pad_idx:] = 0
-                    tdi_dict[tdi_chan[i]][:-self.pad_idx] = 0
+                    tdi_dict[tdi_chan[i]][:self.pad_idx] = 0
+                    tdi_dict[tdi_chan[i]][-self.pad_idx:] = 0
                 elif type(remove_garbage) == bool:
                     # cut the edge data
                     tdi_dict[tdi_chan[i]] = tdi_dict[tdi_chan[i]][slc]
                     if i == 0:
                         # cut the sample times (only do once)
                         self.sample_times = self.sample_times[slc]
+                        print('check')
                 else:
                     # raise error
                     raise ValueError('remove_garbage arg must be a bool or "zero"')
