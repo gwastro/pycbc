@@ -670,7 +670,7 @@ class LISA_detector(object):
     """
     LISA-like GW detector. Applies detector response from FastLISAResponse.
     """
-    def __init__(self, detector='LISA', reference_time=None, orbits=ESAOrbits(), use_gpu=False):
+    def __init__(self, detector='LISA', reference_time=None, orbits=ESAOrbits(), use_gpu=False, t0=10000.):
         """
         Parameters
         ----------
@@ -688,6 +688,11 @@ class LISA_detector(object):
         
         use_gpu : bool (optional)
             Specify whether to run class on GPU support via CuPy. Default False.
+            
+        t0 : float (optional)
+            Time length (in seconds) to cut from start and end of TDI observables. By 
+            default, TDI channels will have erroneous noise at edges that will be cut 
+            according to this argument. Default 10000 s.
         """
         # initialize detector; for now we only accept LISA
         assert (detector=='LISA'), 'Currently only supports LISA detector'
@@ -701,7 +706,7 @@ class LISA_detector(object):
         # specify and cache the start time and orbital time series
         if reference_time is None:
             reference_time = self.orbits.t_base[0]
-        self.com_ref_time = reference_time
+        self.ref_time = reference_time
         self.sample_times = None
 
         # cache the FLR instance along with dt and n
@@ -709,7 +714,9 @@ class LISA_detector(object):
         self.n = None
         self.pad_idx = None
         self.response_init = None
-        self.t0 = 10000.
+        
+        if t0 is None:
+            self.t0 = 10000.
 
         # initialize whether to use gpu; FLR has handles if this cannot be done
         self.use_gpu = use_gpu
@@ -717,9 +724,6 @@ class LISA_detector(object):
     def apply_polarization(self, hp, hc, polarization):
         """
         Apply polarization rotation matrix.
-        
-        .. math::
-            \bmatrix{}
         
         Parameters
         ----------
@@ -744,44 +748,6 @@ class LISA_detector(object):
         hc_ssb = hp*sphi + hc*cphi
         
         return hp_ssb, hc_ssb
-    
-    def time_delay_from_ssb(self, orbits, reference_time):
-        """
-        Calculate the time delay from the SSB frame to the LISA COM frame.
-        
-        Parameters
-        ----------
-        orbits: lisatools.detector.Orbits
-            The orbital information of the satellites.
-            
-        reference_time: float
-            The time in seconds in the SSB frame.
-            
-        Returns
-        -------
-        float
-            The additive time delay factor between the SSB and LISA COM frame
-            at the given time.
-        """
-        C_SI = constants.c.value
-        
-        # configure orbits if not already
-        try:
-            orbits.t
-        except ValueError:
-            orbits.configure(linear_interp_setup=True)
-            
-        # get positions of spacecraft at reference time
-        sc_x = []
-        for i in [1, 2, 3]:
-            sc_x.append(orbits.get_pos(reference_time, i))
-            
-        # average sc positions to get COM position
-        com_vec = sum(sc_x)/len(sc_x)
-        com_dist = sum(com_vec*com_vec)**0.5
-        
-        # time delay from SSB to LISA COM is distance/c
-        return com_dist/C_SI
 
     def get_links(self, hp, hc, lamb, beta, polarization=0, reference_time=None, 
                   use_gpu=None, tdi=2):
@@ -834,10 +800,9 @@ class LISA_detector(object):
 
         # set waveform start time and cache time series
         if reference_time is not None:
-            frame_delay = self.time_delay_from_ssb(self.orbits, reference_time)
-            self.com_ref_time = reference_time + frame_delay
-        hp.start_time = self.com_ref_time
-        hc.start_time = self.com_ref_time
+            self.ref_time = reference_time
+        hp.start_time = self.ref_time
+        hc.start_time = self.ref_time
         self.sample_times = hp.sample_times.numpy()
               
         # rescale the orbital time series to match waveform
