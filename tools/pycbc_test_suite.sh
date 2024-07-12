@@ -10,14 +10,17 @@ echo -e "\\n>> [`date`] Python Minor Version:" $PYTHON_MINOR_VERSION
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
 
 RESULT=0
+cat_output=true
 
 function test_result {
     if test $? -ne 0 ; then
         RESULT=1
         echo -e "    FAILED!"
-        echo -e "---------------------------------------------------------"
-        cat $LOG_FILE
-        echo -e "---------------------------------------------------------"
+        if $cat_output ; then
+            echo -e "---------------------------------------------------------"
+            cat $LOG_FILE
+            echo -e "---------------------------------------------------------"
+        fi
     else
         echo -e "    Pass"
     fi
@@ -28,7 +31,7 @@ if [ "$PYCBC_TEST_TYPE" = "unittest" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     do
         echo -e ">> [`date`] running unit test for $prog"
         python $prog &> $LOG_FILE
-	test_result
+        test_result
     done
 fi
 
@@ -39,23 +42,25 @@ if [ "$PYCBC_TEST_TYPE" = "help" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     do
         echo -e ">> [`date`] running $prog --help"
         $prog --help &> $LOG_FILE
-	test_result
-	if [[ `echo $prog | egrep '(pycbc_copy_output_map|pycbc_submit_dax|pycbc_stageout_failed_workflow)'` ]] ; then
-	    continue
-	fi
-	echo -e ">> [`date`] running $prog --version"
-	$prog --version &> $LOG_FILE
-	test_result
+        test_result
+        if [[ `echo $prog | egrep '(pycbc_copy_output_map|pycbc_submit_dax|pycbc_stageout_failed_workflow)'` ]] ; then
+            continue
+        fi
+        echo -e ">> [`date`] running $prog --version"
+        $prog --version &> $LOG_FILE
+        test_result
     done
     # also check that --version with increased modifiers works for one executable
     echo -e ">> [`date`] running pycbc_inspiral --version with modifiers"
     for modifier in "" 0 1 2 3
     do
-	echo -e ">> [`date`] running pycbc_inspiral --version ${modifier}"
+        echo -e ">> [`date`] running pycbc_inspiral --version ${modifier}"
         pycbc_inspiral --version ${modifier} &> $LOG_FILE
         test_result
     done
 fi
+
+cat_output=false
 
 if [ "$PYCBC_TEST_TYPE" = "search" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     # run pycbc inspiral test
@@ -108,13 +113,7 @@ if [ "$PYCBC_TEST_TYPE" = "inference" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     ## Run inference on GW150914 data
     pushd examples/inference/gw150914
     bash -e run_test.sh
-    if test $? -ne 0 ; then
-        RESULT=1
-        echo -e "    FAILED!"
-        echo -e "---------------------------------------------------------"
-    else
-        echo -e "    Pass."
-    fi
+    test_result
     popd
 
     ## Run inference using single template model
