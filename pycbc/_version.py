@@ -28,7 +28,6 @@ import subprocess
 import logging
 
 logger = logging.getLogger('pycbc._version')
-SUPPRESS = "==SUPPRESS=="
 
 
 def print_link(library):
