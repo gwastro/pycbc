@@ -22,10 +22,6 @@ finding and ranking then generate post-processing
 and plots.
 """
 import pycbc
-import pycbc.version
-__version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
-__program__ = "pycbc_offline"
 
 import sys
 import socket
