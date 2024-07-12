@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 Supervise the periodic collection of triggers from pycbc_live,
 using them to get template fits, smoothing those fits,
@@ -10,12 +9,8 @@ import re
 import logging
 import argparse
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 import os
-import shutil
-import subprocess
 import numpy as np
-import h5py
 
 import lal
 from lal import gpstime
@@ -49,58 +44,59 @@ control_options = [
 # These options are for the collection of triggers into a merged file
 trigger_collation_options = [
     'bank-file',
-    'ifos',
-    'file-identifier',
-    'verbose',
     'date-directories',
-    'trigger-cuts',
+    'date-directory-format',
+    'file-identifier',
+    'ifos',
     'template-cuts',
+    'trigger-cuts',
+    'verbose',
 ]
 
 # These options are for the fit_by_template code
 fit_by_template_options = [
+    'approximant',
     'bank-file',
-    'gating-veto-windows',
+    'f-lower',
     'fit-function',
-    'stat-threshold',
+    'gating-veto-windows',
+    'log-prune-param',
+    'min-duration',
     'prune-param',
     'prune-bins',
     'prune-number',
-    'log-prune-param',
-    'f-lower',
-    'min-duration',
-    'approximant',
     'sngl-ranking',
+    'stat-threshold',
+    'statistic-files',
     'statistic-keywords',
     'verbose',
 ]
 
-# fit_over_multiparam control options
-
 # These options are for the fit_over_multiparam code
 fit_over_multiparam_options = [
-    'bank-file',
-    'fit-param',
     'approximant',
+    'bank-file',
     'f-lower',
-    'min-duration',
+    'fit-param',
     'log-param',
-    'smoothing-width',
+    'min-duration',
+    'output-fits-by-template',
     'smoothing-method',
     'smoothing-keywords',
-    'output-fits-by-template',
+    'smoothing-width',
     'verbose',
 ]
 
 # These options are for the plot_template_bank_corner code
 plot_bank_corner_options = [
     'bank-file',
-    'parameters',
-    'mins',
-    'maxs',
     'color-parameter',
     'dpi',
+    'maxs',
+    'mins',
     'mpl-style',
+    'parameters',
+    'plot-histogram',
     'verbose',
 ]
 
@@ -189,13 +185,11 @@ def collate_triggers(args, day_dt, day_str, option_values):
     # Collate the triggers into a single hdf file for input into
     # fit_by_template and bin_dq
     collate_args = [
-        '/home/gareth.cabourndavies/test_codes/pycbclive/collate_trigs/env_collate_trigs/bin/python',
-        '/home/gareth.cabourndavies/test_codes/pycbclive/collate_trigs/env_collate_trigs/src/pycbc/bin/live/pycbc_live_collate_triggers',  #FIXME - remove the fullpath etc. once this script is merged
+        'pycbc_live_collate_triggers',
     ]
     collate_args += sv.dict_to_args(
         {opt: v for opt, v in option_values.items() if opt in trigger_collation_options}
     )
-    # FIXME: The following will depend on how the trigger finding actually happens
     gps_start = gpstime.utc_to_gps(day_dt).gpsSeconds
     gps_end = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
     ifos_str = ''.join(option_values['ifos'])
@@ -222,7 +216,7 @@ def collate_triggers(args, day_dt, day_str, option_values):
     return trig_merge_file
 
 
-def fits_plot(fits_file, option_values, ifo):
+def fits_plot(fits_file, option_values, ifo, day_title_str):
     # Add plotting for daily fits, and linking to the public directory
     fits_plot_output = fits_file[:-3] + 'png'
     logging.info("Plotting daily fits %s to %s", fits_file, fits_plot_output)
@@ -236,6 +230,10 @@ def fits_plot(fits_file, option_values, ifo):
     fits_plot_arguments += sv.dict_to_args(
         {opt: v for opt, v in option_values.items() if opt in plot_bank_corner_options}
     )
+    fits_plot_arguments += [
+        '--title',
+        "Fit parameters for pycbc-live, triggers from " + day_title_str
+    ]
     logging.info(fits_plot_arguments)
     sv.run_and_error(fits_plot_arguments, option_values)
     if 'public-dir' in option_values:
@@ -263,7 +261,7 @@ def fit_by_template(trigger_merge_file, day_str, option_values, ifo):
     logging.info(fit_by_args)
     sv.run_and_error(fit_by_args, option_values)
 
-    return fbt_out_full
+    return fbt_out_full, day_str
 
 
 def fit_over_multiparam(option_values, ifo, day_dt, day_str):
@@ -363,7 +361,7 @@ def fit_over_multiparam(option_values, ifo, day_dt, day_str):
         variable_fits = option_values['variable-fit-over-param'].format(ifo=ifo)
         sv.symlink(fit_over_full, variable_fits)
 
-    return fit_over_full
+    return fit_over_full, file_id_str
 
 
 def do_collation_fits_dq(args, option_values, day_dt, day_str):
@@ -371,11 +369,11 @@ def do_collation_fits_dq(args, option_values, day_dt, day_str):
     merged_triggers = collate_triggers(args, day_dt, day_str, option_values)
     for ifo in option_values['ifos']:
         if args.fit_by_template:
-            fbt_file = fit_by_template(merged_triggers, day_str, option_values, ifo)
-            fits_plot(fbt_file, option_values, ifo)
+            fbt_file, date_str = fit_by_template(merged_triggers, day_str, option_values, ifo)
+            fits_plot(fbt_file, option_values, ifo, date_str)
         if args.fit_over_multiparam:
-            fom_file = fit_over_multiparam(option_values, ifo, day_dt, day_str)
-            fits_plot(fom_file, option_values, ifo)
+            fom_file, date_str = fit_over_multiparam(option_values, ifo, day_dt, day_str)
+            fits_plot(fom_file, option_values, ifo, date_str)
     logging.info('Done')
 
 
