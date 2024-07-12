@@ -105,8 +105,6 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
 # Main script starts here
 # =============================================================================
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--trig-file',
                     help="HDF file with the triggers found by PyGRB")

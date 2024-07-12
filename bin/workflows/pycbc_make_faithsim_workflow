@@ -18,9 +18,6 @@ from pycbc import add_common_pycbc_options, init_logging
 from pycbc.workflow.plotting import PlotExecutable
 from pycbc.workflow import setup_splittable_dax_generated
 
-__version__ = pycbc.version.git_verbose_msg
-
-
 def make_faithsim_plot(workflow, analysis_time, input_file, out_dir, tags=None):
     tags = [] if tags is None else tags
     secs = workflow.cp.get_subsections("pycbc_faithsim_plots")
@@ -100,7 +97,6 @@ class CollectResultsExecutable(wf.Executable):
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()

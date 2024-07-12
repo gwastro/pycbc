@@ -10,8 +10,6 @@ from shutil import copyfile
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--stat-files', nargs='+',
     help="Statistic files produced by candidate followup codes")
 parser.add_argument('--followup-file',

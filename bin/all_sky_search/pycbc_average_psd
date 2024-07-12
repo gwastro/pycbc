@@ -26,13 +26,11 @@ import argparse
 import numpy as np
 import pycbc
 from pycbc.io import HFile
-from pycbc.version import git_verbose_msg as version
 from pycbc.types import MultiDetOptionAction, FrequencySeries
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--input-files', nargs='+', required=True, metavar='PATH',
                     help='HDF5 files from pycbc_calculate_psd (one per '
                          'detector) containing the input PSDs to average.')

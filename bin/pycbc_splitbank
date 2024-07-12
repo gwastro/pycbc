@@ -35,7 +35,6 @@ from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 
 import pycbc
-from pycbc import version
 from pycbc.io.ligolw import LIGOLWContentHandler, create_process_table
 from pycbc.conversions import mchirp_from_mass1_mass2
 from pycbc.pnutils import frequency_cutoff_from_name
@@ -47,8 +46,6 @@ __program__ = "pycbc_splitbank"
 
 # Command line parsing
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--version', action='version', version=version.git_verbose_msg)
-
 pycbc.add_common_pycbc_options(parser)
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('--templates-per-bank', metavar='SAMPLES',

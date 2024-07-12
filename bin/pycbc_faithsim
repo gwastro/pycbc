@@ -31,7 +31,6 @@ import sys
 from ligo.lw import utils as ligolw_utils
 from ligo.lw import lsctables
 
-import pycbc.version
 import pycbc.strain
 import pycbc.psd
 from pycbc.waveform import td_approximants, fd_approximants
@@ -83,8 +82,6 @@ psd_names = pycbc.psd.get_lalsim_psd_list()
 taper_choices = ["start","end","startend"]
 parser = argparse.ArgumentParser(usage='',
     description="Calculate faithfulness for a set of waveforms.")
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--param-file", dest="bank_file", metavar="FILE",
                     help="Sngl or Sim Inspiral Table containing waveform "

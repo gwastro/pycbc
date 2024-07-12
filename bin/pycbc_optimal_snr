@@ -33,7 +33,6 @@ from ligo.lw import lsctables
 import pycbc
 import pycbc.inject
 import pycbc.psd
-import pycbc.version
 from pycbc.filter import sigma, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
                         MultiDetOptionAction, load_frequencyseries
@@ -120,7 +119,6 @@ def get_gc_end_time(injection):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     pycbc.add_common_pycbc_options(parser)
-    parser.add_argument("--version", action=pycbc.version.Version)
     parser.add_argument('--input-file', '-i', dest='injection_file',
                         required=True,
                         help='Input LIGOLW file defining injections')

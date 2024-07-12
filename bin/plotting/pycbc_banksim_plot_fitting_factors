@@ -38,7 +38,6 @@ __program__ = "pycbc_banksim_plot_fitting_factors"
 parser = argparse.ArgumentParser(usage='',
     description="Plot fitting factor distribution.")
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__)
 parser.add_argument('--input-file', default=None, required=True,
                     help="List of input files.")
 parser.add_argument('--output-file', default=None, required=True,

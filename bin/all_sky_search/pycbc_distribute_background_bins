@@ -1,9 +1,7 @@
 #!/bin/env python
 import argparse, numpy, pycbc.events, logging, pycbc.events, pycbc.io
-import pycbc.version
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--version", action=pycbc.version.Version)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--coinc-files', nargs='+',
                     help="List of coinc files to be redistributed")

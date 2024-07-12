@@ -5,7 +5,6 @@ import logging, argparse, numpy, multiprocessing, time, copy
 from six.moves import zip_longest
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.io import HFile
-from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
 from pycbc.workflow import resolve_td_option
 from ligo.segments import segmentlist, segment
@@ -13,7 +12,6 @@ set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=version)
 parser.add_argument("--low-frequency-cutoff", type=float, required=True,
                     help="The low frequency cutoff to use for filtering (Hz)")
 parser.add_argument("--analysis-segment-file",  required=True,

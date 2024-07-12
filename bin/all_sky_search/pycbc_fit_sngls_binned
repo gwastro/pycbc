@@ -22,12 +22,12 @@ from matplotlib import pyplot as plt
 
 import copy, numpy as np
 
+import pycbc
 from pycbc import events, bin_utils, results
 from pycbc.events import triggers
 from pycbc.events import trigger_fits as trstats
 from pycbc.events import stat as pystat
 from pycbc.io import HFile
-import pycbc.version
 
 #### MAIN ####
 
@@ -35,7 +35,6 @@ parser = argparse.ArgumentParser(usage="",
     description="Perform maximum-likelihood fits of single inspiral trigger"
                 " distributions to various functions")
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("--trigger-file",
                     help="Input hdf5 file containing single triggers. "
                     "Required")

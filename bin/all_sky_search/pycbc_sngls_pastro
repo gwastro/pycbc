@@ -17,7 +17,6 @@ from pycbc import conversions as conv
 from pycbc.events import veto, stat, ranking, coinc, single as sngl
 from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.segments import segment, segmentlist
-import pycbc.version
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
@@ -40,8 +39,6 @@ mchirp_power = {
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("--single-statmap-files", nargs='+', required=True,
                     help="Single statmap files for which p_astro is "
                          "calculated.")

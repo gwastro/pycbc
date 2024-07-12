@@ -22,10 +22,6 @@ finding and ranking then generate post-processing
 and plots.
 """
 import pycbc
-import pycbc.version
-__version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
-__program__ = "pycbc_offline"
 
 import sys
 import socket
@@ -153,7 +149,6 @@ def check_stop(job_name, container, workflow, finalize_workflow):
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()

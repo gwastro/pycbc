@@ -142,7 +142,6 @@ class SbankDaxGenerator(wf.Executable):
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()

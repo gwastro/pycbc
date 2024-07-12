@@ -11,15 +11,12 @@ import mpld3
 import mpld3.plugins
 from matplotlib.patches import Rectangle
 
-import pycbc.version
 import pycbc.events
 from pycbc.results.mpld3_utils import MPLSlide, Tooltip
 
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--segment-files', nargs='+',
                     help="List of segment files to plot")
 parser.add_argument('--output-file', help="output html file")

@@ -10,7 +10,7 @@ import lal, logging, numpy
 from pycbc.events import veto, coinc
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import significance
-import pycbc.version, pycbc.pnutils, pycbc.io
+import pycbc.pnutils, pycbc.io
 import sys
 import pycbc.conversions as conv
 
@@ -35,8 +35,6 @@ class fw(object):
 parser = argparse.ArgumentParser()
 # General required options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--sngls-files', nargs='+',
                     help='List of files containign trigger and statistic '
                          'information.')

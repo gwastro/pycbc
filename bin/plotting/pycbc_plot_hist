@@ -12,14 +12,12 @@ use('Agg')
 from matplotlib import pyplot
 
 import pycbc
-import pycbc.version
 import pycbc.results
 import pycbc.io
 from pycbc.events import background_bin_from_string, veto, ranking
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file', required=True,
                     help="Combined single detector hdf trigger file")
 parser.add_argument('--veto-file',

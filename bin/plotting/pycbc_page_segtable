@@ -28,7 +28,6 @@ from ligo import segments
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import SegFile
-import pycbc.version
 
 def powerset_ifos(ifo_set):
     combo_set = []
@@ -39,8 +38,6 @@ def powerset_ifos(ifo_set):
 # parse command line
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                        version=pycbc.version.git_verbose_msg)
 parser.add_argument('--segment-files', type=str, nargs="+",
                         help='XML files with a segment definer table to read.')
 parser.add_argument('--segment-names', type=str, nargs="+", required=False, default="",

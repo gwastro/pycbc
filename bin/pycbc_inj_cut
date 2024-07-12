@@ -36,11 +36,9 @@ from ligo.lw import lsctables
 import pycbc
 import pycbc.inject
 from pycbc.types import MultiDetOptionAction
-import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument('--input', dest='inj_xml', required=True, help='Input LIGOLW injections file.')
 parser.add_argument('--output-missed', dest='output_missed', required=False,
                   help="Output LIGOLW file containing injections we expect to miss.")

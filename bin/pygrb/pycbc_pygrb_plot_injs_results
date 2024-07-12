@@ -170,8 +170,7 @@ def load_data(input_file_handle, keys, tag):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
-                                          version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("--found-missed-file",
                     help="The hdf injection results file", required=True)
 parser.add_argument("--trig-file",

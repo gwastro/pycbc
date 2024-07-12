@@ -26,7 +26,7 @@ matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
 from pycbc.events import coinc_rate
-from pycbc import init_logging, version, add_common_pycbc_options
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import save_fig_with_metadata
 from pycbc.io.hdf import HFile
 
@@ -43,8 +43,6 @@ def marginalise_pdf(pdf, dimensions_to_keep):
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action="version",
-                    version=version.git_verbose_msg)
 parser.add_argument('--input-file', required=True,
                     help="Input phasetd histogram file, made using "
                          "pycbc_multiifo_dtphase")

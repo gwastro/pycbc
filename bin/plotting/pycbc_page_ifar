@@ -27,7 +27,6 @@ from ligo import segments
 
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.results
-import pycbc.version
 from pycbc.events import veto
 from pycbc import conversions as conv
 from pycbc.io import HFile
@@ -52,8 +51,6 @@ parser = argparse.ArgumentParser(usage='pycbc_page_ifar [--options]',
                           'coincident foreground triggers and a subset of' 
                           'the coincident time slide triggers.')
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-file', type=str, required=True,
                     help='Path to coincident trigger HDF file.')
 parser.add_argument('--output-file', type=str, required=True,

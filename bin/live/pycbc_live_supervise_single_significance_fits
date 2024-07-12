@@ -465,7 +465,11 @@ def wait_for_utc_time(target_str):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--config-file', required=True)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument(
+    '--config-file',
+    required=True
+)
 parser.add_argument(
     '--date',
     help='Date to analyse, if not given, will analyse yesterday (UTC). '
@@ -488,7 +492,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-pycbc.init_logging(True)
+pycbc.init_logging(args.verbose, default_level=1)
 
 if args.run_daily_at is not None and args.date is not None:
     parser.error('Cannot take --run-daily-at and --date at the same time')

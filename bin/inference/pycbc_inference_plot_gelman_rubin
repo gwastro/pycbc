@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import sys
 
 from pycbc import (
-    __version__, results, init_logging, add_common_pycbc_options
+    results, init_logging, add_common_pycbc_options
 )
 from pycbc.inference import (gelman_rubin, io, option_utils)
 
@@ -33,8 +33,6 @@ from pycbc.inference import (gelman_rubin, io, option_utils)
 parser = io.ResultsArgumentParser(skip_args=['walkers'])
 
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__,
-                    help='show version number and exit')
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,

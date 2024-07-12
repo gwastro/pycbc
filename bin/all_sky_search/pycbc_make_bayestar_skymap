@@ -26,7 +26,7 @@ import tempfile
 
 from ligo.lw import lsctables, utils as ligolw_utils
 
-import pycbc.version
+import pycbc
 from pycbc import init_logging
 from pycbc.waveform import bank as wavebank
 from pycbc.io import WaveformArray
@@ -34,8 +34,6 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bayestar-executable',
                     help="The bayestar-localize-coinc executable to be run. "
                          "If not given, will use whatever is available in "

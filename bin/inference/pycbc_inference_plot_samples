@@ -27,7 +27,6 @@ from matplotlib import rc
 import numpy
 import pycbc
 from pycbc import results
-from pycbc import __version__
 from pycbc.inference import (option_utils, io)
 import sys
 
@@ -35,8 +34,6 @@ import sys
 parser = argparse.parser = io.ResultsArgumentParser(
     skip_args=['chains', 'iteration'])
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__,
-                    help="show version number and exit")
 parser.add_argument("--chains", nargs='+', default=None,
                     help="Chain/walker indices to plot. Options are 'all' or "
                          "one or more chain indices. Default is to plot the "

@@ -18,10 +18,10 @@ import argparse, logging
 
 import numpy as np
 
+import pycbc
 from pycbc import init_logging
 from pycbc.io import HFile
 from pycbc.events import triggers
-import pycbc.version
 
 parser = argparse.ArgumentParser(usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -30,7 +30,6 @@ parser = argparse.ArgumentParser(usage="",
                 "background model.")
 
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("--template-fit-file",
                     help="Input hdf5 file containing fit coefficients for each"
                          " individual template. Required")

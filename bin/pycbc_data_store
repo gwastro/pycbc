@@ -8,7 +8,6 @@ import numpy
 import pycbc
 import pycbc.strain
 import pycbc.dq
-from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
 from pycbc.events.veto import segments_to_start_end
 from pycbc.io.hdf import HFile
@@ -17,7 +16,6 @@ set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=version)
 parser.add_argument("--science-name", help="Science flag definition")
 parser.add_argument("--segment-server")
 parser.add_argument("--veto-definer-file")

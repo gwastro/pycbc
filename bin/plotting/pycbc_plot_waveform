@@ -25,7 +25,6 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
 from pycbc import waveform, io
-from pycbc import version
 from pycbc import results
 from pycbc import init_logging, add_common_pycbc_options
 from pycbc.fft import ifft
@@ -34,8 +33,6 @@ from pycbc.types import TimeSeries, zeros, complex64
 
 parser = argparse.ArgumentParser(usage='', description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=version.git_verbose_msg)
 parser.add_argument('--output-file', required=True)
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for generation.")

@@ -26,7 +26,6 @@ import numpy
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.workflow as wf
 import pycbc.workflow.minifollowups as mini
-import pycbc.version
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer, coinc
 from pycbc.results import layout
@@ -122,7 +121,6 @@ def sort_injections(args, inj_group, missed):
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--injection-file',

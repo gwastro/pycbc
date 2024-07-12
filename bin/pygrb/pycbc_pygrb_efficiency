@@ -92,8 +92,7 @@ def efficiency_with_errs(found_bestnr, num_injections, num_mc_injs=0):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
-                                          version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("-F", "--trig-file", action="store", required=True,
                     help="Location of off-source trigger file.")
 parser.add_argument("--onsource-file", action="store",

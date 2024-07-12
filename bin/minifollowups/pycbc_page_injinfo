@@ -19,7 +19,6 @@ import argparse
 import sys
 import numpy
 
-import pycbc.version
 import pycbc.results
 import pycbc.pnutils
 from pycbc import init_logging, add_common_pycbc_options
@@ -28,8 +27,6 @@ from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--output-file')
 parser.add_argument('--injection-file', required=True,
     help="The HDF format injection file. Required")

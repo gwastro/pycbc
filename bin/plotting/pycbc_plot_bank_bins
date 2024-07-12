@@ -12,7 +12,6 @@ import inspect
 from itertools import cycle
 
 import pycbc.events, pycbc.pnutils, pycbc.conversions, pycbc.results
-import pycbc.version
 
 
 class H5BankFile(h5py.File):
@@ -79,8 +78,6 @@ class H5BankFile(h5py.File):
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file', help='hdf format template bank file',
                     required=True)
 parser.add_argument('--background-bins', nargs='+',

@@ -31,7 +31,6 @@ from pycbc.types import zeros, complex64
 from pycbc.types import complex_same_precision_as
 from pycbc.detector import Detector
 import pycbc.waveform.utils
-import pycbc.version
 
 def subtract_template(stilde, template, snr, trigger_time, flow):
     idx = int((trigger_time - snr.start_time) / snr.delta_t)
@@ -92,7 +91,6 @@ def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--subtract-template', action='store_true')
 parser.add_argument("--low-frequency-cutoff", type=float,

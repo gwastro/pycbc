@@ -27,7 +27,6 @@ import pycbc
 from pycbc import io, events, bin_utils, results
 from pycbc.events import triggers
 from pycbc.events import ranking
-import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
@@ -41,7 +40,6 @@ def get_stat(statchoice, trigs):
 
 parser = argparse.ArgumentParser(usage="", description="Plot trigger rates")
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("--trigger-file",
                     help="Input hdf5 file containing single triggers. "
                     "Required")
