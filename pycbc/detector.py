@@ -670,7 +670,7 @@ class LISA_detector(object):
     """
     LISA-like GW detector. Applies detector response from FastLISAResponse.
     """
-    def __init__(self, detector='LISA', reference_time=None, orbits=ESAOrbits(), use_gpu=False, t0=10000.):
+    def __init__(self, detector='LISA', reference_time=None, orbits=None, use_gpu=False, t0=10000.):
         """
         Parameters
         ----------
@@ -699,7 +699,10 @@ class LISA_detector(object):
         
         # intialize orbit information
         if orbits is None:
-            raise ImportError('LISAanalysistools required for inputting orbital data')
+            # set ESAOrbits as default; raise error if ESAOrbits cannot be imported
+            if ESAOrbits is None:
+                raise ImportError('LISAanalysistools required for inputting orbital data')
+            orbits = ESAOrbits()
         orbits.configure(linear_interp_setup=True)
         self.orbits = orbits
         
