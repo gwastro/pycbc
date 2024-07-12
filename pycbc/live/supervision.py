@@ -29,11 +29,12 @@ This module is primarily used in the pycbc_optimize_snr program.
 
 import logging
 import subprocess
+import time
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-import time
 
 logger = logging.getLogger('pycbc.live.supervision')
+
 
 def symlink(target, link_name):
     """
@@ -43,10 +44,10 @@ def symlink(target, link_name):
     logger.info(
         "Linking %s to %s", target, link_name,
     )
-    cp = subprocess.run([
+    symlink_output = subprocess.run([
         'ln', '-sf', target, link_name
     ])
-    if cp.returncode:
+    if symlink_output.returncode:
         raise subprocess.SubprocessError(
             f"Could not link {target} to {link_name}"
         )
@@ -65,7 +66,7 @@ def dict_to_args(opts_dict):
         if value is True:
             # option is a flag, do nothing
             continue
-        elif isinstance(value, list):
+        if isinstance(value, list):
             # value is a list, append individually
             for v in value:
                 dargs.append(v)
@@ -93,22 +94,26 @@ def mail_volunteers_error(controls, mail_body_lines, subject):
     mail_body = '\n'.join(mail_body_lines)
     subprocess.run(mail_command, input=mail_body, text=True)
 
+
 def run_and_error(command_arguments, controls):
     """
     Wrapper around subprocess.run to catch errors and send emails if required
     """
-    logger.info("Running " + " ".join(command_arguments))
+    logger.info("Running %s", " ".join(command_arguments))
     command_output = subprocess.run(command_arguments, capture_output=True)
     if command_output.returncode:
         error_contents = [' '.join(command_arguments),
                           command_output.stderr.decode()]
         if controls['mail-volunteers-file'] is not None:
-            mail_volunteers_error(controls, error_contents,
+            mail_volunteers_error(
+                controls,
+                error_contents,
                 f"PyCBC live could not run {command_arguments[0]}"
             )
         err_msg = f"Could not run {command_arguments[0]}"
         err_msg += ' '.join(error_contents)
         raise subprocess.SubprocessError(err_msg)
+
 
 def wait_for_utc_time(target_str):
     """Wait until the UTC time is as given by `target_str`, in HH:MM:SS format.
