@@ -705,8 +705,10 @@ class LISA_detector(object):
         
         # specify and cache the start time and orbital time series
         if reference_time is None:
-            reference_time = self.orbits.t_base[0]
-        self.ref_time = reference_time
+            ref_time = self.orbits.t_base[0]
+        else:
+            ref_time = reference_time
+        self.ref_time = ref_time
         self.sample_times = None
 
         # cache the FLR instance along with dt and n
