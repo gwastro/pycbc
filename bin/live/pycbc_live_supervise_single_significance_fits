@@ -67,8 +67,11 @@ def check_trigger_files(filenames, test_options, controls):
             for fw in filewarnings:
                 logging.warning("    " + fw)
                 mail_body_lines.append("    " + fw)
-        sv.mail_volunteers_error(controls, mail_body_lines,
-            'PyCBC Live single trigger fits extreme value(s)')
+        sv.mail_volunteers_error(
+            controls,
+            mail_body_lines,
+            'PyCBC Live single trigger fits extreme value(s)'
+        )
 
 
 # These are the option used to control the supervision, and will not be passed

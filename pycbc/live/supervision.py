@@ -21,10 +21,11 @@
 #
 # =============================================================================
 #
-""" This module contains functions for optimizing the signal-to-noise ratio
-of triggers produced by PyCBC Live. Also contained within this module are the
-command line arguments required and options group for the SNR optimization.
-This module is primarily used in the pycbc_optimize_snr program.
+"""
+This module contains functions for supervising codes to run regularly
+during pycbc_live production, taking input from the search and returning
+files which can be used in the search.
+This module is primarily used in the pycbc_live_supervise_* programs.
 """
 
 import logging
