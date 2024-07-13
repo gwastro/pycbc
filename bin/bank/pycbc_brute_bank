@@ -259,6 +259,7 @@ class TriangleBank(object):
                 ({k: params[k][idx] for k in params} for idx in range(total_num))
             ):
             waveform_cache += [return_wf]
+        pool.close_pool()
         del pool
 
         for hp in waveform_cache:

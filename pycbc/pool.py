@@ -91,7 +91,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         return results
 
     def map(self, func, items, chunksize=None):
-        """ Catch keyboard interuppts to allow the pool to exit cleanly.
+        """ Catch keyboard interupts to allow the pool to exit cleanly.
 
         Parameters
         ----------
@@ -113,6 +113,13 @@ class BroadcastPool(multiprocessing.pool.Pool):
                 self.join()
                 raise KeyboardInterrupt
 
+    def close_pool(self):
+        """ Close the pool and remove the reference
+        """
+        self.close()
+        self.join()
+        atexit.unregister(_shutdown_pool)
+
 def _dummy_broadcast(self, f, args):
     self.map(f, [args] * self.size)
 
@@ -129,6 +136,11 @@ class SinglePool(object):
     # imap irrespective of the pool type. 
     imap = map
     imap_unordered = map
+
+    def close_pool(self):
+        ''' Dummy function to be consistent with BroadcastPool
+        '''
+        pass
 
 def use_mpi(require_mpi=False, log=True):
     """ Get whether MPI is enabled and if so the current size and rank
