@@ -91,7 +91,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         return results
 
     def map(self, func, items, chunksize=None):
-        """ Catch keyboard interupts to allow the pool to exit cleanly.
+        """ Catch keyboard interrupts to allow the pool to exit cleanly.
 
         Parameters
         ----------
