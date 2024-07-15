@@ -59,17 +59,14 @@ def dict_to_args(opts_dict):
     Convert an option dictionary into a list to be used by subprocess.run
     """
     dargs = []
-    for option in opts_dict.keys():
-        value = opts_dict[option]
-        if value is None:
-            continue
+    for option, value in opts_dict.items():
         dargs.append('--' + option.strip())
-        if value is True:
+        if value is '':
             # option is a flag, do nothing
             continue
-        if isinstance(value, list):
+        if len(value.split()) > 1:
             # value is a list, append individually
-            for v in value:
+            for v in value.split():
                 dargs.append(v)
         else:
             # Single value option - append once
@@ -105,7 +102,7 @@ def run_and_error(command_arguments, controls):
     if command_output.returncode:
         error_contents = [' '.join(command_arguments),
                           command_output.stderr.decode()]
-        if controls['mail-volunteers-file'] is not None:
+        if 'mail-volunteers-file' in controls:
             mail_volunteers_error(
                 controls,
                 error_contents,

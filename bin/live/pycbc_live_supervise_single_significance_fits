@@ -19,7 +19,7 @@ from lal import gpstime
 import pycbc
 from pycbc.io.hdf import HFile
 from pycbc.live import supervision as sv
-
+from pycbc.types import InterpolatingConfigParser as icp
 
 def check_trigger_files(filenames, test_options, controls):
     """
@@ -128,6 +128,7 @@ coeff_test_options = [
 all_options = control_options + options_both + daily_fit_options \
               + combined_fit_options + coeff_test_options
 
+cp = icp(config_files=[args.config_file])
 
 def do_fitting(args, day_dt, day_str):
     """
