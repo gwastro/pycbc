@@ -19,7 +19,7 @@ from lal import gpstime
 import pycbc
 from pycbc.io.hdf import HFile
 from pycbc.live import supervision as sv
-from pycbc.types import InterpolatingConfigParser as icp
+from pycbc.types.config import InterpolatingConfigParser as icp
 
 def check_trigger_files(filenames, test_options, controls):
     """
@@ -74,104 +74,31 @@ def check_trigger_files(filenames, test_options, controls):
         )
 
 
-# These are the option used to control the supervision, and will not be passed
-# to the subprocesses
-control_options = [
-    "check-daily-output",
-    "combined-days",
-    "mail-volunteers-file",
-    "output-directory",
-    "output-id-str",
-    "public-dir",
-    "replay-duration",
-    "replay-start-time",
-    "submit-dir",
-    "trfits-format",
-    "true-start-time",
-    "variable-trigger-fits",
-]
+def read_options(args):
+    """
+    read the options into a dictionary
+    """
 
-# these are options which can be taken by both the daily fit code and the
-# combined fitting code
-options_both = ['ifos', 'verbose']
+    cp = icp(configFiles=[args.config_file])
+    option_values = {
+        section: {k: v for k, v in cp[section].items()}
+        for section in cp.sections()
+    }
+    del option_values['environment']
+    return option_values
 
-# These options are only for the daily fit code
-daily_fit_options = [
-    'cluster',
-    'date-directories',
-    'duration-bin-edges',
-    'duration-bin-spacing',
-    'duration-from-bank',
-    'file-identifier',
-    'fit-function',
-    'fit-threshold',
-    'num-duration-bins',
-    'prune-loudest',
-    'prune-stat-threshold',
-    'prune-window',
-    'sngl-ranking',
-    'template-cuts',
-    'trigger-cuts',
-    'trigger-directory',
-]
-
-combined_fit_options = [
-    'conservative-percentile',
-]
-
-coeff_test_options = [
-    'duration-bin-lower-limit',
-    'lower-limit-coefficient',
-    'upper-limit-coefficient',
-]
-
-all_options = control_options + options_both + daily_fit_options \
-              + combined_fit_options + coeff_test_options
-
-cp = icp(config_files=[args.config_file])
 
 def do_fitting(args, day_dt, day_str):
     """
     Perform the fits as specified
     """
     # Read in the config file and pack into appropriate dictionaries
-    daily_options = {}
-    combined_options = {}
-    test_options = {}
-    controls = {}
-
-    with open(args.config_file, 'r') as conf_file:
-        all_lines = conf_file.readlines()
-
-    for line in all_lines:
-        # Ignore whitespace and comments
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith(';'):
-            continue
-
-        option, value = line.split('=')
-        option = option.strip()
-        value = value.strip()
-
-        # If it is a control option, add to the controls dictionary
-        if option in control_options:
-            controls[option] = value
-
-        # If the option is not to control the input, then it is passed
-        # straight to the executable
-        if option in daily_fit_options or option in options_both:
-            daily_options[option] = value
-
-        if option in options_both or option in combined_fit_options:
-            combined_options[option] = value
-
-        if option in coeff_test_options:
-            test_options[option] = value
-
-        if option not in all_options:
-            logging.warning("Option %s unrecognised, ignoring", option)
+    option_values = read_options(args)
+    daily_options = option_values['daily_fits']
+    controls = option_values['control']
+    combined_options = option_values['combined_fits']
+    test_options = option_values['test']
+    combined_controls = option_values['combined_fits_control']
 
     # The main output directory will have a date subdirectory which we
     # put the output into
@@ -190,11 +117,13 @@ def do_fitting(args, day_dt, day_str):
         daily_options['output'] = os.path.join(output_dir, out_fname)
         daily_args = ['pycbc_live_single_significance_fits']
 
-        daily_options['gps-start-time'] = f'{gpstime.utc_to_gps(day_dt).gpsSeconds:d}'
-        daily_options['gps-end-time'] = f'{gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds:d}'
+        gps_start_time = gpstime.utc_to_gps(day_dt).gpsSeconds
+        gps_end_time = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
+        daily_options['gps-start-time'] = f'{gps_start_time:d}'
+        daily_options['gps-end-time'] = f'{gps_end_time:d}'
         daily_args += sv.dict_to_args(daily_options)
 
-        sv.run_and_error(daily_args)
+        sv.run_and_error(daily_args, controls)
 
         # Add plotting for daily fits, and linking to the public directory
         logging.info("Plotting daily fits")
@@ -410,6 +339,7 @@ if args.run_daily_at is not None:
         logging.info('==== Time to update the single fits, waking up ====')
         # Get the date string for yesterday's triggers
         day_dt = datetime.utcnow() - timedelta(days=1)
+        day_dt = datetime.combine(day_dt, datetime.min.time())
         day_str = day_dt.strftime('%Y_%m_%d')
         do_fitting(args, day_dt, day_str)
 else:
@@ -420,5 +350,6 @@ else:
     else:
         # Get the date string for yesterday's triggers
         day_dt = datetime.utcnow() - timedelta(days=1)
+        day_dt = datetime.combine(day_dt, datetime.min.time())
         day_str = day_dt.strftime('%Y_%m_%d')
     do_fitting(args, day_dt, day_str)
