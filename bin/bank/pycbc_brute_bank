@@ -223,7 +223,6 @@ class TriangleBank(object):
         inc = Shrinker(r*1, args.nprocesses)
         while 1:
             j = inc.pop()
-            print(j)
             if j is None:
                 hp.matches = matches[r]
                 hp.indices = r
@@ -233,7 +232,7 @@ class TriangleBank(object):
                 return False
 
             match_cache = {}
-            pool = pycbc.pool.choose_pool(args.nprocesses)
+            pool = pycbc.pool.choose_pool(min(len(j), args.nprocesses))
             for return_idx, return_m in pool.imap_unordered(
                 match_wrapper,
                 ({'idx': idx,
