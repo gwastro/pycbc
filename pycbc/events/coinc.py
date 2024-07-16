@@ -1433,7 +1433,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 with self.stat_calculator_lock:
                     self.stat_calculator.check_update_files()
             # Sleep one second for safety
-            time.sleep(1)
+            timemod.sleep(1)
             # Now include the time it took the check / update the statistic
             since_stat_refresh = \
                 (dt.now() - self.time_stat_refreshed).total_seconds()
@@ -1445,6 +1445,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             timemod.sleep(
                 self.statistic_refresh_rate - since_stat_refresh + 1
             )
+
 
 __all__ = [
     "background_bin_from_string",

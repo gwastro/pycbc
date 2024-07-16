@@ -26,10 +26,10 @@ This module contains functions for calculating coincident ranking statistic
 values.
 """
 import logging
-import numpy
-import h5py
 from hashlib import sha1
 from datetime import datetime as dt
+import numpy
+import h5py
 
 from . import ranking
 from . import coinc_rate
@@ -37,6 +37,7 @@ from .eventmgr_cython import logsignalrateinternals_computepsignalbins
 from .eventmgr_cython import logsignalrateinternals_compute2detrate
 
 logger = logging.getLogger('pycbc.events.stat')
+
 
 class Stat(object):
     """Base class which should be extended to provide a coincident statistic"""
@@ -123,6 +124,7 @@ class Stat(object):
                 )
             else:
                 del changed_file_hashes[stat]
+                continue
         else:
             logger.debug(
                 "No %s statistic files have changed",
@@ -460,7 +462,7 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         if selected is None and len(ifos) > 1:
             raise RuntimeError("Couldn't figure out which stat file to use")
-        elif len(ifos) == 1:
+        if len(ifos) == 1:
             # We dont need the histogram file, but we are trying to get one
             # just skip it in this case
             return
@@ -599,6 +601,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             # This is a PhaseTDStatistic file which needs updating
             self.get_hist()
             return True
+        return False
+
 
     def logsignalrate(self, stats, shift, to_shift):
         """
@@ -936,6 +940,7 @@ class ExpFitStatistic(QuadratureSumStatistic):
                 key
             )
             return True
+        return False
 
     def get_ref_vals(self, ifo):
         """
@@ -1455,6 +1460,7 @@ class ExpFitBgRateStatistic(ExpFitStatistic):
             ifo = key[:2]
             self.reassign_rate(ifo)
             return True
+        return False
 
     def rank_stat_coinc(self, s, slide, step, to_shift,
                         **kwargs): # pylint:disable=unused-argument
@@ -1612,6 +1618,7 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
             self.assign_median_sigma(ifo)
             self.assign_benchmark_logvol()
             return True
+        return False
 
     def lognoiserate(self, trigs, alphabelow=6):
         """
@@ -2142,6 +2149,7 @@ class ExpFitFgBgKDEStatistic(ExpFitFgBgNormStatistic):
             kde_style = key.split('-')[0]
             self.assign_kdes(kde_style)
             return True
+        return False
 
     def kde_ratio(self):
         """
@@ -2368,6 +2376,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             self.assign_template_bins(key)
             self.setup_segments(key)
             return True
+        return False
 
     def find_dq_noise_rate(self, trigs, dq_state):
         """Get dq values for a specific ifo and dq states"""

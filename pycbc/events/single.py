@@ -2,7 +2,6 @@
 """
 import logging
 import copy
-import h5py
 import threading
 from datetime import datetime as dt
 import time
@@ -11,6 +10,7 @@ import numpy as np
 from pycbc.events import trigger_fits as fits, stat
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
+from pycbc.io.hdf import HFile
 from pycbc import bin_utils
 
 logger = logging.getLogger('pycbc.events.single')
@@ -317,7 +317,7 @@ class LiveSingle(object):
             return self.fixed_ifar[self.ifo]
 
         try:
-            with h5py.File(self.fit_file, 'r') as fit_file:
+            with HFile(self.fit_file, 'r') as fit_file:
                 bin_edges = fit_file['bins_edges'][:]
                 live_time = fit_file[self.ifo].attrs['live_time']
                 thresh = fit_file.attrs['fit_threshold']
