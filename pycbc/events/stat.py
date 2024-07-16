@@ -122,14 +122,13 @@ class Stat(object):
                     ''.join(self.ifos),
                     stat,
                 )
-            else:
-                del changed_file_hashes[stat]
-                continue
         else:
             logger.debug(
                 "No %s statistic files have changed",
                 ''.join(self.ifos)
             )
+            return []
+
         return list(changed_file_hashes.keys())
 
     def check_update_files(self):
@@ -602,7 +601,6 @@ class PhaseTDStatistic(QuadratureSumStatistic):
             self.get_hist()
             return True
         return False
-
 
     def logsignalrate(self, stats, shift, to_shift):
         """
