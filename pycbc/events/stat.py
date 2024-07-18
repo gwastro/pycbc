@@ -122,12 +122,15 @@ class Stat(object):
                     ''.join(self.ifos),
                     stat,
                 )
-        else:
+            else:
+                # Remove the dataset from the dictionary of hashes
+                del changed_file_hashes[stat]
+
+        if changed_file_hashes == {}:
             logger.debug(
                 "No %s statistic files have changed",
                 ''.join(self.ifos)
             )
-            return []
 
         return list(changed_file_hashes.keys())
 
