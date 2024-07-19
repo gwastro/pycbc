@@ -173,15 +173,14 @@ def pygrb_add_bestnr_cut_opt(parser):
 
 
 # =============================================================================
-# Wrapper to pick triggers with certain slide_ids 
+# Wrapper to pick triggers with certain slide_ids
 # =============================================================================
 def slide_filter(File, data, slide_id=None):
-    """ 
-    This function adds the capability to select triggers with specific 
+    """
+    This function adds the capability to select triggers with specific
     slide_ids during the postprocessing stage of PyGRB.
     """
-    mask  = numpy.where(File['network/slide_id'][:]==slide_id)[0]
-
+    mask = numpy.where(File['network/slide_id'][:] == slide_id)[0]
     if slide_id is not None:
         return data[mask]
     else:
@@ -372,7 +371,8 @@ def dataset_iterator(g, prefix=''):
             yield from dataset_iterator(item, path)
 
 
-def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None, slide_id=None):
+def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None, 
+                  slide_id=None):
     """Loads triggers from PyGRB output file, returning a dictionary"""
 
     trigs = h5py.File(input_file, 'r')
@@ -423,8 +423,8 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None, slide_id=None
             else:
                 trigs_dict[path] = dset[above_thresh]
 
-            if trigs_dict[path].size==trigs['network/slide_id'][:].size:
-                trigs_dict[path] = slide_filter(trigs,trigs_dict[path],
+            if trigs_dict[path].size == trigs['network/slide_id'][:].size:
+                trigs_dict[path] = slide_filter(trigs,trigs_dict[path], 
                                                 slide_id=slide_id)
 
     return trigs_dict
