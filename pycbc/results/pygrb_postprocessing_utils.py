@@ -176,7 +176,10 @@ def pygrb_add_bestnr_cut_opt(parser):
 # Wrapper to pick triggers with certain slide_ids 
 # =============================================================================
 def slide_filter(File, data, slide_id=None):
-    """   """
+    """ 
+    This function adds the capability to select triggers with specific 
+    slide_ids during the postprocessing stage of PyGRB.
+    """
     mask  = numpy.where(File['network/slide_id'][:]==slide_id)[0]
 
     if slide_id is not None:
