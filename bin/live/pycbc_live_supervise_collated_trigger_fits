@@ -21,36 +21,42 @@ from pycbc.io.hdf import HFile
 from pycbc.live import supervision as sv
 from pycbc.types.config import InterpolatingConfigParser as icp
 
-
 def read_options(args):
     """
     read the options into a dictionary
     """
-
+    logging.info("Reading config file")
     cp = icp(configFiles=[args.config_file])
-    option_values = {
+    config_opts = {
         section: {k: v for k, v in cp[section].items()}
         for section in cp.sections()
     }
-    del option_values['environment']
-    return option_values
+    del config_opts['environment']
+    return config_opts
 
-def trigger_collation(day_dt, day_str, collation_control_options, collation_options, output_dir, ifos):
+def trigger_collation(
+        day_dt,
+        day_str,
+        collation_control_options,
+        collation_options,
+        output_dir,
+        controls
+    ):
     """
     Perform the trigger collation as specified
     """
+    logging.info("Performing trigger collation")
     collate_args = [
         'pycbc_live_collate_triggers',
     ]
     collate_args += sv.dict_to_args(collation_options)
     gps_start = gpstime.utc_to_gps(day_dt).gpsSeconds
     gps_end = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
-    ifos_str = ''.join(ifos)
 
     trig_merge_file = os.path.join(
         output_dir,
         collation_control_options['collated-triggers-format'].format(
-            ifos=ifos_str,
+            ifos=''.join(controls['ifos'].split()),
             start=gps_start,
             duration=(gps_end - gps_start)
         )
@@ -61,13 +67,10 @@ def trigger_collation(day_dt, day_str, collation_control_options, collation_opti
         '--output-file', trig_merge_file,
     ]
 
-    # FIXME remove this logging and comment
-    logging.info(collate_args)
+    # FIXME remove this comment
     # Run once then comment out for testing, as this can be expensive
-    #sv.run_and_error(
-    #    collate_args,
-    #    option_values['control']
-    #)
+    #logging.info(' '.join(collate_args))
+    sv.run_and_error(collate_args, controls)
 
     return trig_merge_file
 
@@ -81,6 +84,10 @@ def fit_by_template(
         ifo,
         controls
     ):
+    """
+    Supervise the running of pycbc_fit_sngls_by_template on live triggers
+    """
+    logging.info("Performing daily fit_by_template")
     fbt_out_fname = fbt_control_options['fit-by-template-format'].format(
         date=day_str,
         ifo=ifo,
@@ -90,14 +97,29 @@ def fit_by_template(
     fit_by_args += ['--trigger-file', trigger_merge_file]
     fit_by_args += sv.dict_to_args(fbt_options)
     fit_by_args += ['--output', fbt_out_full, '--ifo', ifo]
-    # FIXME remove this logging and comment
-    logging.info(fit_by_args)
-    #sv.run_and_error(fit_by_args, controls)
+    # FIXME remove this comment
+    # Run once then comment out for testing, as this can be expensive
+    #logging.info(' '.join(fit_by_args))
+    sv.run_and_error(fit_by_args, controls)
 
     return fbt_out_full, day_str
 
 
-def find_daily_fit_files(combined_control_options, daily_fname_format, outputs_dir, ifo):
+def find_daily_fit_files(
+        combined_control_options,
+        daily_fname_format,
+        daily_files_dir,
+        ifo
+    ):
+    """
+    Find files which match the specified formats
+    """
+    logging.info(
+        "Finding files in %s with format %s in detector %s",
+        daily_files_dir,
+        daily_fname_format,
+        ifo
+    )
     combined_days = int(combined_control_options['combined-days'])
     if 'replay-start-time' in combined_control_options:
         replay_start_time = int(combined_control_options['replay-start-time'])
@@ -137,8 +159,6 @@ def find_daily_fit_files(combined_control_options, daily_fname_format, outputs_d
 
     date_test = current_date + timedelta(days=1)
 
-    logging.info("Finding daily files for combination")
-
     daily_files = []
     missed_files = 0
     found_files = 0
@@ -152,7 +172,7 @@ def find_daily_fit_files(combined_control_options, daily_fname_format, outputs_d
         )
 
         output_dir = os.path.join(
-            outputs_dir,
+            daily_files_dir,
             date_out
         )
         daily_full = os.path.join(
@@ -173,50 +193,77 @@ def find_daily_fit_files(combined_control_options, daily_fname_format, outputs_d
         found_files += 1
         daily_files.append(daily_full)
 
+    if found_files == 0:
+        raise RuntimeError("No files found")
+
     if missed_files == 10:
         # If more than 10 days between files, something wrong with analysis.
         # warn and use fewer files - 10 here is chosen to be an unusual amount
         # of time for the analysis to be down in standard operation
         logging.warning('More than 10 days between files, only using '
-                        f'{found_files} files for combination!')
+                        f'{found_files} files!')
 
     return daily_files, first_date, end_date
 
 
-def fit_over_multiparam(fit_over_control_options, fit_over_options, ifo, day_dt, day_str, controls):
+def fit_over_multiparam(
+        fit_over_controls,
+        fit_over_options,
+        ifo,
+        day_str,
+        output_dir,
+        controls
+    ):
+    """
+    Supervise the smoothing of live trigger fits using
+    pycbc_fit_sngls_over_multiparam
+    """
     daily_files, first_date, end_date = find_daily_fit_files(
-        fit_over_control_options,
-        fit_over_control_options['fit-by-format'],
+        fit_over_controls,
+        fit_over_controls['fit-by-format'],
         controls['output-directory'],
         ifo
     )
+    logging.info(
+        "Smoothing fits using fit_over_multiparam with %d files and "
+        "specified parameters",
+        len(daily_files)
+    )
     file_id_str = f'{first_date}-{end_date}'
-    out_fname = fit_over_control_options['fit-over-format'].format(
+    out_fname = fit_over_controls['fit-over-format'].format(
         dates=file_id_str,
         ifo=ifo,
     )
 
-    output_dir = os.path.join(
-        controls['output-directory'],
-        day_str
-    )
     fit_over_args = ['pycbc_fit_sngls_over_multiparam', '--template-fit-file']
     fit_over_args += daily_files
     fit_over_args += sv.dict_to_args(fit_over_options)
     fit_over_full = os.path.join(output_dir, out_fname)
     fit_over_args += ['--output', fit_over_full]
-    logging.info(fit_over_args)
     sv.run_and_error(fit_over_args, controls)
-    if 'variable-fit-over-param' in fit_over_control_options:
-        variable_fits = fit_over_control_options['variable-fit-over-param'].format(ifo=ifo)
+    if 'variable-fit-over-param' in fit_over_controls:
+        variable_fits = fit_over_controls['variable-fit-over-param'].format(
+            ifo=ifo
+        )
         sv.symlink(fit_over_full, variable_fits)
 
     return fit_over_full, file_id_str
 
-def plot_fits(fits_file, ifo, day_title_str, plot_fit_options, controls, smoothed=False):
+def plot_fits(
+        fits_file,
+        ifo,
+        day_title_str,
+        plot_fit_options,
+        controls,
+        smoothed=False
+    ):
     """Plotting for fit_by files, and linking to the public directory"""
     fits_plot_output = fits_file[:-3] + 'png'
-    logging.info("Plotting daily fits %s to %s", fits_file, fits_plot_output)
+    logging.info(
+        "Plotting template fits %s to %s",
+        fits_file,
+        fits_plot_output
+    )
     fits_plot_arguments = [
         'pycbc_plot_bank_corner',
         '--fits-file',
@@ -225,12 +272,11 @@ def plot_fits(fits_file, ifo, day_title_str, plot_fit_options, controls, smoothe
         fits_plot_output,
     ]
     fits_plot_arguments += sv.dict_to_args(plot_fit_options)
+
     title = "Fit parameters for pycbc-live, triggers from " + day_title_str
     if smoothed == True:
         title += ', smoothed'
     fits_plot_arguments += ['--title', title]
-    # FIXME remove this logging and comment
-    logging.info(fits_plot_arguments)
     sv.run_and_error(fits_plot_arguments, controls)
     if 'public-dir' in controls:
         public_dir = os.path.abspath(os.path.join(
@@ -245,14 +291,19 @@ def single_significance_fits(
         daily_options,
         output_dir,
         day_str,
+        day_dt,
         controls,
-        test_options
+        test_options,
+        stat_files=None,
     ):
-    file_id_str = f'{day_str}'
-    if 'output-id-str' in daily_controls:
-        file_id_str += f"-{daily_controls['output-id-str']}"
-    out_fname = f'{file_id_str}-TRIGGER-FITS.hdf'
-    daily_options['output'] = os.path.join(output_dir, out_fname)
+    """
+    Supervise the significance fits for live triggers using
+    pycbc_live_single_significance_fits
+    """
+    daily_options['output'] = os.path.join(
+        output_dir,
+        daily_controls['sig-daily-format'].format(date=day_str),
+    )
     daily_args = ['pycbc_live_single_significance_fits']
 
     gps_start_time = gpstime.utc_to_gps(day_dt).gpsSeconds
@@ -260,89 +311,191 @@ def single_significance_fits(
     daily_options['gps-start-time'] = f'{gps_start_time:d}'
     daily_options['gps-end-time'] = f'{gps_end_time:d}'
     daily_args += sv.dict_to_args(daily_options)
+    if stat_files is not None:
+        daily_args += ['--statistic-files'] + stat_files
 
+    # FIXME remove this comment
+    # Run once then comment out for testing, as this can be expensive
+    #logging.info(' '.join(daily_args))
     sv.run_and_error(daily_args, controls)
 
-    if 'check-output' in daily_controls:
-        logging.info(
-            "Checking that fit coefficients above %s for bins above %ss",
-            test_options['lower-limit-coefficient'],
-            test_options['duration-bin-lower-limit']
-        )
-        sv.check_trigger_files(
-            [daily_options['output']],
-            test_options,
-            controls
-        )
     return daily_options['output']
 
-def plot_single_significance_fits(output_dir, daily_output, daily_plot_options, controls):
-    # Add plotting for daily fits, and linking to the public directory
-    logging.info("Plotting daily fits")
-    daily_plot_output = os.path.join(output_dir,
-                                     '{ifo}-' + f'{out_fname[:-3]}png')
+def plot_single_significance_fits(daily_output, daily_plot_options, controls):
+    """
+    Plotting daily significance fits, and link to public directory if wanted
+    """
+    daily_plot_output = f'{daily_output[:-4]}_{{ifo}}.png'
+    logging.info(
+        "Plotting daily significance fits from %s to %s",
+        daily_output,
+        daily_plot_output
+    )
     daily_plot_arguments = [
         'pycbc_live_plot_single_significance_fits',
         '--trigger-fits-file',
         daily_output,
         '--output-plot-name-format',
         daily_plot_output,
-        '--log-colormap'
     ]
     daily_plot_arguments += sv.dict_to_args(daily_plot_options)
-    sv.run_and_error(daily_plot_arguments)
+    sv.run_and_error(daily_plot_arguments, controls)
 
     # Link the plots to the public-dir if wanted
     if 'public-dir' in controls:
-        daily_plot_outputs = [daily_plot_output.format(ifo=ifo) for ifo in
-                              daily_options['ifos'].split()]
+        daily_plot_outputs = [
+            daily_plot_output.format(ifo=ifo)
+            for ifo in controls['ifos'].split()
+        ]
         logging.info("Linking daily fits plots")
         for dpo in daily_plot_outputs:
+            public_dir = os.path.abspath(os.path.join(
+                controls['public-dir'],
+                *day_str.split('_')
+            ))
+
             sv.symlink(dpo, public_dir)
 
 
-#def combine_significance_fits():
+def combine_significance_fits(
+        combined_options,
+        combined_controls,
+        day_str,
+        ifo,
+        controls
+    ):
+    """
+    Supervise the smoothing of live trigger significance fits using
+    pycbc_live_combine_single_significance_fits
+    """
+    daily_files, first_date, end_date = find_daily_fit_files(
+        combined_controls,
+        combined_controls['daily-format'],
+        controls['output-directory'],
+        ifo
+    )
+    logging.info(
+        "Smoothing significance fits over %d files"
+        len(daily_files)
+    )
+    date_range = f'{first_date}-{end_date}'
+    combined_options['output'] = combined_controls['outfile-format'].format(
+        date=day_str,
+        date_range=date_range,
+    )
+    combined_options['trfits-files'] = ' '.join(daily_files)
 
-#def plot_combined_significance_fits():
+    combined_args = ['pycbc_live_combine_single_significance_fits']
+    combined_args += sv.dict_to_args(combined_options)
+
+    sv.run_and_error(combined_args, controls)
+
+    if 'variable-significance-fits' in combined_controls:
+        logging.info("Linking to variable significance fits file")
+        sv.symlink(
+            combined_options['output'],
+            combined_controls['variable-significance-fits']
+        )
+
+    return combined_options['output'], date_range
+
+def plot_combined_significance_fits(
+        csf_file,
+        date_range,
+        combined_plot_options,
+        combined_plot_control_options,
+        controls
+    ):
+    """
+    Plotting combined significance fits, and link to public directory if wanted
+    """
+
+    oput_fmt = combined_plot_control_options['output-plot-name-format']
+    if not '{date_range}' in oput_fmt:
+        raise RuntimeError(
+            "Must specify {date_range} in output-plot-name-format"
+        )
+    oput_fmt = oput_fmt.replace('{date_range}', date_range)
+    combined_plot_arguments = [
+        'pycbc_live_plot_combined_single_significance_fits',
+        '--combined-fits-file',
+        csf_file,
+        '--output-plot-name-format',
+        oput_fmt
+    ]
+
+    sv.run_and_error(combined_plot_arguments, controls)
+
+    # Get the list of combined plotting output files:
+    combined_plot_outputs = [
+        combined_plot_output.format(ifo=ifo, type='fit_coeffs') for ifo in
+        combined_options['ifos'].split()
+    ]
+    combined_plot_outputs += [
+        combined_plot_output.format(ifo=ifo, type='counts') for ifo in
+        combined_options['ifos'].split()
+    ]
+
+    if 'public-dir' in controls:
+        logging.info("Linking combined fits to public dir")
+        public_dir = os.path.abspath(os.path.join(
+            controls['public-dir'],
+            *day_str.split('_')
+        ))
+        for cpo in combined_plot_outputs:
+            sv.symlink(cpo, public_dir)
 
 def supervise_collation_fits_dq(args, day_dt, day_str):
     """
-    Perform the fits as specified
+    Perform the trigger collation and fits etc. as specified
     """
     # Read in the config file and pack into appropriate dictionaries
-    option_values = read_options(args)
-    controls = option_values['control']
-    collation_options = option_values['collation']
-    collation_control_options = option_values['collation_control']
-    fit_by_template_options = option_values['fit_by_template']
-    fit_by_template_control_options = option_values['fit_by_template_control']
-    fit_over_options = option_values['fit_over_multiparam']
-    fit_over_control_options = option_values['fit_over_multiparam_control']
-    plot_fit_options = option_values['plot_fit']
-    daily_options = option_values['significance_daily_fits']
-    daily_control_options = option_values['significance_daily_fits_control']
-    combined_options = option_values['significance_combined_fits']
-    combined_control_options = option_values['significance_combined_fits_control']
-    test_options = option_values['test']
+    config_opts = read_options(args)
+    controls = config_opts['control']
+    collation_options = config_opts['collation']
+    collation_control_options = config_opts['collation_control']
+    fit_by_template_options = config_opts['fit_by_template']
+    fit_by_template_control_options = config_opts['fit_by_template_control']
+    fit_over_options = config_opts['fit_over_multiparam']
+    fit_over_control_options = config_opts['fit_over_multiparam_control']
+    plot_fit_options = config_opts['plot_fit']
+    daily_options = config_opts['significance_daily_fits']
+    daily_control_options = config_opts['significance_daily_fits_control']
+    daily_plot_options = config_opts['plot_significance_daily']
+    combined_options = config_opts['significance_combined_fits']
+    combined_control_options = config_opts['significance_combined_fits_control']
+    combined_plot_options = config_opts['plot_significance_combined']
+    combined_plot_control_options = config_opts['plot_significance_combined_control']
+    test_options = config_opts['test']
 
     # The main output directory will have a date subdirectory which we
     # put the output into
     sv.ensure_directories(controls, day_str)
 
-    ifos = option_values['control']['ifos'].split()
+    ifos = controls['ifos'].split()
     output_dir = os.path.join(
-        option_values['control']['output-directory'],
+        controls['output-directory'],
         day_str
     )
+    logging.info("Outputs to %s", output_dir)
+    if 'public_dir' in controls:
+        public_dir = os.path.abspath(os.path.join(
+            controls['public-dir'],
+            *day_str.split('_')
+        ))
+        logging.info("Outputs to be linked to % ", public_dir)
+
     merged_triggers = trigger_collation(
         day_dt,
         day_str,
         collation_control_options,
         collation_options,
         output_dir,
-        ifos,
+        controls
     )
-    for ifo in option_values['control']['ifos'].split():
+    # Store the locations of files needed for the statistic
+    stat_files = []
+    for ifo in config_opts['control']['ifos'].split():
         if args.fit_by_template:
             fbt_file, date_str = fit_by_template(
                 merged_triggers,
@@ -360,15 +513,17 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
                 plot_fit_options,
                 controls
             )
+
         if args.fit_over_multiparam:
             fom_file, date_str = fit_over_multiparam(
                 fit_over_control_options,
                 fit_over_options,
                 ifo,
-                day_dt,
                 day_str,
+                output_dir,
                 controls
             )
+            stat_files.append(fom_file)
             plot_fits(
                 fom_file,
                 ifo,
@@ -377,190 +532,39 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
                 controls,
                 smoothed=True,
             )
-#
-#    if args.single_significance_fits:
-#        file_id_str = f'{day_str}'
-#        if 'output-id-str' in controls:
-#            file_id_str += f"-{controls['output-id-str']}"
-#        out_fname = f'{file_id_str}-TRIGGER-FITS.hdf'
-#        daily_options['output'] = os.path.join(output_dir, out_fname)
-#        daily_args = ['pycbc_live_single_significance_fits']
-#
-#        gps_start_time = gpstime.utc_to_gps(day_dt).gpsSeconds
-#        gps_end_time = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
-#        daily_options['gps-start-time'] = f'{gps_start_time:d}'
-#        daily_options['gps-end-time'] = f'{gps_end_time:d}'
-#        daily_args += sv.dict_to_args(daily_options)
-#
-#        sv.run_and_error(daily_args, controls)
-#
-#        # Add plotting for daily fits, and linking to the public directory
-#        logging.info("Plotting daily fits")
-#        daily_plot_output = os.path.join(output_dir,
-#                                         '{ifo}-' + f'{out_fname[:-3]}png')
-#        daily_plot_arguments = [
-#            'pycbc_live_plot_single_significance_fits',
-#            '--trigger-fits-file',
-#            daily_options['output'],
-#            '--output-plot-name-format',
-#            daily_plot_output,
-#            '--log-colormap'
-#        ]
-#        sv.run_and_error(daily_plot_arguments)
-#
-#        # Link the plots to the public-dir if wanted
-#        if 'public-dir' in controls:
-#            daily_plot_outputs = [daily_plot_output.format(ifo=ifo) for ifo in
-#                                  daily_options['ifos'].split()]
-#            logging.info("Linking daily fits plots")
-#            for dpo in daily_plot_outputs:
-#                sv.symlink(dpo, public_dir)
-#
-#        if 'check-daily-output' in controls:
-#            logging.info(
-#                "Checking that fit coefficients above %s for bins above %ss",
-#                test_options['lower-limit-coefficient'],
-#                test_options['duration-bin-lower-limit']
-#            )
-#            sv.check_trigger_files(
-#                [daily_options['output']],
-#                test_options,
-#                controls
-#            )
-#
-#    if args.combine_significance_fits:
-#        combined_days = int(controls['combined-days'])
-#        if 'replay-start-time' in controls:
-#            replay_start_time = int(controls['replay-start-time'])
-#            true_start_time = int(controls['true-start-time'])
-#            replay_duration = int(controls['replay-duration'])
-#            dt_replay_start = gpstime.gps_to_utc(replay_start_time)
-#
-#            td = (day_dt - dt_replay_start).total_seconds()
-#
-#            # Time since the start of this replay
-#            time_since_replay = np.remainder(td, replay_duration)
-#
-#            # Add this on to the original start time to get the current time of
-#            # the replay data
-#            dt_true_start = gpstime.gps_to_utc(true_start_time)
-#
-#            # Original time of the data being replayed right now
-#            current_date = dt_true_start + timedelta(seconds=time_since_replay)
-#        else:
-#            current_date = day_dt
-#
-#        date_test = current_date + timedelta(days=1)
-#
-#        logging.info("Finding trigger fit files for combination")
-#        if 'check-daily-output' in controls:
-#            logging.info(
-#                "Checking all files that fit coefficients above %s for bins "
-#                "above %ss",
-#                test_options['lower-limit-coefficient'],
-#                test_options['duration-bin-lower-limit']
-#            )
-#
-#        daily_files = []
-#        missed_files = 0
-#        found_files = 0
-#        while found_files < combined_days and missed_files < 10:
-#            # Loop through the possible file locations and see if the file exists
-#            date_test -= timedelta(days=1)
-#            date_out = date_test.strftime("%Y_%m_%d")
-#            trfits_filename = controls['trfits-format'].format(date=date_out)
-#            # Check that the file exists:
-#            if not os.path.exists(trfits_filename):
-#                missed_files += 1
-#                logging.info(f"File {trfits_filename} does not exist - skipping")
-#                continue
-#            if not len(daily_files):
-#                end_date = date_out
-#            # This is now the oldest file
-#            first_date = date_out
-#            # reset the "missed files" counter, and add to the "found files"
-#            missed_files = 0
-#            found_files += 1
-#            daily_files.append(trfits_filename)
-#
-#        if 'check-daily-output' in controls:
-#            sv.check_trigger_files(daily_files, test_options, controls)
-#
-#        if missed_files == 10:
-#            # If more than 10 days between files, something wrong with analysis.
-#            # warn and use fewer files - 10 here is chosen to be an unusual amount
-#            # of time for the analysis to be down in standard operation
-#            logging.warning('More than 10 days between files, only using '
-#                            f'{found_files} files for combination!')
-#
-#        file_id_str = f'{first_date}-{end_date}'
-#        if 'output-id-str' in controls:
-#            file_id_str += f"-{controls['output-id-str']}"
-#        out_fname = f'{file_id_str}-TRIGGER_FITS_COMBINED'
-#        combined_options['output'] = os.path.join(output_dir, out_fname + '.hdf')
-#
-#        if not daily_files:
-#            raise ValueError("No files meet the criteria")
-#
-#        combined_options['trfits-files'] = ' '.join(daily_files)
-#
-#        combined_args = ['pycbc_live_combine_single_significance_fits']
-#        combined_args += sv.dict_to_args(combined_options)
-#
-#        sv.run_and_error(combined_args)
-#
-#        if 'variable-trigger-fits' in controls:
-#            logging.info('Copying combined fits file to local filesystem')
-#            try:
-#                shutil.copyfile(
-#                    combined_options['output'],
-#                    controls['variable-trigger-fits']
-#                )
-#            except Exception as e:
-#                sv.mail_volunteers_error(
-#                    controls,
-#                    [str(e)],
-#                    "PyCBC live could not copy to variable trigger fits file"
-#                )
-#                raise e
-#            logging.info(
-#                "%s updated to link to %s",
-#                controls['variable-trigger-fits'],
-#                combined_options['output']
-#            )
-#
-#        logging.info("Plotting combined fits")
-#        # Add plotting for combined fits, and linking to the public directory
-#        combined_plot_output = os.path.join(output_dir,
-#                                            f"{{ifo}}-{out_fname}-{{type}}.png")
-#        combined_plot_arguments = [
-#            'pycbc_live_plot_combined_single_significance_fits',
-#            '--combined-fits-file',
-#            combined_options['output'],
-#            '--output-plot-name-format',
-#            combined_plot_output,
-#            '--log-colormap'
-#        ]
-#
-#        sv.run_and_error(combined_plot_arguments)
-#
-#        combined_plot_outputs = [
-#            combined_plot_output.format(ifo=ifo, type='fit_coeffs') for ifo in
-#            combined_options['ifos'].split()
-#        ]
-#        combined_plot_outputs += [
-#            combined_plot_output.format(ifo=ifo, type='counts') for ifo in
-#            combined_options['ifos'].split()
-#        ]
-#
-#        # Link the plots to the public-dir if wanted
-#        if 'public-dir' in controls:
-#            logging.info("Linking combined fits")
-#            for cpo in combined_plot_outputs:
-#                sv.symlink(cpo, public_dir)
-#
-#        logging.info('Done')
-#
+
+    if args.single_significance_fits:
+        ssf_file = single_significance_fits(
+            daily_control_options,
+            daily_options,
+            output_dir,
+            day_str,
+            day_dt,
+            controls,
+            test_options,
+            stat_files=stat_files,
+        )
+        plot_single_significance_fits(
+            ssf_file,
+            daily_plot_options,
+            controls
+        )
+    if args.combine_significance_fits:
+        csf_file, date_str = combine_significance_fits(
+            combined_options,
+            combined_control_options,
+            date_str,
+            ifo,
+            controls
+        )
+        plot_combined_significance_fits(
+            csf_file,
+            date_str,
+            combined_plot_options,
+            combined_plot_control_options,
+            controls
+        )
+
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
