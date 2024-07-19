@@ -135,6 +135,9 @@ def wait_for_utc_time(target_str):
     time.sleep(sleep_seconds)
 
 def ensure_directories(control_values, day_str):
+    """
+    Ensure that the required directories exist
+    """
     output_dir = os.path.join(
         control_values['output-directory'],
         day_str
@@ -152,56 +155,3 @@ def ensure_directories(control_values, day_str):
             control_values
         )
 
-
-def check_trigger_files(filenames, test_options, controls):
-    """
-    Check that the fit coefficients meet criteria set
-    """
-    coeff_upper_limit = float(test_options['upper-limit-coefficient'])
-    coeff_lower_limit = float(test_options['lower-limit-coefficient'])
-    warnings = []
-    warning_files = []
-    for filename in filenames:
-        warnings_thisfile = []
-        with HFile(filename, 'r') as trff:
-            ifos = [k for k in trff.keys() if not k.startswith('bins')]
-            fit_coeffs = {ifo: trff[ifo]['fit_coeff'][:] for ifo in ifos}
-            bins_upper = trff['bins_upper'][:]
-            bins_lower = trff['bins_lower'][:]
-        # Which bins have at least *some* triggers within the limit
-        use_bins = bins_lower > float(test_options['duration-bin-lower-limit'])
-        for ifo in ifos:
-            coeffs_above = fit_coeffs[ifo][use_bins] > coeff_upper_limit
-            coeffs_below = fit_coeffs[ifo][use_bins] < coeff_lower_limit
-            if not any(coeffs_above) and not any(coeffs_below):
-                continue
-            # Problem - the fit coefficient is outside the limits
-            for bl, bu, fc in zip(bins_lower[use_bins], bins_upper[use_bins],
-                                  fit_coeffs[ifo][use_bins]):
-                if fc < coeff_lower_limit or fc > coeff_upper_limit:
-                    warnings_thisfile.append(
-                        f"WARNING - {ifo} fit coefficient {fc:.3f} in bin "
-                        f"{bl}-{bu} outwith limits "
-                        f"{coeff_lower_limit}-{coeff_upper_limit}"
-                    )
-        if warnings_thisfile:
-            warning_files.append(filename)
-            warnings.append(warnings_thisfile)
-
-    if warnings:
-        # Some coefficients are outside the range
-        # Add the fact that this check failed in the logs
-        logging.warning("Extreme daily fits values found:")
-        mail_body_lines = ["Extreme daily fits values found:"]
-        for filename, filewarnings in zip(warning_files, warnings):
-            logging.warning(filename)
-            mail_body_lines.append(f"Values in {filename}")
-            for fw in filewarnings:
-                logging.warning("    " + fw)
-                mail_body_lines.append("    " + fw)
-        if 'mail-volunteers-file' in controls:
-            mail_volunteers_error(
-                controls,
-                mail_body_lines,
-                'PyCBC Live single trigger fits extreme value(s)'
-            )
