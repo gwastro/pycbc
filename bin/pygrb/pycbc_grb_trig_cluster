@@ -173,10 +173,10 @@ all_clusters = []
 
 # load necessary information from all triggers
 
-with h5py.File(args.trig_file, "r") as h5f:
-    all_times = h5f["network"]["end_time_gc"][()]
-    all_snrs = h5f["network"][args.rank_column][()]
-    slide_ids = h5f["network"]["slide_id"][()]
+with HFile(args.trig_file, "r") as h5f:
+    all_times = h5f["network/end_time_gc"][()]
+    all_snrs = h5f[f"network/{args.rank_column}"][()]
+    slide_ids = h5f["network/slide_id"][()]
 
 # empty file (no triggers), so just copy the file
 if not all_times.size:
@@ -301,6 +301,8 @@ for slide_id in unique_slide_ids:
     logging.info(msg)
 
 logging.info('Total clustered triggers: '+str(len(all_clusters)))
+
+# -- write output --------------------------------
 
 slice_hdf5(
     args.trig_file,
