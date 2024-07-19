@@ -67,9 +67,6 @@ def trigger_collation(
         '--output-file', trig_merge_file,
     ]
 
-    # FIXME remove this comment
-    # Run once then comment out for testing, as this can be expensive
-    #logging.info(' '.join(collate_args))
     sv.run_and_error(collate_args, controls)
 
     return trig_merge_file
@@ -97,9 +94,6 @@ def fit_by_template(
     fit_by_args += ['--trigger-file', trigger_merge_file]
     fit_by_args += sv.dict_to_args(fbt_options)
     fit_by_args += ['--output', fbt_out_full, '--ifo', ifo]
-    # FIXME remove this comment
-    # Run once then comment out for testing, as this can be expensive
-    #logging.info(' '.join(fit_by_args))
     sv.run_and_error(fit_by_args, controls)
 
     return fbt_out_full, day_str
@@ -314,9 +308,6 @@ def single_significance_fits(
     if stat_files is not None:
         daily_args += ['--statistic-files'] + stat_files
 
-    # FIXME remove this comment
-    # Run once then comment out for testing, as this can be expensive
-    #logging.info(' '.join(daily_args))
     sv.run_and_error(daily_args, controls)
 
     return daily_options['output']
