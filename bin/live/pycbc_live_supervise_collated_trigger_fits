@@ -366,7 +366,7 @@ def combine_significance_fits(
         ifo
     )
     logging.info(
-        "Smoothing significance fits over %d files"
+        "Smoothing significance fits over %d files",
         len(daily_files)
     )
     date_range = f'{first_date}-{end_date}'
