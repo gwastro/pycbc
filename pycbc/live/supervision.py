@@ -43,7 +43,7 @@ def symlink(target, link_name):
     link_name = os.path.abspath(link_name)
     logger.info("Linking %s to %s", target, link_name)
     try:
-        subprocess.run(['ln', '-sf', target, link_name, check=True])
+        subprocess.run(['ln', '-sf', target, link_name], check=True)
     except subprocess.CalledProcessError as e:
         logging.error("Could not link %s to %s", target, link_name)
         raise e
