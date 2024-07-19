@@ -317,4 +317,4 @@ injs = [inj_data[snr_type], inj_data[veto_type]]
 plu.pygrb_plotter(trigs, injs, x_label, y_label, opts,
                   snr_vals=snr_vals, conts=conts, colors=colors,
                   shade_cont_value=cont_value, vert_spike=True,
-                  cmd=' '.join(sys.argv))                                                                                                                                                                                                                                                                                                                                                                                                                                                         321,41        Bot
+                  cmd=' '.join(sys.argv))
