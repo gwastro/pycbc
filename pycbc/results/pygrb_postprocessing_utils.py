@@ -182,9 +182,8 @@ def slide_filter(trig_file, data, slide_id=None):
     """
     if slide_id is None:
         return data
-    else:
-        mask = numpy.where(trig_file['network/slide_id'][:] == slide_id)[0]
-        return data[mask] 
+    mask = numpy.where(trig_file['network/slide_id'][:] == slide_id)[0]
+    return data[mask] 
 
 
 # =============================================================================
