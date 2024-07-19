@@ -39,16 +39,14 @@ def symlink(target, link_name):
     errors.
     """
     # Ensure that the target and link name are absolute paths
-    target= os.path.abspath(target)
+    target = os.path.abspath(target)
     link_name = os.path.abspath(link_name)
     logger.info("Linking %s to %s", target, link_name)
-    symlink_output = subprocess.run([
-        'ln', '-sf', target, link_name
-    ])
-    if symlink_output.returncode:
-        raise subprocess.SubprocessError(
-            f"Could not link {target} to {link_name}"
-        )
+    try:
+        subprocess.run(['ln', '-sf', target, link_name, check=True])
+    except subprocess.CalledProcessError as e:
+        logging.error("Could not link %s to %s", target, link_name)
+        raise e
 
 
 def dict_to_args(opts_dict):
@@ -87,7 +85,11 @@ def mail_volunteers_error(controls, mail_body_lines, subject):
     ]
     mail_command += volunteers
     mail_body = '\n'.join(mail_body_lines)
-    subprocess.run(mail_command, input=mail_body, text=True)
+    try:
+        subprocess.run(mail_command, input=mail_body, text=True, check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error("Could not send mail on error")
+        raise e
 
 
 def run_and_error(command_arguments, controls):
