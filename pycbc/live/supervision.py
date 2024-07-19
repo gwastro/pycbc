@@ -28,6 +28,8 @@ import os
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
+from pycbc.io.hdf import HFile
+
 logger = logging.getLogger('pycbc.live.supervision')
 
 
@@ -99,7 +101,7 @@ def run_and_error(command_arguments, controls):
     )
 
     if command_output.returncode:
-        error_contents = [' '.join(command_arguments),
+        error_contents = [' '.join(command_arguments), '\n',
                           command_output.stderr.decode()]
         if 'mail-volunteers-file' in controls:
             mail_volunteers_error(
@@ -107,7 +109,7 @@ def run_and_error(command_arguments, controls):
                 error_contents,
                 f"PyCBC live could not run {command_arguments[0]}"
             )
-        err_msg = f"Could not run {command_arguments[0]}"
+        err_msg = f"Could not run {command_arguments[0]}:\n"
         err_msg += ' '.join(error_contents)
         raise subprocess.SubprocessError(err_msg)
 
@@ -195,8 +197,9 @@ def check_trigger_files(filenames, test_options, controls):
             for fw in filewarnings:
                 logging.warning("    " + fw)
                 mail_body_lines.append("    " + fw)
-        sv.mail_volunteers_error(
-            controls,
-            mail_body_lines,
-            'PyCBC Live single trigger fits extreme value(s)'
-        )
+        if 'mail-volunteers-file' in controls:
+            mail_volunteers_error(
+                controls,
+                mail_body_lines,
+                'PyCBC Live single trigger fits extreme value(s)'
+            )
