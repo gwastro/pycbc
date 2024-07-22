@@ -206,4 +206,4 @@ if opts.x_lims:
 plu.pygrb_plotter([trig_data_time, trig_data_snr],
                   [inj_data_time, inj_data_snr],
                   "Time since %.3f (s)" % (central_time), y_label,
-                  opts, cmd=' '.join(sys.argv), fig=plt.figure())
+                  opts, cmd=' '.join(sys.argv))
