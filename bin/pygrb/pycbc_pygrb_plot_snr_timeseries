@@ -97,7 +97,7 @@ def reset_times(data_time, trig_time):
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("-t", "--trig-file", action="store",
-                    default=None, required=True,
+        default=None, required=True,
                     help="The location of the trigger file")
 parser.add_argument("--found-missed-file",
                     help="The hdf injection results file", required=False)
@@ -136,18 +136,21 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 # points to show the impact of the cut, otherwise remove points with
 # reweighted SNR below threshold
 if snr_type == 'reweighted':
-    trig_data = load_data(trig_file, ifos, vetoes, slide_id=0)
+    trig_data = load_data(trig_file, ifos, vetoes,
+                          slide_id=opts.slide_id)
     trig_data['network/reweighted_snr'] = \
         reweightedsnr_cut(trig_data['network/reweighted_snr'],
                           opts.newsnr_threshold)
-    inj_data = load_data(inj_file, ifos, vetoes, injections=True,slide_id=0)
+    inj_data = load_data(inj_file, ifos, vetoes, injections=True,
+                         slide_id=0)
     if inj_data is not None:
         inj_data['network/reweighted_snr'] = \
             reweightedsnr_cut(inj_data['network/reweighted_snr'],
                               opts.newsnr_threshold)
 else:
     trig_data = load_data(trig_file, ifos, vetoes,
-                   rw_snr_threshold=opts.newsnr_threshold, slide_id=0)
+                          rw_snr_threshold=opts.newsnr_threshold,
+                          slide_id=opts.slide_id)
     inj_data = load_data(inj_file, ifos, vetoes,
                          rw_snr_threshold=opts.newsnr_threshold,
                          injections=True, slide_id=0)

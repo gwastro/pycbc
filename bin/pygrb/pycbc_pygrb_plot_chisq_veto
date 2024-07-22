@@ -251,7 +251,8 @@ if ifo and ifo not in ifos:
     raise RuntimeError(err_msg)
 
 # Extract trigger data
-trig_data = load_data(trig_file, ifos, vetoes, opts, slide_id=0)
+trig_data = load_data(trig_file, ifos, vetoes, opts,
+                      slide_id=opts.slide_id)
 
 # Extract (or initialize) injection data
 inj_data = load_data(found_missed_file, ifos, vetoes, opts,
