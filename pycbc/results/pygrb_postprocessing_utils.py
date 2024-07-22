@@ -93,8 +93,8 @@ def pygrb_initialize_plot_parser(description=None):
                         help="If provided, use the given string as the plot " +
                         "caption")
     parser.add_argument("--slide-id", default=0, type=int,
-                        help="If None, the plotting scripts will use triggers" + 
-                        "from all slides. Most plots only need the slide_id=0")  
+                        help="If None, plotting scripts will use triggers" +
+                        "from all short slides.")
     return parser
 
 
