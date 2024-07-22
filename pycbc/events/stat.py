@@ -2411,10 +2411,9 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         try:
             ifo = trigs.ifo
         except AttributeError:
-            ifo = trigs['ifo']
-            assert len(numpy.unique(ifo)) == 1
             # Should be exactly one ifo provided
-            ifo = ifo[0]
+            assert len(numpy.unique(trigs['ifo'])) == 1
+            ifo = trigs['ifo'][0]
 
         dq_state = trigs['dq_state']
         dq_val = numpy.ones(len(dq_state))
@@ -2471,13 +2470,11 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
     def single(self, trigs):
         # make sure every trig has a dq state
         try:
-            # works in offline
             ifo = trigs.ifo
         except AttributeError:
-            # works in low-latency
-            ifo = trigs['ifo'][0]
             # Should be exactly one ifo provided
             assert len(numpy.unique(trigs['ifo'])) == 1
+            ifo = trigs['ifo'][0]
 
         singles = ExpFitFgBgNormStatistic.single(self, trigs)
 
