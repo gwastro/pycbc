@@ -211,6 +211,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                  sample_rate=None,
                  **kwargs):
 
+        self.sample_rate = float(sample_rate)
         self.kwargs = kwargs
         variable_params, kwargs = self.setup_marginalization(
                                variable_params,
@@ -244,13 +245,12 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         self.dets = {}
 
         if sample_rate is not None:
+            for ifo in self.data:
+                if self.sample_rate < self.data[ifo].sample_rate:
+                    raise ValueError("Model sample rate was set less than the"
+                                     " data. ")
             logging.info("Using %s sample rate for marginalization",
                          sample_rate)
-            for det in self._whitened_data:
-                tlen = int(round(float(sample_rate) *
-                           self.whitened_data[det].duration))
-                flen = tlen // 2 + 1
-                self._whitened_data[det].resize(flen)
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
@@ -307,8 +307,15 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             hp[self._kmin[det]:kmax] *= self._weight[det][slc]
             hc[self._kmin[det]:kmax] *= self._weight[det][slc]
 
-            hp.resize(len(self._whitened_data[det]))
-            hc.resize(len(self._whitened_data[det]))
+            # Use a higher sample rate if requested
+            if self.sample_rate is not None:
+                tlen = int(round(self.sample_rate *
+                           self.whitened_data[det].duration))
+                flen = tlen // 2 + 1
+                hp.resize(flen)
+                hc.resize(flen)
+                self._whitened_data[det].resize(flen)
+
             cplx_hpd[det], _, _ = matched_filter_core(
                                  hp,
                                  self._whitened_data[det],
