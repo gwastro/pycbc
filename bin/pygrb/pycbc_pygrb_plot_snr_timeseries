@@ -59,12 +59,14 @@ def load_data(input_file, ifos, vetoes, rw_snr_threshold=None,
             # This will eventually become load_injections
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                        rw_snr_threshold=rw_snr_threshold,slide_id=slide_id)
+                                  rw_snr_threshold=rw_snr_threshold,
+                                  slide_id=slide_id)
         else:
             logging.info("Loading triggers...")
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                        rw_snr_threshold=rw_snr_threshold,slide_id=slide_id)
+                                  rw_snr_threshold=rw_snr_threshold,
+                                  slide_id=slide_id)
     return trigs_or_injs
 
 
