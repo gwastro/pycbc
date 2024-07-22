@@ -19,6 +19,7 @@ distance.
 """
 
 import itertools
+import logging
 import numpy
 from scipy import special
 
@@ -207,8 +208,10 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
     def __init__(self, variable_params,
                  data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
+                 sample_rate=None,
                  **kwargs):
 
+        self.sample_rate = float(sample_rate)
         self.kwargs = kwargs
         variable_params, kwargs = self.setup_marginalization(
                                variable_params,
@@ -240,6 +243,14 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                     gates=self.gates, **kwargs['static_params'])
 
         self.dets = {}
+
+        if sample_rate is not None:
+            for ifo in self.data:
+                if self.sample_rate < self.data[ifo].sample_rate:
+                    raise ValueError("Model sample rate was set less than the"
+                                     " data. ")
+            logging.info("Using %s sample rate for marginalization",
+                         sample_rate)
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
@@ -296,8 +307,15 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             hp[self._kmin[det]:kmax] *= self._weight[det][slc]
             hc[self._kmin[det]:kmax] *= self._weight[det][slc]
 
-            hp.resize(len(self._whitened_data[det]))
-            hc.resize(len(self._whitened_data[det]))
+            # Use a higher sample rate if requested
+            if self.sample_rate is not None:
+                tlen = int(round(self.sample_rate *
+                           self.whitened_data[det].duration))
+                flen = tlen // 2 + 1
+                hp.resize(flen)
+                hc.resize(flen)
+                self._whitened_data[det].resize(flen)
+
             cplx_hpd[det], _, _ = matched_filter_core(
                                  hp,
                                  self._whitened_data[det],
@@ -325,15 +343,20 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
         for det in wfs:
             if det not in self.dets:
                 self.dets[det] = Detector(det)
-            fp, fc = self.dets[det].antenna_pattern(
-                                    params['ra'],
-                                    params['dec'],
-                                    params['polarization'],
-                                    params['tc'])
-            dt = self.dets[det].time_delay_from_earth_center(params['ra'],
-                                                             params['dec'],
-                                                             params['tc'])
+
+            if self.precalc_antenna_factors:
+                fp, fc, dt = self.get_precalc_antenna_factors(det)
+            else:
+                fp, fc = self.dets[det].antenna_pattern(
+                                        params['ra'],
+                                        params['dec'],
+                                        params['polarization'],
+                                        params['tc'])
+                dt = self.dets[det].time_delay_from_earth_center(params['ra'],
+                                                                 params['dec'],
+                                                                 params['tc'])
             dtc = params['tc'] + dt
+
             cplx_hd = fp * cplx_hpd[det].at_time(dtc,
                                                  interpolate='quadratic')
             cplx_hd += fc * cplx_hcd[det].at_time(dtc,
