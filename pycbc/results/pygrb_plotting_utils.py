@@ -194,8 +194,7 @@ def pygrb_plotter(trigs, injs, xlabel, ylabel, opts,
 
     # Set up plot
     fig = plt.figure()
-    cax = fig.gca()
-                      
+    cax = fig.gca()       
     # Plot trigger-related and (if present) injection-related quantities
     cax_plotter = cax.loglog if opts.use_logs else cax.plot
     cax_plotter(trigs[0], trigs[1], 'bx')
