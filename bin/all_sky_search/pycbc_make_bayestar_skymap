@@ -26,17 +26,14 @@ import tempfile
 
 from ligo.lw import lsctables, utils as ligolw_utils
 
-import pycbc.version
+import pycbc
 from pycbc import init_logging
 from pycbc.waveform import bank as wavebank
 from pycbc.io import WaveformArray
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--version', action="version",
-                    version=pycbc.version.git_verbose_msg)
-parser.add_argument('--verbose', action='count',
-                    help="Make the logging increasingly more verbose")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--bayestar-executable',
                     help="The bayestar-localize-coinc executable to be run. "
                          "If not given, will use whatever is available in "
@@ -52,9 +49,9 @@ parser.add_argument('--output-file', required=True,
 wavebank.add_approximant_arg(parser)
 args, unknown = parser.parse_known_args()
 
-# Default logging is set higher than normal for this job
-logging_level = args.verbose + 1 if args.verbose else None
-init_logging(logging_level)
+# Default logging level is info: --verbose adds to this
+pycbc.init_logging(args.verbose, default_level=1)
+
 logging.info("Starting")
 
 bayestar_exe = args.bayestar_executable or 'bayestar-localize-coincs'

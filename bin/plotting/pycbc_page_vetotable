@@ -21,19 +21,20 @@
 import argparse
 import logging
 import numpy
-import pycbc.results
 import sys
+
 from ligo.lw import lsctables
 from ligo.lw import utils
+
+import pycbc.results
 from pycbc.results import save_fig_with_metadata
-import pycbc.version
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 
 # add command line options
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--veto-definer-file', type=str,
                         help='XML files with a veto_definer table to read.')
 parser.add_argument('--output-file', type=str,
@@ -43,8 +44,7 @@ parser.add_argument('--output-file', type=str,
 opts = parser.parse_args()
 
 # setup log
-logging.basicConfig(format='%(asctime)s:%(levelname)s, %(message)s',
-                    level=logging.INFO,datefmt='%I:%M:%S')
+pycbc.init_logging(opts.verbose, default_level=1)
 
 # set column names
 columns = (('Category', []),

@@ -2,13 +2,13 @@
 A set of helper functions for evaluating rates.
 """
 
-import h5py
 import numpy as np
 from numpy import log
 from scipy import integrate, optimize
 import scipy.stats as ss
 
 from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc.io.hdf import HFile
 
 
 def process_full_data(fname, rhomin, mass1, mass2, lo_mchirp, hi_mchirp):
@@ -35,7 +35,7 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_mchirp, hi_mchirp):
        dictionary
               containing foreground triggers and background information
     """
-    with h5py.File(fname, 'r') as bulk:
+    with HFile(fname, 'r') as bulk:
 
         id_bkg = bulk['background_exc/template_id'][:]
         id_fg = bulk['foreground/template_id'][:]
@@ -77,7 +77,7 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_mchirp, hi_mchi
                Maximum chirp mass for template
     '''
 
-    with h5py.File(fname_bank, 'r') as bulk:
+    with HFile(fname_bank, 'r') as bulk:
         mass1_bank = bulk['mass1'][:]
         mass2_bank = bulk['mass2'][:]
         full_data = process_full_data(fname_statmap, rhomin,

@@ -31,7 +31,6 @@ from pycbc import (distributions, transforms, fft,
                    opt, scheme, pool)
 from pycbc.waveform import generator
 
-from pycbc import __version__
 from pycbc import inference
 from pycbc.inference import (models, burn_in, option_utils)
 from pycbc.inference.io import loadfile
@@ -41,8 +40,6 @@ from pycbc.workflow import configuration
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__,
-                    help="Prints version information.")
 # output options
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output file path.")

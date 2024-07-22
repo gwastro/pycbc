@@ -7,16 +7,16 @@ the capability of doing hierarchical removal of foreground triggers that are
 louder than all of the background triggers. We use this to properly assess
 the FANs of any other gravitational waves in the dataset.
 """
-import argparse, h5py, itertools
+import argparse, itertools
 import lal, logging, numpy
 from pycbc.events import veto, coinc, significance
-import pycbc.version, pycbc.pnutils, pycbc.io
+import pycbc.pnutils, pycbc.io
 import sys
 import pycbc.conversions as conv
 
 class fw(object):
     def __init__(self, name):
-        self.f = h5py.File(name, 'w')
+        self.f = pycbc.io.HFile(name, 'w')
         self.attrs = self.f.attrs
 
     def __setitem__(self, name, data):
@@ -35,8 +35,6 @@ class fw(object):
 parser = argparse.ArgumentParser()
 # General required options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--coinc-files', nargs='+',
                     help='List of coincidence files used to calculate the '
                          'FAP, FAR, etc.')

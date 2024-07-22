@@ -30,7 +30,6 @@ from pycbc.results import layout
 from pycbc.types.optparse import MultiDetOptionAction
 from pycbc.events import select_segments_by_definer
 import pycbc.workflow.minifollowups as mini
-import pycbc.version
 import pycbc.workflow as wf
 import pycbc.events
 from pycbc.workflow.core import resolve_url_to_file
@@ -39,7 +38,6 @@ from pycbc.io import hdf
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--bank-file',
                     help="HDF format template bank file")
 parser.add_argument('--single-detector-file',
@@ -97,8 +95,7 @@ stat.insert_statistic_option_group(parser,
 args = parser.parse_args()
 
 # Default logging level is info: --verbose adds to this
-log_level = 1 if args.verbose is None else args.verbose + 1
-init_logging(log_level)
+init_logging(args.verbose, default_level=1)
 
 workflow = wf.Workflow(args)
 workflow.ifos = [args.instrument]

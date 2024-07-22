@@ -12,7 +12,6 @@ See https://dcc.ligo.org/LIGO-T2100060/public for technical explanations
 """
 
 from os.path import basename
-import h5py
 import bisect
 from itertools import chain as it_chain, combinations as it_comb
 import numpy as np
@@ -21,6 +20,7 @@ from pycbc import conversions as conv
 from pycbc import events
 from pycbc.events.coinc import mean_if_greater_than_zero as coinc_meanigz
 from pycbc.events import triggers
+from pycbc.io.hdf import HFile
 
 
 def filter_bin_lo_hi(values, lo, hi):
@@ -32,7 +32,7 @@ def filter_bin_lo_hi(values, lo, hi):
 
 
 def filter_tmplt_mchirp(bankf, lo_mchirp, hi_mchirp):
-    with h5py.File(bankf) as bank:
+    with HFile(bankf) as bank:
         mchirp = conv.mchirp_from_mass1_mass2(bank['mass1'][:], bank['mass2'][:])
     # Boolean over template id
     return filter_bin_lo_hi(mchirp, lo_mchirp, hi_mchirp)
@@ -58,7 +58,7 @@ def read_full_data(fullf, rhomin, tmplt_filter=None):
        dictionary
               containing foreground triggers and background information
     """
-    with h5py.File(fullf, 'r') as full_data:
+    with HFile(fullf, 'r') as full_data:
         # apply template filter
         tid_bkg = full_data['background_exc/template_id'][:]
         tid_fg = full_data['foreground/template_id'][:]
@@ -265,7 +265,7 @@ class EventRate(object):
 
     def add_bank(self, bank_file):
         self.bank = bank_file
-        with h5py.File(self.bank, 'r') as b:
+        with HFile(self.bank, 'r') as b:
             tids = np.arange(len(b['mass1'][:]))
             # tuples of m1, m2, s1z, s2z in template id order
             self.massspins = triggers.get_mass_spin(b, tids)
@@ -343,7 +343,7 @@ class EventRate(object):
         return in_time
 
     def get_livetimes(self, fi):
-        with h5py.File(fi, 'r') as f:
+        with HFile(fi, 'r') as f:
             for ct in self.ctimes:
                 # 'inclusive' time when at least the ifos specified by ct are on
                 fgt = conv.sec_to_year(f[ct].attrs['foreground_time'])
@@ -379,7 +379,7 @@ class ForegroundEvents(EventRate):
     def add_zerolag(self, full_file):
         start = get_start_dur(full_file)[0]
         self.starttimes.append(start)
-        with h5py.File(full_file, 'r') as f:
+        with HFile(full_file, 'r') as f:
             # get stat values & threshold
             _stats = f['foreground/stat'][:]
             _keepstat = _stats > self.thr
@@ -497,7 +497,7 @@ class BackgroundEventRate(EventRate):
         start = get_start_dur(full_file)[0]
         self.get_livetimes(full_file)
 
-        with h5py.File(full_file, 'r') as ff:
+        with HFile(full_file, 'r') as ff:
             # get stat values and threshold
             _bgstat = ff['background_exc/stat'][:]
             _keepstat = _bgstat > self.thr
@@ -598,7 +598,7 @@ class SignalEventRate(EventRate):
         self.starts.append(get_start_dur(inj_file)[0])
         self.get_livetimes(inj_file)
 
-        with h5py.File(inj_file, 'r') as jf:
+        with HFile(inj_file, 'r') as jf:
             # get stat values and threshold
             _injstat = jf['found_after_vetoes/stat'][:]
             _keepstat = _injstat > self.thr
@@ -622,7 +622,7 @@ class SignalEventRate(EventRate):
             for ct in self.allctimestring:
                 # get coinc time info from segments in fg file
                 intime = self.in_coinc_time_excl(
-                                        h5py.File(fg_file, 'r'), ct, meantimes)
+                                        HFile(fg_file, 'r'), ct, meantimes)
                 _ctime[intime == 1] = ct  # do we need this?
                 if self.args.verbose:
                     print('Got %i ' % (intime == 1).sum() + 'inj in %s time' % ct)

@@ -6,9 +6,13 @@
 import argparse, h5py, numpy, logging, sys
 import matplotlib
 matplotlib.use('Agg')
-import pylab, pycbc.results, pycbc.version
-from pycbc import conversions as conv
+import pylab
+
 from scipy.special import erfc, erfinv
+from pycbc.io.hdf import HFile
+
+import pycbc.results
+from pycbc import conversions as conv
 
 def sigma_from_p(p):
     return - erfinv(1 - (1 - p) * 2) * 2**0.5
@@ -35,9 +39,8 @@ far_from_p = numpy.vectorize(_far_from_p)
 
 parser = argparse.ArgumentParser()
 # General required options
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--trigger-file')
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
 parser.add_argument('--not-cumulative', action='store_true')
 parser.add_argument('--trials-factor', type=int, default=1,
@@ -79,12 +82,10 @@ parser.add_argument('--ymax', type=float,
                          '(in units of 1/years)')
 args = parser.parse_args()
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(args.verbose)
 
 logging.info('Read in the data')
-f = h5py.File(args.trigger_file, 'r')
+f = HFile(args.trigger_file, 'r')
 
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = args.use_hierarchical_level

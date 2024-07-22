@@ -1,21 +1,36 @@
 #!/usr/bin/env python
 """ Plot variation in PSD
 """
-import matplotlib; matplotlib.use('Agg');
-import h5py, numpy, argparse, pylab, sys
-import pycbc.results, pycbc.types, pycbc.version, pycbc.waveform, pycbc.filter
+import matplotlib
+matplotlib.use('Agg');
+import logging
+import numpy
+import argparse
+import pylab
+import sys
+
+import pycbc.results
+import pycbc.types
+import pycbc.waveform
+import pycbc.filter
+from pycbc.io.hdf import HFile
 
 from pycbc.fft.fftw import set_measure_level
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--version", action='version', version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--psd-files", nargs='+', help='HDF file of psds')
 parser.add_argument("--output-file", help='output file name')
-parser.add_argument("--mass1", nargs="+", help="Mass of first component in solar masses", type=float)
-parser.add_argument("--mass2", nargs="+", help="Mass of second component in solar masses", type=float)
-parser.add_argument("--approximant", nargs="+", help="approximant to use for range")
+parser.add_argument("--mass1", nargs="+", type=float,
+                    help="Mass of first component in solar masses")
+parser.add_argument("--mass2", nargs="+", type=float,
+                    help="Mass of second component in solar masses")
+parser.add_argument("--approximant", nargs="+",
+                    help="approximant to use for range")
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 canonical_snr = 8.0
 
@@ -25,7 +40,7 @@ pylab.ylabel('Inspiral Range (Mpc)')
 pylab.grid()
 
 for psd_file in args.psd_files:
-    f = h5py.File(psd_file, 'r')
+    f = HFile(psd_file, 'r')
     ifo = tuple(f.keys())[0]
     flow = f.attrs['low_frequency_cutoff']
     keys = list(f[ifo + '/psds'].keys())
@@ -77,3 +92,5 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
     cmd = ' '.join(sys.argv),
     fig_kwds={'dpi':200}
     )
+
+logging.info("Done!")

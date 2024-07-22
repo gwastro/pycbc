@@ -21,7 +21,6 @@
 Plot found/missed injection properties for the triggered search (PyGRB).
 """
 
-import h5py
 import logging
 import matplotlib.pyplot as plt
 import matplotlib
@@ -34,6 +33,7 @@ import pycbc.results
 import pycbc.version
 from pycbc import init_logging
 from pycbc.results import pygrb_postprocessing_utils as ppu
+from pycbc.io.hdf import HFile
 
 plt.switch_backend('Agg')
 matplotlib.rc("image")
@@ -170,8 +170,7 @@ def load_data(input_file_handle, keys, tag):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(description=__doc__,
-                                          version=__version__)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("--found-missed-file",
                     help="The hdf injection results file", required=True)
 parser.add_argument("--trig-file",
@@ -225,7 +224,7 @@ if 'eff_site_dist' in [x_qty, y_qty] and opts.ifo is None:
 # Store options used multiple times in local variables
 outfile = opts.output_file
 trig_file = os.path.abspath(opts.trig_file)
-f = h5py.File(opts.found_missed_file, 'r')
+f = HFile(opts.found_missed_file, 'r')
 grb_time = opts.trigger_time
 
 # Set output directory

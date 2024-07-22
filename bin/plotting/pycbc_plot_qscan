@@ -34,7 +34,6 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import LogNorm
 
 import pycbc.strain
-import pycbc.version
 import pycbc.results
 
 # https://stackoverflow.com/questions/9978880/python-argument-parser-list-of-list-or-tuple-of-tuples
@@ -46,8 +45,7 @@ def t_window(s):
         raise argparse.ArgumentTypeError("Input must be start,end start,end")
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--output-file', required=True, help='Output plot')
 parser.add_argument('--center-time', type=float,
                     help='Center plot on the given GPS time. If omitted, use '
@@ -114,7 +112,7 @@ parser.add_argument('--spin2z', type=float, default=0,
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+pycbc.init_logging(opts.verbose, default_level=1)
 
 if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.

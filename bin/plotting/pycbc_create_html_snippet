@@ -18,12 +18,14 @@
 
 import sys
 import argparse
+
+from pycbc import init_logging, add_common_pycbc_options
 import pycbc.version
 import pycbc.results
 
 # parse command line
 parser = argparse.ArgumentParser()
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+add_common_pycbc_options(parser)
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
 parser.add_argument('--html-text', type=str,
@@ -31,6 +33,8 @@ parser.add_argument('--html-text', type=str,
 parser.add_argument('--title', type=str, default="Title",
                     help="Title of figure for results webpage.")
 opts = parser.parse_args()
+
+init_logging(opts.verbose)
 
 # set caption beginning
 caption = opts.html_text

@@ -481,7 +481,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description=__doc__)
     pycbc.add_common_pycbc_options(parser)
-    parser.add_argument('--version', action=pycbc.version.Version)
     # note that I am not using a MultiDetOptionAction for --trig-time as I
     # explicitly want to handle cases like `--trig-time 1234` and
     # `--trig-time H1:1234 L1:1234` in different ways

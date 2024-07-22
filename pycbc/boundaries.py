@@ -28,6 +28,10 @@ cyclic boundaries or reflected boundaries.
 """
 
 import numpy
+import logging
+
+logger = logging.getLogger('pycbc.boundaries')
+
 
 class _Bound(float):
     """Adds methods to float for boundary comparisons."""

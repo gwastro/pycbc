@@ -26,12 +26,10 @@ import argparse
 import numpy
 import h5py
 import pycbc
-import pycbc.version
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("--input-file", required=True,
                     help="Input merge triggers HDF file.")
 parser.add_argument("--output-file", required=True,
@@ -50,7 +48,7 @@ parser.add_argument("--filter-func-file", required=True,
 opt = parser.parse_args()
 pycbc.init_logging(opt.verbose)
 
-bank_fd = h5py.File(opt.full_template_bank, 'r')
+bank_fd = HFile(opt.full_template_bank, 'r')
 
 modl = imp.load_source('filter_func', opt.filter_func_file)
 func = modl.filter_tmpltbank
@@ -69,11 +67,11 @@ copy_params = ['bank_chisq', 'bank_chisq_dof', 'chisq', 'chisq_dof',
                'coa_phase', 'cont_chisq', 'cont_chisq_dof','end_time',
                'sg_chisq', 'sigmasq', 'snr', 'template_duration']
 
-ifd = h5py.File(opt.input_file, 'r')
+ifd = HFile(opt.input_file, 'r')
 ifos = list(ifd.keys())
 assert(len(ifos) == 1)
 ifo = ifos[0]
-ofd = h5py.File(opt.output_file, 'w')
+ofd = HFile(opt.output_file, 'w')
 ofd.create_group(ifo)
 new_boundaries = []
 old_boundaries = []

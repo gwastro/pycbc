@@ -15,9 +15,11 @@ import os
 import shutil
 import subprocess
 import numpy as np
+
 from lal import gpstime
+
 import pycbc
-import h5py
+from pycbc.io.hdf import HFile
 
 
 def symlink(target, link_name):
@@ -90,7 +92,7 @@ def check_trigger_files(filenames, test_options, controls):
     warning_files = []
     for filename in filenames:
         warnings_thisfile = []
-        with h5py.File(filename, 'r') as trff:
+        with HFile(filename, 'r') as trff:
             ifos = [k for k in trff.keys() if not k.startswith('bins')]
             fit_coeffs = {ifo: trff[ifo]['fit_coeff'][:] for ifo in ifos}
             bins_upper = trff['bins_upper'][:]
@@ -463,7 +465,11 @@ def wait_for_utc_time(target_str):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--config-file', required=True)
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument(
+    '--config-file',
+    required=True
+)
 parser.add_argument(
     '--date',
     help='Date to analyse, if not given, will analyse yesterday (UTC). '
@@ -486,7 +492,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-pycbc.init_logging(True)
+pycbc.init_logging(args.verbose, default_level=1)
 
 if args.run_daily_at is not None and args.date is not None:
     parser.error('Cannot take --run-daily-at and --date at the same time')

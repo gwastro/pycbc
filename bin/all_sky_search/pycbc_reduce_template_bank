@@ -25,14 +25,11 @@ import numpy
 import logging
 import imp
 import argparse
-import h5py
 import pycbc
-import pycbc.version
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument("--input-bank", required=True,
                     help="Input template bank HDF file.")
 parser.add_argument("--output-bank", required=True,
@@ -49,7 +46,7 @@ parser.add_argument("--filter-func-file", required=True,
 opt = parser.parse_args()
 pycbc.init_logging(opt.verbose)
 
-bank_fd = h5py.File(opt.input_bank, 'r')
+bank_fd = HFile(opt.input_bank, 'r')
 
 modl = imp.load_source('filter_func', opt.filter_func_file)
 func = modl.filter_tmpltbank
@@ -57,7 +54,7 @@ bool_arr = func(bank_fd)
 
 logging.info("Downselecting templates. Started with", len(bool_arr),
              "templates, now have ", bool_arr.sum(), "after downselecting.")
-bank_ofd = h5py.File(opt.output_bank, 'w')
+bank_ofd = HFile(opt.output_bank, 'w')
 for name in bank_fd.keys():
     bank_ofd[name] = bank_fd[name][:][bool_arr]
 bank_ofd.close()

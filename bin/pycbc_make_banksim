@@ -6,10 +6,10 @@ import configparser as ConfigParser
 import subprocess
 import glob
 import tempfile
-from optparse import OptionParser
+from argparse import ArgumentParser
 from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
 
-from pycbc import init_logging
+from pycbc import init_logging, add_common_pycbc_options
 
 class BaseJob(CondorDAGJob, CondorJob):
     def __init__(self, log_dir, executable, cp, section, gpu=False,
@@ -31,7 +31,7 @@ class BaseJob(CondorDAGJob, CondorJob):
 
         if accounting_group:
             self.add_condor_cmd('accounting_group', accounting_group)
-            
+
         self.add_condor_cmd('request_disk', 1024)
 
 class BanksimNode(CondorDAGNode):
@@ -69,16 +69,16 @@ class BanksimNode(CondorDAGNode):
             self.add_post_script_arg(str(inj_per_job))
         else:
             self.add_file_opt("match-file", match_file, file_is_output_file=True)
-        
+
 class CombineNode(CondorDAGNode):
     def __init__(self, job, inj_num):
         CondorDAGNode.__init__(self, job)
-        
+
         self.add_var_opt("inj-num", inj_num)
-        
+
         outf = "match/match" + str(inj_num) + ".dat"
-        
-        self.add_file_opt("output-file", outf)    
+
+        self.add_file_opt("output-file", outf)
 
 def get_ini_opts(confs, section):
     op_str = ""
@@ -86,13 +86,13 @@ def get_ini_opts(confs, section):
         val = confs.get(section, opt)
         op_str += "--" + opt + " " + val + " \\" + "\n"
     return op_str
-    
+
 def mkdir(dir_name):
     try :
         os.mkdir(dir_name)
     except OSError:
         pass
-        
+
 def mc_min_max_from_sorted_file(fname):
     from ligo.lw.utils import load_filename
     from ligo.lw.table import Table
@@ -107,33 +107,31 @@ def mc_min_max_from_sorted_file(fname):
     mc_max, et = mass1_mass2_to_mchirp_eta(t[0].mass1, t[0].mass2)
     mc_min, et = mass1_mass2_to_mchirp_eta(t[-1].mass1, t[-1].mass2)
     return mc_min, mc_max
-    
-        
+
+
 bf_mchirps = {}
 sf_mchirps = {}
 def check_outside_mchirp(bf, sf, w):
     if bf not in bf_mchirps:
-        bf_mchirps[bf] = mc_min_max_from_sorted_file(bf)    
+        bf_mchirps[bf] = mc_min_max_from_sorted_file(bf)
     if sf not in sf_mchirps:
-        sf_mchirps[sf] = mc_min_max_from_sorted_file(sf) 
-         
+        sf_mchirps[sf] = mc_min_max_from_sorted_file(sf)
+
     mc_min, mc_max = bf_mchirps[bf]
     mc2_min, mc2_max =  sf_mchirps[sf]
-    
+
     if (mc_min  <= mc2_max * (1+w) ) and (mc_max * (1+w) >= mc2_min):
         return False
     else:
         return True
 
-parser = OptionParser()
-parser.add_option('--config', type=str)          
-(options, args) = parser.parse_args() 
+parser = ArgumentParser()
+add_common_pycbc_options(parser)
+parser.add_argument('--config', type=str, required=True)
+options = parser.parse_args()
 
-if options.config is None:
-    raise ValueError("Config file is required")  
-
-# logging INFO
-init_logging(1)
+# Default logging level is info: --verbose adds to this
+init_logging(options.verbose, default_level=1)
 
 confs = ConfigParser.ConfigParser()
 confs.read(options.config)
@@ -252,7 +250,7 @@ for inj_num in range(num_injs):
         combine_has_jobs = True
     if combine_has_jobs:
         rnode.add_parent(cnode)
-        dag.add_node(cnode)      
+        dag.add_node(cnode)
 dag.add_node(rnode)
 pnode.add_parent(rnode)
 dag.add_node(pnode)
@@ -280,11 +278,11 @@ matches=[]
 maxmatch = []
 for fil in fils:
     matches.append(loadtxt(fil, dtype=dtypef))
-   
+
 indices = array(matches, dtype=dtypef)['match'].argmax(0)
 for i, j in enumerate(indices):
     maxmatch.append(matches[j][i])
-    
+
 maxmatch=array(maxmatch, dtype =dtypef)
 savetxt(options.output_file, maxmatch,fmt=('%5.5f', '%s', '%i', '%s', '%i', '%5.5f'), delimiter=' ')
 """)
@@ -310,12 +308,12 @@ for fil in fils:
         res = append(res, loadtxt(fil, dtype=dtypem))
     else:
         res = loadtxt(fil, dtype=dtypem)
- 
+
 btables = {}
-itables = {}     
+itables = {}
 
 f = open("results.dat", "w")
-for row in res: 
+for row in res:
     outstr = ""
     if row['bank'] not in btables:
         indoc = utils.load_filename(eval(row['bank']).decode('utf-8'), False,
@@ -329,7 +327,7 @@ for row in res:
     
     bt = btables[row['bank']][row['bank_i']]     
     it = itables[row['sim']][row['sim_i']]
- 
+
     outstr += str(row['match']) + " "
     outstr += str(bt.mass1) + " "
     outstr += str(bt.mass2) + " "
@@ -337,28 +335,28 @@ for row in res:
     outstr += str(bt.spin1y) + " "
     outstr += str(bt.spin1z) + " "
     outstr += str(bt.spin2x) + " "
-    outstr += str(bt.spin2y) + " " 
+    outstr += str(bt.spin2y) + " "
     outstr += str(bt.spin2z) + " "
-    
+
     outstr += str(it.mass1) + " "
     outstr += str(it.mass2) + " "
     outstr += str(it.spin1x) + " "
     outstr += str(it.spin1y) + " "
     outstr += str(it.spin1z) + " "
     outstr += str(it.spin2x) + " "
-    outstr += str(it.spin2y) + " " 
+    outstr += str(it.spin2y) + " "
     outstr += str(it.spin2z) + " "
-    
+
     outstr += str(it.coa_phase) + " "
     outstr += str(it.inclination) + " "
-    outstr += str(it.latitude) + " " 
+    outstr += str(it.latitude) + " "
     outstr += str(it.longitude) + " "
     outstr += str(it.polarization) + " "
-    
+
     outstr += str(row['sigmasq']) + " "
-                
+
     outstr += "\\n"
-    
+
     f.write(outstr)
 """)
 os.chmod('scripts/pycbc_banksim_collect_results', 0o0777)
@@ -380,10 +378,10 @@ if gpu:
     else
        echo "wrong length file"
         exit 1
-    fi  
+    fi
 
     function fuzzy_diff {
-       echo  " ($3>($1-$2)) && ($3>($2-$1)) " | bc  
+       echo  " ($3>($1-$2)) && ($3>($2-$1)) " | bc
     }
 
     exec 3<$1
@@ -393,12 +391,12 @@ if gpu:
     IFS= read -r line2 <&4
     do
         line1=`echo "$line1" | cut --delimiter=' ' -f 1`
-        line2=`echo "$line2" | cut --delimiter=' ' -f 1` 
+        line2=`echo "$line2" | cut --delimiter=' ' -f 1`
 
         if ! [[ "$line1" =~ ^[0-9]+([.][0-9]+)?$ ]] ; then
            exec >&2; echo "error: Not a number"; exit 1
         fi
-        
+
         if ! [[ "$line2" =~ ^[0-9]+([.][0-9]+)?$ ]] ; then
            exec >&2; echo "error: Not a number"; exit 1
         fi
@@ -408,8 +406,8 @@ if gpu:
         if  [ $ok -eq 0 ] ; then
            echo "Files do not match"
            exit 1
-        fi 
-       
+        fi
+
     done
 
 
@@ -420,7 +418,7 @@ if gpu:
     exit 0
     """)
     os.chmod('scripts/diff_match.sh', 0o0777)
-    
+
 logging.info("Creating submit script")
 f = open("submit.sh","w")
 if gpu:
@@ -462,8 +460,8 @@ goldenratio = 2 / (1 + 5**.5)
 #        "legend.fontsize": 8.0,
 #	"figure.figsize": (3.3,3.3*goldenratio),
 #        "figure.dpi": 200,
-#	"subplots.left": 0.2, 
-#	"subplots.right": 0.75, 
+#	"subplots.left": 0.2,
+#	"subplots.right": 0.75,
 #	"subplots.bottom": 0.15,
 #	"subplots.top": 0.75,
 #        "savefig.dpi": 600,
@@ -475,7 +473,7 @@ match = res[:,0]
 
 tmass1 = res[:,1]
 tmass2 = res[:,2]
-tspin1x = res[:,3] 
+tspin1x = res[:,3]
 tspin1y = res[:,4]
 tspin1z = res[:,5]
 tspin2x = res[:,6]
@@ -529,27 +527,27 @@ mhist(imchirp-tmchirp, "plots/hist-mchirp-diff.png")
 mhist((imchirp-tmchirp)/imchirp, "plots/hist-mchirp-reldiff.png")
 mhist(match, "plots/hist-match.png")
 mhist(match, "plots/hist-match-cum.png", cum=1, log=True, bins=10000, xl = "Match", yl="Fraction of injections < Match")
-    
+
 pylab.figure(102)
 pylab.ylabel('Fraction of Injections')
 pylab.xlabel('Fitting factor')
-pylab.yscale('log') 
+pylab.yscale('log')
 pylab.xlim(0.95, 1.0)
 pylab.ylim(1e-4, 1)
 hBins = pylab.arange(0.,1.,0.0005,dtype=float)
 n, bins,patches=pylab.hist(match,cumulative=1,bins=hBins,density=True)
 pylab.grid()
 pylab.savefig("plots/cum_hist.png")
-    
+
 mplot(imass1, imass2, match, "plots/m1-m2-match.png")
 mplot(tmass1, tmass2, match, "plots/tm1-tm2-match.png")
 mplot(q, s1m, match, "plots/q-s1m-match.png")
 mplot(q, s2m, match, "plots/q-s2m-match.png")
-mplot(q, ispin1z, match, "plots/q-s1z-match.png")  
-mplot(q, ispin2z, match, "plots/q-s2z-match.png", "Mass Ratio", "Spin2z") 
+mplot(q, ispin1z, match, "plots/q-s1z-match.png")
+mplot(q, ispin2z, match, "plots/q-s2z-match.png", "Mass Ratio", "Spin2z")
 mplot(q, ispin2z, match, "plots/q-s2z-match97.png", "Mass Ratio", "Spin2z", vmin=0.97)
 mplot(q, ispin2z, match, "plots/q-s2z-match90.png", "Mass Ratio", "Spin2z", vmin=0.90)
-mplot(inclination, match, match, "plots/inc-match.png")   
+mplot(inclination, match, match, "plots/inc-match.png")
 
 mplot(imass1, imass2, imchirp-tmchirp, "plots/m1-m2-mchirpdiff.png")
 mplot(q, ispin1z, imchirp-tmchirp, "plots/q-s1z-mchirpdiff.png", "Mass Ratio", "Spin1z")

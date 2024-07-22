@@ -28,7 +28,6 @@ import copy
 import argparse
 import numpy
 import logging
-import h5py
 import configparser
 from scipy import spatial
 
@@ -45,6 +44,7 @@ import pycbc.workflow.pegasus_workflow as pwf
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.workflow.core import resolve_url_to_file
 from pycbc.io.ligolw import create_process_table
+from pycbc.io import HFile
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
@@ -178,7 +178,6 @@ parser = argparse.ArgumentParser(description=_desc,
 
 # Begin with code specific options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("-s", "--stack-distance", action="store", type=float,\
                   default=0.2, help="Minimum metric spacing before we "+\
                                "stack.")
@@ -398,7 +397,7 @@ else:
         newV3s = v3s
 
 # Now begin to generate the dag
-h5file = h5py.File(opts.intermediate_data_file, 'w')
+h5file = HFile(opts.intermediate_data_file, 'w')
 # Dump the full bank in \xi_i coordinates
 h5file['full_bank/v1s'] = newV1s
 h5file['full_bank/v2s'] = newV2s

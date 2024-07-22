@@ -117,7 +117,6 @@ import h5py
 from numpy.random import uniform
 
 import pycbc
-import pycbc.version
 from pycbc.inject import InjectionSet
 from pycbc import distributions
 from pycbc import transforms
@@ -131,9 +130,6 @@ parser = argparse.ArgumentParser(description=__doc__,
             formatter_class=argparse.RawDescriptionHelpFormatter)
 configuration.add_workflow_command_line_group(parser)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg,
-                    help='Prints version information.')
 parser.add_argument('--ninjections', type=int,
                     help='Number of injections to create.')
 parser.add_argument('--gps-start-time', type=int, help="Alternative to "

@@ -1,6 +1,5 @@
 import logging
 import numpy
-import h5py
 
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
 from ligo.lw import ligolw, lsctables, utils as ligolw_utils
@@ -10,6 +9,7 @@ from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
 from pycbc.io.ligolw import (
     return_empty_sngl, return_search_summary, create_process_table
 )
+from pycbc.io.hdf import HFile
 
 from pycbc.waveform import get_waveform_filter_length_in_time as gwflit
 
@@ -339,7 +339,7 @@ def output_bank_to_hdf(outputFile, tempBank, optDict=None, programName='',
             tmplt_durations[i] = wfrm_length
         bank_dict['template_duration'] = tmplt_durations
 
-    with h5py.File(outputFile, 'w') as bankf_out:
+    with HFile(outputFile, 'w') as bankf_out:
         bankf_out.attrs['program'] = programName
         if optDict is not None:
             bankf_out.attrs['arguments'] = argument_string

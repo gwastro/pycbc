@@ -21,12 +21,15 @@
 #
 # =============================================================================
 #
+import logging
 import numpy, mako.template
 from pycuda.tools import dtype_to_ctype
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.compiler import SourceModule
 from .eventmgr import _BaseThresholdCluster
 import pycbc.scheme
+
+logger = logging.getLogger('pycbc.events.threshold_cuda')
 
 threshold_op = """
     if (i == 0)

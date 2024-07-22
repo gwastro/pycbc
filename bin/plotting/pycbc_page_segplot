@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import argparse, pycbc.version
+import argparse
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
@@ -24,15 +24,16 @@ import itertools, datetime, time
 import sys
 from itertools import cycle
 from matplotlib.patches import Rectangle
+
+from pycbc import add_common_pycbc_options, init_logging
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results.color import ifo_color
 from pycbc.results.mpld3_utils import MPLSlide, LineTooltip
 from pycbc.workflow import SegFile
-import pycbc.version
 
 # parse command line
 parser = argparse.ArgumentParser()
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+add_common_pycbc_options(parser)
 parser.add_argument('--segment-files', type=str, nargs="+",
                         help='XML files with a segment definer table to read.')
 parser.add_argument('--segment-names', type=str, nargs="+", required=False,
@@ -42,6 +43,8 @@ parser.add_argument('--output-file', type=str,
 parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'],
                         help='Space-separated list of IFOs to plot, default H1 L1.')
 opts = parser.parse_args()
+
+init_logging(opts.verbose)
 
 def timestr(s):
     """ Takes seconds and returns a human-readable string for the amount

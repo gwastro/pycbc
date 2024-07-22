@@ -25,7 +25,6 @@ metric approximation to the parameter space.
 import argparse
 import logging
 import numpy
-import h5py
 import matplotlib
 matplotlib.use('Agg')
 import pylab
@@ -36,6 +35,7 @@ import pycbc
 import pycbc.version
 from pycbc import tmpltbank, psd, strain
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.hdf import HFile
 
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
@@ -49,7 +49,6 @@ parser = argparse.ArgumentParser(description=__doc__,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
-parser.add_argument("--version", action="version", version=__version__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--histogram-output-file", action="store", default=None,
                     help="Output a histogram of fitting factors to the "
@@ -198,7 +197,7 @@ if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
         (template_list, vary_fupper=opts.vary_fupper)
 
 elif opts.input_bank.endswith(('.h5','.hdf','.hdf5')):
-    h5_fp = h5py.File(opts.input_bank, 'r')
+    h5_fp = HFile(opts.input_bank, 'r')
     partitioned_bank_object.add_tmpltbank_from_hdf_file\
         (h5_fp, vary_fupper=opts.vary_fupper)
 else:

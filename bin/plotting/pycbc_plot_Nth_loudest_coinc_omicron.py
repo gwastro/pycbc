@@ -5,22 +5,26 @@ Omicron triggers.
 """
 
 import logging
-import h5py
 import numpy as np
 import argparse
 import glob
-from ligo.lw import lsctables, utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+from ligo.lw import lsctables, utils
+
 import pycbc.events
-from pycbc.waveform import get_td_waveform, frequency_from_polarizations, amplitude_from_polarizations
+from pycbc.waveform import (
+    get_td_waveform, frequency_from_polarizations,
+    amplitude_from_polarizations
+)
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.hdf import HFile
 
-
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--coinc-file', type=str, required=True,
                     help='HDF file containing coincident CBC triggers')
 parser.add_argument('--single-ifo-trigs', type=str, required=True,
@@ -46,11 +50,13 @@ parser.add_argument('--analysis-level', type=str, required=False, default='foreg
                     help='Designates which level of the analysis output to search')
 args = parser.parse_args()
 
+pycbc.init_logging(args.verbose)
+
 logging.info('Reading HDF files')
 
-coinc_trig_file = h5py.File(args.coinc_file,'r')
-single_trig_file = h5py.File(args.single_ifo_trigs,'r')
-template_file = h5py.File(args.tmpltbank_file,'r')
+coinc_trig_file = HFile(args.coinc_file,'r')
+single_trig_file = HFile(args.single_ifo_trigs,'r')
+template_file = HFile(args.tmpltbank_file,'r')
 
 logging.info('Parsing HDF files')
 

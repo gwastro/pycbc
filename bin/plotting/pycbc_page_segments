@@ -1,21 +1,28 @@
 #!/usr/bin/env python
 """ Make interactive visualization of segments
 """
-import argparse, pycbc.version
+import argparse
 from itertools import cycle
 import matplotlib
 matplotlib.use('Agg')
-import numpy, pylab, pycbc.events, mpld3, mpld3.plugins
+import numpy
+import pylab
+import mpld3
+import mpld3.plugins
 from matplotlib.patches import Rectangle
+
+import pycbc.events
 from pycbc.results.mpld3_utils import MPLSlide, Tooltip
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--segment-files', nargs='+', help="List of segment files to plot")
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument('--segment-files', nargs='+',
+                    help="List of segment files to plot")
 parser.add_argument('--output-file', help="output html file")
 args = parser.parse_args()
 
+pycbc.init_logging(args.verbose)
 
 def timestr(s):
     t = ""

@@ -28,11 +28,9 @@ import argparse
 import logging
 from textwrap import wrap
 
-from pycbc import init_logging
-import pycbc.version
-from pycbc import __version__
+import pycbc
 from pycbc.results.plot import (add_style_opt_to_parser, set_style_from_cli)
-from pycbc.io import FieldArray
+from pycbc.io import FieldArray, HFile
 from pycbc.inference import option_utils
 from pycbc.tmpltbank import bank_conversions as bconv
 from pycbc.pnutils import get_imr_duration
@@ -51,13 +49,7 @@ parameter_options = conversion_options + _fit_parameters
 
 parser = argparse.ArgumentParser(usage='pycbc_plot_bank_corner [--options]',
                     description=__doc__)
-parser.add_argument("--version",
-    action="version",
-    version=__version__,
-    help="Prints version information.")
-parser.add_argument("--verbose",
-    action='count',
-    help="Output progress and information to stderr")
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--bank-file",
     required=True,
     help="The bank file to read in and plot")
@@ -129,14 +121,14 @@ parser.add_argument('--title',
 add_style_opt_to_parser(parser)
 args = parser.parse_args()
 
-init_logging(args.verbose)
+pycbc.init_logging(args.verbose)
 set_style_from_cli(args)
 
 mins, maxs = option_utils.plot_ranges_from_cli(args)
 
 logging.info("Reading in the bank")
 bank = {}
-with h5py.File(args.bank_file, 'r') as bankf:
+with HFile(args.bank_file, 'r') as bankf:
     for p in bankf.keys():
         if not isinstance(bankf[p], h5py.Dataset): continue
         # Ignore things which aren't numbers, which cannot
@@ -147,7 +139,7 @@ with h5py.File(args.bank_file, 'r') as bankf:
 
 if args.fits_file is not None:
     # Add fit parameters to the bank object
-    with h5py.File(args.fits_file, 'r') as fits_f:
+    with HFile(args.fits_file, 'r') as fits_f:
         for p in _fit_parameters:
             if not fits_f[p].size == banklen:
                 raise RuntimeError(

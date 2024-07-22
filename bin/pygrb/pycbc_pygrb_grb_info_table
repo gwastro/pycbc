@@ -25,7 +25,10 @@ import sys
 import argparse
 from datetime import datetime
 import numpy
+
 import lal
+
+from pycbc import add_common_pycbc_options, init_logging
 import pycbc.version
 import pycbc.results
 from pycbc.detector import Detector
@@ -41,7 +44,7 @@ __program__ = "pycbc_pygrb_grb_info_table"
 # =============================================================================
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=
                                  argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--version", action="version", version=__version__)
+add_common_pycbc_options(parser)
 parser.add_argument("--trigger-time", type=int,
                     required=True,
                     help="GPS time of the GRB.")
@@ -62,6 +65,8 @@ parser.add_argument("--output-file", action="store",
                     help="The output file to write tha table to.")
 
 opts = parser.parse_args()
+
+init_logging(opts.verbose)
 
 headers = []
 data = [[]]

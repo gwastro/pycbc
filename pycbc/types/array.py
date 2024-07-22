@@ -28,11 +28,11 @@ This modules provides a device independent Array class based on PyCUDA and Numpy
 
 BACKEND_PREFIX="pycbc.types.array_"
 
-import h5py
 import os as _os
 
 from functools import wraps
 
+import h5py
 import lal as _lal
 import numpy as _numpy
 from numpy import float32, float64, complex64, complex128, ones

@@ -31,8 +31,10 @@ import sys
 import subprocess
 from PIL import Image, PngImagePlugin
 
+from pycbc import add_common_pycbc_options, init_logging
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--input-file', required=True,
                     help='Input fits file"')
 parser.add_argument('--output-file', required=True,
@@ -41,6 +43,8 @@ parser.add_argument('--colormap',
                     help='Specify the colormap to use.')
 
 opts = parser.parse_args()
+
+init_logging(opts.verbose)
 
 cmd = 'ligo-skymap-plot {} -o {} --annotate --contour 50 90'.format(
     opts.input_file, opts.output_file)

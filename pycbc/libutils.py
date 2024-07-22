@@ -20,12 +20,19 @@ allowing it to be specified in an OS-independent way and searched for preferenti
 according to the paths that pkg-config specifies.
 """
 
-import importlib, inspect
-import os, fnmatch, ctypes, sys, subprocess
+import importlib
+import logging
+import inspect
+import os
+import fnmatch
+import ctypes
+import sys
+import subprocess
 from ctypes.util import find_library
 from collections import deque
 from subprocess import getoutput
 
+logger = logging.getLogger('pycbc.libutils')
 
 # Be careful setting the mode for opening libraries! Some libraries (e.g.
 # libgomp) seem to require the DEFAULT_MODE is used. Others (e.g. FFTW when
