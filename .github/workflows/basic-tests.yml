@@ -108,7 +108,8 @@ jobs:
   deploy_documentation:
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'release')
+    if: [ github.event_name == 'release']; then page=${GITHUB_REF#refs/tags/}; else page=current; fi
     steps:
     - name: retrieve built documentation
       uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
@@ -116,32 +117,6 @@ jobs:
         name: documentation-page
     - name: debug
       run: |
-        mkdir _gh-pages
-        mv latest _gh-pages
-    - name: deploying to gh-pages
-      uses: JamesIves/github-pages-deploy-action@132898c54c57c7cc6b80eb3a89968de8fc283505 # v3.7.1
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages
-        FOLDER: _gh-pages
-        SINGLE_COMMIT: true
-  deploy_documentation_release:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/head/master' && github.event_name == 'release'
-    steps:
-    - name: retrieve built documentation
-      uses: actions/download-artifact@v2
-      with:
-        name: documentation-page
-    - name: debug
-      run: |
-        mkdir _gh-pages
-        mv latest _gh-pages/${GITHUB_REF#refs/tags/}
-    - name: deploying tag ${GITHUB_REF#refs/tags/} to gh-pages
-      uses: JamesIves/github-pages-deploy-action@3.7.1
-      with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages
-        FOLDER: _gh-pages
-        SINGLE_COMMIT: true
+        mkdir _gh-pages/$page
+        mv latest _gh-pages/$page
+    - name: deploying $page to gh-pages
