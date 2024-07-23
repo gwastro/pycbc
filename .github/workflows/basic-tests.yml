@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'release')
-    if: [ github.event_name == 'release']; then page=${GITHUB_REF#refs/tags/}; else page=current; fi
+    script: [ github.event_name == 'release']; then page=${GITHUB_REF#refs/tags/}; else page=current; fi
     steps:
     - name: retrieve built documentation
       uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
