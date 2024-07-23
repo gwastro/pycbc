@@ -28,7 +28,7 @@ import os
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from pycbc.io.hdf import HFile
+import pycbc
 
 logger = logging.getLogger('pycbc.live.supervision')
 
@@ -44,9 +44,9 @@ def symlink(target, link_name):
     logger.info("Linking %s to %s", target, link_name)
     try:
         subprocess.run(['ln', '-sf', target, link_name], check=True)
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError as sub_err:
         logging.error("Could not link %s to %s", target, link_name)
-        raise e
+        raise sub_err
 
 
 def dict_to_args(opts_dict):
@@ -87,9 +87,9 @@ def mail_volunteers_error(controls, mail_body_lines, subject):
     mail_body = '\n'.join(mail_body_lines)
     try:
         subprocess.run(mail_command, input=mail_body, text=True, check=True)
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError as sub_err:
         logging.error("Could not send mail on error")
-        raise e
+        raise sub_err
 
 
 def run_and_error(command_arguments, controls):
@@ -134,6 +134,7 @@ def wait_for_utc_time(target_str):
     logger.info('Waiting %.0f s', sleep_seconds)
     time.sleep(sleep_seconds)
 
+
 def ensure_directories(control_values, day_str):
     """
     Ensure that the required directories exist
@@ -151,4 +152,3 @@ def ensure_directories(control_values, day_str):
             *day_str.split('_')
         )
         pycbc.makedir(public_dir)
-
