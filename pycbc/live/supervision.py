@@ -142,7 +142,7 @@ def ensure_directories(control_values, day_str):
         control_values['output-directory'],
         day_str
     )
-    run_and_error(['mkdir', '-p', output_dir], control_values)
+    pycbc.makedir(output_dir)
     if 'public-dir' in control_values:
         # The public directory wil be in subdirectories for the year, month,
         # day, e.g. 2024_04_12 will be in 2024/04/12.
@@ -150,8 +150,5 @@ def ensure_directories(control_values, day_str):
             control_values['public-dir'],
             *day_str.split('_')
         )
-        run_and_error(
-            ['mkdir', '-p', public_dir],
-            control_values
-        )
+        pycbc.makedir(public_dir)
 

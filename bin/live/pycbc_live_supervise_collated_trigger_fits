@@ -103,17 +103,15 @@ def find_daily_fit_files(
         combined_control_options,
         daily_fname_format,
         daily_files_dir,
-        ifo
+        ifo=None
     ):
     """
     Find files which match the specified formats
     """
-    logging.info(
-        "Finding files in %s with format %s in detector %s",
-        daily_files_dir,
-        daily_fname_format,
-        ifo
-    )
+    log_str = f"Finding files in {daily_files_dir} with format {daily_fname_format}"
+    if ifo is not None:
+        log_str += f"in detector {ifo}"
+    logging.info(log_str)
     combined_days = int(combined_control_options['combined-days'])
     if 'replay-start-time' in combined_control_options:
         replay_start_time = int(combined_control_options['replay-start-time'])
@@ -155,8 +153,11 @@ def find_daily_fit_files(
 
     daily_files = []
     missed_files = 0
+    # Maximum consecutive number of days between files before a warning is raised
+    # 10 days of the detector being off would be unusual for current detectors
+    max_nmissed = combined_control_options.get('maximum_missed_files', 10)
     found_files = 0
-    while found_files < combined_days and missed_files < 10:
+    while found_files < combined_days and missed_files < max_nmissed:
         # Loop through the possible file locations and see if the file exists
         date_test -= timedelta(days=1)
         date_out = date_test.strftime("%Y_%m_%d")
@@ -190,12 +191,14 @@ def find_daily_fit_files(
     if found_files == 0:
         raise RuntimeError("No files found")
 
-    if missed_files == 10:
-        # If more than 10 days between files, something wrong with analysis.
-        # warn and use fewer files - 10 here is chosen to be an unusual amount
-        # of time for the analysis to be down in standard operation
-        logging.warning('More than 10 days between files, only using '
-                        f'{found_files} files!')
+    if missed_files == max_nmissed:
+        # If more than a set maximum days between files, something
+        # is wrong with the analysis. Warn about this and use fewer
+        # files
+        logging.warning(
+            f'More than {max_nmissed} days between files, only using '
+            f'{found_files} files!'
+        )
 
     return daily_files, first_date, end_date
 
@@ -216,7 +219,7 @@ def fit_over_multiparam(
         fit_over_controls,
         fit_over_controls['fit-by-format'],
         controls['output-directory'],
-        ifo
+        ifo=ifo
     )
     logging.info(
         "Smoothing fits using fit_over_multiparam with %d files and "
@@ -351,8 +354,8 @@ def plot_single_significance_fits(daily_output, daily_plot_options, controls):
 def combine_significance_fits(
         combined_options,
         combined_controls,
+        output_dir,
         day_str,
-        ifo,
         controls
     ):
     """
@@ -363,17 +366,17 @@ def combine_significance_fits(
         combined_controls,
         combined_controls['daily-format'],
         controls['output-directory'],
-        ifo
     )
     logging.info(
         "Smoothing significance fits over %d files",
         len(daily_files)
     )
     date_range = f'{first_date}-{end_date}'
-    combined_options['output'] = combined_controls['outfile-format'].format(
+    outfile_name = combined_controls['outfile-format'].format(
         date=day_str,
         date_range=date_range,
     )
+    combined_options['output'] = os.path.join(output_dir, outfile_name)
     combined_options['trfits-files'] = ' '.join(daily_files)
 
     combined_args = ['pycbc_live_combine_single_significance_fits']
@@ -393,6 +396,7 @@ def combine_significance_fits(
 def plot_combined_significance_fits(
         csf_file,
         date_range,
+        output_dir,
         combined_plot_options,
         combined_plot_control_options,
         controls
@@ -407,24 +411,26 @@ def plot_combined_significance_fits(
             "Must specify {date_range} in output-plot-name-format"
         )
     oput_fmt = oput_fmt.replace('{date_range}', date_range)
+    oput_full = os.path.join(output_dir, oput_fmt)
     combined_plot_arguments = [
         'pycbc_live_plot_combined_single_significance_fits',
         '--combined-fits-file',
         csf_file,
         '--output-plot-name-format',
-        oput_fmt
+        oput_full
     ]
+    combined_plot_arguments += sv.dict_to_args(combined_plot_options)
 
     sv.run_and_error(combined_plot_arguments, controls)
 
     # Get the list of combined plotting output files:
     combined_plot_outputs = [
-        combined_plot_output.format(ifo=ifo, type='fit_coeffs') for ifo in
-        combined_options['ifos'].split()
+        oput_full.format(ifo=ifo, type='fit_coeffs') for ifo in
+        controls['ifos'].split()
     ]
     combined_plot_outputs += [
-        combined_plot_output.format(ifo=ifo, type='counts') for ifo in
-        combined_options['ifos'].split()
+        oput_full.format(ifo=ifo, type='counts') for ifo in
+        controls['ifos'].split()
     ]
 
     if 'public-dir' in controls:
@@ -544,18 +550,26 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
         csf_file, date_str = combine_significance_fits(
             combined_options,
             combined_control_options,
+            output_dir,
             date_str,
-            ifo,
             controls
         )
         plot_combined_significance_fits(
             csf_file,
             date_str,
+            output_dir,
             combined_plot_options,
             combined_plot_control_options,
             controls
         )
 
+
+def get_yesterday_date():
+    """ Get the date string for yesterday's triggers """
+    day_dt = datetime.utcnow() - timedelta(days=1)
+    day_dt = datetime.combine(day_dt, datetime.min.time())
+    day_str = day_dt.strftime('%Y_%m_%d')
+    return date_dt, date_str
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -607,11 +621,8 @@ if args.run_daily_at is not None:
     logging.info('Starting in daily run mode')
     while True:
         sv.wait_for_utc_time(args.run_daily_at)
+        day_dt, day_str = get_yesterday_date()
         logging.info('==== Time to update the single fits, waking up ====')
-        # Get the date string for yesterday's triggers
-        day_dt = datetime.utcnow() - timedelta(days=1)
-        day_dt = datetime.combine(day_dt, datetime.min.time())
-        day_str = day_dt.strftime('%Y_%m_%d')
         supervise_collation_fits_dq(args, day_dt, day_str)
 else:
     # run just once
@@ -619,8 +630,5 @@ else:
         day_str = args.date
         day_dt = datetime.strptime(args.date, '%Y_%m_%d')
     else:
-        # Get the date string for yesterday's triggers
-        day_dt = datetime.utcnow() - timedelta(days=1)
-        day_dt = datetime.combine(day_dt, datetime.min.time())
-        day_str = day_dt.strftime('%Y_%m_%d')
+        day_dt, day_str = get_yesterday_date()
     supervise_collation_fits_dq(args, day_dt, day_str)
