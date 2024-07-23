@@ -2273,6 +2273,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         self.dq_bin_by_tid = {}
         self.dq_state_segments = None
         self.low_latency = False
+        self.single_dtype.append(('dq_state', int))
 
         for ifo in self.ifos:
             key = f'{ifo}-dq_stat_info'
@@ -2394,14 +2395,14 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             return True
         # We also need to check if the DQ files have updated
         if key.endswith('dq_stat_info'):
+            ifo = key.split('-')[0]
             logger.info(
                 "Updating %s statistic %s file",
-                ''.join(self.ifos),
+                ifo,
                 key
             )
-            self.assign_dq_rates(key)
-            self.assign_template_bins(key)
-            self.setup_segments(key)
+            self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
+            self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
             return True
         return False
 
