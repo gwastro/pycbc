@@ -98,13 +98,6 @@ args.trigger_cuts = args.trigger_cuts or []
 args.trigger_cuts.append(f"end_time:{args.gps_start_time}:lower_inc")
 args.trigger_cuts.append(f"end_time:{args.gps_end_time}:upper_inc")
 
-# Efficiency saving: add SNR cut before any others as sngl_ranking can
-# only be less than SNR.
-args.trigger_cuts.insert(0, f"snr:{args.fit_threshold}:lower_inc")
-
-# Cut triggers with sngl-ranking below threshold
-args.trigger_cuts.append(f"{args.sngl_ranking}:{args.fit_threshold}:lower_inc")
-
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
 logging.info("Setting up duration bins")

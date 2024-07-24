@@ -342,14 +342,20 @@ if len(args.template_fit_file) > 1:
     nasum = nabove[tidsort].cumsum()
     invsum = invalphan[tidsort].cumsum()
     ntsum = ntotal[tidsort].cumsum()
-    mssum = median_sigma[tidsort].cumsum()
     num = right - left
 
     tid = tid_unique
     nabove = (nasum[right] - nasum[left]) / num
     invalphan = (invsum[right] - invsum[left]) / num
     ntotal = (ntsum[right] - ntsum[left]) / num
-    median_sigma = (mssum[right] - mssum[left]) / num
+    if median_sigma is not None:
+        # Median sigma is a special one - we need to make sure that
+        # we do not mess things up when nan values are given, so we
+        # can't use the special cumsum fast option
+        median_sigma = [
+            numpy.nanmean(median_sigma[tidsort[l:r]])
+            for l, r in zip(left, right)
+        ]
 
 if args.output_fits_by_template:
     # Store fit_by_template values for output file

@@ -352,6 +352,9 @@ sigma_regions = trigf[args.ifo + '/sigmasq_template'][:]
 median_sigma = []
 for reg in sigma_regions:
     strigs = trigf[args.ifo + '/sigmasq'][reg]
+    if len(strigs) == 0:
+        median_sigma.append(np.nan)
+        continue
     median_sigma.append(np.median(strigs) ** 0.5)
 
 outfile = HFile(args.output, 'w')

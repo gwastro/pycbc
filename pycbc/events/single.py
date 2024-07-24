@@ -2,12 +2,15 @@
 """
 import logging
 import copy
-import h5py
+import threading
+from datetime import datetime as dt
+import time
 import numpy as np
 
 from pycbc.events import trigger_fits as fits, stat
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
+from pycbc.io.hdf import HFile
 from pycbc import bin_utils
 
 logger = logging.getLogger('pycbc.events.single')
@@ -25,12 +28,57 @@ class LiveSingle(object):
                  statistic=None,
                  sngl_ranking=None,
                  stat_files=None,
+                 statistic_refresh_rate=None,
                  **kwargs):
+        """
+        Parameters
+        ----------
+        ifo: str
+            Name of the ifo that is being analyzed
+        newsnr_threshold: float
+            Minimum value for the reweighted SNR of the event under
+            consideration. Which reweighted SNR is defined by sngl_ranking
+        reduced_chisq_threshold: float
+            Maximum value for the reduced chisquared of the event under
+            consideration
+        duration_threshold: float
+            Minimum value for the duration of the template which found the
+            event under consideration
+        fit_file: str or path
+            (optional) the file containing information about the
+            single-detector event significance distribution fits
+        sngl_ifar_est_dist: str
+            Which trigger distribution to use when calculating IFAR of
+            single-detector events
+        fixed_ifar: float
+            (optional) give a fixed IFAR value to any event which passes the
+            threshold criteria
+        statistic: str
+            The name of the statistic to rank events.
+        sngl_ranking: str
+            The single detector ranking to use with the background statistic
+        stat_files: list of strs
+            List of filenames that contain information used to construct
+            various coincident statistics.
+        maximum_ifar: float
+            The largest inverse false alarm rate in years that we would like to
+            calculate.
+        statistic_refresh_rate: float
+            How regularly to run the update_files method on the statistic
+            class (in seconds), default not do do this
+        kwargs: dict
+            Additional options for the statistic to use. See stat.py
+            for more details on statistic options.
+        """
         self.ifo = ifo
         self.fit_file = fit_file
         self.sngl_ifar_est_dist = sngl_ifar_est_dist
         self.fixed_ifar = fixed_ifar
         self.maximum_ifar = maximum_ifar
+
+        self.time_stat_refreshed = dt.now()
+        self.stat_calculator_lock = threading.Lock()
+        self.statistic_refresh_rate = statistic_refresh_rate
 
         stat_class = stat.get_statistic(statistic)
         self.stat_calculator = stat_class(
@@ -188,6 +236,7 @@ class LiveSingle(object):
            statistic=args.ranking_statistic,
            sngl_ranking=args.sngl_ranking,
            stat_files=stat_files,
+           statistic_refresh_rate=args.statistic_refresh_rate,
            **kwargs
            )
 
@@ -227,7 +276,9 @@ class LiveSingle(object):
         trigsc['chisq_dof'] = (cut_trigs['chisq_dof'] + 2) / 2
 
         # Calculate the ranking reweighted SNR for cutting
-        single_rank = self.stat_calculator.get_sngl_ranking(trigsc)
+        with self.stat_calculator_lock:
+            single_rank = self.stat_calculator.get_sngl_ranking(trigsc)
+
         sngl_idx = single_rank > self.thresholds['ranking']
         if not np.any(sngl_idx):
             return None
@@ -236,8 +287,9 @@ class LiveSingle(object):
                         for k in trigs}
 
         # Calculate the ranking statistic
-        sngl_stat = self.stat_calculator.single(cutall_trigs)
-        rank = self.stat_calculator.rank_stat_single((self.ifo, sngl_stat))
+        with self.stat_calculator_lock:
+            sngl_stat = self.stat_calculator.single(cutall_trigs)
+            rank = self.stat_calculator.rank_stat_single((self.ifo, sngl_stat))
 
         # 'cluster' by taking the maximal statistic value over the trigger set
         i = rank.argmax()
@@ -265,7 +317,7 @@ class LiveSingle(object):
             return self.fixed_ifar[self.ifo]
 
         try:
-            with h5py.File(self.fit_file, 'r') as fit_file:
+            with HFile(self.fit_file, 'r') as fit_file:
                 bin_edges = fit_file['bins_edges'][:]
                 live_time = fit_file[self.ifo].attrs['live_time']
                 thresh = fit_file.attrs['fit_threshold']
@@ -303,3 +355,44 @@ class LiveSingle(object):
         rate_louder *= len(rates)
 
         return min(conv.sec_to_year(1. / rate_louder), self.maximum_ifar)
+
+    def start_refresh_thread(self):
+        """
+        Start a thread managing whether the stat_calculator will be updated
+        """
+        thread = threading.Thread(
+            target=self.refresh_statistic,
+            daemon=True
+        )
+        logger.info("Starting %s statistic refresh thread", self.ifo)
+        thread.start()
+
+    def refresh_statistic(self):
+        """
+        Function to refresh the stat_calculator at regular intervals
+        """
+        while True:
+            # How long since the statistic was last updated?
+            since_stat_refresh = \
+                (dt.now() - self.time_stat_refreshed).total_seconds()
+            if since_stat_refresh > self.statistic_refresh_rate:
+                self.time_stat_refreshed = dt.now()
+                logger.info(
+                    "Checking %s statistic for updated files",
+                    self.ifo,
+                )
+                with self.stat_calculator_lock:
+                    self.stat_calculator.check_update_files()
+            # Sleep one second for safety
+            time.sleep(1)
+            # Now use the time it took the check / update the statistic
+            since_stat_refresh = \
+                (dt.now() - self.time_stat_refreshed).total_seconds()
+            logger.debug(
+                "%s statistic: Waiting %.3fs for next refresh",
+                self.ifo,
+                self.statistic_refresh_rate - since_stat_refresh
+            )
+            time.sleep(
+                self.statistic_refresh_rate - since_stat_refresh
+            )

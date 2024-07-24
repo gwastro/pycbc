@@ -1048,6 +1048,8 @@ parser.add_argument('--psd-variation', action='store_true',
                          "values for each single detector triggers found by "
                          "the search. Required when using a single detector "
                          "ranking statistic that includes psd variation.")
+parser.add_argument("--statistic-refresh-rate", type=float,
+                    help="How often to refresh the statistic object")
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
@@ -1166,6 +1168,8 @@ with ctx:
     if analyze_singles and evnt.rank == 0:
         sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
                           for ifo in evnt.trigg_ifos}
+        for estim in sngl_estimator.values():
+            estim.start_refresh_thread()
 
     # Create double coincident background estimator
     # for every pair of triggering interferometers
@@ -1186,6 +1190,10 @@ with ctx:
             setproctitle('PyCBC Live {} bg estimator'.format(
                     ppdets(c.ifos, '-')))
 
+        def estimator_refresh_threads(_):
+            c = estimators[my_coinc_id]
+            c.start_refresh_thread()
+
         def get_coinc(results):
             c = estimators[my_coinc_id]
             r = c.add_singles(results)
@@ -1200,6 +1208,7 @@ with ctx:
 
         coinc_pool = BroadcastPool(len(estimators))
         coinc_pool.allmap(set_coinc_id, range(len(estimators)))
+        coinc_pool.broadcast(estimator_refresh_threads, None)
 
     logging.info('Starting')
 
@@ -1428,3 +1437,5 @@ if evnt.rank == 1:
 
 if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
     pr.dump_stats(f'profiling_rank_{evnt.rank:03d}')
+
+logging.info("Exiting as the end time has been reached")
