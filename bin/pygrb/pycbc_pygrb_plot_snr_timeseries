@@ -96,6 +96,7 @@ def reset_times(data_time, trig_time):
 # Main script starts here
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
+pygrb_add_slide_opts(parser)
 parser.add_argument("-t", "--trig-file", action="store",
         default=None, required=True,
                     help="The location of the trigger file")
@@ -107,7 +108,9 @@ parser.add_argument("-y", "--y-variable", default=None,
                     choices=['coherent', 'single', 'reweighted', 'null'],
                     help="Quantity to plot on the vertical axis.")
 ppu.pygrb_add_bestnr_cut_opt(parser)
+ppu.pygrb_add_slide_opts(parser)
 opts = parser.parse_args()
+ppu.slide_opts_helper(opts)
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
