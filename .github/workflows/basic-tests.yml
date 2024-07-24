@@ -66,8 +66,8 @@ jobs:
         name: documentation-page
     - name: debug
       run: |
-        if [ github.event_name == 'release']; then ENV_PAGE=${GITHUB_REF#refs/tags/}; else ENV_PAGE=current; fi
-        mkdir -p _gh-pages/$ENV_PAGE
+        if [ github.event_name == 'release']; then ENV_PAGE=${GITHUB_REF#refs/tags/}; else ENV_PAGE=latest; fi
+        mkdir _gh-pages
         mv latest _gh-pages/$ENV_PAGE
     - name: deploying $page to gh-pages
       uses: JamesIves/github-pages-deploy-action@3.7.1
