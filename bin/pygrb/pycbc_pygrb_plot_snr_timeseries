@@ -44,6 +44,7 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_snr_timeseries"
 
+
 # =============================================================================
 # Functions
 # =============================================================================
@@ -209,7 +210,6 @@ xlims = [start, end]
 if opts.x_lims:
     xlims = opts.x_lims
     xlims = map(float, xlims.split(','))
-
 plu.pygrb_plotter([trig_data_time, trig_data_snr],
                   [inj_data_time, inj_data_snr],
                   "Time since %.3f (s)" % (central_time), y_label,
