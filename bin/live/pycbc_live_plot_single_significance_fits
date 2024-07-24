@@ -131,10 +131,10 @@ for ifo in all_ifos:
         continue
 
     # Keep track of some maxima for use in setting the plot limits
-    maxstat = stats[ifo].max()
+    maxstat = np.nanmax(stats[ifo])
     max_rate = 0
 
-    statrange = maxstat - max(stats[ifo].min(), fit_threshold[ifo])
+    statrange = maxstat - max(np.nanmin(stats[ifo]), fit_threshold[ifo])
     plotmax = maxstat + statrange * 0.05
 
     plotbins = np.linspace(fit_threshold[ifo], plotmax, 400)
