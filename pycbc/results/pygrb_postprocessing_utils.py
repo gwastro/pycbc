@@ -96,18 +96,18 @@ def pygrb_initialize_plot_parser(description=None):
                         help="If None, plotting scripts will use triggers" +
                         "from all short slides.")
     return parser
-    
+
 
 def pygrb_add_slide_opts(parser):
     """Add to parser object arguments related to short timeslides"""
     parser.add_argument("--slide-id", type=str, default='0',
                         help="If all, the plotting scripts will use triggers" +
                         "from all short slides.")
-    
+
 
 def slide_opts_helper(args):
     """
-       This function overwrites the types of input slide_id information 
+       This function overwrites the types of input slide_id information
        when loading data in postprocessing scripts.
     """
     if args.slide_id.isdigit():
@@ -116,7 +116,7 @@ def slide_opts_helper(args):
         args.slide_id = None
     else:
         raise ValueError("--slide-id must be all or int")
-        
+
 
 def pygrb_add_injmc_opts(parser):
     """Add to parser object the arguments used for Monte-Carlo on distance."""
