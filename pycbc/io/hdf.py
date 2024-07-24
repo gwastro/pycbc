@@ -626,6 +626,7 @@ class SingleDetTriggers(object):
                     mtrigs[k] = self.trigs[k][self.mask]
                 else:
                     mtrigs[k] = self.trigs[k][:]
+        mtrigs['ifo'] = self.ifo
         return mtrigs
 
     @classmethod
@@ -687,9 +688,10 @@ class SingleDetTriggers(object):
         self.mask[and_indices.astype(np.uint64)] = True
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
-                                           ranking_threshold=6,
+                                           ranking_threshold=None,
                                            n_loudest=10,
-                                           cluster_window=10):
+                                           cluster_window=10,
+                                           statistic_kwargs=None):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic.
 
@@ -698,17 +700,23 @@ class SingleDetTriggers(object):
         ranking using ranking_threshold
         """
 
+        # If this becomes memory intensive we can optimize
+        if statistic_kwargs is None:
+            statistic_kwargs = {}
         sds = rank_method.single(self.trig_dict())
-        stat = rank_method.rank_stat_single((self.ifo, sds))
+        stat = rank_method.rank_stat_single(
+            (self.ifo, sds),
+            **statistic_kwargs
+        )
         if len(stat) == 0:
             # No triggers at all, so just return here
             self.apply_mask(np.array([], dtype=np.uint64))
             return
 
         times = self.end_time
-        if ranking_threshold:
+        if ranking_threshold is not None:
             # Threshold on sngl_ranking
-            # Note that we can provide None or zero to do no thresholding
+            # Note that we can provide None to do no thresholding
             # but the default is to do some
             keep = stat >= ranking_threshold
             stat = stat[keep]
@@ -744,6 +752,7 @@ class SingleDetTriggers(object):
         index.sort()
         # Apply to the existing mask
         self.apply_mask(index)
+        self.stat = stat[index]
 
     @property
     def mask_size(self):

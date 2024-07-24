@@ -237,48 +237,41 @@ if args.maximum_duration is not None:
 logging.info('Finding loudest clustered events')
 rank_method = stat.get_statistic_from_opts(args, [args.instrument])
 
-extra_kwargs = {}
-for inputstr in args.statistic_keywords:
-    try:
-        key, value = inputstr.split(':')
-        extra_kwargs[key] = value
-    except ValueError:
-        err_txt = "--statistic-keywords must take input in the " \
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
-                  "Received {}".format(args.statistic_keywords)
-        raise ValueError(err_txt)
+extra_kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
 
-logging.info("Calculating statistic for %d triggers", len(trigs.snr))
-sds = rank_method.single(trigs)
-stat = rank_method.rank_stat_single((args.instrument, sds), **extra_kwargs)
-logging.info("Clustering events over %.3fs window", args.cluster_window)
-cid = coinc.cluster_over_time(stat, trigs.end_time,
-                              args.cluster_window)
-trigs.apply_mask(cid)
-stat = stat[cid]
-if len(trigs.snr) < num_events:
-    num_events = len(trigs.snr)
-
-logging.info("Finding the loudest triggers")
-loudest_idx = sorted(numpy.argsort(stat)[::-1][:num_events])
-trigs.apply_mask(loudest_idx)
-stat = stat[loudest_idx]
+trigs.mask_to_n_loudest_clustered_events(
+    rank_method,
+    n_loudest=num_events,
+    cluster_window=args.cluster_window,
+    statistic_kwargs=extra_kwargs,
+)
 
 times = trigs.end_time
-tids = trigs.template_id
 
+if isinstance(trigs.mask, numpy.ndarray) and trigs.mask.dtype == bool:
+    trigger_ids = numpy.flatnonzero(trigs.mask)
+else:
+    trigger_ids = trigs.mask
+
+trig_stat = trigs.stat
+trig_snr = trigs.snr
 # loop over number of loudest events to be followed up
-order = stat.argsort()[::-1]
+order = trig_stat.argsort()[::-1]
 for rank, num_event in enumerate(order):
-    logging.info('Processing event: %s', num_event)
+    logging.info('Processing event: %s', rank)
+
+    print(rank)
+    print(num_event)
+    print(trigger_ids[num_event])
+    print(trig_stat[num_event])
+    print(trig_snr[num_event])
+    print(times[num_event])
+    print('\n'*2)
 
     files = wf.FileList([])
     time = times[num_event]
     ifo_time = '%s:%s' %(args.instrument, str(time))
-    if isinstance(trigs.mask, numpy.ndarray) and trigs.mask.dtype == bool:
-        tid = numpy.flatnonzero(trigs.mask)[num_event]
-    else:
-        tid = trigs.mask[num_event]
+    tid = trigger_ids[num_event]
     ifo_tid = '%s:%s' %(args.instrument, str(tid))
 
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
