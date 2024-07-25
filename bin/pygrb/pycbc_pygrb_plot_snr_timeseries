@@ -98,7 +98,7 @@ def reset_times(data_time, trig_time):
 # =============================================================================
 parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument("-t", "--trig-file", action="store",
-        default=None, required=True,
+                    default=None, required=True,
                     help="The location of the trigger file")
 parser.add_argument("--found-missed-file",
                     help="The hdf injection results file", required=False)
