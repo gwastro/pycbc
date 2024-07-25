@@ -254,19 +254,10 @@ else:
     trigger_ids = trigs.mask
 
 trig_stat = trigs.stat
-trig_snr = trigs.snr
 # loop over number of loudest events to be followed up
 order = trig_stat.argsort()[::-1]
 for rank, num_event in enumerate(order):
     logging.info('Processing event: %s', rank)
-
-    print(rank)
-    print(num_event)
-    print(trigger_ids[num_event])
-    print(trig_stat[num_event])
-    print(trig_snr[num_event])
-    print(times[num_event])
-    print('\n'*2)
 
     files = wf.FileList([])
     time = times[num_event]
