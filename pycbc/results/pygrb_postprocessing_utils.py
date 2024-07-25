@@ -92,7 +92,6 @@ def pygrb_initialize_plot_parser(description=None):
     parser.add_argument('--plot-caption', default=None,
                         help="If provided, use the given string as the plot " +
                         "caption")
-    
     return parser
 
 
