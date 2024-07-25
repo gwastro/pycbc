@@ -171,7 +171,6 @@ trig_data_time = trig_data[x_key][:]
 inj_data_time = inj_data[x_key][:] if inj_file else None
 
 # Obtain SNRs
-
 trig_data_snr = trig_data[y_key][:]
 inj_data_snr = inj_data[y_key][:] if inj_file else None
 
