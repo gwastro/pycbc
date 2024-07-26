@@ -112,7 +112,7 @@ def slide_opts_helper(args):
     elif args.slide_id.lower() == "all":
         args.slide_id = None
     else:
-        raise ValueError("--slide-id must be all or int")
+        raise ValueError("--slide-id must be the string all or an int")
 
 
 def pygrb_add_injmc_opts(parser):
