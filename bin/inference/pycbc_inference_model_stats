@@ -96,7 +96,10 @@ model.sampling_transforms = None
 def callmodel(arg):
     iteration, paramvals = arg
     # calculate the logposterior to get all stats populated
-    model.update(**{p: paramvals[p] for p in model.variable_params})
+    try:
+        model.update_all_models(**{p: paramvals[p] for p in model.variable_params})
+    except:
+        model.update(**{p: paramvals[p] for p in model.variable_params})
     _ = model.logposterior
     stats = model.get_current_stats()
 

@@ -686,6 +686,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.primary_model.return_sh_hh = True
         sh_primary, hh_primary = self.primary_model.loglr
         self.primary_model.return_sh_hh = False
+        # set logr, otherwise it will store (sh, hh)
+        setattr(self.primary_model._current_stats, 'loglr',
+                self.primary_model.marginalize_loglr(sh_primary, hh_primary))
 
         margin_names_vector = list(
             self.primary_model.marginalize_vector_params.keys())
@@ -786,6 +789,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         print("hh_total: ", hh_total)
 
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
+        setattr(self._current_stats, 'total_loglr', loglr)
 
         return loglr
 
