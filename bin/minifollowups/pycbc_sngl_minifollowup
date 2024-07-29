@@ -71,7 +71,8 @@ parser.add_argument('--inspiral-data-analyzed-name',
                          "analyzed by each analysis job.")
 parser.add_argument('--min-sngl-ranking', type=float, default=6.5,
                     help="Minimum sngl-ranking to consider for loudest "
-                         "triggers. Default=6.5.")
+                         "triggers. Useful for efficiency savings. "
+                         "Default=6.5.")
 parser.add_argument('--non-coinc-time-only', action='store_true',
                     help="If given remove (veto) single-detector triggers "
                          "that occur during a time when at least one other "

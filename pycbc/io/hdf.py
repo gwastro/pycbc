@@ -688,7 +688,7 @@ class SingleDetTriggers(object):
         self.mask[and_indices.astype(np.uint64)] = True
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
-                                           ranking_threshold=None,
+                                           statistic_threshold=None,
                                            n_loudest=10,
                                            cluster_window=10,
                                            statistic_kwargs=None):
@@ -697,10 +697,9 @@ class SingleDetTriggers(object):
 
         Events are clustered so that no more than 1 event within +/-
         cluster_window will be considered. Can apply a threshold on the
-        ranking using ranking_threshold
+        statistic using statistic_threshold
         """
 
-        # If this becomes memory intensive we can optimize
         if statistic_kwargs is None:
             statistic_kwargs = {}
         sds = rank_method.single(self.trig_dict())
@@ -715,11 +714,9 @@ class SingleDetTriggers(object):
             return
 
         times = self.end_time
-        if ranking_threshold is not None:
-            # Threshold on sngl_ranking
-            # Note that we can provide None to do no thresholding
-            # but the default is to do some
-            keep = stat >= ranking_threshold
+        if statistic_threshold is not None:
+            # Threshold on statistic
+            keep = stat >= statistic_threshold
             stat = stat[keep]
             times = times[keep]
             self.apply_mask(keep)
