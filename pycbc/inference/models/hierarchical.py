@@ -696,8 +696,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             margin_names_vector.remove('logw_partial')
         margin_params = {}
 
-        print("self.primary_model.current_params: ", self.primary_model.current_params)
-
         if self.static_margin_params_in_other_models:
             # Due to the high precision of extrinsic parameters constrined
             # by the primary model, the mismatch of wavefroms in others by
@@ -709,7 +707,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # waveform. Using SNR will cancel out the effect of amplitude.err
             i_max_extrinsic = numpy.argmax(
                 numpy.abs(sh_primary) / hh_primary**0.5)
-            print("i_max_extrinsic: ", i_max_extrinsic)
             for p in margin_names_vector:
                 if isinstance(self.primary_model.current_params[p],
                               numpy.ndarray):
@@ -746,14 +743,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # not using self.primary_model.current_params, because others_model
             # may have its own static parameters
             current_params_other = other_model.current_params.copy()
-            print("[total_loglr] current_params_other 1: ", current_params_other)
             if not self.static_margin_params_in_other_models:
                 for i in range(nums):
                     current_params_other.update(
                         {key: value[i] if isinstance(value, numpy.ndarray)
                          else value for key, value in margin_params.items()})
                     other_model.update(**current_params_other)
-                    print("[total_loglr] current_params_other 2: ", current_params_other)
                     other_model.return_sh_hh = True
                     sh_other, hh_other = other_model.loglr
                     sh_others[i] += sh_other
@@ -768,7 +763,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     {key: value[0] if isinstance(value, numpy.ndarray)
                      else value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
-                print("other_model.current_params: ", other_model.current_params)
                 other_model.return_sh_hh = True
                 sh_other, hh_other = other_model.loglr
                 other_model.return_sh_hh = False
@@ -786,13 +780,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             hh_others = hh_others[0]
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
-
-        print("sh_primary: ", sh_primary)
-        print("hh_primary: ", hh_primary)
-        print("sh_others: ", sh_others)
-        print("hh_others: ", hh_others)
-        print("sh_total: ", sh_total)
-        print("hh_total: ", hh_total)
 
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
         setattr(self._current_stats, 'total_loglr', loglr)
