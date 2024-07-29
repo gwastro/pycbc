@@ -275,13 +275,6 @@ for rank, num_event in enumerate(order):
     tid = trigger_ids[num_event]
     ifo_tid = '%s:%s' %(args.instrument, str(tid))
 
-    print(num_event)
-    print(tid)
-    print(trig_stat[num_event])
-    print(trig_snrs[num_event])
-    print(time)
-    print('\n'*2)
-
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
                                    tid, args.output_dir, args.instrument,
                                    statfiles=statfiles,
