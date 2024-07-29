@@ -185,12 +185,21 @@ extras_require = {
 # do the actual work of building the package
 VERSION = get_version_info()
 
-cythonext = ['waveform.spa_tmplt',
-             'waveform.utils',
-             'types.array',
-             'filter.matchedfilter',
-             'vetoes.chisq']
+cythonext = ['pycbc.waveform.spa_tmplt_cpu',
+             'pycbc.waveform.utils_cpu',
+             'pycbc.types.array_cpu',
+             'pycbc.filter.matchedfilter_cpu',
+             'pycbc.vetoes.chisq_cpu',
+             "pycbc.fft.fftw_pruned_cython",
+             "pycbc.events.eventmgr_cython",
+             "pycbc.events.simd_threshold_cython",
+             "pycbc.filter.simd_correlate_cython",
+             "pycbc.waveform.decompress_cpu_cython",
+             "pycbc.inference.models.relbin_cpu",
+             ]
 ext = []
+
+libraries = ['m'] # Some platforms / toolchains don't implicitly link this
 cython_compile_args = ['-O3', '-w', '-ffast-math',
                        '-ffinite-math-only']
 
@@ -209,56 +218,17 @@ else:
     cython_compile_args += ["-stdlib=libc++"]
     cython_link_args += ["-stdlib=libc++"]
 
+
 for name in cythonext:
-    e = Extension("pycbc.%s_cpu" % name,
-                  ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
+    fname = name.replace('.', '/')
+    e = Extension(name,
+                  [f"{fname}.pyx"],
+                  language='c++',
                   extra_compile_args=cython_compile_args,
                   extra_link_args=cython_link_args,
+                  libraries=libraries,
                   compiler_directives={'embedsignature': True})
     ext.append(e)
-
-# Not all modules work like this:
-e = Extension("pycbc.fft.fftw_pruned_cython",
-              ["pycbc/fft/fftw_pruned_cython.pyx"],
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
-ext.append(e)
-e = Extension("pycbc.events.eventmgr_cython",
-              ["pycbc/events/eventmgr_cython.pyx"],
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
-ext.append(e)
-e = Extension("pycbc.events.simd_threshold_cython",
-              ["pycbc/events/simd_threshold_cython.pyx"],
-              language='c++',
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
-ext.append(e)
-e = Extension("pycbc.filter.simd_correlate_cython",
-              ["pycbc/filter/simd_correlate_cython.pyx"],
-              language='c++',
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
-ext.append(e)
-e = Extension("pycbc.waveform.decompress_cpu_cython",
-              ["pycbc/waveform/decompress_cpu_cython.pyx"],
-              language='c++',
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
-ext.append(e)
-e = Extension("pycbc.inference.models.relbin_cpu",
-              ["pycbc/inference/models/relbin_cpu.pyx"],
-              language='c++',
-              extra_compile_args=cython_compile_args,
-              extra_link_args=cython_link_args,
-              compiler_directives={'embedsignature': True})
-ext.append(e)
-
 
 setup(
     name = 'PyCBC',
