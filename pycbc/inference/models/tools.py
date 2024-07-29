@@ -122,6 +122,13 @@ class DistMarg():
         self.marginalize_vector_params = {}
         self.marginalized_vector_priors = {}
         self.vsamples = int(marginalize_vector_samples)
+        # Save marginalized parameters' name into one place
+        self.marginalized_params_name =\
+            list(str_to_tuple(marginalize_vector_params, str))
+        if marginalize_distance:
+            self.marginalized_params_name.append(marginalize_distance_param)
+        if marginalize_phase:
+            self.marginalized_params_name.append('coa_phase')
 
         self.marginalize_sky_initial_samples = \
             int(float(marginalize_sky_initial_samples))

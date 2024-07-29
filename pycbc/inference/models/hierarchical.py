@@ -621,8 +621,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
     def __init__(self, variable_params, submodels, **kwargs):
         super().__init__(variable_params, submodels, **kwargs)
 
-        # store the original config to self
-        self.original_config = kwargs['original_config']
         # assume the ground-based submodel as the primary model
         self.primary_model = self.submodels[kwargs['primary_lbl'][0]]
         self.primary_lbl = kwargs['primary_lbl'][0]
@@ -646,9 +644,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             by group, i.e., to ``fp[group].attrs``. Otherwise, metadata is
             written to the top-level attrs (``fp.attrs``).
         """
-        # replace the internal config for top-level model with
-        # the original config
-        fp.write_config_file(self.original_config)
         super().write_metadata(fp, group=group)
         sampattrs = fp.getattrs(group=fp.samples_group)
         # if a group is specified, prepend the lognl names with it
@@ -838,9 +833,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # we need the read from config function from the init; to prevent
         # circular imports, we import it here
         from pycbc.inference.models import read_from_config
-        # store the original config file, here use deeocopy to avoid later
-        # changes of cp affect it
-        kwargs['original_config'] = cp.__deepcopy__(cp)
         # get the submodels
         kwargs['primary_lbl'] = shlex.split(cp.get('model', 'primary_model'))
         kwargs['others_lbls'] = shlex.split(cp.get('model', 'other_models'))
@@ -971,13 +963,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # here we ignore `coa_phase`, because if it's been marginalized,
         # it will not be listed in `variable_params` and `prior` sections
         primary_model = submodels[kwargs['primary_lbl'][0]]
-        marginalized_params = primary_model.marginalize_vector_params.copy()
-        marginalized_params = list(marginalized_params.keys())
-        # add distance or phase if they are marginalized
-        if primary_model.distance_marginalization:
-            marginalized_params.append('distance')
-        if primary_model.marginalize_phase:
-            marginalized_params.append('coa_phase')
+        marginalized_params = primary_model.marginalized_params_name.copy()
 
         for p in primary_model.static_params.keys():
             p_full = '%s__%s' % (kwargs['primary_lbl'][0], p)
