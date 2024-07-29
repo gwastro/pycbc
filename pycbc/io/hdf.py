@@ -711,6 +711,7 @@ class SingleDetTriggers(object):
         if len(stat) == 0:
             # No triggers at all, so just return here
             self.apply_mask(np.array([], dtype=np.uint64))
+            self.stat = np.array([], dtype=np.uint64)
             return
 
         times = self.end_time
