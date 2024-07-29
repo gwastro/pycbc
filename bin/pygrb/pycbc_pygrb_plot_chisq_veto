@@ -49,7 +49,7 @@ __program__ = "pycbc_pygrb_plot_chisq_veto"
 # Functions
 # =============================================================================
 # Function to load trigger data: includes applying cut in reweighted SNR
-def load_data(input_file, ifos, vetoes, opts, injections=False):
+def load_data(input_file, ifos, vetoes, opts, injections=False, slide_id=None):
     """Load data from a trigger/injection file"""
 
     snr_type = opts.snr_type
@@ -71,12 +71,14 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
             # This will eventually become load_injections
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=rw_snr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold,
+                                  slide_id=slide_id)
         else:
             logging.info("Loading triggers...")
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=rw_snr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold,
+                                  slide_id=slide_id)
 
         # Count surviving points
         num_trigs_or_injs = len(trigs_or_injs['network/reweighted_snr'])
@@ -187,7 +189,9 @@ parser.add_argument("--snr-type", default='coherent',
                              'single'], help="SNR value to plot on x-axis.")
 ppu.pygrb_add_bestnr_cut_opt(parser)
 ppu.pygrb_add_bestnr_opts(parser)
+ppu.pygrb_add_slide_opts(parser)
 opts = parser.parse_args()
+ppu.slide_opts_helper(opts)
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
@@ -249,10 +253,12 @@ if ifo and ifo not in ifos:
     raise RuntimeError(err_msg)
 
 # Extract trigger data
-trig_data = load_data(trig_file, ifos, vetoes, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts,
+                      slide_id=opts.slide_id)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_missed_file, ifos, vetoes, opts, injections=True)
+inj_data = load_data(found_missed_file, ifos, vetoes, opts,
+                     injections=True, slide_id=0)
 
 # Sanity checks
 if trig_data[snr_type] is None and inj_data[snr_type] is None:

@@ -92,8 +92,27 @@ def pygrb_initialize_plot_parser(description=None):
     parser.add_argument('--plot-caption', default=None,
                         help="If provided, use the given string as the plot " +
                         "caption")
-
     return parser
+
+
+def pygrb_add_slide_opts(parser):
+    """Add to parser object arguments related to short timeslides"""
+    parser.add_argument("--slide-id", type=str, default='0',
+                        help="If all, the plotting scripts will use triggers" +
+                        "from all short slides.")
+
+
+def slide_opts_helper(args):
+    """
+       This function overwrites the types of input slide_id information
+       when loading data in postprocessing scripts.
+    """
+    if args.slide_id.isdigit():
+        args.slide_id = int(args.slide_id)
+    elif args.slide_id.lower() == "all":
+        args.slide_id = None
+    else:
+        raise ValueError("--slide-id must be the string all or an int")
 
 
 def pygrb_add_injmc_opts(parser):
@@ -173,6 +192,20 @@ def pygrb_add_bestnr_cut_opt(parser):
                         default=0.,
                         help="Cut triggers with NewSNR less than THRESHOLD" +
                         "Default 0: all events are considered.")
+
+
+# =============================================================================
+# Wrapper to pick triggers with certain slide_ids
+# =============================================================================
+def slide_filter(trig_file, data, slide_id=None):
+    """
+    This function adds the capability to select triggers with specific
+    slide_ids during the postprocessing stage of PyGRB.
+    """
+    if slide_id is None:
+        return data
+    mask = numpy.where(trig_file['network/slide_id'][:] == slide_id)[0]
+    return data[mask]
 
 
 # =============================================================================
@@ -359,7 +392,8 @@ def dataset_iterator(g, prefix=''):
             yield from dataset_iterator(item, path)
 
 
-def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
+def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
+                  slide_id=None):
     """Loads triggers from PyGRB output file, returning a dictionary"""
 
     trigs = HFile(input_file, 'r')
@@ -409,6 +443,10 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
             # The dataset is relative to the network: cut it before copying
             else:
                 trigs_dict[path] = dset[above_thresh]
+
+            if trigs_dict[path].size == trigs['network/slide_id'][:].size:
+                trigs_dict[path] = slide_filter(trigs, trigs_dict[path],
+                                                slide_id=slide_id)
 
     return trigs_dict
 

@@ -50,7 +50,7 @@ __program__ = "pycbc_pygrb_plot_snr_timeseries"
 # =============================================================================
 # Load trigger data
 def load_data(input_file, ifos, vetoes, rw_snr_threshold=None,
-              injections=False):
+              injections=False, slide_id=None):
     """Load data from a trigger/injection file"""
 
     trigs_or_injs = None
@@ -60,12 +60,14 @@ def load_data(input_file, ifos, vetoes, rw_snr_threshold=None,
             # This will eventually become load_injections
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=rw_snr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold,
+                                  slide_id=slide_id)
         else:
             logging.info("Loading triggers...")
             trigs_or_injs = \
                 ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=rw_snr_threshold)
+                                  rw_snr_threshold=rw_snr_threshold,
+                                  slide_id=slide_id)
 
     return trigs_or_injs
 
@@ -107,7 +109,9 @@ parser.add_argument("-y", "--y-variable", default=None,
                     choices=['coherent', 'single', 'reweighted', 'null'],
                     help="Quantity to plot on the vertical axis.")
 ppu.pygrb_add_bestnr_cut_opt(parser)
+ppu.pygrb_add_slide_opts(parser)
 opts = parser.parse_args()
+ppu.slide_opts_helper(opts)
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
@@ -136,21 +140,24 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
 # points to show the impact of the cut, otherwise remove points with
 # reweighted SNR below threshold
 if snr_type == 'reweighted':
-    trig_data = load_data(trig_file, ifos, vetoes)
+    trig_data = load_data(trig_file, ifos, vetoes,
+                          slide_id=opts.slide_id)
     trig_data['network/reweighted_snr'] = \
         reweightedsnr_cut(trig_data['network/reweighted_snr'],
                           opts.newsnr_threshold)
-    inj_data = load_data(inj_file, ifos, vetoes, injections=True)
+    inj_data = load_data(inj_file, ifos, vetoes, injections=True,
+                         slide_id=0)
     if inj_data is not None:
         inj_data['network/reweighted_snr'] = \
             reweightedsnr_cut(inj_data['network/reweighted_snr'],
                               opts.newsnr_threshold)
 else:
     trig_data = load_data(trig_file, ifos, vetoes,
-                          rw_snr_threshold=opts.newsnr_threshold)
+                          rw_snr_threshold=opts.newsnr_threshold,
+                          slide_id=opts.slide_id)
     inj_data = load_data(inj_file, ifos, vetoes,
                          rw_snr_threshold=opts.newsnr_threshold,
-                         injections=True)
+                         injections=True, slide_id=0)
 
 # Specify HDF file keys for x quantity (time) and y quantity (SNR)
 if snr_type == 'single':
