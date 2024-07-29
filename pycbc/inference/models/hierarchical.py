@@ -759,6 +759,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     sh_others[i] += sh_other
                     hh_others[i] += hh_other
                     other_model.return_sh_hh = False
+                    # set logr, otherwise it will store (sh, hh)
+                    setattr(other_model._current_stats, 'loglr',
+                            other_model.marginalize_loglr(sh_other, hh_other))
             else:
                 # use one margin point set to approximate all the others
                 current_params_other.update(
@@ -769,6 +772,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 other_model.return_sh_hh = True
                 sh_other, hh_other = other_model.loglr
                 other_model.return_sh_hh = False
+                # set logr, otherwise it will store (sh, hh)
+                setattr(other_model._current_stats, 'loglr',
+                        other_model.marginalize_loglr(sh_other, hh_other))
                 sh_others += sh_other
                 hh_others += hh_other
 
