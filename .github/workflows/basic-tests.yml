@@ -50,7 +50,7 @@ jobs:
         export LAL_DATA_PATH=$PWD
         tox -e py-inference
     - name: store documentation page
-      if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
+      if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
       uses: actions/upload-artifact@v2
       with:
         name: documentation-page
