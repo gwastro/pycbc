@@ -199,7 +199,7 @@ cythonext = ['pycbc.waveform.spa_tmplt_cpu',
              ]
 ext = []
 
-libraries = ['m'] # Some platforms / toolchains don't implicitly link this
+libraries = ['m']  # Some platforms / toolchains don't implicitly link this
 cython_compile_args = ['-O3', '-w', '-ffast-math',
                        '-ffinite-math-only']
 
