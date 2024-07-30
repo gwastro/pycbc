@@ -39,30 +39,30 @@ class HGroup(h5py.Group):
         if track_order is None:
             track_order = h5py.h5.get_config().track_order
 
-        # FIXME: use the h5py file locker? with h5py.phil:
-        name, lcpl = self._e(name, lcpl=True)
-        gcpl = HGroup._gcpl_crt_order if track_order else None
-        gid = h5py.h5g.create(self.id, name, lcpl=lcpl, gcpl=gcpl)
-        return HGroup(gid)
-
-
-    def __setitem__(self, name, obj):
-        """
-        Wrapper around h5py's __setitem__ so that checksums are used
-        """
-        if type(obj) not in [h5py.HLObject, h5py.SoftLink, h5py.ExternalLink, np.dtype]:
+        with h5py._objects.phil:
             name, lcpl = self._e(name, lcpl=True)
-            print(f"Setting {name} while using fletcher32")
-            ds = self.create_dataset(None, data=obj, fletcher32=True)
-            h5py.h5o.link(ds.id, self.id, name, lcpl=lcpl)
-        else:
-            h5py.File.__setitem__(self, name, obj)
+            gcpl = HGroup._gcpl_crt_order if track_order else None
+            gid = h5py.h5g.create(self.id, name, lcpl=lcpl, gcpl=gcpl)
+            return HGroup(gid)
+
+    def create_dataset(self, name, shape=None, dtype=None, data=None, **kwds):
+        """
+        Wrapper around h5py's create_dataset so that checksums are used
+        """
+        kwds['fletcher32'] = True
+        return h5py.Group.create_dataset(
+            self,
+            name,
+            shape=shape,
+            dtype=dtype,
+            data=data,
+            **kwds
+        )
 
 
 class HFile(HGroup, h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
-
     def select(self, fcn, *args, chunksize=10**6, derived=None, group='',
                return_data=True, premask=None):
         """ Return arrays from an hdf5 file that satisfy the given function
