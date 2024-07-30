@@ -122,13 +122,6 @@ class DistMarg():
         self.marginalize_vector_params = {}
         self.marginalized_vector_priors = {}
         self.vsamples = int(marginalize_vector_samples)
-        # Save marginalized parameters' name into one place
-        self.marginalized_params_name =\
-            list(str_to_tuple(marginalize_vector_params, str))
-        if marginalize_distance:
-            self.marginalized_params_name.append(marginalize_distance_param)
-        if marginalize_phase:
-            self.marginalized_params_name.append('coa_phase')
 
         self.marginalize_sky_initial_samples = \
             int(float(marginalize_sky_initial_samples))
@@ -235,6 +228,19 @@ class DistMarg():
             self.distance_interpolator = i
 
         kwargs['static_params']['distance'] = dist_ref
+
+        # Save marginalized parameters into one place
+        if marginalize_distance:
+            marginalize_distance_dict = {marginalize_distance_param:
+                numpy.full(self.vsamples, dist_ref)}
+            self.marginalized_params_all =\
+                {**self.marginalize_vector_params,
+                 **marginalize_distance_dict}
+        else:
+            import copy
+            self.marginalized_params_all =\
+                copy.deepcopy(self.marginalize_vector_params)
+
         return variable_params, kwargs
 
     def reset_vector_params(self):
