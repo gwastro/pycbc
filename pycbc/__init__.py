@@ -32,6 +32,8 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 import logging
 import random
 import string
+import importlib.util
+import importlib.machinery
 from datetime import datetime as dt
 
 try:
@@ -227,3 +229,16 @@ def gps_now():
     from astropy.time import Time
 
     return float(Time.now().gps)
+
+# This is needed as a backwards compatibility. The function was removed in
+# python 3.12.
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename,
+                                                  loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module

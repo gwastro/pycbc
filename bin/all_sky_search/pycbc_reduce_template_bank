@@ -23,10 +23,10 @@ Reduce a template bank using some input parameter cuts
 
 import numpy
 import logging
-import imp
 import argparse
 import pycbc
 from pycbc.io import HFile
+from pycbc import load_source
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -48,7 +48,7 @@ pycbc.init_logging(opt.verbose)
 
 bank_fd = HFile(opt.input_bank, 'r')
 
-modl = imp.load_source('filter_func', opt.filter_func_file)
+modl = load_source('filter_func', opt.filter_func_file)
 func = modl.filter_tmpltbank
 bool_arr = func(bank_fd)
 
