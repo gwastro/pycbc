@@ -684,13 +684,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         # set logr, otherwise it will store (sh, hh)
         setattr(self.primary_model._current_stats, 'loglr',
                 self.primary_model.marginalize_loglr(sh_primary, hh_primary))
+        if isinstance(sh_primary, numpy.ndarray):
+            nums = len(sh_primary)
+        else:
+            nums = 1
 
-        margin_names_vector = list(
-            self.primary_model.marginalize_vector_params.keys())
-        if 'logw_partial' in margin_names_vector:
-            margin_names_vector.remove('logw_partial')
         margin_params = {}
-
         if self.static_margin_params_in_other_models:
             # Due to the high precision of extrinsic parameters constrined
             # by the primary model, the mismatch of wavefroms in others by
@@ -702,31 +701,18 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # waveform. Using SNR will cancel out the effect of amplitude.err
             i_max_extrinsic = numpy.argmax(
                 numpy.abs(sh_primary) / hh_primary**0.5)
-            for p in margin_names_vector:
+            for p in self.primary_model.marginalized_params_name:
                 if isinstance(self.primary_model.current_params[p],
                               numpy.ndarray):
                     margin_params[p] = \
                         self.primary_model.current_params[p][i_max_extrinsic]
-                    nums = len(self.primary_model.current_params[p])
                 else:
                     margin_params[p] = self.primary_model.current_params[p]
-                    nums = 1
         else:
             for key, value in self.primary_model.current_params.items():
                 # add marginalize_vector_params
-                if key in margin_names_vector:
+                if key in self.primary_model.marginalized_params_name:
                     margin_params[key] = value
-                    if isinstance(value, numpy.ndarray):
-                        nums = len(value)
-                    else:
-                        nums = 1
-        # add distance if it has been marginalized,
-        # use numpy array for it is just let it has the same
-        # shape as marginalize_vector_params, here we assume
-        # self.primary_model.current_params['distance'] is a number
-        if self.primary_model.distance_marginalization:
-            margin_params['distance'] = numpy.full(
-                nums, self.primary_model.current_params['distance'])
 
         # add likelihood contribution from other_models, we
         # calculate sh/hh for each marginalized parameter point

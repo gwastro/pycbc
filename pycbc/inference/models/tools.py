@@ -229,17 +229,12 @@ class DistMarg():
 
         kwargs['static_params']['distance'] = dist_ref
 
-        # Save marginalized parameters into one place
+        # Save marginalized parameters' name into one place,
+        # coa_phase will be a static param if been marginalized
         if marginalize_distance:
-            marginalize_distance_dict = {marginalize_distance_param:
-                numpy.full(self.vsamples, dist_ref)}
-            self.marginalized_params_all =\
-                {**self.marginalize_vector_params,
-                 **marginalize_distance_dict}
-        else:
-            import copy
-            self.marginalized_params_all =\
-                copy.deepcopy(self.marginalize_vector_params)
+            self.marginalized_params_name =\
+                list(self.marginalize_vector_params.keys()) +\
+                    [marginalize_distance_param]
 
         return variable_params, kwargs
 
