@@ -17,7 +17,8 @@
 """
 Provides a class representing a time series.
 """
-import os as _os, h5py
+import os as _os
+import h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
 from pycbc.types.frequencyseries import FrequencySeries
@@ -759,10 +760,11 @@ class TimeSeries(Array):
         # Interpolate if requested
         if delta_f or delta_t or logfsteps:
             if return_complex:
-                interp_amp = interp2d(times, freqs, abs(q_plane.T))
-                interp_phase = interp2d(times, freqs, _numpy.angle(q_plane.T))
+                interp_amp = interp2d(freqs, times, abs(q_plane), kx=1, ky=1)
+                interp_phase = interp2d(freqs, times, _numpy.angle(q_plane),
+                                        kx=1, ky=1)
             else:
-                interp = interp2d(times, freqs, q_plane.T)
+                interp = interp2d(freqs, times, q_plane, kx=1, ky=1)
 
         if delta_t:
             times = _numpy.arange(float(self.start_time),
@@ -776,12 +778,12 @@ class TimeSeries(Array):
 
         if delta_f or delta_t or logfsteps:
             if return_complex:
-                q_plane = _numpy.exp(1.0j * interp_phase(times, freqs))
-                q_plane *= interp_amp(times, freqs)
+                q_plane = _numpy.exp(1.0j * interp_phase(freqs, times))
+                q_plane *= interp_amp(freqs, times)
             else:
-                q_plane = interp(times, freqs)
+                q_plane = interp(freqs, times)
 
-        return times, freqs, q_plane.T
+        return times, freqs, q_plane
 
     def notch_fir(self, f1, f2, order, beta=5.0, remove_corrupted=True):
         """ notch filter the time series using an FIR filtered generated from

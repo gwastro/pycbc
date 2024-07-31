@@ -1,18 +1,17 @@
 #!/usr/bin/python
 ''' Make plots of recovered injection parameters
 '''
-import h5py, numpy, logging, argparse, sys, matplotlib
+import numpy, logging, argparse, sys, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plot
 
-import pycbc.version, pycbc.detector
+import pycbc.detector
 from pycbc import pnutils, results
 from pycbc.events import triggers
+from pycbc.io.hdf import HFile
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--verbose", action="count")
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--injection-file", required=True,
                     help="hdf injection file containing found injections. "
                          "Required")
@@ -55,14 +54,12 @@ if args.x_param is not None and "v_param" not in args.plot_type:
 if "v_param" in args.plot_type and args.x_param is None:
     raise RuntimeError("Need an --x-param to plot errors against!")
 
-if args.verbose:
-    log_level = logging.INFO
-    logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(args.verbose)
 
 logging.info("Reading data...")
-injs = h5py.File(args.injection_file, "r")
-bank = h5py.File(args.bank_file, "r") if args.bank_file else None
-trig = h5py.File(args.trigger_file, "r") if args.trigger_file else None
+injs = HFile(args.injection_file, "r")
+bank = HFile(args.bank_file, "r") if args.bank_file else None
+trig = HFile(args.trigger_file, "r") if args.trigger_file else None
 
 # Check the detector
 dets = injs.attrs["ifos"].split(" ")

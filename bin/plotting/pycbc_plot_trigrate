@@ -13,20 +13,20 @@
 # Public License for more details.
 
 
-import sys, h5py
-import argparse, logging
-
+import sys
+import argparse
+import logging
 from matplotlib import use
 use('Agg')
 from matplotlib import pyplot as plt
-
-import copy, numpy as np
+import copy
+import numpy as np
 from scipy import stats as scistats
 
+import pycbc
 from pycbc import io, events, bin_utils, results
 from pycbc.events import triggers
 from pycbc.events import ranking
-import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
@@ -39,10 +39,7 @@ def get_stat(statchoice, trigs):
 #### MAIN ####
 
 parser = argparse.ArgumentParser(usage="", description="Plot trigger rates")
-
-parser.add_argument("--version", action=pycbc.version.Version)
-parser.add_argument("-V", "--verbose", action="store_true",
-                    help="Print extra debugging information", default=False)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--trigger-file",
                     help="Input hdf5 file containing single triggers. "
                     "Required")
@@ -119,11 +116,7 @@ if (args.gps_start_time or args.gps_end_time) and not (args.gps_start_time \
                                                        and args.gps_end_time):
     raise RuntimeError("I need both gps start time and end time!")
 
-if args.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
+pycbc.init_logging(opts.verbose)
 
 statname = "reweighted SNR" if args.sngl_stat == "new_snr" else \
            args.sngl_stat.replace("_", " ").replace("snr", "SNR")
@@ -131,9 +124,9 @@ paramname = args.bin_param.replace("_", " ")
 paramtag = args.bin_param.replace("_", "")
 
 logging.info('Opening trigger file: %s' % args.trigger_file)
-trigf = h5py.File(args.trigger_file, 'r')
+trigf = io.HFile(args.trigger_file, 'r')
 logging.info('Opening template file: %s' % args.bank_file)
-templatef = h5py.File(args.bank_file, 'r')
+templatef = io.HFile(args.bank_file, 'r')
 
 # get the stat values
 stat = get_stat(args.sngl_stat, trigf[args.ifo])

@@ -15,13 +15,20 @@
 Script to plot the output of pycbc_multiifo_dtphase in a corner plot
 """
 
-import matplotlib, h5py, numpy as np, copy
-import itertools, sys, logging, argparse
+import matplotlib
+import numpy as np
+import copy
+import itertools
+import sys
+import logging
+import argparse
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
+
 from pycbc.events import coinc_rate
-from pycbc import init_logging, version
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.results import save_fig_with_metadata
+from pycbc.io.hdf import HFile
 
 def marginalise_pdf(pdf, dimensions_to_keep):
     ndims = len(pdf.shape)
@@ -35,9 +42,7 @@ def marginalise_pdf(pdf, dimensions_to_keep):
     return mrg_pdf
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action="version",
-                    version=version.git_verbose_msg)
-parser.add_argument('--verbose', action='store_true')
+add_common_pycbc_options(parser)
 parser.add_argument('--input-file', required=True,
                     help="Input phasetd histogram file, made using "
                          "pycbc_multiifo_dtphase")
@@ -58,7 +63,7 @@ parser.add_argument('--output-file', required=True,
 args = parser.parse_args()
 init_logging(args.verbose)
 
-f = h5py.File(args.input_file, 'r')
+f = HFile(args.input_file, 'r')
 
 # Hard-code some lists to refer to later
 width_names = ['twidth', 'pwidth', 'swidth']

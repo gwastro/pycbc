@@ -35,6 +35,7 @@ that.
 import os
 import argparse
 import logging
+
 import pycbc
 import pycbc.version
 import pycbc.workflow as wf
@@ -140,10 +141,12 @@ class SbankDaxGenerator(wf.Executable):
 # so run this with --help to see what options are added.
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
-parser.add_argument('--version', action='version', version=__version__)
+pycbc.add_common_pycbc_options(parser)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 # Create the workflow object
 workflow = wf.Workflow(args)

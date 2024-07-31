@@ -29,8 +29,6 @@ parser.add_argument('--ifar-threshold', type=float, default=None,
                          'above threshold.')
 parser.add_argument('--include-mass-gap', action='store_true',
                     help='Option to include the Mass Gap region.')
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 mchirp_area.insert_args(parser)
 args = parser.parse_args()
 

@@ -21,6 +21,7 @@ import numpy
 import sys
 from foton import FilterFile, Filter
 
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.filter.fotonfilter import filter_data, get_swstat_bits, read_gain_from_frames
 from pycbc.frame import frame_paths
 from pycbc.inject import InjectionSet, legacy_approximant_name
@@ -33,6 +34,8 @@ ifo_list = ['H1', 'L1']
 # command line usage
 parser = argparse.ArgumentParser(usage='pycbc_foton_filter [--options]',
              description='Filter a single-column ASCII time series.')
+
+add_common_pycbc_options(parser)
 
 # injection options
 parser.add_argument("--data-file", type=str, required=True,
@@ -80,8 +83,7 @@ parser.add_argument("--sample-rate", type=int, required=True,
 opts = parser.parse_args()
 
 # setup log
-logging_level = logging.DEBUG
-logging.basicConfig(format='%(asctime)s : %(message)s', level=logging_level)
+pycbc.init_logging(args.verbose, default_level=2)
 
 # read data file with time series
 data = numpy.loadtxt(opts.data_file)

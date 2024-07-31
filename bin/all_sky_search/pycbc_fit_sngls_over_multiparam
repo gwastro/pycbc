@@ -13,9 +13,12 @@
 # Public License for more details.
 
 
-import sys, h5py, argparse, logging, pycbc.version, numpy
+import sys, argparse, logging, numpy
 from scipy.stats import norm
+
+import pycbc
 from pycbc.events import triggers
+from pycbc.io import HFile
 from pycbc import init_logging
 
 def dist(i1, i2, parvals, smoothing_width):
@@ -176,7 +179,6 @@ parser = argparse.ArgumentParser(usage="",
                 "background model.")
 
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("--template-fit-file", required=True, nargs='+',
                     help="hdf5 file(s) containing fit coefficients for each "
                          "individual template. Can smooth over multiple "
@@ -266,7 +268,7 @@ logging.info("Loading input template fits")
 # they use the same bank
 num_templates = None
 for filename in args.template_fit_file:
-    with h5py.File(filename, 'r') as fits:
+    with HFile(filename, 'r') as fits:
         if num_templates is None:
             num_templates = fits['template_id'].size
         elif not num_templates == fits['template_id'].size:
@@ -340,14 +342,20 @@ if len(args.template_fit_file) > 1:
     nasum = nabove[tidsort].cumsum()
     invsum = invalphan[tidsort].cumsum()
     ntsum = ntotal[tidsort].cumsum()
-    mssum = median_sigma[tidsort].cumsum()
     num = right - left
 
     tid = tid_unique
     nabove = (nasum[right] - nasum[left]) / num
     invalphan = (invsum[right] - invsum[left]) / num
     ntotal = (ntsum[right] - ntsum[left]) / num
-    median_sigma = (mssum[right] - mssum[left]) / num
+    if median_sigma is not None:
+        # Median sigma is a special one - we need to make sure that
+        # we do not mess things up when nan values are given, so we
+        # can't use the special cumsum fast option
+        median_sigma = [
+            numpy.nanmean(median_sigma[tidsort[l:r]])
+            for l, r in zip(left, right)
+        ]
 
 if args.output_fits_by_template:
     # Store fit_by_template values for output file
@@ -377,7 +385,7 @@ if args.smoothing_method == 'n_closest' and n_required > nabove.sum():
     )
 
 logging.info('Calculating template parameter values')
-bank = h5py.File(args.bank_file, 'r')
+bank = HFile(args.bank_file, 'r')
 m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 
 parvals = []
@@ -485,7 +493,7 @@ else:
         ntotal_smoothed.append(smoothed_tuple[2])
 
 logging.info("Writing output")
-outfile = h5py.File(args.output, 'w')
+outfile = HFile(args.output, 'w')
 outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed

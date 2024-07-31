@@ -1,20 +1,28 @@
 #!/usr/bin/env python
-import numpy, h5py, argparse, matplotlib, sys
 import logging
+import numpy
+import h5py
+import argparse
+import matplotlib
+import sys
 matplotlib.use('Agg')
-import pylab, pycbc.results, pycbc.version
+import pylab
+
+import pycbc.results
 from pycbc.events import veto
 from pycbc.io import (
-    get_chisq_from_file_choice, chisq_choices, SingleDetTriggers
+    get_chisq_from_file_choice, chisq_choices, SingleDetTriggers, HFile
 )
 
 parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--trigger-file', help='Single ifo trigger file')
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument('--veto-file', help='Optional, file of veto segments to remove triggers')
+parser.add_argument('--veto-file',
+                    help='Optional, file of veto segments to remove triggers')
 parser.add_argument('--segment-name', default=None, type=str,
                     help='Optional, name of segment list to use for vetoes')
-parser.add_argument('--min-snr', type=float, help='Optional, Minimum SNR to plot')
+parser.add_argument('--min-snr', type=float,
+                    help='Optional, Minimum SNR to plot')
 parser.add_argument('--output-file')
 parser.add_argument(
     '--newsnr-contours',
@@ -27,7 +35,8 @@ parser.add_argument('--chisq-choice', choices=chisq_choices,
                     help='Which chisquared to plot. Default=traditional')
 args = parser.parse_args()
 
-pycbc.init_logging(1)
+pycbc.init_logging(args.verbose, default_level=1)
+
 
 if args.newsnr_contours is not None and not args.chisq_choice == 'traditional':
     parser.error(
@@ -40,7 +49,7 @@ args.newsnr_contours = \
     args.newsnr_contours if args.newsnr_contours is not None else []
 
 # First - get the IFO from the file
-with h5py.File(args.trigger_file, 'r') as f:
+with HFile(args.trigger_file, 'r') as f:
     ifo = tuple(f.keys())[0]
     n_triggers = f[ifo]['snr'].size
 

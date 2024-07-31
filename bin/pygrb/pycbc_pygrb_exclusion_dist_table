@@ -32,7 +32,7 @@ __program__ = "pycbc_pygrb_exclusion_dist_table"
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=
                                  argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--version", action="version", version=__version__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-files", nargs="+", required=True,
                     help="List of JSON input files" +
                     " output by pycbc_pygrb_efficiency" +
@@ -41,6 +41,8 @@ parser.add_argument("--output-file", required=True,
                     help="HTML output file containing table" +
                     " of exclusion distances.")
 opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
 
 # Load JSON files as a list of dictionaries
 file_contents = []

@@ -1,5 +1,4 @@
 #!/bin/env python
-import h5py
 import numpy
 import argparse
 import sys
@@ -10,6 +9,7 @@ import pylab
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.types
 import pycbc.results
+from pycbc.io.hdf import HFile
 
 parser=argparse.ArgumentParser()
 add_common_pycbc_options(parser)
@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-f = h5py.File(args.single_template_file, 'r')
+f = HFile(args.single_template_file, 'r')
 y = f['chisq_boundaries'][:]
 fig = pylab.figure()
 ax = pylab.gca()

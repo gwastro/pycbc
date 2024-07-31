@@ -26,7 +26,6 @@ from dynesty import plotting as dyplot
 
 from pycbc.inference import io
 import pycbc
-from pycbc import __version__
 from pycbc import results
 import sys
 
@@ -37,8 +36,6 @@ parser = argparse.ArgumentParser(
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-file", type=str, required=True,
                     help="Path to input HDF file.")
-parser.add_argument('--version', action='version', version=__version__,
-                    help='show version number and exit')
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")

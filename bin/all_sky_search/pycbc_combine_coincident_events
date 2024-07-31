@@ -6,10 +6,9 @@ The resulting file would contain triggers from the full set of input files
 import numpy
 import argparse
 import logging
-import h5py
 
 import pycbc
-import pycbc.version
+from pycbc.io import HFile
 
 def com(f, files, group):
     """ Combine the same column from multiple files into another file f"""
@@ -56,7 +55,6 @@ def com_with_detector_key(f, files, group):
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--statmap-files', nargs='+',
                     help="List of coinc files to be redistributed")
 parser.add_argument('--output-file', help="name of output file")
@@ -64,10 +62,10 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-files = [h5py.File(n) for n in args.statmap_files]
+files = [HFile(n) for n in args.statmap_files]
 
 # Start setting some of the attributes
-f = h5py.File(args.output_file, "w")
+f = HFile(args.output_file, "w")
 # It's not guaranteed that all files will follow this, so be careful later!
 f.attrs['detector_1'] = files[0].attrs['detector_1']
 f.attrs['detector_2'] = files[0].attrs['detector_2']

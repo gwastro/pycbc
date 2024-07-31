@@ -26,16 +26,10 @@ how a simple workflow is constructed with pycbc.workflow.
 #imports
 import os
 import argparse
+
 import pycbc
-import pycbc.version
 import pycbc.workflow as wf
 import pycbc.workflow.pegasus_workflow as pwf
-
-# Boiler-plate stuff
-__author__  = "Ian Harry <ian.harry@ligo.org>"
-__version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
-__program__ = "pycbc_make_sbank_workflow"
 
 # We define classes for all executables used in the workflow
 
@@ -169,7 +163,7 @@ class CombineHDFBanksExecutable(wf.Executable):
 # so run this with --help to see what options are added.
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc)
-parser.add_argument('--version', action='version', version=__version__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--output-file", type=str, default=None,
                     help="Specify the output file name. Either a name can be "
                          "provided or a full path to file. Is this is not "
@@ -179,6 +173,8 @@ parser.add_argument("--output-file", type=str, default=None,
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 # Create the workflow object
 workflow = wf.Workflow(args)

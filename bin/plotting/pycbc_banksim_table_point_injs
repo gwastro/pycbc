@@ -18,12 +18,13 @@
 """
 
 import sys
-import h5py
 import argparse
 import numpy
+import logging
 
 import pycbc.version
 from pycbc import results
+from pycbc.io.hdf import HFile
 
 __author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
 __version__ = pycbc.version.git_verbose_msg
@@ -32,7 +33,7 @@ __program__ = "pycbc_banksim_table_point_injs"
 
 parser = argparse.ArgumentParser(usage='',
     description="Plot effective fitting factor vs mass1 and mass2.")
-parser.add_argument("--version", action="version", version=__version__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--input-files', nargs='+', default=None, required=True,
                     help="List of input files.")
 parser.add_argument('--directory-links', nargs='+', default=None,
@@ -41,6 +42,8 @@ parser.add_argument('--output-file', default=None, required=True,
                     help="Output file.")
  
 opt = parser.parse_args()
+
+pycbc.init_logging(opt.verbose)
 
 col_names = ['Mass 1', 'Mass 2', 'Signal <br\\> recovery <br\\> fraction',
              'Effective <br\\> fitting <br\\> factor',
@@ -62,7 +65,7 @@ for idx, file_name in enumerate(opt.input_files):
     if opt.directory_links is not None:
         d = opt.directory_links[idx]
         dir_names.append('<a href="{}">LINK</a>'.format(d))
-    curr_fp = h5py.File(file_name, 'r')
+    curr_fp = HFile(file_name, 'r')
     m1.append(curr_fp['inj_params/mass1'][0])
     m2.append(curr_fp['inj_params/mass2'][0])
     eff_ff.append(curr_fp['eff_fitting_factor'][()])
@@ -76,7 +79,7 @@ columns = [numpy.array(m1), numpy.array(m2), numpy.array(srf),
 if opt.directory_links is not None:
     columns = [numpy.array(dir_names)] + columns
 
-test_fp = h5py.File(opt.input_files[0], 'r')
+test_fp = HFile(opt.input_files[0], 'r')
 if 'filtered_points' in test_fp.keys():
     test_fp.close()
     cn1 = 'Fraction <br\\> of points <br\\> within <br\\> template <br\\> bank'
@@ -92,7 +95,7 @@ if 'filtered_points' in test_fp.keys():
     filt_max_ff = []
     filt_min_ff = []
     for file_name in opt.input_files:
-        curr_fp = h5py.File(file_name, 'r')
+        curr_fp = HFile(file_name, 'r')
         point_frac.append(curr_fp['frac_points_within_bank'][()])
         filt_srf.append(curr_fp['filtered_sig_rec_fac'][()])
         filt_eff_ff.append(curr_fp['filtered_eff_fitting_factor'][()])

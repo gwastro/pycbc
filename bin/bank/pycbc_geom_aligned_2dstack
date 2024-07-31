@@ -30,12 +30,12 @@ import argparse
 import copy
 import numpy
 import logging
-import h5py
 
 import pycbc.tmpltbank
 import pycbc.version
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import pycbcValidOrdersHelpDescriptions
+from pycbc.io import HFile
 
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
@@ -50,7 +50,6 @@ parser = argparse.ArgumentParser(usage, description=_desc,
            formatter_class=pycbc.tmpltbank.IndentedHelpFormatterWithNL)
 pycbc.add_common_pycbc_options(parser)
 # Code specific options
-parser.add_argument('--version', action='version', version=__version__)
 parser.add_argument("--pn-order", action="store", type=str,\
                   default=None,\
                   help="Determines the PN order to use. Note that if you "+\
@@ -127,7 +126,7 @@ metricParams = pycbc.tmpltbank.metricParameters(opts.pn_order, 0, opts.f0, \
                                                 0, f0=opts.f0)
 
 # Load the list of points from file
-h5file = h5py.File(opts.input_file, 'r')
+h5file = HFile(opts.input_file, 'r')
 v1s = h5file['split_banks/split_bank_%05d/v1s' % opts.split_bank_num][:]
 v2s = h5file['split_banks/split_bank_%05d/v2s' % opts.split_bank_num][:]
 if 'v3s' in h5file['split_banks/split_bank_%05d' % opts.split_bank_num].keys():
@@ -372,7 +371,7 @@ for entry in temp_bank:
                     points_info.append([masses[0], masses[1], masses[2],
                                         masses[3], masses[5]])
 
-h5outfile = h5py.File(opts.output_file, 'w')
+h5outfile = HFile(opts.output_file, 'w')
 h5outfile['reject_points'] = numpy.array(reject_info)
 h5outfile['point_depths'] = numpy.array(depths_info)
 h5outfile['accepted_templates'] = numpy.array(points_info)

@@ -5,18 +5,18 @@ by pycbc_sngls_findtrigs to generate a mapping between SNR and FAP/FAR, along
 with producing the combined foreground and background triggers.
 """
 
-import argparse, h5py, itertools
+import argparse, itertools
 import lal, logging, numpy
 from pycbc.events import veto, coinc
 from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events import significance
-import pycbc.version, pycbc.pnutils, pycbc.io
+import pycbc.pnutils, pycbc.io
 import sys
 import pycbc.conversions as conv
 
 class fw(object):
     def __init__(self, name):
-        self.f = h5py.File(name, 'w')
+        self.f = pycbc.io.HFile(name, 'w')
         self.attrs = self.f.attrs
 
     def __setitem__(self, name, data):
@@ -35,8 +35,6 @@ class fw(object):
 parser = argparse.ArgumentParser()
 # General required options
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--sngls-files', nargs='+',
                     help='List of files containign trigger and statistic '
                          'information.')
@@ -71,7 +69,7 @@ all_trigs = all_trigs.cluster(args.cluster_window)
 
 logging.info('getting background statistics')
 
-fb = h5py.File(args.full_data_background,'r')
+fb = pycbc.io.HFile(args.full_data_background,'r')
 back_stat = fb['background/stat'][:]
 back_stat_exc = fb['background_exc/stat'][:]
 

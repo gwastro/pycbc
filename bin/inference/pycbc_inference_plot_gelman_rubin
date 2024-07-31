@@ -19,21 +19,20 @@
 
 import argparse
 import logging
-import matplotlib as mpl; mpl.use("Agg")
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import sys
-from pycbc import results
-from pycbc import __version__ 
+
+from pycbc import (
+    results, init_logging, add_common_pycbc_options
+)
 from pycbc.inference import (gelman_rubin, io, option_utils)
 
 # add options to command line
 parser = io.ResultsArgumentParser(skip_args=['walkers'])
 
-# verbose option
-parser.add_argument("--verbose", action="store_true", default=False,
-                    help="Print logging info.")
-parser.add_argument('--version', action='version', version=__version__,
-                    help='show version number and exit')
+add_common_pycbc_options(parser)
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -55,11 +54,7 @@ parser.add_argument("--segment-step", type=int, required=True,
 opts = parser.parse_args()
 
 # setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+init_logging(opts.verbose)
 
 # enfore that this is not a single iteration
 if opts.iteration is not None:

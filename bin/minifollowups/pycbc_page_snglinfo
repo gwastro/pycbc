@@ -26,7 +26,7 @@ matplotlib.use('Agg')
 
 import lal
 
-import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
+import pycbc.events, pycbc.results, pycbc.pnutils
 from pycbc.results import followup
 from pycbc.events import stat as pystat
 from pycbc.io import hdf
@@ -35,8 +35,6 @@ from pycbc import init_logging, add_common_pycbc_options
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--single-trigger-file', required=True,
     help="HDF format single detector trigger files for the full "
          "data run")

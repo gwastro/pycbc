@@ -12,11 +12,12 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 # Public License for more details.
 
-import numpy, h5py, operator, argparse, logging
+import numpy, operator, argparse, logging
 from pycbc import init_logging, add_common_pycbc_options
 import pycbc.conversions as convert
 from pycbc import libutils
 from pycbc.events import triggers
+from pycbc.io import HFile
 akde = libutils.import_optional('awkde')
 kf = libutils.import_optional('sklearn.model_selection')
 
@@ -144,12 +145,12 @@ def optimizedparam(sampleval, bwgrid, alphagrid, nfold=2):
 
 
 # Obtaining template parameters
-temp_file = h5py.File(args.template_file, 'r')
+temp_file = HFile(args.template_file, 'r')
 mass1 = temp_file['mass1'][:]
 tid = numpy.arange(len(mass1))  # Array of template ids
 mass_spin = triggers.get_mass_spin(temp_file, tid)
 
-f_dest = h5py.File(args.output_file, 'w')
+f_dest = HFile(args.output_file, 'w')
 f_dest.create_dataset("template_id", data=tid)
 template_pars = []
 for param, slog in zip(args.fit_param, args.log_param):
@@ -168,7 +169,7 @@ for param, slog in zip(args.fit_param, args.log_param):
 # Copy standard data to output file
 f_dest.attrs['fit_param'] = args.fit_param
 f_dest.attrs['log_param'] = args.log_param
-with h5py.File(args.template_file, "r") as f_src:
+with HFile(args.template_file, "r") as f_src:
     f_src.copy(f_src["./"], f_dest["./"], "input_template_params")
 temp_samples = numpy.vstack((template_pars)).T
 
@@ -289,7 +290,7 @@ if args.make_signal_kde:
 
 if args.make_injection_kde:
     inj_pars = []
-    inj_file = h5py.File(args.injection_file, 'r')
+    inj_file = HFile(args.injection_file, 'r')
     f_dest.attrs['injection-file'] = args.injection_file
     snr = inj_file["events"]["snr_net"][:]
     N_original = len(snr)

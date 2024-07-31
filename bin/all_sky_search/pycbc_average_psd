@@ -24,15 +24,13 @@ the harmonic mean."""
 import logging
 import argparse
 import numpy as np
-import h5py
 import pycbc
-from pycbc.version import git_verbose_msg as version
+from pycbc.io import HFile
 from pycbc.types import MultiDetOptionAction, FrequencySeries
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=version)
 parser.add_argument('--input-files', nargs='+', required=True, metavar='PATH',
                     help='HDF5 files from pycbc_calculate_psd (one per '
                          'detector) containing the input PSDs to average.')
@@ -54,7 +52,7 @@ delta_f = None
 
 for input_file in args.input_files:
     logging.info('Reading %s', input_file)
-    f = h5py.File(input_file, 'r')
+    f = HFile(input_file, 'r')
     ifo = tuple(f.keys())[0]
     df = f[ifo + '/psds/0'].attrs['delta_f']
     if delta_f is None:

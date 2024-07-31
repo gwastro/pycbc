@@ -27,15 +27,13 @@ import h5py
 import logging
 from numpy import random
 
-import pycbc, pycbc.version
+import pycbc
 from pycbc.waveform import bank
 
 __author__  = "Soumi De <soumi.de@ligo.org>"
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                  version=pycbc.version.git_verbose_msg)
 parser.add_argument("--bank-file", type=str,
                     help="Bank hdf file to load.")
 outbanks = parser.add_mutually_exclusive_group(required=True)

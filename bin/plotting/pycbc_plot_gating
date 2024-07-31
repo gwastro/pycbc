@@ -4,7 +4,6 @@
 
 import argparse
 import logging
-import h5py
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
@@ -12,14 +11,15 @@ import pylab as pl
 from matplotlib.patches import Rectangle
 import mpld3
 import mpld3.plugins
+
+import pycbc
 from pycbc.results.color import ifo_color
 from pycbc.results.mpld3_utils import MPLSlide
-import pycbc.version
+from pycbc.io.hdf import HFile
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--input-file', nargs='+', required=True,
                     help='Single-detector inspiral HDF5 files to take gating '
                          'data from.')
@@ -27,15 +27,13 @@ parser.add_argument('--output-file', required=True,
                     help='Destination file for the plot.')
 args = parser.parse_args()
 
-log_fmt = '%(asctime)s %(message)s'
-log_date_fmt = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
+pycbc.init_logging(args.verbose)
 
 gate_data = {}
 have_gates = False
 for fn in args.input_file:
     logging.info('Reading gates from %s', fn)
-    f = h5py.File(fn, 'r')
+    f = HFile(fn, 'r')
     ifo = tuple(f.keys())[0]
     for gate_type in ['file', 'auto']:
         try:

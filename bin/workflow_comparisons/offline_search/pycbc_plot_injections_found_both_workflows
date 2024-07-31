@@ -14,19 +14,22 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+Plot histograms of ratio of IFAR and ranking statistic of injections
+between two comparable runs
+"""
 
-
-import h5py
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 
-parser = argparse.ArgumentParser()
-parser = argparse.ArgumentParser(description="Plot histograms of ratio of IFAR"
-                                 " and ranking statistic of injections between"
-                                 " two comparable runs")
+from pycbc import add_common_pycbc_options, init_logging
+from pycbc.io.hdf import HFile
+
+parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--combined-comparison-file', required=True,
                     help="HDF file holding output from"
                     " 'pycbc_combine_injection_comparisons'")
@@ -43,8 +46,10 @@ parser.add_argument('--log-y', action='store_true', default=False,
                     help='Use logarithmic y-axis')
 args = parser.parse_args()
 
+init_logging(args.verbose)
+
 # Load in the two datasets
-f = h5py.File(args.combined_comparison_file)
+f = HFile(args.combined_comparison_file)
 
 ifar_ratio = f[args.found_category]['found_in_both']['ifar']['ratio'][:]
 stat_ratio = f[args.found_category]['found_in_both']['stat']['ratio'][:]

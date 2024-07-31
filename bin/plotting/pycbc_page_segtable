@@ -21,12 +21,13 @@ import logging
 import numpy
 import pycbc.results
 import sys
+import itertools
+
 from ligo import segments
+
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import SegFile
-import pycbc.version
-import itertools
 
 def powerset_ifos(ifo_set):
     combo_set = []
@@ -36,8 +37,7 @@ def powerset_ifos(ifo_set):
 
 # parse command line
 parser = argparse.ArgumentParser()
-parser.add_argument("--version", action="version",
-                        version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--segment-files', type=str, nargs="+",
                         help='XML files with a segment definer table to read.')
 parser.add_argument('--segment-names', type=str, nargs="+", required=False, default="",
@@ -53,8 +53,7 @@ parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'],
 opts = parser.parse_args()
 
 # setup log
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    level=logging.INFO,datefmt='%I:%M:%S')
+pycbc.init_logging(opts.verbose)
 
 # create list of combinations of detectors
 ifo_combinations = powerset_ifos(opts.ifos)

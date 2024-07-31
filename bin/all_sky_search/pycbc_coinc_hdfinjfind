@@ -3,14 +3,15 @@
 files.
 """
 
-import argparse, h5py, logging, types, numpy, os.path
+import argparse, logging, types, numpy, os.path
 from ligo.lw import lsctables, utils as ligolw_utils
 from ligo import segments
+import pycbc
 from pycbc import events, init_logging
 from pycbc.events import indices_within_segments
 from pycbc.types import MultiDetOptionAction
 from pycbc.inject import CBCHDFInjectionSet
-import pycbc.version
+from pycbc.io import HFile
 from pycbc.io.ligolw import LIGOLWContentHandler
 
 
@@ -22,7 +23,7 @@ def hdf_append(f, key, value):
     else:
         f[key] = value
 
-h5py.File.append = types.MethodType(hdf_append, h5py.File)
+HFile.append = types.MethodType(hdf_append, HFile)
 
 def keep_ind(times, start, end):
     """ Return the list of indices within the list of start and end times
@@ -56,8 +57,6 @@ def xml_to_hdf(table, hdf_file, hdf_key, columns):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--trigger-files', nargs='+', required=True)
 parser.add_argument('--injection-files', nargs='+', required=True)
 parser.add_argument('--veto-file')
@@ -79,13 +78,13 @@ args = parser.parse_args()
 
 init_logging(args.verbose)
 
-fo = h5py.File(args.output_file, 'w')
+fo = HFile(args.output_file, 'w')
 
 injection_index = 0
 for trigger_file, injection_file in zip(args.trigger_files,
                                         args.injection_files):
     logging.info('Read in the coinc data: %s' % trigger_file)
-    f = h5py.File(trigger_file, 'r')
+    f = HFile(trigger_file, 'r')
 
     # Get list of groups which contain subgroup 'time'
     # - these will be the IFOs

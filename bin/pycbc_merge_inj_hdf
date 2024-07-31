@@ -27,7 +27,6 @@ import h5py
 
 import pycbc
 import pycbc.inject
-import pycbc.version
 
 
 def get_gc_end_time(injection):
@@ -45,7 +44,6 @@ def get_gc_end_time(injection):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     pycbc.add_common_pycbc_options(parser)
-    parser.add_argument("--version", action=pycbc.version.Version)
     parser.add_argument('--injection-files', '-i', dest='injection_file',
                         required=True, nargs='+',
                         help='Input HDF5 files defining injections')

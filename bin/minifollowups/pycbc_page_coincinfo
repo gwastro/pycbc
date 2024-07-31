@@ -16,7 +16,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Make tables describing a foreground event"""
 
-import h5py
 import argparse
 import logging
 import sys
@@ -28,16 +27,14 @@ import numpy
 import lal
 
 from pycbc import add_common_pycbc_options
-import pycbc.version
 import pycbc.results
 import pycbc.pnutils
+from pycbc.io.hdf import HFile
 from pycbc.events import ranking
 from pycbc.results import followup
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--single-trigger-files', nargs='+',
     help="HDF format single detector trigger files for the full data run")
 parser.add_argument('--bank-file',
@@ -78,7 +75,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
-f = h5py.File(args.statmap_file, 'r')
+f = HFile(args.statmap_file, 'r')
 d = f[args.statmap_file_subspace_name]
 
 if args.n_loudest is not None:
@@ -138,12 +135,12 @@ for ifo in ifo_list:
 # Store the single detector trigger files keyed by ifo in a dictionary
 files = {}
 for fname in args.single_trigger_files:
-    f2 = h5py.File(fname, 'r')
+    f2 = HFile(fname, 'r')
     ifos = f2.keys()
     for ifo in ifos:
         files[ifo] = f2[ifo]
 
-bank = h5py.File(args.bank_file, 'r')
+bank = HFile(args.bank_file, 'r')
 statmapfile = d
 # Data will store the values that will appear in the resulting single-detector
 # table. Each entry in data corresponds to each row in the final table and
