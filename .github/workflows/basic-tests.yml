@@ -38,11 +38,17 @@ jobs:
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
+        ; This is just to work around BBHx having some wrong dependencies
+        pip install cython
+        pip install numpy
         tox -e py-${{matrix.test-type}}
     - name: check help messages work
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$PWD
+        ; This is just to work around BBHx having some wrong dependencies
+        pip install cython
+        pip install numpy
         tox -e py-help
     - name: run inference tests
       if: matrix.test-type == 'search'
