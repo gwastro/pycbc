@@ -57,7 +57,10 @@ To plot the posterior distribution after the last iteration, you can run the fol
 
 In this example it will create the following plot:
 
-.. image:: ../../_include/lisa_smbhb_mass_tc.png
+.. warning::
+   EXAMPLE TURNED OFF FOR NOW
+.. 
+   image:: ../../_include/lisa_smbhb_mass_tc.png
    :scale: 60
    :align: center
 

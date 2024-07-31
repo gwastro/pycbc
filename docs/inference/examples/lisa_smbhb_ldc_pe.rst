@@ -61,7 +61,10 @@ Or you can run the advanced one:
 You can modify this advanced plot script to generate the posterior of any SMBHB signals in the LDC Sangria dataset. 
 In this example it will create the following plot:
 
-.. image:: ../../_include/lisa_smbhb_mass_tc_0.png
+.. warning::
+   EXAMPLE TURNED OFF FOR NOW
+.. 
+    image:: ../../_include/lisa_smbhb_mass_tc_0.png
    :scale: 60
    :align: center
 
