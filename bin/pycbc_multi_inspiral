@@ -417,9 +417,7 @@ with ctx:
     # Given the time delays wrt to IFO 0 in time_slides, create a dictionary
     # for time delay indices evaluated wrt the geocenter, in units of samples,
     # i.e. (time delay from geocenter + time slide)*sampling_rate
-    time_delays_zerolag = sky_positions.calculate_time_delays(
-        args.instruments, t_gps
-    )
+    time_delays_zerolag = sky_positions.calculate_time_delays()
     time_delay_idx = {
         slide: {
             position_index: {
@@ -588,9 +586,7 @@ with ctx:
         logging.info("Template bank size after thinning: %d", n_bank)
 
     logging.info("Calculating antenna pattern functions at every sky position")
-    antenna_pattern = sky_positions.calculate_antenna_patterns(
-        args.instruments, t_gps
-    )
+    antenna_pattern = sky_positions.calculate_antenna_patterns()
 
     logging.info("Starting the filtering...")
     # Loop over templates
