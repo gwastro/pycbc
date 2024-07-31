@@ -68,8 +68,12 @@ class SkyGrid:
                 )
             return cls.read_from_file(cli_args.sky_grid)
         if cli_args.ra is not None and cli_args.dec is not None:
-            # FIXME where do we get the detectors and ref time from?
-            return cls([cli_args.ra], [cli_args.dec])
+            return cls(
+                [cli_args.ra],
+                [cli_args.dec],
+                cli_args.instruments,
+                cli_args.trigger_time
+            )
         cli_parser.error(
             'Please specify a sky grid via --sky-grid or a single sky '
             'position via --ra and --dec'
