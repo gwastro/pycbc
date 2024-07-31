@@ -17,9 +17,10 @@ class SkyGrid:
         Parameters
         ----------
         ra: iterable of floats
-            Right ascensions for each point UNITS AND ANGULAR CONVENTION.
+            Right ascensions for each point in radians, in the interval [0,2π).
         dec: iterable of floats
-            Declination for each point UNITS AND ANGULAR CONVENTION.
+            Declination for each point in radians, where π/2 is the North pole,
+            -π/2 is the South pole, and 0 is the celestial equator.
         detectors: iterable of str
             List of detector names associated with the sky grid, typically the
             detectors for which the grid has been placed or is to be placed.
@@ -47,12 +48,13 @@ class SkyGrid:
 
     @property
     def ras(self):
-        """Returns all right ascensions."""
+        """Returns all right ascensions in radians, in the interval [0,2π)."""
         return self.positions[:, 0]
 
     @property
     def decs(self):
-        """Returns all declinations."""
+        """Returns all declinations in radians, where π/2 is the North pole,
+        -π/2 is the South pole, and 0 is the celestial equator."""
         return self.positions[:, 1]
 
     @classmethod
