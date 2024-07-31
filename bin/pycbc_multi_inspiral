@@ -79,7 +79,12 @@ def slide_limiter(args):
 time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument("--output", type=str)
+parser.add_argument(
+    "--output",
+    type=str,
+    required=True,
+    help="Path to the output file."
+)
 parser.add_argument(
     "--instruments",
     nargs="+",
@@ -87,10 +92,16 @@ parser.add_argument(
     required=True,
     help="List of instruments to analyze.",
 )
-parser.add_argument("--bank-file", type=str)
+parser.add_argument(
+    "--bank-file",
+    type=str,
+    required=True,
+    help="Path to the template bank file."
+)
 parser.add_argument(
     "--low-frequency-cutoff",
     type=float,
+    required=True,
     help="The low frequency cutoff to use for filtering (Hz).",
 )
 # Add approximant arg
@@ -203,16 +214,16 @@ parser.add_argument(
 parser.add_argument(
     "--ra",
     type=float,
-    help="Right ascension of sky point to search (radians),",
+    help="Right ascension of sky point to search (radians).",
 )
 parser.add_argument(
-    "--dec", type=float, help="Declination of sky point to search (radians),"
+    "--dec", type=float, help="Declination of sky point to search (radians)."
 )
 parser.add_argument(
     "--sky-grid",
     type=str,
-    help="Sky-grid to search, an hdf file containing two datasets: "
-    "ra and dec, both in radians",
+    help="Path to an HDF file containing the sky grid to search over, "
+    "with two datasets, ra and dec, both in radians.",
 )
 parser.add_argument(
     "--coinc-threshold",
@@ -297,8 +308,8 @@ parser.add_argument(
     help="Size of each time slide shift.",
 )
 parser.add_argument(
-        "--do-shortslides",
-        action="store_true"
+    "--do-shortslides",
+    action="store_true"
 )
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
