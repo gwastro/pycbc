@@ -689,6 +689,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         else:
             nums = 1
 
+        print("[total_loglr] sh_primary: ", sh_primary)
+        print("[total_loglr] self.primary_model.current_params: ", self.primary_model.current_params)
         margin_params = {}
         if self.static_margin_params_in_other_models:
             # Due to the high precision of extrinsic parameters constrined
@@ -701,6 +703,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # waveform. Using SNR will cancel out the effect of amplitude.err
             i_max_extrinsic = numpy.argmax(
                 numpy.abs(sh_primary) / hh_primary**0.5)
+            print("i_max_extrinsic: ", i_max_extrinsic)
             for p in self.primary_model.marginalized_params_name:
                 if isinstance(self.primary_model.current_params[p],
                               numpy.ndarray):
@@ -724,12 +727,14 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # not using self.primary_model.current_params, because others_model
             # may have its own static parameters
             current_params_other = other_model.current_params.copy()
+            print("[total_loglr] current_params_other 1: ", current_params_other)
             if not self.static_margin_params_in_other_models:
                 for i in range(nums):
                     current_params_other.update(
                         {key: value[i] if isinstance(value, numpy.ndarray)
                          else value for key, value in margin_params.items()})
                     other_model.update(**current_params_other)
+                    print("[total_loglr] current_params_other 2: ", current_params_other)
                     other_model.return_sh_hh = True
                     sh_other, hh_other = other_model.loglr
                     sh_others[i] += sh_other
@@ -744,6 +749,8 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     {key: value[0] if isinstance(value, numpy.ndarray)
                      else value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
+                print("[total_loglr] other_model.sampling_transforms: ", other_model.sampling_transforms)
+                print("[total_loglr] other_model.current_params: ", other_model.current_params)
                 other_model.return_sh_hh = True
                 sh_other, hh_other = other_model.loglr
                 other_model.return_sh_hh = False
@@ -762,8 +769,14 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
 
+        inner_dict = {
+                      'sh_others': sh_others,
+                      'hh_others': hh_others,
+                      'sh_primary': sh_primary,
+                      'hh_primary': hh_primary}
+        print(inner_dict)
+
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
-        setattr(self._current_stats, 'total_loglr', loglr)
 
         return loglr
 
@@ -902,15 +915,19 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     subcp.set('static_params', param.subname, 'REPLACE')
 
             for section in cp.sections():
+                print("[from_config] section: ", section)
+                print("[from_config] '%s__waveform_transforms' % lbl: ", '%s__waveform_transforms' % lbl)
+                print("[from_config] '%s__waveform_transforms' % lbl in section: ", '%s__waveform_transforms' % lbl in section)
                 # the primary model needs prior of marginlized parameters
                 if 'prior-' in section and lbl in kwargs['primary_lbl']:
                     prior_section = '%s' % section
                     subcp[prior_section] = cp[prior_section]
                 # if `waveform_transforms` has a prefix,
                 # add it into sub-models' config
-                elif '%s_waveform_transforms' % lbl in section:
+                elif '%s__waveform_transforms' % lbl in section:
                     transforms_section = '%s' % section
                     subcp[transforms_section] = cp[transforms_section]
+                    print("[from_config] subcp[transforms_section]: ", subcp[transforms_section])
                 else:
                     pass
 
@@ -927,6 +944,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
 
             # initialize
             submodel = read_from_config(subcp)
+            print("[from_config] submodel.sampling_transforms 1: ", submodel.sampling_transforms)
 
             if lbl not in kwargs['primary_lbl']:
                 # similar to the standard hierarchical model,
@@ -941,6 +959,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 # doesn't need marginalization
                 for p in wfparam_map[lbl]:
                     submodel.static_params.pop(p.subname)
+            print("[from_config] submodel.sampling_transforms 2: ", submodel.sampling_transforms)
             submodels[lbl] = submodel
             logging.info("")
 

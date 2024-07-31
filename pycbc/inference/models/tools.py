@@ -234,7 +234,7 @@ class DistMarg():
         if marginalize_distance:
             self.marginalized_params_name =\
                 list(self.marginalize_vector_params.keys()) +\
-                    [marginalize_distance_param]
+                [marginalize_distance_param]
 
         return variable_params, kwargs
 

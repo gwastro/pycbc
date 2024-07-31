@@ -411,6 +411,8 @@ class BaseModel(metaclass=ABCMeta):
         # add the static params
         values = self.static_params.copy()
         values.update(params)
+        print("[update] self._transform_params: ", self._transform_params)
+        print("[update] values: ", values)
         self._current_params = self._transform_params(**values)
         self._current_stats = ModelStats()
 
@@ -629,6 +631,8 @@ class BaseModel(metaclass=ABCMeta):
         """
         # apply inverse transforms to go from sampling parameters to
         # variable args
+        print("[_transform_params] self.sampling_transforms: ", self.sampling_transforms)
+        print("[_transform_params] params: ", params)
         if self.sampling_transforms is not None:
             params = self.sampling_transforms.apply(params, inverse=True)
         # apply boundary conditions
