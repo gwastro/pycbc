@@ -864,6 +864,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         submodels = {}
         logging.info("Loading submodels")
         for lbl in submodel_lbls:
+            print("lbl: ", lbl)
             logging.info("============= %s =============", lbl)
             # create a config parser to pass to the model
             subcp = WorkflowConfigParser()
@@ -887,6 +888,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                                      "individual parameter names with the "
                                      "model label. See HierarchicalParam for "
                                      "details.".format(sec))
+                print("[from_config] sec.subname: ", sec.subname)
                 subcp.add_section(sec.subname)
                 for opt, val in cp.items(sec):
                     subcp.set(sec.subname, opt, val)
@@ -915,21 +917,10 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     subcp.set('static_params', param.subname, 'REPLACE')
 
             for section in cp.sections():
-                print("[from_config] section: ", section)
-                print("[from_config] '%s__waveform_transforms' % lbl: ", '%s__waveform_transforms' % lbl)
-                print("[from_config] '%s__waveform_transforms' % lbl in section: ", '%s__waveform_transforms' % lbl in section)
                 # the primary model needs prior of marginlized parameters
                 if 'prior-' in section and lbl in kwargs['primary_lbl']:
                     prior_section = '%s' % section
                     subcp[prior_section] = cp[prior_section]
-                # if `waveform_transforms` has a prefix,
-                # add it into sub-models' config
-                elif '%s__waveform_transforms' % lbl in section:
-                    transforms_section = '%s' % section
-                    subcp[transforms_section] = cp[transforms_section]
-                    print("[from_config] subcp[transforms_section]: ", subcp[transforms_section])
-                else:
-                    pass
 
             # similar to the standard hierarchical model,
             # add the outputs from the waveform transforms if sub-model
@@ -938,6 +929,7 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 for param in wfparam_map[lbl]:
                     subcp.set('static_params', param.subname, 'REPLACE')
 
+            print("[from_config] subcp.sections(): ", subcp.sections())
             # save the vitual config file to disk for later check
             with open('%s.ini' % lbl, 'w', encoding='utf-8') as file:
                 subcp.write(file)

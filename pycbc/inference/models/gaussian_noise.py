@@ -109,6 +109,8 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
                                                 static_params=static_params,
                                                 no_save_data=no_save_data,
                                                 **kwargs)
+        print("[BaseGaussianNoise __init__] self.sampling_transforms :", self.sampling_transforms)
+        print("[BaseGaussianNoise __init__] self.waveform_transforms :", self.waveform_transforms)
         self.ignore_failed_waveforms = ignore_failed_waveforms
         self.no_save_data = no_save_data
         # check if low frequency cutoff has been provided for every IFO with
@@ -536,6 +538,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
             All additional keyword arguments are passed to the class. Any
             provided keyword will override what is in the config file.
         """
+        print("[BaseGaussianNoise from_config] cp.sections() :", cp.sections())
         # get the injection file, to replace any FROM_INJECTION settings
         if 'injection-file' in cp.options('data'):
             injection_file = cp.get('data', 'injection-file')
@@ -617,6 +620,7 @@ class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
         if gates:
             args['gates'] = gates
         args.update(kwargs)
+        print("[BaseGaussianNoise from_config] args: ", args)
         return cls(**args)
 
 
