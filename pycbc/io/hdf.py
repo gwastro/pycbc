@@ -49,7 +49,8 @@ class HGroup(h5py.Group):
         """
         Wrapper around h5py's create_dataset so that checksums are used
         """
-        kwds['fletcher32'] = True
+        if hasattr(data, 'dtype') and not data.dtype == object:
+            kwds['fletcher32'] = True
         return h5py.Group.create_dataset(
             self,
             name,
