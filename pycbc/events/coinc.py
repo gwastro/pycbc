@@ -1406,14 +1406,17 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         Start a thread managing whether the stat_calculator will be updated
         """
         if self.statistic_refresh_rate is None:
+            logger.info(
+                "Statistic refresh disabled for %s", ppdets(self.ifos, "-")
+            )
             return
         thread = threading.Thread(
             target=self.refresh_statistic,
-            daemon=True
+            daemon=True,
+            name="Stat refresh " + ppdets(self.ifos, "-")
         )
         logger.info(
-            "Starting %s statistic refresh thread",
-            ''.join(self.ifos),
+            "Starting %s statistic refresh thread", ppdets(self.ifos, "-")
         )
         thread.start()
 
