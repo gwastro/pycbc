@@ -1431,7 +1431,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 self.time_stat_refreshed = timemod.time()
                 logger.info(
                     "Checking %s statistic for updated files",
-                    ''.join(self.ifos),
+                    ppdets(self.ifos, "-"),
                 )
                 with self.stat_calculator_lock:
                     self.stat_calculator.check_update_files()
@@ -1441,12 +1441,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             since_stat_refresh = timemod.time() - self.time_stat_refreshed
             logger.debug(
                 "%s statistic: Waiting %.3fs for next refresh",
-                ''.join(self.ifos),
+                ppdets(self.ifos, "-"),
                 self.statistic_refresh_rate - since_stat_refresh,
             )
-            timemod.sleep(
-                self.statistic_refresh_rate - since_stat_refresh + 1
-            )
+            timemod.sleep(self.statistic_refresh_rate - since_stat_refresh + 1)
 
 
 __all__ = [
