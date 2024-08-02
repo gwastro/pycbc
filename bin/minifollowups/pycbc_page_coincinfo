@@ -83,6 +83,7 @@ if args.ranking_statistic not in ['quadsum', 'single_ranking_only']:
         "this option will be ignored",
         args.ranking_statistic
     )
+    args.ranking_statistic = 'quadsum'
 
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
 f = HFile(args.statmap_file, 'r')
