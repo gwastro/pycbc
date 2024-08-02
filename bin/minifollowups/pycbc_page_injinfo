@@ -35,6 +35,8 @@ parser.add_argument('--injection-index', type=int, required=True,
     help="The index of the injection to print out. Required")
 parser.add_argument('--n-nearest', type=int,
     help="Optional, used in the title")
+parser.add_argument('--max-columns', type=int,
+    help="Optional, maximum number of columns used for the table")
 
 args = parser.parse_args()
 
@@ -127,7 +129,7 @@ for p in params:
     headers += [labels[p]]
 
 table = numpy.array([data], dtype=str)
-html = str(pycbc.results.static_table(table, headers))
+html = str(pycbc.results.static_table(table, headers, columns_max=args.max_columns))
 
 tag = ''
 if args.n_nearest is not None:

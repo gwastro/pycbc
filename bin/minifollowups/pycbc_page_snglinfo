@@ -68,6 +68,8 @@ parser.add_argument('--include-gracedb-link', action='store_true',
 parser.add_argument('--significance-file',
     help="If given, will search for this trigger's id in the file to see if "
          "stat and p_astro values exists for this trigger.")
+parser.add_argument('--max-columns', type=int,
+    help="Optional. Set a maximum number of columns to be used in the output table")
 pystat.insert_statistic_option_group(parser,
     default_ranking_statistic='single_ranking_only')
 
@@ -117,7 +119,7 @@ if args.n_loudest is not None:
     sngl_file.apply_mask(l[0])
 
 # make a table for the single detector information ############################
-time = sngl_file.end_time
+time = sngl_file.end_time[0]
 utc = lal.GPSToUTC(int(time))[0:6]
 
 # Headers here will contain the list of headers that will appear in the
@@ -128,6 +130,8 @@ headers = []
 # that corresponding to the selected trigger. So this will be a list of a
 # single list that will hold the values to go into the table.
 data = [[]]
+
+row_labels = [args.instrument]
 
 # DQ summary link
 if args.include_summary_page_link:
@@ -141,11 +145,10 @@ headers.append("UTC")
 headers.append("End&nbsp;time")
 
 # SNR and statistic
-data[0].append('%5.2f' % sngl_file.snr)
-data[0].append('%5.2f' % sngl_file.get_column('coa_phase'))
-data[0].append('%5.2f' % stat)
 headers.append("&rho;")
+data[0].append('%5.2f' % sngl_file.snr[0])
 headers.append("Phase")
+data[0].append('%5.2f' % sngl_file.get_column('coa_phase')[0])
 # Determine statistic naming
 if args.sngl_ranking == "newsnr":
     sngl_stat_name = "Reweighted SNR"
@@ -169,30 +172,31 @@ else:
     )
 
 headers.append(stat_name)
+data[0].append('%5.2f' % stat[0])
 
 # Signal-glitch discrimators
-data[0].append('%5.2f' % sngl_file.rchisq)
-data[0].append('%i' % sngl_file.get_column('chisq_dof'))
+data[0].append('%5.2f' % sngl_file.rchisq[0])
+data[0].append('%i' % sngl_file.get_column('chisq_dof')[0])
 headers.append("&chi;<sup>2</sup><sub>r</sub>")
 headers.append("&chi;<sup>2</sup>&nbsp;bins")
 try:
-    data[0].append('%5.2f' % sngl_file.sgchisq)
+    data[0].append('%5.2f' % sngl_file.sgchisq[0])
     headers.append("sg&chi;<sup>2</sup>")
 except:
     pass
 try:
-    data[0].append('%5.2f' % sngl_file.psd_var_val)
+    data[0].append('%5.2f' % sngl_file.psd_var_val[0])
     headers.append("PSD var")
 except:
     pass
 
 # Template parameters
-data[0].append('%5.2f' % sngl_file.mass1)
-data[0].append('%5.2f' % sngl_file.mass2)
-data[0].append('%5.2f' % sngl_file.mchirp)
-data[0].append('%5.2f' % sngl_file.spin1z)
-data[0].append('%5.2f' % sngl_file.spin2z)
-data[0].append('%5.2f' % sngl_file.template_duration)
+data[0].append('%5.2f' % sngl_file.mass1[0])
+data[0].append('%5.2f' % sngl_file.mass2[0])
+data[0].append('%5.2f' % sngl_file.mchirp[0])
+data[0].append('%5.2f' % sngl_file.spin1z[0])
+data[0].append('%5.2f' % sngl_file.spin2z[0])
+data[0].append('%5.2f' % sngl_file.template_duration[0])
 headers.append("m<sub>1</sub>")
 headers.append("m<sub>2</sub>")
 headers.append("M<sub>c</sub>")
@@ -221,7 +225,7 @@ if args.include_gracedb_link:
     data[0].append(gdb_search_link)
 
 html = pycbc.results.dq.redirect_javascript + \
-        str(pycbc.results.static_table(data, headers))
+        str(pycbc.results.static_table(data, headers, row_labels=row_labels, columns_max=args.max_columns))
 ###############################################################################
 
 # Set up default titles and the captions for the file

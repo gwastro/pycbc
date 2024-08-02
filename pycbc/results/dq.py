@@ -22,21 +22,13 @@ search_form_string="""<form name="%s_alog_search" id="%s_alog_search" method="po
 <input type="hidden" name="srcDateTo" id="srcDateTo" value="%s" size="20"/>
 </form>"""
 
-data_h1_string = """H1
-&nbsp;
-<a href=https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/%s>
-Summary</a>
-&nbsp;
-<a onclick="redirect('h1_alog_search',
+data_h1_string = """<a href=https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/%s>
+Summary</a>&nbsp;<a onclick="redirect('h1_alog_search',
 'https://alog.ligo-wa.caltech.edu/aLOG/includes/search.php?adminType=search');
 return true;">aLOG</a>"""
 
-data_l1_string="""L1
-&nbsp;
-<a href=https://ldas-jobs.ligo-la.caltech.edu/~detchar/summary/day/%s>
-Summary</a>
-&nbsp;
-<a onclick="redirect('l1_alog_search',
+data_l1_string="""<a href=https://ldas-jobs.ligo-la.caltech.edu/~detchar/summary/day/%s>
+Summary</a>&nbsp;<a onclick="redirect('l1_alog_search',
 'https://alog.ligo-la.caltech.edu/aLOG/includes/search.php?adminType=search');
 return true;">aLOG</a>"""
 
