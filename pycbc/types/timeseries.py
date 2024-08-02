@@ -243,12 +243,13 @@ class TimeSeries(Array):
 
     def at_time(self, time, nearest_sample=False,
                 interpolate=None, extrapolate=None):
-        """ Return the value of the TimeSeries at the specified GPS time.
+        """Return the value of the TimeSeries at the specified GPS time.
 
         Parameters
         ----------
         time: scalar or array-like
-            GPS time at which the value is wanted.
+            GPS time at which the value is wanted. Note that LIGOTimeGPS
+            objects counts as a scalar.
         nearest_sample: bool
             Return the sample at the time nearest to the chosen time rather
             than rounded down.
