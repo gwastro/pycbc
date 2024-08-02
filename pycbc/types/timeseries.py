@@ -256,7 +256,7 @@ class TimeSeries(Array):
             Return the interpolated value of the time series. Choices
             are simple linear or quadratic interpolation.
         extrapolate: str or float, None
-            Value to return if time is outsidde the range of the vector or
+            Value to return if time is outside the range of the vector or
             method of extrapolating the value.
         """
         if nearest_sample:
@@ -280,7 +280,7 @@ class TimeSeries(Array):
                 keep_idx = _numpy.where(left & right)[0]
                 vtime = vtime[keep_idx]
             else:
-                raise ValueError(f"Unsuported extrapolate: {extrapolate}")
+                raise ValueError(f"Unsupported extrapolate: {extrapolate}")
 
         fi = (vtime - float(self.start_time)) * self.sample_rate
         i = _numpy.asarray(_numpy.floor(fi)).astype(int)
