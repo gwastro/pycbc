@@ -77,6 +77,13 @@ pystat.insert_statistic_option_group(parser,
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
+if args.ranking_statistic not in ['quadsum', 'single_ranking_only']:
+    logging.warning(
+        "For the coincident info table, we only use single ranking, not %s, "
+        "this option will be ignored",
+        args.ranking_statistic
+    )
+
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
 f = HFile(args.statmap_file, 'r')
 d = f[args.statmap_file_subspace_name]
@@ -191,12 +198,6 @@ for ifo in files.keys():
     headers.append("UTC&nbsp;End&nbsp;Time")
     headers.append("GPS&nbsp;End&nbsp;time")
 
-    # SNR and phase (not showing any single-det stat here)
-    data[-1].append('%5.2f' % d['snr'][i])
-    data[-1].append('%5.2f' % d['coa_phase'][i])
-    #data[-1].append('%5.2f' % ranking.newsnr(d['snr'][i], rchisq))
-    headers.append("&rho;")
-    headers.append("Phase")
     #headers.append("Stat")
     # Determine statistic naming
     if args.sngl_ranking == "newsnr":
@@ -210,20 +211,16 @@ for ifo in files.keys():
     else:
         sngl_stat_name = args.sngl_ranking
 
-    if args.ranking_statistic in ["quadsum", "single_ranking_only"]:
-        stat_name = sngl_stat_name
-        stat_name_long = sngl_stat_name
-    else:
-        # Name would be too long - just call it ranking statistic
-        stat_name = 'Ranking Statistic'
-        stat_name_long = ' with '.join(
-            [args.ranking_statistic, args.sngl_ranking]
-        )
-    sds = rank_method.single(trig_dict)
-    stat = rank_method.rank_stat_single((ifo, sds))
-    headers.append(stat_name)
+    stat = rank_method.get_sngl_ranking(trig_dict)
+    headers.append(sngl_stat_name)
     data[-1].append('%5.2f' % stat[0])
 
+    # SNR and phase (not showing any single-det stat here)
+    data[-1].append('%5.2f' % d['snr'][i])
+    data[-1].append('%5.2f' % d['coa_phase'][i])
+    #data[-1].append('%5.2f' % ranking.newsnr(d['snr'][i], rchisq))
+    headers.append("&rho;")
+    headers.append("Phase")
     # Signal-glitch discrimators
     data[-1].append('%5.2f' % rchisq)
     data[-1].append('%i' % d['chisq_dof'][i])
