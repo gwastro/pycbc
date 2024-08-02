@@ -243,10 +243,12 @@ class TimeSeries(Array):
 
     def at_time(self, time, nearest_sample=False,
                 interpolate=None, extrapolate=None):
-        """ Return the value at the specified gps time
+        """ Return the value of the TimeSeries at the specified GPS time.
 
         Parameters
         ----------
+        time: scalar or array-like
+            GPS time at which the value is wanted.
         nearest_sample: bool
             Return the sample at the time nearest to the chosen time rather
             than rounded down.
@@ -278,9 +280,9 @@ class TimeSeries(Array):
                 keep_idx = _numpy.where(left & right)[0]
                 vtime = vtime[keep_idx]
             else:
-                raise ValueError("Unsuported extrapolate: %s" % extrapolate)
+                raise ValueError(f"Unsuported extrapolate: {extrapolate}")
 
-        fi = (vtime - float(self.start_time))*self.sample_rate
+        fi = (vtime - float(self.start_time)) * self.sample_rate
         i = _numpy.asarray(_numpy.floor(fi)).astype(int)
         di = fi - i
 
@@ -305,10 +307,9 @@ class TimeSeries(Array):
             ans[keep_idx] = old
             ans = _numpy.array(ans, ndmin=1)
 
-        if _numpy.isscalar(time):
+        if _numpy.ndim(time) == 0:
             return ans[0]
-        else:
-            return ans
+        return ans
 
     at_times = at_time
 
