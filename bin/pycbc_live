@@ -821,7 +821,7 @@ def check_max_length(args, waveforms):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.waveform.bank.add_approximant_arg(parser)
-parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--verbose', action='count')
 parser.add_argument('--version', action='version', version=version.git_verbose_msg)
 parser.add_argument('--bank-file', required=True,
                     help="Template bank file in XML or HDF format")
