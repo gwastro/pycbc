@@ -28,7 +28,40 @@ from pycbc.events import mean_if_greater_than_zero
 logger = logging.getLogger('pycbc.io.hdf')
 
 
-class HFile(h5py.File):
+class HGroup(h5py.Group):
+    """ Low level extensions to the h5py group object
+    """
+    def create_group(self, name, track_order=None):
+        """
+        Wrapper around h5py's create_group in order to redirect to the
+        manual HGroup object defined here
+        """
+        if track_order is None:
+            track_order = h5py.h5.get_config().track_order
+
+        with h5py._objects.phil:
+            name, lcpl = self._e(name, lcpl=True)
+            gcpl = HGroup._gcpl_crt_order if track_order else None
+            gid = h5py.h5g.create(self.id, name, lcpl=lcpl, gcpl=gcpl)
+            return HGroup(gid)
+
+    def create_dataset(self, name, shape=None, dtype=None, data=None, **kwds):
+        """
+        Wrapper around h5py's create_dataset so that checksums are used
+        """
+        if hasattr(data, 'dtype') and not data.dtype == object:
+            kwds['fletcher32'] = True
+        return h5py.Group.create_dataset(
+            self,
+            name,
+            shape=shape,
+            dtype=dtype,
+            data=data,
+            **kwds
+        )
+
+
+class HFile(HGroup, h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
     def select(self, fcn, *args, chunksize=10**6, derived=None, group='',
