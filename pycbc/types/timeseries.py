@@ -249,7 +249,7 @@ class TimeSeries(Array):
         ----------
         time: scalar or array-like
             GPS time at which the value is wanted. Note that LIGOTimeGPS
-            objects counts as a scalar.
+            objects count as scalar.
         nearest_sample: bool
             Return the sample at the time nearest to the chosen time rather
             than rounded down.
