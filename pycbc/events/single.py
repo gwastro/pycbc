@@ -3,7 +3,6 @@
 import logging
 import copy
 import threading
-from datetime import datetime as dt
 import time
 import numpy as np
 
@@ -76,7 +75,7 @@ class LiveSingle(object):
         self.fixed_ifar = fixed_ifar
         self.maximum_ifar = maximum_ifar
 
-        self.time_stat_refreshed = dt.now()
+        self.time_stat_refreshed = time.time()
         self.stat_calculator_lock = threading.Lock()
         self.statistic_refresh_rate = statistic_refresh_rate
 
@@ -360,9 +359,13 @@ class LiveSingle(object):
         """
         Start a thread managing whether the stat_calculator will be updated
         """
+        if self.statistic_refresh_rate is None:
+            logger.info("Statistic refresh disabled for %s", self.ifo)
+            return
         thread = threading.Thread(
             target=self.refresh_statistic,
-            daemon=True
+            daemon=True,
+            name="Stat refresh " + self.ifo
         )
         logger.info("Starting %s statistic refresh thread", self.ifo)
         thread.start()
@@ -373,26 +376,21 @@ class LiveSingle(object):
         """
         while True:
             # How long since the statistic was last updated?
-            since_stat_refresh = \
-                (dt.now() - self.time_stat_refreshed).total_seconds()
+            since_stat_refresh = time.time() - self.time_stat_refreshed
             if since_stat_refresh > self.statistic_refresh_rate:
-                self.time_stat_refreshed = dt.now()
+                self.time_stat_refreshed = time.time()
                 logger.info(
-                    "Checking %s statistic for updated files",
-                    self.ifo,
+                    "Checking %s statistic for updated files", self.ifo
                 )
                 with self.stat_calculator_lock:
                     self.stat_calculator.check_update_files()
             # Sleep one second for safety
             time.sleep(1)
             # Now use the time it took the check / update the statistic
-            since_stat_refresh = \
-                (dt.now() - self.time_stat_refreshed).total_seconds()
+            since_stat_refresh = time.time() - self.time_stat_refreshed
             logger.debug(
                 "%s statistic: Waiting %.3fs for next refresh",
                 self.ifo,
                 self.statistic_refresh_rate - since_stat_refresh
             )
-            time.sleep(
-                self.statistic_refresh_rate - since_stat_refresh
-            )
+            time.sleep(self.statistic_refresh_rate - since_stat_refresh)

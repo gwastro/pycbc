@@ -1049,7 +1049,8 @@ parser.add_argument('--psd-variation', action='store_true',
                          "the search. Required when using a single detector "
                          "ranking statistic that includes psd variation.")
 parser.add_argument("--statistic-refresh-rate", type=float,
-                    help="How often to refresh the statistic object")
+                    help="How often to refresh the statistic object, "
+                         "in seconds. If omitted, no refreshing is done.")
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
