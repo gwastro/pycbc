@@ -219,7 +219,6 @@ for ifo in files.keys():
     # SNR and phase (not showing any single-det stat here)
     data[-1].append('%5.2f' % d['snr'][i])
     data[-1].append('%5.2f' % d['coa_phase'][i])
-    #data[-1].append('%5.2f' % ranking.newsnr(d['snr'][i], rchisq))
     headers.append("&rho;")
     headers.append("Phase")
     # Signal-glitch discrimators

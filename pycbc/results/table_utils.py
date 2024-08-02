@@ -150,6 +150,9 @@ def static_table(data, titles=None, columns_max=None, row_labels=None):
         Vector str of titles, must be the same length as data
     columns_max : integer or None
         If given, will restrict the number of columns in the table
+    row_labels : list of strings
+        Optional list of row labels to be given as the first cell in
+        each data row. Does not count towards columns_max
 
     Returns
     -------
