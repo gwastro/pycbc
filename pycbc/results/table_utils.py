@@ -161,11 +161,15 @@ def static_table(data, titles=None, columns_max=None, row_labels=None):
     """
     data = copy.deepcopy(data)
     titles = copy.deepcopy(titles)
+    row_labels = copy.deepcopy(row_labels)
     drows, dcols = numpy.array(data).shape
     if titles is not None and not len(titles) == dcols:
-            raise RuntimeError("titles and data lengths do not match")
+        raise ValueError("titles and data lengths do not match")
+
     if row_labels is not None and not len(row_labels) == drows:
-        raise RuntimeError("row labels must be the same number of rows supplied to data")
+        raise ValueError(
+            "row_labels must be the same number of rows supplied to data"
+        )
 
     if columns_max is not None:
         n_rows = int(numpy.ceil(len(data[0]) / columns_max))
