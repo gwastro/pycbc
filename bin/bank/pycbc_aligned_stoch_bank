@@ -25,7 +25,6 @@ import numpy
 import logging
 
 import pycbc
-import pycbc.version
 from pycbc import tmpltbank
 # Old ligolw output functions no longer imported at package level
 import pycbc.tmpltbank.bank_output_utils as bank_output
@@ -35,17 +34,12 @@ import pycbc.strain
 from pycbc.pnutils import named_frequency_cutoffs
 
 
-__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
-__version__ = pycbc.version.git_verbose_msg
-__program__ = "pycbc_aligned_stoch_bank"
-
 # Read command line option
 _desc = __doc__[1:]
 parser = argparse.ArgumentParser(description=_desc,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
-parser.add_argument("--version", action="version", version=__version__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
                     help="Use a variable upper frequency cutoff in laying "

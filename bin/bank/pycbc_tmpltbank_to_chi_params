@@ -32,12 +32,12 @@ __program__ = "pycbc_bank_verification"
 import argparse
 import logging
 import numpy
-import h5py
 
 from ligo.lw import lsctables, utils as ligolw_utils
 
 from pycbc import tmpltbank, psd, strain
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.hdf import HFile
 
 
 # Read command line option
@@ -45,7 +45,6 @@ parser = argparse.ArgumentParser(description=__doc__,
            formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
 
 # Begin with code specific options
-parser.add_argument("--version", action="version", version=__version__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--input-bank", action="store", required=True,
                     help="The template bank to use an input.")
@@ -149,7 +148,7 @@ if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
     spin1z = [template.spin1z for template in template_list]
     spin2z = [template.spin2z for template in template_list]
 elif opts.input_bank.endswith(('.h5','.hdf','.hdf5')):
-    h5_fp = h5py.File(opts.input_bank, 'r')
+    h5_fp = HFile(opts.input_bank, 'r')
     mass1 = h5_fp['mass1'][:]
     mass2 = h5_fp['mass2'][:]
     spin1z = h5_fp['spin1z'][:]

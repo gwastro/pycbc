@@ -26,7 +26,6 @@ import pylab
 import numpy
 
 from pycbc import init_logging, add_common_pycbc_options
-import pycbc.version
 import pycbc.results
 from pycbc.types import MultiDetOptionAction
 from pycbc.events import ranking
@@ -34,8 +33,6 @@ from pycbc.io import HFile, SingleDetTriggers
 
 parser = argparse.ArgumentParser()
 add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--single-trigger-files', nargs='+',
     action=MultiDetOptionAction, metavar="IFO:FILE",
     help="The HDF format single detector merged trigger files, in "

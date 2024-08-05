@@ -28,6 +28,8 @@ utilities.
 
 import logging
 from math import sqrt
+import numpy
+
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import complex_same_precision_as, real_same_precision_as
 from pycbc.fft import fft, ifft, IFFT
@@ -35,7 +37,8 @@ import pycbc.scheme
 from pycbc import events
 from pycbc.events import ranking
 import pycbc
-import numpy
+
+logger = logging.getLogger('pycbc.filter.matchedfilter')
 
 BACKEND_PREFIX="pycbc.filter.matchedfilter_"
 
@@ -276,7 +279,7 @@ class MatchedFilterControl(object):
         if len(idx) == 0:
             return [], [], [], [], []
 
-        logging.info("%s points above threshold" % str(len(idx)))
+        logger.info("%d points above threshold", len(idx))
 
         snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
@@ -323,7 +326,7 @@ class MatchedFilterControl(object):
         if len(idx) == 0:
             return [], [], [], [], []
 
-        logging.info("%s points above threshold" % str(len(idx)))
+        logger.info("%d points above threshold", len(idx))
 
         snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
@@ -366,7 +369,7 @@ class MatchedFilterControl(object):
         self.ifft.execute()
         idx, snrv = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
                                           self.snr_threshold / norm)
-        logging.info("%s points above threshold" % str(len(idx)))
+        logger.info("%d points above threshold", len(idx))
 
         snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
@@ -426,8 +429,8 @@ class MatchedFilterControl(object):
             return [], None, [], [], []
 
         idx_red, _ = events.cluster_reduce(idx_red, snrv_red, window / self.downsample_factor)
-        logging.info("%s points above threshold at reduced resolution"\
-                      %(str(len(idx_red)),))
+        logger.info("%d points above threshold at reduced resolution",
+                    len(idx_red))
 
         # The fancy upsampling is here
         if self.upsample_method=='pruned_fft':
@@ -463,7 +466,7 @@ class MatchedFilterControl(object):
             else:
                 idx, snrv = [], []
 
-            logging.info("%s points at full rate and clustering" % len(idx))
+            logger.info("%d points at full rate and clustering", len(idx))
             return self.snr_mem, norm, self.corr_mem_full, idx, snrv
         else:
             raise ValueError("Invalid upsample method")
@@ -953,11 +956,11 @@ class MatchedFilterSkyMaxControl(object):
 
         if len(idx) == 0:
             return [], 0, 0, [], [], [], [], 0, 0, 0
-        logging.info("%s points above threshold", str(len(idx)))
+        logger.info("%d points above threshold", len(idx))
 
 
         idx, snrv = events.cluster_reduce(idx, snrv, window)
-        logging.info("%s clustered points", str(len(idx)))
+        logger.info("%d clustered points", len(idx))
         # erased self.
         u_vals, coa_phase = self._maximized_extrinsic_params\
             (I_plus.data, I_cross.data, hplus_cross_corr,
@@ -1759,8 +1762,8 @@ class LiveBatchMatchedFilter(object):
             # We have an SNR so high that we will drop the entire analysis
             # of this chunk of time!
             if self.snr_abort_threshold is not None and s > self.snr_abort_threshold:
-                logging.info("We are seeing some *really* high SNRs, lets"
-                             " assume they aren't signals and just give up")
+                logger.info("We are seeing some *really* high SNRs, let's "
+                            "assume they aren't signals and just give up")
                 return False, []
 
             veto_info.append((snrv, norm, l, htilde, stilde))
@@ -1978,8 +1981,8 @@ def followup_event_significance(ifo, data_reader, bank,
                       peak_full + half_dur_samples + 1)
     baysnr = snr[snr_slice]
 
-    logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
-                 pvalue, nsamples)
+    logger.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
+                pvalue, nsamples)
 
     return {
         'snr_series': baysnr * norm,

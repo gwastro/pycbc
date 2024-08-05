@@ -32,6 +32,8 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 import logging
 import random
 import string
+import importlib.util
+import importlib.machinery
 from datetime import datetime as dt
 
 try:
@@ -39,9 +41,11 @@ try:
     # before version.py has been generated.
     from .version import git_hash
     from .version import version as pycbc_version
+    from .version import PyCBCVersionAction
 except:
     git_hash = 'none'
     pycbc_version = 'none'
+    PyCBCVersionAction = None
 
 __version__ = pycbc_version
 
@@ -79,14 +83,26 @@ def add_common_pycbc_options(parser):
         title="PyCBC common options",
         description="Common options for PyCBC executables.",
     )
-    group.add_argument('-v', '--verbose', action='count', default=0,
-                       help='Add verbosity to logging. Adding the option '
-                            'multiple times makes logging progressively '
-                            'more verbose, e.g. --verbose or -v provides '
-                            'logging at the info level, but -vv or '
-                            '--verbose --verbose provides debug logging.')
+    group.add_argument(
+        '-v',
+        '--verbose',
+        action='count',
+        default=0,
+        help=(
+            'Add verbosity to logging. Adding the option '
+            'multiple times makes logging progressively '
+            'more verbose, e.g. --verbose or -v provides '
+            'logging at the info level, but -vv or '
+            '--verbose --verbose provides debug logging.'
+        )
+    )
+    group.add_argument(
+        '--version',
+        action=PyCBCVersionAction,
+    )
 
-def init_logging(verbose=False,
+
+def init_logging(verbose=False, default_level=0, to_file=None,
                  format='%(asctime)s %(levelname)s : %(message)s'):
     """Common utility for setting up logging in PyCBC.
 
@@ -100,6 +116,12 @@ def init_logging(verbose=False,
         or an integer representing the level to set. If True/False will set to
         ``logging.INFO``/``logging.WARN``. For higher logging levels, pass
         an integer representing the level to set. (1 = INFO, 2 = DEBUG).
+    default_level : int, optional
+        The default level, to be added to any verbose option if it is an
+        integer, or set to this value if it is None or False
+    to_file : filepath
+        Set up logging to a file instead of the stderr. File will be
+        overwritten if it already exists.
     format : str, optional
         The format to use for logging messages.
     """
@@ -119,11 +141,15 @@ def init_logging(verbose=False,
     # See https://docs.python.org/3/library/logging.html#levels
     # for log level definitions
     logger = logging.getLogger()
-    verbose_int = 0 if verbose is None else int(verbose)
+    verbose_int = default_level if verbose is None \
+        else int(verbose) + default_level
     logger.setLevel(logging.WARNING - verbose_int * 10)  # Initial setting
-    sh = logging.StreamHandler()
-    logger.addHandler(sh)
-    sh.setFormatter(LogFormatter(fmt=format))
+    if to_file is not None:
+        handler = logging.FileHandler(to_file, mode='w')
+    else:
+        handler = logging.StreamHandler()
+    logger.addHandler(handler)
+    handler.setFormatter(LogFormatter(fmt=format))
 
 
 def makedir(path):
@@ -203,3 +229,16 @@ def gps_now():
     from astropy.time import Time
 
     return float(Time.now().gps)
+
+# This is needed as a backwards compatibility. The function was removed in
+# python 3.12.
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename,
+                                                  loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module

@@ -24,8 +24,10 @@
 """ This module contains functions for calculating and manipulating coherent
 triggers.
 """
-
+import logging
 import numpy as np
+
+logger = logging.getLogger('pycbc.events.coherent')
 
 
 def get_coinc_indexes(idx_dict, time_delay_idx):

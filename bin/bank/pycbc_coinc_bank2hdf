@@ -55,8 +55,6 @@ def parse_parameters(parameters):
     return outnames, columns
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--bank-file', required=True,
                     help="The bank file to load. Must end in '.xml[.gz]' "

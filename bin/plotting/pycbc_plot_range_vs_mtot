@@ -4,21 +4,36 @@
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import h5py, numpy, argparse, sys, math
-import pycbc.results, pycbc.types, pycbc.version, pycbc.waveform, pycbc.filter
+import numpy
+import argparse
+import sys
+import math
+
+import pycbc.results
+import pycbc.types
+import pycbc.waveform
+import pycbc.filter
+from pycbc.io.hdf import HFile
 
 from pycbc.fft.fftw import set_measure_level
 set_measure_level(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--version", action='version', version=pycbc.version.git_verbose_msg)
-parser.add_argument("--psd-files", nargs='+', help='HDF file of psds')
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument("--psd-files", nargs='+',
+                    help='HDF file of psds')
 parser.add_argument("--output-file", help='output file name')
-parser.add_argument("--min_mtot", nargs="+", help="Minimum total mass for range", type=float)
-parser.add_argument("--max_mtot", nargs="+", help="Maximum total mass for range", type=float)
-parser.add_argument("--d_mtot", nargs="+", help="Delta total mass for range ", type=float)
-parser.add_argument("--approximant", nargs="+", help="approximant to use for range")
+parser.add_argument("--min_mtot", nargs="+", type=float,
+                    help="Minimum total mass for range")
+parser.add_argument("--max_mtot", nargs="+", type=float,
+                    help="Maximum total mass for range")
+parser.add_argument("--d_mtot", nargs="+", type=float,
+                    help="Delta total mass for range ")
+parser.add_argument("--approximant", nargs="+",
+                    help="approximant to use for range")
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 canonical_snr = 8.0
 
@@ -28,7 +43,7 @@ plt.ylabel('Inspiral Range (Mpc)')
 plt.grid() 
 
 for psd_file in args.psd_files:
-    f = h5py.File(psd_file, 'r')
+    f = HFile(psd_file, 'r')
     ifo = tuple(f.keys())[0]
     flow = f.attrs['low_frequency_cutoff']
     keys = f[ifo + '/psds'].keys()

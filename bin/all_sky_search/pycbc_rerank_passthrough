@@ -1,11 +1,10 @@
 #!/bin/env python
 """Dummy script to pass through stat files and test reranking"""
-import h5py, numpy, argparse, logging, pycbc
+import numpy, argparse, logging, pycbc
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--output-file',
     help="File containing the newly assigned statistic values")
 
@@ -23,9 +22,9 @@ args, unknown = parser.parse_known_args()
 
 pycbc.init_logging(args.verbose)
 
-ofile = h5py.File(args.output_file, 'w')
+ofile = HFile(args.output_file, 'w')
 
-f = h5py.File(args.input_file, 'r')
+f = HFile(args.input_file, 'r')
 start = 0 if args.start_index is None else args.start_index
 end = len(f['time']) if args.end_index is None else args.end_index
 stride = args.stride

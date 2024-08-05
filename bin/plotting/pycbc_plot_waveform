@@ -23,17 +23,16 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+
 from pycbc import waveform, io
-from pycbc import version
 from pycbc import results
+from pycbc import init_logging, add_common_pycbc_options
 from pycbc.fft import ifft
 from pycbc.types import complex_same_precision_as
 from pycbc.types import TimeSeries, zeros, complex64
 
-parser = argparse.ArgumentParser(usage='',
-    description="Plot a waveform in both time and frequency domain.")
-parser.add_argument('--version', action='version',
-                    version=version.git_verbose_msg)
+parser = argparse.ArgumentParser(usage='', description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument('--output-file', required=True)
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for generation.")
@@ -88,6 +87,8 @@ parser.add_argument('--plot-caption',
                     help="If given, use this as the plot caption")
 
 opt = parser.parse_args()
+
+init_logging(opt.verbose)
 
 delta_f = 1. / opt.waveform_length
 delta_t = 1. / opt.sample_rate

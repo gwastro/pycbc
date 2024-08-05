@@ -31,18 +31,18 @@ import pylab as pl
 import matplotlib.mlab as mlab
 from matplotlib.colors import LogNorm
 from matplotlib.ticker import LogLocator
+
+import pycbc
 from pycbc.io import HFile
 import pycbc.events
 import pycbc.pnutils
 import pycbc.strain
 import pycbc.results
-import pycbc.version
 import pycbc.waveform
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--trig-file', required=True,
                     help='HDF5 file containing single triggers')
 parser.add_argument('--output-file', required=True, help='Output plot')
@@ -70,7 +70,7 @@ pycbc.waveform.bank.add_approximant_arg(parser,
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+pycbc.init_logging(opts.verbose)
 
 if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.

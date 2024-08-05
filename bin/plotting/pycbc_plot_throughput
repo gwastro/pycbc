@@ -2,17 +2,19 @@
 
 import argparse
 import logging
-import h5py
 import numpy as np
-import matplotlib; matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 import pylab as pl
-from pycbc.results.color import ifo_color
-import pycbc.version
+
 from scipy.stats import hmean
 
+import pycbc
+from pycbc.results.color import ifo_color
+from pycbc.io.hdf import HFile
+
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--input-file', nargs='+', required=True,
                     help='Single-detector inspiral HDF5 files to get '
                     'templates per core.')
@@ -21,10 +23,12 @@ parser.add_argument('--output-file', required=True,
 parser.add_argument('--duration-weighted', action="store_true")
 args = parser.parse_args()
 
+pycbc.init_logging(args.verbose)
+
 fig, (ax1, ax2, ax3) = pl.subplots(3,1,figsize=(10,10))
 
 for pa in args.input_file:
-    f = h5py.File(pa, 'r')
+    f = HFile(pa, 'r')
     ifo = tuple(f.keys())[0]
 
     dur = f['%s/search/end_time' % ifo][:] - f['%s/search/start_time' % ifo][:]

@@ -39,7 +39,7 @@ from pycbc.filter import overlap_cplx, matched_filter
 from pycbc.filter import compute_max_snr_over_sky_loc_stat
 from pycbc.filter import compute_max_snr_over_sky_loc_stat_no_phase
 from pycbc.io.ligolw import LIGOLWContentHandler
-import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain, pycbc.version
+import pycbc.psd, pycbc.scheme, pycbc.fft, pycbc.strain
 from pycbc.detector import overhead_antenna_pattern as generate_fplus_fcross
 from pycbc.waveform import TemplateBank
 
@@ -153,8 +153,6 @@ parser = ArgumentParser(description=__doc__)
 parser.add_argument("--match-file", dest="out_file", metavar="FILE",
                     required=True, help="File to output match results")
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
 
 #Template Settings
 parser.add_argument("--template-file", dest="bank_file", metavar="FILE",

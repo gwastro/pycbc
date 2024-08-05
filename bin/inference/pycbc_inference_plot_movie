@@ -53,7 +53,6 @@ from matplotlib import pyplot
 
 import pycbc.results
 from pycbc import conversions
-from pycbc import __version__
 from pycbc.inference import (option_utils, io)
 
 from pycbc.results.scatter_histograms import (create_multidim_plot,
@@ -111,8 +110,6 @@ def integer_logspace(start, end, num):
 skip_args = ['thin-start', 'thin-interval', 'thin-end', 'iteration']
 parser = io.ResultsArgumentParser(description=__doc__, skip_args=skip_args)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=__version__,
-                    help="show version number and exit")
 # make frame number and frame step mutually exclusive
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--frame-number", type=int,

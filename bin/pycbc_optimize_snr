@@ -6,7 +6,6 @@ import os
 import argparse
 import logging
 import numpy
-import h5py
 
 # we will make plots on a likely headless machine, so make sure matplotlib's
 # backend is set appropriately
@@ -15,12 +14,12 @@ mpl_use_backend('agg')
 
 import pycbc
 from pycbc import (
-    fft, scheme, version
+    fft, scheme
 )
 from pycbc.types import MultiDetOptionAction, load_frequencyseries
 import pycbc.conversions as cv
-from pycbc.io.live import CandidateForGraceDB
-from pycbc.io.hdf import load_hdf5_to_dict
+from pycbc.io.gracedb import CandidateForGraceDB
+from pycbc.io.hdf import load_hdf5_to_dict, HFile
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
 from pycbc.live import snr_optimizer
@@ -28,8 +27,6 @@ from pycbc.live import snr_optimizer
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-                    version=version.git_verbose_msg)
 parser.add_argument('--params-file', required=True,
                     help='Location of the attributes file created by PyCBC '
                          'Live')
@@ -108,7 +105,7 @@ for ifo in ifos:
     data[ifo] = load_frequencyseries(args.data_files[ifo])
     data[ifo].psd = load_frequencyseries(args.psd_files[ifo])
 
-fp = h5py.File(args.params_file, 'r')
+fp = HFile(args.params_file, 'r')
 original_gid = None
 if 'gid' in fp:
     original_gid = fp['gid'].asstr()[()]

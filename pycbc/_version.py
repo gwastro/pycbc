@@ -25,6 +25,9 @@ import glob
 import argparse
 import inspect
 import subprocess
+import logging
+
+logger = logging.getLogger('pycbc._version')
 
 
 def print_link(library):
@@ -72,40 +75,82 @@ def get_lal_info(module, lib_glob):
     return version_str
 
 
-class Version(argparse.Action):
-    """Subclass of argparse.Action that prints version information for PyCBC,
-    LAL and LALSimulation.
+class PyCBCVersionAction(argparse._StoreAction):
+    """Subclass of argparse._StoreAction that prints version information for
+    PyCBC, and for LAL and LALSimulation depending on an integer variable.
+    Can be supplied without the option
     """
-    def __init__(self, nargs=0, **kw):
-        super(Version, self).__init__(nargs=nargs, **kw)
+    default_help = (
+        'Display PyCBC version information and exit. '
+        'Can optionally supply a modifier integer to control the '
+        'verbosity of the version information. 0 and 1 are the '
+        'same as --version; 2 provides more detailed PyCBC library '
+        'information; 3 provides information about PyCBC, '
+        'LAL and LALSimulation packages (if installed)'
+    )
 
-    def __call__(self, parser, namespace, values, option_string=None):
-        import pycbc
-
-        version_str = (
-            "--- PyCBC Version --------------------------\n" +
-            pycbc.version.git_verbose_msg +
-            "\n\nImported from: " + inspect.getfile(pycbc)
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 help=default_help,
+                 **kw):
+        argparse._StoreAction.__init__(
+            self,
+            option_strings,
+            dest=dest,
+            nargs='?',
+            help=help,
+            type=int,
+            **kw,
         )
 
-        version_str += "\n\n--- LAL Version ----------------------------\n"
-        try:
-            import lal.git_version
-        except ImportError:
-            version_str += "\nLAL not installed in environment\n"
-        else:
-            version_str += get_lal_info(lal, '_lal*.so')
+    def __call__(self, parser, namespace, values, option_string=None):
+        version_no = 0 if values is None else values
+        import pycbc
+        setattr(namespace, self.dest, version_no)
+        if version_no <= 1:
+            # --version called with zero or default - return the
+            # simple version string
+            version_str = "PyCBC version: " + pycbc.version.version
+        if version_no > 1:
+            # --version with flag above 1 - return the verbose version string
+            version_str = (
+                "--- PyCBC Version --------------------------\n" +
+                pycbc.version.git_verbose_msg
+            )
+        if version_no > 2:
+            # --version called more than twice - print all version information
+            # possible
+            import __main__
+            version_str += (
+                "\n\nCurrent Executable: " + __main__.__file__ +
+                "\nImported from: " + inspect.getfile(pycbc) +
+                "\n\n--- LAL Version ----------------------------\n"
+            )
 
-        version_str += "\n\n--- LALSimulation Version-------------------\n"
-        try:
-            import lalsimulation.git_version
-        except ImportError:
-            version_str += "\nLALSimulation not installed in environment\n"
-        else:
-            version_str += get_lal_info(lalsimulation, '_lalsimulation*.so')
+            try:
+                import lal.git_version
+            except ImportError:
+                version_str += "\nLAL not installed in environment\n"
+            else:
+                version_str += get_lal_info(
+                    lal,
+                    '_lal*.so'
+                )
+
+            version_str += "\n\n--- LALSimulation Version-------------------\n"
+            try:
+                import lalsimulation.git_version
+            except ImportError:
+                version_str += "\nLALSimulation not installed in environment\n"
+            else:
+                version_str += get_lal_info(
+                    lalsimulation,
+                    '_lalsimulation*.so'
+                )
 
         print(version_str)
         sys.exit(0)
 
 
-__all__ = ['Version']
+__all__ = ['PyCBCVersionAction']

@@ -29,9 +29,10 @@ import numpy as np
 
 import pycbc
 import lal
-from pycbc.io.live import gracedb_tag_with_version
+from pycbc.io.gracedb import gracedb_tag_with_version
 
 parser = argparse.ArgumentParser(description=__doc__)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--xml-file-for-upload', required=True, type=str,
                     help='LIGOLW XML file containing the event.')
 parser.add_argument('--log-message', type=str, metavar='MESSAGE',
@@ -62,7 +63,8 @@ parser.add_argument('--labels', nargs='+',
 
 args = parser.parse_args()
 
-pycbc.init_logging(logging.INFO)
+# Default logging level is info: --verbose adds to this
+pycbc.init_logging(args.verbose, default_level=1)
 # Make the scitokens logger a little quieter
 # (it is called through GraceDB)
 logging.getLogger('scitokens').setLevel(logging.root.level + 10)

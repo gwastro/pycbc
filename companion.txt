@@ -27,6 +27,5 @@ setproctitle
 sympy>=1.9
 
 # Needed for KDE trigger statistics
-# FIXME Tito's fork to fix an awkde build error on Python 3.11
-git+https://github.com/titodalcanton/awkde.git@py311_fix
+git+https://github.com/mennthor/awkde.git@master
 scikit-learn

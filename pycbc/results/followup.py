@@ -24,7 +24,7 @@
 """ This module provides functions to generate followup plots and trigger
 time series.
 """
-import h5py, numpy, matplotlib
+import numpy, matplotlib
 # Only if a backend is not already set ... This should really *not* be done
 # here, but in the executables you should set matplotlib.use()
 # This matches the check that matplotlib does internally, but this *may* be
@@ -35,6 +35,7 @@ if 'matplotlib.backends' not in sys.modules:
     matplotlib.use('agg')
 import pylab, mpld3, mpld3.plugins
 from ligo.segments import segment
+from pycbc.io.hdf import HFile
 
 def columns_from_file_list(file_list, columns, ifo, start, end):
     """ Return columns of information stored in single detector trigger
@@ -64,7 +65,7 @@ def columns_from_file_list(file_list, columns, ifo, start, end):
 
     trig_dict = {}
     for trig_file in file_list:
-        f = h5py.File(trig_file.storage_path, 'r')
+        f = HFile(trig_file.storage_path, 'r')
 
         time = f['end_time'][:]
         pick = numpy.logical_and(time < end, time > start)
@@ -81,7 +82,7 @@ ifo_color = {'H1': 'blue', 'L1':'red', 'V1':'green'}
 
 def coinc_timeseries_plot(coinc_file, start, end):
     fig = pylab.figure()
-    f = h5py.File(coinc_file, 'r')
+    f = HFile(coinc_file, 'r')
 
     stat1 = f['foreground/stat1']
     stat2 = f['foreground/stat2']

@@ -49,7 +49,7 @@ elif _scheme == 'cpu':
 
 from numpy import ndarray as CPUArray
 
-class TestTimeSeriesBase(array_base,unittest.TestCase):
+class TestTimeSeriesBase(array_base, unittest.TestCase):
     __test__ = False
     def setUp(self):
         self.scheme = _scheme
@@ -481,10 +481,10 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
         a = TimeSeries([0, 1, 2, 3, 4, 5, 6, 7], delta_t=1.0)
 
         self.assertAlmostEqual(a.at_time(0.5), 0.0)
-        self.assertAlmostEqual(a.at_time(0.6,  nearest_sample=True), 1.0)
+        self.assertAlmostEqual(a.at_time(0.6, nearest_sample=True), 1.0)
         self.assertAlmostEqual(a.at_time(0.5, interpolate='linear'), 0.5)
-        self.assertAlmostEqual(a.at_time([2.5],
-                               interpolate='quadratic'), 2.5)
+        self.assertAlmostEqual(a.at_time([2.5], interpolate='quadratic'), 2.5)
+        self.assertAlmostEqual(a.at_time(lal.LIGOTimeGPS(2.1)), 2.0)
 
         i = numpy.array([-0.2, 0.5, 1.5, 7.0])
 
@@ -503,6 +503,11 @@ class TestTimeSeriesBase(array_base,unittest.TestCase):
         x = a.at_time(i, extrapolate=0, interpolate='quadratic')
         n = numpy.array([0, 0.0, 1.5, 0.0])
         self.assertAlmostEqual((x-n).sum(), 0)
+
+        # Check that the output corresponds to input being scalar/array.
+        self.assertEqual(numpy.ndim(a.at_time(0.5)), 0)
+        self.assertEqual(numpy.ndim(a.at_time(lal.LIGOTimeGPS(2.1))), 0)
+        self.assertEqual(numpy.ndim(a.at_time(i)), 1)
 
     def test_inject(self):
         a = TimeSeries(numpy.zeros(2**20, dtype=numpy.float32),

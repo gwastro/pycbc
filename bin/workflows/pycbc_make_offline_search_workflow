@@ -22,18 +22,22 @@ finding and ranking then generate post-processing
 and plots.
 """
 import pycbc
-import pycbc.version
-__version__ = pycbc.version.git_verbose_msg
-__date__    = pycbc.version.date
-__program__ = "pycbc_offline"
 
 import sys
 import socket
-import pycbc.events, pycbc.workflow as wf
-import os, argparse, logging
+import os
+import argparse
+import logging
 import configparser as ConfigParser
+import numpy
+import datetime
+import itertools
+
+import lal
 from ligo import segments
-import numpy, lal, datetime, itertools
+
+import pycbc.events
+import pycbc.workflow as wf
 from pycbc.results import static_table, layout, save_fig_with_metadata
 from pycbc.results.metadata import html_escape
 
@@ -144,16 +148,13 @@ def check_stop(job_name, container, workflow, finalize_workflow):
 
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', version=__version__)
-parser.add_argument('--verbose', action='count',
-    help="Incrementally add more verbosity")
+pycbc.add_common_pycbc_options(parser)
 wf.add_workflow_command_line_group(parser)
 wf.add_workflow_settings_cli(parser)
 args = parser.parse_args()
 
-# By default, we do logging.info, each --verbose adds a level of verbosity
-logging_level = args.verbose + 1 if args.verbose else 1
-pycbc.init_logging(logging_level)
+# Default logging level is info: --verbose adds to this 
+pycbc.init_logging(args.verbose, default_level=1)
 
 container = wf.Workflow(args, args.workflow_name)
 workflow = wf.Workflow(args, args.workflow_name + '-main')
@@ -176,20 +177,13 @@ rdir = layout.SectionNumber('results', ['analysis_time',
 wf.makedir(rdir.base)
 wf.makedir(rdir['workflow'])
 
+# We are _also_ logging to a file
 wf_log_file = wf.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
                       extension='.txt',
                       directory=rdir['workflow'])
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    filename=wf_log_file.storage_path,
-                    level=logging.INFO,
-                    filemode='w')
-
-logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
-logfile.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
-logfile.setFormatter(formatter)
-logging.getLogger('').addHandler(logfile)
+pycbc.init_logging(args.verbose, default_level=1,
+                   to_file=wf_log_file.storage_path)
 logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # put start / end time at top of summary page

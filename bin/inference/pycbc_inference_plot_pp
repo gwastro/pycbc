@@ -38,13 +38,9 @@ import pycbc.results.plot
 from pycbc.results import save_fig_with_metadata
 from pycbc.inference import (option_utils, io)
 
-from pycbc import __version__
-
 # parse command line
 parser = io.ResultsArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__,
-                    help='show version number and exit')
 parser.add_argument("--output-file", required=True, type=str,
                     help="Path to save output plot.")
 parser.add_argument("--injection-hdf-group", default="injections",

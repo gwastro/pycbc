@@ -5,15 +5,21 @@ test posterior model.
 import sys
 import numpy
 import argparse
-from matplotlib import use; use('Agg')
+from matplotlib import use
+use('Agg')
 import pylab
+
+from scipy.stats import gaussian_kde, ks_2samp
+
 from pycbc.distributions.utils import prior_from_config
 from pycbc.inference import models, io
-from scipy.stats import gaussian_kde, ks_2samp
 from pycbc.io import FieldArray
+from pycbc import add_common_pycbc_options, init_logging
+
 numpy.random.seed(0)
 
 parser = argparse.ArgumentParser()
+add_common_pycbc_options(parser)
 parser.add_argument('--input-file', help='inference posterior file')
 parser.add_argument('--output-file', help='diagnostic plot')
 parser.add_argument('--p-value-threshold', help='minimum ks test p-value',
@@ -21,6 +27,8 @@ parser.add_argument('--p-value-threshold', help='minimum ks test p-value',
 parser.add_argument('--ind-samples', help='use only this number of samples',
                     default=1000, type=int)
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 size = int(1e6)
 d1 = io.loadfile(args.input_file, 'r')

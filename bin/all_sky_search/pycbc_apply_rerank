@@ -2,15 +2,14 @@
 """Rewrite statmap file and rerank candidates using the statistic values
 generated from the followup of candidates.
 """
-import h5py, numpy, argparse, logging, pycbc
+import numpy, argparse, logging, pycbc
+from pycbc.io import HFile
 from pycbc.conversions import sec_to_year
 from pycbc.events import significance
 from shutil import copyfile
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version',
-    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--stat-files', nargs='+',
     help="Statistic files produced by candidate followup codes")
 parser.add_argument('--followup-file',
@@ -29,7 +28,7 @@ pycbc.init_logging(args.verbose)
 significance.check_significance_options(args, parser)
 
 # Reconstruct the full set of statistic values for our candidates
-f = h5py.File(args.followup_file, 'r')
+f = HFile(args.followup_file, 'r')
 num = len(f['offsets']) # Number of followups done
 
 # Mapping between the followups done and the original candidate list
@@ -42,7 +41,7 @@ sections = f.attrs['sections']
 values = []
 starts = []
 for fname in args.stat_files:
-    f = h5py.File(fname, 'r')
+    f = HFile(fname, 'r')
     s = f.attrs['start_index']
     v = f['stat'][:]
     stride = f.attrs['stride']
@@ -52,7 +51,7 @@ stats = stats[inv]
 # copy statmap file to output since we'll
 # only make a few modifications
 copyfile(args.statmap_file, args.output_file)
-o = h5py.File(args.output_file)
+o = HFile(args.output_file)
 
 ifo_combo = o.attrs['ifos'].replace(' ','')
 
@@ -74,7 +73,7 @@ background_time_exc = o.attrs['background_time_exc']
 
 # Injection run
 if args.ranking_file:
-    f = h5py.File(args.ranking_file, 'r')
+    f = HFile(args.ranking_file, 'r')
     fstat = o['foreground/stat'][:]
     backstat = f['background_exc/stat'][:]
     dec = f['background_exc/decimation_factor'][:]

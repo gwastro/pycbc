@@ -16,17 +16,20 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import h5py
 import numpy
 import sys
-import lal
-import matplotlib as mpl; mpl.use('Agg')
-import pylab
-import pycbc.results
-import pycbc.version
 import copy
-from pycbc.events import veto
+import pylab
+import matplotlib as mpl
+mpl.use('Agg')
+
 from ligo import segments
+
+from pycbc import init_logging, add_common_pycbc_options
+import pycbc.results
+from pycbc.events import veto
+from pycbc import conversions as conv
+from pycbc.io import HFile
 
 def calculate_time_slide_duration(pifo_segments, fifo_segments, offset=0):
    ''' Returns the amount of coincident time between two segmentlists.
@@ -47,8 +50,7 @@ parser = argparse.ArgumentParser(usage='pycbc_page_ifar [--options]',
                     description='Plots a cumulative histogram of IFAR for'
                           'coincident foreground triggers and a subset of' 
                           'the coincident time slide triggers.')
-parser.add_argument('--version', action='version',
-                    version=pycbc.version.git_verbose_msg)
+add_common_pycbc_options(parser)
 parser.add_argument('--trigger-file', type=str, required=True,
                     help='Path to coincident trigger HDF file.')
 parser.add_argument('--output-file', type=str, required=True,
@@ -88,8 +90,10 @@ parser.add_argument('--open-box', action='store_true', default=False,
                     help='Show the foreground triggers on the output plot. ')
 opts = parser.parse_args()
 
+init_logging(opts.verbose)
+
 # read file
-fp = h5py.File(opts.trigger_file, 'r')
+fp = HFile(opts.trigger_file, 'r')
 
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = opts.use_hierarchical_level
@@ -151,7 +155,7 @@ if opts.open_box:
 
 # get expected foreground IFAR values and cumulative number for each IFAR value
 expected_ifar = numpy.logspace(-8, 2, num=100, endpoint=True, base=10.0)
-expected_cumnum = fp.attrs['foreground_time'] / expected_ifar / lal.YRJUL_SI 
+expected_cumnum = conv.sec_to_year(fp.attrs['foreground_time'] / expected_ifar)
 
 # get background timeslide IDs and IFAR values
 

@@ -33,6 +33,7 @@ from matplotlib import pyplot as plt
 from matplotlib import rc
 import numpy
 import scipy
+
 import pycbc.version
 from pycbc import init_logging
 from pycbc.detector import Detector
@@ -53,7 +54,7 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # Functions
 # =============================================================================
 # Function to load trigger data
-def load_data(input_file, ifos, vetoes, opts, injections=False):
+def load_data(input_file, ifos, vetoes, opts, injections=False, slide_id=None):
     """Load data from a trigger/injection file"""
 
     # Initialize the dictionary
@@ -74,6 +75,7 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
                 ifos,
                 vetoes,
                 rw_snr_threshold=opts.newsnr_threshold,
+                slide_id=slide_id
             )
         else:
             logging.info("Loading triggers...")
@@ -82,6 +84,7 @@ def load_data(input_file, ifos, vetoes, opts, injections=False):
                 ifos,
                 vetoes,
                 rw_snr_threshold=opts.newsnr_threshold,
+                slide_id=slide_id
             )
 
         # Load SNR data
@@ -163,9 +166,7 @@ def plot_deviation(percentile, snr_grid, y, ax, style):
 # =============================================================================
 # Main script starts here
 # =============================================================================
-parser = ppu.pygrb_initialize_plot_parser(
-    description=__doc__, version=__version__
-)
+parser = ppu.pygrb_initialize_plot_parser(description=__doc__)
 parser.add_argument(
     "-t",
     "--trig-file",
@@ -187,7 +188,9 @@ parser.add_argument(
     help="Output file a zoomed in version of the plot.",
 )
 ppu.pygrb_add_bestnr_cut_opt(parser)
+ppu.pygrb_add_slide_opts(parser)
 opts = parser.parse_args()
+ppu.slide_opts_helper(opts)
 
 init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
@@ -233,10 +236,10 @@ ifos, vetoes = ppu.extract_ifos_and_vetoes(
 )
 
 # Extract trigger data
-trig_data = load_data(trig_file, ifos, vetoes, opts)
+trig_data = load_data(trig_file, ifos, vetoes, opts, slide_id=opts.slide_id)
 
 # Extract (or initialize) injection data
-inj_data = load_data(found_file, ifos, vetoes, opts, injections=True)
+inj_data = load_data(found_file, ifos, vetoes, opts, injections=True, slide_id=0)
 
 # Generate plots
 logging.info("Plotting...")

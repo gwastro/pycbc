@@ -2,9 +2,10 @@
 import argparse, logging, h5py, numpy as np
 from ligo.segments import infinity
 from numpy.random import seed, shuffle
+
+import pycbc
 from pycbc.events import veto, coinc, stat
 import pycbc.conversions as conv
-import pycbc.version
 from pycbc import io
 from pycbc.events import cuts, trigger_fits as trfits
 from pycbc.events.veto import indices_outside_times
@@ -13,8 +14,6 @@ from pycbc import init_logging
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action='version',
-                    version=pycbc.version.git_verbose_msg)
 # Basic file input options
 parser.add_argument("--trigger-files", type=str, nargs=1,
                     help="File containing single-detector triggers")
@@ -45,6 +44,16 @@ parser.add_argument('--cluster-window', type=float,
                          'Default=do not cluster')
 parser.add_argument("--output-file",
                     help="File to store the candidate triggers")
+parser.add_argument("--loudest-keep-values",
+                    default='[6:1]',
+                    help="Apply successive multiplicative levels of"
+                         " decimation to coincs with stat value below the"
+                         " given thresholds. Supply as a comma-separated list"
+                         " of threshold:decimation value pairs surrounded by"
+                         " square brackets (no spaces!). Decimation values must"
+                         " be positive integers."
+                         " Ex. [15:5,10:30,5:30,0:30]."
+                         " Default: no decimation")
 stat.insert_statistic_option_group(parser)
 cuts.insert_cuts_option_group(parser)
 args = parser.parse_args()
@@ -118,8 +127,9 @@ template_ids = cuts.apply_template_cuts(
 logging.info("%d out of %d templates kept after applying template cuts",
              len(template_ids), original_bank_len)
 
-logging.info('Clustering events over %s s window within each template',
-             args.cluster_window)
+if args.cluster_window is not None:
+  logging.info('Clustering events over %s s window within each template',
+               args.cluster_window)
 
 extra_kwargs = {}
 for inputstr in args.statistic_keywords:
@@ -132,8 +142,36 @@ for inputstr in args.statistic_keywords:
                   "Received {}".format(args.statistic_keywords)
         raise ValueError(err_txt)
 
+loudest_keep_vals = args.loudest_keep_values.strip('[]').split(',')
 
-for tnum in template_ids:
+threshes = []
+factors = []
+tot_fac = 1
+for decstr in loudest_keep_vals:
+    thresh, factor = decstr.split(':')
+    if float(factor) % 1:
+        raise RuntimeError("Non-integer decimation is not supported")
+    if int(factor) < 1:
+        raise RuntimeError("Negative or zero decimation does not make sense")
+    if int(factor) == 1:
+        continue
+    tot_fac *= float(factor)
+    threshes.append(float(thresh))
+    factors.append(tot_fac)
+
+# Sort the threshes into descending order
+# - allows decimation factors to be given in any order
+threshorder = np.argsort(threshes)[::-1]
+threshes = np.array(threshes)[threshorder]
+factors = np.array(factors)[threshorder]
+
+
+for i, tnum in enumerate(template_ids):
+    if i % 1000 == 0:
+        logging.info(
+            "Calculating statistic in template %d out of %d",
+            i, len(template_ids),
+        )
     tids_uncut = trigs.set_template(tnum)
 
     trigger_keep_ids = cuts.apply_trigger_cuts(trigs, trigger_cut_dict,
@@ -145,14 +183,15 @@ for tnum in template_ids:
                       len(tids_uncut) - len(tids_full))
 
     n_tot_trigs = tids_full.size
-    if not n_tot_trigs: continue
+    if n_tot_trigs == 0:
+        continue
 
     # Stat class instance to calculate the ranking statistic
     sds = rank_method.single(trigs)[trigger_keep_ids]
     stat_t = rank_method.rank_stat_single((ifo, sds),
                                           **extra_kwargs)
     trigger_times = sds['end_time']
-    if args.cluster_window:
+    if args.cluster_window is not None:
         cid = coinc.cluster_over_time(stat_t, trigger_times,
                                       args.cluster_window)
         stat_t = stat_t[cid]
@@ -164,8 +203,43 @@ for tnum in template_ids:
     trigger_times_all += list(trigger_times)
     stat_all += list(stat_t)
 
+# Perform decimation
+dec_facs = np.ones_like(template_ids_all)
+stat_all = np.array(stat_all)
+template_ids_all = np.array(template_ids_all)
+trigger_ids_all = np.array(trigger_ids_all)
+trigger_times_all = np.array(trigger_times_all)
+
+logging.info("%d events", dec_facs.size)
+for t, f in zip(threshes, factors):
+    # Find the events with statistic above the threshold - these will be kept:
+    abovethresh = stat_all >= t
+    # Any events below threshold, change decimation factor to the current one
+    belowthresh = np.logical_not(abovethresh)
+    dec_facs[belowthresh] = f
+
+    # Also keep events with trigger id as an integer multiple of the factor
+    # Work out which events would be kept whatever happens
+    factor_idx = trigger_ids_all % f == 0
+    # Keep events which are above threshold or a trigger_id multiple of
+    # the factor
+    keep = np.logical_or(abovethresh, factor_idx)
+    # Do the cuts:
+    dec_facs = dec_facs[keep]
+    stat_all = stat_all[keep]
+    template_ids_all = template_ids_all[keep]
+    trigger_ids_all = trigger_ids_all[keep]
+    trigger_times_all = trigger_times_all[keep]
+
+    logging.info(
+        "%d events after decimation at statistic %.3f with factor %d",
+        dec_facs.size,
+        t,
+        f
+    )
+
 data = {"stat": stat_all,
-        "decimation_factor": np.ones_like(stat_all),
+        "decimation_factor": dec_facs,
         "timeslide_id": np.zeros_like(stat_all),
         "template_id": template_ids_all,
         "%s/time" % ifo : trigger_times_all,

@@ -10,7 +10,7 @@ import pickle
 
 from itertools import chain
 from io import BytesIO
-from lal import LIGOTimeGPS, YRJUL_SI
+from lal import LIGOTimeGPS
 
 from ligo.lw import ligolw
 from ligo.lw import lsctables
@@ -25,8 +25,43 @@ from pycbc import events, conversions, pnutils
 from pycbc.events import ranking, veto
 from pycbc.events import mean_if_greater_than_zero
 
+logger = logging.getLogger('pycbc.io.hdf')
 
-class HFile(h5py.File):
+
+class HGroup(h5py.Group):
+    """ Low level extensions to the h5py group object
+    """
+    def create_group(self, name, track_order=None):
+        """
+        Wrapper around h5py's create_group in order to redirect to the
+        manual HGroup object defined here
+        """
+        if track_order is None:
+            track_order = h5py.h5.get_config().track_order
+
+        with h5py._objects.phil:
+            name, lcpl = self._e(name, lcpl=True)
+            gcpl = HGroup._gcpl_crt_order if track_order else None
+            gid = h5py.h5g.create(self.id, name, lcpl=lcpl, gcpl=gcpl)
+            return HGroup(gid)
+
+    def create_dataset(self, name, shape=None, dtype=None, data=None, **kwds):
+        """
+        Wrapper around h5py's create_dataset so that checksums are used
+        """
+        if hasattr(data, 'dtype') and not data.dtype == object:
+            kwds['fletcher32'] = True
+        return h5py.Group.create_dataset(
+            self,
+            name,
+            shape=shape,
+            dtype=dtype,
+            data=data,
+            **kwds
+        )
+
+
+class HFile(HGroup, h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
     def select(self, fcn, *args, chunksize=10**6, derived=None, group='',
@@ -238,8 +273,8 @@ class DictArray(object):
 
     def __add__(self, other):
         if self.data == {}:
-            logging.debug('Adding data to a DictArray instance which'
-                          ' was initialized with an empty dict')
+            logger.debug('Adding data to a DictArray instance which '
+                         'was initialized with an empty dict')
             return self._return(data=other)
 
         data = {}
@@ -247,7 +282,7 @@ class DictArray(object):
             try:
                 data[k] = np.concatenate([self.data[k], other.data[k]])
             except KeyError:
-                logging.info('%s does not exist in other data' % k)
+                logger.info('%s does not exist in other data', k)
         return self._return(data=data)
 
     def select(self, idx):
@@ -459,7 +494,7 @@ class DataFromFiles(object):
             Values from the dataset, filtered if requested and
             concatenated in order of file list
         """
-        logging.info('getting %s' % col)
+        logger.info('getting %s', col)
         vals = []
         for f in self.files:
             d = FileData(f, group=self.group, columnlist=self.columns,
@@ -468,7 +503,7 @@ class DataFromFiles(object):
             # Close each file since h5py has an upper limit on the number of
             # open file objects (approx. 1000)
             d.close()
-        logging.info('- got %i values' % sum(len(v) for v in vals))
+        logger.info('- got %i values', sum(len(v) for v in vals))
         return np.concatenate(vals)
 
 
@@ -513,14 +548,14 @@ class SingleDetTriggers(object):
         chunksize : int , default 10**6
             Size of chunks to read in for the filter_rank / threshold.
         """
-        logging.info('Loading triggers')
+        logger.info('Loading triggers')
         self.trigs_f = HFile(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
         self.ntriggers = self.trigs['end_time'].size
         self.ifo = detector  # convenience attributes
         self.detector = detector
         if bank_file:
-            logging.info('Loading bank')
+            logger.info('Loading bank')
             self.bank = HFile(bank_file, 'r')
         else:
             # empty dict in place of non-existent hdf file
@@ -538,8 +573,8 @@ class SingleDetTriggers(object):
 
         if filter_rank:
             assert filter_threshold is not None
-            logging.info("Applying threshold of %.3f on %s",
-                         filter_threshold, filter_rank)
+            logger.info("Applying threshold of %.3f on %s",
+                        filter_threshold, filter_rank)
             fcn_dsets = (ranking.sngls_ranking_function_dict[filter_rank],
                          ranking.required_datasets[filter_rank])
             idx, _ = self.trigs_f.select(
@@ -551,7 +586,7 @@ class SingleDetTriggers(object):
                  group=detector,
                  chunksize=chunksize,
             )
-            logging.info("%d triggers remain", idx.size)
+            logger.info("%d triggers remain", idx.size)
             # If self.mask already has values, need to take these into account:
             self.and_masks(idx)
 
@@ -559,10 +594,10 @@ class SingleDetTriggers(object):
             # Apply a filter on the triggers which is _not_ a ranking statistic
             for rank_str in ranking.sngls_ranking_function_dict.keys():
                 if f'self.{rank_str}' in filter_func:
-                    logging.warning('Supplying the ranking (%s) in '
-                                    'filter_func is inefficient, suggest to '
-                                    'use filter_rank instead.', rank_str)
-            logging.info('Setting up filter function')
+                    logger.warning('Supplying the ranking (%s) in '
+                                   'filter_func is inefficient, suggest to '
+                                   'use filter_rank instead.', rank_str)
+            logger.info('Setting up filter function')
             for c in self.trigs.keys():
                 if c in filter_func:
                     setattr(self, '_'+c, self.trigs[c][:])
@@ -578,22 +613,22 @@ class SingleDetTriggers(object):
                 if c in filter_func: delattr(self, '_'+c)
 
             self.apply_mask(filter_mask)
-            logging.info('%i triggers remain after cut on %s',
-                         sum(self.mask), filter_func)
+            logger.info('%i triggers remain after cut on %s',
+                        sum(self.mask), filter_func)
 
         if veto_file:
-            logging.info('Applying veto segments')
+            logger.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
             # giving the surviving triggers
-            logging.info('%i triggers before vetoes', self.mask_size)
+            logger.info('%i triggers before vetoes', self.mask_size)
             veto_mask, _ = events.veto.indices_outside_segments(
                 self.end_time, [veto_file],
                 ifo=detector, segment_name=segment_name)
 
             # Update mask accordingly
             self.apply_mask(veto_mask)
-            logging.info('%i triggers remain after vetoes',
-                         self.mask_size)
+            logger.info('%i triggers remain after vetoes',
+                        self.mask_size)
 
     def __getitem__(self, key):
         # Is key in the TRIGGER_MERGE file?
@@ -624,6 +659,7 @@ class SingleDetTriggers(object):
                     mtrigs[k] = self.trigs[k][self.mask]
                 else:
                     mtrigs[k] = self.trigs[k][:]
+        mtrigs['ifo'] = self.ifo
         return mtrigs
 
     @classmethod
@@ -685,39 +721,44 @@ class SingleDetTriggers(object):
         self.mask[and_indices.astype(np.uint64)] = True
 
     def mask_to_n_loudest_clustered_events(self, rank_method,
-                                           ranking_threshold=6,
+                                           statistic_threshold=None,
                                            n_loudest=10,
-                                           cluster_window=10):
+                                           cluster_window=10,
+                                           statistic_kwargs=None):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic.
 
         Events are clustered so that no more than 1 event within +/-
         cluster_window will be considered. Can apply a threshold on the
-        ranking using ranking_threshold
+        statistic using statistic_threshold
         """
 
+        if statistic_kwargs is None:
+            statistic_kwargs = {}
         sds = rank_method.single(self.trig_dict())
-        stat = rank_method.rank_stat_single((self.ifo, sds))
+        stat = rank_method.rank_stat_single(
+            (self.ifo, sds),
+            **statistic_kwargs
+        )
         if len(stat) == 0:
             # No triggers at all, so just return here
             self.apply_mask(np.array([], dtype=np.uint64))
+            self.stat = np.array([], dtype=np.uint64)
             return
 
         times = self.end_time
-        if ranking_threshold:
-            # Threshold on sngl_ranking
-            # Note that we can provide None or zero to do no thresholding
-            # but the default is to do some
-            keep = stat >= ranking_threshold
+        if statistic_threshold is not None:
+            # Threshold on statistic
+            keep = stat >= statistic_threshold
             stat = stat[keep]
             times = times[keep]
             self.apply_mask(keep)
 
             if len(stat) == 0:
-                logging.warning("No triggers after thresholding")
+                logger.warning("No triggers after thresholding")
                 return
             else:
-                logging.info("%d triggers after thresholding", len(stat))
+                logger.info("%d triggers after thresholding", len(stat))
 
         index = stat.argsort()[::-1]
         new_times = []
@@ -742,6 +783,7 @@ class SingleDetTriggers(object):
         index.sort()
         # Apply to the existing mask
         self.apply_mask(index)
+        self.stat = stat[index]
 
     @property
     def mask_size(self):
@@ -938,8 +980,8 @@ class ForegroundTriggers(object):
             raise RuntimeError("IFOs in statmap file not all represented "
                                "by single-detector trigger files.")
         if not sorted(self.sngl_files.keys()) == sorted(self.ifos):
-            logging.warning("WARNING: Single-detector trigger files "
-                            "given for IFOs not in the statmap file")
+            logger.warning("WARNING: Single-detector trigger files "
+                           "given for IFOs not in the statmap file")
 
         self.bank_file = HFile(bank_file, "r")
         self.n_loudest = n_loudest
@@ -957,8 +999,8 @@ class ForegroundTriggers(object):
                 try:
                     ifar = self.coinc_file.get_column('ifar')
                 except KeyError:
-                    logging.warning("WARNING: Can't find inclusive IFAR!"
-                                    "Using exclusive IFAR instead ...")
+                    logger.warning("WARNING: Can't find inclusive IFAR!"
+                                   "Using exclusive IFAR instead ...")
                     ifar = self.coinc_file.get_column('ifar_exc')
                     self._inclusive = False
             else:
@@ -1228,7 +1270,7 @@ class ForegroundTriggers(object):
             coinc_inspiral_row.combined_far = 1./coinc_event_vals['ifar'][idx]
             # Transform to Hz
             coinc_inspiral_row.combined_far = \
-                                    coinc_inspiral_row.combined_far / YRJUL_SI
+                conversions.sec_to_year(coinc_inspiral_row.combined_far)
             coinc_event_row.likelihood = coinc_event_vals['stat'][idx]
             coinc_inspiral_row.minimum_duration = 0.
             coinc_event_table.append(coinc_event_row)
@@ -1244,10 +1286,10 @@ class ForegroundTriggers(object):
         ligolw_utils.write_filename(outdoc, file_name)
 
     def to_coinc_hdf_object(self, file_name):
-        ofd = h5py.File(file_name,'w')
+        ofd = HFile(file_name,'w')
 
         # Some fields are special cases
-        logging.info("Outputting search results")
+        logger.info("Outputting search results")
         time = self.get_end_time()
         # time will be used later to determine active ifos
         ofd['time'] = time
@@ -1263,7 +1305,7 @@ class ForegroundTriggers(object):
         for field in ['stat']:
             ofd[field] = self.get_coincfile_array(field)
 
-        logging.info("Outputting template information")
+        logger.info("Outputting template information")
         # Bank fields
         for field in ['mass1','mass2','spin1z','spin2z']:
             ofd[field] = self.get_bankfile_array(field)
@@ -1272,8 +1314,8 @@ class ForegroundTriggers(object):
         mass2 = self.get_bankfile_array('mass2')
         ofd['chirp_mass'], _ = pnutils.mass1_mass2_to_mchirp_eta(mass1, mass2)
 
-        logging.info("Outputting single-trigger information")
-        logging.info("reduced chisquared")
+        logger.info("Outputting single-trigger information")
+        logger.info("reduced chisquared")
         chisq_vals_valid = self.get_snglfile_array_dict('chisq')
         chisq_dof_vals_valid = self.get_snglfile_array_dict('chisq_dof')
         for ifo in self.ifos:
@@ -1287,12 +1329,12 @@ class ForegroundTriggers(object):
         # Single-detector fields
         for field in ['sg_chisq', 'end_time', 'sigmasq',
                       'psd_var_val']:
-            logging.info(field)
+            logger.info(field)
             try:
                 vals_valid = self.get_snglfile_array_dict(field)
             except KeyError:
-                logging.info(field + " is not present in the "
-                             "single-detector files")
+                logger.info("%s is not present in the "
+                            "single-detector files", field)
 
             for ifo in self.ifos:
                 # Some of the values will not be valid for all IFOs,
@@ -1313,7 +1355,7 @@ class ForegroundTriggers(object):
             network_snr_sq[valid] += vals[valid] ** 2.0
         ofd['network_snr'] = np.sqrt(network_snr_sq)
 
-        logging.info("Triggered detectors")
+        logger.info("Triggered detectors")
         # Create a n_ifos by n_events matrix, with the ifo letter if the
         # event contains a trigger from the ifo, empty string if not
         triggered_matrix = [[ifo[0] if v else ''
@@ -1325,7 +1367,7 @@ class ForegroundTriggers(object):
         ofd.create_dataset('trig', data=triggered_detectors,
                            dtype='<S3')
 
-        logging.info("active detectors")
+        logger.info("active detectors")
         # Create a n_ifos by n_events matrix, with the ifo letter if the
         # ifo was active at the event time, empty string if not
         active_matrix = [[ifo[0] if t in self.active_segments[ifo]
@@ -1345,10 +1387,10 @@ class ReadByTemplate(object):
     def __init__(self, filename, bank=None, segment_name=None, veto_files=None,
                  gating_veto_windows={}):
         self.filename = filename
-        self.file = h5py.File(filename, 'r')
+        self.file = HFile(filename, 'r')
         self.ifo = tuple(self.file.keys())[0]
         self.valid = None
-        self.bank = h5py.File(bank, 'r') if bank else {}
+        self.bank = HFile(bank, 'r') if bank else {}
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
@@ -1424,7 +1466,7 @@ class ReadByTemplate(object):
         if self.valid:
             self.keep = veto.indices_within_times(times, self.valid[0],
                                                   self.valid[1])
-#            logging.info('applying vetoes')
+#            logger.info('applying vetoes')
         else:
             self.keep = np.arange(0, len(times))
 
@@ -1518,7 +1560,7 @@ def save_dict_to_hdf5(dic, filename):
     filename:
         desired name of hdf5 file
     """
-    with h5py.File(filename, 'w') as h5file:
+    with HFile(filename, 'w') as h5file:
         recursively_save_dict_contents_to_group(h5file, '/', dic)
 
 def recursively_save_dict_contents_to_group(h5file, path, dic):

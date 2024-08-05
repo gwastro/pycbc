@@ -7,14 +7,15 @@ that compare two approximants and compute the match between them.
 
 import argparse
 import matplotlib
-
 matplotlib.use("Agg")
 import matplotlib.cm
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 import pylab
 import numpy as np
+
 from ligo.lw import utils, table, lsctables
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-from pycbc import pnutils
+
+from pycbc import pnutils, init_logging, add_common_pycbc_options
 from pycbc.conversions import (
     mtotal_from_mass1_mass2,
     q_from_mass1_mass2,
@@ -114,6 +115,7 @@ def basic_scatter(
 
 
 parser = argparse.ArgumentParser(description=__doc__)
+add_common_pycbc_options(parser)
 parser.add_argument(
     "--input-file",
     required=True,
@@ -132,6 +134,8 @@ parser.add_argument("--minorL", default=None)
 parser.add_argument("--output-plot", required=True, help="name of the output plot")
 
 args = parser.parse_args()
+
+init_logging(args.verbose)
 
 derived_func_map = {
     "total_mass": lambda d: mtotal_from_mass1_mass2(d["mass1"], d["mass2"]),

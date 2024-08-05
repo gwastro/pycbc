@@ -7,6 +7,9 @@ except ImportError:
     NegInf = float("-inf")
 import numpy
 import math
+import logging
+
+logger = logging.getLogger('pycbc.bin_utils')
 
 
 class Bins(object):

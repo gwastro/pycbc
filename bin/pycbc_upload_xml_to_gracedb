@@ -24,7 +24,6 @@ import os
 import argparse
 import logging
 import numpy as np
-import h5py
 import matplotlib
 matplotlib.use('agg')
 
@@ -36,11 +35,13 @@ from ligo.lw import utils as ligolw_utils
 from ligo.segments import segment, segmentlist
 
 import pycbc
-from pycbc.io.live import gracedb_tag_with_version
+from pycbc.io.gracedb import gracedb_tag_with_version
 from pycbc.io.ligolw import LIGOLWContentHandler
+from pycbc.io.hdf import HFile
 from pycbc.psd import interpolate
 from pycbc.types import FrequencySeries
 from pycbc.results import generate_asd_plot
+from pycbc import conversions as conv
 
 
 def check_gracedb_for_event(gdb_handle, query, far):
@@ -49,7 +50,7 @@ def check_gracedb_for_event(gdb_handle, query, far):
     which matches the FAR given
     """
     gdb_events_match_query = list(gdb_handle.events(query=query))
-    ifar = 1. / lal.YRJUL_SI / far
+    ifar = conv.sec_to_year(1. / far)
     for gdb_event in gdb_events_match_query:
         # Test each gracedb event to see if the FAR matches this event
         if np.abs(gdb_event['far'] - far) < 1e-16:
@@ -65,9 +66,6 @@ def check_gracedb_for_event(gdb_handle, query, far):
                  'query: "%s"', ifar, query)
     return False
 
-
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
-                    level=logging.INFO)
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -112,7 +110,7 @@ parser.add_argument('--generate-plots', action='store_true',
 
 args = parser.parse_args()
 
-pycbc.init_logging(args.verbose)
+pycbc.init_logging(args.verbose, default_level=1)
 
 if args.production_server:
     gracedb = GraceDb()
@@ -130,7 +128,7 @@ class psd_segment(segment):
 
 psds = {}
 for psd_file in args.psd_files:
-    (ifo, group), = h5py.File(psd_file, "r").items()
+    (ifo, group), = HFile(psd_file, "r").items()
     psd = [group["psds"][str(i)] for i in range(len(group["psds"].keys()))]
     psds[ifo] = segmentlist(psd_segment(*segargs) for segargs in zip(
         psd, group["start_time"], group["end_time"]))
@@ -158,7 +156,7 @@ for event in coinc_table:
             coinc_inspiral_table_curr.append(coinc_insp)
 
     if args.min_ifar is not None and \
-            coinc_inspiral_table_curr[0].combined_far > 1./args.min_ifar/lal.YRJUL_SI:
+            conv.sec_to_year(1. / coinc_inspiral_table_curr[0].combined_far) < args.min_ifar:  # event IFAR is smaller than the minimum
         continue
 
     time = coinc_inspiral_table_curr[0].end_time

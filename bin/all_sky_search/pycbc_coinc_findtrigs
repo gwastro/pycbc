@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-import h5py, copy, argparse, logging, numpy, numpy.random
+import copy, argparse, logging, numpy, numpy.random
 import shutil, uuid, os.path, atexit
 from ligo.segments import infinity
+import pycbc
 from pycbc.events import veto, coinc, stat, ranking, cuts
-import pycbc.version
+from pycbc.io import HFile
 from pycbc import pool, init_logging
 from numpy.random import seed, shuffle
 from pycbc.io.hdf import ReadByTemplate
@@ -11,7 +12,6 @@ from pycbc.types.optparse import MultiDetOptionAction
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     help="Optional veto file. Triggers within veto segments "
                          "contained in the file are ignored")
@@ -91,7 +91,7 @@ logging.info('Starting...')
 
 trigger_cut_dict, template_cut_dict = cuts.ingest_cuts_option_group(args)
 
-num_templates = len(h5py.File(args.template_bank, "r")['template_hash'])
+num_templates = len(HFile(args.template_bank, "r")['template_hash'])
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
@@ -510,7 +510,7 @@ if args.cluster_window and len(data['stat']) > 0:
                                args.cluster_window)
 
 logging.info('saving coincident triggers')
-f = h5py.File(args.output_file, 'w')
+f = HFile(args.output_file, 'w')
 if len(data['stat']) > 0:
     for key in data:
         var = data[key][cid] if args.cluster_window else data[key]

@@ -5,12 +5,13 @@ import sys
 import argparse
 import h5py
 import numpy
-import matplotlib; matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 import pylab
 import inspect
-import pycbc.events, pycbc.pnutils, pycbc.conversions, pycbc.results
-import pycbc.version
 from itertools import cycle
+
+import pycbc.events, pycbc.pnutils, pycbc.conversions, pycbc.results
 
 
 class H5BankFile(h5py.File):
@@ -76,13 +77,15 @@ class H5BankFile(h5py.File):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--bank-file', help='hdf format template bank file',
                     required=True)
-parser.add_argument('--background-bins', nargs='+', help='list of background bin format strings')
+parser.add_argument('--background-bins', nargs='+',
+                    help='list of background bin format strings')
 parser.add_argument('--f-lower', type=float,
-                    help="Lower frequency cutoff for evaluating template duration. Should"
-                         " be equal to the lower cutoff used in inspiral jobs")
+                    help="Lower frequency cutoff for evaluating template "
+                         "duration. Should be equal to the lower cutoff "
+                         "used in inspiral jobs")
 parser.add_argument('--output-file', help='output file', required=True)
 parser.add_argument('--x-var', type=str, choices=H5BankFile.get_param_names(),
                     default='mass1',
@@ -95,6 +98,8 @@ parser.add_argument('--log-x', action='store_true',
 parser.add_argument('--log-y', action='store_true',
                     help='Make y-axis logarithmic')
 args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
 
 bank = H5BankFile(args.bank_file, 'r')
 f_lower = args.f_lower or bank['f_lower'][:]

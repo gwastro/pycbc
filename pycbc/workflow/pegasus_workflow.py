@@ -206,9 +206,18 @@ class Node(ProfileShortcuts):
 
         self._raw_options += [arg]
 
-    def add_opt(self, opt, value=None):
-        """ Add a option
+    def add_opt(self, opt, value=None, check_existing_options=True, **kwargs):  # pylint:disable=unused-argument
+        """ Add an option
         """
+        if check_existing_options and (opt in self._options
+                                       or opt in self._raw_options):
+            err_msg = (
+                "Trying to set option %s with value %s, but it "
+                "has already been provided by the configuration file. "
+                "Usually this should not be given in the config file, "
+                "but contact developers to check"
+            ) % (opt, value)
+            raise ValueError(err_msg)
         if value is not None:
             if not isinstance(value, File):
                 value = str(value)
@@ -242,40 +251,57 @@ class Node(ProfileShortcuts):
         """
         self._add_output(inp)
 
-    def add_input_opt(self, opt, inp):
+    def add_input_opt(self, opt, inp, **kwargs):
         """ Add an option that determines an input
         """
-        self.add_opt(opt, inp._dax_repr())
+        self.add_opt(opt, inp._dax_repr(), **kwargs)
         self._add_input(inp)
 
-    def add_output_opt(self, opt, out):
+    def add_output_opt(self, opt, out, **kwargs):
         """ Add an option that determines an output
         """
-        self.add_opt(opt, out._dax_repr())
+        self.add_opt(opt, out._dax_repr(), **kwargs)
         self._add_output(out)
 
-    def add_output_list_opt(self, opt, outputs):
+    def add_output_list_opt(self, opt, outputs, **kwargs):
         """ Add an option that determines a list of outputs
         """
-        self.add_opt(opt)
+        self.add_opt(opt, **kwargs)
+        # Never check existing options for list option values
+        if 'check_existing_options' in kwargs:
+            kwargs['check_existing_options'] = False
         for out in outputs:
-            self.add_opt(out)
+            self.add_opt(out, **kwargs)
             self._add_output(out)
 
-    def add_input_list_opt(self, opt, inputs):
+    def add_input_list_opt(self, opt, inputs, **kwargs):
         """ Add an option that determines a list of inputs
         """
-        self.add_opt(opt)
+        self.add_opt(opt, **kwargs)
+        # Never check existing options for list option values
+        if 'check_existing_options' in kwargs:
+            del kwargs['check_existing_options']
         for inp in inputs:
-            self.add_opt(inp)
+            self.add_opt(
+                inp,
+                check_existing_options=False,
+                **kwargs
+            )
             self._add_input(inp)
 
-    def add_list_opt(self, opt, values):
+    def add_list_opt(self, opt, values, **kwargs):
         """ Add an option with a list of non-file parameters.
         """
-        self.add_opt(opt)
+        self.add_opt(opt, **kwargs)
+        # Never check existing options for list option values
+        if 'check_existing_options' in kwargs:
+            del kwargs['check_existing_options']
         for val in values:
-            self.add_opt(val)
+            self.add_opt(
+                val,
+                check_existing_options=False,
+                **kwargs
+            )
 
     def add_input_arg(self, inp):
         """ Add an input as an argument
@@ -324,9 +350,10 @@ class Workflow(object):
         # This sets the logger to one level less verbose than the root
         # (pycbc) logger
 
+        curr_level = logging.getLogger().level
         # Get the logger associated with the Pegasus workflow import
         pegasus_logger = logging.getLogger('Pegasus')
-        pegasus_logger.setLevel(logger.level + 10)
+        pegasus_logger.setLevel(curr_level + 10)
         self.name = name
         self._rc = dax.ReplicaCatalog()
         self._tc = dax.TransformationCatalog()

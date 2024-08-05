@@ -31,7 +31,7 @@ from pycbc.strain import StrainBuffer
 from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingle
-from pycbc.io.live import CandidateForGraceDB
+from pycbc.io.gracedb import CandidateForGraceDB
 from pycbc.io.hdf import recursively_save_dict_contents_to_group
 from pycbc.types import positive_int
 import pycbc.waveform.bank
@@ -44,6 +44,7 @@ from pycbc.filter import resample
 from pycbc.psd import estimate
 from pycbc.psd import variation
 from pycbc.live import snr_optimizer
+from pycbc import conversions as conv
 
 # Use cached class-based FFTs in the resample and estimate module
 resample.USE_CACHING_FOR_LFILTER = True
@@ -820,7 +821,7 @@ def check_max_length(args, waveforms):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.waveform.bank.add_approximant_arg(parser)
-parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--verbose', action='count')
 parser.add_argument('--version', action='version', version=version.git_verbose_msg)
 parser.add_argument('--bank-file', required=True,
                     help="Template bank file in XML or HDF format")
@@ -1047,6 +1048,9 @@ parser.add_argument('--psd-variation', action='store_true',
                          "values for each single detector triggers found by "
                          "the search. Required when using a single detector "
                          "ranking statistic that includes psd variation.")
+parser.add_argument("--statistic-refresh-rate", type=float,
+                    help="How often to refresh the statistic object, "
+                         "in seconds. If omitted, no refreshing is done.")
 
 scheme.insert_processing_option_group(parser)
 LiveSingle.insert_args(parser)
@@ -1165,6 +1169,8 @@ with ctx:
     if analyze_singles and evnt.rank == 0:
         sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
                           for ifo in evnt.trigg_ifos}
+        for estim in sngl_estimator.values():
+            estim.start_refresh_thread()
 
     # Create double coincident background estimator
     # for every pair of triggering interferometers
@@ -1185,6 +1191,10 @@ with ctx:
             setproctitle('PyCBC Live {} bg estimator'.format(
                     ppdets(c.ifos, '-')))
 
+        def estimator_refresh_threads(_):
+            c = estimators[my_coinc_id]
+            c.start_refresh_thread()
+
         def get_coinc(results):
             c = estimators[my_coinc_id]
             r = c.add_singles(results)
@@ -1194,11 +1204,12 @@ with ctx:
 
         def output_background(_):
             estim = estimators[my_coinc_id]
-            bg_time = estim.background_time / lal.YRJUL_SI
+            bg_time = conv.sec_to_year(estim.background_time)
             return estim.ifos, estim.coincs.data, bg_time
 
         coinc_pool = BroadcastPool(len(estimators))
         coinc_pool.allmap(set_coinc_id, range(len(estimators)))
+        coinc_pool.broadcast(estimator_refresh_threads, None)
 
     logging.info('Starting')
 
@@ -1427,3 +1438,5 @@ if evnt.rank == 1:
 
 if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
     pr.dump_stats(f'profiling_rank_{evnt.rank:03d}')
+
+logging.info("Exiting as the end time has been reached")

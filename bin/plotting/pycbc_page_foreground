@@ -8,21 +8,18 @@ import sys
 import argparse
 import logging
 import numpy
-import h5py
+
 import pycbc
 import pycbc.results
-import pycbc.version
 from pycbc.io import hdf
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--trigger-file', required=True)
 parser.add_argument('--bank-file', required=True)
 parser.add_argument('--single-detector-triggers', nargs='+')
-parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--num-to-write', type=int)
 parser.add_argument('--use-hierarchical-level', type=int,
@@ -40,7 +37,7 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-with h5py.File(args.trigger_file, 'r') as f:
+with hdf.HFile(args.trigger_file, 'r') as f:
     try:
         h_iterations = f.attrs['hierarchical_removal_iterations']
     except KeyError:

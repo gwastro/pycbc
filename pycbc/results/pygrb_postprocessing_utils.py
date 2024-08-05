@@ -27,12 +27,17 @@ import os
 import logging
 import argparse
 import copy
-
 import numpy
 import h5py
+
 from scipy import stats
 import ligo.segments as segments
 from pycbc.events.coherent import reweightedsnr_cut
+from pycbc import add_common_pycbc_options
+from pycbc.io.hdf import HFile
+
+logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
+
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
     from ligo.lw import utils
@@ -51,15 +56,13 @@ except ImportError:
 # * Add to the parser object the arguments used for BestNR calculation
 # * Add to the parser object the arguments for found/missed injection files
 # =============================================================================
-def pygrb_initialize_plot_parser(description=None, version=None):
+def pygrb_initialize_plot_parser(description=None):
     """Sets up a basic argument parser object for PyGRB plotting scripts"""
 
     formatter_class = argparse.ArgumentDefaultsHelpFormatter
     parser = argparse.ArgumentParser(description=description,
                                      formatter_class=formatter_class)
-    parser.add_argument("--version", action="version", version=version)
-    parser.add_argument("-v", "--verbose", default=False, action="store_true",
-                        help="Verbose output")
+    add_common_pycbc_options(parser)
     parser.add_argument("-o", "--output-file", default=None,
                         help="Output file.")
     parser.add_argument("--x-lims", action="store", default=None,
@@ -89,8 +92,27 @@ def pygrb_initialize_plot_parser(description=None, version=None):
     parser.add_argument('--plot-caption', default=None,
                         help="If provided, use the given string as the plot " +
                         "caption")
-
     return parser
+
+
+def pygrb_add_slide_opts(parser):
+    """Add to parser object arguments related to short timeslides"""
+    parser.add_argument("--slide-id", type=str, default='0',
+                        help="If all, the plotting scripts will use triggers" +
+                        "from all short slides.")
+
+
+def slide_opts_helper(args):
+    """
+       This function overwrites the types of input slide_id information
+       when loading data in postprocessing scripts.
+    """
+    if args.slide_id.isdigit():
+        args.slide_id = int(args.slide_id)
+    elif args.slide_id.lower() == "all":
+        args.slide_id = None
+    else:
+        raise ValueError("--slide-id must be the string all or an int")
 
 
 def pygrb_add_injmc_opts(parser):
@@ -170,6 +192,20 @@ def pygrb_add_bestnr_cut_opt(parser):
                         default=0.,
                         help="Cut triggers with NewSNR less than THRESHOLD" +
                         "Default 0: all events are considered.")
+
+
+# =============================================================================
+# Wrapper to pick triggers with certain slide_ids
+# =============================================================================
+def slide_filter(trig_file, data, slide_id=None):
+    """
+    This function adds the capability to select triggers with specific
+    slide_ids during the postprocessing stage of PyGRB.
+    """
+    if slide_id is None:
+        return data
+    mask = numpy.where(trig_file['network/slide_id'][:] == slide_id)[0]
+    return data[mask]
 
 
 # =============================================================================
@@ -356,10 +392,11 @@ def dataset_iterator(g, prefix=''):
             yield from dataset_iterator(item, path)
 
 
-def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
+def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
+                  slide_id=None):
     """Loads triggers from PyGRB output file, returning a dictionary"""
 
-    trigs = h5py.File(input_file, 'r')
+    trigs = HFile(input_file, 'r')
     rw_snr = trigs['network/reweighted_snr'][:]
     net_ids = trigs['network/event_id'][:]
     ifo_ids = {}
@@ -389,7 +426,7 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
 
     # Apply the cut on all the data by remove points with reweighted SNR = 0
     trigs_dict = {}
-    with h5py.File(input_file, "r") as trigs:
+    with HFile(input_file, "r") as trigs:
         for (path, dset) in dataset_iterator(trigs):
             # The dataset contains information other than trig/inj properties:
             # just copy it
@@ -406,6 +443,10 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None):
             # The dataset is relative to the network: cut it before copying
             else:
                 trigs_dict[path] = dset[above_thresh]
+
+            if trigs_dict[path].size == trigs['network/slide_id'][:].size:
+                trigs_dict[path] = slide_filter(trigs, trigs_dict[path],
+                                                slide_id=slide_id)
 
     return trigs_dict
 
@@ -496,7 +537,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
-    logging.info("Triggers sorted.")
+    logger.info("Triggers sorted.")
 
     # Build the 3 dictionaries
     trig_time = {}
@@ -518,7 +559,7 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
             trigs['network/reweighted_snr'][indices],
             opts.newsnr_threshold)
 
-    logging.info("Time, SNR, and BestNR of triggers extracted.")
+    logger.info("Time, SNR, and BestNR of triggers extracted.")
 
     return trig_time, trig_snr, trig_bestnr
 
@@ -530,7 +571,7 @@ def extract_ifos(trig_file):
     """Extracts IFOs from hdf file"""
 
     # Load hdf file
-    hdf_file = h5py.File(trig_file, 'r')
+    hdf_file = HFile(trig_file, 'r')
 
     # Extract IFOs
     ifos = sorted(list(hdf_file.keys()))
@@ -548,7 +589,7 @@ def extract_ifos(trig_file):
 def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
     """Extracts IFOs from HDF files and vetoes from a directory"""
 
-    logging.info("Extracting IFOs and vetoes.")
+    logger.info("Extracting IFOs and vetoes.")
 
     # Extract IFOs
     ifos = extract_ifos(trig_file)
@@ -567,7 +608,7 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
 # =============================================================================
 def load_time_slides(hdf_file_path):
     """Loads timeslides from PyGRB output file as a dictionary"""
-    hdf_file = h5py.File(hdf_file_path, 'r')
+    hdf_file = HFile(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
     ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
     time_slide_dict = {
@@ -601,7 +642,7 @@ def load_segment_dict(hdf_file_path):
     """
 
     # Long time slides will require mapping between slides and segments
-    hdf_file = h5py.File(hdf_file_path, 'r')
+    hdf_file = HFile(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
     # Get slide IDs
     slide_ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
@@ -749,10 +790,10 @@ def template_hash_to_id(trigger_file, bank_path):
     templates within the bank.
     Parameters
     ----------
-    trigger_file: h5py File object for trigger file
+    trigger_file: HFile object for trigger file
     bank_file: filepath for template bank
     """
-    with h5py.File(bank_path, "r") as bank:
+    with HFile(bank_path, "r") as bank:
         hashes = bank['template_hash'][:]
     ifos = [k for k in trigger_file.keys() if k != 'network']
     trig_hashes = trigger_file[f'{ifos[0]}/template_hash'][:]

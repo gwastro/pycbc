@@ -2,6 +2,7 @@
 
 import numpy, h5py, argparse, logging
 from pycbc import init_logging, add_common_pycbc_options
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
@@ -14,13 +15,13 @@ args = parser.parse_args()
 init_logging(args.verbose)
 
 
-input_kdes = [h5py.File(kfile, 'r') for kfile in args.kde_files]
+input_kdes = [HFile(kfile, 'r') for kfile in args.kde_files]
 if len(input_kdes) < 2:
     raise ValueError("At least two input files are required.")
 
 
 # Creating output file and save datasets and attributes from input files
-f_dest = h5py.File(args.output_file, 'w')
+f_dest = HFile(args.output_file, 'w')
 for name in input_kdes[0]:
     if isinstance(input_kdes[0][name], h5py.Dataset):
         if name == 'data_kde':

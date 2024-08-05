@@ -26,10 +26,15 @@
 """This module contains convenience pN functions. This includes calculating conversions
 between quantities.
 """
-import lal
+import logging
 import numpy
+
+import lal
 from scipy.optimize import bisect, brentq, minimize
+
 from pycbc import conversions, libutils
+
+logger = logging.getLogger('pycbc.pnutils')
 
 lalsim = libutils.import_optional('lalsimulation')
 

@@ -32,6 +32,8 @@ from functools import wraps
 import logging
 from .libutils import get_ctypes_library
 
+logger = logging.getLogger('pycbc.scheme')
+
 
 class _SchemeManager(object):
     _single = None
@@ -279,7 +281,7 @@ def from_cli(opt):
     name = scheme_str[0]
 
     if name == "cuda":
-        logging.info("Running with CUDA support")
+        logger.info("Running with CUDA support")
         ctx = CUDAScheme(opt.processing_device_id)
     elif name == "mkl":
         if len(scheme_str) > 1:
@@ -289,7 +291,7 @@ def from_cli(opt):
             ctx = MKLScheme(num_threads=numt)
         else:
             ctx = MKLScheme()
-        logging.info("Running with MKL support: %s threads" % ctx.num_threads)
+        logger.info("Running with MKL support: %s threads" % ctx.num_threads)
     else:
         if len(scheme_str) > 1:
             numt = scheme_str[1]
@@ -298,7 +300,7 @@ def from_cli(opt):
             ctx = CPUScheme(num_threads=numt)
         else:
             ctx = CPUScheme()
-        logging.info("Running with CPU support: %s threads" % ctx.num_threads)
+        logger.info("Running with CPU support: %s threads" % ctx.num_threads)
     return ctx
 
 def verify_processing_options(opt, parser):

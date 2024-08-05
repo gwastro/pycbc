@@ -26,8 +26,8 @@ injections.
 
 import logging
 import argparse
+
 import pycbc.strain
-import pycbc.version
 import pycbc.frame
 import pycbc.fft
 from pycbc.types import float32, float64
@@ -45,8 +45,7 @@ def write_strain(file_name, channel, data):
 
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+pycbc.add_common_pycbc_options(parser)
 parser.add_argument('--output-strain-file', required=True,
                     help='Name of output frame file. The file format is '
                          'selected based on the extension (.gwf, .npy, .hdf '
@@ -79,14 +78,14 @@ pycbc.strain.insert_strain_option_group(parser)
 pycbc.fft.insert_fft_option_group(parser)
 args = parser.parse_args()
 
+pycbc.init_logging(args.verbose, default_level=1)
+
 # Take in / deal with the FFT options
 pycbc.fft.verify_fft_options(args, parser)
 pycbc.fft.from_cli(args)
 
 if args.frame_duration is not None and args.frame_duration <= 0:
     parser.error('Frame duration should be positive integer, {} given'.format(args.frame_duration))
-
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 # read and condition strain as pycbc_inspiral would do
 out_strain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC,

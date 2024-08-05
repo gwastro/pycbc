@@ -30,7 +30,6 @@ import pycbc
 from pycbc import results
 from pycbc.filter import autocorrelation
 
-from pycbc import __version__
 from pycbc.inference import io
 
 # command line usage
@@ -40,8 +39,6 @@ parser = io.ResultsArgumentParser(skip_args=['thin-interval', 'temps'],
                                               "length per walker from an MCMC "
                                               "sampler.")
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--version', action='version', version=__version__,
-                    help='show version number and exit')
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")

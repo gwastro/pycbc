@@ -19,14 +19,16 @@ the corresponding fits.
 import argparse
 import logging
 import numpy as np
-import h5py
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 
+from lal import gpstime
+
 import pycbc
 from pycbc.bin_utils import IrregularBins
 from pycbc.events.trigger_fits import cum_fit as eval_cum_fit
+from pycbc.io.hdf import HFile
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -64,7 +66,7 @@ if '{ifo}' not in args.output_plot_name_format:
 pycbc.init_logging(args.verbose)
 
 logging.info("Getting trigger fits file information")
-with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
+with HFile(args.trigger_fits_file, 'r') as trfit_f:
     # Get the ifos to plot from the file
     # Check that all the ifos we want to plot are in the file
     all_ifos = trfit_f.attrs['ifos'].split(',')
@@ -77,7 +79,10 @@ with h5py.File(args.trigger_fits_file, 'r') as trfit_f:
         x_label = "Ranking statistic"
     fit_threshold = {ifo: trfit_f[ifo].attrs['fit_threshold'] for ifo in ifos}
     fit_function = {ifo: trfit_f[ifo].attrs['fit_function'] for ifo in ifos}
-    analysis_date = trfit_f.attrs['analysis_date']
+    start_time = trfit_f.attrs['fit_start_gps_time']
+    end_time = trfit_f.attrs['fit_end_gps_time']
+    start_str = gpstime.gps_to_utc(start_time).strftime("%Y-%m-%d %H:%M:%S")
+    end_str = gpstime.gps_to_utc(end_time).strftime("%Y-%m-%d %H:%M:%S")
 
     # Get the triggers for each detector
     # (This is ones which passed the cuts in the fitting code)
@@ -126,10 +131,10 @@ for ifo in all_ifos:
         continue
 
     # Keep track of some maxima for use in setting the plot limits
-    maxstat = stats[ifo].max()
+    maxstat = np.nanmax(stats[ifo])
     max_rate = 0
 
-    statrange = maxstat - max(stats[ifo].min(), fit_threshold[ifo])
+    statrange = maxstat - max(np.nanmin(stats[ifo]), fit_threshold[ifo])
     plotmax = maxstat + statrange * 0.05
 
     plotbins = np.linspace(fit_threshold[ifo], plotmax, 400)
@@ -196,7 +201,7 @@ for ifo in all_ifos:
     )
     ax.set_xlabel(x_label)
     ax.set_ylabel("Number of louder triggers per live time")
-    title = f"{ifo} {analysis_date} trigger fits"
+    title = f"{ifo} singles significance fits from\n{start_str} to {end_str}"
     ax.set_title(title)
     ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5))
     logging.info(f"Saving {oput_plot}")

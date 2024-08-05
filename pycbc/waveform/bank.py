@@ -254,7 +254,7 @@ class TemplateBank(object):
     indoc : {None, xmldoc}
         If an xml file was provided, an in-memory representation of the xml.
         Otherwise, None.
-    filehandler : {None, h5py.File}
+    filehandler : {None, pycbc.io.HFile}
         If an hdf file was provided, the file handler pointing to the hdf file
         (left open after initialization). Otherwise, None.
     extra_args : {None, dict}
@@ -282,7 +282,7 @@ class TemplateBank(object):
 
         elif ext.endswith(('hdf', '.h5', '.hdf5')):
             self.indoc = None
-            f = h5py.File(filename, 'r')
+            f = pycbc.io.HFile(filename, 'r')
             self.filehandler = f
             try:
                 fileparams = list(f.attrs['parameters'])
@@ -400,14 +400,14 @@ class TemplateBank(object):
 
         Returns
         -------
-        h5py.File
+        pycbc.io.HFile
             The file handler to the output hdf file (left open).
         """
         if not filename.endswith(('.hdf', '.h5', '.hdf5')):
             raise ValueError("Unrecoginized file extension")
         if os.path.exists(filename) and not force:
             raise IOError("File %s already exists" %(filename))
-        f = h5py.File(filename, 'w')
+        f = pycbc.io.HFile(filename, 'w')
         parameters = self.parameters
         if skip_fields is not None:
             if not isinstance(skip_fields, list):

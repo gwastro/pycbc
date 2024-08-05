@@ -32,6 +32,8 @@ import logging
 from io import StringIO
 import configparser as ConfigParser
 
+logger = logging.getLogger('pycbc.types.config')
+
 
 class DeepCopyableConfigParser(ConfigParser.ConfigParser):
     """
@@ -132,7 +134,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                         "no such section in configuration." % delete
                     )
 
-                logging.info(
+                logger.info(
                     "Deleting section %s from configuration", delete[0]
                 )
             elif len(delete) == 2:
@@ -142,7 +144,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
                         " no such option in configuration." % delete
                     )
 
-                logging.info(
+                logger.info(
                     "Deleting option %s from section %s in " "configuration",
                     delete[1],
                     delete[0],
@@ -168,7 +170,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             if not self.has_section(section):
                 self.add_section(section)
             self.set(section, option, value)
-            logging.info(
+            logger.info(
                 "Overriding section %s option %s with value %s "
                 "in configuration.",
                 section,
@@ -208,7 +210,7 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             The command line arguments parsed by argparse
         """
         # read configuration file
-        logging.info("Reading configuration file")
+        logger.info("Reading configuration file")
         if opts.config_overrides is not None:
             overrides = [
                 tuple(override.split(":", 2))

@@ -25,9 +25,17 @@
 coincident triggers.
 """
 
-import numpy, logging, pycbc.pnutils, pycbc.conversions, copy, lal
+import numpy
+import logging
+import copy
+import time as timemod
+import threading
+
+import pycbc.pnutils
 from pycbc.detector import Detector, ppdets
-from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc import conversions as conv
+
+from . import stat as pycbcstat
 from .eventmgr_cython import coincbuffer_expireelements
 from .eventmgr_cython import coincbuffer_numgreater
 from .eventmgr_cython import timecoincidence_constructidxs
@@ -91,14 +99,19 @@ def background_bin_from_string(background_bins, data):
                 vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
                                                    data['mass1'], data['mass2'])[0]
             elif bin_type == 'ratio':
-                vals = pycbc.conversions.q_from_mass1_mass2(
-                                                   data['mass1'], data['mass2'])
+                vals = conv.q_from_mass1_mass2(data['mass1'], data['mass2'])
             elif bin_type == 'eta':
                 vals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
-                                                   data['mass1'], data['mass2'])[1]
+                    data['mass1'],
+                    data['mass2']
+                )[1]
             elif bin_type == 'chi_eff':
-                vals = pycbc.conversions.chi_eff(data['mass1'], data['mass2'],
-                                                 data['spin1z'], data['spin2z'])
+                vals = conv.chi_eff(
+                    data['mass1'],
+                    data['mass2'],
+                    data['spin1z'],
+                    data['spin2z']
+                )
             elif bin_type.endswith('Peak'):
                 vals = pycbc.pnutils.get_freq(
                     'f' + bin_type,
@@ -303,7 +316,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         #  tested against fixed and pivot are now present for testing with new
         #  dependent ifos
         for ifo2 in ids:
-            logger.info('added ifo %s, testing against %s' % (ifo1, ifo2))
+            logger.info('added ifo %s, testing against %s', ifo1, ifo2)
             w = win(ifo1, ifo2)
             left = time1.searchsorted(ctimes[ifo2] - w)
             right = time1.searchsorted(ctimes[ifo2] + w)
@@ -824,6 +837,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  ifar_limit=100,
                  timeslide_interval=.035,
                  coinc_window_pad=.002,
+                 statistic_refresh_rate=None,
                  return_background=False,
                  **kwargs):
         """
@@ -851,6 +865,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         coinc_window_pad: float
             Amount of time allowed to form a coincidence in addition to the
             time of flight in seconds.
+        statistic_refresh_rate: float
+            How regularly to run the update_files method on the statistic
+            class (in seconds), default not do do this
         return_background: boolean
             If true, background triggers will also be included in the file
             output.
@@ -858,17 +875,20 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             Additional options for the statistic to use. See stat.py
             for more details on statistic options.
         """
-        from . import stat
         self.num_templates = num_templates
         self.analysis_block = analysis_block
 
-        stat_class = stat.get_statistic(background_statistic)
+        stat_class = pycbcstat.get_statistic(background_statistic)
         self.stat_calculator = stat_class(
             sngl_ranking,
             stat_files,
             ifos=ifos,
             **kwargs
         )
+
+        self.time_stat_refreshed = timemod.time()
+        self.stat_calculator_lock = threading.Lock()
+        self.statistic_refresh_rate = statistic_refresh_rate
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
@@ -878,7 +898,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if len(self.ifos) != 2:
             raise ValueError("Only a two ifo analysis is supported at this time")
 
-        self.lookback_time = (ifar_limit * lal.YRJUL_SI * timeslide_interval) ** 0.5
+        self.lookback_time = (ifar_limit / conv.sec_to_year(1.) * timeslide_interval) ** 0.5
         self.buffer_size = int(numpy.ceil(self.lookback_time / analysis_block))
 
         self.dets = {ifo: Detector(ifo) for ifo in ifos}
@@ -950,7 +970,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     @classmethod
     def from_cli(cls, args, num_templates, analysis_chunk, ifos):
-        from . import stat
 
         # Allow None inputs
         stat_files = args.statistic_files or []
@@ -959,7 +978,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # flatten the list of lists of filenames to a single list (may be empty)
         stat_files = sum(stat_files, [])
 
-        kwargs = stat.parse_statistic_keywords_opt(stat_keywords)
+        kwargs = pycbcstat.parse_statistic_keywords_opt(stat_keywords)
 
         return cls(num_templates, analysis_chunk,
                    args.ranking_statistic,
@@ -970,13 +989,13 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                    timeslide_interval=args.timeslide_interval,
                    ifos=ifos,
                    coinc_window_pad=args.coinc_window_pad,
+                   statistic_refresh_rate=args.statistic_refresh_rate,
                    **kwargs)
 
     @staticmethod
     def insert_args(parser):
-        from . import stat
 
-        stat.insert_statistic_option_group(parser)
+        pycbcstat.insert_statistic_option_group(parser)
 
         group = parser.add_argument_group('Coincident Background Estimation')
         group.add_argument('--store-background', action='store_true',
@@ -1034,7 +1053,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             in which case `ifar` is to be considered an upper limit.
         """
         n = self.coincs.num_greater(coinc_stat)
-        ifar = self.background_time / lal.YRJUL_SI / (n + 1)
+        ifar = conv.sec_to_year(self.background_time) / (n + 1)
         return ifar, n == 0
 
     def set_singles_buffer(self, results):
@@ -1175,7 +1194,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             # Find newly added triggers in fixed_ifo
             trigs = results[fixed_ifo]
             # Calculate mchirp as a vectorized operation
-            mchirps = mchirp_from_mass1_mass2(
+            mchirps = conv.mchirp_from_mass1_mass2(
                 trigs['mass1'], trigs['mass2']
             )
             # Loop over them one trigger at a time
@@ -1369,17 +1388,63 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
         if len(valid_ifos) == 0: return {}
 
-        # Add single triggers to the internal buffer
-        self._add_singles_to_buffer(results, ifos=valid_ifos)
+        with self.stat_calculator_lock:
+            # Add single triggers to the internal buffer
+            self._add_singles_to_buffer(results, ifos=valid_ifos)
 
-        # Calculate zerolag and background coincidences
-        _, coinc_results = self._find_coincs(results, valid_ifos=valid_ifos)
+            # Calculate zerolag and background coincidences
+            _, coinc_results = self._find_coincs(results, valid_ifos=valid_ifos)
 
         # record if a coinc is possible in this chunk
         if len(valid_ifos) == 2:
             coinc_results['coinc_possible'] = True
 
         return coinc_results
+
+    def start_refresh_thread(self):
+        """
+        Start a thread managing whether the stat_calculator will be updated
+        """
+        if self.statistic_refresh_rate is None:
+            logger.info(
+                "Statistic refresh disabled for %s", ppdets(self.ifos, "-")
+            )
+            return
+        thread = threading.Thread(
+            target=self.refresh_statistic,
+            daemon=True,
+            name="Stat refresh " + ppdets(self.ifos, "-")
+        )
+        logger.info(
+            "Starting %s statistic refresh thread", ppdets(self.ifos, "-")
+        )
+        thread.start()
+
+    def refresh_statistic(self):
+        """
+        Function to refresh the stat_calculator at regular intervals
+        """
+        while True:
+            # How long since the statistic was last updated?
+            since_stat_refresh = timemod.time() - self.time_stat_refreshed
+            if since_stat_refresh > self.statistic_refresh_rate:
+                self.time_stat_refreshed = timemod.time()
+                logger.info(
+                    "Checking %s statistic for updated files",
+                    ppdets(self.ifos, "-"),
+                )
+                with self.stat_calculator_lock:
+                    self.stat_calculator.check_update_files()
+            # Sleep one second for safety
+            timemod.sleep(1)
+            # Now include the time it took the check / update the statistic
+            since_stat_refresh = timemod.time() - self.time_stat_refreshed
+            logger.debug(
+                "%s statistic: Waiting %.3fs for next refresh",
+                ppdets(self.ifos, "-"),
+                self.statistic_refresh_rate - since_stat_refresh,
+            )
+            timemod.sleep(self.statistic_refresh_rate - since_stat_refresh + 1)
 
 
 __all__ = [
