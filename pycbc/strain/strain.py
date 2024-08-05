@@ -1863,17 +1863,47 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         status: boolean
             Returns True if this block is analyzable.
         """
-        ts = super(StrainBuffer, self).attempt_advance(blocksize, timeout=timeout)
-        self.blocksize = blocksize
+        if self.state:
+            # We are using information from the state vector, so check what is
+            # says about the new strain data.
+            state_advance_result = self.state.advance(blocksize)
+            if not state_advance_result:
+                # Something about the state vector indicates a problem.
+                if state_advance_result is None:
+                    logger.warning(
+                        "Failed to read %s state vector. Problem with the "
+                        "frame files, or analysis configured incorrectly",
+                        self.detector
+                    )
+                else:
+                    logger.info(
+                        "%s state vector indicates unusable data", self.detector
+                    )
+                # Either way, give up here; we will not analyze the new segment
+                # of strain data.
+                self.add_hard_count()
+                self.null_advance_strain(blocksize)
+                if self.dq:
+                    self.dq.null_advance(blocksize)
+                if self.idq:
+                    self.idq.null_advance(blocksize)
+                return False
 
+        # Either we are not using the state vector, or the state vector says
+        # the data is ok to analyze. So try to get the next segment of data.
+        ts = super(StrainBuffer, self).attempt_advance(
+            blocksize, timeout=timeout
+        )
+        self.blocksize = blocksize
         self.gate_params = []
 
-        # We have given up so there is no time series
         if ts is None:
-            logger.info("%s frame is late, giving up", self.detector)
+            logger.warning(
+                "Failed to read %s strain channel. Problem with the frame "
+                "files, or analysis configured incorrectly",
+                self.detector
+            )
             self.null_advance_strain(blocksize)
-            if self.state:
-                self.state.null_advance(blocksize)
             if self.dq:
                 self.dq.null_advance(blocksize)
             if self.idq:
@@ -1882,19 +1912,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # We collected some data so we are closer to being able to analyze data
         self.wait_duration -= blocksize
-
-        # If the data we got was invalid, reset the counter on how much to collect
-        # This behavior corresponds to how we handle CAT1 vetoes
-        if self.state and self.state.advance(blocksize) is False:
-            self.add_hard_count()
-            self.null_advance_strain(blocksize)
-            if self.dq:
-                self.dq.null_advance(blocksize)
-            if self.idq:
-                self.idq.null_advance(blocksize)
-            logger.info("%s time has invalid data, resetting buffer",
-                        self.detector)
-            return False
 
         # Also advance the dq vector and idq timeseries in lockstep
         if self.dq:
