@@ -589,8 +589,8 @@ class DataBuffer(object):
             return TimeSeries(data.data.data, delta_t=data.deltaT,
                               epoch=self.read_pos,
                               dtype=dtype)
-        except Exception:
-            raise RuntimeError('Cannot read {0} frame data'.format(self.channel_name))
+        except:
+            raise RuntimeError(f'Cannot read {self.channel_name} frame data')
 
     def null_advance(self, blocksize):
         """Advance and insert zeros
@@ -826,19 +826,22 @@ class StatusBuffer(DataBuffer):
         return idx
 
     def advance(self, blocksize):
-        """ Add blocksize seconds more to the buffer, push blocksize seconds
-        from the beginning.
+        """Read `blocksize` seconds of new status data, append it to the end of
+        the internal status buffer, and drop `blocksize` seconds from the
+        beginning of the buffer. Check if the newly added status data indicates
+        usable or unusable strain data.
 
         Parameters
         ----------
         blocksize: int
-            The number of seconds to attempt to read from the channel
+            The number of seconds to attempt to read from the channel.
 
         Returns
         -------
         status: boolean
-            Returns True if all of the status information if valid,
-            False if any is not.
+            Returns True if all of the status information if valid, False if
+            any is not, None if there was a problem reading the status
+            information.
         """
         try:
             if self.increment_update_cache:
@@ -847,7 +850,8 @@ class StatusBuffer(DataBuffer):
             return self.check_valid(ts)
         except RuntimeError:
             self.null_advance(blocksize)
-            return False
+            return None
+
 
 class iDQBuffer(object):
 
