@@ -519,7 +519,9 @@ class DataBuffer(object):
         self.detector = channel_name.split(':')[0]
 
         self.update_cache()
-        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
+        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(
+            self.stream, self.channel_name
+        )
 
         raw_size = self.raw_sample_rate * max_buffer
         self.raw_buffer = TimeSeries(zeros(raw_size, dtype=dtype),
@@ -584,12 +586,20 @@ class DataBuffer(object):
         try:
             read_func = _fr_type_map[self.channel_type][0]
             dtype = _fr_type_map[self.channel_type][1]
-            data = read_func(self.stream, self.channel_name,
-                             self.read_pos, int(blocksize), 0)
-            return TimeSeries(data.data.data, delta_t=data.deltaT,
-                              epoch=self.read_pos,
-                              dtype=dtype)
-        except:
+            data = read_func(
+                self.stream,
+                self.channel_name,
+                self.read_pos,
+                int(blocksize),
+                0
+            )
+            return TimeSeries(
+                data.data.data,
+                delta_t=data.deltaT,
+                epoch=self.read_pos,
+                dtype=dtype
+            )
+        except Exception:
             raise RuntimeError(f'Cannot read {self.channel_name} frame data')
 
     def null_advance(self, blocksize):
@@ -664,8 +674,9 @@ class DataBuffer(object):
         cache = locations_to_cache(keys)
         stream = lalframe.FrStreamCacheOpen(cache)
         self.stream = stream
-        self.channel_type, self.raw_sample_rate = \
-            self._retrieve_metadata(self.stream, self.channel_name)
+        self.channel_type, self.raw_sample_rate = self._retrieve_metadata(
+            self.stream, self.channel_name
+        )
 
     def attempt_advance(self, blocksize, timeout=10):
         """ Attempt to advance the frame buffer. Retry upon failure, except
