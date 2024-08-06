@@ -387,7 +387,7 @@ class HealpixSky:
         #sampling method
         theta,phi = numpy.array([]),  numpy.array([])
         while len(theta) < size:
-            THETA,PHI = simple_rejection_sampling(self.heapix_map, #☺pas de maj
+            THETA,PHI = simple_rejection_sampling(self.healpix_map, #☺pas de maj
                                                   size,
                                                   self.boundaries
                                                   )
