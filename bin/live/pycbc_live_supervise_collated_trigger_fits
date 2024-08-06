@@ -569,7 +569,7 @@ def get_yesterday_date():
     day_dt = datetime.utcnow() - timedelta(days=1)
     day_dt = datetime.combine(day_dt, datetime.min.time())
     day_str = day_dt.strftime('%Y_%m_%d')
-    return day_dt, date_str
+    return day_dt, day_str
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
