@@ -26,7 +26,7 @@ Below is an example.
 
 .. literalinclude:: ../examples/banksim/banksim_simple.ini
 
-There are four sections that must be present [inspinj], [executables], [workflow],
+There are four sections that must be present [inspinj]/[external_injection], [executables], [workflow],
 and [banksim].
 
  #. inspinj
@@ -40,6 +40,17 @@ and [banksim].
     Note, however, that the waveform name is required but does not 
     determine the actual approximants that will be compared. That is set in the [banksim] 
     section. 
+
+    If you want to use another method to create injections (Eg. ``pycbc_create_injections``), 
+    instead of using [inspinj], you can name the section [external_injection] and specify the 
+    path of the injection file. 
+
+    .. code-block:: bash
+
+        [external_injection]
+        inj-file = /path/to/inj.xml
+
+    Note: The injection file should be in the sim_inspiral table (.xml) format.
 
  #. executables
 
@@ -61,7 +72,7 @@ and [banksim].
     has to calculate fitting factors for. 
 
     The injection
-    file generated from the [inspinj] section is split
+    file generated from the [inspinj] section or provided externally is split
     into smaller pieces to satisfy this requirement.
     Note that this option has a direct effect on the memory
     requirements of each banksim job, as each injection

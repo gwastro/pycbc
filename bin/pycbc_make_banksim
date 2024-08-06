@@ -185,8 +185,19 @@ shutil.copy(banksim_prog, 'scripts/pycbc_banksim')
 os.chmod('scripts/pycbc_banksim', 0o0777)
 
 logging.info("Creating injection file")
-inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
-os.system(inj_str)
+if confs.has_section("inspinj"):
+    logging.info("Using lalapps_inspinj to create injections")
+    inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
+    os.system(inj_str)
+elif confs.has_section("external_injection"):
+    logging.info("Using external injection file. Please ensure the file is in sim_inspiral table (.xml) format.")
+    inj_file_path = confs.get("external_injection", "inj-file")
+    if inj_file_path == "inj.xml":
+        pass
+    else:
+        os.system("cp {} inj.xml".format(inj_file_path))
+else:
+    raise ValueError("Need to specify the injection method. Either provide [inspinj] section or [external_injection]")
 
 logging.info("Splitting template bank")
 subprocess.call(['pycbc_splitbank',
