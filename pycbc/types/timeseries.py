@@ -564,7 +564,8 @@ class TimeSeries(Array):
                            **kwds)
 
     def gate(self, time, window=0.25, method='taper', copy=True,
-             taper_width=0.25, invpsd=None):
+             taper_width=0.25, kernel=None, zero_before_gate=False,
+             zero_after_gate=False):
         """ Gate out portion of time series
 
         Parameters
@@ -581,9 +582,21 @@ class TimeSeries(Array):
         taper_width: float
             Length of tapering region on either side of excized data. Only
             applies to the taper gating method.
-        invpsd: pycbc.types.FrequencySeries
-            The inverse PSD to use for painting method. If not given,
-            a PSD is generated using default settings.
+        kernel: pycbc.types.FrequencySeries
+            The kernel to use for the painting method. Should be either the
+            inverse PSD or the inverse ASD. If the former (latter), the time
+            series will in-painted such that the over-whitened (whitened) data
+            will be zero in the gated region. If not given, and method is
+            'paint' If not given, a PSD is generated using default settings,
+            and the inverse PSD will be used for the kernel.
+        zero_before_gate : bool, optional
+            For in-painting method, the time series will be zeroed out
+            before the gate time. In painting is still only done within the
+            gate time. Default is False.
+        zero_after_gate : bool, optional
+            For in-painting method, the time series will be zeroed out
+            after the gate time. In painting is still only done within the
+            gate time. Default is False.
 
         Returns
         -------
@@ -599,10 +612,10 @@ class TimeSeries(Array):
             # https://arxiv.org/pdf/1908.05644.pdf
             from pycbc.strain.gate import gate_and_paint
             from pycbc.waveform.utils import apply_fd_time_shift
-            if invpsd is None:
+            if kernel is None:
                 # These are some bare minimum settings, normally you
                 # should probably provide a psd
-                invpsd = 1. / self.filter_psd(self.duration/32, self.delta_f, 0)
+                kernel = 1. / self.filter_psd(self.duration/32, self.delta_f, 0)
             lindex = int((time - window - self.start_time) / self.delta_t)
             rindex = int((time + window - self.start_time) / self.delta_t)
             lindex = lindex if lindex >= 0 else 0
@@ -610,14 +623,18 @@ class TimeSeries(Array):
             rindex_time = float(self.start_time + rindex * self.delta_t)
             offset = rindex_time - (time + window)
             if offset == 0:
-                return gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                return gate_and_paint(data, lindex, rindex, kernel, copy=False,
+                                      zero_before_gate=zero_before_gate,
+                                      zero_after_gate=zero_after_gate)
             else:
                 # time shift such that gate end time lands on a specific data sample
                 fdata = data.to_frequencyseries()
                 fdata = apply_fd_time_shift(fdata, offset + fdata.epoch, copy=False)
                 # gate and paint in time domain
                 data = fdata.to_timeseries()
-                data = gate_and_paint(data, lindex, rindex, invpsd, copy=False)
+                data = gate_and_paint(data, lindex, rindex, kernel, copy=False,
+                                      zero_before_gate=zero_before_gate,
+                                      zero_after_gate=zero_after_gate)
                 # shift back to the original time
                 fdata = data.to_frequencyseries()
                 fdata = apply_fd_time_shift(fdata, -offset + fdata.epoch, copy=False)
