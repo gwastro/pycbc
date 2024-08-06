@@ -183,28 +183,31 @@ class HealpixSky:
     """Extract the distribution of a healpix map by using the rejection 
     sampling method on the smallest acceptable piece of the celestial sphere.
     Assume the map is not an empty map.
-    
     As in UniformSky and FisherSky, the declination varies from π/2 to -π/2 
     and the right ascension varies from 0 to 2π.
 
     Parameters
     ----------
-   healpix_file : file.fits.gz
-   coverage : percentage of the map covered by the method
+    healpix_file : str
+        path to a fits file containing probability distribution encoded in a 
+        HEALPix scheme
+    coverage : {float
+        percentage of the map covered by the method
+        default value : coverage = 99.99
+    rasterisation_nside : int
+        nside of the rasterized map used to determine the 
+        boundaries of the input map.
+        default value : rasterisation_nside = 64
     """
     name = 'healpix_sky'
     _params = ['ra', 'dec']
     
-    def __init__(self, **params):
-        
+    def __init__(self, **params): 
         import healpy 
         import mhealpy
         
-        
-        
-        
         #give the boundaries of a map m in radian, and following the 
-        #ra-dec convention i-e- theta in [-pi/2, pi/2] phi in [0,2pi]
+        #ra-dec convention delta in [-pi/2, pi/2] alpha in [0,2pi]
         def boundaries(file_name,nside,X): 
             m = mhealpy.HealpixMap.read_map(file_name)
             
@@ -230,11 +233,12 @@ class HealpixSky:
             for i in range(N):
                 j = numpy.argmax(normalized_data == sort_normalized_data[i]) 
                 pix[i] = rasterize_map.uniq[j]-4*nside*nside
-                delta[i],alpha[i] =  healpy.pix2ang(nside = nside,
-                                                    ipix = pix[i],
-                                                    nest = rasterize_map.is_nested,
-                                                    lonlat = False
-                                                    )
+                delta[i],alpha[i] =  healpy.pix2ang(
+                    nside = nside,
+                    ipix = pix[i],
+                    nest = rasterize_map.is_nested,
+                    lonlat = False
+                )
                 delta[i] = numpy.pi/2 - delta[i] # conversion d'angle colatitude -> latitude 
                 
                 S += sort_normalized_data[i]
@@ -267,8 +271,8 @@ class HealpixSky:
             rasterisation_nside = params['rasterisation_nside']
         else :
             rasterisation_nside = 64 # or 128
-        if rasterisation_nside not in [int(2**n) for n in range(20)]: 
-            raise ValueError(
+        if rasterisation_nside not in [int(2**n) for n in range(20)]: #math.log2(nside).is_integer()
+            raise ValueError( #bin(nside).count('1') == 1
                 'Nside must be in [1,2,4,8,16,32,64,128,256,512,1024, ...],'
                 '(preferably between 16 and 256 for better efficiency)'
                 )
@@ -290,8 +294,13 @@ class HealpixSky:
             raise ValueError("Not all parameters used by this distribution "
                              "included in tag portion of section name")
         healpix_file = str(cp.get_opt_tag(section, 'healpix_file', tag))
-        coverage = float(cp.get_opt_tag(section, 'coverage', tag))
-        rasterisation_nside = int(cp.get_opt_tag(section, 'rasterisation_nside', tag))
+        coverage = 99.99
+        if cp.has_option(section,'coverage',tag):
+            coverage = float(cp.get_opt_tag(section, 'coverage', tag))
+        
+        rasterisation_nside = 64
+        if cp.has_option(section,'rasterisation_nside',tag):
+            rasterisation_nside = int(cp.get_opt_tag(section, 'rasterisation_nside', tag))
         return cls(
             healpix_file=healpix_file,
             coverage=coverage,
@@ -378,7 +387,7 @@ class HealpixSky:
         #sampling method
         theta,phi = numpy.array([]),  numpy.array([])
         while len(theta) < size:
-            THETA,PHI = simple_rejection_sampling(self.heapix_map,
+            THETA,PHI = simple_rejection_sampling(self.heapix_map, #☺pas de maj
                                                   size,
                                                   self.boundaries
                                                   )
