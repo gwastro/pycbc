@@ -20,8 +20,7 @@ right ascension and declination.
 import logging
 import numpy # changer les np en numpy
 import time #pas besoin enfaite?
-import healpy as hp
-import mhealpy as mhp
+
 
 from scipy.spatial.transform import Rotation
 
@@ -181,38 +180,38 @@ class FisherSky:
 
 
 class HealpixSky:
-    """description des inputs outputs et de la methode utilisé
+    """Extract the distribution of a healpix map by using the rejection 
+    sampling method on the smallest acceptable piece of the celestial sphere.
+    Assume the map is not an empty map.
     
-    As in UniformSky,and FisherSky the
-    declination varies from π/2 to -π/2 and the right ascension varies from
-    0 to 2π.
+    As in UniformSky and FisherSky, the declination varies from π/2 to -π/2 
+    and the right ascension varies from 0 to 2π.
 
     Parameters
     ----------
    healpix_file : file.fits.gz
-   map_covering : percentage of the map covered by the method
+   coverage : percentage of the map covered by the method
     """
     name = 'healpix_sky'
     _params = ['ra', 'dec']
     
-   
-    
-    
-    
-
-
-
     def __init__(self, **params):
         
-        rasterisation_nside = 64 # or 128
+        import healpy 
+        import mhealpy
+        
+        
         
         
         #give the boundaries of a map m in radian, and following the 
         #ra-dec convention i-e- theta in [-pi/2, pi/2] phi in [0,2pi]
         def boundaries(file_name,nside,X): 
-            m = mhp.HealpixMap.read_map(file_name)
+            m = mhealpy.HealpixMap.read_map(file_name)
             
-            theta_max,theta_min,phi_max,phi_min = -numpy.pi/2,numpy.pi/2,0,2*numpy.pi
+            delta_max= -numpy.pi/2
+            delta_min= numpy.pi/2
+            alpha_max= 0
+            alpha_min = 2*numpy.pi
             
             rasterize_map = m.rasterize(scheme = 'NESTED',nside = min(nside,m.nside)) #min si jamais nside < m.nside pour eviter pb # scheme pas important ? RING par default
             data = rasterize_map.data
@@ -224,35 +223,57 @@ class HealpixSky:
             
             N = len(non_zero_data)
             S = 0
-            pix, theta, phi = numpy.zeros(N,dtype=int), numpy.zeros(N), numpy.zeros(N)
+            pix =  numpy.zeros(N,dtype=int)
+            delta = numpy.zeros(N)
+            alpha =numpy.zeros(N)
             #print(f'{N} pixels non nuls')
             for i in range(N):
                 j = numpy.argmax(normalized_data == sort_normalized_data[i]) 
                 pix[i] = rasterize_map.uniq[j]-4*nside*nside
-                theta[i],phi[i] =  hp.pix2ang(nside = nside, ipix = pix[i], nest = rasterize_map.is_nested, lonlat = False)
-                theta[i] = numpy.pi/2 - theta[i] # conversion d'angle colatitude -> latitude 
+                delta[i],alpha[i] =  healpy.pix2ang(nside = nside,
+                                                    ipix = pix[i],
+                                                    nest = rasterize_map.is_nested,
+                                                    lonlat = False
+                                                    )
+                delta[i] = numpy.pi/2 - delta[i] # conversion d'angle colatitude -> latitude 
                 
                 S += sort_normalized_data[i]
-                theta_max,theta_min = max(theta_max,theta[i]),min(theta_min,theta[i])
-                phi_max,phi_min = max(phi_max,phi[i]),min(phi_min,phi[i])
+                delta_max,delta_min = max(delta_max,delta[i]),min(delta_min,delta[i])
+                alpha_max,alpha_min = max(alpha_max,alpha[i]),min(alpha_min,alpha[i])
                     
                 if S > X/100 : 
                     break
             #ajout de la securité : taille_pix ~ np.pi/4nside-1
             secu = 2*numpy.pi/(4*nside -1)
             
-            theta_max = min(theta_max + secu, numpy.pi/2)
-            theta_min = max(theta_min - secu, -numpy.pi/2)
-            phi_max = min(phi_max + secu, 2*numpy.pi)
-            phi_min = max(phi_min - secu, 0)
+            delta_max = min(delta_max + secu, numpy.pi/2)
+            delta_min = max(delta_min - secu, -numpy.pi/2)
+            alpha_max = min(alpha_max + secu, 2*numpy.pi)
+            alpha_min = max(alpha_min - secu, 0)
      
-            return theta_min,theta_max,phi_min,phi_max
-        #theta_min,theta_max,phi_min,phi_max
+            return delta_min,delta_max,alpha_min,alpha_max
+       
         
         file_name = params['healpix_file']
-        X = params['map_covering']
-        self.m = mhp.HealpixMap.read_map(file_name)
-        self.boundaries = boundaries(file_name,rasterisation_nside,X) #nside = 64 ou 128 utiliser self.m à la place de file_name ?
+        if 'coverage' in params:
+            coverage = params['coverage']
+        else :
+            coverage = 99.99    
+        if coverage > 100 or coverage < 0 : #mettre entre 0 et 1 ? => modif de boundaries()
+            raise ValueError(
+                'Coverage must be between 0% and 100%'
+                )
+        if 'rasterisation_nside' in params:
+            rasterisation_nside = params['rasterisation_nside']
+        else :
+            rasterisation_nside = 64 # or 128
+        if rasterisation_nside not in [int(2**n) for n in range(20)]: 
+            raise ValueError(
+                'Nside must be in [1,2,4,8,16,32,64,128,256,512,1024, ...],'
+                '(preferably between 16 and 256 for better efficiency)'
+                )
+        self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
+        self.boundaries = boundaries(file_name,rasterisation_nside,coverage) #nside = 64 ou 128 utiliser self.m à la place de file_name ?
         
     
         
@@ -269,24 +290,31 @@ class HealpixSky:
             raise ValueError("Not all parameters used by this distribution "
                              "included in tag portion of section name")
         healpix_file = str(cp.get_opt_tag(section, 'healpix_file', tag))
-        map_covering = float(cp.get_opt_tag(section, 'map_covering', tag))
-        
+        coverage = float(cp.get_opt_tag(section, 'coverage', tag))
+        rasterisation_nside = int(cp.get_opt_tag(section, 'rasterisation_nside', tag))
         return cls(
             healpix_file=healpix_file,
-            map_covering=map_covering 
+            coverage=coverage,
+            rasterisation_nside=rasterisation_nside
         )
 
     def rvs(self, size):
         
-        max_time = 3600 # à suprimer
+       
         
         #give arrays of lenght N for delta(declination) and alpha(right ascention) in radians
-        def uniform_distribution_sphere_partial(N,delta_min,delta_max,alpha_min,alpha_max):
-            # angles must be in radians and following the ra-dec convention
-            u = numpy.random.uniform(0, 1, N)
-            v = numpy.random.uniform(0, 1, N)
+        def uniform_distribution_sphere_partial(size,boundaries):
             
-            delta = numpy.arcsin( (numpy.sin(delta_max)-numpy.sin(delta_min) ) * u  + numpy.sin(delta_min) )  
+            delta_min,delta_max,alpha_min,alpha_max = boundaries
+            
+            # angles must be in radians and following the ra-dec convention
+            u = numpy.random.uniform(0, 1, size)
+            v = numpy.random.uniform(0, 1, size)
+            
+            delta = numpy.arcsin( 
+                ( numpy.sin(delta_max) - numpy.sin(delta_min) ) * u  
+                + numpy.sin(delta_min) 
+                )  
             alpha = (alpha_max - alpha_min) * v + alpha_min
             
 
@@ -294,23 +322,24 @@ class HealpixSky:
         #delta in [-pi/2, pi/2] alpha in [0,2pi]
         
         #give the accepted points by the rejection sampling method  (theta,phi)
-        def simple_rejection_sampling(m,N,delta_min,delta_max,alpha_min,alpha_max):                                                  
+        def simple_rejection_sampling(m,size,boundaries):                                                  
 
             data = m.data
             
             M = data.max()                                                                      
-            X = numpy.random.uniform(0, M, N)
+            X = numpy.random.uniform(0, M, size)
 
-            alpha,delta = uniform_distribution_sphere_partial(N,delta_min,delta_max,alpha_min,alpha_max)                                
+            alpha,delta = uniform_distribution_sphere_partial(size,boundaries)                                
             theta,phi = numpy.pi/2 -delta,alpha                                           
            
-            d_data =  numpy.array( m.get_interp_val(theta,phi,lonlat = False) )  # PLUS NECESSAIRE AVEC NOUVELLE VERSION DE MHEALPY
+            d_data =  numpy.array( m.get_interp_val(theta,phi,lonlat = False) )  # ARRAY PLUS NECESSAIRE AVEC NOUVELLE VERSION DE MHEALPY
             
             dist_theta = theta[ d_data > X ] 
             dist_phi = phi[ d_data > X ]
 
             return (dist_theta,dist_phi)
-
+        """
+        max_time = 3600 # à suprimer
         #does the rejection sampling method multiples times until a limit is reach
         def sampling_method(m,n,N_max,t_max,delta_min,delta_max,alpha_min,alpha_max):
             # m = map healpix
@@ -344,9 +373,22 @@ class HealpixSky:
 
         
         
-        theta,phi = sampling_method(self.m,size,size*1e9,max_time,self.boundaries) #mettre while pour enlever N_max et t_max
+        theta,phi = sampling_method(self.healpix_map,size,size*1e9,max_time,self.boundaries) #mettre while pour enlever N_max et t_max
+        """
+        #sampling method
+        theta,phi = numpy.array([]),  numpy.array([])
+        while len(theta) < size:
+            THETA,PHI = simple_rejection_sampling(self.heapix_map,
+                                                  size,
+                                                  self.boundaries
+                                                  )
+            theta = numpy.concatenate((theta,THETA), axis = 0) # concatene theta et THETA
+            phi   = numpy.concatenate((phi, PHI), axis = 0)    # concatene phi et PHI
 
-
+        if len(theta) > size:
+            theta = theta[:size]
+            phi = phi[:size]
+        #end of sampling method
         radec = FieldArray(
             size,
             dtype=[
