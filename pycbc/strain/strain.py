@@ -1848,7 +1848,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.taper_immediate_strain = True
 
     def advance(self, blocksize, timeout=10):
-        """Advanced buffer blocksize seconds.
+        """Advance buffer blocksize seconds.
 
         Add blocksize seconds more to the buffer, push blocksize seconds
         from the beginning.
@@ -1856,7 +1856,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         Parameters
         ----------
         blocksize: int
-            The number of seconds to attempt to read from the channel
+            The number of seconds to attempt to read from the channel.
+        timeout: {int, 10}
+            Maximum time (in seconds) to wait before declaring frame files are
+            too late and reporting unusable data.
 
         Returns
         -------
@@ -1866,7 +1869,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if self.state:
             # We are using information from the state vector, so check what is
             # says about the new strain data.
-            state_advance_result = self.state.advance(blocksize)
+            state_advance_result = self.state.attempt_advance(
+                blocksize, timeout=timeout
+            )
             if not state_advance_result:
                 # Something about the state vector indicates a problem.
                 if state_advance_result is None:

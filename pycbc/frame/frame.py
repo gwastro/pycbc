@@ -863,6 +863,12 @@ class StatusBuffer(DataBuffer):
             self.null_advance(blocksize)
             return None
 
+    def attempt_advance(self, blocksize, timeout=10):
+        result = super().attempt_advance(blocksize, timeout)
+        if result is None:
+            return None
+        return self.check_valid(result)
+
 
 class iDQBuffer(object):
 
