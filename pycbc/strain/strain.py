@@ -1930,13 +1930,17 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         start = len(self.raw_buffer) - csize * self.factor
         strain = self.raw_buffer[start:]
 
-        strain =  pycbc.filter.highpass_fir(strain, self.highpass_frequency,
-                                       self.highpass_samples,
-                                       beta=self.beta)
+        strain =  pycbc.filter.highpass_fir(
+            strain,
+            self.highpass_frequency,
+            self.highpass_samples,
+            beta=self.beta
+        )
         strain = (strain * self.dyn_range_fac).astype(numpy.float32)
 
-        strain = pycbc.filter.resample_to_delta_t(strain,
-                                           1.0/self.sample_rate, method='ldas')
+        strain = pycbc.filter.resample_to_delta_t(
+            strain, 1.0 / self.sample_rate, method='ldas'
+        )
 
         # remove corruption at beginning
         strain = strain[self.corruption:]
@@ -1945,7 +1949,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if self.taper_immediate_strain:
             logger.info("Tapering start of %s strain block", self.detector)
             strain = gate_data(
-                    strain, [(strain.start_time, 0., self.autogating_taper)])
+                strain, [(strain.start_time, 0., self.autogating_taper)]
+            )
             self.taper_immediate_strain = False
 
         # Stitch into continuous stream
@@ -1956,20 +1961,28 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # apply gating if needed
         if self.autogating_threshold is not None:
             autogating_duration_length = self.autogating_duration * self.sample_rate
-            autogating_start_sample = int(len(self.strain) - autogating_duration_length)
+            autogating_start_sample = int(
+                len(self.strain) - autogating_duration_length
+            )
             glitch_times = detect_loud_glitches(
-                    self.strain[autogating_start_sample:-self.corruption],
-                    psd_duration=self.autogating_psd_segment_length, psd_stride=self.autogating_psd_stride,
-                    threshold=self.autogating_threshold,
-                    cluster_window=self.autogating_cluster,
-                    low_freq_cutoff=self.highpass_frequency,
-                    corrupt_time=self.autogating_pad)
+                self.strain[autogating_start_sample:-self.corruption],
+                psd_duration=self.autogating_psd_segment_length,
+                psd_stride=self.autogating_psd_stride,
+                threshold=self.autogating_threshold,
+                cluster_window=self.autogating_cluster,
+                low_freq_cutoff=self.highpass_frequency,
+                corrupt_time=self.autogating_pad
+            )
             if len(glitch_times) > 0:
-                logger.info('Autogating %s at %s', self.detector,
-                            ', '.join(['%.3f' % gt for gt in glitch_times]))
-                self.gate_params = \
-                        [(gt, self.autogating_width, self.autogating_taper)
-                         for gt in glitch_times]
+                logger.info(
+                    'Autogating %s at %s',
+                    self.detector,
+                    ', '.join(['%.3f' % gt for gt in glitch_times])
+                )
+                self.gate_params = [
+                    (gt, self.autogating_width, self.autogating_taper)
+                    for gt in glitch_times
+                ]
                 self.strain = gate_data(self.strain, self.gate_params)
 
         if self.psd is None and self.wait_duration <=0:
@@ -1985,13 +1998,13 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         state_channel = analyze_flags = None
         if args.state_channel and ifo in args.state_channel \
                 and args.analyze_flags and ifo in args.analyze_flags:
-            state_channel = ':'.join([ifo, args.state_channel[ifo]])
+            state_channel = f'{ifo}:{args.state_channel[ifo]}'
             analyze_flags = args.analyze_flags[ifo].split(',')
 
         dq_channel = dq_flags = None
         if args.data_quality_channel and ifo in args.data_quality_channel \
                 and args.data_quality_flags and ifo in args.data_quality_flags:
-            dq_channel = ':'.join([ifo, args.data_quality_channel[ifo]])
+            dq_channel = f'{ifo}:{args.data_quality_channel[ifo]}'
             dq_flags = args.data_quality_flags[ifo].split(',')
 
         idq_channel = None
