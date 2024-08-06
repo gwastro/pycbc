@@ -295,11 +295,11 @@ class HealpixSky:
                              "included in tag portion of section name")
         healpix_file = str(cp.get_opt_tag(section, 'healpix_file', tag))
         coverage = 99.99
-        if cp.has_option(section,'coverage',tag):
+        if cp.has_option_tag(section,'coverage',tag):
             coverage = float(cp.get_opt_tag(section, 'coverage', tag))
         
         rasterisation_nside = 64
-        if cp.has_option(section,'rasterisation_nside',tag):
+        if cp.has_option_tag(section,'rasterisation_nside',tag):
             rasterisation_nside = int(cp.get_opt_tag(section, 'rasterisation_nside', tag))
         return cls(
             healpix_file=healpix_file,
