@@ -216,7 +216,7 @@ class HealpixSky:
             alpha_max= 0
             alpha_min = 2*numpy.pi
             
-            rasterized_map = healpix_map.rasterize(scheme = 'NESTED',nside = nside) # marche pas si RING ?
+            rasterized_map = healpix_map.rasterize(scheme = 'NESTED',nside = nside) #marche pas si RING ?
             data = rasterized_map.data
             non_zero_data = data[data != 0]
             renormalization_constant = non_zero_data.sum() 
