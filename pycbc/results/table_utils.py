@@ -23,7 +23,10 @@
 #
 """ This module provides functions to generate sortable html tables
 """
-import mako.template, uuid
+import mako.template
+import uuid
+import copy
+import numpy
 
 google_table_template = mako.template.Template("""
     <script type='text/javascript' src='https://www.google.com/jsapi'></script>
@@ -103,42 +106,89 @@ def html_table(columns, names, page_size=None, format_strings=None):
 
 static_table_template = mako.template.Template("""
     <table class="table">
-        % if titles is not None:
-            <tr>
-            % for i in range(len(titles)):
-                <th>
-                    ${titles[i]}
-                </th>
-            % endfor
-            </tr>
-        % endif
+        % for row in range(n_rows):
+            % if titles is not None:
+                <tr>
+                % if row_labels is not None:
+                    <td>
+                    </td>
+                % endif
+                % for i in range(n_columns):
+                    <th>
+                        ${titles[row * n_columns + i]}
+                    </th>
+                % endfor
+                </tr>
+            % endif
 
-        % for i in range(len(data)):
-            <tr>
-            % for j in range(len(data[i])):
-                <td>
-                    ${data[i][j]}
-                </td>
+            % for i in range(len(data)):
+                <tr>
+                % if row_labels is not None:
+                    <td>
+                        ${row_labels[i]}
+                    </td>
+                % endif
+                % for j in range(n_columns):
+                    <td>
+                        ${data[i][row * n_columns + j]}
+                    </td>
+                % endfor
+                </tr>
             % endfor
-            </tr>
         % endfor
     </table>
 """)
 
-def static_table(data, titles=None):
-    """ Return an html tableo of this data
+def static_table(data, titles=None, columns_max=None, row_labels=None):
+    """ Return an html table of this data
 
     Parameters
     ----------
-    data : two-dimensional numpy string array
+    data : two-dimensional string array
         Array containing the cell values
     titles : numpy array
-        Vector str of titles
+        Vector str of titles, must be the same length as data
+    columns_max : integer or None
+        If given, will restrict the number of columns in the table
+    row_labels : list of strings
+        Optional list of row labels to be given as the first cell in
+        each data row. Does not count towards columns_max
 
     Returns
     -------
     html_table : str
         A string containing the html table.
     """
-    return static_table_template.render(data=data, titles=titles)
+    data = copy.deepcopy(data)
+    titles = copy.deepcopy(titles)
+    row_labels = copy.deepcopy(row_labels)
+    drows, dcols = numpy.array(data).shape
+    if titles is not None and not len(titles) == dcols:
+        raise ValueError("titles and data lengths do not match")
+
+    if row_labels is not None and not len(row_labels) == drows:
+        raise ValueError(
+            "row_labels must be the same number of rows supplied to data"
+        )
+
+    if columns_max is not None:
+        n_rows = int(numpy.ceil(len(data[0]) / columns_max))
+        n_columns = min(columns_max, len(data[0]))
+        if len(data[0]) < n_rows * n_columns:
+            # Pad the data and titles with empty strings
+            n_missing = int(n_rows * n_columns - len(data[0]))
+            data = numpy.hstack((data, numpy.zeros((len(data), n_missing), dtype='U1')))
+            if titles is not None:
+                titles += [' '] * n_missing
+    else:
+        n_rows = 1
+        n_columns = len(data[0])
+
+    return static_table_template.render(
+        data=data,
+        titles=titles,
+        n_columns=n_columns,
+        n_rows=n_rows,
+        row_labels=row_labels,
+    )
 

@@ -30,7 +30,7 @@ from pycbc import add_common_pycbc_options
 import pycbc.results
 import pycbc.pnutils
 from pycbc.io.hdf import HFile
-from pycbc.events import ranking
+from pycbc.events import ranking, stat as pystat
 from pycbc.results import followup
 
 parser = argparse.ArgumentParser()
@@ -69,10 +69,21 @@ parser.add_argument('--include-summary-page-link', action='store_true',
 parser.add_argument('--include-gracedb-link', action='store_true',
     help="If given, will provide a link to search GraceDB for events "
          "within a 3s window around the coincidence time.")
-
+parser.add_argument('--max-columns', type=int,
+    help="Maximum number of columns allowed in the table (not including detector names)")
+pystat.insert_statistic_option_group(parser,
+    default_ranking_statistic='single_ranking_only')
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
+
+if args.ranking_statistic not in ['quadsum', 'single_ranking_only']:
+    logging.warning(
+        "For the coincident info table, we only use single ranking, not %s, "
+        "this option will be ignored",
+        args.ranking_statistic
+    )
+    args.ranking_statistic = 'quadsum'
 
 # Get the nth loudest trigger from the output of pycbc_coinc_statmap
 f = HFile(args.statmap_file, 'r')
@@ -146,12 +157,16 @@ statmapfile = d
 # table. Each entry in data corresponds to each row in the final table and
 # should be a list of values. So data is will be a list of lists.
 data = []
+row_labels = []
+rank_method = pystat.get_statistic_from_opts(args, list(files.keys()))
+
 for ifo in files.keys():
 
     # ignore ifo if coinc didn't participate (only for multi-ifo workflow)
     if (statmapfile['%s/time' % ifo][n] == -1.0):
         continue
 
+    row_labels.append(ifo)
     d = files[ifo]
     i = idx[ifo]
     tid = d['template_id'][i]
@@ -161,7 +176,12 @@ for ifo in files.keys():
 
     time = d['end_time'][i]
     utc = lal.GPSToUTC(int(time))[0:6]
-
+    trig_dict = {
+        k: numpy.array([d[k][i]])
+        for k in d.keys()
+        if not k.endswith('_template')
+        and k not in ['gating', 'search', 'template_boundaries']
+    }
     # Headers will store the headers that will appear in the table.
     headers = []
     data.append([])
@@ -170,9 +190,6 @@ for ifo in files.keys():
     if args.include_summary_page_link:
         data[-1].append(pycbc.results.dq.get_summary_page_link(ifo, utc))
         headers.append("Detector&nbsp;status")
-    else:
-        data[-1].append(ifo)
-        headers.append("Ifo")
 
     # End times
     data[-1].append(str(datetime.datetime(*utc)))
@@ -180,14 +197,28 @@ for ifo in files.keys():
     headers.append("UTC&nbsp;End&nbsp;Time")
     headers.append("GPS&nbsp;End&nbsp;time")
 
+    #headers.append("Stat")
+    # Determine statistic naming
+    if args.sngl_ranking == "newsnr":
+        sngl_stat_name = "Reweighted SNR"
+    elif args.sngl_ranking == "newsnr_sgveto":
+        sngl_stat_name = "Reweighted SNR (+sgveto)"
+    elif args.sngl_ranking == "newsnr_sgveto_psdvar":
+        sngl_stat_name = "Reweighted SNR (+sgveto+psdvar)"
+    elif args.sngl_ranking == "snr":
+        sngl_stat_name = "SNR"
+    else:
+        sngl_stat_name = args.sngl_ranking
+
+    stat = rank_method.get_sngl_ranking(trig_dict)
+    headers.append(sngl_stat_name)
+    data[-1].append('%5.2f' % stat[0])
+
     # SNR and phase (not showing any single-det stat here)
     data[-1].append('%5.2f' % d['snr'][i])
     data[-1].append('%5.2f' % d['coa_phase'][i])
-    #data[-1].append('%5.2f' % ranking.newsnr(d['snr'][i], rchisq))
     headers.append("&rho;")
     headers.append("Phase")
-    #headers.append("Stat")
-
     # Signal-glitch discrimators
     data[-1].append('%5.2f' % rchisq)
     data[-1].append('%i' % d['chisq_dof'][i])
@@ -218,7 +249,12 @@ for ifo in files.keys():
     headers.append("s<sub>2z</sub>")
     headers.append("Duration")
 
-html += str(pycbc.results.static_table(data, headers))
+html += str(pycbc.results.static_table(
+    data,
+    headers,
+    columns_max=args.max_columns,
+    row_labels=row_labels
+))
 ###############################################################################
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},

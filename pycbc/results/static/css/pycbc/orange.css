@@ -92,3 +92,17 @@ font-size:16px;
 a {
     color:#000000;
 }
+
+table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+td {
+    text-align: center;
+}
+
+th {
+    text-align: center;
+}
