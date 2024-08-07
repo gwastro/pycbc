@@ -207,16 +207,15 @@ class HealpixSky:
         
         #give the boundaries of a map m in radian, and following the 
         #radec convention delta in [-π/2, π/2] alpha in [0,2π]
-        def boundaries(healpix_file,nside,coverage): 
+        def boundaries(healpix_map,nside,coverage): 
             """boundaries of the part of the celestial sphere which we are 
             looking to do the distribution
             
 
             Parameters
             ----------
-            healpix_file : str
-                path to a fits file containing probability distribution encoded
-                in a HEALPix scheme
+            healpix_map : 
+            
             nside : int
                 nside of the rasterized map used to determine the boundaries of 
                 the input map.
@@ -237,7 +236,7 @@ class HealpixSky:
                 maximum right ascention of the map in radians.
 
             """
-            healpix_map = mhealpy.HealpixMap.read_map(healpix_file)
+            
             nside = min(nside,healpix_map.nside)                               #min si jamais nside < m.nside pour pas ralentir inutilement
             
             delta_max= -numpy.pi/2
@@ -312,7 +311,7 @@ class HealpixSky:
                 '(preferably between 16 and 256 for better efficiency)'        # laisser ca ?
                 )
         self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
-        self.boundaries = boundaries(file_name,rasterization_nside,coverage)   # self.m à la place de file_name ?
+        self.boundaries = boundaries(self.healpix_map,rasterization_nside,coverage)  
         
     
         
