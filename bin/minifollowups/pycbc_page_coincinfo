@@ -190,9 +190,6 @@ for ifo in files.keys():
     if args.include_summary_page_link:
         data[-1].append(pycbc.results.dq.get_summary_page_link(ifo, utc))
         headers.append("Detector&nbsp;status")
-    else:
-        data[-1].append(ifo)
-        headers.append("Ifo")
 
     # End times
     data[-1].append(str(datetime.datetime(*utc)))
