@@ -2411,10 +2411,16 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         try:
             ifo = trigs.ifo
+            print('DEBUG in find_dq_noise_rate: trigs.ifo worked successfully')
         except AttributeError:
-            # Should be exactly one ifo provided
-            assert len(numpy.unique(trigs['ifo'])) == 1
-            ifo = trigs['ifo'][0]
+            ifo = trigs.get('ifo', None)
+            if ifo is None:
+                print('DEBUG in find_dq_noise_rate: ifo is none after trigs.get')
+                print(f'DEBUG in find_dq_noise_rate: stat ifos: {self.ifos}')
+                ifo = self.ifos[0]
+            else:
+                print('DEBUG in find_dq_noise_rate: trigs.get worked')
+            assert ifo in self.ifos
 
         dq_state = trigs['dq_state']
         dq_val = numpy.ones(len(dq_state))
@@ -2472,10 +2478,16 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         # make sure every trig has a dq state
         try:
             ifo = trigs.ifo
+            print('DEBUG in single: trigs.ifo worked successfully')
         except AttributeError:
-            # Should be exactly one ifo provided
-            assert len(numpy.unique(trigs['ifo'])) == 1
-            ifo = trigs['ifo'][0]
+            ifo = trigs.get('ifo', None)
+            if ifo is None:
+                print('DEBUG in single: ifo is none after trigs.get')
+                print(f'DEBUG in single: stat ifos: {self.ifos}')
+                ifo = self.ifos[0]
+            else:
+                print('DEBUG in single: trigs.get worked')
+            assert ifo in self.ifos
 
         singles = ExpFitFgBgNormStatistic.single(self, trigs)
 
