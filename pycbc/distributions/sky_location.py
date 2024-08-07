@@ -18,8 +18,8 @@ right ascension and declination.
 """
 
 import logging
-import numpy # changer les np en numpy
-import time #pas besoin enfaite?
+import numpy 
+
 
 
 from scipy.spatial.transform import Rotation
@@ -245,7 +245,7 @@ class HealpixSky:
             alpha_max= 0
             alpha_min = 2*numpy.pi
             
-            rasterized_map = healpix_map.rasterize(                            #marche pas si RING 
+            rasterized_map = healpix_map.rasterize(                            #marche pas si RING, (code qui ne s'arrete plus) 
                 scheme = 'NESTED',
                 nside = nside
                 )                                                              
@@ -254,7 +254,7 @@ class HealpixSky:
             renormalization_constant = non_zero_data.sum() 
             
             normalized_data = data/renormalization_constant
-            sort_normalized_data = - numpy.sort(-non_zero_data/renormalization_constant) # TRI DECROISSANT DE non_zero_data
+            sort_normalized_data = - numpy.sort(-non_zero_data/renormalization_constant) # TRI DECROISSANT DE non_zero_data, methode numpy toute faite ?
             
             N = len(non_zero_data)
             map_coverage = 0
@@ -300,7 +300,7 @@ class HealpixSky:
             coverage = 0.9999    
         if coverage > 1 or coverage < 0 : 
             raise ValueError(
-                'Coverage must be between 0 and 1'
+                'Coverage must be between 0 and 1'                             # dire la valeur mise par l'utilisateur ?
                 )
         if 'rasterization_nside' in params:
             rasterization_nside = params['rasterization_nside']
@@ -308,8 +308,8 @@ class HealpixSky:
             rasterization_nside = 64 # or 128
         if bin(rasterization_nside).count('1') != 1 :
             raise ValueError(
-                'Nside must be a power of 2'
-                '(preferably between 16 and 256 for better efficiency)'
+                'Nside must be a power of 2'                                   # dire la valeur mise par l'utilisateur ?  
+                '(preferably between 16 and 256 for better efficiency)'        # laisser ca ?
                 )
         self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
         self.boundaries = boundaries(file_name,rasterization_nside,coverage)   # self.m à la place de file_name ?
@@ -361,7 +361,7 @@ class HealpixSky:
 
             Returns
             -------
-            coordinates of the points,
+            coordinates of the points,                                         # besoin de detailler le return ?
             following the radec convention
 
             """
