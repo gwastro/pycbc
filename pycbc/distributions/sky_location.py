@@ -194,7 +194,7 @@ class HealpixSky:
     coverage : {float, 0.9999}
         percentage of the map covered by the method
         
-    rasterization_nside : {int, 64}@
+    rasterization_nside : {int, 64}
         nside of the rasterized map used to determine the 
         boundaries of the input map.
     """
@@ -269,7 +269,7 @@ class HealpixSky:
                 'Coverage must be between 0 and 1'
                 )
         if 'rasterization_nside' in params:
-            rasterization_nside = params['rasterisation_nside']
+            rasterization_nside = params['rasterization_nside']
         else :
             rasterization_nside = 64 # or 128
         if bin(rasterization_nside).count('1') != 1 :
