@@ -1670,6 +1670,12 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         numpy.ndarray
             The array of single detector values
         """
+        try:
+            # exists if accessed via coinc_findtrigs
+            self.curr_tnum = trigs.template_num
+        except AttributeError:
+            # exists for SingleDetTriggers & pycbc_live get_coinc
+            self.curr_tnum = trigs['template_id']
 
         # single-ifo stat = log of noise rate
         sngl_stat = self.lognoiserate(trigs)
@@ -1681,12 +1687,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         singles['end_time'] = trigs['end_time'][:]
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
-        try:
-            # exists if accessed via coinc_findtrigs
-            self.curr_tnum = trigs.template_num
-        except AttributeError:
-            # exists for SingleDetTriggers & pycbc_live get_coinc
-            self.curr_tnum = trigs['template_id']
 
         # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
@@ -2412,14 +2412,17 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         try:
             ifo = trigs.ifo
             logger.info('DEBUG in find_dq_noise_rate: trigs.ifo worked successfully')
+            logger.info(f'DEBUG in find_dq_noise_rate: trig ifo: {ifo}')
+            logger.info(f'DEBUG in find_dq_noise_rate: stat ifos: {self.ifos}')
         except AttributeError:
             ifo = trigs.get('ifo', None)
             if ifo is None:
-                logger.info('DEBUG in find_dq_noise_rate: ifo is none after trigs.get')
-                logger.info(f'DEBUG in find_dq_noise_rate: stat ifos: {self.ifos}')
                 ifo = self.ifos[0]
+                logger.info('DEBUG in find_dq_noise_rate: ifo is none after trigs.get')
             else:
                 logger.info('DEBUG in find_dq_noise_rate: trigs.get worked')
+            logger.info(f'DEBUG in find_dq_noise_rate: trig ifo: {ifo}')
+            logger.info(f'DEBUG in find_dq_noise_rate: stat ifos: {self.ifos}')
             assert ifo in self.ifos
 
         dq_state = trigs['dq_state']
@@ -2480,14 +2483,17 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         try:
             ifo = trigs.ifo
             logger.info('DEBUG in single: trigs.ifo worked successfully')
+            logger.info(f'DEBUG in single: trig ifo: {ifo}')
+            logger.info(f'DEBUG in single: stat ifos: {self.ifos}')
         except AttributeError:
             ifo = trigs.get('ifo', None)
             if ifo is None:
-                logger.info('DEBUG in single: ifo is none after trigs.get')
-                logger.info(f'DEBUG in single: stat ifos: {self.ifos}')
                 ifo = self.ifos[0]
+                logger.info('DEBUG in single: ifo is none after trigs.get')
             else:
                 logger.info('DEBUG in single: trigs.get worked')
+            logger.info(f'DEBUG in single: trig ifo: {ifo}')
+            logger.info(f'DEBUG in single: stat ifos: {self.ifos}')
             assert ifo in self.ifos
 
         singles = ExpFitFgBgNormStatistic.single(self, trigs)
