@@ -207,16 +207,48 @@ class HealpixSky:
         
         #give the boundaries of a map m in radian, and following the 
         #radec convention delta in [-π/2, π/2] alpha in [0,2π]
-        def boundaries(file_name,nside,coverage): 
-            healpix_map = mhealpy.HealpixMap.read_map(file_name)
-            nside = min(nside,healpix_map.nside) #min si jamais nside < m.nside pour pas ralentir inutilement
+        def boundaries(healpix_file,nside,coverage): 
+            """boundaries of the part of the celestial sphere which we are 
+            looking to do the distribution
+            
+
+            Parameters
+            ----------
+            healpix_file : str
+                path to a fits file containing probability distribution encoded
+                in a HEALPix scheme
+            nside : int
+                nside of the rasterized map used to determine the boundaries of 
+                the input map.
+                must be a power of 2
+            coverage : float
+                percentage of the map covered by the method
+                must be betwen 0 and 1
+           
+            Returns
+            -------
+            delta_min : float
+                minimum declination of the map in radians.
+            delta_max : float
+                maximum declination of the map in radians.
+            alpha_min : float
+                minimum right ascention of the map in radians.
+            alpha_max : float
+                maximum right ascention of the map in radians.
+
+            """
+            healpix_map = mhealpy.HealpixMap.read_map(healpix_file)
+            nside = min(nside,healpix_map.nside)                               #min si jamais nside < m.nside pour pas ralentir inutilement
             
             delta_max= -numpy.pi/2
             delta_min= numpy.pi/2
             alpha_max= 0
             alpha_min = 2*numpy.pi
             
-            rasterized_map = healpix_map.rasterize(scheme = 'NESTED',nside = nside) #marche pas si RING ?
+            rasterized_map = healpix_map.rasterize(                            #marche pas si RING 
+                scheme = 'NESTED',
+                nside = nside
+                )                                                              
             data = rasterized_map.data
             non_zero_data = data[data != 0]
             renormalization_constant = non_zero_data.sum() 
@@ -234,7 +266,7 @@ class HealpixSky:
                 j = numpy.argmax(normalized_data == sort_normalized_data[i]) 
                 pix[i] = rasterized_map.uniq[j]-4*nside*nside
                 delta[i],alpha[i] =  healpy.pix2ang(
-                    nside = nside,                                                         #  IL Y AVAIT PEUT ETRE UN PROBLEME AVEC NSIDE QUI ETAIT DIFF SI LE MIN ETAIT UTILISE PLUS HAUT
+                    nside = nside,                                                         
                     ipix = pix[i],
                     nest = rasterized_map.is_nested,
                     lonlat = False
@@ -248,6 +280,8 @@ class HealpixSky:
                     
                 if map_coverage > coverage : 
                     break
+                
+                
             #ajout de la securité : taille_pix ~ np.pi/4nside-1
             secu = 2*numpy.pi/(4*nside -1)
             
@@ -278,7 +312,7 @@ class HealpixSky:
                 '(preferably between 16 and 256 for better efficiency)'
                 )
         self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
-        self.boundaries = boundaries(file_name,rasterization_nside,coverage) # self.m à la place de file_name ?
+        self.boundaries = boundaries(file_name,rasterization_nside,coverage)   # self.m à la place de file_name ?
         
     
         
@@ -310,15 +344,31 @@ class HealpixSky:
 
     def rvs(self, size):
         
-       
-        
-        # gives arrays of random coordinates in radians within the boundaries
-        # alpha being the right ascention and delta the declination
+
         def uniform_distribution_sphere_partial(size,boundaries):
+            """gives arrays of random coordinates in radians within the 
+            boundaries.
+            alpha being the right ascention and delta the declination 
+            delta in [-pi/2, pi/2] alpha in [0,2pi]
+
+            Parameters
+            ----------
+            size : int
+                number of random points returned
+            boundaries : list
+                boundaries of the part of the celestial sphere which we are 
+                looking to do the distribution
+
+            Returns
+            -------
+            coordinates of the points,
+            following the radec convention
+
+            """
             
             delta_min,delta_max,alpha_min,alpha_max = boundaries
             
-            # angles must be in radians and following the radec convention
+            #The angles are in radians and follow the radec convention
             u = numpy.random.uniform(0, 1, size)
             v = numpy.random.uniform(0, 1, size)
             
@@ -330,38 +380,70 @@ class HealpixSky:
             
 
             return alpha, delta  
-        #delta in [-pi/2, pi/2] alpha in [0,2pi]
+        
         
         #gives the points accepted by the rejection sampling method
-        def simple_rejection_sampling(healpix_map,size,boundaries):                                                  
+        def simple_rejection_sampling(healpix_map,size,boundaries):
+            """Start from a uniform distribution of points, and accepts those
+            whose values on the healpix_maps are greater than a random value 
+            following a uniform law
+            
+            Parameters
+            ----------
+            healpix_map  : HealpixMap instance                                 # QUEL TYPE ?
+            size : int
+                number of points tested by the method
+            boundaries : list                                                  # OU TUPLE ? QUEL TYPE ?
+                delta_min,delta_max,alpha_min,alpha_max = boundaries
+                delta is the declination in radians [-pi/2, pi/2]
+                alpha is the right ascention in radians [0,2pi]
+
+            Returns
+            -------
+           coordinates of the accepted points, 
+           following the mhealpy conventions
+
+            """                                                  
 
             data = healpix_map.data
             random_data = numpy.random.uniform(0, data.max(), size)
-
-            alpha,delta = uniform_distribution_sphere_partial(size,boundaries)                                
+            
+            alpha,delta = uniform_distribution_sphere_partial(size,boundaries)
+            #a conversion is required to use get_interp_val                                
             theta,phi = numpy.pi/2 -delta,alpha                                           
            
-            d_data =  numpy.array( healpix_map.get_interp_val(theta,phi,lonlat = False) )  #  NOUVELLE VERSION DE MHEALPY NECESSAIRE # ARRAY NECESSAIRE POUR NOUVELLE MAPS
+            #the latest version of mhealpy is needed to run get_interp_val
+            #get_interp_val might return an astropy object,
+            #hence the need to transform into an array
+            d_data =  numpy.array( healpix_map.get_interp_val(
+                                                            theta,
+                                                            phi,
+                                                            lonlat = False
+                                                            )
+                                    ) 
             
             dist_theta = theta[ d_data > random_data ] 
             dist_phi = phi[ d_data > random_data ]
 
             return (dist_theta,dist_phi)
        
-        #sampling method
+        #Sampling method to generate the desired number of points 
         theta,phi = numpy.array([]),  numpy.array([])
         while len(theta) < size:
-            new_theta,new_phi = simple_rejection_sampling(self.healpix_map, #pas de maj
-                                                  size,
-                                                  self.boundaries
-                                                  )
-            theta = numpy.concatenate((theta,new_theta), axis = 0) # concatene theta et THETA
-            phi   = numpy.concatenate((phi, new_phi), axis = 0)    # concatene phi et PHI
+            new_theta,new_phi = simple_rejection_sampling(
+                self.healpix_map,
+                size,
+                self.boundaries
+                )
+            theta = numpy.concatenate((theta,new_theta), axis = 0) 
+            phi   = numpy.concatenate((phi, new_phi), axis = 0)    
 
         if len(theta) > size:
             theta = theta[:size]
             phi = phi[:size]
         #end of sampling method
+        
+        #Writing the HDF file and converting back to the radec convention
         radec = FieldArray(
             size,
             dtype=[
