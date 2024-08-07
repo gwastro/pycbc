@@ -157,7 +157,7 @@ statmapfile = d
 # table. Each entry in data corresponds to each row in the final table and
 # should be a list of values. So data is will be a list of lists.
 data = []
-row_labels = list(files.keys())
+row_labels = []
 rank_method = pystat.get_statistic_from_opts(args, list(files.keys()))
 
 for ifo in files.keys():
@@ -166,6 +166,7 @@ for ifo in files.keys():
     if (statmapfile['%s/time' % ifo][n] == -1.0):
         continue
 
+    row_labels.append(ifo)
     d = files[ifo]
     i = idx[ifo]
     tid = d['template_id'][i]
