@@ -896,8 +896,8 @@ class iDQBuffer(object):
                                         force_update_cache=force_update_cache,
                                         increment_update_cache=increment_update_cache)
 
-    def indices_of_flag(self, start_time, duration, times, padding=0):
-        """ Return the indices of the times lying in the flagged region
+    def flag_at_times(self, start_time, duration, times, padding=0):
+        """ Check whether the idq flag was on at given times
 
         Parameters
         ----------
@@ -906,16 +906,14 @@ class iDQBuffer(object):
         duration: int
             Number of seconds to check.
         padding: float
-            Number of seconds to add around flag inactive times to be considered
-        inactive as well.
+            Amount of time in seconds to flag around glitchy times
 
         Returns
         -------
-        indices: numpy.ndarray
-            Array of indices marking the location of triggers within valid
-        time.
+        flag_state: numpy.ndarray
+            Boolean array of whether flag was on at given times
         """
-        from pycbc.events.veto import indices_outside_times
+        from pycbc.events.veto import indices_within_times
         sr = self.idq.raw_buffer.sample_rate
         s = int((start_time - self.idq.raw_buffer.start_time - padding) * sr) - 1
         e = s + int((duration + padding) * sr) + 1
@@ -929,8 +927,10 @@ class iDQBuffer(object):
         glitch_times = stamps[glitch_idx]
         starts = glitch_times - padding
         ends = starts + 1.0 / sr + padding * 2.0
-        idx = indices_outside_times(times, starts, ends)
-        return idx
+        idx = indices_within_times(times, starts, ends)
+        out = numpy.zeros(len(times), dtype=bool)
+        out[idx] = True
+        return out
 
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds
