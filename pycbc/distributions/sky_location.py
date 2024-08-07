@@ -194,10 +194,9 @@ class HealpixSky:
     coverage : {float, 0.9999}
         percentage of the map covered by the method
         
-    rasterization_nside : int
+    rasterization_nside : {int, 64}@
         nside of the rasterized map used to determine the 
         boundaries of the input map.
-        default value : rasterization_nside = 64
     """
     name = 'healpix_sky'
     _params = ['ra', 'dec']
@@ -209,43 +208,45 @@ class HealpixSky:
         #give the boundaries of a map m in radian, and following the 
         #radec convention delta in [-π/2, π/2] alpha in [0,2π]
         def boundaries(file_name,nside,coverage): 
-            m = mhealpy.HealpixMap.read_map(file_name)
+            healpix_map = mhealpy.HealpixMap.read_map(file_name)
+            nside = min(nside,healpix_map.nside) #min si jamais nside < m.nside pour pas ralentir inutilement
             
             delta_max= -numpy.pi/2
             delta_min= numpy.pi/2
             alpha_max= 0
             alpha_min = 2*numpy.pi
             
-            rasterized_map = m.rasterize(scheme = 'NESTED',nside = min(nside,m.nside)) #min si jamais nside < m.nside pour eviter pb # scheme pas important ? RING par default
+            rasterized_map = healpix_map.rasterize(scheme = 'NESTED',nside = nside) # scheme pas important ? RING par default #LE MIN ETAIT SEULEMENT ICI
             data = rasterized_map.data
             non_zero_data = data[data != 0]
-            A = non_zero_data.sum() # renormalization_constant
+            renormalization_constant = non_zero_data.sum() 
             
-            normalized_data = data/A
-            sort_normalized_data = - numpy.sort(-non_zero_data/A) # TRI DECROISSANT DE non_zero_data
+            normalized_data = data/renormalization_constant
+            sort_normalized_data = - numpy.sort(-non_zero_data/renormalization_constant) # TRI DECROISSANT DE non_zero_data
             
             N = len(non_zero_data)
-            S = 0
+            map_coverage = 0
             pix =  numpy.zeros(N,dtype=int)
             delta = numpy.zeros(N)
             alpha =numpy.zeros(N)
-            #print(f'{N} pixels non nuls')
+           
             for i in range(N):
                 j = numpy.argmax(normalized_data == sort_normalized_data[i]) 
                 pix[i] = rasterized_map.uniq[j]-4*nside*nside
                 delta[i],alpha[i] =  healpy.pix2ang(
-                    nside = nside,
+                    nside = nside,                                                         #  IL Y AVAIT PEUT ETRE UN PROBLEME AVEC NSIDE QUI ETAIT DIFF SI LE MIN ETAIT UTILISE PLUS HAUT
                     ipix = pix[i],
                     nest = rasterized_map.is_nested,
                     lonlat = False
                 )
-                delta[i] = numpy.pi/2 - delta[i] # conversion d'angle colatitude -> latitude 
+                # converts colatitude to latitude
+                delta[i] = numpy.pi/2 - delta[i] 
                 
-                S += sort_normalized_data[i]
+                map_coverage += sort_normalized_data[i]
                 delta_max,delta_min = max(delta_max,delta[i]),min(delta_min,delta[i])
                 alpha_max,alpha_min = max(alpha_max,alpha[i]),min(alpha_min,alpha[i])
                     
-                if S > coverage : 
+                if map_coverage > coverage : 
                     break
             #ajout de la securité : taille_pix ~ np.pi/4nside-1
             secu = 2*numpy.pi/(4*nside -1)
@@ -271,13 +272,13 @@ class HealpixSky:
             rasterization_nside = params['rasterisation_nside']
         else :
             rasterization_nside = 64 # or 128
-        if rasterization_nside not in [int(2**n) for n in range(20)]: #math.log2(nside).is_integer()
-            raise ValueError( #bin(nside).count('1') == 1
-                'Nside must be in [1,2,4,8,16,32,64,128,256,512,1024, ...],'
+        if bin(rasterization_nside).count('1') != 1 :
+            raise ValueError(
+                'Nside must be a power of 2'
                 '(preferably between 16 and 256 for better efficiency)'
                 )
         self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
-        self.boundaries = boundaries(file_name,rasterization_nside,coverage) #nside = 64 ou 128 utiliser self.m à la place de file_name ?
+        self.boundaries = boundaries(file_name,rasterization_nside,coverage) # self.m à la place de file_name ?
         
     
         
@@ -311,7 +312,8 @@ class HealpixSky:
         
        
         
-        #give arrays of lenght size for delta(declination) and alpha(right ascention) in radians
+        # gives arrays of random coordinates in radians within the boundaries
+        # alpha being the right ascention and delta the declination
         def uniform_distribution_sphere_partial(size,boundaries):
             
             delta_min,delta_max,alpha_min,alpha_max = boundaries
@@ -330,33 +332,31 @@ class HealpixSky:
             return alpha, delta  
         #delta in [-pi/2, pi/2] alpha in [0,2pi]
         
-        #give the accepted points by the rejection sampling method  (theta,phi)
-        def simple_rejection_sampling(m,size,boundaries):                                                  
+        #gives the points accepted by the rejection sampling method
+        def simple_rejection_sampling(healpix_map,size,boundaries):                                                  
 
-            data = m.data
-            
-            M = data.max()                                                                      
-            X = numpy.random.uniform(0, M, size)
+            data = healpix_map.data
+            random_data = numpy.random.uniform(0, data.max(), size)
 
             alpha,delta = uniform_distribution_sphere_partial(size,boundaries)                                
             theta,phi = numpy.pi/2 -delta,alpha                                           
            
-            d_data =  numpy.array( m.get_interp_val(theta,phi,lonlat = False) )  # ARRAY PLUS NECESSAIRE AVEC NOUVELLE VERSION DE MHEALPY
+            d_data =  numpy.array( healpix_map.get_interp_val(theta,phi,lonlat = False) )  #  NOUVELLE VERSION DE MHEALPY NECESSAIRE # ARRAY NECESSAIRE POUR NOUVELLE MAPS
             
-            dist_theta = theta[ d_data > X ] 
-            dist_phi = phi[ d_data > X ]
+            dist_theta = theta[ d_data > random_data ] 
+            dist_phi = phi[ d_data > random_data ]
 
             return (dist_theta,dist_phi)
        
         #sampling method
         theta,phi = numpy.array([]),  numpy.array([])
         while len(theta) < size:
-            THETA,PHI = simple_rejection_sampling(self.healpix_map, #pas de maj
+            new_theta,new_phi = simple_rejection_sampling(self.healpix_map, #pas de maj
                                                   size,
                                                   self.boundaries
                                                   )
-            theta = numpy.concatenate((theta,THETA), axis = 0) # concatene theta et THETA
-            phi   = numpy.concatenate((phi, PHI), axis = 0)    # concatene phi et PHI
+            theta = numpy.concatenate((theta,new_theta), axis = 0) # concatene theta et THETA
+            phi   = numpy.concatenate((phi, new_phi), axis = 0)    # concatene phi et PHI
 
         if len(theta) > size:
             theta = theta[:size]
