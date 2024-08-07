@@ -2411,22 +2411,22 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
         try:
             ifo = trigs.ifo
-            logging.info('DEBUG in find_dq_noise_rate: trigs.ifo worked successfully')
+            logger.info('DEBUG in find_dq_noise_rate: trigs.ifo worked successfully')
         except AttributeError:
             ifo = trigs.get('ifo', None)
             if ifo is None:
-                logging.info('DEBUG in find_dq_noise_rate: ifo is none after trigs.get')
-                logging.info(f'DEBUG in find_dq_noise_rate: stat ifos: {self.ifos}')
+                logger.info('DEBUG in find_dq_noise_rate: ifo is none after trigs.get')
+                logger.info(f'DEBUG in find_dq_noise_rate: stat ifos: {self.ifos}')
                 ifo = self.ifos[0]
             else:
-                logging.info('DEBUG in find_dq_noise_rate: trigs.get worked')
+                logger.info('DEBUG in find_dq_noise_rate: trigs.get worked')
             assert ifo in self.ifos
 
         dq_state = trigs['dq_state']
         dq_val = numpy.ones(len(dq_state))
 
         tnum = self.curr_tnum
-        logging.info(f'DEBUG in find_dq_noise_rate: tnum: {tnum}')
+        logger.info(f'DEBUG in find_dq_noise_rate: tnum: {tnum}')
         if ifo in self.dq_rates_by_state:
             for (i, st) in enumerate(dq_state):
                 if isinstance(tnum, numpy.ndarray):
@@ -2479,15 +2479,15 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         # make sure every trig has a dq state
         try:
             ifo = trigs.ifo
-            logging.info('DEBUG in single: trigs.ifo worked successfully')
+            logger.info('DEBUG in single: trigs.ifo worked successfully')
         except AttributeError:
             ifo = trigs.get('ifo', None)
             if ifo is None:
-                logging.info('DEBUG in single: ifo is none after trigs.get')
-                logging.info(f'DEBUG in single: stat ifos: {self.ifos}')
+                logger.info('DEBUG in single: ifo is none after trigs.get')
+                logger.info(f'DEBUG in single: stat ifos: {self.ifos}')
                 ifo = self.ifos[0]
             else:
-                logging.info('DEBUG in single: trigs.get worked')
+                logger.info('DEBUG in single: trigs.get worked')
             assert ifo in self.ifos
 
         singles = ExpFitFgBgNormStatistic.single(self, trigs)
