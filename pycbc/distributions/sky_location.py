@@ -245,7 +245,7 @@ class HealpixSky:
             alpha_min = 2*numpy.pi
             
             rasterized_map = healpix_map.rasterize(                            # A COMPRENDRE ? marche pas si RING, (code qui ne s'arrete plus) 
-                scheme = 'ring',
+                scheme = 'NESTED',
                 nside = nside
                 )                                                              
             data = rasterized_map.data
