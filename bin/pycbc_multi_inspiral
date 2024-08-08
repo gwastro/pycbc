@@ -31,7 +31,6 @@ import argparse
 import numpy as np
 
 from pycbc import (
-    detector,
     fft,
     init_logging,
     inject,
@@ -49,48 +48,8 @@ from pycbc.io.hdf import HFile
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import zeros, float32, complex64
 from pycbc.vetoes import sgchisq
+from pycbc.tmpltbank.sky_grid import SkyGrid
 
-
-def sky_grid_from_cli(parser, args):
-    """Read the sky grid or the single sky position given the CLI arguments."""
-    if args.sky_grid is not None and (
-        args.ra is not None or args.dec is not None
-    ):
-        parser.error(
-            'Please provide either a sky grid via --sky-grid or a '
-            'single sky position via --ra and --dec, not both'
-        )
-    if args.sky_grid is not None:
-        with HFile(args.sky_grid, 'r') as sky_grid_file:
-            ra = sky_grid_file['ra'][:]
-            dec = sky_grid_file['dec'][:]
-    elif args.ra is not None and args.dec is not None:
-        ra = np.array([args.ra])
-        dec = np.array([args.dec])
-    else:
-        parser.error(
-            'Please specify a sky grid via --sky-grid '
-            'or a single position via --ra and --dec'
-        )
-    return np.array([ra, dec])
-
-
-def calculate_antenna_pattern(args, sky_pos_indices):
-    """Calculate the antenna pattern functions for all detectors and sky
-    positions.
-    """
-    antenna_pattern = {}
-    for ifo in args.instruments:
-        curr_det = detector.Detector(ifo)
-        antenna_pattern[ifo] = [None] * len(sky_pos_indices)
-        for index in sky_pos_indices:
-            antenna_pattern[ifo][index] = curr_det.antenna_pattern(
-                sky_positions[0][index],
-                sky_positions[1][index],
-                polarization=0,
-                t_gps=t_gps,
-            )
-    return antenna_pattern
 
 def slide_limiter(args):
     '''
@@ -120,7 +79,12 @@ def slide_limiter(args):
 time_init = time.time()
 parser = argparse.ArgumentParser(description=__doc__)
 add_common_pycbc_options(parser)
-parser.add_argument("--output", type=str)
+parser.add_argument(
+    "--output",
+    type=str,
+    required=True,
+    help="Path to the output file."
+)
 parser.add_argument(
     "--instruments",
     nargs="+",
@@ -128,10 +92,16 @@ parser.add_argument(
     required=True,
     help="List of instruments to analyze.",
 )
-parser.add_argument("--bank-file", type=str)
+parser.add_argument(
+    "--bank-file",
+    type=str,
+    required=True,
+    help="Path to the template bank file."
+)
 parser.add_argument(
     "--low-frequency-cutoff",
     type=float,
+    required=True,
     help="The low frequency cutoff to use for filtering (Hz).",
 )
 # Add approximant arg
@@ -244,16 +214,16 @@ parser.add_argument(
 parser.add_argument(
     "--ra",
     type=float,
-    help="Right ascension of sky point to search (radians),",
+    help="Right ascension of sky point to search (radians).",
 )
 parser.add_argument(
-    "--dec", type=float, help="Declination of sky point to search (radians),"
+    "--dec", type=float, help="Declination of sky point to search (radians)."
 )
 parser.add_argument(
     "--sky-grid",
     type=str,
-    help="Sky-grid to search, an hdf file containing two datasets: "
-    "ra and dec, both in radians",
+    help="Path to an HDF file containing the sky grid to search over, "
+    "with two datasets, ra and dec, both in radians.",
 )
 parser.add_argument(
     "--coinc-threshold",
@@ -338,8 +308,8 @@ parser.add_argument(
     help="Size of each time slide shift.",
 )
 parser.add_argument(
-        "--do-shortslides",
-        action="store_true"
+    "--do-shortslides",
+    action="store_true"
 )
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
@@ -392,8 +362,7 @@ with ctx:
     nifo = len(args.instruments[:])
     flow = args.low_frequency_cutoff
     t_gps = args.trigger_time
-    sky_positions = sky_grid_from_cli(parser, args)
-    sky_pos_indices = np.arange(sky_positions.shape[1])
+    sky_positions = SkyGrid.from_cli(parser, args)
     # The following for loop is used to check whether
     # the sampling rate, flen and tlen agree for all detectors
     # taking the zeroth detector in the list as a reference.
@@ -448,36 +417,24 @@ with ctx:
     # Given the time delays wrt to IFO 0 in time_slides, create a dictionary
     # for time delay indices evaluated wrt the geocenter, in units of samples,
     # i.e. (time delay from geocenter + time slide)*sampling_rate
-    time_delay_idx_zerolag = {
-        position_index: {
-            ifo: detector.Detector(ifo).time_delay_from_earth_center(
-                sky_positions[0][position_index],
-                sky_positions[1][position_index],
-                t_gps,
-            )
-            for ifo in args.instruments
-        }
-        for position_index in sky_pos_indices
-    }
+    time_delays_zerolag = sky_positions.calculate_time_delays()
     time_delay_idx = {
         slide: {
             position_index: {
-                ifo: int(
-                    round(
-                        (
-                            time_delay_idx_zerolag[position_index][ifo]
-                            + time_slides[ifo][slide]
-                        )
-                        * sample_rate
+                ifo: round(
+                    (
+                        time_delays_zerolag[ifo][position_index]
+                        + time_slides[ifo][slide]
                     )
+                    * sample_rate
                 )
                 for ifo in args.instruments
             }
-            for position_index in sky_pos_indices
+            for position_index in range(len(sky_positions))
         }
         for slide in slide_ids
     }
-    del time_delay_idx_zerolag
+    del time_delays_zerolag
 
     logging.info("Setting up MatchedFilterControl at each IFO")
     # Prototype container for the output of MatchedFilterControl and
@@ -629,7 +586,7 @@ with ctx:
         logging.info("Template bank size after thinning: %d", n_bank)
 
     logging.info("Calculating antenna pattern functions at every sky position")
-    antenna_pattern = calculate_antenna_pattern(args, sky_pos_indices)
+    antenna_pattern = sky_positions.calculate_antenna_patterns()
 
     logging.info("Starting the filtering...")
     # Loop over templates
@@ -698,7 +655,9 @@ with ctx:
                 snr_dict[ifo] = (
                     snr_ts[matched_filter[ifo].segments[s_num].analyze] * norm
                 )
-                assert len(snr_dict[ifo]) > 0, f'SNR time series for {ifo} is empty'
+                assert (
+                    len(snr_dict[ifo]) > 0
+                ), f'SNR time series for {ifo} is empty'
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
                 idx[ifo] = ind.copy()
@@ -713,11 +672,11 @@ with ctx:
             for slide in range(num_slides):
                 logging.info("Analyzing slide %d/%d", slide, num_slides)
                 # Loop over sky positions
-                for position_index in sky_pos_indices:
+                for position_index in range(len(sky_positions)):
                     logging.info(
                         "Analyzing sky position %d/%d",
                         position_index + 1,
-                        len(sky_pos_indices),
+                        len(sky_positions),
                     )
                     # Adjust the indices of triggers (if there are any)
                     # and store trigger indices list in a dictionary;
@@ -1084,10 +1043,10 @@ with ctx:
                         )
                         network_out_vals['nifo'] = [nifo] * num_events
                         network_out_vals['dec'] = [
-                            sky_positions[1][position_index]
+                            sky_positions.decs[position_index]
                         ] * num_events
                         network_out_vals['ra'] = [
-                            sky_positions[0][position_index]
+                            sky_positions.ras[position_index]
                         ] * num_events
                         network_out_vals['slide_id'] = [slide] * num_events
                         event_mgr.add_template_events_to_network(
