@@ -180,7 +180,7 @@ class FisherSky:
 
 
 class HealpixSky:
-    """Extract the distribution of a healpix map by using the rejection 
+    """Extract the distribution of a HEALPix map by using the rejection 
     sampling method on the smallest acceptable piece of the celestial sphere.
     Assume the map is not an empty map.
     As in UniformSky and FisherSky, the declination varies from π/2 to -π/2 
@@ -214,7 +214,7 @@ class HealpixSky:
 
             Parameters
             ----------
-            healpix_map : 
+            healpix_map : HealpixMap instance 
             
             nside : int
                 nside of the rasterized map used to determine the boundaries of 
@@ -245,7 +245,7 @@ class HealpixSky:
             alpha_min = 2*numpy.pi
             
             rasterized_map = healpix_map.rasterize(                            # A COMPRENDRE ? marche pas si RING, (code qui ne s'arrete plus) 
-                scheme = 'NESTED',
+                scheme = 'ring',
                 nside = nside
                 )                                                              
             data = rasterized_map.data
@@ -350,7 +350,7 @@ class HealpixSky:
         #gives the points accepted by the rejection sampling method
         def simple_rejection_sampling(healpix_map,size,boundaries):
             """Start from a uniform distribution of points, and accepts those
-            whose values on the healpix_maps are greater than a random value 
+            whose values on the healpix_map are greater than a random value 
             following a uniform law
             
             Parameters
