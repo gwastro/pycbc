@@ -245,14 +245,12 @@ class HealpixSky:
             map_coverage = 0
 
             for i in range(len(data)):
-                # j = numpy.argmax(normalized_data == sort_normalized_data[i])
                 j = sorter[i]
                 pix = rasterized_map.uniq[j] - 4 * nside * nside
                 delta, alpha = rasterized_map.pix2ang(pix, lonlat=False)
                 # converts colatitude to latitude
                 delta = numpy.pi / 2 - delta
 
-                # map_coverage += sort_normalized_data[i]
                 map_coverage += normalized_data[j]
                 delta_max, delta_min = max(delta_max, delta), min(
                     delta_min, delta
