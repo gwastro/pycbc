@@ -270,7 +270,10 @@ def plot_fits(
     ]
     fits_plot_arguments += sv.dict_to_args(plot_fit_options)
 
-    title = "Fit parameters for pycbc-live, triggers from " + day_title_str
+    title = "Fit parameters for pycbc-live, triggers from {}, {}".format(
+        ifo,
+        day_title_str
+    )
     if smoothed == True:
         title += ', smoothed'
     fits_plot_arguments += ['--title', title]
