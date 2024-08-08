@@ -180,29 +180,31 @@ class FisherSky:
 
 
 class HealpixSky:
-    """Extract the distribution of a HEALPix map by using the rejection 
-    sampling method on the smallest acceptable piece of the celestial sphere.
-    Assume the map is not an empty map.
-    As in UniformSky and FisherSky, the declination varies from π/2 to -π/2 
-    and the right ascension varies from 0 to 2π.
+    """Sample the distribution given by a HEALPix map by using the rejection 
+    sampling method.
+    To have an acceptable acceptance rate, a rectangle in (alpha,delta) is 
+    first found, that encloses a given ammount of probability (specified by 
+    the coverage parameter). In order to do this the map is rasterized to a
+    resolution specified by rasterization_nside.
+    
+    The declination (delta) varies from π/2 to -π/2 and the right ascension 
+    (alpha) varies from 0 to 2π.
 
     Parameters
     ----------
     healpix_file : str
         path to a fits file containing probability distribution encoded in a 
         HEALPix scheme
-    coverage : {float, 0.9999}
-        percentage of the map covered by the method
-        
-    rasterization_nside : {int, 64}
+    coverage : float
+        fraction of the map covered by the method. Must be between 0 and 1
+    rasterization_nside : int
         nside of the rasterized map used to determine the 
-        boundaries of the input map.
+        boundaries of the input map. Must be a power of 2
     """
     name = 'healpix_sky'
     _params = ['ra', 'dec']
     
     def __init__(self, **params): 
-        import healpy 
         import mhealpy
         
         #give the boundaries of a map m in radian, and following the 
@@ -237,77 +239,69 @@ class HealpixSky:
 
             """
             
-            nside = min(nside,healpix_map.nside)                               # A CONSERVER ?
+            nside = min(nside,healpix_map.nside)                               
             
             delta_max= -numpy.pi/2
             delta_min= numpy.pi/2
             alpha_max= 0
             alpha_min = 2*numpy.pi
-            
-            rasterized_map = healpix_map.rasterize(                            # A COMPRENDRE ? marche pas si RING, (code qui ne s'arrete plus) 
+            #FIXME this only works with 'NESTED', why?
+            rasterized_map = healpix_map.rasterize(                            
                 scheme = 'NESTED',
                 nside = nside
                 )                                                              
             data = rasterized_map.data
-            non_zero_data = data[data != 0]
-            renormalization_constant = non_zero_data.sum() 
+            renormalization_constant = data.sum() 
             
             normalized_data = data/renormalization_constant
-            sort_normalized_data = - numpy.sort(-non_zero_data/renormalization_constant) #LAISSER COMME CA ?  TRI DECROISSANT DE non_zero_data, methode numpy toute faite ?
+            sorter = numpy.argsort(-normalized_data)
             
-            N = len(non_zero_data)
             map_coverage = 0
-            pix =  numpy.zeros(N,dtype=int)
-            delta = numpy.zeros(N)
-            alpha =numpy.zeros(N)
-           
-            for i in range(N):
-                j = numpy.argmax(normalized_data == sort_normalized_data[i]) 
-                pix[i] = rasterized_map.uniq[j]-4*nside*nside
-                delta[i],alpha[i] =  healpy.pix2ang(
-                    nside = nside,                                                         
-                    ipix = pix[i],
-                    nest = rasterized_map.is_nested,
+            
+            for i in range(len(data)):
+                # j = numpy.argmax(normalized_data == sort_normalized_data[i]) 
+                j = sorter[i]
+                pix = rasterized_map.uniq[j]-4*nside*nside
+                delta,alpha =  rasterized_map.pix2ang(
+                    ipix = pix,
                     lonlat = False
                 )
                 # converts colatitude to latitude
-                delta[i] = numpy.pi/2 - delta[i] 
+                delta = numpy.pi/2 - delta 
                 
-                map_coverage += sort_normalized_data[i]
-                delta_max,delta_min = max(delta_max,delta[i]),min(delta_min,delta[i])
-                alpha_max,alpha_min = max(alpha_max,alpha[i]),min(alpha_min,alpha[i])
+                # map_coverage += sort_normalized_data[i]
+                map_coverage += normalized_data[j]
+                delta_max,delta_min = max(delta_max,delta),min(delta_min,delta)
+                alpha_max,alpha_min = max(alpha_max,alpha),min(alpha_min,alpha)
                     
                 if map_coverage > coverage : 
                     break
-                
                 
             #A safety margin is added to ensure that the pixels at the edges 
             #of the distribution are fully accounted for.
             #width of one pixel : < π/4nside-1
             
-            secu = 2*numpy.pi/(4*nside -1)
+            margin = 2*numpy.pi/(4*nside -1)
             
-            delta_max = min(delta_max + secu, numpy.pi/2)
-            delta_min = max(delta_min - secu, -numpy.pi/2)
-            alpha_max = min(alpha_max + secu, 2*numpy.pi)
-            alpha_min = max(alpha_min - secu, 0)
+            delta_max = min(delta_max + margin, numpy.pi/2)
+            delta_min = max(delta_min - margin, -numpy.pi/2)
+            alpha_max = min(alpha_max + margin, 2*numpy.pi)
+            alpha_min = max(alpha_min - margin, 0)
      
             return delta_min,delta_max,alpha_min,alpha_max
        
         
         file_name = params['healpix_file']
-        if 'coverage' in params:
-            coverage = params['coverage']
-        else :
-            coverage = 0.9999    
+        
+        coverage = params['coverage']
+      
         if coverage > 1 or coverage < 0 : 
             raise ValueError(
                 f'Coverage must be between 0 and 1, {coverage} is not correct'                            
                 )
-        if 'rasterization_nside' in params:
-            rasterization_nside = params['rasterization_nside']
-        else :
-            rasterization_nside = 64 # or 128
+        
+        rasterization_nside = params['rasterization_nside']
+     
         if bin(rasterization_nside).count('1') != 1 :
             raise ValueError(
                 f'Rasterization_nside must be a power of 2,' 
@@ -316,10 +310,7 @@ class HealpixSky:
                 )
         self.healpix_map = mhealpy.HealpixMap.read_map(file_name)
         self.boundaries = boundaries(self.healpix_map,rasterization_nside,coverage)  
-        
     
-        
-
     @property
     def params(self):
         return self._params
