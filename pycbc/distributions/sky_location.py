@@ -263,7 +263,7 @@ class HealpixSky:
                 j = sorter[i]
                 pix = rasterized_map.uniq[j]-4*nside*nside
                 delta,alpha =  rasterized_map.pix2ang(
-                    ipix = pix,
+                    pix,
                     lonlat = False
                 )
                 # converts colatitude to latitude
