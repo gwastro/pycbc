@@ -776,7 +776,6 @@ def create_multidim_plot(parameters, samples, labels=None,
             else:
                 cmap_norm = colors.Normalize(vmin=vmin, vmax=vmax)
 
-
             plt = ax.scatter(x=samples[px], y=samples[py], c=zvals, s=5,
                              edgecolors='none', norm=cmap_norm,
                              cmap=scatter_cmap, alpha=alpha, zorder=2)
