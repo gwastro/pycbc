@@ -337,7 +337,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
                              linestyle='-', plot_marginal_lines=True,
                              title=True, expected_value=None,
                              expected_color='red', rotated=False,
-                             plot_min=None, plot_max=None):
+                             plot_min=None, plot_max=None, log_scale=False):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
 
@@ -380,6 +380,8 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         creates.
     scalefac : {1., float}
         Factor to scale the default font sizes by. Default is 1 (no scaling).
+    log_scale : boolean
+        Should the histogram bins be logarithmically spaced
     """
     if fillcolor is None:
         htype = 'step'
@@ -389,7 +391,19 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         orientation = 'horizontal'
     else:
         orientation = 'vertical'
-    ax.hist(values, bins=50, histtype=htype, orientation=orientation,
+    if log_scale:
+        bins = numpy.logspace(
+            numpy.log10(numpy.nanmin(values)),
+            numpy.log10(numpy.nanmax(values)),
+            50
+        )
+    else:
+        bins = numpy.linspace(
+            numpy.nanmin(values),
+            numpy.nanmax(values),
+            50,
+        )
+    ax.hist(values, bins=bins, histtype=htype, orientation=orientation,
             facecolor=fillcolor, edgecolor=color, ls=linestyle, lw=2,
             density=True)
     if percentiles is None:
@@ -545,7 +559,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                          marginal_title=True, marginal_linestyle='-',
                          zvals=None, show_colorbar=True, cbar_label=None,
                          vmin=None, vmax=None, scatter_cmap='plasma',
-                         scatter_log_cmap=False,
+                         scatter_log_cmap=False, log_parameters=None,
                          plot_density=False, plot_contours=True,
                          density_cmap='viridis',
                          contour_color=None, label_contours=True,
@@ -640,6 +654,8 @@ def create_multidim_plot(parameters, samples, labels=None,
         Use the given figure instead of creating one.
     axis_dict : dict
         Use the given dictionary of axes instead of creating one.
+    log_parameters : list
+        Which parameters should be plotted on a log scale
 
     Returns
     -------
@@ -735,6 +751,7 @@ def create_multidim_plot(parameters, samples, labels=None,
             create_marginalized_hist(
                 ax, samples[param], label=labels[param],
                 color=hist_color, fillcolor=fill_color,
+                log_scale=param in log_parameters,
                 plot_marginal_lines=plot_marginal_lines,
                 linestyle=marginal_linestyle, linecolor=line_color,
                 title=marginal_title, expected_value=expected_value,

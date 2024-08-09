@@ -286,6 +286,7 @@ fig, axis_dict = create_multidim_plot(
     hist_color=hist_color,
     mins=mins,
     maxs=maxs,
+    log_parameters=args.log_parameters,
 )
 
 title_text = f"{os.path.basename(args.bank_file)}"
@@ -322,10 +323,17 @@ for i in range(len(args.parameters)):
             s0.sharex(s1)
 
 for (p1, p2), ax in axis_dict.items():
-    if p1 in args.log_parameters:
-        ax[0].semilogx()
-    if p2 in args.log_parameters:
-        ax[0].semilogy()
+    if p1 == p2:
+        if p1 == args.parameters[-1] and len(args.parameters) == 2:
+            # This will be turned on its side, so set _y_ axis to log
+            ax[0].semilogy()
+        else:
+            ax[0].semilogx()
+    else:
+        if p1 in args.log_parameters:
+            ax[0].semilogx()
+        if p2 in args.log_parameters:
+            ax[0].semilogy()
 
 logging.info("Plot generated")
 fig.set_dpi(args.dpi)
