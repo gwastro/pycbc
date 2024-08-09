@@ -75,6 +75,7 @@ parser.add_argument("--parameters",
 parser.add_argument(
     '--log-parameters',
     nargs='+',
+    default=[],
     help="Which parameters are to be plotted on a log scale? "
          "Must be also given in parameters"
 )

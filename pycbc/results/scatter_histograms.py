@@ -631,6 +631,8 @@ def create_multidim_plot(parameters, samples, labels=None,
         The color map to use for the scatter points. Default is 'plasma'.
     scatter_log_cmap : boolean
         Should the scatter point coloring be on a log scale? Default False
+    log_parameters : list or None
+        Which parameters should be plotted on a log scale
     plot_density : {False, bool}
         Plot the density of points as a color map.
     plot_contours : {True, bool}
@@ -654,8 +656,6 @@ def create_multidim_plot(parameters, samples, labels=None,
         Use the given figure instead of creating one.
     axis_dict : dict
         Use the given dictionary of axes instead of creating one.
-    log_parameters : list
-        Which parameters should be plotted on a log scale
 
     Returns
     -------
@@ -668,6 +668,8 @@ def create_multidim_plot(parameters, samples, labels=None,
     """
     if labels is None:
         labels = {p: p for p in parameters}
+    if log_parameters is None:
+        log_parameters = []
     # set up the figure with a grid of axes
     # if only plotting 2 parameters, make the marginal plots smaller
     nparams = len(parameters)
