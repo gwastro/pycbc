@@ -43,7 +43,7 @@ import matplotlib
 if 'matplotlib.backends' not in sys.modules:  # nopep8
     matplotlib.use('agg')
 
-from matplotlib import (offsetbox, pyplot, gridspec)
+from matplotlib import (offsetbox, pyplot, gridspec, colors)
 
 from pycbc.results import str_utils
 from pycbc.io import FieldArray
@@ -545,6 +545,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                          marginal_title=True, marginal_linestyle='-',
                          zvals=None, show_colorbar=True, cbar_label=None,
                          vmin=None, vmax=None, scatter_cmap='plasma',
+                         scatter_log_cmap=False,
                          plot_density=False, plot_contours=True,
                          density_cmap='viridis',
                          contour_color=None, label_contours=True,
@@ -614,6 +615,8 @@ def create_multidim_plot(parameters, samples, labels=None,
         zvals.
     scatter_cmap : {'plasma', string}
         The color map to use for the scatter points. Default is 'plasma'.
+    scatter_log_cmap : boolean
+        Should the scatter point coloring be on a log scale? Default False
     plot_density : {False, bool}
         Plot the density of points as a color map.
     plot_contours : {True, bool}
@@ -749,8 +752,14 @@ def create_multidim_plot(parameters, samples, labels=None,
                 alpha = 0.3
             else:
                 alpha = 1.
+            if scatter_log_cmap:
+                cmap_norm = colors.LogNorm(vmin=vmin, vmax=vmax)
+            else:
+                cmap_norm = colors.Normalize(vmin=vmin, vmax=vmax)
+
+
             plt = ax.scatter(x=samples[px], y=samples[py], c=zvals, s=5,
-                             edgecolors='none', vmin=vmin, vmax=vmax,
+                             edgecolors='none', norm=cmap_norm,
                              cmap=scatter_cmap, alpha=alpha, zorder=2)
 
         if plot_contours or plot_density:
