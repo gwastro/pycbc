@@ -323,7 +323,7 @@ for i in range(len(args.parameters)):
             s0.sharex(s1)
 
 for (p1, p2), ax in axis_dict.items():
-    if p1 == p2:
+    if p1 == p2 and p1 in args.log_parameters:
         if p1 == args.parameters[-1] and len(args.parameters) == 2:
             # This will be turned on its side, so set _y_ axis to log
             ax[0].semilogy()
