@@ -211,6 +211,8 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
                  sample_rate=None,
                  **kwargs):
 
+        # the flag used in `_loglr`
+        self.return_sh_hh = False
         self.sample_rate = float(sample_rate)
         self.kwargs = kwargs
         variable_params, kwargs = self.setup_marginalization(
