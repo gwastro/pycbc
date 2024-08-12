@@ -7,6 +7,11 @@ echo -e "\\n>> [`date`] Python Major Version:" $PYTHON_VERSION
 PYTHON_MINOR_VERSION=`python -c 'import sys; print(sys.version_info.minor)'`
 echo -e "\\n>> [`date`] Python Minor Version:" $PYTHON_MINOR_VERSION
 
+# This will work from anywhere within the pycbc directory
+this_script_dir=`dirname -- "$( readlink -f -- "$0"; )"`
+cd $this_script_dir
+cd ..
+
 LOG_FILE=$(mktemp -t pycbc-test-log.XXXXXXXXXX)
 
 RESULT=0
@@ -29,7 +34,8 @@ function test_result {
 if [ "$PYCBC_TEST_TYPE" = "unittest" ] || [ -z ${PYCBC_TEST_TYPE+x} ]; then
     for prog in `find test -name '*.py' -print | egrep -v '(long|lalsim|test_waveform)'`
     do
-        echo -e ">> [`date`] running unit test for $prog"
+        prog_short=`echo $prog | rev | cut -d"/" -f1 | rev`
+        echo -e ">> [`date`] running unit test for $prog_short"
         python $prog &> $LOG_FILE
         test_result
     done

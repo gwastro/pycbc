@@ -22,8 +22,7 @@ search_form_string="""<form name="%s_alog_search" id="%s_alog_search" method="po
 <input type="hidden" name="srcDateTo" id="srcDateTo" value="%s" size="20"/>
 </form>"""
 
-data_h1_string = """H1
-&nbsp;
+data_h1_string = """
 <a href=https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/%s>
 Summary</a>
 &nbsp;
@@ -31,8 +30,7 @@ Summary</a>
 'https://alog.ligo-wa.caltech.edu/aLOG/includes/search.php?adminType=search');
 return true;">aLOG</a>"""
 
-data_l1_string="""L1
-&nbsp;
+data_l1_string="""
 <a href=https://ldas-jobs.ligo-la.caltech.edu/~detchar/summary/day/%s>
 Summary</a>
 &nbsp;

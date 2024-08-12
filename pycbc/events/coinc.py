@@ -28,7 +28,6 @@ coincident triggers.
 import numpy
 import logging
 import copy
-from datetime import datetime as dt
 import time as timemod
 import threading
 
@@ -317,7 +316,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         #  tested against fixed and pivot are now present for testing with new
         #  dependent ifos
         for ifo2 in ids:
-            logger.info('added ifo %s, testing against %s' % (ifo1, ifo2))
+            logger.info('added ifo %s, testing against %s', ifo1, ifo2)
             w = win(ifo1, ifo2)
             left = time1.searchsorted(ctimes[ifo2] - w)
             right = time1.searchsorted(ctimes[ifo2] + w)
@@ -887,7 +886,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             **kwargs
         )
 
-        self.time_stat_refreshed = dt.now()
+        self.time_stat_refreshed = timemod.time()
         self.stat_calculator_lock = threading.Lock()
         self.statistic_refresh_rate = statistic_refresh_rate
 
@@ -1406,13 +1405,18 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         """
         Start a thread managing whether the stat_calculator will be updated
         """
+        if self.statistic_refresh_rate is None:
+            logger.info(
+                "Statistic refresh disabled for %s", ppdets(self.ifos, "-")
+            )
+            return
         thread = threading.Thread(
             target=self.refresh_statistic,
-            daemon=True
+            daemon=True,
+            name="Stat refresh " + ppdets(self.ifos, "-")
         )
         logger.info(
-            "Starting %s statistic refresh thread",
-            ''.join(self.ifos),
+            "Starting %s statistic refresh thread", ppdets(self.ifos, "-")
         )
         thread.start()
 
@@ -1422,29 +1426,25 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         """
         while True:
             # How long since the statistic was last updated?
-            since_stat_refresh = \
-                (dt.now() - self.time_stat_refreshed).total_seconds()
+            since_stat_refresh = timemod.time() - self.time_stat_refreshed
             if since_stat_refresh > self.statistic_refresh_rate:
-                self.time_stat_refreshed = dt.now()
+                self.time_stat_refreshed = timemod.time()
                 logger.info(
                     "Checking %s statistic for updated files",
-                    ''.join(self.ifos),
+                    ppdets(self.ifos, "-"),
                 )
                 with self.stat_calculator_lock:
                     self.stat_calculator.check_update_files()
             # Sleep one second for safety
             timemod.sleep(1)
             # Now include the time it took the check / update the statistic
-            since_stat_refresh = \
-                (dt.now() - self.time_stat_refreshed).total_seconds()
+            since_stat_refresh = timemod.time() - self.time_stat_refreshed
             logger.debug(
                 "%s statistic: Waiting %.3fs for next refresh",
-                ''.join(self.ifos),
+                ppdets(self.ifos, "-"),
                 self.statistic_refresh_rate - since_stat_refresh,
             )
-            timemod.sleep(
-                self.statistic_refresh_rate - since_stat_refresh + 1
-            )
+            timemod.sleep(self.statistic_refresh_rate - since_stat_refresh + 1)
 
 
 __all__ = [
