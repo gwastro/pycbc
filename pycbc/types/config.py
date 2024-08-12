@@ -49,7 +49,7 @@ class DeepCopyableConfigParser(ConfigParser.ConfigParser):
         self.write(config_string)
         config_string.seek(0)
         new_config = self.__class__()
-        new_config.readfp(config_string)
+        new_config.read_file(config_string)
         return new_config
 
 
