@@ -629,8 +629,9 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         self.other_models = list(self.other_models.values())
 
         # determine whether to accelerate total_loglr
+        from .tools import str_to_bool
         self.static_margin_params_in_other_models = \
-            'static_margin_params_in_other_models' in kwargs
+            str_to_bool(kwargs['static_margin_params_in_other_models'][0])
 
     def write_metadata(self, fp, group=None):
         """Adds metadata to the output files
@@ -689,8 +690,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         else:
             nums = 1
 
-        print("[total_loglr] sh_primary: ", sh_primary)
-        print("[total_loglr] self.primary_model.current_params: ", self.primary_model.current_params)
         margin_params = {}
         if self.static_margin_params_in_other_models:
             # Due to the high precision of extrinsic parameters constrined
@@ -703,7 +702,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # waveform. Using SNR will cancel out the effect of amplitude.err
             i_max_extrinsic = numpy.argmax(
                 numpy.abs(sh_primary) / hh_primary**0.5)
-            print("i_max_extrinsic: ", i_max_extrinsic)
             for p in self.primary_model.marginalized_params_name:
                 if isinstance(self.primary_model.current_params[p],
                               numpy.ndarray):
@@ -727,14 +725,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             # not using self.primary_model.current_params, because others_model
             # may have its own static parameters
             current_params_other = other_model.current_params.copy()
-            print("[total_loglr] current_params_other 1: ", current_params_other)
             if not self.static_margin_params_in_other_models:
                 for i in range(nums):
                     current_params_other.update(
                         {key: value[i] if isinstance(value, numpy.ndarray)
                          else value for key, value in margin_params.items()})
                     other_model.update(**current_params_other)
-                    print("[total_loglr] current_params_other 2: ", current_params_other)
                     other_model.return_sh_hh = True
                     sh_other, hh_other = other_model.loglr
                     sh_others[i] += sh_other
@@ -749,8 +745,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                     {key: value[0] if isinstance(value, numpy.ndarray)
                      else value for key, value in margin_params.items()})
                 other_model.update(**current_params_other)
-                print("[total_loglr] other_model.sampling_transforms: ", other_model.sampling_transforms)
-                print("[total_loglr] other_model.current_params: ", other_model.current_params)
                 other_model.return_sh_hh = True
                 sh_other, hh_other = other_model.loglr
                 other_model.return_sh_hh = False
@@ -768,13 +762,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             hh_others = hh_others[0]
         sh_total = sh_primary + sh_others
         hh_total = hh_primary + hh_others
-
-        inner_dict = {
-                      'sh_others': sh_others,
-                      'hh_others': hh_others,
-                      'sh_primary': sh_primary,
-                      'hh_primary': hh_primary}
-        print(inner_dict)
 
         loglr = self.primary_model.marginalize_loglr(sh_total, hh_total)
 
@@ -864,7 +851,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
         submodels = {}
         logging.info("Loading submodels")
         for lbl in submodel_lbls:
-            print("lbl: ", lbl)
             logging.info("============= %s =============", lbl)
             # create a config parser to pass to the model
             subcp = WorkflowConfigParser()
@@ -888,7 +874,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                                      "individual parameter names with the "
                                      "model label. See HierarchicalParam for "
                                      "details.".format(sec))
-                print("[from_config] sec.subname: ", sec.subname)
                 subcp.add_section(sec.subname)
                 for opt, val in cp.items(sec):
                     subcp.set(sec.subname, opt, val)
@@ -929,14 +914,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 for param in wfparam_map[lbl]:
                     subcp.set('static_params', param.subname, 'REPLACE')
 
-            print("[from_config] subcp.sections(): ", subcp.sections())
             # save the vitual config file to disk for later check
             with open('%s.ini' % lbl, 'w', encoding='utf-8') as file:
                 subcp.write(file)
 
             # initialize
             submodel = read_from_config(subcp)
-            print("[from_config] submodel.sampling_transforms 1: ", submodel.sampling_transforms)
 
             if lbl not in kwargs['primary_lbl']:
                 # similar to the standard hierarchical model,
@@ -951,7 +934,6 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
                 # doesn't need marginalization
                 for p in wfparam_map[lbl]:
                     submodel.static_params.pop(p.subname)
-            print("[from_config] submodel.sampling_transforms 2: ", submodel.sampling_transforms)
             submodels[lbl] = submodel
             logging.info("")
 

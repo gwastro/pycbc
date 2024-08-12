@@ -411,8 +411,6 @@ class BaseModel(metaclass=ABCMeta):
         # add the static params
         values = self.static_params.copy()
         values.update(params)
-        print("[update] self._transform_params: ", self._transform_params)
-        print("[update] values: ", values)
         self._current_params = self._transform_params(**values)
         self._current_stats = ModelStats()
 
@@ -504,16 +502,12 @@ class BaseModel(metaclass=ABCMeta):
             return getattr(self._current_stats, statname)
         except AttributeError:
             # apply waveform transforms if requested
-            print("[BaseModel _trytoget] apply_transforms: ", apply_transforms)
-            print("[BaseModel _trytoget] self.waveform_transforms: ", self.waveform_transforms)
-            print("[BaseModel _trytoget] self._current_params 1: ", self._current_params)
             if apply_transforms and self.waveform_transforms is not None:
                 self._current_params = transforms.apply_transforms(
                     self._current_params, self.waveform_transforms,
                     inverse=False)
             val = fallback(**kwargs)
             setattr(self._current_stats, statname, val)
-            print("[BaseModel _trytoget] self._current_params 2: ", self._current_params)
             return val
 
     @property
@@ -524,7 +518,6 @@ class BaseModel(metaclass=ABCMeta):
         If that raises an ``AttributeError``, will call `_loglikelihood`` to
         calculate it and store it to ``current_stats``.
         """
-        print("[BaseModel] loglikelihood")
         return self._trytoget('loglikelihood', self._loglikelihood,
                               apply_transforms=True)
 
@@ -551,7 +544,6 @@ class BaseModel(metaclass=ABCMeta):
         float :
             The value of the jacobian.
         """
-        print("[BaseModel] logjacobian")
         return self._trytoget('logjacobian', self._logjacobian)
 
     def _logjacobian(self):
@@ -566,7 +558,6 @@ class BaseModel(metaclass=ABCMeta):
     @property
     def logprior(self):
         """Returns the log prior at the current parameters."""
-        print("[BaseModel] logprior")
         return self._trytoget('logprior', self._logprior)
 
     def _logprior(self):
@@ -638,8 +629,6 @@ class BaseModel(metaclass=ABCMeta):
         """
         # apply inverse transforms to go from sampling parameters to
         # variable args
-        print("[_transform_params] self.sampling_transforms: ", self.sampling_transforms)
-        print("[_transform_params] params: ", params)
         if self.sampling_transforms is not None:
             params = self.sampling_transforms.apply(params, inverse=True)
         # apply boundary conditions

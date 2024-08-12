@@ -259,6 +259,7 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
+        or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
 
         .. math::
 
@@ -369,7 +370,11 @@ class MarginalizedTime(DistMarg, BaseGaussianNoise):
             hh_total += hh
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
-        return loglr
+        if self.return_sh_hh:
+            results = (sh_total, hh_total)
+        else:
+            results = loglr
+        return results
 
 
 class MarginalizedPolarization(DistMarg, BaseGaussianNoise):
