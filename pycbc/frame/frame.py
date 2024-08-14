@@ -905,8 +905,11 @@ class iDQBuffer(object):
             Beginning time to request for
         duration: int
             Number of seconds to check.
+        times: array of floats
+            Times to check for an active flag
         padding: float
-            Amount of time in seconds to flag around glitchy times
+            Amount of time in seconds to flag around samples
+            below the iDQ FAP threshold
 
         Returns
         -------
@@ -914,23 +917,33 @@ class iDQBuffer(object):
             Boolean array of whether flag was on at given times
         """
         from pycbc.events.veto import indices_within_times
+
+        # convert start and end times to buffer indices
         sr = self.idq.raw_buffer.sample_rate
         s = int((start_time - self.idq.raw_buffer.start_time - padding) * sr) - 1
         e = s + int((duration + padding) * sr) + 1
-        idq_fap = self.idq.raw_buffer[s:e]
-        stamps = idq_fap.sample_times.numpy()
+
+        # find samples when iDQ FAP is below threshold and state is valid
+        idq_fap = self.idq.raw_buffer[s:e]        
         low_fap = idq_fap.numpy() <= self.threshold
         idq_valid = self.idq_state.raw_buffer[s:e]
         idq_valid = idq_valid.numpy().astype(bool)
         valid_low_fap = numpy.logical_and(idq_valid, low_fap)
+
+        # find times corresponding to the valid low FAP samples
         glitch_idx = numpy.flatnonzero(valid_low_fap)
+        stamps = idq_fap.sample_times.numpy()
         glitch_times = stamps[glitch_idx]
+
+        # construct start and end times of flag segments
         starts = glitch_times - padding
         ends = starts + 1.0 / sr + padding * 2.0
+
+        # check if times were flagged
         idx = indices_within_times(times, starts, ends)
-        out = numpy.zeros(len(times), dtype=bool)
-        out[idx] = True
-        return out
+        flagged_bool = numpy.zeros(len(times), dtype=bool)
+        flagged_bool[idx] = True
+        return flagged_bool
 
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds

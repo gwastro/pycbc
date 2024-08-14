@@ -1312,7 +1312,7 @@ with ctx:
                     for key in results[ifo]:
                         if len(results[ifo][key]):
                             results[ifo][key] = results[ifo][key][idx]
-                if data_reader[ifo].idq:
+                if data_reader[ifo].idq is not None:
                     logging.info("Reading %s's iDQ information", ifo)
                     start = data_reader[ifo].start_time
                     times = results[ifo]['end_time']

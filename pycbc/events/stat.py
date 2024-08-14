@@ -2300,14 +2300,13 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
             ifo_grp = dq_file[ifo]
-            if 'dq_segments' in ifo_grp.keys():
-                # if segs are in stat file, we are not in LL
-                assert not self.low_latency, 'Should not have segments in LL'
-            else:
-                # we must be in LL, shouldn't have segments
-                assert not self.dq_state_segments, \
-                      'Should not have segments in LL'
+            if 'dq_segments' not in ifo_grp.keys():
+                # if segs are not in file, we must be in LL
+                if self.dq_state_segments is not None:
+                    raise ValueError('Either all dq stat files must have segments or none')
                 self.low_latency = True
+            elif self.low_latency:
+                raise ValueError('Either all dq stat files must have segments or none')
 
     def assign_template_bins(self, key):
         """
