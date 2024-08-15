@@ -924,7 +924,7 @@ class iDQBuffer(object):
         e = s + int((duration + padding) * sr) + 1
 
         # find samples when iDQ FAP is below threshold and state is valid
-        idq_fap = self.idq.raw_buffer[s:e]        
+        idq_fap = self.idq.raw_buffer[s:e]
         low_fap = idq_fap.numpy() <= self.threshold
         idq_valid = self.idq_state.raw_buffer[s:e]
         idq_valid = idq_valid.numpy().astype(bool)

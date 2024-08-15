@@ -2303,10 +2303,12 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             if 'dq_segments' not in ifo_grp.keys():
                 # if segs are not in file, we must be in LL
                 if self.dq_state_segments is not None:
-                    raise ValueError('Either all dq stat files must have segments or none')
+                    raise ValueError(
+                        'Either all dq stat files must have segments or none')
                 self.low_latency = True
             elif self.low_latency:
-                raise ValueError('Either all dq stat files must have segments or none')
+                raise ValueError(
+                    'Either all dq stat files must have segments or none')
 
     def assign_template_bins(self, key):
         """
