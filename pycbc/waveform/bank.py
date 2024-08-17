@@ -824,13 +824,18 @@ class FilterBank(TemplateBank):
         # If available, record the total duration (which may
         # include ringdown) and the duration up to merger since they will be
         # erased by the type conversion below.
-        ttotal = template_duration = None
         if hasattr(htilde, 'length_in_time'):
             ttotal = htilde.length_in_time
+        else:
+            ttotal = None
         if hasattr(htilde, 'chirp_length'):
             template_duration = htilde.chirp_length
-
-        self.table[index].template_duration = template_duration
+            self.table[index].template_duration = template_duration
+        elif self.table[index].template_duration > 0:
+            # The template bank file contains 'template_duration'
+            template_duration = self.table[index].template_duration
+        else:
+            template_duration = None
 
         htilde = htilde.astype(self.dtype)
         htilde.f_lower = f_low
