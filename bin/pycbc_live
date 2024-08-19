@@ -1318,17 +1318,26 @@ with ctx:
                     times = results[ifo]['end_time']
                     flag_active = data_reader[ifo].idq.flag_at_times(
                             start, valid_pad, times,
-                            padding=data_reader[ifo].dq_padding)
+                            padding=data_reader[ifo].dq_padding
+                        )
 
                     if args.idq_reweighting:
-                        logging.info('iDQ flagged %d/%d %s triggers',
-                                     numpy.sum(flag_active), len(times), ifo)
+                        logging.info(
+                            'iDQ flagged %d/%d %s triggers',
+                            numpy.sum(flag_active),
+                            len(times),
+                            ifo
+                        )
                         results[ifo]['dq_state'] = flag_active.astype(int)
                     else:
                         # use idq as a veto
                         keep = numpy.logical_not(flag_active)
-                        logging.info('Keeping %d/%d %s triggers after iDQ',
-                                     numpy.sum(keep), len(times), ifo)
+                        logging.info(
+                            'Keeping %d/%d %s triggers after iDQ',
+                            numpy.sum(keep),
+                            len(times),
+                            ifo
+                        )
                         for key in results[ifo]:
                             if len(results[ifo][key]):
                                 results[ifo][key] = \
