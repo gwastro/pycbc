@@ -307,7 +307,7 @@ def single_significance_fits(
     daily_options['output'] = os.path.join(
         output_dir,
         daily_controls['sig-daily-format'].format(
-            ifos=''.join(controls['ifos'].split()),
+            ifos=''.join(sorted(controls['ifos'].split())),
             date=day_str
         ),
     )
