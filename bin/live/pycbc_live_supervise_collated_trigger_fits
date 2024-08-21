@@ -226,6 +226,11 @@ def fit_over_multiparam(
         "specified parameters",
         len(daily_files)
     )
+    logging.info(
+        "Smoothing fits using fit_over_multiparam with %d files and "
+        "specified parameters",
+        len(daily_files)
+    )
     file_id_str = f'{first_date}-{end_date}'
     out_fname = fit_over_controls['fit-over-format'].format(
         dates=file_id_str,
@@ -293,7 +298,6 @@ def single_significance_fits(
         day_str,
         day_dt,
         controls,
-        test_options,
         stat_files=None,
     ):
     """
@@ -302,7 +306,10 @@ def single_significance_fits(
     """
     daily_options['output'] = os.path.join(
         output_dir,
-        daily_controls['sig-daily-format'].format(date=day_str),
+        daily_controls['sig-daily-format'].format(
+            ifos=''.join(sorted(controls['ifos'].split())),
+            date=day_str
+        ),
     )
     daily_args = ['pycbc_live_single_significance_fits']
 
@@ -322,7 +329,10 @@ def plot_single_significance_fits(daily_output, daily_plot_options, controls):
     """
     Plotting daily significance fits, and link to public directory if wanted
     """
-    daily_plot_output = f'{daily_output[:-4]}_{{ifo}}.png'
+    daily_plot_output = daily_output[:-4].replace(
+        ''.join(sorted(controls['ifos'].split())),
+        '{ifo}'
+    ) + '.png'
     logging.info(
         "Plotting daily significance fits from %s to %s",
         daily_output,
@@ -365,9 +375,14 @@ def combine_significance_fits(
     Supervise the smoothing of live trigger significance fits using
     pycbc_live_combine_single_significance_fits
     """
+    # This has a trick to do partial formatting, get the IFOs into the
+    # string, but not the date
     daily_files, first_date, end_date = find_daily_fit_files(
         combined_controls,
-        combined_controls['daily-format'],
+        combined_controls['daily-format'].format(
+            ifos=''.join(sorted(controls['ifos'].split())),
+            date='{date}'
+        ),
         controls['output-directory'],
     )
     logging.info(
@@ -466,7 +481,6 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
     combined_control_options = config_opts['significance_combined_fits_control']
     combined_plot_options = config_opts['plot_significance_combined']
     combined_plot_control_options = config_opts['plot_significance_combined_control']
-    test_options = config_opts['test']
 
     # The main output directory will have a date subdirectory which we
     # put the output into
@@ -541,7 +555,6 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
             day_str,
             day_dt,
             controls,
-            test_options,
             stat_files=stat_files,
         )
         plot_single_significance_fits(
