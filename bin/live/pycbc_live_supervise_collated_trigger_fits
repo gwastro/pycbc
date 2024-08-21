@@ -380,7 +380,7 @@ def combine_significance_fits(
     daily_files, first_date, end_date = find_daily_fit_files(
         combined_controls,
         combined_controls['daily-format'].format(
-            ifos=''.join(controls['ifos'].split()),
+            ifos=''.join(sorted(controls['ifos'].split())),
             date='{date}'
         ),
         controls['output-directory'],
