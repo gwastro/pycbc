@@ -330,7 +330,7 @@ def plot_single_significance_fits(daily_output, daily_plot_options, controls):
     Plotting daily significance fits, and link to public directory if wanted
     """
     daily_plot_output = daily_output[:-4].replace(
-        ''.join(controls['ifos'].split()),
+        ''.join(sorted(controls['ifos'].split())),
         '{ifo}'
     ) + '.png'
     logging.info(
