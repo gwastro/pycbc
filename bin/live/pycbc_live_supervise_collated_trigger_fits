@@ -108,7 +108,7 @@ def find_daily_fit_files(
     """
     Find files which match the specified formats
     """
-    log_str = f"Finding files in {daily_files_dir} with format {daily_fname_format}"
+    log_str = f"Finding fit files in {daily_files_dir} with format {daily_fname_format}"
     if ifo is not None:
         log_str += f"in detector {ifo}"
     logging.info(log_str)
@@ -460,6 +460,74 @@ def plot_combined_significance_fits(
         for cpo in combined_plot_outputs:
             sv.symlink(cpo, public_dir)
 
+
+def daily_dq_trigger_rates(
+        trigger_merge_file,
+        day_str,
+        daily_dq_control_options,
+        daily_dq_options,
+        output_dir,
+        ifo,
+        controls
+    ):
+    """Docstring"""
+    logging.info("Calculating daily dq trigger rates")
+    #WRITEME
+
+
+def find_daily_dq_files(
+        combined_dq_control_options,
+        daily_fname_format,
+        daily_files_dir,
+        ifo
+    ):
+    """Docstring"""
+    log_str = f"Finding dq files in {daily_files_dir} with format "
+    log_str += f"{daily_fname_format} in detector {ifo}"
+    logging.info(log_str)
+    #WRITEME
+
+
+def combine_dq_trigger_rates(
+        combined_dq_control_options,
+        combined_dq_options,
+        ifo,
+        day_str,
+        output_dir,
+        controls
+    ):
+    """Docstring"""
+    daily_files = find_daily_dq_files(
+        combined_dq_control_options,
+        combined_dq_control_options['daily-format'],
+        controls['output-directory'],
+        ifo
+    )
+    logging.info(
+        "Combining dq trigger rates over %d files",
+        len(daily_files)
+    )
+    #WRITEME
+
+
+def plot_dq_trigger_rates(
+        dq_file,
+        ifo,
+        day_title_str,
+        plot_dq_options,
+        controls,
+        combined=False
+    ):
+    """Docstring"""
+    dq_plot_output = dq_file[:-3] + 'png'
+    logging.info(
+        "Plotting dq trigger rates from %s to %s",
+        dq_file,
+        dq_plot_output
+    )
+    #WRITEME
+
+
 def supervise_collation_fits_dq(args, day_dt, day_str):
     """
     Perform the trigger collation and fits etc. as specified
@@ -474,13 +542,18 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
     fit_over_options = config_opts['fit_over_multiparam']
     fit_over_control_options = config_opts['fit_over_multiparam_control']
     plot_fit_options = config_opts['plot_fit']
-    daily_options = config_opts['significance_daily_fits']
-    daily_control_options = config_opts['significance_daily_fits_control']
-    daily_plot_options = config_opts['plot_significance_daily']
-    combined_options = config_opts['significance_combined_fits']
+    daily_significance_options = config_opts['significance_daily_fits']
+    daily_significance_control_options = config_opts['significance_daily_fits_control']
+    daily_significance_plot_options = config_opts['plot_significance_daily']
+    combined_significance_fit_options = config_opts['significance_combined_fits']
     combined_control_options = config_opts['significance_combined_fits_control']
     combined_plot_options = config_opts['plot_significance_combined']
     combined_plot_control_options = config_opts['plot_significance_combined_control']
+    daily_dq_options = config_opts['daily_dq_trigger_rates']
+    daily_dq_control_options = config_opts['daily_dq_trigger_rates_control']
+    combined_dq_options = config_opts['combined_dq_trigger_rates']
+    combined_dq_control_options = config_opts['combined_dq_trigger_rates_control']
+    plot_dq_options = config_opts['plot_dq_trigger_rates']
 
     # The main output directory will have a date subdirectory which we
     # put the output into
@@ -511,6 +584,7 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
     stat_files = []
     for ifo in config_opts['control']['ifos'].split():
         if args.fit_by_template:
+            # compute and plot daily template fits
             fbt_file, date_str = fit_by_template(
                 merged_triggers,
                 day_str,
@@ -527,8 +601,29 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
                 plot_fit_options,
                 controls
             )
+        
+        if args.daily_dq_trigger_rates:
+            # compute and plot daily dq trigger rates
+            ddtr_file = daily_dq_trigger_rates(
+                merged_triggers,
+                day_str,
+                daily_dq_control_options,
+                daily_dq_options,
+                output_dir,
+                ifo,
+                controls
+            )
+            plot_dq_trigger_rates(
+                ddtr_file,
+                ifo,
+                date_str,
+                plot_dq_options,
+                controls
+            )
 
         if args.fit_over_multiparam:
+            # compute and plot template fits smoothed over parameter space
+            # and combining multiple days of triggers
             fom_file, date_str = fit_over_multiparam(
                 fit_over_control_options,
                 fit_over_options,
@@ -546,11 +641,31 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
                 controls,
                 smoothed=True,
             )
+        
+        if args.combine_dq_trigger_rates:
+            # combine the dq trigger rates from multiple days
+            cdtr_file = combine_dq_trigger_rates(
+                combined_dq_control_options,
+                combined_dq_options,
+                ifo,
+                day_str,
+                output_dir,
+                controls
+            )
+            stat_files.append(cdtr_file)
+            plot_dq_trigger_rates(
+                cdtr_file,
+                ifo,
+                date_str,
+                plot_dq_options,
+                controls,
+                combined=True,
+            )
 
     if args.single_significance_fits:
         ssf_file = single_significance_fits(
-            daily_control_options,
-            daily_options,
+            daily_significance_control_options,
+            daily_significance_options,
             output_dir,
             day_str,
             day_dt,
@@ -559,12 +674,12 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
         )
         plot_single_significance_fits(
             ssf_file,
-            daily_plot_options,
+            daily_significance_plot_options,
             controls
         )
     if args.combine_significance_fits:
         csf_file, date_str = combine_significance_fits(
-            combined_options,
+            combined_significance_fit_options,
             combined_control_options,
             output_dir,
             date_str,
@@ -586,6 +701,7 @@ def get_yesterday_date():
     day_dt = datetime.combine(day_dt, datetime.min.time())
     day_str = day_dt.strftime('%Y_%m_%d')
     return day_dt, day_str
+
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
