@@ -1670,6 +1670,12 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         numpy.ndarray
             The array of single detector values
         """
+        try:
+            # exists if accessed via coinc_findtrigs
+            self.curr_tnum = trigs.template_num
+        except AttributeError:
+            # exists for SingleDetTriggers & pycbc_live get_coinc
+            self.curr_tnum = trigs['template_id']
 
         # single-ifo stat = log of noise rate
         sngl_stat = self.lognoiserate(trigs)
@@ -1681,12 +1687,6 @@ class ExpFitFgBgNormStatistic(PhaseTDStatistic,
         singles['end_time'] = trigs['end_time'][:]
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
-        try:
-            # exists if accessed via coinc_findtrigs
-            self.curr_tnum = trigs.template_num
-        except AttributeError:
-            # exists for SingleDetTriggers & pycbc_live get_coinc
-            self.curr_tnum = trigs['template_id']
 
         # Store benchmark log volume as single-ifo information since the coinc
         # method does not have access to template id
@@ -2271,14 +2271,46 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
                                          ifos=ifos, **kwargs)
         self.dq_rates_by_state = {}
         self.dq_bin_by_tid = {}
-        self.dq_state_segments = {}
+        self.dq_state_segments = None
+        self.low_latency = False
+        self.single_dtype.append(('dq_state', int))
 
         for ifo in self.ifos:
             key = f'{ifo}-dq_stat_info'
             if key in self.files.keys():
                 self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
                 self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
-                self.dq_state_segments[ifo] = self.setup_segments(key)
+                self.check_low_latency(key)
+                if not self.low_latency:
+                    if self.dq_state_segments is None:
+                        self.dq_state_segments = {}
+                    self.dq_state_segments[ifo] = self.setup_segments(key)
+
+    def check_low_latency(self, key):
+        """
+        Check if the statistic file indicates low latency mode.
+        Parameters
+        ----------
+        key: str
+            Statistic file key string.
+        Returns
+        -------
+        None
+        """
+        ifo = key.split('-')[0]
+        with h5py.File(self.files[key], 'r') as dq_file:
+            ifo_grp = dq_file[ifo]
+            if 'dq_segments' not in ifo_grp.keys():
+                # if segs are not in file, we must be in LL
+                if self.dq_state_segments is not None:
+                    raise ValueError(
+                        'Either all dq stat files must have segments or none'
+                    )
+                self.low_latency = True
+            elif self.low_latency:
+                raise ValueError(
+                    'Either all dq stat files must have segments or none'
+                )
 
     def assign_template_bins(self, key):
         """
@@ -2337,9 +2369,7 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
 
     def setup_segments(self, key):
         """
-        Check if segments definitions are in stat file
-        If they are, we are running offline and need to store them
-        If they aren't, we are running online
+        Store segments from stat file
         """
         ifo = key.split('-')[0]
         with h5py.File(self.files[key], 'r') as dq_file:
@@ -2368,35 +2398,32 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             return True
         # We also need to check if the DQ files have updated
         if key.endswith('dq_stat_info'):
+            ifo = key.split('-')[0]
             logger.info(
                 "Updating %s statistic %s file",
-                ''.join(self.ifos),
+                ifo,
                 key
             )
-            self.assign_dq_rates(key)
-            self.assign_template_bins(key)
-            self.setup_segments(key)
+            self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
+            self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
             return True
         return False
 
-    def find_dq_noise_rate(self, trigs, dq_state):
+    def find_dq_noise_rate(self, trigs):
         """Get dq values for a specific ifo and dq states"""
-
-        try:
-            tnum = trigs.template_num
-        except AttributeError:
-            tnum = trigs['template_id']
 
         try:
             ifo = trigs.ifo
         except AttributeError:
-            ifo = trigs['ifo']
-            assert len(numpy.unique(ifo)) == 1
-            # Should be exactly one ifo provided
-            ifo = ifo[0]
+            ifo = trigs.get('ifo', None)
+            if ifo is None:
+                ifo = self.ifos[0]
+            assert ifo in self.ifos
 
-        dq_val = numpy.zeros(len(dq_state))
+        dq_state = trigs['dq_state']
+        dq_val = numpy.ones(len(dq_state))
 
+        tnum = self.curr_tnum
         if ifo in self.dq_rates_by_state:
             for (i, st) in enumerate(dq_state):
                 if isinstance(tnum, numpy.ndarray):
@@ -2437,23 +2464,34 @@ class DQExpFitFgBgNormStatistic(ExpFitFgBgNormStatistic):
             Array of log noise rate density for each input trigger.
         """
 
-        # make sure every trig has a dq state
-        try:
-            ifo = trigs.ifo
-        except AttributeError:
-            ifo = trigs['ifo']
-            assert len(numpy.unique(ifo)) == 1
-            # Should be exactly one ifo provided
-            ifo = ifo[0]
-
-        dq_state = self.find_dq_state_by_time(ifo, trigs['end_time'][:])
-        dq_rate = self.find_dq_noise_rate(trigs, dq_state)
+        dq_rate = self.find_dq_noise_rate(trigs)
         dq_rate = numpy.maximum(dq_rate, 1)
 
         logr_n = ExpFitFgBgNormStatistic.lognoiserate(
                     self, trigs)
         logr_n += numpy.log(dq_rate)
         return logr_n
+
+    def single(self, trigs):
+        # make sure every trig has a dq state
+        try:
+            ifo = trigs.ifo
+        except AttributeError:
+            ifo = trigs.get('ifo', None)
+            if ifo is None:
+                ifo = self.ifos[0]
+            assert ifo in self.ifos
+
+        singles = ExpFitFgBgNormStatistic.single(self, trigs)
+
+        if self.low_latency:
+            # trigs should already have a dq state assigned
+            singles['dq_state'] = trigs['dq_state'][:]
+        else:
+            singles['dq_state'] = self.find_dq_state_by_time(
+                ifo, trigs['end_time'][:]
+            )
+        return singles
 
 
 class DQExpFitFgBgKDEStatistic(DQExpFitFgBgNormStatistic):

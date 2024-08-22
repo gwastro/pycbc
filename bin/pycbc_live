@@ -848,6 +848,8 @@ parser.add_argument('--idq-state-channel', action=MultiDetMultiColonOptionAction
 parser.add_argument('--idq-threshold', type=float,
                     help='Threshold used to veto triggers at times of '
                     'low iDQ False Alarm Probability')
+parser.add_argument('--idq-reweighting', action='store_true',default=False,
+                    help='Reweight triggers based on iDQ False Alarm Probability')
 parser.add_argument('--data-quality-channel',
                     action=MultiDetMultiColonOptionAction,
                     help="Channel containing data quality information. Used "
@@ -1311,17 +1313,35 @@ with ctx:
                         if len(results[ifo][key]):
                             results[ifo][key] = results[ifo][key][idx]
                 if data_reader[ifo].idq is not None:
-                    logging.info("Checking %s's iDQ information", ifo)
+                    logging.info("Reading %s's iDQ information", ifo)
                     start = data_reader[ifo].start_time
                     times = results[ifo]['end_time']
-                    idx = data_reader[ifo].idq.indices_of_flag(
+                    flag_active = data_reader[ifo].idq.flag_at_times(
                             start, valid_pad, times,
-                            padding=data_reader[ifo].dq_padding)
-                    logging.info('Keeping %d/%d %s triggers after iDQ',
-                                 len(idx), len(times), ifo)
-                    for key in results[ifo]:
-                        if len(results[ifo][key]):
-                            results[ifo][key] = results[ifo][key][idx]
+                            padding=data_reader[ifo].dq_padding
+                        )
+
+                    if args.idq_reweighting:
+                        logging.info(
+                            'iDQ flagged %d/%d %s triggers',
+                            numpy.sum(flag_active),
+                            len(times),
+                            ifo
+                        )
+                        results[ifo]['dq_state'] = flag_active.astype(int)
+                    else:
+                        # use idq as a veto
+                        keep = numpy.logical_not(flag_active)
+                        logging.info(
+                            'Keeping %d/%d %s triggers after iDQ',
+                            numpy.sum(keep),
+                            len(times),
+                            ifo
+                        )
+                        for key in results[ifo]:
+                            if len(results[ifo][key]):
+                                results[ifo][key] = \
+                                    results[ifo][key][keep]
 
             # Calculate and add the psd variation for the results
             if args.psd_variation:
