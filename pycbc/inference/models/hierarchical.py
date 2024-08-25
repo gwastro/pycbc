@@ -977,6 +977,12 @@ class JointPrimaryMarginalizedModel(HierarchicalModel):
             rec = {}
 
         def get_loglr():
+            # make sure waveform transforms have been applied in
+            # the top-level model
+            if self.waveform_transforms is not None:
+                self._current_params = transforms.apply_transforms(
+                    self._current_params, self.waveform_transforms,
+                    inverse=False)
             self.update_all_models(**rec)
             return self.total_loglr()
 
