@@ -1,0 +1,112 @@
+#!/usr/bin/python
+
+# Copyright 2024 Max Trevor
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+
+"""
+Calculate the noise trigger rate adjustment as a function of data-quality state 
+for a day of PyCBC Live triggers.
+"""
+
+import logging
+import argparse
+
+import numpy as np
+import h5py as h5
+
+import pycbc
+import gwdatafind
+
+import gwpy
+from gwpy.timeseries import TimeSeriesDict
+from gwpy.segments import Segment, DataQualityFlag
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--trigger-file", required=True)
+parser.add_argument("--ifo", required=True)
+parser.add_argument("--day-str", required=True)
+parser.add_argument("--gps-start-time", required=True, type=int)
+parser.add_argument("--gps-end-time", required=True, type=int)
+parser.add_argument("--template-bin-file", required=True)
+parser.add_argument("--dq-channel", required=True)
+parser.add_argument("--dq-ok-channel", required=True)
+parser.add_argument("--dq-thresh", required=True, type=float)
+parser.add_argument("--output", required=True)
+pycbc.add_common_pycbc_options(parser)
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+# Get observing segs
+ar_flag_name = f'{args.ifo}:DMT-ANALYSIS_READY:1'
+day_seg = Segment(args.gps_start_time, args.gps_end_time)
+observing_flag = DataQualityFlag.query(ar_flag_name, day_seg)
+observing_segs = observing_flag.active
+daily_livetime = observing_flag.livetime
+logging.info(f'{args.day_str} has {daily_livetime} seconds of observing time.')
+
+# for each segment, check how much time was dq flagged
+flagged_time = 0
+frame_type = f'{args.ifo}_HOFT_C00'
+dq_channel = args.dq_channel.format(ifo=args.ifo)
+dq_ok_channel = args.dq_ok_channel.format(ifo=args.ifo)
+for seg in observing_segs:
+    frames = gwdatafind.find_urls(
+        args.ifo[0],
+        frame_type,
+        seg[0],
+        seg[1],
+    )
+    tsdict = TimeSeriesDict.read(
+        frames,
+        channels=[dq_channel, dq_ok_channel],
+        start=seg[0],
+        end=seg[1],
+    )
+    dq_ok_flag = (tsdict[dq_ok_channel] == 1).to_dqflag()
+    dq_flag = (tsdict[dq_channel] <= args.dq_thresh).to_dqflag()
+    flagged_time += (dq_flag & dq_ok_flag).livetime
+logging.info(f'{args.day_str} has {flagged_time} seconds of dq flagged time.')
+
+# read in template bins
+with h5.File(args.template_bin_file, 'r') as f:
+    template_bin_assignments = f['bin_ids'][:]
+
+# for each bin, get total number of triggers and number of dq flagged triggers
+num_bins = len(np.unique(template_bin_assignments))
+bin_total_triggers = np.zeros(num_bins)
+bin_dq_triggers = np.zeros(num_bins)
+
+with h5.File(args.trigger_file, 'r') as trigf:
+    for template_id in range(len(template_bin_assignments)):
+        # get template bin for this template
+        template_bin = template_bin_assignments[template_id]
+
+        # get dq states for all triggers with this template
+        # dq state is either 0 or 1 for each trigger
+        dq_key = trigf[f'{args.ifo}/dq_state_template'][template_id]
+        dq_states = trigf[f'{args.ifo}/dq_state'][dq_key]
+
+        # update trigger counts
+        bin_total_triggers[template_bin] += len(dq_states)
+        bin_dq_triggers[template_bin] += np.sum(dq_states)
+
+# write outputs to file
+with h5.File(args.output, 'w') as f:
+    f.create_dataset('bin_total_triggers', data=bin_total_triggers)
+    f.create_dataset('bin_dq_triggers', data=bin_dq_triggers)
+    f.create_dataset('template_bin_ids', data=template_bin_assignments)
+    f.attrs['observing_livetime'] = daily_livetime
+    f.attrs['dq_flag_livetime'] = flagged_time
+    f.attrs['dq_thresh'] = args.dq_thresh
+    f.attrs['dq_channel'] = dq_channel
+    f.attrs['dq_ok_channel'] = dq_ok_channel

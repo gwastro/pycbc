@@ -466,6 +466,7 @@ def plot_combined_significance_fits(
 def daily_dq_trigger_rates(
         trigger_merge_file,
         day_str,
+        day_dt,
         daily_dq_controls,
         daily_dq_options,
         output_dir,
@@ -484,8 +485,14 @@ def daily_dq_trigger_rates(
     ddtr_out_full = os.path.join(output_dir, ddtr_out_fname)
     daily_dq_args = ['pycbc_live_daily_dq_trigger_rates']
     daily_dq_args += ['--trigger-file', trigger_merge_file]
-    daily_dq_args += sv.dict_to_args(daily_dq_options)
     daily_dq_args += ['--output', ddtr_out_full, '--ifo', ifo]
+
+    gps_start_time = gpstime.utc_to_gps(day_dt).gpsSeconds
+    gps_end_time = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
+    daily_dq_options['gps-start-time'] = f'{gps_start_time:d}'
+    daily_dq_options['gps-end-time'] = f'{gps_end_time:d}'
+    daily_dq_args += sv.dict_to_args(daily_dq_options)
+
     sv.run_and_error(daily_dq_args, controls)
 
     return ddtr_out_full
