@@ -13,7 +13,7 @@
 # Public License for more details.
 
 """
-Calculate the noise trigger rate adjustment as a function of data-quality state 
+Calculate the noise trigger rate adjustment as a function of data-quality state
 for a day of PyCBC Live triggers.
 """
 
@@ -26,7 +26,6 @@ import h5py as h5
 import pycbc
 import gwdatafind
 
-import gwpy
 from gwpy.timeseries import TimeSeriesDict
 from gwpy.segments import Segment, DataQualityFlag
 
@@ -78,35 +77,62 @@ for seg in observing_segs:
 logging.info(f'{args.day_str} has {flagged_time} seconds of dq flagged time.')
 
 # read in template bins
-with h5.File(args.template_bin_file, 'r') as f:
-    template_bin_assignments = f['bin_ids'][:]
+template_bins = {}
+num_templates = 0
+with h5.File(args.template_bin_file, 'r') as bin_file:
+    f_lower = bin_file.attrs['f_lower']
+    bank_file = bin_file.attrs['bank_file']
+    bin_string = bin_file.attrs['background_bins']
+
+    # only ever one group in this file
+    grp = bin_file[list(bin_file.keys())[0]]
+    num_bins = len(grp.keys())
+    for k in grp.keys():
+        template_bins[k] = grp[k]['tids'][:]
+        num_templates += len(template_bins[k])
 
 # for each bin, get total number of triggers and number of dq flagged triggers
-num_bins = len(np.unique(template_bin_assignments))
 bin_total_triggers = np.zeros(num_bins)
 bin_dq_triggers = np.zeros(num_bins)
 
 with h5.File(args.trigger_file, 'r') as trigf:
-    for template_id in range(len(template_bin_assignments)):
-        # get template bin for this template
-        template_bin = template_bin_assignments[template_id]
+    for bin_name in template_bins.keys():
+        # bins are named as 'bin{bin_num}'
+        bin_num = int(bin_name[3:])
+        template_ids = template_bins[bin_name]
+        for template_id in template_ids:
+            # get dq states for all triggers with this template
+            # dq state is either 0 or 1 for each trigger
+            dq_key = trigf[f'{args.ifo}/dq_state_template'][template_id]
+            dq_states = trigf[f'{args.ifo}/dq_state'][dq_key]
 
-        # get dq states for all triggers with this template
-        # dq state is either 0 or 1 for each trigger
-        dq_key = trigf[f'{args.ifo}/dq_state_template'][template_id]
-        dq_states = trigf[f'{args.ifo}/dq_state'][dq_key]
-
-        # update trigger counts
-        bin_total_triggers[template_bin] += len(dq_states)
-        bin_dq_triggers[template_bin] += np.sum(dq_states)
+            # update trigger counts
+            bin_total_triggers[bin_num] += len(dq_states)
+            bin_dq_triggers[bin_num] += np.sum(dq_states)
 
 # write outputs to file
 with h5.File(args.output, 'w') as f:
-    f.create_dataset('bin_total_triggers', data=bin_total_triggers)
-    f.create_dataset('bin_dq_triggers', data=bin_dq_triggers)
-    f.create_dataset('template_bin_ids', data=template_bin_assignments)
-    f.attrs['observing_livetime'] = daily_livetime
-    f.attrs['dq_flag_livetime'] = flagged_time
+    ifo_group = f.create_group(args.ifo)
+    ifo_group['observing_livetime'] = daily_livetime
+    ifo_group['dq_flag_livetime'] = flagged_time
+    bin_group = ifo_group.create_group('bins')
+    for bin_name in template_bins.keys():
+        bin_num = int(bin_name[3:])
+        bgrp = bin_group.create_group(bin_name)
+        bgrp.create_dataset('tids', data=template_bins[bin_name])
+        bgrp.create_dataset('total_triggers', data=bin_total_triggers[bin_num])
+        bgrp.create_dataset('dq_triggers', data=bin_dq_triggers[bin_num])
+
     f.attrs['dq_thresh'] = args.dq_thresh
     f.attrs['dq_channel'] = dq_channel
     f.attrs['dq_ok_channel'] = dq_ok_channel
+    f.attrs['gps_start_time'] = args.gps_start_time
+    f.attrs['gps_end_time'] = args.gps_end_time
+    f.attrs['f_lower'] = f_lower
+    f.attrs['bank_file'] = bank_file
+    f.attrs['background_bins'] = bin_string
+
+    # hash is used to check if different files have compatible settings
+    settings_to_hash = (args.dq_thresh, dq_channel, dq_ok_channel,
+                        f_lower, bank_file, bin_string)
+    f.attrs['settings_hash'] = hash((settings_to_hash))
