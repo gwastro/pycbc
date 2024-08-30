@@ -677,18 +677,18 @@ class LISA_detector(object):
         detector: str (optional)
             String specifying space-borne detector. Currently only accepts 'LISA', 
             which is the default setting.
-            
+
         reference_time: float (optional)
             The GPS start time of signal in the SSB frame. Default to start time of 
             orbits input.
-        
+
         orbits: lisatools.detector.Orbits (optional)
             Orbital information to pass into pyResponseTDI. Default 
             lisatools.detector.ESAOrbits.
-        
+
         use_gpu : bool (optional)
             Specify whether to run class on GPU support via CuPy. Default False.
-            
+
         t0 : float (optional)
             Time length (in seconds) to cut from start and end of TDI observables. By 
             default, TDI channels will have erroneous noise at edges that will be cut 
@@ -696,7 +696,7 @@ class LISA_detector(object):
         """
         # initialize detector; for now we only accept LISA
         assert (detector=='LISA'), 'Currently only supports LISA detector'
-        
+
         # intialize orbit information
         if orbits is None:
             # set ESAOrbits as default; raise error if ESAOrbits cannot be imported
@@ -705,7 +705,7 @@ class LISA_detector(object):
             orbits = ESAOrbits()
         orbits.configure(linear_interp_setup=True)
         self.orbits = orbits
-        
+
         # specify and cache the start time and orbital time series
         if reference_time is None:
             ref_time = self.orbits.t_base[0]
@@ -719,17 +719,19 @@ class LISA_detector(object):
         self.n = None
         self.pad_idx = None
         self.response_init = None
-        
+
         if t0 is None:
             self.t0 = 10000.
+	else:
+	    self.t0 = t0
 
         # initialize whether to use gpu; FLR has handles if this cannot be done
         self.use_gpu = use_gpu
-        
+
     def apply_polarization(self, hp, hc, polarization):
         """
         Apply polarization rotation matrix.
-        
+
         Parameters
         ----------
         hp : array
@@ -737,10 +739,10 @@ class LISA_detector(object):
 
         hc : array
             The cross polarization of the GW.
-            
+
         polarization : float
             The polarization angle of the GW in radians.
-            
+
         Returns
         -------
         (array, array)
@@ -748,10 +750,10 @@ class LISA_detector(object):
         """
         cphi = cos(2*polarization)
         sphi = sin(2*polarization)
-        
+
         hp_ssb = hp*cphi - hc*sphi
         hc_ssb = hp*sphi + hc*cphi
-        
+
         return hp_ssb, hc_ssb
 
     def get_links(self, hp, hc, lamb, beta, polarization=0, reference_time=None, 
@@ -774,10 +776,10 @@ class LISA_detector(object):
 
         beta : float
             The ecleptic longitude of the source in the SSB frame.
-            
+
         polarization : float (optional)
             The polarization angle of the GW in radians. Default 0.
-            
+
         reference_time : float (optional)
             The GPS start time of the GW signal in the SSB frame. Default to 
             input on class initialization.
@@ -786,7 +788,7 @@ class LISA_detector(object):
             Flag whether to use GPU support. Default to class input.
             CuPy is required if use_gpu is True; an ImportError will be raised 
             if CuPy could not be imported.
-            
+
         tdi : int (optional)
             TDI channel configuration. Accepts 1 for 1st generation TDI or
             2 for 2nd generation TDI. Default 2.
@@ -797,7 +799,7 @@ class LISA_detector(object):
             The waveform projected to the LISA laser links.
         """
         from fastlisaresponse import pyResponseTDI
-        
+
         # get dt from waveform data
         dt = hp.delta_t
         self.dt = dt
@@ -809,12 +811,12 @@ class LISA_detector(object):
         hp.start_time = self.ref_time
         hc.start_time = self.ref_time
         self.sample_times = hp.sample_times.numpy()
-              
+
         # rescale the orbital time series to match waveform
         ### requires bugfix in LISAanalysistools to function
         ### awaiting response from dev team for formal release
         self.orbits.configure(t_arr=self.sample_times)
-        
+
         # rotate GW from radiation frame to SSB using polarization angle
         hp, hc = self.apply_polarization(hp, hc, polarization)
 
@@ -822,7 +824,7 @@ class LISA_detector(object):
         hp = hp.numpy()
         hc = hc.numpy()
         wf = hp + 1j*hc
-        
+
         # get n from waveform data
         n = len(wf)
         self.n = n
@@ -837,7 +839,7 @@ class LISA_detector(object):
                 raise ImportError('CuPy not imported but is required for GPU usage')
             else:
                 wf = cupy.asarray(wf)
-                
+
         # set TDI configuration (let FLR handle if not 1 or 2)
         if tdi == 1:
             tdi_opt = '1st generation'
@@ -857,7 +859,7 @@ class LISA_detector(object):
             self.response_init.num_pts = n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
-            
+
             if tdi_opt != self.response_init.tdi:
                 # update TDI in existing response_init class
                 self.response_init.tdi = tdi_opt
@@ -887,14 +889,14 @@ class LISA_detector(object):
 
         beta : float
             The ecleptic longitude in the SSB frame.
-            
+
         polarization : float
             The polarization angle of the GW in radians.
-            
+
         reference_time : float (optional)
             The GPS start time of the GW signal in the SSB frame. Default to 
             value in input signals hp and hc.
-            
+
         tdi : int (optional)
             TDI channel configuration. Accepts 1 for 1st generation TDI or
             2 for 2nd generation TDI. Default 2.
@@ -909,7 +911,7 @@ class LISA_detector(object):
 
         use_gpu : bool (optional)
             Flag whether to use GPU support. Default to class input.
-            
+
         remove_garbage : bool, str (optional)
             Flag whether to remove gaps in TDI from start and end. If True,
             edge data will be cut from TDI channels. If 'zero', edge data
@@ -924,13 +926,10 @@ class LISA_detector(object):
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
-        
+
         # generate the Doppler time series
         self.get_links(hp, hc, lamb, beta, polarization=polarization, reference_time=reference_time, 
                        use_gpu=use_gpu, tdi=tdi)
-        
-        print(len(self.response_init.y_gw[0]))
-        print(len(self.sample_times))
 
         # set TDI channels
         if tdi_chan in ['XYZ', 'AET', 'AE']:
@@ -948,15 +947,15 @@ class LISA_detector(object):
 
         # generate the TDI channels
         tdi_obs = self.response_init.get_tdi_delays()
-        
+
         # processing
         tdi_dict = {}
         slc = slice(self.pad_idx, -self.pad_idx)
-        
+
         for i in range(len(tdi_chan)):
             # add to dict
             tdi_dict[tdi_chan[i]] = tdi_obs[i]
-            
+
             # treat start and end gaps (if remove_garbage is not False)
             if remove_garbage:
                 if remove_garbage == 'zero':
@@ -969,7 +968,6 @@ class LISA_detector(object):
                     if i == 0:
                         # cut the sample times (only do once)
                         self.sample_times = self.sample_times[slc]
-                        print('check')
                 else:
                     # raise error
                     raise ValueError('remove_garbage arg must be a bool or "zero"')

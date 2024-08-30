@@ -22,6 +22,7 @@ https://github.com/willvousden/ptemcee/archive/master.tar.gz
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 nessai>=0.11.0
+pypmc==1.2.2
 snowline
 
 # useful to look at PyCBC Live with htop
@@ -33,3 +34,6 @@ sympy>=1.9
 # Needed for KDE trigger statistics
 git+https://github.com/mennthor/awkde.git@master
 scikit-learn
+
+# LISA response
+fastlisaresponse
