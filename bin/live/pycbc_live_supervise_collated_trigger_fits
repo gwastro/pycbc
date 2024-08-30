@@ -33,6 +33,41 @@ def read_options(args):
     return config_opts
 
 
+def get_true_date(replay_day_dt, controls):
+    replay_start_time = int(controls['replay-start-time'])
+    true_start_time = int(controls['true-start-time'])
+    replay_duration = int(controls['replay-duration'])
+    rep_start_utc = lal.GPSToUTC(replay_start_time)[0:6]
+
+    dt_replay_start = datetime(
+        year=rep_start_utc[0],
+        month=rep_start_utc[1],
+        day=rep_start_utc[2],
+        hour=rep_start_utc[3],
+        minute=rep_start_utc[4],
+        second=rep_start_utc[5]
+    )
+
+    td = (replay_day_dt - dt_replay_start).total_seconds()
+
+    # Time since the start of this replay
+    time_since_replay = np.remainder(td, replay_duration)
+
+    # Add this on to the original start time to get the current time of
+    # the replay data
+    true_utc = lal.GPSToUTC(true_start_time)[0:6]
+    dt_true_start = datetime(
+        year=true_utc[0],
+        month=true_utc[1],
+        day=true_utc[2],
+        hour=true_utc[3],
+        minute=true_utc[4],
+        second=true_utc[5]
+    )
+    # Original time of the data being replayed right now
+    return dt_true_start + timedelta(seconds=time_since_replay)
+
+
 def trigger_collation(
         day_dt,
         day_str,
@@ -107,44 +142,13 @@ def find_daily_files(
     """
     Find files which match the specified formats
     """
-    log_str = f"Finding fit files in {daily_files_dir} with format {daily_fname_format}"
+    log_str = f"Finding files in {daily_files_dir} with format {daily_fname_format}"
     if ifo is not None:
         log_str += f"in detector {ifo}"
     logging.info(log_str)
     combined_days = int(combined_control_options['combined-days'])
     if 'replay-start-time' in combined_control_options:
-        replay_start_time = int(combined_control_options['replay-start-time'])
-        true_start_time = int(combined_control_options['true-start-time'])
-        replay_duration = int(combined_control_options['replay-duration'])
-        rep_start_utc = lal.GPSToUTC(replay_start_time)[0:6]
-
-        dt_replay_start = datetime(
-            year=rep_start_utc[0],
-            month=rep_start_utc[1],
-            day=rep_start_utc[2],
-            hour=rep_start_utc[3],
-            minute=rep_start_utc[4],
-            second=rep_start_utc[5]
-        )
-
-        td = (day_dt - dt_replay_start).total_seconds()
-
-        # Time since the start of this replay
-        time_since_replay = np.remainder(td, replay_duration)
-
-        # Add this on to the original start time to get the current time of
-        # the replay data
-        true_utc = lal.GPSToUTC(true_start_time)[0:6]
-        dt_true_start = datetime(
-            year=true_utc[0],
-            month=true_utc[1],
-            day=true_utc[2],
-            hour=true_utc[3],
-            minute=true_utc[4],
-            second=true_utc[5]
-        )
-        # Original time of the data being replayed right now
-        current_date = dt_true_start + timedelta(seconds=time_since_replay)
+        current_date = get_true_date(day_dt, combined_control_options)
     else:
         current_date = day_dt
 
@@ -482,13 +486,18 @@ def daily_dq_trigger_rates(
     fname_format = daily_dq_controls['daily-dq-trigger-rates-format']
     ddtr_out_fname = fname_format.format(date=day_str, ifo=ifo)
 
+    if 'replay-start-time' in daily_dq_controls:
+        today = get_true_date(day_dt, daily_dq_controls)
+    else:
+        today = day_dt
+    gps_start_time = gpstime.utc_to_gps(today).gpsSeconds
+    gps_end_time = gpstime.utc_to_gps(today + timedelta(days=1)).gpsSeconds
+
     ddtr_out_full = os.path.join(output_dir, ddtr_out_fname)
     daily_dq_args = ['pycbc_live_daily_dq_trigger_rates']
     daily_dq_args += ['--trigger-file', trigger_merge_file]
     daily_dq_args += ['--output', ddtr_out_full, '--ifo', ifo]
 
-    gps_start_time = gpstime.utc_to_gps(day_dt).gpsSeconds
-    gps_end_time = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
     daily_dq_options['gps-start-time'] = f'{gps_start_time:d}'
     daily_dq_options['gps-end-time'] = f'{gps_end_time:d}'
     daily_dq_args += sv.dict_to_args(daily_dq_options)
@@ -526,12 +535,12 @@ def combine_dq_trigger_rates(
         date_range=date_range,
     )
     combined_dq_options['output'] = os.path.join(output_dir, outfile_name)
-    combined_dq_options['daily-files'] = ' '.join(daily_files)
+    combined_dq_options['daily-dq-files'] = ' '.join(daily_files)
 
-    combined_args = ['pycbc_live_combine_dq_trigger_rates']
-    combined_args += sv.dict_to_args(combined_dq_options)
+    combine_dq_args = ['pycbc_live_combine_dq_trigger_rates']
+    combine_dq_args += sv.dict_to_args(combined_dq_options)
 
-    sv.run_and_error(combined_args, controls)
+    sv.run_and_error(combine_dq_args, controls)
 
     if 'variable-dq-trigger-rates' in combined_dq_controls:
         logging.info("Linking to variable significance fits file")
