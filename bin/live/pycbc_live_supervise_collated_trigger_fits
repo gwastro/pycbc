@@ -536,6 +536,7 @@ def combine_dq_trigger_rates(
     )
     combined_dq_options['output'] = os.path.join(output_dir, outfile_name)
     combined_dq_options['daily-dq-files'] = ' '.join(daily_files)
+    combined_dq_options['ifo'] = ifo
 
     combine_dq_args = ['pycbc_live_combine_dq_trigger_rates']
     combine_dq_args += sv.dict_to_args(combined_dq_options)
@@ -569,11 +570,13 @@ def plot_dq_trigger_rates(
         dq_plot_output
     )
     dq_plot_arguments = [
-        'pycbc_live_plot_dq_trigger_rates',
+        'pycbc_plot_dq_flag_likelihood',
         '--dq-file',
         dq_file,
         '--output-file',
         dq_plot_output,
+        '--ifo',
+        ifo,
     ]
     dq_plot_arguments += sv.dict_to_args(plot_dq_options)
 
