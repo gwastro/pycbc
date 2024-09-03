@@ -719,7 +719,7 @@ class LISA_detector(object):
         self.n = None
         self.pad_idx = None
         self.response_init = None
-        
+
         if t0 is None:
             self.t0 = 10000.
         else:
@@ -803,9 +803,20 @@ class LISA_detector(object):
         # get dt from waveform data
         dt = hp.delta_t
         self.dt = dt
+
+        # index corresponding to time length t0
         self.pad_idx = int(self.t0/self.dt)
 
-        # set waveform start time and cache time series
+        # pad the data with zeros
+        ### this assumes that the signal naturally tapers to zero
+        ### this will not work with e.g. GBs or sinusoids
+        ### i.g. we should be tapering to prevent discontinuities
+        hp.prepend_zeros(self.pad_idx)
+        hp.append_zeros(self.pad_idx)
+        hc.prepend_zeros(self.pad_idx)
+        hc.append_zeros(self.pad_idx)
+
+        # set waveform start time and cache time samples
         if reference_time is not None:
             self.ref_time = reference_time
         hp.start_time = self.ref_time
@@ -823,7 +834,7 @@ class LISA_detector(object):
         hc = hc.numpy()
         wf = hp + 1j*hc
 
-        # get n from waveform data
+        # save length of wf
         n = len(wf)
         self.n = n
 
@@ -870,7 +881,7 @@ class LISA_detector(object):
         return wf_proj
 
     def project_wave(self, hp, hc, lamb, beta, polarization, reference_time=None, tdi=2,
-                     tdi_chan='AET', tdi_orbits=None, use_gpu=None, remove_garbage=False):
+                     tdi_chan='AET', tdi_orbits=None, use_gpu=None, remove_garbage=True):
         """
         Evaluate the TDI observables.
 
@@ -912,9 +923,9 @@ class LISA_detector(object):
 
         remove_garbage : bool, str (optional)
             Flag whether to remove gaps in TDI from start and end. If True,
-            edge data will be cut from TDI channels. If 'zero', edge data
-            will be zeroed. If False, TDI channels will not be modified.
-            Default True.
+            time length t0 worth of edge data will be cut from TDI channels.
+            If 'zero', time length t0 worth of edge data will be zeroed. If
+            False, TDI channels will not be modified. Default True.
 
         Returns
         -------
@@ -926,8 +937,9 @@ class LISA_detector(object):
             use_gpu = self.use_gpu
 
         # generate the Doppler time series
-        self.get_links(hp, hc, lamb, beta, polarization=polarization, reference_time=reference_time,
-                       use_gpu=use_gpu, tdi=tdi)
+        self.get_links(hp, hc, lamb, beta, polarization=polarization,
+                       reference_time=reference_time, use_gpu=use_gpu,
+                       tdi=tdi)
 
         # set TDI channels
         if tdi_chan in ['XYZ', 'AET', 'AE']:
