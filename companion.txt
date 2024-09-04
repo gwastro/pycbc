@@ -6,7 +6,11 @@ healpy
 
 # Needed for GraceDB uploads and skymap generation
 ligo-gracedb>=2.10.0
-ligo.skymap!=1.1.0
+#ligo.skymap!=1.1.0
+# Temporarily use fork that doesn't force numpy<2.0 incompatibilities
+# Remove when PR merged, or numpy > 2.0 is a hard requirement
+# https://github.com/lpsinger/ligo.skymap/pull/28
+git+https://github.com/ahnitz/ligo.skymap@lreq
 
 # auxiliary samplers
 epsie>=1.0
@@ -18,6 +22,10 @@ https://github.com/willvousden/ptemcee/archive/master.tar.gz
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 nessai>=0.11.0
+
+# Needed to make sure numpy2 build works, remove when PR merged
+# https://github.com/pypmc/pypmc/pull/105/files
+git+https://github.com/ahnitz/pypmc@n2
 snowline
 
 # useful to look at PyCBC Live with htop
