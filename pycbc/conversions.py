@@ -436,6 +436,10 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     return formatreturn(8.0 / 13.0 * (p1 + p2), input_is_array)
 
 def delta_lambda_tilde(mass1, mass2, lambda1, lambda2):
+    """ Delta lambda tilde parameter defined as
+    equation 15 in 
+    https://journals.aps.org/prd/pdf/10.1103/PhysRevD.91.043002
+    """
     m1, m2, lambda1, lambda2, input_is_array = ensurearray(
         mass1, mass2, lambda1, lambda2)
     lsum = lambda1 + lambda2
@@ -455,11 +459,13 @@ def delta_lambda_tilde(mass1, mass2, lambda1, lambda2):
          )
     return formatreturn(1 / 2 * (p1 + p2), input_is_array)
 
-def lambda1_from_delta_lambda_tilde_lambda_tilde(
-        delta_lambda_tilde, 
-        lambda_tilde, 
-        mass1, 
-        mass2):
+def lambda1_from_delta_lambda_tilde_lambda_tilde(delta_lambda_tilde, 
+                                                lambda_tilde, 
+                                                mass1, 
+                                                mass2):
+    """ Returns lambda1 parameter by using delta lambda tilde,
+    lambda tilde, mass1 and mass2.
+    """
     m1, m2, delta_lambda_tilde, lambda_tilde, input_is_array = ensurearray(
         mass1, mass2, delta_lambda_tilde, lambda_tilde)
     eta = eta_from_mass1_mass2(m1, m2)
@@ -478,6 +484,9 @@ def lambda2_from_delta_lambda_tilde_lambda_tilde(
         lambda_tilde, 
         mass1, 
         mass2):
+    """ Returns lambda2 parameter by using delta lambda tilde,
+    lambda tilde, mass1 and mass2.
+    """
     m1, m2, delta_lambda_tilde, lambda_tilde, input_is_array = ensurearray(
         mass1, mass2, delta_lambda_tilde, lambda_tilde)
     eta = eta_from_mass1_mass2(m1, m2)   
@@ -1835,5 +1844,6 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'remnant_mass_from_mass1_mass2_spherical_spin_eos',
            'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
            'lambda1_from_delta_lambda_tilde_lambda_tilde',
-           'lambda2_from_delta_lambda_tilde_lambda_tilde'
+           'lambda2_from_delta_lambda_tilde_lambda_tilde',
+           'delta_lambda_tilde'
           ]
