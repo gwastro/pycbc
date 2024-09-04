@@ -451,9 +451,10 @@ def delta_lambda_tilde(mass1, mass2, lambda1, lambda2):
         1 - (13272 / 1319) * eta +
         (8944 / 1319) * eta ** 2
     ) * lsum
-    p2 = (1 - (15910 / 1319) * eta +
-         (32850 / 1319) * eta ** 2 +
-         (3380 / 1319) * eta ** 3
+    p2 = (
+        1 - (15910 / 1319) * eta +
+        (32850 / 1319) * eta ** 2 +
+        (3380 / 1319) * eta ** 3
     ) * ldiff
     return formatreturn(1 / 2 * (p1 + p2), input_is_array)
 
