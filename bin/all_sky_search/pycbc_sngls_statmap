@@ -436,10 +436,10 @@ f.attrs['hierarchical_removal_iterations'] = h_iterations
 
 # Write whether hierarchical removals were removed against the
 # inclusive background or the exclusive background. Have to use
-# numpy.string_ datatype.
+# numpy.bytes_ datatype.
 if h_iterations != 0:
     hrm_method = args.hierarchical_removal_against
-    f.attrs['hierarchical_removal_method'] = numpy.string_(hrm_method)
+    f.attrs['hierarchical_removal_method'] = numpy.bytes_(hrm_method)
 
 logging.info("Done")
 
