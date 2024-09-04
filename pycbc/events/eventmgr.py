@@ -149,7 +149,7 @@ def findchirp_cluster_over_window(times, values, window_length):
 
     indices = numpy.zeros(len(times), dtype=numpy.int32)
     tlen = len(times)
-    absvalues = numpy.asarray(abs(values), copy=False)
+    absvalues = numpy.asarray(abs(values))
     times = numpy.asarray(times, dtype=numpy.int32)
     k = findchirp_cluster_over_window_cython(times, absvalues, window_length,
                                              indices, tlen)
