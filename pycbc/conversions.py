@@ -77,9 +77,9 @@ def ensurearray(*args):
         inputs was an array.
     """
     input_is_array = any(isinstance(arg, numpy.ndarray) for arg in args)
-    args = numpy.broadcast_arrays(*args)
+    args = list(numpy.broadcast_arrays(*args))
     args.append(input_is_array)
-    return args
+    return tuple(args)
 
 
 def formatreturn(arg, input_is_array=False):
