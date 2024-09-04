@@ -36,6 +36,8 @@ parser.add_argument("--day-str", required=True)
 parser.add_argument("--gps-start-time", required=True, type=int)
 parser.add_argument("--gps-end-time", required=True, type=int)
 parser.add_argument("--template-bin-file", required=True)
+parser.add_argument("--analysis-frame-type", required=True)
+parser.add_argument("--analysis-flag-name", required=True)
 parser.add_argument("--dq-channel", required=True)
 parser.add_argument("--dq-ok-channel", required=True)
 parser.add_argument("--dq-thresh", required=True, type=float)
@@ -46,7 +48,7 @@ args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
 # Get observing segs
-ar_flag_name = f'{args.ifo}:DMT-ANALYSIS_READY:1'
+ar_flag_name = args.analysis_flag_name.format(ifo=args.ifo)
 day_seg = Segment(args.gps_start_time, args.gps_end_time)
 observing_flag = DataQualityFlag.query(ar_flag_name, day_seg)
 observing_segs = observing_flag.active
@@ -55,7 +57,7 @@ logging.info(f'{args.day_str} has {daily_livetime} seconds of observing time.')
 
 # for each segment, check how much time was dq flagged
 flagged_time = 0
-frame_type = f'{args.ifo}_HOFT_C00'
+frame_type = args.analysis_frame_type.format(ifo=args.ifo)
 dq_channel = args.dq_channel.format(ifo=args.ifo)
 dq_ok_channel = args.dq_ok_channel.format(ifo=args.ifo)
 for seg in observing_segs:
