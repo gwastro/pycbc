@@ -463,7 +463,7 @@ def lambda1_from_delta_lambda_tilde_lambda_tilde(delta_lambda_tilde,
                                                  mass1,
                                                  mass2):
     """ Returns lambda1 parameter by using delta lambda tilde,
-    lambda tilde, mass1 and mass2.
+    lambda tilde, mass1, and mass2.
     """
     m1, m2, delta_lambda_tilde, lambda_tilde, input_is_array = ensurearray(
         mass1, mass2, delta_lambda_tilde, lambda_tilde)
@@ -487,7 +487,7 @@ def lambda2_from_delta_lambda_tilde_lambda_tilde(
         mass1,
         mass2):
     """ Returns lambda2 parameter by using delta lambda tilde,
-    lambda tilde, mass1 and mass2.
+    lambda tilde, mass1, and mass2.
     """
     m1, m2, delta_lambda_tilde, lambda_tilde, input_is_array = ensurearray(
         mass1, mass2, delta_lambda_tilde, lambda_tilde)
