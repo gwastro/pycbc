@@ -34,11 +34,9 @@ ifo = args.ifo
 f = HFile(args.dq_file, 'r')
 ifo_grp = f[ifo]
 
-dq_states = ifo_grp['dq_segments'].keys()
 bin_names = ifo_grp['bins'].keys()
 
-num_bins = len(bin_names)
-x = numpy.arange(num_bins)
+x = numpy.arange(len(bin_names))
 
 if args.low_latency:
     dq_states = {

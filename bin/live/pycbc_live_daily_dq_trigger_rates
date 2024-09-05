@@ -32,7 +32,6 @@ from gwpy.segments import Segment, DataQualityFlag
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--trigger-file", required=True)
 parser.add_argument("--ifo", required=True)
-parser.add_argument("--day-str", required=True)
 parser.add_argument("--gps-start-time", required=True, type=int)
 parser.add_argument("--gps-end-time", required=True, type=int)
 parser.add_argument("--template-bin-file", required=True)
@@ -53,7 +52,7 @@ day_seg = Segment(args.gps_start_time, args.gps_end_time)
 observing_flag = DataQualityFlag.query(ar_flag_name, day_seg)
 observing_segs = observing_flag.active
 daily_livetime = observing_flag.livetime
-logging.info(f'{args.day_str} has {daily_livetime} seconds of observing time.')
+logging.info(f'Found {daily_livetime} seconds of observing time at {args.ifo}.')
 
 # for each segment, check how much time was dq flagged
 flagged_time = 0
@@ -76,7 +75,10 @@ for seg in observing_segs:
     dq_ok_flag = (tsdict[dq_ok_channel] == 1).to_dqflag()
     dq_flag = (tsdict[dq_channel] <= args.dq_thresh).to_dqflag()
     flagged_time += (dq_flag & dq_ok_flag).livetime
-logging.info(f'{args.day_str} has {flagged_time} seconds of dq flagged time.')
+logging.info(f'Found {flagged_time} seconds of dq flagged time at {args.ifo}.')
+
+bg_livetime = daily_livetime - flagged_time
+state_time = np.array([bg_livetime, flagged_time])
 
 # read in template bins
 template_bins = {}
@@ -124,6 +126,13 @@ with h5.File(args.output, 'w') as f:
         bgrp.create_dataset('tids', data=template_bins[bin_name])
         bgrp.create_dataset('total_triggers', data=bin_total_triggers[bin_num])
         bgrp.create_dataset('dq_triggers', data=bin_dq_triggers[bin_num])
+
+        bg_triggers = bin_total_triggers[bin_num] - bin_dq_triggers[bin_num]
+        num_trigs = np.array([bg_triggers, bin_dq_triggers[bin_num]])
+        trig_rates = num_trigs / state_time
+        mean_rate = bin_total_triggers[bin_num] / daily_livetime
+        normalized_rates = trig_rates / mean_rate
+        bgrp.create_dataset('dq_rates', data=normalized_rates)
 
     f.attrs['dq_thresh'] = args.dq_thresh
     f.attrs['dq_channel'] = dq_channel

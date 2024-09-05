@@ -210,7 +210,6 @@ def fit_over_multiparam(
         fit_over_controls,
         fit_over_options,
         ifo,
-        day_str,
         output_dir,
         controls
 ):
@@ -223,11 +222,6 @@ def fit_over_multiparam(
         fit_over_controls['fit-by-format'],
         controls['output-directory'],
         ifo=ifo
-    )
-    logging.info(
-        "Smoothing fits using fit_over_multiparam with %d files and "
-        "specified parameters",
-        len(daily_files)
     )
     logging.info(
         "Smoothing fits using fit_over_multiparam with %d files and "
@@ -482,8 +476,8 @@ def daily_dq_trigger_rates(
     in each dq bin, total triggers in each dq bin, the amount
     of time flagged by idq and the total observing time.
     """
-    logging.info("Calculating daily dq trigger rates")
-    fname_format = daily_dq_controls['daily-dq-trigger-rates-format']
+    logging.info(f"Calculating daily dq trigger rates for {ifo}")
+    fname_format = daily_dq_controls['daily-dq-format']
     ddtr_out_fname = fname_format.format(date=day_str, ifo=ifo)
 
     if 'replay-start-time' in daily_dq_controls:
@@ -496,7 +490,8 @@ def daily_dq_trigger_rates(
     ddtr_out_full = os.path.join(output_dir, ddtr_out_fname)
     daily_dq_args = ['pycbc_live_daily_dq_trigger_rates']
     daily_dq_args += ['--trigger-file', trigger_merge_file]
-    daily_dq_args += ['--output', ddtr_out_full, '--ifo', ifo]
+    daily_dq_args += ['--output', ddtr_out_full]
+    daily_dq_args += ['--ifo', ifo]
 
     daily_dq_options['gps-start-time'] = f'{gps_start_time:d}'
     daily_dq_options['gps-end-time'] = f'{gps_end_time:d}'
@@ -511,7 +506,6 @@ def combine_dq_trigger_rates(
         combined_dq_controls,
         combined_dq_options,
         ifo,
-        day_str,
         output_dir,
         controls
 ):
@@ -524,16 +518,18 @@ def combine_dq_trigger_rates(
         controls['output-directory'],
         ifo
     )
-    logging.info(
-        "Combining dq trigger rates over %d files",
-        len(daily_files)
-    )
 
     date_range = f'{first_date}-{end_date}'
-    outfile_name = combined_dq_controls['outfile-format'].format(
-        date=day_str,
-        date_range=date_range,
+    outfile_name = combined_dq_controls['combined-dq-format'].format(
+        ifo=ifo,
+        dates=date_range,
     )
+
+    logging.info(
+        f"Combining {ifo} dq trigger rates over {len(daily_files)} files "
+        f"from {date_range}"
+    )
+
     combined_dq_options['output'] = os.path.join(output_dir, outfile_name)
     combined_dq_options['daily-dq-files'] = ' '.join(daily_files)
     combined_dq_options['ifo'] = ifo
@@ -673,6 +669,7 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
             ddtr_file = daily_dq_trigger_rates(
                 merged_triggers,
                 day_str,
+                day_dt,
                 daily_dq_control_options,
                 daily_dq_options,
                 output_dir,
@@ -694,7 +691,6 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
                 fit_over_control_options,
                 fit_over_options,
                 ifo,
-                day_str,
                 output_dir,
                 controls
             )
@@ -714,7 +710,6 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
                 combined_dq_control_options,
                 combined_dq_options,
                 ifo,
-                day_str,
                 output_dir,
                 controls
             )
