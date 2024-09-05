@@ -541,9 +541,12 @@ def combine_dq_trigger_rates(
 
     if 'variable-dq-trigger-rates' in combined_dq_controls:
         logging.info("Linking to variable significance fits file")
+
         sv.symlink(
             combined_dq_options['output'],
-            combined_dq_controls['variable-dq-trigger-rates']
+            combined_dq_controls['variable-dq-trigger-rates'].format(
+                ifo=ifo
+            )
         )
 
     return combined_dq_options['output'], date_range
