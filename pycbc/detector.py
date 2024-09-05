@@ -670,7 +670,8 @@ class LISA_detector(object):
     """
     LISA-like GW detector. Applies detector response from FastLISAResponse.
     """
-    def __init__(self, detector='LISA', reference_time=None, orbits=None, use_gpu=False, t0=None):
+    def __init__(self, detector='LISA', reference_time=None, orbits=None,
+                 orbits_reference_time=None, use_gpu=False, t0=None):
         """
         Parameters
         ----------
@@ -685,6 +686,10 @@ class LISA_detector(object):
         orbits: lisatools.detector.Orbits (optional)
             Orbital information to pass into pyResponseTDI. Default
             lisatools.detector.ESAOrbits.
+
+        orbits_reference_time: float (optional)
+            The GPS start time of the orbital data in the SSB frame. Default to the
+            start time given in the orbital data.
 
         use_gpu : bool (optional)
             Specify whether to run class on GPU support via CuPy. Default False.
@@ -703,29 +708,37 @@ class LISA_detector(object):
             if ESAOrbits is None:
                 raise ImportError('LISAanalysistools required for inputting orbital data')
             orbits = ESAOrbits()
-        orbits.configure(linear_interp_setup=True)
         self.orbits = orbits
 
-        # specify and cache the start time and orbital time series
-        if reference_time is None:
-            ref_time = self.orbits.t_base[0]
+        # specify a start time for the orbit data
+        if orbits_reference_time is None:
+            self.orb_ref_time = self.orbits.t_base[0]
         else:
-            ref_time = reference_time
-        self.ref_time = ref_time
-        self.sample_times = None
+            self.orb_ref_time = orbits_reference_time
 
-        # cache the FLR instance along with dt and n
+        # specify and cache the start time
+        if reference_time is None:
+            self.ref_time = self.orbits.t_base[0]
+        else:
+            assert (reference_time >= self.orb_ref_time) and (
+                reference_time <= self.orbits.t_base[-1]-self.orbits.t_base[0]+self.orb_ref_time), (
+                "Signal reference time is not in time domain of orbital data")
+            self.ref_time = reference_time
+
+        # allocate caches
         self.dt = None
         self.n = None
         self.pad_idx = None
+        self.sample_times = None
         self.response_init = None
 
+        # initialize padding/cutting time length
         if t0 is None:
             self.t0 = 10000.
         else:
             self.t0 = t0
 
-        # initialize whether to use gpu; FLR has handles if this cannot be done
+        # initialize whether to use gpu; FLR handles if this cannot be done
         self.use_gpu = use_gpu
 
     def apply_polarization(self, hp, hc, polarization):
@@ -772,10 +785,10 @@ class LISA_detector(object):
             The cross polarization of the GW in the radiation frame.
 
         lamb : float
-            The ecleptic latitude of the source in the SSB frame.
+            The ecliptic latitude of the source in the SSB frame.
 
         beta : float
-            The ecleptic longitude of the source in the SSB frame.
+            The ecliptic longitude of the source in the SSB frame.
 
         polarization : float (optional)
             The polarization angle of the GW in radians. Default 0.
@@ -800,21 +813,9 @@ class LISA_detector(object):
         """
         from fastlisaresponse import pyResponseTDI
 
-        # get dt from waveform data
-        dt = hp.delta_t
-        self.dt = dt
-
-        # index corresponding to time length t0
-        self.pad_idx = int(self.t0/self.dt)
-
-        # pad the data with zeros
-        ### this assumes that the signal naturally tapers to zero
-        ### this will not work with e.g. GBs or sinusoids
-        ### i.g. we should be tapering to prevent discontinuities
-        hp.prepend_zeros(self.pad_idx)
-        hp.append_zeros(self.pad_idx)
-        hc.prepend_zeros(self.pad_idx)
-        hc.append_zeros(self.pad_idx)
+        # get dt from waveform data (skipped if running project_wave)
+        if self.dt is None:
+            self.dt = hp.delta_t
 
         # set waveform start time and cache time samples
         if reference_time is not None:
@@ -823,20 +824,28 @@ class LISA_detector(object):
         hc.start_time = self.ref_time
         self.sample_times = hp.sample_times.numpy()
 
+        # For simulated orbital data that starts at t=0, we shift the
+        # signal times back by the given orbital ref time. This
+        # converts the GPS time inputs to be relative to the orbital start
+        # time. For data with associated GPS times, this won't be necessary.
+        if self.orbits.t_base[0] == 0.:
+            t_arr = self.sample_times - self.orb_ref_time
+        else:
+            t_arr = self.sample_times
+
         # rescale the orbital time series to match waveform
-        self.orbits.configure(t_arr=self.sample_times)
+        self.orbits.configure(t_arr=t_arr)
 
         # rotate GW from radiation frame to SSB using polarization angle
         hp, hc = self.apply_polarization(hp, hc, polarization)
 
-        # format wf to FLR standard hp + i*hc as ndarray
+        # format wf to hp + i*hc
         hp = hp.numpy()
         hc = hc.numpy()
         wf = hp + 1j*hc
 
         # save length of wf
-        n = len(wf)
-        self.n = n
+        self.n = len(wf)
 
         # set use_gpu to class input if not specified
         if use_gpu is None:
@@ -859,13 +868,12 @@ class LISA_detector(object):
 
         if self.response_init is None:
             # initialize the class
-            response_init = pyResponseTDI(1/dt, n, orbits=self.orbits,
-                                          use_gpu=use_gpu, tdi=tdi_opt)
-            self.response_init = response_init
+            self.response_init = pyResponseTDI(1/self.dt, self.n, orbits=self.orbits,
+                                               use_gpu=use_gpu, tdi=tdi_opt)
         else:
             # update params in the initialized class
-            self.response_init.sampling_frequency = 1/dt
-            self.response_init.num_pts = n
+            self.response_init.sampling_frequency = 1/self.dt
+            self.response_init.num_pts = self.n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
 
@@ -880,10 +888,19 @@ class LISA_detector(object):
 
         return wf_proj
 
-    def project_wave(self, hp, hc, lamb, beta, polarization, reference_time=None, tdi=2,
-                     tdi_chan='AET', tdi_orbits=None, use_gpu=None, remove_garbage=True):
+    def project_wave(self, hp, hc, lamb, beta, polarization, reference_time=None,
+                     tdi=2, tdi_chan='AET', tdi_orbits=None, use_gpu=None,
+                     pad_data=False, remove_garbage=True):
         """
         Evaluate the TDI observables.
+
+        The TDI generation requires some startup time at the start and end of the
+        waveform, creating erroneous ringing or "garbage" at the edges of the signal.
+        By default, this method will cut off a time length t0 from the start and end
+        to remove this garbage, which may delete sensitive data at the edges of the
+        input data (e.g., the late inspiral and ringdown of a binary merger). Thus,
+        the default output will be shorter than the input by (2*t0) seconds. See
+        pad_data and remove_garbage to modify this behavior.
 
         Parameters
         ----------
@@ -894,10 +911,10 @@ class LISA_detector(object):
             The cross polarization of the GW in the radiation frame.
 
         lamb : float
-            The ecleptic latitude in the SSB frame.
+            The ecliptic latitude in the SSB frame.
 
         beta : float
-            The ecleptic longitude in the SSB frame.
+            The ecliptic longitude in the SSB frame.
 
         polarization : float
             The polarization angle of the GW in radians.
@@ -921,17 +938,39 @@ class LISA_detector(object):
         use_gpu : bool (optional)
             Flag whether to use GPU support. Default to class input.
 
+        pad_data : bool (optional)
+            Flag whether to pad the data with time length t0 of zeros at the
+            start and end. If True, remove_garbage will interact with the
+            pads rather than the input data. Default False.
+
         remove_garbage : bool, str (optional)
             Flag whether to remove gaps in TDI from start and end. If True,
-            time length t0 worth of edge data will be cut from TDI channels.
-            If 'zero', time length t0 worth of edge data will be zeroed. If
-            False, TDI channels will not be modified. Default True.
+            time length t0 worth of data at the start and end of the waveform
+            will be cut from TDI channels. If 'zero', time length t0 worth of
+            edge data will be zeroed. If False, TDI channels will not be
+            modified. Default True.
 
         Returns
         -------
         dict
             The TDI observables keyed by their corresponding TDI channel.
         """
+        # get dt from waveform data
+        self.dt = hp.delta_t
+
+        # index corresponding to time length t0
+        self.pad_idx = int(self.t0/self.dt)
+
+        # pad the data with zeros
+        ### this assumes that the signal naturally tapers to zero
+        ### this will not work with e.g. GBs or sinusoids
+        ### we should be tapering in general to prevent discontinuities
+        if pad_data:
+            hp.prepend_zeros(self.pad_idx)
+            hp.append_zeros(self.pad_idx)
+            hc.prepend_zeros(self.pad_idx)
+            hc.append_zeros(self.pad_idx)
+
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
@@ -950,7 +989,12 @@ class LISA_detector(object):
         # if TDI orbit class is provided, update the response_init
         # tdi_orbits are set to class input automatically by FLR otherwise
         if tdi_orbits is not None:
-            tdi_orbits.configure(t_arr=self.sample_times)
+            # handle for analytic orbits
+            if tdi_orbits.t_base[0] == 0:
+                t_arr = self.sample_times - self.orbit_ref_time
+            else:
+                t_arr = self.sample_times
+            tdi_orbits.configure(t_arr=t_arr)
             self.response_init.tdi_orbits = tdi_orbits
 
         # generate the TDI channels
@@ -977,7 +1021,6 @@ class LISA_detector(object):
                         # cut the sample times (only do once)
                         self.sample_times = self.sample_times[slc]
                 else:
-                    # raise error
                     raise ValueError('remove_garbage arg must be a bool or "zero"')
 
         return tdi_dict
