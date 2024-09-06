@@ -637,14 +637,17 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
         ))
         logging.info("Outputs to be linked to % ", public_dir)
 
-    merged_triggers = trigger_collation(
-        day_dt,
-        day_str,
-        collation_control_options,
-        collation_options,
-        output_dir,
-        controls
-    )
+    if args.collated_trigger_file is not None:
+        merged_triggers = args.collated_trigger_file
+    else:
+        merged_triggers = trigger_collation(
+            day_dt,
+            day_str,
+            collation_control_options,
+            collation_options,
+            output_dir,
+            controls
+        )
     # Store the locations of files needed for the statistic
     stat_files = []
     for ifo in config_opts['control']['ifos'].split():
@@ -779,8 +782,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--collated-trigger-file',
-    help='Collated trigger file to use, if not given, will be created. '
-         'Do not use if using --run-daily-at.'
+    help='Collated trigger file to use, if not given, will be created.'
 )
 parser.add_argument(
     '--fit-by-template',
