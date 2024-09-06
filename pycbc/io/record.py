@@ -1507,7 +1507,7 @@ def _isstring(dtype):
     """Given a numpy dtype, determines whether it is a string. Returns True
     if the dtype is string or unicode.
     """
-    return dtype.type == numpy.unicode_ or dtype.type == numpy.string_
+    return dtype.type == numpy.unicode_ or dtype.type == numpy.bytes_
 
 
 def aliases_from_fields(fields):

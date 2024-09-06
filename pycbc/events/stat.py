@@ -506,7 +506,8 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
             # renormalise to PDF
             self.weights[ifo] = \
-                weights[ifo] / (weights[ifo].sum() * bin_volume)
+                (weights[ifo] / (weights[ifo].sum() * bin_volume))
+            self.weights[ifo] = self.weights[ifo].astype(numpy.float32)
 
             if param[ifo].dtype == numpy.int8:
                 # Older style, incorrectly sorted histogram file
@@ -641,13 +642,17 @@ class PhaseTDStatistic(QuadratureSumStatistic):
 
         # Get reference ifo information
         rate = numpy.zeros(len(shift), dtype=numpy.float32)
-        ps = {ifo: numpy.array(stats[ifo]['coa_phase'], ndmin=1)
+        ps = {ifo: numpy.array(stats[ifo]['coa_phase'],
+                               dtype=numpy.float32, ndmin=1)
               for ifo in self.ifos}
-        ts = {ifo: numpy.array(stats[ifo]['end_time'], ndmin=1)
+        ts = {ifo: numpy.array(stats[ifo]['end_time'],
+                               dtype=numpy.float64, ndmin=1)
               for ifo in self.ifos}
-        ss = {ifo: numpy.array(stats[ifo]['snr'], ndmin=1)
+        ss = {ifo: numpy.array(stats[ifo]['snr'],
+                               dtype=numpy.float32, ndmin=1)
               for ifo in self.ifos}
-        sigs = {ifo: numpy.array(stats[ifo]['sigmasq'], ndmin=1)
+        sigs = {ifo: numpy.array(stats[ifo]['sigmasq'],
+                                 dtype=numpy.float32, ndmin=1)
                 for ifo in self.ifos}
         for ref_ifo in self.ifos:
             rtype = rtypes[ref_ifo]
