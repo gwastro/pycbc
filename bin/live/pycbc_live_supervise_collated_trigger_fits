@@ -778,6 +778,11 @@ parser.add_argument(
          'Format YYYY_MM_DD. Do not use if using --run-daily-at.'
 )
 parser.add_argument(
+    '--collated-trigger-file',
+    help='Collated trigger file to use, if not given, will be created. '
+         'Do not use if using --run-daily-at.'
+)
+parser.add_argument(
     '--fit-by-template',
     action='store_true',
     help="Perform template fits calculation."
