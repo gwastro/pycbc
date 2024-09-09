@@ -431,10 +431,79 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     mask = m1 < m2
     ldiff[mask] = -ldiff[mask]
     eta = eta_from_mass1_mass2(m1, m2)
-    p1 = (lsum) * (1 + 7. * eta - 31 * eta ** 2.0)
-    p2 = (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta ** 2.0) * (ldiff)
+    p1 = lsum * (1 + 7. * eta - 31 * eta ** 2.0)
+    p2 = (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta ** 2.0) * ldiff
     return formatreturn(8.0 / 13.0 * (p1 + p2), input_is_array)
 
+def delta_lambda_tilde(mass1, mass2, lambda1, lambda2):
+    """ Delta lambda tilde parameter defined as
+    equation 15 in
+    https://journals.aps.org/prd/pdf/10.1103/PhysRevD.91.043002
+    """
+    m1, m2, lambda1, lambda2, input_is_array = ensurearray(
+        mass1, mass2, lambda1, lambda2)
+    lsum = lambda1 + lambda2
+    ldiff, _ = ensurearray(lambda1 - lambda2)
+    mask = m1 < m2
+    ldiff[mask] = -ldiff[mask]
+    eta = eta_from_mass1_mass2(m1, m2)
+    p1 = numpy.sqrt(1 - 4 * eta) * (
+        1 - (13272 / 1319) * eta +
+        (8944 / 1319) * eta ** 2
+    ) * lsum
+    p2 = (
+        1 - (15910 / 1319) * eta +
+        (32850 / 1319) * eta ** 2 +
+        (3380 / 1319) * eta ** 3
+    ) * ldiff
+    return formatreturn(1 / 2 * (p1 + p2), input_is_array)
+
+def lambda1_from_delta_lambda_tilde_lambda_tilde(delta_lambda_tilde,
+                                                 lambda_tilde,
+                                                 mass1,
+                                                 mass2):
+    """ Returns lambda1 parameter by using delta lambda tilde,
+    lambda tilde, mass1, and mass2.
+    """
+    m1, m2, delta_lambda_tilde, lambda_tilde, input_is_array = ensurearray(
+        mass1, mass2, delta_lambda_tilde, lambda_tilde)
+    eta = eta_from_mass1_mass2(m1, m2)
+    p1 = 1 + 7.0*eta - 31*eta**2.0
+    p2 = (1 - 4*eta)**0.5 * (1 + 9*eta - 11*eta**2.0)
+    p3 = (1 - 4*eta)**0.5 * (1 - 13272/1319*eta + 8944/1319*eta**2)
+    p4 = 1 - (15910/1319)*eta + (32850/1319)*eta**2 + (3380/1319)*eta**3
+    amp = 1/((p1*p4)-(p2*p3))
+    l_tilde_lambda1 = 13/16 * (p3-p4) * lambda_tilde
+    l_delta_tilde_lambda1 = (p1-p2) * delta_lambda_tilde
+    lambda1 = formatreturn(
+        amp * (l_delta_tilde_lambda1 - l_tilde_lambda1),
+        input_is_array
+    )
+    return lambda1
+
+def lambda2_from_delta_lambda_tilde_lambda_tilde(
+        delta_lambda_tilde,
+        lambda_tilde,
+        mass1,
+        mass2):
+    """ Returns lambda2 parameter by using delta lambda tilde,
+    lambda tilde, mass1, and mass2.
+    """
+    m1, m2, delta_lambda_tilde, lambda_tilde, input_is_array = ensurearray(
+        mass1, mass2, delta_lambda_tilde, lambda_tilde)
+    eta = eta_from_mass1_mass2(m1, m2)
+    p1 = 1 + 7.0*eta - 31*eta**2.0
+    p2 = (1 - 4*eta)**0.5 * (1 + 9*eta - 11*eta**2.0)
+    p3 = (1 - 4*eta)**0.5 * (1 - 13272/1319*eta + 8944/1319*eta**2)
+    p4 = 1 - (15910/1319)*eta + (32850/1319)*eta**2 + (3380/1319)*eta**3
+    amp = 1/((p1*p4)-(p2*p3))
+    l_tilde_lambda2 = 13/16 * (p3+p4) * lambda_tilde
+    l_delta_tilde_lambda2 = (p1+p2) * delta_lambda_tilde
+    lambda2 = formatreturn(
+        amp * (l_tilde_lambda2 - l_delta_tilde_lambda2),
+        input_is_array
+    )
+    return lambda2
 
 def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
     """Return the lambda parameter(s) corresponding to the input mass(es)
@@ -1774,5 +1843,8 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'nltides_gw_phase_diff_isco', 'spin_from_pulsar_freq',
            'freqlmn_from_other_lmn', 'taulmn_from_other_lmn',
            'remnant_mass_from_mass1_mass2_spherical_spin_eos',
-           'remnant_mass_from_mass1_mass2_cartesian_spin_eos'
+           'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
+           'lambda1_from_delta_lambda_tilde_lambda_tilde',
+           'lambda2_from_delta_lambda_tilde_lambda_tilde',
+           'delta_lambda_tilde'
           ]
