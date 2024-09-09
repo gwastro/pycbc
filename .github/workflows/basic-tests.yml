@@ -61,7 +61,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
     - name: retrieve built documentation
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
       with:
         name: documentation-page
     - name: debug

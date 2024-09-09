@@ -44,7 +44,7 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         path: ./
     - name: build pycbc for pypi
