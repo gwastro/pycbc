@@ -38,7 +38,7 @@ from pycbc import transforms
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fseries_time_shift, taper_timeseries, \
-                                 ceilpow2, apply_fd_time_shift  
+                                 ceilpow2, apply_fd_time_shift
 from pycbc.detector import Detector
 from pycbc.pool import use_mpi
 import lal as _lal
