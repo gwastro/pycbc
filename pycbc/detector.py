@@ -671,7 +671,7 @@ class LISA_detector(object):
     LISA-like GW detector. Applies detector response from FastLISAResponse.
     """
     def __init__(self, detector='LISA', reference_time=None, orbits=None,
-                 orbits_reference_time=None, use_gpu=False, t0=None):
+                 use_gpu=False, t0=None):
         """
         Parameters
         ----------
@@ -686,10 +686,6 @@ class LISA_detector(object):
         orbits: lisatools.detector.Orbits (optional)
             Orbital information to pass into pyResponseTDI. Default
             lisatools.detector.ESAOrbits.
-
-        orbits_reference_time: float (optional)
-            The GPS start time of the orbital data in the SSB frame. Default to the
-            start time given in the orbital data.
 
         use_gpu : bool (optional)
             Specify whether to run class on GPU support via CuPy. Default False.
@@ -709,20 +705,15 @@ class LISA_detector(object):
                 raise ImportError('LISAanalysistools required for inputting orbital data')
             orbits = ESAOrbits()
         self.orbits = orbits
-
-        # specify a start time for the orbit data
-        if orbits_reference_time is None:
-            self.orb_ref_time = self.orbits.t_base[0]
-        else:
-            self.orb_ref_time = orbits_reference_time
+        orbit_start = self.orbits.t_base[0]
+        orbit_end = self.orbits.t_base[-1]
 
         # specify and cache the start time
         if reference_time is None:
-            self.ref_time = self.orbits.t_base[0]
+            self.ref_time = orbit_start
         else:
-            assert (reference_time >= self.orb_ref_time) and (
-                reference_time <= self.orbits.t_base[-1]-self.orbits.t_base[0]+self.orb_ref_time), (
-                "Signal reference time is not in time domain of orbital data")
+            assert (reference_time >= orbit_start) and (reference_time <= orbit_end), (
+                    "Reference time is not in time domain of orbital data")
             self.ref_time = reference_time
 
         # allocate caches
@@ -770,7 +761,7 @@ class LISA_detector(object):
         return hp_ssb, hc_ssb
 
     def get_links(self, hp, hc, lamb, beta, polarization=0, reference_time=None,
-                  use_gpu=None, tdi=2):
+                  use_gpu=None):
         """
         Project a radiation frame waveform to the LISA constellation.
         This does not perform TDI; this only produces a detector frame
@@ -802,10 +793,6 @@ class LISA_detector(object):
             CuPy is required if use_gpu is True; an ImportError will be raised
             if CuPy could not be imported.
 
-        tdi : int (optional)
-            TDI channel configuration. Accepts 1 for 1st generation TDI or
-            2 for 2nd generation TDI. Default 2.
-
         Returns
         -------
         ndarray
@@ -824,17 +811,10 @@ class LISA_detector(object):
         hc.start_time = self.ref_time
         self.sample_times = hp.sample_times.numpy()
 
-        # For simulated orbital data that starts at t=0, we shift the
-        # signal times back by the given orbital ref time. This
-        # converts the GPS time inputs to be relative to the orbital start
-        # time. For data with associated GPS times, this won't be necessary.
-        if self.orbits.t_base[0] == 0.:
-            t_arr = self.sample_times - self.orb_ref_time
-        else:
-            t_arr = self.sample_times
-
         # rescale the orbital time series to match waveform
-        self.orbits.configure(t_arr=t_arr)
+        assert hp.duration + self.ref_time <= self.orbits.t_base[-1], (
+               "Time of signal end is greater than end of orbital data")
+        self.orbits.configure(t_arr=self.sample_times)
 
         # rotate GW from radiation frame to SSB using polarization angle
         hp, hc = self.apply_polarization(hp, hc, polarization)
@@ -858,29 +838,16 @@ class LISA_detector(object):
             else:
                 wf = cupy.asarray(wf)
 
-        # set TDI configuration (let FLR handle if not 1 or 2)
-        if tdi == 1:
-            tdi_opt = '1st generation'
-        elif tdi == 2:
-            tdi_opt = '2nd generation'
-        else:
-            tdi_opt = tdi
-
         if self.response_init is None:
             # initialize the class
             self.response_init = pyResponseTDI(1/self.dt, self.n, orbits=self.orbits,
-                                               use_gpu=use_gpu, tdi=tdi_opt)
+                                               use_gpu=use_gpu)
         else:
             # update params in the initialized class
             self.response_init.sampling_frequency = 1/self.dt
             self.response_init.num_pts = self.n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
-
-            if tdi_opt != self.response_init.tdi:
-                # update TDI in existing response_init class
-                self.response_init.tdi = tdi_opt
-                self.response_init._init_TDI_delays()
 
         # project the signal
         self.response_init.get_projections(wf, lamb, beta, t0=self.t0)
@@ -977,8 +944,20 @@ class LISA_detector(object):
 
         # generate the Doppler time series
         self.get_links(hp, hc, lamb, beta, polarization=polarization,
-                       reference_time=reference_time, use_gpu=use_gpu,
-                       tdi=tdi)
+                       reference_time=reference_time, use_gpu=use_gpu)
+
+        # set TDI configuration (let FLR handle if not 1 or 2)
+        if tdi == 1:
+            tdi_opt = '1st generation'
+        elif tdi == 2:
+            tdi_opt = '2nd generation'
+        else:
+            tdi_opt = tdi
+
+        if tdi_opt != self.response_init.tdi:
+            # update TDI in existing response_init class
+            self.response_init.tdi = tdi_opt
+            self.response_init._init_TDI_delays()
 
         # set TDI channels
         if tdi_chan in ['XYZ', 'AET', 'AE']:
@@ -989,12 +968,7 @@ class LISA_detector(object):
         # if TDI orbit class is provided, update the response_init
         # tdi_orbits are set to class input automatically by FLR otherwise
         if tdi_orbits is not None:
-            # handle for analytic orbits
-            if tdi_orbits.t_base[0] == 0:
-                t_arr = self.sample_times - self.orbit_ref_time
-            else:
-                t_arr = self.sample_times
-            tdi_orbits.configure(t_arr=t_arr)
+            tdi_orbits.configure(t_arr=self.sample_times)
             self.response_init.tdi_orbits = tdi_orbits
 
         # generate the TDI channels
