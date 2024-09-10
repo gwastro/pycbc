@@ -656,6 +656,9 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 
 
 """     LISA class      """
+
+from pycbc.coordinates.space import ssb_to_lisa, TIME_OFFSET_20_DEGREES
+
 try:
     import cupy
 except ImportError:
@@ -665,13 +668,18 @@ try:
     from lisatools.detector import ESAOrbits
 except ImportError:
     ESAOrbits = None
+    
+try:
+    from fastlisaresponse import pyResponseTDI
+except ImportError:
+    pyResponseTDI = None
 
 class LISA_detector(object):
     """
     LISA-like GW detector. Applies detector response from FastLISAResponse.
     """
     def __init__(self, detector='LISA', reference_time=None, orbits=None,
-                 use_gpu=False, t0=None):
+                 use_gpu=False, apply_offset=False, offset=TIME_OFFSET_20_DEGREES):
         """
         Parameters
         ----------
@@ -690,10 +698,16 @@ class LISA_detector(object):
         use_gpu : bool (optional)
             Specify whether to run class on GPU support via CuPy. Default False.
 
-        t0 : float (optional)
-            Time length (in seconds) to cut from start and end of TDI observables. By
-            default, TDI channels will have erroneous noise at edges that will be cut
-            according to this argument. Default 10000 s.
+        apply_offset : bool (optional)
+            Specify whether to add a time offset to input times. If True,
+            times are treated as GPS times, to which an offset is added to ensure
+            LISA is ~20 degrees behind the Earth at t=0 (the LDC convention for the
+            LISA start date). If False, no offset is applied. Default False.
+
+        offset : float (optional)
+            Time offset in seconds to apply to GPS times if apply_offset = True.
+            Default pycbc.coordinates.space.TIME_OFFSET_20_DEGREES (places LISA
+            ~20 deg behind Earth).
         """
         # initialize detector; for now we only accept LISA
         assert (detector=='LISA'), 'Currently only supports LISA detector'
@@ -708,10 +722,17 @@ class LISA_detector(object):
         orbit_start = self.orbits.t_base[0]
         orbit_end = self.orbits.t_base[-1]
 
+        # specify whether to apply offsets to GPS times
+        if apply_offset:
+            self.offset = offset
+        else:
+            self.offset = 0.
+
         # specify and cache the start time
         if reference_time is None:
-            self.ref_time = orbit_start
+            self.ref_time = orbit_start + self.offset
         else:
+            reference_time += self.offset
             assert (reference_time >= orbit_start) and (reference_time <= orbit_end), (
                     "Reference time is not in time domain of orbital data")
             self.ref_time = reference_time
@@ -719,18 +740,20 @@ class LISA_detector(object):
         # allocate caches
         self.dt = None
         self.n = None
-        self.pad_idx = None
+        self.pad_data = False # don't pad by default if only projecting
         self.sample_times = None
         self.response_init = None
 
         # initialize padding/cutting time length
-        if t0 is None:
-            self.t0 = 10000.
-        else:
-            self.t0 = t0
+        self.t0 = 10000.
 
         # initialize whether to use gpu; FLR handles if this cannot be done
         self.use_gpu = use_gpu
+
+        # extrinsic params for LISA time conversion
+        self.beta = None
+        self.lamb = None
+        self.pol = None
 
     def apply_polarization(self, hp, hc, polarization):
         """
@@ -745,7 +768,7 @@ class LISA_detector(object):
             The cross polarization of the GW.
 
         polarization : float
-            The polarization angle of the GW in radians.
+            The SSB polarization angle of the GW in radians.
 
         Returns
         -------
@@ -764,8 +787,6 @@ class LISA_detector(object):
                   use_gpu=None):
         """
         Project a radiation frame waveform to the LISA constellation.
-        This does not perform TDI; this only produces a detector frame
-        representation of the signal.
 
         Parameters
         ----------
@@ -798,22 +819,36 @@ class LISA_detector(object):
         ndarray
             The waveform projected to the LISA laser links.
         """
-        from fastlisaresponse import pyResponseTDI
+        if pyResponseTDI is None:
+            raise ImportError('FastLISAResponse required for LISA projection/TDI')
 
-        # get dt from waveform data (skipped if running project_wave)
+        # get dt from waveform data
         if self.dt is None:
             self.dt = hp.delta_t
 
-        # set waveform start time and cache time samples
+        # set waveform start time if specified
         if reference_time is not None:
             self.ref_time = reference_time
-        hp.start_time = self.ref_time
-        hc.start_time = self.ref_time
+
+        # specify and cache sample times
+        start = self.ref_time
+        base_dur = hp.duration
+        if self.pad_data:
+            start -= self.t0 # start should correspond to input signal, not pad
+        hp.start_time = start
+        hc.start_time = start
         self.sample_times = hp.sample_times.numpy()
 
-        # rescale the orbital time series to match waveform
-        assert hp.duration + self.ref_time <= self.orbits.t_base[-1], (
-               "Time of signal end is greater than end of orbital data")
+        # make sure signal still lies within orbit length
+        assert hp.duration + start <= self.orbits.t_base[-1], (
+               "Time of signal end is greater than end of orbital data.")
+        if self.pad_data:
+            # specify that the padding is causing the issue
+            assert start >= self.orbits.t_base[0], (
+                   "Starting pad extends before start of orbital data. " + 
+                   "Consider decreasing t0 or increasing reference time.")
+
+        # configure the orbit to match signal
         self.orbits.configure(t_arr=self.sample_times)
 
         # rotate GW from radiation frame to SSB using polarization angle
@@ -834,7 +869,8 @@ class LISA_detector(object):
         # convert to cupy if needed
         if use_gpu:
             if cupy is None:
-                raise ImportError('CuPy not imported but is required for GPU usage')
+                raise ImportError('CuPy not imported but is required for GPU usage. ' +
+                                  'Ensure use_gpu = False if not using GPU.')
             else:
                 wf = cupy.asarray(wf)
 
@@ -857,7 +893,7 @@ class LISA_detector(object):
 
     def project_wave(self, hp, hc, lamb, beta, polarization, reference_time=None,
                      tdi=2, tdi_chan='AET', tdi_orbits=None, use_gpu=None,
-                     pad_data=False, remove_garbage=True):
+                     pad_data=False, remove_garbage=True, t0=None):
         """
         Evaluate the TDI observables.
 
@@ -917,26 +953,34 @@ class LISA_detector(object):
             edge data will be zeroed. If False, TDI channels will not be
             modified. Default True.
 
+        t0 : float (optional)
+            Time length in seconds to pad/cut from the start and end of
+            the data if pad_data/remove_garbage is True. Default 10000.
+
         Returns
         -------
         dict
             The TDI observables keyed by their corresponding TDI channel.
         """
+        self.pad_data = pad_data
+
         # get dt from waveform data
         self.dt = hp.delta_t
 
-        # index corresponding to time length t0
-        self.pad_idx = int(self.t0/self.dt)
+        # get index corresponding to time length t0
+        if t0 is not None:
+            self.t0 = t0
+        if pad_data or remove_garbage:
+            pad_idx = int(self.t0/self.dt)
 
         # pad the data with zeros
         ### this assumes that the signal naturally tapers to zero
         ### this will not work with e.g. GBs or sinusoids
-        ### we should be tapering in general to prevent discontinuities
         if pad_data:
-            hp.prepend_zeros(self.pad_idx)
-            hp.append_zeros(self.pad_idx)
-            hc.prepend_zeros(self.pad_idx)
-            hc.append_zeros(self.pad_idx)
+            hp.prepend_zeros(pad_idx)
+            hp.append_zeros(pad_idx)
+            hc.prepend_zeros(pad_idx)
+            hc.append_zeros(pad_idx)
 
         # set use_gpu
         if use_gpu is None:
@@ -976,18 +1020,17 @@ class LISA_detector(object):
 
         # processing
         tdi_dict = {}
-        slc = slice(self.pad_idx, -self.pad_idx)
+        slc = slice(pad_idx, -pad_idx)
 
         for i in range(len(tdi_chan)):
-            # add to dict
             tdi_dict[tdi_chan[i]] = tdi_obs[i]
 
-            # treat start and end gaps (if remove_garbage is not False)
+            # treat start and end gaps
             if remove_garbage:
                 if remove_garbage == 'zero':
                     # zero the edge data
-                    tdi_dict[tdi_chan[i]][:self.pad_idx] = 0
-                    tdi_dict[tdi_chan[i]][-self.pad_idx:] = 0
+                    tdi_dict[tdi_chan[i]][:pad_idx] = 0
+                    tdi_dict[tdi_chan[i]][-pad_idx:] = 0
                 elif type(remove_garbage) == bool:
                     # cut the edge data
                     tdi_dict[tdi_chan[i]] = tdi_dict[tdi_chan[i]][slc]
@@ -995,9 +1038,33 @@ class LISA_detector(object):
                         # cut the sample times (only do once)
                         self.sample_times = self.sample_times[slc]
                 else:
-                    raise ValueError('remove_garbage arg must be a bool or "zero"')
+                    raise ValueError('remove_garbage arg must be a bool ' + 
+                                     'or "zero"')
+
+        # unapply offset for GPS SSB times
+        self.sample_times -= self.offset
+        self.ref_time -= self.offset
+
+        # save params for LISA time conversion
+        self.beta = beta
+        self.lamb = lamb
+        self.pol = polarization
 
         return tdi_dict
+
+    @property
+    def sample_times_LISA(self):
+        """
+        Sample times of signal converted to LISA frame.
+        """
+        params = [self.sample_times, self.beta, self.lamb, self.pol]
+        assert all(i is not None for i in params), ("Need to run project_wave for conversion")
+
+        # calculate first time converted to LISA; shift sample times to match LISA start time
+        lisa_start, _, _, _ = ssb_to_lisa(self.sample_times[0], self.beta, self.lamb,
+                                          self.pol, t0=0)
+        diff = lisa_start - self.sample_times[0]
+        return self.sample_times + diff
 
 
 def ppdets(ifos, separator=', '):
