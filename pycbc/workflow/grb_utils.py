@@ -539,6 +539,8 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
         node.add_opt('--y-variable', tags[0])
     # Quantity to be displayed on the x-axis of the plot
     elif exec_name == 'pygrb_plot_stats_distribution':
+        seg_filelist = FileList([resolve_url_to_file(sf) for sf in seg_files])
+        node.add_input_list_opt('--seg-files', seg_filelist)
         node.add_opt('--x-variable', tags[0])
     elif exec_name == 'pygrb_plot_injs_results':
         # Variables to plot on x and y axes
@@ -560,30 +562,36 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     return node, node.output_files
 
 
-def make_info_table(workflow, out_dir, tags=None):
-    """Setup a job to create an html snippet with the GRB trigger information.
+def make_info_table(workflow, exec_name, out_dir, in_files=None, tags=None):
+    """
+    Setup a job to create an html snippet with the GRB trigger information
+    or exlusion distances information.
     """
 
+    # Organize tags
     tags = [] if tags is None else tags
-
-    # Executable
-    exec_name = 'pygrb_grb_info_table'
+    grb_name = workflow.cp.get('workflow', 'trigger-name')
+    extra_tags = ['GRB'+grb_name]
 
     # Initialize job node
-    grb_name = workflow.cp.get('workflow', 'trigger-name')
-    extra_tags = ['GRB'+grb_name, 'INFO_TABLE']
     node = PlotExecutable(workflow.cp, exec_name,
                           ifos=workflow.ifos, out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
 
     # Options
-    node.add_opt('--trigger-time', workflow.cp.get('workflow', 'trigger-time'))
-    node.add_opt('--ra', workflow.cp.get('workflow', 'ra'))
-    node.add_opt('--dec', workflow.cp.get('workflow', 'dec'))
-    node.add_opt('--sky-error', workflow.cp.get('workflow', 'sky-error'))
-    node.add_opt('--ifos', ' '.join(workflow.ifos))
+    if exec_name=='pygrb_grb_info_table':
+        node.add_opt('--trigger-time', workflow.cp.get('workflow', 'trigger-time'))
+        node.add_opt('--ra', workflow.cp.get('workflow', 'ra'))
+        node.add_opt('--dec', workflow.cp.get('workflow', 'dec'))
+        node.add_opt('--sky-error', workflow.cp.get('workflow', 'sky-error'))
+        node.add_opt('--ifos', ' '.join(workflow.ifos))
+    elif exec_name=='pygrb_exclusion_dist_table':
+        node.add_input_opt('--input-files', in_files)
+
+    # Output
     node.new_output_file_opt(workflow.analysis_time, '.html',
                              '--output-file', tags=extra_tags)
+
     # Add job node to workflow
     workflow += node
 
