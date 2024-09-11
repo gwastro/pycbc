@@ -19,6 +19,7 @@ for a day of PyCBC Live triggers.
 
 import logging
 import argparse
+import hashlib
 
 import numpy as np
 
@@ -52,8 +53,8 @@ ar_flag_name = args.analysis_flag_name.format(ifo=args.ifo)
 day_seg = Segment(args.gps_start_time, args.gps_end_time)
 observing_flag = DataQualityFlag.query(ar_flag_name, day_seg)
 observing_segs = observing_flag.active
-daily_livetime = observing_flag.livetime
-logging.info(f'Found {daily_livetime} seconds of observing time at {args.ifo}.')
+livetime = observing_flag.livetime
+logging.info(f'Found {livetime} seconds of observing time at {args.ifo}.')
 
 # for each segment, check how much time was dq flagged
 flagged_time = 0
@@ -78,7 +79,7 @@ for seg in observing_segs:
     flagged_time += (dq_flag & dq_ok_flag).livetime
 logging.info(f'Found {flagged_time} seconds of dq flagged time at {args.ifo}.')
 
-bg_livetime = daily_livetime - flagged_time
+bg_livetime = livetime - flagged_time
 state_time = np.array([bg_livetime, flagged_time])
 
 # read in template bins
@@ -118,7 +119,7 @@ with HFile(args.trigger_file, 'r') as trigf:
 # write outputs to file
 with HFile(args.output, 'w') as f:
     ifo_group = f.create_group(args.ifo)
-    ifo_group['observing_livetime'] = daily_livetime
+    ifo_group['observing_livetime'] = livetime
     ifo_group['dq_flag_livetime'] = flagged_time
     bin_group = ifo_group.create_group('bins')
     for bin_name in template_bins.keys():
@@ -131,7 +132,7 @@ with HFile(args.output, 'w') as f:
         bg_triggers = bin_total_triggers[bin_num] - bin_dq_triggers[bin_num]
         num_trigs = np.array([bg_triggers, bin_dq_triggers[bin_num]])
         trig_rates = num_trigs / state_time
-        mean_rate = bin_total_triggers[bin_num] / daily_livetime
+        mean_rate = bin_total_triggers[bin_num] / livetime
         normalized_rates = trig_rates / mean_rate
         bgrp.create_dataset('dq_rates', data=normalized_rates)
 
@@ -145,6 +146,8 @@ with HFile(args.output, 'w') as f:
     f.attrs['background_bins'] = bin_string
 
     # hash is used to check if different files have compatible settings
-    settings_to_hash = (args.dq_thresh, dq_channel, dq_ok_channel,
-                        f_lower, bank_file, bin_string)
-    f.attrs['settings_hash'] = hash((settings_to_hash))
+    settings_to_hash = [args.dq_thresh, dq_channel, dq_ok_channel,
+                        f_lower, bank_file, bin_string]
+    setting_str = ' '.join([str(s) for s in settings_to_hash])
+    hash_object = hashlib.sha256(setting_str.encode())
+    f.attrs['settings_hash'] = hash_object.hexdigest()
