@@ -83,6 +83,7 @@ bg_livetime = livetime - flagged_time
 state_time = np.array([bg_livetime, flagged_time])
 
 # read in template bins
+logging.info(f'Reading template bins from {args.template_bin_file}')
 template_bins = {}
 num_templates = 0
 with HFile(args.template_bin_file, 'r') as bin_file:
@@ -101,6 +102,7 @@ with HFile(args.template_bin_file, 'r') as bin_file:
 bin_total_triggers = np.zeros(num_bins)
 bin_dq_triggers = np.zeros(num_bins)
 
+logging.info(f'Reading triggers from {args.trigger_file}')
 with HFile(args.trigger_file, 'r') as trigf:
     for bin_name in template_bins.keys():
         # bins are named as 'bin{bin_num}'
@@ -117,10 +119,11 @@ with HFile(args.trigger_file, 'r') as trigf:
             bin_dq_triggers[bin_num] += np.sum(dq_states)
 
 # write outputs to file
+logging.info(f'Writing results to {args.output}')
 with HFile(args.output, 'w') as f:
     ifo_group = f.create_group(args.ifo)
-    ifo_group['observing_livetime'] = livetime
-    ifo_group['dq_flag_livetime'] = flagged_time
+    ifo_group.create_dataset('observing_livetime', data=livetime)
+    ifo_group.create_dataset('dq_flag_livetime', data=flagged_time)
     bin_group = ifo_group.create_group('bins')
     for bin_name in template_bins.keys():
         bin_num = int(bin_name[3:])
