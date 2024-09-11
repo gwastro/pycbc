@@ -234,22 +234,29 @@ qf_h5_outfile = opts.quiet_found_injs_h5_output_file
 
 # Set output files and directories
 output_files = []
-# The user may want to process injections (possibly also against onsource)...
-if found_missed_file is not None:
+
+# Check for correct input
+if [found_missed_file, onsource_file, offsource_file].count(None) != 2:
+    parser.error('Please provide one of --found-missed-file, ' +
+                 '--onsource-file, or --offsource-file.')
+# The user may process injections...
+elif found_missed_file is not None:
     output_files = [qf_outfile, mf_outfile, qf_h5_outfile]
     if None in output_files:
         parser.error('Please provide all 3 injections output files when ' +
                      'using --found-missed-file')
-# ...or just triggers in offsource and onsource
+# ...or triggers in the onsource...
 elif onsource_file is not None:
-    output_files = [lont_outfile, lont_h5_outfile, lofft_outfile,
-                    lofft_h5_outfile]
+    output_files = [lont_outfile, lont_h5_outfile]
     if None in output_files:
         parser.error('Please provide both on-source output files ' +
-                     'and both off-source output files when using ' +
-                     '--onsource-file.')
+                     'when using --onsource-file.')
+# ...or triggers in the offsource (offsource_file is not None)
 else:
-    parser.error('Please provide --found-missed-file and/or --onsource-file.')
+    output_files = [lofft_outfile, lofft_h5_outfile]
+    if None in output_files:
+        parser.error('Please provide both off-source output files ' +
+                     'when using --offsource-file.')
 logging.info("Setting output directory.")
 for output_file in output_files:
     if output_file:
