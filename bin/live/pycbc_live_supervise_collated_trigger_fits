@@ -7,9 +7,12 @@ and the associated plots.
 import re
 import logging
 import argparse
-from datetime import datetime, timedelta
+import shutil
 import os
+
 import numpy as np
+
+from datetime import datetime, timedelta
 
 import lal
 from lal import gpstime
@@ -34,6 +37,9 @@ def read_options(args):
 
 
 def get_true_date(replay_day_dt, controls):
+    if 'replay-start-time' not in controls:
+        return replay_day_dt
+
     replay_start_time = int(controls['replay-start-time'])
     true_start_time = int(controls['true-start-time'])
     replay_duration = int(controls['replay-duration'])
@@ -147,10 +153,8 @@ def find_daily_files(
         log_str += f"in detector {ifo}"
     logging.info(log_str)
     combined_days = int(combined_control_options['combined-days'])
-    if 'replay-start-time' in combined_control_options:
-        current_date = get_true_date(day_dt, combined_control_options)
-    else:
-        current_date = day_dt
+
+    current_date = get_true_date(day_dt, combined_control_options)
 
     date_test = current_date + timedelta(days=1)
 
@@ -244,7 +248,7 @@ def fit_over_multiparam(
         variable_fits = fit_over_controls['variable-fit-over-param'].format(
             ifo=ifo
         )
-        sv.symlink(fit_over_full, variable_fits)
+        shutil.copyfile(fit_over_full, variable_fits)
 
     return fit_over_full, file_id_str
 
@@ -403,7 +407,7 @@ def combine_significance_fits(
 
     if 'variable-significance-fits' in combined_fit_controls:
         logging.info("Linking to variable significance fits file")
-        sv.symlink(
+        shutil.copyfile(
             combined_fit_options['output'],
             combined_fit_controls['variable-significance-fits']
         )
@@ -480,10 +484,8 @@ def daily_dq_trigger_rates(
     fname_format = daily_dq_controls['daily-dq-format']
     ddtr_out_fname = fname_format.format(date=day_str, ifo=ifo)
 
-    if 'replay-start-time' in daily_dq_controls:
-        today = get_true_date(day_dt, daily_dq_controls)
-    else:
-        today = day_dt
+    today = get_true_date(day_dt, daily_dq_controls)
+
     gps_start_time = gpstime.utc_to_gps(today).gpsSeconds
     gps_end_time = gpstime.utc_to_gps(today + timedelta(days=1)).gpsSeconds
 
@@ -542,7 +544,7 @@ def combine_dq_trigger_rates(
     if 'variable-dq-trigger-rates' in combined_dq_controls:
         logging.info("Linking to variable significance fits file")
 
-        sv.symlink(
+        shutil.copyfile(
             combined_dq_options['output'],
             combined_dq_controls['variable-dq-trigger-rates'].format(
                 ifo=ifo
@@ -638,6 +640,10 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
         logging.info("Outputs to be linked to % ", public_dir)
 
     if args.collated_trigger_file is not None:
+        logging.info(
+            "Using collated trigger file %s",
+            args.collated_trigger_file
+        )
         merged_triggers = args.collated_trigger_file
     else:
         merged_triggers = trigger_collation(
@@ -782,7 +788,8 @@ parser.add_argument(
 )
 parser.add_argument(
     '--collated-trigger-file',
-    help='Collated trigger file to use, if not given, will be created.'
+    help='Collated trigger file to use, if not given, will be created. '
+         'Useful for testing.'
 )
 parser.add_argument(
     '--fit-by-template',

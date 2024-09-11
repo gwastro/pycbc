@@ -18,9 +18,9 @@ import logging
 import argparse
 
 import numpy as np
-import h5py as h5
 
 import pycbc
+from pycbc.io import HFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
@@ -38,7 +38,7 @@ daily_files.sort()
 # need all files to use compatible settings
 # get settings hash from the last file
 # we will only use files that have the same hash
-with h5.File(daily_files[-1], 'r') as last_file:
+with HFile(daily_files[-1], 'r') as last_file:
     settings_hash = last_file.attrs['settings_hash']
     bin_str = last_file.attrs['background_bins']
     bank_file = last_file.attrs['bank_file']
@@ -56,7 +56,7 @@ flagged_livetime = 0
 total_triggers = np.zeros(num_bins)
 flagged_triggers = np.zeros(num_bins)
 for fpath in daily_files:
-    with h5.File(fpath, 'r') as f:
+    with HFile(fpath, 'r') as f:
         if f.attrs['settings_hash'] != settings_hash:
             warning_str = f'File {fpath} has incompatible settings, skipping'
             logging.warning(warning_str)
@@ -78,7 +78,7 @@ bg_livetime = total_livetime - flagged_livetime
 bg_trigger_rate = bg_triggers / bg_livetime
 
 # save results
-with h5.File(args.output, 'w') as f:
+with HFile(args.output, 'w') as f:
     ifo_grp = f.create_group(args.ifo)
     all_bin_grp = ifo_grp.create_group('bins')
 

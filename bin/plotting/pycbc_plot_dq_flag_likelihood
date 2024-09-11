@@ -43,10 +43,6 @@ if args.low_latency:
         0: 'Clean',
         1: 'DQ Flag',
     }
-    colors = {
-        0: 'green',
-        1: 'red',
-    }
     x_shift = 0.5
     width = 0.33
 else:
@@ -55,13 +51,14 @@ else:
         1: 'DQ Flag',
         2: 'Autogating',
     }
-    colors = {
-        0: 'green',
-        1: 'gold',
-        2: 'red'
-    }
     x_shift = 1
     width = 0.25
+
+colors = {
+    0: 'green',
+    1: 'gold',
+    2: 'red'
+}
 
 fig, ax = pyplot.subplots(figsize=(9, 6))
 ax2 = ax.twinx()
