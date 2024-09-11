@@ -22,6 +22,7 @@ import argparse
 import hashlib
 
 import numpy as np
+import h5py as h5
 
 import pycbc
 from pycbc.io import HFile
@@ -120,7 +121,7 @@ with HFile(args.trigger_file, 'r') as trigf:
 
 # write outputs to file
 logging.info(f'Writing results to {args.output}')
-with HFile(args.output, 'w') as f:
+with h5.File(args.output, 'w') as f:
     ifo_group = f.create_group(args.ifo)
     ifo_group.create_dataset('observing_livetime', data=livetime)
     ifo_group.create_dataset('dq_flag_livetime', data=flagged_time)
