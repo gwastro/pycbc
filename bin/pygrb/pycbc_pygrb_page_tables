@@ -256,7 +256,7 @@ else:
     output_files = [lofft_outfile, lofft_h5_outfile]
     if None in output_files:
         parser.error('Please provide both off-source output files ' +
-                     'when using --onsource-file.')
+                     'when using --offsource-file.')
 logging.info("Setting output directory.")
 for output_file in output_files:
     if output_file:
