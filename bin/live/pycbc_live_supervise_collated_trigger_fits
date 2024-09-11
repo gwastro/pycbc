@@ -490,7 +490,7 @@ def daily_dq_trigger_rates(
     gps_end_time = gpstime.utc_to_gps(today + timedelta(days=1)).gpsSeconds
 
     ddtr_out_full = os.path.join(output_dir, ddtr_out_fname)
-    daily_dq_args = ['pycbc_live_daily_dq_trigger_rates']
+    daily_dq_args = ['pycbc_live_collated_dq_trigger_rates']
     daily_dq_args += ['--trigger-file', trigger_merge_file]
     daily_dq_args += ['--output', ddtr_out_full]
     daily_dq_args += ['--ifo', ifo]
