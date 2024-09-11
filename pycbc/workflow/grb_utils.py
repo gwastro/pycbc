@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Andrew Williamson
+# Copyright (C) 2015  Andrew Williamson, Francesco Pannarale
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -661,10 +661,9 @@ def make_pygrb_injs_tables(workflow, out_dir,  # exclude=None, require=None,
 
 
 # Based on setup_single_det_minifollowups
-def setup_pygrb_minifollowups(workflow, followups_file,
-                              dax_output, out_dir,
-                              trig_file=None, tags=None):
-    """Create plots that followup the the loudest PyGRB triggers or
+def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
+                              dax_output, out_dir, tags=None):
+    """ Create plots that followup the the loudest PyGRB triggers or
     missed injections from an HDF file.
 
     Parameters
@@ -672,8 +671,10 @@ def setup_pygrb_minifollowups(workflow, followups_file,
     workflow: pycbc.workflow.Workflow
         The core workflow instance we are populating
     followups_file: pycbc.workflow.File
-        The File class holding the triggers/injections.
-    dax_output: The directory that will contain the dax file.
+        The File class holding the triggers/injections to follow up
+    trigger_file: pycbc.workflow.File
+        The File class holding the triggers
+    dax_output: The directory that will contain the dax file
     out_dir: path
         The directory to store minifollowups result plots and files
     tags: {None, optional}
@@ -690,7 +691,6 @@ def setup_pygrb_minifollowups(workflow, followups_file,
         return
 
     tags = [] if tags is None else tags
-    # _workflow.makedir(dax_output)
     makedir(dax_output)
 
     # Turn the config file into a File instance
@@ -710,14 +710,12 @@ def setup_pygrb_minifollowups(workflow, followups_file,
                      tags=tags)
     node = exe.create_node()
 
+    node.add_input_opt('--trig-file', resolve_url_to_file(trigger_file))
+
     # Grab and pass all necessary files
-    if trig_file is not None:
-        node.add_input_opt('--trig-file', trig_file)
     if workflow.cp.has_option('workflow', 'veto-files'):
         veto_files = build_veto_filelist(workflow)
         node.add_input_list_opt('--veto-files', veto_files)
-    trig_time = workflow.cp.get('workflow', 'trigger-time')
-    node.add_opt('--trigger-time', trig_time)
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--followups-file', followups_file)
     node.add_opt('--wiki-file', wikifile)
@@ -734,6 +732,7 @@ def setup_pygrb_minifollowups(workflow, followups_file,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
+    node.add_opt('--dax-file-directory', '.')
 
     workflow += node
 
