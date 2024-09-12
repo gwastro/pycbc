@@ -15,10 +15,10 @@ jobs:
         os: [ubuntu-20.04, macos-12]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.8
       - name: Install cibuildwheel
@@ -29,29 +29,33 @@ jobs:
           CIBW_BUILD: cp38-* cp39-* cp310-* cp311-*
           CIBW_SKIP: "*musllinux*"
           CIBW_ARCHS_MACOS: x86_64 arm64
-      - uses: actions/upload-artifact@v2
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
         with:
+          name: wheel-${{ matrix.os }}
           path: ./wheelhouse/*.whl
   deploy_pypi:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI
+    name: Package and publish to PyPI
     runs-on: ubuntu-20.04
     needs: build_wheels
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Set up Python 3.8
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: 3.8
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
-        path: ./
-    - name: build pycbc for pypi
+        pattern: wheel-*
+        merge-multiple: true
+        path: dist/
+    - name: Build source distribution
       run: |
         python setup.py sdist
-        mv artifact/* dist/
-    - name: Publish distribution 📦 to PyPI
+        ls -lh dist
+    - name: Publish to PyPI
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master
       with:

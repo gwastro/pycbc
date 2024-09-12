@@ -16,9 +16,9 @@ jobs:
         python-version: [3.8, 3.9, '3.10', '3.11']
         test-type: [unittest, search, docs]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: installing system packages
@@ -51,7 +51,7 @@ jobs:
         tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.8'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: documentation-page
         path: _gh-pages
@@ -61,7 +61,7 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
     - name: retrieve built documentation
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4.1.7
       with:
         name: documentation-page
     - name: debug
