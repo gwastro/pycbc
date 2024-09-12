@@ -51,7 +51,7 @@ jobs:
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
       if: always()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: logs
         path: output/submitdir/work
