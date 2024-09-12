@@ -54,7 +54,6 @@ jobs:
     - name: Build source distribution
       run: |
         python setup.py sdist
-        ls -lh
         ls -lh dist
     - name: Publish to PyPI
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
