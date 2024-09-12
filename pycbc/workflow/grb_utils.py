@@ -539,8 +539,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
         node.add_opt('--y-variable', tags[0])
     # Quantity to be displayed on the x-axis of the plot
     elif exec_name == 'pygrb_plot_stats_distribution':
-        seg_filelist = FileList([resolve_url_to_file(sf) for sf in seg_files])
-        node.add_input_list_opt('--seg-files', seg_filelist)
         node.add_opt('--x-variable', tags[0])
     elif exec_name == 'pygrb_plot_injs_results':
         # Variables to plot on x and y axes
