@@ -37,7 +37,7 @@ from gwdatafind.utils import filename_metadata
 
 from pycbc import makedir
 from pycbc.workflow.core import \
-    File, FileList, configparser_value_to_file, resolve_url_to_file, \
+    File, FileList, resolve_url_to_file,\
     Executable, Node
 from pycbc.workflow.jobsetup import select_generic_executable
 from pycbc.workflow.pegasus_workflow import SubWorkflow
@@ -590,10 +590,11 @@ def make_info_table(workflow, out_dir, tags=None):
     return node, node.output_files
 
 
-def make_pygrb_injs_tables(workflow, out_dir,  # exclude=None, require=None,
-                           inj_set=None, tags=None):
-    """Adds a PyGRB job to make quiet-found and missed-found injection tables.
+def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
+                           inj_file=None, on_file=None, tags=None):
     """
+    Adds a job to make quiet-found and missed-found injection tables,
+    or loudest trigger(s) table."""
 
     tags = [] if tags is None else tags
 
@@ -602,30 +603,24 @@ def make_pygrb_injs_tables(workflow, out_dir,  # exclude=None, require=None,
     # Initialize job node
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     extra_tags = ['GRB'+grb_name]
-    # TODO: why is inj_set repeated twice in output files?
-    if inj_set is not None:
-        extra_tags.append(inj_set)
     node = PlotExecutable(workflow.cp, exec_name,
                           ifos=workflow.ifos, out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
+    # Pass the bank-file
+    node.add_input_opt('--bank-file', resolve_url_to_file(bank_file))
+    # Offsource input file (or equivalently trigger file for injections)
+    offsource_file = resolve_url_to_file(off_file)
+    node.add_input_opt('--offsource-file', offsource_file)
     # Pass the veto and segment files and options
     if workflow.cp.has_option('workflow', 'veto-files'):
         veto_files = build_veto_filelist(workflow)
         node.add_input_list_opt('--veto-files', veto_files)
-    trig_time = workflow.cp.get('workflow', 'trigger-time')
-    node.add_opt('--trigger-time', trig_time)
-    # Other shared tuning values
-    for opt in ['chisq-index', 'chisq-nhigh', 'null-snr-threshold',
-                'veto-category', 'snr-threshold', 'newsnr-threshold',
-                'sngl-snr-threshold', 'null-grad-thresh', 'null-grad-val']:
-        if workflow.cp.has_option('workflow', opt):
-            node.add_opt('--'+opt, workflow.cp.get('workflow', opt))
+    seg_filelist = FileList([resolve_url_to_file(sf) for sf in seg_files])
+    node.add_input_list_opt('--seg-files', seg_filelist)
     # Handle input/output for injections
-    if inj_set:
+    if inj_file is not None:
         # Found-missed injection file (passed as File instance)
-        fm_file = configparser_value_to_file(workflow.cp,
-                                             'injections-'+inj_set,
-                                             'found-missed-file')
+        fm_file = resolve_url_to_file(inj_file)
         node.add_input_opt('--found-missed-file', fm_file)
         # Missed-found and quiet-found injections html output files
         for mf_or_qf in ['missed-found', 'quiet-found']:
@@ -639,20 +634,20 @@ def make_pygrb_injs_tables(workflow, out_dir,  # exclude=None, require=None,
                                  tags=extra_tags+['QUIET_FOUND'])
     # Handle input/output for onsource/offsource
     else:
-        # Onsource input file (passed as File instance)
-        onsource_file = configparser_value_to_file(workflow.cp,
-                                                   'workflow', 'onsource-file')
-        node.add_input_opt('--onsource-file', onsource_file)
-        # Loudest offsource triggers and onsource trigger html and h5
-        # output files
-        for src_type in ['onsource-trig', 'offsource-trigs']:
-            src_type_tags = [src_type.upper().replace('-', '_')]
-            node.new_output_file_opt(workflow.analysis_time, '.html',
-                                     '--loudest-'+src_type+'-output-file',
-                                     tags=extra_tags+src_type_tags)
-            node.new_output_file_opt(workflow.analysis_time, '.h5',
-                                     '--loudest-'+src_type+'-h5-output-file',
-                                     tags=extra_tags+src_type_tags)
+        src_type = 'offsource-trigs'
+        if on_file is not None:
+            src_type = 'onsource-trig'
+            # Onsource input file (passed as File instance)
+            onsource_file = resolve_url_to_file(on_file)
+            node.add_input_opt('--onsource-file', onsource_file)
+        # Loudest offsource/onsource triggers html and h5 output files
+        src_type_tags = [src_type.upper().replace('-', '_')]
+        node.new_output_file_opt(workflow.analysis_time, '.html',
+                                 '--loudest-'+src_type+'-output-file',
+                                 tags=extra_tags+src_type_tags)
+        node.new_output_file_opt(workflow.analysis_time, '.h5',
+                                 '--loudest-'+src_type+'-h5-output-file',
+                                 tags=extra_tags+src_type_tags)
 
     # Add job node to the workflow
     workflow += node
