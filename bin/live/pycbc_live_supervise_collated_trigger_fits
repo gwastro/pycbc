@@ -118,7 +118,8 @@ def get_active_ifos(trigger_file):
     Get the active ifos from the trigger file
     """
     with HFile(trigger_file, 'r') as f:
-        ifos = [ifo for ifo in f.keys() if 'snr' in f[ifo].keys() ]
+        ifos = [ifo for ifo in f.keys() if 'snr' in f[ifo].keys()]
+    logging.info("Interferometers with data: %s", ' '.join(ifos))
     return ifos
 
 
@@ -160,7 +161,7 @@ def find_daily_files(
     """
     log_str = f"Finding files in {daily_files_dir} with format {daily_fname_format}"
     if ifo is not None:
-        log_str += f"in detector {ifo}"
+        log_str += f" in detector {ifo}"
     logging.info(log_str)
     combined_days = int(combined_control_options['combined-days'])
 
@@ -307,7 +308,6 @@ def single_significance_fits(
         daily_fit_controls,
         daily_fit_options,
         output_dir,
-        ifos,
         day_str,
         day_dt,
         controls,
@@ -330,7 +330,6 @@ def single_significance_fits(
     gps_end_time = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
     daily_fit_options['gps-start-time'] = f'{gps_start_time:d}'
     daily_fit_options['gps-end-time'] = f'{gps_end_time:d}'
-    daily_fit_options['ifos'] = ifos
     daily_args += sv.dict_to_args(daily_fit_options)
     if stat_files is not None:
         daily_args += ['--statistic-files'] + stat_files
@@ -669,8 +668,10 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
     # Store the locations of files needed for the statistic
     stat_files = []
 
-    ifos = get_active_ifos(merged_triggers)
-    for ifo in ifos:
+    all_ifos = controls['ifos'].split()
+    active_ifos = get_active_ifos(merged_triggers)
+    active_ifos = [ifo for ifo in active_ifos if ifo in all_ifos]
+    for ifo in active_ifos:
         if args.fit_by_template:
             # compute and plot daily template fits
             fbt_file, date_str = fit_by_template(
@@ -710,6 +711,7 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
                 controls
             )
 
+    for ifo in all_ifos:
         if args.fit_over_multiparam:
             # compute and plot template fits smoothed over parameter space
             # and combining multiple days of triggers
@@ -753,7 +755,6 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
             daily_significance_control_options,
             daily_significance_options,
             output_dir,
-            ifos,
             day_str,
             day_dt,
             controls,
