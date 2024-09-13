@@ -753,6 +753,7 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
             daily_significance_control_options,
             daily_significance_options,
             output_dir,
+            ifos,
             day_str,
             day_dt,
             controls,
