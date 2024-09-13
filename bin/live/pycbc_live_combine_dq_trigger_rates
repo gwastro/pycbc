@@ -18,7 +18,6 @@ import logging
 import argparse
 
 import numpy as np
-import h5py as h5
 
 import pycbc
 from pycbc.io import HFile
@@ -79,7 +78,7 @@ bg_livetime = total_livetime - flagged_livetime
 bg_trigger_rate = bg_triggers / bg_livetime
 
 # save results
-with h5.File(args.output, 'w') as f:
+with HFile(args.output, 'w') as f:
     ifo_grp = f.create_group(args.ifo)
     all_bin_grp = ifo_grp.create_group('bins')
 
