@@ -20,6 +20,7 @@ from lal import gpstime
 import pycbc
 from pycbc.live import supervision as sv
 from pycbc.types.config import InterpolatingConfigParser as icp
+from pycbc.io import HFile
 
 
 def read_options(args):
@@ -110,6 +111,15 @@ def trigger_collation(
     sv.run_and_error(collate_args, controls)
 
     return trig_merge_file
+
+
+def get_active_ifos(trigger_file):
+    """
+    Get the active ifos from the trigger file
+    """
+    with HFile(trigger_file, 'r') as f:
+        ifos = [ifo for ifo in f.keys() if 'snr' in f[ifo].keys() ]
+    return ifos
 
 
 def fit_by_template(
@@ -297,6 +307,7 @@ def single_significance_fits(
         daily_fit_controls,
         daily_fit_options,
         output_dir,
+        ifos,
         day_str,
         day_dt,
         controls,
@@ -319,6 +330,7 @@ def single_significance_fits(
     gps_end_time = gpstime.utc_to_gps(day_dt + timedelta(days=1)).gpsSeconds
     daily_fit_options['gps-start-time'] = f'{gps_start_time:d}'
     daily_fit_options['gps-end-time'] = f'{gps_end_time:d}'
+    daily_fit_options['ifos'] = ifos
     daily_args += sv.dict_to_args(daily_fit_options)
     if stat_files is not None:
         daily_args += ['--statistic-files'] + stat_files
@@ -656,7 +668,9 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
         )
     # Store the locations of files needed for the statistic
     stat_files = []
-    for ifo in config_opts['control']['ifos'].split():
+
+    ifos = get_active_ifos(merged_triggers)
+    for ifo in ifos:
         if args.fit_by_template:
             # compute and plot daily template fits
             fbt_file, date_str = fit_by_template(
