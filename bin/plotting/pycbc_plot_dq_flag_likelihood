@@ -90,7 +90,7 @@ ax2.set_ylabel('DQ Log Likelihood Penalty')
 ax2.set_ylim(numpy.log(ymin), numpy.log(ymax))
 
 # add meta data and save figure
-if args.title:
+if args.title is not None:
     plot_title = args.title
 else:
     plot_title = f'{ifo}:{args.dq_label} DQ Trigger Rates'
