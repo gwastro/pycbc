@@ -687,9 +687,10 @@ class LISA_detector(object):
             String specifying space-borne detector. Currently only accepts 'LISA',
             which is the default setting.
 
-        reference_time: float (optional)
-            The GPS start time of signal in the SSB frame. Default to start time of
-            orbits input.
+        reference_time: float-like (optional)
+            The start time of signal in the SSB frame. Accepts any type that is
+            castable to float (e.g. LIGOTimeGPS). Default to start time of orbits 
+            input.
 
         orbits: lisatools.detector.Orbits (optional)
             Orbital information to pass into pyResponseTDI. Default
@@ -732,14 +733,17 @@ class LISA_detector(object):
         if reference_time is None:
             self.ref_time = orbit_start + self.offset
         else:
-            reference_time += self.offset
-            assert (reference_time >= orbit_start) and (reference_time <= orbit_end), (
+            try:
+                rt = float(reference_time)
+            except ValueError:
+                raise ValueError('reference time input must be castable to float')
+            rt += self.offset
+            assert (rt >= orbit_start) and (rt <= orbit_end), (
                     "Reference time is not in time domain of orbital data")
-            self.ref_time = reference_time
+            self.ref_time = rt
 
         # allocate caches
         self.dt = None
-        self.n = None
         self.pad_data = False # don't pad by default if only projecting
         self.sample_times = None
         self.response_init = None
@@ -828,7 +832,11 @@ class LISA_detector(object):
 
         # set waveform start time if specified
         if reference_time is not None:
-            self.ref_time = reference_time + self.offset
+            try:
+                rt = float(reference_time)
+            except ValueError:
+                raise ValueError('reference time input must be castable to float')
+            self.ref_time = rt + self.offset
 
         # specify and cache sample times
         start = self.ref_time
@@ -864,7 +872,7 @@ class LISA_detector(object):
         print('converted to numpy')
 
         # save length of wf
-        self.n = len(wf)
+        n = len(wf)
 
         # set use_gpu to class input if not specified
         if use_gpu is None:
@@ -881,13 +889,13 @@ class LISA_detector(object):
         if self.response_init is None:
             # initialize the class
             print('fresh init')
-            self.response_init = pyResponseTDI(1/self.dt, self.n, orbits=self.orbits,
+            self.response_init = pyResponseTDI(1/self.dt, n, orbits=self.orbits,
                                                use_gpu=use_gpu)
         else:
             # update params in the initialized class
             print('update init')
             self.response_init.sampling_frequency = 1/self.dt
-            self.response_init.num_pts = self.n
+            self.response_init.num_pts = n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
         print('response initialized')
@@ -1040,10 +1048,8 @@ class LISA_detector(object):
         print('start preprocessing')
 
         for i in range(len(tdi_chan)):
-            # save as TimeSeries with LISA frame times
-            tdi_dict[tdi_chan[i]] = TimeSeries(tdi_obs[i], delta_t=self.dt,
-                                               epoch=self.ref_time_LISA)
-            print(f'saved {i} to TimeSeries')
+            # save as numpy arrays
+            tdi_dict[tdi_chan[i]] = tdi_obs[i]
 
             # treat start and end gaps
             if remove_garbage:
@@ -1057,11 +1063,16 @@ class LISA_detector(object):
                     tdi_dict[tdi_chan[i]] = tdi_dict[tdi_chan[i]][slc]
                     if i == 0:
                         # update sample times once
-                        self.sample_times = tdi_dict[tdi_chan[i]].sample_times
+                        self.sample_times = self.sample_times[slc]
                 else:
                     raise ValueError('remove_garbage arg must be a bool ' +
                                      'or "zero"')
             print(f'finished postprocessing {i}')
+            
+            # save as TimeSeries with LISA frame times
+            tdi_dict[tdi_chan[i]] = TimeSeries(tdi_dict[tdi_chan[i]], delta_t=self.dt,
+                                               epoch=self.ref_time_LISA)
+            print(f'saved {i} to TimeSeries')
 
         return tdi_dict
 
@@ -1074,8 +1085,7 @@ class LISA_detector(object):
         assert all(i is not None for i in params), ("Need to run project_wave for conversion")
 
         # convert ref time to LISA
-        ssb_start = self.ref_time.gpsSeconds + 1e-9*self.ref_time.gpsNanoSeconds
-        lisa_start, _, _, _ = ssb_to_lisa(t_ssb = ssb_start,
+        lisa_start, _, _, _ = ssb_to_lisa(t_ssb = self.ref_time,
                                           longitude_ssb = self.lamb,
                                           latitude_ssb = self.beta,
                                           polarization_ssb = self.pol,
