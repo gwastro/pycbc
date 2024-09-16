@@ -668,6 +668,8 @@ def supervise_collation_fits_dq(args, day_dt, day_str):
     # Store the locations of files needed for the statistic
     stat_files = []
 
+    # daily fits should only be done for IFOs that had data
+    # and were included in the config file
     all_ifos = controls['ifos'].split()
     active_ifos = get_active_ifos(merged_triggers)
     active_ifos = [ifo for ifo in active_ifos if ifo in all_ifos]
