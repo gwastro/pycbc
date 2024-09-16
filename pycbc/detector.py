@@ -668,7 +668,7 @@ try:
     from lisatools.detector import ESAOrbits
 except ImportError:
     ESAOrbits = None
-    
+
 try:
     from fastlisaresponse import pyResponseTDI
 except ImportError:
@@ -797,10 +797,10 @@ class LISA_detector(object):
             The cross polarization of the GW in the radiation frame.
 
         lamb : float
-            The ecliptic latitude of the source in the SSB frame.
+            The ecliptic longitude of the source in the SSB frame.
 
         beta : float
-            The ecliptic longitude of the source in the SSB frame.
+            The ecliptic latitude of the source in the SSB frame.
 
         polarization : float (optional)
             The polarization angle of the GW in radians. Default 0.
@@ -828,7 +828,7 @@ class LISA_detector(object):
 
         # set waveform start time if specified
         if reference_time is not None:
-            self.ref_time = reference_time
+            self.ref_time = reference_time + self.offset
 
         # specify and cache sample times
         start = self.ref_time
@@ -838,6 +838,7 @@ class LISA_detector(object):
         hp.start_time = start
         hc.start_time = start
         self.sample_times = hp.sample_times.numpy()
+        print('cached wf inputs and times')
 
         # make sure signal still lies within orbit length
         assert hp.duration + start <= self.orbits.t_base[-1], (
@@ -850,14 +851,17 @@ class LISA_detector(object):
 
         # configure the orbit to match signal
         self.orbits.configure(t_arr=self.sample_times)
+        print('configured orbits')
 
         # rotate GW from radiation frame to SSB using polarization angle
         hp, hc = self.apply_polarization(hp, hc, polarization)
+        print('applied polarization')
 
         # format wf to hp + i*hc
         hp = hp.numpy()
         hc = hc.numpy()
         wf = hp + 1j*hc
+        print('converted to numpy')
 
         # save length of wf
         self.n = len(wf)
@@ -876,14 +880,17 @@ class LISA_detector(object):
 
         if self.response_init is None:
             # initialize the class
+            print('fresh init')
             self.response_init = pyResponseTDI(1/self.dt, self.n, orbits=self.orbits,
                                                use_gpu=use_gpu)
         else:
             # update params in the initialized class
+            print('update init')
             self.response_init.sampling_frequency = 1/self.dt
             self.response_init.num_pts = self.n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
+        print('response initialized')
 
         # project the signal
         self.response_init.get_projections(wf, lamb, beta, t0=self.t0)
@@ -914,10 +921,10 @@ class LISA_detector(object):
             The cross polarization of the GW in the radiation frame.
 
         lamb : float
-            The ecliptic latitude in the SSB frame.
+            The ecliptic longitude in the SSB frame.
 
         beta : float
-            The ecliptic longitude in the SSB frame.
+            The ecliptic latitude in the SSB frame.
 
         polarization : float
             The polarization angle of the GW in radians.
@@ -967,10 +974,16 @@ class LISA_detector(object):
         # get dt from waveform data
         self.dt = hp.delta_t
 
+        # save params for LISA time conversion
+        self.beta = beta
+        self.lamb = lamb
+        self.pol = polarization
+
         # get index corresponding to time length t0
         if t0 is not None:
             self.t0 = t0
         if pad_data or remove_garbage:
+            global pad_idx
             pad_idx = int(self.t0/self.dt)
 
         # pad the data with zeros
@@ -989,6 +1002,7 @@ class LISA_detector(object):
         # generate the Doppler time series
         self.get_links(hp, hc, lamb, beta, polarization=polarization,
                        reference_time=reference_time, use_gpu=use_gpu)
+        print('get links')
 
         # set TDI configuration (let FLR handle if not 1 or 2)
         if tdi == 1:
@@ -1017,13 +1031,19 @@ class LISA_detector(object):
 
         # generate the TDI channels
         tdi_obs = self.response_init.get_tdi_delays()
+        print('tdi complete')
 
         # processing
         tdi_dict = {}
-        slc = slice(pad_idx, -pad_idx)
+        self.sample_times -= self.offset
+        self.ref_time -= self.offset
+        print('start preprocessing')
 
         for i in range(len(tdi_chan)):
-            tdi_dict[tdi_chan[i]] = tdi_obs[i]
+            # save as TimeSeries with LISA frame times
+            tdi_dict[tdi_chan[i]] = TimeSeries(tdi_obs[i], delta_t=self.dt,
+                                               epoch=self.ref_time_LISA)
+            print(f'saved {i} to TimeSeries')
 
             # treat start and end gaps
             if remove_garbage:
@@ -1033,37 +1053,42 @@ class LISA_detector(object):
                     tdi_dict[tdi_chan[i]][-pad_idx:] = 0
                 elif type(remove_garbage) == bool:
                     # cut the edge data
+                    slc = slice(pad_idx, -pad_idx)
                     tdi_dict[tdi_chan[i]] = tdi_dict[tdi_chan[i]][slc]
                     if i == 0:
-                        # cut the sample times (only do once)
-                        self.sample_times = self.sample_times[slc]
+                        # update sample times once
+                        self.sample_times = tdi_dict[tdi_chan[i]].sample_times
                 else:
-                    raise ValueError('remove_garbage arg must be a bool ' + 
+                    raise ValueError('remove_garbage arg must be a bool ' +
                                      'or "zero"')
-
-        # unapply offset for GPS SSB times
-        self.sample_times -= self.offset
-        self.ref_time -= self.offset
-
-        # save params for LISA time conversion
-        self.beta = beta
-        self.lamb = lamb
-        self.pol = polarization
+            print(f'finished postprocessing {i}')
 
         return tdi_dict
 
     @property
-    def sample_times_LISA(self):
+    def ref_time_LISA(self):
         """
-        Sample times of signal converted to LISA frame.
+        Signal start time converted to LISA frame.
         """
-        params = [self.sample_times, self.beta, self.lamb, self.pol]
+        params = [self.ref_time, self.lamb, self.beta, self.pol]
         assert all(i is not None for i in params), ("Need to run project_wave for conversion")
 
-        # calculate first time converted to LISA; shift sample times to match LISA start time
-        lisa_start, _, _, _ = ssb_to_lisa(self.sample_times[0], self.beta, self.lamb,
-                                          self.pol, t0=0)
-        diff = lisa_start - self.sample_times[0]
+        # convert ref time to LISA
+        ssb_start = self.ref_time.gpsSeconds + 1e-9*self.ref_time.gpsNanoSeconds
+        lisa_start, _, _, _ = ssb_to_lisa(t_ssb = ssb_start,
+                                          longitude_ssb = self.lamb,
+                                          latitude_ssb = self.beta,
+                                          polarization_ssb = self.pol,
+                                          t0=self.offset)
+
+        return lisa_start
+
+    @property
+    def sample_times_LISA(self):
+        """
+        Signal sample times converted to LISA frame.
+        """
+        diff = self.ref_time_LISA - self.ref_time
         return self.sample_times + diff
 
 
