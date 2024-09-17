@@ -248,6 +248,14 @@ for ifo in files.keys():
     headers.append("s<sub>1z</sub>")
     headers.append("s<sub>2z</sub>")
     headers.append("Duration")
+# display eccentricity and relative anomaly if they exist
+try:
+    data[-1].append('%5.2f' % bank['eccentricity'][tid])
+    data[-1].append('%5.2f' % bank['rel_anomaly'][tid])
+    headers.append("eccentricity")
+    headers.append("rel_anomaly")
+except:
+    pass
 
 html += str(pycbc.results.static_table(
     data,
