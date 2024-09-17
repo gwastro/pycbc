@@ -32,7 +32,7 @@ parser.add_argument('--include-mass-gap', action='store_true',
 mchirp_area.insert_args(parser)
 args = parser.parse_args()
 
-mc_area_args = mchirp_area.from_cli(args)
+mc_area_args = mchirp_area.from_cli(args, parser)
 
 if not args.include_mass_gap:
     mass_bdary = mc_area_args['mass_bdary']
