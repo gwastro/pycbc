@@ -278,6 +278,12 @@ for rank, num_event in enumerate(order):
     curr_params['f_lower'] = trigs.f_lower[num_event]
     curr_params[args.instrument + '_end_time'] = time
     curr_params['mean_time'] = time
+    # optional eccentric parameters, only present when using SEOBNRv4/5E
+    try:
+        curr_params['eccentricity'] = trigs.eccentricity[num_event]
+        curr_params['rel_anomaly'] = trigs.rel_anomaly[num_event]
+    except AttributeError:
+        pass
     # don't require precessing template info if not present
     try:
         curr_params['spin1x'] = trigs.spin1x[num_event]

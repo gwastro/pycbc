@@ -840,6 +840,16 @@ class SingleDetTriggers(object):
         return self.bank['inclination'][:][self.template_id]
 
     @property
+    def eccentricity(self):
+        self.checkbank('eccentricity')
+        return self.bank['eccentricity'][:][self.template_id]
+
+    @property
+    def rel_anomaly(self):
+        self.checkbank('rel_anomaly')
+        return self.bank['rel_anomaly'][:][self.template_id]
+
+    @property
     def f_lower(self):
         self.checkbank('f_lower')
         return self.bank['f_lower'][:][self.template_id]

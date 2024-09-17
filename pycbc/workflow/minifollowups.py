@@ -518,6 +518,10 @@ def make_single_template_files(workflow, segs, ifo, data_read_name,
             except:
                 node.add_opt('--u-val',
                              "%.6f" % params['u_vals_%s' % ifo])
+        # If this is a eccentricity search
+        if 'eccentricity' in params:
+            node.add_opt('--eccentricity', "%.6f" % params['eccentricity'])
+            node.add_opt('--rel-anomaly', "%.6f" % params['rel_anomaly'])
 
     if params[ifo + '_end_time'] > 0 and not use_mean_time:
         trig_time = params[ifo + '_end_time']
@@ -687,6 +691,9 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
             node.add_opt('--spin2y',"%.6f" % params['spin2y'])
             node.add_opt('--inclination',"%.6f" % params['inclination'])
             node.add_opt('--u-val', "%.6f" % params['u_vals'])
+        if 'eccentricity' in params:
+            node.add_opt('--eccentricity', "%.6f" % params['eccentricity'])
+            node.add_opt('--rel-anomaly', "%.6f" % params['rel_anomaly'])
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                      '--output-file')
         workflow += node
