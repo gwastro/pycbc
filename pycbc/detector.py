@@ -812,37 +812,36 @@ class LISA_detector(object):
         except ImportError:
             raise ImportError('FastLISAResponse required for LISA projection/TDI')
 
+        # save params for LISA time conversion
+        self.lamb = lamb
+        self.beta = beta
+        self.pol = polarization
+
         # get dt from waveform data
         if self.dt is None:
             self.dt = hp.delta_t
 
-        if reference_time is None:
-            reference_time = self.ref_time
-        
         # get start time of waveform
         if reference_time is None:
             start_time = self.offset # t = 0 scaled by offset
         else:
-            base_dur = hp.duration
-            if self.pad_data:
-                base_dur -= 2*self.t0 # subtract off pads for base wf length
             reference_time += self.offset
             self.ref_time = float(reference_time)
-            ### this assumes the wf is generated such that tref = 0
-            ### is this generally true?
-            ### if not we need to specify the time value of the input wf tref
-            start_time = float(reference_time + hp.start_time) # start time of unpadded wf
+            # assume tref = 0 in input waveforms (default from get_td_waveform)
+            start_time = float(self.ref_time + hp.start_time)
 
-        if self.pad_data:
-            start_time -= self.t0 # start time of padded wf
-
-        # set start times; save reference time as midpoint if not specified
+        # set start times
         hp.start_time = start_time
         hc.start_time = start_time
-        self.start_time = start_time
+        if self.pad_data:
+            self.start_time = start_time + self.t0 # signal starts t0 after pad start
+        else:
+            self.start_time = start_time
+
+        # save reference time as midpoint if not specified
         if reference_time is None:
-            self.ref_time = float((hp.end_time - hp.start_time)/2)
-        
+            self.ref_time = float((hp.end_time + hp.start_time)/2)
+
         # make sure signal still lies within orbit length
         assert hp.duration + start_time <= self.orbits.t_base[-1], (
                "Time of signal end is greater than end of orbital data.")
@@ -980,22 +979,17 @@ class LISA_detector(object):
         # get dt from waveform data
         self.dt = hp.delta_t
 
-        # save params for LISA time conversion
-        self.beta = beta
-        self.lamb = lamb
-        self.pol = polarization
-
         # get index corresponding to time length t0
         if t0 is not None:
             self.t0 = t0
-        if pad_data or remove_garbage:
+        if self.pad_data or remove_garbage:
             global pad_idx
             pad_idx = int(self.t0/self.dt)
 
         # pad the data with zeros
         ### this assumes that the signal naturally tapers to zero
         ### this will not work with e.g. GBs or sinusoids
-        if pad_data:
+        if self.pad_data:
             hp.prepend_zeros(pad_idx)
             hp.append_zeros(pad_idx)
             hc.prepend_zeros(pad_idx)
@@ -1004,6 +998,10 @@ class LISA_detector(object):
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
+
+        # get reference time from class if not supplied
+        if reference_time is None:
+            reference_time = self.ref_time
 
         # generate the Doppler time series
         self.get_links(hp, hc, lamb, beta, polarization=polarization,
@@ -1059,21 +1057,18 @@ class LISA_detector(object):
                     # cut the edge data
                     slc = slice(pad_idx, -pad_idx)
                     tdi_dict[tdi_chan[i]] = tdi_dict[tdi_chan[i]][slc]
-                    if i == 0:
-                        # update sample times once
-                        self.sample_times = self.sample_times[slc]
                 else:
                     raise ValueError('remove_garbage arg must be a bool ' +
                                      'or "zero"')
             print(f'finished postprocessing {i}')
-            
+
             # save as TimeSeries with LISA frame times
+            loc = self.ref_time - self.start_time
             tdi_dict[tdi_chan[i]] = TimeSeries(tdi_dict[tdi_chan[i]], delta_t=self.dt,
-                                               epoch=self.start_time_LISA)
+                                               epoch=self.ref_time_LISA - loc)
             if i == 0:
-                # reset sample times to LISA
+                # convert sample times to LISA
                 self.sample_times = tdi_dict[tdi_chan[i]].sample_times.numpy()
-            
             print(f'saved {i} to TimeSeries')
 
         return tdi_dict
@@ -1084,7 +1079,8 @@ class LISA_detector(object):
         Reference time converted to LISA frame.
         """
         params = [self.ref_time, self.lamb, self.beta, self.pol]
-        assert all(i is not None for i in params), ("Need to run project_wave for conversion")
+        assert all(i is not None for i in params), (
+               "Need to run get_links (or project_wave) for conversion")
 
         # convert ref time to LISA
         lisa_ref, _, _, _ = ssb_to_lisa(t_ssb = self.ref_time,
@@ -1095,22 +1091,6 @@ class LISA_detector(object):
 
         return lisa_ref
 
-    @property
-    def start_time_LISA(self):
-        """
-        Start time converted to LISA frame.
-        """
-        params = [self.start_time, self.lamb, self.beta, self.pol]
-        assert all(i is not None for i in params), ("Need to run project_wave for conversion")
-
-        # convert ref time to LISA
-        lisa_start, _, _, _ = ssb_to_lisa(t_ssb = self.start_time,
-                                          longitude_ssb = self.lamb,
-                                          latitude_ssb = self.beta,
-                                          polarization_ssb = self.pol,
-                                          t0=self.offset)
-
-        return lisa_start
 
 def ppdets(ifos, separator=', '):
     """Pretty-print a list (or set) of detectors: return a string listing
