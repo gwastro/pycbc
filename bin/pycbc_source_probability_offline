@@ -87,7 +87,7 @@ for event in tqdm.trange(len(ifar)):
                        / sngl_snr[ifo][0][event] for ifo in ifos_event])
     probs = mchirp_area.calc_probabilities(mchirp[event], coinc_snr,
                                            min_eff_dist, mc_area_args)
-    if not args.include_mass_gap:
+    if not args.include_mass_gap and "Mass Gap" in probs:
         probs.pop("Mass Gap")
     ifo_names = ''.join(sorted(ifos_event))
     out_name = dir_path + '%s-%s-%i-1.json' % (ifo_names, args.search_tag,
