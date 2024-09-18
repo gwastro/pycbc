@@ -32,11 +32,6 @@ args = parser.parse_args()
 
 mc_area_args = mchirp_area.from_cli(args, parser)
 
-if not args.include_mass_gap:
-    mass_bdary = mc_area_args['mass_bdary']
-    assert mass_bdary['ns_max'] == mass_bdary['gap_max'], \
-           'NS/Mass Gap boundaries should be the same.'
-
 pycbc.init_logging(args.verbose)
 
 TRIGGER_FILE = args.trigger_file.split('/')[-1]
