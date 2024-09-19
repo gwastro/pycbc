@@ -81,7 +81,8 @@ _ground_detectors = {}
 
 def add_detector_on_earth(name, longitude, latitude,
                           yangle=0, xangle=None, height=0,
-                          xlength=4000, ylength=4000):
+                          xlength=4000, ylength=4000,
+                          xaltitude=0, yaltitude=0):
     """ Add a new detector on the earth
 
     Parameters
@@ -98,6 +99,10 @@ def add_detector_on_earth(name, longitude, latitude,
     xangle: float
         Azimuthal angle of the x-arm (angle drawn from point north). If not set
         we assume a right angle detector following the right-hand rule.
+    xaltitude: float
+        The altitude angle of the x-arm measured from the local horizon.
+    yaltitude: float
+        The altitude angle of the y-arm measured from the local horizon.
     height: float
         The height in meters of the detector above the standard
         reference ellipsoidal earth
@@ -106,27 +111,23 @@ def add_detector_on_earth(name, longitude, latitude,
         # assume right angle detector if no separate xarm direction given
         xangle = yangle + np.pi / 2.0
 
-    # Rotation matrix to move detector to correct orientation
-    rm1 = rotation_matrix(longitude * units.rad, 'z')
-    rm2 = rotation_matrix((np.pi / 2.0 - latitude) * units.rad, 'y')
-    rm = np.matmul(rm2, rm1)
-
+    # baseline response of a single arm pointed in the -X direction
+    resp = np.array([[-1, 0, 0], [0, 0, 0], [0, 0, 0]])
+    rm2 = rotation_matrix(-longitude * units.rad, 'z')
+    rm1 = rotation_matrix(-1.0 * (np.pi / 2.0 - latitude) * units.rad, 'y')
+    
     # Calculate response in earth centered coordinates
     # by rotation of response in coordinates aligned
     # with the detector arms
     resps = []
     vecs = []
-    for angle in [yangle, xangle]:
-        a, b = cos(2 * angle), sin(2 * angle)
-        resp = np.array([[-a, b, 0], [b, a, 0], [0, 0, 0]])
-
+    for angle, azi in [(yangle, yaltitude), (xangle, xaltitude)]:
+        rm0 = rotation_matrix(angle * units.rad , 'z')
+        rmN = rotation_matrix(-azi *  units.rad, 'y')
+        rm = rm2 @ rm1 @ rm0 @ rmN
         # apply rotation
-        resp = np.matmul(resp, rm)
-        resp = np.matmul(rm.T, resp) / 4.0
-        resps.append(resp)
-
-        vec = np.matmul(rm.T, np.array([-np.cos(angle), np.sin(angle), 0]))
-        vecs.append(vec)
+        resps.append(rm @ resp @ rm.T / 2.0)
+        vecs.append(rm @ np.array([-1, 0, 0]))
 
     full_resp = (resps[0] - resps[1])
     loc = coordinates.EarthLocation.from_geodetic(longitude * units.rad,
@@ -142,8 +143,8 @@ def add_detector_on_earth(name, longitude, latitude,
                                'yangle': yangle,
                                'xangle': xangle,
                                'height': height,
-                               'xaltitude': 0.0,
-                               'yaltitude': 0.0,
+                               'xaltitude': xaltitude,
+                               'yaltitude': yaltitude,
                                'ylength': ylength,
                                'xlength': xlength,
                               }
@@ -190,6 +191,21 @@ def load_detector_config(config_files):
                              " {} are required".format(arg_names))
         method(det.upper(), *args, **kwds)
 
+# prepopulate using detectors hardcoded into lalsuite
+for pref, name in get_available_lal_detectors():
+    lalsim = pycbc.libutils.import_optional('lalsimulation')
+    lal_det = lalsim.DetectorPrefixToLALDetector(pref).frDetector
+    add_detector_on_earth(pref, 
+                          lal_det.vertexLongitudeRadians,
+                          lal_det.vertexLatitudeRadians,
+                          height=lal_det.vertexElevation,
+                          xangle=lal_det.xArmAzimuthRadians,
+                          yangle=lal_det.yArmAzimuthRadians,
+                          xlength=lal_det.xArmMidpoint * 2,
+                          ylength=lal_det.yArmMidpoint * 2,
+                          xaltitude=lal_det.xArmAltitudeRadians,
+                          yaltitude=lal_det.yArmAltitudeRadians,
+                          )
 
 # autoload detector config files
 if 'PYCBC_DETECTOR_CONFIG' in os.environ:
@@ -218,11 +234,6 @@ class Detector(object):
             self.info = _ground_detectors[detector_name]
             self.response = self.info['response']
             self.location = self.info['location']
-        elif detector_name in lal_detectors:
-            lalsim = pycbc.libutils.import_optional('lalsimulation')
-            self._lal = lalsim.DetectorPrefixToLALDetector(self.name)
-            self.response = self._lal.response
-            self.location = self._lal.location
         else:
             raise ValueError("Unkown detector {}".format(detector_name))
 
@@ -247,29 +258,27 @@ class Detector(object):
 
     def lal(self):
         """ Return lal data type detector instance """
-        if hasattr(self, '_lal'):
-            return self._lal
-        else:
-            import lal
-            d = lal.FrDetector()
-            d.vertexLongitudeRadians = self.longitude
-            d.vertexLatitudeRadians = self.latitude
-            d.vertexElevation = self.info['height']
-            d.xArmAzimuthRadians = self.info['xangle']
-            d.yArmAzimuthRadians = self.info['yangle']
-            d.xArmAltitudeRadians = self.info['yaltitude']
-            d.xArmAltitudeRadians = self.info['xaltitude']
+        import lal
+        d = lal.FrDetector()
+        d.vertexLongitudeRadians = self.longitude
+        d.vertexLatitudeRadians = self.latitude
+        d.vertexElevation = self.info['height']
+        d.xArmAzimuthRadians = self.info['xangle']
+        d.yArmAzimuthRadians = self.info['yangle']
+        d.xArmAltitudeRadians = self.info['xaltitude']
+        d.yArmAltitudeRadians = self.info['yaltitude']
 
-            # This is somewhat abused by lalsimulation at the moment
-            # to determine a filter kernel size. We set this only so that
-            # value gets a similar number of samples as other detectors
-            # it is used for nothing else
-            d.yArmMidpoint = 4000.0
+        # This is somewhat abused by lalsimulation at the moment
+        # to determine a filter kernel size. We set this only so that
+        # value gets a similar number of samples as other detectors
+        # it is used for nothing else
+        d.yArmMidpoint = self.info['ylength'] / 2.0
+        d.xArmMidpoint = self.info['xlength'] / 2.0
 
-            x = lal.Detector()
-            r = lal.CreateDetector(x, d, lal.LALDETECTORTYPE_IFODIFF)
-            self._lal = r
-            return r
+        x = lal.Detector()
+        r = lal.CreateDetector(x, d, lal.LALDETECTORTYPE_IFODIFF)
+        self._lal = r
+        return r
 
     def gmst_estimate(self, gps_time):
         if self.reference_time is None:
