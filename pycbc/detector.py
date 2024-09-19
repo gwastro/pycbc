@@ -657,7 +657,7 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 
 """     LISA class      """
 
-from pycbc.coordinates.space import ssb_to_lisa, TIME_OFFSET_20_DEGREES
+from pycbc.coordinates.space import ssb_to_lisa, TIME_OFFSET_20_DEGREES, t_ssb_from_t_lisa
 
 try:
     import cupy
@@ -828,11 +828,14 @@ class LISA_detector(object):
             reference_time += self.offset
             self.ref_time = float(reference_time)
             # assume tref = 0 in input waveforms (default from get_td_waveform)
-            start_time = float(self.ref_time + hp.start_time)
+            start_time_LISA = float(self.ref_time_LISA + hp.start_time)
+            # convert the LISA start time to SSB
+            start_time = t_ssb_from_t_lisa(start_time_LISA, self.lamb, self.beta, t0=0)
 
         # set start times
         hp.start_time = start_time
         hc.start_time = start_time
+        
         if self.pad_data:
             self.start_time = start_time + self.t0 # signal starts t0 after pad start
         else:
@@ -1084,10 +1087,10 @@ class LISA_detector(object):
 
         # convert ref time to LISA
         lisa_ref, _, _, _ = ssb_to_lisa(t_ssb = self.ref_time,
-                                          longitude_ssb = self.lamb,
-                                          latitude_ssb = self.beta,
-                                          polarization_ssb = self.pol,
-                                          t0=self.offset)
+                                        longitude_ssb = self.lamb,
+                                        latitude_ssb = self.beta,
+                                        polarization_ssb = self.pol,
+                                        t0=self.offset)
 
         return lisa_ref
 
