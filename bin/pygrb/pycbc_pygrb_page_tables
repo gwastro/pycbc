@@ -236,9 +236,10 @@ qf_h5_outfile = opts.quiet_found_injs_h5_output_file
 output_files = []
 
 # Check for correct input
-if [found_missed_file, onsource_file, offsource_file].count(None) != 2:
-    parser.error('Please provide one of --found-missed-file, ' +
-                 '--onsource-file, or --offsource-file.')
+if [found_missed_file, onsource_file].count(None) == 0:
+    parser.error('Please provide --found-missed-file to process injections, ' +
+                 '--onsource-file to process the on-source, or neither of ' +
+                 'them to process the off-source triggers.')
 # The user may process injections...
 elif found_missed_file is not None:
     output_files = [qf_outfile, mf_outfile, qf_h5_outfile]
@@ -251,7 +252,8 @@ elif onsource_file is not None:
     if None in output_files:
         parser.error('Please provide both on-source output files ' +
                      'when using --onsource-file.')
-# ...or triggers in the offsource (offsource_file is not None)
+# ...or triggers in the offsource
+# (both onsource_file and found_missed_file are None)
 else:
     output_files = [lofft_outfile, lofft_h5_outfile]
     if None in output_files:
