@@ -144,7 +144,7 @@ files = _workflow.FileList([])
 #
 # Create information table about the GRB trigger and plot the search grid
 #
-info_table_node, grb_info_table = _workflow.make_info_table(wflow, out_dir)
+info_table_node, grb_info_table = _workflow.make_info_table(wflow, 'pygrb_grb_info_table', out_dir)
 html_nodes.append(info_table_node)
 files.append(grb_info_table)
 #
