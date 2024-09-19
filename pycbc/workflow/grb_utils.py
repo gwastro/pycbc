@@ -607,20 +607,19 @@ def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
                           ifos=workflow.ifos, out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
     # Pass the bank-file
-    node.add_input_opt('--bank-file', resolve_url_to_file(bank_file))
+    node.add_input_opt('--bank-file', bank_file)
     # Offsource input file (or equivalently trigger file for injections)
-    offsource_file = resolve_url_to_file(off_file)
+    offsource_file = off_file
     node.add_input_opt('--offsource-file', offsource_file)
     # Pass the veto and segment files and options
     if workflow.cp.has_option('workflow', 'veto-files'):
         veto_files = build_veto_filelist(workflow)
         node.add_input_list_opt('--veto-files', veto_files)
-    seg_filelist = FileList([resolve_url_to_file(sf) for sf in seg_files])
-    node.add_input_list_opt('--seg-files', seg_filelist)
+    node.add_input_list_opt('--seg-files', seg_files)
     # Handle input/output for injections
     if inj_file is not None:
         # Found-missed injection file (passed as File instance)
-        fm_file = resolve_url_to_file(inj_file)
+        fm_file = inj_file
         node.add_input_opt('--found-missed-file', fm_file)
         # Missed-found and quiet-found injections html output files
         for mf_or_qf in ['missed-found', 'quiet-found']:
@@ -638,7 +637,7 @@ def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
         if on_file is not None:
             src_type = 'onsource-trig'
             # Onsource input file (passed as File instance)
-            onsource_file = resolve_url_to_file(on_file)
+            onsource_file = on_file
             node.add_input_opt('--onsource-file', onsource_file)
         # Loudest offsource/onsource triggers html and h5 output files
         src_type_tags = [src_type.upper().replace('-', '_')]
