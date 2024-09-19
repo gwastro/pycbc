@@ -710,7 +710,7 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
                      tags=tags)
     node = exe.create_node()
 
-    node.add_input_opt('--trig-file', resolve_url_to_file(trigger_file))
+    node.add_input_opt('--trig-file', trigger_file)
 
     # Grab and pass all necessary files
     if workflow.cp.has_option('workflow', 'veto-files'):
