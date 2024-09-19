@@ -668,7 +668,7 @@ with ctx:
             if not any(n_trigs):
                 continue
 
-            # Loop over (short) time-slides, staring with the zero-lag
+            # Loop over (short) time-slides, starting with the zero-lag
             for slide in range(num_slides):
                 logging.info("Analyzing slide %d/%d", slide, num_slides)
                 # Loop over sky positions
