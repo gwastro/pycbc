@@ -457,10 +457,9 @@ def build_veto_filelist(workflow):
     return veto_files
 
 
-def build_segment_filelist(workflow):
+def build_segment_filelist(seg_dir):
     """Construct a FileList instance containing all segments txt files"""
 
-    seg_dir = workflow.cp.get('workflow', 'segment-dir')
     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
     seg_files = [os.path.join(seg_dir, fn) for fn in file_names]
     seg_files = [resolve_url_to_file(sf) for sf in seg_files]
@@ -489,7 +488,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
                           out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
     if trig_file is not None:
-        node.add_input_opt('--trig-file', resolve_url_to_file(trig_file))
+        node.add_input_opt('--trig-file', trig_file)
     # Pass the veto and segment files and options
     if workflow.cp.has_option('workflow', 'veto-category'):
         node.add_opt('--veto-category',
@@ -507,7 +506,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Pass the injection file as an input File instance
     if inj_file is not None and exec_name not in \
             ['pygrb_plot_skygrid', 'pygrb_plot_stats_distribution']:
-        fm_file = resolve_url_to_file(inj_file)
+        fm_file = inj_file
         node.add_input_opt('--found-missed-file', fm_file)
     # IFO option
     if ifo:
@@ -515,11 +514,10 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Output files and final input file (passed as a File instance)
     if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
-        seg_filelist = FileList([resolve_url_to_file(sf) for sf in seg_files])
-        node.add_input_list_opt('--seg-files', seg_filelist)
+        node.add_input_list_opt('--seg-files', seg_files)
         node.add_input_opt('--onsource-file',
-                           resolve_url_to_file(onsource_file))
-        node.add_input_opt('--bank-file', resolve_url_to_file(bank_file))
+                           onsource_file)
+        node.add_input_opt('--bank-file', bank_file)
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--background-output-file',
                                  tags=extra_tags+['max_background'])
@@ -696,8 +694,6 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
     makedir(dax_output)
 
     # Turn the config file into a File instance
-    # curr_ifo = single_trig_file.ifo
-    # config_path = os.path.abspath(dax_output + '/' + curr_ifo + \
     config_path = os.path.abspath(dax_output + '/' +
                                   '_'.join(tags) + '_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
@@ -772,12 +768,6 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     dax_output = res_dir+'/webpage_daxes'
     # _workflow.makedir(dax_output)
     makedir(dax_output)
-
-    # Turn the config file into a File instance
-    # config_path = os.path.abspath(dax_output + '/' + \
-    #                               '_'.join(tags) + 'webpage.ini')
-    # workflow.cp.write(open(config_path, 'w'))
-    # config_file = resolve_url_to_file(config_path)
 
     # Create the node
     exe = Executable(workflow.cp, 'pygrb_pp_workflow',
