@@ -70,6 +70,7 @@ trig_file = os.path.abspath(opts.trig_file)
 outfile = opts.output_file
 if opts.plot_title is None:
     opts.plot_title = 'PyGRB sky grid'
+plot_caption = 'Search sky grid points'
 
 logging.info("Imported and ready to go.")
 
@@ -109,6 +110,6 @@ ax.plot(numpy.rad2deg(trig_data['network/ra']), numpy.rad2deg(trig_data['network
 # Wrap up
 plt.tight_layout()
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
-                       title=opts.plot_title, caption=opts.plot_caption)
+                       title=opts.plot_title, caption=plot_caption)
                        #fig_kwds=fig_kwds,
 plt.close()
