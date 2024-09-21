@@ -100,12 +100,14 @@ if opts.verbose:
 
 fig = plt.figure()
 ax = fig.gca()
-ax.set_xlabel(xlabel)#, fontsize=16)
-ax.set_ylabel(ylabel)#, fontsize=16)
+ax.grid()
+ax.set_xlabel(xlabel)
+ax.set_ylabel(ylabel)
 # Trigger RA/Dec data is stored in radians, so convert to degrees
 ax.plot(numpy.rad2deg(trig_data['network/ra']), numpy.rad2deg(trig_data['network/dec']),
         'ko', markerfacecolor='blue')
 # Wrap up
+plt.tight_layout()
 save_fig_with_metadata(fig, outfile, cmd=' '.join(sys.argv),
                        title=opts.plot_title, caption=opts.plot_caption)
                        #fig_kwds=fig_kwds,
