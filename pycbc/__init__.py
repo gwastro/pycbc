@@ -207,18 +207,6 @@ except (ImportError, OSError):
 # platforms (mac) that are silly and don't use the standard gcc.
 if sys.platform == 'darwin':
     HAVE_OMP = False
-
-    # MacosX after python3.7 switched to 'spawn', however, this does not
-    # preserve common state information which we have relied on when using
-    # multiprocessing based pools.
-    import multiprocessing
-    if multiprocessing.get_start_method(allow_none=True) is None:
-        if hasattr(multiprocessing, 'set_start_method'):
-            multiprocessing.set_start_method('fork')
-    elif multiprocessing.get_start_method() != 'fork':
-        warnings.warn("PyCBC requires the use of the 'fork' start method"
-                      " for multiprocessing, it is currently set to {}"
-                      .format(multiprocessing.get_start_method()))
 else:
     HAVE_OMP = True
 
