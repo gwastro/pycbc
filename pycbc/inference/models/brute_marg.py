@@ -20,7 +20,7 @@ import math
 import logging
 import numpy
 
-from multiprocessing import Pool
+from pycbc.pool import BroadcastPool as Pool
 from scipy.special import logsumexp
 
 from .gaussian_noise import BaseGaussianNoise

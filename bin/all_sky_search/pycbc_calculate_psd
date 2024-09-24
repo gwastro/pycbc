@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """ Calculate psd estimates for analysis segments
 """
-import logging, argparse, numpy, multiprocessing, time, copy
+import logging, argparse, numpy, time, copy
 from six.moves import zip_longest
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.io import HFile
+from pycbc.pool import BroadcastPool as Pool
 from pycbc.fft.fftw import set_measure_level
 from pycbc.workflow import resolve_td_option
 from ligo.segments import segmentlist, segment
@@ -101,7 +102,7 @@ segments = segmentlist(frozenset(segments))
 logging.info('%d psds to calculate', len(segments))
 
 if len(segments) > 0:
-    pool = multiprocessing.Pool(args.cores)
+    pool = Pool(args.cores)
     psds = pool.map_async(get_psd, zip(segments, range(len(segments))))
     psds = psds.get()
 else:

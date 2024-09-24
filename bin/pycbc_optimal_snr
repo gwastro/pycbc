@@ -33,6 +33,7 @@ from ligo.lw import lsctables
 import pycbc
 import pycbc.inject
 import pycbc.psd
+from pycbc.pool import BroadcastPool as Pool
 from pycbc.filter import sigma, make_frequency_series
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, \
                         MultiDetOptionAction, load_frequencyseries
@@ -312,7 +313,7 @@ if __name__ == '__main__':
 
     if opts.cores > 1:
         logging.info('Starting workers')
-        pool = multiprocessing.Pool(processes=opts.cores)
+        pool = Pool(processes=opts.cores)
         iterator = pool.imap_unordered(compute_optimal_snr, inj_table)
     else:
         # do not bother spawning extra processes if running single-core
