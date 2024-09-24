@@ -56,7 +56,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         _process_lock = multiprocessing.Lock()
         _numdone = multiprocessing.Value('i', 0)
         noint = functools.partial(_noint, initializer)
-        
+
         # Default is fork to preserve child memory inheritance and
         # copy on write
         if context is None:
@@ -201,7 +201,7 @@ def choose_pool(processes, mpi=False):
     else:
         if processes == -1:
             processes = cpu_count()
-        pool = BroadcastPool(processes, context=get_context("fork"))
+        pool = BroadcastPool(processes)
 
     pool.size = processes
     if size:
