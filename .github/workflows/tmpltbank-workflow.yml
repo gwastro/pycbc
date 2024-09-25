@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: 3.8
     - name: install condor
@@ -51,7 +51,7 @@ jobs:
         find submitdir/work/ -type f -name '*.tar.gz' -delete
     - name: store log files
       if: always()
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: logs
         path: output/submitdir/work
