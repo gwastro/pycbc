@@ -70,9 +70,11 @@ def display_seg_plot(output_dir, segments_dir):
 
     curr_dir = os.getcwd()
     os.chdir(output_dir)
+    segments_plot_name = 'GRB' + \
+        wflow.cp.get('workflow', 'trigger-name') + '_segments.png'
     segments_plot = \
-        _workflow.resolve_url_to_file(glob.glob(segments_dir +
-                                                '/*_segments.png')[0])
+        _workflow.resolve_url_to_file(os.path.join(args.segment_dir,
+                                                   segments_plot_name))
     segments_plot_path = segments_plot.storage_path
     im = Image.open(segments_plot_path)
     meta = PngImagePlugin.PngInfo()
