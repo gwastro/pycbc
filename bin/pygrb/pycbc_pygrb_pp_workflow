@@ -43,19 +43,29 @@ __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_pp_workflow"
 
 
-# Function used to retrive a File instance from a FileList based on an
-# injection set label
-def fish_label_in_filelist(label, filelist):
-    """Return the File in a FileList with label in its name if the label
-    appears only once in the FileList, otherwise return None.
+# Function that converts a list of file paths to a FileList in which each File
+# is provided with a label
+def labels_in_files_metadata(labels, file_paths):
+    """Return a FileList based on the list of file paths.  Each File in it
+    is provided with its tag from labels: the correctess of the tag is
+    based on the file name.
     """
-    out_file = None
-    if filelist is not None:
-        out_file = list(filter(lambda x: label.lower()
-                        in x.name.lower(), filelist))
-        out_file = out_file[0] if len(out_file) == 1 else None
+    if len(labels) != len(file_paths):
+        logging.error("The two arguments must have the same length.")
 
-    return out_file
+    # Sort the file paths according to labels
+    up_labels = [l.upper() for l in labels]
+    sorted_file_paths = [list(filter(lambda x: l in x.upper(), file_paths))[0]
+                         for l in up_labels]
+
+    # Convert sorted_file_paths to a FileList where each File has its label
+    # in the tags
+    labels_paths = zip(up_labels, sorted_file_paths)
+    out = \
+        _workflow.FileList([_workflow.resolve_url_to_file(p, attrs={'tags': [l]})
+                            for (l, p) in labels_paths])
+
+    return out
 
 
 # Function to retrieve the segments plot (produced in the preprocessing stage)
@@ -65,7 +75,6 @@ def display_seg_plot(output_dir, segments_dir):
     """Return the File of the segments plot (which was already produced during
     the pre-processing) after adding the appropriate metadata to it.
     """
-    import glob
     from PIL import Image, PngImagePlugin
 
     curr_dir = os.getcwd()
