@@ -224,12 +224,6 @@ layout.two_column_layout(out_dir, summary_layout)
 out_dir = rdir['offsource_triggers_vs_time']
 _workflow.makedir(out_dir)
 
-# Coherent/Reweighted/Single IFO/Null SNR vs time
-out_dirs_dict = {'coherent': 'offsource_triggers_vs_time/coh_snr_timeseries',
-                 'reweighted': 'offsource_triggers_vs_time/reweighted_snr_timeseries',
-                 'single': 'offsource_triggers_vs_time/single_ifo_snr_timeseries',
-                 'null': 'offsource_triggers_vs_time/null_snr_timeseries'}
-
 # Grab the name of the prefereed injection set for these plots
 tuning_inj_set = wflow.cp.get('workflow-pygrb_pp_workflow', 'tuning-inj-set')
 logging.info("The tuning injections set is {0}".format(tuning_inj_set))
@@ -243,6 +237,11 @@ logging.info("The tuning injections results file is {0}".format(tuning_inj_file)
 
 # Loop over timeseries request by the user
 timeseries = wflow.cp.get_subsections('pygrb_plot_snr_timeseries')
+out_dirs_dict = {
+    'coherent': 'offsource_triggers_vs_time/coh_snr_timeseries',
+    'reweighted': 'offsource_triggers_vs_time/reweighted_snr_timeseries',
+    'single': 'offsource_triggers_vs_time/single_ifo_snr_timeseries',
+    'null': 'offsource_triggers_vs_time/null_snr_timeseries'}
 for snr_type in timeseries:
     out_dir = rdir[out_dirs_dict[snr_type]]
     _workflow.makedir(out_dir)
