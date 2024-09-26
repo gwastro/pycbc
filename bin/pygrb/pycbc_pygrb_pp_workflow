@@ -146,27 +146,31 @@ rdir = layout.SectionNumber('webpage', ['offsource_triggers_vs_time',
 _workflow.makedir(rdir.base)
 _workflow.makedir(rdir['workflow'])
 
-# Input trigger files
-# Expected structure: [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
-all_times_file = os.path.join(start_rundir, args.trig_files[0])
-onsource_file = os.path.join(start_rundir, args.trig_files[1])
-offsource_file = os.path.join(start_rundir, args.trig_files[2])
-offtrial_files = [os.path.join(start_rundir, trig_file)
-                  for trig_file in args.trig_files[3:]]
-
+# File instances of all input trigger files
+# Expected structure of args.trig_files:
+# [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
+trig_files = \
+    [_workflow.resolve_url_to_file(os.path.join(start_rundir, trig_file))
+     for trig_file in args.trig_files]
+[all_times_file, onsource_file, offsource_file] = trig_files[0:3]
+offtrial_files = trig_files[3:]
 logging.info("Using the following trigger files:")
-logging.info("All times: %s", all_times_file)
-logging.info("Onsource: %s", onsource_file)
-logging.info("Offsource: %s", offsource_file)
-logging.info("Offtrials: %s", offtrial_files)
+logging.info("All times: %s", all_times_file.storage_path)
+logging.info("Onsource: %s", onsource_file.storage_path)
+logging.info("Offsource: %s", offsource_file.storage_path)
+logging.info("Offtrials: %s", [f.storage_path for f in offtrial_files])
 
+# File instance of the template bank file
 bank_file = os.path.join(start_rundir, args.bank_file)
+bank_file = _workflow.resolve_url_to_file(bank_file)
 
-# Input injection files and injection set names
-inj_files = [start_rundir+'/'+el for el in args.inj_files]
+# File instances of the input injection files
+inj_sets = wflow.cp.get_subsections('injections')
+inj_sets = [i.upper() for i in inj_sets]
+inj_files = labels_in_files_metadata(inj_sets, start_rundir, args.inj_files)
 
 # IFOs actually used: determined by data availability
-ifos = extract_ifos(offsource_file)
+ifos = extract_ifos(offsource_file.storage_path)
 wflow.ifos = ifos
 
 plotting_nodes = []
