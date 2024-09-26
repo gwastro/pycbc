@@ -382,7 +382,6 @@ layout.two_column_layout(coinc_out_dir, coinc_files)
 out_dir = rdir['injections']
 _workflow.makedir(out_dir)
 # Loop over injection plots requested by the user
-inj_sets = wflow.cp.get_subsections('injections')
 inj_plots = wflow.cp.get_subsections('pygrb_plot_injs_results')
 # The command above also picks up the injection set names so we remove them
 # from the set of requested injection plot types
@@ -452,7 +451,6 @@ _workflow.makedir(out_dir)
 # Offtrials and injection sets requested by the user
 num_trials = int(wflow.cp.get('trig_combiner', 'num-trials'))
 offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
-inj_sets = wflow.cp.get_subsections('injections')
 out_dir = rdir['exclusion_distances']
 _workflow.makedir(out_dir)
 for i, offtrial in enumerate(offtrials):
