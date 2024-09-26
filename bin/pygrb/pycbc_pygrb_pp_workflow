@@ -224,16 +224,15 @@ layout.two_column_layout(out_dir, summary_layout)
 out_dir = rdir['offsource_triggers_vs_time']
 _workflow.makedir(out_dir)
 
-# Grab the name of the prefereed injection set for these plots
+# Retrieve the name of the preferred injection set for these plots
 tuning_inj_set = wflow.cp.get('workflow-pygrb_pp_workflow', 'tuning-inj-set')
-logging.info("The tuning injections set is {0}".format(tuning_inj_set))
+tuning_inj_set = tuning_inj_set.upper()
+logging.info("The tuning injections set is %s", tuning_inj_set)
 
-# Determine which injections result corresponds to the tuining set
-tuning_inj_file = None
-if inj_files is not None:
-    tuning_inj_file = list(filter(lambda x: tuning_inj_set.lower() in x.lower(), inj_files))
-    tuning_inj_file = tuning_inj_file[0] if len(tuning_inj_file) == 1 else None
-logging.info("The tuning injections results file is {0}".format(tuning_inj_file))
+# Retrieve the injections result File corresponding to the tuning set
+tuning_inj_file = inj_files.find_output_with_tag(tuning_inj_set)[0]
+logging.info("The tuning injections results file is %s",
+             tuning_inj_file.storage_path)
 
 # Loop over timeseries request by the user
 timeseries = wflow.cp.get_subsections('pygrb_plot_snr_timeseries')
