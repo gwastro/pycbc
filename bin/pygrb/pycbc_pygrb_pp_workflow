@@ -45,7 +45,7 @@ __program__ = "pycbc_pygrb_pp_workflow"
 
 # Function that converts a list of file paths to a FileList in which each File
 # is provided with a label
-def labels_in_files_metadata(labels, file_paths):
+def labels_in_files_metadata(labels, rundir, file_paths):
     """Return a FileList based on the list of file paths.  Each File in it
     is provided with its tag from labels: the correctess of the tag is
     based on the file name.
@@ -62,7 +62,8 @@ def labels_in_files_metadata(labels, file_paths):
     # in the tags
     labels_paths = zip(up_labels, sorted_file_paths)
     out = \
-        _workflow.FileList([_workflow.resolve_url_to_file(p, attrs={'tags': [l]})
+        _workflow.FileList([_workflow.resolve_url_to_file(
+             os.path.join(rundir, p), attrs={'tags': [l]})
                             for (l, p) in labels_paths])
 
     return out
