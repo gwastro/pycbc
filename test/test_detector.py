@@ -54,6 +54,24 @@ class TestDetector(unittest.TestCase):
                 t2 = d1.light_travel_time_to_detector(d2)
                 self.assertAlmostEqual(t1, t2, 7)
 
+    def test_custom_detector(self):
+        det.add_detector_on_earth("TEST", 1.3, 0.5, yangle=0, xaltitude=0.01)
+        d = det.Detector("TEST")
+
+        # Check that we can call the new detector response
+        fp, fc = d.antenna_pattern(1.5, 1.0, 0, 1000000000)
+
+        # Check it interacts with existing detectors
+        d2 = det.Detector("H1")
+        t1 = d2.light_travel_time_to_detector(d)
+
+    def test_response_matrix(self):
+        import lal
+        for ifo in ['H1', 'L1', 'V1', 'K1', 'I1']:
+            ref_resp = lal.cached_detector_by_prefix[ifo].response
+            resp = det.Detector(ifo).response
+            self.assertAlmostEqual((ref_resp - resp).max(), 0, places=6)
+
     def test_antenna_pattern(self):
         vals = list(zip(self.ra, self.dec, self.pol, self.time))
         for ifo in self.d:
