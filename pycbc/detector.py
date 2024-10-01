@@ -122,7 +122,7 @@ def add_detector_on_earth(name, longitude, latitude,
     resps = []
     vecs = []
     for angle, azi in [(yangle, yaltitude), (xangle, xaltitude)]:
-        rm0 = rotation_matrix(angle * units.rad , 'z')
+        rm0 = rotation_matrix(angle * units.rad, 'z')
         rmN = rotation_matrix(-azi *  units.rad, 'y')
         rm = rm2 @ rm1 @ rm0 @ rmN
         # apply rotation
@@ -191,11 +191,12 @@ def load_detector_config(config_files):
                              " {} are required".format(arg_names))
         method(det.upper(), *args, **kwds)
 
+
 # prepopulate using detectors hardcoded into lalsuite
 for pref, name in get_available_lal_detectors():
     lalsim = pycbc.libutils.import_optional('lalsimulation')
     lal_det = lalsim.DetectorPrefixToLALDetector(pref).frDetector
-    add_detector_on_earth(pref, 
+    add_detector_on_earth(pref,
                           lal_det.vertexLongitudeRadians,
                           lal_det.vertexLatitudeRadians,
                           height=lal_det.vertexElevation,
