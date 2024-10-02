@@ -45,7 +45,7 @@ __program__ = "pycbc_pygrb_pp_workflow"
 
 # Function that converts a list of file paths to a FileList in which each File
 # is provided with a label
-def labels_in_files_metadata(labels, file_paths):
+def labels_in_files_metadata(labels, rundir, file_paths):
     """Return a FileList based on the list of file paths.  Each File in it
     is provided with its tag from labels: the correctess of the tag is
     based on the file name.
@@ -62,7 +62,8 @@ def labels_in_files_metadata(labels, file_paths):
     # in the tags
     labels_paths = zip(up_labels, sorted_file_paths)
     out = \
-        _workflow.FileList([_workflow.resolve_url_to_file(p, attrs={'tags': [l]})
+        _workflow.FileList([_workflow.resolve_url_to_file(
+             os.path.join(rundir, p), attrs={'tags': [l]})
                             for (l, p) in labels_paths])
 
     return out
@@ -145,27 +146,31 @@ rdir = layout.SectionNumber('webpage', ['offsource_triggers_vs_time',
 _workflow.makedir(rdir.base)
 _workflow.makedir(rdir['workflow'])
 
-# Input trigger files
-# Expected structure: [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
-all_times_file = os.path.join(start_rundir, args.trig_files[0])
-onsource_file = os.path.join(start_rundir, args.trig_files[1])
-offsource_file = os.path.join(start_rundir, args.trig_files[2])
-offtrial_files = [os.path.join(start_rundir, trig_file)
-                  for trig_file in args.trig_files[3:]]
-
+# File instances of all input trigger files
+# Expected structure of args.trig_files:
+# [ALL_TIMES, ONSOURCE, OFFSOURCE, OFFTRIAL_1, ..., OFFTRIAL_N]
+trig_files = \
+    [_workflow.resolve_url_to_file(os.path.join(start_rundir, trig_file))
+     for trig_file in args.trig_files]
+[all_times_file, onsource_file, offsource_file] = trig_files[0:3]
+offtrial_files = trig_files[3:]
 logging.info("Using the following trigger files:")
-logging.info("All times: %s", all_times_file)
-logging.info("Onsource: %s", onsource_file)
-logging.info("Offsource: %s", offsource_file)
-logging.info("Offtrials: %s", offtrial_files)
+logging.info("All times: %s", all_times_file.storage_path)
+logging.info("Onsource: %s", onsource_file.storage_path)
+logging.info("Offsource: %s", offsource_file.storage_path)
+logging.info("Offtrials: %s", [f.storage_path for f in offtrial_files])
 
+# File instance of the template bank file
 bank_file = os.path.join(start_rundir, args.bank_file)
+bank_file = _workflow.resolve_url_to_file(bank_file)
 
-# Input injection files and injection set names
-inj_files = [start_rundir+'/'+el for el in args.inj_files]
+# File instances of the input injection files
+inj_sets = wflow.cp.get_subsections('injections')
+inj_sets = [i.upper() for i in inj_sets]
+inj_files = labels_in_files_metadata(inj_sets, start_rundir, args.inj_files)
 
 # IFOs actually used: determined by data availability
-ifos = extract_ifos(offsource_file)
+ifos = extract_ifos(offsource_file.storage_path)
 wflow.ifos = ifos
 
 plotting_nodes = []
@@ -219,25 +224,23 @@ layout.two_column_layout(out_dir, summary_layout)
 out_dir = rdir['offsource_triggers_vs_time']
 _workflow.makedir(out_dir)
 
-# Coherent/Reweighted/Single IFO/Null SNR vs time
-out_dirs_dict = {'coherent': 'offsource_triggers_vs_time/coh_snr_timeseries',
-                 'reweighted': 'offsource_triggers_vs_time/reweighted_snr_timeseries',
-                 'single': 'offsource_triggers_vs_time/single_ifo_snr_timeseries',
-                 'null': 'offsource_triggers_vs_time/null_snr_timeseries'}
-
-# Grab the name of the prefereed injection set for these plots
+# Retrieve the name of the preferred injection set for these plots
 tuning_inj_set = wflow.cp.get('workflow-pygrb_pp_workflow', 'tuning-inj-set')
-logging.info("The tuning injections set is {0}".format(tuning_inj_set))
+tuning_inj_set = tuning_inj_set.upper()
+logging.info("The tuning injections set is %s", tuning_inj_set)
 
-# Determine which injections result corresponds to the tuining set
-tuning_inj_file = None
-if inj_files is not None:
-    tuning_inj_file = list(filter(lambda x: tuning_inj_set.lower() in x.lower(), inj_files))
-    tuning_inj_file = tuning_inj_file[0] if len(tuning_inj_file) == 1 else None
-logging.info("The tuning injections results file is {0}".format(tuning_inj_file))
+# Retrieve the injections result File corresponding to the tuning set
+tuning_inj_file = inj_files.find_output_with_tag(tuning_inj_set)[0]
+logging.info("The tuning injections results file is %s",
+             tuning_inj_file.storage_path)
 
 # Loop over timeseries request by the user
 timeseries = wflow.cp.get_subsections('pygrb_plot_snr_timeseries')
+out_dirs_dict = {
+    'coherent': 'offsource_triggers_vs_time/coh_snr_timeseries',
+    'reweighted': 'offsource_triggers_vs_time/reweighted_snr_timeseries',
+    'single': 'offsource_triggers_vs_time/single_ifo_snr_timeseries',
+    'null': 'offsource_triggers_vs_time/null_snr_timeseries'}
 for snr_type in timeseries:
     out_dir = rdir[out_dirs_dict[snr_type]]
     _workflow.makedir(out_dir)
@@ -378,7 +381,6 @@ layout.two_column_layout(coinc_out_dir, coinc_files)
 out_dir = rdir['injections']
 _workflow.makedir(out_dir)
 # Loop over injection plots requested by the user
-inj_sets = wflow.cp.get_subsections('injections')
 inj_plots = wflow.cp.get_subsections('pygrb_plot_injs_results')
 # The command above also picks up the injection set names so we remove them
 # from the set of requested injection plot types
@@ -448,7 +450,6 @@ _workflow.makedir(out_dir)
 # Offtrials and injection sets requested by the user
 num_trials = int(wflow.cp.get('trig_combiner', 'num-trials'))
 offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
-inj_sets = wflow.cp.get_subsections('injections')
 out_dir = rdir['exclusion_distances']
 _workflow.makedir(out_dir)
 for i, offtrial in enumerate(offtrials):
