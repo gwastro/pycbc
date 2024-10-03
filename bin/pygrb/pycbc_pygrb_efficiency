@@ -538,25 +538,6 @@ yerr_low_mc, yerr_high_mc, fraction_mc = efficiency_with_errs(
 yerr_low_no_mc, yerr_high_no_mc, fraction_no_mc = efficiency_with_errs(
                            found_max_bestnr['no_mc'], num_injections['no_mc'])
 
-# Calculate and save to disk the 50% sensitive distance
-eff_low = fraction_no_mc
-eff_idx = np.where(eff_low < 0.5)[0]
-if eff_idx.size == 0:
-    sens_dist = -1
-    err_msg = "Efficiency does not drop below 50%!"
-    logging.error(err_msg)
-elif eff_idx[0] == 0:
-    sens_dist = 0
-    err_msg = "Efficiency does not drop below 90%!"
-    logging.error(err_msg)
-else:
-    i = eff_idx[0]
-    d = dist_plot_vals[i]
-    d_low = dist_plot_vals[i-1]
-    e = eff_low[i]
-    e_low = eff_low[i-1]
-    sens_dist = d + (e - 0.5) * (d - d_low) / (e_low - e)
-
 # Plot efficiency using loudest background
 if opts.background_output_file:
     fig = plt.figure()
@@ -597,6 +578,8 @@ yerr_low, yerr_high, fraction_mc = \
 red_efficiency = (fraction_mc) - (yerr_low) * scipy.stats.norm.isf(0.1)
 
 # Calculate and save to disk 50% and 90% exclusion distances
+# excl_dist dictionary contains 50% and 90% exclusion distances 
+excl_dist = {}
 for percentile in [50, 90]:
     eff_idx = np.where(red_efficiency < (percentile / 100.))[0]
     if eff_idx.size == 0:
@@ -611,13 +594,13 @@ for percentile in [50, 90]:
         d_low = dist_plot_vals[i-1]
         e = excl_efficiency[i]
         e_low = excl_efficiency[i-1]
-        excl_dist = d + (e - (percentile / 100.)) * (d - d_low) /\
+        excl_dist[percentile] = d + (e - (percentile / 100.)) * (d - d_low) /\
             (e_low - e)
     else:
         # Warn the user if the exclusion distance cannot be established,
         # but let the workflow continue: the user will see the plot(s) and
         # repeat with more injections
-        excl_dist = 0
+        excl_dist[percentile] = 0
         msg = "Efficiency below %d%% in first bin!" % (percentile)
         logging.warning(msg)
 
@@ -627,8 +610,8 @@ if opts.exclusion_dist_output_file:
     excl_dist_dict = {}
     excl_dist_dict['inj_set'] = inj_set_name
     excl_dist_dict['trial_name'] = opts.trial_name
-    excl_dist_dict['50%'] = sens_dist
-    excl_dist_dict['90%'] = excl_dist
+    excl_dist_dict['50%'] = excl_dist[50]
+    excl_dist_dict['90%'] = excl_dist[90]
     with open(opts.exclusion_dist_output_file, 'w') as excl_dist_file:
         json.dump(excl_dist_dict, excl_dist_file)
 
@@ -659,15 +642,15 @@ if opts.onsource_output_file:
     ax.set_ylabel("Fraction of injections found louder than " +
                   "loudest foreground")
     ax.set_xlabel("Distance (Mpc)")
-    ax.plot([excl_dist], [0.9], 'gx')
+    ax.plot([excl_dist[90]], [0.9], 'gx')
     ax.set_ylim([0, 1])
     ax.set_xlim(0, 2.*upper_dist - lower_dist)
     plot_title = "Exclusion distance - "+inj_set_name
     plot_caption = "Injection recovery efficiency using "
     plot_caption += "BestNR as detection statistic.  "
     plot_caption += "Injections louder than loudest foreground trigger.\n"
-    plot_caption += f" 90%% exclusion distance: {excl_dist} Mpc\n"
-    plot_caption += f" 50%% sensitive distance: {sens_dist} Mpc"
+    plot_caption += f" 90%% exclusion distance: {excl_dist[90]} Mpc\n"
+    plot_caption += f" 50%% sensitive distance: {excl_dist[50]} Mpc"
     fig_path = opts.onsource_output_file
     save_fig_with_metadata(fig, fig_path, cmd=' '.join(sys.argv),
                            title=plot_title, caption=plot_caption)
