@@ -113,6 +113,7 @@ def callmodel(arg):
             lognls['lognl'] += submodel_lognl
     else:
         lognls = {det: model.det_lognl(det) for det in model.detectors}
+        lognls['lognl'] = sum(lognls.values())
 
     rec = {}
     if opts.reconstruct_parameters:
