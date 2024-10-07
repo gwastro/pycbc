@@ -13,14 +13,18 @@ from pycbc.inference import models
 from pycbc.pool import choose_pool
 from .dummy import DummySampler
 
+
 def call_likelihood(params):
     """ Accessor to update the global model
     """
     models._global_instance.update(**params)
     return models._global_instance.loglikelihood
 
+
 class OutOfSamples(Exception):
+    """Exception if we ran out of samples"""
     pass
+
 
 class GameSampler(DummySampler):
     """Direct importance sampling using a preconstructed parameter space
@@ -154,7 +158,7 @@ class GameSampler(DummySampler):
         with h5py.File(self.mapfile, 'r') as mapfile:
             bparams = {p: mapfile['bank'][p][:] for p in self.variable_params}
             num_nodes = len(bparams[list(bparams.keys())[0]])
-            lengths = numpy.array([len(mapfile['map'][str(x)]) 
+            lengths = numpy.array([len(mapfile['map'][str(x)])
                                    for x in range(num_nodes)])
             self.dtype = mapfile['map']['0'].dtype
 
@@ -172,12 +176,11 @@ class GameSampler(DummySampler):
 
         logging.info('Drawing proposal samples from node regions')
         logw = node_loglrs + numpy.log(lengths)
-        passed = (node_loglrs > loglr_bound)  & ~numpy.isnan(node_loglrs)
+        passed = (node_loglrs > loglr_bound) & ~numpy.isnan(node_loglrs)
         passed = numpy.where(passed)[0]
         logw2 = logw[passed]
         logw2 -= logsumexp(logw2)
         weight = numpy.exp(logw2)
-        node_loglrsp = node_loglrs[passed]
 
         logging.info("...reading template bins")
         with h5py.File(self.mapfile, 'r') as f:
@@ -214,8 +217,6 @@ class GameSampler(DummySampler):
                 loglr_samp = numpy.concatenate([loglr_samp_v, loglr_samp])
                 weight2 = numpy.concatenate([weight2_v, weight2])
                 bin_ids = numpy.concatenate([bin_id, bin_ids])
-
-            uniq = numpy.unique(psamp)
 
             ess = 1.0 / ((weight2/weight2.sum()) ** 2.0).sum()
             logging.info("ESS = %s", ess)
