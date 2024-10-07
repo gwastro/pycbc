@@ -89,7 +89,7 @@ def load_from_config(cp, model, **kwargs):
         Config parser to read from.
     model : pycbc.inference.model
         Which model to pass to the sampler.
-    \**kwargs :
+    **kwargs :
         All other keyword arguments are passed directly to the sampler's
         ``from_config`` file.
 
@@ -103,4 +103,12 @@ def load_from_config(cp, model, **kwargs):
         return DummySampler.from_config(cp, model, **kwargs)
 
     name = cp.get('sampler', 'name')
-    return samplers[name].from_config(cp, model, **kwargs)
+    try:
+        return samplers[name].from_config(cp, model, **kwargs)
+    except KeyError:
+        raise ImportError(
+            f"No available sampler named {name}. Please check "
+            "if the name is correct or the required package "
+            "for this sampler is installed correctly. "
+            f"Available samplers: {', '.join(list(samplers.keys()))}"
+        )
