@@ -1552,11 +1552,11 @@ class FileList(list):
 
         Parameters
         -----------
-        tag: string
+        tag : string
            Tag used to seive the file names
-        fail_if_not_single_file: boolean
-           Triggers a sanity check if the user expects to find a single file
-           with the desired tag in its name t(default: False)
+        fail_if_not_single_file : boolean
+           kwarg (default is False) that riggers a sanity check if the
+           user expects to find a single file with the desired tag in its name
 
         Returns
         --------
