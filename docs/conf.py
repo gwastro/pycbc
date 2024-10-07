@@ -108,7 +108,6 @@ modindex_common_prefix = ['pycbc.']
 # a list of builtin themes.
 import sphinx_rtd_theme
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -116,9 +115,6 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_theme_options = {'style_nav_header_background': 'linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)',
                       'logo_only':True,
                       }
-
-# Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
 
 html_context = {
     'display_github': True,
