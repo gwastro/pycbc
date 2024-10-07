@@ -1546,13 +1546,36 @@ class FileList(list):
 
         return self.__class__(outFiles)
 
-    def find_output_with_tag(self, tag):
+    def find_output_with_tag(self, tag, fail_if_not_single_file=False):
         """
         Find all files who have tag in self.tags
+
+        Parameters
+        -----------
+        tag: string
+           Tag used to seive the file names
+        fail_if_not_single_file: boolean
+           Triggers a sanity check if the user expects to find a single file
+           with the desired tag in its name t(default: False)
+
+        Returns
+        --------
+        FileList/File class
+           If fail_if_not_single_file is False the FileList
+           Containing File instances with tag in self.tags is returned,
+           otherwise the single File with tag in self.tags is returned
+           (if the sanity check requested with fail_if_not_single_file=True is
+           passed)
         """
         # Enforce upper case
         tag = tag.upper()
-        return FileList([i for i in self if tag in i.tags])
+        matching_files = FileList([i for i in self if tag in i.tags])
+        if fail_if_not_single_file:
+            if not len(matching_files) == 1:
+                err_msg = "More than one file with tag %s was found." % (tag,)
+                raise ValueError(err_msg)
+            matching_files = matching_files[0]
+        return matching_files
 
     def find_output_without_tag(self, tag):
         """

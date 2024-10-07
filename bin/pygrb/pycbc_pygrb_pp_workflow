@@ -230,7 +230,8 @@ tuning_inj_set = tuning_inj_set.upper()
 logging.info("The tuning injections set is %s", tuning_inj_set)
 
 # Retrieve the injections result File corresponding to the tuning set
-tuning_inj_file = inj_files.find_output_with_tag(tuning_inj_set)[0]
+tuning_inj_file = inj_files.find_output_with_tag(tuning_inj_set,
+                                                 fail_if_not_single_file=True)
 logging.info("The tuning injections results file is %s",
              tuning_inj_file.storage_path)
 
@@ -253,8 +254,8 @@ for snr_type in timeseries:
         for inj_file in set([None, tuning_inj_file]):
             # If the tuning injection file is used for the plot, include its
             # tags in assembling the plot name
-            tags = [snr_type] if inj_file is None \
-                else [snr_type] + inj_file.tags
+            inj_tags = inj_file.tags if inj_file else []
+            tags = [snr_type] + inj_tags
             plot_node, output_files = \
                 _workflow.make_pygrb_plot(wflow, 'pygrb_plot_snr_timeseries',
                                           out_dir, trig_file=offsource_file,
@@ -287,7 +288,8 @@ for veto in vetoes:
         for inj_file in set([tuning_inj_file, None]):
             # If the tuning injection file is used for the plot, include its
             # tags in assembling the plot name
-            tags = [veto] if inj_file is None else [veto] + inj_file.tags
+            inj_tags = inj_file.tags if inj_file else []
+            tags = [veto] + inj_tags
             ifo_arg = None if veto == 'network' else ifo
             plot_node, output_files = \
                 _workflow.make_pygrb_plot(wflow, 'pygrb_plot_chisq_veto',
@@ -315,8 +317,8 @@ if wflow.cp.has_section('pygrb_plot_coh_ifosnr'):
             for zoom_tag in [['zoomin'], []]:
                 # If the tuning injection file is used for the plot, include
                 # its tags in assembling the plot name
-                tags = zoom_tag if inj_file is None \
-                    else zoom_tag + inj_file.tags
+                inj_tags = inj_file.tags if inj_file else []
+                tags = zoom_tag + inj_tags
                 # Single IFO SNR vs Coherent SNR
                 plot_node, output_files = \
                     _workflow.make_pygrb_plot(wflow, 'pygrb_plot_coh_ifosnr',
@@ -356,10 +358,10 @@ for nstat in nstats:
             files = null_snr_files
         null_stats_plots = _workflow.FileList([])
         for zoom_tag in [['zoomin'], []]:
-            tags = [nstat] + zoom_tag
             # If the tuning injection file is used for the plot, include its
             # tags in assembling the plot name
-            tags = tags if inj_file is None else tags + inj_file.tags
+            inj_tags = inj_file.tags if inj_file else []
+            tags = [nstat] + zoom_tag + inj_tags
             plot_node, output_files = \
                 _workflow.make_pygrb_plot(wflow, 'pygrb_plot_null_stats',
                                           out_dir, trig_file=offsource_file,
@@ -387,7 +389,8 @@ inj_plots = wflow.cp.get_subsections('pygrb_plot_injs_results')
 inj_plots = [inj_plot for inj_plot in inj_plots if inj_plot not in inj_sets]
 for inj_set in inj_sets:
     # Retrieve the injections result File corresponding to the inj_set label
-    inj_file = inj_files.find_output_with_tag(inj_set)[0]
+    inj_file = inj_files.find_output_with_tag(inj_set,
+                                              fail_if_not_single_file=True)
     out_dir = rdir['injections/'+inj_set]
     _workflow.makedir(out_dir)
     files = _workflow.FileList([])
@@ -460,7 +463,8 @@ for i, offtrial in enumerate(offtrials):
     files = _workflow.FileList([])
     for inj_set in inj_sets:
         # Retrieve the injections result File for the inj_set label
-        inj_file = inj_files.find_output_with_tag(inj_set)[0]
+        inj_file = inj_files.find_output_with_tag(inj_set,
+                                                  fail_if_not_single_file=True)
         tags = [offtrial] + inj_file.tags
         plot_node, output_files = \
             _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
