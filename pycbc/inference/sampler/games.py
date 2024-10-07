@@ -81,7 +81,7 @@ class GameSampler(DummySampler):
 
         if size > 0:
             remain = len(self.draw[i])
-            logging.info('Drew {}, {} remains in bin {}', size, remain, i)
+            logging.info('Drew %i, %i remains in bin %i', size, remain, i)
 
         return self.dmap[i][selected]
 
