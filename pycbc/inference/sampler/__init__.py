@@ -14,7 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-This modules provides a list of implemented samplers for parameter estimation.
+This module provides a list of implemented samplers for parameter estimation.
 """
 
 import logging
@@ -26,7 +26,7 @@ from .ultranest import UltranestSampler
 from .dummy import DummySampler
 from .refine import RefineSampler
 from .snowline import SnowlineSampler
-from .netbank import NetBank
+from .games import GameSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
@@ -35,7 +35,7 @@ samplers = {cls.name: cls for cls in (
     DummySampler,
     RefineSampler,
     SnowlineSampler,
-    NetBank,
+    GameSampler,
 )}
 
 try:

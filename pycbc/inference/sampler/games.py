@@ -33,7 +33,7 @@ def call_rlikelihood(params):
 class OutOfSamples(Exception):
     pass
 
-class NetBank(DummySampler):
+class GameSampler(DummySampler):
     """Direct monte-carlo sampler using a preconstructed parameter space
     mapping file.
 
@@ -42,7 +42,7 @@ class NetBank(DummySampler):
     model : Model
         An instance of a model from ``pycbc.inference.models``.
     """
-    name = 'net_bank'
+    name = 'games'
 
     def __init__(self, model, *args, nprocesses=1, use_mpi=False,
                  mapfile=None,
