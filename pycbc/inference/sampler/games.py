@@ -23,7 +23,6 @@ def call_likelihood(params):
 
 class OutOfSamples(Exception):
     """Exception if we ran out of samples"""
-    pass
 
 
 class GameSampler(DummySampler):
@@ -82,7 +81,7 @@ class GameSampler(DummySampler):
 
         if size > 0:
             remain = len(self.draw[i])
-            logging.info(f'Drew {size}, {remain} remains in bin {i}')
+            logging.info('Drew {}, {} remains in bin {}', size, remain, i)
 
         return self.dmap[i][selected]
 
@@ -104,13 +103,13 @@ class GameSampler(DummySampler):
         dorder = bin_weight.argsort()[::-1]
         remainder = 0
         for i in dorder:
-            c = drawcount[i]
-            l = lengths[i]
-            if c > l:
-                drawcount[i] = l
-                remainder += c - l
-            elif c < l:
-                asize = min(l - c, remainder)
+            bincount = drawcount[i]
+            binlen = lengths[i]
+            if bincount > binlen:
+                drawcount[i] = binlen
+                remainder += bincount - binlen
+            elif bincount < binlen:
+                asize = min(binlen - bincount, remainder)
                 drawcount[i] += asize
                 remainder -= asize
 
@@ -183,9 +182,9 @@ class GameSampler(DummySampler):
         weight = numpy.exp(logw2)
 
         logging.info("...reading template bins")
-        with h5py.File(self.mapfile, 'r') as f:
+        with h5py.File(self.mapfile, 'r') as mapfile:
             for i in passed:
-                self.dmap[i] = f['map'][str(i)][:]
+                self.dmap[i] = mapfile['map'][str(i)][:]
 
         # Sample from posterior
         psamp = None
