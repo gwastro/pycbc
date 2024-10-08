@@ -814,8 +814,20 @@ class LISA_detector(object):
         # make sure signal still lies within orbit length
         assert hp.duration + hp.start_time <= self.orbits.t_base[-1], (
                "Time of signal end is greater than end of orbital data.")
-        assert hp.start_time >= self.orbits.t_base[0], (
-                "Time of signal start is less than start of orbital data.")
+        if hp.start_time < self.orbits.t_base[0]:
+            logging.warning("Time of signal start is less than start of orbital data. " + 
+                            "Cutting signal at orbit start time.")
+            
+            # cut off data preceding orbit start time
+            orbit_start_time = self.orbits.t_base[0]
+            orbit_start_idx = np.argwhere(hp.sample_times.numpy() >= orbit_start_time)[0][0]
+            hp = hp[orbit_start_idx:]
+            hc = hc[orbit_start_idx:]
+            
+            # update start time if truncating
+            self.start_time = hp.start_time
+            if self.pad_data:
+                self.start_time += self.t0
 
         # configure the orbit to match signal
         self.sample_times = hp.sample_times.numpy()
