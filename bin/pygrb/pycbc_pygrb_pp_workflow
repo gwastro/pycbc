@@ -230,7 +230,8 @@ tuning_inj_set = tuning_inj_set.upper()
 logging.info("The tuning injections set is %s", tuning_inj_set)
 
 # Retrieve the injections result File corresponding to the tuning set
-tuning_inj_file = inj_files.find_output_with_tag(tuning_inj_set)[0]
+tuning_inj_file = inj_files.find_output_with_tag(tuning_inj_set,
+                                                 fail_if_not_single_file=True)
 logging.info("The tuning injections results file is %s",
              tuning_inj_file.storage_path)
 
@@ -251,9 +252,10 @@ for snr_type in timeseries:
         timeseries_plots = _workflow.FileList([])
         # Plots without and with injections
         for inj_file in set([None, tuning_inj_file]):
-            # If the inj_file is used for the plot, include the tuning
-            # injection set tag in assembling the plot name
-            tags = [snr_type] if inj_file is None else [snr_type, tuning_inj_set]
+            # If the tuning injection file is used for the plot, include its
+            # tags in assembling the plot name
+            inj_tags = inj_file.tags if inj_file else []
+            tags = [snr_type] + inj_tags
             plot_node, output_files = \
                 _workflow.make_pygrb_plot(wflow, 'pygrb_plot_snr_timeseries',
                                           out_dir, trig_file=offsource_file,
@@ -284,9 +286,10 @@ for veto in vetoes:
     for ifo in ifo_loop:
         # Plot with and without injections
         for inj_file in set([tuning_inj_file, None]):
-            # If the inj_file is used for the plot, include the tuning
-            # injection set tag in assembling the plot name
-            tags = [veto] if inj_file is None else [veto, tuning_inj_set]
+            # If the tuning injection file is used for the plot, include its
+            # tags in assembling the plot name
+            inj_tags = inj_file.tags if inj_file else []
+            tags = [veto] + inj_tags
             ifo_arg = None if veto == 'network' else ifo
             plot_node, output_files = \
                 _workflow.make_pygrb_plot(wflow, 'pygrb_plot_chisq_veto',
@@ -312,9 +315,10 @@ if wflow.cp.has_section('pygrb_plot_coh_ifosnr'):
         for inj_file in set([tuning_inj_file, None]):
             sngl_snr_plots = _workflow.FileList([])
             for zoom_tag in [['zoomin'], []]:
-                # If the inj_file is used for the plot, include the tuning
-                # injection set tag in assembling the plot name
-                tags = zoom_tag if inj_file is None else zoom_tag + [tuning_inj_set]
+                # If the tuning injection file is used for the plot, include
+                # its tags in assembling the plot name
+                inj_tags = inj_file.tags if inj_file else []
+                tags = zoom_tag + inj_tags
                 # Single IFO SNR vs Coherent SNR
                 plot_node, output_files = \
                     _workflow.make_pygrb_plot(wflow, 'pygrb_plot_coh_ifosnr',
@@ -353,13 +357,11 @@ for nstat in nstats:
             out_dir = null_snr_out_dir
             files = null_snr_files
         null_stats_plots = _workflow.FileList([])
-        # for zoom_tag in [['zoomin'], []]: # IDEA
-        for zoom_tag in ['zoomin', None]:
-            # If the inj_file is used for the plot, include the tuning
-            # injection set tag in assembling the plot name
-            tags = [nstat]
-            tags = tags + [zoom_tag] if zoom_tag is not None else tags
-            tags = tags + [tuning_inj_set] if inj_file is not None else tags
+        for zoom_tag in [['zoomin'], []]:
+            # If the tuning injection file is used for the plot, include its
+            # tags in assembling the plot name
+            inj_tags = inj_file.tags if inj_file else []
+            tags = [nstat] + zoom_tag + inj_tags
             plot_node, output_files = \
                 _workflow.make_pygrb_plot(wflow, 'pygrb_plot_null_stats',
                                           out_dir, trig_file=offsource_file,
@@ -386,8 +388,9 @@ inj_plots = wflow.cp.get_subsections('pygrb_plot_injs_results')
 # from the set of requested injection plot types
 inj_plots = [inj_plot for inj_plot in inj_plots if inj_plot not in inj_sets]
 for inj_set in inj_sets:
-    inj_file = list(filter(lambda x: inj_set.lower() in x.lower(), inj_files))
-    inj_file = inj_file[0] if len(inj_file) == 1 else None
+    # Retrieve the injections result File corresponding to the inj_set label
+    inj_file = inj_files.find_output_with_tag(inj_set,
+                                              fail_if_not_single_file=True)
     out_dir = rdir['injections/'+inj_set]
     _workflow.makedir(out_dir)
     files = _workflow.FileList([])
@@ -407,7 +410,7 @@ for inj_set in inj_sets:
                                               ifo=ifo, inj_file=inj_file,
                                               tags=tags)
                 plotting_nodes.append(plot_node)
-                # We want a File, not a 1-element list with a File
+                # A File is needed, not a 1-element list with a File
                 # pycbc_pygrb_plot_injs_results produces only one plot, so
                 # take [0]
                 files.append(output_files[0])
@@ -449,7 +452,9 @@ _workflow.makedir(out_dir)
 
 # Offtrials and injection sets requested by the user
 num_trials = int(wflow.cp.get('trig_combiner', 'num-trials'))
-offtrials = ["offtrial_%s" % (i+1) for i in range(num_trials)]
+offtrials = [f"offtrial_{i+1}" for i in range(num_trials)]
+
+# Sensitivity plots of each injection set
 out_dir = rdir['exclusion_distances']
 _workflow.makedir(out_dir)
 for i, offtrial in enumerate(offtrials):
@@ -457,9 +462,10 @@ for i, offtrial in enumerate(offtrials):
     _workflow.makedir(out_dir)
     files = _workflow.FileList([])
     for inj_set in inj_sets:
-        inj_file = list(filter(lambda x: inj_set.lower() in x.lower(), inj_files))
-        inj_file = inj_file[0] if len(inj_file) == 1 else None
-        tags = [offtrial, inj_set]
+        # Retrieve the injections result File for the inj_set label
+        inj_file = inj_files.find_output_with_tag(inj_set,
+                                                  fail_if_not_single_file=True)
+        tags = [offtrial] + inj_file.tags
         plot_node, output_files = \
             _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
                                       out_dir, trig_file=offsource_file,
@@ -542,7 +548,7 @@ log_str = """
 <pre>%s</pre>
 """ % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
 kwds = {'title': 'Workflow Generation Log',
-        'caption': "Log of the workflow script %s" % sys.argv[0],
+        'caption': f"Log of the workflow script {sys.argv[0]}",
         'cmd': ' '.join(sys.argv), }
 save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
 layout.single_layout(rdir['workflow'], ([dashboard_file, log_file_html]))
