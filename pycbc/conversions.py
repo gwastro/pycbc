@@ -431,8 +431,9 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     mask = m1 < m2
     ldiff[mask] = -ldiff[mask]
     eta = eta_from_mass1_mass2(m1, m2)
-    p1 = lsum * (1 + 7. * eta - 31 * eta ** 2.0)
-    p2 = (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta ** 2.0) * ldiff
+    eta[eta > 0.25] = 0.25 # Account for numerical error, 0.25 is the max
+    p1 = (lsum) * (1 + 7. * eta - 31 * eta ** 2.0)
+    p2 = (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta ** 2.0) * (ldiff)
     return formatreturn(8.0 / 13.0 * (p1 + p2), input_is_array)
 
 def delta_lambda_tilde(mass1, mass2, lambda1, lambda2):
