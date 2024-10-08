@@ -1555,7 +1555,7 @@ class FileList(list):
         tag : string
            Tag used to seive the file names
         fail_if_not_single_file : boolean
-           kwarg (default is False) that riggers a sanity check if the
+           kwarg (default is False) that triggers a sanity check if the
            user expects to find a single file with the desired tag in its name
 
         Returns
