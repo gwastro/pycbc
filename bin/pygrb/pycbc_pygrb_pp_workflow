@@ -574,7 +574,7 @@ html_node, [lont_table, lont_h5] = \
                                       on_file=onsource_file)
 html_nodes.append(html_node)
 
-# Reweighted and coherent SNR timseries for the full data stretch
+# Reweighted and coherent SNR timeseries for the full data stretch
 timeseries_plots = _workflow.FileList([])
 for snr_type in ['reweighted', 'coherent']:
     plot_node, output_files = \
