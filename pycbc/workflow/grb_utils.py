@@ -471,7 +471,7 @@ def build_segment_filelist(seg_dir):
 def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None,
                     onsource_file=None, bank_file=None,
-                    seg_files=None, tags=None):
+                    seg_files=None, tags=None, **kwargs):
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -515,20 +515,24 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
         node.add_input_list_opt('--seg-files', seg_files)
-        node.add_input_opt('--onsource-file',
-                           onsource_file)
         node.add_input_opt('--bank-file', bank_file)
-        node.new_output_file_opt(workflow.analysis_time, '.png',
-                                 '--background-output-file',
-                                 tags=extra_tags+['max_background'])
-        node.new_output_file_opt(workflow.analysis_time, '.png',
-                                 '--onsource-output-file',
-                                 tags=extra_tags+['onsource'])
-        node.new_output_file_opt(workflow.analysis_time, '.json',
-                                 '--exclusion-dist-output-file',
-                                 tags=extra_tags)
-        node.add_opt('--injection-set-name', tags[1])
         node.add_opt('--trial-name', tags[0])
+        node.add_opt('--injection-set-name', tags[1])
+        # Output the sensitivity plot
+        if kwargs['plot_bkgd']:
+            node.new_output_file_opt(workflow.analysis_time, '.png',
+                                     '--background-output-file',
+                                     tags=extra_tags+['max_background'])
+        # Output the exclusion distance plot and table
+        else:
+            node.add_input_opt('--onsource-file',
+                               onsource_file)
+            node.new_output_file_opt(workflow.analysis_time, '.png',
+                                     '--onsource-output-file',
+                                     tags=['onsource']+extra_tags)
+            node.new_output_file_opt(workflow.analysis_time, '.json',
+                                     '--exclusion-dist-output-file',
+                                     tags=extra_tags)
     else:
         node.new_output_file_opt(workflow.analysis_time, '.png',
                                  '--output-file', tags=extra_tags)
