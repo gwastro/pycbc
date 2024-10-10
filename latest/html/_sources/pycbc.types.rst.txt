@@ -1,0 +1,69 @@
+pycbc.types package
+===================
+
+Submodules
+----------
+
+pycbc.types.aligned module
+--------------------------
+
+.. automodule:: pycbc.types.aligned
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.types.array module
+------------------------
+
+.. automodule:: pycbc.types.array
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.types.array\_cpu module
+-----------------------------
+
+.. automodule:: pycbc.types.array_cpu
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.types.config module
+-------------------------
+
+.. automodule:: pycbc.types.config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.types.frequencyseries module
+----------------------------------
+
+.. automodule:: pycbc.types.frequencyseries
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.types.optparse module
+---------------------------
+
+.. automodule:: pycbc.types.optparse
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.types.timeseries module
+-----------------------------
+
+.. automodule:: pycbc.types.timeseries
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.types
+   :members:
+   :undoc-members:
+   :show-inheritance:
