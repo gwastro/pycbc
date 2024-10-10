@@ -443,7 +443,7 @@ if post_proc_method == "PYGRB_OFFLINE":
                                           sciSegs[ifo][0], full_bank_file,
                                           inspiral_files, injs,
                                           inj_insp_files, inj_tags)
-    sec_name = 'workflow-pygrb_pp_workflow'
+    sec_name = 'workflow-pygrb_results_workflow'
     if not wflow.cp.has_section(sec_name):
         msg = 'No {0} section found in configuration file.'.format(sec_name)
         logging.info(msg)

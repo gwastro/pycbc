@@ -774,7 +774,7 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     makedir(dax_output)
 
     # Create the node
-    exe = Executable(workflow.cp, 'pygrb_pp_workflow',
+    exe = Executable(workflow.cp, 'pygrb_results_workflow',
                      ifos=workflow.ifos, out_dir=dax_output,
                      tags=tags)
     node = exe.create_node()
@@ -812,8 +812,10 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     config_file = resolve_url_to_file(config_path)
     node.add_input_opt('--config-files', config_file)
 
-    # Track additional ini file produced by pycbc_pygrb_pp_workflow
-    out_file = File(workflow.ifos, 'pygrb_pp_workflow', workflow.analysis_time,
+    # Track additional ini file produced by pycbc_pygrb_results_workflow
+    out_file = File(workflow.ifos,
+                    'pygrb_results_workflow',
+                    workflow.analysis_time,
                     file_url=os.path.join(dax_output, name+'.ini'))
     node.add_output(out_file)
 
