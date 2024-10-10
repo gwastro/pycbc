@@ -1,0 +1,205 @@
+#!/usr/bin/python
+
+"""
+Make a plot of the histograms of compression factor for a given bank
+with compressed waveforms
+"""
+
+import argparse
+import matplotlib
+matplotlib.use("agg")
+from matplotlib import pyplot as plt
+import numpy as np
+import logging
+import sys
+
+import pycbc
+from pycbc.io import HFile
+from pycbc.results import save_fig_with_metadata
+
+parser = argparse.ArgumentParser()
+pycbc.add_common_pycbc_options(parser)
+parser.add_argument(
+    "--bank-files",
+    required=True,
+    nargs="+",
+    help="Template bank file(s) containing compressed waveforms",
+)
+parser.add_argument(
+    "--output",
+    required=True,
+    help="Output plot filename",
+)
+parser.add_argument(
+    "--n-bins",
+    type=int,
+    default=128,
+    help="Number of bins used when making the histogram, default=128",
+)
+parser.add_argument(
+    "--log-duration",
+    action="store_true",
+    help="Flag to plot duration on a log scale",
+)
+parser.add_argument(
+    "--log-compression",
+    action="store_true",
+    help="Flag to histogram/plot compression factor on a log scale",
+)
+parser.add_argument(
+    "--histogram-density",
+    action="store_true",
+    help="Flag to indicate that the histogram should be a density "
+         "rather than a count per bin",
+)
+parser.add_argument(
+    "--log-histogram",
+    action="store_true",
+    help="Flag to indicate that histogram values should be plotted on a log scale"
+)
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+logging.info("Getting information from the bank")
+
+# The three things we want from the banks:
+compression_factor = []
+template_duration = []
+approximants = []
+
+for i, bank_fname in enumerate(args.bank_files):
+    logging.debug(
+        "Bank %d out of %d: %s",
+        i,
+        len(args.bank_files),
+        bank_fname
+    )
+    with HFile(bank_fname, "r") as bank_f:
+        template_duration += list(bank_f["template_duration"][:])
+        compressed_grp = bank_f["compressed_waveforms"]
+        compression_factor += [
+            compressed_grp[str(thash)].attrs["compression_factor"]
+            for thash in bank_f["template_hash"][:]
+        ]
+        approximants += [apx.decode() for apx in bank_f["approximant"][:]]
+
+approximants = np.array(approximants)
+template_duration = np.array(template_duration)
+compression_factor = np.array(compression_factor)
+
+# Store the max/min factors, as these are used for setting
+# histogram / plot limits
+max_factor = compression_factor.max()
+min_factor = compression_factor.min()
+
+# Set the bin edges
+# Add 5% in either linear or log space to the edges used
+# for the bins and plots, so that things arent too cramped
+# in the plots
+if args.log_compression:
+    factor_range = np.log10(max_factor) - np.log10(min_factor)
+    factor_max = np.log10(max_factor) + 0.05 * factor_range
+    factor_min = max(np.log10(min_factor) - 0.05 * factor_range, 0)
+    bin_edges = np.logspace(
+        factor_min,
+        factor_max,
+        args.n_bins
+    )
+else:
+    factor_range = max_factor - min_factor
+    factor_min = max(min_factor - 0.05 * factor_range, 1)
+    factor_max = max_factor + 0.05 * factor_range
+    bin_edges = np.linspace(
+        factor_min,
+        factor_max,
+        args.n_bins
+    )
+
+# These are used as the x values in the histogram plot;
+# this will be each bin edge repeated twice in order,
+# except the first and last which will appear once
+bin_step = np.concatenate(tuple(zip(bin_edges[:-1], bin_edges[1:])))
+
+fig, axes = plt.subplots(1, 2, figsize=(8,4), layout="constrained")
+
+# Make the histogram and scatter points for each approximant separately
+apx_names, apx_count = np.unique(approximants, return_counts=True)
+for apx_name, apx_count in zip(apx_names, apx_count):
+    # Filter to just this approximant
+    this_appx = approximants == apx_name
+
+    logging.info("Making %s compression factor histogram", apx_name)
+    hist, _ = np.histogram(
+        compression_factor[this_appx],
+        bins=bin_edges,
+        density=args.histogram_density,
+    )
+    if args.histogram_density:
+        hist *= apx_count / compression_factor.size
+
+    logging.info("Plotting %s", apx_name)
+    logging.debug("Plotting histogram")
+    axes[0].plot(
+        bin_step,
+        np.repeat(hist, 2),
+        label=f'{apx_name}: {apx_count}',
+    )
+    logging.debug("Plotting compression vs duration scatter")
+    axes[1].scatter(
+        template_duration[this_appx],
+        compression_factor[this_appx],
+        alpha=0.05,
+        s=5,
+        label=f'{apx_name}: {apx_count}',
+    )
+
+logging.debug("Setting scales and limits of axes")
+if args.log_compression:
+    axes[0].set_xlim(10 ** factor_min, 10 ** factor_max)
+    axes[0].set_xscale("log")
+    axes[1].set_yscale("log")
+    axes[1].set_ylim(10 ** factor_min, 10 ** factor_max)
+else:
+    axes[0].set_xlim(factor_min, factor_max)
+    axes[1].set_ylim(factor_min, factor_max)
+
+if args.log_duration:
+    axes[1].set_xscale("log")
+
+if args.log_histogram:
+    axes[0].set_yscale("log")
+else:
+    axes[0].set_ylim(bottom=0)
+
+logging.info("Setting axes labels")
+if args.histogram_density:
+    axes[0].set_ylabel("Template Density")
+else:
+    axes[0].set_ylabel("Number of Templates")
+axes[0].set_xlabel("Compression Factor")
+
+axes[1].set_xlabel("Template Duration (s)")
+axes[1].set_ylabel("Compression Factor")
+
+axes[0].legend(loc='upper right')
+axes[1].legend(loc='upper right')
+
+axes[0].grid(zorder=-100)
+axes[1].grid(zorder=-100)
+
+caption = (
+    "Plot showing the a histogram of compression factor (left) and a "
+    "scatter plot of compression factor vs template duration (right). "
+    "Legend entries indicate the number of templates per approximant. "
+)
+if args.histogram_density:
+    caption += "Density for each histogram is weighted by the number of templates "
+save_fig_with_metadata(
+    fig,
+    args.output,
+    title='Cumulative Number vs. IFAR',
+    caption=caption,
+    cmd=' '.join(sys.argv)
+)
+logging.info("Done!")
