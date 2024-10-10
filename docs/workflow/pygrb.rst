@@ -20,9 +20,7 @@ same point in the sky and at the same time as an observed short duration
 gamma-ray burst.
 
 The output will be a webpage containing plots and other data files that can be
-used to understand the results of the analysis.  At the moment, the old
-results webage generator (pycbc_make_grb_summary_page) is gradually being replaced
-by pycbc_pygrb_pp_workflow, which needs to be run serparatly, for the time being.
+used to understand the results of the analysis.
 
 ==================
 Configuration File
