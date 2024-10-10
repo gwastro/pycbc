@@ -1122,12 +1122,13 @@ class File(pegasus_workflow.File):
         exe_name: string
             A short description of the executable description, tagging
             only the program that ran this job.
-        segs : igwn_segments.segment or igwn_segments.segmentlist
+        segs : igwn_segments.segment or igwn_segments.segmentlist or None
             The time span that the OutFile is valid for. Note that this is
             *not* the same as the data that the job that made the file reads in.
             Lalapps_inspiral jobs do not analyse the first an last 72s of the
             data that is read, and are therefore not valid at those times. If
             the time is not continuous a segmentlist can be supplied.
+            If None is given, the time is not used in the output filename
         file_url : url (optional, default=None)
             If this is *not* supplied, extension and directory must be given.
             If specified this explicitly points to the url of the file, or the
@@ -1285,13 +1286,18 @@ class File(pegasus_workflow.File):
 
         # Follow the frame convention of using integer filenames,
         # but stretching to cover partially covered seconds.
+        # The if statement allows us to use a filename which doesn't
+        # have a teim associated to it
         start = int(segment[0])
         end = int(math.ceil(segment[1]))
-        duration = str(end-start)
-        start = str(start)
+        if (end-start) > 0 and segment[0] > 0:
+            time_str = f"-{start}-{duration}"
+        else:
+            # This comes about when we haven't defined a time range for
+            # the file, so don't add any information
+            time_str = ""
 
-        return "%s-%s-%s-%s.%s" % (ifo, description.upper(), start,
-                                   duration, extension)
+        return "%s-%s%s.%s" % (ifo, description.upper(), time_str, extension)
 
     @classmethod
     def from_path(cls, path, attrs=None, **kwargs):

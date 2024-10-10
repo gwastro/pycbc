@@ -573,3 +573,27 @@ def make_template_bin_table(workflow, dq_file, out_dir, tags=None):
     node.new_output_file_opt(dq_file.segment, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
+
+
+def make_bank_compression_plot(workflow, bank_files, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    node = PlotExecutable(
+        workflow.cp,
+        "plot_bank_compression",
+        ifos=workflow.ifos,
+        out_dir=out_dir,
+    tags=tags).create_node()
+
+    node.add_input_list_opt(
+        "--bank-files",
+        bank_files
+    )
+
+    node.new_output_file_opt(
+        workflow.analysis_time,
+        '.png',
+        '--output-file'
+    )
+    workflow += node
+    return node.output_files[0]
