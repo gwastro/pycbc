@@ -493,10 +493,29 @@ offtrials = [f"offtrial_{i+1}" for i in range(num_trials)]
 # Sensitivity plots of each injection set
 out_dir = rdir['exclusion_distances']
 _workflow.makedir(out_dir)
+bkgd_plots = []
+for inj_set in inj_sets:
+    # Retrieve the injections result File for the inj_set label
+    inj_file = inj_files.find_output_with_tag(inj_set,
+                                              fail_if_not_single_file=True)
+    tags = [offtrials[0]] + inj_file.tags
+    plot_node, output_files = \
+        _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
+                                  out_dir, trig_file=offsource_file,
+                                  inj_file=inj_file,
+                                  bank_file=bank_file,
+                                  seg_files=seg_files, tags=tags,
+                                  plot_bkgd=True)
+    plotting_nodes.append(plot_node)
+    bkgd_plots += [output_files[0]]
+bkgd_plots = list(layout.grouper(bkgd_plots, 2))
+layout.two_column_layout(out_dir, bkgd_plots)
+
+# Exclusion distances of each injection set
 for i, offtrial in enumerate(offtrials):
     out_dir = rdir[f'exclusion_distances/{offtrial}']
     _workflow.makedir(out_dir)
-    files = _workflow.FileList([])
+    eff_layout = []
     for inj_set in inj_sets:
         # Retrieve the injections result File for the inj_set label
         inj_file = inj_files.find_output_with_tag(inj_set,
@@ -508,10 +527,20 @@ for i, offtrial in enumerate(offtrials):
                                       onsource_file=offtrial_files[i],
                                       inj_file=inj_file,
                                       bank_file=bank_file,
-                                      seg_files=seg_files, tags=tags)
+                                      seg_files=seg_files, tags=tags,
+                                      plot_bkgd=False)
         plotting_nodes.append(plot_node)
-        files.extend(output_files)
-    eff_layout = list(layout.grouper(files, 2))
+        eff_plot = output_files[0]
+        json_input = output_files[1]
+        # Create information table about exclusion distances
+        excl_dist_table_node, excl_dist_table = \
+            _workflow.make_pygrb_info_table(wflow,
+                                            'pygrb_exclusion_dist_table',
+                                            out_dir,
+                                            in_files=json_input,
+                                            tags=tags)
+        html_nodes.append(excl_dist_table_node)
+        eff_layout += [(eff_plot, excl_dist_table[0])]
     layout.two_column_layout(out_dir, eff_layout, offtrial)
 
 # Make room for throughput histograms (TODO)
@@ -602,6 +631,33 @@ else:
                                         tags=['loudest_onsource_event'])
     logging.info("Leaving onsource minifollowups")
 
+# Exclusion distances and efficiency plots based on the on-source
+out_dir = rdir['open_box/exclusion_distances']
+eff_layout = []
+for inj_set in inj_sets:
+    # Retrieve the injections result File corresponding to the inj_set label
+    inj_file = inj_files.find_output_with_tag(inj_set,
+                                              fail_if_not_single_file=True)
+    tags = ['onsource'] + inj_file.tags
+    plot_node, output_files = \
+        _workflow.make_pygrb_plot(wflow, 'pygrb_efficiency',
+                                  out_dir, trig_file=offsource_file,
+                                  onsource_file=onsource_file,
+                                  inj_file=inj_file,
+                                  bank_file=bank_file,
+                                  seg_files=seg_files, tags=tags,
+                                  plot_bkgd=False)
+    plotting_nodes.append(plot_node)
+    eff_plot = output_files[0]
+    json_input = output_files[1]
+    # Create information table about exclusion distances
+    excl_dist_table_node, excl_dist_table = \
+        _workflow.make_pygrb_info_table(wflow, 'pygrb_exclusion_dist_table',
+                                        out_dir, in_files=json_input,
+                                        tags=tags)
+    html_nodes.append(excl_dist_table_node)
+    eff_layout += [(eff_plot, excl_dist_table[0])]
+layout.two_column_layout(out_dir, eff_layout)
 
 # Close the log and flush to the html file
 logging.shutdown()
