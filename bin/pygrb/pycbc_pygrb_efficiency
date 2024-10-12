@@ -573,7 +573,7 @@ if opts.background_output_file:
     ax.legend()
     ax.grid()
     ax.set_ylim([0, 1])
-    ax.set_xlim(0, 2.*upper_dist - lower_dist)
+    ax.set_xlim(0, 1.3*upper_dist)
     ax.set_ylabel("Fraction of injections found louder than loudest background")
     ax.set_xlabel("Distance (Mpc)")
     plot_title = "Detection efficiency - "+inj_set_name
@@ -655,13 +655,13 @@ if opts.onsource_output_file:
     ax.get_legend().get_frame().set_alpha(0.5)
     ax.grid()
     ax.set_ylim([0, 1])
-    ax.set_xlim(0, 2.*upper_dist - lower_dist)
+    ax.set_xlim(0, 1.3*upper_dist)
     ax.set_ylabel("Fraction of injections found louder than " +
                   "loudest foreground")
     ax.set_xlabel("Distance (Mpc)")
     ax.plot([excl_dist], [0.9], 'gx')
     ax.set_ylim([0, 1])
-    ax.set_xlim(0, 2.*upper_dist - lower_dist)
+    ax.set_xlim(0, 1.3*upper_dist)
     plot_title = "Exclusion distance - "+inj_set_name
     plot_caption = "Injection recovery efficiency using "
     plot_caption += "BestNR as detection statistic.  "
