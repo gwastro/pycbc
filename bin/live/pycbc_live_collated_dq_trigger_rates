@@ -20,16 +20,39 @@ for a day of PyCBC Live triggers.
 import logging
 import argparse
 import hashlib
+import os
 
 import numpy as np
 
 import pycbc
 from pycbc.io import HFile
 
-import gwdatafind
-
 from gwpy.timeseries import TimeSeriesDict
 from gwpy.segments import Segment, DataQualityFlag
+
+
+def find_frames(ifo, frame_dir, frame_type, start, end):
+    """
+    Find the frame files for a given time range.
+    """
+    ifo_frame_type = frame_type.format(ifo=ifo)
+    ifo_pattern = f'{ifo[0]}-{ifo_frame_type}_llhoft-'
+    folder_pattern = ifo_pattern + '{supertime}'
+    file_pattern = ifo_pattern + '{time}-1.gwf'
+    path_pattern = os.path.join(
+        frame_dir,
+        ifo_frame_type,
+        folder_pattern,
+        file_pattern,
+    )
+
+    files = []
+    for t in range(int(start), int(end) + 1):
+        supertime = int(t / 10000)
+        files.append(path_pattern.format(supertime=supertime, time=t))
+
+    return files
+
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--trigger-file", required=True)
@@ -37,11 +60,14 @@ parser.add_argument("--ifo", required=True)
 parser.add_argument("--gps-start-time", required=True, type=int)
 parser.add_argument("--gps-end-time", required=True, type=int)
 parser.add_argument("--template-bin-file", required=True)
-parser.add_argument("--analysis-frame-type", required=True)
+parser.add_argument("--frame-directory", required=True)
+parser.add_argument("--frame-type", required=True)
 parser.add_argument("--analysis-flag-name", required=True)
 parser.add_argument("--dq-channel", required=True)
 parser.add_argument("--dq-ok-channel", required=True)
 parser.add_argument("--dq-thresh", required=True, type=float)
+parser.add_argument("--dq-padding", type=float, default=1.0)
+parser.add_argument("--replay-offset", type=int, default=0)
 parser.add_argument("--output", required=True)
 pycbc.add_common_pycbc_options(parser)
 args = parser.parse_args()
@@ -52,31 +78,44 @@ pycbc.init_logging(args.verbose)
 ar_flag_name = args.analysis_flag_name.format(ifo=args.ifo)
 day_seg = Segment(args.gps_start_time, args.gps_end_time)
 observing_flag = DataQualityFlag.query(ar_flag_name, day_seg)
+
+# shift observing flag to current time
+observing_flag.pad(args.replay_offset, args.replay_offset)
+
 observing_segs = observing_flag.active
 livetime = observing_flag.livetime
 logging.info(f'Found {livetime} seconds of observing time at {args.ifo}.')
 
 # for each segment, check how much time was dq flagged
 flagged_time = 0
-frame_type = args.analysis_frame_type.format(ifo=args.ifo)
 dq_channel = args.dq_channel.format(ifo=args.ifo)
 dq_ok_channel = args.dq_ok_channel.format(ifo=args.ifo)
 for seg in observing_segs:
-    frames = gwdatafind.find_urls(
-        args.ifo[0],
-        frame_type,
+    frames = find_frames(
+        args.ifo,
+        args.frame_directory,
+        args.frame_type,
         seg[0],
         seg[1],
     )
+
     tsdict = TimeSeriesDict.read(
         frames,
         channels=[dq_channel, dq_ok_channel],
         start=seg[0],
         end=seg[1],
     )
+
     dq_ok_flag = (tsdict[dq_ok_channel] == 1).to_dqflag()
     dq_flag = (tsdict[dq_channel] <= args.dq_thresh).to_dqflag()
-    flagged_time += (dq_flag & dq_ok_flag).livetime
+    valid_bad_dq = dq_flag & dq_ok_flag
+
+    # pad flag outwards to match the padding used in the live script
+    valid_bad_dq.protract(args.dq_padding)
+    valid_bad_dq.coalesce()
+
+    flagged_time += (valid_bad_dq & observing_flag).livetime
+
 logging.info(f'Found {flagged_time} seconds of dq flagged time at {args.ifo}.')
 
 bg_livetime = livetime - flagged_time
