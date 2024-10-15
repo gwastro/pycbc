@@ -507,10 +507,10 @@ def daily_dq_trigger_rates(
     daily_dq_args += ['--trigger-file', trigger_merge_file]
     daily_dq_args += ['--output', ddtr_out_full]
     daily_dq_args += ['--ifo', ifo]
-    daily_dq_args += ['--replay-offset', offset]
 
     daily_dq_options['gps-start-time'] = f'{gps_start_time:d}'
     daily_dq_options['gps-end-time'] = f'{gps_end_time:d}'
+    daily_dq_options['replay-offset'] = f'{offset:d}'
     daily_dq_args += sv.dict_to_args(daily_dq_options)
 
     sv.run_and_error(daily_dq_args, controls)
