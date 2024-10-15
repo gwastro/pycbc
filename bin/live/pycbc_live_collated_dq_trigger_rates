@@ -92,8 +92,6 @@ flagged_time = 0
 dq_channel = args.dq_channel.format(ifo=args.ifo)
 dq_ok_channel = args.dq_ok_channel.format(ifo=args.ifo)
 for seg in observing_segs:
-    print('DEBUG: Segment:', seg)
-    print('DEBUG: Finding frames')
     frames = find_frames(
         args.ifo,
         args.frame_directory,
@@ -102,7 +100,6 @@ for seg in observing_segs:
         seg[1],
     )
 
-    print('DEBUG: Reading frames')
     tsdict = TimeSeriesDict.read(
         frames,
         channels=[dq_channel, dq_ok_channel],
@@ -111,19 +108,15 @@ for seg in observing_segs:
         pad=0,
     )
 
-    print('DEBUG: Calculating dq and dq_ok flags')
     dq_ok_flag = (tsdict[dq_ok_channel] == 1).to_dqflag()
     dq_flag = (tsdict[dq_channel] <= args.dq_thresh).to_dqflag()
 
-    print('DEBUG: Calculating valid_bad_dq')
     valid_bad_dq = dq_flag & dq_ok_flag
 
     # pad flag outwards to match the padding used in the live script
-    print('DEBUG: Protracting and coalescing')
     valid_bad_dq.protract(args.dq_padding)
     valid_bad_dq.coalesce()
 
-    print('DEBUG: Adding flagged time')
     flagged_time += (valid_bad_dq & observing_flag).livetime
 
 logging.info(f'Found {flagged_time} seconds of dq flagged time at {args.ifo}.')
