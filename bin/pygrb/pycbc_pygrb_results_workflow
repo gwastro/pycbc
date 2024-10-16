@@ -208,12 +208,10 @@ bank_file = _workflow.resolve_url_to_file(bank_file)
 
 # Sanity check and File instances of the input injection files
 inj_sets = wflow.cp.get_subsections('injections')
-inj_sets.sort()
 eff_secs = wflow.cp.get_subsections('pygrb_efficiency')
-eff_secs.sort()
-if eff_secs != inj_sets:
-    err_msg = "Each [injections] subsection requires a "
-    err_msg += "corresponding [pygrb_efficiency] subsection. "
+if not set(inj_sets).issubset(eff_secs):
+    err_msg = "Each [injections] subsection requires at "
+    err_msg += "least one dedicated [pygrb_efficiency] subsection. "
     err_msg += "[injections] subsections found: %s. "
     err_msg += "[pygrb_efficiency] subsections found: %s. "
     logging.error(err_msg, inj_sets, eff_secs)
