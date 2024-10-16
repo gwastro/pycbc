@@ -74,6 +74,7 @@ def add_length_estimator(approximant, function):
     from pycbc.waveform.waveform import td_fd_waveform_transform
     td_fd_waveform_transform(approximant)
 
+
 def add_end_frequency_estimator(approximant, function):
     """ Add end frequency estimator for an approximant
 
@@ -82,7 +83,7 @@ def add_end_frequency_estimator(approximant, function):
     approximant : str
         Name of approximant
     function : function
-        A function which takes kwargs and returns the end frequency of the waveform
+        A function which takes kwargs and returns the waveform end frequency
     """
     from pycbc.waveform.waveform import _filter_ends
     if approximant in _filter_ends:
@@ -90,6 +91,7 @@ def add_end_frequency_estimator(approximant, function):
                            " already in use.".format(approximant))
 
     _filter_ends[approximant] = function
+
 
 def retrieve_waveform_plugins():
     """ Process external waveform plugins
@@ -124,5 +126,5 @@ def retrieve_waveform_plugins():
         add_length_estimator(plugin.name, plugin.resolve())
 
     # Check for waveform end frequency estimates
-    for plugin in pkg_resources.iter_entry_points('pycbc.waveform.end_frequency'):
+    for plugin in pkg_resources.iter_entry_points('pycbc.waveform.end_freq'):
         add_end_frequency_estimator(plugin.name, plugin.resolve())
