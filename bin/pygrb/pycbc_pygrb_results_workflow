@@ -206,8 +206,15 @@ logging.info("Offtrials: %s", [f.storage_path for f in offtrial_files])
 bank_file = os.path.join(start_rundir, args.bank_file)
 bank_file = _workflow.resolve_url_to_file(bank_file)
 
-# File instances of the input injection files
+# Sanity check and File instances of the input injection files
 inj_sets = wflow.cp.get_subsections('injections')
+eff_secs = wflow.cp.get_subsections('pygrb_efficiency')
+if not set(inj_sets).issubset(eff_secs):
+    err_msg = "Each [injections] subsection requires at "
+    err_msg += "least one dedicated [pygrb_efficiency] subsection. "
+    err_msg += "[injections] subsections found: %s. "
+    err_msg += "[pygrb_efficiency] subsections found: %s. "
+    logging.error(err_msg, inj_sets, eff_secs)
 inj_sets = [i.upper() for i in inj_sets]
 inj_files = labels_in_files_metadata(inj_sets, start_rundir, args.inj_files)
 
@@ -532,6 +539,7 @@ for stat in stats:
         out_dir,
         trig_file=offsource_file,
         inj_file=inj_file,
+        seg_files=seg_files,
         tags=[stat],
     )
     plotting_nodes.append(plot_node)
