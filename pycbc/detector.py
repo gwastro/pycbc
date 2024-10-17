@@ -812,12 +812,18 @@ class LISA_detector(object):
             self.dt = hp.delta_t
 
         # make sure signal still lies within orbit length
-        assert hp.duration + hp.start_time <= self.orbits.t_base[-1], (
-               "Time of signal end is greater than end of orbital data.")
+        if hp.duration + hp.start_time >= self.orbits.t_base[-1]:
+            logging.warning("Time of signal end is greater than end of orbital data. " +
+                            "Cutting signal at orbit end time.")
+            # cut off data succeeding orbit end time
+            orbit_end_time = self.orbits.t_base[-1]
+            orbit_end_idx = np.argwhere(hp.sample_times.numpy() <= orbits_end_time)[-1][0]
+            hp = hp[:orbit_end_idx]
+            hc = hc[:orbit_end_idx]
+            
         if hp.start_time < self.orbits.t_base[0]:
             logging.warning("Time of signal start is less than start of orbital data. " + 
                             "Cutting signal at orbit start time.")
-            
             # cut off data preceding orbit start time
             orbit_start_time = self.orbits.t_base[0]
             orbit_start_idx = np.argwhere(hp.sample_times.numpy() >= orbit_start_time)[0][0]
@@ -825,24 +831,21 @@ class LISA_detector(object):
             hc = hc[orbit_start_idx:]
             
             # update start time if truncating
-            self.start_time = hp.start_time
+            self.start_time = self.orbits.t_base[0] - self.offset
             if self.pad_data:
                 self.start_time += self.t0
 
         # configure the orbit to match signal
         self.sample_times = hp.sample_times.numpy()
         self.orbits.configure(t_arr=self.sample_times)
-        print('configured orbits')
 
         # rotate GW from radiation frame to SSB using polarization angle
         hp, hc = self.apply_polarization(hp, hc, polarization)
-        print('applied polarization')
 
         # format wf to hp + i*hc
         hp = hp.numpy()
         hc = hc.numpy()
         wf = hp + 1j*hc
-        print('converted to numpy')
 
         # save length of wf
         n = len(wf)
@@ -861,17 +864,14 @@ class LISA_detector(object):
 
         if self.response_init is None:
             # initialize the class
-            print('fresh init')
             self.response_init = pyResponseTDI(1/self.dt, n, orbits=self.orbits,
                                                use_gpu=use_gpu)
         else:
             # update params in the initialized class
-            print('update init')
             self.response_init.sampling_frequency = 1/self.dt
             self.response_init.num_pts = n
             self.response_init.orbits = self.orbits
             self.response_init.use_gpu = use_gpu
-        print('response initialized')
 
         # project the signal
         self.response_init.get_projections(wf, lamb, beta, t0=self.t0)
@@ -992,12 +992,9 @@ class LISA_detector(object):
         if use_gpu is None:
             use_gpu = self.use_gpu
 
-        self.hp = hp
-        
         # generate the Doppler time series
         self.get_links(hp, hc, lamb, beta, polarization=polarization,
                        reference_time=reference_time, use_gpu=use_gpu)
-        print('get links')
 
         # set TDI configuration (let FLR handle if not 1 or 2)
         if tdi == 1:
@@ -1026,12 +1023,9 @@ class LISA_detector(object):
 
         # generate the TDI channels
         tdi_obs = self.response_init.get_tdi_delays()
-        print('tdi complete')
 
         # processing
         tdi_dict = {}
-        print('start preprocessing')
-
         for i in range(len(tdi_chan)):
             # save as numpy arrays
             tdi_dict[tdi_chan[i]] = tdi_obs[i]
@@ -1049,7 +1043,6 @@ class LISA_detector(object):
                 else:
                     raise ValueError('remove_garbage arg must be a bool ' +
                                      'or "zero"')
-            print(f'finished postprocessing {i}')
 
             # save as TimeSeries with SSB times
             tdi_dict[tdi_chan[i]] = TimeSeries(tdi_dict[tdi_chan[i]], delta_t=self.dt,
@@ -1057,7 +1050,6 @@ class LISA_detector(object):
             if pad_data and (not remove_garbage or remove_garbage == 'zero'):
                 # scale the start since the pads haven't been removed
                 tdi_dict[tdi_chan[i]].start_time -= self.t0
-            print(f'saved {i} to TimeSeries')
 
         return tdi_dict
 
