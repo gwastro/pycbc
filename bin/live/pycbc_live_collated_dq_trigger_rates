@@ -25,6 +25,8 @@ import glob
 
 import numpy as np
 
+import gwdatafind
+
 import pycbc
 from pycbc.io import HFile
 
@@ -61,7 +63,12 @@ parser.add_argument("--ifo", required=True)
 parser.add_argument("--gps-start-time", required=True, type=int)
 parser.add_argument("--gps-end-time", required=True, type=int)
 parser.add_argument("--template-bin-file", required=True)
-parser.add_argument("--frame-directory", required=True)
+parser.add_argument("--use-gwdatafind", action='store_true',
+                    help='Use gwdatafind to find frame files. If provided, '
+                         'frame-directory argument will be ignored.')
+parser.add_argument("--frame-directory",
+                    help='Directory containing frame files. Required if '
+                         'not using gwdatafind.')
 parser.add_argument("--frame-type", required=True)
 parser.add_argument("--analysis-flag-name", required=True)
 parser.add_argument("--dq-channel", required=True)
@@ -74,6 +81,9 @@ pycbc.add_common_pycbc_options(parser)
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
+
+if not args.use_gwdatafind and args.frame_directory is None:
+    raise ValueError('Must provide frame-directory if not using gwdatafind.')
 
 # Get observing segs
 ar_flag_name = args.analysis_flag_name.format(ifo=args.ifo)
@@ -92,13 +102,22 @@ flagged_time = 0
 dq_channel = args.dq_channel.format(ifo=args.ifo)
 dq_ok_channel = args.dq_ok_channel.format(ifo=args.ifo)
 for seg in observing_segs:
-    frames = find_frames(
-        args.ifo,
-        args.frame_directory,
-        args.frame_type,
-        seg[0],
-        seg[1],
-    )
+    if args.use_gwdatafind:
+        frame_type = args.analysis_frame_type.format(ifo=args.ifo)
+        frames = gwdatafind.find_urls(
+            args.ifo[0],
+            frame_type,
+            seg[0],
+            seg[1],
+        )
+    else:
+        frames = find_frames(
+            args.ifo,
+            args.frame_directory,
+            args.frame_type,
+            seg[0],
+            seg[1],
+        )
 
     tsdict = TimeSeriesDict.read(
         frames,
