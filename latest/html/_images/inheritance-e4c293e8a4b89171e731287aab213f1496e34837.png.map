@@ -1,0 +1,5 @@
+<map id="inheritancec67a74d38d" name="inheritancec67a74d38d">
+<area shape="rect" id="node1" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.base.BaseSampler" target="_top" title="Abstract base class for all inference samplers." alt="" coords="24,5,223,31"/>
+<area shape="rect" id="node2" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.dummy.DummySampler" target="_top" title="Dummy sampler for not doing sampling" alt="" coords="5,79,241,104"/>
+<area shape="rect" id="node3" href="../pycbc.inference.sampler.html#pycbc.inference.sampler.games.GameSampler" target="_top" title="Direct importance sampling using a preconstructed parameter space" alt="" coords="14,152,233,177"/>
+</map>

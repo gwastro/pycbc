@@ -1,0 +1,316 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pycbc.distributions.sky_location &mdash; PyCBC 2.6.dev1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=f958a8e6"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/typed.min.js?v=edb71f0b"></script>
+      <script src="../../../_static/terminal.css?v=d691274a"></script>
+      <script src="../../../_static/theme_overrides.css?v=e4e1d026"></script>
+      <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="https://raw.githubusercontent.com/gwastro/pycbc-logo/master/pycbc_logo_name.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../install.html">Installing PyCBC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../credit.html">Use of PyCBC in Scientific Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../genindex.html">Index</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">User Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Library Examples and Interactive Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../inference.html">PyCBC inference documentation (<code class="docutils literal notranslate"><span class="pre">pycbc.inference</span></code>)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../apps.html">Applications and Workflows</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Dev Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../extend.html">Extending PyCBC with external plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../devs.html">Documentation for Developers</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(193,193,255,1) 85%)" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBC</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../pycbc.html">pycbc</a></li>
+          <li class="breadcrumb-item"><a href="../distributions.html">pycbc.distributions</a></li>
+      <li class="breadcrumb-item active">pycbc.distributions.sky_location</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pycbc.distributions.sky_location</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (C) 2016  Collin Capano</span>
+<span class="c1"># This program is free software; you can redistribute it and/or modify it</span>
+<span class="c1"># under the terms of the GNU General Public License as published by the</span>
+<span class="c1"># Free Software Foundation; either version 3 of the License, or (at your</span>
+<span class="c1"># option) any later version.</span>
+<span class="c1">#</span>
+<span class="c1"># This program is distributed in the hope that it will be useful, but</span>
+<span class="c1"># WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General</span>
+<span class="c1"># Public License for more details.</span>
+<span class="c1">#</span>
+<span class="c1"># You should have received a copy of the GNU General Public License along</span>
+<span class="c1"># with this program; if not, write to the Free Software Foundation, Inc.,</span>
+<span class="c1"># 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
+
+<span class="sd">&quot;&quot;&quot;This modules provides classes for evaluating sky distributions in</span>
+<span class="sd">right ascension and declination.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="kn">from</span> <span class="nn">scipy.spatial.transform</span> <span class="kn">import</span> <span class="n">Rotation</span>
+
+<span class="kn">from</span> <span class="nn">pycbc.distributions</span> <span class="kn">import</span> <span class="n">angular</span>
+<span class="kn">from</span> <span class="nn">pycbc</span> <span class="kn">import</span> <span class="n">VARARGS_DELIM</span>
+<span class="kn">from</span> <span class="nn">pycbc.io</span> <span class="kn">import</span> <span class="n">FieldArray</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pycbc.distributions.sky_location&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="UniformSky">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.UniformSky">[docs]</a>
+<span class="k">class</span> <span class="nc">UniformSky</span><span class="p">(</span><span class="n">angular</span><span class="o">.</span><span class="n">UniformSolidAngle</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A distribution that is uniform on the sky. This is the same as</span>
+<span class="sd">    UniformSolidAngle, except that the polar angle varies from pi/2 (the north</span>
+<span class="sd">    pole) to -pi/2 (the south pole) instead of 0 to pi. Also, the default</span>
+<span class="sd">    names are &quot;dec&quot; (declination) for the polar angle and &quot;ra&quot; (right</span>
+<span class="sd">    ascension) for the azimuthal angle, instead of &quot;theta&quot; and &quot;phi&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;uniform_sky&#39;</span>
+    <span class="n">_polardistcls</span> <span class="o">=</span> <span class="n">angular</span><span class="o">.</span><span class="n">CosAngle</span>
+    <span class="n">_default_polar_angle</span> <span class="o">=</span> <span class="s1">&#39;dec&#39;</span>
+    <span class="n">_default_azimuthal_angle</span> <span class="o">=</span> <span class="s1">&#39;ra&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="FisherSky">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky">[docs]</a>
+<span class="k">class</span> <span class="nc">FisherSky</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A distribution that returns a random angle drawn from an approximate</span>
+<span class="sd">    `Von_Mises-Fisher distribution`_. Assumes that the Fisher concentration</span>
+<span class="sd">    parameter is large, so that we can draw the samples from a simple</span>
+<span class="sd">    rotationally-invariant distribution centered at the North Pole (which</span>
+<span class="sd">    factors as a uniform distribution for the right ascension, and a Rayleigh</span>
+<span class="sd">    distribution for the declination, as described in</span>
+<span class="sd">    `Fabrycky and Winn 2009 ApJ 696 1230`) and then rotate the samples to be</span>
+<span class="sd">    centered around the specified mean position. As in UniformSky, the</span>
+<span class="sd">    declination varies from π/2 to -π/2 and the right ascension varies from</span>
+<span class="sd">    0 to 2π.</span>
+
+<span class="sd">    .. _Von_Mises-Fisher distribution:</span>
+<span class="sd">        http://en.wikipedia.org/wiki/Von_Mises-Fisher_distribution</span>
+
+<span class="sd">    .. _Fabrycky and Winn 2009 ApJ 696 1230:</span>
+<span class="sd">        https://doi.org/10.1088/0004-637X/696/2/1230</span>
+
+<span class="sd">    .. _Briggs et al 1999 ApJS 122 503:</span>
+<span class="sd">        https://doi.org/10.1086/313221</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mean_ra: float</span>
+<span class="sd">        RA of the center of the distribution.</span>
+<span class="sd">    mean_dec: float</span>
+<span class="sd">        Declination of the center of the distribution.</span>
+<span class="sd">    sigma: float</span>
+<span class="sd">        Spread of the distribution. For the precise interpretation, see Eq 8</span>
+<span class="sd">        of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than</span>
+<span class="sd">        about 20 deg for the approximation to be valid.</span>
+<span class="sd">    angle_unit: str</span>
+<span class="sd">        Unit for the angle parameters: either &quot;deg&quot; or &quot;rad&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;fisher_sky&#39;</span>
+    <span class="n">_params</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;angle_unit&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;deg&#39;</span><span class="p">,</span> <span class="s1">&#39;rad&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only deg or rad is allowed as angle unit&quot;</span><span class="p">)</span>
+        <span class="n">mean_ra</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_ra&#39;</span><span class="p">]</span>
+        <span class="n">mean_dec</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;mean_dec&#39;</span><span class="p">]</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;angle_unit&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;deg&#39;</span><span class="p">:</span>
+            <span class="n">mean_ra</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">mean_ra</span><span class="p">)</span>
+            <span class="n">mean_dec</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">mean_dec</span><span class="p">)</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mean_ra</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">mean_ra</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;The mean RA must be between 0 and 2π, </span><span class="si">{</span><span class="n">mean_ra</span><span class="si">}</span><span class="s1"> rad given&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">mean_dec</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span> <span class="ow">or</span> <span class="n">mean_dec</span> <span class="o">&gt;</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;The mean declination must be between &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;-π/2 and π/2, </span><span class="si">{</span><span class="n">mean_dec</span><span class="si">}</span><span class="s1"> rad given&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sigma</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">sigma</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s1">&#39;Sigma must be positive and smaller than 2π &#39;</span>
+                <span class="s1">&#39;(preferably much smaller)&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sigma</span> <span class="o">&gt;</span> <span class="mf">0.35</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s1">&#39;Warning: sigma = </span><span class="si">%s</span><span class="s1"> rad is probably too large for the &#39;</span>
+                <span class="s1">&#39;Fisher approximation to be valid&#39;</span><span class="p">,</span> <span class="n">sigma</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rayleigh_scale</span> <span class="o">=</span> <span class="mf">0.66</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="c1"># Prepare a rotation that puts the North Pole at the mean position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span> <span class="o">=</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_euler</span><span class="p">(</span>
+            <span class="s1">&#39;yz&#39;</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">mean_dec</span><span class="p">,</span> <span class="n">mean_ra</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span>
+
+<div class="viewcode-block" id="FisherSky.from_config">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cp</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">variable_args</span><span class="p">):</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="n">variable_args</span>
+        <span class="n">variable_args</span> <span class="o">=</span> <span class="n">variable_args</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">VARARGS_DELIM</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">variable_args</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_params</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Not all parameters used by this distribution &quot;</span>
+                             <span class="s2">&quot;included in tag portion of section name&quot;</span><span class="p">)</span>
+        <span class="n">mean_ra</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;mean_ra&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="n">mean_dec</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;mean_dec&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;sigma&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">))</span>
+        <span class="n">angle_unit</span> <span class="o">=</span> <span class="n">cp</span><span class="o">.</span><span class="n">get_opt_tag</span><span class="p">(</span><span class="n">section</span><span class="p">,</span> <span class="s1">&#39;angle_unit&#39;</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">mean_ra</span><span class="o">=</span><span class="n">mean_ra</span><span class="p">,</span>
+            <span class="n">mean_dec</span><span class="o">=</span><span class="n">mean_dec</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="n">angle_unit</span><span class="o">=</span><span class="n">angle_unit</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FisherSky.rvs">
+<a class="viewcode-back" href="../../../pycbc.distributions.html#pycbc.distributions.sky_location.FisherSky.rvs">[docs]</a>
+    <span class="k">def</span> <span class="nf">rvs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="c1"># Draw samples from a distribution centered on the North pole</span>
+        <span class="n">np_ra</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span>
+            <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">high</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span>
+        <span class="p">)</span>
+        <span class="n">np_dec</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rayleigh</span><span class="p">(</span>
+            <span class="n">scale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rayleigh_scale</span><span class="p">,</span>
+            <span class="n">size</span><span class="o">=</span><span class="n">size</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Convert the samples to intermediate cartesian representation</span>
+        <span class="n">np_cart</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np_ra</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_ra</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+        <span class="n">np_cart</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np_dec</span><span class="p">)</span>
+
+        <span class="c1"># Rotate the samples according to our pre-built rotation</span>
+        <span class="n">rot_cart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotation</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np_cart</span><span class="p">)</span>
+
+        <span class="c1"># Convert the samples back to spherical coordinates.</span>
+        <span class="c1"># Some unpleasant conditional operations are needed</span>
+        <span class="c1"># to get the correct angle convention.</span>
+        <span class="n">rot_radec</span> <span class="o">=</span> <span class="n">FieldArray</span><span class="p">(</span>
+            <span class="n">size</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">(</span><span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;dec&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">neg_mask</span> <span class="o">=</span> <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;ra&#39;</span><span class="p">][</span><span class="n">neg_mask</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span>
+        <span class="n">rot_radec</span><span class="p">[</span><span class="s1">&#39;dec&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">rot_cart</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">rot_radec</span></div>
+</div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;UniformSky&#39;</span><span class="p">,</span> <span class="s1">&#39;FisherSky&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton.
+      <span class="lastupdated">Last updated on Oct 18, 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
