@@ -495,10 +495,12 @@ def daily_dq_trigger_rates(
     fname_format = daily_dq_controls['daily-dq-format']
     ddtr_out_fname = fname_format.format(date=day_str, ifo=ifo)
 
-    today = get_true_date(day_dt, daily_dq_controls)
+    start_time = get_true_date(day_dt, daily_dq_controls)
 
-    gps_start_time = gpstime.utc_to_gps(today).gpsSeconds
-    gps_end_time = gpstime.utc_to_gps(today + timedelta(days=1)).gpsSeconds
+    gps_start_time = gpstime.utc_to_gps(start_time).gpsSeconds
+    gps_end_time = gpstime.utc_to_gps(start_time + timedelta(days=1)).gpsSeconds
+
+    offset = gpstime.utc_to_gps(day_dt).gpsSeconds - gps_start_time
 
     ddtr_out_full = os.path.join(output_dir, ddtr_out_fname)
     daily_dq_args = ['pycbc_live_collated_dq_trigger_rates']
@@ -508,6 +510,7 @@ def daily_dq_trigger_rates(
 
     daily_dq_options['gps-start-time'] = f'{gps_start_time:d}'
     daily_dq_options['gps-end-time'] = f'{gps_end_time:d}'
+    daily_dq_options['replay-offset'] = f'{offset:d}'
     daily_dq_args += sv.dict_to_args(daily_dq_options)
 
     sv.run_and_error(daily_dq_args, controls)
