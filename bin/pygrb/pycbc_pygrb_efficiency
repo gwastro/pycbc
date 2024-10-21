@@ -607,11 +607,8 @@ for percentile in [50, 90]:
 # Write 50% and 90% exclusion distances to JSON file
 # Also include injection set name and trial name
 if opts.exclusion_dist_output_file:
-    excl_dist_dict = {}
-    excl_dist_dict['inj_set'] = inj_set_name
-    excl_dist_dict['trial_name'] = opts.trial_name
-    excl_dist_dict['50%'] = excl_dist[50]
-    excl_dist_dict['90%'] = excl_dist[90]
+    excl_dist['inj_set'] = inj_set_name
+    excl_dist['trial_name'] = opts.trial_name
     with open(opts.exclusion_dist_output_file, 'w') as excl_dist_file:
         json.dump(excl_dist, excl_dist_file)
 
