@@ -600,7 +600,7 @@ for percentile in [50, 90]:
         # Warn the user if the exclusion distance cannot be established,
         # but let the workflow continue: the user will see the plot(s) and
         # repeat with more injections
-        excl_dist[percentile] = 0
+        excl_dist[f"{percentile}%"] = 0
         msg = "Efficiency below %d%% in first bin!" % (percentile)
         logging.warning(msg)
 
