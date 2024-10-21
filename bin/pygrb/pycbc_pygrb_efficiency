@@ -594,7 +594,7 @@ for percentile in [50, 90]:
         d_low = dist_plot_vals[i-1]
         e = excl_efficiency[i]
         e_low = excl_efficiency[i-1]
-        excl_dist[percentile] = d + (e - (percentile / 100.)) * (d - d_low) /\
+        excl_dist[f"{percentile}%"] = d + (e - (percentile / 100.)) * (d - d_low) /\
             (e_low - e)
     else:
         # Warn the user if the exclusion distance cannot be established,
