@@ -39,7 +39,7 @@ def check_single_results(args):
                     continue
 
                 # check that PSD is sane
-                psd = group['psd'][:] / pycbc.DYN_RANGE_FAC ** 2
+                psd = group['psd'][:].astype(np.float64) / pycbc.DYN_RANGE_FAC ** 2
                 psd_df = group['psd'].attrs['delta_f']
                 psd_f = np.arange(len(psd)) * psd_df
                 psd_epoch = group['psd'].attrs['epoch']
@@ -141,6 +141,17 @@ def check_found_events(args):
             ctrigfp, False, contenthandler=LIGOLWContentHandler)
         si_table = lsctables.SnglInspiralTable.get_table(xmldoc)
         ci_table = lsctables.CoincInspiralTable.get_table(xmldoc)
+
+        #check the PSD of the XML file
+        event, = LigoLWEventSource(ctrigfp, psd_file=ctrigfp, coinc_def=None).values()
+        for entry in event.singles:
+            psd = entry.psd.data.data
+            if (psd < 1e-48).any() \
+                    or (psd > 1e-40).any() \
+                    or not np.isfinite(psd).all() :
+                log.error('Invalid PSD in %s', ctrigfp)
+                found_fail = True
+
 
         trig_props['tc'][x] = si_table[0].end
         trig_props['mass1'][x] = si_table[0].mass1
