@@ -11,7 +11,7 @@ from pycbc.io.ligolw import LIGOLWContentHandler
 from ligo.lw.utils import load_filename as load_xml_doc
 from ligo.lw import lsctables
 from pycbc import conversions as conv
-import LigoLWEventSource
+from ligo.skymap.io import LigoLWEventSource
 
 def close(a, b, c):
     return abs(a - b) <= c
