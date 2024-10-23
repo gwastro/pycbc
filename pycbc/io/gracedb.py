@@ -222,7 +222,10 @@ class CandidateForGraceDB(object):
             fseries = lal.CreateREAL8FrequencySeries(
                 "psd", psd.epoch, kwargs['low_frequency_cutoff'], psd.delta_f,
                 lal.StrainUnit**2 / lal.HertzUnit, len(psd) - kmin)
-            fseries.data.data = psd.numpy()[kmin:] / pycbc.DYN_RANGE_FAC ** 2.0
+            fseries.data.data = (
+                psd.numpy()[kmin:].astype(numpy.float64)
+                / pycbc.DYN_RANGE_FAC ** 2.0
+            )
             psds_lal[ifo] = fseries
         make_psd_xmldoc(psds_lal, outdoc)
 
