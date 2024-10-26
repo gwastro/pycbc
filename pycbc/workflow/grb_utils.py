@@ -372,7 +372,6 @@ class PycbcGrbTrigCombinerExecutable(Executable):
         node.add_opt("--segment-dir", seg_dir)
         node.add_input_list_opt("--input-files", insp_files)
         node.add_opt("--user-tag", "PYGRB")
-        node.add_opt("--num-trials", self.num_trials)
         node.add_input_opt("--bank-file", bank_file)
         # Prepare output file tag
         user_tag = f"PYGRB_GRB{self.trigger_name}"
