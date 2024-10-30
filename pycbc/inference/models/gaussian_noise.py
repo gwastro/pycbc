@@ -1201,7 +1201,11 @@ def create_waveform_generator(
     except KeyError:
         raise ValueError("no approximant provided in the static args")
 
-    generator_function = generator_class.select_rframe_generator(approximant)
+    dm = static_params.get('preferred_domain', None)
+    if dm == 'None':
+        dm = None
+
+    gen_function = generator_class.select_rframe_generator(approximant, dm)
     # get data parameters; we'll just use one of the data to get the
     # values, then check that all the others are the same
     delta_f = None
@@ -1216,7 +1220,7 @@ def create_waveform_generator(
                 raise ValueError("data must all have the same delta_t, "
                                  "delta_f, and start_time")
     waveform_generator = generator_class(
-        generator_function, epoch=start_time,
+        gen_function, epoch=start_time,
         variable_args=variable_params, detectors=list(data.keys()),
         delta_f=delta_f, delta_t=delta_t,
         recalib=recalibration, gates=gates,
