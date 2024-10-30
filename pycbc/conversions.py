@@ -102,6 +102,62 @@ def sec_to_year(sec):
     return sec / lal.YRJUL_SI
 
 
+def hypertriangle(*params, bounds=(0, 1)):
+    """
+    Apply a hypertriangle map to a series of input parameter values.
+    This will output a series of parameter values in ascending order
+    that can be used to impose a distinguishibility constraint on the
+    posterior. Adapted from Buscicchio et al (PhysRevD.100.084041).
+
+    This transformation assumes that the input parameters were sampled
+    from the same uniform prior distribution.
+
+    Parameters
+    ----------
+    params : float(s) or array(s)
+        The input parameter values. Parameters are assumed to be
+        sampled from the same uniform prior distribution. Values can
+        be input as an arbitrary number of non-keyword arguments, or
+        as a list using the following syntax:
+
+        >>> param_list = [x, y, z, ...]
+        >>> hypertriangle(*param_list)
+
+    bounds : tuple
+        The lower and upper bounds of the input parameter priors.
+        Default (0, 1) for a unit hypercube.
+
+    Returns
+    -------
+    array
+        The mapped parameters. Output values are in ascending order.
+    """
+    # map to numpy array
+    params, input_is_array = ensurearray(params)
+
+    # check all values lie within bounds
+    assert numpy.all(params >= bounds[0]) and numpy.all(params <= bounds[1]), \
+        "Input parameters lie outside of given bounds"
+
+    # rescale the parameters to the unit hypercube
+    scaled_params = (params - bounds[0])/(bounds[1] - bounds[0])
+    
+    # hypertriangulate
+    try:
+        K, num_pts = numpy.shape(scaled_params)
+    except ValueError:
+        K = numpy.size(scaled_params)
+        num_pts = 1
+    idx = numpy.repeat(numpy.arange(K), repeats=num_pts, axis=0)
+    scaled_params.resize(K, num_pts)
+    idx.resize(K, num_pts)
+    fac = numpy.power(1 - scaled_params, 1./(K - idx))
+    out_scaled_params = 1 - numpy.cumprod(fac, axis=0)
+
+    # rescale to prior bounds
+    out_params = (out_scaled_params * (bounds[1] - bounds[0])) + bounds[0]
+    return out_params
+
 #
 # =============================================================================
 #
@@ -1849,5 +1905,5 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
            'lambda1_from_delta_lambda_tilde_lambda_tilde',
            'lambda2_from_delta_lambda_tilde_lambda_tilde',
-           'delta_lambda_tilde'
+           'delta_lambda_tilde', 'hypertriangle'
           ]
