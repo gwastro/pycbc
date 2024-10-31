@@ -28,7 +28,6 @@ from other parameters. All exposed functions in this module's namespace return
 one parameter given a set of inputs.
 """
 
-import random
 import copy
 import numpy
 import logging
@@ -1854,7 +1853,7 @@ def jittering_distance_lognormal(prev_dist, amp_cal_error, phase_cal_error):
     amp_cal_error : float
         amplitude calibration error (percentage) of the wanted 
         detector. It will affect the width of the gaussian
-        distribution.
+       distribution.
     phase_cal_error : float
         phase calibration error (degrees) of the wanted detector. 
         It will affect the center of the gaussian distribution.
@@ -1869,13 +1868,8 @@ def jittering_distance_lognormal(prev_dist, amp_cal_error, phase_cal_error):
     """
     mu = prev_dist * (1 + 0.5 * numpy.deg2rad(phase_cal_error)**2)
     sigma = (amp_cal_error / 100) * prev_dist
-    
-    lognorm = []
 
-    for i in range(len(prev_dist)):
-        lognorm.append(numpy.log(random.lognormvariate(mu[i], sigma[i])))
-
-    return lognorm
+    return numpy.log(numpy.random.lognormal(mu, sigma))
 
 __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'lambda_from_mass_tov_file', 'primary_mass',
