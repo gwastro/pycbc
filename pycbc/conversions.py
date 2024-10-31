@@ -1853,7 +1853,7 @@ def jittering_distance_lognormal(prev_dist, amp_cal_error, phase_cal_error):
     amp_cal_error : float
         amplitude calibration error (percentage) of the wanted 
         detector. It will affect the width of the gaussian
-       distribution.
+        distribution.
     phase_cal_error : float
         phase calibration error (degrees) of the wanted detector. 
         It will affect the center of the gaussian distribution.
