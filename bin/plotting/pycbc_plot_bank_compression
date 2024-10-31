@@ -16,6 +16,7 @@ import sys
 import pycbc
 from pycbc.io import HFile
 from pycbc.results import save_fig_with_metadata
+import pycbc.tmpltbank as tmpltbank
 
 parser = argparse.ArgumentParser()
 pycbc.add_common_pycbc_options(parser)
@@ -37,9 +38,9 @@ parser.add_argument(
     help="Number of bins used when making the histogram, default=128",
 )
 parser.add_argument(
-    "--log-duration",
+    "--log-comparison",
     action="store_true",
-    help="Flag to plot duration on a log scale",
+    help="Flag to plot comparison values on a log scale",
 )
 parser.add_argument(
     "--log-compression",
@@ -55,9 +56,35 @@ parser.add_argument(
 parser.add_argument(
     "--log-histogram",
     action="store_true",
-    help="Flag to indicate that histogram values should be plotted on a log scale"
+    help="Flag to indicate that histogram values should be plotted "
+         "on a log scale"
+)
+parser.add_argument(
+    "--comparison-parameter",
+    default="template_duration:Template duration (s)",
+    help=(
+        "Parameter to be compared to in the scatter plot. Supplied "
+        "as a PARAMETER:NAME pair. PARAMETER should be one of %s, NAME "
+        "can contain latex symbols. Default template_duration:'Template "
+        "duration (s)'"
+    ) % ('{' + ', '.join(tmpltbank.conversion_options) + '}')
 )
 args = parser.parse_args()
+
+try:
+    comparison_parameter, comparison_label = \
+        args.comparison_parameter.split(':')
+except ValueError:
+    raise parser.error(
+        "Incorrect format of --comparison-parameter, got %s. See help" %
+        args.comparison_parameter
+    )
+
+if comparison_parameter not in tmpltbank.conversion_options:
+    raise parser.error(
+        "--comparison-parameter %s not in conversion options %s, see help"
+        % (comparison_parameter, ', '.join(tmpltbank.conversion_options))
+    )
 
 pycbc.init_logging(args.verbose)
 
@@ -65,7 +92,7 @@ logging.info("Getting information from the bank")
 
 # The three things we want from the banks:
 compression_factor = []
-template_duration = []
+comparison_values = []
 approximants = []
 
 for i, bank_fname in enumerate(args.bank_files):
@@ -76,16 +103,20 @@ for i, bank_fname in enumerate(args.bank_files):
         bank_fname
     )
     with HFile(bank_fname, "r") as bank_f:
-        template_duration += list(bank_f["template_duration"][:])
         compressed_grp = bank_f["compressed_waveforms"]
         compression_factor += [
             compressed_grp[str(thash)].attrs["compression_factor"]
             for thash in bank_f["template_hash"][:]
         ]
         approximants += [apx.decode() for apx in bank_f["approximant"][:]]
+        comparison_values += list(tmpltbank.get_bank_property(
+            comparison_parameter,
+            bank_f,
+            template_ids=np.arange(bank_f["template_hash"].size)
+        ))
 
 approximants = np.array(approximants)
-template_duration = np.array(template_duration)
+comparison_values = np.array(comparison_values)
 compression_factor = np.array(compression_factor)
 
 # Store the max/min factors, as these are used for setting
@@ -125,6 +156,10 @@ fig, axes = plt.subplots(1, 2, figsize=(8,4), layout="constrained")
 
 # Make the histogram and scatter points for each approximant separately
 apx_names, apx_count = np.unique(approximants, return_counts=True)
+apx_colors = {
+    apx_name: col for apx_name, col in
+    zip(apx_names, plt.rcParams['axes.prop_cycle'].by_key()['color'])
+}
 for apx_name, apx_count in zip(apx_names, apx_count):
     # Filter to just this approximant
     this_appx = approximants == apx_name
@@ -143,15 +178,25 @@ for apx_name, apx_count in zip(apx_names, apx_count):
     axes[0].plot(
         bin_step,
         np.repeat(hist, 2),
+        c=apx_colors[apx_name],
         label=f'{apx_name}: {apx_count}',
     )
-    logging.debug("Plotting compression vs duration scatter")
+    logging.debug(
+        "Plotting compression vs %s scatter",
+        args.comparison_parameter
+    )
     axes[1].scatter(
-        template_duration[this_appx],
+        comparison_values[this_appx],
         compression_factor[this_appx],
         alpha=0.05,
+        c=apx_colors[apx_name],
         s=5,
-        label=f'{apx_name}: {apx_count}',
+    )
+    # This one is for use in the legend:
+    axes[1].scatter(
+        [],[],
+        c=apx_colors[apx_name],
+        label=f'{apx_name}: {apx_count}'
     )
 
 logging.debug("Setting scales and limits of axes")
@@ -164,7 +209,7 @@ else:
     axes[0].set_xlim(factor_min, factor_max)
     axes[1].set_ylim(factor_min, factor_max)
 
-if args.log_duration:
+if args.log_comparison:
     axes[1].set_xscale("log")
 
 if args.log_histogram:
@@ -179,26 +224,27 @@ else:
     axes[0].set_ylabel("Number of Templates")
 axes[0].set_xlabel("Compression Factor")
 
-axes[1].set_xlabel("Template Duration (s)")
+axes[1].set_xlabel(comparison_label)
 axes[1].set_ylabel("Compression Factor")
 
 axes[0].legend(loc='upper right')
-axes[1].legend(loc='upper right')
+axes[1].legend()
 
 axes[0].grid(zorder=-100)
 axes[1].grid(zorder=-100)
 
 caption = (
     "Plot showing the a histogram of compression factor (left) and a "
-    "scatter plot of compression factor vs template duration (right). "
+    "scatter plot of compression factor vs %s (%s) (right). "
     "Legend entries indicate the number of templates per approximant. "
-)
+) % (comparison_label, comparison_parameter)
+
 if args.histogram_density:
     caption += "Density for each histogram is weighted by the number of templates "
 save_fig_with_metadata(
     fig,
     args.output,
-    title='Cumulative Number vs. IFAR',
+    title="Bank compression vs %s" % comparison_label,
     caption=caption,
     cmd=' '.join(sys.argv)
 )
