@@ -24,7 +24,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: installing system packages
       run: |
-        conda install fftw mpi git-lfs graphviz mysqlclient gsl openssl openmpi
+        conda install fftw mpi git-lfs graphviz gsl openssl openmpi
         pip install "tox<4.0.0" pip setuptools --upgrade
     - name: installing macosx packages
       if: matrix.os == 'macos-latest'
