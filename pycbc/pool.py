@@ -2,7 +2,7 @@
 """
 import multiprocessing.pool
 import functools
-from multiprocessing import TimeoutError, cpu_count
+from multiprocessing import TimeoutError, cpu_count, get_context
 import types
 import signal
 import atexit
@@ -49,13 +49,20 @@ def _shutdown_pool(p):
 class BroadcastPool(multiprocessing.pool.Pool):
     """ Multiprocessing pool with a broadcast method
     """
-    def __init__(self, processes=None, initializer=None, initargs=(), **kwds):
+    def __init__(self, processes=None, initializer=None, initargs=(),
+                 context=None, **kwds):
         global _process_lock
         global _numdone
         _process_lock = multiprocessing.Lock()
         _numdone = multiprocessing.Value('i', 0)
         noint = functools.partial(_noint, initializer)
-        super(BroadcastPool, self).__init__(processes, noint, initargs, **kwds)
+
+        # Default is fork to preserve child memory inheritance and
+        # copy on write
+        if context is None:
+            context = get_context("fork")
+        super(BroadcastPool, self).__init__(processes, noint, initargs,
+                                            context=context, **kwds)
         atexit.register(_shutdown_pool, self)
 
     def __len__(self):
@@ -165,6 +172,7 @@ def use_mpi(require_mpi=False, log=True):
     if not use_mpi:
         size = rank = 0
     return use_mpi, size, rank
+
 
 def choose_pool(processes, mpi=False):
     """ Get processing pool

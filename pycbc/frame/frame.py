@@ -896,8 +896,8 @@ class iDQBuffer(object):
                                         force_update_cache=force_update_cache,
                                         increment_update_cache=increment_update_cache)
 
-    def indices_of_flag(self, start_time, duration, times, padding=0):
-        """ Return the indices of the times lying in the flagged region
+    def flag_at_times(self, start_time, duration, times, padding=0):
+        """ Check whether the idq flag was on at given times
 
         Parameters
         ----------
@@ -905,32 +905,45 @@ class iDQBuffer(object):
             Beginning time to request for
         duration: int
             Number of seconds to check.
+        times: array of floats
+            Times to check for an active flag
         padding: float
-            Number of seconds to add around flag inactive times to be considered
-        inactive as well.
+            Amount of time in seconds to flag around samples
+            below the iDQ FAP threshold
 
         Returns
         -------
-        indices: numpy.ndarray
-            Array of indices marking the location of triggers within valid
-        time.
+        flag_state: numpy.ndarray
+            Boolean array of whether flag was on at given times
         """
-        from pycbc.events.veto import indices_outside_times
+        from pycbc.events.veto import indices_within_times
+
+        # convert start and end times to buffer indices
         sr = self.idq.raw_buffer.sample_rate
         s = int((start_time - self.idq.raw_buffer.start_time - padding) * sr) - 1
         e = s + int((duration + padding) * sr) + 1
+
+        # find samples when iDQ FAP is below threshold and state is valid
         idq_fap = self.idq.raw_buffer[s:e]
-        stamps = idq_fap.sample_times.numpy()
         low_fap = idq_fap.numpy() <= self.threshold
         idq_valid = self.idq_state.raw_buffer[s:e]
         idq_valid = idq_valid.numpy().astype(bool)
         valid_low_fap = numpy.logical_and(idq_valid, low_fap)
+
+        # find times corresponding to the valid low FAP samples
         glitch_idx = numpy.flatnonzero(valid_low_fap)
+        stamps = idq_fap.sample_times.numpy()
         glitch_times = stamps[glitch_idx]
+
+        # construct start and end times of flag segments
         starts = glitch_times - padding
         ends = starts + 1.0 / sr + padding * 2.0
-        idx = indices_outside_times(times, starts, ends)
-        return idx
+
+        # check if times were flagged
+        idx = indices_within_times(times, starts, ends)
+        flagged_bool = numpy.zeros(len(times), dtype=bool)
+        flagged_bool[idx] = True
+        return flagged_bool
 
     def advance(self, blocksize):
         """ Add blocksize seconds more to the buffer, push blocksize seconds

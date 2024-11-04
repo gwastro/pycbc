@@ -24,7 +24,7 @@ import argparse
 import numpy
 import itertools
 import time
-from multiprocessing import Pool
+from pycbc.pool import BroadcastPool as Pool
 
 import pycbc
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events

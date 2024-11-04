@@ -15,9 +15,16 @@ from pycbc.io.hdf import HFile
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
 parser.add_argument("--dq-file", required=True)
-parser.add_argument("--dq-label", required=True)
 parser.add_argument("--ifo", type=str, required=True)
 parser.add_argument("--output-file", required=True)
+parser.add_argument("--low-latency", action='store_true')
+title_grp = parser.add_mutually_exclusive_group(required=True)
+title_grp.add_argument("--dq-label", type=str,
+                       help="Name of dq flag. Used in plot title,"
+                            " mutually exclusive with --title")
+title_grp.add_argument("--title", type=str,
+                       help="Title of plot, mutually exclusive with --dq-label")
+
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
@@ -27,18 +34,25 @@ ifo = args.ifo
 f = HFile(args.dq_file, 'r')
 ifo_grp = f[ifo]
 
-dq_states = ifo_grp['dq_segments'].keys()
 bin_names = ifo_grp['bins'].keys()
 
-num_bins = len(bin_names)
-x = numpy.arange(num_bins)
-width = 0.25
+x = numpy.arange(len(bin_names))
 
-dq_states = {
-    0: 'Clean',
-    1: 'DQ Flag',
-    2: 'Autogating',
-}
+if args.low_latency:
+    dq_states = {
+        0: 'Clean',
+        1: 'DQ Flag',
+    }
+    x_shift = 0.5
+    width = 0.33
+else:
+    dq_states = {
+        0: 'Clean',
+        1: 'DQ Flag',
+        2: 'Autogating',
+    }
+    x_shift = 1
+    width = 0.25
 
 colors = {
     0: 'green',
@@ -59,7 +73,7 @@ for n, dqstate_name in dq_states.items():
 
     ymax = max(ymax, numpy.max(dq_rates))
 
-    offset = width * (n - 1)
+    offset = width * (n - x_shift)
     ax.bar(x + offset, dq_rates, width, label=dqstate_name, color=colors[n])
 
 ymax = ymax**1.05
@@ -76,7 +90,10 @@ ax2.set_ylabel('DQ Log Likelihood Penalty')
 ax2.set_ylim(numpy.log(ymin), numpy.log(ymax))
 
 # add meta data and save figure
-plot_title = f'{ifo}:{args.dq_label} DQ Trigger Rates'
+if args.title is not None:
+    plot_title = args.title
+else:
+    plot_title = f'{ifo}:{args.dq_label} DQ Trigger Rates'
 
 ax.set_title(plot_title)
 

@@ -108,7 +108,11 @@ fft.from_cli(opts)
 with ctx:
 
     # read configuration file
-    cp = configuration.WorkflowConfigParser.from_cli(opts)
+    cp_original = configuration.WorkflowConfigParser.from_cli(opts)
+    # some models will interally modify original cp for sampling,
+    # such as joint_primary_marginalized, we need to save original
+    # and let modify the copied one
+    cp = cp_original.__deepcopy__(cp_original)
 
     # create an empty checkpoint file, if needed
     condor_ckpt = cp.has_option('sampler', 'checkpoint-signal')
@@ -138,7 +142,7 @@ with ctx:
     if pool.is_main_process():
         for fn in [sampler.checkpoint_file, sampler.backup_file]:
             with loadfile(fn, 'a') as fp:
-                fp.write_config_file(cp)
+                fp.write_config_file(cp_original)
 
     # Run the sampler
     sampler.run()

@@ -291,9 +291,9 @@ if fore_locs.sum() > 0:
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
 else:
-    f['foreground/ifar'] = numpy.array([])
+    f['foreground/ifar'] = ifar = numpy.array([])
     f['foreground/fap'] = numpy.array([])
-    f['foreground/ifar_exc'] = numpy.array([])
+    f['foreground/ifar_exc'] = ifar_exc = numpy.array([])
     f['foreground/fap_exc'] = numpy.array([])
 
 if 'name' in all_trigs.attrs:
@@ -330,6 +330,10 @@ else :
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
 #          will happen when ifar_foreground has no elements greater than
 #          the background time.
+
+# This is a workaround for the case that we have no foreground, so that the
+# while loop comparison doesnt fail straight away
+ifar_foreground = numpy.append(ifar_foreground, 0)
 
 while numpy.any(ifar_foreground >= background_time):
     # If the user wants to stop doing hierarchical removals after a set
@@ -508,9 +512,9 @@ f.attrs['hierarchical_removal_iterations'] = h_iterations
 
 # Write whether hierarchical removals were removed against the
 # inclusive background or the exclusive background. Have to use
-# numpy.string_ datatype.
+# numpy.bytes_ datatype.
 if h_iterations != 0:
     hrm_method = args.hierarchical_removal_against
-    f.attrs['hierarchical_removal_method'] = numpy.string_(hrm_method)
+    f.attrs['hierarchical_removal_method'] = numpy.bytes_(hrm_method)
 
 logging.info("Done")

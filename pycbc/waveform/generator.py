@@ -37,8 +37,8 @@ from . import waveform_modes
 from pycbc import transforms
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
-                                 ceilpow2
+from pycbc.waveform.utils import apply_fseries_time_shift, taper_timeseries, \
+                                 ceilpow2, apply_fd_time_shift
 from pycbc.detector import Detector
 from pycbc.pool import use_mpi
 import lal as _lal
@@ -927,8 +927,8 @@ class FDomainDetFrameTwoPolNoRespGenerator(BaseFDomainDetFrameGenerator):
             # happens at the end of the time series (as they are for f-domain),
             # so we add an additional shift to account for it
             tshift = 1./df - abs(hp._epoch)
-            hp = apply_fd_time_shift(hp, tshift, copy=True)
-            hc = apply_fd_time_shift(hc, tshift, copy=True)
+            hp = apply_fseries_time_shift(hp, tshift, copy=True)
+            hc = apply_fseries_time_shift(hc, tshift, copy=True)
 
         hp._epoch = hc._epoch = self._epoch
         h = {}
