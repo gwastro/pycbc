@@ -33,6 +33,7 @@ from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.opt
 import pycbc.inject
+from pycbc.io import HFile
 
 last_progress_update = -1.0
 
@@ -457,12 +458,15 @@ with ctx:
                                  compression_opts=9, shuffle=True)
             psd_group[key].attrs['epoch'] = int(seg.start)
             psd_group[key].attrs['delta_f'] = seg.psd.delta_f
+            start.append(int(seg.start))
+            end.append(int(seg.end))
 
-    f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
-    f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
-    f.attrs['low_frequency_cutoff'] = opt.low_frequency_cutoff
-    f.attrs['dynamic_range_factor'] = pycbc.DYN_RANGE_FAC
-    f.close()
+    if hasattr(opt, 'associated_psd_output') and opt.associated_psd_output:
+        f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
+        f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
+        f.attrs['low_frequency_cutoff'] = opt.low_frequency_cutoff
+        f.attrs['dynamic_range_factor'] = pycbc.DYN_RANGE_FAC
+        f.close()
 
 
     logging.info("Read in template bank")
