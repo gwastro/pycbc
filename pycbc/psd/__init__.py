@@ -241,8 +241,14 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
     psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",
                              help="Maximum frequency to consider in strain "
                              "bandpass.")
+    psd_options.add_argument("--precomputed-psd-file", metavar='FILE', type=str,
+                            help='Given HDF5 MERGE PSD file as the option, '
+                            'appropriate PSD for each strain segment will be '
+                            'chosen and use which is precomputed. PSD from the '
+                            'strain data wil not be computed when this option '
+                            'is  provided.')
 
-    if include_data_options :
+    if include_data_options:
         psd_options.add_argument("--psd-estimation",
                                  help="Measure PSD from the data, using "
                                  "given average method.",
@@ -534,26 +540,44 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         that precision. If 'double' the PSD will be converted to float64, if
         not already in that precision.
     """
-    psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
-                                       flow, dyn_range_factor=dyn_range_factor,
-                                       precision=precision)
+    if opt.precomputed_psd_file:
+        tpsd = PrecomputedTimeVaryingPSD(opt,
+                                         length=len(fd_segments[0].data),
+                                         delta_f=fd_segments[0].delta_f,
+                                         sample_rate=fd_segments[0].sample_rate)
 
-    for fd_segment in fd_segments:
-        best_psd = None
-        psd_overlap = 0
-        inp_seg = segments.segment(fd_segment.seg_slice.start,
-                                   fd_segment.seg_slice.stop)
-        for start_idx, end_idx, psd in psds_and_times:
-            psd_seg = segments.segment(start_idx, end_idx)
-            if psd_seg.intersects(inp_seg):
-                curr_overlap = abs(inp_seg & psd_seg)
-                if curr_overlap > psd_overlap:
-                    psd_overlap = curr_overlap
-                    best_psd = psd
-        if best_psd is None:
-            err_msg = "No PSDs found intersecting segment!"
-            raise ValueError(err_msg)
-        fd_segment.psd = best_psd
+        for fd_segment in fd_segments:
+            inp_seg = segments.segment(fd_segment.start_time,
+                                       fd_segment.end_time)
+            best_psd = tpsd.assosiate_psd_to_inspiral_segment(inp_seg,
+                                                         delta_f=fd_segment.delta_f)
+            if best_psd is None:
+                err_msg = "No PSDs found intersecting segment!"
+                raise ValueError(err_msg)
+            fd_segment.psd = best_psd
+
+    else:
+        psds_and_times = generate_overlapping_psds(opt, gwstrain, flen, delta_f,
+                                        flow, dyn_range_factor=dyn_range_factor,
+                                        precision=precision)
+
+        for fd_segment in fd_segments:
+            best_psd = None
+            psd_overlap = 0
+            inp_seg = segments.segment(fd_segment.seg_slice.start,
+                                    fd_segment.seg_slice.stop)
+            for start_idx, end_idx, psd in psds_and_times:
+                psd_seg = segments.segment(start_idx, end_idx)
+                if psd_seg.intersects(inp_seg):
+                    curr_overlap = abs(inp_seg & psd_seg)
+                    if curr_overlap > psd_overlap:
+                        psd_overlap = curr_overlap
+                        best_psd = psd
+            if best_psd is None:
+                err_msg = "No PSDs found intersecting segment!"
+                raise ValueError(err_msg)
+            fd_segment.psd = best_psd
+
 
 def associate_psds_to_single_ifo_segments(opt, fd_segments, gwstrain, flen,
                                           delta_f, flow, ifo,
