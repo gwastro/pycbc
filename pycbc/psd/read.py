@@ -230,7 +230,7 @@ class PrecomputedTimeVaryingPSD(object):
             sidx = numpy.argpartition(
                 numpy.abs(self.start_times - inp_seg[0]), 2)[:2]
         else:
-            sidx = np.array([0, 1])
+            sidx = numpy.argsort(numpy.abs(self.start_times - inp_seg[0]))
 
         nearest = segments.segment(
             self.start_times[sidx[0]], self.end_times[sidx[0]])

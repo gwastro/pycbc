@@ -34,7 +34,6 @@ from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.opt
 import pycbc.inject
-from pycbc.io import HFile
 
 last_progress_update = -1.0
 
@@ -205,10 +204,6 @@ parser.add_argument("--multiprocessing-nprocesses", type=int,
                          "Used in conjunction with the option"
                          "--finalize-events-template-rate which should be set"
                          "to a multiple of the number of processes.")
-parser.add_argument("--associated-psd-output",
-                    help="(Optional) Write PSD to specified file in the format "
-                    "of calculate_psd output. --output-psd only saves psd of "
-                    "only one segment")
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -441,36 +436,8 @@ with ctx:
                                  maximal_value_dof=opt.autochi_max_valued_dof)
 
     logging.info("Overwhitening frequency-domain data segments")
-    if hasattr(opt, 'associated_psd_output') and opt.associated_psd_output:
-        logging.info("Saving PSDs for filter segments")
-        f = HFile(opt.associated_psd_output, 'w')
-        ifo = opt.channel_name[0:2]
-        psd_group = f.create_group(ifo + '/psds')
-        start, end = [], []
-
     for inc, seg in enumerate(segments):
         seg /= seg.psd
-
-
-        if hasattr(opt, 'associated_psd_output') and opt.associated_psd_output:
-            key = str(inc)
-            # start_time = gwstrain.start_time + seg.analyze.start/gwstrain.sample_rate
-            # end_time = gwstrain.start_time + seg.analyze.stop/gwstrain.sample_rate
-            # ic(start_time, end_time)
-            start.append(int(seg.start_time))
-            end.append(int(seg.end_time))
-            psd_group.create_dataset(key, data=seg.psd, compression='gzip',
-                                 compression_opts=9, shuffle=True)
-            psd_group[key].attrs['epoch'] = int(seg.start_time)
-            psd_group[key].attrs['delta_f'] = seg.psd.delta_f
-
-    if hasattr(opt, 'associated_psd_output') and opt.associated_psd_output:
-        f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
-        f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
-        f.attrs['low_frequency_cutoff'] = opt.low_frequency_cutoff
-        f.attrs['dynamic_range_factor'] = pycbc.DYN_RANGE_FAC
-        f.close()
-
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f,

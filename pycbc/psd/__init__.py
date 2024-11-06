@@ -15,6 +15,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import copy
+import numpy
+import logging
+from pycbc.io import HFile
 from ligo import segments
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
@@ -27,6 +30,9 @@ from pycbc.types import DictOptionAction, MultiDetDictOptionAction
 from pycbc.types import copy_opts_for_single_ifo
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
+from pycbc import DYN_RANGE_FAC
+
+logger = logging.getLogger('pycbc.psd')
 
 def from_cli(opt, length, delta_f, low_frequency_cutoff,
              strain=None, dyn_range_factor=1, precision=None):
@@ -272,7 +278,10 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
     if output:
         psd_options.add_argument("--psd-output",
                           help="(Optional) Write PSD to specified file")
-
+        psd_options.add_argument("--overlapping-psd-output",
+                    help="(Optional) Write PSD to specified file in the format "
+                    "of calculate_psd output. --output-psd only saves psd of "
+                    "only one segment")
     return psd_options
 
 def insert_psd_option_group_multi_ifo(parser):
@@ -505,6 +514,32 @@ def generate_overlapping_psds(opt, gwstrain, flen, delta_f, flow,
         psd = from_cli(opt, flen, delta_f, flow, strain=strain_part,
                        dyn_range_factor=dyn_range_factor, precision=precision)
         psds_and_times.append( (start_idx, end_idx, psd) )
+
+    if hasattr(opt, 'overlapping_psd_output') and opt.overlapping_psd_output:
+        logging.info(f"Saving overlapping PSDs for segments to "
+                f"{opt.overlapping_psd_output}")
+        f = HFile(opt.overlapping_psd_output, 'w')
+        ifo = opt.channel_name[0:2]
+        psd_group = f.create_group(ifo + '/psds')
+        start, end = [], []
+        for inc, pnt in enumerate(psds_and_times):
+            start_idx, end_idx, psd = pnt
+            key = str(inc)
+            start_time = gwstrain.start_time + start_idx/gwstrain.sample_rate
+            end_time = gwstrain.start_time + end_idx/gwstrain.sample_rate
+            start.append(int(start_time))
+            end.append(int(end_time))
+            psd_group.create_dataset(key, data=psd.numpy(), compression='gzip',
+                    compression_opts=9, shuffle=True)
+            psd_group[key].attrs['epoch'] = int(start_time)
+            psd_group[key].attrs['delta_f'] = psd.delta_f
+
+        f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
+        f[ifo + '/end_time'] = numpy.array(end, dtype=numpy.uint32)
+        f.attrs['low_frequency_cutoff'] = opt.low_frequency_cutoff
+        f.attrs['dynamic_range_factor'] = DYN_RANGE_FAC
+        f.close()
+
     return psds_and_times
 
 def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
@@ -541,6 +576,7 @@ def associate_psds_to_segments(opt, fd_segments, gwstrain, flen, delta_f, flow,
         not already in that precision.
     """
     if opt.precomputed_psd_file:
+        logging.info(f"Reading Precomuted PSDs from {opt.precomputed_psd_file}")
         tpsd = PrecomputedTimeVaryingPSD(opt,
                                          length=len(fd_segments[0].data),
                                          delta_f=fd_segments[0].delta_f,
