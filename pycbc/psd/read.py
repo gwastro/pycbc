@@ -225,8 +225,13 @@ class PrecomputedTimeVaryingPSD(object):
             err_msg += "PSDs are within range ({}, {})".format(
                 self.begin, self.end)
             raise ValueError(err_msg)
-        sidx = numpy.argpartition(
-            numpy.abs(self.start_times - inp_seg[0]), 2)[:2]
+
+        if len(self.start_times) > 2:
+            sidx = numpy.argpartition(
+                numpy.abs(self.start_times - inp_seg[0]), 2)[:2]
+        else:
+            sidx = np.array([0, 1])
+
         nearest = segments.segment(
             self.start_times[sidx[0]], self.end_times[sidx[0]])
         next_nearest = segments.segment(
@@ -252,7 +257,6 @@ class PrecomputedTimeVaryingPSD(object):
                                                   self.sample_rate),
                                               low_frequency_cutoff=self.f_low,
                                               trunc_method=self.invpsd_trunc_method)
-
         return best_psd
 
     def get_psd(self, index, delta_f=None):

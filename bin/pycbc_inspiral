@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/data/gravwav/bgadre/cond_envs/pycbc-precomputed-psd/bin/python3.9
 
 # Copyright (C) 2014 Alex Nitz
 #
@@ -25,6 +25,7 @@ import numpy
 import itertools
 import time
 from pycbc.pool import BroadcastPool as Pool
+from icecream import ic
 
 import pycbc
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
@@ -450,16 +451,18 @@ with ctx:
     for inc, seg in enumerate(segments):
         seg /= seg.psd
 
-        if hasattr(opt, 'psd_output') and opt.psd_output:
+
+        if hasattr(opt, 'associated_psd_output') and opt.associated_psd_output:
             key = str(inc)
-            start.append(int(seg.start))
-            end.append(int(seg.end))
+            # start_time = gwstrain.start_time + seg.analyze.start/gwstrain.sample_rate
+            # end_time = gwstrain.start_time + seg.analyze.stop/gwstrain.sample_rate
+            # ic(start_time, end_time)
+            start.append(int(seg.start_time))
+            end.append(int(seg.end_time))
             psd_group.create_dataset(key, data=seg.psd, compression='gzip',
                                  compression_opts=9, shuffle=True)
-            psd_group[key].attrs['epoch'] = int(seg.start)
+            psd_group[key].attrs['epoch'] = int(seg.start_time)
             psd_group[key].attrs['delta_f'] = seg.psd.delta_f
-            start.append(int(seg.start))
-            end.append(int(seg.end))
 
     if hasattr(opt, 'associated_psd_output') and opt.associated_psd_output:
         f[ifo + '/start_time'] = numpy.array(start, dtype=numpy.uint32)
