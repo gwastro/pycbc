@@ -435,7 +435,7 @@ with ctx:
                                  maximal_value_dof=opt.autochi_max_valued_dof)
 
     logging.info("Overwhitening frequency-domain data segments")
-    for  seg in segments:
+    for seg in segments:
         seg /= seg.psd
 
     logging.info("Read in template bank")
