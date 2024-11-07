@@ -74,6 +74,7 @@ def slide_limiter(args):
         num_slides = 1
     return num_slides
 
+
 # The following block of lines sets up the command-line interface (CLI) for the
 # pycbc_multi_inspiral executable.
 time_init = time.time()
