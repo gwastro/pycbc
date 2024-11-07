@@ -275,21 +275,20 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         tags = []
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     curr_out_files = FileList([])
-    if 'IPN' in datafind_outs[-1].description \
-            and 'bank_veto_bank' in datafind_outs[-2].description:
-        # FIXME: This looks like a really nasty hack for the GRB code.
-        #        This should be fixed properly to avoid strange behaviour!
-        ipn_sky_points = datafind_outs[-1]
-        bank_veto = datafind_outs[-2]
-        frame_files = datafind_outs[:-2]
-    else:
-        ipn_sky_points = None
-        if 'bank_veto_bank' in datafind_outs[-1].name:
-            bank_veto = datafind_outs[-1]
-            frame_files = datafind_outs[:-1]
-        else:
-            bank_veto = None
-            frame_files = datafind_outs
+    ipn_sky_points = None
+    veto_file = None
+    bank_veto = None
+    frame_files = FileList(datafind_outs)
+    for f in datafind_outs:
+        if 'IPN' in f.description:
+            ipn_sky_points = f
+            frame_files.remove(f)
+        elif 'vetoes' in f.description:
+            veto_file = f
+            frame_files.remove(f)
+        elif 'INPUT_BANK_VETO_BANK' in f.description:
+            bank_veto = f
+            frame_files.remove(f)
 
     split_bank_counter = 0
 
