@@ -314,7 +314,7 @@ def setup_pygrb_pp_workflow(wf, pp_dir, seg_dir, segment, bank_file,
     exe_class = _select_grb_pp_class(wf, "trig_combiner")
     job_instance = exe_class(wf.cp, "trig_combiner")
     # Create node for coherent no injections jobs
-    node, trig_files = job_instance.create_node(wf.ifos, seg_dir, segment,
+    node, trig_files = job_instance.create_node(wf.ifo_string, seg_dir, segment,
                                                 insp_files, pp_dir, bank_file)
     wf.add_node(node)
 
@@ -445,20 +445,10 @@ class PycbcGrbInjFinderExecutable(Executable):
         return node, out_file
 
 
-def build_veto_filelist(workflow):
-    """Construct a FileList instance containing all veto xml files"""
-
-    veto_dir = workflow.cp.get('workflow', 'veto-directory')
-    veto_files = glob.glob(veto_dir + '/*CAT*.xml')
-    veto_files = [resolve_url_to_file(vf) for vf in veto_files]
-    veto_files = FileList(veto_files)
-
-    return veto_files
-
-
 def build_segment_filelist(seg_dir):
     """Construct a FileList instance containing all segments txt files"""
 
+    # Needs to be in this order for consistency with _read_seg_files
     file_names = ["bufferSeg.txt", "offSourceSeg.txt", "onSourceSeg.txt"]
     seg_files = [os.path.join(seg_dir, fn) for fn in file_names]
     seg_files = [resolve_url_to_file(sf) for sf in seg_files]
@@ -470,7 +460,7 @@ def build_segment_filelist(seg_dir):
 def make_pygrb_plot(workflow, exec_name, out_dir,
                     ifo=None, inj_file=None, trig_file=None,
                     onsource_file=None, bank_file=None,
-                    seg_files=None, tags=None, **kwargs):
+                    seg_files=None, veto_file=None, tags=None, **kwargs):
     """Adds a node for a plot of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
@@ -486,18 +476,13 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     node = PlotExecutable(workflow.cp, exec_name, ifos=workflow.ifos,
                           out_dir=out_dir,
                           tags=tags+extra_tags).create_node()
-    if trig_file is not None:
+    if trig_file:
         node.add_input_opt('--trig-file', trig_file)
     # Pass the veto and segment files and options
-    if workflow.cp.has_option('workflow', 'veto-category'):
-        node.add_opt('--veto-category',
-                     workflow.cp.get('workflow', 'veto-category'))
-    # FIXME: move to next if within previous one and else Raise error?
-    if workflow.cp.has_option('workflow', 'veto-files'):
-        veto_files = build_veto_filelist(workflow)
-        node.add_input_list_opt('--veto-files', veto_files)
-    # TODO: check this for pygrb_plot_stats_distribution
-    # They originally wanted seg_files
+    if seg_files:
+        node.add_input_list_opt('--seg-files', seg_files)
+    if veto_file:
+        node.add_input_opt('--veto-file', veto_file)
     if exec_name in ['pygrb_plot_injs_results',
                      'pygrb_plot_snr_timeseries']:
         trig_time = workflow.cp.get('workflow', 'trigger-time')
@@ -513,7 +498,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Output files and final input file (passed as a File instance)
     if exec_name == 'pygrb_efficiency':
         # In this case tags[0] is the offtrial number
-        node.add_input_list_opt('--seg-files', seg_files)
         node.add_input_opt('--bank-file', bank_file)
         node.add_opt('--trial-name', tags[0])
         node.add_opt('--injection-set-name', tags[1])
@@ -544,7 +528,6 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
         node.add_opt('--y-variable', tags[0])
     # Quantity to be displayed on the x-axis of the plot
     elif exec_name == 'pygrb_plot_stats_distribution':
-        node.add_input_list_opt('--seg-files', seg_files)
         node.add_opt('--x-variable', tags[0])
     elif exec_name == 'pygrb_plot_injs_results':
         # Variables to plot on x and y axes
@@ -600,7 +583,8 @@ def make_pygrb_info_table(workflow, exec_name, out_dir, in_files=None,
 
 
 def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
-                           inj_file=None, on_file=None, tags=None):
+                           inj_file=None, on_file=None, veto_file=None,
+                           tags=None):
     """
     Adds a job to make quiet-found and missed-found injection tables,
     or loudest trigger(s) table."""
@@ -620,13 +604,12 @@ def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
     # Offsource input file (or equivalently trigger file for injections)
     offsource_file = off_file
     node.add_input_opt('--offsource-file', offsource_file)
-    # Pass the veto and segment files and options
-    if workflow.cp.has_option('workflow', 'veto-files'):
-        veto_files = build_veto_filelist(workflow)
-        node.add_input_list_opt('--veto-files', veto_files)
+    # Pass the veto and segment files (as File instances)
+    if veto_file:
+        node.add_input_opt('--veto-file', veto_file)
     node.add_input_list_opt('--seg-files', seg_files)
     # Handle input/output for injections
-    if inj_file is not None:
+    if inj_file:
         # Found-missed injection file (passed as File instance)
         fm_file = inj_file
         node.add_input_opt('--found-missed-file', fm_file)
@@ -643,7 +626,7 @@ def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
     # Handle input/output for onsource/offsource
     else:
         src_type = 'offsource-trigs'
-        if on_file is not None:
+        if on_file:
             src_type = 'onsource-trig'
             # Onsource input file (passed as File instance)
             onsource_file = on_file
@@ -665,7 +648,8 @@ def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
 
 # Based on setup_single_det_minifollowups
 def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
-                              dax_output, out_dir, tags=None):
+                              dax_output, out_dir, seg_files=None,
+                              veto_file=None, tags=None):
     """ Create plots that followup the the loudest PyGRB triggers or
     missed injections from an HDF file.
 
@@ -680,6 +664,10 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
     dax_output: The directory that will contain the dax file
     out_dir: path
         The directory to store minifollowups result plots and files
+    seg_files: {pycbc.workflow.FileList, optional}
+        The list of segments Files
+    veto_file: {pycbc.workflow.File, optional}
+        The veto definer file
     tags: {None, optional}
         Tags to add to the minifollowups executables
     """
@@ -713,10 +701,11 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
 
     node.add_input_opt('--trig-file', trigger_file)
 
-    # Grab and pass all necessary files
-    if workflow.cp.has_option('workflow', 'veto-files'):
-        veto_files = build_veto_filelist(workflow)
-        node.add_input_list_opt('--veto-files', veto_files)
+    # Grab and pass all necessary files as File instances
+    if seg_files:
+        node.add_input_list_opt('--seg-files', seg_files)
+    if veto_file:
+        node.add_input_opt('--veto-file', veto_file)
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--followups-file', followups_file)
     node.add_opt('--wiki-file', wikifile)
@@ -748,7 +737,8 @@ def setup_pygrb_minifollowups(workflow, followups_file, trigger_file,
 
 
 def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
-                                 inj_files, bank_file, seg_dir, tags=None,
+                                 inj_files, bank_file, seg_dir,
+                                 veto_file=None,tags=None,
                                  explicit_dependencies=None):
     """Create subworkflow to produce plots, tables,
     and results webpage for a PyGRB analysis.
@@ -762,9 +752,13 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
     trig_files: FileList of trigger files
     inj_files: FileList of injection results
     bank_file: The template bank File object
+    seg_dir: The directory path with the segments files
+    veto_file: {None, optional}
+        The veto File object
     tags: {None, optional}
         Tags to add to the executables
-    explicit_dependencies: nodes that must precede this
+    explicit_dependencies: {None, optional}
+        nodes that must precede this
     """
 
     tags = [] if tags is None else tags
@@ -774,18 +768,17 @@ def setup_pygrb_results_workflow(workflow, res_dir, trig_files,
 
     # Create the node
     exe = Executable(workflow.cp, 'pygrb_results_workflow',
-                     ifos=workflow.ifos, out_dir=dax_output,
+                     ifos=workflow.ifo_string, out_dir=dax_output,
                      tags=tags)
     node = exe.create_node()
     # Grab and pass all necessary files
     node.add_input_list_opt('--trig-files', trig_files)
-    if workflow.cp.has_option('workflow', 'veto-files'):
-        veto_files = build_veto_filelist(workflow)
-        node.add_input_list_opt('--veto-files', veto_files)
     # node.add_input_opt('--config-files', config_file)
     node.add_input_list_opt('--inj-files', inj_files)
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--segment-dir', seg_dir)
+    if veto_file:
+        node.add_input_opt('--veto-file', veto_file)
 
     if tags:
         node.add_list_opt('--tags', tags)
