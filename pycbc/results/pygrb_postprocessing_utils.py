@@ -40,11 +40,7 @@ logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
 
 # All/most of these final imports will become obsolete with hdf5 switch
 try:
-    from ligo.lw import utils
-    from ligo.lw.table import Table
     from ligo.segments.utils import fromsegwizard
-    from glue.ligolw import lsctables as glsctables
-    from glue.ligolw.ligolw import LIGOLWContentHandler
 except ImportError:
     pass
 
@@ -78,14 +74,10 @@ def pygrb_initialize_plot_parser(description=None):
     parser.add_argument("-i", "--ifo", default=None, help="IFO used for IFO " +
                         "specific plots")
     parser.add_argument("-a", "--seg-files", nargs="+", action="store",
-                        default=None, help="The location of the buffer, " +
-                        "onsource and offsource segment files.")
-    parser.add_argument("-V", "--veto-files", nargs="+", action="store",
-                        default=None, help="The location of the CATX veto " +
-                        "files provided as a list of space-separated values.")
-    parser.add_argument("-b", "--veto-category", action="store", type=int,
-                        default=None, help="Apply vetoes up to this level " +
-                        "inclusive.")
+                        default=[], help="The location of the buffer, " +
+                        "onsource and offsource txt segment files.")
+    parser.add_argument("-V", "--veto-file", action="store",
+                        help="The location of the xml veto file.")
     parser.add_argument('--plot-title', default=None,
                         help="If provided, use the given string as the plot " +
                         "title.")
@@ -98,8 +90,8 @@ def pygrb_initialize_plot_parser(description=None):
 def pygrb_add_slide_opts(parser):
     """Add to parser object arguments related to short timeslides"""
     parser.add_argument("--slide-id", type=str, default='0',
-                        help="If all, the plotting scripts will use triggers" +
-                        "from all short slides.")
+                        help="Select a specific slide or set to all to plot " +
+                        "results from all short slides.")
 
 
 def slide_opts_helper(args):
@@ -190,14 +182,15 @@ def pygrb_add_bestnr_cut_opt(parser):
         parser = argparse.ArgumentParser()
     parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                         default=0.,
-                        help="Cut triggers with NewSNR less than THRESHOLD" +
+                        help="Cut triggers with NewSNR less than THRESHOLD. " +
                         "Default 0: all events are considered.")
 
 
 # =============================================================================
-# Wrapper to pick triggers with certain slide_ids
+# Wrapper to pick triggers with a given slide_id
 # =============================================================================
-def slide_filter(trig_file, data, slide_id=None):
+# Underscore starts name of functions not called outside this file
+def _slide_filter(trig_file, data, slide_id=None):
     """
     This function adds the capability to select triggers with specific
     slide_ids during the postprocessing stage of PyGRB.
@@ -214,12 +207,13 @@ def slide_filter(trig_file, data, slide_id=None):
 def _read_seg_files(seg_files):
     """Read segments txt files"""
 
-    if len(seg_files) != 3 or seg_files is None:
+    if len(seg_files) != 3:
         err_msg = "The location of three segment files is necessary."
         err_msg += "[bufferSeg.txt, offSourceSeg.txt, onSourceSeg.txt]"
         raise RuntimeError(err_msg)
 
     times = {}
+    # Needs to be in this order for consistency with build_segment_filelist
     keys = ["buffer", "off", "on"]
 
     for key, seg_file in zip(keys, seg_files):
@@ -233,126 +227,30 @@ def _read_seg_files(seg_files):
 
 
 # =============================================================================
-# Function to load a table from an xml file
-# =============================================================================
-def load_xml_table(file_name, table_name):
-    """Load xml table from file."""
-
-    xml_doc = utils.load_filename(
-        file_name,
-        compress='auto',
-        contenthandler=glsctables.use_in(LIGOLWContentHandler)
-    )
-    return Table.get_table(xml_doc, table_name)
-
-
-# =============================================================================
-# Function to load segments from an xml file
-# =============================================================================
-def _load_segments_from_xml(xml_doc, return_dict=False, select_id=None):
-    """Read a ligo.segments.segmentlist from the file object file containing an
-    xml segment table.
-
-    Parameters
-    ----------
-        xml_doc: name of segment xml file
-
-        Keyword Arguments:
-            return_dict : [ True | False ]
-                return a ligo.segments.segmentlistdict containing coalesced
-                ligo.segments.segmentlists keyed by seg_def.name for each entry
-                in the contained segment_def_table. Default False
-            select_id : int
-                return a ligo.segments.segmentlist object containing only
-                those segments matching the given segment_def_id integer
-
-    """
-
-    # Load SegmentDefTable and SegmentTable
-    seg_def_table = load_xml_table(xml_doc,
-                                   glsctables.SegmentDefTable.tableName)
-    seg_table = load_xml_table(xml_doc, glsctables.SegmentTable.tableName)
-
-    if return_dict:
-        segs = segments.segmentlistdict()
-    else:
-        segs = segments.segmentlist()
-
-    seg_id = {}
-    for seg_def in seg_def_table:
-        seg_id[int(seg_def.segment_def_id)] = str(seg_def.name)
-        if return_dict:
-            segs[str(seg_def.name)] = segments.segmentlist()
-
-    for seg in seg_table:
-        if return_dict:
-            segs[seg_id[int(seg.segment_def_id)]]\
-                .append(segments.segment(seg.start_time, seg.end_time))
-            continue
-        if select_id and int(seg.segment_def_id) == select_id:
-            segs.append(segments.segment(seg.start_time, seg.end_time))
-            continue
-        segs.append(segments.segment(seg.start_time, seg.end_time))
-
-    if return_dict:
-        for seg_name in seg_id.values():
-            segs[seg_name] = segs[seg_name].coalesce()
-    else:
-        segs = segs.coalesce()
-
-    return segs
-
-
-# =============================================================================
 # Function to extract vetoes
 # =============================================================================
-def _extract_vetoes(all_veto_files, ifos, veto_cat):
-    """Extracts vetoes from veto filelist"""
+def _extract_vetoes(veto_file, ifos, offsource):
+    """Extracts the veto segments from the veto File"""
 
-    if all_veto_files and (veto_cat is None):
-        err_msg = "Must supply veto category to apply vetoes."
-        raise RuntimeError(err_msg)
-
-    # Initialize veto containers
+    clean_segs = {}
     vetoes = segments.segmentlistdict()
-    for ifo in ifos:
-        vetoes[ifo] = segments.segmentlist()
 
-    veto_files = []
-    veto_cats = range(2, veto_cat+1)
-    for cat in veto_cats:
-        veto_files += [vf for vf in all_veto_files if "CAT"+str(cat) in vf]
-    n_found = len(veto_files)
-    n_expected = len(ifos)*len(veto_cats)
-    if n_found != n_expected:
-        err_msg = f"Found {n_found} veto files instead of the expected "
-        err_msg += f"{n_expected}; check the options."
-        raise RuntimeError(err_msg)
+    if veto_file:
+        for ifo in ifos:
+            segs = veto.select_segments_by_definer(veto_file, ifo=ifo)
+            segs.coalesce()
+            clean_segs[ifo] = segs
 
-    # Construct veto list from veto filelist
-    if veto_files:
-        for veto_file in veto_files:
-            ifo = os.path.basename(veto_file)[:2]
-            if ifo in ifos:
-                # This returns a coalesced list of the vetoes
-                tmp_veto_segs = _load_segments_from_xml(veto_file)
-                for entry in tmp_veto_segs:
-                    vetoes[ifo].append(entry)
-    for ifo in ifos:
-        vetoes[ifo].coalesce()
+    if clean_segs:
+        for ifo in ifos:
+            vetoes[ifo] = segments.segmentlist([offsource]) - clean_segs[ifo]
+        vetoes.coalesce()
+        for ifo in ifos:
+            for v in vetoes[ifo]: 
+                v_span = v[1] - v[0]
+                logging.info(f"{v_span}s of data vetoed at GPS time {v[0]}")
 
     return vetoes
-
-
-# =============================================================================
-# Function to get the ID numbers from a LIGO-LW table
-# =============================================================================
-def _get_id_numbers(ligolw_table, column):
-    """Grab the IDs of a LIGO-LW table"""
-
-    ids = [int(getattr(row, column)) for row in ligolw_table]
-
-    return ids
 
 
 # =============================================================================
@@ -362,7 +260,7 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
     """Build a dictionary (indexed by ifo) of time-slid vetoes"""
 
     # Copy vetoes
-    if vetoes is not None:
+    if vetoes:
         slid_vetoes = copy.deepcopy(vetoes)
         # Slide them
         for ifo in ifos:
@@ -373,25 +271,25 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
     return slid_vetoes
 
 
-#
-# Used (also) in executables
-#
+# =============================================================================
+# Recursive function to reach all datasets in an HDF file handle 
+# =============================================================================
+def _dataset_iterator(g, prefix=''):
+    """Reach all datasets in an HDF file handle"""
+
+    for key, item in g.items():
+        # Avoid slash as first character
+        pref = prefix[1:] if prefix.startswith('/') else prefix
+        path = pref + '/' + key
+        if isinstance(item, h5py.Dataset):
+            yield (path, item)
+        elif isinstance(item, h5py.Group):
+            yield from _dataset_iterator(item, path)
+
 
 # =============================================================================
 # Functions to load triggers
 # =============================================================================
-def dataset_iterator(g, prefix=''):
-    """Reach all datasets in and HDF file"""
-
-    for key, item in g.items():
-        # Avoid slash as first character
-        path = prefix[1:] + '/' + key
-        if isinstance(item, h5py.Dataset):
-            yield (path, item)
-        elif isinstance(item, h5py.Group):
-            yield from dataset_iterator(item, path)
-
-
 def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
                   slide_id=None):
     """Loads triggers from PyGRB output file, returning a dictionary"""
@@ -403,10 +301,6 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
     for ifo in ifos:
         ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
     trigs.close()
-
-    if vetoes is not None:
-        # Developers: see PR 3972 for previous implementation
-        raise NotImplementedError
 
     # Apply the reweighted SNR cut on the reweighted SNR
     if rw_snr_threshold is not None:
@@ -485,7 +379,8 @@ def get_antenna_dist_factor(antenna, ra, dec, geocent_time, inc=0.0):
 # Construct sorted triggers from trials
 # =============================================================================
 def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
-    """Constructs sorted triggers from a trials dictionary"""
+    """Constructs sorted triggers from a trials dictionary for the slides
+    requested via slide_dict."""
 
     sorted_trigs = {}
 
@@ -494,7 +389,8 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
         sorted_trigs[slide_id] = []
     for slide_id, event_id in zip(trigs['network/slide_id'],
                                   trigs['network/event_id']):
-        sorted_trigs[slide_id].append(event_id)
+        if slide_id in slide_dict:
+            sorted_trigs[slide_id].append(event_id)
 
     for slide_id in slide_dict:
         # These can only *reduce* the analysis time
@@ -518,17 +414,27 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
         # END OF CHECK #
 
         # Keep triggers that are in trial_dict
+        num_trigs_before = len(sorted_trigs[slide_id])
         sorted_trigs[slide_id] = [event_id for event_id in
                                   sorted_trigs[slide_id]
                                   if trigs['network/end_time_gc'][
                                       trigs['network/event_id'] == event_id][0]
                                   in trial_dict[slide_id]]
 
+        # Check that the number of triggers has not increased after vetoes
+        if num_trigs_before < len(sorted_trigs[slide_id]):
+            err_msg = f"In slide {slide_id}, {num_trigs_before} triggers "
+            err_msg += f"before the trials dictionary was used and "
+            err_msg += f"{len(sorted_trigs[slide_id])} after. "
+            err_msg += "This should not happen."
+            raise RuntimeError(err_msg)
+        # END OF CHECK #
+
     return sorted_trigs
 
 
 # =============================================================================
-# Extract basic trigger properties and store them as dictionaries
+# Extract trigger properties and store them as dictionaries
 # =============================================================================
 def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
                                   opts):
@@ -567,8 +473,8 @@ def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
 # =============================================================================
 # Function to extract ifos from hdfs
 # =============================================================================
-def extract_ifos(trig_file):
-    """Extracts IFOs from hdf file"""
+def extract_ifos(trig_file, ifo=None):
+    """Extracts IFOs from hdf file and checks for presence of a specific IFO"""
 
     # Load hdf file
     hdf_file = HFile(trig_file, 'r')
@@ -576,31 +482,17 @@ def extract_ifos(trig_file):
     # Extract IFOs
     ifos = sorted(list(hdf_file.keys()))
 
-    # Remove 'network' key from list of ifos
-    if 'network' in ifos:
-        ifos.remove('network')
+    # Remove unwanted keys from key list to reduce it to the ifos
+    for key in ['network', 'found', 'missed']:
+        if key in ifos:
+            ifos.remove(key)
+
+    # Exit gracefully if the requested IFO is not available
+    if ifo and ifo not in ifos:
+        err_msg = "The IFO selected with --ifo is unavailable in the data."
+        raise RuntimeError(err_msg)
 
     return ifos
-
-
-# =============================================================================
-# Function to extract IFOs and vetoes
-# =============================================================================
-def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
-    """Extracts IFOs from HDF files and vetoes from a directory"""
-
-    logger.info("Extracting IFOs and vetoes.")
-
-    # Extract IFOs
-    ifos = extract_ifos(trig_file)
-
-    # Extract vetoes
-    if veto_files is not None:
-        vetoes = _extract_vetoes(veto_files, ifos, veto_cat)
-    else:
-        vetoes = None
-
-    return ifos, vetoes
 
 
 # =============================================================================
@@ -608,6 +500,7 @@ def extract_ifos_and_vetoes(trig_file, veto_files, veto_cat):
 # =============================================================================
 def load_time_slides(hdf_file_path):
     """Loads timeslides from PyGRB output file as a dictionary"""
+    logging.info("Loading timeslides.")
     hdf_file = HFile(hdf_file_path, 'r')
     ifos = extract_ifos(hdf_file_path)
     ids = numpy.arange(len(hdf_file[f'{ifos[0]}/search/time_slides']))
@@ -640,6 +533,8 @@ def load_segment_dict(hdf_file_path):
     Loads the segment dictionary with the format
     {slide_id: segmentlist(segments analyzed)}
     """
+
+    logging.info("Loading segments.")
 
     # Long time slides will require mapping between slides and segments
     hdf_file = HFile(hdf_file_path, 'r')
@@ -710,7 +605,10 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
 
                 iter_int += 1
 
-    return trial_dict
+    total_trials = sum([len(trial_dict[slide_id]) for slide_id in slide_dict])
+    logging.info(f"{total_trials} trials generated.")
+
+    return trial_dict, total_trials
 
 
 # =============================================================================
@@ -730,7 +628,7 @@ def sort_stat(time_veto_max_stat):
 # Find max and median of loudest SNRs or BestNRs
 # =============================================================================
 def max_median_stat(slide_dict, time_veto_max_stat, trig_stat, total_trials):
-    """Deterine the maximum and median of the loudest SNRs/BestNRs"""
+    """Return maximum and median of trig_stat and sorted time_veto_max_stat"""
 
     max_stat = max([trig_stat[slide_id].max() if trig_stat[slide_id].size
                    else 0 for slide_id in slide_dict])
@@ -776,9 +674,12 @@ def mc_cal_wf_errs(num_mc_injs, inj_dists, cal_err, wf_err, max_dc_cal_err):
 def get_coinc_snr(trigs_or_injs):
     """ Calculate coincident SNR using coherent and null SNRs"""
 
-    coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
-    null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
-    coinc_snr = numpy.sqrt(coh_snr_sq + null_snr_sq)
+    coinc_snr = numpy.array([])
+    if 'network/coherent_snr' in trigs_or_injs.keys() and \
+        'network/null_snr' in trigs_or_injs.keys():
+        coh_snr_sq = numpy.square(trigs_or_injs['network/coherent_snr'][:])
+        null_snr_sq = numpy.square(trigs_or_injs['network/null_snr'][:])
+        coinc_snr = numpy.sqrt(coh_snr_sq + null_snr_sq)
 
     return coinc_snr
 
