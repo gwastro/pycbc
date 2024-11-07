@@ -628,9 +628,8 @@ def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
         src_type = 'offsource-trigs'
         if on_file:
             src_type = 'onsource-trig'
-            # Onsource input file (passed as File instance)
-            onsource_file = on_file
-            node.add_input_opt('--onsource-file', onsource_file)
+            # Pass onsource input File instance
+            node.add_input_opt('--onsource-file', on_file)
         # Loudest offsource/onsource triggers html and h5 output files
         src_type_tags = [src_type.upper().replace('-', '_')]
         node.new_output_file_opt(workflow.analysis_time, '.html',
