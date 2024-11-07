@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2015 Andrew R. Williamson
+# Copyright (C) 2015 Andrew R. Williamson, Francesco Pannarale
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -79,7 +79,6 @@ sciSegsFile = _workflow.get_segments_file(wflow,
                                           'science',
                                           'segments-science',
                                           seg_dir)
-
 sciSegs = {}
 for ifo in wflow.ifos:
     sciSegs[ifo] = sciSegsFile.segment_dict[ifo+':science']
@@ -130,14 +129,15 @@ else:
 
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
-    plot_met = make_grb_segments_plot(wflow, sciSegs, triggertime, triggername,
-                                      seg_dir, fail_criterion=offSrc)
+    plot_met = make_grb_segments_plot(
+        wflow, segmentlistdict(), triggertime, triggername,
+        seg_dir, fail_criterion=offSrc)
     logging.info("Making segment plot and exiting.")
     sys.exit()
 else:
     plot_met = make_grb_segments_plot(
-            wflow, sciSegs, triggertime, triggername, seg_dir,
-            coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
+        wflow, sciSegs, triggertime, triggername, seg_dir,
+        coherent_seg=offSrc[tuple(offSrc.keys())[0]][0])
     segs_plot = _workflow.File(plot_met[0], plot_met[1], plot_met[2],
                                file_url=plot_met[3])
     segs_plot.add_pfn(segs_plot.cache_entry.path, site="local")
@@ -193,9 +193,11 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
                                            int(sciSegs[ifo][0][1]))
 
 ifos = sorted(sciSegs.keys())
-ifo = ifos[0]
 wflow.ifos = ifos
 datafind_veto_files = _workflow.FileList([])
+
+# Convenience variable to operate on sciSegs within this executable
+ifo = ifos[0]
 
 # GATING
 if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
@@ -234,12 +236,17 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
         gated_frames.convert_to_lal_cache().tofile(
                             open(gated_cache.storage_path, "w"))
         datafind_files.append(gated_cache)
-
 datafind_veto_files.extend(datafind_files)
-ifo_list = sorted(sciSegs.keys())
-ifo = ifo_list[0]
-ifos = ''.join(ifo_list)
-wflow.ifos = ifos
+
+# Retrieve vetoes
+veto_file = None
+if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
+    veto_file = _workflow.get_segments_file(wflow,
+                                            'vetoes', 
+                                            'segments-vetoes',
+                                            seg_dir,
+                                            tags=['veto'])
+    datafind_veto_files.append(veto_file)
 
 # Config file consistency check for IPN GRBs
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
@@ -262,6 +269,7 @@ else:
 if wflow.cp.has_option('workflow-inspiral', 'bank-veto-bank-file'):
     bank_veto_file = configparser_value_to_file(wflow.cp, 'workflow-inspiral',
                                                 'bank-veto-bank-file')
+    bank_veto_file.description += '_BANK_VETO_BANK'
     bank_veto_file = _workflow.FileList([bank_veto_file])
     datafind_veto_files.extend(bank_veto_file)
 
@@ -453,7 +461,8 @@ if post_proc_method == "PYGRB_OFFLINE":
                                                                clustered_files,
                                                                inj_find_files,
                                                                full_bank_file,
-                                                               seg_dir)
+                                                               seg_dir,
+                                                               veto_file=veto_file)
         logging.info('Leaving results module')
 
 all_files.extend(pp_files)
