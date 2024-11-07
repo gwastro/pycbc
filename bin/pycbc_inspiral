@@ -25,7 +25,6 @@ import numpy
 import itertools
 import time
 from pycbc.pool import BroadcastPool as Pool
-from icecream import ic
 
 import pycbc
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
@@ -436,7 +435,7 @@ with ctx:
                                  maximal_value_dof=opt.autochi_max_valued_dof)
 
     logging.info("Overwhitening frequency-domain data segments")
-    for inc, seg in enumerate(segments):
+    for  seg in segments:
         seg /= seg.psd
 
     logging.info("Read in template bank")
