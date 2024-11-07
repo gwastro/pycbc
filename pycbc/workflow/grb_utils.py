@@ -490,8 +490,7 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
     # Pass the injection file as an input File instance
     if inj_file is not None and exec_name not in \
             ['pygrb_plot_skygrid', 'pygrb_plot_stats_distribution']:
-        fm_file = inj_file
-        node.add_input_opt('--found-missed-file', fm_file)
+        node.add_input_opt('--found-missed-file', inj_file)
     # IFO option
     if ifo:
         node.add_opt('--ifo', ifo)
@@ -611,8 +610,7 @@ def make_pygrb_injs_tables(workflow, out_dir, bank_file, off_file, seg_files,
     # Handle input/output for injections
     if inj_file:
         # Found-missed injection file (passed as File instance)
-        fm_file = inj_file
-        node.add_input_opt('--found-missed-file', fm_file)
+        node.add_input_opt('--found-missed-file', inj_file)
         # Missed-found and quiet-found injections html output files
         for mf_or_qf in ['missed-found', 'quiet-found']:
             mf_or_qf_tags = [mf_or_qf.upper().replace('-', '_')]
