@@ -1869,7 +1869,10 @@ def jittering_distance_lognormal(prev_dist, amp_cal_error, phase_cal_error):
     mu = prev_dist * (1 + 0.5 * numpy.deg2rad(phase_cal_error)**2)
     sigma = (amp_cal_error / 100) * prev_dist
 
-    return numpy.log(numpy.random.lognormal(mu, sigma))
+    mu_log = np.log((mu**2)/(np.sqrt(mu**2 + sigma**2)))
+    sigma_log = np.sqrt(np.log(1+(sigma**2)/mu**2)) 
+
+    return numpy.random.lognormal(mu_log, sigma_log)
 
 __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'lambda_from_mass_tov_file', 'primary_mass',
