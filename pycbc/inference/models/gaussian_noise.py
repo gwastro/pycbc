@@ -1202,7 +1202,7 @@ def create_waveform_generator(
         raise ValueError("no approximant provided in the static args")
 
     dm = static_params.get('preferred_domain', None)
-    if dm == 'None':
+    if dm.lower() == 'none':
         dm = None
 
     gen_function = generator_class.select_rframe_generator(approximant, dm)

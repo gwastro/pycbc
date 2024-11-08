@@ -1097,11 +1097,11 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         return h
 
     @staticmethod
-    def select_rframe_generator(approximant):
+    def select_rframe_generator(approximant,domain):
         """Returns a radiation frame generator class based on the approximant
         string.
         """
-        return select_waveform_modes_generator(approximant)
+        return select_waveform_modes_generator(approximant,domain)
 
 
 class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
@@ -1199,6 +1199,27 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
 #
 
 
+# Updated code to make the logic clearer and simplify decision-making based on the domain
+
+def get_td_generator(approximant, modes=False):
+    """Returns the time-domain generator for the given approximant."""
+    if approximant in waveform.td_approximants():
+        return TDomainCBCModesGenerator if modes else TDomainCBCGenerator
+    if approximant in ringdown.ringdown_td_approximants:
+        return TDomainMassSpinRingdownGenerator if approximant == 'TdQNMfromFinalMassSpin' else TDomainFreqTauRingdownGenerator
+    if approximant in supernovae.supernovae_td_approximants:
+        return TDomainSupernovaeGenerator
+    raise ValueError(f"No time-domain generator found for approximant: {approximant}")
+
+def get_fd_generator(approximant, modes=False):
+    """Returns the frequency-domain generator for the given approximant."""
+    if approximant in waveform.fd_approximants():
+        return FDomainCBCModesGenerator if modes else FDomainCBCGenerator
+    if approximant in ringdown.ringdown_fd_approximants:
+        return FDomainMassSpinRingdownGenerator if approximant == 'FdQNMfromFinalMassSpin' else FDomainFreqTauRingdownGenerator
+    raise ValueError(f"No frequency-domain generator found for approximant: {approximant}")
+
+
 def select_waveform_generator(approximant, domain=None):
     """Returns the single-IFO generator for the approximant.
 
@@ -1230,59 +1251,20 @@ def select_waveform_generator(approximant, domain=None):
     >>> select_waveform_generator(waveform.fd_approximants()[0])
     """
 
-    generator_map = {
-        'fd': {
-            'cbc': FDomainCBCGenerator,
-            'ringdown': {
-                'FdQNMfromFinalMassSpin': FDomainMassSpinRingdownGenerator,
-                'FdQNMfromFreqTau': FDomainFreqTauRingdownGenerator,
-            }
-        },
-        'td': {
-            'cbc': TDomainCBCGenerator,
-            'ringdown': {
-                'TdQNMfromFinalMassSpin': TDomainMassSpinRingdownGenerator,
-                'TdQNMfromFreqTau': TDomainFreqTauRingdownGenerator,
-            },
-            'supernovae': {
-                'CoreCollapseBounce': TDomainSupernovaeGenerator
-            }
-        }
-    }
-
-    gen = None
     if domain not in {None, 'td', 'fd'}:
         raise ValueError(f"Invalid domain '{domain}'. Must be one of: None, 'td', or 'fd'.")
 
-    # Check if the approximant exists in any domain
-    if approximant in waveform.fd_approximants():
-        if domain == 'fd' or domain is None:
-            gen = generator_map['fd']['cbc']
-        elif domain == 'td' and approximant in waveform.td_approximants():
-            gen = generator_map['td']['cbc']
-        elif domain == 'td':
-            raise ValueError(f"Requested domain is 'td', but {approximant} is a frequency-domain model.")
-    elif approximant in waveform.td_approximants():
-        if domain == 'td' or domain is None:
-            gen = generator_map['td']['cbc']
-        elif domain == 'fd' and approximant in waveform.fd_approximants():
-            gen = generator_map['fd']['cbc']
-        elif domain == 'fd':
-            raise ValueError(f"Requested domain is 'fd', but {approximant} is a time-domain model.")
-    elif approximant in ringdown.ringdown_fd_approximants:
-        gen = generator_map['fd']['ringdown'].get(approximant, None)
-    elif approximant in ringdown.ringdown_td_approximants:
-        gen = generator_map['td']['ringdown'].get(approximant, None)
-    elif approximant in supernovae.supernovae_td_approximants:
-        gen = generator_map['td']['supernovae'].get(approximant, None)
+    if domain == 'td':
+        return get_td_generator(approximant)
+    elif domain == 'fd':
+        return get_fd_generator(approximant)
+    elif domain is None:
+        try:
+            return get_fd_generator(approximant)
+        except ValueError:
+            return get_td_generator(approximant)
 
-    if gen is None:
-        raise ValueError(f"{approximant} is not a valid approximant.")
-
-    return gen
-
-
-def select_waveform_modes_generator(approximant):
+def select_waveform_modes_generator(approximant, domain=None):
     """Returns the single-IFO modes generator for the approximant.
 
     Parameters
@@ -1290,17 +1272,25 @@ def select_waveform_modes_generator(approximant):
     approximant : str
         Name of waveform approximant. Valid names can be found using
         ``pycbc.waveform`` methods.
+    domain : str or None
+        Name of the preferred waveform domain
+        ('td' for time domain, 'fd' for frequency domain, None for default)
 
     Returns
     -------
     generator : (PyCBC generator instance)
-        A waveform generator object.
+        A waveform modes generator object.
     """
-    # check if frequency-domain CBC waveform
-    if approximant in waveform.fd_approximants():
-        return FDomainCBCModesGenerator
-    # check if time-domain CBC waveform
-    elif approximant in waveform.td_approximants():
-        return TDomainCBCModesGenerator
-    # otherwise waveform approximant is not supported
-    raise ValueError("%s is not a valid approximant." % approximant)
+
+    if domain not in {None, 'td', 'fd'}:
+        raise ValueError(f"Invalid domain '{domain}'. Must be one of: None, 'td', or 'fd'.")
+
+    if domain == 'td':
+        return get_td_generator(approximant, modes=True)
+    elif domain == 'fd':
+        return get_fd_generator(approximant, modes=True)
+    elif domain is None:
+        try:
+            return get_fd_generator(approximant, modes=True)
+        except ValueError:
+            return get_td_generator(approximant, modes=True)
