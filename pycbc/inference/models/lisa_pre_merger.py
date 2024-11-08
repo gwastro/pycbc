@@ -101,6 +101,7 @@ class LISAPreMergerModel(BaseModel):
         self.sample_rate = sample_rate
         self.cutoff_time = cutoff_time
         self.extra_forward_zeroes = extra_forward_zeroes
+        self.tlen = tlen
 
         # Load the data from the file
         data = {}
@@ -145,6 +146,21 @@ class LISAPreMergerModel(BaseModel):
         
         Note: `params` should already include the static parameters.
         """
+        dt = params["tc"] - self._epoch
+        # Time between the end of the data and the time of coalescence
+        dt_end = params.get("cutoff_deltat", self.tlen - dt)
+        # Actual time between the end of the data and the cutoff time
+        # since cutoff time is specified relative to the merger
+        cutoff_time = self.cutoff_time - dt_end
+        # Additional zeros at the beginning of the data, these:
+        # - manually specified zeroes
+        # - kernel length zeros
+        # - zeros that will be wrapped around when the data is shifted
+        forward_zeroes = (
+            self.extra_forward_zeroes
+            + self.kernel_length
+            + int(dt_end * self.sample_rate)
+        )
         # Generate the pre-merger waveform
         # These waveforms are whitened
         # Uses UIDs: 1235(0), 1236(0)
@@ -153,15 +169,14 @@ class LISAPreMergerModel(BaseModel):
             psds_for_whitening=self.whitening_psds,
             window_length=self.window_length,
             sample_rate=self.sample_rate,
-            cutoff_time=self.cutoff_time,
-            forward_zeroes=self.extra_forward_zeroes + self.kernel_length,
+            cutoff_time=cutoff_time,
+            forward_zeroes=forward_zeroes,
         )
 
         wf = {}
         # Adjust epoch to match data and shift merger to the
         # correct time.
         # Can safely set copy=False since ws won't be used again.
-        dt = params["tc"] - self._epoch
         for channel in ws.keys():
             wf[channel] = apply_fseries_time_shift(
                 ws[channel], dt, copy=False,
