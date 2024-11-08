@@ -1097,11 +1097,11 @@ class FDomainDetFrameModesGenerator(BaseFDomainDetFrameGenerator):
         return h
 
     @staticmethod
-    def select_rframe_generator(approximant,domain):
+    def select_rframe_generator(approximant, domain):
         """Returns a radiation frame generator class based on the approximant
         string.
         """
-        return select_waveform_modes_generator(approximant,domain)
+        return select_waveform_modes_generator(approximant, domain)
 
 
 class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
