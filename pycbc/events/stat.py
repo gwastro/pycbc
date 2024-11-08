@@ -930,6 +930,8 @@ class ExpFitStatistic(PhaseTDStatistic):
         self.fits_by_tid = {}
         for i in self.bg_ifos:
             self.fits_by_tid[i] = self.assign_fits(i)
+            if self.kwargs["normalize_fit_rate"]:
+                self.reassign_rate(i)
 
         # These are important for the coinc_lim_for_thresh method
         # Is the single threshold a < or > limit?
@@ -945,6 +947,11 @@ class ExpFitStatistic(PhaseTDStatistic):
         )
         self.min_stat = float(
             self.kwargs.get("minimum_statistic_cutoff", -30.0)
+        )
+
+        # Modifier to get a sensible value of the fit slope below threshold
+        self.alphabelow = float(
+            self.kwargs.get("alpha_below_thresh", numpy.inf)
         )
 
         # This will be used to keep track of the template number being used
@@ -967,14 +974,20 @@ class ExpFitStatistic(PhaseTDStatistic):
             # Reweight the noise rate by the dq reweighting factor
             self.dq_rates_by_state = {}
             self.dq_bin_by_tid = {}
-            self.dq_state_segments = {}
+            self.dq_state_segments = None
+            self.low_latency = False
+            self.single_dtype.append(('dq_state', int))
 
             for ifo in self.ifos:
                 key = f"{ifo}-dq_stat_info"
                 if key in self.files.keys():
                     self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
                     self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
-                    self.dq_state_segments[ifo] = self.setup_segments(key)
+                    self.check_low_latency(key)
+                    if not self.low_latency:
+                        if self.dq_state_segments is None:
+                            self.dq_state_segments = {}
+                        self.dq_state_segments[ifo] = self.setup_segments(key)
 
         if self.kwargs["chirp_mass"]:
             # Reweight the signal rate by the chirp mass of the template
@@ -1049,9 +1062,7 @@ class ExpFitStatistic(PhaseTDStatistic):
 
     def setup_segments(self, key):
         """
-        Check if segments definitions are in stat file
-        If they are, we are running offline and need to store them
-        If they aren't, we are running online
+        Store segments from stat file
         """
         ifo = key.split("-")[0]
         with h5py.File(self.files[key], "r") as dq_file:
@@ -1059,9 +1070,8 @@ class ExpFitStatistic(PhaseTDStatistic):
             dq_state_segs_dict = {}
             for k in ifo_grp["dq_segments"].keys():
                 seg_dict = {}
-                seg_dict["start"] = ifo_grp[f"dq_segments/{k}/segment_starts"][
-                    :
-                ]
+                seg_dict["start"] = \
+                    ifo_grp[f"dq_segments/{k}/segment_starts"][:]
                 seg_dict["end"] = ifo_grp[f"dq_segments/{k}/segment_ends"][:]
                 dq_state_segs_dict[k] = seg_dict
 
@@ -1070,23 +1080,15 @@ class ExpFitStatistic(PhaseTDStatistic):
     def find_dq_noise_rate(self, trigs, dq_state):
         """Get dq values for a specific ifo and dq states"""
 
-        try:
-            ifo = trigs.ifo
-        except AttributeError:
-            ifo = trigs["ifo"]
-            assert len(numpy.unique(ifo)) == 1
-            # Should be exactly one ifo provided
-            ifo = ifo[0]
+        dq_val = numpy.ones(len(dq_state))
 
-        dq_val = numpy.zeros(len(dq_state))
-
-        if ifo in self.dq_rates_by_state:
+        if self.curr_ifo in self.dq_rates_by_state:
             for i, st in enumerate(dq_state):
                 if isinstance(self.curr_tnum, numpy.ndarray):
-                    bin_name = self.dq_bin_by_tid[ifo][self.curr_tnum[i]]
+                    bin_name = self.dq_bin_by_tid[self.curr_ifo][self.curr_tnum[i]]
                 else:
-                    bin_name = self.dq_bin_by_tid[ifo][self.curr_tnum]
-                dq_val[i] = self.dq_rates_by_state[ifo][bin_name][st]
+                    bin_name = self.dq_bin_by_tid[self.curr_ifo][self.curr_tnum]
+                dq_val[i] = self.dq_rates_by_state[self.curr_ifo][bin_name][st]
         return dq_val
 
     def find_dq_state_by_time(self, ifo, times):
@@ -1102,6 +1104,53 @@ class ExpFitStatistic(PhaseTDStatistic):
                 # states are named in file as 'dq_state_N', need to extract N
                 dq_state[inds] = int(k[9:])
         return dq_state
+
+    def check_low_latency(self, key):
+        """
+        Check if the statistic file indicates low latency mode.
+        Parameters
+        ----------
+        key: str
+            Statistic file key string.
+        Returns
+        -------
+        None
+        """
+        ifo = key.split('-')[0]
+        with h5py.File(self.files[key], 'r') as dq_file:
+            ifo_grp = dq_file[ifo]
+            if 'dq_segments' not in ifo_grp.keys():
+                # if segs are not in file, we must be in LL
+                if self.dq_state_segments is not None:
+                    raise ValueError(
+                        'Either all dq stat files must have segments or none'
+                    )
+                self.low_latency = True
+            elif self.low_latency:
+                raise ValueError(
+                    'Either all dq stat files must have segments or none'
+                )
+
+    def reassign_rate(self, ifo):
+        """
+        Reassign the rate to be number per time rather than an arbitrarily
+        normalised number.
+
+        Parameters
+        -----------
+        ifo: str
+            The ifo to consider.
+        """
+        with h5py.File(self.files[f'{ifo}-fit_coeffs'], 'r') as coeff_file:
+            analysis_time = float(coeff_file.attrs['analysis_time'])
+            fbt = 'fit_by_template' in coeff_file
+
+        self.fits_by_tid[ifo]['smoothed_rate_above_thresh'] /= analysis_time
+        self.fits_by_tid[ifo]['smoothed_rate_in_template'] /= analysis_time
+        # The by-template fits may have been stored in the smoothed fits file
+        if fbt:
+            self.fits_by_tid[ifo]['fit_by_rate_above_thresh'] /= analysis_time
+            self.fits_by_tid[ifo]['fit_by_rate_in_template'] /= analysis_time
 
     def assign_fits(self, ifo):
         """
@@ -1152,13 +1201,6 @@ class ExpFitStatistic(PhaseTDStatistic):
                 "count_in_template"
             ][:][tid_sort].astype(float)
 
-        if self.kwargs["normalize_fit_rate"]:
-            analysis_time = float(coeff_file.attrs["analysis_time"])
-            fits_by_tid_dict["smoothed_rate_above_thresh"] /= analysis_time
-            fits_by_tid_dict["smoothed_rate_in_template"] /= analysis_time
-            if "fit_by_template" in coeff_file:
-                fits_by_tid_dict["fit_by_rate_above_thresh"] /= analysis_time
-                fits_by_tid_dict["fit_by_rate_in_template"] /= analysis_time
 
         # Keep the fit threshold in fits_by_tid
         fits_by_tid_dict["thresh"] = coeff_file.attrs["stat_threshold"]
@@ -1173,11 +1215,18 @@ class ExpFitStatistic(PhaseTDStatistic):
         If others are used (i.e. this statistic is inherited), they will
         need updated separately
         """
+        # First - check if the phasetd file has been updated, this is
+        # inherited from the PhaseTDStatistic
+        if PhaseTDStatistic.update_file(self, key):
+            return True
+
         if key.endswith('-fit_coeffs'):
             # This is a ExpFitStatistic file which needs updating
             # Which ifo is it?
             ifo = key[:2]
             self.fits_by_tid[ifo] = self.assign_fits(ifo)
+            if self.kwargs["normalize_fit_rate"]:
+                self.reassign_rate(ifo)
             self.get_ref_vals(ifo)
             logger.info(
                 "Updating %s statistic %s file",
@@ -1185,6 +1234,30 @@ class ExpFitStatistic(PhaseTDStatistic):
                 key
             )
             return True
+
+        # Is the key a KDE statistic file that we update here?
+        if key.endswith('kde_file'):
+            logger.info(
+                "Updating %s statistic %s file",
+                ''.join(self.ifos),
+                key
+            )
+            kde_style = key.split('-')[0]
+            self.assign_kdes(kde_style)
+            return True
+
+        # We also need to check if the DQ files have updated
+        if key.endswith('dq_stat_info'):
+            ifo = key.split('-')[0]
+            logger.info(
+                "Updating %s statistic %s file",
+                ifo,
+                key
+            )
+            self.dq_rates_by_state[ifo] = self.assign_dq_rates(key)
+            self.dq_bin_by_tid[ifo] = self.assign_template_bins(key)
+            return True
+
         return False
 
     def get_ref_vals(self, ifo):
@@ -1311,38 +1384,16 @@ class ExpFitStatistic(PhaseTDStatistic):
             + numpy.log(ratei)
         )
 
-        alphabelow = self.kwargs.get("alpha_below_thresh", 6.0)
-        try:
-            alphabelow = float(alphabelow)
+        if not numpy.isinf(self.alphabelow):
             # Above the threshold we use the usual fit coefficient (alphai)
             # below threshold use specified alphabelow
             bt = sngl_stat < thresh
             lognoiselbt = (
-                -alphabelow * (sngl_stat - thresh)
-                + numpy.log(alphabelow)
+                -self.alphabelow * (sngl_stat - thresh)
+                + numpy.log(self.alphabelow)
                 + numpy.log(ratei)
             )
             lognoisel[bt] = lognoiselbt[bt]
-        except ValueError:
-            # The float conversion will raise this if passed e.g. 'None'
-            # In that case we simply use the fit value everywhere
-            pass
-
-        if self.kwargs["dq"]:
-            # Reweight the lognoiserate things by the dq reweighting factor
-            # make sure every trig has a dq state
-            try:
-                ifo = trigs.ifo
-            except AttributeError:
-                ifo = trigs["ifo"]
-                assert len(numpy.unique(ifo)) == 1
-                # Should be exactly one ifo provided
-                ifo = ifo[0]
-
-            dq_state = self.find_dq_state_by_time(ifo, trigs["end_time"][:])
-            dq_rate = self.find_dq_noise_rate(trigs, dq_state)
-            dq_rate = numpy.maximum(dq_rate, 1)
-            lognoisel += numpy.log(dq_rate)
 
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
@@ -1364,11 +1415,20 @@ class ExpFitStatistic(PhaseTDStatistic):
             The array of single detector values
         """
 
+        try:
+            self.curr_ifo = trigs.ifo
+        except AttributeError:
+            self.curr_ifo = trigs.get('ifo', None)
+            if self.curr_ifo is None:
+                self.curr_ifo = self.ifos[0]
+            assert self.curr_ifo in self.ifos
+            # Should be exactly one ifo provided
+            assert len(numpy.unique(self.curr_ifo)) == 1
+
         # single-ifo stat = log of noise rate
         sngl_stat = self.lognoiserate(trigs)
         # populate other fields to calculate phase/time/amp consistency
         singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
-        singles["snglstat"] = sngl_stat
         singles["coa_phase"] = trigs["coa_phase"][:]
         singles["end_time"] = trigs["end_time"][:]
         singles["snr"] = trigs["snr"][:]
@@ -1397,6 +1457,19 @@ class ExpFitStatistic(PhaseTDStatistic):
                 mass2 = trigs['mass2']
             self.curr_mchirp = mchirp_from_mass1_mass2(mass1, mass2)
 
+        if self.kwargs["dq"]:
+            if self.low_latency:
+                # trigs should already have a dq state assigned
+                singles['dq_state'] = trigs['dq_state'][:]
+            else:
+                singles['dq_state'] = self.find_dq_state_by_time(
+                    self.curr_ifo, trigs['end_time'][:]
+                )
+            dq_rate = self.find_dq_noise_rate(trigs, singles['dq_state'])
+            dq_rate = numpy.maximum(dq_rate, 1)
+            sngl_stat += numpy.log(dq_rate)
+
+        singles["snglstat"] = sngl_stat
         return numpy.array(singles, ndmin=1)
 
     def sensitive_volume_factor(self, sngls):
@@ -1701,6 +1774,11 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         self.alpharef = 6.0
         self.single_increasing = True
         self.single_dtype = numpy.float32
+
+        # Modifier to get a sensible value of the fit slope below threshold
+        self.alphabelow = float(
+            self.kwargs.get("alpha_below_thresh", numpy.inf)
+        )
 
     def single(self, trigs):
         """
