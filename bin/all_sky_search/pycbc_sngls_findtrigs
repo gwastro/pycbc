@@ -158,6 +158,11 @@ for i, tnum in enumerate(template_ids):
             "Calculating statistic in template %d out of %d",
             i, len(template_ids),
         )
+    else:
+        logging.debug(
+            "Calculating statistic in template %d out of %d",
+            i, len(template_ids),
+        )
     tids_uncut = trigs.set_template(tnum)
 
     trigger_keep_ids = cuts.apply_trigger_cuts(trigs, trigger_cut_dict,
@@ -174,8 +179,7 @@ for i, tnum in enumerate(template_ids):
 
     # Stat class instance to calculate the ranking statistic
     sds = rank_method.single(trigs)[trigger_keep_ids]
-    stat_t = rank_method.rank_stat_single((ifo, sds),
-                                          **extra_kwargs)
+    stat_t = rank_method.rank_stat_single((ifo, sds))
     trigger_times = trigs['end_time'][:][trigger_keep_ids]
     if args.cluster_window is not None:
         cid = coinc.cluster_over_time(stat_t, trigger_times,
@@ -192,7 +196,7 @@ for i, tnum in enumerate(template_ids):
 # Perform decimation
 dec_facs = np.ones_like(template_ids_all)
 stat_all = np.array(stat_all)
-template_ids_all = np.array(template_ids_all)
+template_ids_all = np.array(template_ids_all, dtype=int)
 trigger_ids_all = np.array(trigger_ids_all)
 trigger_times_all = np.array(trigger_times_all)
 
