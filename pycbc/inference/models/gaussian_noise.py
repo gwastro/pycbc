@@ -1,20 +1,41 @@
-# Copyright (C) 2018 Collin Capano This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the 
-# Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+# Copyright (C) 2018  Collin Capano
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
 #
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
-# PURPOSE.  See the GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
 #
-# You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, 
-# Boston, MA 02110-1301, USA.
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""This module provides model classes that assume the noise is Gaussian. """
+"""This module provides model classes that assume the noise is Gaussian.
+"""
 
-import logging import shlex from abc import ABCMeta import numpy \ from pycbc import filter as pyfilter from pycbc.waveform import (NoWaveformError, FailedWaveformError) from 
-pycbc.waveform import generator from pycbc.types import FrequencySeries from pycbc.strain import gates_from_cli from pycbc.strain.calibration import Recalibrate from pycbc.inject 
-import InjectionSet from pycbc.io import FieldArray from pycbc.types.optparse import MultiDetOptionAction
+import logging
+import shlex
+from abc import ABCMeta
+import numpy
 
-from .base import ModelStats from .base_data import BaseDataModel from .data_utils import (data_opts_from_config, data_from_cli, fd_data_from_strain_dict, gate_overwhitened_data)
-99
+from pycbc import filter as pyfilter
+from pycbc.waveform import (NoWaveformError, FailedWaveformError)
+from pycbc.waveform import generator
+from pycbc.types import FrequencySeries
+from pycbc.strain import gates_from_cli
+from pycbc.strain.calibration import Recalibrate
+from pycbc.inject import InjectionSet
+from pycbc.io import FieldArray
+from pycbc.types.optparse import MultiDetOptionAction
+
+from .base import ModelStats
+from .base_data import BaseDataModel
+from .data_utils import (data_opts_from_config, data_from_cli,
+                         fd_data_from_strain_dict, gate_overwhitened_data)
+
 
 class BaseGaussianNoise(BaseDataModel, metaclass=ABCMeta):
     r"""Model for analyzing GW data with assuming a wide-sense stationary
