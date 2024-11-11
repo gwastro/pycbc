@@ -679,12 +679,6 @@ def create_multidim_plot(parameters, samples, labels=None,
     else:
         width_ratios = height_ratios = None
 
-    if plot_maxl:
-        # make sure loglikelihood is provide
-        if 'loglikelihood' not in samples.fieldnames:
-            raise ValueError("plot-maxl requires loglikelihood")
-        maxidx = samples['loglikelihood'].argmax()
-
     # only plot scatter if more than one parameter
     plot_scatter = plot_scatter and nparams > 1
 
@@ -703,6 +697,12 @@ def create_multidim_plot(parameters, samples, labels=None,
             zvals = 'gray'
             if plot_contours and contour_color is None:
                 contour_color = 'navy'
+
+    if plot_maxl:
+        # make sure loglikelihood is provide
+        if 'loglikelihood' not in samples.fieldnames:
+            raise ValueError("plot-maxl requires loglikelihood")
+        maxidx = samples['loglikelihood'].argmax()
 
     # create the axis grid
     if fig is None and axis_dict is None:
