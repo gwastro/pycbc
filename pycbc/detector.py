@@ -658,6 +658,7 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
 """     Space-based detector class      """
 
 from pycbc.coordinates.space import TIME_OFFSET_20_DEGREES
+from abc import ABC, abstractmethod
 
 class AbsSpaceDet(ABC):
     """
@@ -810,7 +811,7 @@ class AbsSpaceDet(ABC):
             logging.warning("Time of signal end is greater than end of orbital data. " +
                             "Cutting signal at orbit end time.")
             # cut off data succeeding orbit end time
-            orbit_end_idx = numpy.argwhere(hp.sample_times.numpy() <= self.orbit_end_time)[-1][0]
+            orbit_end_idx = np.argwhere(hp.sample_times.numpy() <= self.orbit_end_time)[-1][0]
             hp = hp[:orbit_end_idx]
             hc = hc[:orbit_end_idx]
 
@@ -818,7 +819,7 @@ class AbsSpaceDet(ABC):
             logging.warning("Time of signal start is less than start of orbital data. " + 
                             "Cutting signal at orbit start time.")
             # cut off data preceding orbit start time
-            orbit_start_idx = numpy.argwhere(hp.sample_times.numpy() >= self.orbit_start_time)[0][0]
+            orbit_start_idx = np.argwhere(hp.sample_times.numpy() >= self.orbit_start_time)[0][0]
             hp = hp[orbit_start_idx:]
             hc = hc[orbit_start_idx:]
 
@@ -928,7 +929,7 @@ class _LDC_detector(AbsSpaceDet):
         defaults = ['EqualArmlength', 'Keplerian']
         assert type(orbits) == str, ("Must input either a file path as a string, " +
                                      "'EqualArmlength', or 'Keplerian'")
-        
+
         # generate a new file
         if orbits in defaults:
             try:
@@ -1004,7 +1005,7 @@ class _LDC_detector(AbsSpaceDet):
         if orbits is None:
             orbits = self.orbits
         return Data.from_orbits(orbits, df, t0, 'tcb/ltt', **measurements)
-    
+
     def get_links(self, hp, hc, lamb, beta, polarization, reference_time=None):
         """
         Project a radiation frame waveform to the LISA constellation.
@@ -1064,7 +1065,7 @@ class _LDC_detector(AbsSpaceDet):
         # project the signal
         wf_proj = self.proj_init.compute_gw_response(self.sample_times, 
                                                      self.proj_init.LINKS)
-        
+
         return wf_proj
 
     def project_wave(self, hp, hc, lamb, beta, polarization=0,
@@ -1135,7 +1136,7 @@ class _LDC_detector(AbsSpaceDet):
             from pytdi import michelson
         except ImportError:
             raise ImportError('pyTDI required for TDI combinations')
-        
+
         # set TDI generation
         if tdi == 1:
             X, Y, Z = michelson.X1, michelson.Y1, michelson.Z1
@@ -1164,11 +1165,10 @@ class _LDC_detector(AbsSpaceDet):
         if tdi_chan == 'XYZ':
             tdi_dict = {'X': chanx, 'Y': chany, 'Z': chanz}
         elif tdi_chan == 'AET':
-            chana = (chanz - chanx)/numpy.sqrt(2)
-            chane = (chanx - 2*chany + chanz)/numpy.sqrt(6)
-            chant = (chanx + chany + chanz)/numpy.sqrt(3)
+            chana = (chanz - chanx)/np.sqrt(2)
+            chane = (chanx - 2*chany + chanz)/np.sqrt(6)
+            chant = (chanx + chany + chanz)/np.sqrt(3)
             tdi_dict = {'A': chana, 'E': chane, 'T': chant}
-            print("Orthogonal observables calculated")
         else:
             raise ValueError('Unrecognized TDI channel input. ' +
                              'Please input either "XYZ" or "AET".')
