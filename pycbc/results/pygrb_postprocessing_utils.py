@@ -287,13 +287,20 @@ def _dataset_iterator(g, prefix=''):
 # =============================================================================
 # Functions to load triggers
 # =============================================================================
-def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
-                  slide_id=None):
+def _load_triggers(input_file, ifos, data_tag=None, rw_snr_threshold=None,
+                   slide_id=None):
     """Loads triggers from PyGRB output file, returning a dictionary"""
 
+    logging.info("Loading triggers.")
     trigs = HFile(input_file, 'r')
     rw_snr = trigs['network/reweighted_snr'][:]
     net_ids = trigs['network/event_id'][:]
+    # Output the number of items loaded only upon a request by the user who
+    # should not use data_tag='trigs'or 'injs' when processing the onsource
+    if data_tag=='trigs':
+        logging.info(f"{len(rw_snr)} triggers loaded.")
+    elif data_tag=='injs':
+        logging.info(f"{len(rw_snr)} injections loaded.")
     ifo_ids = {}
     for ifo in ifos:
         ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
@@ -307,6 +314,16 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
     above_thresh = rw_snr > 0
     num_orig_pts = len(above_thresh)
 
+    # Output the number of items surviging vetoes with the same logic as above
+    msg = ""
+    if data_tag=='trigs':
+        msg += f"{sum(above_thresh)} triggers surviving reweighted SNR cut "
+    elif data_tag=='injs':
+        msg = f"{sum(above_thresh)} injections surviving reweighted SNR cut "
+    if msg:
+        msg += f"at {rw_snr_threshold}."
+        logging.info(msg)
+
     # Do not assume that IFO and network datasets are sorted the same way:
     # find where each surviving network/event_id is placed in the IFO/event_id
     ifo_ids_above_thresh_locations = {}
@@ -315,10 +332,10 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
             numpy.array([numpy.where(ifo_ids[ifo] == net_id)[0][0]
                          for net_id in net_ids[above_thresh]])
 
-    # Apply the cut on all the data by remove points with reweighted SNR = 0
+    # Apply the cut on all the data by removing points with reweighted SNR = 0
     trigs_dict = {}
     with HFile(input_file, "r") as trigs:
-        for (path, dset) in dataset_iterator(trigs):
+        for (path, dset) in _dataset_iterator(trigs):
             # The dataset contains information other than trig/inj properties:
             # just copy it
             if len(dset) != num_orig_pts:
@@ -336,10 +353,25 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
                 trigs_dict[path] = dset[above_thresh]
 
             if trigs_dict[path].size == trigs['network/slide_id'][:].size:
-                trigs_dict[path] = slide_filter(trigs, trigs_dict[path],
-                                                slide_id=slide_id)
+                trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
+                                                 slide_id=slide_id)
 
     return trigs_dict
+
+
+# Wrapper function to load trigger/injection data
+def load_data(input_file, ifos, rw_snr_threshold=None,
+              data_tag=None, slide_id=None):
+    """Load data from a trigger/injection file"""
+
+    trigs_or_injs = None
+    if input_file:
+        trigs_or_injs = \
+            _load_triggers(input_file, ifos, data_tag=data_tag,
+                           rw_snr_threshold=rw_snr_threshold,
+                           slide_id=slide_id)
+
+    return trigs_or_injs
 
 
 # =============================================================================
