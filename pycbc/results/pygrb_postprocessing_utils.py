@@ -38,11 +38,7 @@ from pycbc.io.hdf import HFile
 
 logger = logging.getLogger('pycbc.results.pygrb_postprocessing_utils')
 
-# All/most of these final imports will become obsolete with hdf5 switch
-try:
-    from ligo.segments.utils import fromsegwizard
-except ImportError:
-    pass
+from ligo.segments.utils import fromsegwizard
 
 
 # =============================================================================
@@ -61,28 +57,28 @@ def pygrb_initialize_plot_parser(description=None):
     add_common_pycbc_options(parser)
     parser.add_argument("-o", "--output-file", default=None,
                         help="Output file.")
-    parser.add_argument("--x-lims", action="store", default=None,
-                        help="Comma separated minimum and maximum values " +
-                        "for the horizontal axis. When using negative " +
+    parser.add_argument("--x-lims", default=None,
+                        help="Comma separated minimum and maximum values "
+                        "for the horizontal axis. When using negative "
                         "values an equal sign after --x-lims is necessary.")
-    parser.add_argument("--y-lims", action="store", default=None,
-                        help="Comma separated minimum and maximum values " +
-                        "for the vertical axis. When using negative values " +
+    parser.add_argument("--y-lims", default=None,
+                        help="Comma separated minimum and maximum values "
+                        "for the vertical axis. When using negative values "
                         "an equal sign after --y-lims is necessary.")
     parser.add_argument("--use-logs", default=False, action="store_true",
                         help="Produce a log-log plot")
-    parser.add_argument("-i", "--ifo", default=None, help="IFO used for IFO " +
+    parser.add_argument("-i", "--ifo", default=None, help="IFO used for IFO "
                         "specific plots")
-    parser.add_argument("-a", "--seg-files", nargs="+", action="store",
-                        default=[], help="The location of the buffer, " +
+    parser.add_argument("-a", "--seg-files", nargs="+",
+                        default=[], help="The location of the buffer, "
                         "onsource and offsource txt segment files.")
-    parser.add_argument("-V", "--veto-file", action="store",
+    parser.add_argument("-V", "--veto-file",
                         help="The location of the xml veto file.")
     parser.add_argument('--plot-title', default=None,
-                        help="If provided, use the given string as the plot " +
+                        help="If provided, use the given string as the plot "
                         "title.")
     parser.add_argument('--plot-caption', default=None,
-                        help="If provided, use the given string as the plot " +
+                        help="If provided, use the given string as the plot "
                         "caption")
     return parser
 
@@ -90,7 +86,7 @@ def pygrb_initialize_plot_parser(description=None):
 def pygrb_add_slide_opts(parser):
     """Add to parser object arguments related to short timeslides"""
     parser.add_argument("--slide-id", type=str, default='0',
-                        help="Select a specific slide or set to all to plot " +
+                        help="Select a specific slide or set to all to plot "
                         "results from all short slides.")
 
 
@@ -111,31 +107,31 @@ def pygrb_add_injmc_opts(parser):
     """Add to parser object the arguments used for Monte-Carlo on distance."""
     if parser is None:
         parser = argparse.ArgumentParser()
-    parser.add_argument("-M", "--num-mc-injections", action="store",
-                        type=int, default=100, help="Number of Monte " +
+    parser.add_argument("-M", "--num-mc-injections",
+                        type=int, default=100, help="Number of Monte "
                         "Carlo injection simulations to perform.")
-    parser.add_argument("-S", "--seed", action="store", type=int,
+    parser.add_argument("-S", "--seed", type=int,
                         default=1234, help="Seed to initialize Monte Carlo.")
-    parser.add_argument("-U", "--upper-inj-dist", action="store",
-                        type=float, default=1000, help="The upper distance " +
+    parser.add_argument("-U", "--upper-inj-dist",
+                        type=float, default=1000, help="The upper distance "
                         "of the injections in Mpc, if used.")
-    parser.add_argument("-L", "--lower-inj-dist", action="store",
-                        type=float, default=0, help="The lower distance of " +
+    parser.add_argument("-L", "--lower-inj-dist",
+                        type=float, default=0, help="The lower distance of "
                         "the injections in Mpc, if used.")
-    parser.add_argument("-n", "--num-bins", action="store", type=int,
-                        default=0, help="The number of bins used to " +
+    parser.add_argument("-n", "--num-bins", type=int,
+                        default=0, help="The number of bins used to "
                         "calculate injection efficiency.")
-    parser.add_argument("-w", "--waveform-error", action="store",
-                        type=float, default=0, help="The standard deviation " +
+    parser.add_argument("-w", "--waveform-error",
+                        type=float, default=0, help="The standard deviation "
                         "to use when calculating the waveform error.")
     for ifo in ["g1", "h1", "k1", "l1", "v1"]:
-        parser.add_argument(f"--{ifo}-cal-error", action="store", type=float,
-                            default=0, help="The standard deviation to use " +
-                            f"when calculating the {ifo.upper()} " +
+        parser.add_argument(f"--{ifo}-cal-error", type=float,
+                            default=0, help="The standard deviation to use "
+                            f"when calculating the {ifo.upper()} "
                             "calibration amplitude error.")
-        parser.add_argument(f"--{ifo}-dc-cal-error", action="store",
-                            type=float, default=1.0, help="The scaling " +
-                            "factor to use when calculating the " +
+        parser.add_argument(f"--{ifo}-dc-cal-error",
+                            type=float, default=1.0, help="The scaling "
+                            "factor to use when calculating the "
                             f"{ifo.upper()} calibration amplitude error.")
 
 
@@ -143,36 +139,36 @@ def pygrb_add_bestnr_opts(parser):
     """Add to the parser object the arguments used for BestNR calculation"""
     if parser is None:
         parser = argparse.ArgumentParser()
-    parser.add_argument("-Q", "--chisq-index", action="store", type=float,
-                        default=6.0, help="chisq_index for newSNR " +
+    parser.add_argument("-Q", "--chisq-index", type=float,
+                        default=6.0, help="chisq_index for newSNR "
                         "calculation (default: 6)")
-    parser.add_argument("-N", "--chisq-nhigh", action="store", type=float,
-                        default=2.0, help="chisq_nhigh for newSNR " +
+    parser.add_argument("-N", "--chisq-nhigh", type=float,
+                        default=2.0, help="chisq_nhigh for newSNR "
                         "calculation (default: 2")
 
 
 def pygrb_add_null_snr_opts(parser):
     """Add to the parser object the arguments used for null SNR calculation
     and null SNR cut."""
-    parser.add_argument("-A", "--null-snr-threshold", action="store",
+    parser.add_argument("-A", "--null-snr-threshold",
                         default=5.25,
                         type=float,
                         help="Null SNR threshold for null SNR cut "
                         "(default: 5.25)")
-    parser.add_argument("-T", "--null-grad-thresh", action="store", type=float,
-                        default=20., help="Threshold above which to " +
+    parser.add_argument("-T", "--null-grad-thresh", type=float,
+                        default=20., help="Threshold above which to "
                         "increase the values of the null SNR cut")
-    parser.add_argument("-D", "--null-grad-val", action="store", type=float,
-                        default=0.2, help="Rate the null SNR cut will " +
+    parser.add_argument("-D", "--null-grad-val", type=float,
+                        default=0.2, help="Rate the null SNR cut will "
                         "increase above the threshold")
 
 
 def pygrb_add_single_snr_cut_opt(parser):
     """Add to the parser object an argument to place a threshold on single
     detector SNR."""
-    parser.add_argument("-B", "--sngl-snr-threshold", action="store",
-                        type=float, default=4.0, help="Single detector SNR " +
-                        "threshold, the two most sensitive detectors " +
+    parser.add_argument("-B", "--sngl-snr-threshold",
+                        type=float, default=4.0, help="Single detector SNR "
+                        "threshold, the two most sensitive detectors "
                         "should have SNR above this.")
 
 
@@ -182,7 +178,7 @@ def pygrb_add_bestnr_cut_opt(parser):
         parser = argparse.ArgumentParser()
     parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
                         default=0.,
-                        help="Cut triggers with NewSNR less than THRESHOLD. " +
+                        help="Cut triggers with NewSNR less than THRESHOLD. "
                         "Default 0: all events are considered.")
 
 
