@@ -130,7 +130,7 @@ else:
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
     plot_met = make_grb_segments_plot(
-        wflow, segmentlistdict(), triggertime, triggername,
+        wflow, segmentlistdict(sciSegs), triggertime, triggername,
         seg_dir, fail_criterion=offSrc)
     logging.info("Making segment plot and exiting.")
     sys.exit()
