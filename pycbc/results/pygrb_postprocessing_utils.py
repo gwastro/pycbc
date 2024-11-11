@@ -298,9 +298,9 @@ def _load_triggers(input_file, ifos, data_tag=None, rw_snr_threshold=None,
     # Output the number of items loaded only upon a request by the user who
     # should not use data_tag='trigs'or 'injs' when processing the onsource
     if data_tag=='trigs':
-        logging.info(f"{len(rw_snr)} triggers loaded.")
+        logging.info("%d triggers loaded.", len(rw_snr))
     elif data_tag=='injs':
-        logging.info(f"{len(rw_snr)} injections loaded.")
+        logging.info("%d injections loaded.", len(rw_snr))
     ifo_ids = {}
     for ifo in ifos:
         ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
