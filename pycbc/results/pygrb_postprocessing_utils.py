@@ -419,12 +419,10 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
                                   in trial_dict[slide_id]]
 
         # Check that the number of triggers has not increased after vetoes
-        if num_trigs_before < len(sorted_trigs[slide_id]):
-            err_msg = f"In slide {slide_id}, {num_trigs_before} triggers "
-            err_msg += f"before the trials dictionary was used and "
-            err_msg += f"{len(sorted_trigs[slide_id])} after. "
-            err_msg += "This should not happen."
-            raise RuntimeError(err_msg)
+        assert len(sorted_trigs[slide_id]) <= num_trigs_before,\
+            f"Slide {slide_id} has {num_trigs_before} triggers before the "\
+            f"trials dictionary was used and {len(sorted_trigs[slide_id])} "\
+            "after. This should not happen."
         # END OF CHECK #
 
     return sorted_trigs
