@@ -71,7 +71,7 @@ for outdir in outdirs:
 # Extract IFOs
 ifos = ppu.extract_ifos(trig_file)
 
-# Load trigger data: the sky-grid points are not time-slide in the plot
+# Load trigger data: the sky-grid points are not time-slid in the plot
 trig_data = ppu.load_data(trig_file, ifos, data_tag=None, slide_id=0)
 
 #
