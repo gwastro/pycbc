@@ -110,20 +110,17 @@ def hypertriangle(*params, bounds=(0, 1)):
     posterior. Adapted from Buscicchio et al (PhysRevD.100.084041).
 
     This transformation assumes that the input parameters were sampled
-    from the same uniform prior distribution.
+    from the same uniform prior distribution defined by bounds.
 
     Parameters
     ----------
     params : float(s) or array(s)
         The input parameter values. Parameters are assumed to be
-        sampled from the same uniform prior distribution. Values can
-        be input as an arbitrary number of non-keyword arguments, or
-        as a list using the following syntax:
+        sampled from the same uniform prior distribution. Each
+        argument is treated as one parameter; input arrays will
+        be treated as multiple values for that one parameter.
 
-        >>> param_list = [x, y, z, ...]
-        >>> hypertriangle(*param_list)
-
-    bounds : tuple
+    bounds : tuple (optional)
         The lower and upper bounds of the input parameter priors.
         Default (0, 1) for a unit hypercube.
 
@@ -132,6 +129,11 @@ def hypertriangle(*params, bounds=(0, 1)):
     array
         The mapped parameters. Output values are in ascending order.
     """
+    # check inputs all have the same shape
+    ref_shape = numpy.shape(params[0])
+    assert numpy.all([numpy.shape(params[i]) == ref_shape for i in range(len(params))]), \
+        "All inputs must have the same number of elements"
+    
     # map to numpy array
     params, input_is_array = ensurearray(params)
 
@@ -144,18 +146,20 @@ def hypertriangle(*params, bounds=(0, 1)):
     
     # hypertriangulate
     try:
-        K, num_pts = numpy.shape(scaled_params)
+        K, num_pts = scaled_params.shape
     except ValueError:
         K = numpy.size(scaled_params)
         num_pts = 1
-    idx = numpy.repeat(numpy.arange(K), repeats=num_pts, axis=0)
+    idx = numpy.repeat(numpy.arange(K), repeats=num_pts)
     scaled_params.resize(K, num_pts)
     idx.resize(K, num_pts)
-    fac = numpy.power(1 - scaled_params, 1./(K - idx))
+    fac = numpy.power(1 - scaled_params, 1/(K - idx))
     out_scaled_params = 1 - numpy.cumprod(fac, axis=0)
 
     # rescale to prior bounds
     out_params = (out_scaled_params * (bounds[1] - bounds[0])) + bounds[0]
+    if num_pts == 1:
+        out_params = [out_params[i][0] for i in range(K)]
     return out_params
 
 #
