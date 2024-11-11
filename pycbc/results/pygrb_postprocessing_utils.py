@@ -244,7 +244,8 @@ def _extract_vetoes(veto_file, ifos, offsource):
         for ifo in ifos:
             for v in vetoes[ifo]: 
                 v_span = v[1] - v[0]
-                logging.info(f"{v_span}s of data vetoed at GPS time {v[0]}")
+                logging.info("%ds of data vetoed at GPS time %d",
+                             v_span, v[0])
 
     return vetoes
 
@@ -602,7 +603,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
                 iter_int += 1
 
     total_trials = sum([len(trial_dict[slide_id]) for slide_id in slide_dict])
-    logging.info(f"{total_trials} trials generated.")
+    logging.info("%d trials generated.", total_trials)
 
     return trial_dict, total_trials
 
