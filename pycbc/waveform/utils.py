@@ -519,13 +519,14 @@ def redshift_waveform(srch, z, tref=0):
     shift = (tnew - tref)/redshifted.delta_t
     # for integer shifts, we can just change the epoch
     remainder = (shift % 1)
-    shift = int(shift) * redshifted.delta_t
-    redshifted._epoch -= shift
+    #print('remainder:', remainder)
+    #shift = int(shift) * redshifted.delta_t
+    redshifted._epoch -= shift * redshifted.delta_t
     # if there was any remaining, we'll need to do sub-sample interpolation
     if remainder or isfs:
         redshifted = redshifted.to_frequencyseries()                   
     if remainder:
-        shifttime = redshifted.start_time-(remainder*redshifted.delta_t)
+        shifttime = redshifted.start_time+((1-remainder)*redshifted.delta_t)
         apply_fd_time_shift(redshifted, shifttime, copy=False)
         if not isfs:
             redshifted = redshifted.to_timeseries()
