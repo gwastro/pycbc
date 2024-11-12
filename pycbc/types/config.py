@@ -101,8 +101,6 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         super().__init__()
 
-        self.read_ini_file(configFiles)
-
         # Enable case sensitive options
         self.optionxform = str
 
@@ -118,6 +116,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             if '%' not in value and '$' not in value
         }
         self.read_dict({'environment': env_vals})
+
+        self.read_ini_file(configFiles)
 
         # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
         self.split_multi_sections()
@@ -254,17 +254,20 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             parser.read(filename)
 
             for section in parser.sections():
-                if section not in options_seen:
-                    options_seen[section] = set()
+                if section == "environment":
+                    continue
+                else:
+                    if section not in options_seen:
+                        options_seen[section] = set()
 
-                section_options = parser.options(section)
+                    section_options = parser.options(section)
 
-                option_intersection = options_seen[section].intersection(section_options)
+                    option_intersection = options_seen[section].intersection(section_options)
 
-                if option_intersection:
-                    raise ValueError(f"Duplicate option(s) {', '.join(option_intersection)} found in section '{section}' in file '{filename}'")
+                    if option_intersection:
+                        raise ValueError(f"Duplicate option(s) {', '.join(option_intersection)} found in section '{section}' in file '{filename}'")
 
-                options_seen[section].update(section_options)
+                    options_seen[section].update(section_options)
 
         self.read(fpath)
 
