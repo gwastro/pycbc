@@ -1198,27 +1198,38 @@ class FDomainDirectDetFrameGenerator(BaseCBCGenerator):
 # =============================================================================
 #
 
-
-# Updated code to make the logic clearer and simplify decision-making based on the domain
-
 def get_td_generator(approximant, modes=False):
     """Returns the time-domain generator for the given approximant."""
     if approximant in waveform.td_approximants():
-        return TDomainCBCModesGenerator if modes else TDomainCBCGenerator
+        if modes:
+            return TDomainCBCModesGenerator
+        return TDomainCBCGenerator
+
     if approximant in ringdown.ringdown_td_approximants:
-        return TDomainMassSpinRingdownGenerator if approximant == 'TdQNMfromFinalMassSpin' else TDomainFreqTauRingdownGenerator
+        if approximant == 'TdQNMfromFinalMassSpin':
+            return TDomainMassSpinRingdownGenerator
+        return TDomainFreqTauRingdownGenerator
+
     if approximant in supernovae.supernovae_td_approximants:
         return TDomainSupernovaeGenerator
-    raise ValueError(f"No time-domain generator found for approximant: {approximant}")
+
+    raise ValueError(f"No time-domain generator found for "
+                       "approximant: {approximant}")
 
 def get_fd_generator(approximant, modes=False):
     """Returns the frequency-domain generator for the given approximant."""
     if approximant in waveform.fd_approximants():
-        return FDomainCBCModesGenerator if modes else FDomainCBCGenerator
-    if approximant in ringdown.ringdown_fd_approximants:
-        return FDomainMassSpinRingdownGenerator if approximant == 'FdQNMfromFinalMassSpin' else FDomainFreqTauRingdownGenerator
-    raise ValueError(f"No frequency-domain generator found for approximant: {approximant}")
+        if modes:
+            return FDomainCBCModesGenerator
+        return FDomainCBCGenerator
 
+    if approximant in ringdown.ringdown_fd_approximants:
+        if approximant == 'FdQNMfromFinalMassSpin':
+            return FDomainMassSpinRingdownGenerator
+        return FDomainFreqTauRingdownGenerator
+
+    raise ValueError(f"No frequency-domain generator found for "
+                       "approximant: {approximant}")
 
 def select_waveform_generator(approximant, domain=None):
     """Returns the single-IFO generator for the approximant.
@@ -1252,7 +1263,8 @@ def select_waveform_generator(approximant, domain=None):
     """
 
     if domain not in {None, 'td', 'fd'}:
-        raise ValueError(f"Invalid domain '{domain}'. Must be one of: None, 'td', or 'fd'.")
+        raise ValueError(f"Invalid domain '{domain}'. "
+                          "Must be one of: None, 'td', or 'fd'.")
 
     if domain == 'td':
         return get_td_generator(approximant)
@@ -1283,7 +1295,8 @@ def select_waveform_modes_generator(approximant, domain=None):
     """
 
     if domain not in {None, 'td', 'fd'}:
-        raise ValueError(f"Invalid domain '{domain}'. Must be one of: None, 'td', or 'fd'.")
+        raise ValueError(f"Invalid domain '{domain}'. "
+                           "Must be one of: None, 'td', or 'fd'.")
 
     if domain == 'td':
         return get_td_generator(approximant, modes=True)
