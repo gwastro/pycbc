@@ -101,6 +101,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         super().__init__()
 
+        self.read_ini_file(configFiles)
+
         # Enable case sensitive options
         self.optionxform = str
 
@@ -116,8 +118,6 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             if '%' not in value and '$' not in value
         }
         self.read_dict({'environment': env_vals})
-
-        self.read_ini_file(configFiles)
 
         # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
         self.split_multi_sections()
