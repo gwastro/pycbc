@@ -295,8 +295,9 @@ def _load_triggers(input_file, ifos, data_tag=None, rw_snr_threshold=None,
     trigs = HFile(input_file, 'r')
     rw_snr = trigs['network/reweighted_snr'][:]
     net_ids = trigs['network/event_id'][:]
-    # Output the number of items loaded only upon a request by the user who
-    # should not use data_tag='trigs'or 'injs' when processing the onsource
+    # Output the number of items loaded only upon a request by the user who is
+    # expected not to set data_tag to 'trigs'or 'injs' when processing the
+    # onsource
     if data_tag=='trigs':
         logging.info("%d triggers loaded.", len(rw_snr))
     elif data_tag=='injs':
@@ -317,11 +318,11 @@ def _load_triggers(input_file, ifos, data_tag=None, rw_snr_threshold=None,
     # Output the number of items surviging vetoes with the same logic as above
     msg = ""
     if data_tag=='trigs':
-        msg += f"{sum(above_thresh)} triggers surviving reweighted SNR cut "
+        msg += f"{sum(above_thresh)} triggers "
     elif data_tag=='injs':
-        msg = f"{sum(above_thresh)} injections surviving reweighted SNR cut "
+        msg = f"{sum(above_thresh)} injections "
     if msg:
-        msg += f"at {rw_snr_threshold}."
+        msg += f"surviving reweighted SNR cut at {rw_snr_threshold}."
         logging.info(msg)
 
     # Do not assume that IFO and network datasets are sorted the same way:
@@ -362,7 +363,9 @@ def _load_triggers(input_file, ifos, data_tag=None, rw_snr_threshold=None,
 # Wrapper function to load trigger/injection data
 def load_data(input_file, ifos, rw_snr_threshold=None,
               data_tag=None, slide_id=None):
-    """Load data from a trigger/injection file"""
+    """Load data from a trigger/injection file. data_tag enables logging
+    information about the number of triggers/injections found, so the user
+    should not set it to 'trigs'/'injs' when processing the onsource."""
 
     trigs_or_injs = None
     if input_file:
