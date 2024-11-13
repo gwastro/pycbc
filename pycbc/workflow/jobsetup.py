@@ -276,7 +276,6 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     curr_out_files = FileList([])
     ipn_sky_points = None
-    veto_file = None
     bank_veto = None
     input_files = FileList(datafind_outs)
     for f in datafind_outs:
@@ -284,7 +283,6 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
             ipn_sky_points = f
             input_files.remove(f)
         elif 'vetoes' in f.description:
-            veto_file = f
             input_files.remove(f)
         elif 'INPUT_BANK_VETO_BANK' in f.description:
             bank_veto = f
