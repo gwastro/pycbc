@@ -16,6 +16,7 @@ import sys
 import pycbc
 from pycbc.io import HFile
 from pycbc.results import save_fig_with_metadata
+from pycbc.waveform import bank
 import pycbc.tmpltbank as tmpltbank
 
 parser = argparse.ArgumentParser()
@@ -88,6 +89,10 @@ if comparison_parameter not in tmpltbank.conversion_options:
 
 pycbc.init_logging(args.verbose)
 
+# Quieten the matplotlib logger
+plt.set_loglevel("info" if args.verbose else "warning")
+logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
+
 logging.info("Getting information from the bank")
 
 # The three things we want from the banks:
@@ -102,22 +107,34 @@ for i, bank_fname in enumerate(args.bank_files):
         len(args.bank_files),
         bank_fname
     )
+
     with HFile(bank_fname, "r") as bank_f:
         compressed_grp = bank_f["compressed_waveforms"]
+        thashes = bank_f["template_hash"][:]
+        hash_order = np.argsort(thashes)
+        # These will be in hash order:
+        logging.debug("Getting compression factors")
         compression_factor += [
-            compressed_grp[str(thash)].attrs["compression_factor"]
-            for thash in bank_f["template_hash"][:]
+            compressed_grp[comp_grp].attrs["compression_factor"]
+            for comp_grp in compressed_grp.keys()
         ]
-        approximants += [apx.decode() for apx in bank_f["approximant"][:]]
+        logging.debug("Getting approximants")
+        # These are in template_id order, so use hash_order to get them back:
+        approximants += [apx.decode() for apx in bank_f["approximant"][:][hash_order]]
+        logging.debug("Getting comparison values: %s", comparison_parameter)
         comparison_values += list(tmpltbank.get_bank_property(
             comparison_parameter,
             bank_f,
-            template_ids=np.arange(bank_f["template_hash"].size)
+            template_ids=hash_order
         ))
 
 approximants = np.array(approximants)
 comparison_values = np.array(comparison_values)
 compression_factor = np.array(compression_factor)
+
+print(approximants.size)
+print(comparison_values.size)
+print(compression_factor.size)
 
 # Store the max/min factors, as these are used for setting
 # histogram / plot limits
