@@ -724,7 +724,7 @@ class SingleDetTriggers(object):
                                            statistic_threshold=None,
                                            n_loudest=10,
                                            cluster_window=10,
-                                           statistic_kwargs=None):
+                                           ):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic.
 
@@ -733,12 +733,9 @@ class SingleDetTriggers(object):
         statistic using statistic_threshold
         """
 
-        if statistic_kwargs is None:
-            statistic_kwargs = {}
         sds = rank_method.single(self.trig_dict())
         stat = rank_method.rank_stat_single(
             (self.ifo, sds),
-            **statistic_kwargs
         )
         if len(stat) == 0:
             # No triggers at all, so just return here
