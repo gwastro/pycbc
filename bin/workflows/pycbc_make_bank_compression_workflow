@@ -139,23 +139,23 @@ splitbank_files = wf.setup_splittable_dax_generated(
 compressed_files = wf.make_compress_split_banks(
     workflow,
     splitbank_files,
-    out_dir='compressed_bank',
+    out_dir='compress_bank',
     tags=None,
 )
 
 # All the split banks have had the waveforms compressed, so now
 # join them back together
-rejoined_banks = wf.make_combine_split_banks(
+combine_banks = wf.make_combine_split_banks(
     workflow,
     compressed_files,
-    out_dir='rejoined_bank',
+    out_dir='combine_bank',
     tags=None,
 )
 
 # Make a plot of the compression factor of the templates
 plots = wf.make_bank_compression_plots(
     workflow,
-    rejoined_banks,
+    combine_banks,
     out_dir=rdir.base,
     tags=None,
 )

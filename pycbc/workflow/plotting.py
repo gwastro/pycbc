@@ -596,7 +596,7 @@ def make_bank_compression_plots(workflow, bank_files, out_dir, tags=None):
         node.new_output_file_opt(
             workflow.analysis_time,
             '.png',
-            '--output-file'
+            '--output'
         )
         workflow += node
         files += node.output_files
