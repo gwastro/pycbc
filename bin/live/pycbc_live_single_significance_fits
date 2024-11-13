@@ -69,8 +69,6 @@ pycbc.init_logging(args.verbose)
 sngls_io.verify_live_significance_trigger_pruning_options(args, parser)
 sngls_io.verify_live_significance_duration_bin_options(args, parser)
 
-stat_kwargs = stat.parse_statistic_keywords_opt(args.statistic_keywords)
-
 duration_bin_edges = sngls_io.duration_bins_from_cli(args)
 logging.info(
     "Duration bin edges: %s",
@@ -190,7 +188,6 @@ for counter, filename in enumerate(files):
         sds = rank_method[ifo].single(triggers_cut)
         sngls_value = rank_method[ifo].rank_stat_single(
             (ifo, sds),
-            **stat_kwargs
         )
 
         triggers_cut['stat'] = sngls_value
