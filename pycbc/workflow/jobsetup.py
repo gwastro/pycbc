@@ -311,7 +311,7 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                 tag.append(split_bank.tag_str)
                 node = curr_exe_job.create_node(data_seg, job_valid_seg,
                         parent=split_bank, inj_file=inj_file, tags=tag,
-                        dfParents=frame_files, bankVetoBank=bank_veto,
+                        dfParents=input_files, bankVetoBank=bank_veto,
                         ipn_file=ipn_sky_points)
                 workflow.add_node(node)
                 split_bank_counter += 1
