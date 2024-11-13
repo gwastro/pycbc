@@ -103,7 +103,7 @@ os.chdir(args.output_dir)
 
 rdir = layout.SectionNumber(
     'results',
-    ['compression', 'workflow',],
+    ['workflow',],
 )
 
 wf.makedir(rdir.base)
@@ -153,11 +153,16 @@ rejoined_banks = wf.make_combine_split_banks(
 )
 
 # Make a plot of the compression factor of the templates
-wf.make_bank_compression_plot(
+plots = wf.make_bank_compression_plots(
     workflow,
     rejoined_banks,
-    out_dir=rdir['compression'],
+    out_dir=rdir.base,
     tags=None,
+)
+
+layout.single_layout(
+    rdir.base,
+    plots,
 )
 
 # Create versioning information
