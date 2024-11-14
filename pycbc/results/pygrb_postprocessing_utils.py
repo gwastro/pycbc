@@ -285,16 +285,22 @@ def _dataset_iterator(g, prefix=''):
 
 
 # =============================================================================
-# Functions to load triggers
+# Function to load trigger/injection data
 # =============================================================================
-def _load_triggers(input_file, ifos, data_tag=None, rw_snr_threshold=None,
-                   slide_id=None):
-    """Loads triggers from PyGRB output file, returning a dictionary"""
+def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
+              slide_id=None):
+    """Load data from a trigger/injection PyGRB output file, returning a
+    dictionary. If the input_file is None, None is returned. data_tag enables
+    logging information about the number of triggers/injections found, so the
+    user should not set it to 'trigs'/'injs' when processing the onsource."""
 
-    logging.info("Loading triggers.")
+    if input_file is None:
+        return None
+
     trigs = HFile(input_file, 'r')
     rw_snr = trigs['network/reweighted_snr'][:]
     net_ids = trigs['network/event_id'][:]
+
     # Output the number of items loaded only upon a request by the user who is
     # expected not to set data_tag to 'trigs'or 'injs' when processing the
     # onsource
@@ -302,6 +308,8 @@ def _load_triggers(input_file, ifos, data_tag=None, rw_snr_threshold=None,
         logging.info("%d triggers loaded.", len(rw_snr))
     elif data_tag=='injs':
         logging.info("%d injections loaded.", len(rw_snr))
+    else:
+        logging.info("Loading triggers.")
     ifo_ids = {}
     for ifo in ifos:
         ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
@@ -360,21 +368,7 @@ def _load_triggers(input_file, ifos, data_tag=None, rw_snr_threshold=None,
     return trigs_dict
 
 
-# Wrapper function to load trigger/injection data
-def load_data(input_file, ifos, rw_snr_threshold=None,
-              data_tag=None, slide_id=None):
-    """Load data from a trigger/injection file. data_tag enables logging
-    information about the number of triggers/injections found, so the user
-    should not set it to 'trigs'/'injs' when processing the onsource."""
 
-    trigs_or_injs = None
-    if input_file:
-        trigs_or_injs = \
-            _load_triggers(input_file, ifos, data_tag=data_tag,
-                           rw_snr_threshold=rw_snr_threshold,
-                           slide_id=slide_id)
-
-    return trigs_or_injs
 
 
 # =============================================================================
