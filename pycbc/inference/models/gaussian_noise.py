@@ -1215,6 +1215,9 @@ def create_waveform_generator(
                         d.start_time == start_time]):
                 raise ValueError("data must all have the same delta_t, "
                                  "delta_f, and start_time")
+    if 'waveform_srate' in static_params:
+        delta_t = 1. / static_params['waveform_srate']
+        logging.warning("Overriding delta_t to match waveform_srate")
     waveform_generator = generator_class(
         generator_function, epoch=start_time,
         variable_args=variable_params, detectors=list(data.keys()),
