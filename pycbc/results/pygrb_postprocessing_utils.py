@@ -294,7 +294,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
     logging information about the number of triggers/injections found, so the
     user should not set it to 'trigs'/'injs' when processing the onsource."""
 
-    if input_file is None:
+    if not input_file:
         return None
 
     trigs = HFile(input_file, 'r')
