@@ -23,7 +23,6 @@
 Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
-import os
 import logging
 import argparse
 import copy
@@ -33,6 +32,7 @@ import h5py
 from scipy import stats
 import ligo.segments as segments
 from pycbc.events.coherent import reweightedsnr_cut
+from pycbc.events import veto
 from pycbc import add_common_pycbc_options
 from pycbc.io.hdf import HFile
 
@@ -242,7 +242,7 @@ def _extract_vetoes(veto_file, ifos, offsource):
             vetoes[ifo] = segments.segmentlist([offsource]) - clean_segs[ifo]
         vetoes.coalesce()
         for ifo in ifos:
-            for v in vetoes[ifo]: 
+            for v in vetoes[ifo]:
                 v_span = v[1] - v[0]
                 logging.info("%ds of data vetoed at GPS time %d",
                              v_span, v[0])
@@ -269,7 +269,7 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
 
 
 # =============================================================================
-# Recursive function to reach all datasets in an HDF file handle 
+# Recursive function to reach all datasets in an HDF file handle
 # =============================================================================
 def _dataset_iterator(g, prefix=''):
     """Reach all datasets in an HDF file handle"""
@@ -368,9 +368,6 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
     return trigs_dict
 
 
-
-
-
 # =============================================================================
 # Detector utils:
 # * Function to calculate the antenna response F+^2 + Fx^2
@@ -466,8 +463,7 @@ def extract_trig_properties(trial_dict, trigs, slide_dict, seg_dict, keys):
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
-    n_surviving_trigs = sum([len(sorted_trigs[slide_id])
-                             for slide_id in sorted_trigs.keys()])
+    n_surviving_trigs = sum([len(i) for i in sorted_trigs.values()])
     msg = f"{n_surviving_trigs} triggers found within the trials dictionary "
     msg += "and sorted."
     logging.info(msg)
@@ -490,7 +486,6 @@ def extract_trig_properties(trial_dict, trigs, slide_dict, seg_dict, keys):
     logging.info("Triggers information extracted.")
 
     return found_trigs
-
 
 
 # =============================================================================
