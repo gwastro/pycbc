@@ -1193,6 +1193,8 @@ class _FLR_detector(AbsSpaceDet):
         """
         super().__init__(**kwargs)
         self.use_gpu = use_gpu
+        logging.warning('WARNING: FastLISAResponse TDI implementation is a work in progress. ' +
+                        'Currently unable to reproduce LDC or BBHx waveforms.')
 
     def orbits_init(self, orbits):
         """
@@ -1228,13 +1230,12 @@ class _FLR_detector(AbsSpaceDet):
             class CustomOrbits(detector.Orbits):
                 def __init__(self):
                     super().__init__(orbits)
-            
             o = CustomOrbits()
 
         self.orbits = o
         self.orbit_start_time = self.orbits.t_base[0]
         self.orbit_end_time = self.orbits.t_base[-1]
-    
+
     def get_links(self, hp, hc, lamb, beta, polarization=0,
                   reference_time=None, use_gpu=None):
         """
@@ -1382,7 +1383,7 @@ class _FLR_detector(AbsSpaceDet):
         # set use_gpu
         if use_gpu is None:
             use_gpu = self.use_gpu
-        
+
         # generate the Doppler time series
         self.pad_data = pad_data
         self.remove_garbage = remove_garbage
