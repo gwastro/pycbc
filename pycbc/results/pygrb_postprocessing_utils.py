@@ -583,7 +583,7 @@ def load_segment_dict(hdf_file_path):
 # =============================================================================
 def construct_trials(seg_files, seg_dict, ifos, slide_dict, veto_file,
                      hide_onsource=True):
-    """Constructs trials from triggers, timeslides, segments and vetoes"""
+    """Constructs trials from segments, timeslides, and vetoes"""
 
     logging.info("Constructing trials.")
     trial_dict = {}
