@@ -33,6 +33,3 @@ sympy>=1.9
 # Needed for KDE trigger statistics
 git+https://github.com/mennthor/awkde.git@master
 scikit-learn
-
-# LISA response
-fastlisaresponse
