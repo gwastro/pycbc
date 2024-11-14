@@ -78,7 +78,7 @@ def labels_in_files_metadata(labels, rundir, file_paths):
 # Function to retrieve the segments plot (produced in the preprocessing stage)
 # that ensures its copy is saved in the output directory before returning to
 # the original working directory. Appropriate meta data is added to the plot.
-def display_seg_plot(output_dir, segments_dir):
+def display_seg_plot(output_dir, segment_dir):
     """Return the File of the segments plot (which was already produced during
     the pre-processing) after adding the appropriate metadata to it.
     """
@@ -90,7 +90,7 @@ def display_seg_plot(output_dir, segments_dir):
         'GRB' + wflow.cp.get('workflow', 'trigger-name') + '_segments.png'
     )
     segments_plot = _workflow.resolve_url_to_file(
-        os.path.join(args.segment_dir, segments_plot_name)
+        os.path.join(segment_dir, segments_plot_name)
     )
     segments_plot_path = segments_plot.storage_path
     im = Image.open(segments_plot_path)
@@ -134,7 +134,6 @@ parser.add_argument(
     "-i",
     "--inj-files",
     action="store",
-    default=None,
     nargs="+",
     help="Location(s) of input injection results file(s)",
 )
@@ -142,15 +141,18 @@ parser.add_argument(
     "-b",
     "--bank-file",
     action="store",
-    default=None,
     help="The location of the full template bank file",
 )
 parser.add_argument(
     "--segment-dir",
     action="store",
-    default=None,
     help="The location of the segment files",
 )
+parser.add_argument(
+    "--veto-file",
+    help="File containing segments used to veto injections",
+)
+
 _workflow.add_workflow_command_line_group(parser)
 _workflow.add_workflow_settings_cli(parser, include_subdax_opts=True)
 args = parser.parse_args()
@@ -218,6 +220,12 @@ if not set(inj_sets).issubset(eff_secs):
 inj_sets = [i.upper() for i in inj_sets]
 inj_files = labels_in_files_metadata(inj_sets, start_rundir, args.inj_files)
 
+# File instance of the veto file
+veto_file = args.veto_file
+if veto_file: 
+    veto_file = os.path.join(start_rundir, args.veto_file)
+    veto_file = _workflow.resolve_url_to_file(veto_file)
+
 # IFOs actually used: determined by data availability
 ifos = extract_ifos(offsource_file.storage_path)
 wflow.ifos = ifos
@@ -226,8 +234,6 @@ plotting_nodes = []
 html_nodes = []
 
 # Convert the segments files to a FileList
-seg_filenames = ['bufferSeg.txt', 'offSourceSeg.txt', 'onSourceSeg.txt']
-seg_files = [os.path.join(args.segment_dir, f) for f in seg_filenames]
 seg_files = _workflow.build_segment_filelist(args.segment_dir)
 
 # Logfile of this workflow
@@ -320,6 +326,8 @@ for snr_type in timeseries:
                 trig_file=offsource_file,
                 inj_file=inj_file,
                 ifo=ifo,
+                seg_files=seg_files,
+                veto_file=veto_file,
                 tags=tags,
             )
             plotting_nodes.append(plot_node)
@@ -359,6 +367,8 @@ for veto in vetoes:
                 trig_file=offsource_file,
                 inj_file=inj_file,
                 ifo=ifo_arg,
+                seg_files=seg_files,
+                veto_file=veto_file,
                 tags=tags,
             )
             plotting_nodes.append(plot_node)
@@ -392,6 +402,8 @@ if wflow.cp.has_section('pygrb_plot_coh_ifosnr'):
                     trig_file=offsource_file,
                     inj_file=inj_file,
                     ifo=ifo,
+                    seg_files=seg_files,
+                    veto_file=veto_file,
                     tags=tags,
                 )
                 plotting_nodes.append(plot_node)
@@ -436,6 +448,8 @@ for nstat in nstats:
                 out_dir,
                 trig_file=offsource_file,
                 inj_file=inj_file,
+                seg_files=seg_files,
+                veto_file=veto_file,
                 tags=tags,
             )
             plotting_nodes.append(plot_node)
@@ -483,6 +497,8 @@ for inj_set in inj_sets:
                     trig_file=offsource_file,
                     ifo=ifo,
                     inj_file=inj_file,
+                    seg_files=seg_files,
+                    veto_file=veto_file,
                     tags=tags,
                 )
                 plotting_nodes.append(plot_node)
@@ -498,6 +514,7 @@ for inj_set in inj_sets:
         offsource_file,
         seg_files,
         inj_file=inj_file,
+        veto_file=veto_file,
         tags=inj_file.tags,
     )
     html_nodes.append(html_node)
@@ -520,6 +537,8 @@ for inj_set in inj_sets:
             offsource_file,
             'daxes',
             out_dir,
+            seg_files=seg_files,
+            veto_file=veto_file,
             tags=inj_file.tags + ['loudest_quiet_found_injs'],
         )
         logging.info('Leaving minifollowups')
@@ -540,6 +559,7 @@ for stat in stats:
         trig_file=offsource_file,
         inj_file=inj_file,
         seg_files=seg_files,
+        veto_file=veto_file,
         tags=[stat],
     )
     plotting_nodes.append(plot_node)
@@ -570,6 +590,8 @@ else:
         offsource_file,
         'daxes',
         out_dir,
+        seg_files=seg_files,
+        veto_file=veto_file,
         tags=['loudest_offsource_events'],
     )
     logging.info('Leaving minifollowups')
@@ -603,6 +625,7 @@ for inj_set in inj_sets:
         inj_file=inj_file,
         bank_file=bank_file,
         seg_files=seg_files,
+        veto_file=veto_file,
         tags=tags,
         plot_bkgd=True,
     )
@@ -631,6 +654,7 @@ for i, offtrial in enumerate(offtrials):
             inj_file=inj_file,
             bank_file=bank_file,
             seg_files=seg_files,
+            veto_file=veto_file,
             tags=tags,
             plot_bkgd=False,
         )
@@ -741,6 +765,8 @@ for snr_type in ['reweighted', 'coherent']:
         'pygrb_plot_snr_timeseries',
         out_dir,
         trig_file=all_times_file,
+        seg_files=seg_files,
+        veto_file=veto_file,
         tags=[snr_type, 'alltimes'],
     )
     plotting_nodes.append(plot_node)
@@ -763,6 +789,8 @@ else:
         onsource_file,
         'daxes',
         out_dir,
+        seg_files=seg_files,
+        veto_file=veto_file,
         tags=['loudest_onsource_event'],
     )
     logging.info("Leaving onsource minifollowups")
@@ -785,6 +813,7 @@ for inj_set in inj_sets:
         inj_file=inj_file,
         bank_file=bank_file,
         seg_files=seg_files,
+        veto_file=veto_file,
         tags=tags,
         plot_bkgd=False,
     )

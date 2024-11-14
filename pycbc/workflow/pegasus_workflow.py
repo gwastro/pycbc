@@ -800,9 +800,13 @@ class SubWorkflow(dax.SubWorkflow):
         # change the attribute here.
         # WORSE, we only want to set this if the pegasus *planner* is version
         # 5.0.4 or larger
-        sproc_out = subprocess.check_output(['pegasus-version']).strip()
-        sproc_out = sproc_out.decode()
-        if version.parse(sproc_out) >= version.parse('5.0.4'):
+        try:
+            sproc_out = subprocess.check_output(['pegasus-version']).strip()
+            sproc_out = sproc_out.decode()
+            if version.parse(sproc_out) >= version.parse('5.0.4'):
+                output_map_file.for_planning=True
+        except:
+            logging.warning("Could not execute pegasus-version, assuming >= 5.0.4")
             output_map_file.for_planning=True
         self.add_inputs(output_map_file)
 

@@ -285,15 +285,31 @@ def _dataset_iterator(g, prefix=''):
 
 
 # =============================================================================
-# Functions to load triggers
+# Function to load trigger/injection data
 # =============================================================================
-def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
-                  slide_id=None):
-    """Loads triggers from PyGRB output file, returning a dictionary"""
+def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
+              slide_id=None):
+    """Load data from a trigger/injection PyGRB output file, returning a
+    dictionary. If the input_file is None, None is returned. data_tag enables
+    logging information about the number of triggers/injections found, so the
+    user should not set it to 'trigs'/'injs' when processing the onsource."""
+
+    if not input_file:
+        return None
 
     trigs = HFile(input_file, 'r')
     rw_snr = trigs['network/reweighted_snr'][:]
     net_ids = trigs['network/event_id'][:]
+
+    # Output the number of items loaded only upon a request by the user who is
+    # expected not to set data_tag to 'trigs'or 'injs' when processing the
+    # onsource
+    if data_tag=='trigs':
+        logging.info("%d triggers loaded.", len(rw_snr))
+    elif data_tag=='injs':
+        logging.info("%d injections loaded.", len(rw_snr))
+    else:
+        logging.info("Loading triggers.")
     ifo_ids = {}
     for ifo in ifos:
         ifo_ids[ifo] = trigs[ifo+'/event_id'][:]
@@ -307,6 +323,16 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
     above_thresh = rw_snr > 0
     num_orig_pts = len(above_thresh)
 
+    # Output the number of items surviging vetoes with the same logic as above
+    msg = ""
+    if data_tag=='trigs':
+        msg += f"{sum(above_thresh)} triggers "
+    elif data_tag=='injs':
+        msg = f"{sum(above_thresh)} injections "
+    if msg:
+        msg += f"surviving reweighted SNR cut at {rw_snr_threshold}."
+        logging.info(msg)
+
     # Do not assume that IFO and network datasets are sorted the same way:
     # find where each surviving network/event_id is placed in the IFO/event_id
     ifo_ids_above_thresh_locations = {}
@@ -315,10 +341,10 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
             numpy.array([numpy.where(ifo_ids[ifo] == net_id)[0][0]
                          for net_id in net_ids[above_thresh]])
 
-    # Apply the cut on all the data by remove points with reweighted SNR = 0
+    # Apply the cut on all the data by removing points with reweighted SNR = 0
     trigs_dict = {}
     with HFile(input_file, "r") as trigs:
-        for (path, dset) in dataset_iterator(trigs):
+        for (path, dset) in _dataset_iterator(trigs):
             # The dataset contains information other than trig/inj properties:
             # just copy it
             if len(dset) != num_orig_pts:
@@ -336,10 +362,13 @@ def load_triggers(input_file, ifos, vetoes, rw_snr_threshold=None,
                 trigs_dict[path] = dset[above_thresh]
 
             if trigs_dict[path].size == trigs['network/slide_id'][:].size:
-                trigs_dict[path] = slide_filter(trigs, trigs_dict[path],
-                                                slide_id=slide_id)
+                trigs_dict[path] = _slide_filter(trigs, trigs_dict[path],
+                                                 slide_id=slide_id)
 
     return trigs_dict
+
+
+
 
 
 # =============================================================================

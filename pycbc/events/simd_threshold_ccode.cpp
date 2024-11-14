@@ -92,11 +92,14 @@ void _parallel_threshold(int64_t N, std::complex<float> * __restrict arr,
 
             #pragma omp ordered
             {
-                t+=c;
+                t += c;
+                memmove(
+                    outl + t - c, outl + start, sizeof(unsigned int)*c
+                );
+                memmove(
+                    outv + t - c, outv + start, sizeof(std::complex<float>)*c
+                );
             }
-            memmove(outl+t-c, outl+start, sizeof(unsigned int)*c);
-            memmove(outv+t-c, outv+start, sizeof(std::complex<float>)*c);
-
         }
 
         count[0] = t;

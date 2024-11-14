@@ -42,18 +42,6 @@ __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
 __program__ = "pycbc_pygrb_plot_skygrid"
 
-# =============================================================================
-# Functions
-# =============================================================================
-# Load trigger data
-def load_data(input_file, ifos, vetoes, injections=False):
-    """Load data from a trigger/injection file"""
-    
-    logging.info("Loading triggers...")
-    
-    trigs = ppu.load_triggers(input_file, ifos, vetoes)
-        
-    return trigs
 
 # =============================================================================
 # Main script starts here
@@ -80,12 +68,11 @@ for outdir in outdirs:
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
 
-# Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
-                                           opts.veto_category)
+# Extract IFOs
+ifos = ppu.extract_ifos(trig_file)
 
-# Load trigger data
-trig_data = load_data(trig_file, ifos, vetoes)
+# Load trigger data: the sky-grid points are not time-slid in the plot
+trig_data = ppu.load_data(trig_file, ifos, data_tag=None, slide_id=0)
 
 #
 # Generate sky grid plot
