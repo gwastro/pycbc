@@ -23,8 +23,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: installing system packages
       run: |
-        conda install fftw mpi git-lfs graphviz gsl openssl openmpi
-        pip install "tox<4.0.0" pip setuptools --upgrade
+        conda install fftw mpi git-lfs graphviz gsl openssl openmpi "tox<4.0.0" pip setuptools
     - name: installing macosx packages
       if: matrix.os == 'macos-latest'
       run: |
