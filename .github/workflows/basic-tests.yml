@@ -17,11 +17,10 @@ jobs:
         test-type: [unittest, search, docs]
     steps:
     - uses: conda-incubator/setup-miniconda@v3
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
       with:
+        auto-update-conda: true
         python-version: ${{ matrix.python-version }}
+    - uses: actions/checkout@v4
     - name: installing system packages
       run: |
         conda install fftw mpi git-lfs graphviz gsl openssl openmpi
