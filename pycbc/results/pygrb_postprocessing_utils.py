@@ -582,7 +582,7 @@ def load_segment_dict(hdf_file_path):
 # Construct the trials from the timeslides, segments, and vetoes
 # =============================================================================
 def construct_trials(seg_files, seg_dict, ifos, slide_dict, veto_file,
-                     show_onsource=False):
+                     hide_onsource=True):
     """Constructs trials from triggers, timeslides, segments and vetoes"""
 
     logging.info("Constructing trials.")
@@ -603,7 +603,7 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, veto_file,
 
         # Fill in the buffer segment list if the onsource data must be hidden
         seg_buffer = segments.segmentlist()
-        if show_onsource:
+        if hide_onsource:
             for ifo in ifos:
                 slide_offset = slide_dict[slide_id][ifo]
                 seg_buffer.append(segments.segment(segs['buffer'][0] -
