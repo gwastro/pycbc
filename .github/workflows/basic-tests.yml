@@ -20,6 +20,7 @@ jobs:
       with:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
+        activate-environment: tests
     - uses: actions/checkout@v4
     - name: installing system packages
       run: |
