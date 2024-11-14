@@ -806,7 +806,7 @@ class SubWorkflow(dax.SubWorkflow):
             if version.parse(sproc_out) >= version.parse('5.0.4'):
                 output_map_file.for_planning=True
         except:
-            print("Could not execute pegasus-version, assuming >= 5.0.4")
+            logging.warning("Could not execute pegasus-version, assuming >= 5.0.4")
             output_map_file.for_planning=True
         self.add_inputs(output_map_file)
 
