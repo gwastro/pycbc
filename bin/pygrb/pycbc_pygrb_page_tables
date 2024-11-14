@@ -395,7 +395,7 @@ if lofft_outfile:
         d.append(bestnr)
         td.append(d)
 
-    # th: table header
+    # th: table header [pycbc_pygrb_minifollowups looks for 'Slide Num']
     th = ['Trial', 'Slide Num', 'p-value', 'GPS time',
           'Rec. m1', 'Rec. m2', 'Rec. Mc', 'Rec. spin1z', 'Rec. spin2z',
           'Rec. RA', 'Rec. Dec', 'SNR', 'Chi^2', 'Null SNR']
