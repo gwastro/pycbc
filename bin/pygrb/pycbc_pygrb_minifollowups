@@ -120,7 +120,6 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
     else:
         workflow.cp.remove_option('pygrb_plot_snr_timeseries','slide-id')
 
-
     return node.output_files
 
 
