@@ -55,10 +55,10 @@ jobs:
         which python
         echo "Where is tox?"
         which tox
-        echo "What is $CONDA_PREFIX?"
+        echo "What is CONDA_PREFIX?"
         echo $CONDA_PREFIX
         echo "Is LAPACK where it should?"
-        ls $CONDA_PREFIX/lib/ | grep liblapack
+        find $CONDA_PREFIX/lib/ -type f -name liblapack\*
         echo "What is LD_LIBRARY_PATH?"
         echo $LD_LIBRARY_PATH
     - name: run pycbc test suite
