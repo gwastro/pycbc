@@ -65,21 +65,21 @@ jobs:
       run: |
         export LAL_DATA_PATH=$PWD
         export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
-        export C_INCLUDE_PATH=$CONDA_PREFIX/lib:$C_INCLUDE_PATH
+        export C_INCLUDE_PATH=$CONDA_PREFIX/include:$C_INCLUDE_PATH
         tox -e py-${{matrix.test-type}}
     - name: check help messages work
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$PWD
         export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
-        export C_INCLUDE_PATH=$CONDA_PREFIX/lib:$C_INCLUDE_PATH
+        export C_INCLUDE_PATH=$CONDA_PREFIX/include:$C_INCLUDE_PATH
         tox -e py-help
     - name: run inference tests
       if: matrix.test-type == 'search'
       run: |
         export LAL_DATA_PATH=$PWD
         export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
-        export C_INCLUDE_PATH=$CONDA_PREFIX/lib:$C_INCLUDE_PATH
+        export C_INCLUDE_PATH=$CONDA_PREFIX/include:$C_INCLUDE_PATH
         tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
