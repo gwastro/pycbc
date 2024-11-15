@@ -102,8 +102,7 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
     if ifo is not None:
         title_str = f"'{ifo} SNR at {central_time:.3f} (s)'"
     else:
-        title_str = "'%s SNR at %.3f (s)'" % (snr_type.capitalize(),
-                                              central_time)
+        title_str = f"'{snr_type.capitalize()} SNR at {central_time:.3f} (s)'"
     node.add_opt('--trigger-time', central_time)
     node.add_opt('--plot-title', title_str)
 
@@ -193,7 +192,7 @@ is_injection_followup = True
 try:
     time_shift = fp[ifos[0]+' time shift (s)'][0]
     is_injection_followup = False
-except:
+except KeyError:
     pass
 
 # Loop over triggers/injections to be followed up
