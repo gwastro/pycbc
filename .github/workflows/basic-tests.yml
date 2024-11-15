@@ -15,6 +15,10 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
         test-type: [unittest, search, docs]
+    defaults:
+      run:
+        # important when we use Conda envs
+        shell: bash -el {0}
     steps:
     - uses: conda-incubator/setup-miniconda@v3
       with:
@@ -45,11 +49,17 @@ jobs:
         cd ../
     - name: DEBUG DEBUG DEBUG checking various env stuff
       run: |
+        echo "Which Python version do we have?"
         python --version
+        echo "Where is Python?"
         which python
+        echo "Where is tox?"
         which tox
+        echo "What is $CONDA_PREFIX?"
         echo $CONDA_PREFIX
-        ls $CONDA_PREFIX/lib/liblapack*
+        echo "Is LAPACK where it should?"
+        ls $CONDA_PREFIX/lib/ | grep liblapack
+        echo "What is LD_LIBRARY_PATH?"
         echo $LD_LIBRARY_PATH
     - name: run pycbc test suite
       run: |
