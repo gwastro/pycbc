@@ -28,7 +28,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: installing system packages
       run: |
-        conda install fftw mpi git-lfs graphviz gsl openssl openmpi "tox<4.0.0"
+        conda install fftw mpi git-lfs graphviz gsl openssl openmpi
+        conda install -c conda-forge "tox<4.0.0"
     - name: installing macosx packages
       if: matrix.os == 'macos-latest'
       run: |
@@ -57,22 +58,25 @@ jobs:
         echo "What is CONDA_PREFIX?"
         echo $CONDA_PREFIX
         echo "Is LAPACK where it should?"
-        find $CONDA_PREFIX/lib/ -type f -name liblapack\*
+        find $CONDA_PREFIX -name \*lapack\*
         echo "What is LD_LIBRARY_PATH?"
         echo $LD_LIBRARY_PATH
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
+        export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
         tox -e py-${{matrix.test-type}}
     - name: check help messages work
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$PWD
+        export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
         tox -e py-help
     - name: run inference tests
       if: matrix.test-type == 'search'
       run: |
         export LAL_DATA_PATH=$PWD
+        export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
         tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
