@@ -39,8 +39,7 @@ from pycbc.distributions.external import External, DistributionFunctionFromFile
 from pycbc.distributions.fixedsamples import FixedSamples
 from pycbc.distributions.mass import MchirpfromUniformMass1Mass2, \
                                      QfromUniformMass1Mass2
-from pycbc.distributions.milky_way_radial import MilkyWayRadial
-from pycbc.distributions.milky_way_height import MilkyWayHeight                                    
+from pycbc.distributions.sym_gamma_dist import SymGammaDist                            
                                    
                                     
 
@@ -66,8 +65,7 @@ distribs = {
     MchirpfromUniformMass1Mass2.name: MchirpfromUniformMass1Mass2,
     QfromUniformMass1Mass2.name: QfromUniformMass1Mass2,
     FisherSky.name: FisherSky,
-    MilkyWayHeight.name: MilkyWayHeight,
-    MilkyWayRadial.name: MilkyWayRadial
+    SymGammaDist.name: SymGammaDist
 }
 
 def read_distributions_from_config(cp, section="prior"):
