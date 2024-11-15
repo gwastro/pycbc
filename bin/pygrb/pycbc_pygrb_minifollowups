@@ -56,22 +56,22 @@ def add_wiki_row(outfile, cols):
 
 
 def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
-                         shift_time, out_dir, ifo=None, seg_files=None,
-                         veto_file=None, slide_id=0, tags=None):
+                         out_dir, ifo=None, seg_files=None,
+                         veto_file=None, tags=None):
     """Adds a node for a timeseries of PyGRB results to the workflow"""
 
     tags = [] if tags is None else tags
 
-    # If necessary, overwrite the slide-id configuration option to ensure only
-    # the correct timeslide is used in these follow-up plots
+    # Ensure that zero-lag data is used in these follow-up plots and store
+    # the slide-id option originally provided
     orig_slide_id = None
     if workflow.cp.has_option('pygrb_plot_snr_timeseries','slide-id'):
         orig_slide_id = workflow.cp.get('pygrb_plot_snr_timeseries','slide-id')
-        workflow.cp.add_options_to_section(
-            'pygrb_plot_snr_timeseries',
-            [('slide-id', str(slide_id))],
-            True
-        )
+    workflow.cp.add_options_to_section(
+        'pygrb_plot_snr_timeseries',
+        [('slide-id', '0')],
+        True
+    )
 
     # Initialize job node with its tags
     grb_name = workflow.cp.get('workflow', 'trigger-name')
@@ -97,10 +97,7 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
     node.add_opt('--y-variable', snr_type)
     if ifo is not None:
         node.add_opt('--ifo', ifo)
-    reset_central_time = shift_time - central_time
-    # Horizontal axis range the = prevents errors with negative times
-    x_lims = str(-5.+reset_central_time)+','+str(reset_central_time+5.)
-    node.add_opt('--x-lims='+x_lims)
+    node.add_opt('--x-lims=-5.,5.')
     # Plot title
     if ifo is not None:
         title_str = f"'{ifo} SNR at {central_time:.3f} (s)'"
@@ -113,13 +110,16 @@ def make_timeseries_plot(workflow, trig_file, snr_type, central_time,
     # Add job node to workflow
     workflow += node
 
-    # Revert back the original slide-id option if necessary
+    # Revert the config parser back to how it was given
     if orig_slide_id:
         workflow.cp.add_options_to_section(
             'pygrb_plot_snr_timeseries',
             [('slide-id', orig_slide_id)],
             True
         )
+    else:
+        workflow.cp.remove_option('pygrb_plot_snr_timeseries','slide-id')
+
 
     return node.output_files
 
@@ -200,9 +200,10 @@ except:
 # Loop over triggers/injections to be followed up
 for num_event in range(num_events):
     files = FileList([])
-    logging.info('Processing event: %s', num_event)
+    logging.info('Processing event: %s', num_event+1)
     gps_time = fp['GPS time'][num_event]
     gps_time = gps_time.astype(float)
+    tags = args.tags + [str(num_event+1)]
     if wiki_file:
         row = []
         for key in fp.keys():
@@ -212,37 +213,30 @@ for num_event in range(num_events):
     if is_injection_followup:
         for snr_type in ['reweighted', 'coherent']:
             files += make_timeseries_plot(workflow, trig_file,
-                                          snr_type, gps_time, gps_time,
+                                          snr_type, gps_time,
                                           args.output_dir, ifo=None,
                                           seg_files=seg_files,
                                           veto_file=veto_file,
-                                          slide_id=0,
-                                          tags=args.tags + [str(num_event)])
+                                          tags=tags)
         for ifo in ifos:
             files += mini.make_qscan_plot(workflow, ifo, gps_time,
                                           args.output_dir,
-                                          tags=args.tags + [str(num_event)])
-    # Handle off/on-source loudest triggers follow-up (which are on slid data)
+                                          tags=tags)
+    # Handle off/on-source loudest triggers follow-up (which may be on slid
+    # data in the case of the off-source)
     else:
-        # If the file has information about slides, this is the follow up of an
-        # offsource event, otherwise it is the loudest onsource event, and
-        # zero-lag data must be used
-        slide_id = 0
-        if 'Slide Num' in fp.keys():
-            slide_id = fp['Slide Num'][num_event]
-        for ifo in ifos:
+        for i_ifo, ifo in enumerate(ifos):
             time_shift = fp[ifo+' time shift (s)'][num_event]
-            ifo_time = gps_time - time_shift
+            ifo_time = gps_time + time_shift
             files += make_timeseries_plot(workflow, trig_file,
-                                          'single', gps_time, ifo_time,
+                                          'single', ifo_time,
                                           args.output_dir, ifo=ifo,
                                           seg_files=seg_files,
                                           veto_file=veto_file,
-                                          slide_id=slide_id,
-                                          tags=args.tags + [str(num_event)])
+                                          tags=tags)
             files += mini.make_qscan_plot(workflow, ifo, ifo_time,
                                           args.output_dir,
-                                          tags=args.tags + [str(num_event)])
+                                          tags=tags)
 
     layouts += list(layout.grouper(files, 2))
 
