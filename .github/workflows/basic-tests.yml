@@ -29,7 +29,7 @@ jobs:
     - name: installing system packages
       run: |
         conda install fftw git-lfs graphviz gsl openssl
-        conda install -c conda-forge "tox<4.0.0" mpi openmpi
+        conda install -c conda-forge "tox<4.0.0" mpi openmpi mpi4py
     - name: installing macosx packages
       if: matrix.os == 'macos-latest'
       run: |
