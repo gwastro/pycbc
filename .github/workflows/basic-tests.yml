@@ -28,8 +28,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: installing system packages
       run: |
-        conda install fftw mpi git-lfs graphviz gsl openssl openmpi
-        conda install -c conda-forge "tox<4.0.0"
+        conda install fftw git-lfs graphviz gsl openssl
+        conda install -c conda-forge "tox<4.0.0" openmpi
     - name: installing macosx packages
       if: matrix.os == 'macos-latest'
       run: |
@@ -47,39 +47,25 @@ jobs:
         git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5"
         mv data/lalsimulation/* ../
         cd ../
-    - name: DEBUG DEBUG DEBUG checking various env stuff
-      run: |
-        echo "Which Python version do we have?"
-        python --version
-        echo "Where is Python?"
-        which python
-        echo "Where is tox?"
-        which tox
-        echo "What is CONDA_PREFIX?"
-        echo $CONDA_PREFIX
-        echo "Is LAPACK available?"
-        find $CONDA_PREFIX -name \*lapack\*
-        echo "Is gsl_cblas.h available?"
-        find $CONDA_PREFIX -name gsl_cblas.h
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
         export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
-        export C_INCLUDE_PATH=$CONDA_PREFIX/include:$C_INCLUDE_PATH
+        export CPATH=$CONDA_PREFIX/include:$CPATH
         tox -e py-${{matrix.test-type}}
     - name: check help messages work
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$PWD
         export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
-        export C_INCLUDE_PATH=$CONDA_PREFIX/include:$C_INCLUDE_PATH
+        export CPATH=$CONDA_PREFIX/include:$CPATH
         tox -e py-help
     - name: run inference tests
       if: matrix.test-type == 'search'
       run: |
         export LAL_DATA_PATH=$PWD
         export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
-        export C_INCLUDE_PATH=$CONDA_PREFIX/include:$C_INCLUDE_PATH
+        export CPATH=$CONDA_PREFIX/include:$CPATH
         tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
