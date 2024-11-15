@@ -43,6 +43,14 @@ jobs:
         git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5"
         mv data/lalsimulation/* ../
         cd ../
+    - name: DEBUG DEBUG DEBUG checking various env stuff
+      run: |
+        python --version
+        which python
+        which tox
+        echo $CONDA_PREFIX
+        ls $CONDA_PREFIX/lib/liblapack*
+        echo $LD_LIBRARY_PATH
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
