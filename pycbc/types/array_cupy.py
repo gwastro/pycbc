@@ -35,7 +35,7 @@ def empty(length, dtype=_xp.float64):
     return _xp.empty(length, dtype=dtype)
 
 def ptr(self):
-    return self.data.ctypes.data
+    return self.data.data.mem.ptr
 
 def dot(self, other):
     return _xp.dot(self._data,other)
