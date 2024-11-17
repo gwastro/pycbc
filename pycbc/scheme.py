@@ -115,6 +115,12 @@ class CUDAScheme(Scheme):
         import atexit
         atexit.register(clean_cuda,self.context)
 
+
+class CUPYScheme(Scheme):
+    """Scheme for using CUPY"""
+    def __init__(self):
+        import cupy # Fail now if cupy is not there.
+
 class CPUScheme(Scheme):
     def __init__(self, num_threads=1):
         if isinstance(num_threads, int):
@@ -160,6 +166,7 @@ class NumpyScheme(CPUScheme):
 scheme_prefix = {
     CUDAScheme: "cuda",
     CPUScheme: "cpu",
+    CUPYScheme: "cupy",
     MKLScheme: "mkl",
     NumpyScheme: "numpy",
 }
@@ -212,10 +219,10 @@ def schemed(prefix):
 
                     return schemed_fn(*args, **kwds)
 
-                err = """Failed to find implementation of (%s)
-                      for %s scheme." % (str(fn), current_prefix())"""
+                err = (f"Failed to find implementation of {func.__name__} "
+                       f"for {current_prefix()} scheme. ")
                 for emsg in exc_errors:
-                    err += print(emsg)
+                    err += str(emsg) + " "
                 raise RuntimeError(err)
         return _scheming_function
 
