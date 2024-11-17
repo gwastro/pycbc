@@ -299,6 +299,9 @@ def from_cli(opt):
         else:
             ctx = MKLScheme()
         logger.info("Running with MKL support: %s threads" % ctx.num_threads)
+    elif name == 'cupy':
+        logger.info("Running with CUPY support")
+        cts = CUPYScheme()
     else:
         if len(scheme_str) > 1:
             numt = scheme_str[1]
