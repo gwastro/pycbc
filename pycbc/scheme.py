@@ -301,7 +301,7 @@ def from_cli(opt):
         logger.info("Running with MKL support: %s threads" % ctx.num_threads)
     elif name == 'cupy':
         logger.info("Running with CUPY support")
-        cts = CUPYScheme()
+        ctx = CUPYScheme()
     else:
         if len(scheme_str) > 1:
             numt = scheme_str[1]
