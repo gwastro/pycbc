@@ -728,7 +728,7 @@ class _FLR_detector(AbsSpaceDet):
 
         return wf_proj
 
-    def project_wave(self, hp, hc, lamb, beta, polarization, reference_time=None,
+    def project_wave(self, hp, hc, lamb, beta, polarization=0, reference_time=None,
                      tdi=1, tdi_chan='AET', use_gpu=None, pad_data=False,
                      remove_garbage=True, t0=1e4):
         """
@@ -756,7 +756,7 @@ class _FLR_detector(AbsSpaceDet):
         beta : float
             The ecliptic latitude in the SSB frame.
 
-        polarization : float
+        polarization : float (optional)
             The polarization angle of the GW in radians.
 
         reference_time : float (optional)
@@ -867,5 +867,5 @@ class space_detector(AbsSpaceDet):
     def get_links(self, hp, hc, lamb, beta, **kwargs):
         return self.backend.get_links(hp, hc, lamb, beta, **kwargs)
 
-    def project_wave(self, hp, hc, lamb, beta, polarization, **kwargs):
-        return self.backend.project_wave(hp, hc, lamb, beta, polarization, **kwargs)
+    def project_wave(self, hp, hc, lamb, beta, **kwargs):
+        return self.backend.project_wave(hp, hc, lamb, beta, **kwargs)
