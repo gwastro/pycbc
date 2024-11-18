@@ -255,8 +255,8 @@ class _LDC_detector(AbsSpaceDet):
         and TDI. See self.orbits_init for accepted inputs. Default
         'EqualArmlength'.
     """
-    def __init__(self, orbits='EqualArmlength', **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, orbits='EqualArmlength', *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # orbits properties
         self.orbits = orbits
         self.orbits_start_time = None
@@ -577,10 +577,10 @@ class _FLR_detector(AbsSpaceDet):
         and TDI. See self.orbits_init for accepted inputs. Default
         'EqualArmlength'.
     """
-    def __init__(self, orbits='EqualArmlength', use_gpu=False, **kwargs):
+    def __init__(self, orbits='EqualArmlength', use_gpu=False, *args, **kwargs):
         logging.warning('WARNING: FastLISAResponse TDI implementation is a work in progress. ' +
                         'Currently unable to reproduce LDC or BBHx waveforms.')
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
         self.use_gpu = use_gpu
 
         # orbits properties
@@ -851,21 +851,20 @@ class space_detector(AbsSpaceDet):
         The backend architecture to use for generating TDI. Accepts 'LDC'
         or 'FLR'. Default 'LDC'.
     """
-    def __init__(self, detector='LDC', **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, detector='LDC', *args, **kwargs):
         if detector == 'LDC':
-            self.backend = _LDC_detector(**kwargs)
+            self.backend = _LDC_detector(*args, **kwargs)
         elif detector == 'FLR':
-            self.backend = _FLR_detector(**kwargs)
+            self.backend = _FLR_detector(*args, **kwargs)
         else:
             raise NotImplementedError('Unrecognized backend argument. ' +
                                       'Currently accepts: "LDC", "FLR"')
 
-    def orbits_init(self, **kwargs):
-        return self.backend.orbits_init(**kwargs)
+    def orbits_init(self, *args, **kwargs):
+        return self.backend.orbits_init(*args, **kwargs)
 
-    def get_links(self, hp, hc, lamb, beta, **kwargs):
-        return self.backend.get_links(hp, hc, lamb, beta, **kwargs)
+    def get_links(self, hp, hc, lamb, beta, *args, **kwargs):
+        return self.backend.get_links(hp, hc, lamb, beta, *args, **kwargs)
 
-    def project_wave(self, hp, hc, lamb, beta, **kwargs):
-        return self.backend.project_wave(hp, hc, lamb, beta, **kwargs)
+    def project_wave(self, hp, hc, lamb, beta, *args, **kwargs):
+        return self.backend.project_wave(hp, hc, lamb, beta, *args, **kwargs)
