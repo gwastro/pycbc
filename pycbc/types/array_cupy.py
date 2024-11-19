@@ -128,3 +128,13 @@ def _scheme_matches_base_array(array):
         return True
     else:
         return False
+
+def _to_device(array):
+    return _xp.asarray(array)
+
+def numpy(self):
+    return _xp.asnumpy(self._data)
+
+def _copy_base_array(array):
+    return array.copy()
+
