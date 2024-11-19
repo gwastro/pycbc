@@ -5,12 +5,15 @@ import pycbc.fft
 import pycbc.noise
 import pycbc.strain
 import pycbc.waveform
+import pycbc.types
 
 
 @cache
 def get_window(window_length):
     if window_length:
-        return signal.windows.hann(window_length * 2 + 1)[:window_length]
+        return pycbc.types.Array(
+                signal.windows.hann(window_length * 2 + 1)[:window_length]
+        )
     else:
         return None
 
@@ -62,7 +65,7 @@ def apply_pre_merger_kernel(
     tout_ww.data[:nfz] = 0
     if window is not None:
         # Apply window
-        tout_ww.data[nfz:nfz+window_length] *= window
+        tout_ww.data[nfz:nfz+window_length] *= window.data
     # Zero data from cutoff
     tout_ww.data[-nctf:] = 0
     return tout_ww

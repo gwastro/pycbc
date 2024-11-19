@@ -417,7 +417,8 @@ def generate_pre_merger_psds(
         pycbc.types.zeros(td_psd_length),
         delta_t=delta_t,
     )
-    zero_phase_kern_pycbc.data[-kernel_length:] = zero_phase_kern[-kernel_length:]
+    filter_data = pycbc.types.Array(zero_phase_kern[-kernel_length:])
+    zero_phase_kern_pycbc.data[-kernel_length:] = filter_data.data[:]
     zero_phase_kern_pycbc.data[0] = zero_phase_kern[0]
 
     # Frequency domain pycbc PSD

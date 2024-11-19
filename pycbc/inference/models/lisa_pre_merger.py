@@ -179,7 +179,7 @@ class LISAPreMergerModel(BaseModel):
         # Can safely set copy=False since ws won't be used again.
         for channel in ws.keys():
             wf[channel] = apply_fseries_time_shift(
-                ws[channel], dt, copy=False,
+                ws[channel], float(dt), copy=False,
             )
             wf[channel]._epoch = self._epoch
         return wf
