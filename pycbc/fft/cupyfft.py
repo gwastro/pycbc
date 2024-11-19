@@ -82,7 +82,6 @@ class IFFT(_BaseIFFT):
     """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(IFFT, self).__init__(invec, outvec, nbatch, size)
-        logging.warning(WARN_MSG)
         self.prec, self.itype, self.otype = _check_fft_args(invec, outvec)
 
     def execute(self):
