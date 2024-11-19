@@ -23,7 +23,6 @@
 Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
-import os
 import logging
 import argparse
 import copy
@@ -33,6 +32,7 @@ import h5py
 from scipy import stats
 import ligo.segments as segments
 from pycbc.events.coherent import reweightedsnr_cut
+from pycbc.events import veto
 from pycbc import add_common_pycbc_options
 from pycbc.io.hdf import HFile
 
@@ -242,7 +242,7 @@ def _extract_vetoes(veto_file, ifos, offsource):
             vetoes[ifo] = segments.segmentlist([offsource]) - clean_segs[ifo]
         vetoes.coalesce()
         for ifo in ifos:
-            for v in vetoes[ifo]: 
+            for v in vetoes[ifo]:
                 v_span = v[1] - v[0]
                 logging.info("%ds of data vetoed at GPS time %d",
                              v_span, v[0])
@@ -269,7 +269,7 @@ def _slide_vetoes(vetoes, slide_dict_or_list, slide_id, ifos):
 
 
 # =============================================================================
-# Recursive function to reach all datasets in an HDF file handle 
+# Recursive function to reach all datasets in an HDF file handle
 # =============================================================================
 def _dataset_iterator(g, prefix=''):
     """Reach all datasets in an HDF file handle"""
@@ -368,9 +368,6 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
     return trigs_dict
 
 
-
-
-
 # =============================================================================
 # Detector utils:
 # * Function to calculate the antenna response F+^2 + Fx^2
@@ -460,38 +457,35 @@ def sort_trigs(trial_dict, trigs, slide_dict, seg_dict):
 # =============================================================================
 # Extract trigger properties and store them as dictionaries
 # =============================================================================
-def extract_basic_trig_properties(trial_dict, trigs, slide_dict, seg_dict,
-                                  opts):
-    """Extract and store as dictionaries time, SNR, and BestNR of
-    time-slid triggers"""
+def extract_trig_properties(trial_dict, trigs, slide_dict, seg_dict, keys):
+    """Extract and store as dictionaries specific keys of time-slid
+    triggers (trigs) compatibly with the trials dictionary (trial_dict)"""
 
     # Sort the triggers into each slide
     sorted_trigs = sort_trigs(trial_dict, trigs, slide_dict, seg_dict)
-    logger.info("Triggers sorted.")
+    n_surviving_trigs = sum([len(i) for i in sorted_trigs.values()])
+    msg = f"{n_surviving_trigs} triggers found within the trials dictionary "
+    msg += "and sorted."
+    logging.info(msg)
 
-    # Build the 3 dictionaries
-    trig_time = {}
-    trig_snr = {}
-    trig_bestnr = {}
+    found_trigs = {}
+    for key in keys:
+        found_trigs[key] = {}
+
     for slide_id in slide_dict:
         slide_trigs = sorted_trigs[slide_id]
         indices = numpy.nonzero(
             numpy.isin(trigs['network/event_id'], slide_trigs))[0]
-        if slide_trigs:
-            trig_time[slide_id] = trigs['network/end_time_gc'][
-                indices]
-            trig_snr[slide_id] = trigs['network/coherent_snr'][
-                indices]
-        else:
-            trig_time[slide_id] = numpy.asarray([])
-            trig_snr[slide_id] = numpy.asarray([])
-        trig_bestnr[slide_id] = reweightedsnr_cut(
-            trigs['network/reweighted_snr'][indices],
-            opts.newsnr_threshold)
+        for key in keys:
+            if slide_trigs:
+                found_trigs[key][slide_id] = get_coinc_snr(trigs)[indices] \
+                    if key == 'network/coincident_snr' else trigs[key][indices]
+            else:
+                found_trigs[key][slide_id] = numpy.asarray([])
 
-    logger.info("Time, SNR, and BestNR of triggers extracted.")
+    logging.info("Triggers information extracted.")
 
-    return trig_time, trig_snr, trig_bestnr
+    return found_trigs
 
 
 # =============================================================================
@@ -582,9 +576,11 @@ def load_segment_dict(hdf_file_path):
 # =============================================================================
 # Construct the trials from the timeslides, segments, and vetoes
 # =============================================================================
-def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
-    """Constructs trials from triggers, timeslides, segments and vetoes"""
+def construct_trials(seg_files, seg_dict, ifos, slide_dict, veto_file,
+                     hide_onsource=True):
+    """Constructs trials from segments, timeslides, and vetoes"""
 
+    logging.info("Constructing trials.")
     trial_dict = {}
 
     # Get segments
@@ -593,19 +589,23 @@ def construct_trials(seg_files, seg_dict, ifos, slide_dict, vetoes):
     # Separate segments
     trial_time = abs(segs['on'])
 
+    # Determine the veto segments
+    vetoes = _extract_vetoes(veto_file, ifos, segs['off'])
+
+    # Slide vetoes over trials: this can only *reduce* the analysis time
     for slide_id in slide_dict:
-        # These can only *reduce* the analysis time
         curr_seg_list = seg_dict[slide_id]
 
-        # Construct the buffer segment list
+        # Fill in the buffer segment list if the onsource data must be hidden
         seg_buffer = segments.segmentlist()
-        for ifo in ifos:
-            slide_offset = slide_dict[slide_id][ifo]
-            seg_buffer.append(segments.segment(segs['buffer'][0] -
-                                               slide_offset,
-                                               segs['buffer'][1] -
-                                               slide_offset))
-        seg_buffer.coalesce()
+        if hide_onsource:
+            for ifo in ifos:
+                slide_offset = slide_dict[slide_id][ifo]
+                seg_buffer.append(segments.segment(segs['buffer'][0] -
+                                                   slide_offset,
+                                                   segs['buffer'][1] -
+                                                   slide_offset))
+            seg_buffer.coalesce()
 
         # Construct the ifo-indexed dictionary of slid veteoes
         slid_vetoes = _slide_vetoes(vetoes, slide_dict, slide_id, ifos)
