@@ -118,8 +118,20 @@ class CUDAScheme(Scheme):
 
 class CUPYScheme(Scheme):
     """Scheme for using CUPY"""
-    def __init__(self):
+    def __init__(self, device_num=None):
         import cupy # Fail now if cupy is not there.
+        import cupy.cuda.Device
+        self.device_num = device_num
+        self.cuda_device = cupy.cuda.Device(device_num)
+    def __enter__(self):
+        super().__enter__()
+        import cupy.cuda.Device
+        self.cuda_device.__enter__()
+
+    def __exit__(self):
+        super().__exit__()
+        self.cuda.device.__exit__()
+
 
 class CPUScheme(Scheme):
     def __init__(self, num_threads=1):
