@@ -46,55 +46,6 @@ __program__ = "pycbc_pygrb_plot_null_stats"
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load trigger data
-def load_data(input_file, ifos, vetoes, opts, injections=False, slide_id=None):
-    """Load data from a trigger/injection file"""
-
-    null_stat_type = opts.y_variable
-
-    # Initialize the dictionary
-    data = {}
-    data['coherent'] = None
-    data[null_stat_type] = None
-
-    if input_file:
-        if injections:
-            logging.info("Loading injections...")
-            # This will eventually become ppu.load_injections()
-            trigs_or_injs = \
-                ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=opts.newsnr_threshold,
-                                  slide_id=slide_id)
-        else:
-            logging.info("Loading triggers...")
-            trigs_or_injs = \
-                ppu.load_triggers(input_file, ifos, vetoes,
-                                  rw_snr_threshold=opts.newsnr_threshold,
-                                  slide_id=slide_id)
-
-        # Coherent SNR is always used
-        data['coherent'] = trigs_or_injs['network/coherent_snr']
-
-        # The other SNR may vary
-        if null_stat_type == 'null':
-            data[null_stat_type] = \
-                trigs_or_injs['network/%s_snr' % null_stat_type][:]
-        elif null_stat_type == 'single':
-            key = opts.ifo + '/snr'
-            data[null_stat_type] = trigs_or_injs[key][:]
-        elif null_stat_type == 'coincident':
-            data[null_stat_type] = ppu.get_coinc_snr(trigs_or_injs)
-
-        # Count surviving points
-        num_trigs_or_injs = len(trigs_or_injs['network/reweighted_snr'])
-        if injections:
-            logging.info("%d injections found.", num_trigs_or_injs)
-        else:
-            logging.info("%d triggers found.", num_trigs_or_injs)
-
-    return data
-
-
 # Function that produces the contrours to be plotted
 def calculate_contours(opts, new_snrs=None):
     """Generate the contours to plot"""
@@ -153,20 +104,19 @@ trig_file = os.path.abspath(opts.trig_file)
 found_missed_file = os.path.abspath(opts.found_missed_file)\
     if opts.found_missed_file else None
 zoom_in = opts.zoom_in
-null_stat_type = opts.y_variable
 
 # Prepare plot title and caption
 y_labels = {'null': "Null SNR",
             'coincident': "Coincident SNR"}  # TODO: overwhitened
 if opts.plot_title is None:
-    opts.plot_title = y_labels[null_stat_type] + " vs Coherent SNR"
+    opts.plot_title = y_labels[opts.y_variable] + " vs Coherent SNR"
 if opts.plot_caption is None:
     opts.plot_caption = ("Blue crosses: background triggers.  ")
     if found_missed_file:
         opts.plot_caption = opts.plot_caption +\
                             ("Red crosses: injections triggers.  ")
 
-    if null_stat_type == 'coincident':
+    if opts.y_variable == 'coincident':
         opts.plot_caption += ("Green line: coincident SNR = coherent SNR.")
     else:
         opts.plot_caption = opts.plot_caption +\
@@ -181,17 +131,65 @@ outdir = os.path.split(os.path.abspath(opts.output_file))[0]
 if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
-# Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(trig_file, opts.veto_files,
-                                           opts.veto_category)
+# Extract IFOs
+ifos = ppu.extract_ifos(trig_file)
 
-# Extract trigger data
-trig_data = load_data(trig_file, ifos, vetoes, opts,
-                      slide_id=opts.slide_id)
+# Generate time-slides dictionary
+slide_dict = ppu.load_time_slides(trig_file)
 
-# Extract (or initialize) injection data
-inj_data = load_data(found_missed_file, ifos, vetoes, opts,
-                     injections=True, slide_id=0)
+# We will be looping over slide_dict so reduce it if necessary
+if opts.slide_id is not None:
+    for key in list(slide_dict.keys()):
+        if key != opts.slide_id:
+            slide_dict.pop(key, None)
+
+# Generate segments dictionary
+segment_dict = ppu.load_segment_dict(trig_file)
+
+# Construct trials removing vetoed times
+trial_dict, total_trials = ppu.construct_trials(
+    opts.seg_files,
+    segment_dict,
+    ifos,
+    slide_dict,
+    opts.veto_file
+)
+
+# Load triggers/injections (apply reweighted SNR cut, not vetoes)
+trig_data = ppu.load_data(trig_file, ifos, data_tag='trigs',
+                          rw_snr_threshold=opts.newsnr_threshold,
+                          slide_id=opts.slide_id)
+inj_data = ppu.load_data(found_missed_file, ifos, data_tag='injs',
+                         rw_snr_threshold=opts.newsnr_threshold,
+                         slide_id=0)
+
+# Extract needed trigger properties and store as dictionaries
+# Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
+# Coherent SNR is always used
+x_key = 'network/coherent_snr'
+# The other SNR may vary
+y_key = 'network/' + opts.y_variable + '_snr'
+found_trigs_slides = ppu.extract_trig_properties(
+    trial_dict,
+    trig_data,
+    slide_dict,
+    segment_dict,
+    [x_key, y_key]
+)
+found_trigs = {}
+for key in [x_key, y_key]:
+    found_trigs[key] = numpy.concatenate(
+       [found_trigs_slides[key][slide_id][:] for slide_id in slide_dict]
+    )
+
+# Gather injections found surviving vetoes
+found_injs, *_ = ppu.apply_vetoes_to_found_injs(
+    found_missed_file,
+    inj_data,
+    ifos,
+    veto_file=opts.veto_file,
+    keys=[x_key, y_key]
+)
 
 # Generate plots
 logging.info("Plotting...")
@@ -202,9 +200,9 @@ cont_colors = None
 shade_cont_value = None
 x_max = None
 # Coincident SNR plot case: we want a coinc=coh diagonal line on the plot
-if null_stat_type == 'coincident':
+if y_key == 'network/coincident_snr':
     cont_colors = ['g-']
-    x_max = plu.axis_max_value(trig_data['coherent'], inj_data['coherent'],
+    x_max = plu.axis_max_value(found_trigs[x_key], found_injs[x_key],
                                found_missed_file)
     snr_vals = [4, x_max]
     null_stat_conts = [[4, x_max]]
@@ -226,12 +224,9 @@ if not opts.y_lims and zoom_in:
     opts.y_lims = '0,30'
 # Get rcParams
 rc('font', size=14)
-# Set color for out-of-range values
-# Determine y-axis values of triggers and injections
-y_label = y_labels[null_stat_type]
-trigs = [trig_data['coherent'], trig_data[null_stat_type]]
-injs = [inj_data['coherent'], inj_data[null_stat_type]]
-plu.pygrb_plotter(trigs, injs, "Coherent SNR", y_label, opts,
+plu.pygrb_plotter([found_trigs[x_key], found_trigs[y_key]],
+                  [found_injs[x_key], found_injs[y_key]],
+                  "Coherent SNR", y_labels[opts.y_variable], opts,
                   snr_vals=snr_vals, conts=null_stat_conts,
                   shade_cont_value=shade_cont_value,
                   colors=cont_colors, vert_spike=True,
