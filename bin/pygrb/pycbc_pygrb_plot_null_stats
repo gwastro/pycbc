@@ -195,13 +195,11 @@ found_injs, *_ = ppu.apply_vetoes_to_found_injs(
 logging.info("Plotting...")
 
 # Contours
+cont_colors = ['g-']
 snr_vals = None
-cont_colors = None
 shade_cont_value = None
-x_max = None
 # Coincident SNR plot case: we want a coinc=coh diagonal line on the plot
 if y_key == 'network/coincident_snr':
-    cont_colors = ['g-']
     x_max = plu.axis_max_value(found_trigs[x_key], found_injs[x_key],
                                found_missed_file)
     snr_vals = [4, x_max]
