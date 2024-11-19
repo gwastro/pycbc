@@ -35,7 +35,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     be sampled at equal frequency intervals.
     """
     out = xp.array(htilde.data, copy=copy)
-    phi = -2 * xp.pi * dt * htilde.delta_f
+    phi = -2j * xp.pi * dt * htilde.delta_f
     kmax = len(htilde)
     fstimeshift(out, phi, kmin, kmax)
     if copy:
