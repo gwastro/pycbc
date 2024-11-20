@@ -12,23 +12,35 @@ jobs:
     strategy:
       max-parallel: 60
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-latest, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
         test-type: [unittest, search, docs]
+    defaults:
+      run:
+        # important when we use Conda envs
+        shell: bash -el {0}
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - uses: conda-incubator/setup-miniconda@v3
       with:
+        auto-update-conda: true
         python-version: ${{ matrix.python-version }}
+        activate-environment: tests
+    - uses: actions/checkout@v4
     - name: installing system packages
       run: |
-        sudo apt-get -o Acquire::Retries=3 update
-        sudo apt-get -o Acquire::Retries=3 install *fftw3* mpi intel-mkl* git-lfs graphviz
-        pip install "tox<4.0.0" pip setuptools --upgrade
+        conda install fftw git-lfs graphviz gsl openssl
+        conda install -c conda-forge "tox<4.0.0" mpi openmpi mpi4py
+    - name: installing macosx packages
+      if: matrix.os == 'macos-latest'
+      run: |
+         conda install -c conda-forge lapack==3.9.0
+    - name: installing ubuntu packages
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+         conda install -c conda-forge lapack==3.6.1
     - name: installing auxiliary data files
       run: |
-        GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
+        GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra.git
         cd lalsuite-extra
         git lfs pull -I "data/lalsimulation/SEOBNRv2ROM_*.dat"
         git lfs pull -I "data/lalsimulation/*ChirpTime*.dat"
@@ -38,16 +50,25 @@ jobs:
     - name: run pycbc test suite
       run: |
         export LAL_DATA_PATH=$PWD
+        export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
+        export CPATH=$CONDA_PREFIX/include:$CPATH
+        export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
         tox -e py-${{matrix.test-type}}
     - name: check help messages work
       if: matrix.test-type == 'unittest'
       run: |
         export LAL_DATA_PATH=$PWD
+        export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
+        export CPATH=$CONDA_PREFIX/include:$CPATH
+        export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
         tox -e py-help
     - name: run inference tests
       if: matrix.test-type == 'search'
       run: |
         export LAL_DATA_PATH=$PWD
+        export LIBRARY_PATH=$CONDA_PREFIX/lib:$LIBRARY_PATH
+        export CPATH=$CONDA_PREFIX/include:$CPATH
+        export PKG_CONFIG_PATH=$CONDA_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
         tox -e py-inference
     - name: store documentation page
       if: matrix.test-type == 'docs' && matrix.python-version == '3.12'
