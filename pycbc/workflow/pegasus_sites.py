@@ -186,7 +186,16 @@ def add_condorpool_shared_site(sitecat, cp, local_path, local_url):
     site.add_profiles(Namespace.DAGMAN, key="retry", value="2")
     # Need to set PEGASUS_HOME
     peg_home = which('pegasus-plan')
-    assert peg_home.endswith('bin/pegasus-plan')
+    if peg_home is None:
+        raise RuntimeError(
+            'pegasus-plan command not found. '
+            'Make sure Pegasus is correctly installed.'
+        )
+    if not peg_home.endswith('bin/pegasus-plan'):
+        raise RuntimeError(
+            f'path to pegasus-plan is weird: {peg_home}. '
+            'Make sure Pegasus is correctly installed.'
+        )
     peg_home = peg_home.replace('bin/pegasus-plan', '')
     site.add_profiles(Namespace.ENV, key="PEGASUS_HOME", value=peg_home)
     sitecat.add_sites(site)
