@@ -181,7 +181,7 @@ def use_mpi(require_mpi=False, log=True):
 def choose_pool(processes, mpi=False, **kwargs):
     """ Get processing pool.
 
-    Keyword arguments are pass to the pool constructor.
+    Keyword arguments are passed to the pool constructor.
     """
     do_mpi, size, rank = use_mpi(require_mpi=mpi)
     if do_mpi:
