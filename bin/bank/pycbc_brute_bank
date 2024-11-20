@@ -341,7 +341,7 @@ class GenUniformWaveform(object):
             kwds['approximant'] = kwds['approximant'].decode()
 
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
-            if args.buffer_high_pass_length is not None:
+            if args.full_resolution_buffer_length is not None:
                 # Generate the frequency-domain waveform at full frequency resolution
                 high_hp, high_hc = pycbc.waveform.get_fd_waveform(delta_f=1 / args.full_resolution_buffer_length,
                                                     **kwds)
