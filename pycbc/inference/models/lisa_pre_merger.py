@@ -210,4 +210,4 @@ class LISAPreMergerModel(BaseModel):
         hs = snr_A + snr_E
         hh = (a_norm + e_norm)
 
-        return marginalize_likelihood(hs, hh, phase=False)
+        return marginalize_likelihood(complex(hs), float(hh), phase=False)
