@@ -369,6 +369,53 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
 
 
 # =============================================================================
+# Function to apply vetoes to found injections
+# =============================================================================
+def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
+                               veto_file=None, keys=None):
+    """Separate injections surviving vetoes from vetoed injections.
+    THIS IS ESSENTIALLY AN EMPTY PLACE HOLDER AT THE MOMENT: IT RETURNS
+    THE INJECTIONS GIVEN IN INPUT, WITHOUT APPLYING VETOES.
+
+    Parameters
+    ----------
+        found_missed_file: injections results File
+
+        found_injs: dictionary of found injections
+
+        ifos: list of interferometers to use in vetoing
+
+        veto_file: vetoed segments File (optional)
+
+        keys: list of desired dataset names (optional)
+
+    Return
+    ------
+        found_after_vetoes: dictionary of injections surviving vetoes
+
+        missed_after_vetoes: dictionary of vetoed injections
+
+        found_idx: numpy.array of indices of surviving injections
+
+        veto_idx: numpy.array of indices of vetoed injections
+    """
+
+    keep_keys = keys if keys else found_injs.keys()
+
+    if not found_missed_file:
+        return (dict.fromkeys(keep_keys, numpy.array([])),
+                dict.fromkeys(keep_keys, numpy.array([])),
+                None, None)
+
+    found_after_vetoes = found_injs
+    missed_after_vetoes = dict.fromkeys(keep_keys, numpy.array([]))
+    found_idx = numpy.arange(len(found_injs[ifos[0]+'/end_time'][:]))
+    veto_idx = numpy.array([], dtype=numpy.int64)
+
+    return found_after_vetoes, missed_after_vetoes, found_idx, veto_idx
+
+
+# =============================================================================
 # Detector utils:
 # * Function to calculate the antenna response F+^2 + Fx^2
 # * Function to calculate the antenna distance factor
