@@ -137,7 +137,7 @@ ifos = ppu.extract_ifos(trig_file)
 # Generate time-slides dictionary
 slide_dict = ppu.load_time_slides(trig_file)
 
-# We will be looping over slide_dict to reduce it if necessary
+# We will be looping over slide_dict below so here we reduce it if possible
 if opts.slide_id is not None:
     for key in list(slide_dict.keys()):
         if key != opts.slide_id:
