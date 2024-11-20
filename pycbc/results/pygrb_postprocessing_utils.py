@@ -374,7 +374,7 @@ def load_data(input_file, ifos, rw_snr_threshold=None, data_tag=None,
 def apply_vetoes_to_found_injs(found_missed_file, found_injs, ifos,
                                veto_file=None, keys=None):
     """Separate injections surviving vetoes from vetoed injections.
-    THIS IS ESSENTIALLY AND EMPTY PLACE HOLDER AT THE MOMENT: IT RETURNS
+    THIS IS ESSENTIALLY AN EMPTY PLACE HOLDER AT THE MOMENT: IT RETURNS
     THE INJECTIONS GIVEN IN INPUT, WITHOUT APPLYING VETOES.
 
     Parameters
