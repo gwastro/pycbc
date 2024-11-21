@@ -276,7 +276,7 @@ y_min = 0.9*plu.axis_min_value(found_trigs[y_key], found_injs[y_key],
 y_max = 1.1*plu.axis_max_value(found_trigs[y_key], found_injs[y_key],
                                found_missed_file)
 
-# Determine y-axis minimum value and label
+# Determine y-axis label
 y_label = "Network power chi-square" if veto_type == 'network' \
     else ifo + " Single " + veto_labels[veto_type].lower() + " chi-square"
 
