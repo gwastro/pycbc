@@ -318,7 +318,7 @@ if loudness_index < 2:
     polyy.extend([limy, limy])
     ax.fill(polyx, polyy, color='#dddddd')
 opts.plot_title += (
-    " (" + loudness_labels[loudness_index] + " average sensitivity)"
+    f" ({loudness_labels[loudness_index]} average sensitivity)"
 )
 # Zoom in if asked to do so
 if opts.zoom_in:
