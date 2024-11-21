@@ -213,10 +213,10 @@ else:
     y_key = 'network/my_network_chisq'
 
 keys = [x_key, y_key]
-# The network chi-square is already normalized so dof_key is not needed
+# The network chi-square is already normalized so it does not require a key
+# for the number of degrees of freedom
 if veto_type != 'network':
-    dof_key = y_key + '_dof'
-    keys += [dof_key]
+    keys += [y_key + '_dof']
 
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
