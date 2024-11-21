@@ -199,7 +199,7 @@ for key in keys:
 for ifo in ifos:
     sorted_ifo_ids = numpy.array(
         [
-            numpy.where(found_trigs[ifo+'/event_id'] == idx)[0][0]
+            numpy.nonzero(found_trigs[ifo + '/event_id'] == idx)[0][0]
             for idx in found_trigs['network/event_id']
         ]
     )
