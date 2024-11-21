@@ -29,7 +29,7 @@ from pycbc.detector import Detector
 from pycbc.pnutils import hybrid_meco_frequency
 from pycbc.waveform.utils import time_from_frequencyseries
 from pycbc.waveform import generator
-from pycbc.filter import highpass
+from pycbc.filter import highpass, resample_to_delta_t
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 from .base_data import BaseDataModel
 from .data_utils import fd_data_from_strain_dict
@@ -207,6 +207,12 @@ class BaseGatedGaussian(BaseGaussianNoise):
                     h = highpass(
                         h.to_timeseries(),
                         frequency=self.highpass_waveforms).to_frequencyseries()
+                if 'waveform_srate' in self.static_params:
+                    logging.warning("Resampling waveform from %f to %f Hz",
+                                    self.static_params['waveform_srate'], self.data[det].sample_rate)
+                    h = resample_to_delta_t(h.to_timeseries(),
+                                     1. / self.data[det].sample_rate,
+                                     method='ldas').to_frequencyseries()
                 wfs[det] = h
             self._current_wfs = wfs
         return self._current_wfs
