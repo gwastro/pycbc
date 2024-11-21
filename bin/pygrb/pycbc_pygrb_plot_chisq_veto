@@ -152,7 +152,7 @@ if opts.plot_title is None:
     if snr_type == 'single':
         opts.plot_title += f" vs {ifo} SNR"
     else:
-        opts.plot_title += " vs " + snr_type.capitalize() + " SNR"
+        opts.plot_title += f" vs {snr_type.capitalize()} SNR"
 if opts.plot_caption is None:
     opts.plot_caption = ("Blue crosses: background triggers. ")
     if found_missed_file:
