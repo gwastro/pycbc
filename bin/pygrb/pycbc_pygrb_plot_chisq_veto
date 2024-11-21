@@ -150,7 +150,7 @@ if opts.plot_title is None:
     if veto_type != 'network':
         opts.plot_title = ifo + opts.plot_title
     if snr_type == 'single':
-        opts.plot_title += " vs " + ifo + " SNR"
+        opts.plot_title += f" vs {ifo} SNR"
     else:
         opts.plot_title += " vs " + snr_type.capitalize() + " SNR"
 if opts.plot_caption is None:
