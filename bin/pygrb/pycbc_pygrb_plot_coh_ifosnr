@@ -247,12 +247,13 @@ found_injs, *_ = ppu.apply_vetoes_to_found_injs(
 logging.info("Plotting...")
 
 # Order the IFOs by sensitivity
-ifo_senstvty = {}
+ifo_sensitivity = {}
 for ifo in ifos:
-    senstvty = found_trigs[ifo+'/f_resp_mean'] * found_trigs[ifo+'/sigma_mean']
-    ifo_senstvty.update({ifo: senstvty})
-ifo_senstvty = collections.OrderedDict(
-    sorted(ifo_senstvty.items(), key=operator.itemgetter(1), reverse=True)
+    sensitivity = \
+        found_trigs[ifo+'/f_resp_mean'] * found_trigs[ifo+'/sigma_mean']
+    ifo_sensitivity.update({ifo: sensitivity})
+ifo_sensitivity = collections.OrderedDict(
+    sorted(ifo_sensitivity.items(), key=operator.itemgetter(1), reverse=True)
 )
 loudness_labels = ['first', 'second', 'third']
 
@@ -309,7 +310,7 @@ ax.set_ylabel(y_label)
 ax.set_xlim([0, 1.01 * x_max])
 ax.set_ylim([0, 1.20 * y_max])
 # Veto applies to the two most sensitive IFOs, so shade them
-loudness_index = list(ifo_senstvty.keys()).index(opts.ifo)
+loudness_index = list(ifo_sensitivity.keys()).index(opts.ifo)
 if loudness_index < 2:
     limy = ax.get_ylim()[0]
     polyx = [0, max_snr]
