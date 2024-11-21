@@ -262,7 +262,7 @@ logging.info("Plotting...")
 # Determine x-axis values of triggers and injections
 # Default is coherent SNR
 x_label = ifo if snr_type == 'single' else snr_type.capitalize()
-x_label = x_label + " SNR"
+x_label += " SNR"
 
 # Determine the minumum and maximum SNR value we are dealing with
 x_min = 0.9*plu.axis_min_value(found_trigs[x_key], found_injs[x_key],
