@@ -247,11 +247,9 @@ found_injs, *_ = ppu.apply_vetoes_to_found_injs(
 logging.info("Plotting...")
 
 # Order the IFOs by sensitivity
-ifo_sensitivity = {}
-for ifo in ifos:
-    sensitivity = \
-        found_trigs[ifo+'/f_resp_mean'] * found_trigs[ifo+'/sigma_mean']
-    ifo_sensitivity.update({ifo: sensitivity})
+ifo_sensitivity = {
+    ifo: found_trigs[ifo+'/f_resp_mean'] * found_trigs[ifo+'/sigma_mean'] for ifo in ifos
+}
 ifo_sensitivity = collections.OrderedDict(
     sorted(ifo_sensitivity.items(), key=operator.itemgetter(1), reverse=True)
 )
