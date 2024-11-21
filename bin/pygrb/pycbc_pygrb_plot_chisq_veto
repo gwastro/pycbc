@@ -278,7 +278,7 @@ y_max = 1.1*plu.axis_max_value(found_trigs[y_key], found_injs[y_key],
 
 # Determine y-axis label
 y_label = "Network power chi-square" if veto_type == 'network' \
-    else ifo + " Single " + veto_labels[veto_type].lower() + " chi-square"
+    else f"{ifo} Single {veto_labels[veto_type].lower()} chi-square"
 
 # Determine contours for plots
 conts = None
