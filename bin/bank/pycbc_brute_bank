@@ -54,7 +54,7 @@ parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
 parser.add_argument('--full-resolution-buffer-length', default=None, type=float,
-    help='size of waveform buffer in seconds')
+    help='Size of the waveform buffer in seconds for generating time-domain signals at full resolution before conversion to the frequency domain.')
 parser.add_argument('--max-signal-length', type= float,
                     help="When specified, it cuts the maximum length of the waveform model to the lengh provided")
 parser.add_argument('--sample-rate', default=2048, type=float,
