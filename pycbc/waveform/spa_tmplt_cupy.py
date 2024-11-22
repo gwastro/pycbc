@@ -36,6 +36,7 @@ taylorf2_text = """
     float phasing = 0.;
 
     float LAL_TWOPI = 6.283185307179586;
+    float LAL_PI_4 = 0.785398163397448309615660845819875721;
     float log4 = 1.386294361;
     float logv = __logf(v);
 
@@ -68,16 +69,17 @@ taylorf2_text = """
     float psin;
     __sincosf(phasing, &psin, &pcos);
 
-    htilde = pcos * amp2 - I * psin * amp2;
+    htilde.real(pcos * amp2);
+    htilde.imag(psin * amp2);
 """
 
 taylorf2_kernel = cp.ElementwiseKernel(
     """
-        int kmin, int phase_order, float delta_f, float piM, float pfaN,
-        float pfa2, float pfa3, float pfa4, float pfa5, float pfl5, float pfa6,
-        float pfl6, float pfa7, float amp
+        int64 kmin, int64 phase_order, float32 delta_f, float32 piM,
+        float32 pfaN, float32 pfa2, float32 pfa3, float32 pfa4, float32 pfa5,
+        float32 pfl5, float32 pfa6, float32 pfl6, float32 pfa7, float32 amp
     """,
-    "float complex htilde",
+    "complex64 htilde",
     taylorf2_text,
     "taylorf2_kernel",
 )
