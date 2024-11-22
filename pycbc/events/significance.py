@@ -84,7 +84,7 @@ def count_n_louder(bstat, fstat, dec,
 
     unsort = sort.argsort()
     back_cum_num = n_louder[unsort]
-    return back_cum_num, fore_n_louder
+    return back_cum_num, fore_n_louder, {}
 
 
 def n_louder_from_fit(back_stat, fore_stat, dec_facs,
@@ -120,7 +120,7 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     """
 
     # Calculate the fitting factor of the ranking statistic distribution
-    alpha, _ = trstats.fit_above_thresh(fit_function, back_stat,
+    alpha, sig_alpha = trstats.fit_above_thresh(fit_function, back_stat,
                                         thresh=fit_threshold,
                                         weights=dec_facs)
 
@@ -153,7 +153,7 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
 
     # Count the number of below-threshold background events louder than the
     # bg and foreground
-    bg_n_louder[bg_below], fg_n_louder[fg_below] = count_n_louder(
+    bg_n_louder[bg_below], fg_n_louder[fg_below], _ = count_n_louder(
         back_stat[bg_below],
         fore_stat[fg_below],
         dec_facs[bg_below]
@@ -165,7 +165,7 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     bg_n_louder[bg_below] += n_above
     fg_n_louder[fg_below] += n_above
 
-    return bg_n_louder, fg_n_louder
+    return bg_n_louder, fg_n_louder, {'alpha': alpha, 'sig_alpha': sig_alpha, 'n_above': n_above}
 
 
 _significance_meth_dict = {
@@ -221,7 +221,7 @@ def get_far(back_stat, fore_stat, dec_facs,
        a FAR
 
     """
-    bg_n_louder, fg_n_louder = get_n_louder(
+    bg_n_louder, fg_n_louder, significance_info = get_n_louder(
         back_stat,
         fore_stat,
         dec_facs,
@@ -239,7 +239,10 @@ def get_far(back_stat, fore_stat, dec_facs,
     bg_far = bg_n_louder / background_time
     fg_far = fg_n_louder / background_time
 
-    return bg_far, fg_far
+    if "n_above" in significance_info:
+        significance_info["rate_above"] = significance_info["n_above"] / background_time
+
+    return bg_far, fg_far, significance_info
 
 
 def insert_significance_option_group(parser):
