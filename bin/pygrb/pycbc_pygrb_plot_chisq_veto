@@ -253,7 +253,8 @@ if len(keys) == 3:
     found_trigs[keys[1]] /= found_trigs[keys[2]]
     found_injs[keys[1]] /= found_injs[keys[2]]
 
-# Floor single IFO chi-square at 0.005
+# Single detector chi-squares are initialized to 0: we floor possible
+# remaining 0s to 0.005 to avoid asking for logarithms of 0 in the plot
 numpy.putmask(found_trigs[y_key], found_trigs[y_key] == 0, 0.005)
 
 # Generate plots
