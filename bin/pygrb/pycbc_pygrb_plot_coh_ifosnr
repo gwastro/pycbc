@@ -222,17 +222,11 @@ for ifo in ifos:
 
 # 3) Calculate the mean, max, and min sigmas
 for ifo in ifos:
-    try:
-        sigma_norm = found_trigs[ifo+'/sigmasq'] / found_trigs['sigma_tot']
-        found_trigs[ifo+'/sigma_mean'] = sigma_norm.mean()
-        if ifo == opts.ifo:
-            found_trigs['sigma_max'] = sigma_norm.max()
-            found_trigs['sigma_min'] = sigma_norm.min()
-    except ValueError:
-        found_trigs[ifo+'/sigma_mean'] = 0
-        if ifo == opts.ifo:
-            found_trigs['sigma_max'] = 0
-            found_trigs['sigma_min'] = 0
+    sigma_norm = found_trigs[ifo+'/sigmasq'] / found_trigs['sigma_tot']
+    found_trigs[ifo+'/sigma_mean'] = sigma_norm.mean() if len(sigma_norm) else 0
+    if ifo == opts.ifo:
+        found_trigs['sigma_max'] = sigma_norm.max() if len(sigma_norm) else 0
+        found_trigs['sigma_min'] = sigma_norm.min() if len(sigma_norm) else 0
 
 # Gather injections found surviving vetoes
 found_injs, *_ = ppu.apply_vetoes_to_found_injs(
