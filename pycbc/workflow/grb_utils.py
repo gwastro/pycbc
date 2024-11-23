@@ -483,6 +483,9 @@ def make_pygrb_plot(workflow, exec_name, out_dir,
         node.add_input_list_opt('--seg-files', seg_files)
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
+    # Option to show the onsource trial if this is a plot of all data
+    if exec_name == 'pygrb_plot_snr_timeseries' and 'alltimes' in tags:
+        node.add_opt('--onsource')
     if exec_name in ['pygrb_plot_injs_results',
                      'pygrb_plot_snr_timeseries']:
         trig_time = workflow.cp.get('workflow', 'trigger-time')
