@@ -187,8 +187,16 @@ def get_tkernel(slen, window):
     if nb > 1024:
         raise ValueError("More than 1024 blocks not supported yet")
 
-    fn = cp.RawKernel(tkernel1.render(chunk=nt), 'threshold_and_cluster')
-    fn2 = cp.RawKernel(tkernel2.render(blocks=nb), 'threshold_and_cluster2')
+    fn = cp.RawKernel(
+        tkernel1.render(chunk=nt),
+        'threshold_and_cluster',
+        backend='nvcc'
+    )
+    fn2 = cp.RawKernel(
+        tkernel2.render(blocks=nb),
+        'threshold_and_cluster2',
+        backend='nvcc'
+    )
     return (fn, fn2), nt, nb
 
 def threshold_and_cluster(series, threshold, window):
@@ -205,8 +213,8 @@ def threshold_and_cluster(series, threshold, window):
     cl = loc[0:nb]
     cv = val[0:nb]
 
-    fn((nt, 1, 1), (nb, 1), (series.data, outv, outl, window, threshold))
-    fn2((nb, 1, 1), (1, 1), (outv, outl, threshold, window))
+    fn((nb,), (nt,), (series.data, outv, outl, window, threshold))
+    fn2((1,), (nb,), (outv, outl, threshold, window))
     w = (cl != -1)
     return cv[w], cl[w]
 

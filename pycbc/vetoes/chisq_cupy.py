@@ -29,9 +29,9 @@ from mako.template import Template
 
 
 accum_diff_sq_kernel = cp.ElementwiseKernel(
-    "X z",
-    "raw Y x",
-    "x[i] += norm(z)",
+    "X input",
+    "raw Y output",
+    "output[i] += norm(input)",
     "accum_diff_sq_kernel"
 )
 
@@ -40,6 +40,7 @@ def chisq_accum_bin(chisq, q):
 
 
 chisqkernel = Template("""
+#include <cstdint>
 extern "C" __global__ void power_chisq_at_points_${NP}(
                                       %if fuse:
                                           float2* htilde,
@@ -51,9 +52,9 @@ extern "C" __global__ void power_chisq_at_points_${NP}(
                                       %for p in range(NP):
                                         float phase${p},
                                       %endfor
-                                      unsigned int* kmin,
-                                      unsigned int* kmax,
-                                      unsigned int* bv,
+                                      uint32_t* kmin,
+                                      uint32_t* kmax,
+                                      uint32_t* bv,
                                       unsigned int nbins){
     __shared__ unsigned int s;
     __shared__ unsigned int e;
@@ -121,6 +122,7 @@ extern "C" __global__ void power_chisq_at_points_${NP}(
 """)
 
 chisqkernel_pow2 = Template("""
+#include <cstdint>
 extern "C" __global__ void power_chisq_at_points_${NP}_pow2(
                                       %if fuse:
                                           float2* htilde,
@@ -132,9 +134,9 @@ extern "C" __global__ void power_chisq_at_points_${NP}_pow2(
                                       %for p in range(NP):
                                         unsigned int points${p},
                                       %endfor
-                                      unsigned int* kmin,
-                                      unsigned int* kmax,
-                                      unsigned int* bv,
+                                      uint32_t* kmin,
+                                      uint32_t* kmax,
+                                      uint32_t* bv,
                                       unsigned int nbins){
     __shared__ unsigned int s;
     __shared__ unsigned int e;
@@ -213,7 +215,8 @@ def get_pchisq_fn(np, fuse_correlate=False):
     nt = 256
     fn = cp.RawKernel(
         chisqkernel.render(NT=nt, NP=np, fuse=fuse_correlate),
-        f'power_chisq_at_points_{np}'
+        f'power_chisq_at_points_{np}',
+        backend='nvcc'
     )
     return fn, nt
 
@@ -223,7 +226,8 @@ def get_pchisq_fn_pow2(np, fuse_correlate=False):
     nt = 256
     fn = cp.RawKernel(
         chisqkernel_pow2.render(NT=nt, NP=np, fuse=fuse_correlate),
-        f'power_chisq_at_points_{np}_pow2'
+        f'power_chisq_at_points_{np}_pow2',
+        backend='nvcc'
     )
     return fn, nt
 
@@ -259,8 +263,8 @@ def shift_sum_points(num, N, arg_tuple):
     args += [outp, N] + phase[0:num]
     args += [kmin, kmax, bv, nbins]
     fn(
-        (nt, 1, 1),
-        (nb, 1),
+        (nb,),
+        (nt,),
         *args,
     )
     
@@ -283,8 +287,8 @@ def shift_sum_points_pow2(num, arg_tuple):
     args += [outp, N] + points[0:num] + [kmin, kmax, bv, nbins]
     print(kmin, kmax)
     fn(
-        (nt, 1, 1),
-        (nb, 1),
+        (nb,),
+        (nt,),
         tuple(args)
     )
             
