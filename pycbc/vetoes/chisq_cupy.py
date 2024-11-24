@@ -285,7 +285,6 @@ def shift_sum_points_pow2(num, arg_tuple):
     else:
         args = [corr.data]
     args += [outp, N] + points[0:num] + [kmin, kmax, bv, nbins]
-    print(kmin, kmax)
     fn(
         (nb,),
         (nt,),
