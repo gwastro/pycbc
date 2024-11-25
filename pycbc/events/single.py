@@ -303,7 +303,8 @@ class LiveSingle(object):
 
         # fill in a new candidate event
         candidate = {
-            f'foreground/{self.ifo}/{k}': cutall_trigs[k][i] for k in trigs
+            f'foreground/{self.ifo}/{k}': cut_trigs[k][sngl_idx][i]
+            for k in trigs
         }
         candidate['foreground/stat'] = rank[i]
         candidate['foreground/ifar'] = ifar
