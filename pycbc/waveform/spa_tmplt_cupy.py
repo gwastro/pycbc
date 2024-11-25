@@ -23,8 +23,9 @@
 
 import cupy as cp
 import lal
+import mako.template
 
-taylorf2_text = f"""
+taylorf2_text = mako.template.Template("""
     const float f = (i + kmin ) * delta_f;
     const float amp2 = amp * __powf(f, -7.0/6.0);
     const float v =  __powf(piM*f, 1.0/3.0);
@@ -36,9 +37,9 @@ taylorf2_text = f"""
     const float v7 = v3 * v4;
     float phasing = 0.;
 
-    float LAL_TWOPI = {lal.TWOPI};
-    float LAL_PI_4 = {lal.PI_4};
-    float log4 = {2*lal.LN2};
+    float LAL_TWOPI = ${TWOPI};
+    float LAL_PI_4 = ${PI_4};
+    float log4 = ${LN4};
     float logv = __logf(v);
 
     switch (phase_order)
@@ -72,7 +73,8 @@ taylorf2_text = f"""
 
     htilde.real(pcos * amp2);
     htilde.imag(psin * amp2);
-"""
+""").render(TWOPI=lal.TWOPI, PI_4=lal.PI_4, LN4=2*lal.LN2)
+
 
 taylorf2_kernel = cp.ElementwiseKernel(
     """
