@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Alex Nitz
+# Copyright (C) 2024 Y Ddraig Goch
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -39,7 +39,7 @@ correlate_kernel = cp.ElementwiseKernel(
 def correlate(a, b, out):
     correlate_kernel(a.data, b.data, out.data)
 
-class CUDACorrelator(_BaseCorrelator):
+class CUPYCorrelator(_BaseCorrelator):
     def __init__(self, x, y, z):
         self.x = x.data
         self.y = y.data
@@ -49,6 +49,6 @@ class CUDACorrelator(_BaseCorrelator):
         correlate_kernel(self.x, self.y, self.z)
 
 def _correlate_factory(x, y, z):
-    return CUDACorrelator
+    return CUPYCorrelator
 
 

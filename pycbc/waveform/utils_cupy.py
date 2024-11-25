@@ -22,7 +22,7 @@
 #
 # =============================================================================
 #
-"""This module contains the CPU-specific code for
+"""This module contains the CuPy-specific code for
    convenience utilities for manipulating waveforms
 """
 from pycbc.types import FrequencySeries

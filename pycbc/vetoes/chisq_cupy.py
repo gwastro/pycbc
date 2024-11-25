@@ -25,8 +25,12 @@
 import functools
 import numpy
 import cupy as cp
+import lal
 from mako.template import Template
 
+LALARGS = {
+    'TWOPI': lal.TWOPI,
+}
 
 accum_diff_sq_kernel = cp.ElementwiseKernel(
     "X input",
@@ -141,7 +145,7 @@ extern "C" __global__ void power_chisq_at_points_${NP}_pow2(
     __shared__ unsigned int s;
     __shared__ unsigned int e;
     __shared__ float2 chisq[${NT} * ${NP}];
-    float twopi = 6.283185307179586f;
+    float twopi = ${TWOPI};
     unsigned long long NN;
 
     NN = (unsigned long long) N;
@@ -214,7 +218,7 @@ extern "C" __global__ void power_chisq_at_points_${NP}_pow2(
 def get_pchisq_fn(np, fuse_correlate=False):
     nt = 256
     fn = cp.RawKernel(
-        chisqkernel.render(NT=nt, NP=np, fuse=fuse_correlate),
+        chisqkernel.render(NT=nt, NP=np, fuse=fuse_correlate, **LALARGS),
         f'power_chisq_at_points_{np}',
         backend='nvcc'
     )
@@ -225,7 +229,7 @@ def get_pchisq_fn(np, fuse_correlate=False):
 def get_pchisq_fn_pow2(np, fuse_correlate=False):
     nt = 256
     fn = cp.RawKernel(
-        chisqkernel_pow2.render(NT=nt, NP=np, fuse=fuse_correlate),
+        chisqkernel_pow2.render(NT=nt, NP=np, fuse=fuse_correlate, **LALARGS),
         f'power_chisq_at_points_{np}_pow2',
         backend='nvcc'
     )

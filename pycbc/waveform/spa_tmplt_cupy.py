@@ -22,8 +22,9 @@
 #  MA  02111-1307  USA
 
 import cupy as cp
+import lal
 
-taylorf2_text = """
+taylorf2_text = f"""
     const float f = (i + kmin ) * delta_f;
     const float amp2 = amp * __powf(f, -7.0/6.0);
     const float v =  __powf(piM*f, 1.0/3.0);
@@ -35,9 +36,9 @@ taylorf2_text = """
     const float v7 = v3 * v4;
     float phasing = 0.;
 
-    float LAL_TWOPI = 6.283185307179586;
-    float LAL_PI_4 = 0.785398163397448309615660845819875721;
-    float log4 = 1.386294361;
+    float LAL_TWOPI = {lal.TWOPI};
+    float LAL_PI_4 = {lal.PI_4};
+    float log4 = {2*lal.LN2};
     float logv = __logf(v);
 
     switch (phase_order)

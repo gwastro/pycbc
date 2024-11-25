@@ -1,4 +1,4 @@
-# Copyright (C) 2012  Josh Willis
+# Copyright (C) 2024 Y Ddraig Goch
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -66,7 +66,7 @@ def ifft(invec, outvec, _, itype, otype):
 
 class FFT(_BaseFFT):
     """
-    Class for performing FFTs via the numpy interface.
+    Class for performing FFTs via the cupy interface.
     """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(FFT, self).__init__(invec, outvec, nbatch, size)
@@ -78,7 +78,7 @@ class FFT(_BaseFFT):
 
 class IFFT(_BaseIFFT):
     """
-    Class for performing IFFTs via the numpy interface.
+    Class for performing IFFTs via the cupy interface.
     """
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(IFFT, self).__init__(invec, outvec, nbatch, size)
