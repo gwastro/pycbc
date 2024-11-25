@@ -286,13 +286,13 @@ if fore_locs.sum() > 0:
     fap = 1 - numpy.exp(- coinc_time / ifar)
     f['foreground/ifar'] = conv.sec_to_year(ifar)
     f['foreground/fap'] = fap
-    for key, value in sig_info.itemns():
+    for key, value in sig_info.items():
         f['foreground'].attrs[key] = value
     ifar_exc = 1. / fg_far_exc
     fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
     f['foreground/fap_exc'] = fap_exc
-    for key, value in exc_sig_info.itemns():
+    for key, value in exc_sig_info.items():
         f['foreground'].attrs[key + '_exc'] = value
 else:
     f['foreground/ifar'] = ifar = numpy.array([])
