@@ -200,8 +200,6 @@ def get_tkernel(slen, window):
     return (fn, fn2), nt, nb
 
 def threshold_and_cluster(series, threshold, window):
-    # WARNING: tl and tv are not defined. We need to create memory here,
-    #          presumably using cupy.array, but this is currently to do.
     outl = loc
     outv = val
     slen = len(series)
@@ -245,7 +243,7 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
             (self.outv, self.outl, threshold, window)
         )
         w = (cl != -1)
-        return cv[w], cl[w]
+        return cp.asnumpy(cv[w]), cp.asnumpy(cl[w])
 
 def _threshold_cluster_factory(series):
     return CUDAThresholdCluster
