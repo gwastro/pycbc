@@ -120,14 +120,13 @@ slide_dict = ppu.load_time_slides(trig_file)
 segment_dict = ppu.load_segment_dict(trig_file)
 
 # Construct trials removing vetoed times
-hide_onsource = not opts.onsource
 trial_dict, total_trials = ppu.construct_trials(
     opts.seg_files,
     segment_dict,
     ifos,
     slide_dict,
     opts.veto_file,
-    hide_onsource=hide_onsource
+    hide_onsource=(not opts.onsource)
 )
 
 # Load trigger and injections data: when plotting reweighted SNR, keep all
