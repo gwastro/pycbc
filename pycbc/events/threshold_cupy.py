@@ -28,13 +28,8 @@ import mako.template
 from .eventmgr import _BaseThresholdCluster
 import pycbc.scheme
 
-
-# The CUDA version had globally defined storage arrays. We mimic that here
-# but I think this should be more elegant (ie. don't define arrays unless
-# needed)
-
-val = cp.zeros(4096*256, dtype=cp.complex64)
-loc = cp.zeros(4096*256, cp.int32)
+val = None
+loc = None
 
 # https://stackoverflow.com/questions/77798014/cupy-rawkernel-cuda-error-not-found-named-symbol-not-found-cupy
 
@@ -200,6 +195,13 @@ def get_tkernel(slen, window):
     return (fn, fn2), nt, nb
 
 def threshold_and_cluster(series, threshold, window):
+    global val
+    global loc
+    if val is None:
+        val = cp.zeros(4096*256, dtype=cp.complex64)
+    if loc is None
+        loc = cp.zeros(4096*256, cp.int32)
+
     outl = loc
     outv = val
     slen = len(series)
@@ -219,6 +221,13 @@ def threshold_and_cluster(series, threshold, window):
 class CUDAThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series):
         self.series = series
+
+        global val
+        global loc
+        if val is None:
+            val = cp.zeros(4096*256, dtype=cp.complex64)
+        if loc is None
+            loc = cp.zeros(4096*256, cp.int32)
 
         self.outl = loc
         self.outv = val
