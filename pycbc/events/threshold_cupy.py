@@ -199,7 +199,7 @@ def threshold_and_cluster(series, threshold, window):
     global loc
     if val is None:
         val = cp.zeros(4096*256, dtype=cp.complex64)
-    if loc is None
+    if loc is None:
         loc = cp.zeros(4096*256, cp.int32)
 
     outl = loc
@@ -226,7 +226,7 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         global loc
         if val is None:
             val = cp.zeros(4096*256, dtype=cp.complex64)
-        if loc is None
+        if loc is None:
             loc = cp.zeros(4096*256, cp.int32)
 
         self.outl = loc
