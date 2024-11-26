@@ -26,7 +26,7 @@ def newsnr(snr, reduced_x2, q=6., n=2.):
     reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
     definition. Previous implementation in glue/ligolw/lsctables.py
     """
-    nsnr = numpy.array(snr, ndmin=1, dtype=numpy.float64)
+    nsnr = numpy.array(numpy.abs(snr), ndmin=1, dtype=numpy.float64)
     reduced_x2 = numpy.array(reduced_x2, ndmin=1, dtype=numpy.float64)
 
     # newsnr is only different from snr if reduced chisq > 1

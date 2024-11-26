@@ -19,8 +19,13 @@
 
 import logging
 import numpy
+import h5py
 import scipy.interpolate
 from pycbc.types import FrequencySeries
+
+from ligo import segments
+from pycbc.types import FrequencySeries, load_frequencyseries, zeros, float32
+import pycbc.psd
 
 logger = logging.getLogger('pycbc.psd.read')
 
@@ -79,7 +84,7 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     psd = numpy.zeros(length, dtype=numpy.float64)
 
     vals = numpy.log(numpy.arange(kmin, length) * delta_f)
-    psd[kmin:] =  numpy.exp(psd_interp(vals))
+    psd[kmin:] = numpy.exp(psd_interp(vals))
 
     return FrequencySeries(psd, delta_f=delta_f)
 
@@ -187,3 +192,90 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
 
     return from_numpy_arrays(freq_data, noise_data, length, delta_f,
                              low_freq_cutoff)
+
+
+class PrecomputedTimeVaryingPSD(object):
+    def __init__(self, opt, length, delta_f, sample_rate):
+        self.opt = opt
+        self.file_name = opt.precomputed_psd_file
+        self.f_low = opt.low_frequency_cutoff
+        self.length = length
+        self.delta_f = delta_f
+        self.sample_rate = sample_rate
+        self.psd_inverse_length = opt.psd_inverse_length
+        self.invpsd_trunc_method = opt.invpsd_trunc_method
+
+        with h5py.File(self.file_name, 'r') as f:
+            detector = tuple(f.keys())[0]
+            self.start_times = f[detector + '/start_time'][:]
+            self.end_times = f[detector + '/end_time'][:]
+            self.file_f_low = f.attrs['low_frequency_cutoff']
+
+        self.begin = self.start_times.min()
+        self.end = self.end_times.max()
+        self.detector = detector
+
+    def assosiate_psd_to_inspiral_segment(self, inp_seg, delta_f=None):
+        '''Find 2 PSDs that are closest to the segment and choose the best
+        based on the maximum overlap.
+        '''
+        best_psd = None
+        if inp_seg[0] > self.end or inp_seg[1] < self.begin:
+            err_msg = "PSD file doesn't contain require times. \n"
+            err_msg += "PSDs are within range ({}, {})".format(
+                self.begin, self.end)
+            raise ValueError(err_msg)
+
+        if len(self.start_times) > 2:
+            sidx = numpy.argpartition(
+                numpy.abs(self.start_times - inp_seg[0]), 2)[:2]
+        else:
+            sidx = numpy.argsort(numpy.abs(self.start_times - inp_seg[0]))
+
+        nearest = segments.segment(
+            self.start_times[sidx[0]], self.end_times[sidx[0]])
+        next_nearest = segments.segment(
+            self.start_times[sidx[1]], self.end_times[sidx[1]])
+
+        psd_overlap = 0
+        if inp_seg.intersects(nearest):
+            psd_overlap = abs(nearest & inp_seg)
+            best_psd = self.get_psd(sidx[0], delta_f)
+
+        if inp_seg.intersects(next_nearest):
+            if psd_overlap < abs(next_nearest & inp_seg):
+                psd_overlap = abs(next_nearest & inp_seg)
+                best_psd = self.get_psd(sidx[1], delta_f)
+
+        if best_psd is None:
+            err_msg = "No PSDs found intersecting segment!"
+            raise ValueError(err_msg)
+
+        if self.psd_inverse_length:
+            best_psd = pycbc.psd.inverse_spectrum_truncation(best_psd,
+                                              int(self.psd_inverse_length *
+                                                  self.sample_rate),
+                                              low_frequency_cutoff=self.f_low,
+                                              trunc_method=self.invpsd_trunc_method)
+        return best_psd
+
+    def get_psd(self, index, delta_f=None):
+        group = self.detector + '/psds/' + str(index)
+        psd = load_frequencyseries(self.file_name, group=group)
+        if delta_f is not None and psd.delta_f != delta_f:
+            psd = pycbc.psd.interpolate(psd, delta_f)
+        if self.length is not None and self.length != len(psd):
+            psd2 = FrequencySeries(zeros(self.length, dtype=psd.dtype),
+                                   delta_f=psd.delta_f)
+            if self.length > len(psd):
+                psd2[:] = numpy.inf
+                psd2[0:len(psd)] = psd
+            else:
+                psd2[:] = psd[0:self.length]
+            psd = psd2
+        if self.f_low is not None and self.f_low < self.file_f_low:
+            # avoid using the PSD below the f_low given in the file
+            k = int(self.file_f_low / psd.delta_f)
+            psd[0:k] = numpy.inf
+
+        return psd
