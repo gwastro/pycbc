@@ -271,7 +271,7 @@ trig_data = ppu.extract_trig_properties(
 )
 
 background = trig_data['network/reweighted_snr'][:]
-max_bkgd_reweighted_snr = max(background)
+max_bkgd_reweighted_snr = background.max()
 
 # =======================
 # Post-process injections
