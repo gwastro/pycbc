@@ -661,10 +661,10 @@ with ctx:
                 ), f'SNR time series for {ifo} is empty'
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
-                idx[ifo] = ind.astype(np.int32)
                 # change to integer indexes because we will have to do
                 # arithmetic with time_delay_idx, which can be positive 
-                #or negative
+                # or negative
+                idx[ifo] = ind.astype(np.int32)
                 snr[ifo] = snrv * norm
 
             # Move onto next segment if there are no triggers.
