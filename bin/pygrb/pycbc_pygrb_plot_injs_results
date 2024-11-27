@@ -146,7 +146,7 @@ def complete_inj_data(injs, keys, tag, ifos=[]):
             if key == 'end_time':
                 data_dict[key] = injs[tag+'/tc']
                 # data_dict[key] -= grb_time
-            elif key in ['mtotal', 'mchirp', 'q']:
+            elif key in ['mchirp', 'mtotal', 'q']:
                 data_dict[key] = complete_mass_data(injs, key, tag)
             elif 'incl' in key:
                 data_dict[key] = complete_incl_data(injs, key, tag)
