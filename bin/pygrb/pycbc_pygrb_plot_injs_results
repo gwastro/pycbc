@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
 
-import pycbc.pnutils
+import pycbc.conversions
 import pycbc.results
 import pycbc.version
 from pycbc import init_logging
@@ -95,7 +95,7 @@ def complete_mass_data(injs, key, tag):
     if key == 'mtotal':
         data = injs[tag+'/mass1'][:] + injs[tag+'/mass2'][:]
     elif key == 'mchirp':
-        data, _ = pycbc.pnutils.mass1_mass2_to_mchirp_eta(
+        data = conversions.mchirp_from_mass1_mass2(
             injs[tag+'/mass1'],
             injs[tag+'/mass2'])
     else:
