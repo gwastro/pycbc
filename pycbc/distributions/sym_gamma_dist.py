@@ -104,15 +104,13 @@ class SymGammaDist(bounded.BoundedDist):
             self._norms[p] = norms
 
     def rescaled_gammainc(self,x,power,scale):
-        """ Rescales the lower incomplete gamma function
-        """
+        #Rescales the lower incomplete gamma function
         return gammainc(power+1,abs(x/scale))*\
         factorial(power)*scale**(power+1)
 
     def integral_gamma(self,lower,upper,power,scale):
-        """ The definite integral of the indivdual PDF between the
-        limits 'lower' and 'upper'
-        """
+        # The definite integral of the indivdual PDF between the
+        # limits 'lower' and 'upper'
         lower, upper = numpy.asarray(lower), numpy.asarray(upper)
         rescaled_upper = self.rescaled_gammainc(upper,power,scale)
         rescaled_lower = self.rescaled_gammainc(lower,power,scale)
