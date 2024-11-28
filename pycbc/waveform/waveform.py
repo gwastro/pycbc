@@ -1170,8 +1170,8 @@ for apx in copy.copy(_filter_time_lengths):
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
-td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td})
-fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd})
+td_wav.update({_scheme.CPUScheme:cpu_td,_scheme.CUDAScheme:cuda_td,_scheme.CUPYScheme:cpu_td,})
+fd_wav.update({_scheme.CPUScheme:cpu_fd,_scheme.CUDAScheme:cuda_fd,_scheme.CUPYScheme:cpu_fd,})
 sgburst_wav = {_scheme.CPUScheme:cpu_sgburst}
 
 def get_waveform_filter(out, template=None, **kwargs):
