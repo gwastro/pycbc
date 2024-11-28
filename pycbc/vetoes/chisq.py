@@ -23,12 +23,17 @@
 #
 import numpy, logging, math, pycbc.fft
 
-from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as
+from pycbc.types import zeros, real_same_precision_as, TimeSeries, complex_same_precision_as, get_array_module
 from pycbc.filter import sigmasq_series, make_frequency_series, matched_filter_core, get_cutoff_indices
 from pycbc.scheme import schemed
 import pycbc.pnutils
 
 BACKEND_PREFIX="pycbc.vetoes.chisq_"
+
+_CACHED_BINS = None
+_CACHED_BIN_NUM = 128
+_CACHED_EDGE_VEC = None
+_CACHED_EDGE_ARANGE = None
 
 def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     """Returns bins of equal power for use with the chisq functions
@@ -52,11 +57,43 @@ def power_chisq_bins_from_sigmasq_series(sigmasq_series, num_bins, kmin, kmax):
     bins: List of ints
         A list of the edges of the chisq bins is returned.
     """
+    global _CACHED_BINS
+    global _CACHED_BIN_NUM
+    global _CACHED_EDGE_VEC
+    global _CACHED_EDGE_ARANGE
+
     sigmasq = sigmasq_series[kmax - 1]
-    edge_vec = numpy.arange(0, num_bins) * sigmasq / num_bins
-    bins = numpy.searchsorted(sigmasq_series[kmin:kmax], edge_vec, side='right')
-    bins += kmin
-    return numpy.append(bins, kmax)
+    xp = get_array_module(sigmasq_series.data)
+
+    if _CACHED_BINS is None:
+        _CACHED_BINS = xp.zeros(_CACHED_BIN_NUM, dtype=xp.int64)
+        _CACHED_EDGE_ARANGE = xp.arange(0, _CACHED_BIN_NUM, dtype=xp.int64)
+        _CACHED_EDGE_VEC = xp.zeros(_CACHED_BIN_NUM, dtype=xp.float64)
+    while (num_bins + 1) > _CACHED_BIN_NUM:
+        _CACHED_BIN_NUM *= 2
+        _CACHED_BINS = xp.zeros(_CACHED_BIN_NUM, dtype=xp.int64)
+        _CACHED_EDGE_ARANGE = xp.arange(0, _CACHED_BIN_NUM, dtype=xp.int64)
+        _CACHED_EDGE_VEC = xp.zeros(_CACHED_BIN_NUM, dtype=xp.float64)
+    _CACHED_EDGE_VEC[:num_bins] = _CACHED_EDGE_ARANGE[:num_bins] * (sigmasq / num_bins)
+    # Hack because I want to directly assign output array
+    from cupy._sorting.search import _searchsorted_kernel
+    _searchsorted_kernel(
+        _CACHED_EDGE_VEC[:num_bins],
+        sigmasq_series.data[kmin:kmax],
+        kmax - kmin,
+        True,
+        True,
+        _CACHED_BINS[:num_bins]
+    )
+    #bins[:] = xp.searchsorted(
+    #    sigmasq_series.data[kmin:kmax],
+    #    edge_vec,
+    #    side='right'
+    #)
+    #bins += kmin
+    #return xp.append(bins, kmax)
+    _CACHED_BINS[num_bins] = kmax
+    return _CACHED_BINS[:num_bins+1]
 
 
 def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,

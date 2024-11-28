@@ -39,6 +39,18 @@ accum_diff_sq_kernel = cp.ElementwiseKernel(
     "accum_diff_sq_kernel"
 )
 
+# With thanks to Google Gemini
+sum_real_reduction_kernel = cp.ReductionKernel(
+    'T x',
+    'T y',
+    'x * conj(x)',
+    'a + b',
+    'y = real(a)',
+    '0',
+    'norm_sum'
+)
+
+
 def chisq_accum_bin(chisq, q):
     accum_diff_sq_kernel(q.data, chisq.data)
 
@@ -235,7 +247,28 @@ def get_pchisq_fn_pow2(np, fuse_correlate=False):
     )
     return fn, nt
 
+# FIXME: Don't hardcode 512, make it dynamic
+_CACHED_BIN_BV = cp.zeros(512, dtype=cp.uint32)
+_CACHED_BIN_KMIN = cp.zeros(512, dtype=cp.uint32)
+_CACHED_BIN_KMAX = cp.zeros(512, dtype=cp.uint32)
 def get_cached_bin_layout(bins):
+    bin_layout_kern = cp.ElementwiseKernel(
+        'raw T bins',
+        'X bv, X kmin, X kmax',
+        'bv = i; kmin = bins[i]; kmax = bins[i+1];',
+        'get_bin_layout'
+    )
+
+    bv = _CACHED_BIN_BV[:len(bins)]
+    kmin = _CACHED_BIN_KMIN[:len(bins)]
+    kmax = _CACHED_BIN_KMAX[:len(bins)]
+
+    bin_layout_kern(bins, bv, kmin, kmax)
+
+    return kmin, kmax, bv
+
+    # This is the older code, which might give a faster later GPU kernel, but
+    # is itself a timesink.
     bv, kmin, kmax = [], [], []
     for i in range(len(bins)-1):
         s, e = bins[i], bins[i+1]
@@ -252,6 +285,7 @@ def get_cached_bin_layout(bins):
     bv = cp.array(bv, dtype=cp.uint32)
     kmin = cp.array(kmin, dtype=cp.uint32)
     kmax = cp.array(kmax, dtype=cp.uint32)
+    print(len(bv),len(bins)-1, "CHECKING")
     return kmin, kmax, bv
 
 def shift_sum_points(num, N, arg_tuple):
@@ -341,5 +375,5 @@ def shift_sum(corr, points, bins):
             elif np == 1:
                 outp, phase, np = shift_sum_points(1, cargs) # pylint:disable=no-value-for-parameter
 
-    return cp.asnumpy((outc.conj() * outc).sum(axis=1).real)
+    return cp.asnumpy(sum_real_reduction_kernel(outc, axis=1))
 
