@@ -26,7 +26,7 @@ class SymGammaDist(bounded.BoundedDist):
     regularised lower incomplete gamma function gammainc
     :math:'\gamma(n+1,\frac{r}{s_{i}})' as follows
 
-    ..math::
+    .. math::
         c(r) = |\gamma(n+1,\frac{r}{s_{i}}) - \sigma(r,b)\gamma(n+1,\frac{b}{s_{i}})|
 
     where :math:'\sigma(u, v) = 1' if sign(u)=sign(v) else -1.
