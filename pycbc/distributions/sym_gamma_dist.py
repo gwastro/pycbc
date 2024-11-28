@@ -13,21 +13,21 @@ class SymGammaDist(bounded.BoundedDist):
     distributions between the bounds provided.
     The PDF is given by 
     .. math::
-    p(x) = \sum_{i} w_{i} |x|^{n} e^{\frac{-|x|}{s_{i}}}
+        p(x) = \sum_{i} w_{i} |x|^{n} e^{\frac{-|x|}{s_{i}}}
     
     where :math:'w_{i}' are the weights, :math:'n' is the power,
     and :math:'s_{i}' are the scale factors of the individual distributions
 
     The CDF between the bounds :math:'[a,b]' is given by
     .. math::
-    c(r) = \sum_{i} w_{i} \int_{a}^{r} |x|^{n} e^{\frac{-|x|}{s_{i}}}
+        c(r) = \sum_{i} w_{i} \int_{a}^{r} |x|^{n} e^{\frac{-|x|}{s_{i}}}
 
     The CDF is calculated using a rescaling of scipy's implementation of 
     regularised lower incomplete gamma function gammainc
     :math:'\gamma(n+1,\frac{r}{s_{i}})' as follows
 
     ..math::
-    c(r) = |\gamma(n+1,\frac{r}{s_{i}}) - \sigma(r,b)\gamma(n+1,\frac{b}{s_{i}})|
+        c(r) = |\gamma(n+1,\frac{r}{s_{i}}) - \sigma(r,b)\gamma(n+1,\frac{b}{s_{i}})|
 
     where :math:'\sigma(u, v) = 1' if sign(u)=sign(v) else -1.
 
@@ -62,16 +62,16 @@ class SymGammaDist(bounded.BoundedDist):
 
     name = 'sym_gamma_dist'
 
-    def __init__(self, scales=None, weights=None,
-        power=None, interp_points=5000, **params):
+    def __init__(self,scales=None,weights=None,
+        power=None,interp_points=5000,**params):
         super(SymGammaDist, self).__init__(**params)
 
-        if isinstance(scales, str):
+        if isinstance(scales,str):
             self._scales = [float(s) for s in scales.split()]
         else:
             self._scales = [float(scales)]
 
-        if isinstance(weights, str):
+        if isinstance(weights,str):
             weight_floats = [float(w) for w in weights.split()]
             self._weights = [w/sum(weight_floats) for w in weight_floats]
         else:
@@ -86,12 +86,12 @@ class SymGammaDist(bounded.BoundedDist):
         self._norms = {}
         for p, bounds in self._bounds.items():
             lower, upper = bounds[0], bounds[1]
-            param_array = numpy.linspace(lower, upper, self._interp_points)
+            param_array = numpy.linspace(lower,upper,self._interp_points)
             cdf_array = numpy.zeros(len(param_array))
             norms = numpy.zeros(len(self._scales))
             for i in range(len(self._scales)):
                 norms[i] = self.integral_gamma(
-                    lower, upper, self._power, self._scales[i]
+                    lower,upper,self._power,self._scales[i]
                     )
                 cdf_array += (
                     self._weights[i]
@@ -103,8 +103,7 @@ class SymGammaDist(bounded.BoundedDist):
             self._interpolated_invcdf[p] = interp1d(cdf_array,param_array)
             self._norms[p] = norms
 
-
-    def rescaled_gammainc(self, x, power, scale):
+    def rescaled_gammainc(self,x,power,scale):
         """ Rescales the lower incomplete gamma function
         """
         return gammainc(power+1,abs(x/scale))*\
@@ -114,15 +113,13 @@ class SymGammaDist(bounded.BoundedDist):
         """ The definite integral of the indivdual PDF between the
         limits 'lower' and 'upper'
         """
-        lower,upper = numpy.asarray(lower), numpy.asarray(upper)
-        rescaled_upper = self.rescaled_gammainc(upper, power, scale)
-        rescaled_lower = self.rescaled_gammainc(lower, power, scale)
+        lower, upper = numpy.asarray(lower), numpy.asarray(upper)
+        rescaled_upper = self.rescaled_gammainc(upper,power,scale)
+        rescaled_lower = self.rescaled_gammainc(lower,power,scale)
         sign_factor = numpy.where(sign(lower)==sign(upper),1.0,-1.0)
         return numpy.abs(rescaled_upper - sign_factor*rescaled_lower)
-
-
-                        
-    def _logpdf(self, **kwargs):
+                   
+    def _logpdf(self,**kwargs):
         if kwargs in self:
             lpdf_p = 0
             for p in self._params:
@@ -135,10 +132,12 @@ class SymGammaDist(bounded.BoundedDist):
             return lpdf_p
         else:
             return -numpy.inf
-    def _pdf(self, **kwargs):
+    def _pdf(self,**kwargs):
         return numpy.e**(self._logpdf(**kwargs))
 
-    def _cdfinv_param(self, param, value):
+    def _cdfinv_param(self,param,value):
         invcdf = self._interpolated_invcdf[param]
         return invcdf(value)
+
+
 __all__ = ['SymGammaDist']
