@@ -47,6 +47,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
 def fstimeshift(freqseries, phi, kmin, kmax):
     # Please note that the CPU version has a number of optimizations with respect
     # to this.
+    # FIXME: Convert to ElementwiseKernel and use kmin and max in that.
     idx = xp.arange(len(freqseries))
     phase_shift = xp.exp(phi * idx)
     freqseries[:] = freqseries[:] * phase_shift 
