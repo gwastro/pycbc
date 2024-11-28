@@ -72,7 +72,7 @@ taylorf2_text = mako.template.Template("""
     __sincosf(phasing, &psin, &pcos);
 
     htilde.real(pcos * amp2);
-    htilde.imag(psin * amp2);
+    htilde.imag(-psin * amp2);
 """).render(TWOPI=lal.TWOPI, PI_4=lal.PI_4, LN4=2*lal.LN2)
 
 
