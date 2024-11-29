@@ -279,7 +279,7 @@ def template_triggers(t_num):
                                  idx+stilde.analyze.start, template_comps)
 
         out_vals['sg_chisq'] = sg_chisq.values(
-            stilde, template_comps[0],
+            stilde / stilde.psd ** 0.5, template_comps[0],
             stilde.psd,
             snrv_full, norm,
             out_vals['chisq'],
@@ -310,7 +310,6 @@ def template_triggers(t_num):
                         pycbc.psd.find_trigger_value(psd_var,
                                       out_vals['time_index'],
                                       opt.gps_start_time, opt.sample_rate)
-        #print(idx, out_vals['time_index'])
         
         out_vals_all.append(copy.deepcopy(out_vals))
         #print(out_vals_all)
@@ -452,7 +451,7 @@ with ctx:
                                  take_maximum_value=opt.autochi_max_valued,
                                  maximal_value_dof=opt.autochi_max_valued_dof)
 
-    logging.info("Overwhitening frequency-domain data segments")
+    logging.info("Whitening frequency-domain data segments")
     for seg in segments:
         seg /= (seg.psd ** 0.5)
 
