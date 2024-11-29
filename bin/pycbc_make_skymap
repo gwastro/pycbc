@@ -58,7 +58,7 @@ def default_frame_type(time, ifo):
         if ifo == 'V1':
             return 'HoftOnline'
         elif ifo in ['H1', 'L1']:
-            return ifo + '_HOFT_C00'
+            return ifo + '_HOFT_C00_AR'
     raise ValueError('Detector {} not supported at time {}'.format(ifo, time))
 
 def default_channel_name(time, ifo):
@@ -85,7 +85,7 @@ def default_channel_name(time, ifo):
         if ifo == 'V1':
             return ifo + ':Hrec_hoft_16384Hz'
         elif ifo in ['H1', 'L1']:
-            return ifo + ':GDS-CALIB_STRAIN_CLEAN'
+            return ifo + ':GDS-CALIB_STRAIN_CLEAN_AR'
     raise ValueError('Detector {} not supported at time {}'.format(ifo, time))
 
 def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
@@ -169,8 +169,6 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     st_psd_paths = {}
     st_out_paths = {}
     for ifo in ifos:
-        if ifo not in frame_types:
-            frame_types[ifo] = default_frame_type(mean_trig_time, ifo)
         if ifo not in channel_names:
             if (fake_strain[ifo] is not None or fake_strain_from_file[ifo] is not None):
                 channel_names[ifo] = ifo + ':FAKE_DATA'
@@ -238,7 +236,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
                 command.append("--fake-strain-seed")
                 command.append(str(fake_strain_seed[ifo]))
         elif fake_strain_from_file[ifo] is not None:
-            # use fake strain for this ifo
+            # use fake strain for this ifo with ASDs given from files
             command.append("--fake-strain-from-file")
             command.append(fake_strain_from_file[ifo])
             if fake_strain_seed[ifo] is not None:
