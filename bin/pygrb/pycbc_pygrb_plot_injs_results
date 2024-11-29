@@ -93,8 +93,6 @@ def complete_mass_data(injs, key, tag):
     mass1 = injs[tag+'/mass1']
     mass2 = injs[tag+'/mass2']
 
-    data = np.full(len(mass1), None)
-
     if key == 'mtotal':
         data = mass1 + mass2
     elif key == 'mchirp':
