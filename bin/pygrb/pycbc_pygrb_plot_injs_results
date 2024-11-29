@@ -67,7 +67,7 @@ def complete_incl_data(injs, key, tag):
     # Whether the user requests incl, |incl|, cos(incl), or cos(|incl|)
     # the following information is needed
     # TODO: make sure it is clear that inclination is interpreted as theta_jn
-    local_dict['incl'] = injs[tag+'/thetajn'][:]
+    local_dict['incl'] = injs[tag+'/thetajn']
 
     # Requesting |incl| or cos(|incl|)
     if 'abs_' in key:
@@ -90,16 +90,17 @@ def complete_mass_data(injs, key, tag):
     """Extract data related to mass ratio, chirp mass or total mass from raw
     injection data"""
 
-    data = np.full(len(injs[tag+'/mass1'][:]), None)
+    mass1 = injs[tag+'/mass1']
+    mass2 = injs[tag+'/mass2']
+
+    data = np.full(len(mass1), None)
 
     if key == 'mtotal':
-        data = injs[tag+'/mass1'][:] + injs[tag+'/mass2'][:]
+        data = mass1 + mass2
     elif key == 'mchirp':
-        data = conversions.mchirp_from_mass1_mass2(
-            injs[tag+'/mass1'],
-            injs[tag+'/mass2'])
+        data = conversions.mchirp_from_mass1_mass2(mass1, mass2)
     else:
-        data = injs[tag+'/mass2'][:] / injs[tag+'/mass1'][:]
+        data = mass2 / mass1
         data = np.where(data > 1, 1./data, data)
 
     return data
@@ -109,14 +110,14 @@ def complete_sky_error_data(injs, tag):
     """Extract data related to sky_error from raw injection and trigger data"""
 
     # Missed injections are assigned null values
-    data = np.full(len(injs[tag+'/mass1'][:]), None)
+    data = np.full(len(injs[tag+'/mass1']), None)
     if tag == 'found':
         inj = {}
-        inj['ra'] = injs[tag+'/ra'][:]
-        inj['dec'] = injs[tag+'/dec'][:]
+        inj['ra'] = injs[tag+'/ra']
+        inj['dec'] = injs[tag+'/dec']
         trig = {}
-        trig['ra'] = injs['network/ra'][:]
-        trig['dec'] = injs['network/dec'][:]
+        trig['ra'] = injs['network/ra']
+        trig['dec'] = injs['network/dec']
         data = np.arccos(np.cos(inj['dec'] - trig['dec']) -
                          np.cos(inj['dec']) * np.cos(trig['dec']) *
                          (1 - np.cos(inj['ra'] - trig['ra'])))
@@ -270,7 +271,8 @@ trig_data = ppu.extract_trig_properties(
     keys
 )
 
-background = trig_data['network/reweighted_snr'][:]
+background = list(trig_data['network/reweighted_snr'].values())
+background = np.concatenate(background)
 max_bkgd_reweighted_snr = background.max()
 
 # =======================
@@ -289,7 +291,7 @@ found_inj = complete_inj_data(inj_data, [x_qty, y_qty], 'found', ifos=ifos)
 if opts.newsnr_threshold:
     rw_snr_cut = found_inj['reweighted_snr'] < opts.newsnr_threshold
     for key in [x_qty, y_qty]:
-        missed_inj[key] = np.concatenate((missed_inj[key][:], found_inj[key][rw_snr_cut]))
+        missed_inj[key] = np.concatenate((missed_inj[key], found_inj[key][rw_snr_cut]))
         found_inj[key] = found_inj[key][~rw_snr_cut]
     for ifo in ifos:
         found_inj[ifo+'/end_time'] = found_inj[ifo+'/end_time'][~rw_snr_cut]
@@ -312,7 +314,7 @@ if len(list(found_after_vetoes['reweighted_snr'])) > 0:
     found_after_vetoes_stat = \
         found_inj['reweighted_snr'][found_idx] \
         if 'found_after_vetoes/stat' not in found_after_vetoes.keys() else \
-        found_after_vetoes['found_after_vetoes/stat'][:]
+        found_after_vetoes['found_after_vetoes/stat']
 
     # Separate triggers into:
     # 1) Found louder than background
