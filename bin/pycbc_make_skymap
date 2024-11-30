@@ -47,12 +47,18 @@ def default_frame_type(time, ifo):
             return 'V1O2Repro2A'
         elif ifo in ['H1', 'L1']:
             return ifo + '_CLEANED_HOFT_C02'
-    elif time >= 1235433618:
+    elif time >= 1235433618 and time < 1368975618:
         # O3
         if ifo == 'V1':
             return 'V1Online'
         elif ifo in ['H1', 'L1']:
             return ifo + '_HOFT_CLEAN_SUB60HZ_C01'
+    elif time >= 1368975618:
+        # O4
+        if ifo == 'V1':
+            return 'HoftOnline'
+        elif ifo in ['H1', 'L1']:
+            return ifo + '_HOFT_C00_AR'
     raise ValueError('Detector {} not supported at time {}'.format(ifo, time))
 
 def default_channel_name(time, ifo):
@@ -68,12 +74,18 @@ def default_channel_name(time, ifo):
             return ifo + ':Hrec_hoft_V1O2Repro2A_16384Hz'
         elif ifo in ['H1', 'L1']:
             return ifo + ':DCH-CLEAN_STRAIN_C02'
-    elif time >= 1235433618:
+    elif time >= 1235433618 and time < 1368975618:
         # O3
         if ifo == 'V1':
             return ifo + ':Hrec_hoft_16384Hz'
         elif ifo in ['H1', 'L1']:
             return ifo + ':DCS-CALIB_STRAIN_CLEAN_SUB60HZ_C01'
+    elif time > 1368975618:
+        # O4
+        if ifo == 'V1':
+            return ifo + ':Hrec_hoft_16384Hz'
+        elif ifo in ['H1', 'L1']:
+            return ifo + ':GDS-CALIB_STRAIN_CLEAN_AR'
     raise ValueError('Detector {} not supported at time {}'.format(ifo, time))
 
 def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
@@ -83,7 +95,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
          segment_source=None, segment_server=None,
          gracedb_server=None, test_event=True,
          custom_frame_files=None, approximant=None, detector_state=None,
-         veto_definer=None, injection_file=None, fake_strain=None,
+         veto_definer=None, injection_file=None, fake_strain=None, fake_strain_from_file=None,
          fake_strain_seed=None, rescale_loglikelihood=None):
 
     if not test_event and not gracedb_server:
@@ -158,7 +170,7 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
     st_out_paths = {}
     for ifo in ifos:
         if ifo not in channel_names:
-            if fake_strain[ifo] is not None:
+            if (fake_strain[ifo] is not None or fake_strain_from_file[ifo] is not None):
                 channel_names[ifo] = ifo + ':FAKE_DATA'
             else:
                 channel_names[ifo] = default_channel_name(mean_trig_time, ifo)
@@ -220,6 +232,13 @@ def main(trig_time, mass1, mass2, spin1z, spin2z, f_low, f_upper, sample_rate,
             # use fake strain for this ifo
             command.append("--fake-strain")
             command.append(fake_strain[ifo])
+            if fake_strain_seed[ifo] is not None:
+                command.append("--fake-strain-seed")
+                command.append(str(fake_strain_seed[ifo]))
+        elif fake_strain_from_file[ifo] is not None:
+            # use fake strain for this ifo with ASDs given from files
+            command.append("--fake-strain-from-file")
+            command.append(fake_strain_from_file[ifo])
             if fake_strain_seed[ifo] is not None:
                 command.append("--fake-strain-seed")
                 command.append(str(fake_strain_seed[ifo]))
@@ -556,6 +575,9 @@ if __name__ == '__main__':
     parser.add_argument('--fake-strain', type=str, 
                         action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN",
                         help="The set of fake-strains for each detector")
+    parser.add_argument('--fake-strain-from-file', type=str, 
+                        action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN_FROM_FILE",
+                        help="The set of fake-strains for each detector from files")
     parser.add_argument('--fake-strain-seed', type=int,
                         action=MultiDetOptionAction, metavar="IFO:FAKE_STRAIN_SEED",
                         help="The set of fake-strains-seeds for each detector")
@@ -582,5 +604,5 @@ if __name__ == '__main__':
          approximant=opt.approximant, detector_state=opt.detector_state,
          segment_source=opt.segment_source, segment_server=opt.segment_server,
          veto_definer=opt.veto_definer, injection_file=opt.injection_file, 
-         fake_strain=opt.fake_strain, fake_strain_seed=opt.fake_strain_seed,
+         fake_strain=opt.fake_strain, fake_strain_from_file=opt.fake_strain_from_file, fake_strain_seed=opt.fake_strain_seed,
          rescale_loglikelihood=opt.rescale_loglikelihood)
