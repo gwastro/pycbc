@@ -135,21 +135,6 @@ def check_same_len_precision(a, b):
                 a.precision, b.precision)
         raise TypeError(msg)
 
-
-def get_array_module(arr):
-    if isinstance(arr, _numpy.ndarray):
-        return _numpy
-
-    try:
-        import cupy
-        if isinstance(arr, cupy.ndarray):
-            return cupy
-    except ImportError:
-        pass
-
-    raise ValueError(f"Cannot identify type of {type(arr)} {arr}")
-
-
 class Array(object):
     """Array used to do numeric calculations on a various compute
     devices. It is a convience wrapper around numpy, and

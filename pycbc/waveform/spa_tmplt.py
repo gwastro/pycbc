@@ -135,9 +135,9 @@ def spa_tmplt_precondition(length, delta_f, kmin=0):
 def spa_tmplt_norm(psd, length, delta_f, f_lower):
     amp = spa_tmplt_precondition(length, delta_f)
     k_min = int(f_lower / delta_f)
-    sigma = (amp.data[k_min:length] ** 2. / psd.data[k_min:length])
-    norm_vec = FrequencySeries(zeros(length), delta_f=delta_f, dtype=float32)
-    norm_vec.data[k_min:length] = sigma.cumsum() * 4. * delta_f
+    sigma = (amp[k_min:length].numpy() ** 2. / psd[k_min:length].numpy())
+    norm_vec = numpy.zeros(length)
+    norm_vec[k_min:length] = sigma.cumsum() * 4. * delta_f
     return norm_vec
 
 
