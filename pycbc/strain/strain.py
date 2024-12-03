@@ -318,8 +318,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                            distance_scale=opt.injection_scale_factor,
                            injection_sample_rate=opt.injection_sample_rate,
                            inj_filter_rejector=inj_filter_rejector)
-    else:
-        logger.warning("No injections applied.")
 
     if opt.sgburst_injection_file:
         logger.info("Applying sine-Gaussian burst injections")
