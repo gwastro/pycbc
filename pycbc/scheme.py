@@ -115,6 +115,30 @@ class CUDAScheme(Scheme):
         import atexit
         atexit.register(clean_cuda,self.context)
 
+
+class CUPYScheme(Scheme):
+    """Scheme for using CUPY"""
+    def __init__(self, device_num=None):
+        import cupy # Fail now if cupy is not there.
+        import cupy.cuda
+        self.device_num = device_num
+        self.cuda_device = cupy.cuda.Device(self.device_num)
+    def __enter__(self):
+        super().__enter__()
+        self.cuda_device.__enter__()
+        logging.warn(
+            "You are using the CUPY GPU backend for PyCBC. This backend is "
+            "still only a prototype. It may be useful for your application "
+            "but it may fail unexpectedly, run slowly, or not give correct "
+            "output. Please do contribute to the effort to develop this "
+            "further."
+        )
+
+    def __exit__(self, *args):
+        super().__exit__(*args)
+        self.cuda_device.__exit__(*args)
+
+
 class CPUScheme(Scheme):
     def __init__(self, num_threads=1):
         if isinstance(num_threads, int):
@@ -160,6 +184,7 @@ class NumpyScheme(CPUScheme):
 scheme_prefix = {
     CUDAScheme: "cuda",
     CPUScheme: "cpu",
+    CUPYScheme: "cupy",
     MKLScheme: "mkl",
     NumpyScheme: "numpy",
 }
@@ -212,10 +237,10 @@ def schemed(prefix):
 
                     return schemed_fn(*args, **kwds)
 
-                err = """Failed to find implementation of (%s)
-                      for %s scheme." % (str(fn), current_prefix())"""
+                err = (f"Failed to find implementation of {func.__name__} "
+                       f"for {current_prefix()} scheme. ")
                 for emsg in exc_errors:
-                    err += print(emsg)
+                    err += str(emsg) + " "
                 raise RuntimeError(err)
         return _scheming_function
 
@@ -292,6 +317,9 @@ def from_cli(opt):
         else:
             ctx = MKLScheme()
         logger.info("Running with MKL support: %s threads" % ctx.num_threads)
+    elif name == 'cupy':
+        logger.info("Running with CUPY support")
+        ctx = CUPYScheme()
     else:
         if len(scheme_str) > 1:
             numt = scheme_str[1]

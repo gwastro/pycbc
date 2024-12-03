@@ -988,13 +988,16 @@ def get_sgburst_waveform(template=None, **kwargs):
 # Organize Filter Generators
 _inspiral_fd_filters = {}
 _cuda_fd_filters = {}
+_cupy_fd_filters = {}
 
 _cuda_fd_filters['SPAtmplt'] = spa_tmplt
+_cupy_fd_filters['SPAtmplt'] = spa_tmplt
 _inspiral_fd_filters['SPAtmplt'] = spa_tmplt
 
 filter_wav = _scheme.ChooseBySchemeDict()
 filter_wav.update( {_scheme.CPUScheme:_inspiral_fd_filters,
                     _scheme.CUDAScheme:_cuda_fd_filters,
+                    _scheme.CUPYScheme:_cupy_fd_filters,
                    } )
 
 # Organize functions for function conditioning/precalculated values
