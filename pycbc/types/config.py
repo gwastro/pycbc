@@ -101,8 +101,6 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
         super().__init__()
 
-        self.read_ini_file(configFiles)
-
         # Enable case sensitive options
         self.optionxform = str
 
@@ -118,6 +116,8 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
             if '%' not in value and '$' not in value
         }
         self.read_dict({'environment': env_vals})
+
+        self.read_ini_file(configFiles)
 
         # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
         self.split_multi_sections()
@@ -250,17 +250,16 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         options_seen = {}
 
         for filename in fpath:
-            parser = ConfigParser.ConfigParser()
-            parser.read(filename)
+            self.read(filename)
 
-            for section in parser.sections():
+            for section in self.sections():
                 if section == "environment":
                     continue
                 else:
                     if section not in options_seen:
                         options_seen[section] = set()
 
-                    section_options = parser.options(section)
+                    section_options = self.options(section)
 
                     option_intersection = options_seen[section].intersection(section_options)
 
@@ -269,7 +268,6 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
 
                     options_seen[section].update(section_options)
 
-        self.read(fpath)
 
     def get_subsections(self, section_name):
         """Return a list of subsections for the given section name"""
