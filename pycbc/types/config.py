@@ -250,24 +250,24 @@ class InterpolatingConfigParser(DeepCopyableConfigParser):
         options_seen = {}
 
         for filename in fpath:
-            self.read(filename)
+            parser = ConfigParser.ConfigParser()
+            parser.optionxform=str
+            parser.read(filename)
 
-            for section in self.sections():
-                if section == "environment":
-                    continue
-                else:
-                    if section not in options_seen:
-                        options_seen[section] = set()
+            for section in parser.sections():
+                if section not in options_seen:
+                    options_seen[section] = set()
 
-                    section_options = self.options(section)
+                section_options = parser.options(section)
 
-                    option_intersection = options_seen[section].intersection(section_options)
+                option_intersection = options_seen[section].intersection(section_options)
 
-                    if option_intersection:
-                        raise ValueError(f"Duplicate option(s) {', '.join(option_intersection)} found in section '{section}' in file '{filename}'")
+                if option_intersection:
+                    raise ValueError(f"Duplicate option(s) {', '.join(option_intersection)} found in section '{section}' in file '{filename}'")
 
-                    options_seen[section].update(section_options)
+                options_seen[section].update(section_options)
 
+        self.read(fpath)
 
     def get_subsections(self, section_name):
         """Return a list of subsections for the given section name"""
