@@ -46,7 +46,7 @@ from pycbc import (
 from pycbc.events import ranking, coherent as coh, EventManagerCoherent
 from pycbc.io.hdf import HFile
 from pycbc.filter import MatchedFilterControl
-from pycbc.types import zeros, float32, complex64
+from pycbc.types import zeros, float32, complex64, angle_as_radians
 from pycbc.vetoes import sgchisq
 from pycbc.tmpltbank.sky_grid import SkyGrid
 
@@ -214,11 +214,15 @@ parser.add_argument(
 )
 parser.add_argument(
     "--ra",
-    type=float,
-    help="Right ascension of sky point to search (radians).",
+    type=angle_as_radians,
+    help="Right ascension of a single sky point to search. Use the rad or deg "
+    "suffix to specify units, otherwise radians are assumed."
 )
 parser.add_argument(
-    "--dec", type=float, help="Declination of sky point to search (radians)."
+    "--dec",
+    type=angle_as_radians,
+    help="Declination of a single sky point to search. Use the rad or deg "
+    "suffix to specify units, otherwise radians are assumed."
 )
 parser.add_argument(
     "--sky-grid",
