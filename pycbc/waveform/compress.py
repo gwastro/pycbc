@@ -293,10 +293,15 @@ def compress_waveform(htilde, sample_points, tolerance, interpolation,
         mismatch = 1. - filter.overlap(hdecomp, htilde, psd=psd,
                                        low_frequency_cutoff=fmin)
         added_points.append(addidx)
-    logging.info("mismatch: %f, N points: %i (%i added)" %(mismatch,
-                 len(comp_amp), len(added_points)))
-
     compression_factor = len(htilde) / len(sample_points)
+    logging.info(
+        "mismatch: %f, N points: %i (%i added), compression:%.3e",
+        mismatch,
+        len(comp_amp),
+        len(added_points),
+        compression_factor
+    )
+
     return CompressedWaveform(sample_points, comp_amp, comp_phase,
                               interpolation=interpolation,
                               tolerance=tolerance, mismatch=mismatch,

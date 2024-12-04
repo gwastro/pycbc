@@ -295,10 +295,8 @@ def template_triggers(t_num):
                         pycbc.psd.find_trigger_value(psd_var,
                                       out_vals['time_index'],
                                       opt.gps_start_time, opt.sample_rate)
-        #print(idx, out_vals['time_index'])
 
         out_vals_all.append(copy.deepcopy(out_vals))
-        #print(out_vals_all)
     return out_vals_all, tparam
 
 with ctx:

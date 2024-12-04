@@ -94,11 +94,22 @@ parser.add_argument("--precision", type=str, choices=["double", "single"],
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                     "Otherwise, an error is raised.")
+parser.add_argument(
+    "--do-not-compress",
+    nargs="+",
+    help="If given, will not compress waveforms using "
+         "the given approximant. Default: [TaylorF2, SPAtmplt]"
+)
 
 # Insert the PSD options
 pycbc.psd.insert_psd_option_group(parser, include_data_options=False)
 
 args = parser.parse_args()
+
+# TalyorF2/SPAtmplt should not be compressed, as this will be less
+# efficient than generating on-the-fly
+args.do_not_compress = ["TaylorF2", "SPAtmplt"] if args.do_not_compress \
+    is None else args.do_not_compress
 
 pycbc.init_logging(args.verbose)
 
@@ -139,6 +150,8 @@ logging.info("writing template info to output")
 output = bank.write_to_hdf(args.output, force=args.force,
                            write_compressed_waveforms=False)
 
+output.create_group("compressed_waveforms")
+
 # get the psd
 logging.info("getting psd")
 psd = pycbc.psd.from_cli(args, length=N//2+1, delta_f=df,
@@ -153,9 +166,11 @@ logging.info("getting compressed amplitude and phase")
 decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=dtype), delta_f=df)
 
 for ii in range(templates.size):
+    tmplt = bank.table[ii]
+    if tmplt['approximant'] in args.do_not_compress:
+        continue
     # generate the waveform
     htilde = bank[ii]
-    tmplt = bank.table[ii]
     fmin=tmplt.f_lower
     template_duration = htilde.chirp_length
     output['template_duration'][ii] = template_duration
