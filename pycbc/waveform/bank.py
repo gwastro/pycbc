@@ -774,12 +774,15 @@ class FilterBank(TemplateBank):
         if cached_mem is None:
             wav_len = int(max_freq / delta_f) + 1
             cached_mem = zeros(wav_len, dtype=np.complex64)
-        if self.has_compressed_waveforms and self.enable_compressed_waveforms:
+            
+        try :
+            if not (self.has_compressed_waveforms and self.enable_compressed_waveforms):
+                raise ValueError
             htilde = self.get_decompressed_waveform(cached_mem, t_num,
                                                     f_lower=low_frequency_cutoff,
                                                     approximant=approximant,
                                                     df=delta_f)
-        else :
+        except (ValueError, KeyError) :
             htilde = pycbc.waveform.get_waveform_filter(
                 cached_mem, self.table[t_num], approximant=approximant,
                 f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
@@ -811,10 +814,14 @@ class FilterBank(TemplateBank):
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        if self.has_compressed_waveforms and self.enable_compressed_waveforms:
+        try:
+            if not (self.has_compressed_waveforms and self.enable_compressed_waveforms):
+                raise ValueError
+
             htilde = self.get_decompressed_waveform(tempout, index, f_lower=f_low,
                                                     approximant=approximant, df=None)
-        else :
+
+        except (ValueError, KeyError) :
             htilde = pycbc.waveform.get_waveform_filter(
                 tempout[0:self.filter_length], self.table[index],
                 approximant=approximant, f_lower=f_low, f_final=f_end,
