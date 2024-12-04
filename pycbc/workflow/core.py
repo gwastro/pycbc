@@ -1291,6 +1291,7 @@ class File(pegasus_workflow.File):
         start = int(segment[0])
         end = int(math.ceil(segment[1]))
         if (end-start) > 0 and segment[0] > 0:
+            duration = end - start
             time_str = f"-{start}-{duration}"
         else:
             # This comes about when we haven't defined a time range for
