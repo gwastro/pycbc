@@ -216,13 +216,13 @@ parser.add_argument(
     "--ra",
     type=angle_as_radians,
     help="Right ascension of a single sky point to search. Use the rad or deg "
-    "prefix to specify units, otherwise radians are assumed."
+    "suffix to specify units, otherwise radians are assumed."
 )
 parser.add_argument(
     "--dec",
     type=angle_as_radians,
     help="Declination of a single sky point to search. Use the rad or deg "
-    "prefix to specify units, otherwise radians are assumed."
+    "suffix to specify units, otherwise radians are assumed."
 )
 parser.add_argument(
     "--sky-grid",
