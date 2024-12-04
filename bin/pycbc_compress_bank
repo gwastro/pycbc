@@ -98,18 +98,13 @@ parser.add_argument(
     "--do-not-compress",
     nargs="+",
     help="If given, will not compress waveforms using "
-         "the given approximant. Default: [TaylorF2, SPAtmplt]"
+         "the given approximant. Recommended 'SPAtmplt TaylorF2'."
 )
 
 # Insert the PSD options
 pycbc.psd.insert_psd_option_group(parser, include_data_options=False)
 
 args = parser.parse_args()
-
-# TalyorF2/SPAtmplt should not be compressed, as this will be less
-# efficient than generating on-the-fly
-args.do_not_compress = ["TaylorF2", "SPAtmplt"] if args.do_not_compress \
-    is None else args.do_not_compress
 
 pycbc.init_logging(args.verbose)
 

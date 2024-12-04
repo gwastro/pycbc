@@ -1287,7 +1287,7 @@ class File(pegasus_workflow.File):
         # Follow the frame convention of using integer filenames,
         # but stretching to cover partially covered seconds.
         # The if statement allows us to use a filename which doesn't
-        # have a teim associated to it
+        # have a time associated to it
         start = int(segment[0])
         end = int(math.ceil(segment[1]))
         if (end-start) > 0 and segment[0] > 0:

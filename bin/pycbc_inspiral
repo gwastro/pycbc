@@ -180,8 +180,12 @@ parser.add_argument("--finalize-events-template-rate", default=None,
                          "512, but a good number may depend on other settings "
                          "and your specific use-case.")
 parser.add_argument("--gpu-callback-method", default='none')
-parser.add_argument("--use-compressed-waveforms", action="store_true", default=False,
-                    help='Use compressed waveforms from the bank file.')
+parser.add_argument(
+    "--use-compressed-waveforms",
+    action="store_true",
+    default=False,
+    help='Use compressed waveforms from the bank file (if available).'
+)
 parser.add_argument("--waveform-decompression-method", action='store', default=None,
                     help='Method to be used decompress waveforms from the bank file.')
 parser.add_argument("--checkpoint-interval", type=int,
@@ -295,8 +299,10 @@ def template_triggers(t_num):
                         pycbc.psd.find_trigger_value(psd_var,
                                       out_vals['time_index'],
                                       opt.gps_start_time, opt.sample_rate)
+        #print(idx, out_vals['time_index'])
 
         out_vals_all.append(copy.deepcopy(out_vals))
+        #print(out_vals_all)
     return out_vals_all, tparam
 
 with ctx:
