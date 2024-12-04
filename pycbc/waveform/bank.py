@@ -774,7 +774,7 @@ class FilterBank(TemplateBank):
         if cached_mem is None:
             wav_len = int(max_freq / delta_f) + 1
             cached_mem = zeros(wav_len, dtype=np.complex64)
-            
+
         try :
             if not (self.has_compressed_waveforms and self.enable_compressed_waveforms):
                 raise ValueError
