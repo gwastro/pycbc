@@ -18,6 +18,11 @@ from numpy import cos, sin
 from astropy import constants
 import logging
 
+def get_available_space_detectors():
+    """List the available space detectors"""
+    dets = list(_space_detectors.keys())
+    return dets
+
 def apply_polarization(hp, hc, polarization):
     """
     Apply polarization rotation matrix.
@@ -48,12 +53,12 @@ def apply_polarization(hp, hc, polarization):
     return hp_ssb, hc_ssb
 
 def preprocess(hp, hc, orbit_start_time, orbit_end_time,
-               polarization=0, reference_time=None, 
-               offset=TIME_OFFSET_20_DEGREES, pad_data=False,
-               t0=1e4):
+               polarization=0, offset=TIME_OFFSET_20_DEGREES,
+               pad_data=False, t0=1e4):
     """
     Apply polarization and ensure that input signal lies within the
-    provided orbital window.
+    provided orbital window. This assumes that the start times of
+    hp and hc are relative to the detector mission start time.
 
     Parameters
     ----------
@@ -72,10 +77,6 @@ def preprocess(hp, hc, orbit_start_time, orbit_end_time,
 
     polarization : float (optional)
         The polarization in radians of the GW. Default 0.
-
-    reference_time : float (optional)
-        The reference time of the signal. If None, the reference time
-        is defined such that the signal starts at t = 0. Default None.
 
     offset : float (optional)
         Time offset in seconds to apply to SSB times to ensure proper
@@ -98,16 +99,9 @@ def preprocess(hp, hc, orbit_start_time, orbit_end_time,
     """
     dt = hp.delta_t
 
-    if reference_time is None:
-        # assign ref time such that start time is zero
-        reference_time = -hp.start_time
-
-    # calculate start time in SSB frame
-    start_time = float(reference_time + hp.start_time)
-
-    # apply times to wfs
-    hp.start_time = start_time + offset
-    hc.start_time = start_time + offset
+    # apply offsets to wfs
+    hp.start_time += offset
+    hc.start_time += offset
 
     # pad the data with zeros
     if pad_data:
@@ -139,7 +133,7 @@ def preprocess(hp, hc, orbit_start_time, orbit_end_time,
 
     return hp, hc
 
-def postprocess(tdi_dict, start_time=0, pad_data=False, remove_garbage=True, t0=1e4):
+def postprocess(tdi_dict, remove_garbage=True, t0=1e4):
     """
     Apply start times to TDI channels and cut if needed.
 
@@ -148,13 +142,6 @@ def postprocess(tdi_dict, start_time=0, pad_data=False, remove_garbage=True, t0=
     tdi_dict : dict
         The TDI channels, formatted as a dictionary of TimeSeries arrays
         keyed by the channel label.
-
-    start_time : float (optional)
-        The SSB start time of the signal in seconds. By convention, t = 0
-        corresponds to the mission start time of the detector. Default 0.
-
-    pad_data : bool (optional)
-        Flag whether data was padded by t0 during TDI generation. Default False.
 
     remove_garbage : bool, str (optional)
         Flag whether to remove data from the edges of the channels. If True,
@@ -167,10 +154,9 @@ def postprocess(tdi_dict, start_time=0, pad_data=False, remove_garbage=True, t0=
         Default 1e4.
     """
     for chan in tdi_dict.keys():
-        dt = tdi_dict[chan].delta_t
-        pad_idx = int(t0/dt)
-
         if remove_garbage:
+            dt = tdi_dict[chan].delta_t
+            pad_idx = int(t0/dt)
             if remove_garbage == 'zero':
                 # zero the edge data
                 tdi_dict[chan][:pad_idx] = 0
@@ -206,39 +192,41 @@ class AbsSpaceDet(ABC):
         The time in seconds by which to offset the input waveform if
         apply_offset is True. Default 7365189.431698299.
     """
-    def __init__(self, reference_time=None, apply_offset=False,
-                 offset=TIME_OFFSET_20_DEGREES):
+    def __init__(self, apply_offset=False, offset=TIME_OFFSET_20_DEGREES):
         # specify whether to apply offsets to GPS times
         if apply_offset:
             self.offset = offset
         else:
             self.offset = 0.
 
-        self.ref_time = reference_time
+    @property
+    @abstractmethod
+    def sky_coords(self):
+        """
+        List the sky coordinate names for the detector class.
+        """
+        return
 
     @abstractmethod
     def orbits_init(self):
         """
         Placeholder for initializing constellation orbital data.
-        Raises a NotImplementedError if not specified in child class.
         """
-        raise NotImplementedError
+        return
 
     @abstractmethod
     def get_links(self):
         """
         Placeholder for calculating GW projections onto detector links.
-        Raises a NotImplementedError if not specified in child class.
         """
-        raise NotImplementedError
+        return
 
     @abstractmethod
     def project_wave(self):
         """
         Placeholder for evaluating the TDI channels from the GW projections.
-        Raises a NotImplementedError if not specified in child class.
         """
-        raise NotImplementedError
+        return
 
 
 class _LDC_detector(AbsSpaceDet):
@@ -261,6 +249,7 @@ class _LDC_detector(AbsSpaceDet):
         self.orbits = orbits
         self.orbits_start_time = None
         self.orbits_end_time = None
+        self.armlength = 2.5e9
 
         # waveform properties
         self.dt = None
@@ -275,6 +264,10 @@ class _LDC_detector(AbsSpaceDet):
         # class initialization
         self.proj_init = None
         self.tdi_init = None
+
+    @property
+    def sky_coords(self):
+        return 'eclipticlongitude', 'eclipticlatitude'
 
     def orbits_init(self, orbits, size=316, dt=100000.0, t_init=0.0):
         """
@@ -379,7 +372,7 @@ class _LDC_detector(AbsSpaceDet):
             orbits = self.orbits
         return Data.from_orbits(orbits, df, t_init, 'tcb/ltt', **measurements)
 
-    def get_links(self, hp, hc, lamb, beta, polarization, reference_time=None):
+    def get_links(self, hp, hc, lamb, beta, polarization):
         """
         Project a radiation frame waveform to the LISA constellation.
 
@@ -400,10 +393,6 @@ class _LDC_detector(AbsSpaceDet):
         polarization : float (optional)
             The polarization angle of the GW in radians. Default 0.
 
-        reference_time : float (optional)
-            The reference time of the GW signal in the SSB frame. Default
-            behavior places start time of the signal at GPS time t=0.
-
         Returns
         -------
         ndarray
@@ -417,14 +406,12 @@ class _LDC_detector(AbsSpaceDet):
 
         if self.dt is None:
             self.dt = hp.delta_t
-        if reference_time is not None:
-            self.ref_time = reference_time
 
         # configure orbits and signal
         self.orbits_init(orbits=self.orbits)
         hp, hc = preprocess(hp, hc, self.orbits_start_time, self.orbits_end_time,
-                            polarization=polarization, reference_time=self.ref_time,
-                            offset=self.offset, pad_data=self.pad_data, t0=self.t0)
+                            polarization=polarization, offset=self.offset,
+                            pad_data=self.pad_data, t0=self.t0)
         self.start_time = hp.start_time - self.offset
         self.sample_times = hp.sample_times.numpy()
 
@@ -446,8 +433,8 @@ class _LDC_detector(AbsSpaceDet):
         return wf_proj
 
     def project_wave(self, hp, hc, lamb, beta, polarization=0,
-                     reference_time=None, tdi=1, tdi_chan='AET',
-                     pad_data=False, remove_garbage=True, t0=1e4):
+                     tdi=1, tdi_chan='AET', pad_data=False,
+                     remove_garbage=True, t0=1e4):
         """
         Evaluate the TDI observables.
 
@@ -475,10 +462,6 @@ class _LDC_detector(AbsSpaceDet):
 
         polarization : float
             The polarization angle of the GW in radians.
-
-        reference_time : float (optional)
-            The reference time of the GW signal in the SSB frame. Default
-            behavior places start time of the signal at GPS time t=0.
 
         tdi : int (optional)
             TDI channel configuration. Accepts 1 for 1st generation TDI or
@@ -527,8 +510,7 @@ class _LDC_detector(AbsSpaceDet):
         self.pad_data = pad_data
         self.remove_garbage = remove_garbage
         self.t0 = t0
-        response = self.get_links(hp, hc, lamb, beta, polarization=polarization,
-                                  reference_time=reference_time)
+        response = self.get_links(hp, hc, lamb, beta, polarization=polarization)
 
         # load in data using response measurements
         self.tdi_init = self.strain_container(response, self.orbits)
@@ -555,9 +537,7 @@ class _LDC_detector(AbsSpaceDet):
                              'Please input either "XYZ" or "AET".')
 
         # processing
-        tdi_dict = postprocess(tdi_dict, start_time=self.start_time,
-                               pad_data=self.pad_data,
-                               remove_garbage=self.remove_garbage, t0=self.t0)
+        tdi_dict = postprocess(tdi_dict, remove_garbage=self.remove_garbage, t0=self.t0)
         return tdi_dict
 
 
@@ -578,7 +558,7 @@ class _FLR_detector(AbsSpaceDet):
         'EqualArmlength'.
     """
     def __init__(self, orbits='EqualArmlength', use_gpu=False, *args, **kwargs):
-        logging.warning('WARNING: FastLISAResponse TDI implementation is a work in progress. ' +
+        logging.warning('WARNING: FastLISAResponse TDI implementation is a work in progress. ',
                         'Currently unable to reproduce LDC or BBHx waveforms.')
         super().__init__(*args, **kwargs)
         self.use_gpu = use_gpu
@@ -587,6 +567,7 @@ class _FLR_detector(AbsSpaceDet):
         self.orbits = orbits
         self.orbits_start_time = None
         self.orbits_end_time = None
+        self.armlength = 2.5e9
 
         # waveform properties
         self.dt = None
@@ -600,6 +581,10 @@ class _FLR_detector(AbsSpaceDet):
 
         # class initialization
         self.tdi_init = None
+
+    @property
+    def sky_coords(self):
+        return 'eclipticlongitude', 'eclipticlatitude'
 
     def orbits_init(self, orbits):
         """
@@ -641,8 +626,7 @@ class _FLR_detector(AbsSpaceDet):
         self.orbits_start_time = self.orbits.t_base[0]
         self.orbits_end_time = self.orbits.t_base[-1]
 
-    def get_links(self, hp, hc, lamb, beta, polarization=0,
-                  reference_time=None, use_gpu=None):
+    def get_links(self, hp, hc, lamb, beta, polarization=0, use_gpu=None):
         """
         Project a radiation frame waveform to the LISA constellation.
 
@@ -663,10 +647,6 @@ class _FLR_detector(AbsSpaceDet):
         polarization : float (optional)
             The polarization angle of the GW in radians. Default 0.
 
-        reference_time : float (optional)
-            The reference time of the GW signal in the SSB frame. Default
-            behavior places start time of the signal at GPS time t=0.
-
         use_gpu : bool (optional)
             Flag whether to use GPU support. Default to class input.
             CuPy is required if use_gpu is True; an ImportError will be raised
@@ -685,14 +665,12 @@ class _FLR_detector(AbsSpaceDet):
 
         if self.dt is None:
             self.dt = hp.delta_t
-        if reference_time is not None:
-            self.ref_time = reference_time
 
         # configure the orbit and signal
         self.orbits_init(orbits=self.orbits)
         hp, hc = preprocess(hp, hc, self.orbits_start_time, self.orbits_end_time,
-                            polarization=polarization, reference_time=self.ref_time,
-                            offset=self.offset, pad_data=self.pad_data, t0=self.t0)
+                            polarization=polarization, offset=self.offset,
+                            pad_data=self.pad_data, t0=self.t0)
         self.start_time = hp.start_time - self.offset
         self.sample_times = hp.sample_times.numpy()
 
@@ -709,12 +687,13 @@ class _FLR_detector(AbsSpaceDet):
 
         # convert to cupy if needed
         if use_gpu:
+            import cupy
             wf = cupy.asarray(wf)
 
         if self.tdi_init is None:
             # initialize the class
             self.tdi_init = pyResponseTDI(1/self.dt, len(wf), orbits=self.orbits,
-                                               use_gpu=use_gpu)
+                                          use_gpu=use_gpu)
         else:
             # update params in the initialized class
             self.tdi_init.sampling_frequency = 1/self.dt
@@ -728,7 +707,7 @@ class _FLR_detector(AbsSpaceDet):
 
         return wf_proj
 
-    def project_wave(self, hp, hc, lamb, beta, polarization=0, reference_time=None,
+    def project_wave(self, hp, hc, lamb, beta, polarization=0,
                      tdi=1, tdi_chan='AET', use_gpu=None, pad_data=False,
                      remove_garbage=True, t0=1e4):
         """
@@ -758,10 +737,6 @@ class _FLR_detector(AbsSpaceDet):
 
         polarization : float (optional)
             The polarization angle of the GW in radians.
-
-        reference_time : float (optional)
-            The reference time of the GW signal in the SSB frame. Default
-            behavior places start time of the signal at GPS time t=0.
 
         tdi : int (optional)
             TDI channel configuration. Accepts 1 for 1st generation TDI or
@@ -804,7 +779,7 @@ class _FLR_detector(AbsSpaceDet):
         self.remove_garbage = remove_garbage
         self.t0 = t0
         self.get_links(hp, hc, lamb, beta, polarization=polarization,
-                       reference_time=reference_time, use_gpu=use_gpu)
+                       use_gpu=use_gpu)
 
         # set TDI configuration (let FLR handle if not 1 or 2)
         if tdi == 1:
@@ -835,30 +810,48 @@ class _FLR_detector(AbsSpaceDet):
             tdi_dict[chan] = TimeSeries(tdi_obs[i], delta_t=self.dt,
                                         epoch=self.start_time)
 
-        tdi_dict = postprocess(tdi_dict, start_time=self.start_time,
-                               pad_data=self.pad_data,
-                               remove_garbage=self.remove_garbage, t0=self.t0)
+        tdi_dict = postprocess(tdi_dict, remove_garbage=self.remove_garbage, 
+                               t0=self.t0)
         return tdi_dict
 
+_space_detectors = {'LISA': {'armlength': 2.5e9,
+                            },
+                   }
 
-class space_detector(AbsSpaceDet):
+_backends = {'LISA': {'LDC': _LDC_detector,
+                      'FLR': _FLR_detector,
+                     },
+            }
+
+class SpaceDetector(AbsSpaceDet):
     """
     Space-based detector.
 
     Parameters
     ----------
+    detector_name : str
+       The detector name. Accepts 'LISA'.
+
     backend : str (optional)
         The backend architecture to use for generating TDI. Accepts 'LDC'
         or 'FLR'. Default 'LDC'.
     """
-    def __init__(self, detector='LDC', *args, **kwargs):
-        if detector == 'LDC':
-            self.backend = _LDC_detector(*args, **kwargs)
-        elif detector == 'FLR':
-            self.backend = _FLR_detector(*args, **kwargs)
+    def __init__(self, detector_name, backend='LDC', *args, **kwargs):
+        if detector_name in get_available_space_detectors():
+            if backend in _backends[detector_name].keys():
+                c = _backends[detector_name][backend]
+                self.backend = c(*args, **kwargs)
+            else:
+                raise ValueError(f'Detector {detector_name} does not support backend {backend}',
+                                 f'This detector accepts: {_backends[detector_name].keys()}')
         else:
-            raise NotImplementedError('Unrecognized backend argument. ' +
-                                      'Currently accepts: "LDC", "FLR"')
+            raise NotImplementedError('Unrecognized detector. ',
+                                      'Currently accepts: ',
+                                      f'{get_available_space_detectors()}')
+
+    @property
+    def sky_coords(self):
+        return self.backend.sky_coords
 
     def orbits_init(self, *args, **kwargs):
         return self.backend.orbits_init(*args, **kwargs)
