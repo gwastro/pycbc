@@ -568,6 +568,7 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
             # safety buffer
             start_time = inj.tc - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
+                logger.warning("No injections applied.")
                 continue
             signal = self.make_strain_from_inj_object(inj, delta_t,
                      detector_name, f_lower=f_l,
