@@ -59,6 +59,7 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
     -------------------
     weights: ndarray
         Weighting factor to apply to the templates specified by template_idx
+        If None, then numpy.average will revert to numpy.mean
 
     Returns
     -------
@@ -68,7 +69,6 @@ def smooth_templates(nabove, invalphan, ntotal, template_idx,
         Third float: the smoothed total count in template value
 
     """
-    if weights is None: weights = numpy.ones_like(template_idx)
     nabove_t_smoothed = numpy.average(nabove[template_idx], weights=weights)
     ntotal_t_smoothed = numpy.average(ntotal[template_idx], weights=weights)
     invalphan_mean = numpy.average(invalphan[template_idx], weights=weights)
@@ -119,7 +119,7 @@ def smooth_distance_weighted(nabove, invalphan, ntotal, dists):
     Smooth templates weighted according to dists in a unit-width normal
     distribution, truncated at three sigma
     """
-    idx_within_area = numpy.flatnonzero(dists < 3.)
+    idx_within_area = dists < 3.
     weights = norm.pdf(dists[idx_within_area])
     return smooth_templates(nabove, invalphan, ntotal,
                             idx_within_area, weights=weights)
@@ -404,10 +404,12 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'true', or 'false'")
 
-nabove_smoothed = []
-alpha_smoothed = []
-ntotal_smoothed = []
-rang = numpy.arange(0, len(nabove))
+n_templates = len(nabove)
+rang = numpy.arange(0, n_templates)
+
+nabove_smoothed = numpy.zeros_like(parvals[0])
+alpha_smoothed = numpy.zeros_like(parvals[0])
+ntotal_smoothed = numpy.zeros_like(parvals[0])
 
 # Handle the one-dimensional case of tophat smoothing separately
 # as it is easier to optimize computational performance.
@@ -459,38 +461,49 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     # Sort the values to be smoothed by parameter value
     logging.info("Smoothing ...")
     slices = [slice(l,r) for l, r in zip(lefts, rights)]
+    nabove_sort =  nabove[par_sort]
+    invalphan_sort = invalphan[par_sort]
+    ntotal_sort = ntotal[par_sort]
     for i in rang:
-        report_percentage(i, rang.max())
+        report_percentage(i, n_templates)
         slc = slices[i]
         d = dist(i, slc, parvals, args.smoothing_width)
 
-        smoothed_tuple = smooth(nabove[par_sort][slc],
-                                invalphan[par_sort][slc],
-                                ntotal[par_sort][slc],
-                                d,
-                                args.smoothing_method,
-                                **kwarg_dict)
-        nabove_smoothed.append(smoothed_tuple[0])
-        alpha_smoothed.append(smoothed_tuple[1])
-        ntotal_smoothed.append(smoothed_tuple[2])
+        smoothed_tuple = smooth(
+            nabove_sort[slc],
+            invalphan_sort[slc],
+            ntotal_sort[slc],
+            d,
+            args.smoothing_method,
+            **kwarg_dict
+        )
+        nabove_smoothed[i] = smoothed_tuple[0]
+        alpha_smoothed[i] = smoothed_tuple[1]
+        ntotal_smoothed[i] = smoothed_tuple[2]
 
     # Undo the sorts
     unsort = numpy.argsort(par_sort)
     parvals = [p[unsort] for p in parvals]
-    nabove_smoothed = numpy.array(nabove_smoothed)[unsort]
-    alpha_smoothed = numpy.array(alpha_smoothed)[unsort]
-    ntotal_smoothed = numpy.array(ntotal_smoothed)[unsort]
+    nabove_smoothed = nabove_smoothed[unsort]
+    alpha_smoothed = alpha_smoothed[unsort]
+    ntotal_smoothed = ntotal_smoothed[unsort]
 
 else:
     logging.info("Smoothing ...")
     for i in rang:
-        report_percentage(i, rang.max())
+        report_percentage(i, n_templates)
         d = dist(i, rang, parvals, args.smoothing_width)
-        smoothed_tuple = smooth(nabove, invalphan, ntotal, d,
-                                args.smoothing_method, **kwarg_dict)
-        nabove_smoothed.append(smoothed_tuple[0])
-        alpha_smoothed.append(smoothed_tuple[1])
-        ntotal_smoothed.append(smoothed_tuple[2])
+        smoothed_tuple = smooth(
+            nabove,
+            invalphan,
+            ntotal,
+            d,
+            args.smoothing_method,
+            **kwarg_dict
+        )
+        nabove_smoothed[i] = smoothed_tuple[0]
+        alpha_smoothed[i] = smoothed_tuple[1]
+        ntotal_smoothed[i] = smoothed_tuple[2]
 
 logging.info("Writing output")
 outfile = HFile(args.output, 'w')
