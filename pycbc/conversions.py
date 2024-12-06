@@ -1806,6 +1806,73 @@ def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
 
     return formatreturn(phi_i - phi_l, input_is_array)
 
+def jittering_distance_gaussian(prev_dist, amp_cal_error, phase_cal_error):
+    """ Jitter the distance in order to take in account the
+    calibration errors in phase and amplitude by following a
+    gaussian distribution. Gaussian distribution is not 
+    recommended because it could give you negative distance 
+    as soon as it covers the entire real space. The formula
+    for mu and sigma are obtained in [PUT REF HERE]
+
+
+    Parameters
+    ----------
+    prev_dist : numpy.array
+        distance distribution before the jittering
+    amp_cal_error : float
+        amplitude calibration error (percentage) of the wanted 
+        detector. It will affect the width of the gaussian
+        distribution.
+    phase_cal_error : float
+        phase calibration error (degrees) of the wanted detector. 
+        It will affect the center of the gaussian distribution.
+
+    Returns
+    -------
+    distance : numpy.array
+        distance distribution after the jittering, a gaussian 
+        distribution centerend on the phase calibration error
+        and with a width of the amplitude calibration error.
+
+    """
+    mu = prev_dist * (1 + 0.5 * numpy.deg2rad(phase_cal_error)**2)
+    sigma = (amp_cal_error / 100) * prev_dist
+    
+    return numpy.random.normal(mu, sigma)
+
+def jittering_distance_lognormal(prev_dist, amp_cal_error, phase_cal_error):
+    """ Jitter the distance in order to take in account the
+    calibration errors in phase and amplitude by following a
+    lognormal distribution. The formula for mu and sigma are 
+    obtained in [PUT REF HERE]
+
+    Parameters
+    ----------
+    prev_dist : numpy.array
+        distance distribution before the jittering
+    amp_cal_error : float
+        amplitude calibration error (percentage) of the wanted 
+        detector. It will affect the width of the gaussian
+        distribution.
+    phase_cal_error : float
+        phase calibration error (degrees) of the wanted detector. 
+        It will affect the center of the gaussian distribution.
+
+    Returns
+    -------
+    distance : numpy.array
+        distance distribution after the jittering, a lognormal 
+        distribution centerend on the phase calibration error
+        and with a width of the amplitude calibration error.
+
+    """
+    mu = prev_dist * (1 + 0.5 * numpy.deg2rad(phase_cal_error)**2)
+    sigma = (amp_cal_error / 100) * prev_dist
+
+    mu_log = np.log((mu**2)/(np.sqrt(mu**2 + sigma**2)))
+    sigma_log = np.sqrt(np.log(1+(sigma**2)/mu**2)) 
+
+    return numpy.random.lognormal(mu_log, sigma_log)
 
 __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'lambda_from_mass_tov_file', 'primary_mass',
@@ -1847,5 +1914,6 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'remnant_mass_from_mass1_mass2_cartesian_spin_eos',
            'lambda1_from_delta_lambda_tilde_lambda_tilde',
            'lambda2_from_delta_lambda_tilde_lambda_tilde',
-           'delta_lambda_tilde'
+           'delta_lambda_tilde', 'jittering_distance_gaussian',
+           'jittering_distance_lognormal'
           ]
