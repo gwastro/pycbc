@@ -96,7 +96,7 @@ def complete_mass_data(injs, key, tag):
     if key == 'mtotal':
         data = mass1 + mass2
     elif key == 'mchirp':
-        data = conversions.mchirp_from_mass1_mass2(mass1, mass2)
+        data = pycbc.conversions.mchirp_from_mass1_mass2(mass1, mass2)
     else:
         data = mass2 / mass1
         data = np.where(data > 1, 1./data, data)
@@ -260,7 +260,7 @@ all_off_trigs = ppu.load_data(trig_file, ifos, data_tag='trigs',
 
 # Extract needed trigger properties and store them as dictionaries
 # Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
-keys = ['network/reweighted_snr']
+keys = ['network/end_time_gc', 'network/reweighted_snr']
 trig_data = ppu.extract_trig_properties(
     trial_dict,
     all_off_trigs,
@@ -269,9 +269,25 @@ trig_data = ppu.extract_trig_properties(
     keys
 )
 
-background = list(trig_data['network/reweighted_snr'].values())
+# Max BestNR values in each trial: these are stored in a dictionary keyed
+# by slide_id, as arrays indexed by trial number
+background = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
+for slide_id in slide_dict:
+    for j, trial in enumerate(trial_dict[slide_id]):
+        # True whenever the trigger is in the trial
+        trial_cut = (trial[0] <= trig_data[keys[0]][slide_id][:])\
+                          & (trig_data[keys[0]][slide_id][:] < trial[1])
+        # Move on if nothing was in the trial
+        if not trial_cut.any():
+            continue
+        # Max BestNR
+        background[slide_id][j] = max(trig_data[keys[1]][slide_id][trial_cut])
+# Gather all values and max over them
+background = list(background.values())
 background = np.concatenate(background)
 max_bkgd_reweighted_snr = background.max()
+assert total_trials == len(background)
+logging.info("Background bestNR calculated.")
 
 # =======================
 # Post-process injections
@@ -340,7 +356,7 @@ if len(list(found_after_vetoes['reweighted_snr'])) > 0:
     """
     found_quieter['fap'] = np.array([sum(background > bestnr) for bestnr in
                                      found_quieter['reweighted_snr']],
-                                    dtype=float) / len(background)
+                                    dtype=float) / total_trials
 
     # 3) Missed due to vetoes
     # TODO: needs function to cherry-pick a subset of inj_data specified by
