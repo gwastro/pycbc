@@ -39,6 +39,9 @@ from pycbc.distributions.external import External, DistributionFunctionFromFile
 from pycbc.distributions.fixedsamples import FixedSamples
 from pycbc.distributions.mass import MchirpfromUniformMass1Mass2, \
                                      QfromUniformMass1Mass2
+from pycbc.distributions.sym_gamma_dist import SymGammaDist                            
+                                   
+                                    
 
 # a dict of all available distributions
 distribs = {
@@ -61,7 +64,8 @@ distribs = {
     FixedSamples.name: FixedSamples,
     MchirpfromUniformMass1Mass2.name: MchirpfromUniformMass1Mass2,
     QfromUniformMass1Mass2.name: QfromUniformMass1Mass2,
-    FisherSky.name: FisherSky
+    FisherSky.name: FisherSky,
+    SymGammaDist.name: SymGammaDist
 }
 
 def read_distributions_from_config(cp, section="prior"):
