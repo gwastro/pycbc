@@ -231,17 +231,13 @@ for slide_id in slide_dict:
             continue
         # Max BestNR
         background[slide_id][j] = max(trig_data[keys[1]][slide_id][trial_cut])
-# Gather all values and max over them
-background = list(background.values())
-background = np.concatenate(background)
-max_bkgd_reweighted_snr = background.max()
-assert total_trials == len(background)
 
 # Max and median values of reweighted SNR,
 # and sorted (loudest in trial) reweighted SNR values
-max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
+max_bestnr, median_bestnr, sorted_bkgd =\
     ppu.max_median_stat(slide_dict, background, trig_data[keys[1]],
                         total_trials)
+assert total_trials == len(sorted_bkgd)
 
 logging.info("Background bestNR calculated.")
 
@@ -304,7 +300,7 @@ if onsource_file:
     logging.info("Onsource analysed.")
 
     if loud_on_bestnr_idx is not None:
-        loud_on_fap = sum(background > loud_on_bestnr) / total_trials
+        loud_on_fap = sum(sorted_bkgd > loud_on_bestnr) / total_trials
 
 
 # =======================
@@ -350,7 +346,7 @@ g_ifar['bestnr'] = found_after_vetoes['network/reweighted_snr'][nonzero_fap]
 g_ifar['stat'] = np.zeros([len(g_ifar['bestnr'])])
 for ix, (mc, bestnr) in \
             enumerate(zip(found_trig_mchirp[nonzero_fap], g_ifar['bestnr'])):
-    g_ifar['stat'][ix] = (full_time_veto_max_bestnr > bestnr).sum()
+    g_ifar['stat'][ix] = (sorted_bkgd > bestnr).sum()
 g_ifar['stat'] = g_ifar['stat'] / total_trials
 
 # Set the sigma values
