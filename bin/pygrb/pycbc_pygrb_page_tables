@@ -320,8 +320,8 @@ trig_data_av = ppu.extract_trig_properties(
 
 # Max SNR and BestNR values in each trial: these are stored in dictionaries
 # keyed by slide_id, as arrays indexed by trial number
-time_veto_max_snr = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
-time_veto_max_bestnr = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
+background_snr = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
+background = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
 for slide_id in slide_dict:
     for j, trial in enumerate(trial_dict[slide_id]):
         # True whenever the trigger is in the trial
@@ -330,11 +330,23 @@ for slide_id in slide_dict:
         if not trial_cut.any():
             continue
         # Max SNR
-        time_veto_max_snr[slide_id][j] = \
+        background_snr[slide_id][j] = \
             max(trig_data_av[keys[1]][slide_id][trial_cut])
         # Max BestNR
-        time_veto_max_bestnr[slide_id][j] = \
+        background[slide_id][j] = \
             max(trig_data_av[keys[2]][slide_id][trial_cut])
+
+# Max and median values of reweighted SNR,
+# and sorted (loudest in trial) reweighted SNR values
+max_bestnr, median_bestnr, sorted_bkgd =\
+    ppu.max_median_stat(slide_dict, background,
+                        trig_data_av[keys[2]], total_trials)
+assert total_trials == len(sorted_bkgd)
+
+# Median value of SNR
+_, median_snr, _ = ppu.max_median_stat(slide_dict, background_snr,
+                                       trig_data_av[keys[1]], total_trials)
+
 logging.info("Background SNR and bestNR of trials calculated.")
 
 # Output details of loudest offsouce triggers: only triggers compatible
@@ -347,20 +359,6 @@ for slide_id in slide_dict:
     )
 offsource_trigs.sort(key=lambda element: element[0])
 offsource_trigs.reverse()
-
-# Median value of SNR
-_, median_snr, _ = ppu.max_median_stat(slide_dict, time_veto_max_snr,
-                                       trig_data_av[keys[1]], total_trials)
-
-# Max and median values of reweighted SNR,
-# and sorted (loudest in trial) reweighted SNR values
-max_bestnr, median_bestnr, full_time_veto_max_bestnr =\
-    ppu.max_median_stat(slide_dict, time_veto_max_bestnr,
-                        trig_data_av[keys[2]], total_trials)
-# Gather all values and max over them
-background = list(time_veto_max_bestnr.values())
-background = np.concatenate(background)
-assert total_trials == len(background)
 
 # Calculate chirp masses of templates
 logging.info('Loading triggers template masses')
@@ -399,7 +397,7 @@ if lofft_outfile:
             chunk_num = 'No trial'
 
         # Get FAP of trigger
-        fap = sum(background > bestnr) / len(background)
+        fap = sum(sorted_bkgd > bestnr) / total_trials
         pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
         d = [chunk_num, trig_slide_id, pval,
              trig_data['network/end_time_gc'][trig_index],
@@ -475,7 +473,7 @@ if lofft_outfile:
     # end of an observing run collectively
     # TODO: Needs a final place in the results webpage
     # np.savetxt('%s/bestnr_vs_fap_numbers.txt' %(outdir),
-    #            full_time_veto_max_bestnr, delimiter='/t')
+    #            sorted_bkgd, delimiter='/t')
 
 
 # =======================
@@ -517,8 +515,8 @@ if onsource_file:
             for ifo in ifos
         }
         num_trials_louder = 0
-        fap = sum(background > loud_on_bestnr)/total_trials
-        pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
+        fap = sum(sorted_bkgd > loud_on_bestnr)/total_trials
+        pval = f'< {(1./total_trials):.3g}' if fap == 0 else f'{fap:.3g}'
         loud_on_fap = fap
         d = [pval,
              on_trigs['network/end_time_gc'][trig_index],
@@ -574,7 +572,7 @@ if onsource_file:
                                          **kwds)
 
 else:
-    fap = sum(background > median_bestnr)/total_trials
+    fap = sum(sorted_bkgd > median_bestnr)/total_trials
 
 # =======================
 # Post-process injections
@@ -584,7 +582,7 @@ if found_missed_file is not None:
     found_injs, missed_injs, cut_injs = load_missed_found_injections(
         found_missed_file, ifos, bank_data,
         snr_threshold=opts.newsnr_threshold,
-        background_bestnrs=full_time_veto_max_bestnr
+        background_bestnrs=sorted_bkgd
     )
 
     # Split in injections found surviving vetoes and ones found but vetoed
