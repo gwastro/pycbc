@@ -34,11 +34,12 @@ loc = None
 # https://stackoverflow.com/questions/77798014/cupy-rawkernel-cuda-error-not-found-named-symbol-not-found-cupy
 
 tkernel1 = mako.template.Template("""
-extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float threshold){
-    int s = window * blockIdx.x;
+extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float threshold, int series_length) {
+    int batch_idx = blockIdx.y;  // Batch index
+    int s = batch_idx * series_length + window * blockIdx.x;
     int e = s + window;
 
-    // shared memory for chuck size candidates
+    // Shared memory remains unchanged, but it now processes series per batch index
     __shared__ float svr[${chunk}];
     __shared__ float svi[${chunk}];
     __shared__ int sl[${chunk}];
@@ -194,65 +195,70 @@ def get_tkernel(slen, window):
     )
     return (fn, fn2), nt, nb
 
-def threshold_and_cluster(series, threshold, window):
+def threshold_and_cluster(series_batch, threshold, window):
     global val
     global loc
-    if val is None:
-        val = cp.zeros(4096*256, dtype=cp.complex64)
-    if loc is None:
-        loc = cp.zeros(4096*256, cp.int32)
-
-    outl = loc
-    outv = val
-    slen = len(series)
-    series = series.data
-    (fn, fn2), nt, nb = get_tkernel(slen, window)
+    batch_size, series_length = series_batch.shape
+    
+    if val is None or val.size < batch_size * 4096 * 256:
+        val = cp.zeros((batch_size, 4096 * 256), dtype=cp.complex64)
+    if loc is None or loc.size < batch_size * 4096 * 256:
+        loc = cp.zeros((batch_size, 4096 * 256), dtype=cp.int32)
+    
+    outl = loc[:, :series_length]
+    outv = val[:, :series_length]
+    (fn, fn2), nt, nb = get_tkernel(series_length, window)
     threshold = cp.float32(threshold * threshold)
     window = cp.int32(window)
 
-    cl = loc[0:nb]
-    cv = val[0:nb]
+    # Launch kernel with batch dimension
+    grid = (nb, batch_size, 1)
+    block = (nt, 1, 1)
 
-    fn((nb,), (nt,), (series.data, outv, outl, window, threshold))
-    fn2((1,), (nb,), (outv, outl, threshold, window))
-    w = (cl != -1)
-    return cv[w], cl[w]
+    fn(grid, block, (series_batch.data, outv, outl, window, threshold, series_length))
+    fn2(grid, block, (outv, outl, threshold, window))
+    
+    results = []
+    for batch_idx in range(batch_size):
+        w = (outl[batch_idx] != -1)
+        results.append((outv[batch_idx][w], outl[batch_idx][w]))
+    return results
+
 
 class CUDAThresholdCluster(_BaseThresholdCluster):
-    def __init__(self, series):
-        self.series = series
+    def __init__(self, series_batch):
+        self.series_batch = series_batch
+        self.batch_size, self.series_length = series_batch.shape
 
         global val
         global loc
-        if val is None:
-            val = cp.zeros(4096*256, dtype=cp.complex64)
-        if loc is None:
-            loc = cp.zeros(4096*256, cp.int32)
+        if val is None or val.size < self.batch_size * 4096 * 256:
+            val = cp.zeros((self.batch_size, 4096 * 256), dtype=cp.complex64)
+        if loc is None or loc.size < self.batch_size * 4096 * 256:
+            loc = cp.zeros((self.batch_size, 4096 * 256), cp.int32)
 
         self.outl = loc
         self.outv = val
-        self.slen = len(series)
 
     def threshold_and_cluster(self, threshold, window):
-        threshold = cp.float32(threshold * threshold)
+        threshold = threshold * threshold
+        threshold = cp.asarray(threshold, dtype=cp.float32)
         window = cp.int32(window)
 
-        (fn, fn2), nt, nb = get_tkernel(self.slen, window)
-        cl = loc[0:nb]
-        cv = val[0:nb]
+        (fn, fn2), nt, nb = get_tkernel(self.series_length, window)
+        grid = (nb, self.batch_size, 1)
+        block = (nt, 1, 1)
 
-        fn(
-            (nt, 1, 1),
-            (nb, 1),
-            (self.series.data, self.outv, self.outl, window, threshold)
-        )
-        fn2(
-            (nb, 1, 1),
-            (1, 1),
-            (self.outv, self.outl, threshold, window)
-        )
-        w = (cl != -1)
-        return cp.asnumpy(cv[w]), cp.asnumpy(cl[w])
+        fn(grid, block, (self.series_batch.data, self.outv, self.outl, window, threshold, self.series_length))
+        fn2(grid, block, (self.outv, self.outl, threshold, window))
+
+        results = []
+        for batch_idx in range(self.batch_size):
+            cl = self.outl[batch_idx][:nb]  # Clustered locations for this batch
+            cv = self.outv[batch_idx][:nb]  # Clustered values for this batch
+            w = (cl != -1)  # Valid locations
+            results.append((cp.asnumpy(cv[w]), cp.asnumpy(cl[w])))
+        return results
 
 def _threshold_cluster_factory(series):
     return CUDAThresholdCluster
