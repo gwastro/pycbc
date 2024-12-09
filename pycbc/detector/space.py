@@ -21,7 +21,22 @@ import logging
 def get_available_space_detectors():
     """List the available space detectors"""
     dets = list(_space_detectors.keys())
-    return dets
+    aliases = []
+    for i in dets:
+        aliases.extend(_space_detectors[i]['aliases'])
+    return dets + aliases
+
+def parse_det_name(detector_name):
+    """Parse a string into a detector name and TDI channel.
+       The input is assumed to look like '{detector name}_{channel name}.'"""
+    out = detector_name.split('_', 1)
+    det = out[0]
+    try:
+        chan = out[1]
+    except IndexError:
+        # detector_name is just the detector, so save channel name as None
+        chan = None
+    return det, chan
 
 def apply_polarization(hp, hc, polarization):
     """
@@ -133,7 +148,7 @@ def preprocess(hp, hc, orbit_start_time, orbit_end_time,
 
     return hp, hc
 
-def postprocess(tdi_dict, remove_garbage=True, t0=1e4):
+def postprocess(tdi_dict, remove_garbage=False, t0=1e4):
     """
     Apply start times to TDI channels and cut if needed.
 
@@ -147,7 +162,7 @@ def postprocess(tdi_dict, remove_garbage=True, t0=1e4):
         Flag whether to remove data from the edges of the channels. If True,
         time length t0 is cut from the start and end. If 'zero', time length
         t0 is zeroed at the start and end. If False, channels are unmodified.
-        Default True.
+        Default False.
 
     t0 : float (optional)
         Time in seconds to cut/zero from data if remove_garbage is True/'zero'.
@@ -192,7 +207,8 @@ class AbsSpaceDet(ABC):
         The time in seconds by which to offset the input waveform if
         apply_offset is True. Default 7365189.431698299.
     """
-    def __init__(self, apply_offset=False, offset=TIME_OFFSET_20_DEGREES):
+    def __init__(self, apply_offset=False, 
+                 offset=TIME_OFFSET_20_DEGREES, **kwargs):
         # specify whether to apply offsets to GPS times
         if apply_offset:
             self.offset = offset
@@ -204,6 +220,7 @@ class AbsSpaceDet(ABC):
     def sky_coords(self):
         """
         List the sky coordinate names for the detector class.
+        Raises a NotImplementedError if not specified in child class.
         """
         return
 
@@ -211,6 +228,7 @@ class AbsSpaceDet(ABC):
     def orbits_init(self):
         """
         Placeholder for initializing constellation orbital data.
+        Raises a NotImplementedError if not specified in child class.
         """
         return
 
@@ -218,6 +236,7 @@ class AbsSpaceDet(ABC):
     def get_links(self):
         """
         Placeholder for calculating GW projections onto detector links.
+        Raises a NotImplementedError if not specified in child class.
         """
         return
 
@@ -225,6 +244,7 @@ class AbsSpaceDet(ABC):
     def project_wave(self):
         """
         Placeholder for evaluating the TDI channels from the GW projections.
+        Raises a NotImplementedError if not specified in child class.
         """
         return
 
@@ -249,7 +269,6 @@ class _LDC_detector(AbsSpaceDet):
         self.orbits = orbits
         self.orbits_start_time = None
         self.orbits_end_time = None
-        self.armlength = 2.5e9
 
         # waveform properties
         self.dt = None
@@ -258,12 +277,16 @@ class _LDC_detector(AbsSpaceDet):
 
         # pre- and post-processing
         self.pad_data = False
-        self.remove_garbage = True
+        self.remove_garbage = False
         self.t0 = 1e4
 
         # class initialization
         self.proj_init = None
         self.tdi_init = None
+        self.tdi_chan = 'AET'
+        if 'tdi_chan' in kwargs.keys():
+            if kwargs['tdi_chan'] is not None and kwargs['tdi_chan'] in 'XYZ':
+                self.tdi_chan = 'XYZ'
 
     @property
     def sky_coords(self):
@@ -321,8 +344,8 @@ class _LDC_detector(AbsSpaceDet):
                 self.orbits_start_time = f.attrs['t0']
                 self.orbits_end_time = self.orbit_start_time + f.attrs['dt']*f.attrs['size']
 
-        # add light travel buffer times for preprocessing
-        lisa_arm = 2.5e9 # nominal SI arm length for LISA
+        # add light travel buffer times
+        lisa_arm = _space_detectors['LISA']['armlength']
         ltt_au = constants.au.value / constants.c.value
         ltt_arm = lisa_arm / constants.c.value
         self.orbits_start_time += ltt_arm + ltt_au
@@ -433,8 +456,8 @@ class _LDC_detector(AbsSpaceDet):
         return wf_proj
 
     def project_wave(self, hp, hc, lamb, beta, polarization=0,
-                     tdi=1, tdi_chan='AET', pad_data=False,
-                     remove_garbage=True, t0=1e4):
+                     tdi=1, tdi_chan=None, pad_data=False,
+                     remove_garbage=False, t0=1e4, **kwargs):
         """
         Evaluate the TDI observables.
 
@@ -480,7 +503,7 @@ class _LDC_detector(AbsSpaceDet):
             time length t0 worth of data at the start and end of the waveform
             will be cut from TDI channels. If 'zero', time length t0 worth of
             edge data will be zeroed. If False, TDI channels will not be
-            modified. Default True.
+            modified. Default False.
 
         t0 : float (optional)
             Time length in seconds to pad/cut from the start and end of
@@ -506,6 +529,10 @@ class _LDC_detector(AbsSpaceDet):
             raise ValueError('Unrecognized TDI generation input. ' +
                              'Please input either 1 or 2.')
 
+        # set TDI channels
+        if tdi_chan is None:
+            tdi_chan = self.tdi_chan
+
         # generate the Doppler time series
         self.pad_data = pad_data
         self.remove_garbage = remove_garbage
@@ -522,16 +549,16 @@ class _LDC_detector(AbsSpaceDet):
 
         # convert to AET if specified
         if tdi_chan == 'XYZ':
-            tdi_dict = {'X': TimeSeries(chanx, delta_t=self.dt, epoch=self.start_time),
-                        'Y': TimeSeries(chany, delta_t=self.dt, epoch=self.start_time),
-                        'Z': TimeSeries(chanz, delta_t=self.dt, epoch=self.start_time)}
+            tdi_dict = {'LISA_X': TimeSeries(chanx, delta_t=self.dt, epoch=self.start_time),
+                        'LISA_Y': TimeSeries(chany, delta_t=self.dt, epoch=self.start_time),
+                        'LISA_Z': TimeSeries(chanz, delta_t=self.dt, epoch=self.start_time)}
         elif tdi_chan == 'AET':
             chana = (chanz - chanx)/numpy.sqrt(2)
             chane = (chanx - 2*chany + chanz)/numpy.sqrt(6)
             chant = (chanx + chany + chanz)/numpy.sqrt(3)
-            tdi_dict = {'A': TimeSeries(chana, delta_t=self.dt, epoch=self.start_time),
-                        'E': TimeSeries(chane, delta_t=self.dt, epoch=self.start_time),
-                        'T': TimeSeries(chant, delta_t=self.dt, epoch=self.start_time)}
+            tdi_dict = {'LISA_A': TimeSeries(chana, delta_t=self.dt, epoch=self.start_time),
+                        'LISA_E': TimeSeries(chane, delta_t=self.dt, epoch=self.start_time),
+                        'LISA_T': TimeSeries(chant, delta_t=self.dt, epoch=self.start_time)}
         else:
             raise ValueError('Unrecognized TDI channel input. ' +
                              'Please input either "XYZ" or "AET".')
@@ -567,7 +594,6 @@ class _FLR_detector(AbsSpaceDet):
         self.orbits = orbits
         self.orbits_start_time = None
         self.orbits_end_time = None
-        self.armlength = 2.5e9
 
         # waveform properties
         self.dt = None
@@ -576,12 +602,16 @@ class _FLR_detector(AbsSpaceDet):
 
         # pre- and post-processing
         self.pad_data = False
-        self.remove_garbage = True
+        self.remove_garbage = False
         self.t0 = 1e4
 
         # class initialization
         self.tdi_init = None
-
+        self.tdi_chan = 'AET'
+        if 'tdi_chan' in kwargs.keys():
+            if kwargs['tdi_chan'] is not None and kwargs['tdi_chan'] in 'XYZ':
+                self.tdi_chan = 'XYZ'
+            
     @property
     def sky_coords(self):
         return 'eclipticlongitude', 'eclipticlatitude'
@@ -708,8 +738,8 @@ class _FLR_detector(AbsSpaceDet):
         return wf_proj
 
     def project_wave(self, hp, hc, lamb, beta, polarization=0,
-                     tdi=1, tdi_chan='AET', use_gpu=None, pad_data=False,
-                     remove_garbage=True, t0=1e4):
+                     tdi=1, tdi_chan=None, use_gpu=None, pad_data=False,
+                     remove_garbage=False, t0=1e4, **kwargs):
         """
         Evaluate the TDI observables.
 
@@ -795,6 +825,9 @@ class _FLR_detector(AbsSpaceDet):
             self.tdi_init._init_TDI_delays()
 
         # set TDI channels
+        if tdi_chan is None:
+            tdi_chan = self.tdi_chan
+
         if tdi_chan in ['XYZ', 'AET', 'AE']:
             self.tdi_init.tdi_chan = tdi_chan
         else:
@@ -807,14 +840,16 @@ class _FLR_detector(AbsSpaceDet):
         tdi_dict = {}
         for i, chan in enumerate(tdi_chan):
             # save as TimeSeries
-            tdi_dict[chan] = TimeSeries(tdi_obs[i], delta_t=self.dt,
-                                        epoch=self.start_time)
+            tdi_dict[f'LISA_{chan}'] = TimeSeries(tdi_obs[i], delta_t=self.dt,
+                                           epoch=self.start_time)
 
         tdi_dict = postprocess(tdi_dict, remove_garbage=self.remove_garbage, 
                                t0=self.t0)
         return tdi_dict
 
 _space_detectors = {'LISA': {'armlength': 2.5e9,
+                             'aliases': ['LISA_A', 'LISA_E', 'LISA_T',
+                                         'LISA_X', 'LISA_Y', 'LISA_Z'],
                             },
                    }
 
@@ -830,23 +865,24 @@ class SpaceDetector(AbsSpaceDet):
     Parameters
     ----------
     detector_name : str
-       The detector name. Accepts 'LISA'.
+       The detector name. Accepts 'LISA' or one of its aliases in _space_detectors.
 
     backend : str (optional)
         The backend architecture to use for generating TDI. Accepts 'LDC'
         or 'FLR'. Default 'LDC'.
     """
     def __init__(self, detector_name, backend='LDC', *args, **kwargs):
+        det, chan = parse_det_name(detector_name)
         if detector_name in get_available_space_detectors():
-            if backend in _backends[detector_name].keys():
-                c = _backends[detector_name][backend]
+            if backend in _backends[det].keys():
+                c = _backends[det][backend]
+                kwargs['tdi_chan'] = chan
                 self.backend = c(*args, **kwargs)
             else:
-                raise ValueError(f'Detector {detector_name} does not support backend {backend}',
-                                 f'This detector accepts: {_backends[detector_name].keys()}')
+                raise ValueError(f'Detector {det} does not support backend {backend}',
+                                 f'This detector accepts: {_backends[det].keys()}')
         else:
-            raise NotImplementedError('Unrecognized detector. ',
-                                      'Currently accepts: ',
+            raise NotImplementedError('Unrecognized detector. Currently accepts: ',
                                       f'{get_available_space_detectors()}')
 
     @property
