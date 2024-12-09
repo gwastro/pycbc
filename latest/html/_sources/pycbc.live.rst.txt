@@ -1,0 +1,37 @@
+pycbc.live package
+==================
+
+Submodules
+----------
+
+pycbc.live.significance\_fits module
+------------------------------------
+
+.. automodule:: pycbc.live.significance_fits
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.live.snr\_optimizer module
+--------------------------------
+
+.. automodule:: pycbc.live.snr_optimizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+pycbc.live.supervision module
+-----------------------------
+
+.. automodule:: pycbc.live.supervision
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: pycbc.live
+   :members:
+   :undoc-members:
+   :show-inheritance:
