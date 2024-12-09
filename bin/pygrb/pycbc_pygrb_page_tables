@@ -403,7 +403,7 @@ if lofft_outfile:
              trig_data['network/end_time_gc'][trig_index],
              bank_data['mass1'][trig_data['network/template_id'][trig_index]],
              bank_data['mass2'][trig_data['network/template_id'][trig_index]],
-             template_mchirps[trig_index],
+             template_mchirps[trig_data['network/template_id'][trig_index]],
              bank_data['spin1z'][trig_data['network/template_id'][trig_index]],
              bank_data['spin2z'][trig_data['network/template_id'][trig_index]],
              trig_data['network/ra'][trig_index],
