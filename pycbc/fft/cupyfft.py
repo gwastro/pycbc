@@ -119,15 +119,18 @@ def batch_ifft(invecs, outvecs, _, itype, otype):
     """Batched IFFT operation for multiple templates"""
     if itype == 'complex' and otype == 'complex':
         # Stack the input arrays directly 
-        batch_data = cupy.stack([v.data for v in invecs])
-        
+        # batch_data = cupy.stack([v.data for v in invecs])
+        batch_data = invecs
+
         # Perform batch IFFT
         result = cupy.fft.ifft(batch_data)
         
         # Copy results back efficiently using cupy.copyto
-        for i, outvec in enumerate(outvecs):
-            cupy.copyto(outvec.data, result[i])
-            outvec *= len(outvec)
+        # for i, outvec in enumerate(outvecs):
+        #     cupy.copyto(outvec.data, result[i])
+        #     outvec *= len(outvec)
+        cupy.copyto(outvecs, result)  # Copy all results if outvecs_data is a pre-allocated contiguous array
+        outvecs *= outvecs.shape[-1]
             
     elif itype == 'complex' and otype == 'real':
         batch_data = cupy.stack([v.data for v in invecs])

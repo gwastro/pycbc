@@ -29,6 +29,7 @@ utilities.
 import logging
 from math import sqrt
 import numpy
+import cupy
 
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import complex_same_precision_as, real_same_precision_as
@@ -86,7 +87,7 @@ def _correlate_factory(x, y, z):
 
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
-def _batch_correlate_factory(x, y, z, batch_size):
+def _batch_correlate_factory(x, y, z, batch_size, kmin, kmax):
     err_msg = "This class is a stub that should be overridden using the "
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
@@ -248,9 +249,8 @@ class MatchedFilterControl(object):
         if self.using_cupy and self.batch_size > 1:
             import cupy
             # For CUPY, allocate memory for batch processing
-            self.snr_mem = [Array(zeros(self.tlen, dtype=self.dtype)) 
-                           for _ in range(self.batch_size)]
-            self.corr_mem = [zeros(self.tlen, dtype=self.dtype) for _ in range(self.batch_size)]
+            self.snr_mem = cupy.zeros((self.batch_size, self.tlen), dtype=self.dtype)
+            self.corr_mem = cupy.zeros((self.batch_size, self.tlen), dtype=self.dtype)
         else:
             # For other schemes, single template processing
             self.snr_mem = zeros(self.tlen, dtype=self.dtype)
@@ -283,7 +283,8 @@ class MatchedFilterControl(object):
         self.threshold_and_clusterers = []
         for seg in self.segments:
             # Need to modify threshold clustering for batch operations
-            thresh = events.ThresholdCluster([snr[seg.analyze] for snr in self.snr_mem])
+            snr_mem_view = cupy.asarray([snr[seg.analyze] for snr in self.snr_mem])
+            thresh = events.ThresholdCluster(snr_mem_view)
             self.threshold_and_clusterers.append(thresh)
 
     def setup_standard_clustering(self):
@@ -295,18 +296,18 @@ class MatchedFilterControl(object):
 
     def setup_cupy_correlators(self):
         """Set up batch correlators for CUPY scheme"""
-        from .matchedfilter_cupy import CUPYBatchCorrelator
         corr_slice = slice(self.kmin, self.kmax)
         self.correlators = []
-        htilde_views = [htilde_t[corr_slice].data for htilde_t in self.htilde]
-        corr_mem_views = [mem[corr_slice].data for mem in self.corr_mem] 
+        htilde_views = [htilde_t.data for htilde_t in self.htilde]
         for seg in self.segments:
             # Create batch correlator that can handle multiple templates
             corr = CupyBatchCorrelator(
                 htilde_views,
-                seg[corr_slice],
-                corr_mem_views,
-                self.batch_size
+                seg,
+                self.corr_mem,
+                self.batch_size,
+                self.kmin,
+                self.kmax,
             )
             self.correlators.append(corr)
 
@@ -362,8 +363,8 @@ class MatchedFilterControl(object):
         if self.using_cupy:
             # Batch processing on GPU
             t_start = time.time()
-            norms = [(4.0 * self.delta_f) / numpy.sqrt(template_norm) 
-                    for template_norm in template_norms]
+            norms = cupy.asarray([(4.0 * self.delta_f) / cupy.sqrt(template_norm) 
+                    for template_norm in template_norms])
             print("Time to calculate norms: ", time.time() - t_start)
                     
             # Do batched correlation
@@ -378,59 +379,29 @@ class MatchedFilterControl(object):
             
             t_start = time.time()
             # Process results for each template in batch
-            snrs, cors, idxs, snrvs = [], [], [], []
-            for i, norm in enumerate(norms):
-                # Get this template's results from batch computation
-                snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(
-                    self.snr_threshold / norm,
-                    window,
-                    batch_idx=i
-                )
-                
-                if len(idx) == 0:
-                    snrs.append([])
-                    cors.append([])
-                    idxs.append([])
-                    snrvs.append([])
-                    continue
-                    
-                logging.info("%d points above threshold", len(idx))
-                
-                snr = TimeSeries(self.snr_mem[i], epoch=epoch, 
-                               delta_t=self.delta_t, copy=False)
-                corr = FrequencySeries(self.corr_mem[i], delta_f=self.delta_f, 
-                                     copy=False)
-                                     
-                snrs.append(snr)
-                cors.append(corr)
-                idxs.append(idx)
-                snrvs.append(snrv)
-            print("Time to process results: ", time.time() - t_start)
-            return snrs, norms, cors, idxs, snrvs
-            
-        else:
-            # Original single template processing
-            norm = (4.0 * self.delta_f) / numpy.sqrt(template_norms[0])
-            
-            self.correlators[segnum].correlate()
-            self.ifft.execute()
-            
-            snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(
-                self.snr_threshold / norm,
-                window
+            # Threshold and cluster
+            batched_results = self.threshold_and_clusterers[segnum].threshold_and_cluster(
+                self.snr_threshold / norms, window
             )
 
-            if len(idx) == 0:
+            # If no triggers in any batch, return empty results
+            if all(len(batch_idx) == 0 for _, batch_idx in batched_results):
                 return [], [], [], [], []
 
-            logging.info("%d points above threshold", len(idx))
+            # Aggregate results across batches
+            all_idx = []
+            all_snrv = []
+            for snrv_batch, idx_batch in batched_results:
+                all_snrv.append(snrv_batch)
+                all_idx.append(idx_batch)
 
-            snr = TimeSeries(self.snr_mem, epoch=epoch, 
-                           delta_t=self.delta_t, copy=False)
-            corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, 
-                                 copy=False)
-            
-            return [snr], [norm], [corr], [idx], [snrv]
+            logger.info("%d points above threshold across all batches", sum(len(batch) for batch in all_idx))
+
+            # Create time series and frequency series
+            snr = [TimeSeries(snr, epoch=epoch, delta_t=self.delta_t, copy=False) for snr in self.snr_mem]
+            corr = [FrequencySeries(corr, delta_f=self.delta_f, copy=False) for corr in self.corr_mem]
+
+            return snr, norms, corr, all_idx, all_snrv
 
     def full_matched_filter_and_cluster_fc(self, segnum, template_norms, window, epoch=None):
         """FindChirp clustering version of the matched filter

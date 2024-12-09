@@ -306,8 +306,8 @@ def template_triggers(t_nums):
         # Process results for each template
         for tidx, (template, snr, norm, corr, idx, snrv) in \
                 enumerate(zip(templates, snrs, norms, corrs, idxs, snrvs)):
+            norm = float(norm)
             if not len(idx):
-                out_vals_all[tidx].append([])
                 continue
 
             out_vals = out_vals_ref.copy()
@@ -343,7 +343,7 @@ def template_triggers(t_nums):
                                                opt.gps_start_time,
                                                opt.sample_rate)
 
-            out_vals_all.append(copy.deepcopy(out_vals))
+            out_vals_all[tidx] = copy.deepcopy(out_vals)
 
     return out_vals_all, tparams
 
@@ -531,17 +531,15 @@ with ctx:
             
         # Rest of the event processing remains the same
         for i in range(len(data[0])):
-            out_vals_all_seg, tparam = data[0][i], data[1][i]
-            for j in range(len(out_vals_all_seg)):
-                out_vals_all = out_vals_all_seg[j]
-                if len(out_vals_all) > 0:
-                    event_mgr.new_template(tmplt=tparam)
-                    
-                    for edata in out_vals_all:
-                        event_mgr.add_template_events(names, [edata[n] for n in names])
-                    
-                    event_mgr.cluster_template_events("time_index", "snr", cluster_window)
-                    event_mgr.finalize_template_events()
+            out_vals_all, tparam = data[0][i], data[1][i]
+            if len(out_vals_all) > 0:
+                event_mgr.new_template(tmplt=tparam)
+                
+                for edata in [out_vals_all] :
+                    event_mgr.add_template_events(names, [edata[n] for n in names])
+                
+                event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+                event_mgr.finalize_template_events()
                 
         if opt.finalize_events_template_rate is not None:
             event_mgr.consolidate_events(opt, gwstrain=gwstrain)      

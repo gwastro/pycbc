@@ -77,22 +77,27 @@ def batched_correlate(templates, data, out, batch_size):
     )
 
 class CUPYBatchCorrelator(_BaseCorrelator):
-    def __init__(self, xs, y, zs, batch_size):
+    def __init__(self, xs, y, zs, batch_size, kmin, kmax):
         # Concatenate template data into contiguous array
         self.x = xs
         self.y = y._data
         self.z = zs
         self.batch_size = batch_size
+        self.kmin = kmin
+        self.kmax = kmax
         
     def correlate(self):
-        batched_correlate_kernel(
-            cp.asarray(self.x),
-            self.y, 
-            len(self.y),
-            self.batch_size,
-            cp.asarray(self.z),
-            size=len(self.y) * self.batch_size  # Specify total size
-        )
+        # batched_correlate_kernel(
+        #     cp.asarray(self.x),
+        #     self.y, 
+        #     len(self.y),
+        #     self.batch_size,
+        #     self.z,
+        #     self.kmin,
+        #     self.kmax,
+        # )
+        self.z[:,self.kmin:self.kmax] = cp.conj(cp.asarray(self.x)[:, self.kmin:self.kmax]) * self.y[self.kmin:self.kmax]
 
-def _batch_correlate_factory(xs, y, zs, batch_size):
+
+def _batch_correlate_factory(xs, y, zs, batch_size, kmin, kmax):
     return CUPYBatchCorrelator
