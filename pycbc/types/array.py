@@ -35,10 +35,51 @@ from functools import wraps
 import h5py
 import lal as _lal
 import numpy as _numpy
-from numpy import float32, float64, complex64, complex128, ones
-from numpy.linalg import norm
-
+import cupy as _cupy
 import pycbc.scheme as _scheme
+
+# Define a function to get the appropriate numeric types based on scheme
+def _get_scheme_types():
+    if _scheme.current_prefix() == 'cupy':
+        import cupy
+        return {
+            'float32': cupy.float32,
+            'float64': cupy.float64,
+            'complex64': cupy.complex64,
+            'complex128': cupy.complex128,
+            'ones': cupy.ones,
+            'norm': cupy.linalg.norm
+        }
+    else:
+        return {
+            'float32': _numpy.float32,
+            'float64': _numpy.float64,
+            'complex64': _numpy.complex64,
+            'complex128': _numpy.complex128,
+            'ones': _numpy.ones,
+            'norm': _numpy.linalg.norm
+        }
+
+# Get initial types but allow for later updates
+_types = _get_scheme_types()
+float32 = _types['float32']
+float64 = _types['float64']
+complex64 = _types['complex64']
+complex128 = _types['complex128']
+ones = _types['ones']
+norm = _types['norm']
+
+def update_scheme_types():
+    """Update numeric types based on current scheme"""
+    global float32, float64, complex64, complex128, ones, norm
+    _types = _get_scheme_types()
+    float32 = _types['float32']
+    float64 = _types['float64']
+    complex64 = _types['complex64']
+    complex128 = _types['complex128']
+    ones = _types['ones']
+    norm = _types['norm']
+
 from pycbc.scheme import schemed, cpuonly
 from pycbc.opt import LimitedSizeDict
 
@@ -46,7 +87,9 @@ from pycbc.opt import LimitedSizeDict
 # we should restrict any functions that do not allow an
 # array of uint32 integers
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
-                   _numpy.complex128, _numpy.uint32, _numpy.int32, int]
+                   _numpy.complex128, _numpy.uint32, _numpy.int32, int,
+                   _cupy.float32, _cupy.float64, _cupy.complex64,
+                   _cupy.complex128, _cupy.uint32, _cupy.int32]
 try:
     _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
 except NameError:
@@ -54,8 +97,12 @@ except NameError:
 
 def _convert_to_scheme(ary):
     if not isinstance(ary._scheme, _scheme.mgr.state.__class__):
-        converted_array = Array(ary, dtype=ary._data.dtype)
-        ary._data = converted_array._data
+        if isinstance(_scheme.mgr.state, _scheme.CUPYScheme):
+            # Convert to cupy array
+            ary._data = _cupy.asarray(ary._data)
+        else:
+            # Convert to numpy array for CPU schemes
+            ary._data = _numpy.asarray(ary._data)
         ary._scheme = _scheme.mgr.state
       
 def _convert(func):

@@ -26,6 +26,7 @@ This module provides the cupy backend of the fast Fourier transform
 for the PyCBC package.
 """
 
+from pycbc.types import Array
 import logging
 import cupy.fft
 from .core import _check_fft_args
@@ -86,3 +87,76 @@ class IFFT(_BaseIFFT):
 
     def execute(self):
         ifft(self.invec, self.outvec, self.prec, self.itype, self.otype)
+
+def batch_fft(invecs, outvecs, _, itype, otype):
+    """Batched FFT operation for multiple templates"""
+    if itype == 'complex' and otype == 'complex':
+        # Reshape input for batch operation
+        batch_size = len(invecs)
+        fft_size = len(invecs[0])
+        batch_data = cupy.stack([v.data for v in invecs])
+        
+        # Perform batched FFT
+        result = cupy.fft.fft(batch_data)
+        
+        # Copy results back to output vectors
+        for i, outvec in enumerate(outvecs):
+            outvec.data[:] = result[i]
+            
+    elif itype == 'real' and otype == 'complex':
+        batch_size = len(invecs)
+        fft_size = len(invecs[0])
+        batch_data = cupy.stack([v.data for v in invecs])
+        
+        result = cupy.fft.rfft(batch_data)
+        
+        for i, outvec in enumerate(outvecs):
+            outvec.data[:] = result[i]
+    else:
+        raise ValueError(_INV_FFT_MSG.format("FFT", itype, otype))
+
+def batch_ifft(invecs, outvecs, _, itype, otype):
+    """Batched IFFT operation for multiple templates"""
+    if itype == 'complex' and otype == 'complex':
+        # Stack the input arrays directly 
+        batch_data = cupy.stack([v.data for v in invecs])
+        
+        # Perform batch IFFT
+        result = cupy.fft.ifft(batch_data)
+        
+        # Copy results back efficiently using cupy.copyto
+        for i, outvec in enumerate(outvecs):
+            cupy.copyto(outvec.data, result[i])
+            outvec *= len(outvec)
+            
+    elif itype == 'complex' and otype == 'real':
+        batch_data = cupy.stack([v.data for v in invecs])
+        result = cupy.fft.irfft(batch_data)
+        
+        for i, outvec in enumerate(outvecs):
+            cupy.copyto(outvec.data, result[i])
+            outvec *= len(outvec)
+    else:
+        raise ValueError(_INV_FFT_MSG.format("IFFT", itype, otype))
+
+class BatchFFT(_BaseFFT):
+    """Class for performing batched FFTs via the cupy interface"""
+    def __init__(self, invecs, outvecs, batch_size):
+        self.invecs = invecs
+        self.outvecs = outvecs
+        self.batch_size = batch_size
+        self.prec, self.itype, self.otype = _check_fft_args(invecs[0], outvecs[0])
+
+    def execute(self):
+        batch_fft(self.invecs, self.outvecs, self.prec, self.itype, self.otype)
+
+class BatchIFFT(_BaseIFFT):
+    """Class for performing batched IFFTs via the cupy interface"""
+    def __init__(self, invecs, outvecs, batch_size):
+        self.invecs = invecs  
+        self.outvecs = outvecs
+        self.batch_size = batch_size
+        self.prec, self.itype, self.otype = _check_fft_args(Array(invecs[0]), Array(outvecs[0]))
+
+    def execute(self):
+        batch_ifft(self.invecs, self.outvecs, self.prec, self.itype, self.otype)

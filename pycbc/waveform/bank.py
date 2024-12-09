@@ -786,7 +786,96 @@ class FilterBank(TemplateBank):
                 distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
         return htilde
 
+
     def __getitem__(self, index):
+        """Get template(s) at given index(es)
+        
+        Parameters
+        ----------
+        index : int or list
+            Either a single template index or a list of indices
+            
+        Returns
+        -------
+        htilde : FrequencySeries or list of FrequencySeries
+            The template(s) at the requested index(es)
+        """
+        # Handle single index case as before
+        if isinstance(index, int):
+            return self._get_single_template(index)
+
+        # Handle list of indices for batch loading
+        templates = []
+        if self.out is None:
+            tempout = zeros(self.filter_length, dtype=self.dtype)
+        else:
+            tempout = self.out
+        for i, idx in enumerate(index):
+            approximant = self.approximant(idx)
+            f_end = self.end_frequency(idx)
+            if f_end is None or f_end >= (self.filter_length * self.delta_f):
+                f_end = (self.filter_length-1) * self.delta_f
+
+            # Find start frequency
+            f_low = find_variable_start_frequency(approximant,
+                                                self.table[idx],
+                                                self.f_lower,
+                                                self.max_template_length)
+            logging.info('%s: generating %s from %s Hz' %
+                        (idx, approximant, f_low))
+
+            # Clear storage memory
+            poke = tempout[i].data
+            tempout[i].clear()
+
+            # Get waveform filter
+            distance = 1.0 / DYN_RANGE_FAC
+            if self.has_compressed_waveforms and self.enable_compressed_waveforms:
+                htilde = self.get_decompressed_waveform(tempout[i], idx,
+                                                        f_lower=f_low,
+                                                        approximant=approximant,
+                                                        df=None)
+            else:
+                htilde = pycbc.waveform.get_waveform_filter(
+                    tempout[i][0:self.filter_length],
+                    self.table[idx],
+                    approximant=approximant,
+                    f_lower=f_low,
+                    f_final=f_end,
+                    delta_f=self.delta_f,
+                    delta_t=self.delta_t,
+                    distance=distance,
+                    **self.extra_args)
+
+            # Handle duration info
+            ttotal = template_duration = None
+            if hasattr(htilde, 'length_in_time'):
+                ttotal = htilde.length_in_time
+            if hasattr(htilde, 'chirp_length'):
+                template_duration = htilde.chirp_length
+
+            self.table[idx].template_duration = template_duration
+
+            htilde = htilde.astype(self.dtype)
+            htilde.f_lower = f_low
+            htilde.min_f_lower = self.min_f_lower
+            htilde.end_idx = int(f_end / htilde.delta_f)
+            htilde.params = self.table[idx]
+            htilde.chirp_length = template_duration
+            htilde.length_in_time = ttotal
+            htilde.approximant = approximant
+            htilde.end_frequency = f_end
+
+            # Add sigmasq method
+            htilde.sigmasq = types.MethodType(sigma_cached, htilde)
+            htilde._sigmasq = {}
+
+            templates.append(htilde)
+
+        return templates
+
+
+    def _get_single_template(self, index):
         # Make new memory for templates if we aren't given output memory
         if self.out is None:
             tempout = zeros(self.filter_length, dtype=self.dtype)

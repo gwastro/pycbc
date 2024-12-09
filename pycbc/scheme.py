@@ -118,14 +118,18 @@ class CUDAScheme(Scheme):
 
 class CUPYScheme(Scheme):
     """Scheme for using CUPY"""
-    def __init__(self, device_num=None):
-        import cupy # Fail now if cupy is not there.
+    def __init__(self, device_num=0):
+        import cupy
         import cupy.cuda
+        Scheme.__init__(self)
         self.device_num = device_num
-        self.cuda_device = cupy.cuda.Device(self.device_num)
+        self.cuda_device = cupy.cuda.Device(device_num)
+        
     def __enter__(self):
         super().__enter__()
-        self.cuda_device.__enter__()
+        self.cuda_device.use()
+        from pycbc.types.array import update_scheme_types
+        update_scheme_types()
         logging.warn(
             "You are using the CUPY GPU backend for PyCBC. This backend is "
             "still only a prototype. It may be useful for your application "
@@ -133,10 +137,10 @@ class CUPYScheme(Scheme):
             "output. Please do contribute to the effort to develop this "
             "further."
         )
-
     def __exit__(self, *args):
         super().__exit__(*args)
-        self.cuda_device.__exit__(*args)
+        from pycbc.types.array import update_scheme_types
+        update_scheme_types()
 
 
 class CPUScheme(Scheme):

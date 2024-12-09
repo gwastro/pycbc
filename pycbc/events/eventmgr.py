@@ -30,6 +30,7 @@ import itertools
 import logging
 import pickle
 import numpy
+import cupy
 import h5py
 
 from pycbc.types import Array
@@ -104,7 +105,7 @@ class ThresholdCluster(object):
 #
 # will work? Is there a better way?
 class _BaseThresholdCluster(object):
-    def threshold_and_cluster(self, threshold, window):
+    def threshold_and_cluster(self, threshold, window, batch_idx=None):
         """
         Threshold and cluster the memory specified at instantiation with the
         threshold and window size specified at creation.
@@ -116,6 +117,9 @@ class _BaseThresholdCluster(object):
           to return when thresholding and clustering.
         window : uint32
           The size (in number of samples) of the window over which to cluster
+        batch_idx : int, optional
+          For batched operations, which template in the batch to process.
+          If None, assumes single template operation.
 
         Returns:
         --------
@@ -125,6 +129,91 @@ class _BaseThresholdCluster(object):
           Numpy array, indices into series of location of events
         """
         pass
+
+class CUPYThresholdCluster(_BaseThresholdCluster):
+    def __init__(self, series):
+        """
+        Create a threshold and cluster engine for batched operations
+
+        Parameters
+        ----------
+        series : list of complex64
+          List of input pycbc.types.Array (or subclass) that will be searched for
+          points above threshold that are then clustered
+        """
+        self.series = series
+        
+    def threshold_and_cluster(self, threshold, window, batch_idx=0):
+        """Implementation for CUPY scheme with batch support"""
+        # Select the correct series from batch
+        series = self.series[batch_idx]
+        
+        # Get values above threshold using cupy
+        arr = series.data
+        locs = cupy.where(abs(arr) > threshold)[0]
+        
+        if len(locs) == 0:
+            return cupy.array([], dtype=arr.dtype), cupy.array([], dtype=cupy.uint32)
+            
+        vals = arr[locs]
+        
+        # Move to CPU for clustering since findchirp_cluster is CPU function
+        locs_cpu = cupy.asnumpy(locs)
+        vals_cpu = cupy.asnumpy(vals)
+        
+        # Do clustering
+        indices = findchirp_cluster_over_window_cython(
+            locs_cpu.astype(numpy.int32),
+            numpy.abs(vals_cpu),
+            window,
+            numpy.zeros(len(locs_cpu), dtype=numpy.int32),
+            len(locs_cpu)
+        )
+        
+        if len(indices) == 0:
+            return cupy.array([], dtype=arr.dtype), cupy.array([], dtype=cupy.uint32)
+            
+        # Move results back to GPU
+        return cupy.array(vals_cpu[indices]), cupy.array(locs_cpu[indices])
+
+class CPUThresholdCluster(_BaseThresholdCluster):
+    def __init__(self, series):
+        """Original CPU implementation"""
+        self.series = series
+        
+    def threshold_and_cluster(self, threshold, window, batch_idx=None):
+        """Implementation for CPU schemes"""
+        # Get values above threshold 
+        arr = self.series.data
+        locs = numpy.where(abs(arr) > threshold)[0]
+        
+        if len(locs) == 0:
+            return numpy.array([], dtype=arr.dtype), numpy.array([], dtype=numpy.uint32)
+            
+        vals = arr[locs]
+        
+        # Do clustering
+        indices = findchirp_cluster_over_window_cython(
+            locs.astype(numpy.int32),
+            numpy.abs(vals),
+            window,
+            numpy.zeros(len(locs), dtype=numpy.int32),
+            len(locs)
+        )
+        
+        if len(indices) == 0:
+            return numpy.array([], dtype=arr.dtype), numpy.array([], dtype=numpy.uint32)
+            
+        return vals[indices], locs[indices]
+
+def _threshold_cluster_factory(series):
+    """Factory to create appropriate ThresholdCluster implementation"""
+    import pycbc.scheme
+    
+    if isinstance(pycbc.scheme.mgr.state, pycbc.scheme.CUPYScheme):
+        return CUPYThresholdCluster
+    else:
+        return CPUThresholdCluster
 
 
 def findchirp_cluster_over_window(times, values, window_length):
@@ -345,6 +434,8 @@ class EventManager(object):
             if v is not None:
                 if isinstance(v, Array):
                     new_events[c] = v.numpy()
+                elif isinstance(v, cupy.ndarray):
+                    new_events[c] = cupy.asnumpy(v)
                 else:
                     new_events[c] = v
         self.template_events = numpy.append(self.template_events, new_events)

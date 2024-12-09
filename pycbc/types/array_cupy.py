@@ -106,7 +106,7 @@ def squared_norm(self):
     return (self.data.real**2 + self.data.imag**2)
 
 def numpy(self):
-    return cp.asnumpy(self.data)
+    return cp.asnumpy(self._data)
 
 def _copy(self, self_ref, other_ref):
     self_ref[:] = other_ref[:]
@@ -124,17 +124,16 @@ def clear(self):
     self[:] = 0
 
 def _scheme_matches_base_array(array):
+    """Check if the array is already a CuPy array"""
     if isinstance(array, cp.ndarray):
         return True
-    else:
-        return False
+    return False
 
 def _to_device(array):
+    """Convert input to CuPy array"""
     return cp.asarray(array)
 
-def numpy(self):
-    return cp.asnumpy(self._data)
-
 def _copy_base_array(array):
+    """Copy a CuPy array"""
     return array.copy()
 
