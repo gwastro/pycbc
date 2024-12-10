@@ -639,8 +639,7 @@ if found_missed_file is not None:
     keys += sngl_snr_keys
     keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
              'spin2z', 'rec_spin1z', 'rec_spin2z']
-    td = []
-    td += [found_after_vetoes[key][nonzero_fap] for key in keys]
+    td = [found_after_vetoes[key][nonzero_fap] for key in keys]
     td = list(zip(*td))
     td.sort(key=lambda elem: elem[0])
     logging.info("Writing %d quiet-found injections to h5 and html files.",
@@ -665,8 +664,7 @@ if found_missed_file is not None:
                                          **kwds)
 
     # Write quiet triggers to html file
-    t_missed = []
-    t_missed += [np.concatenate((vetoed[key], cut_injs[key])) for key in keys]
+    t_missed = [np.concatenate((vetoed[key], cut_injs[key])) for key in keys]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])
     logging.info("Writing %d missed-found injections to html file.",
