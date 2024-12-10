@@ -196,8 +196,9 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
     return found_data, missed_data, cut_data
 
 
-def format_pvalue_str(pval, total_trials):
-    return f'< {(1./total_trials):.3g}' if pval == 0 else f'{pval:.3g}'
+def format_pvalue_str(pvalue, n_trials):
+    """Format p-value as a string."""
+    return f'< {(1./n_trials):.3g}' if pvalue == 0 else f'{pvalue:.3g}'
 
 
 # =============================================================================
