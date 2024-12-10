@@ -196,6 +196,10 @@ def load_missed_found_injections(hdf_file, ifos, bank_file, snr_threshold=None,
     return found_data, missed_data, cut_data
 
 
+def format_pvalue_str(pval, total_trials):
+    return f'< {(1./total_trials):.3g}' if pval == 0 else f'{pval:.3g}'
+
+
 # =============================================================================
 # Main script starts here
 # =============================================================================
@@ -323,10 +327,10 @@ trig_data_av = ppu.extract_trig_properties(
 background_snr = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
 background = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
 for slide_id in slide_dict:
+    trig_times = trig_data_av[keys[0]][slide_id]
     for j, trial in enumerate(trial_dict[slide_id]):
         # True whenever the trigger is in the trial
-        trial_cut = (trial[0] <= trig_data_av[keys[0]][slide_id][:])\
-                          & (trig_data_av[keys[0]][slide_id][:] < trial[1])
+        trial_cut = (trial[0] <= trig_times) & (trig_times < trial[1])
         if not trial_cut.any():
             continue
         # Max SNR
@@ -397,8 +401,8 @@ if lofft_outfile:
             chunk_num = 'No trial'
 
         # Get FAP of trigger
-        fap = sum(sorted_bkgd > bestnr) / total_trials
-        pval = '< %.3g' % (1./total_trials) if fap == 0 else '%.3g' % fap
+        pval = sum(sorted_bkgd > bestnr) / total_trials
+        pval = format_pvalue_str(pval, total_trials)
         d = [chunk_num, trig_slide_id, pval,
              trig_data['network/end_time_gc'][trig_index],
              bank_data['mass1'][trig_data['network/template_id'][trig_index]],
@@ -506,7 +510,6 @@ if onsource_file:
     td = []
 
     # Gather data
-    loud_on_fap = 1
     if loud_on_bestnr_trigs:
         trig_id = loud_on_bestnr_trigs
         trig_index = np.where(on_trigs['network/event_id'] == trig_id)[0][0]
@@ -515,9 +518,8 @@ if onsource_file:
             for ifo in ifos
         }
         num_trials_louder = 0
-        fap = sum(sorted_bkgd > loud_on_bestnr)/total_trials
-        pval = f'< {(1./total_trials):.3g}' if fap == 0 else f'{fap:.3g}'
-        loud_on_fap = fap
+        pval = sum(sorted_bkgd > loud_on_bestnr)/total_trials
+        pval = format_pvalue_str(pval, total_trials)
         d = [pval,
              on_trigs['network/end_time_gc'][trig_index],
              bank_data['mass1'][on_trigs['network/template_id'][trig_index]],
@@ -570,9 +572,6 @@ if onsource_file:
             'cmd': ' '.join(sys.argv), }
     pycbc.results.save_fig_with_metadata(str(html_table), lont_outfile,
                                          **kwds)
-
-else:
-    fap = sum(sorted_bkgd > median_bestnr)/total_trials
 
 # =======================
 # Post-process injections
@@ -640,8 +639,7 @@ if found_missed_file is not None:
     keys += ['bestnr', 'spin1x', 'spin1y', 'spin1z', 'spin2x', 'spin2y',
              'spin2z', 'rec_spin1z', 'rec_spin2z']
     td = []
-    for key in keys:
-        td += [found_after_vetoes[key][nonzero_fap]]
+    td += [found_after_vetoes[key][nonzero_fap] for key in keys]
     td = list(zip(*td))
     td.sort(key=lambda elem: elem[0])
     logging.info("Writing %d quiet-found injections to h5 and html files.",
@@ -667,8 +665,7 @@ if found_missed_file is not None:
 
     # Write quiet triggers to html file
     t_missed = []
-    for key in keys:
-        t_missed += [np.concatenate((vetoed[key], cut_injs[key]))]
+    t_missed += [np.concatenate((vetoed[key], cut_injs[key])) for key in keys]
     t_missed = list(zip(*t_missed))
     t_missed.sort(key=lambda elem: elem[0])
     logging.info("Writing %d missed-found injections to html file.",

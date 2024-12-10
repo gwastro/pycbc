@@ -222,10 +222,10 @@ trig_data = ppu.extract_trig_properties(
 # by slide_id, as arrays indexed by trial number
 background = {k: np.zeros(len(v)) for k,v in trial_dict.items()}
 for slide_id in slide_dict:
+    trig_times = trig_data[keys[0]][slide_id]
     for j, trial in enumerate(trial_dict[slide_id]):
         # True whenever the trigger is in the trial
-        trial_cut = (trial[0] <= trig_data[keys[0]][slide_id][:])\
-                          & (trig_data[keys[0]][slide_id][:] < trial[1])
+        trial_cut = (trial[0] <= trig_times) & (trig_times < trial[1])
         # Move on if nothing was in the trial
         if not trial_cut.any():
             continue
@@ -312,7 +312,7 @@ injs = ppu.load_data(found_missed_file, ifos, data_tag='injs',
                      rw_snr_threshold=opts.newsnr_threshold,
                      slide_id=0)
 
-# Gather njections that were not missed
+# Gather injections that were not missed
 found_inj = {}
 for k in injs.keys():
     if 'missed' not in k:
