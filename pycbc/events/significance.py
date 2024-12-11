@@ -55,8 +55,8 @@ def count_n_louder(bstat, fstat, dec,
         The cumulative array of background triggers.
     fore_n_louder: numpy.ndarray
         The number of background triggers above each foreground trigger
-    {} : an empty dictionary
-        This is so that the get_n_louder function gets the same outputs
+    {} : (empty) dictionary
+        Ensure we return the same tuple of objects as get_n_louder()
     """
     sort = bstat.argsort()
     bstat = copy.deepcopy(bstat)[sort]
@@ -86,8 +86,7 @@ def count_n_louder(bstat, fstat, dec,
 
     unsort = sort.argsort()
     back_cum_num = n_louder[unsort]
-    # Need to return an empty dictionary here to match the n_louder_from_fit
-    # outputs
+    # Empty dictionary matching the return objects from n_louder_from_fit
     return back_cum_num, fore_n_louder, {}
 
 
@@ -174,9 +173,7 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     bg_n_louder[bg_below] += n_above
     fg_n_louder[fg_below] += n_above
 
-    # Significance information dictionary
     sig_info = {'alpha': alpha, 'sig_alpha': sig_alpha, 'n_above': n_above}
-
     return bg_n_louder, fg_n_louder, sig_info
 
 
@@ -303,6 +300,7 @@ def positive_float(inp):
         logger.warning("Value provided to positive_float is less than zero, "
                        "this is not allowed")
         raise ValueError
+
     return fl_in
 
 
@@ -381,7 +379,6 @@ def ifar_opt_to_far_limit(ifar_str):
 
     """
     ifar_float = positive_float(ifar_str)
-
     far_hz = 0. if (ifar_float == 0.) else conv.sec_to_year(1. / ifar_float)
 
     return far_hz
