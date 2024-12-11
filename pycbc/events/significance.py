@@ -56,7 +56,7 @@ def count_n_louder(bstat, fstat, dec,
     fore_n_louder: numpy.ndarray
         The number of background triggers above each foreground trigger
     {} : (empty) dictionary
-        Ensure we return the same tuple of objects as get_n_louder()
+        Ensure we return the same tuple of objects as n_louder_from_fit()
     """
     sort = bstat.argsort()
     bstat = copy.deepcopy(bstat)[sort]
@@ -86,7 +86,8 @@ def count_n_louder(bstat, fstat, dec,
 
     unsort = sort.argsort()
     back_cum_num = n_louder[unsort]
-    # Empty dictionary matching the return objects from n_louder_from_fit
+
+    # Empty dictionary to match the return from n_louder_from_fit
     return back_cum_num, fore_n_louder, {}
 
 
