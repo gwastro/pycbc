@@ -320,7 +320,7 @@ class LiveSingle(object):
             with HFile(self.fit_file, 'r') as fit_file:
                 bin_edges = fit_file['bins_edges'][:]
                 live_time = fit_file[self.ifo].attrs['live_time']
-                thresh = fit_file.attrs['fit_threshold']
+                thresh = fit_file[self.ifo].attrs['fit_threshold']
                 dist_grp = fit_file[self.ifo][self.sngl_ifar_est_dist]
                 rates = dist_grp['counts'][:] / live_time
                 coeffs = dist_grp['fit_coeff'][:]
