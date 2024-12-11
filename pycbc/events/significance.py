@@ -55,6 +55,8 @@ def count_n_louder(bstat, fstat, dec,
         The cumulative array of background triggers.
     fore_n_louder: numpy.ndarray
         The number of background triggers above each foreground trigger
+    {} : an empty dictionary
+        This is so that the get_n_louder function gets the same outputs
     """
     sort = bstat.argsort()
     bstat = copy.deepcopy(bstat)[sort]
@@ -84,6 +86,8 @@ def count_n_louder(bstat, fstat, dec,
 
     unsort = sort.argsort()
     back_cum_num = n_louder[unsort]
+    # Need to return an empty dictionary here to match the n_louder_from_fit
+    # outputs
     return back_cum_num, fore_n_louder, {}
 
 
@@ -117,12 +121,17 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     fg_n_louder: numpy.ndarray
         The estimated number of background events louder than each
         foreground event
+    sig_info : a dictionary
+        Information regarding the significance fit
     """
 
     # Calculate the fitting factor of the ranking statistic distribution
-    alpha, sig_alpha = trstats.fit_above_thresh(fit_function, back_stat,
-                                        thresh=fit_threshold,
-                                        weights=dec_facs)
+    alpha, sig_alpha = trstats.fit_above_thresh(
+        fit_function,
+        back_stat,
+        thresh=fit_threshold,
+        weights=dec_facs
+    )
 
     # Count background events above threshold as the cum_fit is
     # normalised to 1
@@ -165,7 +174,10 @@ def n_louder_from_fit(back_stat, fore_stat, dec_facs,
     bg_n_louder[bg_below] += n_above
     fg_n_louder[fg_below] += n_above
 
-    return bg_n_louder, fg_n_louder, {'alpha': alpha, 'sig_alpha': sig_alpha, 'n_above': n_above}
+    # Significance information dictionary
+    sig_info = {'alpha': alpha, 'sig_alpha': sig_alpha, 'n_above': n_above}
+
+    return bg_n_louder, fg_n_louder, sig_info
 
 
 _significance_meth_dict = {
