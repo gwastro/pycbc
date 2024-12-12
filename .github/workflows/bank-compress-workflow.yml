@@ -1,4 +1,4 @@
-name: run small search using pegasus + condor
+name: compress waveforms into a bank using pegasus + condor
 
 on: [push, pull_request]
 
