@@ -39,6 +39,7 @@ jobs:
         pip install -r requirements.txt
         pip install .
     - name: installing sbank
+      run: |
         pip install sbank
     - name: generating template bank
       run: bash -e examples/search/bank.sh
