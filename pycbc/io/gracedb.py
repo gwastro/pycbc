@@ -136,7 +136,10 @@ class CandidateForGraceDB(object):
         coinc_event_row.time_slide_id = lsctables.TimeSlideID(0)
         coinc_event_row.process_id = proc_id
         coinc_event_row.coinc_event_id = coinc_id
-        coinc_event_row.likelihood = 0.
+        if 'foreground/stat' in coinc_results:
+            coinc_event_row.likelihood = coinc_results['foreground/stat']
+        else:
+            coinc_event_row.likelihood = 0.
         coinc_event_table.append(coinc_event_row)
         outdoc.childNodes[0].appendChild(coinc_event_table)
 

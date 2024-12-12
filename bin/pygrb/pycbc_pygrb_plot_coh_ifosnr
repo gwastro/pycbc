@@ -53,94 +53,6 @@ __program__ = "pycbc_pygrb_plot_coh_ifosnr"
 # =============================================================================
 # Functions
 # =============================================================================
-# Function to load trigger data
-def load_data(input_file, ifos, vetoes, opts, injections=False, slide_id=None):
-    """Load data from a trigger/injection file"""
-
-    # Initialize the dictionary
-    data = {}
-    data['coherent'] = None
-    data['single'] = dict((ifo, None) for ifo in ifos)
-    data['f_resp_mean'] = dict((ifo, None) for ifo in ifos)
-    data['sigma_mean'] = dict((ifo, None) for ifo in ifos)
-    data['sigma_max'] = None
-    data['sigma_min'] = None
-
-    if input_file:
-        if injections:
-            logging.info("Loading injections...")
-            # TODO: This will eventually become load_injections
-            trigs = ppu.load_triggers(
-                input_file,
-                ifos,
-                vetoes,
-                rw_snr_threshold=opts.newsnr_threshold,
-                slide_id=slide_id
-            )
-        else:
-            logging.info("Loading triggers...")
-            trigs = ppu.load_triggers(
-                input_file,
-                ifos,
-                vetoes,
-                rw_snr_threshold=opts.newsnr_threshold,
-                slide_id=slide_id
-            )
-
-        # Load SNR data
-        data['coherent'] = trigs['network/coherent_snr']
-
-        # Get single ifo SNR data
-        ifo_trig_index = {}
-        for ifo in ifos:
-            sorted_ifo_ids = numpy.array(
-                [
-                    numpy.where(trigs['%s/event_id' % ifo] == idx)[0][0]
-                    for idx in trigs['network/event_id']
-                ]
-            )
-            ifo_trig_index[ifo] = sorted_ifo_ids
-            data['single'][ifo] = trigs['%s/snr' % ifo][:][sorted_ifo_ids]
-
-        # Get sigma for each ifo
-        sigma = {}
-        for ifo in ifos:
-            sigma[ifo] = trigs['%s/sigmasq' % ifo][:][ifo_trig_index[ifo]]
-
-        # Create array for sigma_tot
-        sigma_tot = numpy.zeros(len(data['coherent']))
-
-        # Get parameters necessary for antenna responses
-        ra = trigs['network/ra'][:]
-        dec = trigs['network/dec'][:]
-        time = trigs['network/end_time_gc'][:]
-
-        # Get antenna response based parameters
-        for ifo in ifos:
-            antenna = Detector(ifo)
-            ifo_f_resp = ppu.get_antenna_responses(antenna, ra, dec, time)
-            # Get the average for f_resp_mean and calculate sigma_tot
-            data['f_resp_mean'][ifo] = ifo_f_resp.mean()
-            sigma_tot += sigma[ifo] * ifo_f_resp
-
-        for ifo in ifos:
-            try:
-                sigma_norm = sigma[ifo] / sigma_tot
-                data['sigma_mean'][ifo] = sigma_norm.mean()
-                if ifo == opts.ifo:
-                    data['sigma_max'] = sigma_norm.max()
-                    data['sigma_min'] = sigma_norm.min()
-            except ValueError:
-                data['sigma_mean'][ifo] = 0
-                if ifo == opts.ifo:
-                    data['sigma_max'] = 0
-                    data['sigma_min'] = 0
-
-        logging.info("%d triggers found.", len(data['coherent']))
-
-    return data
-
-
 # Plot lines representing deviations based on non-central chi-square
 def plot_deviation(percentile, snr_grid, y, ax, style):
     """Plot deviations based on non-central chi-square"""
@@ -196,20 +108,19 @@ init_logging(opts.verbose, format="%(asctime)s: %(levelname)s: %(message)s")
 
 # Check options
 trig_file = os.path.abspath(opts.trig_file)
-found_file = (
+found_missed_file = (
     os.path.abspath(opts.found_missed_file) if opts.found_missed_file else None
 )
 zoom_in = opts.zoom_in
-ifo = opts.ifo
-if ifo is None:
+if opts.ifo is None:
     err_msg = "Please specify an interferometer"
     parser.error(err_msg)
 
 if opts.plot_title is None:
-    opts.plot_title = '%s SNR vs Coherent SNR' % ifo
+    opts.plot_title = opts.ifo + " SNR vs Coherent SNR"
 if opts.plot_caption is None:
     opts.plot_caption = "Blue crosses: background triggers.  "
-    if found_file:
+    if found_missed_file:
         opts.plot_caption += "Red crosses: injections triggers.  "
     opts.plot_caption = (
         opts.plot_caption
@@ -230,65 +141,151 @@ outdir = os.path.split(os.path.abspath(opts.output_file))[0]
 if not os.path.isdir(outdir):
     os.makedirs(outdir)
 
-# Extract IFOs and vetoes
-ifos, vetoes = ppu.extract_ifos_and_vetoes(
-    trig_file, opts.veto_files, opts.veto_category
+# Extract IFOs
+ifos = ppu.extract_ifos(trig_file)
+
+# Generate time-slides dictionary
+slide_dict = ppu.load_time_slides(trig_file)
+
+# Generate segments dictionary
+segment_dict = ppu.load_segment_dict(trig_file)
+
+# Construct trials removing vetoed times
+trial_dict, total_trials = ppu.construct_trials(
+    opts.seg_files,
+    segment_dict,
+    ifos,
+    slide_dict,
+    opts.veto_file
 )
 
-# Extract trigger data
-trig_data = load_data(trig_file, ifos, vetoes, opts, slide_id=opts.slide_id)
+# Load triggers/injections (apply reweighted SNR cut, not vetoes)
+trig_data = ppu.load_data(trig_file, ifos, data_tag='trigs',
+                          rw_snr_threshold=opts.newsnr_threshold,
+                          slide_id=opts.slide_id)
+inj_data = ppu.load_data(found_missed_file, ifos, data_tag='injs',
+                         rw_snr_threshold=opts.newsnr_threshold,
+                         slide_id=0)
 
-# Extract (or initialize) injection data
-inj_data = load_data(found_file, ifos, vetoes, opts, injections=True, slide_id=0)
+# Extract needed trigger properties and store them as dictionaries
+# Based on trial_dict: if vetoes were applied, trig_* are the veto survivors
+# Coherent SNR is always used
+x_key = 'network/coherent_snr'
+keys = [x_key]
+# Get parameters necessary for antenna responses
+keys += ['network/ra', 'network/dec', 'network/end_time_gc']
+# Get event_ids
+keys += [ifo+'/event_id' for ifo in ifos]
+keys += ['network/event_id']
+# Get single ifo SNR data
+keys += [ifo+'/snr' for ifo in ifos]
+# Get sigma for each ifo
+keys += [ifo+'/sigmasq' for ifo in ifos]
+found_trigs_slides = ppu.extract_trig_properties(
+    trial_dict,
+    trig_data,
+    slide_dict,
+    segment_dict,
+    keys
+)
+found_trigs = {}
+for key in keys:
+    found_trigs[key] = numpy.concatenate(
+       [found_trigs_slides[key][slide_id][:] for slide_id in slide_dict]
+    )
+
+# Complete the dictionary found_trigs
+# 1) Do not assume individual IFO and network event_ids are sorted the same way
+for ifo in ifos:
+    sorted_ifo_ids = numpy.array(
+        [
+            numpy.nonzero(found_trigs[ifo + '/event_id'] == idx)[0][0]
+            for idx in found_trigs['network/event_id']
+        ]
+    )
+    for key in [ifo+'/snr', ifo+'/sigmasq']:
+        found_trigs[key] = found_trigs[key][sorted_ifo_ids]
+
+# 2) Get antenna response based parameters
+found_trigs['sigma_tot'] = numpy.zeros(len(found_trigs[x_key]))
+for ifo in ifos:
+    antenna = Detector(ifo)
+    ifo_f_resp = ppu.get_antenna_responses(
+        antenna,
+        found_trigs['network/ra'],
+        found_trigs['network/dec'],
+        found_trigs['network/end_time_gc']
+    )
+    # Get the average for f_resp_mean and calculate sigma_tot
+    found_trigs[ifo+'/f_resp_mean'] = ifo_f_resp.mean()
+    found_trigs['sigma_tot'] += found_trigs[ifo+'/sigmasq'] * ifo_f_resp
+
+# 3) Calculate the mean, max, and min sigmas
+for ifo in ifos:
+    sigma_norm = found_trigs[ifo+'/sigmasq'] / found_trigs['sigma_tot']
+    found_trigs[ifo+'/sigma_mean'] = sigma_norm.mean() if len(sigma_norm) else 0
+    if ifo == opts.ifo:
+        found_trigs['sigma_max'] = sigma_norm.max() if len(sigma_norm) else 0
+        found_trigs['sigma_min'] = sigma_norm.min() if len(sigma_norm) else 0
+
+# Gather injections found surviving vetoes
+found_injs, *_ = ppu.apply_vetoes_to_found_injs(
+    found_missed_file,
+    inj_data,
+    ifos,
+    veto_file=opts.veto_file,
+    keys=keys
+)
 
 # Generate plots
 logging.info("Plotting...")
 
 # Order the IFOs by sensitivity
-ifo_senstvty = {}
-for i_ifo in ifos:
-    senstvty = trig_data['f_resp_mean'][i_ifo] * trig_data['sigma_mean'][i_ifo]
-    ifo_senstvty.update({i_ifo: senstvty})
-ifo_senstvty = collections.OrderedDict(
-    sorted(ifo_senstvty.items(), key=operator.itemgetter(1), reverse=True)
+ifo_sensitivity = {
+    ifo: found_trigs[ifo+'/f_resp_mean'] * found_trigs[ifo+'/sigma_mean'] for ifo in ifos
+}
+ifo_sensitivity = collections.OrderedDict(
+    sorted(ifo_sensitivity.items(), key=operator.itemgetter(1), reverse=True)
 )
 loudness_labels = ['first', 'second', 'third']
 
 # Determine the maximum coherent SNR value we are dealing with
 x_max = plu.axis_max_value(
-    trig_data['coherent'], inj_data['coherent'], found_file
+    found_trigs[x_key], found_injs[x_key], found_missed_file
 )
 max_snr = x_max
 if x_max < 50.0:
     max_snr = 50.0
 
 # Determine the maximum auto veto value we are dealing with
+y_key = opts.ifo+'/snr'
 y_max = plu.axis_max_value(
-    trig_data['single'][ifo], inj_data['single'][ifo], found_file
+    found_trigs[y_key], found_injs[y_key], found_missed_file
 )
 
 # Setup the plots
 x_label = "Coherent SNR"
-y_label = "%s sngl SNR" % ifo
+y_label = opts.ifo + " SNR"
 fig = plt.figure()
 ax = fig.gca()
 # Plot trigger data
-ax.plot(trig_data['coherent'], trig_data['single'][ifo], 'bx')
+ax.plot(found_trigs[x_key], found_trigs[y_key], 'bx')
 ax.grid()
 # Plot injection data
-if found_file:
-    ax.plot(inj_data['coherent'], inj_data['single'][ifo], 'r+')
+if found_missed_file:
+    ax.plot(found_injs[x_key], found_injs[y_key], 'r+')
 # Sigma-mean, min, max
 y_data = {
-    'mean': trig_data['sigma_mean'][ifo],
-    'min': trig_data['sigma_min'],
-    'max': trig_data['sigma_max'],
+    'mean': found_trigs[opts.ifo+'/sigma_mean'],
+    'min': found_trigs['sigma_min'],
+    'max': found_trigs['sigma_max'],
 }
 # Calculate: zoom-snr * sqrt(response * sigma-mean, min, max)
 snr_grid = numpy.arange(0.01, max_snr, 1)
 y_data = dict(
-    (key, snr_grid * (trig_data['f_resp_mean'][ifo] * y_data[key]) ** 0.5)
-    for key in y_data
+    (key,
+     snr_grid * (found_trigs[opts.ifo+'/f_resp_mean'] * val) ** 0.5)
+    for key, val in y_data.items()
 )
 for key in y_data:
     ax.plot(snr_grid, y_data[key], 'g-')
@@ -305,7 +302,7 @@ ax.set_ylabel(y_label)
 ax.set_xlim([0, 1.01 * x_max])
 ax.set_ylim([0, 1.20 * y_max])
 # Veto applies to the two most sensitive IFOs, so shade them
-loudness_index = list(ifo_senstvty.keys()).index(ifo)
+loudness_index = list(ifo_sensitivity.keys()).index(opts.ifo)
 if loudness_index < 2:
     limy = ax.get_ylim()[0]
     polyx = [0, max_snr]
@@ -314,7 +311,7 @@ if loudness_index < 2:
     polyy.extend([limy, limy])
     ax.fill(polyx, polyy, color='#dddddd')
 opts.plot_title += (
-    " (%s average sensitivity)" % loudness_labels[loudness_index]
+    f" ({loudness_labels[loudness_index]} average sensitivity)"
 )
 # Zoom in if asked to do so
 if opts.zoom_in:

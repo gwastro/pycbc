@@ -46,7 +46,7 @@ from pycbc import (
 from pycbc.events import ranking, coherent as coh, EventManagerCoherent
 from pycbc.io.hdf import HFile
 from pycbc.filter import MatchedFilterControl
-from pycbc.types import zeros, float32, complex64
+from pycbc.types import zeros, float32, complex64, angle_as_radians
 from pycbc.vetoes import sgchisq
 from pycbc.tmpltbank.sky_grid import SkyGrid
 
@@ -214,11 +214,15 @@ parser.add_argument(
 )
 parser.add_argument(
     "--ra",
-    type=float,
-    help="Right ascension of sky point to search (radians).",
+    type=angle_as_radians,
+    help="Right ascension of a single sky point to search. Use the rad or deg "
+    "suffix to specify units, otherwise radians are assumed."
 )
 parser.add_argument(
-    "--dec", type=float, help="Declination of sky point to search (radians)."
+    "--dec",
+    type=angle_as_radians,
+    help="Declination of a single sky point to search. Use the rad or deg "
+    "suffix to specify units, otherwise radians are assumed."
 )
 parser.add_argument(
     "--sky-grid",
@@ -661,7 +665,10 @@ with ctx:
                 ), f'SNR time series for {ifo} is empty'
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr.copy()
-                idx[ifo] = ind.copy()
+                # change to integer indexes because we will have to do
+                # arithmetic with time_delay_idx, which can be positive 
+                # or negative
+                idx[ifo] = ind.astype(np.int32)
                 snr[ifo] = snrv * norm
 
             # Move onto next segment if there are no triggers.
@@ -692,8 +699,8 @@ with ctx:
                                 idx[ifo]
                                 > time_delay_idx[slide][position_index][ifo],
                                 idx[ifo]
-                                - time_delay_idx[slide][position_index][ifo]
-                                < len(snr_dict[ifo]),
+                                < time_delay_idx[slide][position_index][ifo]
+                                + len(snr_dict[ifo]),
                             )
                         ]
                         for ifo in args.instruments

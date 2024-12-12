@@ -53,6 +53,8 @@ parser.add_argument('--approximant',  required=False,
 parser.add_argument('--minimal-match', default=0.97, type=float)
 parser.add_argument('--buffer-length', default=2, type=float,
     help='size of waveform buffer in seconds')
+parser.add_argument('--full-resolution-buffer-length', default=None, type=float,
+    help='Size of the waveform buffer in seconds for generating time-domain signals at full resolution before conversion to the frequency domain.')
 parser.add_argument('--max-signal-length', type= float,
                     help="When specified, it cuts the maximum length of the waveform model to the lengh provided")
 parser.add_argument('--sample-rate', default=2048, type=float,
@@ -275,6 +277,37 @@ class TriangleBank(object):
 
         return bank, num_added / total_num
 
+def decimate_frequency_domain(template, target_df):
+    """
+    Returns a frequency-domain waveform resampled to a lower frequency resolution 
+    (delta_f) by decimation.
+
+    Parameters
+    ----------
+    template : pycbc.types.FrequencySeries
+        The input frequency-domain signal to be decimated.
+    target_df : float
+        The target frequency resolution (delta_f) for the decimated signal.
+
+    Returns
+    ----------
+    decimated_template : pycbc.types.FrequencySeries
+        A new FrequencySeries object with the decimated data and the specified 
+        target delta_f.
+    """
+    # Calculate the decimation factor
+    decimation_factor = int(target_df / template.delta_f)
+
+    if decimation_factor < 1:
+        raise ValueError("Target delta_f must be greater than or equal to the original delta_f.")
+
+    # Decimate the data by selecting every 'decimation_factor'-th point
+    decimated_signal = template.data[::decimation_factor]
+
+    # Create a new FrequencySeries object with the decimated data and the target delta_f
+    decimated_template = pycbc.types.FrequencySeries(decimated_signal, delta_f=target_df)
+    return decimated_template
+
 class GenUniformWaveform(object):
     def __init__(self, buffer_length, sample_rate, f_lower):
         self.f_lower = f_lower
@@ -308,7 +341,15 @@ class GenUniformWaveform(object):
             kwds['approximant'] = kwds['approximant'].decode()
 
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
-            hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
+            if args.full_resolution_buffer_length is not None:
+                # Generate the frequency-domain waveform at full frequency resolution
+                high_hp, high_hc = pycbc.waveform.get_fd_waveform(delta_f=1 / args.full_resolution_buffer_length,
+                                                    **kwds)
+                # Decimate the generated signal to a reduced frequency resolution
+                hp = decimate_frequency_domain(high_hp, 1 / args.buffer_length)
+                hc = decimate_frequency_domain(high_hc, 1 / args.buffer_length)
+            else:
+                hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f,
                                                     **kwds)
             if  args.use_cross:
                 hp = hc
