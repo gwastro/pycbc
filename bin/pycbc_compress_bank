@@ -120,6 +120,9 @@ if args.sample_rate % 2 != 0:
 if args.segment_length % 2 != 0:
     raise ValueError("segment length must be a power of 2")
 
+if args.do_not_compress is None:
+    args.do_not_compress = []
+
 df = 1./args.segment_length
 fmax = args.sample_rate/2.
 N = args.sample_rate * args.segment_length
