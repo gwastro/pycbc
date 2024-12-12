@@ -467,16 +467,12 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     nabove_sort =  nabove[par_sort]
     invalphan_sort = invalphan[par_sort]
     ntotal_sort = ntotal[par_sort]
-    # Preallocate memory for *param_vals[0]-sorted* smoothing results
-    nabove_smoothed = numpy.zeros(num_templates)
-    alpha_smoothed = numpy.zeros(num_templates)
-    ntotal_smoothed = numpy.zeros(num_templates)
     for i in rang:
         report_percentage(i, num_templates)
         slc = slices[i]
         d = dist(i, slc, parvals, args.smoothing_width)
 
-        smoothed_tuple = smooth(
+        smoothed_vals[i,:] = smooth(
             nabove_sort[slc],
             invalphan_sort[slc],
             ntotal_sort[slc],
@@ -484,16 +480,11 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
             args.smoothing_method,
             **kwarg_dict
         )
-        nabove_smoothed[i] = smoothed_tuple[0]
-        alpha_smoothed[i] = smoothed_tuple[1]
-        ntotal_smoothed[i] = smoothed_tuple[2]
 
     # Undo the sorts
     unsort = numpy.argsort(par_sort)
     parvals = [p[unsort] for p in parvals]
-    smoothed_vals[:,0] = nabove_smoothed[unsort]
-    smoothed_vals[:,1] = alpha_smoothed[unsort]
-    smoothed_vals[:,2] = ntotal_smoothed[unsort]
+    smoothed_vals = smoothed_vals[unsort,:]
 
 else:
     logging.info("Smoothing ...")
