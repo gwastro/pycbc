@@ -663,3 +663,10 @@ def ppdets(ifos, separator=', '):
     if ifos:
         return separator.join(sorted(ifos))
     return 'no detectors'
+
+__all__ = ['Detector', 'get_available_detectors',
+           'get_available_lal_detectors',
+           'gmst_accurate', 'add_detector_on_earth',
+           'single_arm_frequency_response', 'ppdets',
+           'overhead_antenna_pattern', 'load_detector_config',
+           '_ground_detectors',]
