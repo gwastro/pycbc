@@ -1,5 +1,7 @@
+#!/usr/bin/python
 # Copyright (C) 2024 Gareth Cabourn Davies
-"""Create a workflow for adding compressed waveforms to a template bank
+"""
+Create a workflow for adding compressed waveforms to a template bank
 """
 import pycbc
 
