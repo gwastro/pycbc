@@ -246,19 +246,15 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         bool_sg = ['make_sky_grid' in f.description for f in datafind_outs]
         n_sg = sum(bool_sg)
         if n_sg == 0:
-            # Right ascension + declination must be provided in radians
             cp.set('inspiral', 'ra',
                    cp.get('workflow', 'ra'))
             cp.set('inspiral', 'dec',
                    cp.get('workflow', 'dec'))
-        #elif n_sg == 1:
-        #    print(datafind_outs[bool_sg.index(True)])
         elif m_sg > 1:
             msg = f'{datafind_outs} has {n_sg} sky-grid files, '
             msg += 'instead of only one.'
             raise ValueError(msg)
-        # At the moment we aren't using sky grids, but when we do this code
-        # might be used then. 
+        # Code lines for Fermi GBM are commented out for the time being
         # from pycbc.workflow.grb_utils import get_sky_grid_scale
         # if cp.has_option("jitter_skyloc", "apply-fermi-error"):
         #     cp.set('inspiral', 'sky-error',

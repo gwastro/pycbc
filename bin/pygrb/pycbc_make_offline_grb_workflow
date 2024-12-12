@@ -251,12 +251,9 @@ if wflow.cp.has_option("workflow-segments", "segments-vetoes"):
 # Generate sky grid if needed
 skygrid_file = None
 if wflow.cp.has_option("workflow", "sky-error"):
-    if float(wflow.cp.get("workflow", "sky-error")):
-        logging.info("Generating sky-grid file.")
-        skygrid_file = _workflow.make_skygrid_node(wflow, df_dir,
-                                                   tags=['SEARCH'])
-        #skygrid_file[0].description += '_SKYGRID'
-        datafind_veto_files.extend(skygrid_file)
+    logging.info("Generating sky-grid file.")
+    skygrid_file = _workflow.make_skygrid_node(wflow, df_dir, tags=['SEARCH'])
+    datafind_veto_files.extend(skygrid_file)
 
 # Config file consistency check for IPN GRBs
 if wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \

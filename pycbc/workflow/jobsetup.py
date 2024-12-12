@@ -288,7 +288,6 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
         elif 'INPUT_BANK_VETO_BANK' in f.description:
             bank_veto = f
             input_files.remove(f)
-        #elif 'SKYGRID' in f.description:
         elif 'make_sky_grid' in f.description:
             skygrid_file = f
             input_files.remove(f)
