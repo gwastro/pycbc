@@ -1325,7 +1325,7 @@ class ExpFitStatistic(PhaseTDStatistic):
             if (len(at) == 2 and at[1] == "kde_file")
         ]
         assert sorted(self.kde_names) == ["signal", "template"], (
-            "Two stat files are required, they should have stat attr "
+            "Two KDE stat files are required, they should have stat attr "
             "'signal-kde_file' and 'template-kde_file' respectively"
         )
 
