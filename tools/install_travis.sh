@@ -50,8 +50,5 @@ pip install -r companion.txt
 echo -e ">> [`date`] installing mpi4py"
 pip install mpi4py
 
-echo -e ">> [`date`] installing sbank"
-pip install git+https://github.com/gwastro/sbank.git
-
 echo -e ">> [`date`] installing pycbc"
 pip install .
