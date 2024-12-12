@@ -202,8 +202,9 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
     datafind_outs : pycbc.workflow.core.FileList
-        An FileList of the datafind files that are needed to obtain the
-        data used in the analysis.
+        A FileList of the datafind files that are needed to obtain the
+        data used in the analysis, and (if requested by the user) the vetoes
+        File and (if requested by the user) the search sky-grid File.
     tmplt_banks : pycbc.workflow.core.FileList
         An FileList of the template bank files that will serve as input
         in this stage.
@@ -242,11 +243,20 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     if match_fltr_exe == 'pycbc_multi_inspiral':
         exe_class = select_matchedfilter_class(match_fltr_exe)
-        # Right ascension + declination must be provided in radians
-        cp.set('inspiral', 'ra',
-               cp.get('workflow', 'ra'))
-        cp.set('inspiral', 'dec',
-               cp.get('workflow', 'dec'))
+        bool_sg = ['make_sky_grid' in f.description for f in datafind_outs]
+        n_sg = sum(bool_sg)
+        if n_sg == 0:
+            # Right ascension + declination must be provided in radians
+            cp.set('inspiral', 'ra',
+                   cp.get('workflow', 'ra'))
+            cp.set('inspiral', 'dec',
+                   cp.get('workflow', 'dec'))
+        #elif n_sg == 1:
+        #    print(datafind_outs[bool_sg.index(True)])
+        elif m_sg > 1:
+            msg = f'{datafind_outs} has {n_sg} sky-grid files, '
+            msg += 'instead of only one.'
+            raise ValueError(msg)
         # At the moment we aren't using sky grids, but when we do this code
         # might be used then. 
         # from pycbc.workflow.grb_utils import get_sky_grid_scale
