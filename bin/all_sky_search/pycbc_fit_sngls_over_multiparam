@@ -90,7 +90,6 @@ def smooth_tophat(nabove, invalphan, ntotal, dists):
                             ntotal,
                             idx_within_area)
 
-
 # This is the default number of triggers required for n_closest smoothing
 _default_total_trigs = 500
 
@@ -171,6 +170,7 @@ def report_percentage(i, length):
     pc_last = int(numpy.floor((i - 1) / length * 100))
     if not pc % 10 and pc_last % 10:
         logging.info(f"Template {i} out of {length} ({pc:.0f}%)")
+
 
 parser = argparse.ArgumentParser(usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -407,11 +407,10 @@ for param, slog in zip(args.fit_param, args.log_param):
 rang = numpy.arange(0, num_templates)
 
 # Preallocate memory for smoothing results
-# smoothed_vals is an array containing the smoothed important values
-# regarding the template fits:
+# smoothed_vals is an array containing smoothed template fit values :
 # smoothed_vals[:,0] is the number of triggers above the fit threshold
-# smoothed_vals[:,1] is the fit coefficient (alpha)
-# smoothed_vals[:,2] is the total number of trigger in the template
+# smoothed_vals[:,1] is the fit coefficient 'alpha'
+# smoothed_vals[:,2] is the total number of triggers in the template
 smoothed_vals = numpy.zeros((num_templates, 3))
 
 # Handle the one-dimensional case of tophat smoothing separately
@@ -437,7 +436,7 @@ if len(parvals) == 1 and args.smoothing_method == 'smooth_tophat':
     logging.info("Smoothing ...")
     smoothed_vals[:,0] = (nasum[right] - nasum[left]) / num
     invmean = (invsum[right] - invsum[left]) / num
-    smoothed_vals[:,1] = smoothed_vals[:,0] / invmean
+    smoothed_vals[:,1] = smoothed_vals[:, 0] / invmean
     smoothed_vals[:,2] = (ntsum[right] - ntsum[left]) / num
 
 elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
@@ -461,12 +460,13 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     n_removed = num_templates - rights + lefts
     logging.info("Cutting between %d and %d templates for each smoothing",
                  n_removed.min(), n_removed.max())
+
     # Sort the values to be smoothed by parameter value
     logging.info("Smoothing ...")
-    slices = [slice(l,r) for l, r in zip(lefts, rights)]
     nabove_sort =  nabove[par_sort]
     invalphan_sort = invalphan[par_sort]
     ntotal_sort = ntotal[par_sort]
+    slices = [slice(l, r) for l, r in zip(lefts, rights)]
     for i in rang:
         report_percentage(i, num_templates)
         slc = slices[i]
@@ -484,14 +484,14 @@ elif numpy.isfinite(_smooth_cut[args.smoothing_method]):
     # Undo the sorts
     unsort = numpy.argsort(par_sort)
     parvals = [p[unsort] for p in parvals]
-    smoothed_vals = smoothed_vals[unsort,:]
+    smoothed_vals = smoothed_vals[unsort, :]
 
 else:
     logging.info("Smoothing ...")
     for i in rang:
         report_percentage(i, num_templates)
         d = dist(i, rang, parvals, args.smoothing_width)
-        smoothed_vals[i,:] = smooth(
+        smoothed_vals[i, :] = smooth(
             nabove,
             invalphan,
             ntotal,
@@ -503,9 +503,9 @@ else:
 logging.info("Writing output")
 outfile = HFile(args.output, 'w')
 outfile['template_id'] = tid
-outfile['count_above_thresh'] = smoothed_vals[:,0]
-outfile['fit_coeff'] = smoothed_vals[:,1]
-outfile['count_in_template'] = smoothed_vals[:,2]
+outfile['count_above_thresh'] = smoothed_vals[:, 0]
+outfile['fit_coeff'] = smoothed_vals[:, 1]
+outfile['count_in_template'] = smoothed_vals[:, 2]
 if median_sigma is not None:
     outfile['median_sigma'] = median_sigma
 
