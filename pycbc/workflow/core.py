@@ -137,7 +137,7 @@ class Executable(pegasus_workflow.Executable):
             If True, Pegasus simply uses the name of the (executable) script
             to label the Executable instance, otherwise it also includes tags
             in the labeling and, e.g., performance information is recorded
-            individually by jov rather than being grouped together on the
+            individually by job rather than being grouped together on the
             basis of the script name.
         set_submit_subdir: boolean [default True]
             Place condor files associated with this executable under a
