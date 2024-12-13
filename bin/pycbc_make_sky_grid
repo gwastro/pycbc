@@ -15,6 +15,7 @@ from scipy.spatial.transform import Rotation as R
 import pycbc
 from pycbc.detector import Detector
 from pycbc.io.hdf import HFile
+from pycbc.types import angle_as_radians
 
 
 def spher_to_cart(sky_points):
@@ -36,17 +37,20 @@ def cart_to_spher(sky_points):
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.add_common_pycbc_options(parser)
-parser.add_argument('--ra', type=float,
-    help="Right ascension (in rad) of the center of the external trigger "
-         "error box")
-parser.add_argument('--dec', type=float,
-    help="Declination (in rad) of the center of the external trigger "
-         "error box")
+parser.add_argument('--ra', type=angle_as_radians, required=True,
+    help="Right ascension of the center of the external trigger "
+         "error box. Use the rad or deg suffix to specify units, "
+         "otherwise radians are assumed.")
+parser.add_argument('--dec', type=angle_as_radians, required=True,
+    help="Declination of the center of the external trigger "
+         "error box. Use the rad or deg suffix to specify units, "
+         "otherwise radians are assumed.")
 parser.add_argument('--instruments', nargs="+", type=str, required=True,
     help="List of instruments to analyze.")
-parser.add_argument('--sky-error', type=float, required=True,
-    help="3-sigma confidence radius (in rad) of the external trigger error "
-         "box")
+parser.add_argument('--sky-error', type=angle_as_radians, required=True,
+    help="3-sigma confidence radius of the external trigger error "
+         "box. Use the rad or deg suffix to specify units, otherwise "
+         "radians are assumed.")
 parser.add_argument('--trigger-time', type=int, required=True,
     help="Time (in s) of the external trigger")
 parser.add_argument('--timing-uncertainty', type=float, default=0.0001,
