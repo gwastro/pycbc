@@ -134,10 +134,15 @@ class Executable(pegasus_workflow.Executable):
         tags : list of strings
             A list of strings that is used to identify this job.
         reuse_executable: boolean [default True]
-            Set pegasus_name to name (rather than tagged_name)?
+            If True, Pegasus simply uses the name of the (executable) script
+            to label the Executable instance, otherwise it also includes tags
+            in the labeling and, e.g., performance information is recorded
+            individually by jov rather than being grouped together on the
+            basis of the script name.
         set_submit_subdir: boolean [default True]
-            Set up the sub-directory to use in the submit directory?
-            Regulates pegasus --> relative.submit.dir
+            Place condor files associated with this executable under a
+            sub-directory (named according to the executable name) in the
+            submitdir.
         """
         if isinstance(ifos, str):
             self.ifo_list = [ifos]
