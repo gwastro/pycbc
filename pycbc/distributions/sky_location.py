@@ -69,9 +69,11 @@ class FisherSky:
     Parameters
     ----------
     mean_ra: float
-        RA of the center of the distribution.
+        RA of the center of the distribution.  Use the rad or deg suffix to
+        specify units, otherwise radians are assumed.
     mean_dec: float
-        Declination of the center of the distribution.
+        Declination of the center of the distribution. Use the rad or deg 
+        suffix to specify units, otherwise radians are assumed.
     sigma: float
         Spread of the distribution. For the precise interpretation, see Eq 8
         of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than
@@ -124,9 +126,9 @@ class FisherSky:
                 "Not all parameters used by this distribution "
                 "included in tag portion of section name"
             )
-        mean_ra = float(cp.get_opt_tag(section, 'mean_ra', tag))
-        mean_dec = float(cp.get_opt_tag(section, 'mean_dec', tag))
-        sigma = float(cp.get_opt_tag(section, 'sigma', tag))
+        mean_ra = cp.get_opt_tag(section, 'mean_ra', tag)
+        mean_dec = cp.get_opt_tag(section, 'mean_dec', tag)
+        sigma = cp.get_opt_tag(section, 'sigma', tag)
         return cls(
             mean_ra=mean_ra,
             mean_dec=mean_dec,
