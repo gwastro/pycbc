@@ -340,17 +340,23 @@ class TestChisq(unittest.TestCase):
                                 low_frequency_cutoff=self.low_freq_filter,
                                 normalized=False)
         hpc_corr_R = real(hpc_corr)
-        I_plus, corr_plus, n_plus = matched_filter_core\
-            (hplus, stilde, psd=self.psd,
-             low_frequency_cutoff=self.low_freq_filter, h_norm=1.)
+        I_plus, _, n_plus = matched_filter_core(
+            hplus,
+            stilde,
+            psd=self.psd,
+            low_frequency_cutoff=self.low_freq_filter,
+            h_norm=1.
+        )
         # FIXME: Remove the deepcopies before merging with master
-        I_plus = copy.deepcopy(I_plus)
-        corr_plus = copy.deepcopy(corr_plus)
-        I_cross, corr_cross, n_cross = matched_filter_core\
-            (hcross, stilde, psd=self.psd,
-             low_frequency_cutoff=self.low_freq_filter, h_norm=1.)
-        I_cross = copy.deepcopy(I_cross)
-        corr_cross = copy.deepcopy(corr_cross)
+        I_plus = copy.deepcopy(I_plus).astype(numpy.complex64)
+        I_cross, _, n_cross = matched_filter_core(
+            hcross,
+            stilde,
+            psd=self.psd,
+            low_frequency_cutoff=self.low_freq_filter,
+            h_norm=1.
+        )
+        I_cross = copy.deepcopy(I_cross).astype(numpy.complex64)
         I_plus = I_plus * n_plus
         I_cross = I_cross * n_cross
         IPM = abs(I_plus.data).argmax()
@@ -373,9 +379,15 @@ class TestChisq(unittest.TestCase):
         #print "expected_results[{}][{}]['Ic_angle'] = {}".format(idx,jdx,angle(I_cross[ICM]))
         #print "expected_results[{}][{}]['Ic_argmax'] = {}".format(idx,jdx, ICM)
 
-        det_stat_prec = compute_max_snr_over_sky_loc_stat\
-            (I_plus, I_cross, hpc_corr_R, hpnorm=1., hcnorm=1.,
-             thresh=0.1, analyse_slice=slice(0,len(I_plus.data)))
+        det_stat_prec = compute_max_snr_over_sky_loc_stat(
+            I_plus,
+            I_cross,
+            hpc_corr_R,
+            hpnorm=1.,
+            hcnorm=1.,
+            thresh=0.1,
+            analyse_slice=slice(0,len(I_plus.data))
+        )
         det_stat_hom = compute_max_snr_over_sky_loc_stat_no_phase\
             (I_plus, I_cross, hpc_corr_R, hpnorm=1., hcnorm=1.,
              thresh=0.1, analyse_slice=slice(0,len(I_plus.data)))
