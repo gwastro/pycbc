@@ -85,9 +85,25 @@ class FisherSky:
     def __init__(self, **params):
         if params['angle_unit'] not in ['deg', 'rad']:
             raise ValueError("Only deg or rad is allowed as angle unit")
-        mean_ra = params['mean_ra']
-        mean_dec = params['mean_dec']
-        sigma = params['sigma']
+        try:
+            rematch_ra = re.match('([0-9.e+-]+) *(deg|rad)', params['mean_ra'])
+            rematch_dec = re.match('([0-9.e+-]+) *(deg|rad)', params['mean_dec'])
+            rematch_sigma = re.match('([0-9.e+-]+) *(deg|rad)', params['sigma'])
+            if params['angle_unit'] != rematch_ra.group(2) \
+                or params['angle_unit'] != rematch_dec.group(2) \
+                or params['angle_unit'] != rematch_sigma.group(2):
+                raise ValueError(
+                    f"Angle_unit ({params['angle_unit']}) and ra 
+                    ({rematch_ra.group(2)}) dec ({rematch_dec.group(2)}) units 
+                    must be the same"
+                )
+            mean_ra = float(rematch_ra.group(1))
+            mean_dec = float(rematch_dec.group(1))
+            sigma = float(rematch_sigma.group(1))
+        except:
+            mean_ra = params['mean_ra']
+            mean_dec = params['mean_dec']
+            sigma = params['sigma']
         if params['angle_unit'] == 'deg':
             mean_ra = numpy.deg2rad(mean_ra)
             mean_dec = numpy.deg2rad(mean_dec)
