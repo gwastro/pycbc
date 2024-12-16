@@ -123,11 +123,11 @@ extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* 
 
             if (svv[0] > threshold){
                 tl = idx[0];
-                outv[blockIdx.x].x = svr[tl];
-                outv[blockIdx.x].y = svi[tl];
-                outl[blockIdx.x] = sl[tl];
+                outv[batch_idx*${blockmemsize} + blockIdx.x].x = svr[tl];
+                outv[batch_idx*${blockmemsize} + blockIdx.x].y = svi[tl];
+                outl[batch_idx*${blockmemsize} + blockIdx.x] = sl[tl] % ${slen};
             } else{
-                outl[blockIdx.x] = -1;
+                outl[batch_idx*${blockmemsize} + blockIdx.x] = -1;
             }
         }
     }
@@ -140,6 +140,7 @@ extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float
     __shared__ float val[${blocks}];
 
     int i = threadIdx.x;
+    int posi = i % ${blockmemsize};
 
     int l = outl[i];
     loc[i] = l;
@@ -151,13 +152,13 @@ extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float
 
 
     // Check right
-    if ( (i < (${blocks} - 1)) && (val[i + 1] > val[i]) ){
+    if ( (posi < (${blocksize} - 1)) && (val[i + 1] > val[i]) ){
         outl[i] = -1;
         return;
     }
 
     // Check left
-    if ( (i > 0) && (val[i - 1] > val[i]) ){
+    if ( (posi > 0) && (val[i - 1] > val[i]) ){
         outl[i] = -1;
         return;
     }
@@ -165,7 +166,7 @@ extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float
 """)
 
 @functools.lru_cache(maxsize=None)
-def get_tkernel(slen, window):
+def get_tkernel(slen, window, block_mem_size=None, batch_size=None):
     if window < 32:
         raise ValueError("GPU threshold kernel does not support a window smaller than 32 samples")
 
@@ -183,19 +184,28 @@ def get_tkernel(slen, window):
     if nb > 1024:
         raise ValueError("More than 1024 blocks not supported yet")
 
+    if block_mem_size is not None:
+        blocks = block_mem_size * batch_size
+    else:
+        blocks = nb
+        block_mem_size = nb
+
     fn = cp.RawKernel(
-        tkernel1.render(chunk=nt),
+        tkernel1.render(chunk=nt, slen=slen, blockmemsize=block_mem_size),
         'threshold_and_cluster',
         backend='nvcc'
     )
     fn2 = cp.RawKernel(
-        tkernel2.render(blocks=nb),
+        tkernel2.render(blocks=nb, blocksize=nb, blockmemsize=block_mem_size),
         'threshold_and_cluster2',
         backend='nvcc'
     )
     return (fn, fn2), nt, nb
 
 def threshold_and_cluster(series_batch, threshold, window):
+    raise NotImplementedError("Needs writing properly")
+    # Not sure this function is accessed easily. However, right now, it has not
+    # been properly written. A starting point is here though!
     global val
     global loc
     batch_size, series_length = series_batch.shape
@@ -228,14 +238,18 @@ def threshold_and_cluster(series_batch, threshold, window):
 class CUDAThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series_batch):
         self.series_batch = series_batch
-        self.batch_size, self.series_length = series_batch.shape
+        # This value is hardcoded as it is the longest length currently
+        # supported. Memory usage for this is tiny anyway so no need to be
+        # shorter.
+        self.batch_mem_size = 1024
+        self.batch_size, self.series_length = cp.asarray(series_batch).shape
 
         global val
         global loc
-        if val is None or val.size < self.batch_size * 4096 * 256:
-            val = cp.zeros((self.batch_size, 4096 * 256), dtype=cp.complex64)
-        if loc is None or loc.size < self.batch_size * 4096 * 256:
-            loc = cp.zeros((self.batch_size, 4096 * 256), cp.int32)
+        if val is None or val.size < self.batch_size * self.batch_mem_size:
+            val = cp.zeros((self.batch_size, self.batch_mem_size), dtype=cp.complex64)
+        if loc is None or loc.size < self.batch_size * self.batch_mem_size:
+            loc = cp.zeros((self.batch_size, self.batch_mem_size), cp.int32)
 
         self.outl = loc
         self.outv = val
@@ -245,11 +259,13 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         threshold = cp.asarray(threshold, dtype=cp.float32)
         window = cp.int32(window)
 
-        (fn, fn2), nt, nb = get_tkernel(self.series_length, window)
+        (fn, fn2), nt, nb = get_tkernel(self.series_length, window, block_mem_size=self.batch_mem_size, batch_size=self.batch_size)
         grid = (nb, self.batch_size, 1)
         block = (nt, 1, 1)
 
-        fn(grid, block, (self.series_batch.data, self.outv, self.outl, window, threshold, self.series_length))
+        # FIXME: Initialize series_batch properly outside of this object
+        series_batch = cp.asarray(self.series_batch)
+        fn(grid, block, (series_batch.data, self.outv, self.outl, window, threshold, self.series_length))
         fn2(grid, block, (self.outv, self.outl, threshold, window))
 
         results = []
