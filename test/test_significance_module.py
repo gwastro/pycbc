@@ -170,7 +170,7 @@ for method in significance._significance_meth_dict:
         method_dict['fit_threshold'] = None if not function else 0
 
         def meth_test(self, md=method_dict):
-            bg_n_louder, fg_n_louder = significance.get_n_louder(
+            bg_n_louder, fg_n_louder, sig_info = significance.get_n_louder(
                 self.test_bg_stat,
                 self.test_fg_stat,
                 self.dec_facs,
@@ -206,6 +206,9 @@ for method in significance._significance_meth_dict:
             # equality test array
             self.assertTrue(np.array_equal(fg_n_louder[fore_stat_sort],
                                            fg_n_louder[fore_far_sort][::-1]))
+
+            # Tests on the significance info output dictionary
+            self.assertTrue(isinstance(sig_info, dict))
 
         setattr(SignificanceMethodTest,
                 'test_%s_%s' % (method, function),
