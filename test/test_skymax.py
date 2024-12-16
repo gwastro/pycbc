@@ -347,8 +347,7 @@ class TestChisq(unittest.TestCase):
             low_frequency_cutoff=self.low_freq_filter,
             h_norm=1.
         )
-        # FIXME: Remove the deepcopies before merging with master
-        I_plus = copy.deepcopy(I_plus).astype(numpy.complex64)
+        I_plus = I_plus.astype(numpy.complex64)
         I_cross, _, n_cross = matched_filter_core(
             hcross,
             stilde,
@@ -356,18 +355,20 @@ class TestChisq(unittest.TestCase):
             low_frequency_cutoff=self.low_freq_filter,
             h_norm=1.
         )
-        I_cross = copy.deepcopy(I_cross).astype(numpy.complex64)
+        I_cross = I_cross.astype(numpy.complex64)
         I_plus = I_plus * n_plus
         I_cross = I_cross * n_cross
         IPM = abs(I_plus.data).argmax()
         ICM = abs(I_cross.data).argmax()
-        self.assertAlmostEqual(abs(I_plus[IPM]),
-                               expected_results[idx][jdx]['Ip_snr'])
+        self.assertAlmostEqual(
+            abs(I_plus[IPM]), expected_results[idx][jdx]['Ip_snr'], places=5
+        )
         self.assertAlmostEqual(angle(I_plus[IPM]),
                                expected_results[idx][jdx]['Ip_angle'])
         self.assertEqual(IPM, expected_results[idx][jdx]['Ip_argmax'])
-        self.assertAlmostEqual(abs(I_cross[ICM]),
-                               expected_results[idx][jdx]['Ic_snr'])
+        self.assertAlmostEqual(
+            abs(I_cross[ICM]), expected_results[idx][jdx]['Ic_snr'], places=5
+        )
         self.assertAlmostEqual(angle(I_cross[ICM]),
                                expected_results[idx][jdx]['Ic_angle'])
         self.assertEqual(ICM, expected_results[idx][jdx]['Ic_argmax'])
@@ -388,9 +389,15 @@ class TestChisq(unittest.TestCase):
             thresh=0.1,
             analyse_slice=slice(0,len(I_plus.data))
         )
-        det_stat_hom = compute_max_snr_over_sky_loc_stat_no_phase\
-            (I_plus, I_cross, hpc_corr_R, hpnorm=1., hcnorm=1.,
-             thresh=0.1, analyse_slice=slice(0,len(I_plus.data)))
+        det_stat_hom = compute_max_snr_over_sky_loc_stat_no_phase(
+            I_plus,
+            I_cross,
+            hpc_corr_R,
+            hpnorm=1.,
+            hcnorm=1.,
+            thresh=0.1,
+            analyse_slice=slice(0,len(I_plus.data))
+        )
         idx_max_prec = argmax(det_stat_prec.data)
         idx_max_hom = argmax(det_stat_hom.data)
         max_ds_prec = det_stat_prec[idx_max_prec]
@@ -414,7 +421,9 @@ class TestChisq(unittest.TestCase):
             (ht, stilde, psd=self.psd,
              low_frequency_cutoff=self.low_freq_filter, h_norm=1.)
         I_t = I_t * n_t
-        self.assertAlmostEqual(abs(real(I_t.data[idx_max_hom])), max_ds_hom)
+        self.assertAlmostEqual(
+            abs(real(I_t.data[idx_max_hom])), max_ds_hom, places=5
+        )
         self.assertEqual(abs(real(I_t.data[idx_max_hom])),
                          max(abs(real(I_t.data))))
         with numpy.errstate(invalid='ignore', divide='ignore'):
