@@ -253,7 +253,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         elif m_sg > 1:
             msg = f'{datafind_outs} has {n_sg} sky-grid files, '
             msg += 'instead of only one.'
-            raise ValueError(msg)
+            raise RuntimeError(msg)
         # Code lines for Fermi GBM are commented out for the time being
         # from pycbc.workflow.grb_utils import get_sky_grid_scale
         # if cp.has_option("jitter_skyloc", "apply-fermi-error"):
