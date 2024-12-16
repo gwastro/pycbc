@@ -432,14 +432,14 @@ class MatchedFilterControl(object):
                 self.snr_threshold / norms, window
             )
 
-            # If no triggers in any batch, return empty results
-            if all(len(batch_idx) == 0 for _, batch_idx in batched_results):
-                return [], [], [], [], []
-
             # Aggregate results across batches
             all_idx = []
             all_snrv = []
             for snrv_batch, idx_batch in batched_results:
+                if len(idx_batch) == 0:
+                    all_snrv.append([])
+                    all_idx.append([])
+                    continue
                 all_snrv.append(snrv_batch)
                 all_idx.append(idx_batch)
 

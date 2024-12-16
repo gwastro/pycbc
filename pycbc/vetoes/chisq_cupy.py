@@ -341,5 +341,5 @@ def shift_sum(corr, points, bins):
             elif np == 1:
                 outp, phase, np = shift_sum_points(1, cargs) # pylint:disable=no-value-for-parameter
 
-    return cp.asnumpy((outc.conj() * outc).sum(axis=1).real)
+    return (outc.conj() * outc).sum(axis=1).real
 

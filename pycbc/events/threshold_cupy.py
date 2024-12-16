@@ -34,10 +34,11 @@ loc = None
 # https://stackoverflow.com/questions/77798014/cupy-rawkernel-cuda-error-not-found-named-symbol-not-found-cupy
 
 tkernel1 = mako.template.Template("""
-extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float threshold, int series_length) {
+extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float* thresholds, int series_length) {
     int batch_idx = blockIdx.y;  // Batch index
     int s = batch_idx * series_length + window * blockIdx.x;
     int e = s + window;
+    float threshold = thresholds[batch_idx];
 
     // Shared memory remains unchanged, but it now processes series per batch index
     __shared__ float svr[${chunk}];
@@ -70,7 +71,7 @@ extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* 
     svr[threadIdx.x] = mvr;
     svi[threadIdx.x] = mvi;
     sl[threadIdx.x] = ml;
-
+                                  
     __syncthreads();
 
     if (threadIdx.x < 32){
@@ -126,7 +127,7 @@ extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* 
                 outv[batch_idx*${blockmemsize} + blockIdx.x].x = svr[tl];
                 outv[batch_idx*${blockmemsize} + blockIdx.x].y = svi[tl];
                 outl[batch_idx*${blockmemsize} + blockIdx.x] = sl[tl] % ${slen};
-            } else{
+                } else {
                 outl[batch_idx*${blockmemsize} + blockIdx.x] = -1;
             }
         }
@@ -135,13 +136,14 @@ extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* 
 """)
 
 tkernel2 = mako.template.Template("""
-extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float threshold, int window){
+extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float* thresholds, int window){
     __shared__ int loc[${blocks}];
     __shared__ float val[${blocks}];
-
+                                  
     int i = threadIdx.x;
     int posi = i % ${blockmemsize};
-
+    float threshold = thresholds[i / ${blockmemsize}];
+                                  
     int l = outl[i];
     loc[i] = l;
 
@@ -273,7 +275,7 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
             cl = self.outl[batch_idx][:nb]  # Clustered locations for this batch
             cv = self.outv[batch_idx][:nb]  # Clustered values for this batch
             w = (cl != -1)  # Valid locations
-            results.append((cp.asnumpy(cv[w]), cp.asnumpy(cl[w])))
+            results.append((cv[w], cl[w]))
         return results
 
 def _threshold_cluster_factory(series):
