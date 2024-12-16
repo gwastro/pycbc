@@ -246,7 +246,7 @@ class MatchedFilterControl(object):
     def setup_filtering(self, use_cluster):
         """Set up the matched filtering based on scheme"""
         # Initialize memory for SNR and correlation
-        if self.using_cupy and self.batch_size > 1:
+        if self.using_cupy:
             import cupy
             # For CUPY, allocate memory for batch processing
             self.snr_mem = cupy.zeros((self.batch_size, self.tlen), dtype=self.dtype)
@@ -261,6 +261,7 @@ class MatchedFilterControl(object):
             self.matched_filter_and_cluster = self.full_matched_filter_and_cluster_symm
             if self.using_cupy:
                 self.setup_cupy_clustering()
+                self.matched_filter_and_cluster = self.full_matched_filter_and_cluster_symm_batched
             else:
                 self.setup_standard_clustering()
         elif use_cluster and (self.cluster_function == 'findchirp'):
@@ -273,7 +274,7 @@ class MatchedFilterControl(object):
                                                  self.delta_f, self.tlen)
 
         # Set up correlators
-        if self.using_cupy and self.batch_size > 1:
+        if self.using_cupy:
             self.setup_cupy_correlators()
         else:
             self.setup_standard_correlators()
@@ -283,7 +284,8 @@ class MatchedFilterControl(object):
         self.threshold_and_clusterers = []
         for seg in self.segments:
             # Need to modify threshold clustering for batch operations
-            snr_mem_view = cupy.asarray([snr[seg.analyze] for snr in self.snr_mem])
+            # FIXME: This should be initialized above as a 2D array!
+            snr_mem_view = [snr[seg.analyze] for snr in self.snr_mem]
             thresh = events.ThresholdCluster(snr_mem_view)
             self.threshold_and_clusterers.append(thresh)
 
@@ -328,7 +330,53 @@ class MatchedFilterControl(object):
         # setup up the ifft we will do
         self.ifft = IFFT(self.corr_mem, self.snr_mem)
 
-    def full_matched_filter_and_cluster_symm(self, segnum, template_norms, window, epoch=None):
+    def full_matched_filter_and_cluster_symm(self, segnum, template_norm, window, epoch=None):
+        """ Returns the complex snr timeseries, normalization of the complex snr,
+        the correlation vector frequency series, the list of indices of the
+        triggers, and the snr values at the trigger locations. Returns empty
+        lists for these for points that are not above the threshold.
+
+        Calculated the matched filter, threshold, and cluster.
+
+        Parameters
+        ----------
+        segnum : int
+            Index into the list of segments at MatchedFilterControl construction
+            against which to filter.
+        template_norm : float
+            The htilde, template normalization factor.
+        window : int
+            Size of the window over which to cluster triggers, in samples
+
+        Returns
+        -------
+        snr : TimeSeries
+            A time series containing the complex snr.
+        norm : float
+            The normalization of the complex snr.
+        correlation: FrequencySeries
+            A frequency series containing the correlation vector.
+        idx : Array
+            List of indices of the triggers.
+        snrv : Array
+            The snr values at the trigger locations.
+        """
+        norm = (4.0 * self.delta_f) / sqrt(template_norm)
+        self.correlators[segnum].correlate()
+        self.ifft.execute()
+        snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
+
+        if len(idx) == 0:
+            print("NO TRIGGERS")
+            return [], [], [], [], []
+
+        logging.info("%s points above threshold" % str(len(idx)))
+
+        snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
+        corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
+        return snr, norm, corr, idx, snrv
+
+    def full_matched_filter_and_cluster_symm_batched(self, segnum, template_norms, window, epoch=None):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
         triggers, and the snr values at the trigger locations for a batch of templates.

@@ -204,7 +204,7 @@ parser.add_argument("--multiprocessing-nprocesses", type=int,
                          "Used in conjunction with the option"
                          "--finalize-events-template-rate which should be set"
                          "to a multiple of the number of processes.")
-parser.add_argument("--gpu-batch-size", type=int, default=32,
+parser.add_argument("--gpu-batch-size", type=int, default=1,
                     help="Number of templates to process in parallel on GPU")
 
 # Add options groups
@@ -263,7 +263,10 @@ def template_triggers(t_nums):
             continue
 
         if templates is None:
-            templates = bank[t_nums]
+            if not using_cupy:
+                templates = [bank[t_nums[0]]]
+            else:
+                templates = bank[t_nums]
             tparams = [template.params for template in templates]
 
         if opt.update_progress:
@@ -289,7 +292,7 @@ def template_triggers(t_nums):
             print("Matched filter time: ", time.time() - t_start)
         else:
             # Process templates one at a time for other schemes
-            snrs, norms, corrs, idxs, snrvs = [], [], [], [], []
+            snrs, norms, corrs, idxs, snrvs, sigmasqs = [], [], [], [], [], []
             for template in templates:
                 sigmasq = template.sigmasq(stilde.psd)
                 s, n, c, i, sv = \
@@ -302,13 +305,14 @@ def template_triggers(t_nums):
                 corrs.append(c)
                 idxs.append(i)
                 snrvs.append(sv)
+                sigmasqs.append(sigmasq)
 
         # Process results for each template
         for tidx, (template, snr, norm, corr, idx, snrv) in \
                 enumerate(zip(templates, snrs, norms, corrs, idxs, snrvs)):
-            norm = float(norm)
             if not len(idx):
                 continue
+            norm = float(norm)
 
             out_vals = out_vals_ref.copy()
             out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
@@ -343,7 +347,7 @@ def template_triggers(t_nums):
                                                opt.gps_start_time,
                                                opt.sample_rate)
 
-            out_vals_all[tidx] = copy.deepcopy(out_vals)
+            out_vals_all[tidx].append(copy.deepcopy(out_vals))
 
     return out_vals_all, tparams
 
@@ -441,7 +445,10 @@ with ctx:
 
     # Process in batches for GPU
     batch_size = opt.gpu_batch_size
-    template_mem = [zeros(tlen, dtype=complex64) for _ in range(batch_size)]
+    if opt.processing_scheme == 'cupy':
+        template_mem = [zeros(tlen, dtype=complex64) for _ in range(batch_size)]
+    else:
+        template_mem = zeros(tlen, dtype=complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
 
     if opt.cluster_window == 0.0:
@@ -525,21 +532,22 @@ with ctx:
     for tchunk in tchunks:
         chunk_start = time.time()
         if isinstance(ctx, CUPYScheme):
-            data = list(template_triggers(tchunk))
+            data = [template_triggers(tchunk)]
         else:
             data = list(mmap(template_triggers, tchunk))
             
         # Rest of the event processing remains the same
-        for i in range(len(data[0])):
-            out_vals_all, tparam = data[0][i], data[1][i]
-            if len(out_vals_all) > 0:
-                event_mgr.new_template(tmplt=tparam)
+        for elem in data:
+            for idx in range(len(elem[0])):
+                out_vals_all, tparam = elem[0][idx], elem[1][idx]
+                if len(out_vals_all) > 0:
+                    event_mgr.new_template(tmplt=tparam)
+
+                    for edata in out_vals_all:
+                        event_mgr.add_template_events(names, [edata[n] for n in names])
                 
-                for edata in [out_vals_all] :
-                    event_mgr.add_template_events(names, [edata[n] for n in names])
-                
-                event_mgr.cluster_template_events("time_index", "snr", cluster_window)
-                event_mgr.finalize_template_events()
+                    event_mgr.cluster_template_events("time_index", "snr", cluster_window)
+                    event_mgr.finalize_template_events()
                 
         if opt.finalize_events_template_rate is not None:
             event_mgr.consolidate_events(opt, gwstrain=gwstrain)      
