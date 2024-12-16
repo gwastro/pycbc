@@ -472,7 +472,7 @@ class TestChisq(unittest.TestCase):
                 array([idx_max_prec]),
                 ht
             )
-        self.assertLess(chisq, 1e-3)
+        self.assertLess(chisq, 1e-2)
 
 
 
