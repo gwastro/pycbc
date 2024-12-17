@@ -36,7 +36,7 @@ from pycbc.waveform import (get_fd_waveform_sequence,
 from pycbc.detector import Detector
 from pycbc.types import Array, TimeSeries
 
-from .gaussian_noise import BaseGaussianNoise
+from .gaussian_noise import (BaseGaussianNoise, catch_waveform_error)
 from .relbin_cpu import (likelihood_parts, likelihood_parts_v,
                          likelihood_parts_multi, likelihood_parts_multi_v,
                          likelihood_parts_det, likelihood_parts_det_multi,
@@ -523,6 +523,7 @@ class Relative(DistMarg, BaseGaussianNoise):
                     loglr += - h1h2.real # This is -0.5 * re(<h1|h2> + <h2|h1>)
         return loglr + self.lognl
 
+    @catch_waveform_error
     def _loglr(self):
         r"""Computes the log likelihood ratio,
         or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
@@ -601,6 +602,15 @@ class Relative(DistMarg, BaseGaussianNoise):
             results = (filt, norm)
         else:
             results = loglr
+        return results
+
+    def _nowaveform_handler(self):
+        """Sets loglr values if no waveform generated.
+        """
+        if self.return_sh_hh:
+            results = (-numpy.inf, -numpy.inf)
+        else:
+            results = -numpy.inf
         return results
 
     def write_metadata(self, fp, group=None):
@@ -718,6 +728,7 @@ class RelativeTime(Relative):
                                    epoch=self.tstart[ifo] - delta_t * 2.0)
         return snrs
 
+    @catch_waveform_error
     def _loglr(self):
         r"""Computes the log likelihood ratio,
 
@@ -785,6 +796,11 @@ class RelativeTime(Relative):
         loglr = self.marginalize_loglr(filt, norm)
         return loglr
 
+    def _nowaveform_handler(self):
+        """Sets loglr values if no waveform generated.
+        """
+        return -numpy.inf
+
 
 class RelativeTimeDom(RelativeTime):
     """ Heterodyne likelihood optimized for time marginalization and only
@@ -820,6 +836,7 @@ class RelativeTimeDom(RelativeTime):
 
         return snrs
 
+    @catch_waveform_error
     def _loglr(self):
         r"""Computes the log likelihood ratio,
         or inner product <s|h> and <h|h> if `self.return_sh_hh` is True.
@@ -876,6 +893,16 @@ class RelativeTimeDom(RelativeTime):
             hh_total += self.hh[ifo] * abs(htf) ** 2.0
 
         loglr = self.marginalize_loglr(sh_total, hh_total)
+        if self.return_sh_hh:
+            results = (sh_total, hh_total)
+        else:
+            results = loglr
+        return results
+
+    def _nowaveform_handler(self):
+        """Sets loglr values if no waveform generated.
+        """
+        loglr = sh_total = hh_total = -numpy.inf
         if self.return_sh_hh:
             results = (sh_total, hh_total)
         else:
