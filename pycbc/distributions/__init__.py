@@ -170,9 +170,13 @@ def read_params_from_config(cp, prior_section='prior',
             # float (as we would expect for string arguments)
             static_args[key] = float(val)
         except ValueError:
-            # try converting to a list of strings; this function will just
-            # return val if it does not begin (end) with [ (])
-            static_args[key] = _convert_liststring_to_list(val)
+            if val is None or val == '':
+                # convert None to True in cases where specifying `key = `
+                static_args[key] = True
+            else:
+                # try converting to a list of strings; this function will just
+                # return val if it does not begin (end) with [ (])
+                static_args[key] = _convert_liststring_to_list(val)
     return variable_args, static_args
 
 
