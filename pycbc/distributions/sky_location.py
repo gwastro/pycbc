@@ -68,16 +68,18 @@ class FisherSky:
 
     Parameters
     ----------
-    mean_ra: float
-        RA of the center of the distribution.  Use the rad or deg suffix to
+    mean_ra: float or str
+        RA of the center of the distribution. Use the rad or deg suffix to
         specify units, otherwise radians are assumed.
-    mean_dec: float
+    mean_dec: float or str
         Declination of the center of the distribution. Use the rad or deg 
         suffix to specify units, otherwise radians are assumed.
-    sigma: float
+    sigma: float or str
         Spread of the distribution. For the precise interpretation, see Eq 8
         of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than
-        about 20 deg for the approximation to be valid.
+        about 20 deg for the approximation to be valid. Use the rad or deg 
+        suffix to specify units, otherwise radians are assumed.
+
     """
 
     name = 'fisher_sky'
