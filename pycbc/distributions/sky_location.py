@@ -26,6 +26,7 @@ from scipy.spatial.transform import Rotation
 from pycbc.distributions import angular
 from pycbc import VARARGS_DELIM
 from pycbc.io import FieldArray
+from pycbc.types import angle_as_radians
 
 logger = logging.getLogger('pycbc.distributions.sky_location')
 
@@ -67,31 +68,27 @@ class FisherSky:
 
     Parameters
     ----------
-    mean_ra: float
-        RA of the center of the distribution.
-    mean_dec: float
-        Declination of the center of the distribution.
-    sigma: float
+    mean_ra: float or str
+        RA of the center of the distribution. Use the rad or deg suffix to
+        specify units, otherwise radians are assumed.
+    mean_dec: float or str
+        Declination of the center of the distribution. Use the rad or deg 
+        suffix to specify units, otherwise radians are assumed.
+    sigma: float or str
         Spread of the distribution. For the precise interpretation, see Eq 8
         of `Briggs et al 1999 ApJS 122 503`_. This should be smaller than
-        about 20 deg for the approximation to be valid.
-    angle_unit: str
-        Unit for the angle parameters: either "deg" or "rad".
+        about 20 deg for the approximation to be valid. Use the rad or deg 
+        suffix to specify units, otherwise radians are assumed.
+
     """
 
     name = 'fisher_sky'
     _params = ['ra', 'dec']
 
     def __init__(self, **params):
-        if params['angle_unit'] not in ['deg', 'rad']:
-            raise ValueError("Only deg or rad is allowed as angle unit")
-        mean_ra = params['mean_ra']
-        mean_dec = params['mean_dec']
-        sigma = params['sigma']
-        if params['angle_unit'] == 'deg':
-            mean_ra = numpy.deg2rad(mean_ra)
-            mean_dec = numpy.deg2rad(mean_dec)
-            sigma = numpy.deg2rad(sigma)
+        mean_ra = angle_as_radians(params['mean_ra'])
+        mean_dec = angle_as_radians(params['mean_dec'])
+        sigma = angle_as_radians(params['sigma'])
         if mean_ra < 0 or mean_ra > 2 * numpy.pi:
             raise ValueError(
                 f'The mean RA must be between 0 and 2π, {mean_ra} rad given'
@@ -131,15 +128,13 @@ class FisherSky:
                 "Not all parameters used by this distribution "
                 "included in tag portion of section name"
             )
-        mean_ra = float(cp.get_opt_tag(section, 'mean_ra', tag))
-        mean_dec = float(cp.get_opt_tag(section, 'mean_dec', tag))
-        sigma = float(cp.get_opt_tag(section, 'sigma', tag))
-        angle_unit = cp.get_opt_tag(section, 'angle_unit', tag)
+        mean_ra = cp.get_opt_tag(section, 'mean_ra', tag)
+        mean_dec = cp.get_opt_tag(section, 'mean_dec', tag)
+        sigma = cp.get_opt_tag(section, 'sigma', tag)
         return cls(
             mean_ra=mean_ra,
             mean_dec=mean_dec,
             sigma=sigma,
-            angle_unit=angle_unit,
         )
 
     def rvs(self, size):
