@@ -1242,8 +1242,8 @@ def catch_waveform_error(method):
     happens when the wrapped method is executed:
 
       * A `NoWaveformError` is raised.
-      * A `FailedWaveformError` is raised and the model has an
-        `ignore_failed_waveforms` attribute that is set to True.
+      * A `RuntimeError` or `FailedWaveformError` is raised and the model has
+        an `ignore_failed_waveforms` attribute that is set to True.
 
     This requires the model to have a `_nowaveform_return` method.
     """
@@ -1255,7 +1255,7 @@ def catch_waveform_error(method):
             retval = method(self, *args, **kwargs)
         except NoWaveformError:
             retval = self._nowaveform_return()
-        except FailedWaveformError as e:
+        except (RuntimeError, FailedWaveformError) as e:
             try:
                 ignore_failed = self.ignore_failed_waveforms
             except AttributeError:
