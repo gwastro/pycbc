@@ -307,10 +307,10 @@ def get_cached_pow2(N):
 def shift_sum(corr, points, bins):
     kmin, kmax, bv = get_cached_bin_layout(bins)
     nb = len(kmin)
-    N = numpy.uint32(len(corr))
+    N = cp.uint32(len(corr))
     is_pow2 = get_cached_pow2(N)
-    nbins = numpy.uint32(len(bins) - 1)
-    outc = cp.zeros((len(points), nbins), dtype=numpy.complex64)
+    nbins = cp.uint32(len(bins) - 1)
+    outc = cp.zeros((len(points), nbins), dtype=cp.complex64)
     outp = outc.reshape(nbins * len(points))
     np = len(points)
 
@@ -328,7 +328,7 @@ def shift_sum(corr, points, bins):
             elif np == 1:
                 outp, lpoints, np = shift_sum_points_pow2(1, cargs)
     else:
-        phase = [numpy.float32(p * 2.0 * numpy.pi / N) for p in points]
+        phase = [cp.float32(p * 2.0 * cp.pi / N) for p in points]
         while np > 0:
             cargs = (corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins)
 
