@@ -284,9 +284,7 @@ class MatchedFilterControl(object):
         self.threshold_and_clusterers = []
         for seg in self.segments:
             # Need to modify threshold clustering for batch operations
-            # FIXME: This should be initialized above as a 2D array!
-            snr_mem_view = [snr[seg.analyze] for snr in self.snr_mem]
-            thresh = events.ThresholdCluster(snr_mem_view)
+            thresh = events.ThresholdCluster(self.snr_mem, seg.analyze)
             self.threshold_and_clusterers.append(thresh)
 
     def setup_standard_clustering(self):

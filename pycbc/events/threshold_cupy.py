@@ -34,9 +34,9 @@ loc = None
 # https://stackoverflow.com/questions/77798014/cupy-rawkernel-cuda-error-not-found-named-symbol-not-found-cupy
 
 tkernel1 = mako.template.Template("""
-extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float* thresholds, int series_length) {
+extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int window, float* thresholds, int series_length, int analyse_start) {
     int batch_idx = blockIdx.y;  // Batch index
-    int s = batch_idx * series_length + window * blockIdx.x;
+    int s = batch_idx * series_length + window * blockIdx.x + analyse_start;
     int e = s + window;
     float threshold = thresholds[batch_idx];
 
@@ -126,7 +126,7 @@ extern "C" __global__ void threshold_and_cluster(float2* in, float2* outv, int* 
                 tl = idx[0];
                 outv[batch_idx*${blockmemsize} + blockIdx.x].x = svr[tl];
                 outv[batch_idx*${blockmemsize} + blockIdx.x].y = svi[tl];
-                outl[batch_idx*${blockmemsize} + blockIdx.x] = sl[tl] % ${slen};
+                outl[batch_idx*${blockmemsize} + blockIdx.x] = sl[tl] % ${slen} - analyse_start;
                 } else {
                 outl[batch_idx*${blockmemsize} + blockIdx.x] = -1;
             }
@@ -168,7 +168,7 @@ extern "C" __global__ void threshold_and_cluster2(float2* outv, int* outl, float
 """)
 
 @functools.lru_cache(maxsize=None)
-def get_tkernel(slen, window, block_mem_size=None, batch_size=None):
+def get_tkernel(slen, alen, window, block_mem_size=None, batch_size=None):
     if window < 32:
         raise ValueError("GPU threshold kernel does not support a window smaller than 32 samples")
 
@@ -181,7 +181,7 @@ def get_tkernel(slen, window, block_mem_size=None, batch_size=None):
     else:
         nt = 1024
 
-    nb = int(cp.ceil(slen / float(window)))
+    nb = int(cp.ceil(alen / float(window)))
 
     if nb > 1024:
         raise ValueError("More than 1024 blocks not supported yet")
@@ -339,13 +339,16 @@ class FastFilter:
         return cv_filtered, cl_filtered
 
 class CUDAThresholdCluster(_BaseThresholdCluster):
-    def __init__(self, series_batch):
+    def __init__(self, series_batch, analyse_slice):
         self.series_batch = series_batch
         # This value is hardcoded as it is the longest length currently
         # supported. Memory usage for this is tiny anyway so no need to be
         # shorter.
         self.batch_mem_size = 1024
-        self.batch_size, self.series_length = cp.asarray(series_batch).shape
+        self.batch_size, self.series_length = series_batch.shape
+        self.analyse_start = cp.int32(analyse_slice.start)
+        self.analyse_end = cp.int32(analyse_slice.stop)
+        self.analyse_len = self.analyse_end = self.analyse_start
 
         global val
         global loc
@@ -357,7 +360,7 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         self.outl = loc
         self.outv = val
         # This is kind of hardcoded here, sorry. We maybe should pass window in here.
-        nb = int(cp.ceil(self.series_length / float(2048)))
+        nb = int(cp.ceil(self.analyse_len / float(2048)))
         self.fast_filter = FastFilter(snum=self.batch_size, nb=nb)
 
     def threshold_and_cluster(self, threshold, window):
@@ -365,13 +368,17 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         threshold = cp.asarray(threshold, dtype=cp.float32)
         window = cp.int32(window)
 
-        (fn, fn2), nt, nb = get_tkernel(self.series_length, window, block_mem_size=self.batch_mem_size, batch_size=self.batch_size)
+        (fn, fn2), nt, nb = get_tkernel(
+            self.series_length,
+            self.analyse_len,
+            window,
+            block_mem_size=self.batch_mem_size,
+            batch_size=self.batch_size
+        )
         grid = (nb, self.batch_size, 1)
         block = (nt, 1, 1)
 
-        # FIXME: Initialize series_batch properly outside of this object
-        series_batch = cp.asarray(self.series_batch)
-        fn(grid, block, (series_batch.data, self.outv, self.outl, window, threshold, self.series_length))
+        fn(grid, block, (self.series_batch.data, self.outv, self.outl, window, threshold, self.series_length, self.analyse_start))
         fn2(grid, block, (self.outv, self.outl, threshold, window))
 
         results = []
@@ -386,6 +393,6 @@ class CUDAThresholdCluster(_BaseThresholdCluster):
         results = list(zip(cv_filtered, cl_filtered))
         return results
 
-def _threshold_cluster_factory(series):
+def _threshold_cluster_factory(*args, **kwargs):
     return CUDAThresholdCluster
 
